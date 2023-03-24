@@ -47,9 +47,7 @@ void OptimizableObject::saveVariationalParameters(hdf_archive& hout, opt_variabl
 {
   opt_variables_type dummy;
   checkInVariablesExclusive(dummy);
-  hid_t name_grp = hout.push(name_);
-
-  hid_t grp = hout.push("name_value_lists");
+  hid_t grp = hout.push(hdf_path(name_) / "name_value_lists");
 
   std::vector<qmcplusplus::QMCTraits::ValueType> param_values;
   std::vector<std::string> param_names;
