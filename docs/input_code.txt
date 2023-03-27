@@ -9,15 +9,17 @@ Input Facts
   For most input classes the child nodes will consist primarily or entirely of ``parameter`` nodes.
 
 - For historical reasons this tree is expressed by using XML as described previously in this manual.
-  That documentation is the most formal specification of the input.
+  That documentation is the most formal specification of the XML input format.
 
 - Parameter nodes for historical reasons can be specified in two different ways.
 
-.. code:: xml
+.. xml lexers require valid xml which this fragment isn't
+.. code-block:: html
+   :caption: qmcpack parameter XML
+   :name: param_xml
 
-     <the_parameters_name attributes....>content</the_parameters_name>
-     <parameter name="the_parameters_name"...>content</parameter>  
-
+	    <the_parameters_name>content</the_parameters_name>
+            <parameter name="the_parameters_name">content</parameter>
 
 Input Problems
 ~~~~~~~~~~~~~~
@@ -32,8 +34,8 @@ Input Problems
 - Unrecognized elements, parameter names, and attributes are silently ignored. Sometimes defaults are used instead.
 - Invalid input to recognized elements is sometimes checked, sometimes causes crashes, sometimes causes invalid answers (NaNs etc.) and sometimes is just fixed.
 
-  .. _fig28:
-.. figure:: /figs/simulation_object_state.png
+.. _fig28:
+.. figure:: /uml/simulation_object_state.png
   :width: 500
   :align: left
 
@@ -59,19 +61,18 @@ Legacy QMCPACK input parsing is characterized by a unclear ownership of input no
 The Improved Input Design
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Make input parsing and validation (to the degree feasible) a distinct stages of application execution.
+#. Make input parsing and validation (to the degree feasible) a distinct stages of application execution.
+   This will improve separation of concerns, facilitate unit testing,  and allow parsing and validation of input to be completed before the beginning of the simulation proper and the majority of the computation resource cost is incurred.
 
-This will improve separation of concerns, facilitate unit testing,  and allow parsing and validation of input to be completed before the beginning of the simulation proper and the majority of the computation resource cost is incurred.
+#. *Simulation* objects take valid *Input* objects as constructor arguements.
 
-2. *Simulation* objects take valid *Input* objects as constructor arguements.
+  If we can assume a one to one relationship between some input node and a simulation object then at its simplest the ``Input`` class for a particular simulation object should be a data structure containing as members native data types corresponding to the possible user input for that node.
 
-If we can assume a one to one relationship between some input node and a simulation object then at its simplest the ``Input`` class for a particular simulation object should be a data structure containing as members native data types corresponding to the possible user input for that node.
+#. *Simulation* object will be required to be valid at construction whenever possible.
 
-3. *Simulation* object will be required to be valid at construction whenever possible.
+#. Where input parameters from another simulation object are required carefully consider lifetimes, case by case determine whether it is more appropriate for the simulation object, a more restricted type,  or an input object as a constructor argument.
 
-4. Where input parameters from another simulation object are required carefully consider lifetimes, case by case determine whether it is more appropriate for the simulation object, a more restricted type,  or an input object as a constructor argument.
-
-A base class ``InputSection`` allowing the specification of the user input and handling most parsing of the (currently) XML input is supplied. Composing a type derived from ``InputSection`` is strongly suggested and the rest of this documentation assumes that route is being taken. The basic class hierarchy this results in is illustrated in (see :numref:`fig31`).
+A base class :code:`InputSection` allowing the specification of the user input and handling most parsing of the (currently) XML input is supplied. Composing a type derived from :code:`InputSection` is strongly suggested and the rest of this documentation assumes that route is being taken. The basic class hierarchy this results in is illustrated in (see :numref:`fig31`).
 
 .. _fig31:
 .. figure:: /uml/SimpleInputClass.png
@@ -80,12 +81,15 @@ A base class ``InputSection`` allowing the specification of the user input and h
 
   "Modern" input scheme low level class diagram. Simulation class ``SimpleSimObject``, takes input class ``SimpleInput`` as a constructor argument, in general sharing a aggregate relationship.  ``SimpleInput`` composes an input section class ``SimpleInputSection`` derived from ``InputSection`` base class. ``SimpleInput`` gains input parsing functionality from ``SimpleInputSection``.
 
-How to use the Improved Input Design
-~~~~~~~~~~~~~~~~~~~~~~~~~
+5. The *Input* class is a data structure collecting all the arguments
+   a simulation class needs to be constructed in a valid state. Your simulation class should aggregate the input class
+   and use it as the "single source of truth" for these input parameters.
+
+How to use the improved input design
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Determine for your simulation object what are the immutable parameters that are read from or
-  directly derived from user input. Your input class is a data structure collecting all the arguments
-  your simulation class needs to be constructed in a valid state.
+  directly derived from user input. These will be the data members of the input class.
   
 - If your simulation class is called ``MySimObject`` name the input class ``MySimObjectInput.``
   - Add a constructor that takes an xmlNodePtr as an argument.  
@@ -101,18 +105,22 @@ How to use the Improved Input Design
 
 - Make an implementation file if you have not, ``MySimObjectInput.cpp``.
 - In your ``MySimObjectInput::MySimObjectInput(xmlNodePtr& cur)`` call ``input_section_.readXML(cur)`` to parse input.
-- In your constructor use the ``LAMBDA_setIfInInput`` macro to copy ``MyInputSection`` variables if read to your native data members. (see listing),
+- In your constructor use the ``LAMBDA_setIfInInput`` macro to copy ``MyInputSection`` variables if read to your native data members. (:numref:`lst101`),
   the macro generated lambda is strongly typed.
 
-.. code:: c++
+.. code-block:: c++
+   :caption: Basic InputClass constructor
+   :name: lst101
 
 	  class MySimObjectInput
 	  {
-            input_section_.readXML(cur);
-	    auto setIfInInput = LAMBDA_setIfInInput;
-	    setIfInInput(energy_matrix_, "energy_matrix");
+            MySimObjectInput() {
+	      input_section_.readXML(cur);
+	      auto setIfInInput = LAMBDA_setIfInInput;
+	      setIfInInput(energy_matrix_, "energy_matrix");
 	    ...
-	  }
+	    }
+	  };
 
 - Write unit tests ``tests/test_MySimObjectInput.cpp`` see ``src/Estimators/test_OneBodyDensityMatricesInput.cpp``
 
@@ -143,8 +151,8 @@ This requires that in addition to creating and unit testing ``MyEstimatorInput``
 
 - Add a valid input section for your input class to the integration testing in ``tests/test_EstimatorManagerInput.cpp``
 	    
-Advanced Features of ``InputSection``
-.....................................
+Advanced Features of :code:`InputSection`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Delegation to InputClasses
 
