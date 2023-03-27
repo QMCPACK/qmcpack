@@ -19,8 +19,11 @@ MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput,
 OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat) 
 {
   my_name_ = "MagnetizationDensity";
-  //Pull consistent corner, grids, etc., from already inititalized input.  
+  //Pull consistent corner, grids, etc., from already inititalized input. 
+  //DerivedParameters does the sanity checks and consistent initialization of these variables.   
   MagnetizationDensityInput::DerivedParameters derived = minput.calculateDerivedParameters(lat);
+  
+  //If DerivedParameters does its job, these are all correct, so we pull them and keep them in the class.  
   npoints_ = derived.npoints;
   grid_= derived.grid;
   gdims_ = derived.gdims;
