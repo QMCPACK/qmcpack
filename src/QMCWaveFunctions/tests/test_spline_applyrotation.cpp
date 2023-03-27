@@ -101,10 +101,9 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   // zero rotation = identity matrix
   SPOSet::ValueMatrix rot_mat(orbitalsetsize, orbitalsetsize);
   rot_mat = 0;
-  for (auto i = 0; i < orbitalsetsize; i++)
-  {
+  for (int i = 0; i < orbitalsetsize; i++)
     rot_mat[i][i] = 1;
-  }
+
   spo->storeParamsBeforeRotation(); // avoids coefs_copy_ nullptr segfault
   spo->applyRotation(rot_mat, false);
 
@@ -117,65 +116,47 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   // Compute the expected value, gradient, and laplacian by hand using the transformation above
   // Check value
   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       psiM_rot_manual[i][j] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
-      }
     }
-  }
   checkMatrix(psiM_rot_manual, psiM_rot);
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       dpsiM_rot_manual[i][j][0] = 0.;
       dpsiM_rot_manual[i][j][1] = 0.;
       dpsiM_rot_manual[i][j][2] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
-        for (auto l = 0; l < 3; l++)
-        {
+      for (int k = 0; k < orbitalsetsize; k++)
+        for (int l = 0; l < 3; l++)
           dpsiM_rot_manual[i][j][l] += dpsiM_bare[i][k][l] * rot_mat[k][j];
-        }
-      }
     }
-  }
 
   // No checkMatrix for tensors? Gotta do it by hand...
   double res = 0.;
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
-    {
-      for (auto k = 0; k < 3; k++)
-      {
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
+      for (int k = 0; k < 3; k++)
         res += std::sqrt(std::norm(dpsiM_rot_manual[i][j][k] - dpsiM_rot[i][j][k]));
-      }
-    }
-  }
+
   CHECK(res == Approx(0.).epsilon(2e-4)); // increase threshold to accomodate mixed precision.
 
   // Check laplacian
   SPOSet::ValueMatrix d2psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       d2psiM_rot_manual[i][j] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
-      }
     }
-  }
+
   checkMatrix(d2psiM_rot_manual, d2psiM_rot);
 
 } // TEST_CASE
@@ -341,65 +322,47 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   // Compute the expected value, gradient, and laplacian by hand using the transformation above
   // Check value
   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       psiM_rot_manual[i][j] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
-      }
     }
-  }
   checkMatrix(psiM_rot_manual, psiM_rot);
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       dpsiM_rot_manual[i][j][0] = 0.;
       dpsiM_rot_manual[i][j][1] = 0.;
       dpsiM_rot_manual[i][j][2] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
-        for (auto l = 0; l < 3; l++)
-        {
+      for (int k = 0; k < orbitalsetsize; k++)
+        for (int l = 0; l < 3; l++)
           dpsiM_rot_manual[i][j][l] += dpsiM_bare[i][k][l] * rot_mat[k][j];
-        }
-      }
     }
-  }
 
   // No checkMatrix for tensors? Gotta do it by hand...
   double res = 0.;
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
-    {
-      for (auto k = 0; k < 3; k++)
-      {
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
+      for (int k = 0; k < 3; k++)
         res += std::sqrt(std::norm(dpsiM_rot_manual[i][j][k] - dpsiM_rot[i][j][k]));
-      }
-    }
-  }
+
   CHECK(res == Approx(0.).epsilon(2e-4)); // increase threshold to accomodate mixed precision.
 
   // Check laplacian
   SPOSet::ValueMatrix d2psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       d2psiM_rot_manual[i][j] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
-      }
     }
-  }
+
   checkMatrix(d2psiM_rot_manual, d2psiM_rot);
 
 } // TEST_CASE
@@ -641,20 +604,15 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   spo->storeParamsBeforeRotation();    // avoids coefs_copy_ nullptr segfault
   spo->applyRotation(rot_mat2, false); // Apply rotation2
 
-
   // Total rotation is product of rot_mat1 and rot_mat2
   SPOSet::ValueMatrix rot_mat_tot(orbitalsetsize, orbitalsetsize);
-  for (auto i = 0; i < orbitalsetsize; i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < orbitalsetsize; i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       rot_mat_tot[i][j] = 0;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         rot_mat_tot[i][j] += rot_mat1[i][k] * rot_mat2[k][j];
-      }
     }
-  }
 
   // Get the data for rotated orbitals
   SPOSet::ValueMatrix psiM_rot(elec_.R.size(), orbitalsetsize);
@@ -665,65 +623,46 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   // Compute the expected value, gradient, and laplacian by hand using the transformation above
   // Check value
   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       psiM_rot_manual[i][j] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat_tot[k][j];
-      }
     }
-  }
   checkMatrix(psiM_rot_manual, psiM_rot);
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       dpsiM_rot_manual[i][j][0] = 0.;
       dpsiM_rot_manual[i][j][1] = 0.;
       dpsiM_rot_manual[i][j][2] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
-        for (auto l = 0; l < 3; l++)
-        {
+      for (int k = 0; k < orbitalsetsize; k++)
+        for (int l = 0; l < 3; l++)
           dpsiM_rot_manual[i][j][l] += dpsiM_bare[i][k][l] * rot_mat_tot[k][j];
-        }
-      }
     }
-  }
 
   // No checkMatrix for tensors? Gotta do it by hand...
   double res = 0.;
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
-    {
-      for (auto k = 0; k < 3; k++)
-      {
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
+      for (int k = 0; k < 3; k++)
         res += std::sqrt(std::norm(dpsiM_rot_manual[i][j][k] - dpsiM_rot[i][j][k]));
-      }
-    }
-  }
+
   CHECK(res == Approx(0.).epsilon(2e-4)); // increase threshold to accomodate mixed precision.
 
   // Check laplacian
   SPOSet::ValueMatrix d2psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       d2psiM_rot_manual[i][j] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat_tot[k][j];
-      }
     }
-  }
   checkMatrix(d2psiM_rot_manual, d2psiM_rot);
 
 } // TEST_CASE
@@ -805,15 +744,14 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
      U= (5.40302306e-01 -8.41470985e-01i) * eye(orbitalsetsize)
      U * conj(U.T) = eye(7)
 
-      NB: There's nothing special about this rotation. I purposefully made something 'ugly' to make a worst case scenario...
+     NB: There's nothing special about this rotation. I purposefully made something 'ugly' to make a worst case scenario...
     */
   SPOSet::ValueMatrix rot_mat(orbitalsetsize, orbitalsetsize);
   const SPOSet::ValueType z(5.40302306e-01, -8.41470985e-01);
   rot_mat = 0;
-  for (auto i = 0; i < orbitalsetsize; i++)
-  {
+  for (int i = 0; i < orbitalsetsize; i++)
     rot_mat[i][i] = z;
-  }
+
   spo->storeParamsBeforeRotation(); // avoids coefs_copy_ nullptr segfault
   spo->applyRotation(rot_mat, false);
 
@@ -826,65 +764,46 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   // Compute the expected value, gradient, and laplacian by hand using the transformation above
   // Check value
   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       psiM_rot_manual[i][j] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
-      }
     }
-  }
   checkMatrix(psiM_rot_manual, psiM_rot);
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       dpsiM_rot_manual[i][j][0] = 0.;
       dpsiM_rot_manual[i][j][1] = 0.;
       dpsiM_rot_manual[i][j][2] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
-        for (auto l = 0; l < 3; l++)
-        {
+      for (int k = 0; k < orbitalsetsize; k++)
+        for (int l = 0; l < 3; l++)
           dpsiM_rot_manual[i][j][l] += dpsiM_bare[i][k][l] * rot_mat[k][j];
-        }
-      }
     }
-  }
 
   // No checkMatrix for tensors? Gotta do it by hand...
   double res = 0.;
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
-    {
-      for (auto k = 0; k < 3; k++)
-      {
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
+      for (int k = 0; k < 3; k++)
         res += std::sqrt(std::norm(dpsiM_rot_manual[i][j][k] - dpsiM_rot[i][j][k]));
-      }
-    }
-  }
+
   CHECK(res == Approx(0.).epsilon(2e-4)); // increase threshold to accomodate mixed precision.
 
   // Check laplacian
   SPOSet::ValueMatrix d2psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  for (auto i = 0; i < elec_.R.size(); i++)
-  {
-    for (auto j = 0; j < orbitalsetsize; j++)
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < orbitalsetsize; j++)
     {
       d2psiM_rot_manual[i][j] = 0.;
-      for (auto k = 0; k < orbitalsetsize; k++)
-      {
+      for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
-      }
     }
-  }
   checkMatrix(d2psiM_rot_manual, d2psiM_rot);
 } // TEST_CASE
 #endif

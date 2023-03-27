@@ -93,14 +93,6 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2R>(*this); }
 
-  /*
-    JPT [14.03.2023] implement after R2R and C2C are working
-  */
-  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override
-  {
-    APP_ABORT("SplineC2R::applyRotation() is not implemented! Use SplineC2C or SplineR2R.");
-  }
-
   inline void resizeStorage(size_t n, size_t nvals)
   {
     init_base(n);

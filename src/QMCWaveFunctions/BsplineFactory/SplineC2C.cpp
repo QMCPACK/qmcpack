@@ -94,7 +94,7 @@ void SplineC2C<ST>::storeParamsBeforeRotation()
              |         | c11_r | c11_i |  ...  | c1N_r | c1N_i |   0   |
       basis_set_size   | c21_r | c21_i |  ...  | c2N_r | c2N_i |   0   |
              |         |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |
-             |         | cN1_r | cN1_i |  ...  | cNN_r | cNN_i |   0   |
+             |         | cM1_r | cM1_i |  ...  | cMN_r | cMN_i |   0   |
              v         |=======|=======|=======|=======|=======|=======|
                        <------------------ Nsplines ------------------>
 
@@ -120,39 +120,27 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
     std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
   }
 
-  ST zr{0.};
-  ST zi{0.};
-  ST wr{0.};
-  ST wi{0.};
-  ST newval_r{0.};
-  ST newval_i{0.};
-  for (auto i = 0; i < basis_set_size; i++)
-  {
-    for (auto j = 0; j < OrbitalSetSize; j++)
+  for (int i = 0; i < basis_set_size; i++)
+    for (int j = 0; j < OrbitalSetSize; j++)
     {
       // cur_elem points to the real componend of the coefficient.
       // Imag component is adjacent in memory.
       const auto cur_elem = Nsplines * i + 2 * j;
-      zr                  = 0.;
-      zi                  = 0.;
-      wr                  = 0.;
-      wi                  = 0.;
-      newval_r            = 0.;
-      newval_i            = 0.;
+      ST newval_r{0.};
+      ST newval_i{0.};
       for (auto k = 0; k < OrbitalSetSize; k++)
       {
         const auto index = Nsplines * i + 2 * k;
-        zr               = (*coef_copy_)[index];
-        zi               = (*coef_copy_)[index + 1];
-        wr               = rot_mat[k][j].real();
-        wi               = rot_mat[k][j].imag();
+        ST zr            = (*coef_copy_)[index];
+        ST zi            = (*coef_copy_)[index + 1];
+        ST wr            = rot_mat[k][j].real();
+        ST wi            = rot_mat[k][j].imag();
         newval_r += zr * wr - zi * wi;
         newval_i += zr * wi + zi * wr;
       }
       spl_coefs[cur_elem]     = newval_r;
       spl_coefs[cur_elem + 1] = newval_i;
     }
-  }
 }
 
 template<typename ST>

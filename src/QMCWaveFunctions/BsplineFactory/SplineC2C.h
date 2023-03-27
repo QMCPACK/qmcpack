@@ -91,6 +91,8 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2C>(*this); }
 
+  bool isRotationSupported() const override { return true; }
+
   /// Store an original copy of the spline coefficients for orbital rotation
   void storeParamsBeforeRotation() override;
 
