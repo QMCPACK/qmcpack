@@ -691,11 +691,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     {
       sprintf(name, "%s%d", "/KPTS_0/eigenset_", setVal);
       setname = name;
-      if (!hin.readEntry(Ctemp, setname))
-      {
-        setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
-        APP_ABORT(setname.c_str());
-      }
+      hin.read(Ctemp, setname);
     }
     hin.close();
 
@@ -874,11 +870,7 @@ void LCAOrbitalBuilder::readRealMatrixFromH5(hdf_archive& hin,
                                              const std::string& setname,
                                              Matrix<LCAOrbitalBuilder::RealType>& Creal) const
 {
-  if (!hin.readEntry(Creal, setname))
-  {
-    std::string error_msg = "LCAOrbitalBuilder::readRealMatrixFromH5 Missing " + setname + " from HDF5 File.";
-    APP_ABORT(error_msg.c_str());
-  }
+  hin.read(Creal, setname);
 }
 
 void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
@@ -979,8 +971,7 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
         APP_ABORT("Could not open H5 file");
       if (!hin.push("Cell"))
         APP_ABORT("Could not open Cell group in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
-      if (!hin.readEntry(Lattice, "LatticeVectors"))
-        APP_ABORT("Could not open Lattice vectors in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
+      hin.read(Lattice, "LatticeVectors");
       hin.close();
     }
     for (int i = 0; i < 3; i++)
