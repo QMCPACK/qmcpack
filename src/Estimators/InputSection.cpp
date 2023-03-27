@@ -305,12 +305,6 @@ void InputSection::report(std::ostream& out) const
   out << "\n\n";
 }
 
-void InputSection::report() const
-{
-  auto& out = app_log();
-  report(out);
-}
-
 std::any InputSection::lookupAnyEnum(const std::string& enum_name,
                                      const std::string& enum_value,
                                      const std::unordered_map<std::string, std::any>& enum_map)
