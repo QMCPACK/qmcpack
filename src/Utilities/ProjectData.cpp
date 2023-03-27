@@ -38,11 +38,7 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
       cur_(NULL),
       max_cpu_secs_(360000),
       driver_version_(driver_version),
-#ifdef QMC_COMPLEX
-      is_complex_(true)
-#else
-      is_complex_(false)
-#endif
+      runtime_options_(RuntimeOptions())
 {
   my_comm_ = OHMMS::Controller;
   if (title_.empty())
@@ -253,7 +249,9 @@ int ProjectData::getMaxCPUSeconds() const noexcept { return max_cpu_secs_; }
 
 ProjectData::DriverVersion ProjectData::getDriverVersion() const noexcept { return driver_version_; }
 
-bool ProjectData::isComplex() const noexcept { return is_complex_; }
+bool ProjectData::isComplex() const noexcept { return runtime_options_.is_complex; }
+
+const RuntimeOptions& ProjectData::getRuntimeOptions() const noexcept { return runtime_options_; }
 
 // PRIVATE
 ProjectData::DriverVersion ProjectData::lookupDriverVersion(const std::string& enum_value)

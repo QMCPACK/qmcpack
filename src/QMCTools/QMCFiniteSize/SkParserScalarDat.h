@@ -26,10 +26,10 @@ public:
     SKERR
   };
 
-  void parse(const string& fname) override;
+  void parse(const std::string& fname) override;
 
 private:
-  void read_sk_file(const string& fname);
+  void read_sk_file(const std::string& fname);
 };
 
 } // namespace qmcplusplus

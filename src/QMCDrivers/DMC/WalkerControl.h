@@ -25,6 +25,8 @@
 #include "Message/CommOperators.h"
 #include "Utilities/RandomGenerator.h"
 
+#include <filesystem>
+
 namespace qmcplusplus
 {
 namespace testing
@@ -155,7 +157,7 @@ private:
   ///offset of the particle index for a fair distribution
   std::vector<int> fair_offset_;
   ///filename for dmc.dat
-  std::string dmcFname;
+  std::filesystem::path dmcFname;
   ///file to save energy histogram
   std::unique_ptr<std::ofstream> dmcStream;
   ///context id

@@ -17,7 +17,7 @@ namespace qmcplusplus
 class SkParserHDF5 : public SkParserBase
 {
 public:
-  void parse(const string& fname) override;
+  void parse(const std::string& fname) override;
 
 private:
   hdf_archive statfile;

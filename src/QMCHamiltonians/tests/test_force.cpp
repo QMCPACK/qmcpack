@@ -23,6 +23,7 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -244,7 +245,8 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // 2) The species is active
   CoulombPBCAA noElecForce(elec, true, true, false);
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   // Making local copies here in refactoring attempt to disallow modifying
   // ForceBase members directly...
   // Probably fine for a test but if this type of behavior was needed in
@@ -462,7 +464,8 @@ TEST_CASE("AC Force", "[hamiltonian]")
   elec.update();
 
   // defaults
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   QMCHamiltonian qmcHamiltonian;
 
   //This is redundant code, but necessary to avoid adding API's to

@@ -11,6 +11,7 @@
 
 #include "catch.hpp"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
+#include "Utilities/RuntimeOptions.h"
 
 
 namespace qmcplusplus
@@ -55,7 +56,8 @@ TEST_CASE("updateXmlNodes", "[drivers]")
   const SimulationCell simulation_cell;
   MCWalkerConfiguration w(simulation_cell);
   QMCHamiltonian h;
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   Communicate* comm = OHMMS::Controller;
 
@@ -90,7 +92,8 @@ TEST_CASE("updateXmlNodes with existing element", "[drivers]")
   const SimulationCell simulation_cell;
   MCWalkerConfiguration w(simulation_cell);
   QMCHamiltonian h;
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   Communicate* comm = OHMMS::Controller;
 

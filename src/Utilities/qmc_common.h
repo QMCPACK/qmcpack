@@ -56,6 +56,7 @@ struct QMCState
 
 ///a unique QMCState during a run
 extern QMCState qmc_common;
+
 } // namespace qmcplusplus
 
 #endif

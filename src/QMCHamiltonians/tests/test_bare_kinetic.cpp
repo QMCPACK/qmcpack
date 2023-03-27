@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/tests/TestListenerFunction.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <functional>
 #include <stdio.h>
@@ -71,7 +72,8 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   BareKineticEnergy bare_ke(elec, psi);
   bare_ke.put(h1);
 
@@ -160,7 +162,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   //Add the two body jastrow
   const char* particles = R"(<tmp>
@@ -270,7 +273,7 @@ void testElecCase(double mass_up,
   ParticleSet elec(simulation_cell);
 
   elec.setName("elec");
-  elec.create({1,1});
+  elec.create({1, 1});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -295,7 +298,9 @@ void testElecCase(double mass_up,
   elec2.R[1][2] = 1.0;
   elec2.update();
 
-  TrialWaveFunction psi, psi_clone;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi_clone(runtime_options);
 
   RefVector<ParticleSet> ptcls{elec, elec2};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
