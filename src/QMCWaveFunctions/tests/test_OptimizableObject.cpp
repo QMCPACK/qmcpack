@@ -13,6 +13,7 @@
 #include "catch.hpp"
 
 #include "OptimizableObject.h"
+#include "io/hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -21,7 +22,12 @@ class FakeOptimizableObject : public OptimizableObject
 {
 public:
   FakeOptimizableObject(const std::string& my_name) : OptimizableObject(my_name) {}
-  void checkInVariablesExclusive(opt_variables_type& active) override {}
+  void checkInVariablesExclusive(opt_variables_type& active) override
+  {
+    active.insert("var1", 1.1);
+    active.insert("var2", 2.3);
+  }
+
   void resetParametersExclusive(const opt_variables_type& active) override {}
 };
 
@@ -42,4 +48,23 @@ TEST_CASE("Test OptimizableObject", "[wavefunction]")
   CHECK(opt_obj_refs[0].getName() == "functor_a");
   CHECK(opt_obj_refs[1].getName() == "functor_b");
 }
+
+TEST_CASE("OptimizableObject HDF output and input", "[wavefunction]")
+{
+  FakeOptimizableObject fake_a("functor_a");
+  hdf_archive hout;
+  opt_variables_type opt_vars;
+
+  fake_a.openHDFToSave("opt_obj_vp.h5", hout);
+  fake_a.saveVariationalParameters(hout, opt_vars);
+  hout.close();
+
+  FakeOptimizableObject fake_a2("functor_a");
+  hdf_archive hin;
+  fake_a2.openHDFToRead("opt_obj_vp.h5", hin);
+  fake_a2.readVariationalParameters(hin, opt_vars);
+  CHECK(opt_vars.find("var1")->second == Approx(1.1));
+  CHECK(opt_vars.find("var2")->second == Approx(2.3));
+}
+
 } // namespace qmcplusplus
