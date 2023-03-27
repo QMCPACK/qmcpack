@@ -68,11 +68,15 @@ The Improved Input Design
 
   If we can assume a one to one relationship between some input node and a simulation object then at its simplest the ``Input`` class for a particular simulation object should be a data structure containing as members native data types corresponding to the possible user input for that node.
 
-#. *Simulation* object will be required to be valid at construction whenever possible.
+#. *Simulation* objects will be required to be valid at construction whenever possible.
 
+#. The *Input* class is a data structure collecting all the arguments
+   a simulation class needs to be constructed in a valid state. Your simulation class should aggregate the input class
+   and use it as the "single source of truth" for these input parameters.
+   
 #. Where input parameters from another simulation object are required carefully consider lifetimes, case by case determine whether it is more appropriate for the simulation object, a more restricted type,  or an input object as a constructor argument.
 
-A base class :code:`InputSection` allowing the specification of the user input and handling most parsing of the (currently) XML input is supplied. Composing a type derived from :code:`InputSection` is strongly suggested and the rest of this documentation assumes that route is being taken. The basic class hierarchy this results in is illustrated in (see :numref:`fig31`).
+#. A base class :code:`InputSection` allowing the specification of the user input and handling most parsing of the XML input is provided. *Input* classes compose one or more types derived from :code:`InputSection`. The basic class hierarchy this results in is illustrated in (see :numref:`fig31`).
 
 .. _fig31:
 .. figure:: /uml/SimpleInputClass.png
@@ -81,9 +85,13 @@ A base class :code:`InputSection` allowing the specification of the user input a
 
   "Modern" input scheme low level class diagram. Simulation class ``SimpleSimObject``, takes input class ``SimpleInput`` as a constructor argument, in general sharing a aggregate relationship.  ``SimpleInput`` composes an input section class ``SimpleInputSection`` derived from ``InputSection`` base class. ``SimpleInput`` gains input parsing functionality from ``SimpleInputSection``.
 
-5. The *Input* class is a data structure collecting all the arguments
-   a simulation class needs to be constructed in a valid state. Your simulation class should aggregate the input class
-   and use it as the "single source of truth" for these input parameters.
+The :code:`InputSection` class parses the string representations of input data
+that have been previously organized hierarchically within Libxml2 data
+structures.  Input values of are stored in a single hash table
+where strongly typed polymorphism is supported by \verb|std::any|.  The parsed
+inputs are checked for type and name validity. Subtypes are expected to implement more
+specific checking by overriding the :code:`InputSection::checkParticularValidity` virtual method.
+
 
 How to use the improved input design
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
