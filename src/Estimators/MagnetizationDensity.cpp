@@ -13,60 +13,57 @@
 
 namespace qmcplusplus
 {
-
-MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput,
-					   const Lattice & lat):
-OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat) 
+MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput, const Lattice& lat)
+    : OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
 {
   my_name_ = "MagnetizationDensity";
-  //Pull consistent corner, grids, etc., from already inititalized input. 
-  //DerivedParameters does the sanity checks and consistent initialization of these variables.   
+  //Pull consistent corner, grids, etc., from already inititalized input.
+  //DerivedParameters does the sanity checks and consistent initialization of these variables.
   MagnetizationDensityInput::DerivedParameters derived = minput.calculateDerivedParameters(lat);
-  
-  //If DerivedParameters does its job, these are all correct, so we pull them and keep them in the class.  
+
+  //If DerivedParameters does its job, these are all correct, so we pull them and keep them in the class.
   npoints_ = derived.npoints;
-  grid_= derived.grid;
-  gdims_ = derived.gdims;
+  grid_    = derived.grid;
+  gdims_   = derived.gdims;
 
   rcorner_ = derived.corner;
   center_  = rcorner_ + lattice_.Center;
 
-  nsamples_ = input_.get_nsamples();
+  nsamples_   = input_.get_nsamples();
   integrator_ = input_.get_integrator();
 
   //Resize the data arrays.
-  data_.resize(getFullDataSize(),0);
+  data_.resize(getFullDataSize(), 0);
 }
 
-MagnetizationDensity::MagnetizationDensity(const MagnetizationDensity& magdens,DataLocality dl): MagnetizationDensity(magdens)
+MagnetizationDensity::MagnetizationDensity(const MagnetizationDensity& magdens, DataLocality dl)
+    : MagnetizationDensity(magdens)
 {
- my_name_ = "MagnetizationDensity";
- data_locality_ = dl;
+  my_name_       = "MagnetizationDensity";
+  data_locality_ = dl;
 }
-void MagnetizationDensity::startBlock(int steps)
-{
-};
-   
+void MagnetizationDensity::startBlock(int steps){};
+
 size_t MagnetizationDensity::getFullDataSize() { return npoints_ * DIM; }
 
 void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
-                  const RefVector<ParticleSet>& psets,
-                  const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng) 
+                                      const RefVector<ParticleSet>& psets,
+                                      const RefVector<TrialWaveFunction>& wfns,
+                                      RandomGenerator& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
-    MCPWalker& walker     = walkers[iw];
-    ParticleSet& pset     = psets[iw];
-    TrialWaveFunction& wfn   = wfns[iw];
+    MCPWalker& walker      = walkers[iw];
+    ParticleSet& pset      = psets[iw];
+    TrialWaveFunction& wfn = wfns[iw];
 
     QMCT::RealType weight = walker.Weight;
-    std::vector<Value> sxgrid(nsamples_,0.0);
-    std::vector<Value> sygrid(nsamples_,0.0);
-    std::vector<Value> szgrid(nsamples_,0.0);
+    std::vector<Value> sxgrid(nsamples_, 0.0);
+    std::vector<Value> sygrid(nsamples_, 0.0);
+    std::vector<Value> szgrid(nsamples_, 0.0);
 
-    //Temporary variables to hold the integrated sx, sy, sz estimates.  
-    //These are overwritten as needed in the loop over particles.  
+    //Temporary variables to hold the integrated sx, sy, sz estimates.
+    //These are overwritten as needed in the loop over particles.
     Value sx(0.0);
     Value sy(0.0);
     Value sz(0.0);
@@ -74,22 +71,20 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
     const int np = pset.getTotalNum();
     assert(weight >= 0);
 
-    walkers_weight_+= weight;
+    walkers_weight_ += weight;
     for (int p = 0; p < np; ++p)
     {
-      size_t sxindex = computeBin(pset.R[p],0);
-      generateSpinIntegrand(pset,wfn,p,sxgrid,sygrid,szgrid);
-      sx=integrateMagnetizationDensity(sxgrid);
-      sy=integrateMagnetizationDensity(sygrid); 
-      sz=integrateMagnetizationDensity(szgrid); 
-     
-      data_[sxindex]+=std::real(sx*weight); 
-      data_[sxindex+1]+=std::real(sy*weight); 
-      data_[sxindex+2]+=std::real(sz*weight); 
+      size_t sxindex = computeBin(pset.R[p], 0);
+      generateSpinIntegrand(pset, wfn, p, sxgrid, sygrid, szgrid);
+      sx = integrateMagnetizationDensity(sxgrid);
+      sy = integrateMagnetizationDensity(sygrid);
+      sz = integrateMagnetizationDensity(szgrid);
+
+      data_[sxindex] += std::real(sx * weight);
+      data_[sxindex + 1] += std::real(sy * weight);
+      data_[sxindex + 2] += std::real(sz * weight);
     }
   }
-
-
 };
 
 void MagnetizationDensity::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
@@ -106,24 +101,24 @@ void MagnetizationDensity::collect(const RefVector<OperatorEstBase>& type_erased
 
 size_t MagnetizationDensity::computeBin(const QMCT::PosType& r, const unsigned int component) const
 {
-  assert(component < QMCT::DIM);  
+  assert(component < QMCT::DIM);
   QMCT::PosType u = lattice_.toUnit(r - rcorner_);
-  size_t point = 0; //This establishes the real space grid point.  
+  size_t point    = 0; //This establishes the real space grid point.
   for (int d = 0; d < QMCT::DIM; ++d)
     point += gdims_[d] * ((int)(grid_[d] * (u[d] - std::floor(u[d])))); //periodic only
-  
+
   //We now have the real space grid point.  For each grid point, we store sx[point],sy[point],sz[point].
-  //Thus, the actual position in array is DIM*point+component.  
-  return DIM*point+component; 
+  //Thus, the actual position in array is DIM*point+component.
+  return DIM * point + component;
 }
 
-std::unique_ptr<OperatorEstBase> MagnetizationDensity::spawnCrowdClone() const 
-{ 
+std::unique_ptr<OperatorEstBase> MagnetizationDensity::spawnCrowdClone() const
+{
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
 
   //Everyone else has this attempt to set up a non-implemented memory saving optimization.
-  //We won't rock the boat.  
+  //We won't rock the boat.
   if (data_locality_ == DataLocality::rank)
   {
     // This is just a stub until a memory saving optimization is deemed necessary
@@ -138,65 +133,64 @@ std::unique_ptr<OperatorEstBase> MagnetizationDensity::spawnCrowdClone() const
 };
 
 void MagnetizationDensity::generateSpinIntegrand(ParticleSet& pset_target,
-                                                  TrialWaveFunction& psi_target,
-                                                  const int iat,
-                                                  std::vector<Value>& sxgrid,
-                                                  std::vector<Value>& sygrid,
-                                                  std::vector<Value>& szgrid)
-                                            
+                                                 TrialWaveFunction& psi_target,
+                                                 const int iat,
+                                                 std::vector<Value>& sxgrid,
+                                                 std::vector<Value>& sygrid,
+                                                 std::vector<Value>& szgrid)
+
 {
   std::vector<Real> sgrid(nsamples_);
-  std::vector<Real> ds(nsamples_,0.0);
-  std::vector<Value> ratios(nsamples_,0);
+  std::vector<Real> ds(nsamples_, 0.0);
+  std::vector<Value> ratios(nsamples_, 0);
   generateGrid(sgrid);
-  for (int samp=0; samp<nsamples_; samp++)
-    ds[samp]=sgrid[samp]-pset_target.spins[iat];
- 
+  for (int samp = 0; samp < nsamples_; samp++)
+    ds[samp] = sgrid[samp] - pset_target.spins[iat];
+
   VirtualParticleSet vp(pset_target, nsamples_);
-  std::vector<Position> dV(nsamples_,0); 
-  vp.makeMovesWithSpin(pset_target,iat,dV,ds);
-  psi_target.evaluateRatios(vp,ratios);
-    
+  std::vector<Position> dV(nsamples_, 0);
+  vp.makeMovesWithSpin(pset_target, iat, dV, ds);
+  psi_target.evaluateRatios(vp, ratios);
+
   const std::complex<Real> eye(0, 1.0);
- 
-  for (int samp=0; samp<nsamples_; samp++)
+
+  for (int samp = 0; samp < nsamples_; samp++)
   {
     sxgrid[samp] = std::real(Real(2.0) * Real(std::cos(sgrid[samp] + pset_target.spins[iat])) * ratios[samp]);
     sygrid[samp] = std::real(Real(2.0) * Real(std::sin(sgrid[samp] + pset_target.spins[iat])) * ratios[samp]);
     szgrid[samp] = std::real(Real(-2.0) * eye * std::sin(ds[samp]) * ratios[samp]);
-  } 
-  
+  }
 }
 
 void MagnetizationDensity::generateUniformGrid(std::vector<Real>& sgrid, const Real start, const Real stop) const
 {
   size_t num_gridpoints = sgrid.size();
-  Real delta = (stop - start) / (num_gridpoints - 1.0);
+  Real delta            = (stop - start) / (num_gridpoints - 1.0);
   for (int i = 0; i < num_gridpoints; i++)
     sgrid[i] = start + i * delta;
 }
 
 void MagnetizationDensity::generateGrid(std::vector<Real>& sgrid) const
 {
-  sgrid.resize(nsamples_); 
-  Real start=0.0;
-  Real stop=2*M_PI;
+  sgrid.resize(nsamples_);
+  Real start = 0.0;
+  Real stop  = 2 * M_PI;
 
-  switch(integrator_)
+  switch (integrator_)
   {
-    case Integrator::SIMPSONS:
-      generateUniformGrid(sgrid,start,stop);
-      break;
-    case Integrator::MONTECARLO:
-      throw std::runtime_error("Monte Carlo sampling not implemented yet");
-      break;
+  case Integrator::SIMPSONS:
+    generateUniformGrid(sgrid, start, stop);
+    break;
+  case Integrator::MONTECARLO:
+    throw std::runtime_error("Monte Carlo sampling not implemented yet");
+    break;
   }
 }
 void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
 
-  std::vector<int> ng(1,getFullDataSize());
+  std::vector<int> ng(1, getFullDataSize());
 
   hdf_path hdf_name{my_name_};
   h5desc_.emplace_back(hdf_name);

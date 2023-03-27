@@ -24,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 namespace testing
 {
 class MagnetizationDensityTests;
@@ -43,14 +42,14 @@ class MagnetizationDensityTests;
 class MagnetizationDensity : public OperatorEstBase
 {
 public:
-  using Value         = QMCTraits::ValueType;
-  using FullPrecValue = QMCTraits::FullPrecValueType;
-  using Real          = RealAlias<Value>;
-  using FullPrecReal  = RealAlias<FullPrecValue>;
-  using Grad          = TinyVector<Value, OHMMS_DIM>;
-  using Lattice       = PtclOnLatticeTraits::ParticleLayout;
-  using Position      = QMCTraits::PosType;
-  using Integrator    = MagnetizationDensityInput::Integrator;
+  using Value              = QMCTraits::ValueType;
+  using FullPrecValue      = QMCTraits::FullPrecValueType;
+  using Real               = RealAlias<Value>;
+  using FullPrecReal       = RealAlias<FullPrecValue>;
+  using Grad               = TinyVector<Value, OHMMS_DIM>;
+  using Lattice            = PtclOnLatticeTraits::ParticleLayout;
+  using Position           = QMCTraits::PosType;
+  using Integrator         = MagnetizationDensityInput::Integrator;
   static constexpr int DIM = QMCTraits::DIM;
 
   MagnetizationDensity(MagnetizationDensityInput&& min, const Lattice& lattice);
@@ -69,7 +68,7 @@ public:
   * Right now, it's 3*number_of_realspace_gridpoints
   *
   * @return Size of data.
-  */ 
+  */
   size_t getFullDataSize();
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
   void registerOperatorEstimator(hdf_archive& file) override;
@@ -88,33 +87,33 @@ public:
   template<class VAL>
   VAL integrateMagnetizationDensity(const std::vector<VAL>& fgrid)
   {
-    Real start=0.0;
-    Real stop=2*M_PI;
-    Real deltax=(stop-start)/(nsamples_ - 1.0);
-    VAL val=0.0;
-    switch(integrator_)
+    Real start  = 0.0;
+    Real stop   = 2 * M_PI;
+    Real deltax = (stop - start) / (nsamples_ - 1.0);
+    VAL val     = 0.0;
+    switch (integrator_)
     {
-      case Integrator::SIMPSONS:
-        //There's a normalizing 2pi factor in this integral.  Take care of it here.  
-        val=integrateBySimpsonsRule(fgrid,deltax)/Real(2.0*M_PI);
-        
-        break;
-      case Integrator::MONTECARLO:
-        //Integrand has form that can be monte carlo sampled.  This means the 2*PI
-        //is taken care of if the integrand is uniformly sampled between [0,2PI),
-        //which it is.  The following is just an average.  
-        val=std::accumulate(fgrid.begin(),fgrid.end(),VAL(0));
-        val/=Real(nsamples_);
-        break;
-    }  
+    case Integrator::SIMPSONS:
+      //There's a normalizing 2pi factor in this integral.  Take care of it here.
+      val = integrateBySimpsonsRule(fgrid, deltax) / Real(2.0 * M_PI);
+
+      break;
+    case Integrator::MONTECARLO:
+      //Integrand has form that can be monte carlo sampled.  This means the 2*PI
+      //is taken care of if the integrand is uniformly sampled between [0,2PI),
+      //which it is.  The following is just an average.
+      val = std::accumulate(fgrid.begin(), fgrid.end(), VAL(0));
+      val /= Real(nsamples_);
+      break;
+    }
 
     return val;
   };
-  
+
 private:
   MagnetizationDensity(const MagnetizationDensity& magdens) = default;
 
-  
+
   /**
   * Generates the spin integrand \Psi(s')/Psi(s)* \langle s | \vec{\sigma} | s'\rangle for a specific
   *  electron iat.  Since this is a vectorial quantity, this function returns sx, sy, and sz in their own
@@ -127,13 +126,13 @@ private:
   * @param[out] sy y component of spin integrand
   * @param[out] sz z component of spin integrand
   */
-  void generateSpinIntegrand(ParticleSet& pset, 
-                             TrialWaveFunction& wfn, 
-                             const int iat, 
+  void generateSpinIntegrand(ParticleSet& pset,
+                             TrialWaveFunction& wfn,
+                             const int iat,
                              std::vector<Value>& sx,
                              std::vector<Value>& sy,
                              std::vector<Value>& sz);
- 
+
   /**
   *  Implementation of Simpson's 1/3 rule to integrate a function on a uniform grid. 
   *
@@ -148,14 +147,14 @@ private:
     VAL sint(0.0);
     int gridsize = fgrid.size();
     for (int is = 1; is < gridsize - 1; is += 2)
-    sint += Real(4. / 3.) * gridDx * fgrid[is];
+      sint += Real(4. / 3.) * gridDx * fgrid[is];
 
     for (int is = 2; is < gridsize - 1; is += 2)
       sint += Real(2. / 3.) * gridDx * fgrid[is];
-   
+
     sint += Real(1. / 3.) * gridDx * fgrid[0];
     sint += Real(1. / 3.) * gridDx * fgrid[gridsize - 1];
-    
+
     return sint;
   };
 
@@ -186,15 +185,15 @@ private:
   * @param[in] start start of grid interval 
   * @param[in] stop end of grid interval
   */
-  template<class RAN_GEN> 
+  template<class RAN_GEN>
   void generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN& rng, Real start, Real stop) const
   {
-    size_t npoints=sgrid.size();
-    for(int i=0; i<npoints;i++)
-      sgrid[i] = (stop-start)*rng();
+    size_t npoints = sgrid.size();
+    for (int i = 0; i < npoints; i++)
+      sgrid[i] = (stop - start) * rng();
   };
 
-  
+
   /**
   * For a given spatial position r and spin component s, this returns the bin for accumulating the observable.
   * 
@@ -205,7 +204,7 @@ private:
   */
   size_t computeBin(const Position& r, const unsigned int component) const;
   MagnetizationDensityInput input_;
-  //These are the same variables as in SpinDensityNew.  
+  //These are the same variables as in SpinDensityNew.
   Integrator integrator_;
   Lattice lattice_;
   Position rcorner_;
@@ -218,4 +217,4 @@ private:
   friend class testing::MagnetizationDensityTests;
 };
 } // namespace qmcplusplus
-#endif  /* QMCPLUSPLUS_MAGNETIZATION_DENSITY_H */
+#endif /* QMCPLUSPLUS_MAGNETIZATION_DENSITY_H */
