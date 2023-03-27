@@ -1,4 +1,5 @@
 .. _developguide:
+.. highlight:: c++
 
 Development Guide
 =================
@@ -38,7 +39,7 @@ Files
 
 Each file should start with the header.
 
-::
+.. code:: c++
 
   //////////////////////////////////////////////////////////////////////////////////////
   // This file is distributed under the University of Illinois/NCSA Open Source License.
@@ -96,7 +97,7 @@ In QMCPACK, include paths are handled by modern CMake target dependency. Every t
 example, ``src/Particle/CMakeLists.txt`` defines `qmcparticle` target. It propagates include path ``qmcpack/src/Particle`` to
 compiling command lines in CMake via
 
-::
+.. code:: cmake
 
   TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -110,7 +111,7 @@ If the compiled file is not part of the same target as `qmcparticle`, the target
 `qmcparticle`. For example, test source files under ``qmcpack/src/Particle/tests`` are not part of `qmcparticle` and thus requires
 the following additional CMake setting
 
-::
+.. code:: cmake
 
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
 
@@ -161,8 +162,8 @@ Type and class names
 
 Type and class names should start with a capital letter and have a capital letter for each new word. Underscores (``_``) are not
 allowed. It's redundant to end these names with ``Type`` or ``_t``.
+.. code:: c++
 
-::
    \\no
    using ValueMatrix_t = Matrix<Value>;
    using RealType = double;
@@ -591,6 +592,7 @@ Examples:
   Foo::Foo(int var)
       : some_var_(var) {}
 
+
 Namespace formatting
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -600,14 +602,12 @@ inner namespace.
 
 Examples:
 
-::
+.. code:: c++
 
   namespace ns
   {
   void foo();
   }  // ns
-
-::
 
   namespace ns1
   {
@@ -647,26 +647,29 @@ A class is not just a naming scheme for a set of variables and functions. It sho
 contain the state of a logical object, and might allow access to object data through a well-defined interface related variables,
 while preserving maximally ability to change internal implementation of the class.
 
-Do not use ``struct`` as a way to avoid controlling access to the class. Only in rare cases where a class is a fully public data
-structure ``struct`` is this appropriate. Ignore (or fix one) the many examples of this in QMCPACK.
+Do not...
+^^^^^^^^^
 
-Do not use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do
-that, and access it solely through its public interface. This will reduce dependencies.
+- use ``struct`` as a way to avoid controlling access to the class. Only when the instantiated objects are public data structure is ``struct`` appropriate.
+
+- use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do that, and access it solely through its public interface. This will reduce dependencies.
+
+- pass entire classes as function arguments when what the function actually requires is one or a few arguments available through the public API of a class, encapsulation is harmful when is just used to save keystrokes and hides the logical data dependence of functions.
+
+All these "idioms" are common in legacy QMCPACK code and should not be perpetuated.
 
 Casting
 ~~~~~~~
 
-In C++ source, avoid C style casts; they are difficult to search for and imprecise in function. An exception is made for
-controlling implicit conversion of simple numerical types.
-
+In C++ source, avoid C style casts; they are difficult to search for and imprecise in function.
 Explicit C++ style casts make it clear what the safety of the cast is and what sort of conversion is expected to be possible.
 
-::
+.. code::c++
 
   int c = 2;
   int d = 3;
   double a;
-  a = (double)c / d;  // Ok
+  a = static_cast<double>(c) / d;  // Ok
 
   const class1 c1;
   class2* c2;
