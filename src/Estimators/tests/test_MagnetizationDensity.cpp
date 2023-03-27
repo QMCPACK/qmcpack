@@ -35,6 +35,8 @@
 #include "Estimators/MagnetizationDensity.h"
 #include "EstimatorTesting.h"
 
+#include "Utilities/RuntimeOptions.h"
+
 using std::string;
 
 
@@ -380,7 +382,9 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
   std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets;
   dirac_dets.push_back(std::move(dd));
   auto sd = std::make_unique<SlaterDet>(elec_, std::move(dirac_dets));
-  TrialWaveFunction psi;
+
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   psi.addComponent(std::move(sd));
 
   //psi.addComponent(std::move(dd));
