@@ -326,17 +326,9 @@ void LCAOHDFParser::getMO(const std::string& fname)
   char name[72];
   sprintf(name, "%s", "/Super_Twist/eigenset_0");
   setname = name;
-  if (!hin.readEntry(CartMat, setname))
-  {
-    setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
-    APP_ABORT(setname.c_str());
-  }
+  hin.read(CartMat, setname);
   sprintf(name, "%s", "/Super_Twist/eigenval_0");
-  if (!hin.readEntry(EigVal_alpha, setname))
-  {
-    setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
-    APP_ABORT(setname.c_str());
-  }
+  hin.read(EigVal_alpha, setname);
 
   int cnt = 0;
   for (int i = 0; i < numMO; i++)
@@ -347,17 +339,9 @@ void LCAOHDFParser::getMO(const std::string& fname)
   {
     sprintf(name, "%s", "/Super_Twist/eigenset_1");
     setname = name;
-    if (!hin.readEntry(CartMat, setname))
-    {
-      setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
-      APP_ABORT(setname.c_str());
-    }
+    hin.read(CartMat, setname);
     sprintf(name, "%s", "/Super_Twist/eigenval_1");
-    if (!hin.readEntry(EigVal_beta, setname))
-    {
-      setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
-      APP_ABORT(setname.c_str());
-    }
+    hin.read(EigVal_beta, setname);
   }
 
 
