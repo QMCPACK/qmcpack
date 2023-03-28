@@ -84,7 +84,7 @@ void SplineC2C<ST>::storeParamsBeforeRotation()
              |         | c11 | ... | c1N | 0   |
       basis_set_size   | c21 | ... | c2N | 0   |
              |         | ... | ... | ... | 0   |
-             |         | cN1 | ... | cNN | 0   |
+             |         | cM1 | ... | cMN | 0   |
              v         |=====|=====|=====|=====|
                        <------ Nsplines ------>
 

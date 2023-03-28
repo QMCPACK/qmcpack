@@ -63,21 +63,41 @@ void SplineR2R<ST>::storeParamsBeforeRotation()
 
 /*
   ~~ Notes for rotation ~~
-  spl_coefs      = Raw pointer of spline coefficients
-  BasisSetSize   = Number of spline coefs per orbital
+  spl_coefs      = Raw pointer to spline coefficients
+  basis_set_size = Number of spline coefs per orbital
   OrbitalSetSize = Number of orbitals (excluding padding)
-  
-  spl_coefs has a complicated layout depending on dimensionality of splines. 
-  Luckily, for our purposes, we can think of spl_coefs as pointing to a 
-  matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline 
-  index adjacent in memory. The orbital index is SIMD aligned and therefore 
+
+  spl_coefs has a complicated layout depending on dimensionality of splines.
+  Luckily, for our purposes, we can think of spl_coefs as pointing to a
+  matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline
+  index adjacent in memory. The orbital index is SIMD aligned and therefore
   may include padding.
-    
-  As a result, due to SIMD alignment, Nsplines may be larger than the 
-  actual number of splined orbitals. This means that in practice rot_mat 
-  may be smaller than the number of 'columns' in the coefs array! 
-  
-  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs 
+
+  As a result, due to SIMD alignment, Nsplines may be larger than the
+  actual number of splined orbitals. This means that in practice rot_mat
+  may be smaller than the number of 'columns' in the coefs array!
+
+      SplineR2R spl_coef layout:
+             ^         | sp1 | ... | spN | pad |
+             |         |=====|=====|=====|=====|
+             |         | c11 | ... | c1N | 0   |
+      basis_set_size   | c21 | ... | c2N | 0   |
+             |         | ... | ... | ... | 0   |
+             |         | cM1 | ... | cMN | 0   |
+             v         |=====|=====|=====|=====|
+                       <------ Nsplines ------>
+
+      SplineC2C spl_coef layout:
+             ^         | sp1_r | sp1_i |  ...  | spN_r | spN_i |  pad  |
+             |         |=======|=======|=======|=======|=======|=======|
+             |         | c11_r | c11_i |  ...  | c1N_r | c1N_i |   0   |
+      basis_set_size   | c21_r | c21_i |  ...  | c2N_r | c2N_i |   0   |
+             |         |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |
+             |         | cM1_r | cM1_i |  ...  | cMN_r | cMN_i |   0   |
+             v         |=======|=======|=======|=======|=======|=======|
+                       <------------------ Nsplines ------------------>
+
+  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs
   "matrix" is very tall and skinny.
 */
 template<typename ST>
