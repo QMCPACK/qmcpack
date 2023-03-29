@@ -50,7 +50,7 @@ class MagnetizationDensityTests
   using Position = QMCTraits::PosType;
   using Data     = MagnetizationDensity::Data;
   using Real     = WF::Real;
-  using Value     = WF::Value;
+  using Value    = WF::Value;
 
 public:
   void testCopyConstructor(const MagnetizationDensity& magdens)
@@ -234,8 +234,8 @@ TEST_CASE("MagnetizationDensity::gridAssignment", "[estimators]")
 TEST_CASE("MagnetizationDensity::integralAPI", "[estimators]")
 {
   using namespace testing;
-  using WF   = WaveFunctionTypes<QMCTraits::ValueType, QMCTraits::FullPrecValueType>;
-  using Real = WF::Real;
+  using WF    = WaveFunctionTypes<QMCTraits::ValueType, QMCTraits::FullPrecValueType>;
+  using Real  = WF::Real;
   using Value = WF::Value;
 
   Libxml2Document doc_simpsons;
@@ -261,14 +261,15 @@ TEST_CASE("MagnetizationDensity::integralAPI", "[estimators]")
   Value result_simpsons(0.0);
   Value result_mc(0.0);
 
-  
+
   result_simpsons = magdens_simpsons.integrateMagnetizationDensity(ygrid);
   result_mc       = magdens_mc.integrateMagnetizationDensity(ygrid);
 
-  CHECK(std::real(result_simpsons) == Approx(Real(16.2539682539))); //From scipy.integrate.  Note, this input file has 64 samples.
-                                                   //Since I only use 9 entries, this integral is internally treated
-                                                   //as from [0 to 2pi*8/63]
-  CHECK(std::real(result_mc) == Approx(Real(10.125)));              //Divide sum(ygrid) by nsamples=128
+  CHECK(std::real(result_simpsons) ==
+        Approx(Real(16.2539682539)));                  //From scipy.integrate.  Note, this input file has 64 samples.
+                                                       //Since I only use 9 entries, this integral is internally treated
+                                                       //as from [0 to 2pi*8/63]
+  CHECK(std::real(result_mc) == Approx(Real(10.125))); //Divide sum(ygrid) by nsamples=128
 }
 
 TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")

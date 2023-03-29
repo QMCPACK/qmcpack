@@ -199,7 +199,8 @@ void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
   oh.set_dimensions(ng, 0);
 }
 
-MagnetizationDensity::Value MagnetizationDensity::integrateBySimpsonsRule(const std::vector<Value>& fgrid, Real gridDx) const
+MagnetizationDensity::Value MagnetizationDensity::integrateBySimpsonsRule(const std::vector<Value>& fgrid,
+                                                                          Real gridDx) const
 {
   Value sint(0.0);
   int gridsize = fgrid.size();
@@ -220,7 +221,7 @@ MagnetizationDensity::Value MagnetizationDensity::integrateMagnetizationDensity(
   Real start  = 0.0;
   Real stop   = 2 * M_PI;
   Real deltax = (stop - start) / (nsamples_ - 1.0);
-  Value val     = 0.0;
+  Value val   = 0.0;
   switch (integrator_)
   {
   case Integrator::SIMPSONS:
@@ -248,10 +249,16 @@ void MagnetizationDensity::generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN&
 }
 
 
-template void MagnetizationDensity::generateRandomGrid<RandomGenerator>(std::vector<Real>& sgrid, RandomGenerator& rng, Real start, Real stop) const;
+template void MagnetizationDensity::generateRandomGrid<RandomGenerator>(std::vector<Real>& sgrid,
+                                                                        RandomGenerator& rng,
+                                                                        Real start,
+                                                                        Real stop) const;
 
 #if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
-template void MagnetizationDensity::generateRandomGrid<StdRandom<double>>(std::vector<Real>& sgrid, StdRandom<double>& rng, Real start, Real stop) const;
+template void MagnetizationDensity::generateRandomGrid<StdRandom<double>>(std::vector<Real>& sgrid,
+                                                                          StdRandom<double>& rng,
+                                                                          Real start,
+                                                                          Real stop) const;
 #endif
 
 } //namespace qmcplusplus
