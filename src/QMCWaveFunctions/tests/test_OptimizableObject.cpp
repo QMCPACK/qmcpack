@@ -63,8 +63,8 @@ TEST_CASE("OptimizableObject HDF output and input", "[wavefunction]")
   hdf_archive hin;
   fake_a2.openHDFToRead("opt_obj_vp.h5", hin);
   fake_a2.readVariationalParameters(hin, opt_vars);
-  CHECK(opt_vars.find("var1")->second == Approx(1.1));
-  CHECK(opt_vars.find("var2")->second == Approx(2.3));
+  CHECK(opt_vars.find("var1")->second == ValueApprox(1.1));
+  CHECK(opt_vars.find("var2")->second == ValueApprox(2.3));
 }
 
 } // namespace qmcplusplus
