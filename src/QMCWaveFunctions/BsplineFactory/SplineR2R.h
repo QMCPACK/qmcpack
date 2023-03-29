@@ -89,15 +89,15 @@ public:
   /// Store an original copy of the spline coefficients for orbital rotation
   void storeParamsBeforeRotation() override;
 
-  /* 
-     Implements orbital rotations via [1,2]. 
+  /*
+     Implements orbital rotations via [1,2].
      Should be called by RotatedSPOs::apply_rotation()
-     
+
      This implementation requires that NSPOs > Nelec. In other words,
      if you want to run a orbopt wfn, you must include some virtual orbitals!
-     
+
      Some results (using older Berkeley branch) were published in [3].
-     
+
      [1] Filippi & Fahy, JCP 112, (2000)
      [2] Toulouse & Umrigar, JCP 126, (2007)
      [3] Townsend et al., PRB 102, (2020)
