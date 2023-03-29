@@ -186,6 +186,7 @@ void MagnetizationDensity::generateGrid(std::vector<Real>& sgrid) const
     break;
   }
 }
+
 void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
@@ -197,5 +198,60 @@ void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
   auto& oh = h5desc_.back();
   oh.set_dimensions(ng, 0);
 }
+
+MagnetizationDensity::Value MagnetizationDensity::integrateBySimpsonsRule(const std::vector<Value>& fgrid, Real gridDx) const
+{
+  Value sint(0.0);
+  int gridsize = fgrid.size();
+  for (int is = 1; is < gridsize - 1; is += 2)
+    sint += Real(4. / 3.) * gridDx * fgrid[is];
+
+  for (int is = 2; is < gridsize - 1; is += 2)
+    sint += Real(2. / 3.) * gridDx * fgrid[is];
+
+  sint += Real(1. / 3.) * gridDx * fgrid[0];
+  sint += Real(1. / 3.) * gridDx * fgrid[gridsize - 1];
+
+  return sint;
+}
+
+MagnetizationDensity::Value MagnetizationDensity::integrateMagnetizationDensity(const std::vector<Value>& fgrid) const
+{
+  Real start  = 0.0;
+  Real stop   = 2 * M_PI;
+  Real deltax = (stop - start) / (nsamples_ - 1.0);
+  Value val     = 0.0;
+  switch (integrator_)
+  {
+  case Integrator::SIMPSONS:
+    //There's a normalizing 2pi factor in this integral.  Take care of it here.
+    val = integrateBySimpsonsRule(fgrid, deltax) / Real(2.0 * M_PI);
+
+    break;
+  case Integrator::MONTECARLO:
+    //Integrand has form that can be monte carlo sampled.  This means the 2*PI
+    //is taken care of if the integrand is uniformly sampled between [0,2PI),
+    //which it is.  The following is just an average.
+    val = std::accumulate(fgrid.begin(), fgrid.end(), Value(0));
+    val /= Real(nsamples_);
+    break;
+  }
+  return val;
+}
+
+template<class RAN_GEN>
+void MagnetizationDensity::generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN& rng, Real start, Real stop) const
+{
+  size_t npoints = sgrid.size();
+  for (int i = 0; i < npoints; i++)
+    sgrid[i] = (stop - start) * rng();
+}
+
+
+template void MagnetizationDensity::generateRandomGrid<RandomGenerator>(std::vector<Real>& sgrid, RandomGenerator& rng, Real start, Real stop) const;
+
+#if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
+template void MagnetizationDensity::generateRandomGrid<StdRandom<double>>(std::vector<Real>& sgrid, StdRandom<double>& rng, Real start, Real stop) const;
+#endif
 
 } //namespace qmcplusplus

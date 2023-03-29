@@ -84,31 +84,7 @@ public:
   *        random, it's assumed to be uniform.
   * @return Value of integral.
   */
-  template<class VAL>
-  VAL integrateMagnetizationDensity(const std::vector<VAL>& fgrid)
-  {
-    Real start  = 0.0;
-    Real stop   = 2 * M_PI;
-    Real deltax = (stop - start) / (nsamples_ - 1.0);
-    VAL val     = 0.0;
-    switch (integrator_)
-    {
-    case Integrator::SIMPSONS:
-      //There's a normalizing 2pi factor in this integral.  Take care of it here.
-      val = integrateBySimpsonsRule(fgrid, deltax) / Real(2.0 * M_PI);
-
-      break;
-    case Integrator::MONTECARLO:
-      //Integrand has form that can be monte carlo sampled.  This means the 2*PI
-      //is taken care of if the integrand is uniformly sampled between [0,2PI),
-      //which it is.  The following is just an average.
-      val = std::accumulate(fgrid.begin(), fgrid.end(), VAL(0));
-      val /= Real(nsamples_);
-      break;
-    }
-
-    return val;
-  };
+  Value integrateMagnetizationDensity(const std::vector<Value>& fgrid) const;
 
 private:
   MagnetizationDensity(const MagnetizationDensity& magdens) = default;
@@ -136,27 +112,11 @@ private:
   /**
   *  Implementation of Simpson's 1/3 rule to integrate a function on a uniform grid. 
   *
-  * @tparam Value type.  Real or complex in double or single precision.  Return type is same as fgrid type.
   * @param[in] fgrid f(x), the function to integrate. 
   * @param[in] gridDx, the grid spacing for the uniform grid.  Assumed to be consistent with size of fgrid.
   * @return Value of integral.
   */
-  template<class VAL>
-  VAL integrateBySimpsonsRule(const std::vector<VAL>& fgrid, Real gridDx) const
-  {
-    VAL sint(0.0);
-    int gridsize = fgrid.size();
-    for (int is = 1; is < gridsize - 1; is += 2)
-      sint += Real(4. / 3.) * gridDx * fgrid[is];
-
-    for (int is = 2; is < gridsize - 1; is += 2)
-      sint += Real(2. / 3.) * gridDx * fgrid[is];
-
-    sint += Real(1. / 3.) * gridDx * fgrid[0];
-    sint += Real(1. / 3.) * gridDx * fgrid[gridsize - 1];
-
-    return sint;
-  };
+  Value integrateBySimpsonsRule(const std::vector<Value>& fgrid, Real gridDx) const;
 
 
   /**
@@ -186,12 +146,7 @@ private:
   * @param[in] stop end of grid interval
   */
   template<class RAN_GEN>
-  void generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN& rng, Real start, Real stop) const
-  {
-    size_t npoints = sgrid.size();
-    for (int i = 0; i < npoints; i++)
-      sgrid[i] = (stop - start) * rng();
-  };
+  void generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN& rng, Real start, Real stop) const;
 
 
   /**

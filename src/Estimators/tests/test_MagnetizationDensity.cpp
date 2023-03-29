@@ -50,6 +50,7 @@ class MagnetizationDensityTests
   using Position = QMCTraits::PosType;
   using Data     = MagnetizationDensity::Data;
   using Real     = WF::Real;
+  using Value     = WF::Value;
 
 public:
   void testCopyConstructor(const MagnetizationDensity& magdens)
@@ -77,11 +78,11 @@ public:
   {
     //For xgrid, we use dx=1.0 from 0 to 8.
     //For ygrid, we use f(x)=x^3.
-    std::vector<Real> ygrid = {0, 1, 8, 27, 64, 125, 216, 343, 512};
-    Real result_simpsons(0.0);
-    result_simpsons = magdens.integrateBySimpsonsRule<Real>(ygrid, Real(1.0));
+    std::vector<Value> ygrid = {0, 1, 8, 27, 64, 125, 216, 343, 512};
+    Value result_simpsons(0.0);
+    result_simpsons = magdens.integrateBySimpsonsRule(ygrid, Real(1.0));
 
-    CHECK(result_simpsons == Approx(1024));
+    CHECK(std::real(result_simpsons) == Approx(Real(1024)));
   }
 
   void testGrids(const MagnetizationDensity& magdens)
@@ -235,6 +236,7 @@ TEST_CASE("MagnetizationDensity::integralAPI", "[estimators]")
   using namespace testing;
   using WF   = WaveFunctionTypes<QMCTraits::ValueType, QMCTraits::FullPrecValueType>;
   using Real = WF::Real;
+  using Value = WF::Value;
 
   Libxml2Document doc_simpsons;
   Libxml2Document doc_mc;
@@ -255,17 +257,18 @@ TEST_CASE("MagnetizationDensity::integralAPI", "[estimators]")
   MagnetizationDensity magdens_mc(std::move(mdi_mc), lattice);
 
 
-  std::vector<Real> ygrid = {0, 1, 8, 27, 64, 125, 216, 343, 512};
-  Real result_simpsons(0.0);
-  Real result_mc(0.0);
+  std::vector<Value> ygrid = {0, 1, 8, 27, 64, 125, 216, 343, 512};
+  Value result_simpsons(0.0);
+  Value result_mc(0.0);
 
+  
   result_simpsons = magdens_simpsons.integrateMagnetizationDensity(ygrid);
   result_mc       = magdens_mc.integrateMagnetizationDensity(ygrid);
 
-  CHECK(result_simpsons == Approx(16.2539682539)); //From scipy.integrate.  Note, this input file has 64 samples.
+  CHECK(std::real(result_simpsons) == Approx(Real(16.2539682539))); //From scipy.integrate.  Note, this input file has 64 samples.
                                                    //Since I only use 9 entries, this integral is internally treated
                                                    //as from [0 to 2pi*8/63]
-  CHECK(result_mc == Approx(10.125));              //Divide sum(ygrid) by nsamples=128
+  CHECK(std::real(result_mc) == Approx(Real(10.125)));              //Divide sum(ygrid) by nsamples=128
 }
 
 TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
