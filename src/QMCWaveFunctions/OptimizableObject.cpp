@@ -92,7 +92,8 @@ void OptimizableObject::readVariationalParameters(hdf_archive& hin, opt_variable
     std::string& vp_name = param_names[i];
     // Find and set values by name.
     // Values that are not present do not get added.
-    opt_vars.insert(vp_name, param_values[i]);
+    if (opt_vars.find(vp_name) != opt_vars.end())
+      opt_vars[vp_name] = param_values[i];
   }
 
   hin.pop(); // component name in name_ / name_value_lists
