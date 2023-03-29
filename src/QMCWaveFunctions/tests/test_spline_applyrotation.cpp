@@ -65,7 +65,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="7"/>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
 </tmp>)";
 
   Libxml2Document doc;
@@ -198,7 +198,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="7"/>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
 </tmp>)";
 
   Libxml2Document doc;
@@ -404,7 +404,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="7"/>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
 </tmp>)";
 
   Libxml2Document doc;
@@ -705,7 +705,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="7"/>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
 </tmp>)";
 
   Libxml2Document doc;
