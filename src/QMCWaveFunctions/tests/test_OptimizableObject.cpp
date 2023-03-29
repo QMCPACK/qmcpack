@@ -24,11 +24,14 @@ public:
   FakeOptimizableObject(const std::string& my_name) : OptimizableObject(my_name) {}
   void checkInVariablesExclusive(opt_variables_type& active) override
   {
-    active.insert("var1", 1.1);
-    active.insert("var2", 2.3);
+    active.insert("var1", var1);
+    active.insert("var2", var2);
   }
 
   void resetParametersExclusive(const opt_variables_type& active) override {}
+
+  double var1 = 1.1;
+  double var2 = 2.3;
 };
 
 TEST_CASE("Test OptimizableObject", "[wavefunction]")
@@ -60,6 +63,10 @@ TEST_CASE("OptimizableObject HDF output and input", "[wavefunction]")
   hout.close();
 
   FakeOptimizableObject fake_a2("functor_a");
+  fake_a2.var1 = 0.0;
+  fake_a2.var2 = 0.0;
+  fake_a2.checkInVariablesExclusive(opt_vars);
+  opt_vars.resetIndex();
   hdf_archive hin;
   fake_a2.openHDFToRead("opt_obj_vp.h5", hin);
   fake_a2.readVariationalParameters(hin, opt_vars);
