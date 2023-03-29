@@ -115,8 +115,7 @@ private:
     else
       extVar = "Coeff_" + std::to_string(ext_level);
 
-    if (!hin.readEntry(ci_coeff, extVar))
-      throw std::runtime_error("Could not read CI coefficients from HDF5");
+    hin.read(ci_coeff, extVar);
   }
 
   template<typename VT,
@@ -142,8 +141,7 @@ private:
       extVar = "Coeff_" + std::to_string(ext_level);
 
 
-    if (!hin.readEntry(CIcoeff_real, extVar))
-      throw std::runtime_error("Could not read CI coefficients from HDF5");
+    hin.read(CIcoeff_real, extVar);
 
     extVar = extVar + "_imag";
     if (!hin.readEntry(CIcoeff_imag, extVar))
