@@ -57,6 +57,9 @@ if(NOT QMC_MIXED_PRECISION)
     file(MAKE_DIRECTORY ${TDIR})
     execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py
                             ${SDIR}/he_vp_opt.txt ${complex_flag} -o ${TDIR}/he_vp_opt.h5)
+    # Version 2
+    execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py
+                            ${SDIR}/he_vp_opt_v2.txt ${complex_flag} -o ${TDIR}/he_vp_opt_v2.h5)
 
     list(APPEND HE_BSPLINE_OPT_PARAM jud_0 0.00000124 0.002) # scalar name, value, error
     list(APPEND HE_BSPLINE_OPT_PARAM jud_1 -0.000273 0.0012)
@@ -72,6 +75,24 @@ if(NOT QMC_MIXED_PRECISION)
       He_param_grad_load.param
       INPUT_FILE
       He_param_grad_load.xml
+      PROCS
+      1
+      THREADS
+      16
+      SERIES
+      0
+      SCALAR_VALUES
+      HE_BSPLINE_OPT_PARAM)
+
+    qmc_run_and_check_custom_scalar(
+      BASE_NAME
+      He_param_grad_load_v2
+      BASE_DIR
+      "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+      PREFIX
+      He_param_grad_load_v2.param
+      INPUT_FILE
+      He_param_grad_load_v2.xml
       PROCS
       1
       THREADS
