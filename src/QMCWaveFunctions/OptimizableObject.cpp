@@ -13,6 +13,7 @@
 #include "OptimizableObject.h"
 #include "VariableSet.h"
 #include "io/hdf/hdf_archive.h"
+#include "Host/sysutil.h"
 
 /**@file OptimizableObject.cpp
  *@brief OptimizableObject implementation
@@ -28,6 +29,9 @@ void OptimizableObject::openHDFToSave(const std::filesystem::path& filename, hdf
   hout.create(filename);
   std::vector<int> vp_file_version{2, 0, 0};
   hout.write(vp_file_version, "version");
+
+  std::string timestamp(getDateAndTime("%Y-%m-%d %H:%M:%S %Z"));
+  hout.write(timestamp, "timestamp");
 }
 
 int OptimizableObject::openHDFToRead(const std::filesystem::path& filename, hdf_archive& hin)
