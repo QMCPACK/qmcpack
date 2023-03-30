@@ -29,6 +29,7 @@ namespace qmcplusplus
 {
 
 using QMCT = QMCTraits;
+using Real = QMCTraits::RealType;
 
 namespace testing
 {
@@ -47,29 +48,32 @@ public:
 };
 } // namespace testing
 
-
-void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEstBase>& crowd_sdns)
+void accumulateFromPsets(int n_crowds,
+                         int n_walkers,
+                         SpinDensityNew& sdn,
+                         UPtrVector<OperatorEstBase>& crowd_sdns,
+                         int n_electrons = 2)
 {
   const SimulationCell simulation_cell;
-  for (int iops = 0; iops < ncrowds; ++iops)
+  for (int iops = 0; iops < n_crowds; ++iops)
   {
     std::vector<OperatorEstBase::MCPWalker> walkers;
-    int nwalkers = 4;
-    for (int iw = 0; iw < nwalkers; ++iw)
-      walkers.emplace_back(2);
+    for (int iw = 0; iw < n_walkers; ++iw)
+      walkers.emplace_back(n_electrons);
 
     std::vector<ParticleSet> psets;
 
     crowd_sdns.emplace_back(sdn.spawnCrowdClone());
     SpinDensityNew& crowd_sdn = dynamic_cast<SpinDensityNew&>(*(crowd_sdns.back()));
 
-    for (int iw = 0; iw < nwalkers; ++iw)
+    for (int iw = 0; iw < n_walkers; ++iw)
     {
       psets.emplace_back(simulation_cell);
       ParticleSet& pset = psets.back();
-      pset.create({2});
-      pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
-      pset.R[1] = ParticleSet::PosType(0.68658058, 0.68658058, 0.68658058);
+      pset.create({n_electrons});
+      Real inv_ne = 1 / n_electrons;
+      for (int ie = 0; ie < n_electrons; ++ie)
+        pset.R[ie] = ParticleSet::PosType(ie * inv_ne, ie * inv_ne, ie * inv_ne);
     }
 
     std::vector<TrialWaveFunction> wfns;
@@ -84,28 +88,30 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
   }
 }
 
-void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVector<OperatorEstBase>& crowd_sdns)
+void randomUpdateAccumulate(int n_walkers,
+                            testing::RandomForTest<QMCT::RealType>& rft,
+                            UPtrVector<OperatorEstBase>& crowd_sdns)
 {
+  int n_elecs = 2;
   const SimulationCell simulation_cell;
   for (auto& uptr_crowd_sdn : crowd_sdns)
   {
     std::vector<OperatorEstBase::MCPWalker> walkers;
-    int nwalkers = 4;
-    for (int iw = 0; iw < nwalkers; ++iw)
-      walkers.emplace_back(2);
+    for (int iw = 0; iw < n_walkers; ++iw)
+      walkers.emplace_back(n_elecs);
 
     std::vector<ParticleSet> psets;
 
     SpinDensityNew& crowd_sdn = dynamic_cast<SpinDensityNew&>(*(uptr_crowd_sdn));
 
-    std::vector<QMCT::RealType> rng_reals(nwalkers * QMCT::DIM * 2);
+    std::vector<QMCT::RealType> rng_reals(n_walkers * QMCT::DIM * n_elecs);
     rft.fillVecRng(rng_reals);
     auto it_rng_reals = rng_reals.begin();
-    for (int iw = 0; iw < nwalkers; ++iw)
+    for (int iw = 0; iw < n_walkers; ++iw)
     {
       psets.emplace_back(simulation_cell);
       ParticleSet& pset = psets.back();
-      pset.create({2});
+      pset.create({n_elecs});
       pset.R[0] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
       pset.R[1] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
     }
@@ -227,13 +233,11 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   std::vector<QMCT::RealType>& data_ref = sdn.get_data();
   // There should be a check that the discretization of particle locations expressed in lattice coords
   // is correct.  This just checks it hasn't changed from how it was in SpinDensity which lacked testing.
-  CHECK(data_ref[555] == 4);
-  CHECK(data_ref[1777] == 4);
 }
 
 TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
 {
-  {
+  auto checkCollectForNParticles = [](int n_elec) {
     using MCPWalker = OperatorEstBase::MCPWalker;
     using QMCT      = QMCTraits;
 
@@ -246,16 +250,17 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
     int ispecies = species_set.addSpecies("u");
     ispecies     = species_set.addSpecies("d");
     CHECK(ispecies == 1);
-    int iattribute             = species_set.addAttribute("membersize");
-    species_set(iattribute, 0) = 1;
-    species_set(iattribute, 1) = 1;
+    int i_msize             = species_set.addAttribute("membersize");
+    species_set(i_msize, 0) = n_elec / 2 + n_elec % 2;
+    species_set(i_msize, 1) = n_elec / 2;
 
     SpinDensityNew sdn(std::move(sdi), species_set);
 
     UPtrVector<OperatorEstBase> crowd_sdns;
-    int ncrowds = 2;
+    int n_crowds  = 2;
+    int n_walkers = 4;
 
-    accumulateFromPsets(ncrowds, sdn, crowd_sdns);
+    accumulateFromPsets(n_crowds, n_walkers, sdn, crowd_sdns);
 
     RefVector<OperatorEstBase> crowd_oeb_refs = convertUPtrToRefVector(crowd_sdns);
     sdn.collect(crowd_oeb_refs);
@@ -263,9 +268,20 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
     std::vector<QMCT::RealType>& data_ref = sdn.get_data();
     // There should be a check that the discretization of particle locations expressed in lattice coords
     // is correct.  This just checks it hasn't changed from how it was in SpinDensity which lacked testing.
-    CHECK(data_ref[555] == 4 * ncrowds);
-    CHECK(data_ref[1666] == 4 * ncrowds);
-  }
+    Real up_sum{0};
+    Real dn_sum{0};
+    for (int i = 0; i < 1000; ++i)
+      up_sum += data_ref[i];
+    for (int i = 0; i < 1000; ++i)
+      dn_sum += data_ref[i + 1000];
+    // \todo why is it 8?
+    CHECK(up_sum == n_crowds * n_walkers * species_set(i_msize, 0));
+    CHECK(dn_sum == n_crowds * n_walkers * species_set(i_msize, 1));
+  };
+  checkCollectForNParticles(1);
+  checkCollectForNParticles(2);
+  checkCollectForNParticles(3);
+  checkCollectForNParticles(11);
 }
 
 TEST_CASE("SpinDensityNew::collect(DataLocality::rank)", "[estimators]")
@@ -292,9 +308,10 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::rank)", "[estimators]")
     auto lattice = testing::makeTestLattice();
 
     UPtrVector<OperatorEstBase> crowd_sdns;
-    int ncrowds = 2;
+    int n_crowds  = 2;
+    int n_walkers = 4;
 
-    accumulateFromPsets(ncrowds, sdn, crowd_sdns);
+    accumulateFromPsets(n_crowds, n_walkers, sdn, crowd_sdns);
 
     RefVector<OperatorEstBase> crowd_oeb_refs = convertUPtrToRefVector(crowd_sdns);
     sdn.collect(crowd_oeb_refs);
@@ -302,8 +319,9 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::rank)", "[estimators]")
     std::vector<QMCT::RealType>& data_ref = sdn.get_data();
     // There should be a check that the discretization of particle locations expressed in lattice coords
     // is correct.  This just checks it hasn't changed from how it was in SpinDensity which lacked testing.
-    CHECK(data_ref[555] == 4 * ncrowds);
-    CHECK(data_ref[1666] == 4 * ncrowds);
+    //
+    CHECK(data_ref[555] == n_walkers * n_crowds);
+    CHECK(data_ref[1555] == n_walkers * n_crowds);
   }
 }
 
@@ -321,31 +339,31 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
   int ispecies = species_set.addSpecies("u");
   ispecies     = species_set.addSpecies("d");
   CHECK(ispecies == 1);
-  int iattribute             = species_set.addAttribute("membersize");
-  species_set(iattribute, 0) = 1;
-  species_set(iattribute, 1) = 1;
+  int i_msize             = species_set.addAttribute("membersize");
+  species_set(i_msize, 0) = 1;
+  species_set(i_msize, 1) = 1;
 
   SpinDensityInput sdi_copy = sdi;
 
-  int ncrowds = 3;
-  int nsteps  = 4;
+  int n_crowds  = 3;
+  int n_walkers = 4;
+  int nsteps    = 4;
 
   SpinDensityNew sdn_rank(std::move(sdi), species_set, DataLocality::rank);
   UPtrVector<OperatorEstBase> crowd_sdns_rank;
-  accumulateFromPsets(ncrowds, sdn_rank, crowd_sdns_rank);
+  accumulateFromPsets(n_crowds, n_walkers, sdn_rank, crowd_sdns_rank);
   testing::RandomForTest<QMCT::RealType> rng_for_test_rank;
   for (int i = 0; i < nsteps; ++i)
-    randomUpdateAccumulate(rng_for_test_rank, crowd_sdns_rank);
+    randomUpdateAccumulate(n_walkers, rng_for_test_rank, crowd_sdns_rank);
   RefVector<OperatorEstBase> crowd_oeb_refs_rank = convertUPtrToRefVector(crowd_sdns_rank);
   sdn_rank.collect(crowd_oeb_refs_rank);
   std::vector<QMCT::RealType>& data_ref_rank = sdn_rank.get_data();
-
   SpinDensityNew sdn_crowd(std::move(sdi), species_set, DataLocality::crowd);
   UPtrVector<OperatorEstBase> crowd_sdns_crowd;
-  accumulateFromPsets(ncrowds, sdn_crowd, crowd_sdns_crowd);
+  accumulateFromPsets(n_crowds, n_walkers, sdn_crowd, crowd_sdns_crowd);
   testing::RandomForTest<QMCT::RealType> rng_for_test_crowd;
   for (int i = 0; i < nsteps; ++i)
-    randomUpdateAccumulate(rng_for_test_crowd, crowd_sdns_crowd);
+    randomUpdateAccumulate(n_walkers, rng_for_test_crowd, crowd_sdns_crowd);
   RefVector<OperatorEstBase> crowd_oeb_refs_crowd = convertUPtrToRefVector(crowd_sdns_crowd);
   sdn_crowd.collect(crowd_oeb_refs_crowd);
   std::vector<QMCT::RealType>& data_ref_crowd = sdn_crowd.get_data();
@@ -356,6 +374,20 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
       FAIL_CHECK("crowd local " << data_ref_crowd[i] << " != rank local " << data_ref_rank[i] << " at index " << i);
     break;
   }
+
+  auto sumAndCheck = [i_msize, nsteps, n_crowds, n_walkers, &species_set](const auto& data_ref) {
+    Real up_sum{0};
+    Real dn_sum{0};
+    for (int i = 0; i < 1000; ++i)
+      up_sum += data_ref[i];
+    for (int i = 0; i < 1000; ++i)
+      dn_sum += data_ref[i + 1000];
+    // +1 is for the accumulateFromPsets
+    CHECK(up_sum == (nsteps + 1) * n_crowds * n_walkers * species_set(i_msize, 0));
+    CHECK(dn_sum == (nsteps + 1) * n_crowds * n_walkers * species_set(i_msize, 1));
+  };
+  sumAndCheck(data_ref_rank);
+  sumAndCheck(data_ref_crowd);
 }
 
 
