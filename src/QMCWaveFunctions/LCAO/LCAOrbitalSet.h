@@ -289,6 +289,11 @@ private:
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
                               OffloadMWVGLArray& phi_vgl_v) const;
+  /// packed walker GEMM implementation
+  void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        OffloadMWVArray& phi_v) const override;
 };
 } // namespace qmcplusplus
 #endif

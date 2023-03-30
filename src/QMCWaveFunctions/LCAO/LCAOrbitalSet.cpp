@@ -412,37 +412,41 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                                      const RefVectorWithLeader<ParticleSet>& P_list,
                                      int iat,
-                                     const RefVector<ValueVector>& psi_v_list) const
+                                     OffloadMWVArray& psi_v) const
 {
   const size_t nw = spo_list.size();
-  //RefVector<OffloadMatrix<ValueType>> phi_v_list;
-  RefVector<ValueVector> phi_v_list;
-  phi_v_list.reserve(nw);
+  OffloadMWVArray phi_v;
+  phi_v.resize(nw, BasisSetSize);
 
-  myBasisSet->mw_evaluateV(P_list, iat, phi_v_list);
+
+  myBasisSet->mw_evaluateV(P_list, iat, phi_v);
 
   if (Identity)
   {
-    for (int iw = 0; iw < nw; iw++)
-      std::copy_n(phi_v_list[iw].get().data(), OrbitalSetSize, psi_v_list[iw].get().data());
+    std::copy_n(phi_v.data_at(0,0), OrbitalSetSize * nw, psi_v.data_at(0,0));
   }
   else
   {
-    const size_t requested_orb_size = phi_v_list.size(1);
+    const size_t requested_orb_size = psi_v.size(1);
     assert(requested_orb_size <= OrbitalSetSize);
     ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
-    //TODO: psi <- C.phi (loop over walkers)
+    BLAS::gemm('T', 'N',
+               requested_orb_size,  // MOs
+               spo_list.size(),     // walkers * DIM_VGL
+               BasisSetSize,        // AOs
+               1, C_partial_view.data(), BasisSetSize, phi_v.data(), BasisSetSize, 0, psi_v.data(),
+               requested_orb_size);
   }
 }
 
-void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                const RefVector<ValueVector>& psi_list,
-                                const std::vector<const ValueType*>& invRow_ptr_list,
-                                std::vector<std::vector<ValueType>>& ratios_list) const
-{
-  //TODO: implement this
-}
+//void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+//                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+//                                const RefVector<ValueVector>& psi_list,
+//                                const std::vector<const ValueType*>& invRow_ptr_list,
+//                                std::vector<std::vector<ValueType>>& ratios_list) const
+//{
+//  //TODO: implement this
+//}
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                       ValueVector& psi,

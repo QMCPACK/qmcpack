@@ -50,6 +50,7 @@ public:
   using GGGMatrix         = OrbitalSetTraits<ValueType>::GradHessMatrix;
   using SPOMap            = std::map<std::string, const std::unique_ptr<const SPOSet>>;
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+  using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
@@ -258,6 +259,17 @@ public:
                                 const RefVectorWithLeader<ParticleSet>& P_list,
                                 int iat,
                                 const RefVector<ValueVector>& psi_v_list) const;
+
+  /** evaluate the values this single-particle orbital sets of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param psi_v array of values over [walkers, SPOs]
+   */
+  virtual void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                                const RefVectorWithLeader<ParticleSet>& P_list,
+                                int iat,
+                                OffloadMWVArray& psi_v) const;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch

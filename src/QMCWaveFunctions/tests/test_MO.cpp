@@ -430,6 +430,11 @@ void test_EtOH_mw(bool transform)
   RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
   RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
 
+  size_t nw = psi_list.size();
+  SPOSet::OffloadMWVArray psi_v_array;
+  psi_v_array.resize(nw, n_mo);
+  sposet->mw_evaluateValue(spo_list, P_list, 0, psi_v_array);
+
   //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
   //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
   // FIXME: add resource management
@@ -437,6 +442,11 @@ void test_EtOH_mw(bool transform)
 
   for (size_t iorb = 0; iorb < n_mo; iorb++)
   {
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      // test values from OffloadMWVArray impl.
+      CHECK(std::real(psi_v_array(iw, iorb)) == Approx(psi_list[iw].get()[iorb]));
+    }
     CHECK(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
     CHECK(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
     CHECK(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));
