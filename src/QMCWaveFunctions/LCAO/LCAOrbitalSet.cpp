@@ -418,7 +418,6 @@ void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list
   OffloadMWVArray phi_v;
   phi_v.resize(nw, BasisSetSize);
 
-
   myBasisSet->mw_evaluateV(P_list, iat, phi_v);
 
   if (Identity)
@@ -432,7 +431,7 @@ void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list
     ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
     BLAS::gemm('T', 'N',
                requested_orb_size,  // MOs
-               spo_list.size(),     // walkers * DIM_VGL
+               spo_list.size(),     // walkers
                BasisSetSize,        // AOs
                1, C_partial_view.data(), BasisSetSize, phi_v.data(), BasisSetSize, 0, psi_v.data(),
                requested_orb_size);
