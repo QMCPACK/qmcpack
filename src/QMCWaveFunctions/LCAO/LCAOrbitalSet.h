@@ -78,6 +78,10 @@ public:
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
+  void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        const RefVector<ValueVector>& psi_v_list) const override;
 
   void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                       const RefVectorWithLeader<ParticleSet>& P_list,
@@ -290,10 +294,10 @@ private:
                               int iat,
                               OffloadMWVGLArray& phi_vgl_v) const;
   /// packed walker GEMM implementation
-  void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
-                        const RefVectorWithLeader<ParticleSet>& P_list,
-                        int iat,
-                        OffloadMWVArray& phi_v) const override;
+  void mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                const RefVectorWithLeader<ParticleSet>& P_list,
+                                int iat,
+                                OffloadMWVArray& phi_v) const;
 };
 } // namespace qmcplusplus
 #endif

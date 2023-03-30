@@ -412,13 +412,29 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                                      const RefVectorWithLeader<ParticleSet>& P_list,
                                      int iat,
-                                     OffloadMWVArray& psi_v) const
+                                     const RefVector<ValueVector>& psi_v_list) const
+{
+  OffloadMWVArray phi_v;
+  phi_v.resize(spo_list.size(), OrbitalSetSize);
+  mw_evaluateValueImplGEMM(spo_list, P_list, iat, phi_v);
+
+  const size_t output_size = phi_v.size(1);
+  const size_t nw          = phi_v.size(0);
+
+  for (int iw = 0; iw < nw; iw++)
+    std::copy_n(phi_v.data_at(iw, 0), output_size, psi_v_list[iw].get().data());
+}
+
+void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                             const RefVectorWithLeader<ParticleSet>& P_list,
+                                             int iat,
+                                             OffloadMWVArray& psi_v) const
 {
   const size_t nw = spo_list.size();
   OffloadMWVArray phi_v;
   phi_v.resize(nw, BasisSetSize);
 
-  myBasisSet->mw_evaluateV(P_list, iat, phi_v);
+  myBasisSet->mw_evaluateValue(P_list, iat, phi_v);
 
   if (Identity)
   {

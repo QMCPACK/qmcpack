@@ -431,9 +431,10 @@ void test_EtOH_mw(bool transform)
   RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
 
   size_t nw = psi_list.size();
-  SPOSet::OffloadMWVArray psi_v_array;
-  psi_v_array.resize(nw, n_mo);
-  sposet->mw_evaluateValue(spo_list, P_list, 0, psi_v_array);
+  SPOSet::ValueVector psi_v_1(n_mo);
+  SPOSet::ValueVector psi_v_2(n_mo);
+  RefVector<SPOSet::ValueVector> psi_v_list   = {psi_v_1, psi_v_2};
+  sposet->mw_evaluateValue(spo_list, P_list, 0, psi_v_list);
 
   //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
   //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
@@ -445,7 +446,7 @@ void test_EtOH_mw(bool transform)
     for (size_t iw = 0; iw < nw; iw++)
     {
       // test values from OffloadMWVArray impl.
-      CHECK(std::real(psi_v_array(iw, iorb)) == Approx(psi_list[iw].get()[iorb]));
+      CHECK(std::real(psi_v_list[iw].get()[iorb]) == Approx(psi_list[iw].get()[iorb]));
     }
     CHECK(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
     CHECK(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));

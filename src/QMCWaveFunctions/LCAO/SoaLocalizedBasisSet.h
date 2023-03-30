@@ -114,7 +114,7 @@ public:
    * @param iat active particle
    * @param v   Array(n_walkers, BasisSetSize)
    */
-  void mw_evaluateV(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) override;
+  void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) override;
 
   /** compute VGL using packed array with all walkers 
    * @param P_list list of quantum particleset (one for each walker)

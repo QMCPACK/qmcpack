@@ -152,7 +152,7 @@ struct SoaBasisSetBase
   //Evaluates value, gradient, and laplacian for electron "iat".  places them in a offload array for batched code.
   virtual void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) = 0;
   //Evaluates value for electron "iat".  places it in a offload array for batched code.
-  virtual void mw_evaluateV(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) = 0;
+  virtual void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) = 0;
   //Evaluates value, gradient, and Hessian for electron "iat".  Parks them into a temporary data structure "vgh".
   virtual void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh) = 0;
   //Evaluates value, gradient, and Hessian, and Gradient Hessian for electron "iat".  Parks them into a temporary data structure "vghgh".

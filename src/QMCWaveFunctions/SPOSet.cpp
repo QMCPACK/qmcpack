@@ -103,19 +103,6 @@ void SPOSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
     spo_list[iw].evaluateValue(P_list[iw], iat, psi_v_list[iw]);
 }
 
-void SPOSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
-                              const RefVectorWithLeader<ParticleSet>& P_list,
-                              int iat,
-                              OffloadMWVArray& psi_v) const
-{
-  ValueVector tmp_v;
-  assert(this == &spo_list.getLeader());
-  for (int iw = 0; iw < spo_list.size(); iw++)
-  {
-    spo_list[iw].evaluateValue(P_list[iw], iat, tmp_v);
-    std::copy_n(tmp_v.data(), tmp_v.size(), psi_v.data_at(iw,0));
-  }
-}
 
 void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVectorWithLeader<ParticleSet>& P_list,
