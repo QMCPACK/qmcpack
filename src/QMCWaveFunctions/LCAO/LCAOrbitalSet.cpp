@@ -398,6 +398,8 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
     assert(requested_orb_size <= OrbitalSetSize);
     ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
     myBasisSet->mw_evaluateVGL(P_list, iat, basis_mw);
+    // TODO: make class for general blas interface in Platforms
+    // have instance of that class as member of LCAOrbitalSet, call gemm through that
     BLAS::gemm('T', 'N',
                requested_orb_size,        // MOs
                spo_list.size() * DIM_VGL, // walkers * DIM_VGL
@@ -405,6 +407,41 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                1, C_partial_view.data(), BasisSetSize, basis_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
                requested_orb_size);
   }
+}
+
+void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                                     const RefVectorWithLeader<ParticleSet>& P_list,
+                                     int iat,
+                                     const RefVector<ValueVector>& psi_v_list) const
+{
+  const size_t nw = spo_list.size();
+  //RefVector<OffloadMatrix<ValueType>> phi_v_list;
+  RefVector<ValueVector> phi_v_list;
+  phi_v_list.reserve(nw);
+
+  myBasisSet->mw_evaluateV(P_list, iat, phi_v_list);
+
+  if (Identity)
+  {
+    for (int iw = 0; iw < nw; iw++)
+      std::copy_n(phi_v_list[iw].get().data(), OrbitalSetSize, psi_v_list[iw].get().data());
+  }
+  else
+  {
+    const size_t requested_orb_size = phi_v_list.size(1);
+    assert(requested_orb_size <= OrbitalSetSize);
+    ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+    //TODO: psi <- C.phi (loop over walkers)
+  }
+}
+
+void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                const RefVector<ValueVector>& psi_list,
+                                const std::vector<const ValueType*>& invRow_ptr_list,
+                                std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  //TODO: implement this
 }
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,

@@ -217,6 +217,15 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, O
 }
 
 template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateV(const RefVectorWithLeader<ParticleSet>& P_list,
+                                                   int iat,
+                                                   RefVector<ORBT>& vals_list)
+{
+  for (size_t iw = 0; iw < P_list.size(); iw++)
+    evaluateV(P_list[iw], iat, vals_list[iw]);
+}
+
+template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceV(const ParticleSet& P,
                                                           int iat,
                                                           const ParticleSet& ions,
