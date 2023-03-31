@@ -114,7 +114,7 @@ struct SKMultiWalkerMem : public Resource
 
   SKMultiWalkerMem(const SKMultiWalkerMem&) : SKMultiWalkerMem() {}
 
-  Resource* makeClone() const override { return new SKMultiWalkerMem(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<SKMultiWalkerMem>(*this); }
 };
 
 } // namespace qmcplusplus
