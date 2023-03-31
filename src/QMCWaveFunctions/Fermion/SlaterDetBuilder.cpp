@@ -1151,7 +1151,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     }
 
     if (!hin.readEntry(temps[grp], ds_tag))
-      APP_ABORT("Unknown HDF5 CI format");
+      throw std::runtime_error("Unknown HDF5 CI format");
   }
 
   std::vector<std::string> MyCIs(nGroups);

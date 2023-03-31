@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'QMCPACK Manual'
-copyright = '2021, QMCPACK Developers'
+copyright = '2023, QMCPACK Developers'
 author = 'QMCPACK Developers'
 
 # The full version, including alpha/beta/rc tags
