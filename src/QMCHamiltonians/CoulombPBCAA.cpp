@@ -128,8 +128,8 @@ void CoulombPBCAA::updateSource(ParticleSet& s)
   if (ComputeForces)
   {
     forces_ = 0.0;
-    eS     = evalSRwithForces(s);
-    eL     = evalLRwithForces(s);
+    eS      = evalSRwithForces(s);
+    eL      = evalLRwithForces(s);
   }
   else
   {
@@ -236,8 +236,8 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
   auto num_centers = p_leader.getTotalNum();
   auto name(o_leader.getName());
-  Vector<RealType>& v_sample = o_leader.mw_res_->v_sample;
-  const auto& pp_consts      = o_leader.mw_res_->pp_consts;
+  Vector<RealType>& v_sample = o_leader.mw_res_handle_.getResource().v_sample;
+  const auto& pp_consts      = o_leader.mw_res_handle_.getResource().pp_consts;
   auto num_species           = p_leader.getSpeciesSet().getTotalNum();
   v_sample.resize(num_centers);
   // This lambda is mostly about getting a handle on what is being touched by the per particle evaluation.
@@ -653,7 +653,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   if (chunk_size == 0)
     throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
 
-  auto& values_offload        = caa_leader.mw_res_->values_offload;
+  auto& values_offload        = caa_leader.mw_res_handle_.getResource().values_offload;
   const size_t total_num      = p_leader.getTotalNum();
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
@@ -795,18 +795,15 @@ void CoulombPBCAA::createResource(ResourceCollection& collection) const
 void CoulombPBCAA::acquireResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
-  auto res_ptr   = dynamic_cast<CoulombPBCAAMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("CoulombPBCAA::acquireResource dynamic_cast failed");
-  o_leader.mw_res_.reset(res_ptr);
+  auto& o_leader          = o_list.getCastedLeader<CoulombPBCAA>();
+  o_leader.mw_res_handle_ = collection.lendResource<CoulombPBCAAMultiWalkerResource>();
 }
 
 void CoulombPBCAA::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
-  collection.takebackResource(std::move(o_leader.mw_res_));
+  collection.takebackResource(o_leader.mw_res_handle_);
 }
 
 std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

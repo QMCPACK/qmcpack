@@ -161,7 +161,7 @@ private:
   {
     MultiWalkerResource() : Resource("BareKineticEnergy") {}
 
-    Resource* makeClone() const override { return new MultiWalkerResource(*this); }
+    std::unique_ptr<Resource> makeClone() const override { return std::make_unique<MultiWalkerResource>(*this); }
 
     Vector<RealType> t_samples;
     Vector<std::complex<RealType>> tcmp_samples;

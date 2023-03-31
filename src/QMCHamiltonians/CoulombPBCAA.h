@@ -201,7 +201,10 @@ private:
   {
     CoulombPBCAAMultiWalkerResource() : Resource("CoulombPBCAA") {}
 
-    Resource* makeClone() const override { return new CoulombPBCAAMultiWalkerResource(*this); }
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<CoulombPBCAAMultiWalkerResource>(*this);
+    }
 
     Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
 
@@ -213,7 +216,7 @@ private:
   };
 
   /// multiwalker shared resource
-  ResourceHandle<CoulombPBCAAMultiWalkerResource> mw_res_;
+  ResourceHandle<CoulombPBCAAMultiWalkerResource> mw_res_handle_;
 
   /** constructor code factored out
    */

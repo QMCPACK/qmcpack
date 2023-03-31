@@ -265,10 +265,11 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
   auto num_centers            = p_leader.getTotalNum();
   auto& name                  = o_leader.name_;
-  Vector<RealType>& ve_sample = o_leader.mw_res_->pp_samples_trg;
-  Vector<RealType>& vi_sample = o_leader.mw_res_->pp_samples_src;
-  const auto& ve_consts       = o_leader.mw_res_->pp_consts_trg;
-  const auto& vi_consts       = o_leader.mw_res_->pp_consts_src;
+  auto& mw_res                = o_leader.mw_res_handle_.getResource();
+  Vector<RealType>& ve_sample = mw_res.pp_samples_trg;
+  Vector<RealType>& vi_sample = mw_res.pp_samples_src;
+  const auto& ve_consts       = mw_res.pp_consts_trg;
+  const auto& vi_consts       = mw_res.pp_consts_src;
   auto num_species            = p_leader.getSpeciesSet().getTotalNum();
   ve_sample.resize(NptclB);
   vi_sample.resize(NptclA);
@@ -730,18 +731,15 @@ void CoulombPBCAB::createResource(ResourceCollection& collection) const
 void CoulombPBCAB::acquireResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
-  auto res_ptr   = dynamic_cast<CoulombPBCABMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("CoulombPBCAA::acquireResource dynamic_cast failed");
-  o_leader.mw_res_.reset(res_ptr);
+  auto& o_leader          = o_list.getCastedLeader<CoulombPBCAB>();
+  o_leader.mw_res_handle_ = collection.lendResource<CoulombPBCABMultiWalkerResource>();
 }
 
 void CoulombPBCAB::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
-  collection.takebackResource(std::move(o_leader.mw_res_));
+  collection.takebackResource(o_leader.mw_res_handle_);
 }
 
 } // namespace qmcplusplus
