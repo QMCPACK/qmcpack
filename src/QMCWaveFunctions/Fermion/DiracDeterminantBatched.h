@@ -59,30 +59,6 @@ public:
 
   using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
 
-  struct DiracDeterminantBatchedMultiWalkerResource : public Resource
-  {
-    DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
-    DiracDeterminantBatchedMultiWalkerResource(const DiracDeterminantBatchedMultiWalkerResource&)
-        : DiracDeterminantBatchedMultiWalkerResource()
-    {}
-
-    std::unique_ptr<Resource> makeClone() const override
-    {
-      return std::make_unique<DiracDeterminantBatchedMultiWalkerResource>(*this);
-    }
-    DualVector<LogValue> log_values;
-    /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw][norb]
-    OffloadMWVGLArray phi_vgl_v;
-    // multi walker of ratio
-    std::vector<Value> ratios_local;
-    // multi walker of grads
-    std::vector<Grad> grad_new_local;
-    // multi walker of spingrads
-    std::vector<Value> spingrad_new_local;
-    // mw spin gradients of orbitals, matrix is [nw][norb]
-    OffloadMatrix<ComplexType> mw_dspin;
-  };
-
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
@@ -307,6 +283,7 @@ public:
   PsiValue curRatio;
   /**@}*/
 
+  struct DiracDeterminantBatchedMultiWalkerResource;
   ResourceHandle<DiracDeterminantBatchedMultiWalkerResource> mw_res_handle_;
 
 private:

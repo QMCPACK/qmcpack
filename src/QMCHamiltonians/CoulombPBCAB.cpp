@@ -22,6 +22,24 @@
 
 namespace qmcplusplus
 {
+struct CoulombPBCAB::CoulombPBCABMultiWalkerResource : public Resource
+{
+  CoulombPBCABMultiWalkerResource() : Resource("CoulombPBCAB") {}
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<CoulombPBCABMultiWalkerResource>(*this);
+  }
+
+  /// a walkers worth of per ion AB potential values
+  Vector<RealType> pp_samples_src;
+  /// a walkers worth of per electron AB potential values
+  Vector<RealType> pp_samples_trg;
+  /// constant values for the source particles aka ions aka A
+  Vector<RealType> pp_consts_src;
+  /// constant values for the target particles aka electrons aka B
+  Vector<RealType> pp_consts_trg;
+};
+
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces)
     : ForceBase(ions, elns),
       myTableIndex(elns.addTable(ions)),

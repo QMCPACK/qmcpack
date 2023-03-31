@@ -28,6 +28,16 @@ namespace qmcplusplus
 using WP       = WalkerProperties::Indexes;
 using Return_t = BareKineticEnergy::Return_t;
 
+struct BareKineticEnergy::MultiWalkerResource : public Resource
+{
+  MultiWalkerResource() : Resource("BareKineticEnergy") {}
+
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<MultiWalkerResource>(*this); }
+
+  Vector<RealType> t_samples;
+  Vector<std::complex<RealType>> tcmp_samples;
+};
+
 /** constructor with particleset
    * @param target particleset
    *

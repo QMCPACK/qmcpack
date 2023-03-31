@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_RESOURCE_H
 
 #include <string>
+#include <memory>
 
 namespace qmcplusplus
 {

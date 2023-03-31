@@ -25,6 +25,24 @@
 
 namespace qmcplusplus
 {
+struct CoulombPBCAA::CoulombPBCAAMultiWalkerResource : public Resource
+{
+  CoulombPBCAAMultiWalkerResource() : Resource("CoulombPBCAA") {}
+
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<CoulombPBCAAMultiWalkerResource>(*this);
+  }
+
+  Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
+
+  /// a walkers worth of per particle coulomb AA potential values
+  Vector<RealType> v_sample;
+
+  /// constant values per particle for coulomb AA potential
+  Vector<RealType> pp_consts;
+};
+
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload)
     : ForceBase(ref, ref),
       is_active(active),

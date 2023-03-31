@@ -308,25 +308,7 @@ private:
   std::vector<Matrix<RealType>> dpsia, dLa;
   std::vector<Array<GradType, OHMMS_DIM>> dGa;
 
-  struct MultiSlaterDetTableMethodMultiWalkerResource : public Resource
-  {
-    MultiSlaterDetTableMethodMultiWalkerResource() : Resource("MultiSlaterDetTableMethod") {}
-    MultiSlaterDetTableMethodMultiWalkerResource(const MultiSlaterDetTableMethodMultiWalkerResource&)
-        : MultiSlaterDetTableMethodMultiWalkerResource()
-    {}
-
-    std::unique_ptr<Resource> makeClone() const override
-    {
-      return std::make_unique<MultiSlaterDetTableMethodMultiWalkerResource>(*this);
-    }
-
-    /// grads of each unique determinants for multiple walkers
-    Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;
-    /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
-    OffloadVector<const ValueType*> C_otherDs_ptr_list;
-    OffloadVector<const ValueType*> det_value_ptr_list;
-  };
-
+  struct MultiSlaterDetTableMethodMultiWalkerResource;
   ResourceHandle<MultiSlaterDetTableMethodMultiWalkerResource> mw_res_handle_;
 
   // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction

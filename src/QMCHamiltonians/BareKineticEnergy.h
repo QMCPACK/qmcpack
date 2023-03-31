@@ -157,16 +157,6 @@ public:
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
 private:
-  struct MultiWalkerResource : public Resource
-  {
-    MultiWalkerResource() : Resource("BareKineticEnergy") {}
-
-    std::unique_ptr<Resource> makeClone() const override { return std::make_unique<MultiWalkerResource>(*this); }
-
-    Vector<RealType> t_samples;
-    Vector<std::complex<RealType>> tcmp_samples;
-  };
-
   ///true, if all the species have the same mass
   bool same_mass_;
 
@@ -186,6 +176,7 @@ private:
 
   ParticleSet& ps_;
 
+  struct MultiWalkerResource;
   ResourceHandle<MultiWalkerResource> mw_res_;
 
   TrialWaveFunction& psi_;

@@ -20,6 +20,25 @@
 
 namespace qmcplusplus
 {
+struct MultiSlaterDetTableMethod::MultiSlaterDetTableMethodMultiWalkerResource : public Resource
+{
+  MultiSlaterDetTableMethodMultiWalkerResource() : Resource("MultiSlaterDetTableMethod") {}
+  MultiSlaterDetTableMethodMultiWalkerResource(const MultiSlaterDetTableMethodMultiWalkerResource&)
+      : MultiSlaterDetTableMethodMultiWalkerResource()
+  {}
+
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<MultiSlaterDetTableMethodMultiWalkerResource>(*this);
+  }
+
+  /// grads of each unique determinants for multiple walkers
+  Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;
+  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
+  OffloadVector<const ValueType*> C_otherDs_ptr_list;
+  OffloadVector<const ValueType*> det_value_ptr_list;
+};
+
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
