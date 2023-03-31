@@ -438,7 +438,7 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
 
   if (Identity)
   {
-    std::copy_n(phi_v.data_at(0,0), OrbitalSetSize * nw, psi_v.data_at(0,0));
+    std::copy_n(phi_v.data_at(0, 0), OrbitalSetSize * nw, psi_v.data_at(0, 0));
   }
   else
   {
@@ -446,22 +446,29 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
     assert(requested_orb_size <= OrbitalSetSize);
     ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
     BLAS::gemm('T', 'N',
-               requested_orb_size,  // MOs
-               spo_list.size(),     // walkers
-               BasisSetSize,        // AOs
-               1, C_partial_view.data(), BasisSetSize, phi_v.data(), BasisSetSize, 0, psi_v.data(),
-               requested_orb_size);
+               requested_orb_size, // MOs
+               spo_list.size(),    // walkers
+               BasisSetSize,       // AOs
+               1, C_partial_view.data(), BasisSetSize, phi_v.data(), BasisSetSize, 0, psi_v.data(), requested_orb_size);
   }
 }
 
-//void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-//                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-//                                const RefVector<ValueVector>& psi_list,
-//                                const std::vector<const ValueType*>& invRow_ptr_list,
-//                                std::vector<std::vector<ValueType>>& ratios_list) const
-//{
-//  //TODO: implement this
-//}
+void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                         const RefVector<ValueVector>& psi_list,
+                                         const std::vector<const ValueType*>& invRow_ptr_list,
+                                         std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  size_t nw = spo_list.size();
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+    {
+      spo_list[iw].evaluateValue(vp_list[iw], iat, psi_list[iw]);
+      ratios_list[iw][iat] = simd::dot(psi_list[iw].get().data(), invRow_ptr_list[iw], psi_list[iw].get().size());
+    }
+  }
+}
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                       ValueVector& psi,

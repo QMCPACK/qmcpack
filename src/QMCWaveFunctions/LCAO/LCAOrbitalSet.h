@@ -90,6 +90,12 @@ public:
                       const RefVector<GradVector>& dpsi_v_list,
                       const RefVector<ValueVector>& d2psi_v_list) const override;
 
+  void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                            const RefVector<ValueVector>& psi_list,
+                            const std::vector<const ValueType*>& invRow_ptr_list,
+                            std::vector<std::vector<ValueType>>& ratios_list) const override;
+
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,
                          const ValueVector& psiinv,
