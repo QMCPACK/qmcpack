@@ -23,25 +23,28 @@ template<class RS>
 class ResourceHandle : private std::optional<std::reference_wrapper<RS>>
 {
 public:
+  using Base = std::optional<std::reference_wrapper<RS>>;
+
   ResourceHandle() = default;
-  ResourceHandle(RS& res) { this->emplace(res); }
+  ResourceHandle(RS& res) { Base::emplace(res); }
   ResourceHandle& operator=(RS& res)
   {
-    this->emplace(res);
+    Base::emplace(res);
     return *this;
   }
-  bool hasResource() const { return this->has_value(); }
+  bool hasResource() const { return Base::has_value(); }
+  operator bool() const { return Base::has_value(); }
 
-  RS& getResource() { return this->value(); }
-  const RS& getResource() const { return this->value(); }
+  RS& getResource() { return Base::value(); }
+  const RS& getResource() const { return Base::value(); }
 
   operator RS&() { return this->value(); }
-  operator const RS&() const { return this->value(); }
+  operator const RS&() const { return Base::value(); }
 
   RS& release()
   {
-    RS& res = this->value();
-    this->reset();
+    RS& res = Base::value();
+    Base::reset();
     return res;
   }
 };

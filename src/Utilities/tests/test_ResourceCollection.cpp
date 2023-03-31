@@ -83,7 +83,7 @@ TEST_CASE("ResourceCollection", "[utilities]")
   {
     ResourceCollectionTeamLock lock(res_collection, wfc_list);
     auto& res_handle = wfc.getResourceHandle();
-    REQUIRE(res_handle.hasResource() == true);
+    REQUIRE(res_handle);
 
     MemoryResource& mem_res             = res_handle;
     const MemoryResource& const_mem_res = res_handle;
