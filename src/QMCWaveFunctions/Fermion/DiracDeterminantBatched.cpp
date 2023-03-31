@@ -79,22 +79,23 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
     RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(nw);
 
-    wfc_leader.mw_res_->log_values.resize(nw);
+    auto& mw_res = wfc_leader.mw_res_handle_.getResource();
+    mw_res.log_values.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
       engine_list.push_back(det.get_det_engine());
-      wfc_leader.mw_res_->log_values[iw] = {0.0, 0.0};
+      mw_res.log_values[iw] = {0.0, 0.0};
     }
 
-    wfc_leader.accel_inverter_->mw_invertTranspose(wfc_leader.det_engine_.getLAhandles(), logdetT_list, a_inv_list,
-                                                   wfc_leader.mw_res_->log_values);
+    wfc_leader.accel_inverter_.getResource().mw_invertTranspose(wfc_leader.det_engine_.getLAhandles(), logdetT_list,
+                                                                a_inv_list, mw_res.log_values);
 
     for (int iw = 0; iw < nw; ++iw)
     {
       auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-      det.log_value_ = wfc_leader.mw_res_->log_values[iw];
+      det.log_value_ = mw_res.log_values[iw];
     }
   }
   else
@@ -214,11 +215,11 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  auto& mw_res     = *wfc_leader.mw_res_;
+  auto& mw_res     = wfc_leader.mw_res_handle_.getResource();
   auto& mw_dspin   = mw_res.mw_dspin;
   ScopedTimer local_timer(RatioTimer);
 
-  const int nw = wfc_list.size();
+  const int nw           = wfc_list.size();
   const int num_orbitals = wfc_leader.Phi->size();
   mw_dspin.resize(nw, num_orbitals);
 
@@ -294,9 +295,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
                                                        std::vector<Grad>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  wfc_leader.guardMultiWalkerRes();
-  auto& mw_res         = *wfc_leader.mw_res_;
+  auto& wfc_leader     = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  auto& mw_res         = wfc_leader.mw_res_handle_.getResource();
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
   auto& grad_new_local = mw_res.grad_new_local;
@@ -344,9 +344,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGradWithSpin(
     std::vector<ComplexType>& spingrad_new) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  wfc_leader.guardMultiWalkerRes();
-  auto& mw_res             = *wfc_leader.mw_res_;
+  auto& wfc_leader         = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  auto& mw_res             = wfc_leader.mw_res_handle_.getResource();
   auto& phi_vgl_v          = mw_res.phi_vgl_v;
   auto& ratios_local       = mw_res.ratios_local;
   auto& grad_new_local     = mw_res.grad_new_local;
@@ -443,9 +442,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
     bool safe_to_delay) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  wfc_leader.guardMultiWalkerRes();
-  auto& mw_res       = *wfc_leader.mw_res_;
+  auto& wfc_leader   = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  auto& mw_res       = wfc_leader.mw_res_handle_.getResource();
   auto& phi_vgl_v    = mw_res.phi_vgl_v;
   auto& ratios_local = mw_res.ratios_local;
 
@@ -726,9 +724,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader
                                                        std::vector<PsiValue>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  wfc_leader.guardMultiWalkerRes();
-  auto& mw_res         = *wfc_leader.mw_res_;
+  auto& wfc_leader     = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  auto& mw_res         = wfc_leader.mw_res_handle_.getResource();
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
   auto& grad_new_local = mw_res.grad_new_local;
@@ -1162,11 +1159,8 @@ void DiracDeterminantBatched<DET_ENGINE>::acquireResource(
     ResourceCollection& collection,
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  auto res_ptr     = dynamic_cast<DiracDeterminantBatchedMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("DiracDeterminantBatched::acquireResource dynamic_cast failed");
-  wfc_leader.mw_res_.reset(res_ptr);
+  auto& wfc_leader          = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  wfc_leader.mw_res_handle_ = collection.lendResource<DiracDeterminantBatchedMultiWalkerResource>();
 
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
   for (WaveFunctionComponent& wfc : wfc_list)
@@ -1175,14 +1169,8 @@ void DiracDeterminantBatched<DET_ENGINE>::acquireResource(
     phi_list.push_back(*det.Phi);
   }
   wfc_leader.Phi->acquireResource(collection, phi_list);
-
   wfc_leader.det_engine_.acquireResource(collection);
-
-  auto det_eng_ptr = dynamic_cast<typename DET_ENGINE::DetInverter*>(collection.lendResource().release());
-  if (!det_eng_ptr)
-    throw std::runtime_error(
-        "DiracDeterminantBatched::acquireResource dynamic_cast to DET_ENGINE::DetInverter* failed");
-  wfc_leader.accel_inverter_.reset(det_eng_ptr);
+  wfc_leader.accel_inverter_ = collection.lendResource<typename DET_ENGINE::DetInverter>();
 }
 
 template<typename DET_ENGINE>
@@ -1191,7 +1179,7 @@ void DiracDeterminantBatched<DET_ENGINE>::releaseResource(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  collection.takebackResource(std::move(wfc_leader.mw_res_));
+  collection.takebackResource(wfc_leader.mw_res_handle_);
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
   for (WaveFunctionComponent& wfc : wfc_list)
   {
@@ -1200,7 +1188,7 @@ void DiracDeterminantBatched<DET_ENGINE>::releaseResource(
   }
   wfc_leader.Phi->releaseResource(collection, phi_list);
   wfc_leader.det_engine_.releaseResource(collection);
-  collection.takebackResource(std::move(wfc_leader.accel_inverter_));
+  collection.takebackResource(wfc_leader.accel_inverter_);
 }
 
 template class DiracDeterminantBatched<>;

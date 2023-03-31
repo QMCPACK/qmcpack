@@ -161,7 +161,7 @@ private:
 public:
   DiracMatrixComputeOMPTarget() : Resource("DiracMatrixComputeOMPTarget"), lwork_(0) {}
 
-  Resource* makeClone() const override { return new DiracMatrixComputeOMPTarget(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixComputeOMPTarget>(*this); }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
    * when VALUE_FP and TMAT are the same

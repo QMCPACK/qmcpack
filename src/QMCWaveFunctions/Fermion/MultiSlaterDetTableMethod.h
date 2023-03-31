@@ -184,9 +184,7 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
-                             Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
@@ -265,9 +263,7 @@ private:
    * @param dlogpsi saved derivatives
    * @param det_id provide this argument to affect determinant group id for virtual moves
    */
-  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
-                              Vector<ValueType>& dlogpsi,
-                              int det_id = -1) const;
+  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref, Vector<ValueType>& dlogpsi, int det_id = -1) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
@@ -319,7 +315,10 @@ private:
         : MultiSlaterDetTableMethodMultiWalkerResource()
     {}
 
-    Resource* makeClone() const override { return new MultiSlaterDetTableMethodMultiWalkerResource(*this); }
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<MultiSlaterDetTableMethodMultiWalkerResource>(*this);
+    }
 
     /// grads of each unique determinants for multiple walkers
     Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;
@@ -328,7 +327,7 @@ private:
     OffloadVector<const ValueType*> det_value_ptr_list;
   };
 
-  std::unique_ptr<MultiSlaterDetTableMethodMultiWalkerResource> mw_res_;
+  ResourceHandle<MultiSlaterDetTableMethodMultiWalkerResource> mw_res_handle_;
 
   // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
   RefVectorWithLeader<MultiDiracDeterminant> extract_DetRef_list(
