@@ -13,9 +13,21 @@
 #include "LCAOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/BLAS.hpp"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
+
+struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
+{
+  LCAOMultiWalkerMem() : Resource("LCAOrbitalSet") {}
+  LCAOMultiWalkerMem(const LCAOMultiWalkerMem&) : LCAOMultiWalkerMem() {}
+
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
+
+  OffloadMWVGLArray phi_vgl_v;
+};
+
 LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
     : SPOSet(my_name), BasisSetSize(bs ? bs->getBasisSetSize() : 0), Identity(true)
 {
@@ -82,6 +94,25 @@ void LCAOrbitalSet::checkObject() const
     if (BasisSetSize != C->cols())
       throw std::runtime_error("LCAOrbitalSet::checkObject C columns doesn't match BasisSetSize.");
   }
+}
+
+void LCAOrbitalSet::createResource(ResourceCollection& collection) const
+{
+  auto resource_index = collection.addResource(std::make_unique<LCAOMultiWalkerMem>());
+}
+
+void LCAOrbitalSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader          = spo_list.getCastedLeader<LCAOrbitalSet>();
+  spo_leader.mw_mem_handle_ = collection.lendResource<LCAOMultiWalkerMem>();
+}
+
+void LCAOrbitalSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  collection.takebackResource(spo_leader.mw_mem_handle_);
 }
 
 std::unique_ptr<SPOSet> LCAOrbitalSet::makeClone() const { return std::make_unique<LCAOrbitalSet>(*this); }
@@ -353,7 +384,10 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                                    const RefVector<GradVector>& dpsi_v_list,
                                    const RefVector<ValueVector>& d2psi_v_list) const
 {
-  OffloadMWVGLArray phi_vgl_v;
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& phi_vgl_v  = spo_leader.mw_mem_handle_.getResource().phi_vgl_v;
+
   phi_vgl_v.resize(DIM_VGL, spo_list.size(), OrbitalSetSize);
   mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
 
