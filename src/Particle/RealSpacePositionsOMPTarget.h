@@ -89,8 +89,6 @@ public:
   {
     assert(this == &coords_list.getLeader());
     auto& coords_leader = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
-    // multi walker resource must have been acquired
-    assert(coords_leader.mw_mem_handle_);
 
     const auto nw    = coords_list.size();
     auto& mw_new_pos = coords_leader.mw_mem_handle_.getResource().mw_new_pos;
