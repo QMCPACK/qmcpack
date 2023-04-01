@@ -408,20 +408,21 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   const auto NumOrbitals  = det_leader.NumOrbitals;
   const auto& confgList   = *det_leader.ciConfigList;
 
-  auto* psiV_list_devptr   = det_leader.mw_res_->psiV_deviceptr_list.device_data();
-  auto* psiV_temp_list_ptr = det_leader.mw_res_->psiV_temp_deviceptr_list.data();
+  auto& mw_res             = det_leader.mw_res_handle_.getResource();
+  auto* psiV_list_devptr   = mw_res.psiV_deviceptr_list.device_data();
+  auto* psiV_temp_list_ptr = mw_res.psiV_temp_deviceptr_list.data();
 
-  auto* psiMinv_list_devptr      = det_leader.mw_res_->psiMinv_deviceptr_list.device_data();
-  auto* psiMinv_temp_list_devptr = det_leader.mw_res_->psiMinv_temp_deviceptr_list.device_data();
+  auto* psiMinv_list_devptr      = mw_res.psiMinv_deviceptr_list.device_data();
+  auto* psiMinv_temp_list_devptr = mw_res.psiMinv_temp_deviceptr_list.device_data();
 
-  auto* TpsiM_list_devptr = det_leader.mw_res_->TpsiM_deviceptr_list.device_data();
-  auto* psiM_list_ptr     = det_leader.mw_res_->psiM_deviceptr_list.data();
+  auto* TpsiM_list_devptr = mw_res.TpsiM_deviceptr_list.device_data();
+  auto* psiM_list_ptr     = mw_res.psiM_deviceptr_list.data();
 
-  auto& curRatio_list = det_leader.mw_res_->curRatio_list;
+  auto& curRatio_list = mw_res.curRatio_list;
   curRatio_list.resize(nw);
   auto* curRatio_list_ptr = curRatio_list.data();
 
-  auto& inv_curRatio_list = det_leader.mw_res_->inv_curRatio_list;
+  auto& inv_curRatio_list = mw_res.inv_curRatio_list;
   inv_curRatio_list.resize(nw);
   auto* inv_curRatio_list_ptr = inv_curRatio_list.data();
 
@@ -455,9 +456,9 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
       inv_curRatio_list_ptr[iw] = ValueType(1) / c_ratio;
     }
 
-    det_leader.mw_InverseUpdateByColumn(*det_leader.mw_res_, WorkingIndex, inv_curRatio_list,
-                                        det_leader.mw_res_->psiV_temp_deviceptr_list,
-                                        det_leader.mw_res_->psiMinv_temp_deviceptr_list, psiMinv_rows);
+    det_leader.mw_InverseUpdateByColumn(det_leader.mw_res_handle_, WorkingIndex, inv_curRatio_list,
+                                        mw_res.psiV_temp_deviceptr_list, mw_res.psiMinv_temp_deviceptr_list,
+                                        psiMinv_rows);
     ///This is needed by acceptMove. Eventually acceptMove will need to become mw_acceptMove.
     {
       ScopedTimer local_timer(det_leader.transferD2H_timer);
@@ -465,9 +466,9 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
         psiMinv_temp_list[iw].get().updateFrom();
     }
 
-    auto& det0_list = det_leader.mw_res_->cone_vec;
-    det_leader.mw_buildTableMatrix_calculateRatios(*det_leader.mw_res_, det_leader.ReferenceDeterminant, det0_list,
-                                                   psiMinv_temp_list, TpsiM_list, *det_leader.detData,
+    auto& det0_list = mw_res.cone_vec;
+    det_leader.mw_buildTableMatrix_calculateRatios(det_leader.mw_res_handle_, det_leader.ReferenceDeterminant,
+                                                   det0_list, psiMinv_temp_list, TpsiM_list, *det_leader.detData,
                                                    *det_leader.uniquePairs, *det_leader.DetSigns, table_matrix_list,
                                                    new_ratios_to_ref_list);
 
@@ -696,8 +697,9 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   dpsiMinv_list.reserve(nw);
   WorkSpace_list.reserve(nw);
 
-  auto& ratioGradRef_list = det_leader.mw_res_->ratioGradRef_list;
-  auto& det0_grad_list    = det_leader.mw_res_->det0_grad_list;
+  auto& mw_res            = det_leader.mw_res_handle_.getResource();
+  auto& ratioGradRef_list = mw_res.ratioGradRef_list;
+  auto& det0_grad_list    = mw_res.det0_grad_list;
   ratioGradRef_list.resize(nw);
   det0_grad_list.resize(nw);
 
@@ -747,26 +749,26 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   const auto psiM_num_cols  = psiM_list[0].get().cols();
   const auto& confgList     = *det_leader.ciConfigList;
 
-  auto* psiV_list_devptr         = det_leader.mw_res_->psiV_deviceptr_list.device_data();
-  auto* psiV_temp_list_ptr       = det_leader.mw_res_->psiV_temp_deviceptr_list.data();
-  auto* TpsiM_list_devptr        = det_leader.mw_res_->TpsiM_deviceptr_list.device_data();
-  auto* psiM_list_ptr            = det_leader.mw_res_->psiM_deviceptr_list.data();
-  auto* psiMinv_list_devptr      = det_leader.mw_res_->psiMinv_deviceptr_list.device_data();
-  auto* dpsiMinv_list_devptr     = det_leader.mw_res_->dpsiMinv_deviceptr_list.device_data();
-  auto* psiMinv_temp_list_devptr = det_leader.mw_res_->psiMinv_temp_deviceptr_list.device_data();
+  auto* psiV_list_devptr         = mw_res.psiV_deviceptr_list.device_data();
+  auto* psiV_temp_list_ptr       = mw_res.psiV_temp_deviceptr_list.data();
+  auto* TpsiM_list_devptr        = mw_res.TpsiM_deviceptr_list.device_data();
+  auto* psiM_list_ptr            = mw_res.psiM_deviceptr_list.data();
+  auto* psiMinv_list_devptr      = mw_res.psiMinv_deviceptr_list.device_data();
+  auto* dpsiMinv_list_devptr     = mw_res.dpsiMinv_deviceptr_list.device_data();
+  auto* psiMinv_temp_list_devptr = mw_res.psiMinv_temp_deviceptr_list.device_data();
 
-  auto& curRatio_list = det_leader.mw_res_->curRatio_list;
+  auto& curRatio_list = mw_res.curRatio_list;
   curRatio_list.resize(nw);
   auto* curRatio_list_ptr = curRatio_list.data();
 
-  auto& inv_curRatio_list = det_leader.mw_res_->inv_curRatio_list;
+  auto& inv_curRatio_list = mw_res.inv_curRatio_list;
   inv_curRatio_list.resize(nw);
   auto* inv_curRatio_list_ptr = inv_curRatio_list.data();
 
   auto* det0_grad_list_ptr = det0_grad_list.data();
   auto* confgListOccup_ptr = det_leader.refdet_occup->data();
 
-  auto* dpsiV_list_ptr        = det_leader.mw_res_->dpsiV_deviceptr_list.data();
+  auto* dpsiV_list_ptr        = mw_res.dpsiV_deviceptr_list.data();
   auto* ratioGradRef_list_ptr = ratioGradRef_list.data();
 
   {
@@ -807,9 +809,9 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
       throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
 
-    det_leader.mw_InverseUpdateByColumn(*det_leader.mw_res_, WorkingIndex, inv_curRatio_list,
-                                        det_leader.mw_res_->psiV_temp_deviceptr_list,
-                                        det_leader.mw_res_->psiMinv_temp_deviceptr_list, psiMinv_rows);
+    det_leader.mw_InverseUpdateByColumn(det_leader.mw_res_handle_, WorkingIndex, inv_curRatio_list,
+                                        mw_res.psiV_temp_deviceptr_list, mw_res.psiMinv_temp_deviceptr_list,
+                                        psiMinv_rows);
 
     ///This is needed by Host in acceptMove. Eventually acceptMove will need to become mw_acceptMove.
     {
@@ -818,9 +820,9 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
         psiMinv_temp_list[iw].get().updateFrom();
     }
 
-    auto& det0_list = det_leader.mw_res_->cone_vec;
-    det_leader.mw_buildTableMatrix_calculateRatios(*det_leader.mw_res_, det_leader.ReferenceDeterminant, det0_list,
-                                                   psiMinv_temp_list, TpsiM_list, *det_leader.detData,
+    auto& det0_list = mw_res.cone_vec;
+    det_leader.mw_buildTableMatrix_calculateRatios(det_leader.mw_res_handle_, det_leader.ReferenceDeterminant,
+                                                   det0_list, psiMinv_temp_list, TpsiM_list, *det_leader.detData,
                                                    *det_leader.uniquePairs, *det_leader.DetSigns, table_matrix_list,
                                                    new_ratios_to_ref_list);
 
@@ -843,9 +845,9 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
         }
       }
 
-      det_leader.mw_InverseUpdateByColumn(*det_leader.mw_res_, WorkingIndex, inv_curRatio_list,
-                                          det_leader.mw_res_->psiV_temp_deviceptr_list,
-                                          det_leader.mw_res_->dpsiMinv_deviceptr_list, psiMinv_rows);
+      det_leader.mw_InverseUpdateByColumn(det_leader.mw_res_handle_, WorkingIndex, inv_curRatio_list,
+                                          mw_res.psiV_temp_deviceptr_list, mw_res.dpsiMinv_deviceptr_list,
+                                          psiMinv_rows);
 
       PRAGMA_OFFLOAD("omp target teams distribute map(to:dpsiV_list_ptr[:nw], curRatio_list_ptr[:nw]) \
 		                       map(always,from:det0_grad_list_ptr[:nw]) \
@@ -857,7 +859,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
           TpsiM_list_devptr[iw][i * TpsiM_num_cols + WorkingIndex] = dpsiV_list_ptr[iw][i][idim];
       }
 
-      det_leader.mw_buildTableMatrix_calculateGradRatios(*det_leader.mw_res_, det_leader.ReferenceDeterminant,
+      det_leader.mw_buildTableMatrix_calculateGradRatios(det_leader.mw_res_handle_, det_leader.ReferenceDeterminant,
                                                          WorkingIndex, idim, det_leader.getNumDets(), det0_grad_list,
                                                          dpsiMinv_list, TpsiM_list, *det_leader.detData,
                                                          *det_leader.uniquePairs, *det_leader.DetSigns, WorkSpace_list,
@@ -1008,20 +1010,21 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   const auto dpsiM_rows   = dpsiM_list[0].get().rows();
   const auto& confgList   = *det_leader.ciConfigList;
 
-  auto& ratioG_list = det_leader.mw_res_->curRatio_list;
+  auto& mw_res      = det_leader.mw_res_handle_.getResource();
+  auto& ratioG_list = mw_res.curRatio_list;
   ratioG_list.resize(nw);
   auto* ratioG_list_ptr = ratioG_list.data();
 
-  auto& inv_ratioG_list = det_leader.mw_res_->inv_curRatio_list;
+  auto& inv_ratioG_list = mw_res.inv_curRatio_list;
   inv_ratioG_list.resize(nw);
   auto* inv_ratioG_list_ptr = inv_ratioG_list.data();
 
-  auto* psiMinv_list_devptr  = det_leader.mw_res_->psiMinv_deviceptr_list.device_data();
-  auto* dpsiMinv_list_devptr = det_leader.mw_res_->dpsiMinv_deviceptr_list.device_data();
-  auto* TpsiM_list_devptr    = det_leader.mw_res_->TpsiM_deviceptr_list.data();
-  auto* psiM_list_ptr        = det_leader.mw_res_->psiM_deviceptr_list.data();
-  auto* psiV_temp_list_ptr   = det_leader.mw_res_->psiV_temp_deviceptr_list.data();
-  auto* dpsiM_list_ptr       = det_leader.mw_res_->dpsiM_deviceptr_list.data();
+  auto* psiMinv_list_devptr  = mw_res.psiMinv_deviceptr_list.device_data();
+  auto* dpsiMinv_list_devptr = mw_res.dpsiMinv_deviceptr_list.device_data();
+  auto* TpsiM_list_devptr    = mw_res.TpsiM_deviceptr_list.data();
+  auto* psiM_list_ptr        = mw_res.psiM_deviceptr_list.data();
+  auto* psiV_temp_list_ptr   = mw_res.psiV_temp_deviceptr_list.data();
+  auto* dpsiM_list_ptr       = mw_res.dpsiM_deviceptr_list.data();
   auto* confgListOccup_ptr   = det_leader.refdet_occup->data();
 
   {
@@ -1057,9 +1060,9 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
         inv_ratioG_list_ptr[iw] = ValueType(1) / ratioG_local;
       }
 
-      det_leader.mw_InverseUpdateByColumn(*det_leader.mw_res_, WorkingIndex, inv_ratioG_list,
-                                          det_leader.mw_res_->psiV_temp_deviceptr_list,
-                                          det_leader.mw_res_->dpsiMinv_deviceptr_list, psiMinv_rows);
+      det_leader.mw_InverseUpdateByColumn(det_leader.mw_res_handle_, WorkingIndex, inv_ratioG_list,
+                                          mw_res.psiV_temp_deviceptr_list, mw_res.dpsiMinv_deviceptr_list,
+                                          psiMinv_rows);
 
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:dpsiM_list_ptr[:nw]) \
 		                                              map(always, to: TpsiM_list_devptr[:nw])")
@@ -1069,7 +1072,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
               dpsiM_list_ptr[iw][dpsiM_cols * WorkingIndex + i][idim];
 
 
-      det_leader.mw_buildTableMatrix_calculateGradRatios(*det_leader.mw_res_, det_leader.ReferenceDeterminant,
+      det_leader.mw_buildTableMatrix_calculateGradRatios(det_leader.mw_res_handle_, det_leader.ReferenceDeterminant,
                                                          WorkingIndex, idim, det_leader.getNumDets(), ratioG_list,
                                                          dpsiMinv_list, TpsiM_list, *det_leader.detData,
                                                          *det_leader.uniquePairs, *det_leader.DetSigns, WorkSpace_list,

@@ -146,10 +146,10 @@ public:
   /** Listener Registration
    *  This must be called on a QMCHamiltonian that has acquired multiwalker resources
    */
-  static void mw_registerKineticListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
-  static void mw_registerLocalEnergyListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
-  static void mw_registerLocalPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
-  static void mw_registerLocalIonPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerKineticListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalEnergyListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalIonPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
 
   /** Some Hamiltonian components need to be informed that they are in a per particle reporting
    *  situation so additional state can be added either to them or the objects they are strongly coupled with.
@@ -488,20 +488,9 @@ private:
   Array<TraceReal, 2>* position_sample;
 #endif
 
-  struct QMCHamiltonianMultiWalkerResource : public Resource
-  {
-    QMCHamiltonianMultiWalkerResource() : Resource("QMCHamiltonian") {}
-    // the listeners represet the connection of a particular crowds estimators to the crowds lead QMCHamiltonian.
-    // So you can not clone them.
-    Resource* makeClone() const override { return new QMCHamiltonianMultiWalkerResource(*this); }
-    std::vector<ListenerVector<RealType>> kinetic_listeners_;
-    std::vector<ListenerVector<RealType>> potential_listeners_;
-    std::vector<ListenerVector<RealType>> ion_kinetic_listeners_;
-    std::vector<ListenerVector<RealType>> ion_potential_listeners_;
-  };
-
   /// multiwalker shared resource
-  ResourceHandle<QMCHamiltonianMultiWalkerResource> mw_res_;
+  struct QMCHamiltonianMultiWalkerResource;
+  ResourceHandle<QMCHamiltonianMultiWalkerResource> mw_res_handle_;
 };
 } // namespace qmcplusplus
 #endif

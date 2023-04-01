@@ -28,6 +28,21 @@
 
 namespace qmcplusplus
 {
+struct QMCHamiltonian::QMCHamiltonianMultiWalkerResource : public Resource
+{
+  QMCHamiltonianMultiWalkerResource() : Resource("QMCHamiltonian") {}
+  // the listeners represet the connection of a particular crowds estimators to the crowds lead QMCHamiltonian.
+  // So you can not clone them.
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<QMCHamiltonianMultiWalkerResource>(*this);
+  }
+  std::vector<ListenerVector<RealType>> kinetic_listeners_;
+  std::vector<ListenerVector<RealType>> potential_listeners_;
+  std::vector<ListenerVector<RealType>> ion_kinetic_listeners_;
+  std::vector<ListenerVector<RealType>> ion_potential_listeners_;
+};
+
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian(const std::string& aname)
@@ -260,31 +275,30 @@ void QMCHamiltonian::registerCollectables(std::vector<ObservableHelper>& h5desc,
     auxH[i]->registerCollectables(h5desc, file);
 }
 
-void QMCHamiltonian::mw_registerKineticListener(const QMCHamiltonian& leader, ListenerVector<RealType> listener)
+void QMCHamiltonian::mw_registerKineticListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener)
 {
   // This creates a state replication burder of unknown scope when operators are cloned.
-  leader.mw_res_->kinetic_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().kinetic_listeners_.push_back(listener);
 }
 
-void QMCHamiltonian::mw_registerLocalEnergyListener(const QMCHamiltonian& leader, ListenerVector<RealType> listener)
+void QMCHamiltonian::mw_registerLocalEnergyListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener)
 {
   // This creates a state replication burder of unknown scope when operators are cloned.
   // A local energy listener listens to both the kinetic operator and all involved in the potential.
-  leader.mw_res_->kinetic_listeners_.push_back(listener);
-  leader.mw_res_->potential_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().kinetic_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().potential_listeners_.push_back(listener);
 }
 
-void QMCHamiltonian::mw_registerLocalPotentialListener(const QMCHamiltonian& leader, ListenerVector<RealType> listener)
+void QMCHamiltonian::mw_registerLocalPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener)
 {
   // This creates a state replication burder of unknown scope when operators are cloned.
-  leader.mw_res_->potential_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().potential_listeners_.push_back(listener);
 }
 
-void QMCHamiltonian::mw_registerLocalIonPotentialListener(const QMCHamiltonian& leader,
-                                                          ListenerVector<RealType> listener)
+void QMCHamiltonian::mw_registerLocalIonPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener)
 {
   // This creates a state replication burder of unknown scope when operators are cloned.
-  leader.mw_res_->ion_potential_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().ion_potential_listeners_.push_back(listener);
 }
 
 void QMCHamiltonian::informOperatorsOfListener()
@@ -622,10 +636,10 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
   {
     ScopedTimer h_timer(ham_leader.my_timers_[kinetic_index]);
     const auto HC_list(extract_HC_list(ham_list, kinetic_index));
-    if (ham_leader.mw_res_->kinetic_listeners_.size() > 0)
-      ham_leader.H[kinetic_index]->mw_evaluatePerParticle(HC_list, wf_list, p_list,
-                                                          ham_leader.mw_res_->kinetic_listeners_,
-                                                          ham_leader.mw_res_->ion_kinetic_listeners_);
+    if (ham_leader.mw_res_handle_.getResource().kinetic_listeners_.size() > 0)
+      ham_leader.H[kinetic_index]
+          ->mw_evaluatePerParticle(HC_list, wf_list, p_list, ham_leader.mw_res_handle_.getResource().kinetic_listeners_,
+                                   ham_leader.mw_res_handle_.getResource().ion_kinetic_listeners_);
     else
       ham_leader.H[kinetic_index]->mw_evaluate(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
@@ -652,9 +666,10 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
     //   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
     // };
 
-    if (ham_leader.mw_res_->potential_listeners_.size() > 0)
-      ham_leader.H[i_ham_op]->mw_evaluatePerParticle(HC_list, wf_list, p_list, ham_leader.mw_res_->potential_listeners_,
-                                                     ham_leader.mw_res_->ion_potential_listeners_);
+    if (ham_leader.mw_res_handle_.getResource().potential_listeners_.size() > 0)
+      ham_leader.H[i_ham_op]->mw_evaluatePerParticle(HC_list, wf_list, p_list,
+                                                     ham_leader.mw_res_handle_.getResource().potential_listeners_,
+                                                     ham_leader.mw_res_handle_.getResource().ion_potential_listeners_);
     else
       ham_leader.H[i_ham_op]->mw_evaluate(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
@@ -862,10 +877,11 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
   {
     ScopedTimer h_timer(ham_leader.my_timers_[kinetic_index]);
     const auto HC_list(extract_HC_list(ham_list, kinetic_index));
-    if (ham_leader.mw_res_->kinetic_listeners_.size() > 0)
-      ham_leader.H[kinetic_index]->mw_evaluatePerParticleWithToperator(HC_list, wf_list, p_list,
-                                                                       ham_leader.mw_res_->kinetic_listeners_,
-                                                                       ham_leader.mw_res_->ion_kinetic_listeners_);
+    if (ham_leader.mw_res_handle_.getResource().kinetic_listeners_.size() > 0)
+      ham_leader.H[kinetic_index]
+          ->mw_evaluatePerParticleWithToperator(HC_list, wf_list, p_list,
+                                                ham_leader.mw_res_handle_.getResource().kinetic_listeners_,
+                                                ham_leader.mw_res_handle_.getResource().ion_kinetic_listeners_);
     else
       ham_leader.H[kinetic_index]->mw_evaluateWithToperator(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
@@ -876,10 +892,11 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
   {
     ScopedTimer local_timer(ham_leader.my_timers_[i_ham_op]);
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
-    if (ham_leader.mw_res_->potential_listeners_.size() > 0)
-      ham_leader.H[i_ham_op]->mw_evaluatePerParticleWithToperator(HC_list, wf_list, p_list,
-                                                                  ham_leader.mw_res_->potential_listeners_,
-                                                                  ham_leader.mw_res_->ion_potential_listeners_);
+    if (ham_leader.mw_res_handle_.getResource().potential_listeners_.size() > 0)
+      ham_leader.H[i_ham_op]
+          ->mw_evaluatePerParticleWithToperator(HC_list, wf_list, p_list,
+                                                ham_leader.mw_res_handle_.getResource().potential_listeners_,
+                                                ham_leader.mw_res_handle_.getResource().ion_potential_listeners_);
     else
       ham_leader.H[i_ham_op]->mw_evaluateWithToperator(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); ++iw)
@@ -1080,11 +1097,8 @@ void QMCHamiltonian::createResource(ResourceCollection& collection) const
 void QMCHamiltonian::acquireResource(ResourceCollection& collection,
                                      const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
-  auto& ham_leader = ham_list.getLeader();
-  ham_leader.mw_res_.reset(
-      dynamic_cast<typename decltype(ham_leader.mw_res_)::pointer>(collection.lendResource().release()));
-  if (!ham_leader.mw_res_)
-    throw std::runtime_error("QMCHamilonian::acquireResource dynamic_cast failed");
+  auto& ham_leader          = ham_list.getLeader();
+  ham_leader.mw_res_handle_ = collection.lendResource<QMCHamiltonianMultiWalkerResource>();
   for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
   {
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
@@ -1096,7 +1110,7 @@ void QMCHamiltonian::releaseResource(ResourceCollection& collection,
                                      const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
   auto& ham_leader = ham_list.getLeader();
-  collection.takebackResource(std::move(ham_leader.mw_res_));
+  collection.takebackResource(ham_leader.mw_res_handle_);
   for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
   {
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
