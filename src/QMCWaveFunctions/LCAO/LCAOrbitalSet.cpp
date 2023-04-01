@@ -26,6 +26,8 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
 
   OffloadMWVGLArray phi_vgl_v;
+  // [5][NW][NumAO]
+  OffloadMWVGLArray basis_mw;
 };
 
 LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
@@ -411,8 +413,9 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                                            int iat,
                                            OffloadMWVGLArray& phi_vgl_v) const
 {
-  // [5][NW][NumAO]
-  OffloadMWVGLArray basis_mw;
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& basis_mw   = spo_leader.mw_mem_handle_.getResource().basis_mw;
   basis_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
 
   if (Identity)
