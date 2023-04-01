@@ -296,6 +296,10 @@ private:
 
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
+  /// timer for basis set
+  NewTimer& basis_timer_;
+  /// timer for MO
+  NewTimer& mo_timer_;
 };
 } // namespace qmcplusplus
 #endif
