@@ -244,9 +244,8 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
   }
 }
 
-void VariableSet::saveAsHDF(const std::string& filename) const
+void VariableSet::writeToHDF(const std::string& filename, qmcplusplus::hdf_archive& hout) const
 {
-  qmcplusplus::hdf_archive hout;
   hout.create(filename);
   std::vector<int> vp_file_version{1, 0, 0};
   hout.write(vp_file_version, "version");
@@ -269,9 +268,8 @@ void VariableSet::saveAsHDF(const std::string& filename) const
   hout.pop();
 }
 
-void VariableSet::readFromHDF(const std::string& filename)
+void VariableSet::readFromHDF(const std::string& filename, qmcplusplus::hdf_archive& hin)
 {
-  qmcplusplus::hdf_archive hin;
   if (!hin.open(filename, H5F_ACC_RDONLY))
   {
     std::ostringstream err_msg;
@@ -301,6 +299,8 @@ void VariableSet::readFromHDF(const std::string& filename)
     if (find(vp_name) != end())
       (*this)[vp_name] = param_values[i];
   }
+
+  hin.pop();
 }
 
 

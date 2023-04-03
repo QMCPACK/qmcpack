@@ -22,6 +22,11 @@
 #include <complex>
 #include "Configuration.h"
 
+namespace qmcplusplus
+{
+class hdf_archive;
+}
+
 namespace optimize
 {
 /** An enum useful for determining the type of parameter is being optimized.
@@ -324,11 +329,11 @@ struct VariableSet
   void print(std::ostream& os, int leftPadSpaces = 0, bool printHeader = false) const;
 
   // Save variational parameters to an HDF file
-  void saveAsHDF(const std::string& filename) const;
+  void writeToHDF(const std::string& filename, qmcplusplus::hdf_archive& hout) const;
 
   /// Read variational parameters from an HDF file.
   /// This assumes VariableSet is already set up.
-  void readFromHDF(const std::string& filename);
+  void readFromHDF(const std::string& filename, qmcplusplus::hdf_archive& hin);
 };
 } // namespace optimize
 
