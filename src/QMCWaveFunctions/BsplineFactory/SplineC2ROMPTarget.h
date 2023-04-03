@@ -82,7 +82,7 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_;
+  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_handle_;
 
   ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
@@ -134,18 +134,15 @@ public:
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
     assert(this == &spo_list.getLeader());
-    auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-    auto res_ptr     = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, TT>*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("SplineC2ROMPTarget::acquireResource dynamic_cast failed");
-    phi_leader.mw_mem_.reset(res_ptr);
+    auto& phi_leader          = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+    phi_leader.mw_mem_handle_ = collection.lendResource<SplineOMPTargetMultiWalkerMem<ST, TT>>();
   }
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
     assert(this == &spo_list.getLeader());
     auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-    collection.takebackResource(std::move(phi_leader.mw_mem_));
+    collection.takebackResource(phi_leader.mw_mem_handle_);
   }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2ROMPTarget>(*this); }

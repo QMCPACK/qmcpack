@@ -265,9 +265,6 @@ void test_He_mw(bool transform)
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, P_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
-  //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
-  //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
-  // FIXME: add resource management
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
 
   CHECK(std::real(psi_list[0].get()[0]) == Approx(psi[0]));
@@ -430,9 +427,15 @@ void test_EtOH_mw(bool transform)
   RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
   RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
 
-  //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
-  //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
-  // FIXME: add resource management
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec.createResource(pset_res);
+  sposet->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, P_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
 
   for (size_t iorb = 0; iorb < n_mo; iorb++)

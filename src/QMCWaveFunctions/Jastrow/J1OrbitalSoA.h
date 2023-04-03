@@ -18,6 +18,7 @@
 #include <map>
 #include <numeric>
 #include "Configuration.h"
+#include <ResourceHandle.h>
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
@@ -101,7 +102,7 @@ class J1OrbitalSoA : public WaveFunctionComponent
   std::vector<GradDerivVec> gradLogPsi;
   std::vector<ValueDerivVec> lapLogPsi;
 
-  std::unique_ptr<J1OrbitalSoAMultiWalkerMem<RealType>> mw_mem_;
+  ResourceHandle<J1OrbitalSoAMultiWalkerMem<RealType>> mw_mem_handle_;
 
   void resizeWFOptVectors()
   {

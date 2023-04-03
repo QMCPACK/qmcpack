@@ -197,23 +197,9 @@ private:
   /// Timer for offload part
   NewTimer& offload_timer_;
 
-  struct CoulombPBCAAMultiWalkerResource : public Resource
-  {
-    CoulombPBCAAMultiWalkerResource() : Resource("CoulombPBCAA") {}
-
-    Resource* makeClone() const override { return new CoulombPBCAAMultiWalkerResource(*this); }
-
-    Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
-
-    /// a walkers worth of per particle coulomb AA potential values
-    Vector<RealType> v_sample;
-
-    /// constant values per particle for coulomb AA potential
-    Vector<RealType> pp_consts;
-  };
-
   /// multiwalker shared resource
-  ResourceHandle<CoulombPBCAAMultiWalkerResource> mw_res_;
+  struct CoulombPBCAAMultiWalkerResource;
+  ResourceHandle<CoulombPBCAAMultiWalkerResource> mw_res_handle_;
 
   /** constructor code factored out
    */

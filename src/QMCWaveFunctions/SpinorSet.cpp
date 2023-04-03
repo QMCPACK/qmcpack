@@ -20,7 +20,7 @@ struct SpinorSet::SpinorSetMultiWalkerResource : public Resource
 {
   SpinorSetMultiWalkerResource() : Resource("SpinorSet") {}
   SpinorSetMultiWalkerResource(const SpinorSetMultiWalkerResource&) : SpinorSetMultiWalkerResource() {}
-  Resource* makeClone() const override { return new SpinorSetMultiWalkerResource(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<SpinorSetMultiWalkerResource>(*this); }
   OffloadMWVGLArray up_phi_vgl_v, dn_phi_vgl_v;
   std::vector<ValueType> up_ratios, dn_ratios;
   std::vector<GradType> up_grads, dn_grads;
@@ -211,7 +211,7 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
   const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size(2);
 
-  auto& mw_res       = *spo_leader.mw_res_;
+  auto& mw_res       = spo_leader.mw_res_handle_.getResource();
   auto& up_phi_vgl_v = mw_res.up_phi_vgl_v;
   auto& dn_phi_vgl_v = mw_res.dn_phi_vgl_v;
   auto& up_ratios    = mw_res.up_ratios;
@@ -521,10 +521,7 @@ void SpinorSet::acquireResource(ResourceCollection& collection, const RefVectorW
   auto& dn_spo_leader             = dn_spo_list.getLeader();
   up_spo_leader.acquireResource(collection, up_spo_list);
   dn_spo_leader.acquireResource(collection, dn_spo_list);
-  auto res_ptr = dynamic_cast<SpinorSetMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("SpinorSet::acquireResource dynamic_cast failed");
-  spo_leader.mw_res_.reset(res_ptr);
+  spo_leader.mw_res_handle_ = collection.lendResource<SpinorSetMultiWalkerResource>();
 }
 
 void SpinorSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
@@ -535,7 +532,7 @@ void SpinorSet::releaseResource(ResourceCollection& collection, const RefVectorW
   auto& dn_spo_leader             = dn_spo_list.getLeader();
   up_spo_leader.releaseResource(collection, up_spo_list);
   dn_spo_leader.releaseResource(collection, dn_spo_list);
-  collection.takebackResource(std::move(spo_leader.mw_res_));
+  collection.takebackResource(spo_leader.mw_res_handle_);
 }
 
 std::pair<RefVectorWithLeader<SPOSet>, RefVectorWithLeader<SPOSet>> SpinorSet::extractSpinComponentRefList(

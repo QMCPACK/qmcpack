@@ -32,7 +32,11 @@ struct NonLocalECPotential::NonLocalECPotentialMultiWalkerResource : public Reso
 {
   NonLocalECPotentialMultiWalkerResource() : Resource("NonLocalECPotential") {}
 
-  Resource* makeClone() const override;
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<NonLocalECPotentialMultiWalkerResource>(*this);
+  }
+
 
   ResourceCollection collection{"NLPPcollection"};
   /// a crowds worth of per particle nonlocal ecp potential values
@@ -336,8 +340,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
   if (listeners)
   {
-    auto& ve_samples = O_leader.mw_res_->ve_samples;
-    auto& vi_samples = O_leader.mw_res_->vi_samples;
+    auto& ve_samples = O_leader.mw_res_handle_.getResource().ve_samples;
+    auto& vi_samples = O_leader.mw_res_handle_.getResource().vi_samples;
     ve_samples.resize(nw, pset_leader.getTotalNum());
     vi_samples.resize(nw, O_leader.IonConfig.getTotalNum());
   }
@@ -397,7 +401,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       }
 
       NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                           O_leader.mw_res_->collection, O_leader.use_DLA);
+                                           O_leader.mw_res_handle_.getResource().collection, O_leader.use_DLA);
 
       // Right now this is just over walker but could and probably should be over a set
       // larger than the walker count.  The easiest way to not complicate the per particle
@@ -410,8 +414,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
         if (listeners)
         {
-          auto& ve_samples = O_leader.mw_res_->ve_samples;
-          auto& vi_samples = O_leader.mw_res_->vi_samples;
+          auto& ve_samples = O_leader.mw_res_handle_.getResource().ve_samples;
+          auto& vi_samples = O_leader.mw_res_handle_.getResource().vi_samples;
           // CAUTION! This may not be so simple in the future
           int iw = j;
           ve_samples(iw, batch_list[j].get().electron_id) += pairpots[j];
@@ -435,8 +439,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   {
     // Motivation for this repeated definition is to make factoring this listener code out easy
     // and making it ignorable when reading this function.
-    auto& ve_samples  = O_leader.mw_res_->ve_samples;
-    auto& vi_samples  = O_leader.mw_res_->vi_samples;
+    auto& ve_samples  = O_leader.mw_res_handle_.getResource().ve_samples;
+    auto& vi_samples  = O_leader.mw_res_handle_.getResource().vi_samples;
     int num_electrons = pset_leader.getTotalNum();
     for (int iw = 0; iw < nw; ++iw)
     {
@@ -777,18 +781,15 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
 void NonLocalECPotential::acquireResource(ResourceCollection& collection,
                                           const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& O_leader = o_list.getCastedLeader<NonLocalECPotential>();
-  auto res_ptr   = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
-  O_leader.mw_res_.reset(res_ptr);
+  auto& O_leader          = o_list.getCastedLeader<NonLocalECPotential>();
+  O_leader.mw_res_handle_ = collection.lendResource<NonLocalECPotentialMultiWalkerResource>();
 }
 
 void NonLocalECPotential::releaseResource(ResourceCollection& collection,
                                           const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& O_leader = o_list.getCastedLeader<NonLocalECPotential>();
-  collection.takebackResource(std::move(O_leader.mw_res_));
+  collection.takebackResource(O_leader.mw_res_handle_);
 }
 
 std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -873,11 +874,6 @@ void NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& pl
       }
     }
   }
-}
-
-Resource* NonLocalECPotential::NonLocalECPotentialMultiWalkerResource::makeClone() const
-{
-  return new NonLocalECPotentialMultiWalkerResource(*this);
 }
 
 } // namespace qmcplusplus
