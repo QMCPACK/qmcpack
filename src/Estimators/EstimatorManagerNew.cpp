@@ -18,6 +18,7 @@
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
+#include "SHOverlap.h"
 #include "PerParticleHamiltonianLogger.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
@@ -98,6 +99,7 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
                                                      pset.getLattice()) ||
+          createEstimator<SHOverlapInput>(est_input) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank())))

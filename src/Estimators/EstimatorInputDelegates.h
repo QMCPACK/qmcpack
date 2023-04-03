@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 /** \file
- *  Compilation units that construct QMCDriverInput need visibility to the actual input classe
+ *  Compilation units that construct QMCDriverInput need visibility to the actual input classes
  *  types in the delegation tree.
  */
 #ifndef QMCPLUSPLUS_QMCDRIVERINPUTDELEGATES_H
@@ -20,5 +20,6 @@
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"
 #include "PerParticleHamiltonianLoggerInput.h"
+#include "SHOverlapInput.h"
 
 #endif
