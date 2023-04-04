@@ -231,5 +231,31 @@ void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
   }
 }
 
+void SpinDensityNew::write(hdf_archive& file)
+{
+  if (h5desc_.empty())
+    return;
+
+  auto writeFullPrecData = [&](auto& fp_data) {
+    std::size_t offset = 0;
+    for (auto& h5d : h5desc_)
+    {
+      h5d.write(fp_data.data() + offset, file);
+      offset += derived_parameters_.npoints;
+    }
+  };
+
+#ifdef MIXED_PRECISION
+  std::vector<QMCT::FullPrecRealType> expanded_data(data_.size(), 0.0);
+  std::copy_n(data_.begin(), data_.size(), expanded_data.begin());
+  assert(!data_.empty());
+  writeFullPrecData(expanded_data);
+  // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
+  // std::cout << "data size: " << data_->size() << " : " << total << '\n';
+
+#else
+  writeFullPrecData(data_);
+#endif
+}
 
 } // namespace qmcplusplus

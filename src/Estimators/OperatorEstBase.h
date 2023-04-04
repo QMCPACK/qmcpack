@@ -103,10 +103,12 @@ public:
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *
+   *  You need to override this if your estimator does anything more than just write its data to a single h5 descriptor.
+   *
    *  if you haven't registered Operator Estimator 
-   *  this will do nothing.
+   *  this will/should do nothing.
    */
-  void write(hdf_archive& file);
+  virtual void write(hdf_archive& file);
 
   /** zero data appropriately for the DataLocality
    */

@@ -109,6 +109,10 @@ public:
    */
   void registerOperatorEstimator(hdf_archive& file) override;
 
+  /** Custom write method since spin density new has its own hdf5 format
+   */
+  void write(hdf_archive& file) override;
+
 private:
   SpinDensityNew(const SpinDensityNew& sdn) = default;
 

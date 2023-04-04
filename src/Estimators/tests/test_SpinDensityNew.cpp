@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -15,6 +15,8 @@
 #include "SpinDensityInput.h"
 #include "ValidSpinDensityInput.h"
 #include "SpinDensityNew.h"
+#include "hdf/hdf_archive.h"
+#include "hdf/hdf_path.h"
 #include "RandomForTest.h"
 #include "ParticleSet.h"
 #include "TrialWaveFunction.h"
@@ -28,8 +30,9 @@
 namespace qmcplusplus
 {
 
-using QMCT = QMCTraits;
-using Real = QMCTraits::RealType;
+using QMCT         = QMCTraits;
+using Real         = QMCTraits::RealType;
+using FullPrecReal = QMCTraits::FullPrecRealType;
 
 namespace testing
 {
@@ -45,6 +48,8 @@ public:
     CHECK(sdn.species_size_ == sdn2.species_size_);
     CHECK(sdn.data_ != sdn2.data_);
   }
+
+  const std::string& getName(const SpinDensityNew& sdn) { return sdn.my_name_; }
 };
 } // namespace testing
 
@@ -390,5 +395,76 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
   sumAndCheck(data_ref_crowd);
 }
 
+TEST_CASE("SpinDensityNew::registerAndWrite", "[estimators]")
+{
+  auto checkWriteForNParticles = [](int n_elec) {
+    using MCPWalker = OperatorEstBase::MCPWalker;
+    using QMCT      = QMCTraits;
+
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    SpinDensityInput sdi(node);
+    SpeciesSet species_set;
+    int ispecies = species_set.addSpecies("u");
+    ispecies     = species_set.addSpecies("d");
+    CHECK(ispecies == 1);
+    int i_msize             = species_set.addAttribute("membersize");
+    species_set(i_msize, 0) = n_elec / 2 + n_elec % 2;
+    species_set(i_msize, 1) = n_elec / 2;
+
+    SpinDensityNew sdn(std::move(sdi), species_set);
+
+    UPtrVector<OperatorEstBase> crowd_sdns;
+    int n_crowds  = 2;
+    int n_walkers = 4;
+
+    accumulateFromPsets(n_crowds, n_walkers, sdn, crowd_sdns);
+
+    RefVector<OperatorEstBase> crowd_oeb_refs = convertUPtrToRefVector(crowd_sdns);
+    sdn.collect(crowd_oeb_refs);
+
+    hdf_archive hd;
+    std::string test_file{"spin_density_new_test.hdf"};
+    okay = hd.create(test_file);
+    REQUIRE(okay);
+
+    sdn.registerOperatorEstimator(hd);
+    sdn.write(hd);
+    hd.close();
+
+    hdf_archive read_hd;
+    okay = read_hd.open(test_file);
+    REQUIRE(okay);
+    std::vector<FullPrecReal> up_data;
+    std::vector<FullPrecReal> dn_data;
+
+    testing::SpinDensityNewTests sdnt;
+    hdf_path sdn_name_up{sdnt.getName(sdn)};
+
+    sdn_name_up /= "u";
+    std::cout << sdn_name_up.string() << '\n';
+    read_hd.read(up_data, "SpinDensity/u"); //sdn_name_up.string());
+    CHECK(up_data.size() == 1000);
+    hdf_path sdn_name_dn{sdnt.getName(sdn)};
+    sdn_name_dn /= "d";
+    std::cout << sdn_name_dn.string() << '\n';
+    read_hd.read(dn_data, sdn_name_dn.string());
+
+    auto sumAndCheckData = [i_msize, n_crowds, n_walkers](const auto& data, int num_particles) {
+      FullPrecReal sum;
+      for (int i = 0; i < data.size(); ++i)
+        sum += data[i];
+      // +1 is for the accumulateFromPsets
+      CHECK(sum == n_crowds * n_walkers * num_particles);
+    };
+
+    sumAndCheckData(up_data, species_set(i_msize, 0));
+    sumAndCheckData(dn_data, species_set(i_msize, 1));
+  };
+
+  checkWriteForNParticles(3);
+}
 
 } // namespace qmcplusplus
