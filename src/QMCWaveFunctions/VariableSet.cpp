@@ -247,6 +247,10 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
 void VariableSet::writeToHDF(const std::string& filename, qmcplusplus::hdf_archive& hout) const
 {
   hout.create(filename);
+
+  // File Versioning
+  // 1.0.0  Initial file version
+  // 1.1.0  Files could have object-specific data from OptimizableObject::read/writeVariationalParameters
   std::vector<int> vp_file_version{1, 1, 0};
   hout.write(vp_file_version, "version");
 
