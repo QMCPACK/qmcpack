@@ -218,6 +218,10 @@ void QMCCostFunctionBase::reportParameters()
     hdf_archive hout;
     OptVariables.writeToHDF(vp_filename.str(), hout);
 
+    UniqueOptObjRefs opt_obj_refs = Psi.extractOptimizableObjectRefs();
+    for (auto opt_obj : opt_obj_refs)
+      opt_obj.get().writeVariationalParameters(hout);
+
     char newxml[128];
     sprintf(newxml, "%s.opt.xml", RootName.c_str());
     *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;

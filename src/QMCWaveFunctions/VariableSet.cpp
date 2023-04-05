@@ -247,7 +247,7 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
 void VariableSet::writeToHDF(const std::string& filename, qmcplusplus::hdf_archive& hout) const
 {
   hout.create(filename);
-  std::vector<int> vp_file_version{1, 0, 0};
+  std::vector<int> vp_file_version{1, 1, 0};
   hout.write(vp_file_version, "version");
 
   std::string timestamp(getDateAndTime("%Y-%m-%d %H:%M:%S %Z"));
