@@ -130,11 +130,25 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
     walkers_weight_ += weight;
     int p         = 0;
     size_t offset = 0;
+    QMCT::PosType u;
     for (int s = 0; s < species_.size(); ++s, offset += dp_.npoints)
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
       {
-        QMCT::PosType u = lattice_.toUnit(pset.R[p] - dp_.corner);
-        size_t point    = offset;
+        switch (pset.R.getUnit())
+        {
+        case PosUnit::Cartesian:
+          u = lattice_.toUnit(pset.R[p] - dp_.corner);
+          break;
+        case PosUnit::Lattice:
+#ifndef NDEBUG
+          if (!(p < pset.getTotalNum()))
+            throw std::runtime_error("p < pset.getTotalNum(): " + std::to_string(p) + " " +
+                                     std::to_string(pset.getTotalNum()));
+#endif
+          u = pset.R[p] - lattice_.toUnit(dp_.corner);
+          break;
+        }
+        size_t point = offset;
         for (int d = 0; d < QMCT::DIM; ++d)
           point += dp_.gdims[d] * ((int)(dp_.grid[d] * (u[d] - std::floor(u[d])))); //periodic only
         accumulateToData(point, weight);
@@ -195,66 +209,63 @@ void SpinDensityNew::collect(const RefVector<OperatorEstBase>& type_erased_opera
   }
 }
 
-void SpinDensityNew::report(const std::string& pad)
+void SpinDensityNew::report(const std::string& pad) const { report(pad, app_log()); }
+
+void SpinDensityNew::report(const std::string& pad, std::ostream& out) const
 {
   auto& dp_ = derived_parameters_;
-  app_log() << pad << "SpinDensity report" << std::endl;
-  app_log() << pad << "  dim     = " << QMCT::DIM << std::endl;
-  app_log() << pad << "  npoints = " << dp_.npoints << std::endl;
-  app_log() << pad << "  grid    = " << dp_.grid << std::endl;
-  app_log() << pad << "  gdims   = " << dp_.gdims << std::endl;
-  app_log() << pad << "  corner  = " << dp_.corner << std::endl;
-  app_log() << pad << "  center  = " << dp_.corner + lattice_.Center << std::endl;
-  app_log() << pad << "  cell " << std::endl;
+  out << pad << "SpinDensity report" << std::endl;
+  out << pad << "  dim     = " << QMCT::DIM << std::endl;
+  out << pad << "  npoints = " << dp_.npoints << std::endl;
+  out << pad << "  grid    = " << dp_.grid << std::endl;
+  out << pad << "  gdims   = " << dp_.gdims << std::endl;
+  out << pad << "  corner  = " << dp_.corner << std::endl;
+  out << pad << "  center  = " << dp_.corner + lattice_.Center << std::endl;
+  out << pad << "  cell " << std::endl;
   for (int d = 0; d < QMCT::DIM; ++d)
-    app_log() << pad << "    " << d << " " << lattice_.Rv[d] << std::endl;
-  app_log() << pad << "  end cell " << std::endl;
-  app_log() << pad << "  nspecies = " << species_.size() << std::endl;
+    out << pad << "    " << d << " " << lattice_.Rv[d] << std::endl;
+  out << pad << "  end cell " << std::endl;
+  out << pad << "  nspecies = " << species_.size() << std::endl;
   for (int s = 0; s < species_.size(); ++s)
-    app_log() << pad << "    species[" << s << "]"
-              << " = " << species_.speciesName[s] << " " << species_size_[s] << std::endl;
-  app_log() << pad << "end SpinDensity report" << std::endl;
+    out << pad << "    species[" << s << "]"
+        << " = " << species_.speciesName[s] << " " << species_size_[s] << std::endl;
+  out << pad << "end SpinDensity report" << std::endl;
 }
 
-void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
-{
-  std::vector<size_t> my_indexes;
 
-  std::vector<int> ng(1, derived_parameters_.npoints);
-
-  hdf_path hdf_name{my_name_};
-  for (int s = 0; s < species_.size(); ++s)
-  {
-    h5desc_.emplace_back(hdf_name / species_.speciesName[s]);
-    auto& oh = h5desc_.back();
-    oh.set_dimensions(ng, 0);
-  }
-}
+void SpinDensityNew::registerOperatorEstimator(hdf_archive& file) {}
 
 void SpinDensityNew::write(hdf_archive& file)
 {
-  if (h5desc_.empty())
-    return;
-
-  auto writeFullPrecData = [&](auto& fp_data) {
+  auto writeFullPrecData = [&](auto& file, auto& fp_data) {
+    std::vector<size_t> my_indexes;
+    std::array<hsize_t, 2> ng{1, derived_parameters_.npoints};
+    hdf_path hdf_name{my_name_};
+    file.push(hdf_name);
+    Vector<QMCT::FullPrecRealType> data;
     std::size_t offset = 0;
-    for (auto& h5d : h5desc_)
+    for (int s = 0; s < species_.size(); ++s)
     {
-      h5d.write(fp_data.data() + offset, file);
+      data.attachReference(fp_data.data() + offset, derived_parameters_.npoints);
+      file.push(species_.speciesName[s]);
+      //file.write(data, "value");
+      file.writeSlabReshaped(data, ng, "value");
       offset += derived_parameters_.npoints;
+      file.pop();
     }
+    file.pop();
   };
 
 #ifdef MIXED_PRECISION
   std::vector<QMCT::FullPrecRealType> expanded_data(data_.size(), 0.0);
   std::copy_n(data_.begin(), data_.size(), expanded_data.begin());
   assert(!data_.empty());
-  writeFullPrecData(expanded_data);
+  writeFullPrecData(file, expanded_data);
   // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
   // std::cout << "data size: " << data_->size() << " : " << total << '\n';
 
 #else
-  writeFullPrecData(data_);
+  writeFullPrecData(file, data_);
 #endif
 }
 

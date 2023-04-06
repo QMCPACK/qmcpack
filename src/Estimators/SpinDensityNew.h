@@ -122,7 +122,8 @@ private:
   size_t getFullDataSize();
   void accumulateToData(size_t point, QMCT::RealType weight);
   void reset();
-  void report(const std::string& pad);
+  void report(const std::string& pad) const;
+  void report(const std::string& pad, std::ostream& out) const;
 
   //data members
   const SpinDensityInput input_;
