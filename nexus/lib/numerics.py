@@ -436,14 +436,18 @@ def eos_param(p,param,type='vinet'):
 #end def eos_param
 
 
-def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',optimizer='fmin',jackknife=False):
+def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfuncs=None,auxres=None,capture=None):
     if isinstance(V,(list,tuple)):
         V = array(V,dtype=float)
     #end if
     if isinstance(E,(list,tuple)):
         E = array(E,dtype=float)
     #end if
-    
+    Edata = None
+    if len(E)!=E.size and len(E.shape)==2:
+        Edata = E
+        E     = Edata.mean(axis=0)
+    #end if
     if type not in eos_funcs:
         error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
     #end if
@@ -458,10 +462,85 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',optimizer='fmin',jackk
         p0 = Einf,V0,B0,Bp0
     #end if
 
+    calc_aux = auxfuncs!=None and auxres!=None
+    capture_results = capture!=None
+    jcapture    = None
+    jauxcapture = None
+    if capture_results:
+        jcapture    = obj()
+        jauxcapture = obj()
+        capture.V         = V
+        capture.E         = E
+        capture.p0        = p0
+        capture.jackknife = jackknife
+        capture.cost = cost
+        capture.auxfuncs  = auxfuncs
+        capture.auxres    = auxres
+        capture.Edata     = Edata
+        capture.pp        = pp
+    elif calc_aux:
+        jcapture = obj()
+    #end if
+
     # get an optimized fit of the means
     pf = curve_fit(V,E,eos_func,p0,cost)
+    pmean = None
+    perror = None
+    if jackknife:
+        if Edata is None:
+            error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
+        #end if
+        pmean,perror = numerics_jackknife(data     = Edata,
+                                          function = curve_fit,
+                                          args     = [V,None,vinet,pf,cost],
+                                          position = 1,
+                                          capture  = jcapture)
+        # compute auxiliary jackknife quantities, if desired
+        if calc_aux:
+            psamples = jcapture.jsamples
+            # determine equilibrium volume first
+            assert('minimum_x' in auxfuncs.keys())
+            
+            auxname = 'minimum_x'
+            auxcap = None
+            if capture_results:
+                auxcap = obj()
+                jauxcapture[auxname] = auxcap
+            #end if 
+            auxfunc = auxfuncs[auxname]
+            auxres[auxname] = jackknife_aux(psamples,auxfunc,capture=auxcap)
+            eq_vol = auxres[auxname][0]
+            auxfuncs.delete(auxname)
+            for auxname,auxfunc in auxfuncs.items():
+                num_variables = len(inspect.getargspec(auxfunc).args)
+                if num_variables > 1:
+                    # Assume that the second variable is volume for the pressure fits
+                    auxfunc_p = lambda p: auxfunc(p, eq_vol)
+                else:
+                    auxfunc_p = auxfunc
+                #end if 
+                auxcap = None
+                if capture_results:
+                    auxcap = obj()
+                    jauxcapture[auxname] = auxcap
+                #end if
+                auxres[auxname] = jackknife_aux(psamples,auxfunc_p,capture=auxcap)
+            #end for
+        #end if
+    #end if
+    if capture_results:
+        capture.pmean  = pmean
+        capture.perror = perror
+        capture.jcapture     = jcapture
+        capture.jauxcapture  = jauxcapture
+    #end if
 
-    return pf
+    # return desired results
+    if not jackknife:
+        return pf
+    else:
+        return pf,pmean,perror
+    #end if
 #end def eos_fit
 
 
