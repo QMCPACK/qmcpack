@@ -26,6 +26,6 @@ target_compile_options(common PUBLIC
     $<$<CXX_COMPILER_ID:NVHPC>:
         -Kieee
     >
->)
+)
 
 target_link_libraries(common PUBLIC qmc_external_multi)
