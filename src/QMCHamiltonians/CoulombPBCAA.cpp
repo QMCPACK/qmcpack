@@ -21,6 +21,7 @@
 #include "Particle/DistanceTable.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <ResourceCollection.h>
+#include <Message/UniformCommunicateError.h>
 #include "Numerics/OneDimCubicSplineLinearGrid.h"
 
 namespace qmcplusplus
@@ -116,7 +117,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       msg << "differences to ensure this error is controlled for your application." << std::endl;
       msg << std::endl;
 
-      throw std::runtime_error(msg.str());
+      throw UniformCommunicateError(msg.str());
     }
     else
     {
