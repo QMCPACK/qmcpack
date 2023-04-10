@@ -24,13 +24,13 @@ namespace magdensity
 enum Inputs
 {
   valid_magdensity_input = 0,
-  valid_magdensity_input_grid,
   valid_magdensity_input_dr,
-  valid_magdensity_input_integrator,
+  valid_magdensity_input_grid,
+  valid_magdensity_input_unittest
 };
 
 // clang-format: off
-constexpr std::array<std::string_view, 3> valid_mag_density_input_sections{
+constexpr std::array<std::string_view, 4> valid_mag_density_input_sections{
     R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
   <parameter name="integrator"   >  simpsons       </parameter>
@@ -51,6 +51,14 @@ constexpr std::array<std::string_view, 3> valid_mag_density_input_sections{
   <parameter name="samples"      >  32            </parameter>
   <parameter name="corner"       >  0.0 0.0 0.1   </parameter>
   <parameter name="grid"         >  4 3 2         </parameter>
+</estimator>
+)XML",
+    R"XML(
+<estimator type="MagnetizationDensity" name="magdensity">
+  <parameter name="integrator"   >  simpsons       </parameter>
+  <parameter name="samples"      >  9            </parameter>
+  <parameter name="corner"       >  0.0 0.0 0.0   </parameter>
+  <parameter name="grid"         >  2 2 2         </parameter>
 </estimator>
 )XML"
     // clang-format: on
