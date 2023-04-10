@@ -8,6 +8,8 @@ target_sources(
          "${CMAKE_CURRENT_SOURCE_DIR}/XMLWriterClass2.cc" "${CMAKE_CURRENT_SOURCE_DIR}/NLPPClass.cc"
          "${CMAKE_CURRENT_SOURCE_DIR}/ParserClass.cc")
 
+target_compile_options(ppconvert PUBLIC -fno-fast-math)  # ppconvert generates and checks for NaN in normal use; needs IEEE compliance
+
 target_link_libraries(ppconvert common platform_LA)
 
 add_test_target_in_output_location(ppconvert bin)
