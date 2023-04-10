@@ -23,6 +23,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "Utilities/ProjectData.h"
 #include <stdio.h>
 #include <sstream>
 
@@ -45,6 +46,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
 
 TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)", "[estimators]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
   using namespace testing;
@@ -54,12 +56,13 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   CHECK(emi.get_estimator_inputs().size() == 2);
   CHECK(emi.get_scalar_estimator_inputs().size() == 1);
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf              = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham              = *(hamiltonian_pool.getPrimary());
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset            = *(particle_pool.getParticleSet("e"));
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham             = *(hamiltonian_pool.getPrimary());
   EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
 
   CHECK(emn.getNumEstimators() == 2);
@@ -68,7 +71,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   EstimatorManagerNewTestAccess emnta(emn);
   CHECK(emnta.getMainEstimator().getName() == "LocalEnergyEstimator");
 
-  
+
   // Check behavior when multiple "main" estimators are in the input
   // Each should override the previous main input as this is the behavior of legacy.
   Libxml2Document estimators_doc2 = createEstimatorManagerNewInputXML();
@@ -84,7 +87,6 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   CHECK(emn2.getNumScalarEstimators() == 0);
   EstimatorManagerNewTestAccess emnta2(emn2);
   CHECK(emnta2.getMainEstimator().getName() == "RMCLocalEnergyEstimator");
-
 }
 
 TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")

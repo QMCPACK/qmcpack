@@ -97,7 +97,10 @@ public:
         : MatrixDelayedUpdateCUDAMultiWalkerMem()
     {}
 
-    Resource* makeClone() const override { return new MatrixDelayedUpdateCUDAMultiWalkerMem(*this); }
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem>(*this);
+    }
   };
 
   const DualMatrix<Value>& get_psiMinv() const { return psiMinv_; }
@@ -147,14 +150,14 @@ private:
   /** @ingroup Resources
    *  @{ */
   // CUDA stream, cublas handle object
-  std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
+  ResourceHandle<CUDALinearAlgebraHandles> cuda_handles_;
   /// crowd scope memory resource
-  std::unique_ptr<MatrixDelayedUpdateCUDAMultiWalkerMem> mw_mem_;
+  ResourceHandle<MatrixDelayedUpdateCUDAMultiWalkerMem> mw_mem_handle_;
   /**}@ */
 
   inline void waitStream()
   {
-    cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
+    cudaErrorCheck(cudaStreamSynchronize(cuda_handles_.getResource().hstream), "cudaStreamSynchronize failed!");
   }
 
   /** ensure no previous delay left.
@@ -173,22 +176,23 @@ private:
   /** a bad smell */
   void resize_fill_constant_arrays(size_t nw)
   {
-    if (mw_mem_->cone_vec.size() < nw)
+    auto& mw_mem = mw_mem_handle_.getResource();
+    if (mw_mem.cone_vec.size() < nw)
     {
       // cone
-      mw_mem_->cone_vec.resize(nw);
-      std::fill_n(mw_mem_->cone_vec.data(), nw, Value(1));
-      Value* cone_ptr = mw_mem_->cone_vec.data();
+      mw_mem.cone_vec.resize(nw);
+      std::fill_n(mw_mem.cone_vec.data(), nw, Value(1));
+      Value* cone_ptr = mw_mem.cone_vec.data();
       PRAGMA_OFFLOAD("omp target update to(cone_ptr[:nw])")
       // cminusone
-      mw_mem_->cminusone_vec.resize(nw);
-      std::fill_n(mw_mem_->cminusone_vec.data(), nw, Value(-1));
-      Value* cminusone_ptr = mw_mem_->cminusone_vec.data();
+      mw_mem.cminusone_vec.resize(nw);
+      std::fill_n(mw_mem_handle_.getResource().cminusone_vec.data(), nw, Value(-1));
+      Value* cminusone_ptr = mw_mem.cminusone_vec.data();
       PRAGMA_OFFLOAD("omp target update to(cminusone_ptr[:nw])")
       // czero
-      mw_mem_->czero_vec.resize(nw);
-      std::fill_n(mw_mem_->czero_vec.data(), nw, Value(0));
-      Value* czero_ptr = mw_mem_->czero_vec.data();
+      mw_mem.czero_vec.resize(nw);
+      std::fill_n(mw_mem.czero_vec.data(), nw, Value(0));
+      Value* czero_ptr = mw_mem.czero_vec.data();
       PRAGMA_OFFLOAD("omp target update to(czero_ptr[:nw])")
     }
   }
@@ -200,12 +204,14 @@ private:
   static void mw_prepareInvRow(const RefVectorWithLeader<This_t>& engines, const int rowchanged)
   {
     auto& engine_leader              = engines.getLeader();
-    auto& hstream                    = engine_leader.cuda_handles_->hstream;
-    auto& h_cublas                   = engine_leader.cuda_handles_->h_cublas;
-    auto& cminusone_vec              = engine_leader.mw_mem_->cminusone_vec;
-    auto& cone_vec                   = engine_leader.mw_mem_->cone_vec;
-    auto& czero_vec                  = engine_leader.mw_mem_->czero_vec;
-    auto& prepare_inv_row_buffer_H2D = engine_leader.mw_mem_->prepare_inv_row_buffer_H2D;
+    auto& cuda_handles               = engine_leader.cuda_handles_.getResource();
+    auto& hstream                    = cuda_handles.hstream;
+    auto& h_cublas                   = cuda_handles.h_cublas;
+    auto& mw_mem                     = engine_leader.mw_mem_handle_.getResource();
+    auto& cminusone_vec              = mw_mem.cminusone_vec;
+    auto& cone_vec                   = mw_mem.cone_vec;
+    auto& czero_vec                  = mw_mem.czero_vec;
+    auto& prepare_inv_row_buffer_H2D = mw_mem.prepare_inv_row_buffer_H2D;
     const int norb                   = engine_leader.get_psiMinv().rows();
     const int nw                     = engines.size();
     int& delay_count                 = engine_leader.delay_count;
@@ -298,12 +304,13 @@ private:
     if (n_accepted == 0)
       return;
 
-    auto& hstream               = engine_leader.cuda_handles_->hstream;
-    auto& updateRow_buffer_H2D  = engine_leader.mw_mem_->updateRow_buffer_H2D;
-    auto& mw_temp               = engine_leader.mw_mem_->mw_temp;
-    auto& mw_rcopy              = engine_leader.mw_mem_->mw_rcopy;
-    auto& cone_vec              = engine_leader.mw_mem_->cone_vec;
-    auto& czero_vec             = engine_leader.mw_mem_->czero_vec;
+    auto& hstream               = engine_leader.cuda_handles_.getResource().hstream;
+    auto& mw_mem                = engine_leader.mw_mem_handle_.getResource();
+    auto& updateRow_buffer_H2D  = mw_mem.updateRow_buffer_H2D;
+    auto& mw_temp               = mw_mem.mw_temp;
+    auto& mw_rcopy              = mw_mem.mw_rcopy;
+    auto& cone_vec              = mw_mem.cone_vec;
+    auto& czero_vec             = mw_mem.czero_vec;
     const int norb              = engine_leader.get_ref_psiMinv().rows();
     const int lda               = engine_leader.get_ref_psiMinv().cols();
     const int nw                = engines.size();
@@ -404,21 +411,14 @@ public:
 
   void acquireResource(ResourceCollection& collection)
   {
-    auto res_ptr = dynamic_cast<CUDALinearAlgebraHandles*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast CUDALinearAlgebraHandles failed");
-    cuda_handles_.reset(res_ptr);
-    auto res2_ptr = dynamic_cast<MatrixDelayedUpdateCUDAMultiWalkerMem*>(collection.lendResource().release());
-    if (!res2_ptr)
-      throw std::runtime_error(
-          "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast MatrixDelayedUpdateCUDAMultiWalkerMem failed");
-    mw_mem_.reset(res2_ptr);
+    cuda_handles_  = collection.lendResource<CUDALinearAlgebraHandles>();
+    mw_mem_handle_ = collection.lendResource<MatrixDelayedUpdateCUDAMultiWalkerMem>();
   }
 
   void releaseResource(ResourceCollection& collection)
   {
-    collection.takebackResource(std::move(cuda_handles_));
-    collection.takebackResource(std::move(mw_mem_));
+    collection.takebackResource(cuda_handles_);
+    collection.takebackResource(mw_mem_handle_);
   }
 
   /** The problem with this as well as the idea of putting psiMinv
@@ -452,9 +452,9 @@ public:
     if (!engine_leader.isSM1())
       mw_prepareInvRow(engines, rowchanged);
 
-    auto& hstream             = engine_leader.cuda_handles_->hstream;
-    auto& evalGrad_buffer_H2D = engine_leader.mw_mem_->evalGrad_buffer_H2D;
-    auto& grads_value_v       = engine_leader.mw_mem_->grads_value_v;
+    auto& hstream             = engine_leader.cuda_handles_.getResource().hstream;
+    auto& evalGrad_buffer_H2D = engine_leader.mw_mem_handle_.getResource().evalGrad_buffer_H2D;
+    auto& grads_value_v       = engine_leader.mw_mem_handle_.getResource().grads_value_v;
 
     const int nw                     = engines.size();
     constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
@@ -585,11 +585,12 @@ public:
       return;
     }
 
-    auto& hstream                     = engine_leader.cuda_handles_->hstream;
-    auto& cminusone_vec               = engine_leader.mw_mem_->cminusone_vec;
-    auto& cone_vec                    = engine_leader.mw_mem_->cone_vec;
-    auto& czero_vec                   = engine_leader.mw_mem_->czero_vec;
-    auto& accept_rejectRow_buffer_H2D = engine_leader.mw_mem_->accept_rejectRow_buffer_H2D;
+    auto& hstream                     = engine_leader.cuda_handles_.getResource().hstream;
+    auto& mw_mem                      = engine_leader.mw_mem_handle_.getResource();
+    auto& cminusone_vec               = mw_mem.cminusone_vec;
+    auto& cone_vec                    = mw_mem.cone_vec;
+    auto& czero_vec                   = mw_mem.czero_vec;
+    auto& accept_rejectRow_buffer_H2D = mw_mem.accept_rejectRow_buffer_H2D;
     int& delay_count                  = engine_leader.delay_count;
     const int lda_Binv                = engine_leader.Binv_gpu.cols();
     const int norb                    = engine_leader.get_psiMinv().rows();
@@ -712,9 +713,9 @@ public:
     if (delay_count == 0)
       return;
     // update the inverse matrix
-    auto& hstream              = engine_leader.cuda_handles_->hstream;
-    auto& h_cublas             = engine_leader.cuda_handles_->h_cublas;
-    auto& updateInv_buffer_H2D = engine_leader.mw_mem_->updateInv_buffer_H2D;
+    auto& hstream              = engine_leader.cuda_handles_.getResource().hstream;
+    auto& h_cublas             = engine_leader.cuda_handles_.getResource().h_cublas;
+    auto& updateInv_buffer_H2D = engine_leader.mw_mem_handle_.getResource().updateInv_buffer_H2D;
     const int norb             = engine_leader.get_psiMinv().rows();
     const int lda              = engine_leader.get_psiMinv().cols();
     const int nw               = engines.size();
@@ -775,7 +776,7 @@ public:
     delay_count = 0;
   }
 
-/*
+  /*
   inline void print_Ainv(const RefVector<This_t>& engines)
   {
     for (This_t& engine : engines)
@@ -849,7 +850,7 @@ public:
   static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines)
   {
     auto& engine_leader = engines.getLeader();
-    auto& hstream       = engine_leader.cuda_handles_->hstream;
+    auto& hstream       = engine_leader.cuda_handles_.getResource().hstream;
     engine_leader.guard_no_delay();
 
     for (This_t& engine : engines)
@@ -870,7 +871,7 @@ public:
                                  size_t row_begin,
                                  size_t row_size)
   {
-    auto& hstream = engine_leader.cuda_handles_->hstream;
+    auto& hstream = engine_leader.cuda_handles_.getResource().hstream;
     for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
     {
       const size_t stride = psiM_vgl.capacity();
@@ -892,7 +893,7 @@ public:
                                  size_t row_begin,
                                  size_t row_size)
   {
-    auto& hstream = engine_leader.cuda_handles_->hstream;
+    auto& hstream = engine_leader.cuda_handles_.getResource().hstream;
     for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
     {
       const size_t stride = psiM_vgl.capacity();
@@ -903,12 +904,7 @@ public:
     engine_leader.waitStream();
   }
 
-  auto& getLAhandles()
-  {
-    if (!cuda_handles_)
-      throw std::logic_error("attempted to get null cuda_handles_, this is developer logic error");
-    return *cuda_handles_;
-  }
+  CUDALinearAlgebraHandles& getLAhandles() { return cuda_handles_; }
 };
 } // namespace qmcplusplus
 

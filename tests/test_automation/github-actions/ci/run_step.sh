@@ -54,11 +54,11 @@ case "$1" in
         echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
 
       else
-        echo "Set CUDACXX CMake environment variable to nvcc standard location"
-        export CUDACXX=/usr/local/cuda/bin/nvcc
+        echo "Set CUDACXX CMake environment variable to nvcc 11.8"
+        export CUDACXX=/usr/local/cuda-11.8/bin/nvcc
 
         # Make current environment variables available to subsequent steps
-        echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+        echo "CUDACXX=/usr/local/cuda-11.8/bin/nvcc" >> $GITHUB_ENV
       fi
     fi 
 
@@ -103,8 +103,32 @@ case "$1" in
       echo "LD_LIBRARY_PATH=/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9:$LD_LIBRARY_PATH" >> $GITHUB_ENV
     fi
     
+    if [[ "$CONTAINER_OS" =~ (centos) ]]
+    then
+      # use spack
+      export PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:$PATH
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include
+      export FFTW_HOME=/opt/view
+      export LibXml2_ROOT=/opt/view
+      export HDF5_ROOT=/opt/view
+      export BOOST_ROOT=/opt/view
+
+
+      # Make current environment variables available to subsequent steps
+      echo "PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:$PATH" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include" >> $GITHUB_ENV
+      echo "FFTW_HOME=/opt/view" >> $GITHUB_ENV
+      echo "LibXml2_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "HDF5_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "BOOST_ROOT=/opt/view" >> $GITHUB_ENV
+    fi
+    
     case "${GH_JOBNAME}" in
-      *"GCC9-NoMPI-Debug-"*)
+      *"GCC9-NoMPI-Debug-"*|*"GCC11-NoMPI-Debug-"*)
         echo 'Configure for debug mode to capture asserts with gcc'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -113,7 +137,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=Debug \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-NoOMP-"*)
+      *"GCC9-NoMPI-NoOMP-"*|*"GCC11-NoMPI-NoOMP-"*)
         echo 'Configure for disabling OpenMP with QMC_OMP=0'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -124,7 +148,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-Sandbox-"*)
+      *"GCC9-NoMPI-Sandbox-"*|*"GCC11-NoMPI-Sandbox-"*)
         echo 'Configure for enabling sandbox (minimal) only option with gcc'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -200,6 +224,7 @@ case "$1" in
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
+              -DQMC_GPU_ARCHS=sm_70 \
               -DENABLE_OFFLOAD=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
@@ -231,26 +256,7 @@ case "$1" in
               -DCMAKE_CUDA_FLAGS="-diag-disable=10441" \
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
-              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
-        echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
-        export ROCM_PATH=/opt/rocm
-
-        # Make current environment variables available to subsequent steps
-        echo "ROCM_PATH=/opt/rocm" >> $GITHUB_ENV
-
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
-              -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
-              -DQMC_MPI=0 \
-              -DENABLE_CUDA=ON \
-              -DQMC_CUDA2HIP=ON \
+              -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -266,6 +272,7 @@ case "$1" in
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
+              -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -349,7 +356,7 @@ case "$1" in
       then
         export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
       else
-        export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+        export LD_LIBRARY_PATH=/usr/local/cuda-11.8/lib64:${LD_LIBRARY_PATH}
       fi
     fi
 

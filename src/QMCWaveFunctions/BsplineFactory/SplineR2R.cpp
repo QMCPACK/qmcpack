@@ -51,27 +51,53 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
+template<typename ST>
+void SplineR2R<ST>::storeParamsBeforeRotation()
+{
+  const auto spline_ptr     = SplineInst->getSplinePtr();
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+
+  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+}
+
 /*
   ~~ Notes for rotation ~~
-  spl_coefs      = Raw pointer of spline coefficients
-  BasisSetSize   = Number of spline coefs per orbital
+  spl_coefs      = Raw pointer to spline coefficients
+  basis_set_size = Number of spline coefs per orbital
   OrbitalSetSize = Number of orbitals (excluding padding)
-  
-  spl_coefs has a complicated layout depending on dimensionality of splines. 
-  Luckily, for our purposes, we can think of spl_coefs as pointing to a 
-  matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline 
-  index adjacent in memory. The orbital index is SIMD aligned and therefore 
+
+  spl_coefs has a complicated layout depending on dimensionality of splines.
+  Luckily, for our purposes, we can think of spl_coefs as pointing to a
+  matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline
+  index adjacent in memory. The orbital index is SIMD aligned and therefore
   may include padding.
-    
-  As a result, due to SIMD alignment, Nsplines may be larger than the 
-  actual number of splined orbitals. This means that in practice rot_mat 
-  may be smaller than the number of 'columns' in the coefs array! 
-  To fix this problem, we put rot_mat inside "tmpU", which is guaranteed to have
-  the 'right' size to match spl_coefs. The padding of the splines is at the end, 
-  so if we put rot_mat at top left corner of tmpU, then we can apply tmpU to the 
-  coefs safely regardless of padding.   
-  
-  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs 
+
+  As a result, due to SIMD alignment, Nsplines may be larger than the
+  actual number of splined orbitals. This means that in practice rot_mat
+  may be smaller than the number of 'columns' in the coefs array!
+
+      SplineR2R spl_coef layout:
+             ^         | sp1 | ... | spN | pad |
+             |         |=====|=====|=====|=====|
+             |         | c11 | ... | c1N | 0   |
+      basis_set_size   | c21 | ... | c2N | 0   |
+             |         | ... | ... | ... | 0   |
+             |         | cM1 | ... | cMN | 0   |
+             v         |=====|=====|=====|=====|
+                       <------ Nsplines ------>
+
+      SplineC2C spl_coef layout:
+             ^         | sp1_r | sp1_i |  ...  | spN_r | spN_i |  pad  |
+             |         |=======|=======|=======|=======|=======|=======|
+             |         | c11_r | c11_i |  ...  | c1N_r | c1N_i |   0   |
+      basis_set_size   | c21_r | c21_i |  ...  | c2N_r | c2N_i |   0   |
+             |         |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |
+             |         | cM1_r | cM1_i |  ...  | cMN_r | cMN_i |   0   |
+             v         |=======|=======|=======|=======|=======|=======|
+                       <------------------ Nsplines ------------------>
+
+  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs
   "matrix" is very tall and skinny.
 */
 template<typename ST>
@@ -85,46 +111,30 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   const auto coefs_tot_size = spline_ptr->coefs_size;
   const auto BasisSetSize   = coefs_tot_size / Nsplines;
   const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
-  assert(OrbitalSetSize >= TrueNOrbs);
+  assert(OrbitalSetSize == rot_mat.rows());
+  assert(OrbitalSetSize == rot_mat.cols());
 
-  // Fill top left corner of tmpU with rot_mat
-  ValueMatrix tmpU;
-  tmpU.resize(Nsplines, Nsplines);
-  std::fill(tmpU.begin(), tmpU.end(), 0.0);
-  for (auto i = 0; i < rot_mat.size1(); i++)
+  if (!use_stored_copy)
   {
-    for (auto j = 0; j < rot_mat.size2(); j++)
-    {
-      tmpU[i][j] = rot_mat[i][j];
-    }
+    assert(coef_copy_ != nullptr);
+    std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
   }
 
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
-  std::vector<RealType> new_coefs(coefs_tot_size, 0);
   for (auto i = 0; i < BasisSetSize; i++)
   {
-    for (auto j = 0; j < Nsplines; j++)
+    for (auto j = 0; j < OrbitalSetSize; j++)
     {
       const auto cur_elem = Nsplines * i + j;
       auto newval{0.};
-      for (auto k = 0; k < Nsplines; k++)
+      for (auto k = 0; k < OrbitalSetSize; k++)
       {
         const auto index = i * Nsplines + k;
-        newval += *(spl_coefs + index) * tmpU[k][j];
+        newval += (*coef_copy_)[index] * rot_mat[k][j];
       }
-      new_coefs[cur_elem] = newval;
+      spl_coefs[cur_elem] = newval;
     }
   }
-
-  // Update the coefs
-  std::copy(new_coefs.begin(), new_coefs.end(), spl_coefs);
-
-  /*
-    // Here is my attempt to use gemm but it doesn't work...
-    int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
-    int smaller_OrbitalSetSize = static_cast<int>(OrbitalSetSize);
-    BLAS::gemm('N', 'T', smaller_BasisSetSize, smaller_OrbitalSetSize, smaller_OrbitalSetSize, RealType(1.0), spl_coefs, smaller_BasisSetSize, tmpU.data(), smaller_OrbitalSetSize, RealType(0.0), spl_coefs, smaller_BasisSetSize);
-  */
 }
 
 

@@ -20,6 +20,25 @@
 
 namespace qmcplusplus
 {
+struct MultiSlaterDetTableMethod::MultiSlaterDetTableMethodMultiWalkerResource : public Resource
+{
+  MultiSlaterDetTableMethodMultiWalkerResource() : Resource("MultiSlaterDetTableMethod") {}
+  MultiSlaterDetTableMethodMultiWalkerResource(const MultiSlaterDetTableMethodMultiWalkerResource&)
+      : MultiSlaterDetTableMethodMultiWalkerResource()
+  {}
+
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<MultiSlaterDetTableMethodMultiWalkerResource>(*this);
+  }
+
+  /// grads of each unique determinants for multiple walkers
+  Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;
+  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
+  OffloadVector<const ValueType*> C_otherDs_ptr_list;
+  OffloadVector<const ValueType*> det_value_ptr_list;
+};
+
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
@@ -233,14 +252,15 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
     det_list.push_back(*det.Dets[det_id]);
   }
 
-  auto& mw_grads = det_leader.mw_res_->mw_grads;
+  auto& mw_res   = det_leader.mw_res_handle_.getResource();
+  auto& mw_grads = mw_res.mw_grads;
   mw_grads.resize(3 * nw, ndets);
   if (newpos)
     det_leader.Dets[det_id]->mw_evaluateDetsAndGradsForPtclMove(det_list, P_list, iat, mw_grads);
   else
     det_leader.Dets[det_id]->mw_evaluateGrads(det_list, P_list, iat, mw_grads);
 
-  auto& det_value_ptr_list = det_leader.mw_res_->det_value_ptr_list;
+  auto& det_value_ptr_list = mw_res.det_value_ptr_list;
   det_value_ptr_list.resize(nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -253,7 +273,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
   auto* grad_now_list_ptr      = grad_now_list.data();
   auto* mw_grads_ptr           = mw_grads.data();
   auto* psi_list_ptr           = psi_list.data();
-  auto* C_otherDs_ptr_list_ptr = det_leader.mw_res_->C_otherDs_ptr_list.data();
+  auto* C_otherDs_ptr_list_ptr = mw_res.C_otherDs_ptr_list.data();
   auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
   {
     ScopedTimer local_timer(det_leader.offload_timer);
@@ -387,6 +407,8 @@ WaveFunctionComponent::GradType MultiSlaterDetTableMethod::evalGradWithSpin(Part
     evalGradWithSpin_impl(P, iat, false, grad_iat, spingrad_iat);
   else
     evalGradWithSpin_impl_no_precompute(P, iat, false, grad_iat, spingrad_iat);
+
+  spingrad += spingrad_iat;
 
   return grad_iat;
 }
@@ -559,7 +581,8 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
 
   det_leader.Dets[det_id]->mw_evaluateDetsForPtclMove(det_list, P_list, iat);
 
-  auto& det_value_ptr_list = det_leader.mw_res_->det_value_ptr_list;
+  auto& mw_res             = det_leader.mw_res_handle_.getResource();
+  auto& det_value_ptr_list = mw_res.det_value_ptr_list;
   det_value_ptr_list.resize(nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -571,7 +594,7 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
 
   std::vector<PsiValueType> psi_list(nw, 0);
   auto* psi_list_ptr           = psi_list.data();
-  auto* C_otherDs_ptr_list_ptr = det_leader.mw_res_->C_otherDs_ptr_list.data();
+  auto* C_otherDs_ptr_list_ptr = mw_res.C_otherDs_ptr_list.data();
   auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
   {
     ScopedTimer local_timer(det_leader.offload_timer);
@@ -1119,7 +1142,7 @@ void MultiSlaterDetTableMethod::mw_prepareGroup(const RefVectorWithLeader<WaveFu
   const size_t nw  = wfc_list.size();
   assert(this == &det_leader);
 
-  auto& C_otherDs_ptr_list = det_leader.mw_res_->C_otherDs_ptr_list;
+  auto& C_otherDs_ptr_list = det_leader.mw_res_handle_.getResource().C_otherDs_ptr_list;
   C_otherDs_ptr_list.resize(nw);
   for (int iw = 0; iw < nw; iw++)
   {
@@ -1172,11 +1195,8 @@ void MultiSlaterDetTableMethod::createResource(ResourceCollection& collection) c
 void MultiSlaterDetTableMethod::acquireResource(ResourceCollection& collection,
                                                 const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<MultiSlaterDetTableMethod>();
-  auto res_ptr     = dynamic_cast<MultiSlaterDetTableMethodMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("MultiSlaterDetTableMethod::acquireResource dynamic_cast failed");
-  wfc_leader.mw_res_.reset(res_ptr);
+  auto& wfc_leader          = wfc_list.getCastedLeader<MultiSlaterDetTableMethod>();
+  wfc_leader.mw_res_handle_ = collection.lendResource<MultiSlaterDetTableMethodMultiWalkerResource>();
   for (int idet = 0; idet < Dets.size(); idet++)
   {
     const auto det_list(extract_DetRef_list(wfc_list, idet));
@@ -1188,7 +1208,7 @@ void MultiSlaterDetTableMethod::releaseResource(ResourceCollection& collection,
                                                 const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<MultiSlaterDetTableMethod>();
-  collection.takebackResource(std::move(wfc_leader.mw_res_));
+  collection.takebackResource(wfc_leader.mw_res_handle_);
   for (int idet = 0; idet < Dets.size(); idet++)
   {
     const auto det_list(extract_DetRef_list(wfc_list, idet));

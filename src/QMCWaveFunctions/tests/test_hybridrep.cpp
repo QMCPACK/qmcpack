@@ -12,6 +12,10 @@
 
 #include "catch.hpp"
 
+#include <cstdio>
+#include <string>
+#include <limits>
+
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "DistanceTable.h"
@@ -20,10 +24,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
-
-#include <stdio.h>
-#include <string>
-#include <limits>
+#include <ResourceCollection.h>
 
 using std::string;
 
@@ -35,15 +36,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   ParticleSet::ParticleLayout lattice;
   // diamondC_1x1x1
-  lattice.R(0, 0) = 3.37316115;
-  lattice.R(0, 1) = 3.37316115;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.37316115;
-  lattice.R(1, 2) = 3.37316115;
-  lattice.R(2, 0) = 3.37316115;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.37316115;
+  lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -159,15 +152,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   ParticleSet::ParticleLayout lattice;
   // diamondC_2x1x1
-  lattice.R(0, 0) = 6.7463223;
-  lattice.R(0, 1) = 6.7463223;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.37316115;
-  lattice.R(1, 2) = 3.37316115;
-  lattice.R(2, 0) = 3.37316115;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.37316115;
+  lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -326,20 +311,28 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 #endif
 
   // test batched interfaces
-
   ParticleSet elec_2(elec_);
   // interchange positions
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
   elec_2.update();
-  RefVectorWithLeader<ParticleSet> P_list(elec_);
-  P_list.push_back(elec_);
-  P_list.push_back(elec_2);
+  RefVectorWithLeader<ParticleSet> p_list(elec_);
+  p_list.push_back(elec_);
+  p_list.push_back(elec_2);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
+
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec_.createResource(pset_res);
+  spo->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
   SPOSet::ValueVector psi(spo->getOrbitalSetSize());
   SPOSet::GradVector dpsi(spo->getOrbitalSetSize());
@@ -359,7 +352,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   d2psi_v_list.push_back(d2psi);
   d2psi_v_list.push_back(d2psi_2);
 
-  spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
+  spo->mw_evaluateVGL(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
 #if defined(QMC_COMPLEX)
   // real part
   // value

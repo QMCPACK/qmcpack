@@ -41,7 +41,7 @@ void SkParserBase::compute_grid()
   isGridComputed = true;
 }
 
-void SkParserBase::set_grid(const vector<TinyVector<IndexType, OHMMS_DIM>>& kgridraw1)
+void SkParserBase::set_grid(const std::vector<TinyVector<IndexType, OHMMS_DIM>>& kgridraw1)
 {
   if (skraw.size() != kgridraw1.size())
     APP_ABORT("SkParserBase::set_grid:  S(k) and k-grid don't match");
@@ -52,7 +52,7 @@ void SkParserBase::set_grid(const vector<TinyVector<IndexType, OHMMS_DIM>>& kgri
   compute_grid();
 }
 
-void SkParserBase::set_grid(const vector<PosType>& kgridraw1)
+void SkParserBase::set_grid(const std::vector<PosType>& kgridraw1)
 {
   if (skraw.size() != kgridraw1.size())
     APP_ABORT("SkParserBase::set_grid:  S(k) and k-grid don't match");
@@ -121,7 +121,7 @@ void SkParserBase::compute_sk()
   isSkComputed = true;
 }
 
-void SkParserBase::get_sk(vector<RealType>& sk_i, vector<RealType>& skerr_i)
+void SkParserBase::get_sk(std::vector<RealType>& sk_i, std::vector<RealType>& skerr_i)
 {
   //  cout<<"In get_sk(..)\n";
   if (!isSkComputed)

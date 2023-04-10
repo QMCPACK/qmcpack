@@ -23,6 +23,7 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -244,7 +245,8 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // 2) The species is active
   CoulombPBCAA noElecForce(elec, true, true, false);
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   // Making local copies here in refactoring attempt to disallow modifying
   // ForceBase members directly...
   // Probably fine for a test but if this type of behavior was needed in
@@ -416,6 +418,7 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
 
 TEST_CASE("AC Force", "[hamiltonian]")
 {
+  using Real = QMCTraits::RealType;
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   ParticleSet elec(simulation_cell);
@@ -461,7 +464,8 @@ TEST_CASE("AC Force", "[hamiltonian]")
   elec.update();
 
   // defaults
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   QMCHamiltonian qmcHamiltonian;
 
   //This is redundant code, but necessary to avoid adding API's to
@@ -482,6 +486,22 @@ TEST_CASE("AC Force", "[hamiltonian]")
   </acforce> 
   </tmp> 
   )";
+
+  ParticleSet::ParticleGradient g(elec.getTotalNum());
+  //Let magnitude be 1
+  g[0][0] = std::sqrt(1.0 / 2.0);
+  g[1][2] = std::sqrt(1.0 / 2.0);
+
+  //Epsilon = 2 places this within the regularizer threshold of x < 1.
+  Real regval = ACForce::compute_regularizer_f(g, 2);
+  CHECK(regval == Approx(1.421875));
+  //Epsilon = 0.001 places this way outside of regularizer threshold.
+  //Should return 1.
+  regval = ACForce::compute_regularizer_f(g, 0.001);
+  CHECK(regval == Approx(1.0));
+  //Epsilon = 0.0 indicates the regularizer is not used.  Return 1.
+  regval = ACForce::compute_regularizer_f(g, 0.0);
+  CHECK(regval == Approx(1.0));
 
   Libxml2Document olddoc;
   Libxml2Document newdoc;

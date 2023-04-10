@@ -6,7 +6,7 @@ else()
   set(MP_SUCCESS TRUE)
 endif()
 
-if(NOT QMC_CUDA AND NOT QMC_COMPLEX)
+if(NOT QMC_COMPLEX)
 
   list(APPEND HE_SIMPLE_VMC_SCALARS "totenergy" "-2.83 .006") # total energy
 

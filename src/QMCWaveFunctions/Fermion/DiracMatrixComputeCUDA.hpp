@@ -215,7 +215,7 @@ public:
 
   DiracMatrixComputeCUDA(const DiracMatrixComputeCUDA& other) : Resource(other.getName()) {}
 
-  Resource* makeClone() const override { return new DiracMatrixComputeCUDA(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixComputeCUDA>(*this); }
 
   /** Given a_mat returns inverted amit and log determinant of a_matches.
    *  \param [in] a_mat a matrix input

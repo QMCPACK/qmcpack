@@ -34,10 +34,11 @@ struct VPMultiWalkerMem : public Resource
 
   VPMultiWalkerMem(const VPMultiWalkerMem&) : VPMultiWalkerMem() {}
 
-  Resource* makeClone() const override { return new VPMultiWalkerMem(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<VPMultiWalkerMem>(*this); }
 };
 
-VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl, size_t dt_count_limit) : ParticleSet(p.getSimulationCell())
+VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl, size_t dt_count_limit)
+    : ParticleSet(p.getSimulationCell())
 {
   setName("virtual");
 
@@ -64,14 +65,12 @@ VirtualParticleSet::~VirtualParticleSet() = default;
 
 Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalkerRefPctls()
 {
-  assert(mw_mem_ != nullptr);
-  return mw_mem_->mw_refPctls;
+  return mw_mem_handle_.getResource().mw_refPctls;
 }
 
 const Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalkerRefPctls() const
 {
-  assert(mw_mem_ != nullptr);
-  return mw_mem_->mw_refPctls;
+  return mw_mem_handle_.getResource().mw_refPctls;
 }
 
 void VirtualParticleSet::createResource(ResourceCollection& collection) const
@@ -83,11 +82,8 @@ void VirtualParticleSet::createResource(ResourceCollection& collection) const
 void VirtualParticleSet::acquireResource(ResourceCollection& collection,
                                          const RefVectorWithLeader<VirtualParticleSet>& vp_list)
 {
-  auto& vp_leader = vp_list.getLeader();
-  auto res_ptr    = dynamic_cast<VPMultiWalkerMem*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
-  vp_leader.mw_mem_.reset(res_ptr);
+  auto& vp_leader          = vp_list.getLeader();
+  vp_leader.mw_mem_handle_ = collection.lendResource<VPMultiWalkerMem>();
 
   auto p_list = RefVectorWithLeaderParticleSet(vp_list);
   ParticleSet::acquireResource(collection, p_list);
@@ -96,7 +92,7 @@ void VirtualParticleSet::acquireResource(ResourceCollection& collection,
 void VirtualParticleSet::releaseResource(ResourceCollection& collection,
                                          const RefVectorWithLeader<VirtualParticleSet>& vp_list)
 {
-  collection.takebackResource(std::move(vp_list.getLeader().mw_mem_));
+  collection.takebackResource(vp_list.getLeader().mw_mem_handle_);
   auto p_list = RefVectorWithLeaderParticleSet(vp_list);
   ParticleSet::releaseResource(collection, p_list);
 }
@@ -184,6 +180,56 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
       vp.R[k] = refp_list[iw].R[vp.refPtcl] + deltaV[k];
       if (vp_leader.isSpinor())
         vp.spins[k] = refp_list[iw].spins[vp.refPtcl]; //no spin deltas in this API
+      mw_refPctls[ivp] = vp.refPtcl;
+    }
+    p_list.push_back(vp);
+  }
+  assert(ivp == nVPs);
+
+  mw_refPctls.updateTo();
+  ParticleSet::mw_update(p_list);
+}
+
+void VirtualParticleSet::mw_makeMovesWithSpin(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                                              const RefVectorWithLeader<ParticleSet>& refp_list,
+                                              const RefVector<const std::vector<PosType>>& deltaV_list,
+                                              const RefVector<const std::vector<RealType>>& deltaS_list,
+                                              const RefVector<const NLPPJob<RealType>>& joblist,
+                                              bool sphere)
+{
+  auto& vp_leader = vp_list.getLeader();
+  if (!vp_leader.isSpinor())
+    throw std::runtime_error(
+        "VirtualParticleSet::mw_makeMovesWithSpin should not be called if particle sets aren't spionor types");
+  vp_leader.onSphere = sphere;
+  vp_leader.refPS    = refp_list.getLeader();
+
+  const size_t nVPs = countVPs(vp_list);
+  auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
+  mw_refPctls.resize(nVPs);
+
+  RefVectorWithLeader<ParticleSet> p_list(vp_leader);
+  p_list.reserve(vp_list.size());
+
+  size_t ivp = 0;
+  for (int iw = 0; iw < vp_list.size(); iw++)
+  {
+    VirtualParticleSet& vp(vp_list[iw]);
+    const std::vector<PosType>& deltaV(deltaV_list[iw]);
+    const std::vector<RealType>& deltaS(deltaS_list[iw]);
+    const NLPPJob<RealType>& job(joblist[iw]);
+
+    vp.onSphere      = sphere;
+    vp.refPS         = refp_list[iw];
+    vp.refPtcl       = job.electron_id;
+    vp.refSourcePtcl = job.ion_id;
+    assert(vp.R.size() == deltaV.size());
+    assert(vp.spins.size() == deltaS.size());
+    assert(vp.R.size() == vp.spins.size());
+    for (size_t k = 0; k < vp.R.size(); k++, ivp++)
+    {
+      vp.R[k]          = refp_list[iw].R[vp.refPtcl] + deltaV[k];
+      vp.spins[k]      = refp_list[iw].spins[vp.refPtcl] + deltaS[k];
       mw_refPctls[ivp] = vp.refPtcl;
     }
     p_list.push_back(vp);

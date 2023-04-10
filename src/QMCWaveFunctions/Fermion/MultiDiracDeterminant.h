@@ -59,7 +59,10 @@ public:
     MultiDiracDetMultiWalkerResource() : Resource("MultiDiracDeterminant") {}
     MultiDiracDetMultiWalkerResource(const MultiDiracDetMultiWalkerResource&) : MultiDiracDetMultiWalkerResource() {}
 
-    Resource* makeClone() const override { return new MultiDiracDetMultiWalkerResource(*this); }
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<MultiDiracDetMultiWalkerResource>(*this);
+    }
 
     void resizeConstants(size_t nw)
     {
@@ -597,7 +600,7 @@ private:
   /// for matrices with leading dimensions <= MaxSmallDet, compute determinant with direct expansion.
   static constexpr size_t MaxSmallDet = 5;
 
-  std::unique_ptr<MultiDiracDetMultiWalkerResource> mw_res_;
+  ResourceHandle<MultiDiracDetMultiWalkerResource> mw_res_handle_;
 };
 
 

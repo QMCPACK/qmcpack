@@ -25,6 +25,8 @@
 #include "Message/CommOperators.h"
 #include "Utilities/RandomGenerator.h"
 
+#include <filesystem>
+
 namespace qmcplusplus
 {
 namespace testing
@@ -67,10 +69,8 @@ public:
   inline void setTrialEnergy(FullPrecRealType et) { trial_energy_ = et; }
 
   /** unified: perform branch and swap walkers as required 
-   *
-   *  \return global population
    */
-  int branch(int iter, MCPopulation& pop, bool do_not_branch);
+  void branch(int iter, MCPopulation& pop, bool do_not_branch);
 
   bool put(xmlNodePtr cur);
 
@@ -157,7 +157,7 @@ private:
   ///offset of the particle index for a fair distribution
   std::vector<int> fair_offset_;
   ///filename for dmc.dat
-  std::string dmcFname;
+  std::filesystem::path dmcFname;
   ///file to save energy histogram
   std::unique_ptr<std::ofstream> dmcStream;
   ///context id

@@ -30,7 +30,7 @@ namespace testing
 class VMCBatchedTest
 {
 public:
-  VMCBatchedTest()
+  VMCBatchedTest(const ProjectData& project_data) : project_data_(project_data)
   {
     Concurrency::OverrideMaxCapacity<> override(8);
     comm_ = OHMMS::Controller;
@@ -47,20 +47,23 @@ public:
     QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);
 
-    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm_);
-    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm_, particle_pool);
-    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm_, particle_pool, wavefunction_pool);
+    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm_);
+    auto wavefunction_pool =
+        MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data_.getRuntimeOptions(), comm_, particle_pool);
+    auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm_, particle_pool, wavefunction_pool);
   }
 
 private:
   Communicate* comm_;
+  const ProjectData& project_data_;
 };
 } // namespace testing
 
 TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
 {
   using namespace testing;
-  VMCBatchedTest vbt;
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  VMCBatchedTest vbt(test_project);
   vbt.testCalcDefaultLocalWalkers();
 }
 

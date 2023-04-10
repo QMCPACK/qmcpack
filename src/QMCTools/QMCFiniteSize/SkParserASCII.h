@@ -29,13 +29,13 @@ public:
     SKERR
   };
 
-  void parse(const string& fname) override;
+  void parse(const std::string& fname) override;
 
 private:
-  vector<vector<RealType>> read_sk_file(const string& fname);
-  vector<PosType> get_grid_from_data(vector<vector<RealType>>& data);
-  vector<RealType> get_sk_from_data(vector<vector<RealType>>& data);
-  vector<RealType> get_skerr_from_data(vector<vector<RealType>>& data);
+  std::vector<std::vector<RealType>> read_sk_file(const std::string& fname);
+  std::vector<PosType> get_grid_from_data(std::vector<std::vector<RealType>>& data);
+  std::vector<RealType> get_sk_from_data(std::vector<std::vector<RealType>>& data);
+  std::vector<RealType> get_skerr_from_data(std::vector<std::vector<RealType>>& data);
 };
 
 } // namespace qmcplusplus

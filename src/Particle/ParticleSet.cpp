@@ -705,7 +705,7 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
                                        const std::vector<bool>& isAccepted,
                                        bool forward_mode)
 {
-  if (CT == CoordsType::POS_SPIN)
+  if constexpr (CT == CoordsType::POS_SPIN)
     mw_accept_rejectSpinMove(p_list, iat, isAccepted);
   mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
 }
@@ -791,7 +791,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bo
   if (!skipSK && p_leader.structure_factor_)
   {
     auto sk_list = extractSKRefList(p_list);
-    StructFact::mw_updateAllPart(sk_list, p_list, *p_leader.mw_structure_factor_data_);
+    StructFact::mw_updateAllPart(sk_list, p_list, p_leader.mw_structure_factor_data_handle_);
   }
 
   auto& dts = p_leader.DistTables;
@@ -901,9 +901,8 @@ void ParticleSet::initPropertyList()
 
 int ParticleSet::addPropertyHistory(int leng)
 {
-  int newL                                    = PropertyHistory.size();
-  std::vector<FullPrecRealType> newVecHistory = std::vector<FullPrecRealType>(leng, 0.0);
-  PropertyHistory.push_back(newVecHistory);
+  int newL = PropertyHistory.size();
+  PropertyHistory.push_back(std::vector<FullPrecRealType>(leng, 0.0));
   PHindex.push_back(0);
   return newL;
 }
@@ -959,12 +958,7 @@ void ParticleSet::acquireResource(ResourceCollection& collection, const RefVecto
     ps_leader.DistTables[i]->acquireResource(collection, extractDTRefList(p_list, i));
 
   if (ps_leader.structure_factor_)
-  {
-    auto res_ptr = dynamic_cast<SKMultiWalkerMem*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("ParticleSet::acquireResource SKMultiWalkerMem dynamic_cast failed");
-    p_list.getLeader().mw_structure_factor_data_.reset(res_ptr);
-  }
+    p_list.getLeader().mw_structure_factor_data_handle_ = collection.lendResource<SKMultiWalkerMem>();
 }
 
 void ParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
@@ -975,7 +969,7 @@ void ParticleSet::releaseResource(ResourceCollection& collection, const RefVecto
     ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
 
   if (ps_leader.structure_factor_)
-    collection.takebackResource(std::move(p_list.getLeader().mw_structure_factor_data_));
+    collection.takebackResource(p_list.getLeader().mw_structure_factor_data_handle_);
 }
 
 RefVectorWithLeader<DistanceTable> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list, int id)

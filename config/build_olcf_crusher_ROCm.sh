@@ -6,7 +6,7 @@
 echo "Loading QMCPACK dependency modules for crusher"
 module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
 module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
-module load PrgEnv-amd amd/5.3.0 gcc-mixed/11.2.0
+module load PrgEnv-amd amd/5.4.0 gcc-mixed/11.2.0
 module unload cray-libsci
 module load cmake/3.22.2
 module load cray-fftw
@@ -17,7 +17,7 @@ module load boost/1.78.0
 module list >& module_list.txt
 
 TYPE=Release
-Compiler=rocm530
+Compiler=rocm540
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`

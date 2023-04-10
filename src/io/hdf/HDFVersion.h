@@ -35,6 +35,7 @@ const char config_group[] = "config_collection";
 const char random[]         = "random_state";
 const char walkers[]        = "walkers";
 const char num_walkers[]    = "number_of_walkers";
+const char walker_weights[] = "walker_weights";
 const char energy_history[] = "energy_history";
 const char norm_history[]   = "norm_history";
 const char qmc_status[]     = "qmc_status";

@@ -32,6 +32,7 @@ set(DRIVER_TEST_SRC
     test_LMYEngine.cpp
     test_vmc_driver.cpp
     test_dmc_driver.cpp
+    test_SimpleFixedNodeBranch.cpp
     test_QMCDriverFactory.cpp)
 
 # legacy driver mpi, not tested in a meaningful way since the standard unit test is
@@ -78,7 +79,6 @@ set(DRIVER_TEST_SRC
     test_VMCFactoryNew.cpp
     test_VMCBatched.cpp
     test_DMCBatched.cpp
-    test_SimpleFixedNodeBranch.cpp
     test_SFNBranch.cpp
     test_QMCCostFunctionBatched.cpp
     test_QMCCostFunctionBase.cpp
@@ -103,8 +103,7 @@ add_unit_test(${UTEST_NAME} 1 8 $<TARGET_FILE:${UTEST_EXE}>)
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
 if(HAVE_MPI)
-  set(UTEST_EXE test_${SRC_DIR}_mpi)
-  set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
+  set(UTEST_EXE test_new_${SRC_DIR}_mpi)
   #this is dependent on the directory creation and sym linking of earlier driver tests
   set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
@@ -122,7 +121,9 @@ if(HAVE_MPI)
       qmcutil
       platform_omptarget_LA)
   endif()
-  # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
-  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  foreach(NUM_RANKS 1 2 3 4 16)
+    set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS})
+    add_unit_test(${UTEST_NAME} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
+    set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  endforeach()
 endif(HAVE_MPI)

@@ -581,9 +581,9 @@ void test_lcao_spinor_excited()
   p_list.push_back(elec_);
   p_list.push_back(elec_2);
 
-  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
-  elec_.mw_update(p_list);
+  ResourceCollection spo_res("test_spo_res");
+  spo->createResource(spo_res);
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
@@ -604,6 +604,10 @@ void test_lcao_spinor_excited()
   d2logdet_list.push_back(d2psiM);
   d2logdet_list.push_back(d2psiM_2);
 
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_spo_lock(spo_res, spo_list);
+
+  elec_.mw_update(p_list);
   spo->mw_evaluate_notranspose(spo_list, p_list, 0, 1, logdet_list, dlogdet_list, d2logdet_list);
   for (unsigned int iat = 0; iat < 1; iat++)
   {

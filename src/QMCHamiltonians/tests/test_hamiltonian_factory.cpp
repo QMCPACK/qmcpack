@@ -17,6 +17,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -57,8 +58,9 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
+  RuntimeOptions runtime_options;
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting("psi0"));
+  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
@@ -109,8 +111,9 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
+  RuntimeOptions runtime_options;
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting("psi0"));
+  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 

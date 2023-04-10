@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "TWFGrads.hpp"
+#include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -47,15 +48,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
   // diamondC_1x1x1
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0)   = 3.37316115;
-  lattice.R(0, 1)   = 3.37316115;
-  lattice.R(0, 2)   = 0.0;
-  lattice.R(1, 0)   = 0.0;
-  lattice.R(1, 1)   = 3.37316115;
-  lattice.R(1, 2)   = 3.37316115;
-  lattice.R(2, 0)   = 3.37316115;
-  lattice.R(2, 1)   = 0.0;
-  lattice.R(2, 2)   = 3.37316115;
+  lattice.R         = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
   lattice.BoxBConds = {1, 1, 1};
   lattice.reset();
 
@@ -119,7 +112,8 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   psi.addComponent(std::move(slater_det));
 
   const char* jas_input = R"(<tmp>

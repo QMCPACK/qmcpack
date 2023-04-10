@@ -39,7 +39,7 @@ struct CUDALinearAlgebraHandles : public Resource
     cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
   }
 
-  Resource* makeClone() const override { return new CUDALinearAlgebraHandles(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<CUDALinearAlgebraHandles>(*this); }
 };
 }
 #endif

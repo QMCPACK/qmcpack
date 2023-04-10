@@ -42,8 +42,9 @@ typedef enum
 static const std::vector<std::string> suffixes{"V",         "VGL",    "accept", "NLratio",
                                                "recompute", "buffer", "derivs", "preparegroup"};
 
-TrialWaveFunction::TrialWaveFunction(const std::string_view aname, bool tasking)
-    : myNode_(NULL),
+TrialWaveFunction::TrialWaveFunction(const RuntimeOptions& runtime_options, const std::string_view aname, bool tasking)
+    : runtime_options_(runtime_options),
+      myNode_(NULL),
       spomap_(std::make_shared<SPOMap>()),
       myName(aname),
       BufferCursor(0),
@@ -1057,7 +1058,7 @@ bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }
 
 std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
-  auto myclone                 = std::make_unique<TrialWaveFunction>(myName, use_tasking_);
+  auto myclone                 = std::make_unique<TrialWaveFunction>(runtime_options_, myName, use_tasking_);
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)

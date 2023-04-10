@@ -55,7 +55,7 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
-  void storeParamsBeforeRotation() override { C_copy = *C; }
+  void storeParamsBeforeRotation() override { C_copy = std::make_shared<ValueMatrix>(*C); }
 
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
@@ -207,11 +207,15 @@ public:
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet) override;
 
+  void createResource(ResourceCollection& collection) const override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
 protected:
   ///number of Single-particle orbitals
   const IndexType BasisSetSize;
   /// a copy of the original C before orbital rotation is applied;
-  ValueMatrix C_copy;
+  std::shared_ptr<ValueMatrix> C_copy;
 
   ///true if C is an identity matrix
   bool Identity;
@@ -289,6 +293,13 @@ private:
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
                               OffloadMWVGLArray& phi_vgl_v) const;
+
+  struct LCAOMultiWalkerMem;
+  ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
+  /// timer for basis set
+  NewTimer& basis_timer_;
+  /// timer for MO
+  NewTimer& mo_timer_;
 };
 } // namespace qmcplusplus
 #endif

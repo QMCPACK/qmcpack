@@ -78,10 +78,10 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   CloneManager::clearClones();
 
-  TrialWaveFunction psi;
+  TrialWaveFunction psi(project_data.getRuntimeOptions());
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -164,10 +164,10 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   CloneManager::clearClones();
 
-  TrialWaveFunction psi;
+  TrialWaveFunction psi(project_data.getRuntimeOptions());
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 

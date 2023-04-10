@@ -20,6 +20,7 @@
 #include "TestListenerFunction.h"
 #include "Utilities/ResourceCollection.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Utilities/RuntimeOptions.h"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
 
 namespace qmcplusplus
@@ -31,14 +32,15 @@ constexpr bool generate_test_data = false;
 
 TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
 {
+  RuntimeOptions runtime_options;
   Communicate* comm;
   comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
-  TrialWaveFunction twf;
+  TrialWaveFunction twf(runtime_options);
 
   std::vector<QMCHamiltonian> hamiltonians;
   //hamiltonians.emplace_back(*(hamiltonian_pool.getPrimary()));
@@ -58,10 +60,11 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
  */
 TEST_CASE("integrateListeners", "[hamiltonian]")
 {
+  RuntimeOptions runtime_options;
   Communicate* comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   //auto& species_set        = pset_target.getSpeciesSet();
