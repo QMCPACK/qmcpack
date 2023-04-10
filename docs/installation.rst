@@ -1000,7 +1000,7 @@ Job script example with one MPI rank per GPU.
   module list >& module_list.txt # record modules loaded at run
   ldd $exe_path/qmcpack >& ldd.out # double check dynamic libraries
 
-  export OMP_NUM_THREADS=7
+  export OMP_NUM_THREADS=7 # change this to 1 if running with only 1 thread is intended.
   export THREAD_SLOTS=7
   srun -n 8 --ntasks-per-node=8 --gpus-per-task 1 -c $THREAD_SLOTS --gpu-bind=closest \
        $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
