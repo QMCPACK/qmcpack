@@ -34,7 +34,7 @@ module list >& module_list.txt
 
 TYPE=Release
 Machine=summit
-Compiler=Clang
+Compiler=Clang15
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
