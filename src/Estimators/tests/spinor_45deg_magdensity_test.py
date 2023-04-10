@@ -126,7 +126,7 @@ def integrate(R,spins,iat,kup,kdn,ngrid=500):
     psi0=eval_det(R,spins,kup,kdn)
     ratios=np.zeros(ngrid)
     
-    sxgrid=np.zeros(ngrid,)
+    sxgrid=np.zeros(ngrid)
     sygrid=np.zeros(ngrid)
     szgrid=np.zeros(ngrid)
     
