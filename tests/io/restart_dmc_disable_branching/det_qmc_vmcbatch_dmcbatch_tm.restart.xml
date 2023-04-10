@@ -93,5 +93,6 @@
      <parameter name="steps">   3   </parameter>
      <parameter name="blocks">  3   </parameter>
      <parameter name="nonlocalmoves">  v1 </parameter>
+     <parameter name="debug_disable_branching"> yes </parameter>
    </qmc>
 </simulation>

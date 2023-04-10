@@ -14,15 +14,20 @@
 #ifndef QMCPLUSPLUS_STRUCTFACT_H
 #define QMCPLUSPLUS_STRUCTFACT_H
 
-#include "ParticleSet.h"
-#include "DynamicCoordinates.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Resource.h"
+#include "Configuration.h"
+#include <Resource.h>
+#include <NewTimer.h>
+#include <OMPTarget/OffloadAlignedAllocators.hpp>
+#include <type_traits/template_types.hpp>
 
 namespace qmcplusplus
 {
+class ParticleSet;
 class KContainer;
+struct SKMultiWalkerMem;
+
 /** @ingroup longrange
  *\brief Calculates the structure-factor for a particle set
  *
@@ -108,13 +113,13 @@ struct SKMultiWalkerMem : public Resource
   using RealType = StructFact::RealType;
 
   ///dist displ for temporary and old pairs
-  Matrix<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_rhok;
+  Matrix<RealType, OffloadPinnedAllocator<RealType>> nw_rhok;
 
   SKMultiWalkerMem() : Resource("SKMultiWalkerMem") {}
 
   SKMultiWalkerMem(const SKMultiWalkerMem&) : SKMultiWalkerMem() {}
 
-  Resource* makeClone() const override { return new SKMultiWalkerMem(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<SKMultiWalkerMem>(*this); }
 };
 
 } // namespace qmcplusplus

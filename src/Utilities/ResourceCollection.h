@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <vector>
 #include "Resource.h"
+#include "ResourceHandle.h"
 #include "type_traits/RefVectorWithLeader.h"
 
 namespace qmcplusplus
@@ -26,19 +27,26 @@ class ResourceCollection
 public:
   ResourceCollection(const std::string& name);
   ResourceCollection(const ResourceCollection&);
+
   const std::string& getName() const { return name_; }
+
   size_t size() const { return collection_.size(); }
-  void printResources() const;
-
-  size_t addResource(std::unique_ptr<Resource>&& res, bool noprint = false);
-  std::unique_ptr<Resource> lendResource();
-  void takebackResource(std::unique_ptr<Resource>&& res);
-
-  void rewind(size_t cursor = 0) { cursor_index_ = cursor; }
-
   bool empty() const { return collection_.size() == 0; }
 
+  size_t addResource(std::unique_ptr<Resource>&& res, bool noprint = false);
+  void printResources() const;
+
+  template<class RS>
+  ResourceHandle<RS> lendResource() { return dynamic_cast<RS&>(lendResourceImpl()); }
+
+  template<class RS>
+  void takebackResource(ResourceHandle<RS>& res_handle) { takebackResourceImpl(res_handle.release()); }
+
+  void rewind(size_t cursor = 0) { cursor_index_ = cursor; }
 private:
+  Resource& lendResourceImpl();
+  void takebackResourceImpl(Resource& res);
+
   const std::string name_;
   size_t cursor_index_;
   std::vector<std::unique_ptr<Resource>> collection_;

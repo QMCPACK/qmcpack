@@ -53,6 +53,97 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
 }
 
 template<typename ST>
+void SplineC2C<ST>::storeParamsBeforeRotation()
+{
+  const auto spline_ptr     = SplineInst->getSplinePtr();
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+
+  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+}
+
+/*
+  ~~ Notes for rotation ~~
+  spl_coefs      = Raw pointer to spline coefficients
+  basis_set_size = Number of spline coefs per orbital
+  OrbitalSetSize = Number of orbitals (excluding padding)
+
+  spl_coefs has a complicated layout depending on dimensionality of splines.
+  Luckily, for our purposes, we can think of spl_coefs as pointing to a
+  matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline
+  index adjacent in memory. The orbital index is SIMD aligned and therefore
+  may include padding.
+
+  As a result, due to SIMD alignment, Nsplines may be larger than the
+  actual number of splined orbitals. This means that in practice rot_mat
+  may be smaller than the number of 'columns' in the coefs array!
+
+      SplineR2R spl_coef layout:
+             ^         | sp1 | ... | spN | pad |
+             |         |=====|=====|=====|=====|
+             |         | c11 | ... | c1N | 0   |
+      basis_set_size   | c21 | ... | c2N | 0   |
+             |         | ... | ... | ... | 0   |
+             |         | cM1 | ... | cMN | 0   |
+             v         |=====|=====|=====|=====|
+                       <------ Nsplines ------>
+
+      SplineC2C spl_coef layout:
+             ^         | sp1_r | sp1_i |  ...  | spN_r | spN_i |  pad  |
+             |         |=======|=======|=======|=======|=======|=======|
+             |         | c11_r | c11_i |  ...  | c1N_r | c1N_i |   0   |
+      basis_set_size   | c21_r | c21_i |  ...  | c2N_r | c2N_i |   0   |
+             |         |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |
+             |         | cM1_r | cM1_i |  ...  | cMN_r | cMN_i |   0   |
+             v         |=======|=======|=======|=======|=======|=======|
+                       <------------------ Nsplines ------------------>
+
+  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs
+  "matrix" is very tall and skinny.
+*/
+template<typename ST>
+void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+{
+  // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
+  const auto spline_ptr = SplineInst->getSplinePtr();
+  assert(spline_ptr != nullptr);
+  const auto spl_coefs      = spline_ptr->coefs;
+  const auto Nsplines       = spline_ptr->num_splines; // May include padding
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  const auto basis_set_size = coefs_tot_size / Nsplines;
+  assert(OrbitalSetSize == rot_mat.rows());
+  assert(OrbitalSetSize == rot_mat.cols());
+
+  if (!use_stored_copy)
+  {
+    assert(coef_copy_ != nullptr);
+    std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
+  }
+
+  for (int i = 0; i < basis_set_size; i++)
+    for (int j = 0; j < OrbitalSetSize; j++)
+    {
+      // cur_elem points to the real componend of the coefficient.
+      // Imag component is adjacent in memory.
+      const auto cur_elem = Nsplines * i + 2 * j;
+      ST newval_r{0.};
+      ST newval_i{0.};
+      for (auto k = 0; k < OrbitalSetSize; k++)
+      {
+        const auto index = Nsplines * i + 2 * k;
+        ST zr            = (*coef_copy_)[index];
+        ST zi            = (*coef_copy_)[index + 1];
+        ST wr            = rot_mat[k][j].real();
+        ST wi            = rot_mat[k][j].imag();
+        newval_r += zr * wr - zi * wi;
+        newval_i += zr * wi + zi * wr;
+      }
+      spl_coefs[cur_elem]     = newval_r;
+      spl_coefs[cur_elem + 1] = newval_i;
+    }
+}
+
+template<typename ST>
 inline void SplineC2C<ST>::assign_v(const PointType& r,
                                     const vContainer_type& myV,
                                     ValueVector& psi,

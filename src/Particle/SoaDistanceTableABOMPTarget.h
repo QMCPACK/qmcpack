@@ -51,10 +51,10 @@ private:
 
     DTABMultiWalkerMem(const DTABMultiWalkerMem&) : DTABMultiWalkerMem() {}
 
-    Resource* makeClone() const override { return new DTABMultiWalkerMem(*this); }
+    std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DTABMultiWalkerMem>(*this); }
   };
 
-  std::unique_ptr<DTABMultiWalkerMem> mw_mem_;
+  ResourceHandle<DTABMultiWalkerMem> mw_mem_handle_;
 
   void resize()
   {
@@ -95,7 +95,7 @@ private:
     const size_t num_padded    = getAlignedSize<T>(dt_leader.num_sources_);
     const size_t stride_size   = num_padded * (D + 1);
     const size_t total_targets = count_targets;
-    auto& mw_r_dr              = dt_leader.mw_mem_->mw_r_dr;
+    auto& mw_r_dr              = dt_leader.mw_mem_handle_.getResource().mw_r_dr;
     mw_r_dr.resize(total_targets * stride_size);
 
     count_targets = 0;
@@ -151,17 +151,14 @@ public:
 
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
-    auto res_ptr = dynamic_cast<DTABMultiWalkerMem*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("SoaDistanceTableABOMPTarget::acquireResource dynamic_cast failed");
-    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
-    dt_leader.mw_mem_.reset(res_ptr);
+    auto& dt_leader          = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
+    dt_leader.mw_mem_handle_ = collection.lendResource<DTABMultiWalkerMem>();
     associateResource(dt_list);
   }
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
-    collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>().mw_mem_));
+    collection.takebackResource(dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>().mw_mem_handle_);
     for (size_t iw = 0; iw < dt_list.size(); iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
@@ -170,12 +167,7 @@ public:
     }
   }
 
-  const T* getMultiWalkerDataPtr() const override
-  {
-    if (!mw_mem_)
-      throw std::runtime_error("SoaDistanceTableABOMPTarget mw_mem_ is nullptr");
-    return mw_mem_->mw_r_dr.data();
-  }
+  const T* getMultiWalkerDataPtr() const override { return mw_mem_handle_.getResource().mw_r_dr.data(); }
 
   size_t getPerTargetPctlStrideSize() const override { return getAlignedSize<T>(num_sources_) * (D + 1); }
 
@@ -237,14 +229,12 @@ public:
   {
     assert(this == &dt_list.getLeader());
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
-    // multi walker resource must have been acquired
-    assert(dt_leader.mw_mem_);
 
     ScopedTimer local_timer(evaluate_timer_);
 
-    const size_t nw = dt_list.size();
-    auto& mw_mem    = *dt_leader.mw_mem_;
-    auto& mw_r_dr   = mw_mem.mw_r_dr;
+    const size_t nw            = dt_list.size();
+    DTABMultiWalkerMem& mw_mem = dt_leader.mw_mem_handle_;
+    auto& mw_r_dr              = mw_mem.mw_r_dr;
 
     size_t count_targets = 0;
     for (ParticleSet& p : p_list)

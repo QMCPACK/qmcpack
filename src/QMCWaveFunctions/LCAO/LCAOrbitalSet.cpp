@@ -13,11 +13,29 @@
 #include "LCAOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/BLAS.hpp"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
+
+struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
+{
+  LCAOMultiWalkerMem() : Resource("LCAOrbitalSet") {}
+  LCAOMultiWalkerMem(const LCAOMultiWalkerMem&) : LCAOMultiWalkerMem() {}
+
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
+
+  OffloadMWVGLArray phi_vgl_v;
+  // [5][NW][NumAO]
+  OffloadMWVGLArray basis_mw;
+};
+
 LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
-    : SPOSet(my_name), BasisSetSize(bs ? bs->getBasisSetSize() : 0), Identity(true)
+    : SPOSet(my_name),
+      BasisSetSize(bs ? bs->getBasisSetSize() : 0),
+      Identity(true),
+      basis_timer_(*timer_manager.createTimer("LCAOrbitalSet::Basis", timer_level_fine)),
+      mo_timer_(*timer_manager.createTimer("LCAOrbitalSet::MO", timer_level_fine))
 {
   if (!bs)
     throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
@@ -35,7 +53,9 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
       C(in.C),
       BasisSetSize(in.BasisSetSize),
       C_copy(in.C_copy),
-      Identity(in.Identity)
+      Identity(in.Identity),
+      basis_timer_(in.basis_timer_),
+      mo_timer_(in.mo_timer_)
 {
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
@@ -82,6 +102,25 @@ void LCAOrbitalSet::checkObject() const
     if (BasisSetSize != C->cols())
       throw std::runtime_error("LCAOrbitalSet::checkObject C columns doesn't match BasisSetSize.");
   }
+}
+
+void LCAOrbitalSet::createResource(ResourceCollection& collection) const
+{
+  auto resource_index = collection.addResource(std::make_unique<LCAOMultiWalkerMem>());
+}
+
+void LCAOrbitalSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader          = spo_list.getCastedLeader<LCAOrbitalSet>();
+  spo_leader.mw_mem_handle_ = collection.lendResource<LCAOMultiWalkerMem>();
+}
+
+void LCAOrbitalSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  collection.takebackResource(spo_leader.mw_mem_handle_);
 }
 
 std::unique_ptr<SPOSet> LCAOrbitalSet::makeClone() const { return std::make_unique<LCAOrbitalSet>(*this); }
@@ -334,14 +373,21 @@ inline void LCAOrbitalSet::evaluate_ionderiv_v_row_impl(const vgl_type& temp, Gr
 void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   //TAKE CARE OF IDENTITY
-  myBasisSet->evaluateVGL(P, iat, Temp);
+  {
+    ScopedTimer local(basis_timer_);
+    myBasisSet->evaluateVGL(P, iat, Temp);
+  }
+
   if (Identity)
     evaluate_vgl_impl(Temp, psi, dpsi, d2psi);
   else
   {
     assert(psi.size() <= OrbitalSetSize);
-    ValueMatrix C_partial_view(C->data(), psi.size(), BasisSetSize);
-    Product_ABt(Temp, C_partial_view, Tempv);
+    {
+      ScopedTimer local(mo_timer_);
+      ValueMatrix C_partial_view(C->data(), psi.size(), BasisSetSize);
+      Product_ABt(Temp, C_partial_view, Tempv);
+    }
     evaluate_vgl_impl(Tempv, psi, dpsi, d2psi);
   }
 }
@@ -353,7 +399,10 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                                    const RefVector<GradVector>& dpsi_v_list,
                                    const RefVector<ValueVector>& d2psi_v_list) const
 {
-  OffloadMWVGLArray phi_vgl_v;
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& phi_vgl_v  = spo_leader.mw_mem_handle_.getResource().phi_vgl_v;
+
   phi_vgl_v.resize(DIM_VGL, spo_list.size(), OrbitalSetSize);
   mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
 
@@ -377,13 +426,18 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                                            int iat,
                                            OffloadMWVGLArray& phi_vgl_v) const
 {
-  // [5][NW][NumAO]
-  OffloadMWVGLArray basis_mw;
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& basis_mw   = spo_leader.mw_mem_handle_.getResource().basis_mw;
   basis_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
+
+  {
+    ScopedTimer local(basis_timer_);
+    myBasisSet->mw_evaluateVGL(P_list, iat, basis_mw);
+  }
 
   if (Identity)
   {
-    myBasisSet->mw_evaluateVGL(P_list, iat, basis_mw);
     // output_size can be smaller than BasisSetSize
     const size_t output_size = phi_vgl_v.size(2);
     const size_t nw          = phi_vgl_v.size(1);
@@ -396,14 +450,16 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
   {
     const size_t requested_orb_size = phi_vgl_v.size(2);
     assert(requested_orb_size <= OrbitalSetSize);
-    ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
-    myBasisSet->mw_evaluateVGL(P_list, iat, basis_mw);
-    BLAS::gemm('T', 'N',
-               requested_orb_size,        // MOs
-               spo_list.size() * DIM_VGL, // walkers * DIM_VGL
-               BasisSetSize,              // AOs
-               1, C_partial_view.data(), BasisSetSize, basis_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
-               requested_orb_size);
+    {
+      ScopedTimer local(mo_timer_);
+      ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+      BLAS::gemm('T', 'N',
+                 requested_orb_size,        // MOs
+                 spo_list.size() * DIM_VGL, // walkers * DIM_VGL
+                 BasisSetSize,              // AOs
+                 1, C_partial_view.data(), BasisSetSize, basis_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
+                 requested_orb_size);
+    }
   }
 }
 
@@ -415,13 +471,19 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
   Vector<ValueType> invTemp(Temp.data(1), BasisSetSize);
 
-  // when only a subset of orbitals is used, extract limited rows of C.
-  Matrix<ValueType> C_occupied(C->data(), psiinv.size(), BasisSetSize);
-  MatrixOperators::product_Atx(C_occupied, psiinv, invTemp);
+  {
+    ScopedTimer local(mo_timer_);
+    // when only a subset of orbitals is used, extract limited rows of C.
+    Matrix<ValueType> C_occupied(C->data(), psiinv.size(), BasisSetSize);
+    MatrixOperators::product_Atx(C_occupied, psiinv, invTemp);
+  }
 
   for (size_t j = 0; j < VP.getTotalNum(); j++)
   {
-    myBasisSet->evaluateV(VP, j, vTemp.data());
+    {
+      ScopedTimer local(basis_timer_);
+      myBasisSet->evaluateV(VP, j, vTemp.data());
+    }
     ratios[j] = simd::dot(vTemp.data(), invTemp.data(), BasisSetSize);
   }
 }
