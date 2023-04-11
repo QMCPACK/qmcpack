@@ -953,7 +953,7 @@ Job script example with one MPI rank per GPU.
 Installing on ORNL OLCF Frontier/Crusher
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Frontier is a HPE Cray EX supercomputer located at the Oak Ridge Leadership Computing Facility.a
+Frontier is a HPE Cray EX supercomputer located at the Oak Ridge Leadership Computing Facility.
 Each Frontier compute node consists of [1x] 64-core AMD CPU with access to 512 GB of DDR4 memory. Each node also contains [4x] AMD MI250X, each with 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node. 
 
 Building QMCPACK
