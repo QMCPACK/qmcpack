@@ -948,13 +948,15 @@ Job script example with one MPI rank per GPU.
 
   export OMP_NUM_THREADS=7
   jsrun -n $NNODES -a $RANKS_PER_NODE -c $((RANKS_PER_NODE*OMP_NUM_THREADS)) -g 6 -r 1 -d packed -b packed:$OMP_NUM_THREADS \
-        --smpiargs="-disable_gpu_hooks" $exe_path/qmcpack --enable-timers=fine $prefix.xml > $prefix.out
+        --smpiargs="-disable_gpu_hooks" $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
 
 Installing on ORNL OLCF Frontier/Crusher
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Frontier is a HPE Cray EX supercomputer located at the Oak Ridge Leadership Computing Facility.
-Each Frontier compute node consists of [1x] 64-core AMD CPU with access to 512 GB of DDR4 memory. Each node also contains [4x] AMD MI250X, each with 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node. 
+Each Frontier compute node consists of [1x] 64-core AMD CPU with access to 512 GB of DDR4 memory.
+Each node also contains [4x] AMD MI250X, each with 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node.
+Crusher is the test and development system of Frontier with exactly the same node architecture.
 
 Building QMCPACK
 ^^^^^^^^^^^^^^^^
@@ -1000,9 +1002,11 @@ Job script example with one MPI rank per GPU.
   module list >& module_list.txt # record modules loaded at run
   ldd $exe_path/qmcpack >& ldd.out # double check dynamic libraries
 
+  RANKS_PER_NODE=8
+  TOTAL_RANKS=$((SLURM_JOB_NUM_NODES * RANKS_PER_NODE))
+  THREAD_SLOTS=7
   export OMP_NUM_THREADS=7 # change this to 1 if running with only 1 thread is intended.
-  export THREAD_SLOTS=7
-  srun -n 8 --ntasks-per-node=8 --gpus-per-task 1 -c $THREAD_SLOTS --gpu-bind=closest \
+  srun -n $TOTAL_RANKS --ntasks-per-node=$RANKS_PER_NODE --gpus-per-task=1 -c $THREAD_SLOTS --gpu-bind=closest \
        $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
 
 Installing on NERSC Cori, Haswell Partition, Cray XC40
