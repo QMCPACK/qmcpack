@@ -995,7 +995,7 @@ Job script example with one MPI rank per GPU.
   module load openblas/0.3.17-omp
   module load cray-hdf5-parallel
 
-  exe_path=/ccs/home/yeluo/opt/qmcpack/build_crusher_rocm543_offload_cuda2hip_real_MP/bin
+  exe_path=/lustre/orion/mat151/world-shared/opt/qmcpack/develop-20230411/build_crusher_rocm543_offload_cuda2hip_real/bin
 
   prefix=NiO-fcc-S128-dmc
 
