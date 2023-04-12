@@ -105,7 +105,7 @@ private:
   //job list for evaluation
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
   //multi walker resource
-  std::unique_ptr<SOECPotentialMultiWalkerResource> mw_res_;
+  ResourceHandle<SOECPotentialMultiWalkerResource> mw_res_handle_;
 
   void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
 

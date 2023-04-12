@@ -207,6 +207,10 @@ public:
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet) override;
 
+  void createResource(ResourceCollection& collection) const override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
 protected:
   ///number of Single-particle orbitals
   const IndexType BasisSetSize;
@@ -289,6 +293,13 @@ private:
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
                               OffloadMWVGLArray& phi_vgl_v) const;
+
+  struct LCAOMultiWalkerMem;
+  ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
+  /// timer for basis set
+  NewTimer& basis_timer_;
+  /// timer for MO
+  NewTimer& mo_timer_;
 };
 } // namespace qmcplusplus
 #endif

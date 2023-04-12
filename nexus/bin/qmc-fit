@@ -4,6 +4,7 @@ import os
 import sys
 import argparse
 
+
 try:
     import numpy as np
 except:
@@ -41,13 +42,11 @@ def import_nexus_module(module_name):
     return importlib.import_module(module_name)
 #end def import_nexus_module
 
-
 # Load Nexus modules
 try:
     # Attempt specialized path-based imports.
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
-
     versions = import_nexus_module('versions')
     nexus_version = versions.nexus_version
     del versions
@@ -70,6 +69,23 @@ try:
     equilibration_length = numerics.equilibration_length
     curve_fit            = numerics.curve_fit
     least_squares        = numerics.least_squares
+    num_eos_fit          = numerics.eos_fit
+    morse_fit            = numerics.morse_fit
+    morse                = numerics.morse
+    morse_einf           = numerics.morse_Einf
+    morse_re             = numerics.morse_re
+    morse_De             = numerics.morse_De
+    morse_a              = numerics.morse_a
+    morse_width          = numerics.morse_width
+    morse_depth          = numerics.morse_depth
+    morse_Ee             = numerics.morse_Ee
+    morse_k              = numerics.morse_k
+    murnaghan            = numerics.murnaghan
+    birch                = numerics.birch
+    vinet                = numerics.vinet
+    murnaghan_pressure   = numerics.murnaghan_pressure
+    birch_pressure       = numerics.birch_pressure
+    vinet_pressure       = numerics.vinet_pressure
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
@@ -82,10 +98,10 @@ except:
 #end try
 
 
+# Polynomial functions
 roots_n     = lambda p, x: np.roots(np.polyder(p[::-1], x))
 root_vals_n = lambda p, x: np.polyval(p[::-1], roots_n(p, x))
 moment_n    = lambda p, x: np.polyval(np.polyder(p[::-1], x), roots_n(p, x-1))
-
 
 all_fit_functions = obj(
     ts = obj(
@@ -133,9 +149,53 @@ all_fit_functions = obj(
                         ('minimum_e',lambda p: root_vals_n(p,1)[moment_n(p,2) > 0]),
                         ('curvature',lambda p: moment_n(p, 2)[moment_n(p,2) > 0])],
             ),            
-        ),        
+        ),
+    eos = obj(
+        morse = obj(
+            nparam   = 4,
+            function = morse,
+            format   = 'De ( (1-e^-a(r-re))^2 - 1 ) + E_infinity',
+            params   = [('minimum_x', morse_re), 
+                        ('a',         morse_a),
+                        ('de',        morse_De),
+                        ('einf',      morse_einf),
+                        ('well_width',morse_width),
+                        ('well_depth',morse_depth),
+                        ('minimum_e' ,morse_Ee),
+                        ('morse_k'   ,morse_k)]
+            ),
+        birch = obj(
+            nparam   = 4,
+            format   = 'E_inf + 9*V_0*B/16*((V_0/V)**(2./3)-1)**2*( 2 + (Bp-4)*((V_0/V)**(2./3)-1) )', 
+            function = birch, 
+            params   = [('minimum_x', lambda p: p[1]),
+                        ('e_inf',     lambda p: p[0]),
+                        ('B',         lambda p: p[2]),
+                        ('Bp',        lambda p: p[3]),
+                        ('pressure' , lambda p, V: birch_pressure(p[1:], V))],
+            ),         
+        vinet = obj(
+            nparam   = 4,
+            format   = 'E_inf + 2*V_0*B/(Bp-1)**2*( 2 - (2+3*(Bp-1)*((V/V_0)**(1./3)-1))*exp(-1.5*(Bp-1)*((V/V_0)**(1./3)-1)) ) ', 
+            function = vinet, 
+            params   = [('minimum_x', lambda p: p[1]),
+                        ('e_inf',     lambda p: p[0]),
+                        ('B',         lambda p: p[2]),
+                        ('Bp',        lambda p: p[3]),
+                        ('pressure' , lambda p, V: vinet_pressure(p[1:], V))],
+            ),
+        murnaghan = obj(
+            nparam   = 4,
+            format   = 'E_inf + B/Bp*V*((V_0/V)**Bp/(Bp-1)+1)-V_0*B/(Bp-1)', 
+            function = murnaghan, 
+            params   = [('minimum_x', lambda p: p[1]),
+                        ('e_inf',     lambda p: p[0]),
+                        ('B',         lambda p: p[2]),
+                        ('Bp',        lambda p: p[3]),
+                        ('pressure' , lambda p, V: murnaghan_pressure(p[1:], V))],
+            ),             
+        ),
     )
-
 fit_functions = obj()
 
 
@@ -164,9 +224,9 @@ def qmcfit(q,E,fname='linear',minimizer=least_squares):
     # setup initial guess parameters
     if fname=='quartic':
         pp = np.polyfit(q,E,4)
-    if fname=='cubic':
+    elif fname=='cubic':
         pp = np.polyfit(q,E,3)
-    if fname=='quadratic':
+    elif fname=='quadratic':
         pp = np.polyfit(q,E,2)
     else:
         pp = np.polyfit(q,E,1)
@@ -416,7 +476,7 @@ def hubbard_u_fit(args):
         series_start    = opt.series_start,
         equils          = opt.equils,
         reblock_factors = opt.reblock_factors,
-        )    
+        )
     hubbard_u = True
     if opt.hubbards is not None:
         parse_list(opt,'hubbards',float)
@@ -501,6 +561,84 @@ def hubbard_u_fit(args):
     #end if    
 #end def hubbard_u_fit 
 
+def eos_fit(args):
+    opt = obj(**args.__dict__)
+    scalar_files = sorted(opt.scalar_files)
+    if opt.fit_function not in fit_functions:
+        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+    #end if
+    Edata,Emean,Eerror,scalar_files = process_scalar_files(
+        scalar_files    = scalar_files,
+        series_start    = opt.series_start,
+        equils          = opt.equils,
+        reblock_factors = opt.reblock_factors,
+        )
+
+    parse_list(opt,'eos',float)
+    parse_list(opt,'equils',int,len1=True)
+    parse_list(opt,'reblock_factors',int,len1=True)
+    
+    # perform jackknife analysis of the fit
+    x = opt.eos
+    
+    jcapture = obj()
+    auxfuncs = obj()
+    auxres   = obj()
+    finfo = fit_functions[opt.fit_function]
+    if 'params' in finfo.keys():
+        for name,func in finfo.params:
+            auxfuncs[name]=func
+        #end for
+    if opt.fit_function == 'morse':
+        _, pmean, perror = morse_fit(x, np.transpose(Edata), jackknife=True, auxfuncs=auxfuncs, auxres=auxres, capture=jcapture)
+    else:
+        _, pmean, perror = eos_fit(x, np.transpose(Edata), type = opt.fit_function, jackknife=True, auxfuncs=auxfuncs, auxres=auxres, capture=jcapture)
+
+    func_info = fit_functions[opt.fit_function]
+    pvals = []
+    for n in range(len(pmean)):
+        pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
+    #end for
+    log('\nfit function  : '+opt.fit_function)
+    log('fitted formula: '+func_info.format.format(*pvals))
+
+    if 'params' in func_info.keys():
+        for pname,pfunc in func_info.params:
+            pm,pe = stat_strings(*np.array(auxres[pname]))
+            log('{0}: {1} +/- {2} '.format(pname,pm,pe))
+        #end for
+    
+    # plot the fit (if available)
+    if plots_available and not opt.noplot:
+        lw = 2
+        ms = 10
+        ts = x
+        tsmin = ts.min()
+        tsmax = ts.max()
+        tsrange = tsmax-tsmin
+        x_min,x_err = auxres.minimum_x
+        if 'minimum_e' in auxres.keys():
+            e_min,e_err = auxres.minimum_e
+        else:
+            e_min = func_info.function(pmean, x_min)
+        #end if
+        tsfit = np.linspace(tsmin,1.1*tsmax,400)
+        Efit  = func_info.function(pmean,tsfit)
+        plt.figure()
+        plt.plot(tsfit,Efit,'k-',lw=lw)
+        plt.errorbar(ts,Emean,Eerror,fmt='b.',ms=ms)
+        plt.errorbar(x_min,e_min,xerr=x_err,fmt='r.',ms=ms)
+        plt.xlim([tsmin-0.1*tsrange,tsmax + 0.1*tsrange])
+        if opt.fit_function == 'morse':
+            plt.xlabel('Distance (A)')
+        else:
+            plt.xlabel('Volume (A^3)')
+        #end if
+        plt.ylabel('DMC Energy (Ha)')
+        plt.show()
+    #end if              
+#end def eos_fit 
+
 def parse_args():
     """This utility provides a fit to the one-dimensional parameter scans of QMC 
     observables. Currently, the functionality in place is to fit linear/quadratic polynomial
@@ -511,7 +649,7 @@ def parse_args():
     parser       = argparse.ArgumentParser(description=parse_args.__doc__,
                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('fit_type', choices=['ts', 'u'], default = 'ts',
+    parser.add_argument('fit_type', choices=['ts', 'u', 'eos'], default = 'ts',
                         help='One dimensional parameter used to fit QMC local energies. Options are ts for timestep and u for hubbard_u parameter fitting'
                         ) 
     parser.add_argument('-f','--fit',dest='fit_function',default='linear',
@@ -528,7 +666,9 @@ def parse_args():
     parameters.add_argument('--exx',dest='exx',default=None, 
                         help='EXX ratios'
                         )                        
-
+    parameters.add_argument('--eos',dest='eos',default=None, 
+                        help='Structural parameter for EOS fitting'
+                        )           
     parser.add_argument('-s', '--series_start',dest='series_start',type=int, default=None,
                         help='Series number for first DMC run.  Use to exclude prior VMC scalar files if they have been provided'
                         )
@@ -568,6 +708,8 @@ if __name__=='__main__':
         timestep_fit(args)
     elif fit_type == 'u':
         hubbard_u_fit(args)
+    elif fit_type == 'eos':
+        eos_fit(args)
     else:
         error('unsupported fit type: {0}'.format(fit_type))
     #end if

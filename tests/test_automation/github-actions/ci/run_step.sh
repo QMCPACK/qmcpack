@@ -54,11 +54,11 @@ case "$1" in
         echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
 
       else
-        echo "Set CUDACXX CMake environment variable to nvcc standard location"
-        export CUDACXX=/usr/local/cuda/bin/nvcc
+        echo "Set CUDACXX CMake environment variable to nvcc 11.8"
+        export CUDACXX=/usr/local/cuda-11.8/bin/nvcc
 
         # Make current environment variables available to subsequent steps
-        echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+        echo "CUDACXX=/usr/local/cuda-11.8/bin/nvcc" >> $GITHUB_ENV
       fi
     fi 
 
@@ -356,7 +356,7 @@ case "$1" in
       then
         export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
       else
-        export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+        export LD_LIBRARY_PATH=/usr/local/cuda-11.8/lib64:${LD_LIBRARY_PATH}
       fi
     fi
 

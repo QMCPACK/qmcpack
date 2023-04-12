@@ -900,34 +900,114 @@ accelerators.
 Building QMCPACK
 ^^^^^^^^^^^^^^^^
 
-Note that these build instructions are preliminary as the
-software environment is subject to change. As of December 2018, the
-IBM XL compiler does not support C++14, so we currently use the
-gnu compiler.
+As of April 2023, LLVM Clang (>=15) is the only compiler, validated by QMCPACK developers,
+on Summit for OpenMP offloading computation to NVIDIA GPUs.
 
 For ease of reproducibility we provide build scripts for Summit.
 
 ::
 
   cd qmcpack
-  ./config/build_olcf_summit.sh
-  ls bin
+  ./config/build_olcf_summit_Clang.sh
+  ls build_*/bin
 
-Building Quantum ESPRESSO
-^^^^^^^^^^^^^^^^^^^^^^^^^
-We provide a build script for the v6.4.1 release of Quantum ESPRESSO (QE).
-The following can be used to build a CPU version of QE on Summit,
-placing the script in the external\_codes/quantum\_espresso directory.
+Running QMCPACK
+^^^^^^^^^^^^^^^
+Job script example with one MPI rank per GPU.
 
 ::
 
-  cd external_codes/quantum_espresso
-  ./build_qe_olcf_summit.sh
+  #!/bin/bash
+  # Begin LSF directives
+  #BSUB -P MAT151
+  #BSUB -J test
+  #BSUB -o tst.o%J
+  #BSUB -W 60
+  #BSUB -nnodes 1
+  #BSUB -alloc_flags smt1
+  # End LSF directives and begin shell commands
 
-Note that performance is
-not yet optimized although vendor libraries are
-used. Alternatively, the wavefunction files can be generated on
-another system and the converted HDF5 files copied over.
+  module load gcc/9.3.0
+  module load spectrum-mpi
+  module load cuda
+  module load essl
+  module load netlib-lapack
+  module load hdf5/1.10.7
+  module load fftw
+  # private module until OLCF provides a new llvm build
+  module use /gpfs/alpine/mat151/world-shared/opt/modules
+  module load llvm/release-15.0.0-cuda11.0
+
+  NNODES=$(((LSB_DJOB_NUMPROC-1)/42))
+  RANKS_PER_NODE=6
+  RS_PER_NODE=6
+
+  exe_path=/gpfs/alpine/mat151/world-shared/opt/qmcpack/release-3.16.0/build_summit_Clang_offload_cuda_real/bin
+
+  prefix=NiO-fcc-S1-dmc
+
+  export OMP_NUM_THREADS=7
+  jsrun -n $NNODES -a $RANKS_PER_NODE -c $((RANKS_PER_NODE*OMP_NUM_THREADS)) -g 6 -r 1 -d packed -b packed:$OMP_NUM_THREADS \
+        --smpiargs="-disable_gpu_hooks" $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
+
+Installing on ORNL OLCF Frontier/Crusher
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Frontier is a HPE Cray EX supercomputer located at the Oak Ridge Leadership Computing Facility.
+Each Frontier compute node consists of [1x] 64-core AMD CPU with access to 512 GB of DDR4 memory.
+Each node also contains [4x] AMD MI250X, each with 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node.
+Crusher is the test and development system of Frontier with exactly the same node architecture.
+
+Building QMCPACK
+^^^^^^^^^^^^^^^^
+
+As of April 2023, ROCm Clang (>= 5.3.0) is the only compiler, validated by QMCPACK developers,
+on Frontier for OpenMP offloading computation to AMD GPUs.
+
+For ease of reproducibility we provide build scripts for Frontier.
+
+::
+
+  cd qmcpack
+  ./config/build_olcf_frontier_ROCm.sh
+  ls build_*/bin
+
+Running QMCPACK
+^^^^^^^^^^^^^^^
+Job script example with one MPI rank per GPU.
+
+::
+
+  #!/bin/bash
+  #SBATCH -A MAT151
+  #SBATCH -J test
+  #SBATCH -o tst.o%J
+  #SBATCH -t 01:30:00
+  #SBATCH -N 1
+
+  echo "Loading QMCPACK dependency modules for crusher"
+  module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
+  module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
+  module load PrgEnv-amd amd/5.4.3
+  module unload cray-libsci
+  module load cmake/3.22.2
+  module load cray-fftw
+  module load openblas/0.3.17-omp
+  module load cray-hdf5-parallel
+
+  exe_path=/lustre/orion/mat151/world-shared/opt/qmcpack/develop-20230411/build_crusher_rocm543_offload_cuda2hip_real/bin
+
+  prefix=NiO-fcc-S128-dmc
+
+  module list >& module_list.txt # record modules loaded at run
+  ldd $exe_path/qmcpack >& ldd.out # double check dynamic libraries
+
+  RANKS_PER_NODE=8
+  TOTAL_RANKS=$((SLURM_JOB_NUM_NODES * RANKS_PER_NODE))
+  THREAD_SLOTS=7
+  export OMP_NUM_THREADS=7 # change this to 1 if running with only 1 thread is intended.
+  srun -n $TOTAL_RANKS --ntasks-per-node=$RANKS_PER_NODE --gpus-per-task=1 -c $THREAD_SLOTS --gpu-bind=closest \
+       $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
 
 Installing on NERSC Cori, Haswell Partition, Cray XC40
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

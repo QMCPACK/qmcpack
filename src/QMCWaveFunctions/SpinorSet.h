@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_SPINORSET_H
 
 #include "QMCWaveFunctions/SPOSet.h"
+#include <ResourceHandle.h>
 
 namespace qmcplusplus
 {
@@ -175,11 +176,11 @@ public:
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
 
   /// check if the multi walker resource is owned. For testing only.
-  bool isResourceOwned() const { return bool(mw_res_); }
+  bool isResourceOwned() const { return bool(mw_res_handle_); }
 
 private:
   struct SpinorSetMultiWalkerResource;
-  std::unique_ptr<SpinorSetMultiWalkerResource> mw_res_;
+  ResourceHandle<SpinorSetMultiWalkerResource> mw_res_handle_;
 
   std::pair<RefVectorWithLeader<SPOSet>, RefVectorWithLeader<SPOSet>> extractSpinComponentRefList(
       const RefVectorWithLeader<SPOSet>& spo_list) const;
