@@ -73,7 +73,13 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///Species ID
+  /** Species ID
+   *  This forms a redundant and unchecked for consistency pair with the species_set_ membersize attribute.
+   *  This can result in out of bounds access depending on which the client of ParticleSet trusts.!
+   *  Group id is more widely used but implementation specific and a per particle value.
+   *  the membersize attribute is a per group value and allows code to process by group.
+   *  \todo Fix this mess.
+   */
   ParticleIndex GroupID;
   ///Position
   ParticlePos R;
