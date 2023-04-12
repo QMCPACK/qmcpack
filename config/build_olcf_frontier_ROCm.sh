@@ -61,6 +61,11 @@ if [[ $name == *"cuda2hip"* ]]; then
 fi
 
 folder=build_crusher_${Compiler}_${name}
+
+if [[ -v install_folder ]]; then
+  CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX=$install_folder/$folder"
+fi
+
 echo "**********************************"
 echo "$folder"
 echo "$CMAKE_FLAGS"
