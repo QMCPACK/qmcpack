@@ -18,7 +18,6 @@
 #include <unordered_map>
 
 #include "Configuration.h"
-#include "OhmmsData/ParameterSet.h"
 #include "Containers/OhmmsPETE/TinyVector.h"
 
 #include "Message/UniformCommunicateError.h"
@@ -44,12 +43,12 @@ protected:
   // Becuase it hurts to read all the trailing _ in the constructors of input section subtypes
   // NOLINTBEGIN(readability-indentifier-naming)
 
-  std::string section_name; // name of the input section
+  std::string section_name;                      // name of the input section
 
-  std::unordered_set<std::string> attributes; // list of attribute variables
-  std::unordered_set<std::string> parameters; // list of parameter variables
-  std::unordered_set<std::string> delegates;  // input nodes delegate to next level of input parsing.
-  std::unordered_set<std::string> required;   // list of required variables
+  std::unordered_set<std::string> attributes;    // list of attribute variables
+  std::unordered_set<std::string> parameters;    // list of parameter variables
+  std::unordered_set<std::string> delegates;     // input nodes delegate to next level of input parsing.
+  std::unordered_set<std::string> required;      // list of required variables
 
   std::unordered_set<std::string> strings;       // list of string variables that can have one value
   std::unordered_set<std::string> multi_strings; // list of string variables that can one or more values
@@ -146,8 +145,7 @@ protected:
    *   \param[in]   tag                parmater name or node ename delgation is controlled by
    *   \param[in]   delegate_handler   factory function for delegated input function.
    */
-  void registerDelegate(const std::string& tag,
-                        DelegateHandler delegate_handler);
+  void registerDelegate(const std::string& tag, DelegateHandler delegate_handler);
 
   /** Do validation for a particular subtype of InputSection
    *  Called by check_valid.
@@ -176,7 +174,9 @@ protected:
   /** Derived class can overrides this to do custom parsing of the element values for Custom elements
    *  These can have a name attribute only.
    */
-  [[noreturn]] virtual void setFromStreamCustom(const std::string& ename, const std::string& name, std::istringstream& svalue)
+  [[noreturn]] virtual void setFromStreamCustom(const std::string& ename,
+                                                const std::string& name,
+                                                std::istringstream& svalue)
   {
     throw std::runtime_error("derived class must provide handleCustom method if custom parameters are used");
   }
