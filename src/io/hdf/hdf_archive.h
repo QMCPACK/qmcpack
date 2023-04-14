@@ -43,6 +43,8 @@ class Communicate;
 namespace qmcplusplus
 {
 /** class to handle hdf file
+ *
+ *  Wrapper functions necessary because hdf5 c interface h5d_xxx semantics.
  */
 class hdf_archive
 {
@@ -245,6 +247,45 @@ public:
     {
       throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
     }
+  }
+
+  /** Append data to a dynamically sized dataspace.
+   *
+   *  \param[in]     data                    reference to actual data object, hdf5_proxy, hdf_stl, hdf_pete provide proxies for most.
+   *  \param[in]     aname                   hdf5 path from the current file group on.
+   *  \param[in]     append_index            In a dynamic dataseries which entry will this be, updated to next entry.
+   *
+   *  This has no legacy usage and exceptions are thrown in case of error.
+   *
+   *  This is pointless unless you do something with the current_append_index
+   *  which is the necessary state to determine where in the data series you
+   *  are writing.
+   */
+  template<typename T>
+  unsigned long long  append(T& data, const std::string& aname, const unsigned long long current_append_index)
+  {
+    auto local_append_index = current_append_index;
+    if (!appendEntry(data, aname, local_append_index))
+    {
+      throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
+    }
+    return local_append_index;
+  }
+
+  /** write the data to the group aname and return status
+   * use write() for inbuilt error checking
+   * @return true if successful
+   */
+  template<typename T>
+  bool appendEntry(T& data, const std::string& aname, unsigned long long& current_append_index)
+  {
+    if (Mode[NOIO])
+      return true;
+    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
+      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    h5data_proxy<typename std::remove_const<T>::type> e(data);
+    return e.append(data, p, aname, current_append_index, xfer_plist);
   }
 
   /** write the container data with a specific shape and check status

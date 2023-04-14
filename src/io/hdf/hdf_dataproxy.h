@@ -48,6 +48,16 @@ struct h5data_proxy : public h5_space_type<T, 0>
   {
     return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(&ref), xfer_plist);
   }
+
+  inline bool append(const data_type& ref, hid_t grp, const std::string& aname, hsize_t& current_leading_index, hid_t xfer_plist = H5P_DEFAULT) const
+  {
+    std::vector<hsize_t> my_dims;
+    hsize_t rank = dims.size() + 1;
+    my_dims.resize(rank, 1);
+    copy(dims.begin(), dims.end(), my_dims.begin() + 1);
+    return h5d_append(grp, aname.c_str(), current_leading_index, FileSpace::rank, my_dims.data(), get_address(&ref), xfer_plist);
+  }
+
 };
 
 /** specialization for bool, convert to int

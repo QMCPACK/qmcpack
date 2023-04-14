@@ -143,6 +143,9 @@ private:
   SpinDensityInput::DerivedParameters derived_parameters_;
   /**}@*/
 
+  /// current index for h5d_append
+  hsize_t append_index_ = 0;
+
   friend class testing::SpinDensityNewTests;
 };
 

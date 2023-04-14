@@ -199,6 +199,41 @@ TEST_CASE("hdf_archive_vector", "[hdf]")
     CHECK(v_const[i] == v2_for_const[i]);
 }
 
+TEST_CASE("hdf_archive_append_pete", "[hdf]")
+{
+  using qmcplusplus::Vector;
+  hdf_archive hd;
+  hd.create("test_append_pete.hdf");
+
+  Vector<double> v1{2.3, 3.4, 5.6};
+  hsize_t append_index = 0;
+
+  std::string name = "pete_vector_series";
+  hd.append(v1, name, append_index);
+
+  Vector<double> v2{4.0, 5.0, 6.0};
+
+  hd.append(v2, name, append_index);
+  hd.close();
+
+  hdf_archive read_hd;
+  bool okay = read_hd.open("test_append_pete.hdf");
+  REQUIRE(okay);
+
+  Vector<double> v_read;
+  std::array<int, 2> select_one_vector{0, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v1 == v_read);
+
+  select_one_vector = {1, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v2 == v_read);
+}
+
 TEST_CASE("hdf_archive_group", "[hdf]")
 {
   hdf_archive hd;

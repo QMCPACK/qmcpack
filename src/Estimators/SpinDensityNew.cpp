@@ -247,12 +247,12 @@ void SpinDensityNew::write(hdf_archive& file)
     for (int s = 0; s < species_.size(); ++s)
     {
       data.attachReference(fp_data.data() + offset, derived_parameters_.npoints);
-      file.push(species_.speciesName[s]);
-      //file.write(data, "value");
-      file.writeSlabReshaped(data, ng, "value");
+      hid_t g_id = file.push(species_.speciesName[s], true);
+      file.append(data, "value", append_index_);
       offset += derived_parameters_.npoints;
       file.pop();
     }
+    ++append_index_;
     file.pop();
   };
 

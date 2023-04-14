@@ -521,12 +521,13 @@ TEST_CASE("SpinDensityNew::registerAndWrite", "[estimators]")
 
     sdn_name_up /= "u/value";
     std::cout << sdn_name_up.string() << '\n';
-    read_hd.read(up_data, sdn_name_up.string()); //sdn_name_up.string());
+    std::array<int, 2> select_one_grid{0, -1};
+    read_hd.readSlabSelection(up_data, select_one_grid, sdn_name_up.string()); //sdn_name_up.string());
     CHECK(up_data.size() == 1000);
     hdf_path sdn_name_dn{sdnt.getName(sdn)};
     sdn_name_dn /= "d/value";
     std::cout << sdn_name_dn.string() << '\n';
-    read_hd.read(dn_data, sdn_name_dn.string());
+    read_hd.readSlabSelection(dn_data, select_one_grid, sdn_name_dn.string());
     CHECK(up_data.size() == 1000);
 
     auto sumAndCheckData = [n_crowds, n_walkers](const auto& data, int num_particles) {
@@ -542,7 +543,7 @@ TEST_CASE("SpinDensityNew::registerAndWrite", "[estimators]")
     sumAndCheckData(up_data, species_set(i_msize, 0));
     sumAndCheckData(dn_data, species_set(i_msize, 1));
   };
-
+  checkWriteForNParticles(2);
   checkWriteForNParticles(3);
 }
 
