@@ -55,7 +55,7 @@ bool EstimatorManagerNew::areThereListeners() const
   return std::any_of(operator_ests_.begin(), operator_ests_.end(),
                      [](auto& oper_est) { return oper_est->isListenerRequired(); });
 }
-  
+
 template<class EstInputType, typename... Args>
 bool EstimatorManagerNew::createEstimator(EstimatorInput& input, Args&&... args)
 {
@@ -373,7 +373,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     {
       operator_data_sizes[iop] = operator_ests_[iop]->get_data().size();
     }
-    // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced firt.
+    // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced first.
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
     std::vector<RealType> operator_send_buffer;
     std::vector<RealType> operator_recv_buffer;
