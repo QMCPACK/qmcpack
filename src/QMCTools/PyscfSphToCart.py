@@ -307,8 +307,8 @@ class qmch5:
                 assert(bset['expandYlm'][()] == b'pyscf')
                 del bset['angular']
                 del bset['expandYlm']
-                bset.create_dataset('angular', (1,),'S9',b'cartesian')
-                bset.create_dataset('expandYlm', (1,),'S6',b'Gamess')
+                bset.create_dataset('angular', (1,),'S9',np.string_("cartesian"))
+                bset.create_dataset('expandYlm', (1,),'S6',np.string_("Gamess"))
 
             # generate transformation matrix (over all AOs)
             A = self.s2c_transformation_matrix()
