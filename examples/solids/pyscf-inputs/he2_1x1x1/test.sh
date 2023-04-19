@@ -11,7 +11,7 @@
 python3 he2_1x1x1_sph2cart.py > pyscf.out
 
 export OMP_NUM_THREADS=1
-for l in sp sd sf sg sh si
+for l in sp sd #sf sg sh si
 do
   # generate he_${l}_cart.h5
   PyscfSphToCart.py -o he_${l}_cart.h5 he_${l}_sph.h5 > s2c.${l}.out

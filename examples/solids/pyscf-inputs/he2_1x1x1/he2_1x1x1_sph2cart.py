@@ -57,7 +57,8 @@ def runscf(l):
     return
 
 # add higher l when supported in QMCPACK
-for lbas in 'pdfghi':
+#for lbas in 'pdfghi':
+for lbas in 'pd':
     # run scf with 'sp', 'sd', 'sf', ... basis
     # need 2+ shells at a time to verify correct relative normalization between shells of different l
     runscf('s'+lbas)

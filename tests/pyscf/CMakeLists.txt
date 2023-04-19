@@ -75,3 +75,22 @@ if(${THIS_TEST_NAME})
 endif()
 
 ################################################################################
+
+# PYSCF_TEST_NAME set to pyscf-he2_1x1x1_sph2cart
+# copy src dir to workdir
+# add pyscf test: pyscf-he2_1x1x1_sph2cart
+#    python he2_1x1x1_sph2cart.py
+run_pyscf_test(pyscf-he2_1x1x1_sph2cart
+  ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs/he2_1x1x1
+  he2_1x1x1_sph2cart
+  PYSCF_TEST_NAME)
+set_property(TEST ${PYSCF_TEST_NAME} APPEND PROPERTY LABELS "s2c")
+
+foreach(X IN ITEMS sp sd)
+  pyscf_s2c(pyscf-he2_1x1x1_sph2cart-s2c-${X}
+    ${qmcpack_SOURCE_DIR}/src/QMCTools/PyscfSphToCart.py
+    ${CMAKE_CURRENT_BINARY_DIR}/pyscf-he2_1x1x1_sph2cart
+    he_${X}_sph.h5
+    he_${X}_cart.h5)
+
+endforeach()
