@@ -1257,14 +1257,86 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 TEST_CASE("Eloc_Derivatives:slater_noj_pbc", "[hamiltonian]")
 {
   app_log() << "====Ion Derivative Test: Single Slater No Jastrow, PBC====\n";
-  using RealType = QMCTraits::RealType;
+  std::ostringstream section_name;
+  section_name << "Carbon diamond off gamma unit test: ";
 
-  Communicate* c = OHMMS::Controller;
+  SECTION(section_name.str())
+  {
+    Communicate* c = OHMMS::Controller;
 
-  const SimulationCell simulation_cell;
-  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto &ions(*ions_ptr), elec(*elec_ptr);
+    Libxml2Document doc;
+    bool okay = doc.parse("C_diamond-twist-third.structure.xml");
+    REQUIRE(okay);
+    xmlNodePtr root = doc.getRoot();
+
+    ParticleSet::ParticleLayout lattice;
+    // BCC H
+    lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
+    lattice.reset();
+
+    const SimulationCell simulation_cell(lattice);
+    auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& ions(*ions_ptr);
+    XMLParticleParser parse_ions(ions);
+    OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
+    REQUIRE(particleset_ion.size() == 1);
+    parse_ions.readXML(particleset_ion[0]);
+
+    REQUIRE(ions.groups() == 1);
+    REQUIRE(ions.R.size() == 2);
+    ions.update();
+
+    auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& elec(*elec_ptr);
+    XMLParticleParser parse_elec(elec);
+    OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
+    REQUIRE(particleset_elec.size() == 1);
+    parse_elec.readXML(particleset_elec[0]);
+
+    REQUIRE(elec.groups() == 2);
+    REQUIRE(elec.R.size() == 8);
+
+    elec.R = 0.0;
+
+    elec.addTable(ions);
+    elec.update();
+
+    Libxml2Document doc2;
+
+    okay = doc2.parse("C_diamond-twist-third.wfj.xml");
+    REQUIRE(okay);
+    xmlNodePtr root2 = doc2.getRoot();
+
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
+    particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+    particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
+
+    OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
+    REQUIRE(MO_base.size() == 1);
+
+    const auto sposet_builder_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb                      = *sposet_builder_ptr;
+
+    OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
+    auto sposet = bb.createSPOSet(slater_base[0]);
+
+    SPOSet::ValueVector values;
+    values.resize(26);
+
+    // BEGIN generated C++ input from Carbon1x1x1-tw1_gen_mos.py (pyscf version 1.6.2) on 2019-11-19 15:08:42.652893
+
+    //Move electron 0 to position [[-10. -10. -10.]] a.u.:
+    elec.R[0] = {-10.0, -10.0, -10.0};
+    elec.update();
+    sposet->evaluateValue(elec, 0, values);
+
+    // Position [[-10. -10. -10.]] a.u.
+    // Verifying values of SPO 0
+    CHECK(std::real(values[0]) == Approx(-0.060195105580765275));
+    CHECK(std::imag(values[0]) == Approx(-0.011833831357235357));
+  }
 }
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
