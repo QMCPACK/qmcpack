@@ -1250,6 +1250,22 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   ParticleSet::ParticlePos dpsidr(ions.getTotalNum());
   ham.evaluateIonDerivsDeterministicFast(elec, ions, *psi, twf, dedr, dpsidr);
 }
+
+//This will be very similar to the previous tests, but we will check its behavior
+//in periodic boundary conditions.  First for gamma point:
+//
+TEST_CASE("Eloc_Derivatives:slater_noj_pbc", "[hamiltonian]")
+{
+  app_log() << "====Ion Derivative Test: Single Slater No Jastrow, PBC====\n";
+  using RealType = QMCTraits::RealType;
+
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+}
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
