@@ -115,13 +115,13 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-            TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload
-            TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload-Real,
-            TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
-            TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload-Complex,
-            TeslaV100-ICX23-MPI-CUDA-Real-Mixed,
-            TeslaV100-ICX23-MPI-CUDA-Complex-Mixed,
-            TeslaV100-ICX23-MPI-CUDA-Real,
+            V100-Clang16-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload
+            V100-Clang16-MPI-CUDA-AFQMC-Offload-Real,
+            V100-Clang16-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
+            V100-Clang16-MPI-CUDA-AFQMC-Offload-Complex,
+            V100-OneAPI23-MPI-CUDA-Real-Mixed,
+            V100-OneAPI23-MPI-CUDA-Complex-Mixed,
+            V100-OneAPI23-MPI-CUDA-Real,
           ]
 
     steps:

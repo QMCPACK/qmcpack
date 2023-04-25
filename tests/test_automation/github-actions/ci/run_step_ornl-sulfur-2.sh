@@ -14,6 +14,7 @@ case "$1" in
     echo "PATH=$PATH" >> $GITHUB_ENV
 
     QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
+    
     # Using 1.74 to avoid the > 1.75 error: use of undeclared identifier 'noinline'; did you mean 'inline'?
     # caused by LLVM + GCC libstdc++ mismatch
     BOOST_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/boost-1.74.0-gdhlc5uynyw5un6mniss7nfjdyqqjd7p
@@ -47,19 +48,19 @@ case "$1" in
         IS_MIXED_PRECISION=1
       ;; 
       *)
+        echo 'Configure for mixed precision build -DQMC_MIXED_PRECISION=0'
         IS_MIXED_PRECISION=0
       ;;
     esac
 
     case "${GH_JOBNAME}" in
       
-      *"TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload"*)
-        echo "Configure for building with CUDA and AFQMC using OpenMP offload"
+      *"V100-Clang16-MPI-CUDA-AFQMC-Offload"*)
+        echo "Configure for building with CUDA and AFQMC using LLVM OpenMP offload"
 
         LLVM_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/llvm-16.0.2-ltjkfjdu6p2cfcyw3zalz4x5sz5do3cr
         
-
-        echo "Set PATHS to cuda 11.2 due to a CUDA regression bug in 11.6"
+        echo "Set PATHs to cuda 11.2 due to a regression bug in 11.6"
         export PATH=$HOME/opt/cuda/11.2/bin:$PATH
         export LD_LIBRARY_PATH=$HOME/opt/cuda/11.2/lib64:$LD_LIBRARY_PATH
         export OMPI_CC=$LLVM_DIR/bin/clang
@@ -90,13 +91,13 @@ case "$1" in
               ${GITHUB_WORKSPACE}
       ;;
 
-      *"TeslaV100-ICX23-MPI-CUDA"*)
+      *"V100-OneAPI23-MPI-CUDA"*)
         echo "Configure for building with CUDA and AFQMC  " \
-             "using OneAPI ICX23 " \
+             "using Intel OneAPI icx compiler" 
         
         source /opt/intel/oneapi/setvars.sh
 
-        echo "Set PATH to cuda-12.1"
+        echo "Set PATHs to cuda-12.1"
         export PATH=/usr/local/cuda-12.1/bin:$PATH
         export LD_LIBRARY_PATH=/usr/local/cuda-12.1/bin:$LD_LIBRARY_PATH
         
@@ -142,11 +143,6 @@ case "$1" in
     export OMPI_MCA_btl=self
     # Clang helper threads used by target nowait is very broken. Disable this feature
     export LIBOMP_USE_HIDDEN_HELPER_TASK=0
-
-    if [[ "${GH_JOBNAME}" =~ (ICX23) ]]
-    then
-       source /opt/intel/oneapi/setvars.sh
-    fi
 
     echo "Running deterministic tests"
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
