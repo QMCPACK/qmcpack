@@ -119,9 +119,9 @@ jobs:
             TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload-Real,
             TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
             TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload-Complex,
-            TeslaV100-ICX23-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
-            TeslaV100-ICX23-MPI-CUDA-AFQMC-Complex-Mixed,
-            TeslaV100-ICX23-MPI-CUDA-AFQMC-Real,
+            TeslaV100-ICX23-MPI-CUDA-Real-Mixed,
+            TeslaV100-ICX23-MPI-CUDA-Complex-Mixed,
+            TeslaV100-ICX23-MPI-CUDA-Real,
           ]
 
     steps:

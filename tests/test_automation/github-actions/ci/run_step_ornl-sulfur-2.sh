@@ -3,9 +3,6 @@
 set -x
 HOST_NAME=$(hostname -s)
 
-# Current local LLVM version on sulfur
-LLVM_VERSION=16.0.2
-
 case "$1" in 
 
   # Configure qmcpack using cmake out-of-source builds 
@@ -17,7 +14,10 @@ case "$1" in
     echo "PATH=$PATH" >> $GITHUB_ENV
 
     QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
-
+    # Using 1.74 to avoid the > 1.75 error: use of undeclared identifier 'noinline'; did you mean 'inline'?
+    # caused by LLVM + GCC libstdc++ mismatch
+    BOOST_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/boost-1.74.0-gdhlc5uynyw5un6mniss7nfjdyqqjd7p
+    
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
     then
       echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
@@ -52,20 +52,22 @@ case "$1" in
     esac
 
     case "${GH_JOBNAME}" in
+      
       *"TeslaV100-Clang16-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with CUDA and AFQMC using OpenMP offload"
 
-        echo "Set PATH to cuda-11.2 due to a CUDA regression bug in 11.6"
-        export PATH=/usr/local/cuda-11.2/bin:$PATH
-        echo "Set CUDACXX CMake environment variable to nvcc cuda 11.2"
-        export CUDACXX=/usr/local/cuda-11.2/bin/nvcc
+        LLVM_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/llvm-16.0.2-ltjkfjdu6p2cfcyw3zalz4x5sz5do3cr
+        
 
-        export OMPI_CC=$HOME/opt/llvm/$LLVM_VERSION/bin/clang
-        export OMPI_CXX=$HOME/opt/llvm/$LLVM_VERSION/bin/clang++
+        echo "Set PATHS to cuda 11.2 due to a CUDA regression bug in 11.6"
+        export PATH=$HOME/opt/cuda/11.2/bin:$PATH
+        export LD_LIBRARY_PATH=$HOME/opt/cuda/11.2/lib64:$LD_LIBRARY_PATH
+        export OMPI_CC=$LLVM_DIR/bin/clang
+        export OMPI_CXX=$LLVM_DIR/bin/clang++
 
         # Make current environment variables available to subsequent steps
         echo "PATH=$PATH" >> $GITHUB_ENV
-        echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV        
+        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "OMPI_CC=$OMPI_CC" >> $GITHUB_ENV
         echo "OMPI_CXX=$OMPI_CXX" >> $GITHUB_ENV
 
@@ -76,6 +78,7 @@ case "$1" in
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
+              -DBOOST_ROOT=$BOOST_DIR \
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
               -DQMC_GPU_ARCHS=sm_70 \
@@ -86,7 +89,8 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"TeslaV100-ICX23-MPI-CUDA-AFQMC"*)
+
+      *"TeslaV100-ICX23-MPI-CUDA"*)
         echo "Configure for building with CUDA and AFQMC  " \
              "using OneAPI ICX23 " \
         
@@ -94,26 +98,22 @@ case "$1" in
 
         echo "Set PATH to cuda-12.1"
         export PATH=/usr/local/cuda-12.1/bin:$PATH
-        echo "Set CUDACXX CMake environment variable to nvcc cuda 12.1"
-        export CUDACXX=/usr/local/cuda-12.1/bin/nvcc
-
-        export OMPI_CC=/opt/intel/oneapi/compiler/2023.1.0/linux/bin/icx
-        export OMPI_CXX=/opt/intel/oneapi/compiler/2023.1.0/linux/bin/icpx
-
-        # Confirm that cuda 12.1 gets picked up by the compiler
-        $OMPI_CXX -v
+        export LD_LIBRARY_PATH=/usr/local/cuda-12.1/bin:$LD_LIBRARY_PATH
+        
+        export OMPI_CC=`which icx`
+        export OMPI_CXX=`which icpx`
 
         # Make current environment variables available to subsequent steps
         echo "PATH=$PATH" >> $GITHUB_ENV
-        echo "CUDACXX=/usr/local/cuda-12.1/bin/nvcc" >> $GITHUB_ENV        
-        echo "OMPI_CC=/opt/intel/oneapi/compiler/2023.1.0/linux/bin/icx" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/intel/oneapi/compiler/2023.1.0/linux/bin/icpx" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "OMPI_CC=$OMPI_CC" >> $GITHUB_ENV
+        echo "OMPI_CXX=$OMPI_CXX" >> $GITHUB_ENV
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
-              -DBUILD_AFQMC=ON \
+              -DBOOST_ROOT=$BOOST_DIR \
               -DENABLE_CUDA=ON \
               -DQMC_GPU_ARCHS=sm_70 \
               -DQMC_COMPLEX=$IS_COMPLEX \
@@ -142,13 +142,6 @@ case "$1" in
     export OMPI_MCA_btl=self
     # Clang helper threads used by target nowait is very broken. Disable this feature
     export LIBOMP_USE_HIDDEN_HELPER_TASK=0
-
-    if [[ "${GH_JOBNAME}" =~ (-Offload) ]]
-    then
-      export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
-    else
-      export LD_LIBRARY_PATH=/usr/local/cuda-21.1/lib64:${LD_LIBRARY_PATH}
-    fi
 
     if [[ "${GH_JOBNAME}" =~ (ICX23) ]]
     then
