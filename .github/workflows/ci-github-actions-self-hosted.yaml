@@ -20,10 +20,10 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-            GCC9-NoMPI-MKL-Real-Mixed, # mixed precision
-            GCC9-NoMPI-MKL-Complex-Mixed,
-            GCC9-NoMPI-MKL-Real, # full precision
-            GCC9-NoMPI-MKL-Complex,
+            GCC11-NoMPI-MKL-Real-Mixed, # mixed precision
+            GCC11-NoMPI-MKL-Complex-Mixed,
+            GCC11-NoMPI-MKL-Real, # full precision
+            GCC11-NoMPI-MKL-Complex,
           ]
 
     steps:
@@ -79,15 +79,15 @@ jobs:
 
       - name: Configure
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh configure
+        run: tests/test_automation/github-actions/ci/run_step_ornl-sulfur-1.sh configure
 
       - name: Build
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh build
+        run: tests/test_automation/github-actions/ci/run_step_ornl-sulfur-1.sh build
 
       - name: Test
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh test
+        run: tests/test_automation/github-actions/ci/run_step_ornl-sulfur-1.sh test
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
@@ -115,13 +115,13 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-            Clang15-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload
-            Clang15-MPI-CUDA-AFQMC-Offload-Real,
-            Clang15-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
-            Clang15-MPI-CUDA-AFQMC-Offload-Complex,
-            Intel21-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
-            Intel21-MPI-CUDA-AFQMC-Complex-Mixed,
-            Intel21-MPI-CUDA-AFQMC-Real,
+            V100-Clang16-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload
+            V100-Clang16-MPI-CUDA-AFQMC-Offload-Real,
+            V100-Clang16-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
+            V100-Clang16-MPI-CUDA-AFQMC-Offload-Complex,
+            V100-OneAPI23-MPI-CUDA-Real-Mixed,
+            V100-OneAPI23-MPI-CUDA-Complex-Mixed,
+            V100-OneAPI23-MPI-CUDA-Real,
           ]
 
     steps:
@@ -177,15 +177,15 @@ jobs:
 
       - name: Configure
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh configure
+        run: tests/test_automation/github-actions/ci/run_step_ornl-sulfur-2.sh configure
 
       - name: Build
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh build
+        run: tests/test_automation/github-actions/ci/run_step_ornl-sulfur-2.sh build
 
       - name: Test
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh test
+        run: tests/test_automation/github-actions/ci/run_step_ornl-sulfur-2.sh test
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
