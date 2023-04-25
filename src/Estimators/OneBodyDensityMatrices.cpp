@@ -612,7 +612,7 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
   if constexpr (IsComplex_t<Value>::value)
     spin_data_size = 2 * basis_size_ * basis_size_;
   else
-    spin_data_size =  basis_size_ * basis_size_;
+    spin_data_size = basis_size_ * basis_size_;
 
   hdf_path hdf_name{my_name_};
   hdf_name /= "number_matrix";
