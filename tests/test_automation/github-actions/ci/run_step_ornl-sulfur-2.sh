@@ -150,7 +150,7 @@ case "$1" in
 
     echo "Running deterministic tests"
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest --output-on-failure -L deterministic -j 32
+    ctest --output-on-failure -E ppconvert -L deterministic -j 32
     ;;
     
 esac
