@@ -68,10 +68,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 
   ions_.setName("ion");
   ions_.create({1});
-  ions_.R[0][0] = 2.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-
+  ions_.R[0]                 = {2.0, 0.0, 0.0};
   SpeciesSet& ispecies       = ions_.getSpeciesSet();
   int CIdx                   = ispecies.addSpecies("C");
   int ichargeIdx             = ispecies.addAttribute("charge");
@@ -81,13 +78,8 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 
   elec_.setName("elec");
   elec_.create({1, 1});
-  elec_.R[0][0] = 1.00;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 0.0;
-  elec_.R[1][2] = 0.0;
-
+  elec_.R[0]                   = {1.00, 0.0, 0.0};
+  elec_.R[1]                   = {0.0, 0.0, 0.0};
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
