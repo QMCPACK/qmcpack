@@ -48,7 +48,8 @@ case "$1" in
       ;;
     esac
 
-    *"GCC11-NoMPI-MKL-"*)
+    case "${GH_JOBNAME}" in
+      *"GCC11-NoMPI-MKL-"*)
         echo 'Configure for building with GCC and Intel MKL'
 
         source /opt/intel/oneapi/setvars.sh
@@ -63,7 +64,9 @@ case "$1" in
               ${GITHUB_WORKSPACE}
 
       ;;
-  
+    esac
+    ;;  
+
   build)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     ninja
