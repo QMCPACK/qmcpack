@@ -91,24 +91,17 @@ case "$1" in
               ${GITHUB_WORKSPACE}
       ;;
 
-      *"V100-OneAPI23-MPI-CUDA"*)
-        echo "Configure for building with CUDA and AFQMC  " \
-             "using Intel OneAPI icx compiler" 
-        
-        source /opt/intel/oneapi/setvars.sh
+      *"V100-GCC11-MPI-CUDA"*)
+        echo "Configure for building with CUDA 12.1 and" \
+             "GCC11 system compiler" 
 
         echo "Set PATHs to cuda-12.1"
         export PATH=/usr/local/cuda-12.1/bin:$PATH
         export LD_LIBRARY_PATH=/usr/local/cuda-12.1/bin:$LD_LIBRARY_PATH
-        
-        export OMPI_CC=`which icx`
-        export OMPI_CXX=`which icpx`
 
         # Make current environment variables available to subsequent steps
         echo "PATH=$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "OMPI_CC=$OMPI_CC" >> $GITHUB_ENV
-        echo "OMPI_CXX=$OMPI_CXX" >> $GITHUB_ENV
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
