@@ -82,10 +82,6 @@ void ExchangePotential (double nup, double ndown,
   Vdown *= 0.5;
   Ex *= 0.5;
 
-  #ifndef __STDC_IEC_559__
-  #error This program depends on NaN markings and therefore relies on IEEE 754 Standard, ensure this with the necessary compilation flags.
-  #endif
-
   if (std::isnan(Vup))
     Vup = 0.0;
   if (std::isnan(Vdown))

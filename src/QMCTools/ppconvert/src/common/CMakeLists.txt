@@ -19,13 +19,4 @@ set(COMMON_SRCS
 
 add_library(common EXCLUDE_FROM_ALL ${COMMON_SRCS})
 
-target_compile_options(common PUBLIC
-    $<$<NOT:$<CXX_COMPILER_ID:NVHPC>>:
-        -fno-fast-math
-    >
-    $<$<CXX_COMPILER_ID:NVHPC>:
-        -Kieee
-    >
-)
-
 target_link_libraries(common PUBLIC qmc_external_multi)
