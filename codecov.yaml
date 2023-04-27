@@ -21,3 +21,9 @@ ignore:
 # from https://docs.codecov.io/docs/fixing-paths
 fixes:
   - "/__w/::"
+
+# Wait for both real and complex reports
+# from https://docs.codecov.com/docs/notifications#preventing-notifications-until-after-n-builds
+codecov:
+  notify:
+    after_n_builds: 2
