@@ -81,6 +81,7 @@ void ExchangePotential (double nup, double ndown,
   Vup *= 0.5;
   Vdown *= 0.5;
   Ex *= 0.5;
+
   if (std::isnan(Vup))
     Vup = 0.0;
   if (std::isnan(Vdown))
@@ -245,12 +246,12 @@ double Ec(double nup, double ndown)
 //  double EcPp =    F(np, 0.0310907, -0.10498, 3.72744, 12.9352);
 //  double EcFp =    F(np, 0.01554535, -0.325, 7.06042, 18.0578);
 //  double alphacp = F(np, -1.0/(6.0*M_PI*M_PI), -0.00475840,
-//		     1.13107, 13.0045);
+//           1.13107, 13.0045);
 
 //  double EcPm =    F(nm, 0.0310907, -0.10498, 3.72744, 12.9352);
 //  double EcFm =    F(nm, 0.01554535, -0.325, 7.06042, 18.0578);
 //  double alphacm = F(nm, -1.0/(6.0*M_PI*M_PI), -0.00475840,
-//		     1.13107, 13.0045);
+//           1.13107, 13.0045);
 
 //  double f_doubleprime = 4.0/(9*(pow(2.0,1.0/3.0)-1.0));
 
@@ -263,7 +264,7 @@ double Ec(double nup, double ndown)
 //  double deltaEcm = alphacm*f(zeta)/f_doubleprime * (1.0+betam*zeta4);
 
 //  fprintf (stderr, "FD2: ddeltaEc_dn = %1.12f\n",
-//	   (deltaEcp-deltaEcm)/(2.0*eps)); 
+//     (deltaEcp-deltaEcm)/(2.0*eps)); 
 
 //  fprintf (stderr, "FD: dbeta_dn = %1.12f\n", (betap-betam)/(2.0*eps));
 
