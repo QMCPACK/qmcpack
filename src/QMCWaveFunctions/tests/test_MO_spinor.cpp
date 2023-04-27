@@ -43,9 +43,7 @@ void test_lcao_spinor()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1});
 
-  ions_.R[0][0]        = 0.00000000;
-  ions_.R[0][1]        = 0.00000000;
-  ions_.R[0][2]        = 0.00000000;
+  ions_.R[0]           = {0.00000000, 0.00000000, 0.00000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -53,9 +51,7 @@ void test_lcao_spinor()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.1;
-  elec_.R[0][1]  = -0.3;
-  elec_.R[0][2]  = 1.7;
+  elec_.R[0]     = {0.1, -0.3, 1.7};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 
@@ -227,9 +223,7 @@ void test_lcao_spinor()
 
   //now create second walker
   ParticleSet elec_2(elec_);
-  elec_2.R[0][0]  = -0.4;
-  elec_2.R[0][1]  = 1.5;
-  elec_2.R[0][2]  = -0.2;
+  elec_2.R[0]     = {-0.4, 1.5, -0.2};
   elec_2.spins[0] = -1.3;
 
   //create new reference values for new positions
@@ -373,9 +367,7 @@ void test_lcao_spinor_excited()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1});
 
-  ions_.R[0][0]        = 0.00000000;
-  ions_.R[0][1]        = 0.00000000;
-  ions_.R[0][2]        = 0.00000000;
+  ions_.R[0]           = {0.00000000, 0.00000000, 0.00000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -383,9 +375,7 @@ void test_lcao_spinor_excited()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.1;
-  elec_.R[0][1]  = -0.3;
-  elec_.R[0][2]  = 1.7;
+  elec_.R[0]     = {0.1, -0.3, 1.7};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 
@@ -562,9 +552,7 @@ void test_lcao_spinor_excited()
 
   //now create second walker
   ParticleSet elec_2(elec_);
-  elec_2.R[0][0]  = -0.4;
-  elec_2.R[0][1]  = 1.5;
-  elec_2.R[0][2]  = -0.2;
+  elec_2.R[0]     = {-0.4, 1.5, -0.2};
   elec_2.spins[0] = -1.3;
 
   //create new reference values for new positions
@@ -702,12 +690,8 @@ void test_lcao_spinor_ion_derivs()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
 
-  ions_.R[0][0]        = 0.10000000;
-  ions_.R[0][1]        = 0.20000000;
-  ions_.R[0][2]        = 0.30000000;
-  ions_.R[1][0]        = -0.30000000;
-  ions_.R[1][1]        = -0.20000000;
-  ions_.R[1][2]        = -0.10000000;
+  ions_.R[0]           = {0.10000000, 0.20000000, 0.30000000};
+  ions_.R[1]           = {-0.30000000, -0.20000000, -0.10000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -715,9 +699,7 @@ void test_lcao_spinor_ion_derivs()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.01;
-  elec_.R[0][1]  = -0.02;
-  elec_.R[0][2]  = 0.03;
+  elec_.R[0]     = {0.01, -0.02, 0.03};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 

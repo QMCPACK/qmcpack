@@ -359,9 +359,7 @@ void test_EtOH_mw(bool transform)
   //std::cout << elec.R[0] << std::endl;
   //elec.makeMove(0, newpos);
   //elec.update();
-  elec.R[0][0] = 0.0001;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
+  elec.R[0] = {0.0001, 0.0, 0.0};
   elec.update();
   std::cout << elec.R[0] << std::endl;
   // set up second walkers
@@ -381,9 +379,7 @@ void test_EtOH_mw(bool transform)
 
   //ParticleSet::SingleParticlePos newpos2(0.0, 0.04, 0.02);
   //elec.makeMove(1, newpos2);
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.04;
-  elec.R[1][2] = 0.02;
+  elec.R[1] = {0.0, 0.04, 0.02};
   elec.update();
   SPOSet::ValueVector psiref_1(n_mo);
   SPOSet::GradVector dpsiref_1(n_mo);
@@ -486,9 +482,7 @@ void test_Ne(bool transform)
     auto& ions(*ions_ptr);
     ions.setName("ion0");
     ions.create({1});
-    ions.R[0][0]         = 0.0;
-    ions.R[0][1]         = 0.0;
-    ions.R[0][2]         = 0.0;
+    ions.R[0]            = {0.0, 0.0, 0.0};
     SpeciesSet& ispecies = ions.getSpeciesSet();
     int heIdx            = ispecies.addSpecies("Ne");
     ions.update();
