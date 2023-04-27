@@ -41,13 +41,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   agroup[0] = nelec;
   elec.setName("e");
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 2.0;
-  elec.R[0][2] = 3.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 1.1;
-  elec.R[1][2] = 2.2;
-
+  elec.R[0]                  = {1.0, 2.0, 3.0};
+  elec.R[1]                  = {0.0, 1.1, 2.2};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int downIdx                = tspecies.addSpecies("d");
@@ -60,10 +55,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   ions.setName("ion0");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0]                   = {0.0, 0.0, 0.0};
   SpeciesSet& he_species      = ions.getSpeciesSet();
   int He_Idx                  = he_species.addSpecies("He");
   int chargeIdx               = he_species.addAttribute("charge");

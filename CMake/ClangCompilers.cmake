@@ -45,6 +45,15 @@ if(QMC_OMP)
       set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fstandalone-debug")
       set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fstandalone-debug")
     endif()
+
+    # AOMP/ROCM special option -fdisable-host-devmem to disable unecessary data transfers
+    # The down side of using this option is that it disables printf from offload regions.
+    # see https://github.com/ROCm-Developer-Tools/aomp/issues/526
+    check_cxx_compiler_flag(-fdisable-host-devmem DISABLE_HOST_DEVMEM_WORKS)
+    option(AMDGPU_DISABLE_HOST_DEVMEM "Use -fdisable-host-devmem link option" ${DISABLE_HOST_DEVMEM_WORKS})
+    if(AMDGPU_DISABLE_HOST_DEVMEM)
+      string(APPEND CMAKE_EXE_LINKER_FLAGS " -fdisable-host-devmem")
+    endif()
   endif()
 endif(QMC_OMP)
 

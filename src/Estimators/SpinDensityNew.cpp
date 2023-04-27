@@ -227,7 +227,7 @@ void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
   {
     h5desc_.emplace_back(hdf_name / species_.speciesName[s]);
     auto& oh = h5desc_.back();
-    oh.set_dimensions(ng, 0);
+    oh.set_dimensions(ng, s * derived_parameters_.npoints);
   }
 }
 
