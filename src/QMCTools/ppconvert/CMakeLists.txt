@@ -28,9 +28,9 @@ ISNAN_WORKS)
 
 # ppconvert only works when std::isnan works.
 if(ISNAN_WORKS)
-  message(STATUS "ppconvert enabled")
+  message(STATUS "ppconvert enabled. std:isnan support check passed.")
   add_subdirectory(src)
   add_subdirectory(test)
 else()
-  message(STATUS "ppconvert disabled due to ineffective std::isnan()")
+  message(STATUS "ppconvert disabled. std:isnan support check failed.")
 endif()
