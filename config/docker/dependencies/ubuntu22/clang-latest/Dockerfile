@@ -31,9 +31,9 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
 
 # add the latest clang development
 RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - &&\
-    apt-add-repository 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main'
+    apt-add-repository 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main'
 RUN apt-get update -y &&\     
-    apt-get install clang-12 clang-tools-12 libomp-12-dev -y
+    apt-get install clang-16 clang-tools-16 libomp-16-dev -y
 
 # must add a user different from root 
 # to run MPI executables
