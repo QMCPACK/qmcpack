@@ -177,11 +177,11 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang12-NoMPI-Offload-Real"*)
-        echo 'Configure for building OpenMP offload with clang12 on x86_64 target'
+      *"Clang16-NoMPI-Offload-Real"*)
+        echo 'Configure for building OpenMP offload with clang16 on x86_64 target'
         cmake -GNinja \
-              -DCMAKE_C_COMPILER=clang-12 \
-              -DCMAKE_CXX_COMPILER=clang++-12 \
+              -DCMAKE_C_COMPILER=clang-16 \
+              -DCMAKE_CXX_COMPILER=clang++-16 \
               -DQMC_MPI=0 \
               -DENABLE_OFFLOAD=ON \
               -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
@@ -327,7 +327,7 @@ case "$1" in
       fi
     fi 
     
-    if [[ "${GH_JOBNAME}" =~ (Clang12-NoMPI-Offload) ]]
+    if [[ "${GH_JOBNAME}" =~ (Clang16-NoMPI-Offload) ]]
     then
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
        export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
