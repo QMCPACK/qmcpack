@@ -32,9 +32,9 @@ jobs:
             GCC11-NoMPI-Werror-Complex,
             GCC11-NoMPI-Werror-Real-Mixed,
             GCC11-NoMPI-Werror-Complex-Mixed,
-            clang14-NoMPI-ASan-Real,
-            clang14-NoMPI-ASan-Complex,
-            clang14-NoMPI-UBSan-Real,
+            Clang14-NoMPI-ASan-Real,
+            Clang14-NoMPI-ASan-Complex,
+            Clang14-NoMPI-UBSan-Real,
             Clang16-NoMPI-Offload-Real,
           ]
         include:
@@ -88,17 +88,17 @@ jobs:
               image: williamfgc/qmcpack-ci:ubuntu2110-serial
               options: -u 1001
 
-          - jobname: clang14-NoMPI-ASan-Real
+          - jobname: Clang14-NoMPI-ASan-Real
             container:
               image: walshmm/qmcpack-ci:ubuntu22-openmpi
               options: -u 1001
 
-          - jobname: clang14-NoMPI-ASan-Complex
+          - jobname: Clang14-NoMPI-ASan-Complex
             container:
               image: walshmm/qmcpack-ci:ubuntu22-openmpi
               options: -u 1001
 
-          - jobname: clang14-NoMPI-UBSan-Real
+          - jobname: Clang14-NoMPI-UBSan-Real
             container:
               image: walshmm/qmcpack-ci:ubuntu22-openmpi
               options: -u 1001
