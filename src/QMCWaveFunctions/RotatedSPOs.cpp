@@ -14,6 +14,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
+#include "io/hdf/hdf_archive.h"
 
 
 namespace qmcplusplus
@@ -136,6 +137,148 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
     // Save the parameters in the history list
     history_params_.push_back(delta_param);
   }
+}
+
+void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
+{
+  hout.push("RotatedSPOs");
+  if (use_global_rot_)
+  {
+    hid_t grp                   = hout.push("rotation_global");
+    std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
+
+    int nparam_full = myVarsFull.size();
+    std::vector<RealType> full_params(nparam_full);
+    for (int i = 0; i < nparam_full; i++)
+      full_params[i] = myVarsFull[i];
+
+    hout.write(full_params, rot_global_name);
+    hout.pop();
+  }
+  else
+  {
+    hid_t grp   = hout.push("rotation_history");
+    size_t rows = history_params_.size();
+    size_t cols = 0;
+    if (rows > 0)
+      cols = history_params_[0].size();
+
+    Matrix<RealType> tmp(rows, cols);
+    for (size_t i = 0; i < rows; i++)
+      for (size_t j = 0; j < cols; j++)
+        tmp(i, j) = history_params_[i][j];
+
+    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
+    hout.write(tmp, rot_hist_name);
+    hout.pop();
+  }
+
+  // Save myVars in order to restore object state exactly
+  //  The values aren't meaningful, but they need to match those saved in VariableSet
+  hid_t grp                   = hout.push("rotation_params");
+  std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
+
+  int nparam = myVars.size();
+  std::vector<RealType> params(nparam);
+  for (int i = 0; i < nparam; i++)
+    params[i] = myVars[i];
+
+  hout.write(params, rot_params_name);
+  hout.pop();
+
+  hout.pop();
+}
+
+void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
+{
+  hid_t grp_rot = hin.push("RotatedSPOs", false);
+  if (grp_rot < 0)
+    app_warning() << "RotateSPOs not found in VP file";
+
+  bool grp_hist_exists   = hin.is_group("rotation_history");
+  bool grp_global_exists = hin.is_group("rotation_global");
+  if (!grp_hist_exists && !grp_global_exists)
+    app_warning() << "Rotation parameters not found in VP file";
+
+
+  if (grp_global_exists)
+  {
+    hin.push("rotation_global", false);
+    std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
+
+    std::vector<int> sizes(1);
+    if (!hin.getShape<RealType>(rot_global_name, sizes))
+      throw std::runtime_error("Failed to read rotation_global in VP file");
+
+    int nparam_full_actual = sizes[0];
+    int nparam_full        = myVarsFull.size();
+
+    if (nparam_full != nparam_full_actual)
+    {
+      std::ostringstream tmp_err;
+      tmp_err << "Expected number of full rotation parameters (" << nparam_full << ") does not match number in file ("
+              << nparam_full_actual << ")";
+      throw std::runtime_error(tmp_err.str());
+    }
+    std::vector<RealType> full_params(nparam_full);
+    hin.read(full_params, rot_global_name);
+    for (int i = 0; i < nparam_full; i++)
+      myVarsFull[i] = full_params[i];
+
+    hin.pop();
+
+    applyFullRotation(full_params, true);
+  }
+  else if (grp_hist_exists)
+  {
+    hin.push("rotation_history", false);
+    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
+    std::vector<int> sizes(2);
+    if (!hin.getShape<RealType>(rot_hist_name, sizes))
+      throw std::runtime_error("Failed to read rotation history in VP file");
+
+    int rows = sizes[0];
+    int cols = sizes[1];
+    history_params_.resize(rows);
+    Matrix<RealType> tmp(rows, cols);
+    hin.read(tmp, rot_hist_name);
+    for (size_t i = 0; i < rows; i++)
+    {
+      history_params_[i].resize(cols);
+      for (size_t j = 0; j < cols; j++)
+        history_params_[i][j] = tmp(i, j);
+    }
+
+    hin.pop();
+
+    applyRotationHistory();
+  }
+
+  hin.push("rotation_params", false);
+  std::string rot_param_name = std::string("rotation_params_") + SPOSet::getName();
+
+  std::vector<int> sizes(1);
+  if (!hin.getShape<RealType>(rot_param_name, sizes))
+    throw std::runtime_error("Failed to read rotation_params in VP file");
+
+  int nparam_actual = sizes[0];
+  int nparam        = myVars.size();
+  if (nparam != nparam_actual)
+  {
+    std::ostringstream tmp_err;
+    tmp_err << "Expected number of rotation parameters (" << nparam << ") does not match number in file ("
+            << nparam_actual << ")";
+    throw std::runtime_error(tmp_err.str());
+  }
+
+  std::vector<RealType> params(nparam);
+  hin.read(params, rot_param_name);
+  for (int i = 0; i < nparam; i++)
+    myVars[i] = params[i];
+
+  hin.pop();
+
+  hin.pop();
 }
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
@@ -312,6 +455,33 @@ void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_para
   ValueMatrix log_rot_mat(nmo, nmo);
   log_antisym_matrix(new_rot_mat, log_rot_mat);
   extractParamsFromAntiSymmetricMatrix(full_rot_inds, log_rot_mat, new_param);
+}
+
+void RotatedSPOs::applyFullRotation(const std::vector<RealType>& full_param, bool use_stored_copy)
+{
+  assert(full_param.size() == m_full_rot_inds.size());
+
+  const size_t nmo = Phi->getOrbitalSetSize();
+  ValueMatrix rot_mat(nmo, nmo);
+  rot_mat = ValueType(0);
+
+  constructAntiSymmetricMatrix(m_full_rot_inds, full_param, rot_mat);
+
+  /*
+    rot_mat is now an anti-hermitian matrix. Now we convert
+    it into a unitary matrix via rot_mat = exp(-rot_mat).
+    Finally, apply unitary matrix to orbs.
+  */
+  exponentiate_antisym_matrix(rot_mat);
+  Phi->applyRotation(rot_mat, use_stored_copy);
+}
+
+void RotatedSPOs::applyRotationHistory()
+{
+  for (auto delta_param : history_params_)
+  {
+    apply_rotation(delta_param, false);
+  }
 }
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
