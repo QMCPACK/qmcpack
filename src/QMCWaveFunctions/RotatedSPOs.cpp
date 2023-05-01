@@ -147,9 +147,9 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     hid_t grp                   = hout.push("rotation_global");
     std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
-    int nparam = myVarsFull.size();
-    std::vector<RealType> full_params(nparam);
-    for (int i = 0; i < nparam; i++)
+    int nparam_full = myVarsFull.size();
+    std::vector<RealType> full_params(nparam_full);
+    for (int i = 0; i < nparam_full; i++)
       full_params[i] = myVarsFull[i];
 
     hout.write(full_params, rot_global_name);
@@ -210,19 +210,19 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     if (!hin.getShape<RealType>(rot_global_name, sizes))
       throw std::runtime_error("Failed to read rotation_global in VP file");
 
-    int nparam_actual = sizes[0];
-    int nparam        = myVarsFull.size();
+    int nparam_full_actual = sizes[0];
+    int nparam_full        = myVarsFull.size();
 
-    if (nparam != nparam_actual)
+    if (nparam_full != nparam_full_actual)
     {
       std::ostringstream tmp_err;
-      tmp_err << "Expected number of full rotation parameters (" << nparam << ") does not match number in file ("
-              << nparam_actual << ")";
+      tmp_err << "Expected number of full rotation parameters (" << nparam_full << ") does not match number in file ("
+              << nparam_full_actual << ")";
       throw std::runtime_error(tmp_err.str());
     }
-    std::vector<RealType> full_params(nparam);
+    std::vector<RealType> full_params(nparam_full);
     hin.read(full_params, rot_global_name);
-    for (int i = 0; i < nparam; i++)
+    for (int i = 0; i < nparam_full; i++)
       myVarsFull[i] = full_params[i];
 
     hin.pop();
