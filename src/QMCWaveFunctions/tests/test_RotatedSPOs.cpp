@@ -665,12 +665,12 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   vs[3] = 0.25;
   rot.resetParametersExclusive(vs);
 
-  hdf_archive hout;
-  vs.writeToHDF("rot_vp.h5", hout);
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp.h5", hout);
 
-  rot.writeVariationalParameters(hout);
-
-  hout.close();
+    rot.writeVariationalParameters(hout);
+  }
 
   auto fake_spo2 = std::make_unique<FakeSPO>();
   fake_spo2->setOrbitalSetSize(4);
@@ -718,11 +718,12 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   vs[3] = 0.25;
   rot.resetParametersExclusive(vs);
 
-  hdf_archive hout;
-  vs.writeToHDF("rot_vp_hist.h5", hout);
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp_hist.h5", hout);
 
-  rot.writeVariationalParameters(hout);
-  hout.close();
+    rot.writeVariationalParameters(hout);
+  }
 
   auto fake_spo2 = std::make_unique<FakeSPO>();
   fake_spo2->setOrbitalSetSize(4);
