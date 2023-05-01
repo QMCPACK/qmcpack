@@ -662,7 +662,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   vs[0] = 0.1;
   vs[1] = 0.15;
   vs[2] = 0.2;
-  vs[4] = 0.25;
+  vs[3] = 0.25;
   rot.resetParametersExclusive(vs);
 
   hdf_archive hout;
@@ -715,7 +715,7 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   vs[0] = 0.1;
   vs[1] = 0.15;
   vs[2] = 0.2;
-  vs[4] = 0.25;
+  vs[3] = 0.25;
   rot.resetParametersExclusive(vs);
 
   hdf_archive hout;
