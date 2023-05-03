@@ -48,9 +48,7 @@ public:
 
   void readVariationalParameters(hdf_archive& hin) override
   {
-    hid_t group = hin.push("FakeOptimizableObject", false);
-    if (group < 0)
-      throw std::runtime_error("Expected group not present in file");
+    hin.push("FakeOptimizableObject", false);
 
     myVars.clear();
     double tmp_var1;

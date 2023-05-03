@@ -144,7 +144,7 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   hout.push("RotatedSPOs");
   if (use_global_rot_)
   {
-    hid_t grp                   = hout.push("rotation_global");
+    hout.push("rotation_global");
     std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
     int nparam_full = myVarsFull.size();
@@ -157,7 +157,7 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   }
   else
   {
-    hid_t grp   = hout.push("rotation_history");
+    hout.push("rotation_history");
     size_t rows = history_params_.size();
     size_t cols = 0;
     if (rows > 0)
@@ -175,7 +175,7 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
 
   // Save myVars in order to restore object state exactly
   //  The values aren't meaningful, but they need to match those saved in VariableSet
-  hid_t grp                   = hout.push("rotation_params");
+  hout.push("rotation_params");
   std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
 
   int nparam = myVars.size();
@@ -191,9 +191,7 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
 
 void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 {
-  hid_t grp_rot = hin.push("RotatedSPOs", false);
-  if (grp_rot < 0)
-    app_warning() << "RotateSPOs not found in VP file";
+  hin.push("RotatedSPOs", false);
 
   bool grp_hist_exists   = hin.is_group("rotation_history");
   bool grp_global_exists = hin.is_group("rotation_global");

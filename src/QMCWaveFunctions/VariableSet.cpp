@@ -174,17 +174,17 @@ void VariableSet::getIndex(const VariableSet& selected)
   }
 }
 
-  int VariableSet::getIndex(const std::string& vname) const
+int VariableSet::getIndex(const std::string& vname) const
+{
+  int loc = 0;
+  while (loc != NameAndValue.size())
   {
-    int loc = 0;
-    while (loc != NameAndValue.size())
-    {
-      if (NameAndValue[loc].first == vname)
-        return Index[loc];
-      ++loc;
-    }
-    return -1;
+    if (NameAndValue[loc].first == vname)
+      return Index[loc];
+    ++loc;
   }
+  return -1;
+}
 
 void VariableSet::setIndexDefault()
 {
@@ -257,7 +257,7 @@ void VariableSet::writeToHDF(const std::string& filename, qmcplusplus::hdf_archi
   std::string timestamp(getDateAndTime("%Y-%m-%d %H:%M:%S %Z"));
   hout.write(timestamp, "timestamp");
 
-  hid_t grp = hout.push("name_value_lists");
+  hout.push("name_value_lists");
 
   std::vector<qmcplusplus::QMCTraits::ValueType> param_values;
   std::vector<std::string> param_names;
@@ -281,8 +281,11 @@ void VariableSet::readFromHDF(const std::string& filename, qmcplusplus::hdf_arch
     throw std::runtime_error(err_msg.str());
   }
 
-  hid_t grp = hin.push("name_value_lists", false);
-  if (grp < 0)
+  try
+  {
+    hin.push("name_value_lists", false);
+  }
+  catch (std::runtime_error&)
   {
     std::ostringstream err_msg;
     err_msg << "The group name_value_lists in not present in file: " << filename;
