@@ -159,33 +159,27 @@ void LCAOHDFParser::parse(const std::string& fname)
       abort();
     }
 
-    if (!hin.push("MultiDet"))
-    {
-      std::cerr << "Could not open Multidet Group in H5 file" << std::endl;
-      abort();
-    }
-    else
-    {
-      hin.read(ci_size, "NbDet");
-      hin.read(ci_nstates, "nstate");
-      hin.read(nbexcitedstates, "nexcitedstate");
-      CIcoeff.clear();
-      CIalpha.clear();
-      CIbeta.clear();
-      CIcoeff.resize(ci_size);
-      CIalpha.resize(ci_size);
-      CIbeta.resize(ci_size);
+    hin.push("MultiDet");
 
-      int ds  = SpinMultiplicity - 1;
-      int neb = (NumberOfEls - ds) / 2;
-      int nea = NumberOfEls - NumberOfBeta;
-      ci_nea  = NumberOfAlpha;
-      ci_neb  = NumberOfBeta;
-      ci_nca  = nea - ci_nea;
-      ci_ncb  = neb - ci_neb;
-      std::cout << " Done reading CIs!!" << std::endl;
-      hin.close();
-    }
+    hin.read(ci_size, "NbDet");
+    hin.read(ci_nstates, "nstate");
+    hin.read(nbexcitedstates, "nexcitedstate");
+    CIcoeff.clear();
+    CIalpha.clear();
+    CIbeta.clear();
+    CIcoeff.resize(ci_size);
+    CIalpha.resize(ci_size);
+    CIbeta.resize(ci_size);
+
+    int ds  = SpinMultiplicity - 1;
+    int neb = (NumberOfEls - ds) / 2;
+    int nea = NumberOfEls - NumberOfBeta;
+    ci_nea  = NumberOfAlpha;
+    ci_neb  = NumberOfBeta;
+    ci_nca  = nea - ci_nea;
+    ci_ncb  = neb - ci_neb;
+    std::cout << " Done reading CIs!!" << std::endl;
+    hin.close();
   }
 }
 
@@ -290,11 +284,8 @@ void LCAOHDFParser::getSuperTwist(const std::string& fname)
     abort();
   }
 
-  if (!hin.push("Super_Twist"))
-  {
-    std::cerr << "Could not find Super Twist" << std::endl;
-    abort();
-  }
+  hin.push("Super_Twist");
+
   STwist_Coord.resize(3);
 
   hin.read(MyVec, "Coord");
