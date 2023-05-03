@@ -71,6 +71,9 @@ private:
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
 
+  /// Name of file
+  std::string filename_;
+
   ///set the access property
   void set_access_plist(Communicate* comm, bool request_pio);
 #ifdef HAVE_MPI
@@ -189,8 +192,8 @@ public:
    * @param gname name of the group
    * @param createit if true, group is create when missing
    */
-  hid_t push(const std::string& gname, bool createit = true);
-  hid_t push(const hdf_path& gname, bool createit = true);
+  void push(const std::string& gname, bool createit = true);
+  void push(const hdf_path& gname, bool createit = true);
 
 
   inline void pop()

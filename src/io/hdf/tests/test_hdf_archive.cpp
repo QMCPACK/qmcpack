@@ -216,6 +216,9 @@ TEST_CASE("hdf_archive_group", "[hdf]")
 
   hd.close();
 
+  // Check that opening a group on a closed file throws an exception
+  REQUIRE_THROWS(hd.push("group"));
+
   hdf_archive hd2;
   hd2.open("test_group.hdf");
   bool int_is_group = hd2.is_group("int");
@@ -234,6 +237,8 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   okay = hd2.readEntry(j3, "int2");
   REQUIRE(okay);
   REQUIRE(j3 == j);
+
+  REQUIRE_THROWS(hd2.push("nonexistent_group", false));
 
   hd2.close();
 }

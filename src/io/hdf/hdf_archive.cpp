@@ -138,6 +138,7 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 
 bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 {
+  filename_ = fname;
   if (Mode[NOIO])
     return true;
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
@@ -149,6 +150,7 @@ bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 
 bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
 {
+  filename_ = fname;
   if (Mode[NOIO])
     return true;
   close();
@@ -189,11 +191,11 @@ bool hdf_archive::is_group(const std::string& aname)
   }
 }
 
-hid_t hdf_archive::push(const std::string& gname, bool createit)
+void hdf_archive::push(const std::string& gname, bool createit)
 {
   hid_t g = is_closed;
   if (Mode[NOIO] || file_id == is_closed)
-    return is_closed;
+    throw std::runtime_error("Failed to open group \"" + gname + "\" because file \"" + filename_ + "\" is not open");
   hid_t p = group_id.empty() ? file_id : group_id.top();
 
 #if H5_VERSION_GE(1, 12, 0)
@@ -221,9 +223,11 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
   }
   if (g != is_closed)
     group_id.push(g);
-  return g;
+
+  if (!createit && g < 0)
+    throw std::runtime_error("Group \"" + gname + "\" not found in file " + filename_);
 }
 
-hid_t hdf_archive::push(const hdf_path& gname, bool createit) { return push(gname.string(), createit); }
+void hdf_archive::push(const hdf_path& gname, bool createit) { push(gname.string(), createit); }
 
 } // namespace qmcplusplus
