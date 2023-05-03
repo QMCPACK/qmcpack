@@ -825,7 +825,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
             }
           } // if(name=="det")
           csf = csf->next;
-        }   // csf loop
+        } // csf loop
         if (DetsPerCSF.back() == 0)
         {
           APP_ABORT("Found empty CSF (no det blocks).");
@@ -1059,7 +1059,12 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     abort();
   }
 
-  if (!hin.push("MultiDet"))
+
+  try
+  {
+    hin.push("MultiDet", false);
+  }
+  catch (...)
   {
     std::cerr << "Could not open Multidet Group in H5 file" << std::endl;
     abort();
@@ -1105,7 +1110,11 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
       abort();
     }
 
-    if (!coeffin.push("MultiDet"))
+    try
+    {
+      coeffin.push("MultiDet", false);
+    }
+    catch (...)
     {
       std::cerr << "Could not open Multidet Group in H5 file" << std::endl;
       abort();
