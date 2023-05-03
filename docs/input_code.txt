@@ -8,8 +8,8 @@ Input Facts
 - The user supplied input to QMCPACK can be formally thought of as a tree constructed of input nodes. These nodes have optional attributes and content. Content may be nothing, free form "text" that must be handled in an application defined manner, or one or more nodes with the same possible structure.
   For most input classes the child nodes will consist primarily or entirely of ``parameter`` nodes.
 
-- For historical reasons this tree is expressed by using XML as described previously in this manual.
-  That documentation is the most formal specification of the XML input format.
+- This tree is expressed by using XML as described previously in this manual. While XML offers the possibility that a formal specification could be defined, 
+  the documentation earlier in the manual is the most formal specification of the XML input format that exists.
 
 - Parameter nodes for historical reasons can be specified in two different ways.
 
@@ -18,18 +18,21 @@ Input Facts
    :caption: qmcpack parameter XML
    :name: param_xml
 
-	    <the_parameters_name>content</the_parameters_name>
-            <parameter name="the_parameters_name">content</parameter>
+	    <the_parameter_name>content</the_parameter_name>
+            <parameter name="the_parameter_name">content</parameter>
 
-Input Problems
-~~~~~~~~~~~~~~
-- The input parsing takes place throughout the execution of the application as needed through `put`, `process` and other calls to existing objects.
+Legacy Input Problems
+~~~~~~~~~~~~~~~~~~~~~
+- XML input parsing, validation, and processing takes place throughout the execution of the application, as needed through `put`, `process` and other calls to existing objects. 
 - Most/All simulation objects are not valid at construction but are state machines (see :numref:`fig28`) that require many transforms to become valid.
-- This makes unit tests difficult since discovering how to creating a valid object requires significant effort, sometimes archeological!
+- This impedes unit tests of simulation objects since the process for bring objects to a valid state must be derived via extensive code review or by mocking large portions of the applications execution sequence copied.
+- This impedes unit tests of input validation since to the degree this occurs is happens primarily as side effects to the construction of simulation objects.
 - Reasoning about the state of objects when debugging or developing new features is difficult.
-- Attributes are sometimes the main content and not additional information about the "content" of the node.
-- In different input sections different ways to specify very similar information. i.e. grids. are used.
-- Specific implementations are tangled up in the extended construction of numerous simulation objects and particular input expressions.
+- Attributes are sometimes the main content or only content of a node.
+- Multiple objects will take the same node as an argument to their ``put`` method, so ownership of nodes is unclear.
+- In different input sections, different ways to specify very similar information. i.e. grids. are used.
+- Specific implementations of grids etc. are tangled up in the extended construction of numerous simulation objects and particular input expressions,
+  this is a barrier to code reuse and improvement.
 - The XML parser catches only the most basic issues with the input document.
 - Unrecognized elements, parameter names, and attributes are silently ignored. Sometimes defaults are used instead.
 - Invalid input to recognized elements is sometimes checked, sometimes causes crashes, sometimes causes invalid answers (NaNs etc.) and sometimes is just fixed.
@@ -42,41 +45,52 @@ Input Problems
   **Simulation object state diagram** emphasizing the long period and multiple state updates required to become a valid object. Many objects
   require more than two updates to go from constructed to valid.
 
-Input Goals
-~~~~~~~~~~~
+Modernizing Goals
+~~~~~~~~~~~~~~~~~
 
 Legacy QMCPACK input parsing is characterized by a unclear ownership of input nodes and a multistage mixture of construction, parsing, validation, and state progression of simulation objects. The handling of input and its relation to testing and error handling is a major pain point for developers. The following program is proposed:
 
-- *Simulation classes* and the input parsing and storage of input values should be refactored into 2 or more classes. Refered to after as *Simulation classes* and *Input classes*.
-- No input parsing should occur in *simulation* objects. i.e. no ``put`` methods no ``XMLNodePtr`` argument types. 
-- *Simulation* objects should access input parameters as clearly defined and appropriate types through readonly *Input* object accessors, they should not make local copies of these parameters.
+- *Simulation classes* and the input parsing and storage of input values should be refactored into 2 or more classes. Below these are refered to as *Simulation classes* and *Input classes*.
+- No input parsing should occur in *simulation* objects. i.e. **no** ``put`` methods, **no** ``XMLNodePtr`` argument types. 
+- *Simulation* objects should access input parameters as clearly defined and appropriate types through read only *Input* object accessors, they should not make local copies of these parameters.
 - Each type of Node in the input tree should have a clear relationship to some `input` class.
 - If an input class is given a node it must be able handle all content and attributes and able to handle or delegate all child nodes.
-- Anything other than white space in a node, attribute or element not consumed by the node owner or its delgates constitutes a fatal error.
+- Anything other than white space in a node, attribute or element not consumed by the node owner or its delegates constitutes a fatal error.
 - The `Input` objects should be for practical purposes immutable after parsing.
 - After parsing the input parameters should be in appropriate native c++ types.
 - Default values should be specified in native c++ whenever practical.
-- In principle you should be able to construct an input object simply by intializing its members i.e. no input parsing necessary.
-  
+- In principle you should be able to construct an input object simply by initializing its members i.e. no input parsing necessary.
+
 The Improved Input Design
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. Make input parsing and validation (to the degree feasible) a distinct stages of application execution.
-   This will improve separation of concerns, facilitate unit testing,  and allow parsing and validation of input to be completed before the beginning of the simulation proper and the majority of the computation resource cost is incurred.
+#. Make input parsing and validation (to the degree feasible) distinct stages of application execution.
 
-#. *Simulation* objects take valid *Input* objects as constructor arguements.
+   * Improve separation of concerns
+   * Facilitate unit testing
+   * Allow parsing and validation of input to be completed before the beginning of the simulation proper, i.e. fail fast conserve HPC resources.
 
-  If we can assume a one to one relationship between some input node and a simulation object then at its simplest the ``Input`` class for a particular simulation object should be a data structure containing as members native data types corresponding to the possible user input for that node.
+#. *Simulation* objects take valid *Input* objects as constructor arguments.
+
+   * Refactor to a situation where a one to one relationship holds between a given input node and a consuming input object.
+   * The *Input* class for a particular *Simulation* class should be data structure containing native data type members corresponding to a read only representation of user input need to instantiate a valid *Simulation* object.
 
 #. *Simulation* objects will be required to be valid at construction whenever possible.
 
-#. The *Input* class is a data structure collecting all the arguments
-   a simulation class needs to be constructed in a valid state. Your simulation class should aggregate the input class
-   and use it as the "single source of truth" for these input parameters.
-   
-#. Where input parameters from another simulation object are required carefully consider lifetimes, case by case determine whether it is more appropriate for the simulation object, a more restricted type,  or an input object as a constructor argument.
+   * Existing pool objects should also be taken as constructor arguements.
 
-#. A base class :code:`InputSection` allowing the specification of the user input and handling most parsing of the XML input is provided. *Input* classes compose one or more types derived from :code:`InputSection`. The basic class hierarchy this results in is illustrated in (see :numref:`fig31`).
+#. The *Input* object is the single source of truth for input parameters.
+
+   * The *Simulation* class should aggregate the *Input* class.
+   * Access to input values should be through the aggregated *Input*.
+   * Only values that are derived at simulation time by transformation of input values should be stored in the *Simulation* object itself.
+   * Values that are calculated using only input values should be calculated and stored as derived values in the *Input* object.
+
+#. Where a *Simulation* object requires input parameters from another simulation object, carefully consider lifetimes, and on case by case basis decide whether  the simulation object, a more restricted type,  or an input object to be taken as a constructor argument.
+
+#. A base class ``InputSection`` allowing the specification of the user input and handling most parsing of the XML input is provided.
+
+   * *Input* classes compose one or more types derived from ``InputSection``. The basic class hierarchy this results in is illustrated in (see :numref:`fig31`).
 
 .. _fig31:
 .. figure:: /uml/SimpleInputClass.png
@@ -85,13 +99,11 @@ The Improved Input Design
 
   "Modern" input scheme low level class diagram. Simulation class ``SimpleSimObject``, takes input class ``SimpleInput`` as a constructor argument, in general sharing a aggregate relationship.  ``SimpleInput`` composes an input section class ``SimpleInputSection`` derived from ``InputSection`` base class. ``SimpleInput`` gains input parsing functionality from ``SimpleInputSection``.
 
-The :code:`InputSection` class parses the string representations of input data
-that have been previously organized hierarchically within Libxml2 data
-structures.  Input values of are stored in a single hash table
-where strongly typed polymorphism is supported by \verb|std::any|.  The parsed
-inputs are checked for type and name validity. Subtypes are expected to implement more
-specific checking by overriding the :code:`InputSection::checkParticularValidity` virtual method.
-
+   * The ``InputSection`` class parses the string representations of input data that have been previously organized hierarchically within Libxml2 data
+     structures.
+   * Input values of are stored in a single hash table where strongly typed polymorphism is supported by ``std::any``.
+   * The parsed inputs are checked for type and name validity.
+   * Subtypes are expected to implement specific input validation by overriding the ``InputSection::checkParticularValidity`` virtual method.
 
 How to use the improved input design
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -101,13 +113,13 @@ How to use the improved input design
   
 - If your simulation class is called ``MySimObject`` name the input class ``MySimObjectInput.``
   - Add a constructor that takes an xmlNodePtr as an argument.  
-  - Add data members for each element of the input. If the data type for an input is a ``Position`` it should be represented as a ``Position`` in
-  the input class, not a string or other type to be processed further in ``MySimObject``
+  - Add data members for each element of the input.
+  - Use appropriate data types, if an input is a "position" using a type ``Position`` in the *Simulation* class, then it should be parsed, translated to, stored as and if possible checked to be valid by the *Input* class. Don't store it as a string and do further parsing in the simulation class!
   
 - Derive a class from ``InputSection`` and add it to your ``MySimObjectInput`` class. Here we'll call it ``MySimObjectInputSection``
 
 - Define your user input in ``MySimObjectInputSection``'s default constructor. Default the copy constructor.
-  (This is to allow parent Input classes to include this input class in std::variants of their child input classes)
+  (This is to allow parent *Input* classes to include this *Input* class in std::variants of their delegate classes)
 
 - Add a private data member for the your input section to ``MySimObjectInput`` call it ``input_section_``
 
@@ -164,8 +176,13 @@ Advanced Features of :code:`InputSection`
 
 - Delegation to InputClasses
 
+  This is used when node represents another logical input class
+  
 - Custom stream handlers
+
+  This is used when content is type and/or format used only by this input section.
 
 Basic usage in ``tests/test_InputSection.cpp``
 
 - When to add a type to InputSection
+  * Type is used in multiple child input sections
