@@ -400,6 +400,12 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
   CHECK(dhpsioverpsi[0] == ValueApprox(32.462519534916666));
   CHECK(dhpsioverpsi[1] == ValueApprox(10.047601212881027));
   CHECK(dhpsioverpsi[2] == ValueApprox(2.0820644399551895));
+
+  // Check for out-of-bounds array access when a variable is disabled.
+  // When a variable is disabled, myVars.where() returns -1.
+  opt_vars.insert("rot-spo-up_orb_rot_0000_0001", 0.0, false);
+  psi->checkOutVariables(opt_vars);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 }
 
 // Test the case where the rotation has already been applied to
