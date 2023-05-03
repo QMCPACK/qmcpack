@@ -329,13 +329,8 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
   elec_.setName("elec");
   elec_.create({2});
 
-  elec_.R[0][0] = 5;
-  elec_.R[0][1] = 0;
-  elec_.R[0][2] = 0;
-  elec_.R[1][0] = 2.22798;
-  elec_.R[1][1] = 0;
-  elec_.R[1][2] = 4.249609;
-
+  elec_.R[0]     = {5, 0, 0};
+  elec_.R[1]     = {2.22798, 0, 4.249609};
   elec_.spins[0] = 1.9;
   elec_.spins[1] = 2.5410;
   elec_.setSpinor(true);

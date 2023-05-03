@@ -41,19 +41,11 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 1.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                = {0.0, 1.0, 0.0};
+  elec.R[1]                = {1.0, 1.0, 0.0};
   SpeciesSet& tspecies     = elec.getSpeciesSet();
   int upIdx                = tspecies.addSpecies("u");
   int massIdx              = tspecies.addAttribute("mass");
@@ -116,14 +108,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   ions.setName("ion0");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 6.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {6.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("Na");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -135,14 +121,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   elec.setName("e");
   std::vector<int> agroup(2, 1);
   elec.create(agroup);
-  elec.R[0][0] = 2.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 3.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 0.0;
-
-
+  elec.R[0]                    = {2.0, 0.0, 0.0};
+  elec.R[1]                    = {3.0, 0.0, 0.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -264,23 +244,15 @@ void testElecCase(double mass_up,
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   Matrix<Real> kinetic_energies(2);
 
   ParticleSet elec(simulation_cell);
 
   elec.setName("elec");
   elec.create({1, 1});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 1.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                    = {0.0, 1.0, 0.0};
+  elec.R[1]                    = {1.0, 1.0, 0.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
