@@ -688,10 +688,13 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
 
     for (int i = 0; i < m_act_rot_inds.size(); i++)
     {
-      int kk           = myVars.where(i);
-      const int p      = m_act_rot_inds.at(i).first;
-      const int q      = m_act_rot_inds.at(i).second;
-      dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
+      int kk = myVars.where(i);
+      if (kk >= 0)
+      {
+        const int p      = m_act_rot_inds.at(i).first;
+        const int q      = m_act_rot_inds.at(i).second;
+        dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
+      }
     }
   }
 }
@@ -735,10 +738,13 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
 
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
-    int kk      = myVars.where(i);
-    const int p = m_act_rot_inds.at(i).first;
-    const int q = m_act_rot_inds.at(i).second;
-    dlogpsi[kk] = T(p, q);
+    int kk = myVars.where(i);
+    if (kk >= 0)
+    {
+      const int p = m_act_rot_inds.at(i).first;
+      const int q = m_act_rot_inds.at(i).second;
+      dlogpsi[kk] = T(p, q);
+    }
   }
 }
 
@@ -837,11 +843,14 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
-    int kk      = myVars.where(i);
-    const int p = m_act_rot_inds.at(i).first;
-    const int q = m_act_rot_inds.at(i).second;
-    dlogpsi[kk] += T(p, q);
-    dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+    int kk = myVars.where(i);
+    if (kk >= 0)
+    {
+      const int p = m_act_rot_inds.at(i).first;
+      const int q = m_act_rot_inds.at(i).second;
+      dlogpsi[kk] += T(p, q);
+      dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+    }
   }
 }
 
@@ -1368,35 +1377,38 @@ $
   for (int mu = 0, k = parameter_start_index; k < (parameter_start_index + parameters_size); k++, mu++)
   {
     int kk = myVars.where(k);
-    const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
-    if (i <= nel - 1 && j > nel - 1)
+    if (kk >= 0)
     {
-      dhpsioverpsi[kk] +=
-          ValueType(-0.5 * Y4(i, j) -
-                    0.5 *
-                        (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
-                         K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
-                         const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
-                         K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
-    }
-    else if (i <= nel - 1 && j <= nel - 1)
-    {
-      dhpsioverpsi[kk] += ValueType(
-          -0.5 * (Y4(i, j) - Y4(j, i)) -
-          0.5 *
-              (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
-               TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
-               K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
-               const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
-               K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
-    }
-    else
-    {
-      dhpsioverpsi[kk] += ValueType(-0.5 *
-                                    (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
+      const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+      if (i <= nel - 1 && j > nel - 1)
+      {
+        dhpsioverpsi[kk] +=
+            ValueType(-0.5 * Y4(i, j) -
+                      0.5 *
+                          (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
+                           K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
+                           const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
+                           K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
+      }
+      else if (i <= nel - 1 && j <= nel - 1)
+      {
+        dhpsioverpsi[kk] += ValueType(
+            -0.5 * (Y4(i, j) - Y4(j, i)) -
+            0.5 *
+                (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
+                 TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
+                 K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
+                 const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
+                 K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
+      }
+      else
+      {
+        dhpsioverpsi[kk] += ValueType(-0.5 *
+                                      (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
 
-                                     + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) +
-                                     const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) - K2T(i, j) + K2T(j, i)));
+                                       + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) +
+                                       const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) - K2T(i, j) + K2T(j, i)));
+      }
     }
   }
 }
@@ -1549,20 +1561,23 @@ void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
   for (int mu = 0, k = parameter_start_index; k < (parameter_start_index + parameters_size); k++, mu++)
   {
     int kk = myVars.where(k);
-    const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
-    if (i <= nel - 1 && j > nel - 1)
+    if (kk >= 0)
     {
-      dlogpsi[kk] +=
-          ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
-    }
-    else if (i <= nel - 1 && j <= nel - 1)
-    {
-      dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
-                               (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
-    }
-    else
-    {
-      dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
+      const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+      if (i <= nel - 1 && j > nel - 1)
+      {
+        dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) +
+                                 (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
+      }
+      else if (i <= nel - 1 && j <= nel - 1)
+      {
+        dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
+                                 (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
+      }
+      else
+      {
+        dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
+      }
     }
   }
 }
