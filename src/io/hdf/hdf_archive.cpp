@@ -238,7 +238,7 @@ void hdf_archive::push(const std::string& gname, bool createit)
 
 void hdf_archive::push(const hdf_path& gname, bool createit) { push(gname.string(), createit); }
 
-std::string hdf_archive::group_path_as_string()
+std::string hdf_archive::group_path_as_string() const
 {
   std::string group_path;
   for (auto it = group_names.begin(); it != group_names.end(); it++)

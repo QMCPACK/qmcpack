@@ -212,7 +212,7 @@ public:
 
   /** Return a string representation of the current group stack
    */
-  std::string group_path_as_string();
+  std::string group_path_as_string() const;
 
   /** read the shape of multidimensional filespace from the group aname
    * this function can be used to query dataset for preparing containers.
