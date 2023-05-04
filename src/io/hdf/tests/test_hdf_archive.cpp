@@ -208,11 +208,18 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
+  CHECK(hd.group_path_as_string() == "");
+
   hd.push("name1");
+
+  CHECK(hd.group_path_as_string() == "name1");
 
   int j = 3;
   okay  = hd.writeEntry(j, "int2");
   REQUIRE(okay);
+
+  hd.push("name2");
+  CHECK(hd.group_path_as_string() == "name1/name2");
 
   hd.close();
 

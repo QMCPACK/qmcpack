@@ -38,6 +38,7 @@ void hdf_archive::close()
   {
     hid_t gid = group_id.top();
     group_id.pop();
+    group_names.pop_back();
     H5Gclose(gid);
   }
   if (file_id != is_closed)
@@ -139,25 +140,25 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 
 bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 {
-  assert(filename_.empty());
-  filename_ = fname;
   if (Mode[NOIO])
     return true;
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
     throw std::runtime_error("Only create file in parallel or by master but not every rank!");
   close();
-  file_id = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, access_id);
+  assert(filename_.empty());
+  filename_ = fname;
+  file_id   = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, access_id);
   return file_id != is_closed;
 }
 
 bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
 {
-  assert(filename_.empty());
-  filename_ = fname;
   if (Mode[NOIO])
     return true;
   close();
-  file_id = H5Fopen(fname.c_str(), flags, access_id);
+  assert(filename_.empty());
+  filename_ = fname;
+  file_id   = H5Fopen(fname.c_str(), flags, access_id);
   return file_id != is_closed;
 }
 
@@ -225,12 +226,29 @@ void hdf_archive::push(const std::string& gname, bool createit)
     g = H5Gopen2(p, gname.c_str(), H5P_DEFAULT);
   }
   if (g != is_closed)
+  {
     group_id.push(g);
+    group_names.push_back(gname);
+  }
 
   if (!createit && g < 0)
-    throw std::runtime_error("Group \"" + gname + "\" not found in file " + filename_);
+    throw std::runtime_error("Group \"" + gname + "\" not found in file " + filename_ +
+                             ". Group path: " + group_path_as_string());
 }
 
 void hdf_archive::push(const hdf_path& gname, bool createit) { push(gname.string(), createit); }
+
+std::string hdf_archive::group_path_as_string()
+{
+  std::string group_path;
+  for (auto it = group_names.begin(); it != group_names.end(); it++)
+  {
+    group_path += *it;
+    if (it != group_names.end() - 1)
+      group_path += "/";
+  }
+
+  return group_path;
+}
 
 } // namespace qmcplusplus

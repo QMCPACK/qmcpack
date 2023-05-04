@@ -70,6 +70,8 @@ private:
   hid_t lcpl_id;
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
+  ///Track group names corresponding to group_id
+  std::vector<std::string> group_names;
 
   /// Name of file
   std::string filename_;
@@ -202,10 +204,15 @@ public:
       return;
     hid_t g = group_id.top();
     group_id.pop();
+    group_names.pop_back();
     herr_t err = H5Gclose(g);
     if (err < 0)
       throw std::runtime_error("H5Gclose failed with error.");
   }
+
+  /** Return a string representation of the current group stack
+   */
+  std::string group_path_as_string();
 
   /** read the shape of multidimensional filespace from the group aname
    * this function can be used to query dataset for preparing containers.
