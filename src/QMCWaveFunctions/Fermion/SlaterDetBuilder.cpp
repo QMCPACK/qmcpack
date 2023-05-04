@@ -1060,15 +1060,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   }
 
 
-  try
-  {
-    hin.push("MultiDet", false);
-  }
-  catch (...)
-  {
-    std::cerr << "Could not open Multidet Group in H5 file" << std::endl;
-    abort();
-  }
+  hin.push("MultiDet", false);
 
   hin.read(H5_ndets, "NbDet");
   if (ndets != H5_ndets)
@@ -1110,15 +1102,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
       abort();
     }
 
-    try
-    {
-      coeffin.push("MultiDet", false);
-    }
-    catch (...)
-    {
-      std::cerr << "Could not open Multidet Group in H5 file" << std::endl;
-      abort();
-    }
+    coeffin.push("MultiDet", false);
+
     coeffin.read(OptCiSize, "NbDet");
     CIcoeffopt.resize(OptCiSize);
 
