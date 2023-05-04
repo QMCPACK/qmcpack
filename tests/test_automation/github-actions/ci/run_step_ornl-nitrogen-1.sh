@@ -54,6 +54,7 @@ case "$1" in
     cmake -GNinja \
           -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
           -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+          -DCMAKE_PREFIX_PATH=$HOME/opt/OpenBLAS/0.3.23 \
           -DQMC_MPI=0 \
           -DENABLE_CUDA=ON \
           -DQMC_CUDA2HIP=ON \
