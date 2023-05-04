@@ -262,25 +262,14 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
-    try
-    {
-      hin.push("basisset", false);
-    }
-    catch (...)
-    {
-      PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file", true);
-    }
+
+    hin.push("basisset", false);
 
     std::string sph;
     std::string ElemID0 = "atomicBasisSet0";
-    try
-    {
-      hin.push(ElemID0.c_str(), false);
-    }
-    catch (...)
-    {
-      PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file", true);
-    }
+
+    hin.push(ElemID0.c_str(), false);
+
     if (!hin.readEntry(sph, "angular"))
       PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file", true);
     ylm = (sph == "cartesian") ? 0 : 1;
@@ -402,14 +391,9 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
-    try
-    {
-      hin.push("basisset", false);
-    }
-    catch (...)
-    {
-      PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file", true);
-    }
+
+    hin.push("basisset", false);
+
     hin.read(Nb_Elements, "NbElements");
   }
 
@@ -427,14 +411,8 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
 
     if (myComm->rank() == 0)
     {
-      try
-      {
-        hin.push(ElemType.c_str(), false);
-      }
-      catch (...)
-      {
-        PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file", true);
-      }
+      hin.push(ElemType.c_str(), false);
+
       if (!hin.readEntry(basiset_name, "name"))
         PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file", true);
       if (!hin.readEntry(elementType, "elementType"))
@@ -995,14 +973,9 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
     {
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("Could not open H5 file");
-      try
-      {
-        hin.push("Cell", false);
-      }
-      catch (...)
-      {
-        APP_ABORT("Could not open Cell group in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
-      }
+
+      hin.push("Cell", false);
+
       hin.read(Lattice, "LatticeVectors");
       hin.close();
     }
