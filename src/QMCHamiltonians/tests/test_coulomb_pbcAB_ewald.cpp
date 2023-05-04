@@ -39,12 +39,7 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
-  //  ions.Lattice.LR_dim_cutoff=40;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -55,10 +50,7 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({1});
-  elec.R[0][0] = 0.5;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-
+  elec.R[0]                  = {0.5, 0.0, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -87,14 +79,14 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 
   CoulombPBCAA caa_elec(elec, true, false, false);
   CoulombPBCAA caa_ion(ions, false, false, false);
-  double val_ee         = caa_elec.evaluate(elec);
-  double val_ii         = caa_ion.evaluate(ions);
-  double sum            = val_ee + val_ii + val_ei;
+  double val_ee = caa_elec.evaluate(elec);
+  double val_ii = caa_ion.evaluate(ions);
+  double sum    = val_ee + val_ii + val_ei;
 
   CHECK(val_ee == Approx(-1.418927));
   CHECK(val_ii == Approx(-1.418927));
   CHECK(sum == Approx(-2.741436)); // Can be validated via Ewald summation elsewhere
-                                     // -2.74136517454081
+                                   // -2.74136517454081
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 }
@@ -112,14 +104,8 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.88972614;
-  ions.R[1][1] = 1.88972614;
-  ions.R[1][2] = 1.88972614;
-
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.88972614, 1.88972614, 1.88972614};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -130,14 +116,8 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.5;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.5;
-  elec.R[1][2] = 0.0;
-
-
+  elec.R[0]                  = {0.5, 0.0, 0.0};
+  elec.R[1]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -167,14 +147,14 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 
   CoulombPBCAA caa_elec(elec, false, false, false);
   CoulombPBCAA caa_ion(ions, false, false, false);
-  double val_ee         = caa_elec.evaluate(elec);
-  double val_ii         = caa_ion.evaluate(ions);
-  double sum            = val_ee + val_ii + val_ei;
+  double val_ee = caa_elec.evaluate(elec);
+  double val_ii = caa_ion.evaluate(ions);
+  double sum    = val_ee + val_ii + val_ei;
 
   CHECK(val_ee == Approx(-0.012808 - 0.0277076538 * 2));
   CHECK(val_ii == Approx(-0.907659 - 0.0277076538 * 2));
   CHECK(sum == Approx(-3.143880)); // Can be validated via Ewald summation elsewhere
-                                     // -3.14349127313640
+                                   // -3.14349127313640
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 }
