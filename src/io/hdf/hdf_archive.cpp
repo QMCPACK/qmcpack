@@ -42,6 +42,7 @@ void hdf_archive::close()
   }
   if (file_id != is_closed)
     H5Fclose(file_id);
+  filename_.clear();
   file_id = is_closed;
 }
 
@@ -138,6 +139,7 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 
 bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 {
+  assert(filename_.empty());
   filename_ = fname;
   if (Mode[NOIO])
     return true;
@@ -150,6 +152,7 @@ bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 
 bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
 {
+  assert(filename_.empty());
   filename_ = fname;
   if (Mode[NOIO])
     return true;
@@ -195,7 +198,7 @@ void hdf_archive::push(const std::string& gname, bool createit)
 {
   hid_t g = is_closed;
   if (Mode[NOIO] || file_id == is_closed)
-    throw std::runtime_error("Failed to open group \"" + gname + "\" because file \"" + filename_ + "\" is not open");
+    throw std::runtime_error("Failed to open group \"" + gname + "\" because file is not open");
   hid_t p = group_id.empty() ? file_id : group_id.top();
 
 #if H5_VERSION_GE(1, 12, 0)
