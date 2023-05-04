@@ -42,14 +42,8 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.62478653;
-  ions.R[1][1] = 1.62478653;
-  ions.R[1][2] = 1.62478653;
-
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.62478653, 1.62478653, 1.62478653};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -60,14 +54,8 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.4;
-  elec.R[0][1] = 0.4;
-  elec.R[0][2] = 0.4;
-  elec.R[1][0] = 2.02478653;
-  elec.R[1][1] = 2.02478653;
-  elec.R[1][2] = 2.02478653;
-
-
+  elec.R[0]                  = {0.4, 0.4, 0.4};
+  elec.R[1]                  = {2.02478653, 2.02478653, 2.02478653};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");

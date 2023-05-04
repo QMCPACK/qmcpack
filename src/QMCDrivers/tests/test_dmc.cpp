@@ -46,20 +46,13 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 1.0;
+  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.0, 1.0};
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -140,20 +133,13 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 1.0;
+  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.0, 1.0};
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
