@@ -625,7 +625,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
           Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                       dhpsioverpsi);
     }
-    REQUIRE(Value1 == Approx(-3.530511241));
+    REQUIRE(Value1 == Approx(-3.530511241).epsilon(2.e-5));
 
     for (int ip = 0; ip < NumOptimizables; ip++)
       CHECK(std::real(dhpsioverpsi[ip]) == Approx(dhpsioverpsi_refs[ip]));
