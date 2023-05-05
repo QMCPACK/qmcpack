@@ -75,13 +75,8 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
   source.setName("electrons");
 
   source.create({2});
-  source.R[0][0] = 0.0;
-  source.R[0][1] = 1.0;
-  source.R[0][2] = 2.0;
-  source.R[1][0] = 1.1;
-  source.R[1][1] = 1.0;
-  source.R[1][2] = 3.2;
-
+  source.R[0] = {0.0, 1.0, 2.0};
+  source.R[1] = {1.1, 1.0, 3.2};
   source.update();
   /// make sure getCoordinates().getAllParticlePos() is updated no matter SoA or AoS.
   CHECK(source.getCoordinates().getAllParticlePos()[0][1] == Approx(1.0));
