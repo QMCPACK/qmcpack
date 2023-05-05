@@ -262,13 +262,14 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
-    if (!hin.push("basisset"))
-      PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file", true);
+
+    hin.push("basisset", false);
 
     std::string sph;
     std::string ElemID0 = "atomicBasisSet0";
-    if (!hin.push(ElemID0.c_str()))
-      PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file", true);
+
+    hin.push(ElemID0.c_str(), false);
+
     if (!hin.readEntry(sph, "angular"))
       PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file", true);
     ylm = (sph == "cartesian") ? 0 : 1;
@@ -390,8 +391,9 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
-    if (!hin.push("basisset"))
-      PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file", true);
+
+    hin.push("basisset", false);
+
     hin.read(Nb_Elements, "NbElements");
   }
 
@@ -409,8 +411,8 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
 
     if (myComm->rank() == 0)
     {
-      if (!hin.push(ElemType.c_str()))
-        PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file", true);
+      hin.push(ElemType.c_str(), false);
+
       if (!hin.readEntry(basiset_name, "name"))
         PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file", true);
       if (!hin.readEntry(elementType, "elementType"))
@@ -506,7 +508,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
     bool file_exists(myComm->rank() == 0 && std::ifstream(cusp_file).good());
     myComm->bcast(file_exists);
-    app_log() << "  Cusp correction file " << cusp_file << (file_exists? " exits.": " doesn't exist.") << std::endl;
+    app_log() << "  Cusp correction file " << cusp_file << (file_exists ? " exits." : " doesn't exist.") << std::endl;
 
     // validate file if it exists
     if (file_exists)
@@ -594,18 +596,20 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     {
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
-      //TO REVIEWERS:: IDEAL BEHAVIOUR SHOULD BE:
-      /*
-         if(!hin.push("PBC")
-             PBC=false;
-         else
-            if (!hin.readEntry(PBC,"PBC"))
-                APP_ABORT("Could not read PBC dataset in H5 file. Probably corrupt file!!!.");
-        // However, it always succeeds to enter the if condition even if the group does not exists...
-        */
-      hin.push("PBC");
-      PBC = false;
-      hin.read(PBC, "PBC");
+
+      try
+      {
+        hin.push("PBC", false);
+        PBC = true;
+      }
+      catch (...)
+      {
+        PBC = false;
+      }
+
+      if (PBC)
+        hin.read(PBC, "PBC");
+
       hin.close();
     }
     myComm->bcast(PBC);
@@ -969,8 +973,9 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
     {
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("Could not open H5 file");
-      if (!hin.push("Cell"))
-        APP_ABORT("Could not open Cell group in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
+
+      hin.push("Cell", false);
+
       hin.read(Lattice, "LatticeVectors");
       hin.close();
     }

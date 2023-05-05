@@ -144,8 +144,14 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
       if (read.open(hdf_read_restart, H5F_ACC_RDONLY))
       {
         // always write driver data and walkers
-        if (!read.push("AFQMCDriver", false))
+        try
+        {
+          read.push("AFQMCDriver", false);
+        }
+        catch (...)
+        {
           return false;
+        }
 
         std::vector<IndexType> Idata(2);
         std::vector<RealType> Rdata(2);

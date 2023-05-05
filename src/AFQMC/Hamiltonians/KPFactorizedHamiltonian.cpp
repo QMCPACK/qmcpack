@@ -99,12 +99,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
       app_error() << " Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in THCHamiltonian::getHamiltonianOperations():"
-                  << " Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
   }
 
   std::vector<int> Idata(8);
@@ -257,12 +252,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
       ma::add(ComplexType(1.0), h1, ComplexType(0.0), h1, H1[Q]({0, npol * nmo_per_kp[Q]}, {0, npol * nmo_per_kp[Q]}));
     }
     // read LQ
-    if (!dump.push("KPFactorized", false))
-    {
-      app_error() << " Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
-                  << " Group KPFactorized not found. \n";
-      APP_ABORT("");
-    }
+    dump.push("KPFactorized", false);
+
     for (int Q = 0; Q < nkpts; Q++)
     {
       using ma::conj;
@@ -834,12 +825,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
       app_error() << " Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in THCHamiltonian::getHamiltonianOperations():"
-                  << " Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
   }
 
   std::vector<int> Idata(8);
@@ -993,12 +979,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     for (auto& v : LQKikn)
       std::fill_n(to_address(v.origin()), v.num_elements(), SPComplexType(0.0));
     // read LQ
-    if (!dump.push("KPFactorized", false))
-    {
-      app_error() << " Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
-                  << " Group KPFactorized not found. \n";
-      APP_ABORT("");
-    }
+    dump.push("KPFactorized", false);
     // read in compact form and transform to padded
     SpMatrix L_({1, 1});
     for (int Q = 0; Q < nkpts; Q++)

@@ -1286,7 +1286,8 @@ struct TraceBuffer
     dims[1] = buffer.size(1);
     if (dims[0] > 0)
     {
-      h5d_append(f.push(top), "traces", file_pointer, buffer.dim(), dims, buffer.data());
+      f.push(top);
+      h5d_append(f.top(), "traces", file_pointer, buffer.dim(), dims, buffer.data());
       f.pop();
     }
     f.flush();
