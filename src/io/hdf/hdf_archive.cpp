@@ -195,9 +195,13 @@ bool hdf_archive::is_group(const std::string& aname)
 void hdf_archive::push(const std::string& gname, bool createit)
 {
   hid_t g = is_closed;
-  if (Mode[NOIO] || file_id == is_closed)
+  if (Mode[NOIO])
+    return;
+
+  if (file_id == is_closed)
     throw std::runtime_error("Failed to open group \"" + gname +
                              "\" because file is not open.  Expected file: " + possible_filename_);
+
   hid_t p = group_id.empty() ? file_id : group_id.top();
 
 #if H5_VERSION_GE(1, 12, 0)
