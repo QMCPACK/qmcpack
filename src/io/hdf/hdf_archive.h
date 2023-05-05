@@ -73,8 +73,11 @@ private:
   ///Track group names corresponding to group_id
   std::vector<std::string> group_names;
 
-  /// Name of file
-  std::string filename_;
+  /** Name of file that hdf_archive thinks is open.
+   *  This may not correspond to the actual file because the open call failed,
+   *  or the file was closed. This information is useful for debugging.
+   */
+  std::string possible_filename_;
 
   ///set the access property
   void set_access_plist(Communicate* comm, bool request_pio);

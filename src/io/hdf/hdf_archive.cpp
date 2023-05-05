@@ -43,7 +43,6 @@ void hdf_archive::close()
   }
   if (file_id != is_closed)
     H5Fclose(file_id);
-  filename_.clear();
   file_id = is_closed;
 }
 
@@ -140,25 +139,23 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 
 bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 {
+  possible_filename_ = fname;
   if (Mode[NOIO])
     return true;
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
     throw std::runtime_error("Only create file in parallel or by master but not every rank!");
   close();
-  assert(filename_.empty());
-  filename_ = fname;
-  file_id   = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, access_id);
+  file_id = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, access_id);
   return file_id != is_closed;
 }
 
 bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
 {
+  possible_filename_ = fname;
   if (Mode[NOIO])
     return true;
   close();
-  assert(filename_.empty());
-  filename_ = fname;
-  file_id   = H5Fopen(fname.c_str(), flags, access_id);
+  file_id = H5Fopen(fname.c_str(), flags, access_id);
   return file_id != is_closed;
 }
 
@@ -199,7 +196,8 @@ void hdf_archive::push(const std::string& gname, bool createit)
 {
   hid_t g = is_closed;
   if (Mode[NOIO] || file_id == is_closed)
-    throw std::runtime_error("Failed to open group \"" + gname + "\" because file is not open");
+    throw std::runtime_error("Failed to open group \"" + gname +
+                             "\" because file is not open.  Expected file: " + possible_filename_);
   hid_t p = group_id.empty() ? file_id : group_id.top();
 
 #if H5_VERSION_GE(1, 12, 0)
@@ -232,7 +230,7 @@ void hdf_archive::push(const std::string& gname, bool createit)
   }
 
   if (!createit && g < 0)
-    throw std::runtime_error("Group \"" + gname + "\" not found in file " + filename_ +
+    throw std::runtime_error("Group \"" + gname + "\" not found in file " + possible_filename_ +
                              ". Group path: " + group_path_as_string());
 }
 
