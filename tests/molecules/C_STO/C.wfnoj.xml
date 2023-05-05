@@ -1,0 +1,62 @@
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+     <sposet_collection type="MolecularOrbital">
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet elementType="C" normalized="no" type="STO">
+          <!-- exponent fixed to satisfy cusp condition -->
+          <basisGroup l="0" m="0" rid="C0" type="Slater">
+             <radfunc exponent="6.0" n="1" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C1" type="Slater">
+             <radfunc exponent="1.6293625116375647" n="2" />
+          </basisGroup>
+          <basisGroup l="1" m="0" rid="C2" type="Slater">
+             <radfunc exponent=" 1.465111658082114" n="2" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C3" type="Slater">
+             <radfunc exponent=" 4.6238291212602185" n="2" />
+          </basisGroup>
+          <basisGroup l="1" m="0" rid="C4" type="Slater">
+             <radfunc exponent=" 3.7640206348792504" n="2" />
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+     <rotated_sposet name="rot-spo-up" method="global">
+      <sposet basisset="LCAOBSet" name="spo-up">
+          <coefficient id="updetC" size="9" type="Array">
+ 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+ 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+ 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0
+ 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0
+ 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0
+ 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0
+ 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0
+ 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0
+ 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0
+          </coefficient>
+      </sposet>
+     </rotated_sposet>
+     <rotated_sposet name="rot-spo-down" method="global">
+      <sposet basisset="LCAOBSet" name="spo-down">
+          <coefficient id="downdetC" size="9" type="Array">
+ 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+ 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+ 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0
+ 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0
+ 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0
+ 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0
+ 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0
+ 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0
+ 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0
+          </coefficient>
+      </sposet>
+     </rotated_sposet>
+    </sposet_collection>
+    <determinantset key="STO" source="ion0" transform="no" type="MO">
+      <slaterdeterminant batch="no">
+        <determinant id="rot-spo-up" size="4"/>
+        <determinant id="rot-spo-down" size="2"/>
+      </slaterdeterminant>
+    </determinantset>
+ </wavefunction>
+</qmcsystem>
