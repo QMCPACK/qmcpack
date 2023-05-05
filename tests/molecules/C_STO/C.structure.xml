@@ -13,16 +13,6 @@
  C
 </attrib>
   </particleset>
-  <!--
-  <particleset name="e" random="yes" randomsrc="ion0">
-    <group name="u" size="3">
-      <parameter name="charge">-1</parameter>
-    </group>
-    <group name="d" size="3">
-      <parameter name="charge">-1</parameter>
-    </group>
-  </particleset>
-  -->
 
   <particleset name="e" random="yes" randomsrc="ion0">
     <group name="u" size="4">
