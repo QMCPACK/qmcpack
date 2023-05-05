@@ -72,12 +72,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       app_error() << " Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in THCHamiltonian::getHamiltonianOperations():"
-                  << " Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
   }
 
   std::vector<int> Idata(8);
@@ -228,12 +223,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     }
 
     // read LQ
-    if (!dump.push("KPTHC", false))
-    {
-      app_error() << " Error in KPTHCHamiltonian::getHamiltonianOperations():"
-                  << " Group KPTHC not found. \n";
-      APP_ABORT("");
-    }
+    dump.push("KPTHC", false);
 
     if (!dump.readEntry(Idata, "dims"))
     {
@@ -1056,12 +1046,8 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       app_error() << " Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump_.push("Hamiltonian", false))
-    {
-      app_error() << " Error in THCHamiltonian::getHamiltonianOperations():"
-                  << " Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump_.push("Hamiltonian", false);
+
     if (!dump_.readEntry(nchol_per_kp_, "NCholPerKP"))
     {
       app_error() << " Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
@@ -1078,12 +1064,8 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   if (TG.Node().root())
   {
     // read LQ
-    if (!dump_.push("KPFactorized", false))
-    {
-      app_error() << " Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
-                  << " Group KPFactorized not found. \n";
-      APP_ABORT("");
-    }
+    dump_.push("KPFactorized", false);
+
     for (int Q = 0; Q < nkpts; Q++)
     {
       std::cout << " reading: " << Q << std::endl;

@@ -132,11 +132,8 @@ public:
         app_error() << " Error opening orbitals file for n2r estimator. \n";
         APP_ABORT("");
       }
-      if (!dump.push("OrbsR", false))
-      {
-        app_error() << " Error in n2r: Group OrbsR not found." << std::endl;
-        APP_ABORT("");
-      }
+      dump.push("OrbsR", false);
+
       if (!dump.readEntry(grid_dim, "grid_dim"))
       {
         app_error() << " Error in n2r: Problems reading grid_dim. " << std::endl;
