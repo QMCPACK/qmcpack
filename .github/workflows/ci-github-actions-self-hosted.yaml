@@ -36,7 +36,7 @@ jobs:
         if: contains(env.SECRET_ACTORS, env.ACTOR_TOKEN)
         id: check
         run: |
-          echo "::set-output name=triggered::true"
+          echo "triggered=true" >> $GITHUB_OUTPUT
 
       # Request repo info, required since issue_comment doesn't point at PR commit, but develop
       - name: GitHub API Request
@@ -64,10 +64,10 @@ jobs:
         if: steps.check.outputs.triggered == 'true'
         id: pr_data
         run: |
-          echo "::set-output name=branch::${{ fromJson(steps.request.outputs.data).head.ref }}"
-          echo "::set-output name=repo_name::${{ fromJson(steps.request.outputs.data).head.repo.full_name }}"
-          echo "::set-output name=repo_clone_url::${{ fromJson(steps.request.outputs.data).head.repo.clone_url }}"
-          echo "::set-output name=repo_ssh_url::${{ fromJson(steps.request.outputs.data).head.repo.ssh_url }}"
+          echo "branch=${{ fromJson(steps.request.outputs.data).head.ref }}" >> $GITHUB_OUTPUT
+          echo "repo_name=${{ fromJson(steps.request.outputs.data).head.repo.full_name }}" >> $GITHUB_OUTPUT
+          echo "repo_clone_url=${{ fromJson(steps.request.outputs.data).head.repo.clone_url }}" >> $GITHUB_OUTPUT
+          echo "repo_ssh_url=${{ fromJson(steps.request.outputs.data).head.repo.ssh_url }}" >> $GITHUB_OUTPUT
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
@@ -135,7 +135,7 @@ jobs:
         if: contains(env.SECRET_ACTORS, env.ACTOR_TOKEN)
         id: check
         run: |
-          echo "::set-output name=triggered::true"
+          echo "triggered=true" >> $GITHUB_OUTPUT
 
       # Request repo info, required since issue_comment doesn't point at PR commit, but develop
       - name: GitHub API Request
@@ -163,10 +163,10 @@ jobs:
         if: steps.check.outputs.triggered == 'true'
         id: pr_data
         run: |
-          echo "::set-output name=branch::${{ fromJson(steps.request.outputs.data).head.ref }}"
-          echo "::set-output name=repo_name::${{ fromJson(steps.request.outputs.data).head.repo.full_name }}"
-          echo "::set-output name=repo_clone_url::${{ fromJson(steps.request.outputs.data).head.repo.clone_url }}"
-          echo "::set-output name=repo_ssh_url::${{ fromJson(steps.request.outputs.data).head.repo.ssh_url }}"
+          echo "branch=${{ fromJson(steps.request.outputs.data).head.ref }}" >> $GITHUB_OUTPUT
+          echo "repo_name=${{ fromJson(steps.request.outputs.data).head.repo.full_name }}" >> $GITHUB_OUTPUT
+          echo "repo_clone_url=${{ fromJson(steps.request.outputs.data).head.repo.clone_url }}" >> $GITHUB_OUTPUT
+          echo "repo_ssh_url=${{ fromJson(steps.request.outputs.data).head.repo.ssh_url }}" >> $GITHUB_OUTPUT
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
@@ -231,7 +231,7 @@ jobs:
         if: contains(env.SECRET_ACTORS, env.ACTOR_TOKEN)
         id: check
         run: |
-          echo "::set-output name=triggered::true"
+          echo "triggered=true" >> $GITHUB_OUTPUT
 
       # Request repo info, required since issue_comment doesn't point at PR commit, but develop
       - name: GitHub API Request
@@ -259,10 +259,10 @@ jobs:
         if: steps.check.outputs.triggered == 'true'
         id: pr_data
         run: |
-          echo "::set-output name=branch::${{ fromJson(steps.request.outputs.data).head.ref }}"
-          echo "::set-output name=repo_name::${{ fromJson(steps.request.outputs.data).head.repo.full_name }}"
-          echo "::set-output name=repo_clone_url::${{ fromJson(steps.request.outputs.data).head.repo.clone_url }}"
-          echo "::set-output name=repo_ssh_url::${{ fromJson(steps.request.outputs.data).head.repo.ssh_url }}"
+          echo "branch=${{ fromJson(steps.request.outputs.data).head.ref }}" >> $GITHUB_OUTPUT
+          echo "repo_name=${{ fromJson(steps.request.outputs.data).head.repo.full_name }}" >> $GITHUB_OUTPUT
+          echo "repo_clone_url=${{ fromJson(steps.request.outputs.data).head.repo.clone_url }}" >> $GITHUB_OUTPUT
+          echo "repo_ssh_url=${{ fromJson(steps.request.outputs.data).head.repo.ssh_url }}" >> $GITHUB_OUTPUT
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
