@@ -85,7 +85,7 @@
    <mcwalkerset fileroot="qmc_short_batch.s000" node="-1" nprocs="1" version="0 4" collected="yes"/>
 
    <qmc method="vmc_batch" move="pbyp" checkpoint="-1">
-      <parameter name="walkers_per_rank"> 16            </parameter>	   
+      <parameter name="total_walkers">    16            </parameter>
       <parameter name="blocks">           1             </parameter>
       <parameter name="steps">            1             </parameter>
       <parameter name="subSteps">         1             </parameter>
