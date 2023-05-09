@@ -3566,7 +3566,29 @@ class Polaris(Supercomputer):
     #end def specialized_bundle_commands
 #end class Polaris
 
+## Added 05/04/2023 by Tom Ichibha
+class Kagayaki(Supercomputer):
+    name = 'kagayaki'
+    requires_account = False
+    batch_capable    = True
+    special_bundling = False
 
+    def process_job_options(self,job):
+        job.run_options.add(nodefile='-machinefile $PBS_NODEFILE', np='-np '+str(job.processes))
+
+    def write_job_header(self,job):
+        ppn = 16 if ['Default', 'SINGLE', 'LONG', 'DEFAULT'].includes(job.queue) else 128
+        c=''
+        c+='#!/bin/bash'
+        c+='#PBS -q ' + job.queue + '\n'
+        c+='#PBS -N ' + job.name + '\n' 
+        c+='#PBS -l select=' +  job.nodes + '\n'
+        c+='#PBS -l ncpus=' + ppn + '\n'
+        c+='#PBS -l mpiprocs=' + ppn + '\n'
+        c+='cd $PBS_O_WORKDIR\n'
+        return c
+    #end def write_job_header                                                                       
+#end class CadesMoab
 
 
 #Known machines
@@ -3576,6 +3598,7 @@ for cores in range(1,128+1):
 #end for
 #  supercomputers and clusters
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
+Kagayaki(      240,   2,    64,  512,   10, 'mpirun',     'qsub',   'qstat',    'qdel')
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
