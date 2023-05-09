@@ -3577,7 +3577,7 @@ class Kagayaki(Supercomputer):
         job.run_options.add(nodefile='-machinefile $PBS_NODEFILE', np='-np '+str(job.processes))
 
     def write_job_header(self,job):
-        ppn = 16 if ['Default', 'SINGLE', 'LONG', 'DEFAULT'].includes(job.queue) else 128
+        ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
         c=''
         c+='#!/bin/bash'
         c+='#PBS -q ' + job.queue + '\n'
