@@ -118,8 +118,9 @@ How to use the improved input design
   
 - Derive a class from ``InputSection`` and add it to your ``MySimObjectInput`` class. Here we'll call it ``MySimObjectInputSection``
 
-- Define your user input in ``MySimObjectInputSection``'s default constructor. Default the copy constructor.
-  (This is to allow parent *Input* classes to include this *Input* class in std::variants of their delegate classes)
+- Define your user input in ``MySimObjectInputSection``'s default constructor.
+
+ - Default the copy constructor. (This is to allow parent *Input* classes to include this *Input* class in std::variants of their delegate classes)
 
 - Add a private data member for the your input section to ``MySimObjectInput`` call it ``input_section_``
 
@@ -143,6 +144,17 @@ How to use the improved input design
 	  };
 
 - Write unit tests ``tests/test_MySimObjectInput.cpp`` see ``src/Estimators/test_OneBodyDensityMatricesInput.cpp``
+
+Declaring input node Contents
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The constructor of the ``InputSection`` subtype uses a pseudo DSL to define the input node the section handles. Doing this lets InputSection know what type difference input parameters and attributes must be as well as what is expected, optional, and what doesn't belong in the input node at all.
+
+.. literalinclude:: input_section_dsl.cpp
+   :caption: ``InputSection`` pseudo DSL
+   :name: _input_dsl_lst
+
+Any easy way of thinking about this is you are adding your input elements to different logical sets from parsing and validation. The input breaks down into attributes and parameters for each node. So first each element is added to one of these two sets. Then required inputs should be added to the required set. Then each element should be added to the type set it matches.  Any element that isn't defined in this fashion will cause a fatal error when the input node is parsed by the ``InputSection.`` Without extension ``InputSection`` provides only a basic set of types and expects only attribute and parameter elements. There is an established API for delegation to other input classes when an included child nodes are actually complex Inputs in their own right, i.e. not just parameters and attribute. There is also an extension method through custom stream handlers for types not covered by ``InputSection`` (see :ref:`_advanced-input_section`)
 
 Special concerns if your InputClass is for an Estimator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -170,19 +182,31 @@ This requires that in addition to creating and unit testing ``MyEstimatorInput``
             appendEstimatorInput<MyEstimatorInput>(child);
 
 - Add a valid input section for your input class to the integration testing in ``tests/test_EstimatorManagerInput.cpp``
-	    
+
+.. _advanced-input-section:
+
 Advanced Features of :code:`InputSection`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Delegation to InputClasses
+Delegation to InputClasses
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  This is used when node represents another logical input class
-  
-- Custom stream handlers
+  This is used when child node in input represents another logical input class we register a factory function for that input child class as a delegate of the input class responsible for the parent node.
 
-  This is used when content is type and/or format used only by this input section.
+  The delgating class should will pass an entire node to this input class factory function and receive an input class as a ``std::any`` back. The delegate class is expected to take responsibility for complete parsing of this node. Including its own internal validation. 
+  a tag name (see :ref:`_delegating_lst`).
 
-Basic usage in ``tests/test_InputSection.cpp``
+.. literalinclude:: delegating.cpp
+   :caption: Delgating to another ``InputSection`` subtype
+   :name: _delegating_lst
 
-- When to add a type to InputSection
-  * Type is used in multiple child input sections
+Custom stream handlers
+^^^^^^^^^^^^^^^^^^^^^^
+
+In the case that we just have a input parameter that is unique to a particular input class,  not for one of the types handled by ``InputSection``, and it does not logically map to a separate Input we should use a custom stream handler (see :ref:`_custom_stream_handler_lst`).
+
+
+.. literalinclude:: custom_stream_handler.cpp
+   :caption: Implementing a custom type handler for an Input class.
+   :name: _custom_stream_handler_lst
+
