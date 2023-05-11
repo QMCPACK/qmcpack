@@ -157,7 +157,9 @@ protected:
    *
    *  Side effect only method updates values_.
    *  \param[in]   cur              current xml node
-   *  \param[in]   consume_name     read the name attribute (this has complicated semantics in QMCPACK input)
+   *  \param[in]   consume_name     parse the name attribute (this has complicated semantics in QMCPACK input)
+   *                                when a parameter has an ename="parameter" and the name attribtue is used to identify the
+   *                                parmeter we do not consume i.e. parse that name into the values_.
    *  \param[in]   element_name     qualifying identifier with respect to the InputSection root node for the atttributes.
    
    *  Ideally any child node of significant complexity would be delegated to another input section.
