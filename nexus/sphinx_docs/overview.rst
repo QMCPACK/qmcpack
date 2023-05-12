@@ -1,7 +1,7 @@
 .. _overview:
 
-Overview of Nexus
-=================
+Overview of how Nexus will run all our workflows
+================================================
 
 What Nexus is
 -------------
