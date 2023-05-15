@@ -158,8 +158,8 @@ protected:
    *  Side effect only method updates values_.
    *  \param[in]   cur              current xml node
    *  \param[in]   consume_name     parse the name attribute (this has complicated semantics in QMCPACK input)
-   *                                when a parameter has an ename="parameter" and the name attribtue is used to identify the
-   *                                parmeter we do not consume i.e. parse that name into the values_.
+   *                                when a parameter has an ename="parameter" and the name attribute is used to identify the
+   *                                parameter we do not consume i.e. parse that name into the values_.
    *  \param[in]   element_name     qualifying identifier with respect to the InputSection root node for the atttributes.
    
    *  Ideally any child node of significant complexity would be delegated to another input section.
@@ -203,6 +203,11 @@ protected:
 
   /** Derived class can overrides this to do custom parsing of the element values for Custom elements
    *  These can have a name attribute only.
+   *  \param[in]  ename    name of the element svalue comes from, top level attributes do not have ename.
+   *  \param[in]  name     name of the attribute
+   *  \param[in]  svalue   input stream consisting of the contents of one element. It is expected that your
+   *                       custom stream handler will consume this entirely.
+   *
    */
   [[noreturn]] virtual void setFromStreamCustom(const std::string& ename,
                                                 const std::string& name,

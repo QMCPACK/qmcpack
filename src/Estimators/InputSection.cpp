@@ -92,8 +92,12 @@ void InputSection::readXML(xmlNodePtr cur)
   xmlNodePtr element = cur->xmlChildrenNode;
   while (element != NULL)
   {
+    // ename is the "name" of the XML element i.e. <ename [attributes]>
     std::string ename{lowerCase(castXMLCharToChar(element->name))};
+    // value of the elements attribute = name
     std::string name(lowerCase(getXMLAttributeValue(element, "name")));
+    // we need both ename and name to figure out how to handle an element because of the <parameter name="actual_parameter"> pattern.
+    // If the name attribute isn't there it should equal the element name.
     if (name.size() < 1)
       name = ename;
 
@@ -111,6 +115,9 @@ void InputSection::readXML(xmlNodePtr cur)
       if (ename == "parameter")
         ename = name;
       else
+	// We do this because the semantics of parameters are such that name can not have a unique value because
+	// if it did have one that the equivalence of <parameter_name> and <parameter name="parameter_name"> would
+	// be broken. Input code being ported could depend on this an an invariant.
         name = ename;
       if (!isParameter(ename))
       {
@@ -130,6 +137,9 @@ void InputSection::readXML(xmlNodePtr cur)
             << "\n";
       throw UniformCommunicateError(error.str());
     }
+    else
+      std::cout << ename << '\n';
+    // else can't be an error case because this is how the whitespace text nodes
     element = element->next;
   }
 
