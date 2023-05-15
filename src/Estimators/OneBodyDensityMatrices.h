@@ -90,7 +90,9 @@ private:
   Vector<Value> basis_norms_;
   Vector<Grad> basis_gradients_;
   Vector<Value> basis_laplacians_;
+  Vector<Value> basis_spin_gradients_;
   std::vector<Position> rsamples_;
+  std::vector<Real> ssamples_;
   Vector<Real> samples_weights_;
   int basis_size_;
   std::vector<int> species_sizes_;
@@ -144,6 +146,11 @@ private:
   Position dpcur_;
   /// current density
   Real rhocur_ = 0.0;
+
+  //spin related variables
+  Real spcur_;
+  Real dspcur_;
+  bool is_spinor_;
 
 public:
   /** Standard Constructor
@@ -235,12 +242,21 @@ private:
    */
   template<class RNG_GEN>
   void generateDensitySamples(bool save, int steps, RNG_GEN& rng, ParticleSet& pset_target);
+
+  //same as above, but with spin variables included
+  template<class RNG_GEN>
+  void generateDensitySamplesWithSpin(bool save, int steps, RNG_GEN& rng, ParticleSet& pset_target);
   void generateSampleRatios(ParticleSet& pset_target,
                             TrialWaveFunction& psi_target,
                             std::vector<Matrix<Value>>& Psi_nm);
   /// produce a position difference vector from timestep
   template<class RNG_GEN>
   Position diffuse(const Real sqt, RNG_GEN& rng);
+
+  /// spin diffusion
+  template<class RNG_GEN>
+  Real diffuseSpin(const Real sqt, RNG_GEN& rng);
+
   /** calculate density based on r
    *  \param[in]      r       position
    *  \param[out]   dens      density
@@ -251,6 +267,8 @@ private:
    *    * updateBasis is called
    */
   void calcDensity(const Position& r, Real& dens, ParticleSet& pset_target);
+  //same as above, but with spin move
+  void calcDensityWithSpin(const Position& r, const Real& s, Real& dens, ParticleSet& pset_target);
   /** calculate density and drift bashed on r
    *  \param[in]      r       position
    *  \param[out]   dens      density
@@ -263,6 +281,13 @@ private:
    *    * updateBasisD012 is called
    */
   void calcDensityDrift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target);
+
+  void calcDensityDriftWithSpin(const Position& r,
+                                const Real& s,
+                                Real& dens,
+                                Position& drift,
+                                Real& sdrift,
+                                ParticleSet& pset_target);
   //  basis & wavefunction ratio matrix construction
 
   /** set Phi_mp to basis vaules per sample
@@ -278,12 +303,16 @@ private:
 
   //  basis set updates
   void updateBasis(const Position& r, ParticleSet& pset_target);
+  //  basis set updates with spin
+  void updateBasisWithSpin(const Position& r, const Real& s, ParticleSet& pset_target);
   /** evaluates vgl on basis_functions_ for r
    *  sideeffects:
    *    * sets basis_values_, basis_gradients_, basis_laplacians_
    *      all are normalized by basis norms_
    */
   void updateBasisD012(const Position& r, ParticleSet& pset_target);
+  // same as above, but includes spin gradients
+  void updateBasisD012WithSpin(const Position& r, const Real& s, ParticleSet& pset_target);
   /** does some warmup sampling i.e. samples but throws away the results
    *  Only when integrator_ = Integrator::DENSITY
    *  sets rpcur_ initial rpcur + one diffusion step
