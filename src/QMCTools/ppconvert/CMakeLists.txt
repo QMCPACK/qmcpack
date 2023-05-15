@@ -12,8 +12,7 @@ endif()
 string(REPLACE "-ffast-math" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
 if(CMAKE_CROSSCOMPILING)
-  message(STATUS "Cannot run std::isnan tests when cross compiling. Assume std::isnan not working. "
-                 "Use -DQMC_ISNAN=ON to override.")
+  message(STATUS "Cannot run std::isnan tests when cross compiling. Set ISNAN_WORKS to FALSE.")
   set(ISNAN_WORKS FALSE)
 else()
   # check if std::isnan works or not
@@ -32,13 +31,13 @@ int main()
   ISNAN_WORKS)
 endif()
 
-option(QMC_ISNAN "Enable Code paths relying std::isnan" ${ISNAN_WORKS})
+option(ENABLE_PPCONVERT "Enable ppconvert" ${ISNAN_WORKS})
 
 # ppconvert only works when std::isnan works.
-if(QMC_ISNAN)
-  message(STATUS "std::isnan dependent code paths enabled. ppconvert enabled.")
+if(ENABLE_PPCONVERT)
+  message(STATUS "ppconvert enabled.")
   add_subdirectory(src)
   add_subdirectory(test)
 else()
-  message(STATUS "std::isnan dependent code paths disabled. ppconvert disabled.")
+  message(STATUS "ppconvert disabled.")
 endif()

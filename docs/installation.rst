@@ -342,6 +342,7 @@ the path to the source directory.
                            saving default use of symbolic links for test files. Useful
                            if the build is on a separate filesystem from the source, as
                            required on some HPC systems.
+    ENABLE_PPCONVERT       ON/OFF. Enable the ppconvert tool. If requirements are met, it is ON by default.
 
 - BLAS/LAPACK related
 
