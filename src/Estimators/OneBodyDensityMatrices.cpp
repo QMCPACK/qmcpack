@@ -227,6 +227,7 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
       generateDensitySamplesWithSpin(save, steps, rng, pset_target);
     else
       generateDensitySamples(save, steps, rng, pset_target);
+    break;
   }
 
   if (save)
