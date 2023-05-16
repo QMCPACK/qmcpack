@@ -17,7 +17,9 @@
 namespace qmcplusplus
 {
 
-void InputSection::readAttributes(xmlNodePtr cur, bool consume_name, const std::string& element_name)
+void InputSection::readAttributes(xmlNodePtr cur,
+                                  const std::string& element_name,
+                                  const std::vector<std::string>& do_not_consume)
 {
   xmlAttrPtr att = cur->properties;
   while (att != NULL)
@@ -26,12 +28,18 @@ void InputSection::readAttributes(xmlNodePtr cur, bool consume_name, const std::
     std::string name{lowerCase(castXMLCharToChar(att->name))};
     // issue here is that we don't want to consume the name of the parameter as that has a special status in a parameter tag.
     // This is due to the <parameter name="parameter_name>  == <parameter_name> tag equivalence :(
-    if (!consume_name && name == "name")
+    std::string qualified_name{((element_name.size() > 0 && element_name != "parameter") ? (element_name + "::") : "") +
+                               name};
+    std::cout << "qualified_name:" << qualified_name << '\n';
+
+    // Since parameters don't get a qualified name this will still prevent consumption of any of the do_not_consume attributes from them
+    if (std::any_of(do_not_consume.begin(), do_not_consume.end(), [&name](auto& dnc) { return name == dnc; }))
     {
       att = att->next;
       continue;
     }
-    if (!isAttribute(name))
+
+    if (!isAttribute(qualified_name))
     {
       std::stringstream error;
       error << "InputSection::readXML name " << name << " is not an attribute of " << section_name << "\n";
@@ -39,26 +47,10 @@ void InputSection::readAttributes(xmlNodePtr cur, bool consume_name, const std::
     }
     std::istringstream stream(castXMLCharToChar(att->children->content));
     if (isCustom(name))
-    {
-      std::string ename{lowerCase(castXMLCharToChar(cur->name))};
-      if (consume_name)
-        setFromStreamCustom(ename, name, stream);
-      else
-      {
-        std::string qualified_name{element_name + "::" + name};
-        setFromStreamCustom(ename, qualified_name, stream);
-      }
-    }
+      setFromStreamCustom(element_name, qualified_name, stream);
     else
-    {
-      if (consume_name)
-        setFromStream(name, stream);
-      else
-      {
-        std::string qualified_name{element_name + "__" + name};
-        setFromStream(qualified_name, stream);
-      }
-    }
+      setFromStream(qualified_name, stream);
+
     att = att->next;
   }
 }
@@ -86,8 +78,8 @@ void InputSection::readXML(xmlNodePtr cur)
         section_type == lcase_section_name || section_name == lcase_section_name))
     throw UniformCommunicateError("Input is invalid  " + lcase_section_name + " does not match input node!");
 
-  // these attributes don't get a qualified name.
-  readAttributes(cur, true, section_name);
+  // these attributes don't get an element name passed to them because by convention we save and define them unqualified.
+  readAttributes(cur, "", {"type"});
   // read parameters
   xmlNodePtr element = cur->xmlChildrenNode;
   while (element != NULL)
@@ -115,9 +107,9 @@ void InputSection::readXML(xmlNodePtr cur)
       if (ename == "parameter")
         ename = name;
       else
-	// We do this because the semantics of parameters are such that name can not have a unique value because
-	// if it did have one that the equivalence of <parameter_name> and <parameter name="parameter_name"> would
-	// be broken. Input code being ported could depend on this an an invariant.
+        // We do this because the semantics of parameters are such that name can not have a unique value because
+        // if it did have one that the equivalence of <parameter_name> and <parameter name="parameter_name"> would
+        // be broken. Input code being ported could depend on this an an invariant.
         name = ename;
       if (!isParameter(ename))
       {
@@ -128,7 +120,7 @@ void InputSection::readXML(xmlNodePtr cur)
 
       std::istringstream stream(XMLNodeString{element});
       setFromStream(name, stream);
-      readAttributes(element, false, name);
+      readAttributes(element, name, {"name"});
     }
     else if (ename != "text")
     {
@@ -137,8 +129,6 @@ void InputSection::readXML(xmlNodePtr cur)
             << "\n";
       throw UniformCommunicateError(error.str());
     }
-    else
-      std::cout << ename << '\n';
     // else can't be an error case because this is how the whitespace text nodes
     element = element->next;
   }

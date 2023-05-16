@@ -157,14 +157,15 @@ protected:
    *
    *  Side effect only method updates values_.
    *  \param[in]   cur              current xml node
-   *  \param[in]   consume_name     parse the name attribute (this has complicated semantics in QMCPACK input)
+   *  \param[in]   element_name     qualifying identifier with respect to the InputSection root node for the atttributes.
+   *  \param[in]   do_not_consume   drop attributes used for element identification instead of the element name
+   *                                (this has complicated semantics in QMCPACK input)
    *                                when a parameter has an ename="parameter" and the name attribute is used to identify the
    *                                parameter we do not consume i.e. parse that name into the values_.
-   *  \param[in]   element_name     qualifying identifier with respect to the InputSection root node for the atttributes.
-   
+   *                                If a top level section's indentifier is a name or type attribute we also need to avoid consuming it.
    *  Ideally any child node of significant complexity would be delegated to another input section.
    */
-  void readAttributes(xmlNodePtr cur, bool consume_name, const std::string& element_name);
+  void readAttributes(xmlNodePtr cur, const std::string& element_name, const std::vector<std::string>& do_not_consume);
   /** Function that returns Input class as std::any
    *   \param[in]   cur                xml_node being delegated by the Input Class
    *   \param[out]  value_name         string key value to store the delegate with

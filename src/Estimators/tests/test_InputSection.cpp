@@ -51,11 +51,11 @@ public:
   TestInputSection()
   {
     section_name   = "Test";
-    attributes     = {"name", "samples", "kmax", "full"};
+    attributes     = {"name", "samples", "kmax", "full","width::type"};
     parameters     = {"label",     "count",   "width",  "rational", "testenum1",
                       "testenum2", "sposets", "center", "density",  "target"};
     required       = {"count", "full"};
-    strings        = {"name", "label"};
+    strings        = {"name", "label","width::type"};
     multi_strings  = {"sposets"};
     multi_reals    = {"density"};
     multiple       = {"target"};
@@ -116,7 +116,6 @@ TEST_CASE("InputSection::assignAnyEnum", "[estimators]")
   CHECK_THROWS_AS(taae.get<SomeEnum>("testenum"), std::runtime_error);
 }
 
-
 TEST_CASE("InputSection::readXML", "[estimators]")
 {
   SECTION("minimum required attributes and parameters")
@@ -170,7 +169,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 <test name="alice" samples="10" kmax="3.0" full="no">
   <parameter name="label"   >  relative  </parameter>
   <parameter name="count"   >  15        </parameter>
-  <parameter name="width"   >  2.5       </parameter>
+  <parameter name="width" type="super">  2.5       </parameter>
   <parameter name="rational">  yes       </parameter>
   <parameter name="testenum1"> Value1 </parameter>
   <parameter name="testenum2"> Value2 </parameter>
@@ -202,6 +201,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.has("label"));
     CHECK(ti.has("count"));
     CHECK(ti.has("width"));
+    CHECK(ti.has("width::type"));
     CHECK(ti.has("rational"));
     CHECK(ti.has("sposets"));
     // check value correctness
@@ -212,6 +212,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.get<std::string>("label") == "relative");
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<Real>("width") == Approx(2.5));
+    CHECK(ti.get<std::string>("width::type") == "super");
     CHECK(ti.get<bool>("rational") == true);
     CHECK(ti.get<std::vector<Real>>("density") == std::vector<Real>{10.0, 20.0, 30.0});
     CHECK(ti.get<TestEnum1>("testenum1") == TestEnum1::VALUE1);
@@ -246,6 +247,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   <parameter name="area" > 51 </parameter>
 </test>
 )"},
+	{"invalid_section_name", R"(<not_test> <parameter name="nothing"></parameter></not_test>)"}
     };
 
     for (auto& [label, xml] : invalid_inputs)
@@ -263,6 +265,16 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   }
 }
 
+TEST_CASE("InputSection::InvalidElement", "[estimators]")
+{
+  std::string invalid_element{R"(<test> &lt; </test>)"};
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(invalid_element);
+  REQUIRE(okay);
+  xmlNodePtr cur = doc.getRoot();
+  TestInputSection ti;
+  CHECK_THROWS_AS(ti.readXML(cur), UniformCommunicateError);
+}
 
 TEST_CASE("InputSection::init", "[estimators]")
 {
@@ -385,7 +397,7 @@ public:
   CustomTestInput()
   {
     section_name = "Test";
-    attributes   = {"name", "samples", "kmax", "full", "custom_attribute"};
+    attributes   = {"name", "samples", "kmax", "full", "custom_attribute", "with_custom::custom_attribute"};
     parameters   = {"label", "count", "width", "with_custom"};
     strings      = {"name", "label", "with_custom"};
     reals        = {"kmax"};
