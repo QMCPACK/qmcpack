@@ -12,7 +12,7 @@ endif()
 string(REPLACE "-ffast-math" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
 if(CMAKE_CROSSCOMPILING)
-  message(STATUS "Cannot run std::isnan tests when cross compiling. Set ISNAN_WORKS to FALSE.")
+  message(STATUS "Cannot run std::isnan tests when cross compiling. Setting ISNAN_WORKS to FALSE.")
   set(ISNAN_WORKS FALSE)
 else()
   # check if std::isnan works or not
