@@ -222,9 +222,11 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
   case Integrator::UNIFORM:
     generateUniformSamples(rng);
     break;
-  case Integrator::DENSITY: {
-    generateDensitySamples(save, steps, rng, pset_target);
-  }
+  case Integrator::DENSITY:
+    if (is_spinor_)
+      generateDensitySamplesWithSpin(save, steps, rng, pset_target);
+    else
+      generateDensitySamples(save, steps, rng, pset_target);
   }
 
   if (save)
