@@ -9,7 +9,7 @@ addition of a Jastrow function or a new QMC method.
 
 .. admonition:: Definitions
 
-   * **Legacy**: code from previous work usually not in line current coding standards or design. It mostly functional and correct within the context of legacy operations. Most has been modified piecemeal for years to extend funcitionality.
+   * **Legacy**: code from previous work usually not in line current coding standards or design. It is mostly functional and correct within the context of legacy operations. Most has been modified piecemeal for years to extend functionality.
    * **Refactoring**: Process of redesigning code in place through incremental changes toward current design and functionality goals.
 
 
