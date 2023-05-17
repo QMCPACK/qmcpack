@@ -65,6 +65,7 @@ void CompositeSPOSet::add(std::unique_ptr<SPOSet> component)
   component_values.emplace_back(norbs);
   component_gradients.emplace_back(norbs);
   component_laplacians.emplace_back(norbs);
+  component_spin_gradients.emplace_back(norbs);
 
   OrbitalSetSize += norbs;
   component_offsets.push_back(OrbitalSetSize);
