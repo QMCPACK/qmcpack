@@ -28,7 +28,7 @@ void ReportEngine::echo(xmlNodePtr cur, bool recursive)
     app_debug() << "  " << (const char*)(att->name) << R"(=")" << (const char*)(att->children->content) << '"';
     att = att->next;
   }
-  app_debug() << R"(>\n)";
+  app_debug() << R"(/>\n)";
 }
 
 bool ReportEngine::DoOutput = false;

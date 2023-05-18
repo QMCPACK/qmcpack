@@ -184,41 +184,14 @@ int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* fi
     throw std::runtime_error("Error extract end_key from field.");
 
   std::vector<std::string> vlist;
-  bool start = true;
-  while (start)
+  while (true)
   {
     if (getwords(vlist, fpos) == 0)
       continue;
-    if (vlist[0] == terminate)
+    if (vlist[0] == terminate || vlist[0] == end_key)
       break;
-    if (vlist[0] == end_key)
-      start = false;
-    else
-      slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
+    slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
   };
-  return slist.size();
-}
-
-/////////////////////////////////////////////////////////////
-// insert parsed strings of std::istream until terminate is encountered
-/////////////////////////////////////////////////////////////
-int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* terminate)
-{
-  // first check if the input list already contains "terminate"
-  if (std::find(slist.cbegin(), slist.cend(), terminate) != slist.cend())
-    return slist.size();
-
-  std::vector<std::string> vlist;
-  bool start = true;
-  while (start)
-  {
-    if (getwords(vlist, fpos) == 0)
-      continue;
-    if (vlist[0] == terminate)
-      break;
-    else
-      slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
-  }
   return slist.size();
 }
 
@@ -250,29 +223,4 @@ int getXwords(std::vector<std::string>& slist, std::istream& fp)
     return parseXwords(s, slist);
   else
     return -1;
-}
-
-
-/////////////////////////////////////////////////////////////
-// insert parsed strings of std::istream until terminate is encountered
-/////////////////////////////////////////////////////////////
-int getXwords(std::vector<std::string>& slist, std::istream& fpos, const char* terminate)
-{
-  // first check if the input list already contains "terminate"
-  if (std::find(slist.cbegin(), slist.cend(), terminate) != slist.cend())
-    return slist.size();
-
-  std::vector<std::string> vlist;
-  bool start = true;
-  while (start)
-  {
-    int nw = getXwords(vlist, fpos);
-    if (nw == 0)
-      continue;
-    if (vlist[0] == terminate)
-      break;
-    else
-      slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
-  }
-  return slist.size();
 }
