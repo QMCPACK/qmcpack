@@ -17,6 +17,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <regex>
 #include <string>
 
@@ -55,7 +56,7 @@ char* readLine(char* s, int max, std::istream& fp)
   if (max > 0)
     s[i] = '\0'; // add terminating NULL
   if (!(ch == '\n' || ch == ';'))
-    return NULL; // return NULL for end of file
+    return nullptr; // return NULL for end of file
   return s;
 }
 
@@ -176,40 +177,25 @@ int getwords(std::vector<std::string>& slist,std::istream& fpos, const char* fie
 
 int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* field, const char* terminate)
 {
-  slist.erase(slist.begin(), slist.end());
+  slist.clear();
+  const int max = 128;
+  char end_key[max];
+  if (snprintf(end_key, max, "</%s>", field) < 0)
+    throw std::runtime_error("Error extract end_key from field.");
+
   std::vector<std::string> vlist;
-  //char start_key[128];
-  char end_key[128];
-  //sprintf(start_key,"<%s>",field);
-  sprintf(end_key, "</%s>", field);
-  //   bool start = false;
-  //   do {
-  //     int nw =getwords(vlist,fpos);
-  //     if(nw == 0) continue;
-  //     if(vlist[0] == terminate)
-  //       return slist.size();
-  //     if(vlist[0] == start_key) {
-  //       slist.insert(slist.end(), vlist.begin()+1, vlist.end());
-  //       start = true;
-  //     }
-  //   } while(!start);
   bool start = true;
-  do
+  while (start)
   {
-    int nw = getwords(vlist, fpos);
-    if (nw == 0)
+    if (getwords(vlist, fpos) == 0)
       continue;
     if (vlist[0] == terminate)
-      return slist.size();
+      break;
     if (vlist[0] == end_key)
-    {
       start = false;
-    }
     else
-    {
-      slist.insert(slist.end(), vlist.begin(), vlist.end());
-    }
-  } while (start);
+      slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
+  };
   return slist.size();
 }
 
@@ -218,34 +204,33 @@ int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* fi
 /////////////////////////////////////////////////////////////
 int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* terminate)
 {
-  std::vector<std::string> vlist;
   // first check if the input list already contains "terminate"
-  std::vector<std::string>::iterator it = find(slist.begin(), slist.end(), terminate);
-  if (it != slist.end())
+  if (std::find(slist.cbegin(), slist.cend(), terminate) != slist.cend())
     return slist.size();
-  //slist.erase(slist.begin(), slist.end()); // remove input number
+
+  std::vector<std::string> vlist;
   bool start = true;
-  do
+  while (start)
   {
-    int nw = getwords(vlist, fpos);
-    if (nw == 0)
+    if (getwords(vlist, fpos) == 0)
       continue;
     if (vlist[0] == terminate)
-      return slist.size();
+      break;
     else
-      slist.insert(slist.end(), vlist.begin(), vlist.end());
-  } while (start);
+      slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
+  }
   return slist.size();
 }
 
 ////////////////////////////////////////////////////////
 // simple parser to get around XML parser problem
 ////////////////////////////////////////////////////////
-unsigned parseXwords(char* inbuf, std::vector<std::string>& slist)
+unsigned parseXwords(const char* inbuf, std::vector<std::string>& slist)
 {
+  slist.clear();
+
   const char* token = "=, <>\"\t\n";
   std::string tmpstr(inbuf);
-  slist.clear();
   unsigned num = 0;
   char* tokenp = strtok(tmpstr.data(), token);
   while (tokenp && tokenp[0] != '#')
@@ -273,22 +258,21 @@ int getXwords(std::vector<std::string>& slist, std::istream& fp)
 /////////////////////////////////////////////////////////////
 int getXwords(std::vector<std::string>& slist, std::istream& fpos, const char* terminate)
 {
-  std::vector<std::string> vlist;
   // first check if the input list already contains "terminate"
-  std::vector<std::string>::iterator it = find(slist.begin(), slist.end(), terminate);
-  if (it != slist.end())
+  if (std::find(slist.cbegin(), slist.cend(), terminate) != slist.cend())
     return slist.size();
-  //slist.erase(slist.begin(), slist.end()); // remove input number
+
+  std::vector<std::string> vlist;
   bool start = true;
-  do
+  while (start)
   {
     int nw = getXwords(vlist, fpos);
     if (nw == 0)
       continue;
     if (vlist[0] == terminate)
-      return slist.size();
+      break;
     else
-      slist.insert(slist.end(), vlist.begin(), vlist.end());
-  } while (start);
+      slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
+  }
   return slist.size();
 }

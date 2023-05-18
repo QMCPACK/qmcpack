@@ -181,7 +181,8 @@ void EstimatorManagerBase::start(int blocks, bool record)
   if (record && !DebugArchive)
   {
     char fname[128];
-    sprintf(fname, "%s.p%03d.scalar.dat", myComm->getName().c_str(), myComm->rank());
+    if (snprintf(fname, 128, "%s.p%03d.scalar.dat", myComm->getName().c_str(), myComm->rank()) < 0)
+      throw std::runtime_error("Error generating filename");
     DebugArchive = std::make_unique<std::ofstream>(fname);
     addHeader(*DebugArchive);
   }
