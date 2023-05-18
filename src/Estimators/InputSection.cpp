@@ -71,11 +71,28 @@ void InputSection::readXML(xmlNodePtr cur)
   std::string section_ename{lowerCase(castXMLCharToChar(cur->name))};
   std::string section_method(lowerCase(getXMLAttributeValue(cur, "method")));
   std::string section_type(lowerCase(getXMLAttributeValue(cur, "type")));
-  std::string section_name(lowerCase(getXMLAttributeValue(cur, "name")));
+  std::string section_name_actual(lowerCase(getXMLAttributeValue(cur, "name")));
   // at anyrate one of these must match the section_name.
   std::string lcase_section_name{lowerCase(section_name)};
-  if (!(section_ename == lcase_section_name || section_method == lcase_section_name ||
-        section_type == lcase_section_name || section_name == lcase_section_name))
+  std::cout << "section_name:" << section_name << "  section_ename: " << section_ename
+            << "  section_method:" << section_method << "  section_type:" << section_type
+            << "   section_name_actual:" << section_name_actual << '\n';
+
+  auto checkSectionName = [&section_name = section_name, &section_name_alternates = section_name_alternates](auto& possible_sname){
+    std::string lcase_section_name{lowerCase(section_name)};
+    if (possible_sname == lcase_section_name)
+      return true;
+    if (section_name_alternates.size() > 0)
+      return std::any_of(section_name_alternates.begin(), section_name_alternates.end(),
+                      [&possible_sname](auto& name_alternate) {
+                        std::string lcase_alternate{lowerCase(name_alternate)};
+                        return possible_sname == lcase_alternate;
+                      });
+    return false;
+  };
+
+  if (!(checkSectionName(section_ename) || checkSectionName(section_method) ||
+        checkSectionName(section_type) || checkSectionName(section_name_actual)))
     throw UniformCommunicateError("Input is invalid  " + lcase_section_name + " does not match input node!");
 
   // these attributes don't get an element name passed to them because by convention we save and define them unqualified.

@@ -47,7 +47,11 @@ protected:
   // Becuase it hurts to read all the trailing _ in the constructors of input section subtypes
   // NOLINTBEGIN(readability-indentifier-naming)
 
-  std::string section_name; // name of the input section
+  /// "Name" of the input section, you must define this in the subtype and the ename, name, type, or method must match. 
+  std::string section_name;
+
+  /// For historical reasons some sections must recognize several different names. Assign them to this variable in your subtype.
+  std::vector<std::string> section_name_alternates;
 
   std::unordered_set<std::string> attributes;    // list of attribute variables
   std::unordered_set<std::string> parameters;    // list of parameter variables

@@ -247,7 +247,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   <parameter name="area" > 51 </parameter>
 </test>
 )"},
-	{"invalid_section_name", R"(<not_test> <parameter name="nothing"></parameter></not_test>)"}
+	{"invalid_section_name", R"(<not_test><parameter name="nothing"></parameter></not_test>)"}
     };
 
     for (auto& [label, xml] : invalid_inputs)
@@ -520,7 +520,8 @@ public:
   public:
     AnotherInputSection()
     {
-      section_name = "AnotherInputSection";
+      section_name = "AnotherInput";
+      section_name_alternates = {"ainput"};
       attributes   = {"name", "optional"};
       strings      = {"name", "optional"};
     }
@@ -593,11 +594,11 @@ private:
 TEST_CASE("InputSection::Delegate", "[estimators]")
 {
   std::string_view xml = R"XML(
-<test name="alice" full="no">
+<delegatetest name="alice" full="no">
   <parameter name="label"   >  relative  </parameter>
   <parameter name="count"   >  15        </parameter>
   <AnotherInput name="ainput"> XQ 10 20 10 </AnotherInput>
-</test>
+</delegatetest>
 )XML";
 
   Libxml2Document doc;
