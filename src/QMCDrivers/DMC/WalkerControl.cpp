@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include <array>
 #include <cassert>
 #include <stdexcept>
 #include <numeric>
@@ -325,14 +326,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   determineNewWalkerPopulation(num_per_rank_, fair_offset_, minus, plus);
 
 #ifdef MCWALKERSET_MPI_DEBUG
-  char fname[128];
-  sprintf(fname, "test.%d", rank_num_);
-  std::ofstream fout(fname, std::ios::app);
-  //fout << NumSwaps << " " << Cur_pop << " ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << num_per_rank_[ic] << " ";
-  //fout << " | ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << fair_offset_[ic+1]-fair_offset_[ic] << " ";
-  //fout << " | ";
+  std::array<char, 128> fname;
+  if (std::snprintf(fname.data(), fname.size(), "test.%d", rank_num_) < 0)
+    throw std::runtime_error("Error generating filename");
+  std::ofstream fout(fname.data(), std::ios::app);
+
   for (int ic = 0; ic < plus.size(); ic++)
   {
     fout << plus[ic] << " ";

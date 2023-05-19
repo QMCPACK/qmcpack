@@ -4,6 +4,7 @@
  * @brief Top level class for AFQMC. Parses input and performs setup of classes.
  */
 
+#include <array>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -198,28 +199,32 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
 
 bool AFQMCFactory::execute(xmlNodePtr cur)
 {
-  if (cur == NULL)
+  if (cur == nullptr)
     return false;
 
   int groupid = 0; //myComm->getGroupID();
-  char fileroot[256];
+  std::array<char, 256> fileroot;
 
   bool no_gtag = (qmc_common.mpi_groups == 1);
 
   xmlNodePtr curRoot = cur;
   cur                = curRoot->children;
-  while (cur != NULL)
+  while (cur != nullptr)
   {
     std::string cname((const char*)(cur->name));
     if (cname == "execute")
     {
+      int length{0};
       if (no_gtag) //qnproc_g == nproc)
-        sprintf(fileroot, "%s.s%03d", project_title.c_str(), m_series);
+        length = snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", project_title.c_str(), m_series);
       else
-        sprintf(fileroot, "%s.g%03d.s%03d", project_title.c_str(), groupid, m_series);
+        length = snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", project_title.c_str(), groupid, m_series);
+
+      if (s_size < 0)
+        throw std::runtime_error("Error generating fileroot");
 
       // execute driver
-      if (!DriverFac.executeDriver(std::string(fileroot), m_series, cur))
+      if (!DriverFac.executeDriver(std::string(fileroot.data(), length), m_series, cur))
       {
         app_error() << "Error in DriverFactory::executeDriver::run()" << std::endl;
         return false;
