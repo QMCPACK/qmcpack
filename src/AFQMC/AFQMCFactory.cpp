@@ -216,11 +216,12 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
     {
       int length{0};
       if (no_gtag) //qnproc_g == nproc)
-        length = snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", project_title.c_str(), m_series);
+        length = std::snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", project_title.c_str(), m_series);
       else
-        length = snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", project_title.c_str(), groupid, m_series);
+        length =
+            std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", project_title.c_str(), groupid, m_series);
 
-      if (s_size < 0)
+      if (length < 0)
         throw std::runtime_error("Error generating fileroot");
 
       // execute driver
