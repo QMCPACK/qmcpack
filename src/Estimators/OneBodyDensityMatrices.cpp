@@ -660,7 +660,7 @@ void OneBodyDensityMatrices::generateSampleRatios(ParticleSet& pset_target,
       for (int s = 0; s < species_.size(); ++s)
         for (int n = 0; n < species_sizes_[s]; ++n, ++p)
         {
-          pset_target.makeMoveWithSpin(p, rsamples_[m], ssamples_[m]);
+          pset_target.makeMoveWithSpin(p, rsamples_[m] - pset_target.R[p], ssamples_[m] - pset_target.spins[p]);
           psi_ratios_[p] = psi_target.calcRatio(pset_target, p);
           pset_target.rejectMove(p);
           psi_target.resetPhaseDiff();
