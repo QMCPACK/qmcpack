@@ -31,13 +31,6 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-TimerNameList_t<DMCTimers> DMCTimerNames = {{DMC_buffer, "DMCUpdatePbyP::Buffer"},
-                                            {DMC_movePbyP, "DMCUpdatePbyP::movePbyP"},
-                                            {DMC_hamiltonian, "DMCUpdatePbyP::Hamiltonian"},
-                                            {DMC_collectables, "DMCUpdatePbyP::Collectables"},
-                                            {DMC_tmoves, "DMCUpdatePbyP::Tmoves"}};
-
-
 /// Constructor.
 DMCUpdatePbyPWithRejectionFast::DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                                                TrialWaveFunction& psi,
@@ -45,6 +38,9 @@ DMCUpdatePbyPWithRejectionFast::DMCUpdatePbyPWithRejectionFast(MCWalkerConfigura
                                                                RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
+  static const std::vector<std::string> DMCTimerNames = {"DMCUpdatePbyP::Buffer", "DMCUpdatePbyP::movePbyP",
+                                                         "DMCUpdatePbyP::Hamiltonian", "DMCUpdatePbyP::Collectables",
+                                                         "DMCUpdatePbyP::Tmoves"};
   setup_timers(myTimers, DMCTimerNames, timer_level_medium);
 }
 

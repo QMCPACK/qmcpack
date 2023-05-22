@@ -394,7 +394,7 @@ enum TestTimer
 };
 
 // Next define a structure mapping the enum to a string name
-TimerNameList_t<TestTimer> TestTimerNames = {{MyTimer1, "Timer name 1"}, {MyTimer2, "Timer name 2"}};
+std::vector<std::string> TestTimerNames = {"Timer name 1", "Timer name 2"};
 
 TEST_CASE("test setup timers", "[utilities]")
 {

@@ -31,7 +31,6 @@
 
 namespace qmcplusplus
 {
-extern TimerList_t AFQMCTimers;
 enum AFQMCTimerIDs
 {
   block_timer,
@@ -58,7 +57,9 @@ enum AFQMCTimerIDs
   T7_t,
   T8_t
 };
-extern TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames;
+
+extern TimerList_t AFQMCTimers;
+extern const std::vector<std::string> AFQMCTimerNames;
 
 namespace afqmc
 {

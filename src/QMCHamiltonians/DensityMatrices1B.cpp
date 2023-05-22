@@ -364,13 +364,13 @@ void DensityMatrices1B::initialize()
     normalize();
   }
 
-  const TimerNameList_t<DMTimers> DMTimerNames = {{DM_eval, "DensityMatrices1B::evaluate"},
-                                                  {DM_gen_samples, "DensityMatrices1B::generate_samples"},
-                                                  {DM_gen_sample_basis, "DensityMatrices1B::generate_sample_basis"},
-                                                  {DM_gen_sample_ratios, "DensityMatrices1B::generate_sample_ratios"},
-                                                  {DM_gen_particle_basis, "DensityMatrices1B::generate_particle_basis"},
-                                                  {DM_matrix_products, "DensityMatrices1B::evaluate_matrix_products"},
-                                                  {DM_accumulate, "DensityMatrices1B::evaluate_matrix_accum"}};
+  const std::vector<std::string> DMTimerNames = {"DensityMatrices1B::evaluate",
+                                                 "DensityMatrices1B::generate_samples",
+                                                 "DensityMatrices1B::generate_sample_basis",
+                                                 "DensityMatrices1B::generate_sample_ratios",
+                                                 "DensityMatrices1B::generate_particle_basis",
+                                                 "DensityMatrices1B::evaluate_matrix_products",
+                                                 "DensityMatrices1B::evaluate_matrix_accum"};
   setup_timers(timers, DMTimerNames, timer_level_fine);
 
   initialized = true;

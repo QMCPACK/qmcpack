@@ -5,6 +5,7 @@ set(AFQMC_DEBUG 3)
 #-------------------------------------------------------------------
 set(AFQMC_SRCS
     AFQMCFactory.cpp
+    config.cpp
     Drivers/DriverFactory.cpp
     Drivers/AFQMCDriver.cpp
     #  Drivers/BenchmarkDriver.cpp

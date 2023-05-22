@@ -39,6 +39,9 @@ DMCUpdatePbyPL2::DMCUpdatePbyPL2(MCWalkerConfiguration& w,
                                  RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
+  static const std::vector<std::string> DMCTimerNames = {"DMCUpdatePbyP::Buffer", "DMCUpdatePbyP::movePbyP",
+                                                         "DMCUpdatePbyP::Hamiltonian", "DMCUpdatePbyP::Collectables",
+                                                         "DMCUpdatePbyP::Tmoves"};
   setup_timers(myTimers, DMCTimerNames, timer_level_medium);
 }
 

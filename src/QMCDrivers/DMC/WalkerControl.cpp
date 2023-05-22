@@ -44,15 +44,6 @@ enum WC_Timers
   WC_recv,
 };
 
-TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl::branch"},
-                                                      {WC_imbalance, "WalkerControl::imbalance"},
-                                                      {WC_prebalance, "WalkerControl::pre-loadbalance"},
-                                                      {WC_copyWalkers, "WalkerControl::copyWalkers"},
-                                                      {WC_recomputing, "WalkerControl::recomputing"},
-                                                      {WC_allreduce, "WalkerControl::allreduce"},
-                                                      {WC_loadbalance, "WalkerControl::loadbalance"},
-                                                      {WC_send, "WalkerControl::send"},
-                                                      {WC_recv, "WalkerControl::recv"}};
 
 WalkerControl::WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
@@ -70,6 +61,10 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixe
 {
   num_per_rank_.resize(num_ranks_);
   fair_offset_.resize(num_ranks_ + 1);
+  static const std::vector<std::string> WalkerControlTimerNames =
+      {"WalkerControl::branch",      "WalkerControl::imbalance",   "WalkerControl::pre-loadbalance",
+       "WalkerControl::copyWalkers", "WalkerControl::recomputing", "WalkerControl::allreduce",
+       "WalkerControl::loadbalance", "WalkerControl::send",        "WalkerControl::recv"};
 
   setup_timers(my_timers_, WalkerControlTimerNames, timer_level_medium);
 }

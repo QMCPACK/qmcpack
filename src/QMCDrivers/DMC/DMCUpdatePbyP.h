@@ -46,9 +46,6 @@ enum DMCTimers
   DMC_tmoves
 };
 
-extern TimerNameList_t<DMCTimers> DMCTimerNames;
-
-
 } // namespace qmcplusplus
 
 #endif

@@ -44,15 +44,12 @@ enum PSetTimers
   PS_mw_copy
 };
 
-static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj_name)
+static const std::vector<std::string> generatePSetTimerNames(std::string& obj_name)
 {
-  return {{PS_newpos, "ParticleSet:" + obj_name + "::computeNewPosDT"},
-          {PS_donePbyP, "ParticleSet:" + obj_name + "::donePbyP"},
-          {PS_accept, "ParticleSet:" + obj_name + "::acceptMove"},
-          {PS_loadWalker, "ParticleSet:" + obj_name + "::loadWalker"},
-          {PS_update, "ParticleSet:" + obj_name + "::update"},
-          {PS_dt_move, "ParticleSet:" + obj_name + "::dt_move"},
-          {PS_mw_copy, "ParticleSet:" + obj_name + "::mw_copy"}};
+  return {"ParticleSet:" + obj_name + "::computeNewPosDT", "ParticleSet:" + obj_name + "::donePbyP",
+          "ParticleSet:" + obj_name + "::acceptMove",      "ParticleSet:" + obj_name + "::loadWalker",
+          "ParticleSet:" + obj_name + "::update",          "ParticleSet:" + obj_name + "::dt_move",
+          "ParticleSet:" + obj_name + "::mw_copy"};
 }
 
 ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind)

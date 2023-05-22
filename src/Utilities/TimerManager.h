@@ -144,25 +144,16 @@ extern TimerManager<NewTimer> timer_manager;
 
 using TimerList_t = std::vector<std::reference_wrapper<NewTimer>>;
 
-template<class T>
-struct TimerIDName_t
-{
-  T id;
-  const std::string name;
-};
-
-template<class T>
-using TimerNameList_t = std::vector<TimerIDName_t<T>>;
-
-template<class T, class TIMER>
+template<class TIMER>
 void setup_timers(std::vector<std::reference_wrapper<TIMER>>& timers,
-                  TimerNameList_t<T> timer_list,
+                  const std::vector<std::string>& timer_list,
                   timer_levels timer_level     = timer_level_fine,
                   TimerManager<TIMER>* manager = &timer_manager)
 {
+  timers.clear();
   timers.reserve(timer_list.size());
-  for (int i = 0; i < timer_list.size(); i++)
-    timers.push_back(*manager->createTimer(timer_list[i].name, timer_level));
+  for (const auto& timer_name : timer_list)
+    timers.push_back(*manager->createTimer(timer_name, timer_level));
 }
 
 } // namespace qmcplusplus

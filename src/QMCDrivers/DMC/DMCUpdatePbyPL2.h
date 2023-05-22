@@ -37,9 +37,6 @@ private:
   TimerList_t myTimers;
 };
 
-//extern TimerNameList_t<DMCTimers> DMCTimerNames;
-
-
 } // namespace qmcplusplus
 
 #endif

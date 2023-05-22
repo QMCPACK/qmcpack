@@ -38,15 +38,6 @@ enum DMC_MPI_Timers
   DMC_MPI_recv,
 };
 
-TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames = {{DMC_MPI_branch, "WalkerControlMPI::branch"},
-                                                    {DMC_MPI_imbalance, "WalkerControlMPI::imbalance"},
-                                                    {DMC_MPI_prebalance, "WalkerControlMPI::pre-loadbalance"},
-                                                    {DMC_MPI_copyWalkers, "WalkerControlMPI::copyWalkers"},
-                                                    {DMC_MPI_allreduce, "WalkerControlMPI::allreduce"},
-                                                    {DMC_MPI_loadbalance, "WalkerControlMPI::loadbalance"},
-                                                    {DMC_MPI_send, "WalkerControlMPI::send"},
-                                                    {DMC_MPI_recv, "WalkerControlMPI::recv"}};
-
 /** default constructor
  *
  * set SwapMode? SwapMode is set to 1 but what does that mean?
@@ -64,6 +55,10 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c) : WalkerControlBase(c)
   SwapMode       = 1;
   Cur_min        = 0;
   Cur_max        = 0;
+  static const std::vector<std::string> DMCMPITimerNames =
+      {"WalkerControlMPI::branch",      "WalkerControlMPI::imbalance", "WalkerControlMPI::pre-loadbalance",
+       "WalkerControlMPI::copyWalkers", "WalkerControlMPI::allreduce", "WalkerControlMPI::loadbalance",
+       "WalkerControlMPI::send",        "WalkerControlMPI::recv"};
   setup_timers(myTimers, DMCMPITimerNames, timer_level_medium);
 }
 

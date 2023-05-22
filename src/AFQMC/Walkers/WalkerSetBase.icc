@@ -133,8 +133,8 @@ void WalkerSetBase<Alloc, Ptr>::parse(xmlNodePtr cur)
 template<class Alloc, typename Ptr>
 void WalkerSetBase<Alloc, Ptr>::setup()
 {
-  TimerNameList_t<WalkerSetBaseTimers> WalkerSetBaseTimerNames = {{LoadBalance_t, "WalkerSetBase::loadBalance"},
-                                                                  {Branching_t, "WalkerSetBase::branching"}};
+  static const std::vector<std::string> WalkerSetBaseTimerNames = {"WalkerSetBase::loadBalance",
+                                                                   "WalkerSetBase::branching"};
 
   setup_timers(Timers, WalkerSetBaseTimerNames, timer_level_coarse);
 
