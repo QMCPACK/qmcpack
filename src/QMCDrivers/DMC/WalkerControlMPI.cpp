@@ -13,6 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include <array>
 #include <cmath>
 #include <sstream>
 
@@ -192,9 +193,10 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   std::vector<std::unique_ptr<Walker_t>> newW;
   std::vector<int> ncopy_newW;
 #ifdef MCWALKERSET_MPI_DEBUG
-  char fname[128];
-  sprintf(fname, "test.%d", MyContext);
-  std::ofstream fout(fname, std::ios::app);
+  std::array<char, 128> fname;
+  if (std::snprintf(fname.data(), fname.size() "test.%d", MyContext) < 0)
+    throw std::runtime_error("Error generating filename");
+  std::ofstream fout(fname.data(), std::ios::app);
   //fout << NumSwaps << " " << Cur_pop << " ";
   //for(int ic=0; ic<NumContexts; ic++) fout << NumPerRank[ic] << " ";
   //fout << " | ";
