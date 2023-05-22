@@ -24,12 +24,14 @@
 #include "Message/MPIObjectBase.h"
 
 #ifdef HAVE_LMY_ENGINE
-//#include "Eigen/Dense"
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
 
 #include "EngineHandle.h"
+
+#include <memory>
+
 namespace qmcplusplus
 {
 class DescentEngine;
@@ -299,7 +301,7 @@ protected:
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
   std::vector<ParticleLaplacian*> d2LogPsi;
   ///stream for debug
-  std::ostream* debug_stream;
+  std::unique_ptr<std::ostream> debug_stream;
 
   bool checkParameters();
   void updateXmlNodes();

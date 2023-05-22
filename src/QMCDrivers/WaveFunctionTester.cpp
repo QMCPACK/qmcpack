@@ -29,6 +29,7 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/SymmetryOperations.h"
+#include <array>
 #include <sstream>
 
 namespace qmcplusplus
@@ -99,13 +100,13 @@ WaveFunctionTester::~WaveFunctionTester() {}
 
 bool WaveFunctionTester::run()
 {
-  //DistanceTable::create(1);
-  char fname[16];
-  sprintf(fname, "wftest.%03d", OHMMS::Controller->rank());
-  fout.open(fname);
+  std::array<char, 16> fname;
+  if (std::snprintf(fname.data(), fname.size(), "wftest.%03d", OHMMS::Controller->rank()) < 0)
+    throw std::runtime_error("Error generating filename");
+  fout.open(fname.data());
   fout.precision(15);
 
-  app_log() << "Starting a Wavefunction tester.  Additional information in " << fname << std::endl;
+  app_log() << "Starting a Wavefunction tester.  Additional information in " << fname.data() << std::endl;
 
   put(qmcNode);
 
@@ -1626,9 +1627,10 @@ void WaveFunctionTester::runZeroVarianceTest()
   W.R[7] = PosType(4.690, 5.901, 4.989);
   for (int i = 1; i < 8; i++)
     W.R[i] -= PosType(2.5, 2.5, 2.5);
-  char fname[32];
-  sprintf(fname, "ZVtest.%03d.dat", OHMMS::Controller->rank());
-  FILE* fzout = fopen(fname, "w");
+  std::array<char, 32> fname;
+  if (std::snprintf(fname.data(), fname.size(), "ZVtest.%03d.dat", OHMMS::Controller->rank()) < 0)
+    throw std::runtime_error("Error generating filename");
+  FILE* fzout = fopen(fname.data(), "w");
   TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> grad_grad;
   TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> lapl_grad;
   TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> grad_grad_FD;
@@ -1805,9 +1807,11 @@ void WaveFunctionTester::runDerivTest()
 void WaveFunctionTester::runDerivNLPPTest()
 {
   app_log() << " ===== runDerivNLPPTest =====\n";
-  char fname[16];
-  sprintf(fname, "nlpp.%03d", OHMMS::Controller->rank());
-  std::ofstream nlout(fname);
+  std::array<char, 16> fname;
+  if (std::snprintf(fname.data(), fname.size(), "nlpp.%03d", OHMMS::Controller->rank()) < 0)
+    throw std::runtime_error("Error generating name");
+
+  std::ofstream nlout(fname.data());
   nlout.precision(15);
 
   app_log() << " Testing derivatives" << std::endl;
@@ -2072,11 +2076,6 @@ void WaveFunctionTester::runNodePlot()
   Psi.copyFromBuffer(W, w_buffer);
 #if OHMMS_DIM == 2
   assert(Grid.size() == 2);
-  char fname[16];
-  //       sprintf(fname,"loc.xy");
-  //       std::ofstream e_out(fname);
-  //       e_out.precision(6);
-  //       e_out<<"#e  x  y"<< std::endl;
   int nat = W.getTotalNum();
   int nup = W.getTotalNum() / 2; //std::max(W.getSpeciesSet().findSpecies("u"),W.getSpeciesSet().findSpecies("d"));
                                  //       for(int iat(0);iat<nat;iat++)
