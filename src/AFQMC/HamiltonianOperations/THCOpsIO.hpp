@@ -75,16 +75,9 @@ inline THCOps loadTHCOps(hdf_archive& dump,
 
   // read from HDF
 
-  if (!dump.push("HamiltonianOperations", false))
-  {
-    app_error() << " Error in loadTHCOps: Group HamiltonianOperations not found. \n";
-    APP_ABORT("");
-  }
-  if (!dump.push("THCOps", false))
-  {
-    app_error() << " Error in loadTHCOps: Group THCOps not found. \n";
-    APP_ABORT("");
-  }
+  dump.push("HamiltonianOperations", false);
+  dump.push("THCOps", false);
+
   if (TGwfn.Global().root())
   {
     if (!dump.readEntry(dims, "dims"))

@@ -34,7 +34,7 @@ struct VPMultiWalkerMem : public Resource
 
   VPMultiWalkerMem(const VPMultiWalkerMem&) : VPMultiWalkerMem() {}
 
-  Resource* makeClone() const override { return new VPMultiWalkerMem(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<VPMultiWalkerMem>(*this); }
 };
 
 VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl, size_t dt_count_limit)
@@ -65,14 +65,12 @@ VirtualParticleSet::~VirtualParticleSet() = default;
 
 Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalkerRefPctls()
 {
-  assert(mw_mem_ != nullptr);
-  return mw_mem_->mw_refPctls;
+  return mw_mem_handle_.getResource().mw_refPctls;
 }
 
 const Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalkerRefPctls() const
 {
-  assert(mw_mem_ != nullptr);
-  return mw_mem_->mw_refPctls;
+  return mw_mem_handle_.getResource().mw_refPctls;
 }
 
 void VirtualParticleSet::createResource(ResourceCollection& collection) const
@@ -84,11 +82,8 @@ void VirtualParticleSet::createResource(ResourceCollection& collection) const
 void VirtualParticleSet::acquireResource(ResourceCollection& collection,
                                          const RefVectorWithLeader<VirtualParticleSet>& vp_list)
 {
-  auto& vp_leader = vp_list.getLeader();
-  auto res_ptr    = dynamic_cast<VPMultiWalkerMem*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
-  vp_leader.mw_mem_.reset(res_ptr);
+  auto& vp_leader          = vp_list.getLeader();
+  vp_leader.mw_mem_handle_ = collection.lendResource<VPMultiWalkerMem>();
 
   auto p_list = RefVectorWithLeaderParticleSet(vp_list);
   ParticleSet::acquireResource(collection, p_list);
@@ -97,7 +92,7 @@ void VirtualParticleSet::acquireResource(ResourceCollection& collection,
 void VirtualParticleSet::releaseResource(ResourceCollection& collection,
                                          const RefVectorWithLeader<VirtualParticleSet>& vp_list)
 {
-  collection.takebackResource(std::move(vp_list.getLeader().mw_mem_));
+  collection.takebackResource(vp_list.getLeader().mw_mem_handle_);
   auto p_list = RefVectorWithLeaderParticleSet(vp_list);
   ParticleSet::releaseResource(collection, p_list);
 }

@@ -9,6 +9,7 @@
 // File refactored from: EstimatorManagerBase.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <array>
 #include <functional>
 #include <numeric>
 #include <algorithm>
@@ -18,6 +19,7 @@
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
+#include "MagnetizationDensity.h"
 #include "PerParticleHamiltonianLogger.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
@@ -100,6 +102,7 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
                                                      pset.getLattice()) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
+          createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank())))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
@@ -203,9 +206,10 @@ void EstimatorManagerNew::startDriverRun()
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (!DebugArchive)
   {
-    char fname[128];
-    sprintf(fname, "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank());
-    DebugArchive = std::make_unique<std::ofstream>(fname);
+    std::array<char, 128> fname;
+    if (snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank()) < 0)
+      throw std::runtime_error("Error generating filename");
+    DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
   }
 #endif
@@ -505,6 +509,12 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
         operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
                                                                              pset.getSpeciesSet(), twf.getSPOMap(),
                                                                              pset_target));
+      }
+      else if (est_type == "MagnetizationDensity")
+      {
+        MagnetizationDensityInput magdensinput(cur);
+        ParticleSet pset_target(pset);
+        operator_ests_.emplace_back(std::make_unique<MagnetizationDensity>(std::move(magdensinput), pset.getLattice()));
       }
       else
       {

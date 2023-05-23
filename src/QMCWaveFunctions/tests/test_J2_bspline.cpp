@@ -45,19 +45,11 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   ions_.setName("ion");
   ions_.create({1});
-  ions_.R[0][0] = 2.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-
+  ions_.R[0] = {2.0, 0.0, 0.0};
   elec_.setName("elec");
   elec_.create({1, 1});
-  elec_.R[0][0] = 1.00;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 0.0;
-  elec_.R[1][2] = 0.0;
-
+  elec_.R[0]                   = {1.00, 0.0, 0.0};
+  elec_.R[1]                   = {0.0, 0.0, 0.0};
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");

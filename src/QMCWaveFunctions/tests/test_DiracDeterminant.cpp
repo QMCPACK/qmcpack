@@ -480,25 +480,13 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   ions_.setName("ion");
   ions_.create({2});
 
-  ions_.R[0][0] = 0.00000000;
-  ions_.R[0][1] = 0.00000000;
-  ions_.R[0][2] = 1.08659253;
-  ions_.R[1][0] = 0.00000000;
-  ions_.R[1][1] = 0.00000000;
-  ions_.R[1][2] = -1.08659253;
-
+  ions_.R[0] = {0.00000000, 0.00000000, 1.08659253};
+  ions_.R[1] = {0.00000000, 0.00000000, -1.08659253};
   elec_.setName("elec");
   elec_.create({3});
-  elec_.R[0][0] = 0.1;
-  elec_.R[0][1] = -0.3;
-  elec_.R[0][2] = 1.0;
-  elec_.R[1][0] = -0.1;
-  elec_.R[1][1] = 0.3;
-  elec_.R[1][2] = 1.0;
-  elec_.R[2][0] = 0.1;
-  elec_.R[2][1] = 0.2;
-  elec_.R[2][2] = 0.3;
-
+  elec_.R[0]     = {0.1, -0.3, 1.0};
+  elec_.R[1]     = {-0.1, 0.3, 1.0};
+  elec_.R[2]     = {0.1, 0.2, 0.3};
   elec_.spins[0] = 0.0;
   elec_.spins[1] = 0.2;
   elec_.spins[2] = 0.4;

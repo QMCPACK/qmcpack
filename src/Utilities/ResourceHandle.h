@@ -12,27 +12,41 @@
 #ifndef QMCPLUSPLUS_RESOURCHANDLE_H
 #define QMCPLUSPLUS_RESOURCHANDLE_H
 
-#include <memory>
+#include <functional>
+#include <optional>
 
 namespace qmcplusplus
 {
-/** ResourceHandle manages the temporary owned resource obtained from a collection
- *
- * Resource copy should be handled at the collection. Individual handle cannot be copied.
- * However, directly using unique_ptr prevents compiler generated copy constructor.
- * For this reason, the ResourceHandle class adds a copy constructor as no-op to facilitate
- * compiler generated copy constructor in classes owning ResourceHandle objects.
+/** ResourceHandle manages the temporary resource referenced from a collection
  */
 template<class RS>
-class ResourceHandle : public std::unique_ptr<RS>
+class ResourceHandle : private std::optional<std::reference_wrapper<RS>>
 {
 public:
+  using Base = std::optional<std::reference_wrapper<RS>>;
+
   ResourceHandle() = default;
-  ResourceHandle(const ResourceHandle&) {}
-  ResourceHandle(ResourceHandle&&) = default;
-  ResourceHandle& operator=(const ResourceHandle&) {};
-  ResourceHandle& operator=(ResourceHandle&&) = default;
-  using std::unique_ptr<RS>::operator=;
+  ResourceHandle(RS& res) { Base::emplace(res); }
+  ResourceHandle& operator=(RS& res)
+  {
+    Base::emplace(res);
+    return *this;
+  }
+  bool hasResource() const { return Base::has_value(); }
+  operator bool() const { return Base::has_value(); }
+
+  RS& getResource() { return Base::value(); }
+  const RS& getResource() const { return Base::value(); }
+
+  operator RS&() { return this->value(); }
+  operator const RS&() const { return Base::value(); }
+
+  RS& release()
+  {
+    RS& res = Base::value();
+    Base::reset();
+    return res;
+  }
 };
 
 } // namespace qmcplusplus

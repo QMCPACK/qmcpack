@@ -22,6 +22,9 @@
 #include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
 #include "Message/UniformCommunicateError.h"
+
+#include <array>
+
 //#define QMCCOSTFUNCTION_DEBUG
 
 
@@ -50,15 +53,11 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
       targetExcitedStr("no"),
       targetExcited(false),
       omega_shift(0.0),
-      msg_stream(0),
-      m_wfPtr(NULL),
-      m_doc_out(NULL),
-      debug_stream(0),
+      msg_stream(nullptr),
+      m_wfPtr(nullptr),
+      m_doc_out(nullptr),
       do_override_output(true)
 {
-  GEVType = "mixed";
-  //paramList.resize(10);
-  //costList.resize(10,0.0);
   //default: don't check fo MinNumWalkers
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
@@ -66,7 +65,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
 #if defined(QMCCOSTFUNCTION_DEBUG)
   char fname[16];
   sprintf(fname, "optdebug.p%d", OHMMS::Controller->mycontext());
-  debug_stream = new std::ofstream(fname);
+  debug_stream = std::make_unique<std::ofstream>(fname);
   debug_stream->setf(std::ios::scientific, std::ios::floatfield);
   debug_stream->precision(8);
 #endif
@@ -77,10 +76,9 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
 {
   delete_iter(dLogPsi.begin(), dLogPsi.end());
   delete_iter(d2LogPsi.begin(), d2LogPsi.end());
-  if (m_doc_out != NULL)
+  if (m_doc_out != nullptr)
     xmlFreeDoc(m_doc_out);
-  if (debug_stream)
-    delete debug_stream;
+  debug_stream.reset();
 }
 
 void QMCCostFunctionBase::setRng(RefVector<RandomGenerator> r)
@@ -215,7 +213,12 @@ void QMCCostFunctionBase::reportParameters()
   {
     std::ostringstream vp_filename;
     vp_filename << RootName << ".vp.h5";
-    OptVariables.saveAsHDF(vp_filename.str());
+    hdf_archive hout;
+    OptVariables.writeToHDF(vp_filename.str(), hout);
+
+    UniqueOptObjRefs opt_obj_refs = Psi.extractOptimizableObjectRefs();
+    for (auto opt_obj : opt_obj_refs)
+      opt_obj.get().writeVariationalParameters(hout);
 
     char newxml[128];
     sprintf(newxml, "%s.opt.xml", RootName.c_str());
@@ -263,7 +266,6 @@ void QMCCostFunctionBase::reportParametersH5()
     if (ci_size > 0)
     {
       CI_Opt = true;
-      //         sprintf(newh5, "%s.opt.h5", RootName.c_str());
       newh5 = RootName + ".opt.h5";
       *msg_stream << "  <Ci Coeffs saved in opt_coeffs=\"" << newh5 << "\">" << std::endl;
       hdf_archive hout;

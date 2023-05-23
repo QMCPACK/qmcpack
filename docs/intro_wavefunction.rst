@@ -802,8 +802,17 @@ Additional information:
 
 - ``batch`` The default value is ``yes`` if ``gpu=yes`` and ``no`` otherwise.
 
-- ``matrix_inverter`` If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed.
-  If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
+- ``matrix_inverter``. When the inversion happens on the GPU, additional GPU memory is needed. Support matrix:
+
++------------------------------------+-----------------+-----------------+
+| Build condition \\ matrix_inverter | ``host``        | ``gpu``         |
++====================================+=================+=================+
+| CUDA/HIP/SYCL not enabled          | running on host | running on host |
++------------------------------------+-----------------+-----------------+
+| CUDA/HIP/SYCL enabled and gpu==no  | running on host | running on host |
++------------------------------------+-----------------+-----------------+
+| CUDA/HIP/SYCL enabled and gpu==yes | running on host | running on GPU  |
++------------------------------------+-----------------+-----------------+
 
 .. _multideterminants:
 

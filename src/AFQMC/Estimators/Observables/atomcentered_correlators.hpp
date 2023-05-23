@@ -137,11 +137,9 @@ public:
         app_error() << " Error opening orbitals file for atomcentered_correlators estimator. \n";
         APP_ABORT("");
       }
-      if (!dump.push("AtomicOverlaps", false))
-      {
-        app_error() << " Error in atomcentered_correlators: Group OrbsR not found." << std::endl;
-        APP_ABORT("");
-      }
+
+      dump.push("AtomicOverlaps", false);
+
       if (!dump.readEntry(orbs, "index_of_orbital_per_site"))
       {
         app_error() << " Error in atomcentered_correlators: Problems reading index_of_orbital_per_site. " << std::endl;

@@ -60,10 +60,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     DTAAMultiWalkerMem(const DTAAMultiWalkerMem&) : DTAAMultiWalkerMem() {}
 
-    Resource* makeClone() const override { return new DTAAMultiWalkerMem(*this); }
+    std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DTAAMultiWalkerMem>(*this); }
   };
 
-  std::unique_ptr<DTAAMultiWalkerMem> mw_mem_;
+  ResourceHandle<DTAAMultiWalkerMem> mw_mem_handle_;
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.getLattice()),
@@ -117,9 +117,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   const RealType* getMultiWalkerTempDataPtr() const override
   {
-    if (!mw_mem_)
-      throw std::runtime_error("SoaDistanceTableAAOMPTarget mw_mem_ is nullptr");
-    return mw_mem_->mw_new_old_dist_displ.data();
+    return mw_mem_handle_.getResource().mw_new_old_dist_displ.data();
   }
 
   void createResource(ResourceCollection& collection) const override
@@ -129,13 +127,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
-    auto res_ptr = dynamic_cast<DTAAMultiWalkerMem*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("SoaDistanceTableAAOMPTarget::acquireResource dynamic_cast failed");
     assert(this == &dt_list.getLeader());
-    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
-    dt_leader.mw_mem_.reset(res_ptr);
-    auto& mw_mem             = *dt_leader.mw_mem_;
+    auto& dt_leader          = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    dt_leader.mw_mem_handle_ = collection.lendResource<DTAAMultiWalkerMem>();
     const size_t nw          = dt_list.size();
     const size_t stride_size = num_targets_padded_ * (D + 1);
 
@@ -148,7 +142,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       dt.old_dr_.free();
     }
 
-    auto& mw_new_old_dist_displ = mw_mem.mw_new_old_dist_displ;
+    auto& mw_new_old_dist_displ = dt_leader.mw_mem_handle_.getResource().mw_new_old_dist_displ;
     mw_new_old_dist_displ.resize(nw * 2 * stride_size);
     for (int iw = 0; iw < nw; iw++)
     {
@@ -164,7 +158,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
-    collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_));
+    collection.takebackResource(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_handle_);
     const size_t nw = dt_list.size();
     for (int iw = 0; iw < nw; iw++)
     {
@@ -203,8 +197,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     ScopedTimer local_timer(dt_leader.evaluate_timer_);
 
-    auto& mw_mem      = *dt_leader.mw_mem_;
-    auto& pset_leader = p_list.getLeader();
+    DTAAMultiWalkerMem& mw_mem = dt_leader.mw_mem_handle_;
+    auto& pset_leader          = p_list.getLeader();
 
     const size_t nw              = dt_list.size();
     const auto num_sources_local = dt_leader.num_targets_;
@@ -299,11 +293,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
                bool prepare_old = true) const override
   {
     assert(this == &dt_list.getLeader());
-    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
-    // multi walker resource must have been acquired;
-    assert(dt_leader.mw_mem_);
-    auto& mw_mem      = *dt_leader.mw_mem_;
-    auto& pset_leader = p_list.getLeader();
+    auto& dt_leader            = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    DTAAMultiWalkerMem& mw_mem = dt_leader.mw_mem_handle_;
+    auto& pset_leader          = p_list.getLeader();
 
     ScopedTimer local_timer(move_timer_);
     const size_t nw          = dt_list.size();

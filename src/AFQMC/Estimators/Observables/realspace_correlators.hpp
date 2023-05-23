@@ -121,11 +121,8 @@ public:
         app_error() << " Error opening orbitals file for realspace_correlators estimator. \n";
         APP_ABORT("");
       }
-      if (!dump.push("OrbsR", false))
-      {
-        app_error() << " Error in realspace_correlators: Group OrbsR not found." << std::endl;
-        APP_ABORT("");
-      }
+      dump.push("OrbsR", false);
+
       // read one orbital to check size and later corroborate all orbitals have same size
       stdCVector orb(iextensions<1u>{1});
       if (!dump.readEntry(orb, "kp0_b0"))

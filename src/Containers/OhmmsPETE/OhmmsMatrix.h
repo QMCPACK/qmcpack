@@ -517,12 +517,11 @@ inline void evaluate(Matrix<T, Alloc>& lhs, const Op& op, const Expression<RHS>&
   {
     // We get here if the vectors on the RHS are the same size as those on
     // the LHS.
-    int ii = 0;
     for (int i = 0; i < lhs.rows(); ++i)
     {
       for (int j = 0; j < lhs.cols(); ++j)
       {
-        op(lhs(ii++), forEach(rhs, EvalLeaf2(i, j), OpCombine()));
+        op(lhs(i, j), forEach(rhs, EvalLeaf2(i, j), OpCombine()));
       }
     }
   }

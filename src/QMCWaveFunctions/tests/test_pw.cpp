@@ -47,14 +47,8 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   ions.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.88972614;
-  ions.R[1][1] = 1.88972614;
-  ions.R[1][2] = 1.88972614;
-
-
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {1.88972614, 1.88972614, 1.88972614};
   std::vector<int> agroup(2);
   agroup[0] = 1;
   agroup[1] = 1;
@@ -62,14 +56,8 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-
-
+  elec.R[0]                    = {0.0, 0.0, 0.0};
+  elec.R[1]                    = {0.0, 1.0, 0.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -136,9 +124,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
         double x = step*ix;
         double y = step*iy;
         double z = step*iz;
-        elec.R[0][0] = x;
-        elec.R[0][1] = y;
-        elec.R[0][2] = z;
+        elec.R[0] = {x, y, z};
         elec.update();
         SPOSet::ValueVector orbs(orbSize);
         spo->evaluateValue(elec, 0, orbs);
@@ -178,14 +164,8 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   ions.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 3.55;
-  ions.R[1][1] = 3.55;
-  ions.R[1][2] = 3.55;
-
-
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {3.55, 3.55, 3.55};
   std::vector<int> agroup(2);
   agroup[0] = 2;
   agroup[1] = 2;
@@ -193,20 +173,10 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-  elec.R[2][0] = 0.0;
-  elec.R[2][1] = 0.0;
-  elec.R[2][2] = 1.0;
-  elec.R[3][0] = 0.0;
-  elec.R[3][1] = 1.0;
-  elec.R[3][2] = 1.0;
-
-
+  elec.R[0]                    = {0.0, 0.0, 0.0};
+  elec.R[1]                    = {0.0, 1.0, 0.0};
+  elec.R[2]                    = {0.0, 0.0, 1.0};
+  elec.R[3]                    = {0.0, 1.0, 1.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -273,9 +243,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
         double x = step*ix;
         double y = step*iy;
         double z = step*iz;
-        elec.R[0][0] = x;
-        elec.R[0][1] = y;
-        elec.R[0][2] = z;
+        elec.R[0] = {x, y, z};
         elec.update();
         SPOSet::ValueVector orbs(orbSize);
         spo->evaluateValue(elec, 0, orbs);

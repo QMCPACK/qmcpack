@@ -7,6 +7,12 @@ Development Guide
 The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
 addition of a Jastrow function or a new QMC method.
 
+.. admonition:: Definitions
+
+   * **Legacy**: code from previous work usually not in line current coding standards or design. It is mostly functional and correct within the context of legacy operations. Most has been modified piecemeal for years to extend functionality.
+   * **Refactoring**: Process of redesigning code in place through incremental changes toward current design and functionality goals.
+
+
 QMCPACK coding standards
 ------------------------
 
@@ -767,6 +773,8 @@ During Jastrow optimization, any update to the parameter data managed by the sha
 the Jastrow objects. In another example, spline coefficients are managed by a shared pointer which achieves a single copy in
 memory shared by an SPOSet and all of its clones.
 
+.. include:: input_code.txt
+
 .. _distance-tables:
 
 Particles and distance tables
@@ -1027,8 +1035,11 @@ three body Jastrow factors in QMCPACK only needs the row [iel][0:Nelec).
 In ``ratioGrad``, the new distances are stored in the ``Temp_r`` and
 ``Temp_dr`` members of the distance tables.
 
-Setup
-~~~~~
+Legacy Setup
+~~~~~~~~~~~~
+.. warning::
+   The following describes a deprecated method of handling user input.
+   It is not to be used for new code.
 
 A builder processes XML input, creates the wavefunction, and adds it to
 ``targetPsi``. Builders derive from ``WaveFunctionComponentBuilder``.

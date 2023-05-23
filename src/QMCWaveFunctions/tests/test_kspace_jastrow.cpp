@@ -65,19 +65,11 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
 
   ions_.setName("ion");
   ions_.create({1});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-
+  ions_.R[0] = {0.0, 0.0, 0.0};
   elec_.setName("elec");
-  elec_.create({2,0});
-  elec_.R[0][0] = -0.28;
-  elec_.R[0][1] = 0.0225;
-  elec_.R[0][2] = -2.709;
-  elec_.R[1][0] = -1.08389;
-  elec_.R[1][1] = 1.9679;
-  elec_.R[1][2] = -0.0128914;
-
+  elec_.create({2, 0});
+  elec_.R[0]                   = {-0.28, 0.0225, -2.709};
+  elec_.R[1]                   = {-1.08389, 1.9679, -0.0128914};
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");

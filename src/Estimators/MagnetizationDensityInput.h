@@ -47,11 +47,13 @@ public:
   /** default copy constructor
    *  This is required due to SDI being part of a variant used as a vector element.
    */
-  MagnetizationDensityInput(){};
   MagnetizationDensityInput(const MagnetizationDensityInput&) = default;
   PosType get_corner() const { return corner_; }
+  PosType get_center() const { return center_; }
   PosType get_grid() const { return grid_real_; }
   PosType get_dr() const { return dr_; }
+  bool get_corner_defined() const { return have_corner_; }
+  bool get_center_defined() const { return have_center_; }
   int get_nsamples() const { return nsamples_; }
   Integrator get_integrator() const { return integrator_; }
   bool get_write_report() const { return write_report_; }

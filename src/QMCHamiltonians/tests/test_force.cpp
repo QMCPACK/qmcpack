@@ -42,19 +42,11 @@ TEST_CASE("Bare Force", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.4;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]            = {0.0, 1.0, 0.0};
+  elec.R[1]            = {0.4, 0.3, 0.0};
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
   //int chargeIdx = tspecies.addAttribute("charge");
@@ -150,22 +142,12 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 2.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {2.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.4;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                   = {0.0, 1.0, 0.0};
+  elec.R[1]                   = {0.4, 0.3, 0.0};
   SpeciesSet& tspecies        = elec.getSpeciesSet();
   int upIdx                   = tspecies.addSpecies("u");
   int massIdx                 = tspecies.addAttribute("mass");
@@ -278,22 +260,12 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 2.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {2.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.2;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                   = {0.0, 1.0, 0.0};
+  elec.R[1]                   = {0.2, 0.3, 0.0};
   SpeciesSet& tspecies        = elec.getSpeciesSet();
   int upIdx                   = tspecies.addSpecies("u");
   int massIdx                 = tspecies.addAttribute("mass");
@@ -358,29 +330,14 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
 
   ions.setName("ions");
   ions.create({3});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 2.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-  ions.R[2][0] = 1.0;
-  ions.R[2][1] = 1.0;
-  ions.R[2][2] = 0.0;
-
-  // Add elec
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {2.0, 0.0, 0.0};
+  ions.R[2] = {1.0, 1.0, 0.0};
   elec.setName("elec");
   elec.create({3});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 2.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-  elec.R[2][0] = 1.0;
-  elec.R[2][1] = 0.0;
-  elec.R[2][2] = 0.0;
-
+  elec.R[0]                    = {0.0, 1.0, 0.0};
+  elec.R[1]                    = {2.0, 1.0, 0.0};
+  elec.R[2]                    = {1.0, 0.0, 0.0};
   SpeciesSet& ionSpecies       = ions.getSpeciesSet();
   int HIdx                     = ionSpecies.addSpecies("H");
   int HChargeIdx               = ionSpecies.addAttribute("charge");
@@ -425,19 +382,11 @@ TEST_CASE("AC Force", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.4;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]            = {0.0, 1.0, 0.0};
+  elec.R[1]            = {0.4, 0.3, 0.0};
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
   //int chargeIdx = tspecies.addAttribute("charge");

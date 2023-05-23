@@ -241,9 +241,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
         double x = 0.1*ix - 1.5;
         double y = 0.1*iy - 1.5;
         double z = 0.1*iz - 1.5;
-        elec_.R[0][0] = x;
-        elec_.R[0][1] = y;
-        elec_.R[0][2] = z;
+        elec_.R[0] = {x, y, z};
         elec_.update();
         SPOSet::ValueVector orbs(orbSize);
         spo->evaluate(elec_, 0, orbs);

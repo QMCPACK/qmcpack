@@ -226,9 +226,9 @@ void ECPComponentBuilder::printECPTable()
     return;
   if (!outputManager.isActive(Verbosity::DEBUG))
     return;
-  char fname[12];
-  sprintf(fname, "%s.pp.dat", Species.c_str());
-  std::ofstream fout(fname);
+  std::array<char, 12> fname;
+  std::snprintf(fname.data(), fname.size(), "%s.pp.dat", Species.c_str());
+  std::ofstream fout(fname.data());
   fout.setf(std::ios::scientific, std::ios::floatfield);
   fout.precision(12);
   int nl      = pp_nonloc ? pp_nonloc->nlpp_m.size() : 0;

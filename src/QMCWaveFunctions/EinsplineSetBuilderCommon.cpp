@@ -786,8 +786,6 @@ bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
   if (root)
   {
     misc.rewind();
-    //misc.put(NumValenceOrbs);
-    //misc.put(NumCoreOrbs);
     for (int i = 0; i < n; ++i)
     {
       misc.put(SortBands[i].TwistIndex);
@@ -814,8 +812,6 @@ bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
   {
     SortBands.resize(nbands[0]);
     misc.rewind();
-    //misc.get(NumValenceOrbs);
-    //misc.get(NumCoreOrbs);
     for (int i = 0; i < n; ++i)
     {
       misc.get(SortBands[i].TwistIndex);
@@ -835,14 +831,6 @@ bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
       misc.get(SortBands[i].IsCoreState);
     }
   }
-
-  //char fname[64];
-  //sprintf(fname,"debug.%d",myComm->rank());
-  //ofstream fout(fname);
-  //fout.setf(std::ios::scientific, std::ios::floatfield);
-  //fout.precision(12);
-  //for(int i=0; i<misc.size();++i)
-  //  fout << misc[i] << std::endl;
   return isCore;
 }
 

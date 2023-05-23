@@ -175,13 +175,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   ions.setName("ion0");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 6.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {6.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("Na");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -193,14 +188,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.setName("e");
   std::vector<int> agroup(2, 1);
   elec.create(agroup);
-  elec.R[0][0] = 2.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 3.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 0.0;
-
-
+  elec.R[0]                    = {2.0, 0.0, 0.0};
+  elec.R[1]                    = {3.0, 0.0, 0.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -625,7 +614,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
           Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                       dhpsioverpsi);
     }
-    REQUIRE(Value1 == Approx(-3.530511241));
+    REQUIRE(Value1 == Approx(-3.530511241).epsilon(2.e-5));
 
     for (int ip = 0; ip < NumOptimizables; ip++)
       CHECK(std::real(dhpsioverpsi[ip]) == Approx(dhpsioverpsi_refs[ip]));

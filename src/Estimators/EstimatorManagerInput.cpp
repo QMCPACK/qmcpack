@@ -15,6 +15,7 @@
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"
+#include "MagnetizationDensityInput.h"
 #include "PerParticleHamiltonianLoggerInput.h"
 #include "ModernStringUtils.hpp"
 
@@ -88,6 +89,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<MomentumDistributionInput>(child);
       else if (atype == "perparticlehamiltonianlogger")
         appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
+      else if (atype == "magnetizationdensity")
+        appendEstimatorInput<MagnetizationDensityInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");

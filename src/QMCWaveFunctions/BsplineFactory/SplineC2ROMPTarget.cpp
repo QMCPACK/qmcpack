@@ -270,7 +270,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 {
   assert(this == &spo_list.getLeader());
   auto& phi_leader                = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-  auto& mw_mem                    = *phi_leader.mw_mem_;
+  auto& mw_mem                    = phi_leader.mw_mem_handle_.getResource();
   auto& det_ratios_buffer_H2D     = mw_mem.det_ratios_buffer_H2D;
   auto& mw_ratios_private         = mw_mem.mw_ratios_private;
   auto& mw_offload_scratch        = mw_mem.mw_offload_scratch;
@@ -708,8 +708,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
 {
   assert(this == &sa_list.getLeader());
   auto& phi_leader = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-  assert(phi_leader.mw_mem_);
-  auto& mw_mem             = *phi_leader.mw_mem_;
+  auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
   auto& mw_pos_copy        = mw_mem.mw_pos_copy;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
   auto& mw_results_scratch = mw_mem.mw_results_scratch;
@@ -744,7 +743,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
 {
   assert(this == &spo_list.getLeader());
   auto& phi_leader         = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-  auto& mw_mem             = *phi_leader.mw_mem_;
+  auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
   auto& buffer_H2D         = mw_mem.buffer_H2D;
   auto& rg_private         = mw_mem.rg_private;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
