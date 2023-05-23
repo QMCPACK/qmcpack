@@ -406,12 +406,12 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
   phi_vgl_v.resize(DIM_VGL, spo_list.size(), OrbitalSetSize);
   mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
 
-  const size_t output_size = phi_vgl_v.size(2);
-  const size_t nw          = phi_vgl_v.size(1);
+  const size_t nw = phi_vgl_v.size(1);
 
   //TODO: make this cleaner?
   for (int iw = 0; iw < nw; iw++)
   {
+    const size_t output_size = psi_v_list[iw].get().size();
     std::copy_n(phi_vgl_v.data_at(0, iw, 0), output_size, psi_v_list[iw].get().data());
     std::copy_n(phi_vgl_v.data_at(4, iw, 0), output_size, d2psi_v_list[iw].get().data());
     // grads are [dim, walker, orb] in phi_vgl_v
