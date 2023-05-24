@@ -163,12 +163,15 @@ struct J1Spin : public WaveFunctionComponent
     else
     {
       for (int i = 0; i < Nions; i++)
-        for (int j = 0; j < NumTargetGroups; j++)
+      {
+        auto igroup = Ions.getGroupID(i);
+        if (igroup == source_type)
         {
-          auto igroup = Ions.getGroupID(i);
-          if (igroup == source_type && j == target_type && J1UniqueFunctors[igroup * NumTargetGroups + j] == nullptr)
-            J1UniqueFunctors[igroup * Nelec + j] = std::move(afunc);
+          for (int j = 0; j < NumTargetGroups; j++)
+            if (j == target_type && J1UniqueFunctors[igroup * NumTargetGroups + j] == nullptr)
+              J1UniqueFunctors[igroup * Nelec + j] = std::move(afunc);
         }
+      }
     }
   }
 
