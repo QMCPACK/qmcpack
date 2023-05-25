@@ -29,6 +29,8 @@
 
 namespace qmcplusplus
 {
+TimerManager<NewTimer> timer_manager;
+
 namespace
 {
 const std::array<std::string, num_timer_levels> timer_level_names = {"none", "coarse", "medium", "fine"};

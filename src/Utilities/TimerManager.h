@@ -137,7 +137,7 @@ public:
 
 extern template class TimerManager<NewTimer>;
 extern template class TimerManager<FakeTimer>;
-inline static TimerManager<NewTimer> timer_manager;
+extern TimerManager<NewTimer> timer_manager;
 
 // Helpers to make it easier to define a set of timers
 // See tests/test_timer.cpp for an example
