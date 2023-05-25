@@ -47,7 +47,7 @@ class TimerManager
 {
 private:
   /// All the timers created by this manager
-  std::vector<std::unique_ptr<TIMER>> TimerStorage;
+  std::vector<std::unique_ptr<TIMER>> timer_storage_;
   /// mutex for TimerList
   std::mutex timer_list_lock_;
   /// The stack of nested active timers
@@ -156,8 +156,6 @@ template<class TIMER>
 class TimerList : public std::vector<std::reference_wrapper<TIMER>>
 {
 public:
-  TimerList() = default;
-
   template<class T>
   TimerList(const TimerNameList_t<T>& timer_list,
             timer_levels timer_level     = timer_level_fine,

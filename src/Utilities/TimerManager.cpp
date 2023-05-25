@@ -69,8 +69,8 @@ TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels 
   TIMER* t = nullptr;
   {
     const std::lock_guard<std::mutex> lock(timer_list_lock_);
-    TimerStorage.push_back(std::make_unique<TIMER>(myname, this, mytimer));
-    t = TimerStorage.back().get();
+    timer_storage_.push_back(std::make_unique<TIMER>(myname, this, mytimer));
+    t = timer_storage_.back().get();
     initializeTimer(*t);
   }
   return t;
@@ -115,16 +115,16 @@ void TimerManager<TIMER>::pop_timer(TIMER* t)
 template<class TIMER>
 void TimerManager<TIMER>::reset()
 {
-  for (int i = 0; i < TimerStorage.size(); i++)
-    TimerStorage[i]->reset();
+  for (int i = 0; i < timer_storage_.size(); i++)
+    timer_storage_[i]->reset();
 }
 
 template<class TIMER>
 void TimerManager<TIMER>::set_timer_threshold(const timer_levels threshold)
 {
   timer_threshold = threshold;
-  for (int i = 0; i < TimerStorage.size(); i++)
-    TimerStorage[i]->set_active_by_timer_threshold(timer_threshold);
+  for (int i = 0; i < timer_storage_.size(); i++)
+    timer_storage_[i]->set_active_by_timer_threshold(timer_threshold);
 }
 
 template<class TIMER>
@@ -150,9 +150,9 @@ std::string TimerManager<TIMER>::get_timer_threshold_string() const
 template<class TIMER>
 void TimerManager<TIMER>::collate_flat_profile(Communicate* comm, FlatProfileData& p)
 {
-  for (int i = 0; i < TimerStorage.size(); ++i)
+  for (int i = 0; i < timer_storage_.size(); ++i)
   {
-    TIMER& timer = *TimerStorage[i];
+    TIMER& timer = *timer_storage_[i];
     nameList_t::iterator it(p.nameList.find(timer.get_name()));
     if (it == p.nameList.end())
     {
@@ -233,9 +233,9 @@ void TimerManager<TIMER>::collate_stack_profile(Communicate* comm, StackProfileD
   // The order in which sibling timers are encountered in the code is not
   // preserved. They will be ordered alphabetically instead.
   std::map<std::string, ProfileData> all_stacks;
-  for (int i = 0; i < TimerStorage.size(); ++i)
+  for (int i = 0; i < timer_storage_.size(); ++i)
   {
-    TIMER& timer = *TimerStorage[i];
+    TIMER& timer = *timer_storage_[i];
     for (const auto& [key, time] : timer.get_per_stack_total_time())
     {
       ProfileData pd;
