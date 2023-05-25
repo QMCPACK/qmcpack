@@ -48,6 +48,9 @@ protected:
     Branching_t
   };
 
+  inline static const TimerNameList_t<WalkerSetBaseTimers> WalkerSetBaseTimerNames =
+      {{LoadBalance_t, "WalkerSetBase::loadBalance"}, {Branching_t, "WalkerSetBase::branching"}};
+
   using element       = typename std::pointer_traits<Ptr>::element_type;
   using pointer       = Ptr;
   using const_element = const element;
@@ -101,6 +104,7 @@ public:
         history_pos(0),
         walkerType(UNDEFINED_WALKER_TYPE),
         tot_num_walkers(0),
+        Timers(WalkerSetBaseTimerNames, timer_level_coarse),
         walker_buffer({0, 1}, alloc_),
         bp_buffer({0, 0}, bpalloc_),
         load_balance(UNDEFINED_LOAD_BALANCE),

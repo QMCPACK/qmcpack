@@ -25,13 +25,36 @@ using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
+enum DMTimers
+{
+  DM_eval,
+  DM_gen_samples,
+  DM_gen_sample_basis,
+  DM_gen_sample_ratios,
+  DM_gen_particle_basis,
+  DM_matrix_products,
+  DM_accumulate,
+};
+
+static const TimerNameList_t<DMTimers> DMTimerNames =
+    {{DM_eval, "DensityMatrices1B::evaluate"},
+     {DM_gen_samples, "DensityMatrices1B::generate_samples"},
+     {DM_gen_sample_basis, "DensityMatrices1B::generate_sample_basis"},
+     {DM_gen_sample_ratios, "DensityMatrices1B::generate_sample_ratios"},
+     {DM_gen_particle_basis, "DensityMatrices1B::generate_particle_basis"},
+     {DM_matrix_products, "DensityMatrices1B::evaluate_matrix_products"},
+     {DM_accumulate, "DensityMatrices1B::evaluate_matrix_accum"}};
 
 DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
-    : basis_functions("DensityMatrices1B::basis"), lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl)
+    : timers(DMTimerNames, timer_level_fine),
+      basis_functions("DensityMatrices1B::basis"),
+      lattice_(P.getLattice()),
+      Psi(psi),
+      Pq(P),
+      Pc(Pcl)
 {
   reset();
 }
-
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
     : OperatorBase(master),
@@ -363,15 +386,6 @@ void DensityMatrices1B::initialize()
   {
     normalize();
   }
-
-  const TimerNameList_t<DMTimers> DMTimerNames = {{DM_eval, "DensityMatrices1B::evaluate"},
-                                                  {DM_gen_samples, "DensityMatrices1B::generate_samples"},
-                                                  {DM_gen_sample_basis, "DensityMatrices1B::generate_sample_basis"},
-                                                  {DM_gen_sample_ratios, "DensityMatrices1B::generate_sample_ratios"},
-                                                  {DM_gen_particle_basis, "DensityMatrices1B::generate_particle_basis"},
-                                                  {DM_matrix_products, "DensityMatrices1B::evaluate_matrix_products"},
-                                                  {DM_accumulate, "DensityMatrices1B::evaluate_matrix_accum"}};
-  setup_timers(timers, DMTimerNames, timer_level_fine);
 
   initialized = true;
 }

@@ -64,7 +64,6 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
   if (check_hamil_wfn_for_utest("reduced_density_matrix", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
-    setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);

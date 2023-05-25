@@ -67,7 +67,6 @@ void propg_fac_shared(boost::mpi3::communicator& world)
   if (check_hamil_wfn_for_utest("propg_fac_shared", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
-    setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -238,7 +237,6 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
   if (check_hamil_wfn_for_utest("propg_fac_distributed", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
-    setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);

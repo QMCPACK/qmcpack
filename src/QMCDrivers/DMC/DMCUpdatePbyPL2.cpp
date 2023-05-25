@@ -37,9 +37,8 @@ DMCUpdatePbyPL2::DMCUpdatePbyPL2(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
                                  RandomGenerator& rg)
-    : QMCUpdateBase(w, psi, h, rg)
+    : QMCUpdateBase(w, psi, h, rg), myTimers(DMCTimerNames, timer_level_medium)
 {
-  setup_timers(myTimers, DMCTimerNames, timer_level_medium);
 }
 
 /// destructor

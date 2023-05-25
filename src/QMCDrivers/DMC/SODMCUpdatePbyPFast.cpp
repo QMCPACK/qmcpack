@@ -28,11 +28,11 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdatePbyP::Buffer"},
-                                                {SODMC_movePbyP, "SODMCUpdatePbyP::movePbyP"},
-                                                {SODMC_hamiltonian, "SODMCUpdatePbyP::Hamiltonian"},
-                                                {SODMC_collectables, "SODMCUpdatePbyP::Collectables"},
-                                                {SODMC_tmoves, "SODMCUpdatePbyP::Tmoves"}};
+const TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdatePbyP::Buffer"},
+                                                      {SODMC_movePbyP, "SODMCUpdatePbyP::movePbyP"},
+                                                      {SODMC_hamiltonian, "SODMCUpdatePbyP::Hamiltonian"},
+                                                      {SODMC_collectables, "SODMCUpdatePbyP::Collectables"},
+                                                      {SODMC_tmoves, "SODMCUpdatePbyP::Tmoves"}};
 
 
 /// Constructor.
@@ -40,9 +40,9 @@ SODMCUpdatePbyPWithRejectionFast::SODMCUpdatePbyPWithRejectionFast(MCWalkerConfi
                                                                    TrialWaveFunction& psi,
                                                                    QMCHamiltonian& h,
                                                                    RandomGenerator& rg)
-    : QMCUpdateBase(w, psi, h, rg)
+    : QMCUpdateBase(w, psi, h, rg), myTimers(SODMCTimerNames, timer_level_medium)
+
 {
-  setup_timers(myTimers, SODMCTimerNames, timer_level_medium);
 }
 
 /// destructor

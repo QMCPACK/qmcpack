@@ -29,11 +29,12 @@
 
 namespace qmcplusplus
 {
-TimerManager<NewTimer> timer_manager;
-
+namespace
+{
 const std::array<std::string, num_timer_levels> timer_level_names = {"none", "coarse", "medium", "fine"};
 
 const char TIMER_STACK_SEPARATOR = '/';
+} // namespace
 
 template<class TIMER>
 void TimerManager<TIMER>::initializeTimer(TIMER& t)
@@ -68,8 +69,8 @@ TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels 
   TIMER* t = nullptr;
   {
     const std::lock_guard<std::mutex> lock(timer_list_lock_);
-    TimerList.push_back(std::make_unique<TIMER>(myname, this, mytimer));
-    t = TimerList.back().get();
+    TimerStorage.push_back(std::make_unique<TIMER>(myname, this, mytimer));
+    t = TimerStorage.back().get();
     initializeTimer(*t);
   }
   return t;
@@ -114,16 +115,16 @@ void TimerManager<TIMER>::pop_timer(TIMER* t)
 template<class TIMER>
 void TimerManager<TIMER>::reset()
 {
-  for (int i = 0; i < TimerList.size(); i++)
-    TimerList[i]->reset();
+  for (int i = 0; i < TimerStorage.size(); i++)
+    TimerStorage[i]->reset();
 }
 
 template<class TIMER>
 void TimerManager<TIMER>::set_timer_threshold(const timer_levels threshold)
 {
   timer_threshold = threshold;
-  for (int i = 0; i < TimerList.size(); i++)
-    TimerList[i]->set_active_by_timer_threshold(timer_threshold);
+  for (int i = 0; i < TimerStorage.size(); i++)
+    TimerStorage[i]->set_active_by_timer_threshold(timer_threshold);
 }
 
 template<class TIMER>
@@ -149,9 +150,9 @@ std::string TimerManager<TIMER>::get_timer_threshold_string() const
 template<class TIMER>
 void TimerManager<TIMER>::collate_flat_profile(Communicate* comm, FlatProfileData& p)
 {
-  for (int i = 0; i < TimerList.size(); ++i)
+  for (int i = 0; i < TimerStorage.size(); ++i)
   {
-    TIMER& timer = *TimerList[i];
+    TIMER& timer = *TimerStorage[i];
     nameList_t::iterator it(p.nameList.find(timer.get_name()));
     if (it == p.nameList.end())
     {
@@ -232,14 +233,12 @@ void TimerManager<TIMER>::collate_stack_profile(Communicate* comm, StackProfileD
   // The order in which sibling timers are encountered in the code is not
   // preserved. They will be ordered alphabetically instead.
   std::map<std::string, ProfileData> all_stacks;
-  for (int i = 0; i < TimerList.size(); ++i)
+  for (int i = 0; i < TimerStorage.size(); ++i)
   {
-    TIMER& timer                                     = *TimerList[i];
-    std::map<StackKey, double>::iterator stack_id_it = timer.get_per_stack_total_time().begin();
-    for (; stack_id_it != timer.get_per_stack_total_time().end(); stack_id_it++)
+    TIMER& timer = *TimerStorage[i];
+    for (const auto& [key, time] : timer.get_per_stack_total_time())
     {
       ProfileData pd;
-      const StackKey& key = stack_id_it->first;
       std::string stack_name;
       get_stack_name_from_id(key, stack_name);
       pd.time  = timer.get_total(key);
@@ -250,16 +249,14 @@ void TimerManager<TIMER>::collate_stack_profile(Communicate* comm, StackProfileD
   }
 
   // Fill in the output data structure (but don't compute exclusive time yet)
-  std::map<std::string, ProfileData>::iterator si = all_stacks.begin();
-  int idx                                         = 0;
-  for (; si != all_stacks.end(); ++si)
+  int idx = 0;
+  for (const auto& [stack_name, data] : all_stacks)
   {
-    std::string stack_name = si->first;
     p.nameList[stack_name] = idx;
     p.names.push_back(stack_name);
-    p.timeList.push_back(si->second.time);
-    p.timeExclList.push_back(si->second.time);
-    p.callList.push_back(si->second.calls);
+    p.timeList.push_back(data.time);
+    p.timeExclList.push_back(data.time);
+    p.callList.push_back(data.calls);
     idx++;
   }
 

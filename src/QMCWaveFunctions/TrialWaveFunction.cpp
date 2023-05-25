@@ -42,6 +42,15 @@ typedef enum
 static const std::vector<std::string> suffixes{"V",         "VGL",    "accept", "NLratio",
                                                "recompute", "buffer", "derivs", "preparegroup"};
 
+static TimerNameList_t<TimerEnum> create_names(std::string_view myName)
+{
+  TimerNameList_t<TimerEnum> timer_names;
+  std::string prefix = std::string("WaveFunction:").append(myName).append("::");
+  for (std::size_t i = 0; i < suffixes.size(); ++i)
+    timer_names.push_back({static_cast<TimerEnum>(i), prefix + suffixes[i]});
+  return timer_names;
+}
+
 TrialWaveFunction::TrialWaveFunction(const RuntimeOptions& runtime_options, const std::string_view aname, bool tasking)
     : runtime_options_(runtime_options),
       myNode_(NULL),
@@ -53,16 +62,11 @@ TrialWaveFunction::TrialWaveFunction(const RuntimeOptions& runtime_options, cons
       PhaseDiff(0.0),
       log_real_(0.0),
       OneOverM(1.0),
-      use_tasking_(tasking)
+      use_tasking_(tasking),
+      TWF_timers_(create_names(aname), timer_level_medium)
 {
   if (suffixes.size() != TIMER_SKIP)
     throw std::runtime_error("TrialWaveFunction::TrialWaveFunction mismatched timer enums and suffixes");
-
-  for (auto& suffix : suffixes)
-  {
-    std::string timer_name = "WaveFunction:" + myName + "::" + suffix;
-    TWF_timers_.push_back(*timer_manager.createTimer(timer_name, timer_level_medium));
-  }
 }
 
 /** Destructor

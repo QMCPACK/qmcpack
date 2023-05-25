@@ -58,13 +58,13 @@ TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames = {{DMC_MPI_branch, "WalkerCont
  * In the new drivers SFNB should throw an except if there is attempted 
  * reuse of WalkerController
  */
-WalkerControlMPI::WalkerControlMPI(Communicate* c) : WalkerControlBase(c)
+WalkerControlMPI::WalkerControlMPI(Communicate* c)
+    : WalkerControlBase(c), myTimers(DMCMPITimerNames, timer_level_medium)
 {
   NumWalkersSent = 0;
   SwapMode       = 1;
   Cur_min        = 0;
   Cur_max        = 0;
-  setup_timers(myTimers, DMCMPITimerNames, timer_level_medium);
 }
 
 /** Perform branch and swap walkers as required
