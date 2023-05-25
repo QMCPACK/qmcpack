@@ -58,7 +58,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, Par
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
     : OperatorBase(master),
-      ttimers(DMTimerNames, timer_level_fine),
+      timers(DMTimerNames, timer_level_fine),
       basis_functions(master.basis_functions),
       lattice_(P.getLattice()),
       Psi(psi),
