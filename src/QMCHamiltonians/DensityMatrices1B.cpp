@@ -46,7 +46,7 @@ static const TimerNameList_t<DMTimers> DMTimerNames =
      {DM_accumulate, "DensityMatrices1B::evaluate_matrix_accum"}};
 
 DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
-    : timers(DMTimerNames, timer_level_fine),
+    : timers(getGlobalTimerManager(), DMTimerNames, timer_level_fine),
       basis_functions("DensityMatrices1B::basis"),
       lattice_(P.getLattice()),
       Psi(psi),
@@ -58,7 +58,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, Par
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
     : OperatorBase(master),
-      timers(DMTimerNames, timer_level_fine),
+      timers(getGlobalTimerManager(), DMTimerNames, timer_level_fine),
       basis_functions(master.basis_functions),
       lattice_(P.getLattice()),
       Psi(psi),

@@ -56,7 +56,7 @@ const TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames = {{block_timer, "Block"},
                                                         {T7_t, "T7_t"},
                                                         {T8_t, "T8_t"}};
 
-TimerList_t AFQMCTimers(AFQMCTimerNames, timer_level_coarse);
+TimerList_t AFQMCTimers(getGlobalTimerManager(), AFQMCTimerNames, timer_level_coarse);
 
 namespace afqmc
 {
@@ -88,7 +88,7 @@ AFQMCFactory::AFQMCFactory(boost::mpi3::communicator& comm_)
   // Global host buffers manager
   HostBufferManager host_buffer(10uL * 1024uL * 1024uL);  // setup monostate
   DeviceBufferManager dev_buffer(10uL * 1024uL * 1024uL); // setup monostate
-  timer_manager.set_timer_threshold(timer_level_coarse);
+  getGlobalTimerManager().set_timer_threshold(timer_level_coarse);
 }
 
 AFQMCFactory::~AFQMCFactory() { release_memory_managers(); }

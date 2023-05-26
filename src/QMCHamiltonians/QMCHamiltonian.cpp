@@ -51,12 +51,10 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       myName(aname),
       nlpp_ptr(nullptr),
       l2_ptr(nullptr),
-      ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
-      eval_vals_derivs_timer_(
-          *timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
+      ham_timer_(createGlobalTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
+      eval_vals_derivs_timer_(createGlobalTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
       eval_ion_derivs_fast_timer_(
-          *timer_manager.createTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsDeterministicFast",
-                                     timer_level_medium))
+          createGlobalTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsDeterministicFast", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -115,7 +113,7 @@ void QMCHamiltonian::addOperator(std::unique_ptr<OperatorBase>&& h, const std::s
     h->setName(aname);
     H.push_back(std::move(h));
     std::string tname = "Hamiltonian:" + aname;
-    my_timers_.push_back(*timer_manager.createTimer(tname, timer_level_fine));
+    my_timers_.push_back(createGlobalTimer(tname, timer_level_fine));
   }
   else
   {

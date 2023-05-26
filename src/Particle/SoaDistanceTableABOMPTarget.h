@@ -121,10 +121,10 @@ public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.getLattice()),
         DistanceTableAB(source, target, DTModes::ALL_OFF),
-        offload_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::offload_") + name_, timer_level_fine)),
-        evaluate_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::evaluate_") + name_, timer_level_fine)),
-        move_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::move_") + name_, timer_level_fine)),
-        update_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::update_") + name_, timer_level_fine))
+        offload_timer_(createGlobalTimer(std::string("DTABOMPTarget::offload_") + name_, timer_level_fine)),
+        evaluate_timer_(createGlobalTimer(std::string("DTABOMPTarget::evaluate_") + name_, timer_level_fine)),
+        move_timer_(createGlobalTimer(std::string("DTABOMPTarget::move_") + name_, timer_level_fine)),
+        update_timer_(createGlobalTimer(std::string("DTABOMPTarget::update_") + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());

@@ -63,7 +63,7 @@ TrialWaveFunction::TrialWaveFunction(const RuntimeOptions& runtime_options, cons
       log_real_(0.0),
       OneOverM(1.0),
       use_tasking_(tasking),
-      TWF_timers_(create_names(aname), timer_level_medium)
+      TWF_timers_(getGlobalTimerManager(), create_names(aname), timer_level_medium)
 {
   if (suffixes.size() != TIMER_SKIP)
     throw std::runtime_error("TrialWaveFunction::TrialWaveFunction mismatched timer enums and suffixes");
@@ -92,7 +92,7 @@ void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& at
     app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
   for (auto& suffix : suffixes)
-    WFC_timers_.push_back(*timer_manager.createTimer(aname + "::" + suffix));
+    WFC_timers_.push_back(createGlobalTimer(aname + "::" + suffix));
 
   Z.emplace_back(std::move(aterm));
 }

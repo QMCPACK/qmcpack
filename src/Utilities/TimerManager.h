@@ -137,7 +137,10 @@ public:
 
 extern template class TimerManager<NewTimer>;
 extern template class TimerManager<FakeTimer>;
-extern TimerManager<NewTimer> timer_manager;
+
+TimerManager<NewTimer>& getGlobalTimerManager();
+
+NewTimer& createGlobalTimer(const std::string& myname, timer_levels mylevel = timer_level_fine);
 
 // Helpers to make it easier to define a set of timers
 // See tests/test_timer.cpp for an example
@@ -157,16 +160,16 @@ class TimerList : public std::vector<std::reference_wrapper<TIMER>>
 {
 public:
   template<class T>
-  TimerList(const TimerNameList_t<T>& timer_list,
-            timer_levels timer_level     = timer_level_fine,
-            TimerManager<TIMER>* manager = &timer_manager)
+  TimerList(TimerManager<TIMER>& manager,
+            const TimerNameList_t<T>& timer_list,
+            timer_levels timer_level = timer_level_fine)
   {
     this->reserve(timer_list.size());
     for (std::size_t i = 0; i < timer_list.size(); i++)
     {
       if (i != static_cast<std::underlying_type_t<T>>(timer_list[i].id))
         throw std::runtime_error("Mismatch between index and enumeration");
-      this->push_back(*manager->createTimer(timer_list[i].name, timer_level));
+      this->push_back(*manager.createTimer(timer_list[i].name, timer_level));
     }
   }
 };
