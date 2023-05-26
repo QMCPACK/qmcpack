@@ -188,8 +188,7 @@ bool QMCMain::execute()
 #ifdef BUILD_AFQMC
   if (simulationType == "afqmc")
   {
-    NewTimer* t2 = getGlobalTimerManager().createTimer("Total", timer_level_coarse);
-    ScopedTimer t2_scope(*t2);
+    ScopedTimer t2_scope(createGlobalTimer("Total", timer_level_coarse));
     app_log() << std::endl
               << "/*************************************************\n"
               << " ********  This is an AFQMC calculation   ********\n"
@@ -218,11 +217,11 @@ bool QMCMain::execute()
   }
 #endif
 
-  NewTimer* t2 = getGlobalTimerManager().createTimer("Total", timer_level_coarse);
-  t2->start();
+  NewTimer& t2 = createGlobalTimer("Total", timer_level_coarse);
+  t2.start();
 
-  NewTimer* t3 = getGlobalTimerManager().createTimer("Startup", timer_level_coarse);
-  t3->start();
+  NewTimer& t3 = createGlobalTimer("Startup", timer_level_coarse);
+  t3.start();
 
   //validate the input file
   bool success = validateXML();
@@ -246,7 +245,7 @@ bool QMCMain::execute()
     app_log() << "  dryrun == 1 Ignore qmc/loop elements " << std::endl;
     APP_ABORT("QMCMain::execute");
   }
-  t3->stop();
+  t3.stop();
   Timer t1;
   qmc_common.qmc_counter = 0;
   for (int qa = 0; qa < qmc_action_.size(); qa++)
@@ -283,7 +282,7 @@ bool QMCMain::execute()
       xmlFreeNode(qmcactionPair.first);
 
   qmc_action_.clear();
-  t2->stop();
+  t2.stop();
   app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
   if (is_manager())
   {
