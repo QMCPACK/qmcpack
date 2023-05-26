@@ -58,7 +58,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
       timers_(timer_prefix),
-      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
       walker_configs_ref_(wc),
@@ -443,7 +443,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
       awc.walkers_per_rank[rank_id] = requested_walkers_per_rank;
     else if (current_configs) // requested_walkers_per_rank == 0 and current_configs > 0
       awc.walkers_per_rank[rank_id] = current_configs;
-    else                      // requested_walkers_per_rank == 0 and current_configs == 0
+    else // requested_walkers_per_rank == 0 and current_configs == 0
       awc.walkers_per_rank[rank_id] = num_crowds;
     comm.allreduce(awc.walkers_per_rank);
     awc.global_walkers = std::accumulate(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(), 0);

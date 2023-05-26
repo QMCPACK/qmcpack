@@ -36,12 +36,9 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(ParticleSet& w,
     : QMCCostFunctionBase(w, psi, h, comm),
       samples_(samples),
       walkers_per_crowd_(walkers_per_crowd),
-      check_config_timer_(
-          *timer_manager.createTimer("QMCCostFunctionBatched::checkConfigurations", timer_level_medium)),
-      corr_sampling_timer_(
-          *timer_manager.createTimer("QMCCostFunctionBatched::correlatedSampling", timer_level_medium)),
-      fill_timer_(
-          *timer_manager.createTimer("QMCCostFunctionBatched::fillOverlapHamiltonianMatrices", timer_level_medium))
+      check_config_timer_(createGlobalTimer("QMCCostFunctionBatched::checkConfigurations", timer_level_medium)),
+      corr_sampling_timer_(createGlobalTimer("QMCCostFunctionBatched::correlatedSampling", timer_level_medium)),
+      fill_timer_(createGlobalTimer("QMCCostFunctionBatched::fillOverlapHamiltonianMatrices", timer_level_medium))
 
 {
   app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;

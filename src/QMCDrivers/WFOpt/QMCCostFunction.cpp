@@ -27,8 +27,7 @@ namespace qmcplusplus
 {
 QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
     : QMCCostFunctionBase(w, psi, h, comm),
-      fill_timer_(
-          *timer_manager.createTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
+      fill_timer_(createGlobalTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
 {
   CSWeight = 1.0;
   app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl;

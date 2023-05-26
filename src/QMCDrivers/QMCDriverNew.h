@@ -332,20 +332,20 @@ protected:
     NewTimer& production_timer;
     NewTimer& resource_timer;
     DriverTimers(const std::string& prefix)
-        : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
-          run_steps_timer(*timer_manager.createTimer(prefix + "RunSteps", timer_level_medium)),
-          create_walkers_timer(*timer_manager.createTimer(prefix + "CreateWalkers", timer_level_medium)),
-          init_walkers_timer(*timer_manager.createTimer(prefix + "InitWalkers", timer_level_medium)),
-          buffer_timer(*timer_manager.createTimer(prefix + "Buffer", timer_level_medium)),
-          movepbyp_timer(*timer_manager.createTimer(prefix + "MovePbyP", timer_level_medium)),
-          hamiltonian_timer(*timer_manager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
-          collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium)),
-          estimators_timer(*timer_manager.createTimer(prefix + "Estimators", timer_level_medium)),
-          imbalance_timer(*timer_manager.createTimer(prefix + "Imbalance", timer_level_medium)),
-          endblock_timer(*timer_manager.createTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
-          startup_timer(*timer_manager.createTimer(prefix + "Startup", timer_level_medium)),
-          production_timer(*timer_manager.createTimer(prefix + "Production", timer_level_medium)),
-          resource_timer(*timer_manager.createTimer(prefix + "Resources", timer_level_medium))
+        : checkpoint_timer(createGlobalTimer(prefix + "CheckPoint", timer_level_medium)),
+          run_steps_timer(createGlobalTimer(prefix + "RunSteps", timer_level_medium)),
+          create_walkers_timer(createGlobalTimer(prefix + "CreateWalkers", timer_level_medium)),
+          init_walkers_timer(createGlobalTimer(prefix + "InitWalkers", timer_level_medium)),
+          buffer_timer(createGlobalTimer(prefix + "Buffer", timer_level_medium)),
+          movepbyp_timer(createGlobalTimer(prefix + "MovePbyP", timer_level_medium)),
+          hamiltonian_timer(createGlobalTimer(prefix + "Hamiltonian", timer_level_medium)),
+          collectables_timer(createGlobalTimer(prefix + "Collectables", timer_level_medium)),
+          estimators_timer(createGlobalTimer(prefix + "Estimators", timer_level_medium)),
+          imbalance_timer(createGlobalTimer(prefix + "Imbalance", timer_level_medium)),
+          endblock_timer(createGlobalTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
+          startup_timer(createGlobalTimer(prefix + "Startup", timer_level_medium)),
+          production_timer(createGlobalTimer(prefix + "Production", timer_level_medium)),
+          resource_timer(createGlobalTimer(prefix + "Resources", timer_level_medium))
     {}
   };
 

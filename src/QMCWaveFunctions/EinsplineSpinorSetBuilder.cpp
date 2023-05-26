@@ -51,7 +51,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   std::string hybrid_rep("no");
   std::string spo_object_name;
 
-  ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;
@@ -124,7 +124,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   if (Occ != last_occ)
   {
-    NewOcc  = true;
+    NewOcc = true;
   }
   else
     NewOcc = false;
