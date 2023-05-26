@@ -151,7 +151,7 @@ QMCMain::QMCMain(Communicate* c)
 
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer build option is enabled. Current timer level is "
-                << timer_manager.get_timer_threshold_string() << std::endl;
+                << getGlobalTimerManager().get_timer_threshold_string() << std::endl;
 #endif
   app_summary() << std::endl;
 
@@ -188,7 +188,7 @@ bool QMCMain::execute()
 #ifdef BUILD_AFQMC
   if (simulationType == "afqmc")
   {
-    NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
+    NewTimer* t2 = getGlobalTimerManager().createTimer("Total", timer_level_coarse);
     ScopedTimer t2_scope(*t2);
     app_log() << std::endl
               << "/*************************************************\n"
@@ -218,10 +218,10 @@ bool QMCMain::execute()
   }
 #endif
 
-  NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
+  NewTimer* t2 = getGlobalTimerManager().createTimer("Total", timer_level_coarse);
   t2->start();
 
-  NewTimer* t3 = timer_manager.createTimer("Startup", timer_level_coarse);
+  NewTimer* t3 = getGlobalTimerManager().createTimer("Startup", timer_level_coarse);
   t3->start();
 
   //validate the input file

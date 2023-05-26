@@ -30,7 +30,7 @@ StructFact::StructFact(const ParticleLayout& lattice, const KContainer& k_lists)
     : SuperCellEnum(SUPERCELL_BULK),
       k_lists_(k_lists),
       StorePerParticle(false),
-      update_all_timer_(*timer_manager.createTimer("StructFact::update_all_part", timer_level_fine))
+      update_all_timer_(createGlobalTimer("StructFact::update_all_part", timer_level_fine))
 {
   if (LRCoulombSingleton::isQuasi2D())
   {

@@ -40,10 +40,9 @@ SODMCUpdatePbyPWithRejectionFast::SODMCUpdatePbyPWithRejectionFast(MCWalkerConfi
                                                                    TrialWaveFunction& psi,
                                                                    QMCHamiltonian& h,
                                                                    RandomGenerator& rg)
-    : QMCUpdateBase(w, psi, h, rg), myTimers(SODMCTimerNames, timer_level_medium)
+    : QMCUpdateBase(w, psi, h, rg), myTimers(getGlobalTimerManager(), SODMCTimerNames, timer_level_medium)
 
-{
-}
+{}
 
 /// destructor
 SODMCUpdatePbyPWithRejectionFast::~SODMCUpdatePbyPWithRejectionFast() {}

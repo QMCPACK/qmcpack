@@ -308,7 +308,7 @@ private:
   /// Copy operator (disabled).
   QMCUpdateBase& operator=(const QMCUpdateBase&) { return *this; }
   ///
-  NewTimer* InitWalkersTimer;
+  NewTimer& initWalkers_timer_;
 };
 } // namespace qmcplusplus
 

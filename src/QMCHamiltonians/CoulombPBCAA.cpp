@@ -54,9 +54,9 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       Ps(ref),
       use_offload_(active && !computeForces && use_offload),
       d_aa_ID(ref.addTable(ref, use_offload_ ? DTModes::ALL_OFF : DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
-      evalLR_timer_(*timer_manager.createTimer("CoulombPBCAA::LongRange", timer_level_fine)),
-      evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine)),
-      offload_timer_(*timer_manager.createTimer("CoulombPBCAA::offload", timer_level_fine))
+      evalLR_timer_(createGlobalTimer("CoulombPBCAA::LongRange", timer_level_fine)),
+      evalSR_timer_(createGlobalTimer("CoulombPBCAA::ShortRange", timer_level_fine)),
+      offload_timer_(createGlobalTimer("CoulombPBCAA::offload", timer_level_fine))
 {
   if (use_offload_)
     assert(ref.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD);

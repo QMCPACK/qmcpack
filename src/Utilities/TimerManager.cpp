@@ -29,14 +29,26 @@
 
 namespace qmcplusplus
 {
-TimerManager<NewTimer> timer_manager;
-
 namespace
 {
 const std::array<std::string, num_timer_levels> timer_level_names = {"none", "coarse", "medium", "fine"};
 
 const char TIMER_STACK_SEPARATOR = '/';
+
+std::unique_ptr<TimerManager<NewTimer>> global_timer_manager;
 } // namespace
+
+TimerManager<NewTimer>& getGlobalTimerManager()
+{
+  if (!global_timer_manager)
+    global_timer_manager = std::make_unique<TimerManager<NewTimer>>();
+  return *global_timer_manager;
+}
+
+NewTimer& createGlobalTimer(const std::string& myname, timer_levels mylevel)
+{
+  return *getGlobalTimerManager().createTimer(myname, mylevel);
+}
 
 template<class TIMER>
 void TimerManager<TIMER>::initializeTimer(TIMER& t)

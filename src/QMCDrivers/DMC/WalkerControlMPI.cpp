@@ -59,7 +59,7 @@ TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames = {{DMC_MPI_branch, "WalkerCont
  * reuse of WalkerController
  */
 WalkerControlMPI::WalkerControlMPI(Communicate* c)
-    : WalkerControlBase(c), myTimers(DMCMPITimerNames, timer_level_medium)
+    : WalkerControlBase(c), myTimers(getGlobalTimerManager(), DMCMPITimerNames, timer_level_medium)
 {
   NumWalkersSent = 0;
   SwapMode       = 1;
