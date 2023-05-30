@@ -71,18 +71,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
       app_error() << " Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in THCHamiltonian::getHamiltonianOperations():"
-                  << " Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
-    if (!dump.push("THC", false))
-    {
-      app_error() << " Error in THCHamiltonian::getHamiltonianOperations():"
-                  << " Group not THC found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
+    dump.push("THC", false);
   }
   if (TG.Global().root())
   {

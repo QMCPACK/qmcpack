@@ -32,6 +32,13 @@ namespace qmcplusplus
 {
 class ResourceCollection;
 
+class SPOSet;
+namespace testing
+{
+opt_variables_type& getMyVars(SPOSet& spo);
+}
+
+
 /** base class for Single-particle orbital sets
  *
  * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
@@ -546,6 +553,8 @@ protected:
   IndexType OrbitalSetSize;
   /// Optimizable variables
   opt_variables_type myVars;
+
+  friend opt_variables_type& testing::getMyVars(SPOSet& spo);
 };
 
 using SPOSetPtr = SPOSet*;

@@ -54,7 +54,8 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       W(w),
       Psi(psi),
       H(h),
-      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
+      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
@@ -139,8 +140,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
-
-  checkpointTimer = timer_manager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
 QMCDriver::~QMCDriver()
@@ -305,11 +304,10 @@ void QMCDriver::recordBlock(int block)
 {
   if (DumpConfig && block % Period4CheckPoint == 0)
   {
-    checkpointTimer->start();
+    ScopedTimer local(checkpoint_timer_);
     wOut->dump(W, block);
     branchEngine->write(RootName, true); //save energy_history
     RandomNumberControl::write(RootName, myComm);
-    checkpointTimer->stop();
   }
 }
 

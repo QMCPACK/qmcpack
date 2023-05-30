@@ -25,12 +25,11 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
                          LCAOrbitalSetWithCorrection& lcwc,
                          const std::string& id)
 {
-  const int num_centers = info.rows();
+  const int num_centers      = info.rows();
   const int orbital_set_size = info.cols();
-  using RealType = QMCTraits::RealType;
+  using RealType             = QMCTraits::RealType;
 
-  NewTimer& cuspApplyTimer =
-      *timer_manager.createTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
+  NewTimer& cuspApplyTimer = createGlobalTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
@@ -115,11 +114,11 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
 void saveCusp(std::string filename, Matrix<CuspCorrectionParameters>& info, const std::string& id)
 {
-  const int num_centers = info.rows();
+  const int num_centers      = info.rows();
   const int orbital_set_size = info.cols();
-  xmlDocPtr doc       = xmlNewDoc((const xmlChar*)"1.0");
-  xmlNodePtr cuspRoot = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-  xmlNodePtr spo      = xmlNewNode(NULL, (const xmlChar*)"sposet");
+  xmlDocPtr doc              = xmlNewDoc((const xmlChar*)"1.0");
+  xmlNodePtr cuspRoot        = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+  xmlNodePtr spo             = xmlNewNode(NULL, (const xmlChar*)"sposet");
   xmlNewProp(spo, (const xmlChar*)"name", (const xmlChar*)id.c_str());
   xmlAddChild(cuspRoot, spo);
   xmlDocSetRootElement(doc, cuspRoot);
@@ -188,15 +187,13 @@ void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
                       const std::string& id,
                       Communicate& Comm)
 {
-  const int num_centers = info.rows();
+  const int num_centers      = info.rows();
   const int orbital_set_size = info.cols();
-  using RealType = QMCTraits::RealType;
+  using RealType             = QMCTraits::RealType;
 
-  NewTimer& cuspCreateTimer =
-      *timer_manager.createTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
-  NewTimer& splitPhiEtaTimer = *timer_manager.createTimer("CuspCorrectionConstruction::splitPhiEta", timer_level_fine);
-  NewTimer& computeTimer =
-      *timer_manager.createTimer("CuspCorrectionConstruction::computeCorrection", timer_level_fine);
+  NewTimer& cuspCreateTimer = createGlobalTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
+  NewTimer& splitPhiEtaTimer = createGlobalTimer("CuspCorrectionConstruction::splitPhiEta", timer_level_fine);
+  NewTimer& computeTimer     = createGlobalTimer("CuspCorrectionConstruction::computeCorrection", timer_level_fine);
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 

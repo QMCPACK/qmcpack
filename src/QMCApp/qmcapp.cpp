@@ -77,7 +77,7 @@ int main(int argc, char** argv)
           if (pos != std::string::npos)
           {
             std::string timer_level = c.substr(pos + 1);
-            timer_manager.set_timer_threshold(timer_level);
+            getGlobalTimerManager().set_timer_threshold(timer_level);
           }
         }
         if (c.find("-verbosity") < c.size())
@@ -219,13 +219,13 @@ int main(int argc, char** argv)
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
     output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
-    timer_manager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
+    getGlobalTimerManager().output_timing(qmcComm, timingDoc, timingDoc.getRoot());
     qmc->getParticlePool().output_particleset_info(timingDoc, timingDoc.getRoot());
     if (OHMMS::Controller->rank() == 0)
     {
       timingDoc.dump(qmc->getTitle() + ".info.xml");
     }
-    timer_manager.print(qmcComm);
+    getGlobalTimerManager().print(qmcComm);
 
     qmc.reset();
   }

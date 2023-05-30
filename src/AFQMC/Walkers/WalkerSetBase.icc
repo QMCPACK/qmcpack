@@ -133,11 +133,6 @@ void WalkerSetBase<Alloc, Ptr>::parse(xmlNodePtr cur)
 template<class Alloc, typename Ptr>
 void WalkerSetBase<Alloc, Ptr>::setup()
 {
-  TimerNameList_t<WalkerSetBaseTimers> WalkerSetBaseTimerNames = {{LoadBalance_t, "WalkerSetBase::loadBalance"},
-                                                                  {Branching_t, "WalkerSetBase::branching"}};
-
-  setup_timers(Timers, WalkerSetBaseTimerNames, timer_level_coarse);
-
   // careful! These are only used to calculate memory needs and access points/partitionings
   int ncol = NAEA;
   int nrow = NMO;

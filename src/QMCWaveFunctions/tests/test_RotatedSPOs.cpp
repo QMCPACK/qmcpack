@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #include "checkMatrix.hpp"
+#include "FakeSPO.h"
 
 #include <stdio.h>
 #include <string>
@@ -62,24 +63,13 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 1.68658058;
-  ions_.R[1][1] = 1.68658058;
-  ions_.R[1][2] = 1.68658058;
-
-
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0][0] = 0.0;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 1.0;
-  elec_.R[1][2] = 0.0;
-
+  elec_.R[0]                 = {0.0, 0.0, 0.0};
+  elec_.R[1]                 = {0.0, 1.0, 0.0};
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -649,6 +639,114 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
   RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
   for (int i = 0; i < new_params2.size(); i++)
     CHECK(new_params2[i] == Approx(old_params[i]));
+}
+
+namespace testing
+{
+opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
+opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull; }
+std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+} // namespace testing
+
+// Test using global rotation
+TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
+{
+  auto fake_spo = std::make_unique<FakeSPO>();
+  fake_spo->setOrbitalSetSize(4);
+  RotatedSPOs rot("fake_rot", std::move(fake_spo));
+  int nel = 2;
+  rot.buildOptVariables(nel);
+
+  optimize::VariableSet vs;
+  rot.checkInVariablesExclusive(vs);
+  vs[0] = 0.1;
+  vs[1] = 0.15;
+  vs[2] = 0.2;
+  vs[3] = 0.25;
+  rot.resetParametersExclusive(vs);
+
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp.h5", hout);
+
+    rot.writeVariationalParameters(hout);
+  }
+
+  auto fake_spo2 = std::make_unique<FakeSPO>();
+  fake_spo2->setOrbitalSetSize(4);
+
+  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  rot2.buildOptVariables(nel);
+
+  optimize::VariableSet vs2;
+  rot2.checkInVariablesExclusive(vs2);
+
+  hdf_archive hin;
+  vs2.readFromHDF("rot_vp.h5", hin);
+  rot2.readVariationalParameters(hin);
+
+  opt_variables_type& var = testing::getMyVars(rot2);
+  CHECK(var[0] == Approx(vs[0]));
+  CHECK(var[1] == Approx(vs[1]));
+  CHECK(var[2] == Approx(vs[2]));
+  CHECK(var[3] == Approx(vs[3]));
+
+  opt_variables_type& full_var = testing::getMyVarsFull(rot2);
+  CHECK(full_var[0] == Approx(vs[0]));
+  CHECK(full_var[1] == Approx(vs[1]));
+  CHECK(full_var[2] == Approx(vs[2]));
+  CHECK(full_var[3] == Approx(vs[3]));
+  CHECK(full_var[4] == Approx(0.0));
+  CHECK(full_var[5] == Approx(0.0));
+}
+
+// Test using history list.
+TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
+{
+  auto fake_spo = std::make_unique<FakeSPO>();
+  fake_spo->setOrbitalSetSize(4);
+  RotatedSPOs rot("fake_rot", std::move(fake_spo));
+  rot.set_use_global_rotation(false);
+  int nel = 2;
+  rot.buildOptVariables(nel);
+
+  optimize::VariableSet vs;
+  rot.checkInVariablesExclusive(vs);
+  vs[0] = 0.1;
+  vs[1] = 0.15;
+  vs[2] = 0.2;
+  vs[3] = 0.25;
+  rot.resetParametersExclusive(vs);
+
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp_hist.h5", hout);
+
+    rot.writeVariationalParameters(hout);
+  }
+
+  auto fake_spo2 = std::make_unique<FakeSPO>();
+  fake_spo2->setOrbitalSetSize(4);
+
+  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  rot2.buildOptVariables(nel);
+
+  optimize::VariableSet vs2;
+  rot2.checkInVariablesExclusive(vs2);
+
+  hdf_archive hin;
+  vs2.readFromHDF("rot_vp_hist.h5", hin);
+  rot2.readVariationalParameters(hin);
+
+  opt_variables_type& var = testing::getMyVars(rot2);
+  CHECK(var[0] == Approx(vs[0]));
+  CHECK(var[1] == Approx(vs[1]));
+  CHECK(var[2] == Approx(vs[2]));
+  CHECK(var[3] == Approx(vs[3]));
+
+  auto hist = testing::getHistoryParams(rot2);
+  REQUIRE(hist.size() == 1);
+  REQUIRE(hist[0].size() == 4);
 }
 
 } // namespace qmcplusplus

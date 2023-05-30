@@ -92,8 +92,8 @@ void ObservableHelper::write(const value_type* const first_v, hdf_archive& file)
   hsize_t rank = mydims.size();
   if (rank)
   {
-    hid_t g_id = file.push(group_name, true);
-    h5d_append(g_id, "value", current, rank, mydims.data(), first_v + lower_bound);
+    file.push(group_name, true);
+    h5d_append(file.top(), "value", current, rank, mydims.data(), first_v + lower_bound);
     file.pop();
   }
 }

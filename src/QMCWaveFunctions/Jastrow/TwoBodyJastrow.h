@@ -20,6 +20,7 @@
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
+#include <ResourceHandle.h>
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
@@ -120,7 +121,7 @@ private:
   std::vector<GradDerivVec> gradLogPsi;
   std::vector<ValueDerivVec> lapLogPsi;
 
-  std::unique_ptr<TwoBodyJastrowMultiWalkerMem<RealType>> mw_mem_;
+  ResourceHandle<TwoBodyJastrowMultiWalkerMem<RealType>> mw_mem_handle_;
 
   void resizeWFOptVectors()
   {

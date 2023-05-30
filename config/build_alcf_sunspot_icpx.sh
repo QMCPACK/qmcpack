@@ -9,7 +9,7 @@
 
 module load spack libxml2 cmake
 module load cray-hdf5/1.12.2.1
-module load oneapi/eng-compiler/2022.12.30.002
+module load oneapi/eng-compiler/2022.12.30.005
 
 module list >& module_list.txt
 
@@ -23,7 +23,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=sunspot
-Compiler=icpx
+Compiler=icpx20230321
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -45,7 +45,7 @@ for name in offload_sycl_real_MP offload_sycl_real offload_sycl_cplx_MP offload_
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
-CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE"
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE -DMPIEXEC_PREFLAGS='--cpu-bind;depth;-d;8'"
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_COMPLEX=ON"
@@ -57,6 +57,7 @@ fi
 
 if [[ $name == *"offload"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON"
+  CMAKE_CXX_FLAGS="-mllvm -vpo-paropt-atomic-free-reduction-slm=true"
 fi
 
 if [[ $name == *"sycl"* ]]; then
@@ -70,15 +71,16 @@ if [[ -v install_folder ]]; then
 fi
 
 echo "**********************************"
-echo "$folder"
-echo "$CMAKE_FLAGS"
+echo "folder $folder"
+echo "CMAKE_FLAGS: $CMAKE_FLAGS"
+echo "CMAKE_CXX_FLAGS: $CMAKE_CXX_FLAGS"
 echo "**********************************"
 
 mkdir $folder
 cd $folder
 
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS  -DCMAKE_CXX_FLAGS="-mllvm -vpo-paropt-atomic-free-reduction-slm=true" \
+cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" \
       -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx $source_folder
 fi
 

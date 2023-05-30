@@ -126,8 +126,8 @@ public:
       {
         if (!dump.open(rot_file, H5F_ACC_RDONLY))
           APP_ABORT("Error opening orbitals file for n2r estimator.\n");
-        if (!dump.push(path, false))
-          APP_ABORT("Error in full1rdm: path not found.");
+        dump.push(path, false);
+
         stdCMatrix R;
         if (!dump.readEntry(R, "RotationMatrix"))
           APP_ABORT("Error reading RotationMatrix.\n");

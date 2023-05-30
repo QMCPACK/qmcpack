@@ -23,7 +23,11 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
 {
   SOECPotentialMultiWalkerResource() : Resource("SOECPotential") {}
 
-  Resource* makeClone() const override;
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<SOECPotentialMultiWalkerResource>(*this);
+  }
+
 
   ResourceCollection collection{"SOPPcollection"};
 
@@ -189,8 +193,8 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
   if (listeners)
   {
-    auto& ve_samples = O_leader.mw_res_->ve_samples;
-    auto& vi_samples = O_leader.mw_res_->vi_samples;
+    auto& ve_samples = O_leader.mw_res_handle_.getResource().ve_samples;
+    auto& vi_samples = O_leader.mw_res_handle_.getResource().vi_samples;
     ve_samples.resize(nw, pset_leader.getTotalNum());
     vi_samples.resize(nw, O_leader.ion_config_.getTotalNum());
   }
@@ -248,7 +252,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
       }
 
       SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                     O_leader.mw_res_->collection);
+                                     O_leader.mw_res_handle_.getResource().collection);
 
       for (size_t j = 0; j < soecp_potential_list.size(); j++)
       {
@@ -256,8 +260,8 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
         if (listeners)
         {
-          auto& ve_samples = O_leader.mw_res_->ve_samples;
-          auto& vi_samples = O_leader.mw_res_->vi_samples;
+          auto& ve_samples = O_leader.mw_res_handle_.getResource().ve_samples;
+          auto& vi_samples = O_leader.mw_res_handle_.getResource().vi_samples;
           int iw           = j;
           ve_samples(iw, batch_list[j].get().electron_id) += pairpots[j];
           vi_samples(iw, batch_list[j].get().ion_id) += pairpots[j];
@@ -268,8 +272,8 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
   if (listeners)
   {
-    auto& ve_samples  = O_leader.mw_res_->ve_samples;
-    auto& vi_samples  = O_leader.mw_res_->vi_samples;
+    auto& ve_samples  = O_leader.mw_res_handle_.getResource().ve_samples;
+    auto& vi_samples  = O_leader.mw_res_handle_.getResource().vi_samples;
     int num_electrons = pset_leader.getTotalNum();
     for (int iw = 0; iw < nw; iw++)
     {
@@ -317,23 +321,15 @@ void SOECPotential::createResource(ResourceCollection& collection) const
 void SOECPotential::acquireResource(ResourceCollection& collection,
                                     const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& O_leader = o_list.getCastedLeader<SOECPotential>();
-  auto res_ptr   = dynamic_cast<SOECPotentialMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("SOECPotential::acquireResource dynamic_cast failed");
-  O_leader.mw_res_.reset(res_ptr);
+  auto& O_leader          = o_list.getCastedLeader<SOECPotential>();
+  O_leader.mw_res_handle_ = collection.lendResource<SOECPotentialMultiWalkerResource>();
 }
 
 void SOECPotential::releaseResource(ResourceCollection& collection,
                                     const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& O_leader = o_list.getCastedLeader<SOECPotential>();
-  collection.takebackResource(std::move(O_leader.mw_res_));
-}
-
-Resource* SOECPotential::SOECPotentialMultiWalkerResource::makeClone() const
-{
-  return new SOECPotentialMultiWalkerResource(*this);
+  collection.takebackResource(O_leader.mw_res_handle_);
 }
 
 } // namespace qmcplusplus

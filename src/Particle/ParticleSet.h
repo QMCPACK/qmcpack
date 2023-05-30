@@ -24,6 +24,7 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
+#include "ResourceHandle.h"
 #include "SpeciesSet.h"
 #include "Pools/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
@@ -616,7 +617,7 @@ protected:
   std::unique_ptr<StructFact> structure_factor_;
 
   ///multi walker structure factor data
-  std::unique_ptr<SKMultiWalkerMem> mw_structure_factor_data_;
+  ResourceHandle<SKMultiWalkerMem> mw_structure_factor_data_handle_;
 
   /** map to handle distance tables
    *

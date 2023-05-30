@@ -191,10 +191,8 @@ bool restartFromHDF5(WalkerSet& wset,
       return false;
     }
 
-    if (!read.push("Walkers"))
-      return false;
-    if (!read.push("WalkerSet"))
-      return false;
+    read.push("Walkers");
+    read.push("WalkerSet");
 
     if (!read.readEntry(Idata, "dims"))
       return false;

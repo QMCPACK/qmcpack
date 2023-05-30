@@ -227,7 +227,7 @@ private:
   ///NLPP job list of ion-electron pairs by spin group
   std::vector<std::vector<NLPPJob<Real>>> nlpp_jobs;
   /// mult walker shared resource
-  std::unique_ptr<NonLocalECPotentialMultiWalkerResource> mw_res_;
+  ResourceHandle<NonLocalECPotentialMultiWalkerResource> mw_res_handle_;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set

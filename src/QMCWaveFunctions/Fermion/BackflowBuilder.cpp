@@ -332,17 +332,6 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur
         offsets.push_back(tbf->numParams);
         tbf->numParams += bsp->NumParams;
         tbf->addFunc(ia, ib, std::move(bsp));
-
-        //            if(OHMMS::Controller->rank()==0)
-        //            {
-        //              char fname[64];
-        //              sprintf(fname,"BFe-e.%s.dat",(spA+spB).c_str());
-        //              std::ofstream fout(fname);
-        //              fout.setf(std::ios::scientific, std::ios::floatfield);
-        //              fout << "# Backflow radial function \n";
-        //              bsp->print(fout);
-        //              fout.close();
-        //            }
       }
       cur = cur->next;
     }
@@ -561,8 +550,11 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace* 
       offsets.push_back(tbfks->numParams);
       if (OHMMS::Controller->rank() == 0)
       {
-        char fname[16];
-        sprintf(fname, "RPABFee-LR.%s.dat", (spA + spB).c_str());
+        const int max_size{16};
+        char fname[max_size];
+        if (snprintf(fname, max_size, "RPABFee-LR.%s.dat", (spA + spB).c_str()) < 0)
+          throw std::runtime_error("Error generating filename");
+
         std::ofstream fout(fname);
         fout.setf(std::ios::scientific, std::ios::floatfield);
         fout << "# Backflow longrange  \n";
@@ -690,16 +682,6 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
       tbf->addFunc(ia, ib, std::move(bsp));
       offsets.push_back(tbf->numParams);
       tbf->numParams += bsp->NumParams;
-      //            if(OHMMS::Controller->rank()==0)
-      //            {
-      //              char fname[64];
-      //              sprintf(fname,"RPABFee-SR.%s.dat",(spA+spB).c_str());
-      //              std::ofstream fout(fname);
-      //              fout.setf(std::ios::scientific, std::ios::floatfield);
-      //              fout << "# Backflow radial function \n";
-      //              bsp->print(fout);
-      //              fout.close();
-      //            }
     }
     xmlCoefs = xmlCoefs->next;
   }

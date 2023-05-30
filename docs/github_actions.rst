@@ -14,7 +14,7 @@ Note: This is not necessarily the intended typical way for users to build QMCPAC
 
 Jobs running on GitHub hosted runners are triggered automatically. Permission from an admin is required to run jobs on self-hosted runners for security reasons. In addition, jobs running on GitHub hosted runners run automatically in parallel and the time each job takes may vary depending on system utilization. For information on the underlying hardware see the GitHub Actions `docs on the topic <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners>`_.  
 
-All Linux jobs GitHub Runner hosts currently use the `williamfgc/qmcpack-ci:ubuntu20-openmpi <https://hub.docker.com/r/williamfgc/qmcpack-ci>`_ docker image, if you would like to reproduce theses tests exactly using docker, please refer to `Running QMCPACK on Docker Containers <https://qmcpack.readthedocs.io/en/develop/running_docker.html>`_ section in the QMCPACK documentation. The macOS job runs directly on the `macos-latest GitHub Actions VM runner <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources>`_
+All Linux jobs GitHub Runner hosts currently use the `ghcr.io/qmcpack/ubuntu22-openmpi:latest <https://github.com/orgs/QMCPACK/packages/container/package/ubuntu22-openmpi>`_ docker image, if you would like to reproduce theses tests exactly using docker, please refer to `Running QMCPACK on Docker Containers <https://qmcpack.readthedocs.io/en/develop/running_docker.html>`_ section in the QMCPACK documentation. The macOS job runs directly on the `macos-latest GitHub Actions VM runner <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources>`_
 
 
 .. note::
@@ -67,7 +67,7 @@ To run the workflow:
 - Click on `Run workflow` on the right
 - Use workflow from `Branch:develop` and click on the `Run workflow` button
 
-**Note:** the current `.clang-tidy` configuration file is compatible with clang v14 and runs on the `williamfgc/qmcpack-ci:ubuntu22-openmpi` docker image. To run locally on a Linux system use: `docker run -it user williamfgc/qmcpack-ci:ubuntu22-openmpi /bin/bash` or refer to the :ref:`running_docker` section.
+**Note:** the current `.clang-tidy` configuration file is compatible with clang v14 and runs on the `ghcr.io/qmcpack/ubuntu22-openmpi:latest` docker image. To run locally on a Linux system use: `docker run -it user ghcr.io/qmcpack/ubuntu22-openmpi:latest /bin/bash` or refer to the :ref:`running_docker` section.
 
 To build locally enabling `clang-tidy`` static checks defined in `qmcpack/src/.clang-tidy` use the CMake `-DCMAKE_CXX_CLANG_TIDY` option as follows:
 
