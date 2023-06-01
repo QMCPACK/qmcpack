@@ -60,6 +60,29 @@ if(NOT QMC_COMPLEX)
     SCALAR_VALUES
     BE_STO_SHORT)
 
+
+  # Test orbital rotation optimization.  Energy is HF value.  Error comes from
+  #  visual inspection of an ensemble of runs.
+  list(APPEND BE_STO_OPT_SHORT LocalEnergy -14.57302313 0.03)
+
+  qmc_run_and_check_custom_scalar(
+    BASE_NAME
+    short-Be_STO-orb_opt
+    BASE_DIR
+    "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
+    PREFIX
+    be_opt
+    INPUT_FILE
+    be_opt.in.xml
+    PROCS
+    1
+    THREADS
+    16
+    SERIES
+    6
+    SCALAR_VALUES
+    BE_STO_OPT_SHORT)
+
 else()
   message(VERBOSE "Skipping Be_STO tests because STO basis sets are not supported by complex build (QMC_COMPLEX=1)")
 endif()
