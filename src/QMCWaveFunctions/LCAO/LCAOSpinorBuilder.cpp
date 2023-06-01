@@ -130,12 +130,11 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 missing or incorrect path to H5 file");
 
-    std::string setname;
     Matrix<RealType> upReal;
     Matrix<RealType> upImag;
-    setname = "/Super_Twist/eigenset_0";
+    std::string setname = "/Super_Twist/eigenset_0";
     readRealMatrixFromH5(hin, setname, upReal);
-    setname = "/Super_Twist/eigenset_0_imag";
+    setname += "_imag";
     readRealMatrixFromH5(hin, setname, upImag);
 
     assert(upReal.rows() == upImag.rows());
@@ -154,7 +153,7 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     Matrix<RealType> dnImag;
     setname = "/Super_Twist/eigenset_1";
     readRealMatrixFromH5(hin, setname, dnReal);
-    setname = "/Super_Twist/eigenset_1_imag";
+    setname += "_imag";
     readRealMatrixFromH5(hin, setname, dnImag);
 
     assert(dnReal.rows() == dnImag.rows());

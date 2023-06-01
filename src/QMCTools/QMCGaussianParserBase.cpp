@@ -18,6 +18,7 @@
 #include "QMCGaussianParserBase.h"
 #include <iterator>
 #include <algorithm>
+#include <array>
 #include <numeric>
 #include "hdf/hdf_archive.h"
 #include <set>
@@ -1430,28 +1431,34 @@ void QMCGaussianParserBase::createShellH5(int n, int ig, int off_, int numelem)
   int gid(gShell[ig]);
   int ng(gNumber[ig]);
 
+  std::array<char, 4> l_name;
+  int l_len = std::snprintf(l_name.data(), l_name.size(), "%d", gShellID[gid]);
+  if (l_len < 0)
+    throw std::runtime_error("Error generating l_name");
+  std::string al_name(l_name.data(), l_len);
 
-  char l_name[4], n_name[4], a_name[32];
-  sprintf(a_name, "%s%d%d", CurrentCenter.c_str(), n, gShellID[gid]);
-  sprintf(l_name, "%d", gShellID[gid]);
-  sprintf(n_name, "%d", n);
+  std::array<char, 4> n_name;
+  int n_len = std::snprintf(n_name.data(), n_name.size(), "%d", n);
+  if (n_len < 0)
+    throw std::runtime_error("Error generating n_name");
+  std::string an_name(n_name.data(), n_len);
 
-  std::string aa_name(a_name);
-  std::string an_name(n_name);
-  std::string al_name(l_name);
+  std::string aa_name = CurrentCenter;
+  aa_name.append(an_name).append(al_name);
+
   std::string at_name("Gaussian");
   std::string basisGroupID = "basisGroup" + an_name;
 
   std::stringstream tempElem;
-  std::string ElemID0 = "atomicBasisSet", ElemID;
+  std::string ElemID0 = "atomicBasisSet";
   tempElem << ElemID0 << numelem;
-  ElemID = tempElem.str();
+  std::string ElemID = tempElem.str();
 
   hdf_archive hout;
-  hout.open(h5file.c_str(), H5F_ACC_RDWR);
+  hout.open(h5file, H5F_ACC_RDWR);
   hout.push("basisset");
-  hout.push(ElemID.c_str());
-  hout.push(basisGroupID.c_str(), true);
+  hout.push(ElemID);
+  hout.push(basisGroupID, true);
   hout.write(aa_name, "rid");
   hout.write(n, "n");
   hout.write(gShellID[gid], "l");
@@ -1511,20 +1518,33 @@ void QMCGaussianParserBase::createShell(int n, int ig, int off_, xmlNodePtr abas
   int ng(gNumber[ig]);
   xmlNodePtr ag  = xmlNewNode(NULL, (const xmlChar*)"basisGroup");
   xmlNodePtr ag1 = 0;
-  char l_name[4], n_name[4], a_name[32];
-  sprintf(a_name, "%s%d%d", CurrentCenter.c_str(), n, gShellID[gid]);
-  sprintf(l_name, "%d", gShellID[gid]);
-  sprintf(n_name, "%d", n);
-  xmlNewProp(ag, (const xmlChar*)"rid", (const xmlChar*)a_name);
-  xmlNewProp(ag, (const xmlChar*)"n", (const xmlChar*)n_name);
-  xmlNewProp(ag, (const xmlChar*)"l", (const xmlChar*)l_name);
+
+  std::array<char, 4> l_name;
+  int l_len = std::snprintf(l_name.data(), l_name.size(), "%d", gShellID[gid]);
+  if (l_len < 0)
+    throw std::runtime_error("Error generating l_name");
+  std::string al_name(l_name.data(), l_len);
+
+  std::array<char, 4> n_name;
+  int n_len = std::snprintf(n_name.data(), n_name.size(), "%d", n);
+  if (n_len < 0)
+    throw std::runtime_error("Error generating n_name");
+  std::string an_name(n_name.data(), n_len);
+
+  std::string aa_name = CurrentCenter;
+  aa_name.append(an_name).append(al_name);
+
+  xmlNewProp(ag, (const xmlChar*)"rid", (const xmlChar*)aa_name.c_str());
+  xmlNewProp(ag, (const xmlChar*)"n", (const xmlChar*)an_name.c_str());
+  xmlNewProp(ag, (const xmlChar*)"l", (const xmlChar*)al_name.c_str());
   xmlNewProp(ag, (const xmlChar*)"type", (const xmlChar*)"Gaussian");
   if (gid == 2)
   {
-    sprintf(a_name, "%s%d1", CurrentCenter.c_str(), n);
+    aa_name = CurrentCenter;
+    aa_name.append(an_name);
     ag1 = xmlNewNode(NULL, (const xmlChar*)"basisGroup");
-    xmlNewProp(ag1, (const xmlChar*)"rid", (const xmlChar*)a_name);
-    xmlNewProp(ag1, (const xmlChar*)"n", (const xmlChar*)n_name);
+    xmlNewProp(ag1, (const xmlChar*)"rid", (const xmlChar*)aa_name.c_str());
+    xmlNewProp(ag1, (const xmlChar*)"n", (const xmlChar*)an_name.c_str());
     xmlNewProp(ag1, (const xmlChar*)"l", (const xmlChar*)"1");
     xmlNewProp(ag1, (const xmlChar*)"type", (const xmlChar*)"Gaussian");
   }
