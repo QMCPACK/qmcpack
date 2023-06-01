@@ -13,29 +13,14 @@
 
 #ifndef OHMMS_FILEUTILITY_H
 #define OHMMS_FILEUTILITY_H
-#include <string>
-#include <vector>
-inline void Tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters = " ")
-{
-  // Skip delimiters at beginning.
-  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-  // Find first "non-delimiter".
-  std::string::size_type pos = str.find_first_of(delimiters, lastPos);
-  while (std::string::npos != pos || std::string::npos != lastPos)
-  {
-    // Found a token, add it to the vector.
-    tokens.push_back(str.substr(lastPos, pos - lastPos));
-    // Skip delimiters.  Note the "not_of"
-    lastPos = str.find_first_not_of(delimiters, pos);
-    // Find next "non-delimiter"
-    pos = str.find_first_of(delimiters, lastPos);
-  }
-}
 
-inline std::string getExtension(const std::string& str)
+#include <string_view>
+
+inline std::string_view getExtension(const std::string_view str)
 {
-  std::vector<std::string> splitted;
-  Tokenize(str, splitted, ".");
-  return splitted.back();
+  size_t pos = str.find_last_of('.');
+  if (pos == std::string_view::npos)
+    return std::string_view();
+  return str.substr(pos + 1);
 }
 #endif
