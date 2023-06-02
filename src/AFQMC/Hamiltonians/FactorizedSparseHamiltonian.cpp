@@ -73,7 +73,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
   else
   {
     // you always need to count since some vectors might be empty
-    auto nnz_per_cv = HamHelper::count_nnz_per_cholvec(cut, TG, V2_fact, NMO);
+    auto nnz_per_cv = HamHelper::count_nnz_per_cholvec<SPValueType>(cut, TG, V2_fact, NMO);
 
     // count vectors and make mapping from 2*n/2*n+1 to actual value
     std::vector<int> map_;
@@ -126,7 +126,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       }
     }
 
-    auto nnz_per_ik = HamHelper::count_nnz_per_ik(cut, TG, V2_fact, NMO, cv0, cvN);
+    auto nnz_per_ik = HamHelper::count_nnz_per_ik<SPValueType>(cut, TG, V2_fact, NMO, cv0, cvN);
 
     std::size_t nvec =
         std::count_if(nnz_per_cv.begin() + cv0, nnz_per_cv.begin() + cvN, [](std::size_t const& i) { return i > 0; });
@@ -138,7 +138,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     // and can use emplace_back
     SpVType_shm_csr_matrix csr(tp_ul_ul{NMO * NMO, nvec}, tp_ul_ul{0, cv_origin}, nnz_per_ik, Alloc(TG.Node()));
 
-    HamHelper::generateHSPotential(csr, map_, cut, TG, V2_fact, NMO, cv0, cvN);
+    HamHelper::generateHSPotential<SPValueType>(csr, map_, cut, TG, V2_fact, NMO, cv0, cvN);
     TG.node_barrier();
 
     return csr;

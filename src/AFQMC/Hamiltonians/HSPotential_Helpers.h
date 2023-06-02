@@ -23,15 +23,17 @@ namespace afqmc
 {
 namespace HamHelper
 {
+template<class T>
 std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO);
 
+template<class T>
 std::vector<std::size_t> count_nnz_per_ik(double cut,
                                           TaskGroup_& TG,
                                           SpVType_shm_csr_matrix& V2,
                                           int NMO,
                                           int cv0,
                                           int cvN);
-
+template<class T>
 void generateHSPotential(SpVType_shm_csr_matrix& vn,
                          std::vector<int> const& map_,
                          double cut,

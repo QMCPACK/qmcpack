@@ -35,7 +35,7 @@ namespace
 {
 //inline double const& ma::conj(double const& d){return d;}
 //inline float const& ma::conj(float const& f){return f;}
-
+template<class T>
 void count_over_cholvec(double cut,
                         std::vector<std::size_t>& count,
                         int c0,
@@ -78,9 +78,8 @@ void count_over_cholvec(double cut,
       if (abs(*vik) > cut)
       {
         count[2 * (*cik)] += size_t(2); // Lik + 0
-#if defined(QMC_COMPLEX)
-        count[2 * (*cik) + 1] += size_t(2); // Lik - 0
-#endif
+        if constexpr (is_complex<T>::value)
+          count[2 * (*cik) + 1] += size_t(2); // Lik - 0
       }
       ++cik;
       ++vik;
@@ -90,9 +89,8 @@ void count_over_cholvec(double cut,
       if (abs(*vki) > cut)
       {
         count[2 * (*cki)] += size_t(2); // Lki + 0
-#if defined(QMC_COMPLEX)
-        count[2 * (*cki) + 1] += size_t(2); // Lki - 0
-#endif
+        if constexpr (is_complex<T>::value)
+          count[2 * (*cki) + 1] += size_t(2); // Lki - 0
       }
       ++cki;
       ++vki;
@@ -104,9 +102,8 @@ void count_over_cholvec(double cut,
     if (abs(*vik) > cut)
     {
       count[2 * (*cik)] += size_t(2); // Lik + 0
-#if defined(QMC_COMPLEX)
-      count[2 * (*cik) + 1] += size_t(2); // Lik - 0
-#endif
+      if constexpr (is_complex<T>::value)
+        count[2 * (*cik) + 1] += size_t(2); // Lik - 0
     }
     ++cik;
     ++vik;
@@ -116,15 +113,14 @@ void count_over_cholvec(double cut,
     if (abs(*vki) > cut)
     {
       count[2 * (*cki)] += size_t(2); // Lki + 0
-#if defined(QMC_COMPLEX)
-      count[2 * (*cki) + 1] += size_t(2); // Lki - 0
-#endif
+      if constexpr (is_complex<T>::value)
+        count[2 * (*cki) + 1] += size_t(2); // Lki - 0
     }
     ++cki;
     ++vki;
   }
 }
-
+template<class T>
 void count_over_cholvec(double cut,
                         std::vector<std::size_t>& count,
                         int c0,
@@ -147,16 +143,17 @@ void count_over_cholvec(double cut,
   {
     if (abs(*vi + ma::conj(*vi)) > cut)
       ++count[2 * (*ci)]; // Lii + Lii*
-#if defined(QMC_COMPLEX)
-    if (abs(*vi - ma::conj(*vi)) > cut)
-      ++count[2 * (*ci) + 1]; // Lii - Lii*
-#endif
+    if constexpr (is_complex<T>::value) {
+      if (abs(*vi - ma::conj(*vi)) > cut)
+        ++count[2 * (*ci) + 1]; // Lii - Lii*
+    }
     ++ci;
     ++vi;
   }
 }
 
 // In this case, c0/c1 refer to the ranges in the expanded list of CVs, e.g. 2*n/2*n+1
+template<class T>
 void count_nnz(double cut,
                std::size_t& nik,
                std::size_t& nki,
@@ -195,14 +192,14 @@ void count_nnz(double cut,
         nik++;
         nki++;
       }
-#if defined(QMC_COMPLEX)
-      if (abs(*vik - ma::conj(*vki)) > cut && // Lik - Lki* and Lki - Lik*
-          2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
-      {
-        nik++;
-        nki++;
+      if constexpr (is_complex<T>::value){
+        if (abs(*vik - ma::conj(*vki)) > cut && // Lik - Lki* and Lki - Lik*
+            2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
+        {
+          nik++;
+          nki++;
+        }
       }
-#endif
       ++cik;
       ++vik;
       ++cki;
@@ -210,7 +207,60 @@ void count_nnz(double cut,
     }
     else if (*cik < *cki)
     { // not on the same chol vector, only operate on the smallest
-#if defined(QMC_COMPLEX)
+      if constexpr (is_complex<T>::value) {
+        if (abs(*vik) > cut)
+        {
+          if (2 * (*cik) >= c0 && 2 * (*cik) < c1)
+          {
+            ++nik;
+            ++nki;
+          }
+          if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
+          {
+            ++nik;
+            ++nki;
+          }
+        }
+      } else {
+        if (abs(*vik) > cut && 2 * (*cik) >= c0 && 2 * (*cik) < c1)
+        {
+          ++nik;
+          ++nki;
+        }
+      }
+      ++cik;
+      ++vik;
+    }
+    else
+    {
+      if constexpr (is_complex<T>::value) {
+        if (abs(*vki) > cut)
+        {
+          if (2 * (*cki) >= c0 && 2 * (*cki) < c1)
+          {
+            ++nik;
+            ++nki;
+          }
+          if (2 * (*cki) + 1 >= c0 && 2 * (*cki) + 1 < c1)
+          {
+            ++nik;
+            ++nki;
+          }
+        }
+      } else {
+        if (abs(*vki) > cut && 2 * (*cki) >= c0 && 2 * (*cki) < c1)
+        {
+          ++nik;
+          ++nki;
+        }
+      }
+      ++cki;
+      ++vki;
+    }
+  }
+  while (cik != cik_end)
+  {
+    if constexpr (is_complex<T>::value) {
       if (abs(*vik) > cut)
       {
         if (2 * (*cik) >= c0 && 2 * (*cik) < c1)
@@ -224,19 +274,20 @@ void count_nnz(double cut,
           ++nki;
         }
       }
-#else
+    }
+    else {
       if (abs(*vik) > cut && 2 * (*cik) >= c0 && 2 * (*cik) < c1)
       {
         ++nik;
         ++nki;
       }
-#endif
-      ++cik;
-      ++vik;
     }
-    else
-    {
-#if defined(QMC_COMPLEX)
+    ++cik;
+    ++vik;
+  }
+  while (cki != cki_end)
+  {
+    if constexpr (is_complex<T>::value) {
       if (abs(*vki) > cut)
       {
         if (2 * (*cki) >= c0 && 2 * (*cki) < c1)
@@ -250,71 +301,19 @@ void count_nnz(double cut,
           ++nki;
         }
       }
-#else
+    } else {
       if (abs(*vki) > cut && 2 * (*cki) >= c0 && 2 * (*cki) < c1)
       {
         ++nik;
         ++nki;
       }
-#endif
-      ++cki;
-      ++vki;
     }
-  }
-  while (cik != cik_end)
-  {
-#if defined(QMC_COMPLEX)
-    if (abs(*vik) > cut)
-    {
-      if (2 * (*cik) >= c0 && 2 * (*cik) < c1)
-      {
-        ++nik;
-        ++nki;
-      }
-      if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
-      {
-        ++nik;
-        ++nki;
-      }
-    }
-#else
-    if (abs(*vik) > cut && 2 * (*cik) >= c0 && 2 * (*cik) < c1)
-    {
-      ++nik;
-      ++nki;
-    }
-#endif
-    ++cik;
-    ++vik;
-  }
-  while (cki != cki_end)
-  {
-#if defined(QMC_COMPLEX)
-    if (abs(*vki) > cut)
-    {
-      if (2 * (*cki) >= c0 && 2 * (*cki) < c1)
-      {
-        ++nik;
-        ++nki;
-      }
-      if (2 * (*cki) + 1 >= c0 && 2 * (*cki) + 1 < c1)
-      {
-        ++nik;
-        ++nki;
-      }
-    }
-#else
-    if (abs(*vki) > cut && 2 * (*cki) >= c0 && 2 * (*cki) < c1)
-    {
-      ++nik;
-      ++nki;
-    }
-#endif
     ++cki;
     ++vki;
   }
 }
 
+template<class T>
 void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::reference const& Lii)
 {
   using ma::conj;
@@ -335,15 +334,16 @@ void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::r
   {
     if (abs(*vi + ma::conj(*vi)) > cut && 2 * (*ci) >= c0 && 2 * (*ci) < c1)
       ++ni; // Lii + Lii*
-#if defined(QMC_COMPLEX)
-    if (abs(*vi - ma::conj(*vi)) > cut && 2 * (*ci) + 1 >= c0 && 2 * (*ci) + 1 < c1)
-      ++ni; // Lii - Lii*
-#endif
+    if constexpr (is_complex<T>::value) {
+      if (abs(*vi - ma::conj(*vi)) > cut && 2 * (*ci) + 1 >= c0 && 2 * (*ci) + 1 < c1)
+        ++ni; // Lii - Lii*
+    }
     ++ci;
     ++vi;
   }
 }
 
+template<class T>
 void add_to_vn(SpVType_shm_csr_matrix& vn,
                std::vector<int> const& map_,
                double cut,
@@ -376,20 +376,21 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
       vn.emplace_back({ik, (map_[2 * (*ci)] - c_origin)},
                       static_cast<SPValueType>(half * (*vi + ma::conj(*vi)))); // Lii + Lii*
     }
-#if defined(QMC_COMPLEX)
-    if (abs(*vi - ma::conj(*vi)) > cut && 2 * (*ci) + 1 >= c0 && 2 * (*ci) + 1 < c1)
-    {
-      assert(map_[2 * (*ci) + 1] >= 0);
-      assert(map_[2 * (*ci) + 1] - c_origin < vn.size(1));
-      vn.emplace_back({ik, (map_[2 * (*ci) + 1] - c_origin)},
-                      static_cast<SPValueType>(half * im * (*vi - ma::conj(*vi)))); // Lii - Lii*
+    if constexpr (is_complex<T>::value) {
+      if (abs(*vi - ma::conj(*vi)) > cut && 2 * (*ci) + 1 >= c0 && 2 * (*ci) + 1 < c1)
+      {
+        assert(map_[2 * (*ci) + 1] >= 0);
+        assert(map_[2 * (*ci) + 1] - c_origin < vn.size(1));
+        vn.emplace_back({ik, (map_[2 * (*ci) + 1] - c_origin)},
+                        static_cast<SPValueType>(half * im * (*vi - ma::conj(*vi)))); // Lii - Lii*
+      }
     }
-#endif
     ++ci;
     ++vi;
   }
 }
 
+template<class T>
 void add_to_vn(SpVType_shm_csr_matrix& vn,
                std::vector<int> const& map_,
                double cut,
@@ -437,20 +438,20 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
                           static_cast<SPValueType>(half * (*vki + ma::conj(*vik)))); // Lki + Lik*
         }
       }
-#if defined(QMC_COMPLEX)
-      if (abs(*vik - ma::conj(*vki)) > cut)
-      { // Lik - Lki* and Lki - Lik*
-        if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
-        {
-          assert(map_[2 * (*cik) + 1] >= 0);
-          assert(map_[2 * (*cik) + 1] - c_origin < vn.size(1));
-          vn.emplace_back({ik, (map_[2 * (*cik) + 1] - c_origin)},
-                          static_cast<SPValueType>(half * im * (*vik - ma::conj(*vki)))); // Lik - Lki*
-          vn.emplace_back({ki, (map_[2 * (*cki) + 1] - c_origin)},
-                          static_cast<SPValueType>(half * im * (*vki - ma::conj(*vik)))); // Lki - Lik*
+      if constexpr (is_complex<T>::value) {
+        if (abs(*vik - ma::conj(*vki)) > cut)
+        { // Lik - Lki* and Lki - Lik*
+          if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
+          {
+            assert(map_[2 * (*cik) + 1] >= 0);
+            assert(map_[2 * (*cik) + 1] - c_origin < vn.size(1));
+            vn.emplace_back({ik, (map_[2 * (*cik) + 1] - c_origin)},
+                            static_cast<SPValueType>(half * im * (*vik - ma::conj(*vki)))); // Lik - Lki*
+            vn.emplace_back({ki, (map_[2 * (*cki) + 1] - c_origin)},
+                            static_cast<SPValueType>(half * im * (*vki - ma::conj(*vik)))); // Lki - Lik*
+          }
         }
       }
-#endif
       ++cik;
       ++vik;
       ++cki;
@@ -469,17 +470,17 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
           vn.emplace_back({ki, (map_[2 * (*cik)] - c_origin)},
                           static_cast<SPValueType>(half * ma::conj(*vik))); // Lik + 0
         }
-#if defined(QMC_COMPLEX)
-        if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
-        {
-          assert(map_[2 * (*cik) + 1] >= 0);
-          assert(map_[2 * (*cik) + 1] - c_origin < vn.size(1));
-          vn.emplace_back({ik, (map_[2 * (*cik) + 1] - c_origin)},
-                          static_cast<SPValueType>(half * im * (*vik))); // Lik - 0
-          vn.emplace_back({ki, (map_[2 * (*cik) + 1] - c_origin)},
-                          static_cast<SPValueType>(-half * im * ma::conj(*vik))); // Lik - 0
+        if constexpr (is_complex<T>::value) {
+          if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
+          {
+            assert(map_[2 * (*cik) + 1] >= 0);
+            assert(map_[2 * (*cik) + 1] - c_origin < vn.size(1));
+            vn.emplace_back({ik, (map_[2 * (*cik) + 1] - c_origin)},
+                            static_cast<SPValueType>(half * im * (*vik))); // Lik - 0
+            vn.emplace_back({ki, (map_[2 * (*cik) + 1] - c_origin)},
+                            static_cast<SPValueType>(-half * im * ma::conj(*vik))); // Lik - 0
+          }
         }
-#endif
       }
       ++cik;
       ++vik;
@@ -497,17 +498,17 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
           vn.emplace_back({ki, (map_[2 * (*cki)] - c_origin)},
                           static_cast<SPValueType>(half * (*vki))); // Lki + 0
         }
-#if defined(QMC_COMPLEX)
-        if (2 * (*cki) + 1 >= c0 && 2 * (*cki) + 1 < c1)
-        {
-          assert(map_[2 * (*cki) + 1] >= 0);
-          assert(map_[2 * (*cki) + 1] - c_origin < vn.size(1));
-          vn.emplace_back({ik, (map_[2 * (*cki) + 1] - c_origin)},
-                          static_cast<SPValueType>(-half * im * ma::conj(*vki))); // Lki - 0
-          vn.emplace_back({ki, (map_[2 * (*cki) + 1] - c_origin)},
-                          static_cast<SPValueType>(half * im * (*vki))); // Lki - 0
+        if constexpr (is_complex<T>::value) {
+          if (2 * (*cki) + 1 >= c0 && 2 * (*cki) + 1 < c1)
+          {
+            assert(map_[2 * (*cki) + 1] >= 0);
+            assert(map_[2 * (*cki) + 1] - c_origin < vn.size(1));
+            vn.emplace_back({ik, (map_[2 * (*cki) + 1] - c_origin)},
+                            static_cast<SPValueType>(-half * im * ma::conj(*vki))); // Lki - 0
+            vn.emplace_back({ki, (map_[2 * (*cki) + 1] - c_origin)},
+                            static_cast<SPValueType>(half * im * (*vki))); // Lki - 0
+          }
         }
-#endif
       }
       ++cki;
       ++vki;
@@ -526,17 +527,17 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
         vn.emplace_back({ki, (map_[2 * (*cik)] - c_origin)},
                         static_cast<SPValueType>(half * ma::conj(*vik))); // Lik + 0
       }
-#if defined(QMC_COMPLEX)
-      if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
-      {
-        assert(map_[2 * (*cik) + 1] >= 0);
-        assert(map_[2 * (*cik) + 1] - c_origin < vn.size(1));
-        vn.emplace_back({ik, (map_[2 * (*cik) + 1] - c_origin)},
-                        static_cast<SPValueType>(half * im * (*vik))); // Lik - 0
-        vn.emplace_back({ki, (map_[2 * (*cik) + 1] - c_origin)},
-                        static_cast<SPValueType>(-half * im * ma::conj(*vik))); // Lik - 0
+      if constexpr (is_complex<T>::value) {
+        if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
+        {
+          assert(map_[2 * (*cik) + 1] >= 0);
+          assert(map_[2 * (*cik) + 1] - c_origin < vn.size(1));
+          vn.emplace_back({ik, (map_[2 * (*cik) + 1] - c_origin)},
+                          static_cast<SPValueType>(half * im * (*vik))); // Lik - 0
+          vn.emplace_back({ki, (map_[2 * (*cik) + 1] - c_origin)},
+                          static_cast<SPValueType>(-half * im * ma::conj(*vik))); // Lik - 0
+        }
       }
-#endif
     }
     ++cik;
     ++vik;
@@ -554,17 +555,17 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
         vn.emplace_back({ki, (map_[2 * (*cki)] - c_origin)},
                         static_cast<SPValueType>(half * (*vki))); // Lki + 0
       }
-#if defined(QMC_COMPLEX)
-      if (2 * (*cki) + 1 >= c0 && 2 * (*cki) + 1 < c1)
-      {
-        assert(map_[2 * (*cki) + 1] >= 0);
-        assert(map_[2 * (*cki) + 1] - c_origin < vn.size(1));
-        vn.emplace_back({ik, (map_[2 * (*cki) + 1] - c_origin)},
-                        static_cast<SPValueType>(-half * im * ma::conj(*vki))); // Lki - 0
-        vn.emplace_back({ki, (map_[2 * (*cki) + 1] - c_origin)},
-                        static_cast<SPValueType>(half * im * (*vki))); // Lki - 0
+      if constexpr (is_complex<T>::value) {
+        if (2 * (*cki) + 1 >= c0 && 2 * (*cki) + 1 < c1)
+        {
+          assert(map_[2 * (*cki) + 1] >= 0);
+          assert(map_[2 * (*cki) + 1] - c_origin < vn.size(1));
+          vn.emplace_back({ik, (map_[2 * (*cki) + 1] - c_origin)},
+                          static_cast<SPValueType>(-half * im * ma::conj(*vki))); // Lki - 0
+          vn.emplace_back({ki, (map_[2 * (*cki) + 1] - c_origin)},
+                          static_cast<SPValueType>(half * im * (*vki))); // Lki - 0
+        }
       }
-#endif
     }
     ++cki;
     ++vki;
@@ -572,7 +573,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
 }
 
 } // namespace
-
+template<class T>
 std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO)
 {
   if (TG.getNumberOfTGs() > 1)
@@ -597,15 +598,16 @@ std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVTy
       if (cnt >= ikN)
         break;
       if (i == k)
-        count_over_cholvec(cut, counts, 0, nvecs, V2[i * NMO + k]);
+        count_over_cholvec<T>(cut, counts, 0, nvecs, V2[i * NMO + k]);
       else
-        count_over_cholvec(cut, counts, 0, nvecs, V2[i * NMO + k], V2[k * NMO + i]);
+        count_over_cholvec<T>(cut, counts, 0, nvecs, V2[i * NMO + k], V2[k * NMO + i]);
     }
   TG.Global().all_reduce_in_place_n(counts.begin(), counts.size(), std::plus<>());
 
   return counts;
 }
 
+template<class T>
 std::vector<std::size_t> count_nnz_per_ik(double cut,
                                           TaskGroup_& TG,
                                           SpVType_shm_csr_matrix& V2,
@@ -638,9 +640,9 @@ std::vector<std::size_t> count_nnz_per_ik(double cut,
       if (cnt >= ikN)
         break;
       if (i == k)
-        count_nnz(cut, counts[i * NMO + k], cv0, cvN, V2[i * NMO + k]);
+        count_nnz<T>(cut, counts[i * NMO + k], cv0, cvN, V2[i * NMO + k]);
       else
-        count_nnz(cut, counts[i * NMO + k], counts[k * NMO + i], cv0, cvN, V2[i * NMO + k], V2[k * NMO + i]);
+        count_nnz<T>(cut, counts[i * NMO + k], counts[k * NMO + i], cv0, cvN, V2[i * NMO + k], V2[k * NMO + i]);
     }
   TG.Node().all_reduce_in_place_n(counts.begin(), counts.size(), std::plus<>());
   // if divided over equivalent nodes, reduce over the Core_Equivalent communicator
@@ -649,6 +651,7 @@ std::vector<std::size_t> count_nnz_per_ik(double cut,
   return counts;
 }
 
+template<class T>
 void generateHSPotential(SpVType_shm_csr_matrix& vn,
                          std::vector<int> const& map_,
                          double cut,
@@ -682,9 +685,9 @@ void generateHSPotential(SpVType_shm_csr_matrix& vn,
       if (cnt >= ikN)
         break;
       if (i == k)
-        add_to_vn(vn, map_, cut, i * NMO + k, cv0, cvN, V2[i * NMO + k]);
+        add_to_vn<T>(vn, map_, cut, i * NMO + k, cv0, cvN, V2[i * NMO + k]);
       else
-        add_to_vn(vn, map_, cut, i * NMO + k, k * NMO + i, cv0, cvN, V2[i * NMO + k], V2[k * NMO + i]);
+        add_to_vn<T>(vn, map_, cut, i * NMO + k, k * NMO + i, cv0, cvN, V2[i * NMO + k], V2[k * NMO + i]);
     }
   // if distributed over equivalent nodes, perform communication step here
 

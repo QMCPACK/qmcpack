@@ -58,6 +58,16 @@ using SPValueType = SPRealType;
 using ComplexType   = std::complex<RealType>;
 using SPComplexType = std::complex<SPRealType>;
 
+template <class T>
+struct is_complex : std::false_type {};
+template <>
+struct is_complex<ComplexType> : std::true_type {};
+template <>
+struct is_complex<SPComplexType> : std::true_type {};
+
+{};
+
+
 } // namespace afqmc
 } // namespace qmcplusplus
 
