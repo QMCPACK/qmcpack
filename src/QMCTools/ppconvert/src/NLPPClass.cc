@@ -18,9 +18,10 @@
 #include "XMLWriterClass2.h"
 #include "ParserClass.h"
 #include "ParseCommand.h"
+
+#include <array>
 #include <sstream>
 #include <ctime>
-#include <stdlib.h>
 #include <cstdlib>
 
 void
@@ -1047,9 +1048,10 @@ PseudoClass::ReadBFD_PP (std::string fileName)
   assert (parser.FindToken ("Non-local component:"));
   assert (parser.FindToken ("Proj."));
   for (int l=0; l<numProjectors; l++) {
-    char fname[100];
-    snprintf (fname, 100, "V_%d.dat", l);
-    FILE *fout = fopen (fname, "w");
+    std::array<char, 100> fname;
+    if (std::snprintf(fname.data(), fname.size(), "V_%d.dat", l) < 0)
+      throw std::runtime_error("Error generating filename");
+    FILE* fout = fopen(fname.data(), "w");
     double c0, exp0;
     int power, channel;
     assert (parser.ReadDouble (c0));

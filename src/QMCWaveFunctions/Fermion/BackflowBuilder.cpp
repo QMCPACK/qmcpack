@@ -36,6 +36,8 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Numerics/LinearFit.h"
 
+#include <array>
+
 namespace qmcplusplus
 {
 BackflowBuilder::BackflowBuilder(ParticleSet& els, const PSetMap& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool)
@@ -550,20 +552,18 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace* 
       offsets.push_back(tbfks->numParams);
       if (OHMMS::Controller->rank() == 0)
       {
-        const int max_size{16};
-        char fname[max_size];
-        if (snprintf(fname, max_size, "RPABFee-LR.%s.dat", (spA + spB).c_str()) < 0)
+        std::array<char, 16> fname;
+        if (std::snprintf(fname.data(), fname.size(), "RPABFee-LR.%s.dat", (spA + spB).c_str()) < 0)
           throw std::runtime_error("Error generating filename");
 
-        std::ofstream fout(fname);
+        std::ofstream fout(fname.data());
         fout.setf(std::ios::scientific, std::ios::floatfield);
         fout << "# Backflow longrange  \n";
         for (int i = 0; i < tbfks->NumKShells; i++)
         {
-          fout << std::pow(targetPtcl.getSimulationCell()
-                               .getKLists()
-                               .ksq[targetPtcl.getSimulationCell().getKLists().kshell[i]],
-                           0.5)
+          fout << std::sqrt(targetPtcl.getSimulationCell()
+                                .getKLists()
+                                .ksq[targetPtcl.getSimulationCell().getKLists().kshell[i]])
                << " " << yk[i] << std::endl;
         }
         fout.close();
