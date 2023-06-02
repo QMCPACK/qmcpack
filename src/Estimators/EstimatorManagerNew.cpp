@@ -207,7 +207,8 @@ void EstimatorManagerNew::startDriverRun()
   if (!DebugArchive)
   {
     std::array<char, 128> fname;
-    if (snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank()) < 0)
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_->getName().c_str(),
+                      my_comm_->rank()) < 0)
       throw std::runtime_error("Error generating filename");
     DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);

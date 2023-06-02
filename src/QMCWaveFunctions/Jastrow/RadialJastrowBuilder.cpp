@@ -226,9 +226,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
       if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
       {
-        char fname[32];
-        sprintf(fname, "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(), getGroupID());
-        std::ofstream os(fname);
+        std::array<char, 32> fname;
+        if (std::snprintf(fname.data(), fname.size(), "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(),
+                          getGroupID()) < 0)
+          throw std::runtime_error("Error generating filename");
+        std::ofstream os(fname.data());
         print(*functor, os);
       }
 
@@ -257,12 +259,13 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
   const int numPoints = 1000;
   RealType vol        = targetPtcl.getLattice().Volume;
   int nsp             = targetPtcl.groups();
-  FILE* fout          = 0;
+  FILE* fout          = nullptr;
   if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
   {
-    char fname[16];
-    sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
-    fout = fopen(fname, "w");
+    std::array<char, 16> fname;
+    if (std::snprintf(fname.data(), fname.size(), "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID()) < 0)
+      throw std::runtime_error("Error generating filename");
+    fout = fopen(fname.data(), "w");
   }
   for (int iG = 0; iG < targetPtcl.getSimulationCell().getKLists().ksq.size(); iG++)
   {
@@ -391,15 +394,19 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       app_summary() << std::endl;
       if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
       {
-        char fname[128];
+        std::array<char, 128> fname;
+        int fname_len{0};
         if (speciesB.size())
-          sprintf(fname, "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), speciesB.c_str(),
-                  getGroupID());
+          fname_len = std::snprintf(fname.data(), fname.size(), "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(),
+                                    speciesA.c_str(), speciesB.c_str(), getGroupID());
         else
-          sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
-        std::ofstream os(fname);
-        if (std::is_same<RadFuncType, PadeFunctor<RealType>>::value ||
-            std::is_same<RadFuncType, Pade2ndOrderFunctor<RealType>>::value)
+          fname_len = std::snprintf(fname.data(), fname.size(), "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(),
+                                    speciesA.c_str(), getGroupID());
+        if (fname_len < 0)
+          throw std::runtime_error("Error generating filename");
+        std::ofstream os(std::string(fname.data(), fname_len));
+        if constexpr (std::is_same_v<RadFuncType, PadeFunctor<RealType>> ||
+                      std::is_same_v<RadFuncType, Pade2ndOrderFunctor<RealType>>)
         {
           double plotextent = 10.0;
           print(*functor.get(), os, plotextent);

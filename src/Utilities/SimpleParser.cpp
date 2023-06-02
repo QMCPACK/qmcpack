@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include <iterator>
@@ -178,9 +179,8 @@ int getwords(std::vector<std::string>& slist,std::istream& fpos, const char* fie
 int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* field, const char* terminate)
 {
   slist.clear();
-  const int max = 128;
-  char end_key[max];
-  if (snprintf(end_key, max, "</%s>", field) < 0)
+  std::array<char, 128> end_key;
+  if (std::snprintf(end_key.data(), end_key.size(), "</%s>", field) < 0)
     throw std::runtime_error("Error extract end_key from field.");
 
   std::vector<std::string> vlist;
@@ -188,7 +188,7 @@ int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* fi
   {
     if (getwords(vlist, fpos) == 0)
       continue;
-    if (vlist[0] == terminate || vlist[0] == end_key)
+    if (vlist[0] == terminate || vlist[0] == end_key.data())
       break;
     slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
   };
