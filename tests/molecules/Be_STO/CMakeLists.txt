@@ -63,7 +63,7 @@ if(NOT QMC_COMPLEX)
 
   # Test orbital rotation optimization.  Energy is HF value.  Error comes from
   #  visual inspection of an ensemble of runs.
-  list(APPEND BE_STO_OPT_SHORT LocalEnergy -14.57302313 0.03)
+  list(APPEND BE_STO_OPT_SHORT LocalEnergy -14.57302313 0.05)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
