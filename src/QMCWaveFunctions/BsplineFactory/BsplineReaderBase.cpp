@@ -221,9 +221,9 @@ void BsplineReaderBase::initialize_spo2band(int spin,
     double e  = bigspace[i].Energy;
     int nd    = (bigspace[i].MakeTwoCopies) ? 2 : 1;
     PosType k = mybuilder->PrimCell.k_cart(mybuilder->TwistAngles[ti]);
-    int s_size = snprintf(s.data(), s.size(), "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n", i, ns,
-                          ti, bi, e, k[0], k[1], k[2], mybuilder->TwistAngles[ti][0], mybuilder->TwistAngles[ti][1],
-                          mybuilder->TwistAngles[ti][2], nd);
+    int s_size = std::snprintf(s.data(), s.size(), "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n",
+                               i, ns, ti, bi, e, k[0], k[1], k[2], mybuilder->TwistAngles[ti][0],
+                               mybuilder->TwistAngles[ti][1], mybuilder->TwistAngles[ti][2], nd);
     if (s_size < 0)
       throw std::runtime_error("Error generating bandinfo");
     o << s.data();
