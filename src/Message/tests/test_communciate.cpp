@@ -37,6 +37,18 @@ TEST_CASE("test_communicate_split_one", "[message]")
     REQUIRE(c2->isGroupLeader() == false);
     REQUIRE(c2->getGroupLeaderComm() == nullptr);
   }
+
+  std::string real_name = c->getName();
+
+  std::string name = "myname";
+  c->setName(name);
+  REQUIRE(c->getName() == name);
+
+  std::string other_name = "myothername";
+  c->setName(other_name.data(), other_name.size());
+  REQUIRE(c->getName() == other_name);
+
+  c->setName(real_name);
 }
 
 TEST_CASE("test_communicate_split_two", "[message]")
