@@ -60,12 +60,12 @@ using SPComplexType = std::complex<SPRealType>;
 
 template <class T>
 struct is_complex : std::false_type {};
-template <>
-struct is_complex<ComplexType> : std::true_type {};
-template <>
-struct is_complex<SPComplexType> : std::true_type {};
 
-{};
+template <class T>
+struct is_complex<std::complex<T>> : std::true_type {};
+
+template<class T>
+inline constexpr bool is_complex_v = is_complex<T>::value;
 
 
 } // namespace afqmc

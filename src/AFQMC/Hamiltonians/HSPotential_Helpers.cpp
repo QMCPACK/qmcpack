@@ -18,6 +18,7 @@
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Numerics/detail/utilities.hpp"
+#include "type_traits/QMCMacros.h"
 
 /********************************************************************
 *  You get 2 potentials per Cholesky std::vector
@@ -78,7 +79,7 @@ void count_over_cholvec(double cut,
       if (abs(*vik) > cut)
       {
         count[2 * (*cik)] += size_t(2); // Lik + 0
-        if constexpr (is_complex<T>::value)
+        if constexpr (is_complex_v<T>)
           count[2 * (*cik) + 1] += size_t(2); // Lik - 0
       }
       ++cik;
@@ -89,7 +90,7 @@ void count_over_cholvec(double cut,
       if (abs(*vki) > cut)
       {
         count[2 * (*cki)] += size_t(2); // Lki + 0
-        if constexpr (is_complex<T>::value)
+        if constexpr (is_complex_v<T>)
           count[2 * (*cki) + 1] += size_t(2); // Lki - 0
       }
       ++cki;
@@ -102,7 +103,7 @@ void count_over_cholvec(double cut,
     if (abs(*vik) > cut)
     {
       count[2 * (*cik)] += size_t(2); // Lik + 0
-      if constexpr (is_complex<T>::value)
+      if constexpr (is_complex_v<T>)
         count[2 * (*cik) + 1] += size_t(2); // Lik - 0
     }
     ++cik;
@@ -113,13 +114,24 @@ void count_over_cholvec(double cut,
     if (abs(*vki) > cut)
     {
       count[2 * (*cki)] += size_t(2); // Lki + 0
-      if constexpr (is_complex<T>::value)
+      if constexpr (is_complex_v<T>)
         count[2 * (*cki) + 1] += size_t(2); // Lki - 0
     }
     ++cki;
     ++vki;
   }
 }
+
+#define declare_type(T) \
+  template void count_over_cholvec<T>(double cut, \
+                          std::vector<std::size_t>& count, \
+                          int c0, \
+                          int c1, \
+                          SpVType_shm_csr_matrix::reference const& Lik, \
+                          SpVType_shm_csr_matrix::reference const& Lki);
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
 template<class T>
 void count_over_cholvec(double cut,
                         std::vector<std::size_t>& count,
@@ -143,7 +155,7 @@ void count_over_cholvec(double cut,
   {
     if (abs(*vi + ma::conj(*vi)) > cut)
       ++count[2 * (*ci)]; // Lii + Lii*
-    if constexpr (is_complex<T>::value) {
+    if constexpr (is_complex_v<T>) {
       if (abs(*vi - ma::conj(*vi)) > cut)
         ++count[2 * (*ci) + 1]; // Lii - Lii*
     }
@@ -151,6 +163,16 @@ void count_over_cholvec(double cut,
     ++vi;
   }
 }
+
+#define declare_type(T) \
+  template \
+  void count_over_cholvec<T>(double cut, \
+                          std::vector<std::size_t>& count, \
+                          int c0, \
+                          int c1, \
+                          SpVType_shm_csr_matrix::reference const& Lii);
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
 
 // In this case, c0/c1 refer to the ranges in the expanded list of CVs, e.g. 2*n/2*n+1
 template<class T>
@@ -192,7 +214,7 @@ void count_nnz(double cut,
         nik++;
         nki++;
       }
-      if constexpr (is_complex<T>::value){
+      if constexpr (is_complex_v<T>){
         if (abs(*vik - ma::conj(*vki)) > cut && // Lik - Lki* and Lki - Lik*
             2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
         {
@@ -207,7 +229,7 @@ void count_nnz(double cut,
     }
     else if (*cik < *cki)
     { // not on the same chol vector, only operate on the smallest
-      if constexpr (is_complex<T>::value) {
+      if constexpr (is_complex_v<T>) {
         if (abs(*vik) > cut)
         {
           if (2 * (*cik) >= c0 && 2 * (*cik) < c1)
@@ -233,7 +255,7 @@ void count_nnz(double cut,
     }
     else
     {
-      if constexpr (is_complex<T>::value) {
+      if constexpr (is_complex_v<T>) {
         if (abs(*vki) > cut)
         {
           if (2 * (*cki) >= c0 && 2 * (*cki) < c1)
@@ -260,7 +282,7 @@ void count_nnz(double cut,
   }
   while (cik != cik_end)
   {
-    if constexpr (is_complex<T>::value) {
+    if constexpr (is_complex_v<T>) {
       if (abs(*vik) > cut)
       {
         if (2 * (*cik) >= c0 && 2 * (*cik) < c1)
@@ -287,7 +309,7 @@ void count_nnz(double cut,
   }
   while (cki != cki_end)
   {
-    if constexpr (is_complex<T>::value) {
+    if constexpr (is_complex_v<T>) {
       if (abs(*vki) > cut)
       {
         if (2 * (*cki) >= c0 && 2 * (*cki) < c1)
@@ -313,6 +335,18 @@ void count_nnz(double cut,
   }
 }
 
+#define declare_type(T) \
+  template \
+  void count_nnz<T>(double cut, \
+                std::size_t& nik, \
+                std::size_t& nki, \
+                int c0, \
+                int c1, \
+                SpVType_shm_csr_matrix::reference const& Lik, \
+                SpVType_shm_csr_matrix::reference const& Lki);
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
 template<class T>
 void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::reference const& Lii)
 {
@@ -334,7 +368,7 @@ void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::r
   {
     if (abs(*vi + ma::conj(*vi)) > cut && 2 * (*ci) >= c0 && 2 * (*ci) < c1)
       ++ni; // Lii + Lii*
-    if constexpr (is_complex<T>::value) {
+    if constexpr (is_complex_v<T>) {
       if (abs(*vi - ma::conj(*vi)) > cut && 2 * (*ci) + 1 >= c0 && 2 * (*ci) + 1 < c1)
         ++ni; // Lii - Lii*
     }
@@ -376,7 +410,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
       vn.emplace_back({ik, (map_[2 * (*ci)] - c_origin)},
                       static_cast<SPValueType>(half * (*vi + ma::conj(*vi)))); // Lii + Lii*
     }
-    if constexpr (is_complex<T>::value) {
+    if constexpr (is_complex_v<T>) {
       if (abs(*vi - ma::conj(*vi)) > cut && 2 * (*ci) + 1 >= c0 && 2 * (*ci) + 1 < c1)
       {
         assert(map_[2 * (*ci) + 1] >= 0);
@@ -438,7 +472,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
                           static_cast<SPValueType>(half * (*vki + ma::conj(*vik)))); // Lki + Lik*
         }
       }
-      if constexpr (is_complex<T>::value) {
+      if constexpr (is_complex_v<T>) {
         if (abs(*vik - ma::conj(*vki)) > cut)
         { // Lik - Lki* and Lki - Lik*
           if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
@@ -470,7 +504,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
           vn.emplace_back({ki, (map_[2 * (*cik)] - c_origin)},
                           static_cast<SPValueType>(half * ma::conj(*vik))); // Lik + 0
         }
-        if constexpr (is_complex<T>::value) {
+        if constexpr (is_complex_v<T>) {
           if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
           {
             assert(map_[2 * (*cik) + 1] >= 0);
@@ -498,7 +532,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
           vn.emplace_back({ki, (map_[2 * (*cki)] - c_origin)},
                           static_cast<SPValueType>(half * (*vki))); // Lki + 0
         }
-        if constexpr (is_complex<T>::value) {
+        if constexpr (is_complex_v<T>) {
           if (2 * (*cki) + 1 >= c0 && 2 * (*cki) + 1 < c1)
           {
             assert(map_[2 * (*cki) + 1] >= 0);
@@ -527,7 +561,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
         vn.emplace_back({ki, (map_[2 * (*cik)] - c_origin)},
                         static_cast<SPValueType>(half * ma::conj(*vik))); // Lik + 0
       }
-      if constexpr (is_complex<T>::value) {
+      if constexpr (is_complex_v<T>) {
         if (2 * (*cik) + 1 >= c0 && 2 * (*cik) + 1 < c1)
         {
           assert(map_[2 * (*cik) + 1] >= 0);
@@ -555,7 +589,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn,
         vn.emplace_back({ki, (map_[2 * (*cki)] - c_origin)},
                         static_cast<SPValueType>(half * (*vki))); // Lki + 0
       }
-      if constexpr (is_complex<T>::value) {
+      if constexpr (is_complex_v<T>) {
         if (2 * (*cki) + 1 >= c0 && 2 * (*cki) + 1 < c1)
         {
           assert(map_[2 * (*cki) + 1] >= 0);
@@ -607,6 +641,11 @@ std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVTy
   return counts;
 }
 
+#define declare_type(T) \
+  template std::vector<std::size_t> count_nnz_per_cholvec<T>(double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO);
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
 template<class T>
 std::vector<std::size_t> count_nnz_per_ik(double cut,
                                           TaskGroup_& TG,
@@ -651,6 +690,18 @@ std::vector<std::size_t> count_nnz_per_ik(double cut,
   return counts;
 }
 
+
+#define declare_type(T) \
+  template \
+  std::vector<std::size_t> count_nnz_per_ik<T>(double cut, \
+                                            TaskGroup_& TG, \
+                                            SpVType_shm_csr_matrix& V2, \
+                                            int NMO, \
+                                            int cv0, \
+                                            int cvN);
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
 template<class T>
 void generateHSPotential(SpVType_shm_csr_matrix& vn,
                          std::vector<int> const& map_,
@@ -693,6 +744,18 @@ void generateHSPotential(SpVType_shm_csr_matrix& vn,
 
   TG.node_barrier();
 }
+
+#define declare_type(T) \
+  template void generateHSPotential<T>(SpVType_shm_csr_matrix& vn, \
+                         std::vector<int> const& map_, \
+                         double cut, \
+                         TaskGroup_& TG, \
+                         SpVType_shm_csr_matrix& V2, \
+                         int NMO, \
+                         int cv0, \
+                         int cvN);
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
 
 } // namespace HamHelper
 
