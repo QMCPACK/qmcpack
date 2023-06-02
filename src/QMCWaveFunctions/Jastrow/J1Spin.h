@@ -151,26 +151,10 @@ struct J1Spin : public WaveFunctionComponent
     // if target type is specified J1UniqueFunctors[i*NumTargetGroups + j] is assigned
     assert(target_type < NumTargetGroups);
     if (target_type == -1)
-    {
-      for (int i = 0; i < Nions; i++)
-        for (int j = 0; j < NumTargetGroups; j++)
-        {
-          auto igroup = Ions.getGroupID(i);
-          if (igroup == source_type && J1UniqueFunctors[igroup * NumTargetGroups + j] == nullptr)
-            J1UniqueFunctors[igroup * NumTargetGroups + j] = std::move(afunc);
-        }
-    }
+      throw std::runtime_error(
+          "J1Spin::addFunc is not compatible with spin independent Jastrow factors (target_type == -1");
     else
-    {
-      for (int i = 0; i < Nions; i++)
-        for (int j = 0; j < NumTargetGroups; j++)
-        {
-          auto igroup = Ions.getGroupID(i);
-          if (Ions.getGroupID(i) == source_type && j == target_type &&
-              J1UniqueFunctors[i * NumTargetGroups + j] == nullptr)
-            J1UniqueFunctors[igroup * Nelec + j] = std::move(afunc);
-        }
-    }
+      J1UniqueFunctors[source_type * NumTargetGroups + target_type] = std::move(afunc);
   }
 
   void recompute(const ParticleSet& P) override
