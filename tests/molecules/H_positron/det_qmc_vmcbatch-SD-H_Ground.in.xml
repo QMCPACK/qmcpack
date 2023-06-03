@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="det_qmc_vmcbatch-SD-H_Ground" series="0">
+    <parameter name="driver_version"> batch </parameter>
+  </project>  
+  <random seed="384"/>
+  <qmcsystem>
+    <particleset name="ion0" size="1">
+      <group name="H">
+        <parameter name="charge">1</parameter>
+        <parameter name="valence">1</parameter>
+        <parameter name="atomicnumber">1</parameter>
+      </group>
+      <attrib name="position" datatype="posArray">
+        0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+      </attrib>
+      <attrib name="ionid" datatype="stringArray">
+        H
+      </attrib>
+    </particleset>
+    <particleset name="e" random="yes" randomsrc="ion0">
+      <group name="ue" size="1">
+        <parameter name="charge">-1</parameter>
+      </group>
+      <group name="de" size="1">
+        <parameter name="charge">-1</parameter>
+      </group>
+      <group name="up" size="1">
+        <parameter name="charge">1</parameter>
+      </group>
+    </particleset>
+   </qmcsystem>
+   <wavefunction name="psi0" target="e">
+      <sposet_collection name="PositronOrbital" type="MolecularOrbital" source="ion0" cuspCorrection="yes" href="positron_H_wpos.h5">
+        <basisset name="LCAOBSet_positron" transform="yes" > </basisset>
+        <sposet name="spo2" basisset="LCAOBSet_positron" size="1" >
+          <occupation mode="ground" />
+          <coefficient size="5" spindataset="0" />
+        </sposet>
+      </sposet_collection>
+      <sposet_collection name="ElectronOrbital" type="MolecularOrbital" source="ion0" cuspCorrection="yes" href="electron_H_wpos.h5">
+        <basisset name="LCAOBSet_electron" transform="yes"> </basisset>
+        <sposet name="spo0" basisset="LCAOBSet_electron" size="1" >
+          <occupation mode="ground" />
+          <coefficient size="5" spindataset="0"/>
+        </sposet>
+      </sposet_collection>
+      <determinantset>
+        <slaterdeterminant delay_rank="1">
+          <determinant id="updet" sposet="spo0"/>
+          <determinant id="ddet"  sposet="spo0" />
+          <determinant id="pdet"  sposet="spo2" />
+        </slaterdeterminant>
+     </determinantset>
+   </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+
+   <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="total_walkers"       >    1               </parameter>
+      <parameter name="blocks"              >    3               </parameter>
+      <parameter name="steps"               >    3               </parameter>
+      <parameter name="subSteps"            >    2               </parameter>
+      <parameter name="timestep"            >    0.3             </parameter>
+      <parameter name="warmupSteps"         >    3               </parameter>
+   </qmc>
+
+</simulation>
