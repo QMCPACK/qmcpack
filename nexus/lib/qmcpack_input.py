@@ -4456,14 +4456,19 @@ def generate_particlesets(electrons   = 'e',
     eup  = elns.up_electron
     edn  = elns.down_electron
 
+    particleset_groups = []
+    if eup.count > 0:
+        particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=eup.count))
+    #end if
+    if edn.count > 0:
+        particleset_groups.append(group(name=dname,charge=-1,mass=edn.mass,size=edn.count))
+    #end if
+
     particlesets = []
     eps = particleset(
         name   = ename,
         random = True,
-        groups = [
-            group(name=uname,charge=-1,mass=eup.mass,size=eup.count),
-            group(name=dname,charge=-1,mass=edn.mass,size=edn.count)
-            ]
+        groups = particleset_groups,
         )
     particlesets.append(eps)
     if len(ions)>0:
@@ -4554,8 +4559,14 @@ def generate_sposets(type           = None,
                            sposet(type=type,name=spo_down,spindataset=0,size=ndn)]
             #end if
         else:
-            sposets = [sposet(type=type,name=spo_up,  spindataset=0,size=nup),
-                       sposet(type=type,name=spo_down,spindataset=1,size=ndn)]
+            sposets_list = []
+            if nup > 0:
+                sposets_list.append(sposet(type=type,name=spo_up,  spindataset=0,size=nup))
+            #end if
+            if ndn > 0:
+                sposets_list.append(sposet(type=type,name=spo_down,spindataset=1,size=ndn))
+            #end if
+            sposets = sposets_list
         #end if
         if not spindatasets:
             for spo in sposets:
@@ -4768,22 +4779,30 @@ def generate_determinantset(up             = 'u',
         spo_u = spo_up
         spo_d = spo_down
     #end if
+    determinants_list = []
+    if nup > 0:
+        determinants_list.append(
+            determinant(
+                id     = 'updet',
+                group  = up,
+                sposet = spo_u,
+                size   = nup
+                )
+        )
+    #end if
+    if ndn > 0:
+        determinants_list.append(
+            determinant(
+                id     = 'downdet',
+                group  = down,
+                sposet = spo_d,
+                size   = ndn
+                )
+        )
+    #end if
     dset = determinantset(
         slaterdeterminant = slaterdeterminant(
-            determinants = collection(
-                determinant(
-                    id     = 'updet',
-                    group  = up,
-                    sposet = spo_u,
-                    size   = nup
-                    ),
-                determinant(
-                    id     = 'downdet',
-                    group  = down,
-                    sposet = spo_d,
-                    size   = ndn
-                    )
-                )
+            determinants = collection(*determinants_list)
             )
         )
     if delay_rank is not None:
@@ -4918,6 +4937,27 @@ def generate_determinantset_old(type           = 'bspline',
     if system!=None:
         tilematrix = system.structure.tilematrix()
     #end if
+    nup = elns.up_electron.count
+    ndn = elns.down_electron.count
+    determinants_list = []
+    if nup > 0:
+        determinants_list.append(
+            determinant(
+                id   = 'updet',
+                size = nup,
+                occupation=section(mode='ground',spindataset=0)
+                ),
+        )
+    #end if
+    if ndn > 0:
+        determinants_list.append(
+            determinant(
+                id   = 'downdet',
+                size = ndn,
+                occupation=section(mode='ground',spindataset=down_spin)
+                )
+        )
+    #end if
     dset = determinantset(
         type       = type,
         meshfactor = meshfactor,
@@ -4926,18 +4966,7 @@ def generate_determinantset_old(type           = 'bspline',
         href       = href,
         source     = source,
         slaterdeterminant = slaterdeterminant(
-            determinants = collection(
-                determinant(
-                    id   = 'updet',
-                    size = elns.up_electron.count,
-                    occupation=section(mode='ground',spindataset=0)
-                    ),
-                determinant(
-                    id   = 'downdet',
-                    size = elns.down_electron.count,
-                    occupation=section(mode='ground',spindataset=down_spin)
-                    )
-                )
+            determinants = collection(*determinants_list)
             )
         )
     if twist is not None:
