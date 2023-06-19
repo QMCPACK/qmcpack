@@ -13,7 +13,7 @@
 
 
 #include "AGPDeterminant.h"
-#include "Numerics/DeterminantOperators.h"
+#include "AGPDeterminant.tcc"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/SIMD/simd.hpp"
 
@@ -217,43 +217,6 @@ void AGPDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     //copy current inverse of the determinant
     psiM_temp = psiM;
   }
-}
-
-
-/** return the ratio only for the  iat-th partcle move
- * @param P current configuration
- * @param iat the particle thas is being moved
- */
-AGPDeterminant::PsiValueType AGPDeterminant::ratio(ParticleSet& P, int iat)
-{
-  UpdateMode = ORB_PBYP_RATIO;
-  //GeminalBasis->evaluate(P,iat);
-  GeminalBasis->evaluateForPtclMove(P, iat); //@@
-  //To dune with gemv
-  //BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->y(0), phiT[iat]);
-  //const ValueType* restrict y_ptr=GeminalBasis->y(0);
-  const BasisSetType::ValueType* restrict y_ptr = GeminalBasis->Phi.data(); //@@
-  if (iat < Nup)
-  {
-    for (int d = 0, jat = Nup; d < Ndown; d++, jat++)
-      psiU[d] = simd::dot(y_ptr, phiT[jat], BasisSize);
-    //psiU[d]=BLAS::dot(BasisSize,y_ptr,phiT[jat]);
-    //unpaired block Ndown x unpaired
-    for (int d = Ndown, unpaired = 0; d < Nup; d++, unpaired++)
-      //psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
-      psiU[d] = simd::dot(LambdaUP[unpaired], y_ptr, BasisSize);
-    //curRatio=DetRatio(psiM, psiU.data(),iat);
-    curRatio = DetRatioByRow(psiM, psiU, iat);
-  }
-  else
-  {
-    for (int u = 0; u < Nup; u++)
-      //psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
-      psiD[u] = simd::dot(y_ptr, phiT[u], BasisSize);
-    //curRatio=DetRatioTranspose(psiM, psiD.data(),iat-Nup);
-    curRatio = DetRatioByColumn(psiM, psiD, iat - Nup);
-  }
-  return curRatio;
 }
 
 void AGPDeterminant::ratioUp(ParticleSet& P, int iat)

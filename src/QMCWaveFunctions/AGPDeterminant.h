@@ -57,12 +57,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  /** return the ratio only for the  iat-th partcle move
-   * @param P current configuration
-   * @param iat the particle thas is being moved
-   */
-  PsiValueType ratio(ParticleSet& P, int iat) override;
-
   void ratioUp(ParticleSet& P, int iat);
 
   void ratioDown(ParticleSet& P, int iat);
@@ -181,6 +175,20 @@ public:
   ParticleSet::ParticleLaplacian myL, myL_temp;
 
   void evaluateLogAndStore(const ParticleSet& P);
+
+private:
+#define declare_type(T) \
+  inline void do_ratio(T& value, ParticleSet& P, int iat) final { value = do_ratioT<T>(P, iat); }
+
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
+  /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
+   * @param P active particle set
+   * @param iat particle that has been moved.
+   */
+  template<class T>
+  T do_ratioT(ParticleSet& P, int iat);
 };
 } // namespace qmcplusplus
 #endif
