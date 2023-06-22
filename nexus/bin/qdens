@@ -686,47 +686,61 @@ class StatFile(QDBase):
                     #end for
                 #end for
                 # reblock the data
-                u_data = reblock(spin_density.u.value,equilibration,reblock_factor,self.filepath)
-                d_data = reblock(spin_density.d.value,equilibration,reblock_factor,self.filepath)
+                if hasattr(spin_density, 'u'):
+                    u_data = reblock(spin_density.u.value,equilibration,reblock_factor,self.filepath)
+                #end if
+                if hasattr(spin_density, 'd'):
+                    d_data = reblock(spin_density.d.value,equilibration,reblock_factor,self.filepath)
+                #end if
                 # save the reblocked data
-                spin_density.u.clear()
-                spin_density.u.value = u_data
-                spin_density.d.clear()
-                spin_density.d.value = d_data
+                if hasattr(spin_density, 'u'):
+                    spin_density.u.clear()
+                    spin_density.u.value = u_data
+                #end if
+                if hasattr(spin_density, 'd'):
+                    spin_density.d.clear()
+                    spin_density.d.value = d_data
+                #end if
                 # make the single density means/errors
                 sres = obj()
-                sres.u = SingleDensity(
-                    structure = opt.structure,
-                    grid      = g,
-                    data      = u_data,
-                    extension = '_u',
-                    density_cell   = opt.density_cell,
-                    density_corner = opt.density_corner,
-                    )
-                sres.d = SingleDensity(
-                    structure = opt.structure,
-                    grid      = g,
-                    data      = d_data,
-                    extension = '_d',
-                    density_cell   = opt.density_cell,
-                    density_corner = opt.density_corner,
-                    )
-                sres.tot = SingleDensity(
-                    structure = opt.structure,
-                    grid      = g,
-                    data      = u_data+d_data,
-                    extension = '_u+d',
-                    density_cell   = opt.density_cell,
-                    density_corner = opt.density_corner,
-                    )
-                sres.pol = SingleDensity(
-                    structure = opt.structure,
-                    grid      = g,
-                    data      = u_data-d_data,
-                    extension = '_u-d',
-                    density_cell   = opt.density_cell,
-                    density_corner = opt.density_corner,
-                    )
+                if hasattr(spin_density, 'u'):
+                    sres.u = SingleDensity(
+                        structure = opt.structure,
+                        grid      = g,
+                        data      = u_data,
+                        extension = '_u',
+                        density_cell   = opt.density_cell,
+                        density_corner = opt.density_corner,
+                        )
+                #end if
+                if hasattr(spin_density, 'd'):
+                    sres.d = SingleDensity(
+                        structure = opt.structure,
+                        grid      = g,
+                        data      = d_data,
+                        extension = '_d',
+                        density_cell   = opt.density_cell,
+                        density_corner = opt.density_corner,
+                        )
+                #end if
+                if (hasattr(spin_density, 'u')) and (hasattr(spin_density, 'd')):
+                    sres.tot = SingleDensity(
+                        structure = opt.structure,
+                        grid      = g,
+                        data      = u_data+d_data,
+                        extension = '_u+d',
+                        density_cell   = opt.density_cell,
+                        density_corner = opt.density_corner,
+                        )
+                    sres.pol = SingleDensity(
+                        structure = opt.structure,
+                        grid      = g,
+                        data      = u_data-d_data,
+                        extension = '_u-d',
+                        density_cell   = opt.density_cell,
+                        density_corner = opt.density_corner,
+                        )
+                #end if
                 self.spin_density_results[name] = sres
             #end for
         else:
