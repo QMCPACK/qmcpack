@@ -340,7 +340,6 @@ private:
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
-   * @param det0_list list of reference det value
    * @param table_matrix_list list of table_matrix
    *
    * this is a general implementation. Support abitrary excitation level
@@ -351,15 +350,19 @@ private:
                                SmallMatrixDetCalculator<ValueType>& det_calculator,
                                const OffloadVector<int>& data,
                                const OffloadVector<RealType>& sign,
-                               const OffloadVector<ValueType>& det0_list,
                                const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
                                const RefVector<OffloadVector<ValueType>>& ratios_list) const;
+
+  /** update ratios of the reference deteriminant
+   * @param det0_list list of reference det value
+   */
+  void mw_updateRatios_det0(const OffloadVector<ValueType>& det0_list,
+                            const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
 
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
-   * @param det0_list list of reference det value
    * @param table_matrix_list list of table_matrix
    *
    * this is intended to be customized based on EXT_LEVEL
@@ -369,7 +372,6 @@ private:
                        const size_t data_offset,
                        const OffloadVector<int>& data,
                        const OffloadVector<RealType>& sign,
-                       const OffloadVector<ValueType>& det0_list,
                        const OffloadVector<ValueType*>& table_matrix_deviceptr_list,
                        const size_t num_table_matrix_cols,
                        const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
