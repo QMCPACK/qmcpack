@@ -437,8 +437,6 @@ void test_EtOH_mw(bool transform)
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, P_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
-  //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
-  //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
   sposet->mw_evaluateValue(spo_list, P_list, 0, psi_v_list);
 
