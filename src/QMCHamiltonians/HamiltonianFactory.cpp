@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: John R. Gergely,  University of Illinois at Urbana-Champaign
 //                    Bryan Clark, bclark@Princeton.edu, Princeton University
@@ -49,6 +49,7 @@
 #endif
 #include "QMCHamiltonians/SkPot.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -179,7 +180,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool batched)
     else if (cname == "estimator")
     {
       if (batched)
-        throw std::runtime_error(
+        throw UniformCommunicateError(
             "estimator input nodes are not accepted in hamiltonian input in the batched version of the code!");
 
       if (potType == "flux")
