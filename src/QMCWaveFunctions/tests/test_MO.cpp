@@ -426,7 +426,7 @@ void test_EtOH_mw(bool transform)
   size_t nw = psi_list.size();
   SPOSet::ValueVector psi_v_1(n_mo);
   SPOSet::ValueVector psi_v_2(n_mo);
-  RefVector<SPOSet::ValueVector> psi_v_list   = {psi_v_1, psi_v_2};
+  RefVector<SPOSet::ValueVector> psi_v_list{psi_v_1, psi_v_2};
 
   ResourceCollection pset_res("test_pset_res");
   ResourceCollection spo_res("test_spo_res");

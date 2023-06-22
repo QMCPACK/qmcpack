@@ -222,7 +222,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
                                                        OffloadMWVArray& v)
 {
   for (size_t iw = 0; iw < P_list.size(); iw++)
-    evaluateV(P_list[iw], iat, v.data_at(iw,0));
+    evaluateV(P_list[iw], iat, v.data_at(iw, 0));
 }
 
 template<class COT, typename ORBT>

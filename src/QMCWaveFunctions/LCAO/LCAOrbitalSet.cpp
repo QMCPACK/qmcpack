@@ -27,6 +27,7 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
 
   OffloadMWVGLArray phi_vgl_v;
   // [5][NW][NumAO]
+  OffloadMWVArray phi_v;
   OffloadMWVGLArray basis_mw;
 };
 
@@ -453,8 +454,8 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
     {
       ScopedTimer local(mo_timer_);
       ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
-    // TODO: make class for general blas interface in Platforms
-    // have instance of that class as member of LCAOrbitalSet, call gemm through that
+      // TODO: make class for general blas interface in Platforms
+      // have instance of that class as member of LCAOrbitalSet, call gemm through that
       BLAS::gemm('T', 'N',
                  requested_orb_size,        // MOs
                  spo_list.size() * DIM_VGL, // walkers * DIM_VGL
@@ -470,7 +471,9 @@ void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list
                                      int iat,
                                      const RefVector<ValueVector>& psi_v_list) const
 {
-  OffloadMWVArray phi_v;
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& phi_v      = spo_leader.mw_mem_handle_.getResource().phi_v;
   phi_v.resize(spo_list.size(), OrbitalSetSize);
   mw_evaluateValueImplGEMM(spo_list, P_list, iat, phi_v);
 
@@ -486,8 +489,10 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
                                              int iat,
                                              OffloadMWVArray& psi_v) const
 {
-  const size_t nw = spo_list.size();
-  OffloadMWVArray phi_v;
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  const size_t nw  = spo_list.size();
+  auto& phi_v      = spo_leader.mw_mem_handle_.getResource().phi_v;
   phi_v.resize(nw, BasisSetSize);
 
   myBasisSet->mw_evaluateValue(P_list, iat, phi_v);
@@ -515,7 +520,7 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
                                          const std::vector<const ValueType*>& invRow_ptr_list,
                                          std::vector<std::vector<ValueType>>& ratios_list) const
 {
-  size_t nw = spo_list.size();
+  const size_t nw = spo_list.size();
   for (size_t iw = 0; iw < nw; iw++)
   {
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
