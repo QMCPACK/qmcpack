@@ -446,7 +446,18 @@ bool QMCMain::validateXML()
     }
     else if (cname == "hamiltonian")
     {
-      ham_pool_->put(cur);
+      bool batched;
+      // since driver version is an enum this bool should be set explicitly for each version.
+      switch (my_project_.getDriverVersion())
+      {
+      case ProjectData::DriverVersion::LEGACY:
+        batched = false;
+	break;
+      case ProjectData::DriverVersion::BATCH:
+        batched = true;
+	break;
+      }
+      ham_pool_->put(cur, batched);
     }
     else if (cname == "include")
     {

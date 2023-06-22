@@ -52,7 +52,7 @@ public:
   HamiltonianPool& operator=(HamiltonianPool&&) = delete;
   ~HamiltonianPool();
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur, bool batched);
   bool get(std::ostream& os) const;
   void reset();
 

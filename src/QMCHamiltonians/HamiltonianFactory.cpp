@@ -84,7 +84,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
  *  </hamiltonian>
  * \endxmlonly
  */
-bool HamiltonianFactory::build(xmlNodePtr cur)
+bool HamiltonianFactory::build(xmlNodePtr cur, bool batched)
 {
   if (cur == NULL)
     return false;
@@ -178,6 +178,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
     }
     else if (cname == "estimator")
     {
+      if (batched)
+        throw std::runtime_error(
+            "estimator input nodes are not accepted in hamiltonian input in the batched version of the code!");
+
       if (potType == "flux")
         targetH->addOperator(std::make_unique<ConservedEnergy>(), potName, false);
       else if (potType == "specieskinetic")
@@ -418,9 +422,9 @@ void HamiltonianFactory::renameProperty(std::string& aname)
   }
 }
 
-bool HamiltonianFactory::put(xmlNodePtr cur)
+bool HamiltonianFactory::put(xmlNodePtr cur, bool batched)
 {
-  bool success = build(cur);
+  bool success = build(cur, batched);
   return success;
 }
 
