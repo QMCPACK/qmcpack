@@ -337,7 +337,7 @@ real_t ewaldSum(const RealVec& r, const RealMat& a, real_t tol = 1e-10)
 real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, real_t tol)
 {
   // Timer for EwaldRef
-  ScopedTimer totalEwaldTimer(*timer_manager.createTimer("EwaldRef"));
+  ScopedTimer totalEwaldTimer(createGlobalTimer("EwaldRef"));
 
   // Number of particles
   const size_t N = R.size();
@@ -347,7 +347,7 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
 
   {
     // Sum Madelung contributions
-    ScopedTimer totalMadelungTimer(*timer_manager.createTimer("MadelungSum"));
+    ScopedTimer totalMadelungTimer(createGlobalTimer("MadelungSum"));
     // Maximum self-interaction charge product
     real_t qqmax = 0.0;
     for (size_t i = 0; i < N; ++i)
@@ -363,7 +363,7 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
 
   {
     // Sum the interaction terms for all particle pairs
-    ScopedTimer EwaldSumTimer(*timer_manager.createTimer("EwaldSum"));
+    ScopedTimer EwaldSumTimer(createGlobalTimer("EwaldSum"));
 
 #pragma omp parallel for reduction(+ : ve)
     for (size_t i = 1; i < N / 2 + 1; ++i)

@@ -63,6 +63,7 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
       is_spinor_(false),
       active_ptcl_(-1),
       active_spin_val_(0.0),
+      myTimers(getGlobalTimerManager(), generatePSetTimerNames(myName), timer_level_medium),
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
@@ -70,7 +71,6 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
       coordinates_(createDynamicCoordinates(kind))
 {
   initPropertyList();
-  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
@@ -81,6 +81,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       active_ptcl_(-1),
       active_spin_val_(0.0),
       my_species_(p.getSpeciesSet()),
+      myTimers(getGlobalTimerManager(), generatePSetTimerNames(myName), timer_level_medium),
       myTwist(0.0),
       ParentName(p.parentName()),
       group_offsets_(p.group_offsets_),
@@ -113,7 +114,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
 
   if (p.structure_factor_)
     structure_factor_ = std::make_unique<StructFact>(*p.structure_factor_);
-  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
   myTwist = p.myTwist;
 
   G = p.G;

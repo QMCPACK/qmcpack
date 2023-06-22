@@ -548,7 +548,7 @@ private:
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level
-  TimerList_t WFC_timers_;
+  std::vector<std::reference_wrapper<NewTimer>> WFC_timers_;
   std::vector<RealType> myTwist;
 
   /** @{

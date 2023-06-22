@@ -66,12 +66,11 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixe
       SwapMode(0),
       use_nonblocking_(true),
       debug_disable_branching_(false),
+      my_timers_(getGlobalTimerManager(), WalkerControlTimerNames, timer_level_medium),
       saved_num_walkers_sent_(0)
 {
   num_per_rank_.resize(num_ranks_);
   fair_offset_.resize(num_ranks_ + 1);
-
-  setup_timers(my_timers_, WalkerControlTimerNames, timer_level_medium);
 }
 
 WalkerControl::~WalkerControl() = default;

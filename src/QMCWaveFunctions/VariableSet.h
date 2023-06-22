@@ -98,14 +98,8 @@ struct VariableSet
    */
   inline iterator find(const std::string& vname)
   {
-    iterator it(NameAndValue.begin());
-    while (it != NameAndValue.end())
-    {
-      if ((*it).first == vname)
-        return it;
-      ++it;
-    }
-    return NameAndValue.end();
+    return std::find_if(NameAndValue.begin(), NameAndValue.end(),
+                        [&vname](const auto& value) { return value.first == vname; });
   }
 
   /** return the Index vaule for the named parameter
@@ -193,7 +187,7 @@ struct VariableSet
   /** return the name of i-th variable
    * @param i index
    */
-  inline std::string name(int i) const { return NameAndValue[i].first; }
+  const std::string& name(int i) const { return NameAndValue[i].first; }
 
   /** return the i-th value
    * @param i index

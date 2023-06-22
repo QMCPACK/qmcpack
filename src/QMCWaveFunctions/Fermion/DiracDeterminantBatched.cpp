@@ -63,8 +63,8 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::unique_ptr<SPO
     : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first, last),
       ndelay_(ndelay),
       matrix_inverter_kind_(matrix_inverter_kind),
-      D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
-      H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
+      D2HTimer(createGlobalTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
+      H2DTimer(createGlobalTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
   static_assert(std::is_same<SPOSet::ValueType, typename DET_ENGINE::Value>::value);
   resize(NumPtcls, NumPtcls);

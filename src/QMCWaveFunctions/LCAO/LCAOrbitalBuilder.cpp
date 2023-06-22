@@ -35,6 +35,8 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "CPU/math.hpp"
 
+#include <array>
+
 namespace qmcplusplus
 {
 /** traits for a localized basis set; used by createBasisSet
@@ -673,7 +675,6 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
   int neigs  = spo.getBasisSetSize();
   int setVal = -1;
-  std::string setname;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
   aAttrib.add(neigs, "size");
@@ -686,15 +687,20 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
     Matrix<RealType> Ctemp;
-    char name[72];
+    std::array<char, 72> name;
+
 
     //This is to make sure of Backward compatibility with previous tags.
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
-    setname = name;
+    int name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_", setVal);
+    if (name_len < 0)
+      throw std::runtime_error("Error generating name");
+    std::string setname(name.data(), name_len);
     if (!hin.readEntry(Ctemp, setname))
     {
-      sprintf(name, "%s%d", "/KPTS_0/eigenset_", setVal);
-      setname = name;
+      name_len = std::snprintf(name.data(), name.size(), "%s%d", "/KPTS_0/eigenset_", setVal);
+      if (name_len < 0)
+        throw std::runtime_error("Error generating name");
+      setname = std::string(name.data(), name_len);
       hin.read(Ctemp, setname);
     }
     hin.close();
@@ -886,8 +892,8 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   Matrix<RealType> Creal;
   Matrix<RealType> Ccmplx;
 
-  char name[72];
-  std::string setname;
+  std::array<char, 72> name;
+  int name_len{0};
   ///When running Single Determinant calculations, MO coeff loaded based on occupation and lowest eingenvalue.
   ///However, for solids with multideterminants, orbitals are order by kpoints; first all MOs for kpoint 1, then 2 etc
   /// The multideterminants occupation is specified in the input/HDF5 and theefore as long as there is consistency between
@@ -896,11 +902,13 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   /// the orbitals labelled eigenset_unsorted.
 
   if (MultiDet == false)
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+    name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_", setVal);
   else
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+    name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+  if (name_len < 0)
+    throw std::runtime_error("Error generating name");
 
-  setname = name;
+  std::string setname(name.data(), name_len);
   readRealMatrixFromH5(hin, setname, Creal);
 
   bool IsComplex = true;
@@ -912,7 +920,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   }
   else
   {
-    setname = std::string(name) + "_imag";
+    setname += "_imag";
     readRealMatrixFromH5(hin, setname, Ccmplx);
   }
 
@@ -938,14 +946,18 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
     APP_ABORT(setname.c_str());
   }
 
-  char name[72];
+  std::array<char, 72> name;
+  int name_len{0};
   bool PBC = false;
   hin.read(PBC, "/PBC/PBC");
   if (MultiDet && PBC)
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+    name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
   else
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
-  readRealMatrixFromH5(hin, name, Creal);
+    name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_", setVal);
+  if (name_len < 0)
+    throw std::runtime_error("Error generating name");
+
+  readRealMatrixFromH5(hin, std::string(name.data(), name_len), Creal);
 }
 
 /// Periodic Image Phase Factors computation to be determined

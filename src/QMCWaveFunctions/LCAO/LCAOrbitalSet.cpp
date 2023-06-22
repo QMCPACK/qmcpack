@@ -34,8 +34,8 @@ LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_t
     : SPOSet(my_name),
       BasisSetSize(bs ? bs->getBasisSetSize() : 0),
       Identity(true),
-      basis_timer_(*timer_manager.createTimer("LCAOrbitalSet::Basis", timer_level_fine)),
-      mo_timer_(*timer_manager.createTimer("LCAOrbitalSet::MO", timer_level_fine))
+      basis_timer_(createGlobalTimer("LCAOrbitalSet::Basis", timer_level_fine)),
+      mo_timer_(createGlobalTimer("LCAOrbitalSet::MO", timer_level_fine))
 {
   if (!bs)
     throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
