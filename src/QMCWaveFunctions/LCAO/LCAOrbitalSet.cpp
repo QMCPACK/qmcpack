@@ -25,10 +25,10 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
 
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
 
-  OffloadMWVGLArray phi_vgl_v;
-  // [5][NW][NumAO]
-  OffloadMWVArray phi_v;
-  OffloadMWVGLArray basis_mw;
+  OffloadMWVGLArray phi_vgl_v; // [5][NW][NumMO]
+  OffloadMWVGLArray basis_mw;  // [5][NW][NumAO]
+  OffloadMWVArray phi_v;       // [NW][NumMO]
+  OffloadMWVArray basis_v_mw;  // [NW][NumMO]
 };
 
 LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
@@ -487,30 +487,31 @@ void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list
 void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
                                              const RefVectorWithLeader<ParticleSet>& P_list,
                                              int iat,
-                                             OffloadMWVArray& psi_v) const
+                                             OffloadMWVArray& phi_v) const
 {
   assert(this == &spo_list.getLeader());
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
   const size_t nw  = spo_list.size();
-  auto& phi_v      = spo_leader.mw_mem_handle_.getResource().phi_v;
-  phi_v.resize(nw, BasisSetSize);
+  auto& basis_v_mw = spo_leader.mw_mem_handle_.getResource().basis_v_mw;
+  basis_v_mw.resize(nw, BasisSetSize);
 
-  myBasisSet->mw_evaluateValue(P_list, iat, phi_v);
+  myBasisSet->mw_evaluateValue(P_list, iat, basis_v_mw);
 
   if (Identity)
   {
-    std::copy_n(phi_v.data_at(0, 0), OrbitalSetSize * nw, psi_v.data_at(0, 0));
+    std::copy_n(basis_v_mw.data_at(0, 0), OrbitalSetSize * nw, phi_v.data_at(0, 0));
   }
   else
   {
-    const size_t requested_orb_size = psi_v.size(1);
+    const size_t requested_orb_size = phi_v.size(1);
     assert(requested_orb_size <= OrbitalSetSize);
     ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
     BLAS::gemm('T', 'N',
                requested_orb_size, // MOs
                spo_list.size(),    // walkers
                BasisSetSize,       // AOs
-               1, C_partial_view.data(), BasisSetSize, phi_v.data(), BasisSetSize, 0, psi_v.data(), requested_orb_size);
+               1, C_partial_view.data(), BasisSetSize, basis_v_mw.data(), BasisSetSize, 0, phi_v.data(),
+               requested_orb_size);
   }
 }
 
