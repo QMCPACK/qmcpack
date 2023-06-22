@@ -103,7 +103,6 @@ void SPOSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
     spo_list[iw].evaluateValue(P_list[iw], iat, psi_v_list[iw]);
 }
 
-
 void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVectorWithLeader<ParticleSet>& P_list,
                                     int iat,
