@@ -30,7 +30,6 @@ void InputSection::readAttributes(xmlNodePtr cur,
     // This is due to the <parameter name="parameter_name>  == <parameter_name> tag equivalence :(
     std::string qualified_name{((element_name.size() > 0 && element_name != "parameter") ? (element_name + "::") : "") +
                                name};
-    std::cout << "qualified_name:" << qualified_name << '\n';
 
     // Since parameters don't get a qualified name this will still prevent consumption of any of the do_not_consume attributes from them
     if (std::any_of(do_not_consume.begin(), do_not_consume.end(), [&name](auto& dnc) { return name == dnc; }))
@@ -74,9 +73,6 @@ void InputSection::readXML(xmlNodePtr cur)
   std::string section_name_actual(lowerCase(getXMLAttributeValue(cur, "name")));
   // at anyrate one of these must match the section_name.
   std::string lcase_section_name{lowerCase(section_name)};
-  std::cout << "section_name:" << section_name << "  section_ename: " << section_ename
-            << "  section_method:" << section_method << "  section_type:" << section_type
-            << "   section_name_actual:" << section_name_actual << '\n';
 
   auto checkSectionName = [&section_name = section_name, &section_name_alternates = section_name_alternates](auto& possible_sname){
     std::string lcase_section_name{lowerCase(section_name)};
