@@ -1023,6 +1023,15 @@ class QMCDensityProcessor(QDBase):
                     #end if
                 #end if
             #end if
+            if 'estimators' in qi.simulation:
+                ests = qi.simulation.estimators.estimators
+                est_sources.append(ests)
+            #end if
+            qsys = qi.get('qmcsystem')
+            if qsys is not None and 'estimators' in qsys:
+                ests = qsys.estimators.estimators
+                est_sources.append(ests)            
+            #end if
             calcs = qi.get('calculations')
             if calcs is not None:
                 for series in sorted(calcs.keys()):
