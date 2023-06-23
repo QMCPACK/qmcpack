@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "TWFGrads.hpp"
+#include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -47,15 +48,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
   // diamondC_1x1x1
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0)   = 3.37316115;
-  lattice.R(0, 1)   = 3.37316115;
-  lattice.R(0, 2)   = 0.0;
-  lattice.R(1, 0)   = 0.0;
-  lattice.R(1, 1)   = 3.37316115;
-  lattice.R(1, 2)   = 3.37316115;
-  lattice.R(2, 0)   = 3.37316115;
-  lattice.R(2, 1)   = 0.0;
-  lattice.R(2, 2)   = 3.37316115;
+  lattice.R         = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
   lattice.BoxBConds = {1, 1, 1};
   lattice.reset();
 
@@ -97,10 +90,10 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   ParticleSet elec_clone(elec_);
 
   //diamondC_1x1x1
-  const char* spo_xml = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"2\"/> \
-</tmp> \
-";
+  const char* spo_xml = R"(<tmp> \
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="2"/>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml);
@@ -119,17 +112,18 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   psi.addComponent(std::move(slater_det));
 
-  const char* jas_input = "<tmp> \
-<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
-   <correlation size=\"10\" speciesA=\"u\" speciesB=\"u\"> \
-      <coefficients id=\"uu\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
-   </correlation> \
-</jastrow> \
-</tmp> \
-";
+  const char* jas_input = R"(<tmp>
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+   <correlation size="10" speciesA="u" speciesB="u">
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients>
+   </correlation>
+</jastrow>
+</tmp>
+)";
   Libxml2Document doc_jas;
   okay = doc.parseFromString(jas_input);
   REQUIRE(okay);
@@ -140,16 +134,15 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
-#if !defined(QMC_CUDA)
   // initialize distance tables.
   elec_.update();
   double logpsi = psi.evaluateLog(elec_);
 
   //app_log() << "debug before YYY " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()<< std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi == Approx(-0.1201465271523596));
+  CHECK(logpsi == Approx(-0.1201465271523596));
 #else
-  REQUIRE(logpsi == Approx(-1.471840358291562));
+  CHECK(logpsi == Approx(-1.471840358291562));
 #endif
 
   // make a TrialWaveFunction Clone
@@ -158,9 +151,9 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_clone.update();
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi_clone == Approx(-0.1201465271523596));
+  CHECK(logpsi_clone == Approx(-0.1201465271523596));
 #else
-  REQUIRE(logpsi_clone == Approx(-1.471840358291562));
+  CHECK(logpsi_clone == Approx(-1.471840358291562));
 #endif
 
   const int moved_elec_id = 0;
@@ -191,18 +184,21 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   psi.acceptMove(elec_, moved_elec_id);
   elec_.acceptMove(moved_elec_id);
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(0.4351202455204972));
+  CHECK(psi.getLogPsi() == Approx(0.4351202455204972));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-0.63650297977845492));
+  CHECK(psi.getLogPsi() == Approx(-0.63650297977845492));
 #endif
 
   elec_.update(true);
   psi.evaluateLog(elec_);
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(0.4351202455204972));
+  CHECK(psi.getLogPsi() == Approx(0.4351202455204972));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-0.63650297977845492));
+  CHECK(psi.getLogPsi() == Approx(-0.63650297977845492));
 #endif
+
+  const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
+  REQUIRE(opt_obj_refs.size() == 1);
 
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");
@@ -366,8 +362,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   CHECK(grad_old.grads_positions[1][0] == Approx(14.77249702264));
   CHECK(grad_old.grads_positions[1][1] == Approx(-20.385235323777));
   CHECK(grad_old.grads_positions[1][2] == Approx(4.8529516184558));
-#endif
-
 #endif
 }
 

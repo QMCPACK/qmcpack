@@ -166,6 +166,7 @@ public:
     return static_cast<size_type>(pointers_end_[i] - pointers_begin_[i]);
   }
   auto shape() const { return std::array<size_type, 2>{{size(), size2_}}; }
+  auto sizes() const {return shape();}
   template<typename integer_type = size_type>
   auto size(integer_type d) const
   {
@@ -1150,6 +1151,7 @@ protected:
     auto num_non_zero_elements() const { return size_type(self_.pointers_end_[i_] - self_.pointers_begin_[i_]); }
     auto capacity() const { return self_.capacity(i_); }
     auto shape() const { return std::array<size_type, 1>{{self_.size2_}}; }
+	auto sizes() const {return shape();}
     template<typename integer_type = size_type>
     auto size(integer_type d) const
     {

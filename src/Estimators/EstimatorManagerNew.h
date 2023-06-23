@@ -22,7 +22,6 @@
 #include "OperatorEstBase.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "OhmmsData/HDFAttribIO.h"
 #include "type_traits/template_types.hpp"
 #include "EstimatorManagerInput.h"
 #include <bitset>
@@ -35,6 +34,7 @@ class hdf_archive;
 namespace testing
 {
 class EstimatorManagerNewTest;
+class EstimatorManagerNewTestAccess;
 } // namespace testing
 
 
@@ -275,6 +275,7 @@ private:
 
   friend class EstimatorManagerCrowd;
   friend class qmcplusplus::testing::EstimatorManagerNewTest;
+  friend class qmcplusplus::testing::EstimatorManagerNewTestAccess;
 };
 } // namespace qmcplusplus
 #endif

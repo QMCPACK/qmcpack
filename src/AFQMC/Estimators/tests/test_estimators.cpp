@@ -63,8 +63,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
 
   if (check_hamil_wfn_for_utest("reduced_density_matrix", UTEST_WFN, UTEST_HAMIL))
   {
-    timer_manager.set_timer_threshold(timer_level_coarse);
-    setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
+    getGlobalTimerManager().set_timer_threshold(timer_level_coarse);
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -75,13 +74,13 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-<parameter name=\"filetype\">hdf5</parameter> \
-<parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-</Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
@@ -91,21 +90,21 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
 
     WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
-    const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">closed</parameter>  \
-      <parameter name=\"back_propagation_steps\">10</parameter>  \
-    </WalkerSet> \
-    ";
-    const char* wlk_xml_block_coll   = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">collinear</parameter>  \
-      <parameter name=\"back_propagation_steps\">10</parameter>  \
-    </WalkerSet> \
-    ";
-    const char* wlk_xml_block_noncol = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">noncollinear</parameter>  \
-      <parameter name=\"back_propagation_steps\">10</parameter>  \
-    </WalkerSet> \
-    ";
+    const char* wlk_xml_block_closed = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">closed</parameter>
+      <parameter name="back_propagation_steps">10</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_coll   = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+      <parameter name="back_propagation_steps">10</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_noncol = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">noncollinear</parameter>
+      <parameter name="back_propagation_steps">10</parameter>
+    </WalkerSet>
+    )";
 
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
@@ -113,13 +112,14 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
 
-    std::string wfn_xml = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">" +
-        UTEST_WFN + "</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+    std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">)" +
+        UTEST_WFN + R"(</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </Wavefunction>
+    )";
+
     const char* wfn_xml_block = wfn_xml.c_str();
     auto TG                   = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
@@ -133,9 +133,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     WfnFac.push(wfn_name, doc2.getRoot());
     Wavefunction& wfn = WfnFac.getWavefunction(TG, TG, wfn_name, type, &ham, 1e-6, nwalk);
 
-    const char* propg_xml_block = "<Propagator name=\"prop0\">  \
-</Propagator> \
-";
+    const char* propg_xml_block = R"(<Propagator name="prop0"></Propagator>)";
     Libxml2Document doc5;
     okay = doc5.parseFromString(propg_xml_block);
     REQUIRE(okay);
@@ -146,26 +144,25 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
 
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NMO);
-    REQUIRE(initial_guess.size(2) == NAEA);
+    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(std::get<1>(initial_guess.sizes()) == NMO);
+    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
     using EstimPtr = std::shared_ptr<EstimatorBase>;
     std::vector<EstimPtr> estimators;
-    const char* est_xml_block = "<Estimator name=\"back_propagation\"> \
-      <parameter name=\"nsteps\">1</parameter> \
-      <parameter name=\"block_size\">2</parameter> \
-      <OneRDM> </OneRDM>  \
-      <parameter name=\"path_restoration\">false</parameter> \
-  </Estimator> \
-";
+    const char* est_xml_block = R"(<Estimator name="back_propagation">
+      <parameter name="nsteps">1</parameter>
+      <parameter name="block_size">2</parameter>
+      <OneRDM> </OneRDM>
+      <parameter name="path_restoration">false</parameter>
+    </Estimator>
+    )";
     Libxml2Document doc4;
     okay = doc4.parseFromString(est_xml_block);
     REQUIRE(okay);
     bool impsamp = true;
-    estimators.emplace_back(
-        static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TG, InfoMap["info0"], "none", doc4.getRoot(),
-                                                                        type, wset, wfn, prop, impsamp)));
+    estimators.push_back(std::make_shared<BackPropagatedEstimator>(TG, InfoMap["info0"], "none", doc4.getRoot(), type,
+                                                                   wset, wfn, prop, impsamp));
 
     // generate P1 with dt=0
     prop.generateP1(0.0, wset.getWalkerType());
@@ -215,7 +212,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       ComplexType trace = ComplexType(0.0);
       for (int i = 0; i < NMO; i++)
         trace += BPRDM[i][i];
-      REQUIRE(trace.real() == Approx(NAEA));
+      CHECK(trace.real() == Approx(NAEA));
       boost::multi::array<ComplexType, 2, Allocator> Gw({1, NMO * NMO}, alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
       boost::multi::array_ref<ComplexType, 2, pointer> G(Gw.origin(), {NMO, NMO});
@@ -230,7 +227,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       ComplexType trace = ComplexType(0.0);
       for (int i = 0; i < NMO; i++)
         trace += BPRDM[0][i][i] + BPRDM[1][i][i];
-      REQUIRE(trace.real() == Approx(NAEA + NAEB));
+      CHECK(trace.real() == Approx(NAEA + NAEB));
       boost::multi::array<ComplexType, 2, Allocator> Gw({1, 2 * NMO * NMO}, alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
       boost::multi::array_ref<ComplexType, 3, pointer> G(Gw.origin(), {2, NMO, NMO});

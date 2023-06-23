@@ -84,8 +84,9 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   //*****************************************************************************//
 
   ///default constructor
-  ShortRangeCuspFunctor()
-      : Opt_A(false),
+  ShortRangeCuspFunctor(const std::string& my_name)
+      : OptimizableFunctorBase(my_name),
+        Opt_A(false),
         Opt_R0(true),
         Opt_B(true),
         A(1.0),
@@ -632,19 +633,17 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     active.insertFrom(myVars);
-    //myVars.print(std::cout);
   }
 
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.getIndex(active);
-    //myVars.print(std::cout);
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (myVars.size())
     {

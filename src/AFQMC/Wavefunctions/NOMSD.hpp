@@ -245,15 +245,15 @@ public:
   {
     if (transposed_G_for_vbias_)
     {
-      assert(G.size(0) == v.size(1));
-      assert(G.size(1) == size_of_G_for_vbias());
+      assert(std::get<0>(G.sizes()) == std::get<1>(v.sizes()));
+      assert(std::get<1>(G.sizes()) == size_of_G_for_vbias());
     }
     else
     {
-      assert(G.size(0) == size_of_G_for_vbias());
-      assert(G.size(1) == v.size(1));
+      assert(std::get<0>(G.sizes()) == size_of_G_for_vbias());
+      assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
     }
-    assert(v.size(0) == HamOp.local_number_of_cholesky_vectors());
+    assert(std::get<0>(v.sizes()) == HamOp.local_number_of_cholesky_vectors());
     if (ci.size() == 1)
     {
       // HamOp expects a compact Gc with alpha/beta components
@@ -285,11 +285,11 @@ public:
   template<class MatX, class MatA>
   void vHS(MatX&& X, MatA&& v, double a = 1.0)
   {
-    assert(X.size(0) == HamOp.local_number_of_cholesky_vectors());
+    assert(std::get<0>(X.sizes()) == HamOp.local_number_of_cholesky_vectors());
     if (transposed_vHS_)
-      assert(X.size(1) == v.size(0));
+      assert(std::get<1>(X.sizes()) == std::get<0>(v.sizes()));
     else
-      assert(X.size(1) == v.size(1));
+      assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
     HamOp.vHS(std::forward<MatX>(X), std::forward<MatA>(v), a);
     TG.local_barrier();
   }
@@ -507,8 +507,8 @@ public:
   {
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     int ndet = number_of_references_for_back_propagation();
-    assert(A.size(0) == ndet);
-    if (RefOrbMats.size(0) == 0)
+    assert(A.size() == ndet);
+    if (RefOrbMats.size() == 0)
     {
       TG.Node().barrier(); // for safety
       int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
@@ -538,13 +538,13 @@ public:
       }                    // TG.Node().root()
       TG.Node().barrier(); // for safety
     }
-    assert(RefOrbMats.size(0) == ndet);
-    assert(RefOrbMats.size(1) == A.size(1));
+    assert(std::get<0>(RefOrbMats.sizes()) == ndet);
+    assert(std::get<1>(RefOrbMats.sizes()) == std::get<1>(A.sizes()));
     auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));
     auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));
     using std::copy_n;
     int n0, n1;
-    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(A.size(1)), TG.getNCoresPerTG());
+    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(std::get<1>(A.sizes())), TG.getNCoresPerTG());
     for (int i = 0; i < ndet; i++)
       copy_n(RefOrbMats_[i].origin() + n0, n1 - n0, A_[i].origin() + n0);
     TG.TG_local().barrier();

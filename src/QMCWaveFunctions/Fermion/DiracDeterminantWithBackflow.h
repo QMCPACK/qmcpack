@@ -33,20 +33,14 @@ class BackflowTransformation;
 class DiracDeterminantWithBackflow : public DiracDeterminantBase
 {
 public:
-  using IndexVector = SPOSet::IndexVector;
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
   using GradVector  = SPOSet::GradVector;
   using GradMatrix  = SPOSet::GradMatrix;
   using HessMatrix  = SPOSet::HessMatrix;
   using HessVector  = SPOSet::HessVector;
-  using HessType    = SPOSet::HessType;
-  using GGGType     = SPOSet::GGGType;
-  using GGGVector   = SPOSet::GGGVector;
   using GGGMatrix   = SPOSet::GGGMatrix;
-  using HessArray   = SPOSet::HessArray;
-  //using GradArray_t = Array<GradType,3>      ;
-  //using PosArray_t = Array<PosType,3>       ;
+
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -61,11 +55,13 @@ public:
   DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s)            = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
 
+  std::string getClassName() const override { return "DiracDeterminantWithBackflow"; }
+
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override;
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,

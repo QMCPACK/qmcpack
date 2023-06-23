@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<simulation>
+    <project id="H4-batched-hybrid" series="0">
+         <parameter name="driver_version">batched</parameter>
+     </project>
+  <!--random seed="7819"/-->
+  <!-- input from gaussian converter -->
+  <include href="H4.ptcl.xml"/>
+  <include href="H4.wfs.xml"/>
+
+  <hamiltonian name="h0" type="generic" target="e"> 
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/> 
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
+  </hamiltonian> 
+
+
+  <loop max="9">
+  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+   <parameter name="Minmethod"> hybrid </parameter>
+   
+   <optimizer num_updates="6">
+       <parameter name="blocks">2000</parameter>
+       <parameter name="steps">1</parameter>
+       <parameter name="walkers_per_rank">16</parameter>
+       <parameter name="warmupsteps">1000</parameter>
+       <parameter name="timestep">0.05</parameter>
+       <estimator name="LocalEnergy" hdf5="no"/>
+       <parameter name="Minmethod"> descent </parameter>
+       <parameter name="Stored_Vectors">1</parameter>
+       <parameter name="flavor">RMSprop</parameter>
+       <parameter name="TJF_2Body_eta">.01</parameter>
+       <parameter name="TJF_1Body_eta">.01</parameter>
+       <parameter name="CI_eta">.01</parameter>
+
+       <parameter name="Ramp_eta">no</parameter>
+       <parameter name="Ramp_num">10</parameter>
+   </optimizer>
+
+   <optimizer num_updates="3">
+       <parameter name="blocks">2000</parameter>
+       <parameter name="steps">1</parameter>
+       <parameter name="walkers_per_rank">16</parameter>
+       <parameter name="warmupsteps">1000</parameter>
+       <parameter name="timestep">0.05</parameter>
+       <estimator name="LocalEnergy" hdf5="no"/>
+       <parameter name="Minmethod"> adaptive </parameter>
+       <parameter name="max_relative_cost_change">10.0</parameter>
+       <parameter name="max_param_change">3</parameter>
+       <parameter name="shift_i">0.01</parameter>
+       <parameter name="shift_s">1.00</parameter>
+
+       <parameter name="block_lm">yes</parameter>
+       <parameter name="nblocks">2</parameter>
+       <parameter name="nolds">1</parameter>
+       <parameter name="nkept">5</parameter>
+
+   </optimizer>
+  </qmc>
+</loop>  
+   
+<qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">500</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.05</parameter>
+    <parameter name="useDrift">yes</parameter>
+</qmc>
+
+</simulation>

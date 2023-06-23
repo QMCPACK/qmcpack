@@ -76,12 +76,10 @@ public:
 
   ~MPC() override;
 
+  std::string getClassName() const override { return "MPC"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
-
-  /** implement all-walker stuff */
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override;

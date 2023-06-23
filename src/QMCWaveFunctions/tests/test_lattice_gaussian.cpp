@@ -38,19 +38,19 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
 
   ParticleSet::ParticleLayout lattice;
   // initialize simulationcell for kvectors
-  const char* xmltext = "<tmp> \
-  <simulationcell>\
-     <parameter name=\"lattice\" units=\"bohr\">\
-              6.00000000        0.00000000        0.00000000\
-              0.00000000        6.00000000        0.00000000\
-              0.00000000        0.00000000        6.00000000\
-     </parameter>\
-     <parameter name=\"bconds\">\
-        p p p\
-     </parameter>\
-     <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
-  </simulationcell>\
-</tmp> ";
+  const char* xmltext = R"(<tmp>
+  <simulationcell>
+     <parameter name="lattice" units="bohr">
+              6.00000000        0.00000000        0.00000000
+              0.00000000        6.00000000        0.00000000
+              0.00000000        0.00000000        6.00000000
+     </parameter>
+     <parameter name="bconds">
+        p p p
+     </parameter>
+     <parameter name="LR_dim_cutoff"> 15 </parameter>
+  </simulationcell>
+</tmp>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xmltext);
   REQUIRE(okay);
@@ -69,22 +69,12 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 0.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2, 0});
-  elec.R[0][0] = -0.28;
-  elec.R[0][1] = 0.0225;
-  elec.R[0][2] = -2.709;
-  elec.R[1][0] = -1.08389;
-  elec.R[1][1] = 1.9679;
-  elec.R[1][2] = -0.0128914;
-
+  elec.R[0] = {-0.28, 0.0225, -2.709};
+  elec.R[1] = {-1.08389, 1.9679, -0.0128914};
   std::map<string, const std::unique_ptr<ParticleSet>> pp;
   pp.emplace(ions_ptr->getName(), std::move(ions_ptr));
   pp.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -99,10 +89,10 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // initialize SK
   elec.createSK();
 
-  const char* particles = "<tmp> \
-  <ionwf name=\"ionwf\" source=\"ion\" width=\"0.5 0.5\"/> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+  <ionwf name="ionwf" source="ion" width="0.5 0.5"/>
+</tmp>
+)";
   okay                  = doc.parseFromString(particles);
   REQUIRE(okay);
 
@@ -118,7 +108,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // check initialization. Nope, cannot access Psi.Z
   for (int i = 0; i < 2; i++)
   {
-    REQUIRE(LGP->ParticleAlpha[i] == Approx(alpha));
+    CHECK(LGP->ParticleAlpha[i] == Approx(alpha));
   }
 
   // update all distance tables
@@ -129,6 +119,6 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // check answer
   RealType r2  = Dot(elec.R, elec.R);
   double wfval = std::exp(-alpha * r2);
-  REQUIRE(logpsi == ComplexApprox(std::log(wfval)));
+  CHECK(logpsi == ComplexApprox(std::log(wfval)));
 }
 } // namespace qmcplusplus

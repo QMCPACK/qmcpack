@@ -25,14 +25,18 @@ using Real = QMCT::RealType;
 namespace testing
 {
 
-class Talker
+/** Mock class that collects ListnerVectors as QMCHamiltonian does
+ *   and reports ListenerVectors Hamiltonian operators do when they report per particle values.
+ */
+class MockQMCHamiltonianAndReporter
 {
 private:
   std::vector<ListenerVector<Real>> listener_vectors_;
   const std::string name_{"Talker"};
 
 public:
-  void registerVector(ListenerVector<Real>&& listener_vector) { listener_vectors_.push_back(listener_vector); }
+  /** why move or not move */
+  void registerVector(ListenerVector<Real>&& listener_vector) { listener_vectors_.push_back(std::move(listener_vector)); }
   void reportVector()
   {
     Vector<Real> vec_part(4);
@@ -42,7 +46,7 @@ public:
   }
 };
 
-class TestReceiver
+class MockPerParticleEstimator
 {
 public:
   /** Return listener frunction that has captured an object data member.
@@ -64,14 +68,14 @@ public:
 
 TEST_CASE("ListenerVector", "[hamiltonian]")
 {
-  Talker talker;
-  TestReceiver test_receiver;
+  MockQMCHamiltonianAndReporter mock_ham_report;
+  MockPerParticleEstimator mock_estimator;
 
-  talker.registerVector(test_receiver.makeListener());
+  mock_ham_report.registerVector(mock_estimator.makeListener());
 
-  talker.reportVector();
-  CHECK(test_receiver.receiver_vector_[0] == 0);
-  CHECK(test_receiver.receiver_vector_[3] == 3);
+  mock_ham_report.reportVector();
+  CHECK(mock_estimator.receiver_vector_[0] == 0);
+  CHECK(mock_estimator.receiver_vector_[3] == 3);
 }
 
 } // namespace testing

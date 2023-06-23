@@ -135,10 +135,6 @@ inline void EinsplineMultiEval(multi_UBspline_3d_z* restrict spline,
 }
 
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::resetParameters(const opt_variables_type& active)
-{}
-
-template<typename StorageType>
 void EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
 {
   OrbitalSetSize = norbs;
@@ -450,7 +446,7 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
                                                            int iat,
                                                            RealGradMatrix& dpsi)
 {
-  if (ionDerivs)
+  if (hasIonDerivs())
   {
     // Loop over dimensions
     for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -500,7 +496,7 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
                                                            RealHessMatrix& dgrad_phi,
                                                            RealGradMatrix& dlapl_phi)
 {
-  if (ionDerivs)
+  if (hasIonDerivs())
   {
     std::complex<double> eye(0.0, 1.0);
     // Loop over dimensions
@@ -571,7 +567,7 @@ void EinsplineSetExtended<double>::evaluateGradSource(const ParticleSet& P,
                                                       RealHessMatrix& dgrad_phi,
                                                       RealGradMatrix& dlapl_phi)
 {
-  if (ionDerivs)
+  if (hasIonDerivs())
   {
     // Loop over dimensions
     for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -631,7 +627,7 @@ void EinsplineSetExtended<double>::evaluateGradSource(const ParticleSet& P,
                                                       int iat,
                                                       RealGradMatrix& dpsi)
 {
-  if (ionDerivs)
+  if (hasIonDerivs())
   {
     // Loop over dimensions
     for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -1083,7 +1079,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
     EinsplineTimer.stop();
     //computePhaseFactors(r);
     std::complex<double> eye(0.0, 1.0);
-    for (int j = 0; j < OrbitalSetSize; j++)
+    for (int j = 0; j < psi.cols(); j++)
     {
       std::complex<double> u, laplu;
       TinyVector<std::complex<double>, OHMMS_DIM> gradu;
@@ -1216,7 +1212,14 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
     }
     const std::complex<double> eye(0.0, 1.0);
     const std::complex<double> meye(0.0, -1.0);
-    for (int j = 0; j < NumValenceOrbs; j++)
+
+    // NumValenceOrbs appears to be the same as OrbitalSetSize in some code paths.
+    // In order to handle orbital rotation where OrbitalSetSize is not
+    // the same as the number of columns of psi, OrbitalSetSize was
+    // replaced with the columns of psi in other places.
+    // The minimum is used here just in case NumValenceOrbs might be smaller.
+    size_t loop_bound = NumValenceOrbs < psi.cols() ? NumValenceOrbs : psi.cols();
+    for (int j = 0; j < loop_bound; j++)
     {
       std::complex<double> u(storage_value_vector_[j]);
       TinyVector<std::complex<double>, OHMMS_DIM> gradu(storage_grad_vector_[j]);
@@ -1279,56 +1282,4 @@ std::unique_ptr<SPOSet> EinsplineSetExtended<StorageType>::makeClone() const
 
 template class EinsplineSetExtended<std::complex<double>>;
 template class EinsplineSetExtended<double>;
-
-
-#ifdef QMC_CUDA
-///////////////////////////////
-// Real StorageType versions //
-///////////////////////////////
-template<>
-std::string EinsplineSetHybrid<double>::Type()
-{
-  return "EinsplineSetHybrid<double>";
-}
-
-
-template<typename StorageType>
-std::unique_ptr<SPOSet> EinsplineSetHybrid<StorageType>::makeClone() const
-{
-  auto clone = std::make_unique<EinsplineSetHybrid<StorageType>>(*this);
-  clone->registerTimers();
-  return clone;
-}
-
-
-//////////////////////////////////
-// Complex StorageType versions //
-//////////////////////////////////
-
-
-template<>
-std::string EinsplineSetHybrid<std::complex<double>>::Type()
-{
-  return "EinsplineSetHybrid<std::complex<double> >";
-}
-
-template<>
-EinsplineSetHybrid<double>::EinsplineSetHybrid() : CurrentWalkers(0)
-{
-  className = "EinsplineSeHybrid";
-  for (int i = 0; i < OHMMS_DIM; i++)
-    HalfG[i] = 0;
-}
-
-template<>
-EinsplineSetHybrid<std::complex<double>>::EinsplineSetHybrid() : CurrentWalkers(0)
-{
-  className = "EinsplineSeHybrid";
-  for (int i = 0; i < OHMMS_DIM; i++)
-    HalfG[i] = 0;
-}
-
-template class EinsplineSetHybrid<std::complex<double>>;
-template class EinsplineSetHybrid<double>;
-#endif
 } // namespace qmcplusplus

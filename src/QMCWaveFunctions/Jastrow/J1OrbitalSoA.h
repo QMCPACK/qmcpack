@@ -18,6 +18,7 @@
 #include <map>
 #include <numeric>
 #include "Configuration.h"
+#include <ResourceHandle.h>
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
@@ -101,7 +102,7 @@ class J1OrbitalSoA : public WaveFunctionComponent
   std::vector<GradDerivVec> gradLogPsi;
   std::vector<ValueDerivVec> lapLogPsi;
 
-  std::unique_ptr<J1OrbitalSoAMultiWalkerMem<RealType>> mw_mem_;
+  ResourceHandle<J1OrbitalSoAMultiWalkerMem<RealType>> mw_mem_handle_;
 
   void resizeWFOptVectors()
   {
@@ -195,6 +196,8 @@ public:
 
   ~J1OrbitalSoA();
 
+  std::string getClassName() const override { return "J1OrbitalSoA"; }
+
   /* initialize storage */
   void initialize(const ParticleSet& els)
   {
@@ -221,6 +224,8 @@ public:
     GroupFunctors[source_type]    = afunc.get();
     J1UniqueFunctors[source_type] = std::move(afunc);
   }
+
+  void checkSanity() const override;
 
   const auto& getFunctors() const { return J1Functors; }
 
@@ -299,8 +304,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {
     evaluateDerivativesWF(P, active, dlogpsi);
     bool recalculate(false);
@@ -329,7 +334,7 @@ public:
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override
   {
     resizeWFOptVectors();
     bool recalculate(false);
@@ -501,8 +506,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    auto j1copy         = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp, use_offload_);
-    j1copy->Optimizable = Optimizable;
+    auto j1copy = std::make_unique<J1OrbitalSoA<FT>>(my_name_, Ions, tqp, use_offload_);
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {
       if (J1UniqueFunctors[i] != nullptr)
@@ -517,27 +521,15 @@ public:
   }
 
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
-  void reportStatus(std::ostream& os) override
+  bool isOptimizable() const override { return true; }
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
   {
-    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
-    {
-      if (J1UniqueFunctors[i] != nullptr)
-        J1UniqueFunctors[i]->myVars.print(os);
-    }
+    for (auto& functor : J1UniqueFunctors)
+      if (functor)
+        opt_obj_refs.push_back(*functor);
   }
 
-  void checkInVariables(opt_variables_type& active) override
-  {
-    myVars.clear();
-    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
-    {
-      if (J1UniqueFunctors[i] != nullptr)
-      {
-        J1UniqueFunctors[i]->checkInVariables(active);
-        J1UniqueFunctors[i]->checkInVariables(myVars);
-      }
-    }
-  }
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();
@@ -564,27 +556,11 @@ public:
         }
       }
     }
-    Optimizable = myVars.is_optimizable();
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
       if (J1UniqueFunctors[i] != nullptr)
         J1UniqueFunctors[i]->checkOutVariables(active);
   }
 
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (!Optimizable)
-      return;
-    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
-      if (J1UniqueFunctors[i] != nullptr)
-        J1UniqueFunctors[i]->resetParameters(active);
-
-    for (int i = 0; i < myVars.size(); ++i)
-    {
-      int ii = myVars.Index[i];
-      if (ii >= 0)
-        myVars[i] = active[ii];
-    }
-  }
   /**@} */
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
@@ -615,7 +591,7 @@ public:
       const size_t ns = d_table.sources();
       const size_t nt = VP.getTotalNum();
 
-      const auto& dist_ref = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl);
+      const auto& dist_ref = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl);
 
       for (size_t i = 0; i < ns; ++i)
       {

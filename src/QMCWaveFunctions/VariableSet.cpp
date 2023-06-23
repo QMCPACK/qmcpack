@@ -25,18 +25,6 @@ using std::setw;
 
 namespace optimize
 {
-//   VariableSet::VariableSet(variable_map_type& input):num_active_vars(0)
-//   {
-//     Index.resize(input.size(),-1);
-//     NameAndValue.resize(input.size());
-//     copy(input.begin(),input.end(),NameAndValue.begin());
-//     for(int i=0; i<Index.size(); ++i) Index[i]=i;
-//
-//     ParameterType.resize(0); Recompute.resize(0);
-//     for(int i=0; i<Index.size(); ++i) ParameterType.push_back(index_pair_type(NameAndValue[i].first,0));
-//     for(int i=0; i<Index.size(); ++i) Recompute.push_back(index_pair_type(NameAndValue[i].first,1));
-//   }
-
 void VariableSet::clear()
 {
   num_active_vars = 0;
@@ -45,22 +33,6 @@ void VariableSet::clear()
   Recompute.clear();
   ParameterType.clear();
 }
-
-/** insert name-value pairs  of this object to output
- * @param output parameters to be added
- */
-//   void VariableSet::insertTo(variable_map_type& output) const
-//   {
-//     for(int i=0; i<Index.size(); ++i)
-//     {
-//       if(Index[i]>-1)
-//       {
-//         output[NameAndValue[i].first]=NameAndValue[i].second;
-//         output[Recompute[i].first]=Recompute[i].second;
-//         output[ParameterType[i].first]=ParameterType[i].second;
-//       }
-//     }
-//   }
 
 void VariableSet::insertFrom(const VariableSet& input)
 {
@@ -160,34 +132,6 @@ void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& 
   num_active_vars = input_1.num_active_vars;
 }
 
-void VariableSet::activate(const variable_map_type& selected)
-{
-  //activate the variables
-  variable_map_type::const_iterator it(selected.begin()), it_end(selected.end());
-  while (it != it_end)
-  {
-    iterator loc = find((*it++).first);
-    if (loc != NameAndValue.end())
-    {
-      int i = loc - NameAndValue.begin();
-      if (Index[i] < 0)
-        Index[i] = num_active_vars++;
-    }
-  }
-}
-
-void VariableSet::disable(const variable_map_type& selected)
-{
-  variable_map_type::const_iterator it(selected.begin()), it_end(selected.end());
-  while (it != it_end)
-  {
-    int loc = find((*it++).first) - NameAndValue.begin();
-    if (loc < NameAndValue.size())
-      Index[loc] = -1;
-  }
-}
-
-
 void VariableSet::removeInactive()
 {
   std::vector<int> valid(Index);
@@ -221,6 +165,7 @@ void VariableSet::resetIndex()
 
 void VariableSet::getIndex(const VariableSet& selected)
 {
+  num_active_vars = 0;
   for (int i = 0; i < NameAndValue.size(); ++i)
   {
     Index[i] = selected.getIndex(NameAndValue[i].first);
@@ -229,10 +174,22 @@ void VariableSet::getIndex(const VariableSet& selected)
   }
 }
 
-void VariableSet::setDefaults(bool optimize_all)
+int VariableSet::getIndex(const std::string& vname) const
+{
+  int loc = 0;
+  while (loc != NameAndValue.size())
+  {
+    if (NameAndValue[loc].first == vname)
+      return Index[loc];
+    ++loc;
+  }
+  return -1;
+}
+
+void VariableSet::setIndexDefault()
 {
   for (int i = 0; i < Index.size(); ++i)
-    Index[i] = optimize_all ? i : -1;
+    Index[i] = i;
 }
 
 void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) const
@@ -287,17 +244,20 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
   }
 }
 
-void VariableSet::saveAsHDF(const std::string& filename) const
+void VariableSet::writeToHDF(const std::string& filename, qmcplusplus::hdf_archive& hout) const
 {
-  qmcplusplus::hdf_archive hout;
   hout.create(filename);
-  std::vector<int> vp_file_version{1, 0, 0};
+
+  // File Versioning
+  // 1.0.0  Initial file version
+  // 1.1.0  Files could have object-specific data from OptimizableObject::read/writeVariationalParameters
+  std::vector<int> vp_file_version{1, 1, 0};
   hout.write(vp_file_version, "version");
 
   std::string timestamp(getDateAndTime("%Y-%m-%d %H:%M:%S %Z"));
   hout.write(timestamp, "timestamp");
 
-  hid_t grp = hout.push("name_value_lists");
+  hout.push("name_value_lists");
 
   std::vector<qmcplusplus::QMCTraits::ValueType> param_values;
   std::vector<std::string> param_names;
@@ -312,9 +272,8 @@ void VariableSet::saveAsHDF(const std::string& filename) const
   hout.pop();
 }
 
-void VariableSet::readFromHDF(const std::string& filename)
+void VariableSet::readFromHDF(const std::string& filename, qmcplusplus::hdf_archive& hin)
 {
-  qmcplusplus::hdf_archive hin;
   if (!hin.open(filename, H5F_ACC_RDONLY))
   {
     std::ostringstream err_msg;
@@ -322,8 +281,11 @@ void VariableSet::readFromHDF(const std::string& filename)
     throw std::runtime_error(err_msg.str());
   }
 
-  hid_t grp = hin.push("name_value_lists", false);
-  if (grp < 0)
+  try
+  {
+    hin.push("name_value_lists", false);
+  }
+  catch (std::runtime_error&)
   {
     std::ostringstream err_msg;
     err_msg << "The group name_value_lists in not present in file: " << filename;
@@ -344,6 +306,8 @@ void VariableSet::readFromHDF(const std::string& filename)
     if (find(vp_name) != end())
       (*this)[vp_name] = param_values[i];
   }
+
+  hin.pop();
 }
 
 

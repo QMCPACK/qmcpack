@@ -20,14 +20,11 @@ namespace qmcplusplus
 class ConstantOrbital : public WaveFunctionComponent
 {
 public:
-  void checkInVariables(opt_variables_type& active) override {}
-  void checkOutVariables(const opt_variables_type& active) override {}
-  void resetParameters(const opt_variables_type& active) override {}
-  void reportStatus(std::ostream& os) override {}
-
   PsiValueType FakeGradRatio;
 
-  ConstantOrbital() : WaveFunctionComponent("ConstantOrbital"), FakeGradRatio(1.0) {}
+  ConstantOrbital() : FakeGradRatio(1.0) {}
+
+  std::string getClassName() const override { return "ConstantOrbital"; }
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
@@ -61,8 +58,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 };
 

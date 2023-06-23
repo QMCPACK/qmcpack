@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # Installs compilers & libraries for QMCPACK testing via SPACK 
 #
@@ -13,16 +12,21 @@
 #[url "https://"]
 #	insteadOf = git://
 
-echo --- START setup script `date`
-
+echo --- START initial setup `date`
+# Bug avoidance 20230404
+if [ -e /opt/rocm-*/bin/rocminfo ]; then
+    echo Spack LLVM16 installation will fail with ROCm present
+    echo Suggest temporarily: sudo chmod og-rx /opt/rocm-*
+    exit 1
+fi
 # Bug avoidance 20200902
 #if [ -e /usr/lib/aomp/bin/clang ]; then
-#    echo AOMP Clang install detected. This will break llvm install.
+#    echo AOMP Clang install detected. This will break LLVM install.
 #    echo Suggest temporarily: sudo chmod og-rx /usr/lib/aomp
 #    exit 1
 #fi
 
-
+here=`pwd`
 if [ -e `dirname "$0"`/ornl_versions.sh ]; then
     echo --- Contents of ornl_versions.sh
     cat `dirname "$0"`/ornl_versions.sh
@@ -63,7 +67,7 @@ mkdir $HOME/.spack
 # Setup build multiplicity and preferred directories for spack
 # Choose the fastest filesytem. Don't abuse shared nodes.
 case "$ourhostname" in
-    nitrogen )
+    nitrogen2 )
 	cat >$HOME/.spack/config.yaml<<EOF
 config:
 
@@ -71,7 +75,8 @@ config:
     - /scratch/$USER/spack_build_stage
     - /home/$USER/apps/spack/var/spack/stage
 
-  build_jobs: 128
+  build_jobs: 96
+  connect_timeout: 120
 
 EOF
 # Use flash /scratch for builds
@@ -83,18 +88,36 @@ EOF
 packages:
     openssl:
         externals:
-        - spec: openssl@1.1.1g
+        - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
 EOF
-#	cat >>$HOME/.spack/packages.yaml<<EOF
-#packages:
-#EOF
-# Experiment to See if clang builds and other problems clear 20200827
-#	cat >>$HOME/.spack/packages.yaml<<EOF
-#    all:
-#        target: [x86_64]
-#EOF
+;;
+    nitrogen )
+	cat >$HOME/.spack/config.yaml<<EOF
+config:
+
+  build_stage:
+    - /scratch/$USER/spack_build_stage
+    - /home/$USER/apps/spack/var/spack/stage
+
+  build_jobs: 128
+  connect_timeout: 120
+
+EOF
+# Use flash /scratch for builds
+	rm -r -f /scratch/$USER/spack_build_stage
+	mkdir /scratch/$USER/spack_build_stage
+
+	#Use system installed SSL. See https://spack.readthedocs.io/en/latest/getting_started.html#openssl
+	cat >>$HOME/.spack/packages.yaml<<EOF
+packages:
+    openssl:
+        externals:
+        - spec: openssl@1.1.1k
+          prefix: /usr
+          buildable: False
+EOF
 ;;
     sulfur )
 	cat >$HOME/.spack/config.yaml<<EOF
@@ -105,89 +128,78 @@ config:
     - /home/$USER/apps/spack/var/spack/stage
 
   build_jobs: 96
+  connect_timeout: 120
 
 EOF
-#  concretizer: clingo
 # Use flash /scratch for builds
 	rm -r -f /scratch/$USER/spack_build_stage
 	mkdir /scratch/$USER/spack_build_stage
+
 	#Use system installed SSL. See https://spack.readthedocs.io/en/latest/getting_started.html#openssl
-	#Use system RHEL gcc8 compiler for cmake to solve bootstrap problems
 	cat >>$HOME/.spack/packages.yaml<<EOF
 packages:
     openssl:
         externals:
-        - spec: openssl@1.1.1g
+        - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
 EOF
-# Workaround cmake bootstrap error with old versions/old spack compilers. e.g.
-# spack install cmake@3.13.2%gcc@8.3.0 failure but spack install cmake@3.13.2%gcc@8.3.1 OK (RHEL compiler)	
-#        cat >>$HOME/.spack/packages.yaml<<EOF
-#    cmake:
-#        compiler: [gcc@8.4.1]
-#EOF
-#    boost:
-#        compiler: [gcc@8.3.1]
-#    perl:
-#        compiler: [gcc@8.3.1]
-# Workaround linux-rhel8-cascadelake problem on sulfur for GCC in spack circa 202006
-#	cat >>$HOME/.spack/packages.yaml<<EOF
-#packages:
-#  all:
-#    target: [skylake_avx512]
-#EOF
-
-# Workaround build error of perl%gcc@installed_by_spack	. perl-data-dumper & perl are e.g. an LLVM build dep
-# dnf install perl-data-dumper if missing
-#	cat >>$HOME/.spack/packages.yaml<<EOF
-#    perl:
-#        externals:
-#        - spec: perl@5.26.3
-#          prefix: /
-#          buildable: False
-#    perl-data-dumper:
-#        externals:
-#        - spec: perl-data-dumper@2.167.399
-#          prefix: /
-#          buildable: False
-#EOF
-#	cat >>$HOME/.spack/packages.yaml<<EOF
-#    all:
-#        target: [x86_64]
-#EOF
 	;;
     *)
 	echo "*** WARNING: Unknown host in initial ourhostname case statement. No custom onfiguration"
 	;;
 esac
 
+cat >$HOME/.spack/modules.yaml<<EOF
+modules:
+  prefix_inspections::
+    bin:
+    - PATH
+    man:
+    - MANPATH
+    share/man:
+    - MANPATH
+    share/aclocal:
+    - ACLOCAL_PATH
+    lib/pkgconfig:
+    - PKG_CONFIG_PATH
+    lib64/pkgconfig:
+    - PKG_CONFIG_PATH
+    share/pkgconfig:
+    - PKG_CONFIG_PATH
+    '':
+    - CMAKE_PREFIX_PATH
+EOF
 
+#cat >$HOME/.spack/spack.yaml<<EOF
+#spack:
+#  concretization:
+#    unify:  true
+#EOF
+cat >$HOME/.spack/spack.yaml<<EOF
+spack:
+  concretization:
+    unify:  when_possible
+EOF
 
 if [ ! -e $HOME/apps ]; then
 mkdir $HOME/apps
 fi
 
 cd $HOME/apps
-#DEBUG git clone --depth 1 https://github.com/spack/spack.git 
-git clone https://github.com/spack/spack.git 
+
+git clone https://github.com/spack/spack.git
 
 cd $HOME/apps/spack
+
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-#commit 3c6050d3a20e1d4f76c553780fb93d897b2112b9 (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Hadrien G <grasland@lal.in2p3.fr>
-#Date:   Tue Aug 31 16:44:01 2021 +0200
-#
-#acts: add v12.0.0, v12.0.1 (#25697)
-#git checkout 3c6050d3a20e1d4f76c553780fb93d897b2112b9
-
-git checkout bb29c5d6744a227c6169aafa2a79d36a51de85b6
-#commit bb29c5d6744a227c6169aafa2a79d36a51de85b6 (HEAD -> develop, origin/develop, origin/HEAD)
+git checkout 6edfc070926f7934eda5882de20ac3fb193e310a
+#commit 6edfc070926f7934eda5882de20ac3fb193e310a (HEAD -> develop, origin/develop, origin/HEAD)
 #Author: Alec Scott <hi@alecbcs.com>
-#Date:   Thu Sep 16 11:08:15 2021 -0700
+#Date:   Mon Apr 24 12:04:31 2023 -0700
 #
-#    Add v7.0.2 to Admixtools (#25997)
+#    megadock: add v4.1.1 (#37154)
 
 echo --- Git version and last log entry
 git log -1
@@ -196,19 +208,29 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 
 cd bin
 
+# Consider using a GCC toolset on Red Hat systems to use
+# recent compilers with better architecture support.
+# e.g. dnf install gcc-toolset-11
+#if [ -e /opt/rh/gcc-toolset-11/root/bin/gcc ]; then
+#    echo --- Added gcc-toolset-11 to path for RHEL provided GCC11 compilers
+#    export PATH=/opt/rh/gcc-toolset-11/root/bin/:$PATH
+#fi
+#else
+#if [ -e /opt/rh/gcc-toolset-10/root/bin/gcc ]; then
+#    echo --- Added gcc-toolset-10 to path for RHEL provided GCC10 compilers
+#    export PATH=/opt/rh/gcc-toolset-10/root/bin/:$PATH
+#fi
+#fi
+
 export DISPLAY="" 
 export SPACK_ROOT=$HOME/apps/spack
 export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
+echo --- Bootstrap
+spack bootstrap now
 
-## IMPORTANT: Install+Use a GCC toolset on Red Hat systems to use
-## recent compilers with better architecture support.
-## e.g. yum install gcc-toolset-9
-#if [ -e /opt/rh/gcc-toolset-9/root/bin/gcc ]; then
-#    echo --- Added gcc-toolset-9 to path for RHEL provided GCC9 compilers
-#    export PATH=/opt/rh/gcc-toolset-9/root/bin/:$PATH
-#fi
-
+#echo --- Changing RMGDFT boost dependency
+sed -i 's/^ .* depends.*boost@1.61.*//g' $HOME/apps/spack/var/spack/repos/builtin/packages/rmgdft/package.py
 echo --- Spack list
 spack find
 echo --- Spack compilers
@@ -221,175 +243,77 @@ echo --- Modules list
 module list
 echo --- End listings
 
-
-echo --- START `date`
-#echo --- SPACK HACK: diffutils iconv dependency workaround
-#sed -i 's/.*depends_on.*iconv.*//g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/diffutils/package.py
-#echo --- SPACK HACK: Add new util-linux-uuid
-#sed -i "16 a \    version('2.36.1', sha256='37de03dbb98cdeffdf9e754122b0aca2a9bbdc19769f6570dfcb6f123643bf53')" ${SPACK_ROOT}/var/spack/repos/builtin/packages/util-linux-uuid/package.py
-#echo --- SPACK HACK: https for gcc git
-#sed -i 's/git:/https:/g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/gcc/package.py
-echo --- gcc@${gcc_vnew}
+echo --- gcc@${gcc_vnew} `date`
 spack install gcc@${gcc_vnew}
 echo --- load gcc@${gcc_vnew}
 spack load gcc@${gcc_vnew}
 module list
 spack compiler find
-echo --- Convenience
-spack install git
-echo --- gcc@${gcc_vnew} consumers
-spack install cmake@${cmake_vnew}
-spack install libxml2@${libxml2_v}%gcc@${gcc_vnew}
-#spack install boost@${boost_vnew}%gcc@${gcc_vnew}
-spack install boost@${boost_vnew}
-spack install util-linux-uuid%gcc@${gcc_vnew}
-spack install python@${python_version}%gcc@${gcc_vnew} # Needed by libflame, good safety measure
-spack load python@${python_version}%gcc@${gcc_vnew}
-spack install openmpi@${ompi_vnew}%gcc@${gcc_vnew} ^libxml2@${libxml2_v}%gcc@${gcc_vnew}
-#spack HDF5 package requires fortran and hl (high level) support to be specifically enabled for use with QE
-spack install hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl -mpi #Avoid MPI otherwise nompi build can break
-spack install fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-#spack install perl%gcc@${gcc_vnew} # Kludge for broken deps
-spack install ninja
-spack unload python@${python_version}%gcc@${gcc_vnew}
 spack unload gcc@${gcc_vnew}
-echo --- gcc@${gcc_vold}
+echo --- gcc@${gcc_vold}  `date`
 spack install gcc@${gcc_vold}
 echo --- load gcc@${gcc_vold}
 spack load gcc@${gcc_vold}
 module list
 spack compiler find
 spack unload gcc@${gcc_vold}
-echo --- gcc@${gcc_vold} consumers
-#spack install cmake@${cmake_vold}%gcc@${gcc_vold}
-spack install cmake@${cmake_vold} # Some old cmakes do not bootstrap with old gcc
-spack install --no-checksum libxml2@${libxml2_v}%gcc@${gcc_vold}
-spack install boost@${boost_vold}%gcc@${gcc_vold}
-#spack install boost@${boost_vold}
-spack install util-linux-uuid%gcc@${gcc_vold}
-spack install python@${python_version}%gcc@${gcc_vold}
-spack load python@${python_version}%gcc@${gcc_vold}
-#spack install --no-checksum libxml2@${libxml2_v}%gcc@${gcc_vold}
-#spack install openmpi@${ompi_vold}%gcc@${gcc_vold} ^libxml2@${libxml2_v}%gcc@${gcc_vold}
-#spack install openmpi@${ompi_vold} ^libxml2@${libxml2_v}%gcc@${gcc_vold}
-spack install openmpi@${ompi_vold} ^libxml2@${libxml2_v}%gcc@${gcc_vold}
-#spack HDF5 package requires fortran and hl (high level) support to be specifically enabled for use with QE
-spack install hdf5@${hdf5_vold}%gcc@${gcc_vold} +fortran +hl -mpi #Avoid MPI otherwise nompi build can break
-spack install fftw@${fftw_vold}%gcc@${gcc_vold} -mpi #Avoid MPI for simplicity
-spack unload python@${python_version}%gcc@${gcc_vold}
-echo --- gcc@${gcc_vcuda}
-spack install gcc@${gcc_vcuda}
-spack load gcc@${gcc_vcuda}
-spack compiler find
-spack unload gcc@${gcc_vcuda}
+#echo --- gcc@master
+#spack install gcc@master
+#echo --- load gcc@master
+#spack load gcc@master
+#module list
+#spack compiler find
+#spack unload gcc@master
+#echo --- gcc@${gcc_vcuda}
+#spack install gcc@${gcc_vcuda}
+#spack load gcc@${gcc_vcuda}
+#spack compiler find
+#spack unload gcc@${gcc_vcuda}
 if [ "$ourplatform" == "Intel" ]; then
-echo --- gcc@${gcc_vintel}
+echo --- gcc@${gcc_vintel}  `date`
 spack install gcc@${gcc_vintel}
 spack load gcc@${gcc_vintel}
 spack compiler find
 spack unload gcc@${gcc_vintel}
 fi
-echo --- gcc@${gcc_vpgi}
-spack install gcc@${gcc_vpgi}
-spack load gcc@${gcc_vpgi}
+echo --- gcc@${gcc_vnvhpc}  `date`
+spack install gcc@${gcc_vnvhpc}
+spack load gcc@${gcc_vnvhpc}
 spack compiler find
-spack unload gcc@${gcc_vpgi}
-echo --- llvm@${llvm_vnew}
-spack install llvm@${llvm_vnew} ^python@${python_version}%gcc@${gcc_vnew}
+spack unload gcc@${gcc_vnvhpc}
+echo --- llvm@${llvm_vnew}  `date`
+spack install llvm@${llvm_vnew}
 spack load llvm@${llvm_vnew}
 spack compiler find
 spack unload llvm@${llvm_vnew}
-#echo --- llvm@${llvm_vold}
-#spack install --no-checksum llvm@${llvm_vold}%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold}
-#spack load llvm@${llvm_vold}%gcc@$gcc_vold
+#echo --- llvm@main
+#spack install llvm@main +cuda cuda_arch=70
+#spack load llvm@main
 #spack compiler find
-#spack unload llvm@${llvm_vold}%gcc@$gcc_vold
-#echo --- llvm@${llvm_vcuda}
-#spack install llvm@${llvm_vcuda} ^python@${python_version}%gcc@${gcc_vnew}
-#spack load llvm@${llvm_vcuda}
-#spack compiler find
-#spack unload llvm@${llvm_vcuda}
-echo --- BLAS+LAPACK
-# Additional development required here due to only partial AMD Rome coverage and
-# spack support for optimized BLAS and LAPACK, problems building libflame etc.
-#spack install blis%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
-#if [ "$ourplatform" == "AMD" ]; then
-#    spack install amdblis%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
-#fi
+#spack unload llvm@main
+#echo --- Cleanup
+#spack gc --yes-to-all
+echo --- gcc@${gcc_vllvmoffload} for offload  `date`
+spack install gcc@${gcc_vllvmoffload}
+spack load gcc@${gcc_vllvmoffload}
+spack compiler find
+spack unload gcc@${gcc_vllvmoffload}
 
-## Spack has no amdlibflame package for LAPACK
-## libflame builds fail 20200326 with SHA-1 collisions
-##spack install libflame%gcc@${gcc_vnew} ^blis%gcc@${gcc_vnew} # Needs env python to work to build. Python is loaded above.
-#spack install netlib-lapack%gcc@${gcc_vnew} # Netlib failback
-##spack install openblas%gcc@${gcc_vnew} # Historically crashed in Performance tests with large thread counts on AMD
+echo --- llvm@${llvm_voffload} for offload  `date`
+spack install gcc@${gcc_vllvmoffload}
+spack install cuda@${cuda_voffload} +allow-unsupported-compilers
+spack install llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} ~libcxx +compiler-rt ~lldb ~gold ~omp_as_runtime targets=all
+spack load llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload}
+spack compiler find
+spack unload llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload}
 
-#spack install openblas%gcc@${gcc_vnew} threads=openmp
-#spack install openblas%gcc@${gcc_vold} threads=openmp
-spack install openblas threads=openmp
-echo --- CUDA
-spack install cuda # Will be used by llvm@main+cuda
-echo --- Modules installed so far
-spack find
-echo --- Python setup for NEXUS `date`
-echo --- New python modules
-#spack install py-numpy^blis%gcc@${gcc_vnew} # will pull in libflame (problems 2020-03-27)
-spack load gcc@${gcc_vnew}
-spack load python@${python_version}%gcc@${gcc_vnew} 
-#spack install py-numpy%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew} # Will pull in OpenBLAS
-spack install py-scipy%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
-#spack install py-mpi4py%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew} ^openmpi@${ompi_vnew}%gcc@${gcc_vnew} ^libxml2@${libxml2_v}%gcc@${gcc_vnew} 
-spack install py-setuptools%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
-spack install py-mpi4py%gcc@${gcc_vnew} ^openmpi@${ompi_vnew}%gcc@${gcc_vnew} ^py-setuptools%gcc@${gcc_vnew}  ^python@${python_version}%gcc@${gcc_vnew}
-spack install py-h5py%gcc@${gcc_vnew}  -mpi ^python@${python_version}%gcc@${gcc_vnew} ^hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl -mpi #Avoid MPI otherwise nompi build can break 
-spack install py-pandas%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
-spack install py-lxml%gcc@${gcc_vnew}  
-spack install py-matplotlib%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
-#spack activate py-numpy%gcc@${gcc_vnew} 
-spack activate py-scipy%gcc@${gcc_vnew} 
-spack activate py-h5py%gcc@${gcc_vnew} 
-spack activate py-pandas%gcc@${gcc_vnew} 
-spack activate py-lxml%gcc@${gcc_vnew}
-spack activate py-matplotlib%gcc@${gcc_vnew}
-spack unload python@${python_version}%gcc@${gcc_vnew} 
-spack unload gcc@${gcc_vnew}
-echo --- Old python modules
-# Due to problems installing old versions with old compilers of at least scipy (20201223) we only install numpy.
-spack load gcc@${gcc_vold}
-spack load python@${python_version}%gcc@${gcc_vold}
-spack install py-numpy%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} # Will pull in OpenBLAS
-#spack install py-scipy%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} # Will pull in py-pybind11 and cmake which won't bootstrap 20201223
-#SKIPspack install py-setuptools%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold}
-#SKIP#BAD gives dupe python spack install py-mpi4py%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} ^openmpi@${ompi_vold}%gcc@${gcc_vold} ^libxml2@${libxml2_v}%gcc@${gcc_vold}
-#SKIPspack install py-mpi4py%gcc@${gcc_vold} ^openmpi@${ompi_vold}%gcc@${gcc_vold} ^py-setuptools%gcc@${gcc_vold}  ^python@${python_version}%gcc@${gcc_vold}
-#SKIPspack install py-h5py%gcc@${gcc_vold}  -mpi ^python@${python_version}%gcc@${gcc_vold} ^hdf5@${hdf5_vold}%gcc@${gcc_vold} +fortran +hl -mpi #Avoid MPI otherwise nompi build can break
-#SKIPspack install py-pandas%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold}
-#SKIPspack install py-lxml%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold}
-#SKIPspack install py-matplotlib%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold}
-spack activate py-numpy%gcc@${gcc_vold} 
-#SKIPspack activate py-scipy%gcc@${gcc_vold} 
-#SKIPspack activate py-h5py%gcc@${gcc_vold} 
-#SKIPspack activate py-pandas%gcc@${gcc_vold} 
-#SKIPspack activate py-lxml%gcc@${gcc_vold} 
-#SKIPspack activate py-matplotlib%gcc@${gcc_vold}
-spack unload python@${python_version}%gcc@${gcc_vold} 
-spack unload gcc@${gcc_vold}
-#spack load git
-#DEBUG Disable cleanup based on guess there are hidden dependencies
-#DEBUGecho --- Remove build dependencies
-#DEBUGspack gc --yes-to-all
-echo --- Run update script to get development compilers and their dependencies
-source `dirname "$0"`/ornl_update.sh
-echo --- Update script completed
-echo --- PGI setup reminder
-echo "To configure the PGI compilers with one of the newly installed C++ libraries:"
-echo "spack load gcc@${gcc_vpgi} # For example"
-echo "cd /opt/nvidia/hpc_sdk/Linux_x86_64/20.9/compilers/bin"
-echo "sudo ./makelocalrc -x /opt/nvidia/hpc_sdk/Linux_x86_64/20.9/compilers/ -gcc \`which gcc\` -gpp \`which g++\` -g77 \`which gfortran\`"
-echo "gcc_vpgi is set to" ${gcc_vpgi}
+echo --- Spack compilers  `date`
+spack compilers
+echo --- Modules list
+module list
+echo --- End listings
+echo --- FINISH initial setup `date`
+bash $HOME/.cron_jobs/ornl_setup_environments.sh
 
-# Bug avoidance 20200902
-#if [ -e /usr/lib/aomp ]; then
-#    echo --- AOMP Bug workaround
-#    echo Change permissions back on AOMP Clang install. e.g. sudo chmod og+rx /usr/lib/aomp
-#fi
-echo --- FINISH setup script `date`
+echo --- REMEMBER REMEMBER
+echo If ROCm installed, sudo chmod og+rx /opt/rocm-*

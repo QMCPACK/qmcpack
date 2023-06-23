@@ -33,7 +33,6 @@ namespace qmcplusplus
 class MultiDiracDeterminant : public WaveFunctionComponent
 {
 public:
-  bool Optimizable;
   NewTimer &inverse_timer, &buildTable_timer, &table2ratios_timer, &evalWalker_timer, &evalOrbValue_timer,
       &evalOrbVGL_timer;
   NewTimer &updateInverse_timer, &calculateRatios_timer, &calculateGradRatios_timer, &updateRatios_timer;
@@ -52,20 +51,18 @@ public:
   template<typename DT>
   using UnpinnedOffloadMatrix = Matrix<DT, OffloadAllocator<DT>>;
 
-  using IndexVector = SPOSet::IndexVector;
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradVector  = SPOSet::GradVector;
-  using GradMatrix  = SPOSet::GradMatrix;
-  using HessMatrix  = SPOSet::HessMatrix;
-  using HessType    = SPOSet::HessType;
 
   struct MultiDiracDetMultiWalkerResource : public Resource
   {
     MultiDiracDetMultiWalkerResource() : Resource("MultiDiracDeterminant") {}
     MultiDiracDetMultiWalkerResource(const MultiDiracDetMultiWalkerResource&) : MultiDiracDetMultiWalkerResource() {}
 
-    Resource* makeClone() const override { return new MultiDiracDetMultiWalkerResource(*this); }
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<MultiDiracDetMultiWalkerResource>(*this);
+    }
 
     void resizeConstants(size_t nw)
     {
@@ -147,28 +144,37 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
-  ///optimizations  are disabled
-  inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
+  std::string getClassName() const override { return "MultiDiracDeterminant"; }
 
-  inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
+  bool isFermionic() const final { return true; }
+  inline bool isOptimizable() const final { return Phi->isOptimizable(); }
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
+  {
+    Phi->extractOptimizableObjectRefs(opt_obj_refs);
+  }
+
+  inline void checkOutVariables(const opt_variables_type& active) override
+  {
+    if (Phi->isOptimizable())
+      Phi->checkOutVariables(active);
+  }
 
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node);
   ///helper function to buildOptVariables
   int build_occ_vec(const OffloadVector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
 
-  void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
-
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
@@ -177,15 +183,13 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi,
+                             Vector<ValueType>& dlogpsi,
                              const MultiDiracDeterminant& pseudo_dn,
                              const PsiValueType& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
                              const std::vector<size_t>& C2node_dn);
 
-
-  inline void reportStatus(std::ostream& os) override {}
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -336,7 +340,6 @@ private:
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
-   * @param det0_list list of reference det value
    * @param table_matrix_list list of table_matrix
    *
    * this is a general implementation. Support abitrary excitation level
@@ -347,15 +350,19 @@ private:
                                SmallMatrixDetCalculator<ValueType>& det_calculator,
                                const OffloadVector<int>& data,
                                const OffloadVector<RealType>& sign,
-                               const OffloadVector<ValueType>& det0_list,
                                const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
                                const RefVector<OffloadVector<ValueType>>& ratios_list) const;
+
+  /** update ratios of the reference deteriminant
+   * @param det0_list list of reference det value
+   */
+  void mw_updateRatios_det0(const OffloadVector<ValueType>& det0_list,
+                            const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
 
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
-   * @param det0_list list of reference det value
    * @param table_matrix_list list of table_matrix
    *
    * this is intended to be customized based on EXT_LEVEL
@@ -365,7 +372,6 @@ private:
                        const size_t data_offset,
                        const OffloadVector<int>& data,
                        const OffloadVector<RealType>& sign,
-                       const OffloadVector<ValueType>& det0_list,
                        const OffloadVector<ValueType*>& table_matrix_deviceptr_list,
                        const size_t num_table_matrix_cols,
                        const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
@@ -596,7 +602,7 @@ private:
   /// for matrices with leading dimensions <= MaxSmallDet, compute determinant with direct expansion.
   static constexpr size_t MaxSmallDet = 5;
 
-  std::unique_ptr<MultiDiracDetMultiWalkerResource> mw_res_;
+  ResourceHandle<MultiDiracDetMultiWalkerResource> mw_res_handle_;
 };
 
 

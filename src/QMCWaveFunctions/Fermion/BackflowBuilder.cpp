@@ -36,6 +36,8 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Numerics/LinearFit.h"
 
+#include <array>
+
 namespace qmcplusplus
 {
 BackflowBuilder::BackflowBuilder(ParticleSet& els, const PSetMap& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool)
@@ -247,7 +249,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
       for (int i = 0; i < funs.size(); i++)
       {
         //           BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>(cusps[i]);
-        auto bsp           = std::make_unique<BsplineFunctor<RealType>>();
+        auto bsp           = std::make_unique<BsplineFunctor<RealType>>(extractCoefficientsID(funs[i]));
         bsp->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
         bsp->put(funs[i]);
         if (bsp->cutoff_radius > cutOff)
@@ -323,7 +325,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur
         }
         app_log() << "Adding radial component for species: " << spA << " " << spB << " " << ia << "  " << ib
                   << std::endl;
-        auto bsp           = std::make_unique<BsplineFunctor<RealType>>();
+        auto bsp           = std::make_unique<BsplineFunctor<RealType>>(extractCoefficientsID(cur));
         bsp->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
         bsp->put(cur);
         if (bsp->cutoff_radius > cutOff)
@@ -332,17 +334,6 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur
         offsets.push_back(tbf->numParams);
         tbf->numParams += bsp->NumParams;
         tbf->addFunc(ia, ib, std::move(bsp));
-
-        //            if(OHMMS::Controller->rank()==0)
-        //            {
-        //              char fname[64];
-        //              sprintf(fname,"BFe-e.%s.dat",(spA+spB).c_str());
-        //              std::ofstream fout(fname);
-        //              fout.setf(std::ios::scientific, std::ios::floatfield);
-        //              fout << "# Backflow radial function \n";
-        //              bsp->print(fout);
-        //              fout.close();
-        //            }
       }
       cur = cur->next;
     }
@@ -561,17 +552,18 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace* 
       offsets.push_back(tbfks->numParams);
       if (OHMMS::Controller->rank() == 0)
       {
-        char fname[16];
-        sprintf(fname, "RPABFee-LR.%s.dat", (spA + spB).c_str());
-        std::ofstream fout(fname);
+        std::array<char, 16> fname;
+        if (std::snprintf(fname.data(), fname.size(), "RPABFee-LR.%s.dat", (spA + spB).c_str()) < 0)
+          throw std::runtime_error("Error generating filename");
+
+        std::ofstream fout(fname.data());
         fout.setf(std::ios::scientific, std::ios::floatfield);
         fout << "# Backflow longrange  \n";
         for (int i = 0; i < tbfks->NumKShells; i++)
         {
-          fout << std::pow(targetPtcl.getSimulationCell()
-                               .getKLists()
-                               .ksq[targetPtcl.getSimulationCell().getKLists().kshell[i]],
-                           0.5)
+          fout << std::sqrt(targetPtcl.getSimulationCell()
+                                .getKLists()
+                                .ksq[targetPtcl.getSimulationCell().getKLists().kshell[i]])
                << " " << yk[i] << std::endl;
         }
         fout.close();
@@ -625,7 +617,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
       {
         APP_ABORT("Unknown correlation type " + type + " in Backflow.");
       }
-      auto bsp = std::make_unique<BsplineFunctor<RealType>>();
+      auto bsp = std::make_unique<BsplineFunctor<RealType>>(extractCoefficientsID(cur));
       if (init == "true" || init == "yes")
       {
         app_log() << "Initializing backflow radial functions with RPA.";
@@ -670,7 +662,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
         //              for (int j=0; j<nfitgaussians; j++) y1_c+=gb[j]*(std::exp(-x[1]*x[1]/((j+1)*Rcut*Rcut)));
         //              for (int j=0; j<nfitgaussians; j++) y2_c+=gb[j]*(std::exp(-x[2]*x[2]/((j+1)*Rcut*Rcut)));
         //make a temp functor to ensure right BC's (Necessary?)
-        auto tmp_bsp = std::make_unique<BsplineFunctor<RealType>>();
+        auto tmp_bsp = std::make_unique<BsplineFunctor<RealType>>("tmp_bsp");
         tmp_bsp->initialize(12, x, y, cusp, Rcut, id, optimize);
         //              tmp_bsp->print(app_log());
         for (int i = 0; i < myGrid->size(); i++)
@@ -690,16 +682,6 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
       tbf->addFunc(ia, ib, std::move(bsp));
       offsets.push_back(tbf->numParams);
       tbf->numParams += bsp->NumParams;
-      //            if(OHMMS::Controller->rank()==0)
-      //            {
-      //              char fname[64];
-      //              sprintf(fname,"RPABFee-SR.%s.dat",(spA+spB).c_str());
-      //              std::ofstream fout(fname);
-      //              fout.setf(std::ios::scientific, std::ios::floatfield);
-      //              fout << "# Backflow radial function \n";
-      //              bsp->print(fout);
-      //              fout.close();
-      //            }
     }
     xmlCoefs = xmlCoefs->next;
   }

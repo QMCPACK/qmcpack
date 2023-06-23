@@ -2,6 +2,7 @@
 <simulation>
    <project id="qmc_short" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+      <parameter name="driver_version">batched</parameter>
    </project>
    <qmcsystem>
       <simulationcell>
@@ -85,7 +86,7 @@
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
-      <parameter name="walkers"             >    16              </parameter>
+      <parameter name="walkers_per_rank"    >    16              </parameter>
       <parameter name="blocks"              >    1000            </parameter>
       <parameter name="steps"               >    2.0             </parameter>
       <parameter name="subSteps"            >    2               </parameter>

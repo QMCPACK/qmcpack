@@ -23,10 +23,15 @@ namespace qmcplusplus
 {
 struct Timer
 {
-  double start_time;
-  inline Timer() { start_time = CPUClock()(); }
-  inline void restart() { start_time = CPUClock()(); }
-  inline double elapsed() const { return CPUClock()() - start_time; }
+  using Clock = std::chrono::system_clock;
+  Clock::time_point start_time;
+  inline Timer() { start_time = Clock::now(); }
+  inline void restart() { start_time = Clock::now(); }
+  inline double elapsed() const
+  {
+    std::chrono::duration<double> elapsed = Clock::now() - start_time;
+    return elapsed.count();
+  }
 };
 } // namespace qmcplusplus
 #endif

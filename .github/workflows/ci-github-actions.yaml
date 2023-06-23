@@ -30,70 +30,82 @@ jobs:
             GCC9-MPI-Gcov-Complex,
             GCC11-NoMPI-Werror-Real,
             GCC11-NoMPI-Werror-Complex,
-            Clang10-NoMPI-ASan-Real,
-            Clang10-NoMPI-ASan-Complex,
-            Clang10-NoMPI-UBSan-Real,
-            Clang12-NoMPI-Offload-Real,
+            GCC11-NoMPI-Werror-Real-Mixed,
+            GCC11-NoMPI-Werror-Complex-Mixed,
+            Clang14-NoMPI-ASan-Real,
+            Clang14-NoMPI-ASan-Complex,
+            Clang14-NoMPI-UBSan-Real,
+            Clang16-NoMPI-Offload-Real,
           ]
         include:
           - jobname: GCC9-NoMPI-Debug-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-NoMPI-NoOMP-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-NoMPI-NoOMP-Complex
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-NoMPI-Sandbox-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-MPI-Gcov-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-MPI-Gcov-Complex
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC11-NoMPI-Werror-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
               options: -u 1001
 
           - jobname: GCC11-NoMPI-Werror-Complex
             container:
-              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
               options: -u 1001
 
-          - jobname: Clang10-NoMPI-ASan-Real
+          - jobname: GCC11-NoMPI-Werror-Real-Mixed
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
               options: -u 1001
 
-          - jobname: Clang10-NoMPI-ASan-Complex
+          - jobname: GCC11-NoMPI-Werror-Complex-Mixed
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
               options: -u 1001
 
-          - jobname: Clang10-NoMPI-UBSan-Real
+          - jobname: Clang14-NoMPI-ASan-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
-          - jobname: Clang12-NoMPI-Offload-Real
+          - jobname: Clang14-NoMPI-ASan-Complex
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-clang-latest
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
+              options: -u 1001
+
+          - jobname: Clang14-NoMPI-UBSan-Real
+            container:
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
+              options: -u 1001
+
+          - jobname: Clang16-NoMPI-Offload-Real
+            container:
+              image: ghcr.io/qmcpack/ubuntu22-clang:latest
               options: -u 1001
 
     steps:
@@ -115,7 +127,7 @@ jobs:
 
       - name: Upload Coverage
         if: contains(matrix.jobname, 'Gcov') && github.repository_owner == 'QMCPACK'
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           files: ../qmcpack-build/coverage.xml
           flags: tests-deterministic # optional
@@ -123,7 +135,7 @@ jobs:
           fail_ci_if_error: true # optional (default = false)
 
   macos:
-    runs-on: macos-latest
+    runs-on: macos-11
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: macOS
@@ -136,6 +148,11 @@ jobs:
     steps:
       - name: Checkout Action
         uses: actions/checkout@v3
+
+      - name: Set Python Version
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
       - name: Setup Dependencies
         run: |
@@ -153,3 +170,56 @@ jobs:
 
       - name: Install
         run: tests/test_automation/github-actions/ci/run_step.sh install
+
+  spack-centos-stream:
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    env:
+      GH_JOBNAME: ${{ matrix.jobname }}
+      GH_OS: Linux
+      CONTAINER_OS: spack-centos-stream
+    strategy:
+      fail-fast: false
+      matrix:
+        jobname:
+          [
+            GCC11-NoMPI-Debug-Real,
+            GCC11-NoMPI-NoOMP-Real,
+            GCC11-NoMPI-NoOMP-Complex,
+            GCC11-NoMPI-Sandbox-Real,
+          ]
+        include:
+          - jobname: GCC11-NoMPI-Debug-Real
+            container:
+              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
+              options: -u 1001
+          - jobname: GCC11-NoMPI-NoOMP-Real
+            container:
+              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
+              options: -u 1001
+          - jobname: GCC11-NoMPI-NoOMP-Complex
+            container:
+              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
+              options: -u 1001
+          - jobname: GCC11-NoMPI-Sandbox-Real
+            container:
+              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
+              options: -u 1001
+        
+    steps:
+      - name: Checkout Action
+        uses: actions/checkout@v3
+      
+      - name: Echo Debug
+        run: |
+          echo $PATH
+          echo $LD_LIBRARY_PATH
+
+      - name: Configure
+        run: tests/test_automation/github-actions/ci/run_step.sh configure
+
+      - name: Build
+        run: tests/test_automation/github-actions/ci/run_step.sh build
+
+      - name: Test
+        run: tests/test_automation/github-actions/ci/run_step.sh test

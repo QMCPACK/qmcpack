@@ -1,0 +1,6 @@
+# Specify exact versions for reproducible builds, e.g. in readthedocs
+sphinx==3.2.0
+sphinx_rtd_theme==0.5.2
+sphinxcontrib-bibtex==2.2.0
+
+

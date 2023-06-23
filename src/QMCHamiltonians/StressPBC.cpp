@@ -37,7 +37,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
 {
   ReportEngine PRE("StressPBC", "StressPBC");
   name_  = "StressPBC";
-  prefix = "StressPBC";
+  prefix_ = "StressPBC";
   //This sets up the long range breakups.
   initBreakup(PtclTarg);
   stress_eI_const = 0.0;
@@ -48,7 +48,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
     firstTimeStress = false;
   }
   RealType vinv = -1. / PtclTarg.getLattice().Volume;
-  app_log() << "\n====ion-ion stress ====\n" << stress_IonIon * vinv << std::endl;
+  app_log() << "\n====ion-ion stress ====\n" << stress_ion_ion_ * vinv << std::endl;
   app_log() << "\n e-e const = " << stress_ee_const * vinv << std::endl;
   app_log() << "\n e-I const = " << stress_eI_const * vinv << std::endl;
 }
@@ -102,8 +102,8 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
     esum = 0.0;
     for (int j = 0; j < NumSpeciesB; j++)
       esum += Qspec[j] *
-          AA->evaluateStress(P.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j],
-                             RhoKB.rhok_i[j]);
+          AA->evaluateStress(P.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i],
+                             RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
     res += Zspec[i] * esum;
   }
 
@@ -179,7 +179,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
         temp *= 0.5;
       stress_aa += Z1 * Zmyspec[spec2] * temp;
     } //spec2
-  } //spec1
+  }   //spec1
 
   return stress_aa;
 }
@@ -262,25 +262,25 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
 StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
 {
   const RealType vinv(-1.0 / P.getLattice().Volume);
-  stress     = 0.0;
-  stress_ee  = 0.0;
-  stress_ei  = 0.0;
-  stress_kin = 0.0;
+  stress_     = 0.0;
+  stress_ee_  = 0.0;
+  stress_ei_  = 0.0;
+  stress_kin_ = 0.0;
 
-  stress_ei += vinv * evaluateLR_AB(PtclTarg);
-  stress_ei += vinv * evaluateSR_AB(PtclTarg);
-  stress_ei += vinv * stress_eI_const;
+  stress_ei_ += vinv * evaluateLR_AB(PtclTarg);
+  stress_ei_ += vinv * evaluateSR_AB(PtclTarg);
+  stress_ei_ += vinv * stress_eI_const;
 
-  stress_ee += vinv * evaluateLR_AA(PtclTarg);
-  stress_ee += vinv * evaluateSR_AA(PtclTarg, ee_table_index);
-  stress_ee += vinv * stress_ee_const;
+  stress_ee_ += vinv * evaluateLR_AA(PtclTarg);
+  stress_ee_ += vinv * evaluateSR_AA(PtclTarg, ee_table_index);
+  stress_ee_ += vinv * stress_ee_const;
 
 
-  stress_kin += vinv * evaluateKineticSymTensor(P);
+  stress_kin_ += vinv * evaluateKineticSymTensor(P);
 
-  stress = stress_ee + stress_ei + stress_kin;
-  if (addionion)
-    stress += vinv * stress_IonIon;
+  stress_ = stress_ee_ + stress_ei_ + stress_kin_;
+  if (add_ion_ion_)
+    stress_ += vinv * stress_ion_ion_;
 
   return 0.0;
 }
@@ -311,11 +311,11 @@ bool StressPBC::put(xmlNodePtr cur)
 {
   std::string ionionforce("yes");
   OhmmsAttributeSet attr;
-  attr.add(prefix, "name");
-  attr.add(ionionforce, "addionion");
+  attr.add(prefix_, "name");
+  attr.add(ionionforce, "add_ion_ion_");
   attr.put(cur);
-  addionion = (ionionforce == "yes") || (ionionforce == "true");
-  app_log() << "add ion-ion stress = " << addionion << std::endl;
+  add_ion_ion_ = (ionionforce == "yes") || (ionionforce == "true");
+  app_log() << "add ion-ion stress = " << add_ion_ion_ << std::endl;
   return true;
 }
 
@@ -323,10 +323,10 @@ std::unique_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFun
 {
   std::unique_ptr<StressPBC> tmp = std::make_unique<StressPBC>(PtclA, qp, psi);
   tmp->firstTimeStress           = firstTimeStress;
-  tmp->stress_IonIon             = stress_IonIon;
+  tmp->stress_ion_ion_           = stress_ion_ion_;
   tmp->stress_ee_const           = stress_ee_const;
   tmp->stress_eI_const           = stress_eI_const;
-  tmp->addionion                 = addionion;
+  tmp->add_ion_ion_              = add_ion_ion_;
   return tmp;
 }
 } // namespace qmcplusplus

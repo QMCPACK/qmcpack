@@ -55,7 +55,7 @@ public:
 
   using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
   using Integrator = OneBodyDensityMatricesInput::Integrator;
-  using SPOMap     = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+  using SPOMap     = SPOSet::SPOMap;
 
   enum class Sampling
   {
@@ -176,7 +176,7 @@ public:
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  void registerOperatorEstimator(hid_t gid) override;
+  void registerOperatorEstimator(hdf_archive& file) override;
 
 private:
   /** Default copy constructor.
@@ -303,13 +303,13 @@ private:
     NewTimer& matrix_products_timer;
     NewTimer& accumulate_timer;
     OneBodyDensityMatrixTimers(const std::string& prefix)
-        : eval_timer(*timer_manager.createTimer(prefix + "Eval", timer_level_fine)),
-          gen_samples_timer(*timer_manager.createTimer(prefix + "GenSamples", timer_level_fine)),
-          gen_sample_basis_timer(*timer_manager.createTimer(prefix + "GenSampleBasis", timer_level_fine)),
-          gen_sample_ratios_timer(*timer_manager.createTimer(prefix + "GenSampleRatios", timer_level_fine)),
-          gen_particle_basis_timer(*timer_manager.createTimer(prefix + "GenParticleBasis", timer_level_fine)),
-          matrix_products_timer(*timer_manager.createTimer(prefix + "MatrixProducts", timer_level_fine)),
-          accumulate_timer(*timer_manager.createTimer(prefix + "Accumulate", timer_level_fine))
+        : eval_timer(createGlobalTimer(prefix + "Eval", timer_level_fine)),
+          gen_samples_timer(createGlobalTimer(prefix + "GenSamples", timer_level_fine)),
+          gen_sample_basis_timer(createGlobalTimer(prefix + "GenSampleBasis", timer_level_fine)),
+          gen_sample_ratios_timer(createGlobalTimer(prefix + "GenSampleRatios", timer_level_fine)),
+          gen_particle_basis_timer(createGlobalTimer(prefix + "GenParticleBasis", timer_level_fine)),
+          matrix_products_timer(createGlobalTimer(prefix + "MatrixProducts", timer_level_fine)),
+          accumulate_timer(createGlobalTimer(prefix + "Accumulate", timer_level_fine))
     {}
   };
 

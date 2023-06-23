@@ -99,11 +99,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       app_error() << " Error opening integral file in SparseGeneralHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
   }
 
   HamiltonianTypes htype = UNKNOWN;
@@ -266,11 +262,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   if (htype == KPTHC)
   {
     APP_ABORT(" Error: KPTHC hamiltonian not yet working. \n");
-    if (coreid < nread && !dump.push("KPTHC", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not KPTHC found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("KPTHC", false);
+
     if (coreid < nread)
     {
       dump.pop();
@@ -284,11 +278,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   }
   else if (htype == KPFactorized)
   {
-    if (coreid < nread && !dump.push("KPFactorized", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not KPFactorized found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("KPFactorized", false);
+
     if (coreid < nread)
     {
       dump.pop();
@@ -304,11 +296,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 #else
   if (htype == RealDenseFactorized)
   {
-    if (coreid < nread && !dump.push("DenseFactorized", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not DenseFactorized found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("DenseFactorized", false);
+
     if (coreid < nread)
     {
       dump.pop();
@@ -332,11 +322,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 #endif
       if (htype == THC)
   {
-    if (coreid < nread && !dump.push("THC", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not THC found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("THC", false);
+
     if (coreid < nread)
     {
       dump.pop();
@@ -350,11 +338,8 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   }
   else if (htype == Factorized)
   {
-    if (coreid < nread && !dump.push("Factorized", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group Factorized not found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("Factorized", false);
 
     if (TG.getNumberOfTGs() > 1)
       APP_ABORT(" Error: Distributed Factorized hamiltonian not yet implemented. \n\n");

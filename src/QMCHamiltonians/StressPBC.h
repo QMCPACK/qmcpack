@@ -15,6 +15,7 @@
 #ifndef QMCPLUSPLUS_STRESSPBC_HAMILTONIAN_H
 #define QMCPLUSPLUS_STRESSPBC_HAMILTONIAN_H
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "OhmmsPETE/SymTensor.h"
 
@@ -65,6 +66,8 @@ struct StressPBC : public OperatorBase, public ForceBase
   bool firstTimeStress;
   StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi);
 
+  std::string getClassName() const override { return "StressPBC"; }
+
   Return_t evaluate(ParticleSet& P) override;
 
   void initBreakup(ParticleSet& P);
@@ -78,9 +81,9 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   SymTensor<RealType, OHMMS_DIM> evaluateKineticSymTensor(ParticleSet& P);
 
-  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override
+  void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override
   {
-    registerObservablesF(h5list, gid);
+    registerObservablesF(h5list, file);
   }
 
   void addObservables(PropertySetType& plist, BufferType& collectables) override { addObservablesStress(plist); }
@@ -95,13 +98,13 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   bool get(std::ostream& os) const override
   {
-    os << "Ceperley Force Estimator Hamiltonian: " << pairName;
+    os << "Ceperley Force Estimator Hamiltonian: " << pair_name_;
     return true;
   }
 
   void CalculateIonIonStress()
   {
-    stress_IonIon = evaluateSR_AA(PtclA, ii_table_index) + evaluateLR_AA(PtclA) + evalConsts_AA(PtclA);
+    stress_ion_ion_ = evaluateSR_AA(PtclA, ii_table_index) + evaluateLR_AA(PtclA) + evalConsts_AA(PtclA);
     stress_eI_const += evalConsts_AB();
     stress_ee_const += evalConsts_AA(PtclTarg);
   }

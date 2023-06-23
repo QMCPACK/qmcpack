@@ -70,7 +70,7 @@ public:
     OneBodyDensityMatricesInputSection()
     {
       // clang-format off
-      section_name  = "OneBodyDensityMatrix";
+      section_name  = "OneBodyDensityMatrices";
       attributes    = {"name", "type"};
       parameters    = {"basis", "energy_matrix", "integrator", "evaluator", "scale",
                        "corner", "center", "points", "samples", "warmup", "timestep",
@@ -97,6 +97,9 @@ public:
   using Position = QMCTraits::PosType;
   using Real     = QMCTraits::RealType;
 
+  /** default copy constructor
+   *  This is required due to OBDMI being part of a variant used as a vector element.
+   */
   OneBodyDensityMatricesInput(const OneBodyDensityMatricesInput&) = default;
   OneBodyDensityMatricesInput(xmlNodePtr cur);
 

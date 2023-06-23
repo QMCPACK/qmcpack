@@ -21,9 +21,7 @@ namespace qmcplusplus
 {
 using std::copy;
 
-AGPDeterminant::AGPDeterminant(BasisSetType* bs)
-    : WaveFunctionComponent("AGPDeterminant"), GeminalBasis(bs), NumPtcls(0)
-{}
+AGPDeterminant::AGPDeterminant(BasisSetType* bs) : GeminalBasis(bs), NumPtcls(0) {}
 AGPDeterminant::~AGPDeterminant() {}
 
 void AGPDeterminant::resize(int nup, int ndown)
@@ -70,23 +68,6 @@ void AGPDeterminant::resize(int nup, int ndown)
     FirstAddressOfG = &myG[0][0];
     LastAddressOfG  = FirstAddressOfG + DIM * NumPtcls;
   }
-}
-
-void AGPDeterminant::checkInVariables(opt_variables_type& active)
-{
-  //do nothing
-}
-void AGPDeterminant::checkOutVariables(const opt_variables_type& active)
-{
-  //do nothing
-}
-void AGPDeterminant::resetParameters(const opt_variables_type& active)
-{
-  //GeminalBasis->resetParameters(active);
-}
-void AGPDeterminant::reportStatus(std::ostream& os)
-{
-  //do nothing
 }
 
 /** Calculate the log value of the Dirac determinant for particles

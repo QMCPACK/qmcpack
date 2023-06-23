@@ -23,6 +23,8 @@
 
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+
 
 namespace qmcplusplus
 {
@@ -107,14 +109,6 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   /** return the basis set size */
   inline IndexType getBasisSetSize() const { return BasisSetSize; }
 
-  /**@{ functions to perform optimizations  */
-  /** checkIn optimizable variables */
-  virtual void checkInVariables(opt_variables_type& active) {}
-  /** checkOut optimizable variables */
-  virtual void checkOutVariables(const opt_variables_type& active) {}
-  /** reset parameters */
-  virtual void resetParameters(const opt_variables_type& active) {}
-  /**@}*/
   ///resize the basis set
   virtual void setBasisSetSize(int nbs) = 0;
 
@@ -136,10 +130,13 @@ struct BasisSetBase : public OrbitalSetTraits<T>
 template<typename T>
 struct SoaBasisSetBase
 {
-  using value_type = T;
-  using vgl_type   = VectorSoaContainer<T, OHMMS_DIM + 2>;
-  using vgh_type   = VectorSoaContainer<T, 10>;
-  using vghgh_type = VectorSoaContainer<T, 20>;
+  using value_type        = T;
+  using vgl_type          = VectorSoaContainer<T, OHMMS_DIM + 2>;
+  using vgh_type          = VectorSoaContainer<T, 10>;
+  using vghgh_type        = VectorSoaContainer<T, 20>;
+  using ValueType         = QMCTraits::ValueType;
+  using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+
   ///size of the basis set
   int BasisSetSize;
 
@@ -151,6 +148,8 @@ struct SoaBasisSetBase
 
   //Evaluates value, gradient, and laplacian for electron "iat".  Parks them into a temporary data structure "vgl".
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) = 0;
+  //Evaluates value, gradient, and laplacian for electron "iat".  places them in a offload array for batched code.
+  virtual void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) = 0;
   //Evaluates value, gradient, and Hessian for electron "iat".  Parks them into a temporary data structure "vgh".
   virtual void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh) = 0;
   //Evaluates value, gradient, and Hessian, and Gradient Hessian for electron "iat".  Parks them into a temporary data structure "vghgh".

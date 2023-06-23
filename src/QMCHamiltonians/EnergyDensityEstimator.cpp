@@ -477,35 +477,31 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 }
 
 
-void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  hid_t g = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5desc.emplace_back("variables");
+  hdf_path hdf_name{name_};
+  h5desc.emplace_back(hdf_name / "variables");
   auto& oh = h5desc.back();
-  oh.open(g);
-  oh.addProperty(const_cast<int&>(nparticles), "nparticles");
+  oh.addProperty(const_cast<int&>(nparticles), "nparticles", file);
   int nspacegrids = spacegrids.size();
-  oh.addProperty(const_cast<int&>(nspacegrids), "nspacegrids");
-  oh.addProperty(const_cast<int&>(nsamples), "nsamples");
+  oh.addProperty(const_cast<int&>(nspacegrids), "nspacegrids", file);
+  oh.addProperty(const_cast<int&>(nsamples), "nsamples", file);
   if (ion_points)
   {
-    oh.addProperty(const_cast<int&>(nions), "nions");
-    oh.addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions");
+    oh.addProperty(const_cast<int&>(nions), "nions", file);
+    oh.addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions", file);
   }
 
-
-  ref.save(h5desc, g);
-
-  h5desc.emplace_back("outside");
+  ref.save(h5desc, file);
+  h5desc.emplace_back(hdf_name / "outside");
   auto& ohOutside = h5desc.back();
   std::vector<int> ng(1);
   ng[0] = (int)nEDValues;
   ohOutside.set_dimensions(ng, outside_buffer_offset);
-  ohOutside.open(g);
   for (int i = 0; i < spacegrids.size(); i++)
   {
     SpaceGrid& sg = *spacegrids[i];
-    sg.registerCollectables(h5desc, g, i);
+    sg.registerCollectables(h5desc, file, i);
   }
   if (ion_points)
   {
@@ -513,10 +509,9 @@ void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>&
     ng2[0] = nions;
     ng2[1] = (int)nEDValues;
 
-    h5desc.emplace_back("ions");
+    h5desc.emplace_back(hdf_name / "ions");
     auto& ohIons = h5desc.back();
     ohIons.set_dimensions(ng2, ion_buffer_offset);
-    ohIons.open(g);
   }
 }
 

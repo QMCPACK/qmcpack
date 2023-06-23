@@ -18,13 +18,25 @@
 
 namespace qmcplusplus
 {
-class RotatedSPOs : public SPOSet
+class RotatedSPOs;
+namespace testing
+{
+opt_variables_type& getMyVarsFull(RotatedSPOs& rot);
+std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot);
+} // namespace testing
+
+class RotatedSPOs : public SPOSet, public OptimizableObject
 {
 public:
   //constructor
-  RotatedSPOs(std::unique_ptr<SPOSet>&& spos);
+  RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos);
   //destructor
   ~RotatedSPOs() override;
+
+  std::string getClassName() const override { return "RotatedSPOs"; }
+  bool isOptimizable() const override { return true; }
+  bool isOMPoffload() const override { return Phi->isOMPoffload(); }
+  bool hasIonDerivs() const override { return Phi->hasIonDerivs(); }
 
   // Vector of rotation matrix indices
   using RotationIndices = std::vector<std::pair<int, int>>;
@@ -32,24 +44,63 @@ public:
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
 
+  // Full set of rotation values for global rotation
+  RotationIndices m_full_rot_inds;
+
   // Construct a list of the matrix indices for non-zero rotation parameters.
   // (The structure for a sparse representation of the matrix)
   // Only core->active rotations are created.
   static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
 
-  // Fill in anti-symmetric matrix from the list of rotation parameter indices
+  // Construct a list for all the matrix indices, including core->active, core->core and active->active
+  static void createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices);
+
+  // Fill in antisymmetric matrix from the list of rotation parameter indices
   // and a list of parameter values.
   // This function assumes rot_mat is properly sized upon input and is set to zero.
   static void constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                            const std::vector<ValueType>& param,
                                            ValueMatrix& rot_mat);
 
+  // Extract the list of rotation parameters from the entries in an antisymmetric matrix
+  // This function expects rot_indices and param are the same length.
+  static void extractParamsFromAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                                   const ValueMatrix& rot_mat,
+                                                   std::vector<ValueType>& param);
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
+  // For global rotation, inputs are the old parameters and the delta parameters.
+  // The corresponding rotation matrices are constructed, multiplied together,
+  // and the new parameters extracted.
+  // The new rotation is applied to the underlying SPO coefficients
+  void applyDeltaRotation(const std::vector<RealType>& delta_param,
+                          const std::vector<RealType>& old_param,
+                          std::vector<RealType>& new_param);
+
+  // Perform the construction of matrices and extraction of parameters for a delta rotation.
+  // Split out and made static for testing.
+  static void constructDeltaRotation(const std::vector<RealType>& delta_param,
+                                     const std::vector<RealType>& old_param,
+                                     const RotationIndices& act_rot_inds,
+                                     const RotationIndices& full_rot_inds,
+                                     std::vector<RealType>& new_param,
+                                     ValueMatrix& new_rot_mat);
+
+  // When initializing the rotation from VP files
+  // This function applies the rotation history
+  void applyRotationHistory();
+
+  // This function applies the global rotation (similar to apply_rotation, but for the full
+  // set of rotation parameters)
+  void applyFullRotation(const std::vector<RealType>& full_param, bool use_stored_copy);
+
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
+
+  // Compute matrix log of rotation matrix to produce antisymmetric matrix
+  static void log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output);
 
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi;
@@ -78,23 +129,29 @@ public:
 
 
   // Single Slater creation
-  void buildOptVariables(size_t nel) override;
+  void buildOptVariables(size_t nel);
 
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const RotationIndices& rotations) override;
+  void buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations);
 
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const int& FirstIndex,
                            const int& LastIndex) override;
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             Vector<ValueType>& dlogpsi,
+                             int FirstIndex,
+                             int LastIndex) override;
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
@@ -120,7 +177,7 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi,
+                             Vector<ValueType>& dlogpsi,
                              const QTFull::ValueType& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
@@ -135,8 +192,8 @@ public:
                              const std::vector<std::vector<int>>& lookup_tbl) override;
 
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-  void table_method_eval(std::vector<ValueType>& dlogpsi,
-                         std::vector<ValueType>& dhpsioverpsi,
+  void table_method_eval(Vector<ValueType>& dlogpsi,
+                         Vector<ValueType>& dhpsioverpsi,
                          const ParticleSet::ParticleLaplacian& myL_J,
                          const ParticleSet::ParticleGradient& myG_J,
                          const size_t nel,
@@ -164,7 +221,7 @@ public:
                          const size_t NP2,
                          const std::vector<std::vector<int>>& lookup_tbl);
 
-  void table_method_evalWF(std::vector<ValueType>& dlogpsi,
+  void table_method_evalWF(Vector<ValueType>& dlogpsi,
                            const size_t nel,
                            const size_t nmo,
                            const ValueType& psiCurrent,
@@ -180,42 +237,22 @@ public:
                            const std::vector<int>& detData_up,
                            const std::vector<std::vector<int>>& lookup_tbl);
 
-  void checkInVariables(opt_variables_type& active) override
-  {
-    //reset parameters to zero after coefficient matrix has been updated
-    for (int k = 0; k < myVars.size(); ++k)
-      myVars[k] = 0.0;
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
-    if (Optimizable)
-    {
-      if (myVars.size())
-        active.insertFrom(myVars);
-      Phi->storeParamsBeforeRotation();
-    }
+  void checkInVariablesExclusive(opt_variables_type& active) override
+  {
+    if (myVars.size())
+      active.insertFrom(myVars);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
-  {
-    if (Optimizable)
-    {
-      myVars.getIndex(active);
-    }
-  }
+  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (Optimizable)
-    {
-      std::vector<RealType> param(m_act_rot_inds.size());
-      for (int i = 0; i < m_act_rot_inds.size(); i++)
-      {
-        int loc  = myVars.where(i);
-        param[i] = myVars[i] = active[loc];
-      }
-      apply_rotation(param, true);
-    }
-  }
+  void resetParametersExclusive(const opt_variables_type& active) override;
+
+  void writeVariationalParameters(hdf_archive& hout) override;
+
+  void readVariationalParameters(hdf_archive& hin) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
@@ -243,6 +280,15 @@ public:
   {
     Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
   }
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           ValueVector& psi,
+                           const ValueVector& psiinv,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios,
+                           int FirstIndex,
+                           int LastIndex) override;
 
   void evaluateVGH(const ParticleSet& P,
                    int iat,
@@ -322,11 +368,26 @@ public:
   //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
   //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
 
+  /// Use history list (false) or global rotation (true)
+  void set_use_global_rotation(bool use_global_rotation) { use_global_rot_ = use_global_rotation; }
+
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
+
+  /// Full set of rotation matrix parameters for use in global rotation method
+  opt_variables_type myVarsFull;
+
+  /// List of previously applied parameters
+  std::vector<std::vector<RealType>> history_params_;
+
+  /// Use global rotation or history list
+  bool use_global_rot_ = true;
+
+  friend opt_variables_type& testing::getMyVarsFull(RotatedSPOs& rot);
+  friend std::vector<std::vector<RealType>>& testing::getHistoryParams(RotatedSPOs& rot);
 };
 
 } //namespace qmcplusplus

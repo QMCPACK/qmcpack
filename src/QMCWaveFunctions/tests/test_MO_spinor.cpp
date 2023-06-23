@@ -19,6 +19,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ResourceCollection.h"
+#include "QMCWaveFunctions/SpinorSet.h"
 
 namespace qmcplusplus
 {
@@ -42,9 +43,7 @@ void test_lcao_spinor()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1});
 
-  ions_.R[0][0]        = 0.00000000;
-  ions_.R[0][1]        = 0.00000000;
-  ions_.R[0][2]        = 0.00000000;
+  ions_.R[0]           = {0.00000000, 0.00000000, 0.00000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -52,9 +51,7 @@ void test_lcao_spinor()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.1;
-  elec_.R[0][1]  = -0.3;
-  elec_.R[0][2]  = 1.7;
+  elec_.R[0]     = {0.1, -0.3, 1.7};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 
@@ -72,7 +69,7 @@ void test_lcao_spinor()
      <basisset transform="yes"/> 
      <sposet name="myspo" size="1"/> 
    </sposet_builder> 
-   </tmp>)XML"; 
+   </tmp>)XML";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -226,9 +223,7 @@ void test_lcao_spinor()
 
   //now create second walker
   ParticleSet elec_2(elec_);
-  elec_2.R[0][0]  = -0.4;
-  elec_2.R[0][1]  = 1.5;
-  elec_2.R[0][2]  = -0.2;
+  elec_2.R[0]     = {-0.4, 1.5, -0.2};
   elec_2.spins[0] = -1.3;
 
   //create new reference values for new positions
@@ -252,6 +247,15 @@ void test_lcao_spinor()
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
+
+  //test resource APIs
+  //First resource is created, and then passed to the colleciton so it should be null
+  ResourceCollection spo_res("test_spo_res");
+  spo->createResource(spo_res);
+  SpinorSet& spinor = spo_list.getCastedLeader<SpinorSet>();
+  REQUIRE(!spinor.isResourceOwned());
+  ResourceCollectionTeamLock<SPOSet> mw_spo_lock(spo_res, spo_list);
+  REQUIRE(spinor.isResourceOwned());
 
   SPOSet::ValueMatrix psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());
@@ -300,12 +304,12 @@ void test_lcao_spinor()
   SPOSet::ValueVector psi_work_2(OrbitalSetSize);
   SPOSet::GradVector dpsi_work_2(OrbitalSetSize);
   SPOSet::ValueVector d2psi_work_2(OrbitalSetSize);
-  SPOSet::ValueVector dspsi_work_2(OrbitalSetSize);
 
   RefVector<SPOSet::ValueVector> psi_v_list   = {psi_work, psi_work_2};
   RefVector<SPOSet::GradVector> dpsi_v_list   = {dpsi_work, dpsi_work_2};
   RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
-  RefVector<SPOSet::ValueVector> dspsi_v_list = {dspsi_work, dspsi_work_2};
+  SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin;
+  mw_dspin.resize(2, OrbitalSetSize);
   //check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 1; iat++)
   {
@@ -317,27 +321,26 @@ void test_lcao_spinor()
     psi_work_2   = 0.0;
     dpsi_work_2  = 0.0;
     d2psi_work_2 = 0.0;
-    dspsi_work_2 = 0.0;
 
     MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {-dR[iat], -dR[iat]};
     displs.spins     = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
-    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
+    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(val).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][0] == ComplexApprox(vdx).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2psi_v_list[0].get()[0] == ComplexApprox(vlp).epsilon(eps));
-    CHECK(dspsi_v_list[0].get()[0] == ComplexApprox(vds).epsilon(eps));
+    CHECK(mw_dspin(0, 0) == ComplexApprox(vds).epsilon(eps));
     //walker 1
     CHECK(psi_v_list[1].get()[0] == ComplexApprox(val2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][0] == ComplexApprox(vdx2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][1] == ComplexApprox(vdy2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][2] == ComplexApprox(vdz2).epsilon(eps));
     CHECK(d2psi_v_list[1].get()[0] == ComplexApprox(vlp2).epsilon(eps));
-    CHECK(dspsi_v_list[1].get()[0] == ComplexApprox(vds2).epsilon(eps));
+    CHECK(mw_dspin(1, 0) == ComplexApprox(vds2).epsilon(eps));
 
     std::vector<bool> accept = {false, false};
     elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
@@ -364,9 +367,7 @@ void test_lcao_spinor_excited()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1});
 
-  ions_.R[0][0]        = 0.00000000;
-  ions_.R[0][1]        = 0.00000000;
-  ions_.R[0][2]        = 0.00000000;
+  ions_.R[0]           = {0.00000000, 0.00000000, 0.00000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -374,9 +375,7 @@ void test_lcao_spinor_excited()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.1;
-  elec_.R[0][1]  = -0.3;
-  elec_.R[0][2]  = 1.7;
+  elec_.R[0]     = {0.1, -0.3, 1.7};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 
@@ -553,9 +552,7 @@ void test_lcao_spinor_excited()
 
   //now create second walker
   ParticleSet elec_2(elec_);
-  elec_2.R[0][0]  = -0.4;
-  elec_2.R[0][1]  = 1.5;
-  elec_2.R[0][2]  = -0.2;
+  elec_2.R[0]     = {-0.4, 1.5, -0.2};
   elec_2.spins[0] = -1.3;
 
   //create new reference values for new positions
@@ -572,9 +569,9 @@ void test_lcao_spinor_excited()
   p_list.push_back(elec_);
   p_list.push_back(elec_2);
 
-  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
-  elec_.mw_update(p_list);
+  ResourceCollection spo_res("test_spo_res");
+  spo->createResource(spo_res);
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
@@ -595,6 +592,10 @@ void test_lcao_spinor_excited()
   d2logdet_list.push_back(d2psiM);
   d2logdet_list.push_back(d2psiM_2);
 
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_spo_lock(spo_res, spo_list);
+
+  elec_.mw_update(p_list);
   spo->mw_evaluate_notranspose(spo_list, p_list, 0, 1, logdet_list, dlogdet_list, d2logdet_list);
   for (unsigned int iat = 0; iat < 1; iat++)
   {
@@ -627,12 +628,12 @@ void test_lcao_spinor_excited()
   SPOSet::ValueVector psi_work_2(OrbitalSetSize);
   SPOSet::GradVector dpsi_work_2(OrbitalSetSize);
   SPOSet::ValueVector d2psi_work_2(OrbitalSetSize);
-  SPOSet::ValueVector dspsi_work_2(OrbitalSetSize);
 
   RefVector<SPOSet::ValueVector> psi_v_list   = {psi_work, psi_work_2};
   RefVector<SPOSet::GradVector> dpsi_v_list   = {dpsi_work, dpsi_work_2};
   RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
-  RefVector<SPOSet::ValueVector> dspsi_v_list = {dspsi_work, dspsi_work_2};
+  SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin;
+  mw_dspin.resize(2, OrbitalSetSize); //two walkers
   //check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 1; iat++)
   {
@@ -644,28 +645,26 @@ void test_lcao_spinor_excited()
     psi_work_2   = 0.0;
     dpsi_work_2  = 0.0;
     d2psi_work_2 = 0.0;
-    dspsi_work_2 = 0.0;
 
     MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {-dR[iat], -dR[iat]};
     displs.spins     = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
-    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
+    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(val).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][0] == ComplexApprox(vdx).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2psi_v_list[0].get()[0] == ComplexApprox(vlp).epsilon(eps));
-    CHECK(dspsi_v_list[0].get()[0] == ComplexApprox(vds).epsilon(eps));
+    CHECK(mw_dspin(0, 0) == ComplexApprox(vds).epsilon(eps));
     //walker 1
     CHECK(psi_v_list[1].get()[0] == ComplexApprox(val2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][0] == ComplexApprox(vdx2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][1] == ComplexApprox(vdy2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][2] == ComplexApprox(vdz2).epsilon(eps));
     CHECK(d2psi_v_list[1].get()[0] == ComplexApprox(vlp2).epsilon(eps));
-    CHECK(dspsi_v_list[1].get()[0] == ComplexApprox(vds2).epsilon(eps));
-
+    CHECK(mw_dspin(1, 0) == ComplexApprox(vds2).epsilon(eps));
     std::vector<bool> accept = {false, false};
     elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
@@ -691,12 +690,8 @@ void test_lcao_spinor_ion_derivs()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
 
-  ions_.R[0][0]        = 0.10000000;
-  ions_.R[0][1]        = 0.20000000;
-  ions_.R[0][2]        = 0.30000000;
-  ions_.R[1][0]        = -0.30000000;
-  ions_.R[1][1]        = -0.20000000;
-  ions_.R[1][2]        = -0.10000000;
+  ions_.R[0]           = {0.10000000, 0.20000000, 0.30000000};
+  ions_.R[1]           = {-0.30000000, -0.20000000, -0.10000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -704,9 +699,7 @@ void test_lcao_spinor_ion_derivs()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.01;
-  elec_.R[0][1]  = -0.02;
-  elec_.R[0][2]  = 0.03;
+  elec_.R[0]     = {0.01, -0.02, 0.03};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 
@@ -724,7 +717,7 @@ void test_lcao_spinor_ion_derivs()
      <basisset transform="yes"/> 
      <sposet name="myspo" size="1"/> 
    </sposet_builder> 
-   </tmp>)XML"; 
+   </tmp>)XML";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);

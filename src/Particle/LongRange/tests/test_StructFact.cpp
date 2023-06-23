@@ -28,11 +28,11 @@ TEST_CASE("StructFact", "[lrhandler]")
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
-  REQUIRE(Approx(Lattice.Volume) == 125);
+  CHECK(Approx(Lattice.Volume) == 125);
   Lattice.SetLRCutoffs(Lattice.Rv);
   Lattice.printCutoffs(app_log());
-  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
-  REQUIRE(Approx(Lattice.LR_kc) == 12);
+  CHECK(Approx(Lattice.LR_rc) == 2.5);
+  CHECK(Approx(Lattice.LR_kc) == 12);
 
   Lattice.LR_dim_cutoff = 125;
   const SimulationCell simulation_cell(Lattice);

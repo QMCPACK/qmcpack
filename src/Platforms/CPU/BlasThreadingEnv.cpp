@@ -13,7 +13,6 @@
 
 #include "BlasThreadingEnv.h"
 #include "config.h"
-#include "Concurrency/OpenMP.h"
 #ifdef HAVE_MKL
 #include <mkl_service.h>
 #endif

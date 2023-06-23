@@ -21,6 +21,9 @@
 namespace qmcplusplus
 {
 template<typename ST>
+SplineC2C<ST>::SplineC2C(const SplineC2C& in) = default;
+
+template<typename ST>
 inline void SplineC2C<ST>::set_spline(SingleSplineType* spline_r,
                                       SingleSplineType* spline_i,
                                       int twist,
@@ -47,6 +50,97 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
   o << "spline_" << MyIndex;
   einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
+}
+
+template<typename ST>
+void SplineC2C<ST>::storeParamsBeforeRotation()
+{
+  const auto spline_ptr     = SplineInst->getSplinePtr();
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+
+  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+}
+
+/*
+  ~~ Notes for rotation ~~
+  spl_coefs      = Raw pointer to spline coefficients
+  basis_set_size = Number of spline coefs per orbital
+  OrbitalSetSize = Number of orbitals (excluding padding)
+
+  spl_coefs has a complicated layout depending on dimensionality of splines.
+  Luckily, for our purposes, we can think of spl_coefs as pointing to a
+  matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline
+  index adjacent in memory. The orbital index is SIMD aligned and therefore
+  may include padding.
+
+  As a result, due to SIMD alignment, Nsplines may be larger than the
+  actual number of splined orbitals. This means that in practice rot_mat
+  may be smaller than the number of 'columns' in the coefs array!
+
+      SplineR2R spl_coef layout:
+             ^         | sp1 | ... | spN | pad |
+             |         |=====|=====|=====|=====|
+             |         | c11 | ... | c1N | 0   |
+      basis_set_size   | c21 | ... | c2N | 0   |
+             |         | ... | ... | ... | 0   |
+             |         | cM1 | ... | cMN | 0   |
+             v         |=====|=====|=====|=====|
+                       <------ Nsplines ------>
+
+      SplineC2C spl_coef layout:
+             ^         | sp1_r | sp1_i |  ...  | spN_r | spN_i |  pad  |
+             |         |=======|=======|=======|=======|=======|=======|
+             |         | c11_r | c11_i |  ...  | c1N_r | c1N_i |   0   |
+      basis_set_size   | c21_r | c21_i |  ...  | c2N_r | c2N_i |   0   |
+             |         |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |
+             |         | cM1_r | cM1_i |  ...  | cMN_r | cMN_i |   0   |
+             v         |=======|=======|=======|=======|=======|=======|
+                       <------------------ Nsplines ------------------>
+
+  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs
+  "matrix" is very tall and skinny.
+*/
+template<typename ST>
+void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+{
+  // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
+  const auto spline_ptr = SplineInst->getSplinePtr();
+  assert(spline_ptr != nullptr);
+  const auto spl_coefs      = spline_ptr->coefs;
+  const auto Nsplines       = spline_ptr->num_splines; // May include padding
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  const auto basis_set_size = coefs_tot_size / Nsplines;
+  assert(OrbitalSetSize == rot_mat.rows());
+  assert(OrbitalSetSize == rot_mat.cols());
+
+  if (!use_stored_copy)
+  {
+    assert(coef_copy_ != nullptr);
+    std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
+  }
+
+  for (int i = 0; i < basis_set_size; i++)
+    for (int j = 0; j < OrbitalSetSize; j++)
+    {
+      // cur_elem points to the real componend of the coefficient.
+      // Imag component is adjacent in memory.
+      const auto cur_elem = Nsplines * i + 2 * j;
+      ST newval_r{0.};
+      ST newval_i{0.};
+      for (auto k = 0; k < OrbitalSetSize; k++)
+      {
+        const auto index = Nsplines * i + 2 * k;
+        ST zr            = (*coef_copy_)[index];
+        ST zi            = (*coef_copy_)[index + 1];
+        ST wr            = rot_mat[k][j].real();
+        ST wi            = rot_mat[k][j].imag();
+        newval_r += zr * wr - zi * wi;
+        newval_i += zr * wi + zi * wr;
+      }
+      spl_coefs[cur_elem]     = newval_r;
+      spl_coefs[cur_elem + 1] = newval_i;
+    }
 }
 
 template<typename ST>
@@ -83,7 +177,8 @@ void SplineC2C<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
     assign_v(r, myV, psi, first / 2, last / 2);
@@ -109,7 +204,8 @@ void SplineC2C<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 #pragma omp barrier
     }
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
     const int first_cplx = first / 2;
     const int last_cplx  = kPoints.size() < last / 2 ? kPoints.size() : last / 2;
 
@@ -289,7 +385,8 @@ void SplineC2C<ST>::evaluateVGL(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgl(r, psi, dpsi, d2psi, first / 2, last / 2);
@@ -428,7 +525,8 @@ void SplineC2C<ST>::evaluateVGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgh(r, psi, dpsi, grad_grad_psi, first / 2, last / 2);
@@ -683,7 +781,8 @@ void SplineC2C<ST>::evaluateVGHGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
     assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);

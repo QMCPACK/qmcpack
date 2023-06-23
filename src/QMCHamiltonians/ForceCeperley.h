@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_FORCE_CEPERLEY_HAMILTONIAN_H
 #define QMCPLUSPLUS_FORCE_CEPERLEY_HAMILTONIAN_H
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -41,13 +42,15 @@ public:
 
   ForceCeperley(ParticleSet& ions, ParticleSet& elns);
 
+  std::string getClassName() const override { return "ForceCeperley"; }
+
   Return_t evaluate(ParticleSet& P) override;
 
   void InitMatrix();
 
-  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override
+  void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override
   {
-    registerObservablesF(h5list, gid);
+    registerObservablesF(h5list, file);
   }
 
   void addObservables(PropertySetType& plist, BufferType& collectables) override { addObservablesF(plist); }
@@ -66,7 +69,7 @@ public:
 
   bool get(std::ostream& os) const override
   {
-    os << "Ceperley Force Estimator Hamiltonian: " << pairName;
+    os << "Ceperley Force Estimator Hamiltonian: " << pair_name_;
     return true;
   }
 };

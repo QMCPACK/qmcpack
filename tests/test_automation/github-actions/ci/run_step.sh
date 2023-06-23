@@ -8,6 +8,15 @@ case "$1" in
   # Configure qmcpack using cmake out-of-source builds 
   configure)
     
+    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
+    then
+      echo "Use recent cmake v3.21.3"
+      export PATH=/opt/cmake-3.21.3-linux-x86_64/bin:$PATH
+      # Make current environment variables available to subsequent steps, 
+      # e.g. ctest
+      echo "PATH=$PATH" >> $GITHUB_ENV
+    fi
+    
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
     then
       echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
@@ -45,11 +54,11 @@ case "$1" in
         echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
 
       else
-        echo "Set CUDACXX CMake environment variable to nvcc standard location"
-        export CUDACXX=/usr/local/cuda/bin/nvcc
+        echo "Set CUDACXX CMake environment variable to nvcc 11.8"
+        export CUDACXX=/usr/local/cuda-11.8/bin/nvcc
 
         # Make current environment variables available to subsequent steps
-        echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+        echo "CUDACXX=/usr/local/cuda-11.8/bin/nvcc" >> $GITHUB_ENV
       fi
     fi 
 
@@ -80,14 +89,32 @@ case "$1" in
       ;;
     esac
 
-    # Path to QMC_DATA in self-hosted CI system
-    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
+    if [[ "$CONTAINER_OS" =~ (centos) ]]
     then
-      QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
+      # use spack
+      export PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:$PATH
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include
+      export FFTW_HOME=/opt/view
+      export LibXml2_ROOT=/opt/view
+      export HDF5_ROOT=/opt/view
+      export BOOST_ROOT=/opt/view
+
+
+      # Make current environment variables available to subsequent steps
+      echo "PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:$PATH" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include" >> $GITHUB_ENV
+      echo "FFTW_HOME=/opt/view" >> $GITHUB_ENV
+      echo "LibXml2_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "HDF5_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "BOOST_ROOT=/opt/view" >> $GITHUB_ENV
     fi
     
     case "${GH_JOBNAME}" in
-      *"GCC9-NoMPI-Debug-"*)
+      *"GCC9-NoMPI-Debug-"*|*"GCC11-NoMPI-Debug-"*)
         echo 'Configure for debug mode to capture asserts with gcc'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -96,7 +123,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=Debug \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-NoOMP-"*)
+      *"GCC9-NoMPI-NoOMP-"*|*"GCC11-NoMPI-NoOMP-"*)
         echo 'Configure for disabling OpenMP with QMC_OMP=0'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -107,7 +134,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-Sandbox-"*)
+      *"GCC9-NoMPI-Sandbox-"*|*"GCC11-NoMPI-Sandbox-"*)
         echo 'Configure for enabling sandbox (minimal) only option with gcc'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -136,6 +163,7 @@ case "$1" in
               -DQMC_MPI=0 \
               -DCMAKE_CXX_FLAGS=-Werror \
               -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
@@ -149,11 +177,11 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang12-NoMPI-Offload-Real"*)
-        echo 'Configure for building OpenMP offload with clang12 on x86_64 target'
+      *"Clang16-NoMPI-Offload-Real"*)
+        echo 'Configure for building OpenMP offload with clang16 on x86_64 target'
         cmake -GNinja \
-              -DCMAKE_C_COMPILER=clang-12 \
-              -DCMAKE_CXX_COMPILER=clang++-12 \
+              -DCMAKE_C_COMPILER=clang-16 \
+              -DCMAKE_CXX_COMPILER=clang++-16 \
               -DQMC_MPI=0 \
               -DENABLE_OFFLOAD=ON \
               -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
@@ -161,19 +189,20 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang14-MPI-CUDA-AFQMC-Offload"*)
+      *"Clang15-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with ENABLE_CUDA and AFQMC using OpenMP offload on x86_64 " \
               "with latest llvm, need built-from-source OpenBLAS due to bug in rpm"
 
-        export OMPI_CC=/opt/llvm/14.0.1/bin/clang
-        export OMPI_CXX=/opt/llvm/14.0.1/bin/clang++
+        # todo: update to llvm 15 release, currently using release candidate
+        export OMPI_CC=/opt/llvm/15.0.0/bin/clang
+        export OMPI_CXX=/opt/llvm/15.0.0/bin/clang++
         
         # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/llvm/14.0.1/bin/clang" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/llvm/14.0.1/bin/clang++" >> $GITHUB_ENV
+        echo "OMPI_CC=/opt/llvm/15.0.0/bin/clang" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/llvm/15.0.0/bin/clang++" >> $GITHUB_ENV
 
         # Confirm that cuda 11.2 gets picked up by the compiler
-        /opt/llvm/14.0.1/bin/clang++ -v
+        /opt/llvm/15.0.0/bin/clang++ -v
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -181,8 +210,8 @@ case "$1" in
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
+              -DQMC_GPU_ARCHS=sm_70 \
               -DENABLE_OFFLOAD=ON \
-              -DUSE_OBJECT_TARGET=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -190,25 +219,30 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Intel19-MPI-CUDA-AFQMC"*)
+      *"Intel21-MPI-CUDA-AFQMC"*)
         echo "Configure for building with ENABLE_CUDA and AFQMC  " \
-              "with Intel 2019 compiler, need built-from-source OpenBLAS due to bug in rpm"
+             "with Intel classic compiler in OneAPI 2021 (to be deprecated in 2023), " \
+             "need built-from-source OpenBLAS due to bug in rpm"
         
-        source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux
+        source /opt/intel/oneapi/setvars.sh
 
-        export OMPI_CC=/opt/intel2020/bin/icc
-        export OMPI_CXX=/opt/intel2020/bin/icpc
+        export OMPI_CC=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icc
+        export OMPI_CXX=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icpc
         
         # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/intel2020/bin/icc" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/intel2020/bin/icpc" >> $GITHUB_ENV
+        echo "OMPI_CC=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icc" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icpc" >> $GITHUB_ENV
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
+              -DCMAKE_C_FLAGS="-diag-disable=10441" \
+              -DCMAKE_CXX_FLAGS="-diag-disable=10441" \
+              -DCMAKE_CUDA_FLAGS="-diag-disable=10441" \
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
+              -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -216,45 +250,7 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
-        echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
-              -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
-              -DQMC_MPI=0 \
-              -DENABLE_CUDA=ON \
-              -DQMC_CUDA2HIP=ON \
-              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"ROCm-Clang13-MPI-Legacy-CUDA2HIP"*)
-        echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
-
-        export OMPI_CC=/opt/rocm/llvm/bin/clang
-        export OMPI_CXX=/opt/rocm/llvm/bin/clang++
-
-        # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/rocm/llvm/bin/clang" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/rocm/llvm/bin/clang++" >> $GITHUB_ENV
-
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
-              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
-              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
-              -DQMC_CUDA=1 \
-              -DQMC_CUDA2HIP=ON \
-              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"GCC8-MPI-CUDA-AFQMC"*)
+      *"GCC9-MPI-CUDA-AFQMC"*)
         echo 'Configure for building with ENABLE_CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -262,6 +258,7 @@ case "$1" in
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
+              -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -269,18 +266,7 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC8-NoMPI-Legacy-CUDA"*)
-        echo 'Configure for building with Legacy CUDA'
-        cmake -GNinja \
-              -DQMC_CUDA=1 \
-              -DQMC_MPI=0 \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"GCC8-NoMPI-MKL-"*)
+      *"GCC9-NoMPI-MKL-"*)
         echo 'Configure for building with GCC and Intel MKL'
 
         source /opt/intel2020/mkl/bin/mklvars.sh intel64
@@ -341,7 +327,7 @@ case "$1" in
       fi
     fi 
     
-    if [[ "${GH_JOBNAME}" =~ (Clang12-NoMPI-Offload) ]]
+    if [[ "${GH_JOBNAME}" =~ (Clang16-NoMPI-Offload) ]]
     then
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
        export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
@@ -356,7 +342,7 @@ case "$1" in
       then
         export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
       else
-        export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+        export LD_LIBRARY_PATH=/usr/local/cuda-11.8/lib64:${LD_LIBRARY_PATH}
       fi
     fi
 
@@ -374,12 +360,12 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
-       export LD_LIBRARY_PATH=/opt/llvm/14.0.1/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
+       export LD_LIBRARY_PATH=/opt/llvm/15.0.0/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
     fi
 
-    if [[ "${GH_JOBNAME}" =~ (Intel19) ]]
+    if [[ "${GH_JOBNAME}" =~ (Intel21) ]]
     then
-       source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux
+       source /opt/intel/oneapi/setvars.sh
     fi
 
     if [[ "${GH_JOBNAME}" =~ (MKL) ]]

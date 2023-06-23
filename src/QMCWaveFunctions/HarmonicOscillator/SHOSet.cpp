@@ -16,7 +16,8 @@
 
 namespace qmcplusplus
 {
-SHOSet::SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states) : length(l), center(c)
+SHOSet::SHOSet(const std::string& my_name, RealType l, PosType c, const std::vector<SHOState*>& sho_states)
+    : SPOSet(my_name), length(l), center(c)
 {
   state_info.resize(sho_states.size());
   for (int s = 0; s < sho_states.size(); ++s)
@@ -28,8 +29,6 @@ SHOSet::SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states) 
 void SHOSet::initialize()
 {
   using std::sqrt;
-
-  className = "SHOSet";
 
   OrbitalSetSize = state_info.size();
 
@@ -522,9 +521,6 @@ void SHOSet::test_overlap()
   app_log() << "end SHOSet::test_overlap" << std::endl;
 }
 
-
-//methods to be implemented later
-void SHOSet::resetParameters(const opt_variables_type& optVariables) { not_implemented("resetParameters"); }
 
 void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
 {

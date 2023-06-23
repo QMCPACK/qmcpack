@@ -20,18 +20,7 @@ set(SRCS bspline_create.c bspline_data.c multi_bspline_create.c multi_bspline_co
 set(SRCS ${SRCS} bspline_eval_d_std.cpp multi_bspline_eval_s_std3.cpp multi_bspline_eval_d_std3.cpp
          multi_bspline_eval_z_std3.cpp)
 
-if(QMC_CUDA)
-  set(SRCS ${SRCS} multi_bspline_create_cuda.cu bspline_create_cuda.cu)
-  if(NOT QMC_CUDA2HIP)
-    add_library(einspline ${SRCS})
-  else()
-    hip_add_library(einspline ${SRCS})
-  endif(NOT QMC_CUDA2HIP)
-  target_link_libraries(einspline PRIVATE platform_runtime)
-else(QMC_CUDA)
-  add_library(einspline ${SRCS})
-endif(QMC_CUDA)
-
+add_library(einspline ${SRCS})
 target_compile_definitions(einspline INTERFACE "HAVE_EINSPLINE")
 
 #ADD_EXECUTABLE(time_multi time_multi_new.c)

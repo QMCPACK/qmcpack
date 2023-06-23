@@ -95,10 +95,18 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
     abort();
 #else
+    app_warning() << "Specifying orbital rotation via optimize tag is deprecated. Use the rotated_spo element instead"
+                  << std::endl;
+
+    sposet->storeParamsBeforeRotation();
     // create sposet with rotation
     auto& sposet_ref = *sposet;
-    auto rot_spo     = std::make_unique<RotatedSPOs>(std::move(sposet));
-    xmlNodePtr tcur  = cur->xmlChildrenNode;
+    app_log() << "  SPOSet " << sposet_ref.getName() << " is optimizable\n";
+    if (!sposet_ref.isRotationSupported())
+      myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet_ref.getName() + "' of type '" +
+                                sposet_ref.getClassName() + "'.");
+    auto rot_spo    = std::make_unique<RotatedSPOs>(sposet_ref.getName(), std::move(sposet));
+    xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
       std::string cname((const char*)(tcur->name));
@@ -110,23 +118,10 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
       }
       tcur = tcur->next;
     }
-
-    // pass sposet name and rename sposet before rotation
-    if (!sposet_ref.getName().empty())
-    {
-      rot_spo->setName(sposet_ref.getName());
-      sposet_ref.setName(sposet_ref.getName() + "_before_rotation");
-    }
-    if (sposet_ref.getName().empty())
-      sposet_ref.setName(spo_object_name + "_before_rotation");
-
-    // overwrite sposet
     sposet = std::move(rot_spo);
 #endif
   }
 
-  if (!spo_object_name.empty() && sposet->getName().empty())
-    sposet->setName(spo_object_name);
   if (sposet->getName().empty())
     app_warning() << "SPOSet object doesn't have a name." << std::endl;
   if (!spo_object_name.empty() && sposet->getName() != spo_object_name)
@@ -135,6 +130,53 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   sposet->checkObject();
   return sposet;
+}
+
+std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
+{
+  std::string spo_object_name;
+  std::string method;
+  OhmmsAttributeSet attrib;
+  attrib.add(spo_object_name, "name");
+  attrib.add(method, "method", {"global", "history"});
+  attrib.put(cur);
+
+
+#ifdef QMC_COMPLEX
+  myComm->barrier_and_abort("Orbital optimization via rotation doesn't support complex wavefunctions yet.");
+  return nullptr;
+#else
+  std::unique_ptr<SPOSet> sposet;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
+    {
+      sposet = createSPOSet(element);
+    }
+  });
+
+  if (!sposet)
+    myComm->barrier_and_abort("Rotated SPO needs an SPOset");
+
+  if (!sposet->isRotationSupported())
+    myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet->getName() + "' of type '" +
+                              sposet->getClassName() + "'.");
+
+  sposet->storeParamsBeforeRotation();
+  auto rot_spo = std::make_unique<RotatedSPOs>(spo_object_name, std::move(sposet));
+
+  if (method == "history")
+    rot_spo->set_use_global_rotation(false);
+
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "opt_vars")
+    {
+      std::vector<RealType> params;
+      putContent(params, element);
+      rot_spo->setRotationParameters(params);
+    }
+  });
+  return rot_spo;
+#endif
 }
 
 } // namespace qmcplusplus

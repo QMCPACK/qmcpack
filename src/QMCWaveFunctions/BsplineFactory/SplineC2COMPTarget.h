@@ -78,7 +78,7 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, ComplexT>> mw_mem_;
+  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, ComplexT>> mw_mem_handle_;
 
   ///team private ratios for reduction, numVP x numTeams
   Matrix<ComplexT, OffloadPinnedAllocator<ComplexT>> ratios_private;
@@ -107,18 +107,19 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2COMPTarget()
-      : BsplineSet(true),
-        offload_timer_(*timer_manager.createTimer("SplineC2COMPTarget::offload", timer_level_fine)),
+  SplineC2COMPTarget(const std::string& my_name)
+      : BsplineSet(my_name),
+        offload_timer_(createGlobalTimer("SplineC2COMPTarget::offload", timer_level_fine)),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
-  {
-    is_complex = true;
-    className  = "SplineC2COMPTarget";
-    KeyWord    = "SplineC2C";
-  }
+  {}
 
-  SplineC2COMPTarget(const SplineC2COMPTarget& in) = default;
+  SplineC2COMPTarget(const SplineC2COMPTarget& in);
+
+  virtual std::string getClassName() const override { return "SplineC2COMPTarget"; }
+  virtual std::string getKeyword() const override { return "SplineC2C"; }
+  bool isComplex() const override { return true; };
+  virtual bool isOMPoffload() const override { return true; }
 
   void createResource(ResourceCollection& collection) const override
   {
@@ -128,18 +129,15 @@ public:
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
     assert(this == &spo_list.getLeader());
-    auto& phi_leader = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-    auto res_ptr     = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, ComplexT>*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("SplineC2COMPTarget::acquireResource dynamic_cast failed");
-    phi_leader.mw_mem_.reset(res_ptr);
+    auto& phi_leader          = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
+    phi_leader.mw_mem_handle_ = collection.lendResource<SplineOMPTargetMultiWalkerMem<ST, ComplexT>>();
   }
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
     assert(this == &spo_list.getLeader());
     auto& phi_leader = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-    collection.takebackResource(std::move(phi_leader.mw_mem_));
+    collection.takebackResource(phi_leader.mw_mem_handle_);
   }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2COMPTarget>(*this); }

@@ -31,7 +31,12 @@ class DMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling);
+  DMC(const ProjectData& project_data,
+      MCWalkerConfiguration& w,
+      TrialWaveFunction& psi,
+      QMCHamiltonian& h,
+      Communicate* comm,
+      bool enable_profiling);
 
   bool run() override;
   bool put(xmlNodePtr cur) override;

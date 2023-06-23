@@ -1174,7 +1174,7 @@ class PoscarFile(StandardFile):
                 if not iselem:
                     self.error('{0} is not an element'.format(e))
                 #end if
-                text += symbol+' '
+                text += e+' '
             #end for
             text += '\n'
         #end if

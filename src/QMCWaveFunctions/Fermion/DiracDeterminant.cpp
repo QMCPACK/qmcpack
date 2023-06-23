@@ -22,6 +22,9 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#ifndef QMC_COMPLEX
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -35,15 +38,18 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
                                             int last,
                                             int ndelay,
                                             DetMatInvertor matrix_inverter_kind)
-    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last),
+    : DiracDeterminantBase(getClassName(), std::move(spos), first, last),
       ndelay_(ndelay),
       invRow_id(-1),
       matrix_inverter_kind_(matrix_inverter_kind)
 {
   resize(NumPtcls, NumPtcls);
 
-  if (Optimizable)
-    Phi->buildOptVariables(NumPtcls);
+#ifndef QMC_COMPLEX
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  if (rot_spo)
+    rot_spo->buildOptVariables(NumPtcls);
+#endif
 
   if (Phi->getOrbitalSetSize() < NumPtcls)
   {
@@ -457,11 +463,24 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<Wave
 }
 
 template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                                    const opt_variables_type& optvars,
+                                                    std::vector<ValueType>& ratios,
+                                                    Matrix<ValueType>& dratios)
+{
+  const int WorkingIndex = VP.refPtcl - FirstIndex;
+  assert(WorkingIndex >= 0);
+  std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
+  Phi->evaluateDerivRatios(VP, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
+}
+
+template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   ScopedTimer local_timer(SPOVTimer);
   Phi->evaluateValue(P, -1, psiV);
-  MatrixOperators::product(psiM, psiV.data(), &ratios[FirstIndex]);
+  Vector<ValueType> ratios_this_det(ratios.data() + FirstIndex, NumPtcls);
+  MatrixOperators::product(psiM, psiV, ratios_this_det);
 }
 
 
@@ -666,10 +685,18 @@ void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& active,
-                                                    std::vector<ValueType>& dlogpsi,
-                                                    std::vector<ValueType>& dhpsioverpsi)
+                                                    Vector<ValueType>& dlogpsi,
+                                                    Vector<ValueType>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::evaluateDerivativesWF(ParticleSet& P,
+                                                      const opt_variables_type& active,
+                                                      Vector<ValueType>& dlogpsi)
+{
+  Phi->evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
 }
 
 template<typename DU_TYPE>

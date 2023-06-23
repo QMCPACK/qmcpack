@@ -13,7 +13,7 @@ set(SRC_DIR Concurrency)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-set(SRCS test_ParallelExecutorOPENMP.cpp)
+set(SRCS test_ParallelExecutorOPENMP.cpp test_UtilityFunctionsOPENMP.cpp)
 
 if(QMC_EXP_THREADING)
   set(SRCS ${SRCS} test_ParallelExecutorSTD.cpp)

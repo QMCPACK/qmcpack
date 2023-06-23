@@ -25,6 +25,9 @@
 #include <fftw3.h>
 #endif
 
+#include <array>
+#include <string_view>
+
 namespace qmcplusplus
 {
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
@@ -206,13 +209,15 @@ void MPC::init_f_G()
     // std::cerr << "f_G = " << f_G[iG]/volInv << std::endl;
     // std::cerr << "f_G - 4*pi/G2= " << f_G[iG]/volInv - 4.0*M_PI/G2 << std::endl;
   }
-  char buff[1000];
-  snprintf(buff, 1000,
-           "    Worst MPC discrepancy:\n"
-           "      Linear Extrap   : %18.14e\n"
-           "      Quadratic Extrap: %18.14e\n",
-           worstLin, worstQuad);
-  app_log() << buff;
+  std::array<char, 1000> buff;
+  int length = std::snprintf(buff.data(), buff.size(),
+                             "    Worst MPC discrepancy:\n"
+                             "      Linear Extrap   : %18.14e\n"
+                             "      Quadratic Extrap: %18.14e\n",
+                             worstLin, worstQuad);
+  if (length < 0)
+    throw std::runtime_error("Error generating buffer string");
+  app_log() << std::string_view(buff.data(), length);
 }
 
 
@@ -366,25 +371,6 @@ MPC::Return_t MPC::evaluate(ParticleSet& P)
   //if (FirstTime || P.tag() == PtclRef->tag())
   value_ = evalSR(P) + evalLR(P) + Vconst;
   return value_;
-}
-
-void MPC::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  //only used for debugging
-  //  const int nw=W.getActiveWalkers();
-  //  const int indx=NUMPROPERTIES+myIndex;
-  //#ifdef QMC_CUDA
-  //#pragma omp parallel for
-  //  for(int iw=0; iw<nw; ++iw)
-  //  {
-  //    ParticleSet& p(*myPtcl[omp_get_thread_num()]);
-  //    p.R=W[iw]->R;
-  //    p.update();
-  //    RealType e=evalSR(p)+evalLR(p)+Vconst;
-  //    W[iw]->getPropertyBase()[indx] = e;
-  //    LocalEnergy[iw]+=e;
-  //  }
-  //#endif
 }
 
 bool MPC::put(xmlNodePtr cur)

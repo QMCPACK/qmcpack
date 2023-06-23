@@ -26,6 +26,7 @@
 #include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
+#include "Utilities/ProjectData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -94,17 +95,13 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w,
+  QMCDriver(const ProjectData& project_data,
+            MCWalkerConfiguration& w,
             TrialWaveFunction& psi,
             QMCHamiltonian& h,
             Communicate* comm,
             const std::string& QMC_driver_type,
             bool enable_profiling = false);
-
-  ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver&) = delete;
-  ///Copy operator (disabled).
-  QMCDriver& operator=(const QMCDriver&) = delete;
 
   ~QMCDriver() override;
 
@@ -200,6 +197,8 @@ public:
   unsigned long getDriverMode() override { return qmc_driver_mode.to_ulong(); }
 
 protected:
+  /// @brief top-level project data information
+  const ProjectData& project_data_;
   ///branch engine
   std::unique_ptr<BranchEngineType> branchEngine;
   ///drift modifer
@@ -365,7 +364,7 @@ protected:
   const std::string& get_root_name() const override { return RootName; }
 
 private:
-  NewTimer* checkpointTimer;
+  NewTimer& checkpoint_timer_;
   ///time the driver lifetime
   ScopedTimer driver_scope_timer_;
   ///profile the driver lifetime

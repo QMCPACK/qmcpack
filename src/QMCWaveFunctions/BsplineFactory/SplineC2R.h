@@ -36,7 +36,7 @@ namespace qmcplusplus
  * The internal storage of complex spline coefficients uses double sized real arrays of ST type, aligned and padded.
  * The first nComplexBands complex splines produce 2 real orbitals.
  * The rest complex splines produce 1 real orbital.
- * All the output orbitals are real.
+ * All the output orbitals are real (C2R). The maximal number of output orbitals is OrbitalSetSize.
  */
 template<typename ST>
 class SplineC2R : public BsplineSet
@@ -84,12 +84,12 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2R() : nComplexBands(0)
-  {
-    is_complex = true;
-    className  = "SplineC2R";
-    KeyWord    = "SplineC2R";
-  }
+  SplineC2R(const std::string& my_name) : BsplineSet(my_name), nComplexBands(0) {}
+
+  SplineC2R(const SplineC2R& in);
+  virtual std::string getClassName() const override { return "SplineC2R"; }
+  virtual std::string getKeyword() const override { return "SplineC2R"; }
+  bool isComplex() const override { return true; };
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2R>(*this); }
 
@@ -136,11 +136,8 @@ public:
   /** remap kPoints to pack the double copy */
   inline void resize_kpoints()
   {
-#ifndef QMC_CUDA
-    // GPU CUDA code doesn't allow a change of the ordering
     nComplexBands = this->remap_kpoints();
-#endif
-    int nk = kPoints.size();
+    const int nk  = kPoints.size();
     mKK.resize(nk);
     myKcart.resize(nk);
     for (size_t i = 0; i < nk; ++i)

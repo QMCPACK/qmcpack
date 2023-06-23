@@ -35,6 +35,7 @@ set(HAMSRCS
     SkAllEstimator.cpp
     MomentumEstimator.cpp
     ForceBase.cpp
+    BareForce.cpp
     HamiltonianFactory.cpp
     CoulombPotentialFactory.cpp
     HarmonicExternalPotential.cpp
@@ -76,19 +77,6 @@ if(OHMMS_DIM MATCHES 3)
     set(HAMSRCS ${HAMSRCS} MPC.cpp)
   endif(HAVE_LIBFFTW)
 
-  if(QMC_CUDA)
-    set(HAMSRCS_CUDA CudaCoulomb.cu NLPP.cu)
-    set(HAMSRCS
-        ${HAMSRCS}
-        CoulombPBCAA_CUDA.cpp
-        CoulombPBCAB_CUDA.cpp
-        MPC_CUDA.cpp
-        LocalECPotential_CUDA.cpp
-        NonLocalECPotential_CUDA.cpp
-        CoulombPotential_CUDA.cpp
-        SkEstimator_CUDA.cpp)
-  endif(QMC_CUDA)
-
 endif(OHMMS_DIM MATCHES 3)
 
 if(USE_OBJECT_TARGET)
@@ -98,15 +86,6 @@ else()
   add_library(qmcham ${HAMSRCS})
   add_library(qmcham_unit ${HAMSRCS})
 endif()
-if(QMC_CUDA)
-  if(NOT QMC_CUDA2HIP)
-    add_library(qmcham_cuda ${HAMSRCS_CUDA})
-  else()
-    hip_add_library(qmcham_cuda ${HAMSRCS_CUDA})
-  endif(NOT QMC_CUDA2HIP)
-  target_link_libraries(qmcham PRIVATE qmcham_cuda)
-  target_link_libraries(qmcham_unit PRIVATE qmcham_cuda)
-endif(QMC_CUDA)
 
 use_fake_rng(qmcham_unit)
 

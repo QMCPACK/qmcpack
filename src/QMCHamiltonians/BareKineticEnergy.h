@@ -43,41 +43,19 @@ namespace qmcplusplus
 class BareKineticEnergy : public OperatorBase
 {
 public:
-  ///true, if all the species have the same mass
-  bool SameMass;
-  ///mass of the particle
-  FullPrecRealType M;
-  ///\f$ 1/(2 m^*) \f$
-  FullPrecRealType OneOver2M;
-  ///MinusOver2M[i] = \f$ -1/2m[i]\f$ for the ith species
-  std::vector<FullPrecRealType> MinusOver2M;
-
-  ParticleSet::ParticleGradient Gtmp;
-  ParticleSet::ParticleLaplacian Ltmp;
-
-  ///single particle trace samples
-  bool streaming_kinetic;
-  bool streaming_kinetic_comp;
-  bool streaming_momentum;
-
-#if !defined(REMOVE_TRACEMANAGER)
-  Array<TraceReal, 1>* T_sample;
-  Array<TraceComp, 1>* T_sample_comp;
-  Array<TraceComp, 2>* p_sample;
-#endif
-  ParticleSet& Ps;
-
   /** constructor with particleset
    * @param target particleset
    *
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-  BareKineticEnergy(ParticleSet& p);
+  BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi);
   ///destructor
   ~BareKineticEnergy() override;
 
-  void resetTargetParticleSet(ParticleSet& P) override {}
+  bool dependsOnWaveFunction() const override;
+  std::string getClassName() const override;
+  void resetTargetParticleSet(ParticleSet& p) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override;
@@ -86,6 +64,17 @@ public:
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
+
+  Return_t evaluateValueAndDerivatives(ParticleSet& P,
+                                       const opt_variables_type& optvars,
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi) override;
+
+  void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           const opt_variables_type& optvars,
+                                           const RecordArray<ValueType>& dlogpsi,
+                                           RecordArray<ValueType>& dhpsioverpsi) const override;
 
   /** Evaluate the contribution of this component for multiple walkers reporting
    *  to registered listeners from Estimators.
@@ -155,13 +144,6 @@ public:
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-#ifdef QMC_CUDA
-  ////////////////////////////////
-  // Vectorized version for GPU //
-  ////////////////////////////////
-  // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
-#endif
   /** initialize a shared resource and hand it to a collection
    */
   void createResource(ResourceCollection& collection) const override;
@@ -175,17 +157,29 @@ public:
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
 private:
-  struct MultiWalkerResource : public Resource
-  {
-    MultiWalkerResource() : Resource("BareKineticEnergy") {}
+  ///true, if all the species have the same mass
+  bool same_mass_;
 
-    Resource* makeClone() const override { return new MultiWalkerResource(*this); }
+  ///mass of the particle
+  FullPrecRealType particle_mass_;
 
-    Vector<RealType> t_samples;
-    Vector<std::complex<RealType>> tcmp_samples;
-  };
+  ///\f$ 1/(2 m^*) \f$
+  FullPrecRealType one_over_2m_;
+  ///minus_over_2m_[i] = \f$ -1/2m[i]\f$ for the ith species
+  std::vector<FullPrecRealType> minus_over_2m_;
 
+#if !defined(REMOVE_TRACEMANAGER)
+  Array<TraceReal, 1>* t_sample_;
+  Array<TraceComp, 1>* t_sample_comp_;
+  Array<TraceComp, 2>* p_sample_;
+#endif
+
+  ParticleSet& ps_;
+
+  struct MultiWalkerResource;
   ResourceHandle<MultiWalkerResource> mw_res_;
+
+  TrialWaveFunction& psi_;
 };
 
 } // namespace qmcplusplus

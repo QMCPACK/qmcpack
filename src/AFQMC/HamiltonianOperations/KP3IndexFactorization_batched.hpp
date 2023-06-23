@@ -181,7 +181,7 @@ public:
         dev_Q2vbias(typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
         dev_Qmap(Qmap),
         dev_nelpk(nelpk),
-        dev_a0pk(typename IMatrix::extensions_type{nelpk.size(0), nelpk.size(1)}, IAllocator{allocator_}),
+        dev_a0pk(typename IMatrix::extensions_type{std::get<0>(nelpk.sizes()), std::get<1>(nelpk.sizes())}, IAllocator{allocator_}),
         dev_QKToK2(QKToK2),
         EQ(nopk.size() + 2)
   {
@@ -241,7 +241,7 @@ public:
       i0[i] = i0[i - 1] + nopk[i - 1];
     copy_n(i0.data(), nkpts, dev_i0pk.origin());
     // dev_nelpk
-    for (int n = 0; n < nelpk.size(0); n++)
+    for (int n = 0; n < nelpk.size(); n++)
     {
       i0[0] = 0;
       for (int i = 1; i < nkpts; i++)
@@ -481,10 +481,10 @@ public:
     using std::copy_n;
     using std::fill_n;
     int nkpts = nopk.size();
-    assert(E.size(1) >= 3);
+    assert(std::get<1>(E.sizes()) >= 3);
     assert(nd >= 0 && nd < nelpk.size());
 
-    int nwalk     = Gc.size(1);
+    int nwalk     = std::get<1>(Gc.sizes());
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -497,7 +497,7 @@ public:
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
                 "dimensions \n");
 
@@ -523,13 +523,13 @@ public:
       Knc = local_nCV;
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride(0) == std::get<1>(KEright->sizes()));
       }
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride(0) == std::get<1>(KEleft->sizes()));
       }
     }
     else if (getKr or getKl)
@@ -1183,8 +1183,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<AType, 2, decltype(X.origin())> X_(X.origin(), {X.size(0), 1});
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {1, v.size(0)});
+    boost::multi::array_ref<AType, 2, decltype(X.origin())> X_(X.origin(), {X.size(), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {1, v.size()});
     return vHS(X_, v_, a, c);
   }
 
@@ -1199,8 +1199,8 @@ public:
   void vHS(MatA& X, MatB&& v, double a = 1., double c = 0.)
   {
     int nkpts = nopk.size();
-    int nwalk = X.size(1);
-    assert(v.size(0) == nwalk);
+    int nwalk = std::get<1>(X.sizes());
+    assert(v.size() == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
     int nmo_max   = *std::max_element(nopk.begin(), nopk.end());
@@ -1336,8 +1336,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(), 1});
+    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -1371,9 +1371,9 @@ public:
 
     int nkpts = nopk.size();
     assert(nd >= 0 && nd < nelpk.size());
-    int nwalk = G.size(1);
-    assert(v.size(0) == 2 * local_nCV);
-    assert(v.size(1) == nwalk);
+    int nwalk = std::get<1>(G.sizes());
+    assert(std::get<0>(v.sizes()) == 2 * local_nCV);
+    assert(std::get<1>(v.sizes()) == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -1586,8 +1586,8 @@ private:
     int npol    = (walker_type == NONCOLLINEAR) ? 2 : 1;
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
     //      int nocc_max = *std::max_element(nocc.begin(),nocc.end());
-    int nmo_tot = GKaKj.size(1);
-    int nwalk   = GKaKj.size(2);
+    int nmo_tot = std::get<1>(GKaKj.sizes());
+    int nwalk   = std::get<2>(GKaKj.sizes());
     int nkpts   = nopk.size();
     assert(GKKaj.num_elements() >= nkpts * nkpts * nwalk * nocc_max * npol * nmo_max);
 
@@ -1602,8 +1602,8 @@ private:
     int npol    = (walker_type == NONCOLLINEAR) ? 2 : 1;
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
     //      int nocc_max = *std::max_element(nocc.begin(),nocc.end());
-    int nmo_tot = GKaKj.size(1);
-    int nwalk   = GKaKj.size(2);
+    int nmo_tot = std::get<1>(GKaKj.sizes());
+    int nwalk   = std::get<2>(GKaKj.sizes());
     int nkpts   = nopk.size();
     assert(GQKaj.num_elements() >= nkpts * nkpts * nwalk * nocc_max * npol * nmo_max);
 
@@ -1621,8 +1621,8 @@ private:
   void vKKwij_to_vwKiKj(MatA const& vKK, MatB&& vKiKj)
   {
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
-    int nwalk   = vKiKj.size(0);
-    int nmo_tot = vKiKj.size(1);
+    int nwalk   = std::get<0>(vKiKj.sizes());
+    int nmo_tot = std::get<1>(vKiKj.sizes());
     int nkpts   = nopk.size();
 
     using ma::vKKwij_to_vwKiKj;
@@ -1634,7 +1634,7 @@ private:
   void vbias_from_v1(ComplexType a, MatA const& v1, MatB&& vbias)
   {
     using BType   = typename std::decay<MatB>::type::element;
-    int nwalk     = vbias.size(1);
+    int nwalk     = std::get<1>(vbias.sizes());
     int nkpts     = nopk.size();
     int nchol_max = *std::max_element(ncholpQ.begin(), ncholpQ.end());
 

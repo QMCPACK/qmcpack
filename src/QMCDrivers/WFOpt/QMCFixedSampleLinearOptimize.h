@@ -44,7 +44,11 @@ class QMCFixedSampleLinearOptimize : public QMCDriver, public LinearMethod, priv
 {
 public:
   ///Constructor.
-  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCFixedSampleLinearOptimize(const ProjectData& project_data,
+                               MCWalkerConfiguration& w,
+                               TrialWaveFunction& psi,
+                               QMCHamiltonian& h,
+                               Communicate*);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimize() override;
@@ -54,7 +58,7 @@ public:
   ///preprocess xml node
   bool put(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
-  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
+  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
 
   RealType Func(RealType dl) override;
 
@@ -239,6 +243,7 @@ private:
   NewTimer& generate_samples_timer_;
   NewTimer& initialize_timer_;
   NewTimer& eigenvalue_timer_;
+  NewTimer& involvmat_timer_;
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
   Timer t1;

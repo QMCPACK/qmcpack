@@ -47,7 +47,11 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0) { className = "PWRealOrbitalSet"; }
+  PWRealOrbitalSet(const std::string& my_name)
+      : SPOSet(my_name), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0)
+  {}
+
+  std::string getClassName() const override { return "PWRealOrbitalSet"; }
 
   /** delete BasisSet only it owns this
    *
@@ -75,8 +79,6 @@ public:
    * @param jorb orbital index
    */
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
-
-  void resetParameters(const opt_variables_type& optVariables) override;
 
   void setOrbitalSetSize(int norbs) override;
 

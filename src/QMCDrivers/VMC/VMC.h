@@ -25,7 +25,12 @@ class VMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling);
+  VMC(const ProjectData& project_data_,
+      MCWalkerConfiguration& w,
+      TrialWaveFunction& psi,
+      QMCHamiltonian& h,
+      Communicate* comm,
+      bool enable_profiling);
   bool run() override;
   bool put(xmlNodePtr cur) override;
   QMCRunType getRunType() override { return QMCRunType::VMC; }
@@ -34,8 +39,6 @@ private:
   int prevSteps;
   int prevStepsBetweenSamples;
 
-  ///Ways to set rn constant
-  RealType logoffset, logepsilon;
   ///option to enable/disable drift equation or RN for VMC
   std::string UseDrift;
   ///check the run-time environments

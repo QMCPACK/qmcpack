@@ -656,20 +656,13 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
     app_error() << " Error hdf5 file in WavefunctionFactory. \n";
     APP_ABORT("");
   }
-  if (!dump.push("Wavefunction", false))
-  {
-    app_error() << " Error in WavefunctionFactory: Group Wavefunction not found. \n";
-    APP_ABORT("");
-  }
+  dump.push("Wavefunction", false);
 
   if (type == "msd" || type == "nomsd")
   {
     app_log() << " Wavefunction type: NOMSD" << std::endl;
-    if (!dump.push("NOMSD", false))
-    {
-      app_error() << " Error in WavefunctionFactory: Group NOMSD not found.\n";
-      APP_ABORT("");
-    }
+    dump.push("NOMSD", false);
+
     std::vector<ComplexType> ci;
 
     // Read common trial wavefunction input options.
@@ -690,11 +683,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
     using Alloc = shared_allocator<ComplexType>;
     for (int i = 0; i < ndread; ++i)
     {
-      if (!dump.push(std::string("PsiT_") + std::to_string(i), false))
-      {
-        app_error() << " Error in WavefunctionFactory: Group PsiT not found. \n";
-        APP_ABORT("");
-      }
+      dump.push(std::string("PsiT_") + std::to_string(i), false);
+
       PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix, Alloc>(dump, TGwfn.Node())); //,Alloc(TGwfn.Node())));
       dump.pop();
       if (walker_type == COLLINEAR and input_wtype == CLOSED)
@@ -702,11 +692,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
         if (NAEA != NAEB)
           APP_ABORT(" Error: NAEA!=NAEB when initializing collinear wfn from closed shell file.\n");
         // read them again
-        if (!dump.push(std::string("PsiT_") + std::to_string(i), false))
-        {
-          app_error() << " Error in WavefunctionFactory: Group PsiT not found. \n";
-          APP_ABORT("");
-        }
+        dump.push(std::string("PsiT_") + std::to_string(i), false);
         PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix, Alloc>(dump, TGwfn.Node())); //,Alloc(TGwfn.Node())));
         dump.pop();
       }
@@ -795,11 +781,9 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
       APP_ABORT("Error: PHMSD requires a COLLINEAR calculation.\n");
     std::vector<PsiT_Matrix> PsiT_MO;
     std::string wfn_type;
-    if (!dump.push("PHMSD", false))
-    {
-      app_error() << " Error in WavefunctionFactory: Group PHMSD not found. \n";
-      APP_ABORT("");
-    }
+
+    dump.push("PHMSD", false);
+
     std::vector<int> occbuff;
     std::vector<ComplexType> coeffs;
     // 1. Read occupancies and coefficients.

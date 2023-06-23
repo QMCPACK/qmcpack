@@ -14,7 +14,7 @@
 
 #include <cassert>
 #include <complex>
-#include "rocrand/rocrand.h"
+#include <rocrand/rocrand.h>
 
 namespace kernels
 {

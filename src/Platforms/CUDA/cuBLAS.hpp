@@ -22,7 +22,7 @@
 #include <cublas_v2.h>
 #define castNativeType castCUDAType
 #else
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 #include "Platforms/ROCm/cuda2hip.h"
 #include "Platforms/ROCm/hipBLAS.hpp"
 #include "Platforms/ROCm/hipblasTypeMapping.hpp"

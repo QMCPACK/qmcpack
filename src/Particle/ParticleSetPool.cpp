@@ -56,16 +56,12 @@ ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 
 MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
 {
-  ParticleSet* mc = 0;
-  if (myPool.size() == 1)
-    mc = myPool.begin()->second.get();
-  else
-    mc = getParticleSet(pname);
-  if (mc == 0)
+  auto mc = dynamic_cast<MCWalkerConfiguration*>(getParticleSet(pname));
+  if (mc == nullptr)
   {
     throw std::runtime_error("ParticleSePool::getWalkerSet missing " + pname);
   }
-  return dynamic_cast<MCWalkerConfiguration*>(mc);
+  return mc;
 }
 
 void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
@@ -76,7 +72,8 @@ void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
     auto& pname = p->getName();
     LOGMSG("  Adding " << pname << " ParticleSet to the pool")
     if (&p->getSimulationCell() != simulation_cell_.get())
-      throw std::runtime_error("bug mandate");
+      throw std::runtime_error("Bug detected! ParticleSetPool::addParticleSet requires p created with the simulation "
+                               "cell from ParticleSetPool.");
     myPool.emplace(pname, std::move(p));
   }
   else
@@ -210,12 +207,11 @@ bool ParticleSetPool::get(std::ostream& os) const
   os << "ParticleSetPool has: " << std::endl << std::endl;
   os.setf(std::ios::scientific, std::ios::floatfield);
   os.precision(14);
-  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-  while (it != it_end)
-  {
-    (*it).second->get(os);
-    ++it;
-  }
+  for (const auto& [name, pset] : myPool)
+    if (outputManager.isDebugActive())
+      pset->print(os, 0);
+    else
+      pset->print(os, 10 /* maxParticlesToPrint */);
   return true;
 }
 

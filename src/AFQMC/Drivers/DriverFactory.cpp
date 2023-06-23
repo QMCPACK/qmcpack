@@ -144,8 +144,14 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
       if (read.open(hdf_read_restart, H5F_ACC_RDONLY))
       {
         // always write driver data and walkers
-        if (!read.push("AFQMCDriver", false))
+        try
+        {
+          read.push("AFQMCDriver", false);
+        }
+        catch (...)
+        {
           return false;
+        }
 
         std::vector<IndexType> Idata(2);
         std::vector<RealType> Rdata(2);
@@ -241,7 +247,11 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   else
   {
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    wset.resize(nWalkers, initial_guess[0], initial_guess[1]({0, NMO}, {0, NAEB}));
+    wset.resize(
+		nWalkers, 
+		initial_guess[0], 
+		initial_guess[1]({0, NMO}, {0, NAEB})
+	);
     wfn0.Energy(wset);
     app_log() << " Energy of starting determinant: \n"
               << "  - Total energy    : " << std::setprecision(12) << wset[0].energy() << "\n"

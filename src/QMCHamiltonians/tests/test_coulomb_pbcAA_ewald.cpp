@@ -37,10 +37,7 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -54,10 +51,10 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   CoulombPBCAA caa(ions, false, false, false);
   // Background charge term
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.142553)); // not validated
+  CHECK(consts == Approx(-3.142553)); // not validated
 
   double val = caa.evaluate(ions);
-  REQUIRE(val == Approx(-1.418927)); // not validated
+  CHECK(val == Approx(-1.418927)); // not validated
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 }
@@ -75,13 +72,8 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.88972614;
-  ions.R[1][1] = 1.88972614;
-  ions.R[1][2] = 1.88972614;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.88972614, 1.88972614, 1.88972614};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -95,10 +87,10 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 
   // Background charge term
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-1.690675)); // not validated
+  CHECK(consts == Approx(-1.690675)); // not validated
 
   double val = caa.evaluate(elec);
-  REQUIRE(val == Approx(-0.963074)); // not validated
+  CHECK(val == Approx(-0.963074)); // not validated
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 }
@@ -115,10 +107,7 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({1});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.5;
-  elec.R[0][2] = 0.0;
-
+  elec.R[0]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -136,10 +125,10 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.142553));
+  CHECK(consts == Approx(-3.142553));
 
   double val = caa.evaluate(elec);
-  REQUIRE(val == Approx(-1.418927)); // not validated
+  CHECK(val == Approx(-1.418927)); // not validated
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 }

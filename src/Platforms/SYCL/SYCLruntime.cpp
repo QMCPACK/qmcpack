@@ -9,11 +9,11 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "SYCLDeviceManager.h"
 #include "SYCLruntime.hpp"
 
 namespace qmcplusplus
 {
-sycl::queue getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceQueue(); }
+sycl::queue& getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceDefaultQueue(); }
 } // namespace qmcplusplus

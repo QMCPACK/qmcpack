@@ -22,6 +22,11 @@
 #include <complex>
 #include "Configuration.h"
 
+namespace qmcplusplus
+{
+class hdf_archive;
+}
+
 namespace optimize
 {
 /** An enum useful for determining the type of parameter is being optimized.
@@ -46,12 +51,11 @@ struct VariableSet
   using value_type = qmcplusplus::QMCTraits::ValueType;
   using real_type  = qmcplusplus::QMCTraits::RealType;
 
-  using pair_type         = std::pair<std::string, value_type>;
-  using index_pair_type   = std::pair<std::string, int>;
-  using iterator          = std::vector<pair_type>::iterator;
-  using const_iterator    = std::vector<pair_type>::const_iterator;
-  using size_type         = std::vector<pair_type>::size_type;
-  using variable_map_type = std::map<std::string, value_type>;
+  using pair_type       = std::pair<std::string, value_type>;
+  using index_pair_type = std::pair<std::string, int>;
+  using iterator        = std::vector<pair_type>::iterator;
+  using const_iterator  = std::vector<pair_type>::const_iterator;
+  using size_type       = std::vector<pair_type>::size_type;
 
   ///number of active variables
   int num_active_vars;
@@ -66,10 +70,8 @@ struct VariableSet
 
   ///default constructor
   inline VariableSet() : num_active_vars(0) {}
-  ///constructor using map
-  //       VariableSet(variable_map_type& input);
   ///viturval destructor for safety
-  virtual ~VariableSet() {}
+  virtual ~VariableSet() = default;
   /** if any of Index value is not zero, return true
    */
   inline bool is_optimizable() const { return num_active_vars > 0; }
@@ -96,14 +98,8 @@ struct VariableSet
    */
   inline iterator find(const std::string& vname)
   {
-    iterator it(NameAndValue.begin());
-    while (it != NameAndValue.end())
-    {
-      if ((*it).first == vname)
-        return it;
-      ++it;
-    }
-    return NameAndValue.end();
+    return std::find_if(NameAndValue.begin(), NameAndValue.end(),
+                        [&vname](const auto& value) { return value.first == vname; });
   }
 
   /** return the Index vaule for the named parameter
@@ -111,17 +107,7 @@ struct VariableSet
    *
    * If vname is not found in this variables, return -1;
    */
-  inline int getIndex(const std::string& vname) const
-  {
-    int loc = 0;
-    while (loc != NameAndValue.size())
-    {
-      if (NameAndValue[loc].first == vname)
-        return Index[loc];
-      ++loc;
-    }
-    return -1;
-  }
+  int getIndex(const std::string& vname) const;
 
   /* return the NameAndValue index for the named parameter
    * @ param vname name of the variable
@@ -201,7 +187,7 @@ struct VariableSet
   /** return the name of i-th variable
    * @param i index
    */
-  inline std::string name(int i) const { return NameAndValue[i].first; }
+  const std::string& name(int i) const { return NameAndValue[i].first; }
 
   /** return the i-th value
    * @param i index
@@ -246,10 +232,6 @@ struct VariableSet
    * Remove all the data.
    */
   void clear();
-
-  /** insert local variables to output
-   */
-  //       void insertTo(variable_map_type& output) const;
 
   /** insert a VariableSet to the list
    * @param input variables
@@ -299,12 +281,6 @@ struct VariableSet
     }
   }
 
-  /** make the selected variables active
-   * @param selected input variables that are set to be varied
-   */
-  void activate(const variable_map_type& selected);
-
-
   /** deactivate variables for optimization
    * @param first iterator of the first name
    * @param last iterator of the last name
@@ -326,16 +302,6 @@ struct VariableSet
     }
   }
 
-  ///** make the selected variables active
-  // * @param selected input variables that are set to be varied
-  // */
-  //void activate(const std::vector<std::string>& selected, bool reindex);
-
-  /** exclude variables
-   * @param selected name-value pairs that should be dropped from the set
-   */
-  void disable(const variable_map_type& selected);
-
   /** reset Index
    */
   void resetIndex();
@@ -350,19 +316,18 @@ struct VariableSet
    */
   void getIndex(const VariableSet& selected);
 
-  /** set default Indices
-   * @param optimize_all if true, all the variables are active
+  /** set default Indices, namely all the variables are active
    */
-  void setDefaults(bool optimize_all);
+  void setIndexDefault();
 
   void print(std::ostream& os, int leftPadSpaces = 0, bool printHeader = false) const;
 
   // Save variational parameters to an HDF file
-  void saveAsHDF(const std::string& filename) const;
+  void writeToHDF(const std::string& filename, qmcplusplus::hdf_archive& hout) const;
 
   /// Read variational parameters from an HDF file.
   /// This assumes VariableSet is already set up.
-  void readFromHDF(const std::string& filename);
+  void readFromHDF(const std::string& filename, qmcplusplus::hdf_archive& hin);
 };
 } // namespace optimize
 

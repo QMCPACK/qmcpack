@@ -23,9 +23,7 @@
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
 #include "CPU/math.hpp"
-
-//#include "QMCHamiltonians/Ylm.h"
-//#define PRINT_RADIAL
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -540,7 +538,7 @@ public:
             splineData_r[ip] = all_vals[idx][ip][lm];
           atomic_spline_r = einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(),
                                               ((lm == 0) || (lm > 3)));
-          if (!bspline->is_complex)
+          if (!bspline->isComplex())
           {
             mycenter.set_spline(atomic_spline_r, lm, iorb);
             einspline::destroy(atomic_spline_r);
@@ -560,51 +558,6 @@ public:
           }
         }
       }
-
-#ifdef PRINT_RADIAL
-      char fname[64];
-      sprintf(fname, "band_%d_center_%d_pw.dat", iorb, center_idx);
-      FILE* fout_pw = fopen(fname, "w");
-      sprintf(fname, "band_%d_center_%d_spline_v.dat", iorb, center_idx);
-      FILE* fout_spline_v = fopen(fname, "w");
-      sprintf(fname, "band_%d_center_%d_spline_g.dat", iorb, center_idx);
-      FILE* fout_spline_g = fopen(fname, "w");
-      sprintf(fname, "band_%d_center_%d_spline_l.dat", iorb, center_idx);
-      FILE* fout_spline_l = fopen(fname, "w");
-      fprintf(fout_pw, "# r vals(lm)\n");
-      fprintf(fout_spline_v, "# r vals(lm)\n");
-      fprintf(fout_spline_g, "# r grads(lm)\n");
-      fprintf(fout_spline_l, "# r lapls(lm)\n");
-      // write to file for plotting
-      for (int ip = 0; ip < spline_npoints - 1; ip++)
-      {
-        double r = delta * static_cast<double>(ip);
-        mycenter.SplineInst->evaluate_vgl(r, mycenter.localV, mycenter.localG, mycenter.localL);
-        fprintf(fout_pw, "%15.10lf  ", r);
-        fprintf(fout_spline_v, "%15.10lf  ", r);
-        fprintf(fout_spline_g, "%15.10lf  ", r);
-        fprintf(fout_spline_l, "%15.10lf  ", r);
-        for (int lm = 0; lm < lm_tot; lm++)
-        {
-          fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[center_idx][ip][lm].real(),
-                  all_vals[center_idx][ip][lm].imag());
-          fprintf(fout_spline_v, "%15.10lf  %15.10lf  ", mycenter.localV[lm * mycenter.Npad + iorb * 2],
-                  mycenter.localV[lm * mycenter.Npad + iorb * 2 + 1]);
-          fprintf(fout_spline_g, "%15.10lf  %15.10lf  ", mycenter.localG[lm * mycenter.Npad + iorb * 2],
-                  mycenter.localG[lm * mycenter.Npad + iorb * 2 + 1]);
-          fprintf(fout_spline_l, "%15.10lf  %15.10lf  ", mycenter.localL[lm * mycenter.Npad + iorb * 2],
-                  mycenter.localL[lm * mycenter.Npad + iorb * 2 + 1]);
-        }
-        fprintf(fout_pw, "\n");
-        fprintf(fout_spline_v, "\n");
-        fprintf(fout_spline_g, "\n");
-        fprintf(fout_spline_l, "\n");
-      }
-      fclose(fout_pw);
-      fclose(fout_spline_v);
-      fclose(fout_spline_g);
-      fclose(fout_spline_l);
-#endif
     }
   }
 };

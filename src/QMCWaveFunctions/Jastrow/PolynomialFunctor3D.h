@@ -55,8 +55,8 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
   bool notOpt;
 
   ///constructor
-  PolynomialFunctor3D(real_type ee_cusp = 0.0, real_type eI_cusp = 0.0)
-      : N_eI(0), N_ee(0), ResetCount(0), C(3), scale(1.0), notOpt(false)
+  PolynomialFunctor3D(const std::string& my_name, real_type ee_cusp = 0.0, real_type eI_cusp = 0.0)
+      : OptimizableFunctorBase(my_name), N_eI(0), N_ee(0), ResetCount(0), C(3), scale(1.0), notOpt(false)
   {
     if (std::abs(ee_cusp) > 0.0 || std::abs(eI_cusp) > 0.0)
     {
@@ -733,6 +733,86 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     return true;
   }
 
+  ///calculate derivatives with respect to polynomial parameters
+  inline bool evaluateDerivatives(const real_type r_12,
+                                  const real_type r_1I,
+                                  const real_type r_2I,
+                                  std::vector<real_type>& d_vals)
+  {
+    const real_type L = 0.5 * cutoff_radius;
+    if (r_1I >= L || r_2I >= L)
+      return false;
+
+    constexpr real_type czero(0);
+    constexpr real_type cone(1);
+
+    real_type dval_dgamma;
+
+    for (int i = 0; i < dval_Vec.size(); i++)
+      dval_Vec[i]  = czero;
+
+    const real_type r_2I_minus_L = r_2I - L;
+    const real_type r_1I_minus_L = r_1I - L;
+    const real_type both_minus_L = r_2I_minus_L * r_1I_minus_L;
+
+    real_type r2l(cone);
+    for (int l = 0; l <= N_eI; l++)
+    {
+      real_type r2m(cone);
+      for (int m = 0; m <= N_eI; m++)
+      {
+        int num;
+        if (m > l)
+          num = ((2 * N_eI - l + 3) * l / 2 + m - l) * (N_ee + 1);
+        else
+          num = ((2 * N_eI - m + 3) * m / 2 + l - m) * (N_ee + 1);
+        real_type r2n(cone);
+        for (int n = 0; n <= N_ee; n++, num++)
+        {
+          dval_dgamma        = r2l * r2m * r2n;
+          for (int i = 0; i < C; i++)
+            dval_dgamma *= both_minus_L;
+
+          // Now, pack into vectors
+          dval_Vec[num] += scale * dval_dgamma;
+          r2n *= r_12;
+        }
+        r2m *= r_2I;
+      }
+      r2l *= r_1I;
+    }
+    // for (int i=0; i<dval_Vec.size(); i++)
+    // 	fprintf (stderr, "dval_Vec[%d] = %12.6e\n", i, dval_Vec[i]);
+    ///////////////////////////////////////////
+    // Now, compensate for constraint matrix //
+    ///////////////////////////////////////////
+    std::fill(d_vals.begin(), d_vals.end(), 0.0);
+    int var = 0;
+    for (int i = 0; i < NumGamma; i++)
+      if (IndepVar[i])
+      {
+        d_vals[var]  = dval_Vec[i];
+        var++;
+      }
+    int constraint = 0;
+    for (int i = 0; i < NumGamma; i++)
+    {
+      if (!IndepVar[i])
+      {
+        int indep_var = 0;
+        for (int j = 0; j < NumGamma; j++)
+          if (IndepVar[j])
+          {
+            d_vals[indep_var] -= ConstraintMatrix(constraint, j) * dval_Vec[i];
+            indep_var++;
+          }
+          else if (i != j)
+            assert(std::abs(ConstraintMatrix(constraint, j)) < 1.0e-10);
+        constraint++;
+      }
+    }
+    return true;
+  }
 
   inline bool evaluateDerivatives(const real_type r_12,
                                   const real_type r_1I,
@@ -970,7 +1050,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     return true;
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (notOpt)
       return;
@@ -990,9 +1070,21 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     reset_gamma();
   }
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariablesExclusive(opt_variables_type& active) override
+  {
+    if (notOpt)
+      return;
 
-  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
+    myVars.setIndexDefault();
+    active.insertFrom(myVars);
+  }
+
+  void checkOutVariables(const opt_variables_type& active) override
+  {
+    if (notOpt)
+      return;
+    myVars.getIndex(active);
+  }
 
   void print(std::ostream& os)
   {

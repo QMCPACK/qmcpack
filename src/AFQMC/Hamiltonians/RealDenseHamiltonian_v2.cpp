@@ -88,12 +88,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
       app_error() << " Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in THCHamiltonian::getHamiltonianOperations():"
-                  << " Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
   }
 
   std::vector<int> Idata(8);
@@ -156,12 +151,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   if (distNode.root())
   {
     // read L
-    if (!dump.push("DenseFactorized", false))
-    {
-      app_error() << " Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
-                  << " Group DenseFactorized not found. \n";
-      APP_ABORT("");
-    }
+    dump.push("DenseFactorized", false);
     SpRMatrix_ref L(to_address(Likn.origin()), Likn.extensions());
     hyperslab_proxy<SpRMatrix_ref, 2> hslab(L,
                                             std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
@@ -185,11 +175,11 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n";
       APP_ABORT("");
     }
-    if (Likn.size(0) != NMO * NMO || Likn.size(1) != local_ncv)
+    if (std::get<0>(Likn.sizes()) != NMO * NMO || std::get<1>(Likn.sizes()) != local_ncv)
     {
       app_error() << " Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n"
-                  << " Unexpected dimensins: " << Likn.size(0) << " " << Likn.size(1) << std::endl;
+                  << " Unexpected dimensins: " << std::get<0>(Likn.sizes()) << " " << std::get<1>(Likn.sizes()) << std::endl;
       APP_ABORT("");
     }
     dump.pop();

@@ -37,8 +37,13 @@ using TraceManager = int;
 namespace qmcplusplus
 {
 /// Constructor.
-VMC::VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling)
-    : QMCDriver(w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes")
+VMC::VMC(const ProjectData& project_data,
+         MCWalkerConfiguration& w,
+         TrialWaveFunction& psi,
+         QMCHamiltonian& h,
+         Communicate* comm,
+         bool enable_profiling)
+    : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes")
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -160,15 +165,19 @@ void VMC::resetRun()
   if (Movers.empty())
   {
     movers_created = true;
-    Movers.resize(NumThreads, 0);
-    estimatorClones.resize(NumThreads, 0);
-    traceClones.resize(NumThreads, 0);
+    Movers.resize(NumThreads, nullptr);
+    estimatorClones.resize(NumThreads, nullptr);
+    traceClones.resize(NumThreads, nullptr);
     Rng.resize(NumThreads);
+
+    // hdf_archive::hdf_archive() is not thread-safe
+    for (int ip = 0; ip < NumThreads; ++ip)
+      estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
+
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -279,47 +288,7 @@ void VMC::resetRun()
     qmc_common.memory_allocated += W.getActiveWalkers() * W[0]->DataSet.byteSize();
     qmc_common.print_memory_change("VMC::resetRun", before);
   }
-  //     //JNKIM: THIS IS BAD AND WRONG
-  //     if (UseDrift == "rn")
-  //     {
-  //       RealType avg_w(0);
-  //       RealType n_w(0);
-  // #pragma omp parallel
-  //       {
-  //         int ip=omp_get_thread_num();
-  //         for (int step=0; step<nWarmupSteps; ++step)
-  //         {
-  //           avg_w=0;
-  //           n_w=0;
-  //           for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-  //           {
-  //             Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-  //             #pragma omp single
-  //             {
-  //               MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-  //               while (wit!=wit_end)
-  //               {
-  //                 avg_w += (*wit)->Weight;
-  //                 n_w +=1;
-  //                 wit++;
-  //               }
-  //             }
-  //             #pragma omp barrier
-  //            }
-  //            #pragma omp single
-  //            {
-  //              avg_w *= 1.0/n_w;
-  //              RealType w_m = avg_w/(1.0-avg_w);
-  //              w_m = std::log(0.5+0.5*w_m);
-  //              if (std::abs(w_m)>0.01)
-  //                logepsilon += w_m;
-  //            }
-  //           }
-  //
-  //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-  //           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
-  //       }
-  //     }
+  
   for (int ip = 0; ip < NumThreads; ++ip)
     wClones[ip]->clearEnsemble();
   if (nSamplesPerThread)

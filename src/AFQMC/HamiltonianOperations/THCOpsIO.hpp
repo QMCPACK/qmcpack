@@ -75,16 +75,9 @@ inline THCOps loadTHCOps(hdf_archive& dump,
 
   // read from HDF
 
-  if (!dump.push("HamiltonianOperations", false))
-  {
-    app_error() << " Error in loadTHCOps: Group HamiltonianOperations not found. \n";
-    APP_ABORT("");
-  }
-  if (!dump.push("THCOps", false))
-  {
-    app_error() << " Error in loadTHCOps: Group THCOps not found. \n";
-    APP_ABORT("");
-  }
+  dump.push("HamiltonianOperations", false);
+  dump.push("THCOps", false);
+
   if (TGwfn.Global().root())
   {
     if (!dump.readEntry(dims, "dims"))
@@ -302,8 +295,8 @@ inline void writeTHCOps(hdf_archive& dump,
                         shmCMatrix& vn0,
                         ValueType E0)
 {
-  size_t gnmu(Luv.size(1));
-  size_t grotnmu(rotMuv.size(1));
+  size_t gnmu(std::get<1>(Luv.sizes()));
+  size_t grotnmu(std::get<1>(rotMuv.sizes()));
   if (TGwfn.Global().root())
   {
     dump.push("HamiltonianOperations");

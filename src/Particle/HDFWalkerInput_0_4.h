@@ -18,6 +18,7 @@
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "WalkerConfigurations.h"
+#include <filesystem>
 #include <stack>
 
 class Communicate;
@@ -56,10 +57,10 @@ struct HDFWalkerInput_0_4
   IOInfo i_info;
   //propoery list to handle parallel io
   hid_t h_plist;
-  //the last file which was processed
-  std::string FileName;
-  //list of files to process
-  std::stack<std::string> FileStack;
+  //the last file which was processed, extension removed
+  std::filesystem::path FileName_noext;
+  //list of files to process, extensions removed
+  std::stack<std::filesystem::path> FileStack;
 
   /** constructor
    * @param wc_list target walker configurations
@@ -81,11 +82,11 @@ struct HDFWalkerInput_0_4
   void checkOptions(xmlNodePtr cur);
 
   /** read walkers for small number of MPI tasks */
-  bool read_hdf5(std::string h5name);
+  bool read_hdf5(const std::filesystem::path& h5name);
   /** read walkers. Master reads and scatter the walkers */
-  bool read_hdf5_scatter(std::string h5name);
+  bool read_hdf5_scatter(const std::filesystem::path& h5name);
   /** read walkers using PHDF5 */
-  bool read_phdf5(std::string h5name);
+  bool read_phdf5(const std::filesystem::path& h5name);
 };
 
 } // namespace qmcplusplus

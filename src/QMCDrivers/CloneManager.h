@@ -83,7 +83,7 @@ protected:
   static std::vector<std::vector<TrialWaveFunction*>> PsiPoolClones;
   static std::vector<UPtrVector<QMCHamiltonian>> HPoolClones_uptr;
   static std::vector<std::vector<QMCHamiltonian*>> HPoolClones;
-  std::vector<CSUpdateBase*> CSMovers;
+  UPtrVector<CSUpdateBase> CSMovers;
 
   ///Walkers per MPI rank
   std::vector<int> wPerRank;

@@ -37,8 +37,8 @@ TEST_CASE("std_vector_OMPallocator", "[OMP]")
     A_ptr[i] += i;
   }
 
-  REQUIRE(A[0] == Approx(3.1));
-  REQUIRE(A[1] == Approx(4.1));
+  CHECK(A[0] == Approx(3.1));
+  CHECK(A[1] == Approx(4.1));
 
   A.resize(256);
   A_ptr = A.data();

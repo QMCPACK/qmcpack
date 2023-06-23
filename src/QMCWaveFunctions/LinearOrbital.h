@@ -24,19 +24,16 @@ namespace qmcplusplus
 class LinearOrbital : public WaveFunctionComponent
 {
 public:
-  void checkInVariables(opt_variables_type& active) override {}
-  void checkOutVariables(const opt_variables_type& active) override {}
-  void resetParameters(const opt_variables_type& active) override {}
-  void reportStatus(std::ostream& os) override {}
-
   TinyVector<ValueType, 3> coeff;
 
-  LinearOrbital() : WaveFunctionComponent("LinearOrbital")
+  LinearOrbital()
   {
     coeff[0] = 1.0;
     coeff[1] = 2.0;
     coeff[2] = 3.0;
   }
+
+  std::string getClassName() const override { return "LinearOrbital"; }
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
@@ -77,8 +74,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 };
 

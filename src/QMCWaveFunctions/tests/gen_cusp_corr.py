@@ -89,17 +89,17 @@ def output_required_xvals_and_alphas(Xvals, alpha_vals):
   print('Xvals = ',Xvals)
   print('  // From gen_cusp_corr.py')
   for i in range(5):
-    print('  REQUIRE(X[%d] == Approx(%.15f));'%(i,Xvals[i+1]))
+    print('  CHECK(X[%d] == Approx(%.15f));'%(i,Xvals[i+1]))
 
   print()
   print('  // From gen_cusp_corr.py')
   for i in range(5):
-    print('  REQUIRE(cusp.alpha[%d] == Approx(%.15f));'%(i,alpha_vals[i]))
+    print('  CHECK(cusp.alpha[%d] == Approx(%.15f));'%(i,alpha_vals[i]))
 
 def output_array(v, name):
   print('  // From gen_cusp_corr.py')
   for i,a in enumerate(v):
-    print('  REQUIRE(%s[%d] == Approx(%.15f));'%(name, i, a))
+    print('  CHECK(%s[%d] == Approx(%.15f));'%(name, i, a))
   print()
 
 
@@ -247,7 +247,7 @@ def values_for_He():
   chi2 = 0.0
   for rval, ideal, curr in zip(pos, ideal_EL, current_EL):
     chi2 += (ideal - curr)**2
-  print('  REQUIRE(chi2 == Approx(%.10f)); '%chi2)
+  print('  CHECK(chi2 == Approx(%.10f)); '%chi2)
 
 
 def split_by_angular_momentum(pos_list, elements, basis_sets, MO_matrix):
@@ -343,7 +343,7 @@ def gen_correction_for_hcn():
       for i,x in enumerate(xgrid):
         epos = np.array([x, 0.0, 0.0]) + pos_list[center_idx]
         v,g,l = cusp.compute_cusp_correction(center_idx, mo_idx, epos)
-        print('  REQUIRE(rad_orb[%d] == Approx(%.10f)); // x = %g'%(i,v,x))
+        print('  CHECK(rad_orb[%d] == Approx(%.10f)); // x = %g'%(i,v,x))
       print()
 
 def gen_wavefunction_plus_correction_for_hcn():
@@ -378,18 +378,18 @@ def gen_wavefunction_plus_correction_for_hcn():
         final_l += cl
 
       print('  # MO %d'%mo_idx)
-      print('  REQUIRE(values[%d] == Approx(%.10f));'%(mo_idx,final_v))
-      print('  REQUIRE(dpsi[%d][0] == Approx(%.10f));'%(mo_idx, final_g[0]))
-      print('  REQUIRE(dpsi[%d][1] == Approx(%.10f));'%(mo_idx, final_g[1]))
-      print('  REQUIRE(dpsi[%d][2] == Approx(%.10f));'%(mo_idx, final_g[2]))
-      print('  REQUIRE(d2psi[%d] == Approx(%.10f));'%(mo_idx,final_l))
+      print('  CHECK(values[%d] == Approx(%.10f));'%(mo_idx,final_v))
+      print('  CHECK(dpsi[%d][0] == Approx(%.10f));'%(mo_idx, final_g[0]))
+      print('  CHECK(dpsi[%d][1] == Approx(%.10f));'%(mo_idx, final_g[1]))
+      print('  CHECK(dpsi[%d][2] == Approx(%.10f));'%(mo_idx, final_g[2]))
+      print('  CHECK(d2psi[%d] == Approx(%.10f));'%(mo_idx,final_l))
       print()
 
-      print('  REQUIRE(all_values[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_v))
-      print('  REQUIRE(all_grad[%d][%d][0] == Approx(%.10f));'%(iat, mo_idx, final_g[0]))
-      print('  REQUIRE(all_grad[%d][%d][1] == Approx(%.10f));'%(iat, mo_idx, final_g[1]))
-      print('  REQUIRE(all_grad[%d][%d][2] == Approx(%.10f));'%(iat, mo_idx, final_g[2]))
-      print('  REQUIRE(all_lap[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_l))
+      print('  CHECK(all_values[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_v))
+      print('  CHECK(all_grad[%d][%d][0] == Approx(%.10f));'%(iat, mo_idx, final_g[0]))
+      print('  CHECK(all_grad[%d][%d][1] == Approx(%.10f));'%(iat, mo_idx, final_g[1]))
+      print('  CHECK(all_grad[%d][%d][2] == Approx(%.10f));'%(iat, mo_idx, final_g[2]))
+      print('  CHECK(all_lap[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_l))
       print()
 
 def gen_wavefunction_plus_correction_for_ethanol():
@@ -424,18 +424,18 @@ def gen_wavefunction_plus_correction_for_ethanol():
         final_l += cl
 
       print('  # MO %d'%mo_idx)
-      print('  REQUIRE(values[%d] == Approx(%.10f));'%(mo_idx,final_v))
-      print('  REQUIRE(dpsi[%d][0] == Approx(%.10f));'%(mo_idx, final_g[0]))
-      print('  REQUIRE(dpsi[%d][1] == Approx(%.10f));'%(mo_idx, final_g[1]))
-      print('  REQUIRE(dpsi[%d][2] == Approx(%.10f));'%(mo_idx, final_g[2]))
-      print('  REQUIRE(d2psi[%d] == Approx(%.10f));'%(mo_idx,final_l))
+      print('  CHECK(values[%d] == Approx(%.10f));'%(mo_idx,final_v))
+      print('  CHECK(dpsi[%d][0] == Approx(%.10f));'%(mo_idx, final_g[0]))
+      print('  CHECK(dpsi[%d][1] == Approx(%.10f));'%(mo_idx, final_g[1]))
+      print('  CHECK(dpsi[%d][2] == Approx(%.10f));'%(mo_idx, final_g[2]))
+      print('  CHECK(d2psi[%d] == Approx(%.10f));'%(mo_idx,final_l))
       print()
 
-      print('  REQUIRE(all_values[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_v))
-      print('  REQUIRE(all_grad[%d][%d][0] == Approx(%.10f));'%(iat, mo_idx, final_g[0]))
-      print('  REQUIRE(all_grad[%d][%d][1] == Approx(%.10f));'%(iat, mo_idx, final_g[1]))
-      print('  REQUIRE(all_grad[%d][%d][2] == Approx(%.10f));'%(iat, mo_idx, final_g[2]))
-      print('  REQUIRE(all_lap[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_l))
+      print('  CHECK(all_values[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_v))
+      print('  CHECK(all_grad[%d][%d][0] == Approx(%.10f));'%(iat, mo_idx, final_g[0]))
+      print('  CHECK(all_grad[%d][%d][1] == Approx(%.10f));'%(iat, mo_idx, final_g[1]))
+      print('  CHECK(all_grad[%d][%d][2] == Approx(%.10f));'%(iat, mo_idx, final_g[2]))
+      print('  CHECK(all_lap[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_l))
       print()
 
 

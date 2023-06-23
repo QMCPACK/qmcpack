@@ -21,10 +21,8 @@ using ValueType    = LatticeGaussianProduct::ValueType;
 using GradType     = LatticeGaussianProduct::GradType;
 using PsiValueType = LatticeGaussianProduct::PsiValueType;
 
-LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
-    : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)
+LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
 {
-  Optimizable    = false;
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
   myTableID      = ptcls.addTable(CenterRef);
@@ -35,13 +33,7 @@ LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet
   LastAddressOfdU  = FirstAddressOfdU + dU.size() * OHMMS_DIM;
 }
 
-LatticeGaussianProduct::~LatticeGaussianProduct() {}
-
-//evaluate the distance table with P
-void LatticeGaussianProduct::checkInVariables(opt_variables_type& active) {}
-void LatticeGaussianProduct::checkOutVariables(const opt_variables_type& active) {}
-void LatticeGaussianProduct::resetParameters(const opt_variables_type& active) {}
-void LatticeGaussianProduct::reportStatus(std::ostream& os) {}
+LatticeGaussianProduct::~LatticeGaussianProduct() = default;
 
 /**
      *@param P input configuration containing N particles

@@ -35,8 +35,8 @@ void test_e2iphi()
 
   for (int i = 0; i < N; i++)
   {
-    REQUIRE(vcos[i] == Approx(std::cos(phi[i])));
-    REQUIRE(vsin[i] == Approx(std::sin(phi[i])));
+    CHECK(vcos[i] == Approx(std::cos(phi[i])));
+    CHECK(vsin[i] == Approx(std::sin(phi[i])));
   }
 }
 

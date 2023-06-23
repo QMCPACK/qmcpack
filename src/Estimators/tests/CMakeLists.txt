@@ -33,17 +33,18 @@ set(SRCS
     test_InputSection.cpp
     test_EstimatorManagerInput.cpp
     test_ScalarEstimatorInputs.cpp
-    )
-
-# OneBodyDensityMatrices are not tested with legacy CUDA
-# DiracDeterminantsCUDA cannot be copied
-if(NOT QMC_CUDA)
-  set(SRCS ${SRCS} test_MomentumDistribution.cpp test_OneBodyDensityMatricesInput.cpp test_OneBodyDensityMatrices.cpp)
-endif()
+    test_SizeLimitedDataQueue.cpp
+    test_MomentumDistribution.cpp
+    test_OneBodyDensityMatricesInput.cpp
+    test_OneBodyDensityMatrices.cpp
+    test_PerParticleHamiltonianLogger.cpp
+    test_EstimatorManagerCrowd.cpp
+    test_MagnetizationDensityInput.cpp
+    test_MagnetizationDensity.cpp)
 
 add_executable(${UTEST_EXE} ${SRCS})
 use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test sposets_for_testing)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}

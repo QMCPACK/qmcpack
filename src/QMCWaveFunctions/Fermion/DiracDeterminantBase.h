@@ -38,22 +38,18 @@ public:
    *@param last index of last particle
    */
   DiracDeterminantBase(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
-      : WaveFunctionComponent(class_name),
-        UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
-        RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
-        InverseTimer(*timer_manager.createTimer(class_name + "::inverse", timer_level_fine)),
-        BufferTimer(*timer_manager.createTimer(class_name + "::buffer", timer_level_fine)),
-        SPOVTimer(*timer_manager.createTimer(class_name + "::spoval", timer_level_fine)),
-        SPOVGLTimer(*timer_manager.createTimer(class_name + "::spovgl", timer_level_fine)),
+      : UpdateTimer(createGlobalTimer(class_name + "::update", timer_level_fine)),
+        RatioTimer(createGlobalTimer(class_name + "::ratio", timer_level_fine)),
+        InverseTimer(createGlobalTimer(class_name + "::inverse", timer_level_fine)),
+        BufferTimer(createGlobalTimer(class_name + "::buffer", timer_level_fine)),
+        SPOVTimer(createGlobalTimer(class_name + "::spoval", timer_level_fine)),
+        SPOVGLTimer(createGlobalTimer(class_name + "::spovgl", timer_level_fine)),
         Phi(std::move(spos)),
         FirstIndex(first),
         LastIndex(last),
         NumOrbitals(last - first),
         NumPtcls(last - first)
-  {
-    Optimizable  = Phi->isOptimizable();
-    is_fermionic = true;
-  }
+  {}
 
   ///default destructor
   ~DiracDeterminantBase() override {}
@@ -73,14 +69,19 @@ public:
   virtual ValueMatrix& getPsiMinv() { return dummy_vmt; }
 #endif
 
-  ///optimizations  are disabled
-  inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
+  bool isFermionic() const final { return true; }
+  inline bool isOptimizable() const final { return Phi->isOptimizable(); }
 
-  inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
+  {
+    Phi->extractOptimizableObjectRefs(opt_obj_refs);
+  }
 
-  void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
-
-  inline void reportStatus(std::ostream& os) final {}
+  inline void checkOutVariables(const opt_variables_type& active) final
+  {
+    if (Phi->isOptimizable())
+      Phi->checkOutVariables(active);
+  }
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
   {
@@ -89,7 +90,7 @@ public:
 
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi) override
+                                     Vector<ValueType>& dlogpsi) override
   {
     // assume no orbital optimization. If implemented, override this function
   }
@@ -148,12 +149,12 @@ public:
 
   PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
-    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
+    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpin():  Implementation required\n");
     return 0.0;
   }
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
-    APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
+    APP_ABORT("  DiracDeterminantBase::evalGradWithSpin():  Implementation required\n");
     return GradType();
   }
   /** cloning function
@@ -164,22 +165,6 @@ public:
    * can overwrite to clone itself correctly.
    */
   virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const = 0;
-
-#ifdef QMC_CUDA
-  // expose GPU interfaces
-  //using WaveFunctionComponent::recompute;
-  using WaveFunctionComponent::addLog;
-  using WaveFunctionComponent::reserve;
-  //using WaveFunctionComponent::ratio;
-  using WaveFunctionComponent::addGradient;
-  using WaveFunctionComponent::addRatio;
-  using WaveFunctionComponent::calcGradient;
-  using WaveFunctionComponent::calcRatio;
-  using WaveFunctionComponent::det_lookahead;
-  using WaveFunctionComponent::gradLapl;
-  using WaveFunctionComponent::NLratios;
-  using WaveFunctionComponent::update;
-#endif
 
 protected:
   /// Timers
@@ -204,6 +189,7 @@ protected:
 
   static bool checkG(const GradType& g)
   {
+#if !defined(NDEBUG)
     auto g_mag = std::abs(dot(g, g));
     if (std::isnan(g_mag))
       throw std::runtime_error("gradient of NaN");
@@ -214,6 +200,7 @@ protected:
       std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
       throw std::runtime_error("gradient of zero");
     }
+#endif
     return true;
   }
 };

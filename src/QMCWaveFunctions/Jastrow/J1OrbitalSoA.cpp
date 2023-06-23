@@ -41,12 +41,12 @@ struct J1OrbitalSoAMultiWalkerMem : public Resource
 
   J1OrbitalSoAMultiWalkerMem(const J1OrbitalSoAMultiWalkerMem&) : J1OrbitalSoAMultiWalkerMem() {}
 
-  Resource* makeClone() const override { return new J1OrbitalSoAMultiWalkerMem(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<J1OrbitalSoAMultiWalkerMem>(*this); }
 };
 
 template<typename FT>
 J1OrbitalSoA<FT>::J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload)
-    : WaveFunctionComponent("J1OrbitalSoA", obj_name),
+    : WaveFunctionComponent(obj_name),
       use_offload_(use_offload),
       myTableID(els.addTable(ions, use_offload ? DTModes::ALL_OFF : DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
       Nions(ions.getTotalNum()),
@@ -54,7 +54,7 @@ J1OrbitalSoA<FT>::J1OrbitalSoA(const std::string& obj_name, const ParticleSet& i
       NumGroups(ions.groups()),
       Ions(ions)
 {
-  if (myName.empty())
+  if (my_name_.empty())
     throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
 
   if (use_offload_)
@@ -76,6 +76,15 @@ template<typename FT>
 J1OrbitalSoA<FT>::~J1OrbitalSoA() = default;
 
 template<typename FT>
+void J1OrbitalSoA<FT>::checkSanity() const
+{
+  if (std::any_of(J1Functors.begin(), J1Functors.end(), [](auto* ptr) { return ptr == nullptr; }))
+    app_warning() << "One-body Jastrow \"" << my_name_ << "\" doesn't cover all the particle pairs. "
+                  << "Consider fusing multiple entries if they are of the same type for optimal code performance."
+                  << std::endl;
+}
+
+template<typename FT>
 void J1OrbitalSoA<FT>::createResource(ResourceCollection& collection) const
 {
   collection.addResource(std::make_unique<J1OrbitalSoAMultiWalkerMem<RealType>>());
@@ -85,11 +94,8 @@ template<typename FT>
 void J1OrbitalSoA<FT>::acquireResource(ResourceCollection& collection,
                                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<J1OrbitalSoA<FT>>();
-  auto res_ptr     = dynamic_cast<J1OrbitalSoAMultiWalkerMem<RealType>*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
-  wfc_leader.mw_mem_.reset(res_ptr);
+  auto& wfc_leader          = wfc_list.getCastedLeader<J1OrbitalSoA<FT>>();
+  wfc_leader.mw_mem_handle_ = collection.lendResource<J1OrbitalSoAMultiWalkerMem<RealType>>();
 }
 
 template<typename FT>
@@ -97,7 +103,7 @@ void J1OrbitalSoA<FT>::releaseResource(ResourceCollection& collection,
                                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<J1OrbitalSoA<FT>>();
-  collection.takebackResource(std::move(wfc_leader.mw_mem_));
+  collection.takebackResource(wfc_leader.mw_mem_handle_);
 }
 
 template<typename FT>
@@ -117,19 +123,20 @@ void J1OrbitalSoA<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionC
   auto& wfc_leader        = wfc_list.getCastedLeader<J1OrbitalSoA<FT>>();
   auto& vp_leader         = vp_list.getLeader();
   const auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
-  auto& mw_vals           = wfc_leader.mw_mem_->mw_vals;
-  auto& mw_minus_one      = wfc_leader.mw_mem_->mw_minus_one;
+  auto& mw_mem            = wfc_leader.mw_mem_handle_.getResource();
+  auto& mw_vals           = mw_mem.mw_vals;
+  auto& mw_minus_one      = mw_mem.mw_minus_one;
   const int nw            = wfc_list.size();
 
   const size_t nVPs = mw_refPctls.size();
   mw_vals.resize(nVPs);
-  wfc_leader.mw_mem_->resize_minus_one(nVPs);
+  mw_mem.resize_minus_one(nVPs);
 
   const auto& dt_leader(vp_leader.getDistTableAB(wfc_leader.myTableID));
 
   FT::mw_evaluateV(NumGroups, GroupFunctors.data(), wfc_leader.Nions, grp_ids.data(), nVPs, mw_minus_one.data(),
                    dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data(),
-                   wfc_leader.mw_mem_->transfer_buffer);
+                   mw_mem.transfer_buffer);
 
   size_t ivp = 0;
   for (int iw = 0; iw < nw; ++iw)

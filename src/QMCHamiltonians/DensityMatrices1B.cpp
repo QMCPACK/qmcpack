@@ -25,18 +25,40 @@ using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
+enum DMTimers
+{
+  DM_eval,
+  DM_gen_samples,
+  DM_gen_sample_basis,
+  DM_gen_sample_ratios,
+  DM_gen_particle_basis,
+  DM_matrix_products,
+  DM_accumulate,
+};
 
-DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet* Pcl)
-    : lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl)
+static const TimerNameList_t<DMTimers> DMTimerNames =
+    {{DM_eval, "DensityMatrices1B::evaluate"},
+     {DM_gen_samples, "DensityMatrices1B::generate_samples"},
+     {DM_gen_sample_basis, "DensityMatrices1B::generate_sample_basis"},
+     {DM_gen_sample_ratios, "DensityMatrices1B::generate_sample_ratios"},
+     {DM_gen_particle_basis, "DensityMatrices1B::generate_particle_basis"},
+     {DM_matrix_products, "DensityMatrices1B::evaluate_matrix_products"},
+     {DM_accumulate, "DensityMatrices1B::evaluate_matrix_accum"}};
+
+DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
+    : timers(getGlobalTimerManager(), DMTimerNames, timer_level_fine),
+      basis_functions("DensityMatrices1B::basis"),
+      lattice_(P.getLattice()),
+      Psi(psi),
+      Pq(P),
+      Pc(Pcl)
 {
   reset();
 }
 
-
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
     : OperatorBase(master),
+      timers(getGlobalTimerManager(), DMTimerNames, timer_level_fine),
       basis_functions(master.basis_functions),
       lattice_(P.getLattice()),
       Psi(psi),
@@ -232,7 +254,8 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     metric     = 1.0 / samples;
   }
   else
-    throw std::runtime_error("DensityMatrices1B::set_state  invalid integrator\n  valid options are: uniform_grid, uniform, density");
+    throw std::runtime_error(
+        "DensityMatrices1B::set_state  invalid integrator\n  valid options are: uniform_grid, uniform, density");
 
   if (evstr == "loop")
     evaluator = loop;
@@ -257,7 +280,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
   for (int i = 0; i < sposets.size(); ++i)
   {
     auto& spomap = Psi.getSPOMap();
-    auto spo_it = spomap.find(sposets[i]);
+    auto spo_it  = spomap.find(sposets[i]);
     if (spo_it == spomap.end())
       throw std::runtime_error("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist.");
     basis_functions.add(spo_it->second->makeClone());
@@ -364,15 +387,6 @@ void DensityMatrices1B::initialize()
   {
     normalize();
   }
-
-  const TimerNameList_t<DMTimers> DMTimerNames = {{DM_eval, "DensityMatrices1B::evaluate"},
-                                                  {DM_gen_samples, "DensityMatrices1B::generate_samples"},
-                                                  {DM_gen_sample_basis, "DensityMatrices1B::generate_sample_basis"},
-                                                  {DM_gen_sample_ratios, "DensityMatrices1B::generate_sample_ratios"},
-                                                  {DM_gen_particle_basis, "DensityMatrices1B::generate_particle_basis"},
-                                                  {DM_matrix_products, "DensityMatrices1B::evaluate_matrix_products"},
-                                                  {DM_accumulate, "DensityMatrices1B::evaluate_matrix_accum"}};
-  setup_timers(timers, DMTimerNames, timer_level_fine);
 
   initialized = true;
 }
@@ -525,7 +539,7 @@ void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& colle
 }
 
 
-void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
 #if defined(QMC_COMPLEX)
   std::vector<int> ng(3);
@@ -540,29 +554,23 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   int nentries = ng[0] * ng[1];
 #endif
 
-  std::string dname = name_;
-  hid_t dgid        = H5Gcreate2(gid, dname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-  std::string nname = "number_matrix";
-  hid_t ngid        = H5Gcreate2(dgid, nname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hdf_path hdf_name{name_};
+  hdf_name /= "number_matrix";
   for (int s = 0; s < nspecies; ++s)
   {
-    h5desc.emplace_back(species_name[s]);
+    h5desc.emplace_back(hdf_name / species_name[s]);
     auto& oh = h5desc.back();
     oh.set_dimensions(ng, nindex + s * nentries);
-    oh.open(ngid);
   }
 
   if (energy_mat)
   {
-    std::string ename = "energy_matrix";
-    hid_t egid        = H5Gcreate2(dgid, ename.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    hdf_name.replace_subgroup("energy_matrix");
     for (int s = 0; s < nspecies; ++s)
     {
-      h5desc.emplace_back(species_name[s]);
+      h5desc.emplace_back(hdf_name / species_name[s]);
       auto& oh = h5desc.back();
       oh.set_dimensions(ng, eindex + s * nentries);
-      oh.open(egid);
     }
   }
 }

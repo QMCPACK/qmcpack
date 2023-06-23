@@ -89,11 +89,9 @@ public:
   {
     assert(this == &coords_list.getLeader());
     auto& coords_leader = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
-    // multi walker resource must have been acquired
-    assert(coords_leader.mw_mem_);
 
     const auto nw    = coords_list.size();
-    auto& mw_new_pos = coords_leader.mw_mem_->mw_new_pos;
+    auto& mw_new_pos = coords_leader.mw_mem_handle_.getResource().mw_new_pos;
     mw_new_pos.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
@@ -111,11 +109,12 @@ public:
                             const std::vector<bool>& isAccepted) const override
   {
     assert(this == &coords_list.getLeader());
-    auto& coords_leader     = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
-    auto& mw_new_pos        = coords_leader.mw_mem_->mw_new_pos;
-    auto& mw_rsoa_ptrs      = coords_leader.mw_mem_->mw_rsoa_ptrs;
-    auto& mw_accept_indices = coords_leader.mw_mem_->mw_accept_indices;
     const size_t nw         = coords_list.size();
+    auto& coords_leader     = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
+    MultiWalkerMem& mw_mem  = coords_leader.mw_mem_handle_;
+    auto& mw_new_pos        = mw_mem.mw_new_pos;
+    auto& mw_rsoa_ptrs      = mw_mem.mw_rsoa_ptrs;
+    auto& mw_accept_indices = mw_mem.mw_accept_indices;
 
     if (!is_nw_new_pos_prepared)
     {
@@ -175,7 +174,7 @@ public:
 
   const RealType* getDevicePtr() const { return RSoA.device_data(); }
 
-  const auto& getFusedNewPosBuffer() const { return mw_mem_->mw_new_pos; }
+  const auto& getFusedNewPosBuffer() const { return mw_mem_handle_.getResource().mw_new_pos; }
 
   void createResource(ResourceCollection& collection) const override
   {
@@ -185,13 +184,10 @@ public:
   void acquireResource(ResourceCollection& collection,
                        const RefVectorWithLeader<DynamicCoordinates>& coords_list) const override
   {
-    auto res_ptr = dynamic_cast<MultiWalkerMem*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("RealSpacePositionsOMPTarget::acquireResource dynamic_cast failed");
-    auto& mw_mem = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_;
-    mw_mem.reset(res_ptr);
+    MultiWalkerMem& mw_mem = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_handle_ =
+        collection.lendResource<MultiWalkerMem>();
 
-    auto& mw_rsoa_ptrs(mw_mem->mw_rsoa_ptrs);
+    auto& mw_rsoa_ptrs(mw_mem.mw_rsoa_ptrs);
     const auto nw = coords_list.size();
     mw_rsoa_ptrs.resize(nw);
     for (int iw = 0; iw < nw; iw++)
@@ -205,10 +201,10 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<DynamicCoordinates>& coords_list) const override
   {
-    collection.takebackResource(std::move(coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_));
+    collection.takebackResource(coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_handle_);
   }
 
-  const auto& getMultiWalkerRSoADevicePtrs() const { return mw_mem_->mw_rsoa_ptrs; }
+  const auto& getMultiWalkerRSoADevicePtrs() const { return mw_mem_handle_.getResource().mw_rsoa_ptrs; }
 
 private:
   ///particle positions in SoA layout
@@ -230,10 +226,10 @@ private:
 
     MultiWalkerMem(const MultiWalkerMem&) : MultiWalkerMem() {}
 
-    Resource* makeClone() const override { return new MultiWalkerMem(*this); }
+    std::unique_ptr<Resource> makeClone() const override { return std::make_unique<MultiWalkerMem>(*this); }
   };
 
-  std::unique_ptr<MultiWalkerMem> mw_mem_;
+  ResourceHandle<MultiWalkerMem> mw_mem_handle_;
 
   ///host view of RSoA
   PosVectorSoa RSoA_hostview;

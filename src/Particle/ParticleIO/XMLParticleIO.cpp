@@ -178,7 +178,7 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
     }
 
     if (ntot > 0 && num_non_zero_group != nat_group.size())
-      throw UniformCommunicateError("Some 'group' XML element node doesn't contain a 'size' attribute!");
+      throw UniformCommunicateError("Some 'group' XML element node doesn't contain a 'size' attribute! 'size = 0' is not allowed in the input. Make appropriate adjustments to the input or converter.");
   }
 
   { // parse all the 'attrib's to obtain or verify the total number of particles
@@ -229,7 +229,8 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
           throw UniformCommunicateError("'ionid' only supports datatype=\"" + stringtype_tag + "\"");
         std::vector<std::string> d_in(nat);
         putContent(d_in, element);
-        int storage_index = 0;
+        bool input_ungrouped = false;
+        int storage_index    = 0;
         for (int ig = 0; ig < nat_group.size(); ig++)
         {
           const auto& group_species_name = tspecies.getSpeciesName(ig);
@@ -242,6 +243,8 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
                                             " doesn't match any species from 'group' XML element nodes.");
             if (element_index == ig)
             {
+              if (iat != storage_index)
+                input_ungrouped = true;
               count_group_size++;
               map_storage_to_input[storage_index++] = iat;
             }
@@ -258,6 +261,22 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
             msg << "The number of particles of element '" << group_species_name << "' from 'group' XML elment node was "
                 << nat_group[ig] << " but 'ionid' contains " << count_group_size << " entries." << std::endl;
             throw UniformCommunicateError(msg.str());
+          }
+        }
+
+        if (input_ungrouped)
+        {
+          app_log() << "  Input particle set is not grouped by species.  Remapping particle position indices "
+                       "internally."
+                    << std::endl;
+          app_debug() << "    Species : input particle index -> internal particle index" << std::endl;
+          for (int new_idx = 0; new_idx < map_storage_to_input.size(); new_idx++)
+          {
+            int old_idx = map_storage_to_input[new_idx];
+            if (new_idx != old_idx)
+            {
+              app_debug() << "    " << d_in[old_idx] << " : " << old_idx << " -> " << new_idx << std::endl;
+            }
           }
         }
       }
@@ -316,10 +335,8 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
       makeUniformRandom(ref_.R);
       ref_.R.setUnit(PosUnit::Lattice);
       ref_.convert2Cart(ref_.R);
-#if !defined(QMC_CUDA)
       makeUniformRandom(ref_.spins);
       ref_.spins *= 2 * M_PI;
-#endif
     }
     else // put them [0,1) in the cell
       ref_.applyBC(ref_.R);
@@ -427,7 +444,7 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_si
   if (oname.empty() || otype.empty())
   {
     app_error() << "   Missing attrib/@name or attrib/@datatype " << std::endl;
-    app_error() << "     <attrib name=\"aname\"  datatype=\"atype\"/>" << std::endl;
+    app_error() << R"(     <attrib name="aname"  datatype="atype"/>)" << std::endl;
     return;
   }
   int t_id = ref_AttribList.getAttribType(otype);

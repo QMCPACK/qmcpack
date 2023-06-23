@@ -38,7 +38,7 @@ public:
   {
     if (DoOutput)
     {
-      LogBuffer << "  " << ClassName << "::" << FuncName << "\n";
+      LogBuffer << "  " << ClassName << "::" << FuncName << '\n';
       LogBuffer.flush(); //always flush
     }
   }
@@ -57,11 +57,11 @@ public:
     }
   }
 
-  inline void warning(const std::string& msg) { LogBuffer << ("WARNING: " + msg + "\n"); }
+  inline void warning(const std::string& msg) { LogBuffer << ("WARNING: " + msg + '\n'); }
 
   inline void error(const std::string& msg, bool fatal = false)
   {
-    app_error() << ("ERROR: " + msg + "\n");
+    app_error() << ("ERROR: " + msg + '\n');
     if (fatal)
       APP_ABORT(ClassName + "::" + FuncName);
   }

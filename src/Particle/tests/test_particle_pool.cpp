@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string>
 #include <sstream>
+#include <type_traits>
 
 
 namespace qmcplusplus
@@ -33,16 +34,16 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   ParticleSetPool pp(c);
 
   // See ParticleIO/tests/test_xml_io.cpp for particle parsing
-  const char* particles = " \
-<particleset name=\"ion0\" size=\"1\"> \
-  <group name=\"He\"> \
-    <parameter name=\"charge\">2</parameter> \
-  </group> \
-  <attrib name=\"position\" datatype=\"posArray\"> \
-    0.1 0.2 0.3 \
-  </attrib> \
-</particleset> \
-";
+  const char* particles = R"(
+<particleset name="ion0" size="1">
+  <group name="He">
+    <parameter name="charge">2</parameter>
+  </group>
+  <attrib name="position" datatype="posArray">
+    0.1 0.2 0.3
+  </attrib>
+</particleset>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -57,8 +58,10 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   ParticleSet* not_here = pp.getParticleSet("does_not_exist");
   REQUIRE(not_here == NULL);
 
-  ParticleSet* ws = pp.getWalkerSet("ion0");
+  MCWalkerConfiguration* ws = pp.getWalkerSet("ion0");
   REQUIRE(ws != NULL);
+
+  REQUIRE_THROWS_AS(pp.getWalkerSet("does_not_exist"), std::runtime_error);
 
   auto ps2 = std::make_unique<ParticleSet>(pp.getSimulationCell());
   ps2->setName("particle_set_2");
@@ -81,23 +84,23 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
   ParticleSetPool pp(c);
 
   // See ParticleIO/tests/test_xml_io.cpp for particle parsing
-  const char* particles = " \
-<tmp> \
-<particleset name=\"ion0\" size=\"1\"> \
-  <group name=\"He\"> \
-    <parameter name=\"charge\">2</parameter> \
-  </group> \
-  <attrib name=\"position\" datatype=\"posArray\"> \
-    0.1 0.2 0.3 \
-  </attrib> \
-</particleset> \
-<particleset name=\"elec\" random=\"yes\" randomsrc=\"ion0\" spinor=\"yes\"> \
-   <group name=\"u\" size=\"4\"> \
-      <parameter name=\"charge\">-1</parameter> \
-   </group> \
-</particleset> \
-</tmp> \
-";
+  const char* particles = R"(
+<tmp>
+<particleset name="ion0" size="1">
+  <group name="He">
+    <parameter name="charge">2</parameter>
+  </group>
+  <attrib name="position" datatype="posArray">
+    0.1 0.2 0.3
+  </attrib>
+</particleset>
+<particleset name="elec" random="yes" randomsrc="ion0" spinor="yes">
+   <group name="u" size="4">
+      <parameter name="charge">-1</parameter>
+   </group>
+</particleset>
+</tmp>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -123,9 +126,7 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
   pp.randomize();
 
   REQUIRE(elec->R[0][0] != 0.0);
-#if !defined(QMC_CUDA)
   REQUIRE(elec->spins[0] != 0.0);
-#endif
 }
 
 TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
@@ -135,7 +136,7 @@ TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
 
   ParticleSetPool pp(c);
 
-  const char* lattice = "<parameter name='lattice'> </parameter>";
+  const char* lattice = R"(<parameter name="lattice"> </parameter>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(lattice);

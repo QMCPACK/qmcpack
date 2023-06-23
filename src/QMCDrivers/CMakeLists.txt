@@ -64,6 +64,7 @@ set(QMCDRIVERS
     DMC/DMCFactoryNew.cpp
     DMC/DMCBatched.cpp
     DMC/DMCDriverInput.cpp
+    DMC/DMCRefEnergy.cpp
     DMC/WalkerControlFactory.cpp
     DMC/WalkerReconfiguration.cpp
     DMC/WalkerControl.cpp
@@ -76,10 +77,6 @@ set(QMCDRIVERS
     CorrelatedSampling/CSVMCUpdateAll.cpp
     CorrelatedSampling/CSVMCUpdatePbyP.cpp
     CorrelatedSampling/CSUpdateBase.cpp)
-
-if(QMC_CUDA)
-  set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp)
-endif(QMC_CUDA)
 
 set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC.cpp VMC/VMCBatched.cpp WFOpt/QMCCostFunction.cpp WFOpt/QMCCostFunctionBatched.cpp)
 

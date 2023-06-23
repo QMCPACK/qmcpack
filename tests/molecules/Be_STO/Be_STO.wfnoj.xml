@@ -1,0 +1,49 @@
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <!-- From Bunge, Barrientos, and Bunge, Atomic Data and Nuclear Data Tables 53, 113-162(1993) -->
+    <sposet_collection type="MolecularOrbital">
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet elementType="Be" normalized="no" type="STO">
+          <basisGroup l="0" m="0" rid="C0" type="Slater">
+             <radfunc n="1" exponent= "5.7531" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C1" type="Slater">
+             <radfunc n="1" exponent= "3.7156" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C2" type="Slater">
+             <radfunc n="3" exponent= "9.9670" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C3" type="Slater">
+             <radfunc n="3" exponent= "3.7128" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C4" type="Slater">
+             <radfunc n="2" exponent= "4.4661" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C5" type="Slater">
+             <radfunc n="2" exponent= "1.2919" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C6" type="Slater">
+             <radfunc n="2" exponent= "0.8555" />
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <sposet basisset="LCAOBSet" name="spo-up">
+          <coefficient id="updetC" size="7" type="Array">
+  0.285107  0.474813 -0.001620  0.052852  0.243499  0.000106 -0.000032
+ -0.016378 -0.155066  0.000426 -0.059234 -0.031925  0.387968  0.685674
+  0.0       0.0       1.0       0.0       0.0       0.0       0.0
+  0.0       0.0       0.0       1.0       0.0       0.0       0.0
+  0.0       0.0       0.0       0.0       1.0       0.0       0.0
+  0.0       0.0       0.0       0.0       0.0       1.0       0.0
+  0.0       0.0       0.0       0.0       0.0       0.0       1.0
+          </coefficient>
+      </sposet>
+    </sposet_collection>
+    <determinantset key="STO" source="ion0" transform="no" type="MO">
+      <slaterdeterminant batch="no">
+        <determinant id="spo-up"/>
+        <determinant id="spo-up"/>
+      </slaterdeterminant>
+    </determinantset>
+ </wavefunction>
+</qmcsystem>

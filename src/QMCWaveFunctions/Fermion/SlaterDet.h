@@ -48,14 +48,14 @@ public:
   ///destructor
   ~SlaterDet() override;
 
-  void checkInVariables(opt_variables_type& active) override;
+  std::string getClassName() const override { return "SlaterDet"; }
+
+  bool isFermionic() const final { return true; }
+  bool isOptimizable() const override;
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
 
   void checkOutVariables(const opt_variables_type& active) override;
-
-  ///reset all the Dirac determinants, Optimizable is true
-  void resetParameters(const opt_variables_type& optVariables) override;
-
-  void reportStatus(std::ostream& os) override;
 
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
@@ -108,6 +108,11 @@ public:
   {
     return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
   }
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
 
   inline void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
@@ -237,8 +242,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {
     // First zero out values, since each determinant only adds on
     // its contribution (i.e. +=) , rather than setting the value
@@ -254,7 +259,7 @@ public:
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override
   {
     // First zero out values, since each determinant only adds on
     // its contribution (i.e. +=) , rather than setting the value
@@ -275,111 +280,6 @@ public:
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
-
-#ifdef QMC_CUDA
-  /////////////////////////////////////////////////////
-  // Functions for vectorized evaluation and updates //
-  /////////////////////////////////////////////////////
-  void recompute(MCWalkerConfiguration& W, bool firstTime) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->recompute(W, firstTime);
-  }
-
-  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, int kblocksize = 1) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->reserve(pool, kblocksize);
-  }
-
-  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->addLog(W, logPsi);
-  }
-
-  void ratio(MCWalkerConfiguration& W,
-             int iat,
-             std::vector<ValueType>& psi_ratios,
-             std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl) override
-  {
-    Dets[getDetID(iat)]->ratio(W, iat, psi_ratios, grad, lapl);
-  }
-
-  void det_lookahead(MCWalkerConfiguration& W,
-                     std::vector<ValueType>& psi_ratios,
-                     std::vector<GradType>& grad,
-                     std::vector<ValueType>& lapl,
-                     int iat,
-                     int k,
-                     int kd,
-                     int nw) override
-  {
-    Dets[getDetID(iat)]->det_lookahead(W, psi_ratios, grad, lapl, iat, k, kd, nw);
-  }
-  void calcRatio(MCWalkerConfiguration& W,
-                 int iat,
-                 std::vector<ValueType>& psi_ratios,
-                 std::vector<GradType>& grad,
-                 std::vector<ValueType>& lapl) override
-  {
-    Dets[getDetID(iat)]->calcRatio(W, iat, psi_ratios, grad, lapl);
-  }
-
-  void addRatio(MCWalkerConfiguration& W,
-                int iat,
-                int k,
-                std::vector<ValueType>& psi_ratios,
-                std::vector<GradType>& grad,
-                std::vector<ValueType>& lapl) override
-  {
-    Dets[getDetID(iat)]->addRatio(W, iat, k, psi_ratios, grad, lapl);
-  }
-
-  void ratio(std::vector<Walker_t*>& walkers,
-             std::vector<int>& iatList,
-             std::vector<PosType>& rNew,
-             std::vector<ValueType>& psi_ratios,
-             std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl) override;
-
-  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override
-  {
-    Dets[getDetID(iat)]->calcGradient(W, iat, k, grad);
-  }
-
-  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override
-  {
-    Dets[getDetID(iat)]->addGradient(W, iat, grad);
-  }
-
-  void update(MCWalkerConfiguration* W,
-              std::vector<Walker_t*>& walkers,
-              int iat,
-              std::vector<bool>* acc,
-              int k) override
-  {
-    Dets[getDetID(iat)]->update(W, walkers, iat, acc, k);
-  }
-
-  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList) override;
-
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->gradLapl(W, grads, lapl);
-  }
-
-  void NLratios(MCWalkerConfiguration& W,
-                std::vector<NLjob>& jobList,
-                std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->NLratios(W, jobList, quadPoints, psi_ratios);
-  }
-#endif
 
 private:
   //get Det ID

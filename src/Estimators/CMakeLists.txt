@@ -29,7 +29,11 @@ set(QMCEST_SRC
     SpinDensityNew.cpp
     MomentumDistribution.cpp
     OneBodyDensityMatricesInput.cpp
-    OneBodyDensityMatrices.cpp)
+    OneBodyDensityMatrices.cpp
+    MagnetizationDensity.cpp
+    MagnetizationDensityInput.cpp
+    PerParticleHamiltonianLoggerInput.cpp
+    PerParticleHamiltonianLogger.cpp)
 
 ####################################
 # create libqmcestimators

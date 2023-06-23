@@ -16,10 +16,9 @@
 
 
 #include "QMCGaussianParserBase.h"
-#include "ParticleIO/XMLParticleIO.h"
-#include "Numerics/HDFSTLAttrib.h"
 #include <iterator>
 #include <algorithm>
+#include <array>
 #include <numeric>
 #include "hdf/hdf_archive.h"
 #include <set>
@@ -27,7 +26,8 @@
 #include <sstream>
 #include <bitset>
 #include <iomanip>
-
+#include "ParticleIO/XMLParticleIO.h"
+#include "ModernStringUtils.hpp"
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;
 const int OhmmsAsciiParser::bufferSize;
@@ -1095,7 +1095,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
   }
   /// 64 bit fixed width integer
   const unsigned bit_kind = 64;
-  static_assert(bit_kind == sizeof(int64_t) * 8, "Must be 64 bit fixed width integer");
+  static_assert(bit_kind == sizeof(uint64_t) * 8, "Must be 64 bit fixed width integer");
   static_assert(bit_kind == sizeof(unsigned long long) * 8, "Must be 64 bit fixed width integer");
   /// the number of 64 bit integers which represent the binary string for occupation
   int N_int;
@@ -1112,8 +1112,8 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
   hout.write(N_int, "Nbits");
   hout.write(nbexcitedstates, "nexcitedstate");
 
-  Matrix<int64_t> tempAlpha(ci_size, N_int);
-  Matrix<int64_t> tempBeta(ci_size, N_int);
+  Matrix<uint64_t> tempAlpha(ci_size, N_int);
+  Matrix<uint64_t> tempBeta(ci_size, N_int);
   for (int i = 0; i < CIcoeff.size(); i++)
   {
     std::string loc_alpha = CIalpha[i].substr(0, ci_nstates);
@@ -1139,7 +1139,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     for (std::size_t l = 0; l < N_int; l++)
     {
       offset = bit_kind * l;
-      int64_t Val;
+      uint64_t Val;
       std::string Var_alpha, Var_beta;
       Var_alpha.resize(bit_kind);
       Var_beta.resize(bit_kind);
@@ -1431,28 +1431,34 @@ void QMCGaussianParserBase::createShellH5(int n, int ig, int off_, int numelem)
   int gid(gShell[ig]);
   int ng(gNumber[ig]);
 
+  std::array<char, 4> l_name;
+  int l_len = std::snprintf(l_name.data(), l_name.size(), "%d", gShellID[gid]);
+  if (l_len < 0)
+    throw std::runtime_error("Error generating l_name");
+  std::string al_name(l_name.data(), l_len);
 
-  char l_name[4], n_name[4], a_name[32];
-  sprintf(a_name, "%s%d%d", CurrentCenter.c_str(), n, gShellID[gid]);
-  sprintf(l_name, "%d", gShellID[gid]);
-  sprintf(n_name, "%d", n);
+  std::array<char, 4> n_name;
+  int n_len = std::snprintf(n_name.data(), n_name.size(), "%d", n);
+  if (n_len < 0)
+    throw std::runtime_error("Error generating n_name");
+  std::string an_name(n_name.data(), n_len);
 
-  std::string aa_name(a_name);
-  std::string an_name(n_name);
-  std::string al_name(l_name);
+  std::string aa_name = CurrentCenter;
+  aa_name.append(an_name).append(al_name);
+
   std::string at_name("Gaussian");
   std::string basisGroupID = "basisGroup" + an_name;
 
   std::stringstream tempElem;
-  std::string ElemID0 = "atomicBasisSet", ElemID;
+  std::string ElemID0 = "atomicBasisSet";
   tempElem << ElemID0 << numelem;
-  ElemID = tempElem.str();
+  std::string ElemID = tempElem.str();
 
   hdf_archive hout;
-  hout.open(h5file.c_str(), H5F_ACC_RDWR);
+  hout.open(h5file, H5F_ACC_RDWR);
   hout.push("basisset");
-  hout.push(ElemID.c_str());
-  hout.push(basisGroupID.c_str(), true);
+  hout.push(ElemID);
+  hout.push(basisGroupID, true);
   hout.write(aa_name, "rid");
   hout.write(n, "n");
   hout.write(gShellID[gid], "l");
@@ -1512,20 +1518,33 @@ void QMCGaussianParserBase::createShell(int n, int ig, int off_, xmlNodePtr abas
   int ng(gNumber[ig]);
   xmlNodePtr ag  = xmlNewNode(NULL, (const xmlChar*)"basisGroup");
   xmlNodePtr ag1 = 0;
-  char l_name[4], n_name[4], a_name[32];
-  sprintf(a_name, "%s%d%d", CurrentCenter.c_str(), n, gShellID[gid]);
-  sprintf(l_name, "%d", gShellID[gid]);
-  sprintf(n_name, "%d", n);
-  xmlNewProp(ag, (const xmlChar*)"rid", (const xmlChar*)a_name);
-  xmlNewProp(ag, (const xmlChar*)"n", (const xmlChar*)n_name);
-  xmlNewProp(ag, (const xmlChar*)"l", (const xmlChar*)l_name);
+
+  std::array<char, 4> l_name;
+  int l_len = std::snprintf(l_name.data(), l_name.size(), "%d", gShellID[gid]);
+  if (l_len < 0)
+    throw std::runtime_error("Error generating l_name");
+  std::string al_name(l_name.data(), l_len);
+
+  std::array<char, 4> n_name;
+  int n_len = std::snprintf(n_name.data(), n_name.size(), "%d", n);
+  if (n_len < 0)
+    throw std::runtime_error("Error generating n_name");
+  std::string an_name(n_name.data(), n_len);
+
+  std::string aa_name = CurrentCenter;
+  aa_name.append(an_name).append(al_name);
+
+  xmlNewProp(ag, (const xmlChar*)"rid", (const xmlChar*)aa_name.c_str());
+  xmlNewProp(ag, (const xmlChar*)"n", (const xmlChar*)an_name.c_str());
+  xmlNewProp(ag, (const xmlChar*)"l", (const xmlChar*)al_name.c_str());
   xmlNewProp(ag, (const xmlChar*)"type", (const xmlChar*)"Gaussian");
   if (gid == 2)
   {
-    sprintf(a_name, "%s%d1", CurrentCenter.c_str(), n);
+    aa_name = CurrentCenter;
+    aa_name.append(an_name);
     ag1 = xmlNewNode(NULL, (const xmlChar*)"basisGroup");
-    xmlNewProp(ag1, (const xmlChar*)"rid", (const xmlChar*)a_name);
-    xmlNewProp(ag1, (const xmlChar*)"n", (const xmlChar*)n_name);
+    xmlNewProp(ag1, (const xmlChar*)"rid", (const xmlChar*)aa_name.c_str());
+    xmlNewProp(ag1, (const xmlChar*)"n", (const xmlChar*)an_name.c_str());
     xmlNewProp(ag1, (const xmlChar*)"l", (const xmlChar*)"1");
     xmlNewProp(ag1, (const xmlChar*)"type", (const xmlChar*)"Gaussian");
   }
@@ -1883,7 +1902,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       xmlAddChild(wfPtr, detPtr);
       if (addJastrow)
       {
-        std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
+        std::cout << R"(Adding Two-Body and One-Body jastrows with rcut="10" and size="10")" << std::endl;
         if (NumberOfEls > 1)
         {
           xmlAddChild(wfPtr, createJ2());
@@ -1992,7 +2011,7 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
       xmlAddChild(wfPtr, detPtr);
       if (addJastrow)
       {
-        std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
+        std::cout << R"(Adding Two-Body and One-Body jastrows with rcut="10" and size="10")" << std::endl;
         if (NumberOfEls > 1)
         {
           xmlAddChild(wfPtr, createJ2());

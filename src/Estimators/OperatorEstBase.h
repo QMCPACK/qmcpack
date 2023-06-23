@@ -19,8 +19,10 @@
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
 #include "QMCHamiltonians/ObservableHelper.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/DataLocality.h"
+#include "hdf/hdf_archive.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -42,20 +44,6 @@ public:
 
   using Data = std::vector<QMCT::RealType>;
 
-  /** locality for accumulation of estimator data.
-   *  This designates the memory scheme used for the estimator
-   *  The default is:
-   *  DataLocality::Crowd, each crowd and the rank level estimator have a full representation of the data
-   *  Memory Savings Schemes:
-   *  One:
-   *  DataLocality::Rank,  This estimator has the full representation of the data but its crowd spawn will have
-   *  One per crowd:
-   *  DataLocality::Queue  This estimator accumulates queue of values to collect to the Rank estimator data
-   *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
-   */
-  DataLocality data_locality_;
-
-  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
   /** Shallow copy constructor!
@@ -109,7 +97,7 @@ public:
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  virtual void registerOperatorEstimator(hid_t gid) {}
+  virtual void registerOperatorEstimator(hdf_archive& file) {}
 
   virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() const = 0;
 
@@ -118,7 +106,7 @@ public:
    *  if you haven't registered Operator Estimator 
    *  this will do nothing.
    */
-  void write();
+  void write(hdf_archive& file);
 
   /** zero data appropriately for the DataLocality
    */
@@ -126,20 +114,44 @@ public:
 
   /** Return the total walker weight for this block
    */
-  QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
+  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
 
   const std::string& get_my_name() const { return my_name_; }
 
+  /** Register 0-many listeners with a leading QMCHamiltonian instance i.e. a QMCHamiltonian
+   *  that has acquired the crowd scope QMCHamiltonianMultiWalkerResource.
+   *  This must be called for each crowd scope estimator that listens to register listeners into
+   *  the crowd scope QMCHamiltonianMultiWalkerResource.
+   *
+   *  Many estimators don't need per particle values so the default implementation is no op.
+   */
+  virtual void registerListeners(QMCHamiltonian& ham_leader){};
+
   bool isListenerRequired() { return requires_listener_; }
 
+  DataLocality get_data_locality() const { return data_locality_; }
+
 protected:
+  /** locality for accumulation of estimator data.
+   *  This designates the memory scheme used for the estimator
+   *  The default is:
+   *  DataLocality::Crowd, each crowd and the rank level estimator have a full representation of the data
+   *  Memory Savings Schemes:
+   *  One:
+   *  DataLocality::Rank,  This estimator has the full representation of the data but its crowd spawn will have
+   *  One per crowd:
+   *  DataLocality::Queue  This estimator accumulates queue of values to collect to the Rank estimator data
+   *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
+   */
+  DataLocality data_locality_;
+
   ///name of this object -- only used for debugging and h5 output
   std::string my_name_;
 
   QMCT::FullPrecRealType walkers_weight_;
 
   // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
-  UPtrVector<ObservableHelper> h5desc_;
+  std::vector<ObservableHelper> h5desc_;
 
   Data data_;
 

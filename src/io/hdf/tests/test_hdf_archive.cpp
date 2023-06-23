@@ -208,13 +208,23 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
+  CHECK(hd.group_path_as_string() == "");
+
   hd.push("name1");
+
+  CHECK(hd.group_path_as_string() == "name1");
 
   int j = 3;
   okay  = hd.writeEntry(j, "int2");
   REQUIRE(okay);
 
+  hd.push("name2");
+  CHECK(hd.group_path_as_string() == "name1/name2");
+
   hd.close();
+
+  // Check that opening a group on a closed file throws an exception
+  REQUIRE_THROWS(hd.push("group"));
 
   hdf_archive hd2;
   hd2.open("test_group.hdf");
@@ -234,6 +244,8 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   okay = hd2.readEntry(j3, "int2");
   REQUIRE(okay);
   REQUIRE(j3 == j);
+
+  REQUIRE_THROWS(hd2.push("nonexistent_group", false));
 
   hd2.close();
 }
@@ -392,4 +404,51 @@ TEST_CASE("hdf_archive_string_vector", "[hdf]")
   REQUIRE(strings2.size() == 2);
   REQUIRE(strings2[0] == "first");
   REQUIRE(strings2[1] == "really long string");
+}
+
+TEST_CASE("hdf_archive_dataset_existence_checking", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_dataset_existence_checking.hdf");
+
+  std::vector<uint64_t> numbers;
+  numbers.push_back(123456);
+  std::string ds_tag = "numbers_vector";
+
+  bool okay = hd.writeEntry(numbers, ds_tag);
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  okay = hd2.open("test_dataset_existence_checking.hdf");
+  REQUIRE(okay);
+
+  REQUIRE(hd2.is_dataset(ds_tag));
+  REQUIRE(!hd2.is_dataset("tag_doesnt_exist"));
+}
+
+TEST_CASE("hdf_archive_dataset_type_checking", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_dataset_type_checking.hdf");
+
+  std::vector<uint64_t> numbers;
+  numbers.push_back(123456);
+  std::string ds_tag = "numbers_vector";
+
+  bool okay = hd.writeEntry(numbers, ds_tag);
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  okay = hd2.open("test_dataset_type_checking.hdf");
+  REQUIRE(okay);
+
+  bool is_correct_type = hd2.is_dataset_of_type<uint64_t>(ds_tag);
+  REQUIRE(is_correct_type);
+  is_correct_type = hd2.is_dataset_of_type<int64_t>(ds_tag);
+  REQUIRE(is_correct_type == false);
+  REQUIRE_THROWS_AS(hd2.is_dataset_of_type<uint64_t>("tag_doesnt_exist"), std::runtime_error);
 }

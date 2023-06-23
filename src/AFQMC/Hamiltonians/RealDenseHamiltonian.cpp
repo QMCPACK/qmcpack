@@ -65,10 +65,10 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
     assert(PsiT.size() % 2 == 0);
   int nspins = ((type != COLLINEAR) ? 1 : 2);
   int ndet   = PsiT.size() / nspins;
-  int nup    = PsiT[0].size(0);
+  int nup    = std::get<0>(PsiT[0].sizes());
   int ndown  = 0;
   if (nspins == 2)
-    ndown = PsiT[1].size(0);
+    ndown = std::get<0>(PsiT[1].sizes());
   int NEL = nup + ndown;
 
   // distribute work over equivalent nodes in TGprop.TG() across TG.Global()
@@ -90,12 +90,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
       app_error() << " Error opening integral file in RealDenseHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in RealDenseHamiltonian::getHamiltonianOperations():"
-                  << " Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
   }
 
   std::vector<int> Idata(8);
@@ -158,12 +153,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
   if (distNode.root())
   {
     // read L
-    if (!dump.push("DenseFactorized", false))
-    {
-      app_error() << " Error in RealDenseHamiltonian::getHamiltonianOperations():"
-                  << " Group DenseFactorized not found. \n";
-      APP_ABORT("");
-    }
+    dump.push("DenseFactorized", false);
     SpRMatrix_ref L(to_address(Likn.origin()), Likn.extensions());
     hyperslab_proxy<SpRMatrix_ref, 2> hslab(L,
                                             std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
@@ -186,11 +176,11 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n";
       APP_ABORT("");
     }
-    if (Likn.size(0) != NMO * NMO || Likn.size(1) != local_ncv)
+    if (std::get<0>(Likn.sizes()) != NMO * NMO || std::get<1>(Likn.sizes()) != local_ncv)
     {
       app_error() << " Error in RealDenseHamiltonian::getHamiltonianOperations():"
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n"
-                  << " Unexpected dimensions: " << Likn.size(0) << " " << Likn.size(1) << std::endl;
+                  << " Unexpected dimensions: " << std::get<0>(Likn.sizes()) << " " << std::get<1>(Likn.sizes()) << std::endl;
       APP_ABORT("");
     }
     dump.pop();

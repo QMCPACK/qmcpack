@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/tests/TestListenerFunction.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <functional>
 #include <stdio.h>
@@ -40,19 +41,11 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 1.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                = {0.0, 1.0, 0.0};
+  elec.R[1]                = {1.0, 1.0, 0.0};
   SpeciesSet& tspecies     = elec.getSpeciesSet();
   int upIdx                = tspecies.addSpecies("u");
   int massIdx              = tspecies.addAttribute("mass");
@@ -61,10 +54,8 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.addTable(ions);
   elec.update();
 
+  const char* particles = R"(<tmp></tmp>)";
 
-  const char* particles = "<tmp> \
-</tmp> \
-";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -73,7 +64,9 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  BareKineticEnergy bare_ke(elec);
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  BareKineticEnergy bare_ke(elec, psi);
   bare_ke.put(h1);
 
   elec.L[0] = 1.0;
@@ -115,14 +108,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   ions.setName("ion0");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 6.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {6.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("Na");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -134,14 +121,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   elec.setName("e");
   std::vector<int> agroup(2, 1);
   elec.create(agroup);
-  elec.R[0][0] = 2.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 3.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 0.0;
-
-
+  elec.R[0]                    = {2.0, 0.0, 0.0};
+  elec.R[1]                    = {3.0, 0.0, 0.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -161,17 +142,18 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   //Add the two body jastrow
-  const char* particles = "<tmp> \
-  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\">  \
-      <correlation speciesA=\"u\" speciesB=\"d\" rcut=\"10\" size=\"8\"> \
-          <coefficients id=\"ud\" type=\"Array\"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients> \
-        </correlation> \
-  </jastrow> \
-  </tmp> \
-  ";
+  const char* particles = R"(<tmp>
+  <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+      <correlation speciesA="u" speciesB="d" rcut="10" size="8">
+          <coefficients id="ud" type="Array"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients>
+        </correlation>
+  </jastrow>
+  </tmp>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -185,14 +167,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   // Done with two body jastrow.
 
   //Add the one body jastrow.
-  const char* particles2 = "<tmp> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" source=\"ion0\" print=\"yes\"> \
-        <correlation elementType=\"Na\" rcut=\"10\" size=\"10\" cusp=\"0\"> \
-          <coefficients id=\"eNa\" type=\"Array\"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients> \
-        </correlation> \
-      </jastrow> \
-  </tmp> \
-  ";
+  const char* particles2 = R"(<tmp>
+  <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="Na" rcut="10" size="10" cusp="0">
+          <coefficients id="eNa" type="Array"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients>
+        </correlation>
+      </jastrow>
+  </tmp>
+  )";
   bool okay3             = doc.parseFromString(particles2);
   REQUIRE(okay3);
 
@@ -203,15 +185,13 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RadialJastrowBuilder jastrow1bdy(c, elec, ions);
   psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
-  const char* kexml = "<tmp> \
-</tmp> \
-";
+  const char* kexml = R"(<tmp></tmp>)";
 
   root = doc.getRoot();
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  BareKineticEnergy bare_ke(elec);
+  BareKineticEnergy bare_ke(elec, psi);
   bare_ke.put(h1);
 
   // update all distance tables
@@ -223,7 +203,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RealType keval = bare_ke.evaluate(elec);
 
   //This is validated against an alternate code path (waveefunction tester for local energy).
-  REQUIRE(keval == Approx(-0.147507745));
+  CHECK(keval == Approx(-0.147507745));
 
   ParticleSet::ParticlePos HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
@@ -231,14 +211,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   RealType keval2 = bare_ke.evaluateWithIonDerivs(elec, ions, psi, HFTerm, PulayTerm);
 
-  REQUIRE(keval2 == Approx(-0.147507745));
+  CHECK(keval2 == Approx(-0.147507745));
   //These are validated against finite differences (delta=1e-6).
-  REQUIRE(PulayTerm[0][0] == Approx(-0.13166));
-  REQUIRE(PulayTerm[0][1] == Approx(0.0));
-  REQUIRE(PulayTerm[0][2] == Approx(0.0));
-  REQUIRE(PulayTerm[1][0] == Approx(-0.12145));
-  REQUIRE(PulayTerm[1][1] == Approx(0.0));
-  REQUIRE(PulayTerm[1][2] == Approx(0.0));
+  CHECK(PulayTerm[0][0] == Approx(-0.13166));
+  CHECK(PulayTerm[0][1] == Approx(0.0));
+  CHECK(PulayTerm[0][2] == Approx(0.0));
+  CHECK(PulayTerm[1][0] == Approx(-0.12145));
+  CHECK(PulayTerm[1][1] == Approx(0.0));
+  CHECK(PulayTerm[1][2] == Approx(0.0));
 }
 
 /** Provide a test scope parameterized on electron species mass that then can run a set of tests using
@@ -264,23 +244,15 @@ void testElecCase(double mass_up,
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   Matrix<Real> kinetic_energies(2);
 
   ParticleSet elec(simulation_cell);
 
   elec.setName("elec");
-  elec.create({1,1});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 1.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-
+  elec.create({1, 1});
+  elec.R[0]                    = {0.0, 1.0, 0.0};
+  elec.R[1]                    = {1.0, 1.0, 0.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -298,11 +270,15 @@ void testElecCase(double mass_up,
   elec2.R[1][2] = 1.0;
   elec2.update();
 
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi_clone(runtime_options);
+
   RefVector<ParticleSet> ptcls{elec, elec2};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
 
-  BareKineticEnergy bare_ke(elec);
-  BareKineticEnergy bare_ke2(elec);
+  BareKineticEnergy bare_ke(elec, psi);
+  BareKineticEnergy bare_ke2(elec, psi_clone);
 
   RefVector<OperatorBase> bare_kes{bare_ke, bare_ke2};
   RefVectorWithLeader<OperatorBase> o_list(bare_ke, bare_kes);
@@ -310,9 +286,6 @@ void testElecCase(double mass_up,
   elec.L[1]  = 0.0;
   elec2.L[0] = 1.0;
   elec2.L[1] = 0.0;
-
-  TrialWaveFunction psi;
-  TrialWaveFunction psi_clone;
 
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
