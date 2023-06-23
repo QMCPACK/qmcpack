@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
 #include "Utilities/RuntimeOptions.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -75,7 +76,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  hf.put(root);
+  hf.put(root, true);
 
 
   REQUIRE(hf.getH());
@@ -122,7 +123,7 @@ TEST_CASE("HamiltonianFactory_prevent_legacy_estimator_input", "[hamiltonian]")
 
   xmlNodePtr root = doc.getRoot();
 
-  CHECK_THROWS_AS(hf.put(root), UniformCommunicateError);
+  CHECK_THROWS_AS(hf.put(root, true), qmcplusplus::UniformCommunicateError);
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
@@ -167,7 +168,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  hf.put(root);
+  hf.put(root,true);
 }
 
 } // namespace qmcplusplus

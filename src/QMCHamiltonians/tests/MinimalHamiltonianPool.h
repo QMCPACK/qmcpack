@@ -45,7 +45,7 @@ public:
     doc.parseFromString(hamiltonian_xml);
 
     xmlNodePtr root = doc.getRoot();
-    hpool.put(root);
+    hpool.put(root,true);
 
     return hpool;
   }
@@ -59,7 +59,7 @@ public:
     doc.parseFromString(hamiltonian_eeei_xml);
 
     xmlNodePtr root = doc.getRoot();
-    hpool.put(root);
+    hpool.put(root,true);
 
     return hpool;
   }

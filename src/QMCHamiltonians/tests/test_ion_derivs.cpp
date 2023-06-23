@@ -107,7 +107,7 @@ QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  hf.put(root);
+  hf.put(root,true);
 
   return *hf.getH();
 }

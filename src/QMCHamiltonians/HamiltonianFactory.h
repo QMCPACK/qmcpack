@@ -39,7 +39,7 @@ public:
                      Communicate* c);
 
   ///read from xmlNode
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur, bool batched);
 
   /** add a property whose name will be renamed by b
    * @param a target property whose name should be replaced by b
@@ -58,9 +58,12 @@ public:
   QMCHamiltonian* getH() const { return targetH.get(); }
 
 private:
-  /** process xmlNode to populate targetPsi
+  /** process xmlNode to populate the targetH
+   *  \param[in] cur       xml that contains the actual arguments required to make a valid hamiltonians in the QMCHamiltonian
+   *  \param[in] batched   if true reject legacy input for estimators.
+   *  returns true unless cur == NULL
    */
-  bool build(xmlNodePtr cur);
+  bool build(xmlNodePtr cur, bool batched);
 
   void addCoulombPotential(xmlNodePtr cur);
   void addForceHam(xmlNodePtr cur);

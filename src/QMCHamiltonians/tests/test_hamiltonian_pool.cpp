@@ -58,7 +58,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   REQUIRE(hpool.empty());
 
-  hpool.put(root);
+  hpool.put(root,true);
 
   QMCHamiltonian* h = hpool.getHamiltonian("h0");
   REQUIRE(h != nullptr);
