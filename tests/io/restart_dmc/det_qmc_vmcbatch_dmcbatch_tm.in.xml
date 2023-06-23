@@ -80,7 +80,7 @@
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
          <pairpot name="MPC" type="MPC" source="e" target="e" ecut="60.0" physical="false"/>
-         <!-- <estimator type="flux" name="Flux"/> -->
+         <!-- <flux name="Flux"/> -->
       </hamiltonian>
    </qmcsystem>
 

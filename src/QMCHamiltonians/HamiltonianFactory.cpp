@@ -177,6 +177,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool batched)
         targetH->addOperator(std::move(hs), "Grid", true);
       }
     }
+    else if (cname == "flux")
+    {
+      if (potName.size() < 1)
+	potName = "flux";
+      targetH->addOperator(std::make_unique<ConservedEnergy>(), potName, false);
+    }
     else if (cname == "estimator")
     {
       if (batched)

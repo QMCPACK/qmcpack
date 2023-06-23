@@ -79,7 +79,7 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
-         <estimator type="flux" name="Flux"/>
+         <flux type="flux" name="Flux"/>
       </hamiltonian>
       <estimators>
 	<estimator name="spindensity" type="spindensity" report="yes" save_memory="no">
