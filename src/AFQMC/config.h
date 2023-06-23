@@ -218,6 +218,7 @@ using host_constructor     = std::allocator<T>;
 using host_memory_resource = boost::multi::memory::resource<>;
 
 // new types
+// DEPRECATED:  use CSRMtrxShared<T> instead
 using SpCType_shm_csr_matrix =
     ma::sparse::csr_matrix<SPComplexType, int, std::size_t, shared_allocator<SPComplexType>, ma::sparse::is_root>;
 using SpVType_shm_csr_matrix =
@@ -226,6 +227,9 @@ using CType_shm_csr_matrix =
     ma::sparse::csr_matrix<ComplexType, int, std::size_t, shared_allocator<ComplexType>, ma::sparse::is_root>;
 using VType_shm_csr_matrix =
     ma::sparse::csr_matrix<ValueType, int, std::size_t, shared_allocator<ValueType>, ma::sparse::is_root>;
+
+template<typename T>
+using CSRMtrxShared<T> = ma::sparse::csr_matrix<T, int, std::size_t, shared_allocator<T>, ma::sparse::is_root>;
 
 //#ifdef PsiT_IN_SHM
 template<typename T>

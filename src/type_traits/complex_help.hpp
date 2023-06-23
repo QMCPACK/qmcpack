@@ -22,6 +22,9 @@ struct IsComplex_t<std::complex<T>> : public std::true_type
 {};
 
 template<typename T>
+inline constexpr bool IsComplex_t_v = IsComplex_t<T>::value;
+
+template<typename T>
 using IsComplex = std::enable_if_t<IsComplex_t<T>::value, bool>;
 template<typename T>
 using IsReal = std::enable_if_t<std::is_floating_point<T>::value, bool>;
