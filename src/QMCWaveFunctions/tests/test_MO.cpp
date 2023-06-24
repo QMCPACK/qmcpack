@@ -423,6 +423,11 @@ void test_EtOH_mw(bool transform)
   RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
   RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
 
+  size_t nw = psi_list.size();
+  SPOSet::ValueVector psi_v_1(n_mo);
+  SPOSet::ValueVector psi_v_2(n_mo);
+  RefVector<SPOSet::ValueVector> psi_v_list{psi_v_1, psi_v_2};
+
   ResourceCollection pset_res("test_pset_res");
   ResourceCollection spo_res("test_spo_res");
 
@@ -433,9 +438,15 @@ void test_EtOH_mw(bool transform)
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
+  sposet->mw_evaluateValue(spo_list, P_list, 0, psi_v_list);
 
   for (size_t iorb = 0; iorb < n_mo; iorb++)
   {
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      // test values from OffloadMWVArray impl.
+      CHECK(std::real(psi_v_list[iw].get()[iorb]) == Approx(psi_list[iw].get()[iorb]));
+    }
     CHECK(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
     CHECK(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
     CHECK(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));
