@@ -3580,7 +3580,8 @@ class Kagayaki(Supercomputer):
         ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
         c=''
         c+='#!/bin/bash\n'
-        c+='#PBS -q ' + job.queue + '\n'
+        if (job.queue is not None):
+            c+='#PBS -q ' + job.queue + '\n'
         c+='#PBS -N ' + job.name + '\n'
         c+='#PBS -o ' + job.outfile +'\n'
         c+='#PBS -e ' + job.errfile + '\n'

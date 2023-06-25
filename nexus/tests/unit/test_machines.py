@@ -1922,6 +1922,16 @@ echo "Cobalt location args: $LOCARGS" >&2
 
 
 runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
+        kagayaki = '''#!/bin/bash
+#PBS -N jobname
+#PBS -o test.out
+#PBS -e test.err
+#PBS -l select=2:ncpus=128:mpiprocs=128
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -machinefile $PBS_NODEFILE -np 256 test.x''',
         )
 
     def process_job_file(jf):
