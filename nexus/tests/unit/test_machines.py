@@ -1240,6 +1240,7 @@ def test_job_run_command():
         ('vesta'          , 'n2_t2_e'       ) : 'runjob --envs OMP_NUM_THREADS=2 ENV_VAR=1 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2_t2_p2'      ) : 'runjob --envs OMP_NUM_THREADS=2 --np 4 -p 2 --verbose=INFO $LOCARGS : test.x',
         ('kagayaki'       , 'n1'            ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 test.x',
+        ('kagayaki'       , 'n1_p1'         ) : 'mpirun -machinefile $PBS_NODEFILE -np 1 test.x',
         })
 
     if testing.global_data['job_ref_table']:
