@@ -1239,6 +1239,12 @@ def test_job_run_command():
         ('vesta'          , 'n2_t2'         ) : 'runjob --envs OMP_NUM_THREADS=2 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2_t2_e'       ) : 'runjob --envs OMP_NUM_THREADS=2 ENV_VAR=1 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2_t2_p2'      ) : 'runjob --envs OMP_NUM_THREADS=2 --np 4 -p 2 --verbose=INFO $LOCARGS : test.x',
+        ('kagayaki'       , 'n1'            ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n1_p1'         ) : 'mpirun -machinefile $PBS_NODEFILE -np 1 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2'            ) : 'mpirun -machinefile $PBS_NODEFILE -np 256 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2'         ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2_e'       ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2_p2'      ) : 'mpirun -machinefile $PBS_NODEFILE -np 4 -x OMP_NUM_THREADS test.x',
         })
 
     if testing.global_data['job_ref_table']:
@@ -1916,6 +1922,16 @@ echo "Cobalt location args: $LOCARGS" >&2
 
 
 runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
+        kagayaki = '''#!/bin/bash
+#PBS -N jobname
+#PBS -o test.out
+#PBS -e test.err
+#PBS -l select=2:ncpus=128:mpiprocs=128
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -machinefile $PBS_NODEFILE -np 256 -x OMP_NUM_THREADS test.x''',
         )
 
     def process_job_file(jf):
