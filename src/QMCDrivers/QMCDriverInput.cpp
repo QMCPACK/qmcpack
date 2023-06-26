@@ -39,7 +39,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   std::string serialize_walkers;
   std::string debug_checks_str;
   std::string measure_imbalance_str;
-  int Period4CheckPoint{-1};
+  int Period4CheckPoint{0};
 
   ParameterSet parameter_set;
   parameter_set.add(recalculate_properties_period_, "checkProperties");

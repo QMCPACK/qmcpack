@@ -36,7 +36,7 @@ Quantum Monte Carlo Methods
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
   +----------------+--------------+--------------+-------------+---------------------------------+
-  | ``checkpoint`` | integer      | -1, 0, n     | -1          | Checkpoint frequency            |
+  | ``checkpoint`` | integer      | -1, 0, n     | 0           | Checkpoint frequency            |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``record``     | integer      | n            | 0           | Save configuration ever n steps |
   +----------------+--------------+--------------+-------------+---------------------------------+
@@ -69,9 +69,9 @@ Additional information:
 -  ``checkpoint``: This enables and disables checkpointing and
    specifying the frequency of output. Possible values are:
 
-   - **[-1]** No checkpoint (default setting).
+   - **[-1]** No checkpoint files are written.
 
-   - **[0]** Write the checkpoint files after the completion of the QMC section.
+   - **[0]** Write the checkpoint files after the completion of the QMC section (default).
 
    - **[n]** Write the checkpoint files after every :math:`n` blocks, and also at the end of the QMC section.
 
