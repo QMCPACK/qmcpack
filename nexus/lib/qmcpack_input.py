@@ -1752,8 +1752,8 @@ class simulation(QIxml):
     attributes = ['method']
     #            rsqmc
     elements   = ['project','random','include','qmcsystem','particleset',
-                  'wavefunction','hamiltonian','init','traces','qmc','loop',
-                  'mcwalkerset','cmc']+\
+                  'wavefunction','hamiltonian','estimators','init','traces',
+                  'qmc','loop','mcwalkerset','cmc']+\
                   ['afqmcinfo','walkerset','propagator','execute'] # afqmc
     afqmc_order = ['project','random','afqmcinfo','hamiltonian',
                    'wavefunction','walkerset','propagator','execute']
@@ -1799,7 +1799,7 @@ class mcwalkerset(QIxml):
 
 class qmcsystem(QIxml):
     attributes = ['dim'] #,'wavefunction','hamiltonian']  # breaks QmcpackInput
-    elements = ['simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset']
+    elements = ['simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset','estimators']
 #end class qmcsystem
 
 
@@ -2084,6 +2084,10 @@ class override_variational_parameters(QIxml):
 #end class override_variational_parameters
 
 
+
+class estimators(QIxml):
+    elements = ['estimator']
+#end class estimators
 
 class hamiltonian(QIxml):
     #            rsqmc                              afqmc
@@ -2580,7 +2584,7 @@ class vmc_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay']
+    attributes = ['method','move','profiling','kdelay','checkpoint']
     elements   = ['estimator']
     parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift']
     write_types = obj(usedrift=yesno,profiling=yesno)
@@ -2592,7 +2596,7 @@ class dmc_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay']
+    attributes = ['method','move','profiling','kdelay','checkpoint']
     elements   = ['estimator']
     parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound']
     write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno)
@@ -2710,7 +2714,7 @@ classes = [   #standard classes
     nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,rpa_jastrow,momentum,override_variational_parameters,
-    momentumdistribution,onebodydensitymatrices,
+    momentumdistribution,onebodydensitymatrices,estimators,
     # afqmc classes
     afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]

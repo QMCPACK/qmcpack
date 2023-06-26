@@ -217,6 +217,10 @@ class Namelist(DevBase):
         for line in lines:
             tokens = line.split(',')
             for t in tokens:
+                t = t.strip()
+                if len(t)==0:
+                    continue
+                #end if
                 name,value = t.split('=')
                 name  = name.strip()
                 value = value.strip()
