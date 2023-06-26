@@ -3574,7 +3574,12 @@ class Kagayaki(Supercomputer):
     special_bundling = False
 
     def process_job_options(self,job):
-        job.run_options.add(nodefile='-machinefile $PBS_NODEFILE', np='-np '+str(job.processes))
+        # job.run_options.add(nodefile='-machinefile $PBS_NODEFILE', np='-np '+str(job.processes))
+        opt = obj(
+            nodefile='-machinefile $PBS_NODEFILE',
+            np='-np {}'.format(job.processes),
+            omp='-x OMP_NUM_THREAD'
+            )
 
     def write_job_header(self,job):
         ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
@@ -3587,6 +3592,7 @@ class Kagayaki(Supercomputer):
         c+='#PBS -e ' + job.errfile + '\n'
         c+='#PBS -l select={0}:ncpus={1}:mpiprocs={1}\n'.format(job.nodes, ppn)  
         c+='cd $PBS_O_WORKDIR\n'
+        c+='export OMP_NUM_THREADS=' + str(job.threads) + '\n'
         return c
     #end def write_job_header                                                                       
 #end class CadesMoab
