@@ -86,7 +86,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   VMC vmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* vmc_input = R"(<qmc method="vmc" move="pbyp">
+  const char* vmc_input = R"(<qmc method="vmc" move="pbyp" checkpoint="-1">
    <parameter name="substeps">1</parameter>
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
@@ -168,7 +168,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   VMC vmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* vmc_input = R"(<qmc method="vmc" move="pbyp">
+  const char* vmc_input = R"(<qmc method="vmc" move="pbyp" checkpoint="-1">
    <parameter name="substeps">1</parameter>
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
@@ -255,7 +255,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 
   VMC vmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* vmc_input = R"(<qmc method="vmc" move="alle">
+  const char* vmc_input = R"(<qmc method="vmc" move="alle" checkpoint="-1">
    <parameter name="substeps">1</parameter>
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
