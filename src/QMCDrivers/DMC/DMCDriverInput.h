@@ -61,8 +61,6 @@ private:
   bool reconfiguration_ = true;
   ///input std::string to determine to use nonlocal move
   std::string NonLocalMove;
-  ///input std::string to use fast gradient
-  std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType max_age_ = 10;
   /// reserved walkers for population growth

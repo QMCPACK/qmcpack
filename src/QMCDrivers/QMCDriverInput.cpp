@@ -42,8 +42,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   int Period4CheckPoint{-1};
 
   ParameterSet parameter_set;
-  parameter_set.add(store_config_period_, "storeconfigs");
-  parameter_set.add(store_config_period_, "store_configs");
   parameter_set.add(recalculate_properties_period_, "checkProperties");
   parameter_set.add(recalculate_properties_period_, "checkproperties");
   parameter_set.add(recalculate_properties_period_, "check_properties");

@@ -68,10 +68,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
   Period4CheckPoint = -1;
-  storeConfigs      = 0;
-  //m_param.add(storeConfigs,"storeConfigs");
-  m_param.add(storeConfigs, "storeconfigs");
-  m_param.add(storeConfigs, "store_configs");
   Period4CheckProperties = 100;
   m_param.add(Period4CheckProperties, "checkProperties");
   m_param.add(Period4CheckProperties, "checkproperties");

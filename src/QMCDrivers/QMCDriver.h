@@ -229,7 +229,6 @@ protected:
   *
   * The unit is in steps.
   */
-  int storeConfigs;
 
   ///Period to recalculate the walker properties from scratch.
   int Period4CheckProperties;
