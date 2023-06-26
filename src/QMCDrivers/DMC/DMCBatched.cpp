@@ -492,6 +492,7 @@ bool DMCBatched::run()
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("Block " + std::to_string(block));
     endBlock();
+    recordBlock(block);
     dmc_loop.stop();
 
     bool stop_requested = false;

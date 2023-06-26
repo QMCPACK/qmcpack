@@ -109,8 +109,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    if (storeConfigs)
-      recordBlock(block);
+    recordBlock(block);
     vmc_loop.stop();
 
     bool stop_requested = false;

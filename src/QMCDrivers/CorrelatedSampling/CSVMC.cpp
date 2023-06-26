@@ -184,8 +184,7 @@ bool CSVMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    if (storeConfigs)
-      recordBlock(block);
+    recordBlock(block);
   } //block
   Estimators->stop(estimatorClones);
   for (int ip = 0; ip < NumThreads; ++ip)

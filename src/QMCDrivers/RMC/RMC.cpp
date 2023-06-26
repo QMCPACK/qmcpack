@@ -114,9 +114,7 @@ bool RMC::run()
     } //end-of-parallel for
     CurrentStep += nSteps;
     Estimators->stopBlock(estimatorClones);
-    //why was this commented out? Are checkpoints stored some other way?
-    if (storeConfigs)
-      recordBlock(block);
+    recordBlock(block);
     rmc_loop.stop();
 
     bool stop_requested = false;

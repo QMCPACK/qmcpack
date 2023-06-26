@@ -43,8 +43,6 @@ class HDFWalkerOutput
   ///rootname
   std::string RootName;
   std::string prevFile;
-  //     ///handle for the storeConfig.h5
-  //     hdf_archive fw_out;
 public:
   ///constructor
   HDFWalkerOutput(size_t num_ptcls, const std::string& fname, Communicate* c);

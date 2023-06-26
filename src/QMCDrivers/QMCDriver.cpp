@@ -67,11 +67,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  Period4CheckPoint = -1;
-  storeConfigs      = 0;
-  //m_param.add(storeConfigs,"storeConfigs");
-  m_param.add(storeConfigs, "storeconfigs");
-  m_param.add(storeConfigs, "store_configs");
+  Period4CheckPoint = 0;
   Period4CheckProperties = 100;
   m_param.add(Period4CheckProperties, "checkProperties");
   m_param.add(Period4CheckProperties, "checkproperties");
@@ -405,7 +401,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //int oldSteps=nSteps;
 
   //set the default walker to the number of threads times 10
-  Period4CheckPoint = -1;
+  Period4CheckPoint = 0;
   int defaultw      = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint, "checkpoint");

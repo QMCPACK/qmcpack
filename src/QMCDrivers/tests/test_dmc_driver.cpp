@@ -87,7 +87,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   DMC dmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* dmc_input = R"(<qmc method="dmc">
+  const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
    <parameter name="timestep">0.1</parameter>
@@ -168,7 +168,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   DMC dmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* dmc_input = R"(<qmc method="dmc">
+  const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
    <parameter name="timestep">0.1</parameter>
