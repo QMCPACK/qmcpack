@@ -43,7 +43,7 @@ enum SODMCTimers
   SODMC_tmoves
 };
 
-extern TimerNameList_t<SODMCTimers> SODMCTimerNames;
+extern const TimerNameList_t<SODMCTimers> SODMCTimerNames;
 
 
 } // namespace qmcplusplus

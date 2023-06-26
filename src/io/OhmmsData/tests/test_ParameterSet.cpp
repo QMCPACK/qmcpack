@@ -15,9 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsData/ParameterSet.h"
-#include <string>
-
-using std::string;
 
 TEST_CASE("ParameterSet", "[xml]")
 {

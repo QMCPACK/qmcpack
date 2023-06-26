@@ -459,7 +459,7 @@ private:
   /// Total timer for H ion deriv evaluation;
   NewTimer& eval_ion_derivs_fast_timer_;
   /// timers for H components
-  TimerList_t my_timers_;
+  std::vector<std::reference_wrapper<NewTimer>> my_timers_;
   ///types of component operators
   std::map<std::string, std::string> operator_types;
   ///data

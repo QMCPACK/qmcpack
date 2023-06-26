@@ -109,7 +109,7 @@ protected:
 public:
   SplineC2COMPTarget(const std::string& my_name)
       : BsplineSet(my_name),
-        offload_timer_(*timer_manager.createTimer("SplineC2COMPTarget::offload", timer_level_fine)),
+        offload_timer_(createGlobalTimer("SplineC2COMPTarget::offload", timer_level_fine)),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
   {}

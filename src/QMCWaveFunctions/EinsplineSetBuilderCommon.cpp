@@ -28,6 +28,9 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTable.h"
 
+#include <array>
+#include <string_view>
+
 namespace qmcplusplus
 {
 //std::map<H5OrbSet,SPOSet*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
@@ -453,10 +456,12 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
       int n_tot_irred(0);
       for (int si = 0; si < numSuperTwists; si++)
       {
-        char buf[1000];
-        snprintf(buf, 1000, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n", si, superFracs[si][0], superFracs[si][1],
-                 superFracs[si][2]);
-        app_log() << buf;
+        std::array<char, 1000> buf;
+        int length = std::snprintf(buf.data(), buf.size(), "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n", si,
+                                   superFracs[si][0], superFracs[si][1], superFracs[si][2]);
+        if (length < 0)
+          throw std::runtime_error("Error converting Super twist to a string");
+        app_log() << std::string_view(buf.data(), length);
         app_log().flush();
       }
     }
@@ -477,11 +482,14 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
 
       if (twist_num < 0)
       {
-        char buf[1000];
-        snprintf(buf, 1000,
-                 "AnalyzeTwists2. Input twist [ %9.5f %9.5f %9.5f] not found in the list of super twists above.\n",
-                 twist[0], twist[1], twist[2]);
-        throw UniformCommunicateError(buf);
+        std::array<char, 1000> buf;
+        int length = std::
+            snprintf(buf.data(), buf.size(),
+                     "AnalyzeTwists2. Input twist [ %9.5f %9.5f %9.5f] not found in the list of super twists above.\n",
+                     twist[0], twist[1], twist[2]);
+        if (length < 0)
+          throw std::runtime_error("Error generating error message");
+        throw UniformCommunicateError(buf.data());
       }
       return twist_num;
     };
@@ -516,10 +524,12 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
 
     assert(twist_num_ >= 0 && twist_num_ < numSuperTwists);
 
-    char buf[1000];
-    snprintf(buf, 1000, "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]", twist_num_, superFracs[twist_num_][0],
-             superFracs[twist_num_][1], superFracs[twist_num_][2]);
-    app_log() << buf << std::endl;
+    std::array<char, 1000> buf;
+    int length = std::snprintf(buf.data(), buf.size(), "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]", twist_num_,
+                               superFracs[twist_num_][0], superFracs[twist_num_][1], superFracs[twist_num_][2]);
+    if (length < 0)
+      throw std::runtime_error("Error converting supercell twist to a string");
+    app_log() << std::string_view(buf.data(), length) << std::endl;
   }
 
   TargetPtcl.setTwist(superFracs[twist_num_]);
@@ -545,10 +555,12 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
     // First make sure we have enough points
     if (superSets[si].size() != numTwistsNeeded)
     {
-      char buf[1000];
-      snprintf(buf, 1000, "Super twist %d should own %d k-points, but owns %d.\n", si, numTwistsNeeded,
-               static_cast<int>(superSets[si].size()));
-      app_error() << buf;
+      std::array<char, 1000> buf;
+      int length = std::snprintf(buf.data(), buf.size(), "Super twist %d should own %d k-points, but owns %d.\n", si,
+                                 numTwistsNeeded, static_cast<int>(superSets[si].size()));
+      if (length < 0)
+        throw std::runtime_error("Error generating Super twist string");
+      app_error() << std::string_view(buf.data(), length);
       if (si == twist_num_)
       {
         APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
@@ -621,11 +633,12 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
     }
     if (myComm->rank() == 0)
     {
-      char buf[1000];
-
-      snprintf(buf, 1000, "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n", MakeTwoCopies[i] ? 2 : 1,
-               twist_i[0], twist_i[1], twist_i[2]);
-      app_log() << buf;
+      std::array<char, 1000> buf;
+      int length = std::snprintf(buf.data(), buf.size(), "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
+                                 MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
+      if (length < 0)
+        throw std::runtime_error("Error generating string");
+      app_log() << std::string_view(buf.data(), length);
       app_log().flush();
     }
   }
@@ -786,8 +799,6 @@ bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
   if (root)
   {
     misc.rewind();
-    //misc.put(NumValenceOrbs);
-    //misc.put(NumCoreOrbs);
     for (int i = 0; i < n; ++i)
     {
       misc.put(SortBands[i].TwistIndex);
@@ -814,8 +825,6 @@ bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
   {
     SortBands.resize(nbands[0]);
     misc.rewind();
-    //misc.get(NumValenceOrbs);
-    //misc.get(NumCoreOrbs);
     for (int i = 0; i < n; ++i)
     {
       misc.get(SortBands[i].TwistIndex);
@@ -835,14 +844,6 @@ bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
       misc.get(SortBands[i].IsCoreState);
     }
   }
-
-  //char fname[64];
-  //sprintf(fname,"debug.%d",myComm->rank());
-  //ofstream fout(fname);
-  //fout.setf(std::ios::scientific, std::ios::floatfield);
-  //fout.precision(12);
-  //for(int i=0; i<misc.size();++i)
-  //  fout << misc[i] << std::endl;
   return isCore;
 }
 

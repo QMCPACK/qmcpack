@@ -46,6 +46,7 @@ public:
   using vghgh_type        = typename BaseType::vghgh_type;
   using PosType           = typename ParticleSet::PosType;
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+  using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
 
   using BaseType::BasisSetSize;
 
@@ -108,6 +109,18 @@ public:
    */
   void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) override;
 
+  /** compute V using packed array with all walkers 
+   * @param P_list list of quantum particleset (one for each walker)
+   * @param iat active particle
+   * @param v   Array(n_walkers, BasisSetSize)
+   */
+  void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) override;
+
+  /** compute VGL using packed array with all walkers 
+   * @param P_list list of quantum particleset (one for each walker)
+   * @param iat active particle
+   * @param vgl   Array(n_walkers, 5, BasisSetSize)
+   */
   void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) override;
 
   /** compute VGH 

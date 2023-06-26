@@ -20,12 +20,12 @@ jobs:
         include:
           - jobname: ClangTidy14-NoMPI-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: ClangTidy14-NoMPI-Complex
             container:
-              image: williamfgc/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
     steps:

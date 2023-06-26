@@ -40,72 +40,72 @@ jobs:
         include:
           - jobname: GCC9-NoMPI-Debug-Real
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-NoMPI-NoOMP-Real
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-NoMPI-NoOMP-Complex
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-NoMPI-Sandbox-Real
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-MPI-Gcov-Real
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC9-MPI-Gcov-Complex
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: GCC11-NoMPI-Werror-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
               options: -u 1001
 
           - jobname: GCC11-NoMPI-Werror-Complex
             container:
-              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
               options: -u 1001
 
           - jobname: GCC11-NoMPI-Werror-Real-Mixed
             container:
-              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
               options: -u 1001
 
           - jobname: GCC11-NoMPI-Werror-Complex-Mixed
             container:
-              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
               options: -u 1001
 
           - jobname: Clang14-NoMPI-ASan-Real
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: Clang14-NoMPI-ASan-Complex
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: Clang14-NoMPI-UBSan-Real
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-openmpi
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
           - jobname: Clang16-NoMPI-Offload-Real
             container:
-              image: walshmm/qmcpack-ci:ubuntu22-clang-latest
+              image: ghcr.io/qmcpack/ubuntu22-clang:latest
               options: -u 1001
 
     steps:
@@ -191,19 +191,19 @@ jobs:
         include:
           - jobname: GCC11-NoMPI-Debug-Real
             container:
-              image: walshmm/qmcpack-ci:centos-stream-gcc11
+              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
               options: -u 1001
           - jobname: GCC11-NoMPI-NoOMP-Real
             container:
-              image: walshmm/qmcpack-ci:centos-stream-gcc11
+              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
               options: -u 1001
           - jobname: GCC11-NoMPI-NoOMP-Complex
             container:
-              image: walshmm/qmcpack-ci:centos-stream-gcc11
+              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
               options: -u 1001
           - jobname: GCC11-NoMPI-Sandbox-Real
             container:
-              image: walshmm/qmcpack-ci:centos-stream-gcc11
+              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
               options: -u 1001
         
     steps:

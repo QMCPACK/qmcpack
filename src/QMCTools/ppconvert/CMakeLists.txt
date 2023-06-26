@@ -11,10 +11,14 @@ endif()
 
 string(REPLACE "-ffast-math" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
-# check if std::isnan works or not
-# this check may fail when cross-compiling even if std::isnan actually functions properly.
-include(CheckCXXSourceRuns)
-check_cxx_source_runs(
+if(CMAKE_CROSSCOMPILING)
+  message(STATUS "Cannot run std::isnan tests when cross compiling. Setting ISNAN_WORKS to FALSE.")
+  set(ISNAN_WORKS FALSE)
+else()
+  # check if std::isnan works or not
+  # this check may fail when cross-compiling even if std::isnan actually functions properly.
+  include(CheckCXXSourceRuns)
+  check_cxx_source_runs(
 "
 #include <cmath>
 int main()
@@ -24,13 +28,16 @@ int main()
   return 1;
 }
 "
-ISNAN_WORKS)
+  ISNAN_WORKS)
+endif()
+
+option(ENABLE_PPCONVERT "Enable ppconvert" ${ISNAN_WORKS})
 
 # ppconvert only works when std::isnan works.
-if(ISNAN_WORKS)
-  message(STATUS "ppconvert enabled. std:isnan support check passed.")
+if(ENABLE_PPCONVERT)
+  message(STATUS "ppconvert enabled.")
   add_subdirectory(src)
   add_subdirectory(test)
 else()
-  message(STATUS "ppconvert disabled. std:isnan support check failed.")
+  message(STATUS "ppconvert disabled.")
 endif()

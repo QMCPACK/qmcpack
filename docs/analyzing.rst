@@ -1394,9 +1394,18 @@ input flags are:
                           File containing atomic structure (default=None).
     -g GRID, --grid=GRID  Density grid dimensions (default=None).
     -c CELL, --cell=CELL  Simulation cell axes (default=None).
+    --density_cell=DENSITY_CELL
+                          Density cell axes (default=None).
+    --density_corner=DENSITY_CORNER
+                          Density cell corner (default=None).
     --lineplot=LINEPLOT   Produce a line plot along the selected dimension: 0,
                           1, or 2 (default=None).
     --noplot              Do not show plots interactively (default=False).
+    --twist_info=TWIST_INFO
+                          Use twist weights in twist_info.dat files or not.
+                          Options: "use", "ignore", "require".  "use" means use
+                          when present, "ignore" means do not use, "require"
+                          means must be used (default=use).
 
 Usage examples
 ~~~~~~~~~~~~~~

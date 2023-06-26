@@ -9,6 +9,7 @@
 // File refactored from: EstimatorManagerBase.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <array>
 #include <functional>
 #include <numeric>
 #include <algorithm>
@@ -205,9 +206,11 @@ void EstimatorManagerNew::startDriverRun()
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (!DebugArchive)
   {
-    char fname[128];
-    sprintf(fname, "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank());
-    DebugArchive = std::make_unique<std::ofstream>(fname);
+    std::array<char, 128> fname;
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_->getName().c_str(),
+                      my_comm_->rank()) < 0)
+      throw std::runtime_error("Error generating filename");
+    DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
   }
 #endif
