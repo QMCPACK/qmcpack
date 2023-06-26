@@ -3577,9 +3577,10 @@ class Kagayaki(Supercomputer):
         # job.run_options.add(nodefile='-machinefile $PBS_NODEFILE', np='-np '+str(job.processes))
         opt = obj(
             nodefile='-machinefile $PBS_NODEFILE',
+            omp='-x OMP_NUM_THREAD',
             np='-np {}'.format(job.processes),
-            omp='-x OMP_NUM_THREAD'
             )
+        job.run.options.add(opt)
 
     def write_job_header(self,job):
         ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
