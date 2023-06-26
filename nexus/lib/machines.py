@@ -3580,7 +3580,7 @@ class Kagayaki(Supercomputer):
             omp='-x OMP_NUM_THREAD',
             np='-np {}'.format(job.processes),
             )
-        job.run.options.add(opt)
+        job.run_options.add(opt)
 
     def write_job_header(self,job):
         ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
