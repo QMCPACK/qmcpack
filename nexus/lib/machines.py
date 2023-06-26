@@ -3577,7 +3577,7 @@ class Kagayaki(Supercomputer):
         # job.run_options.add(nodefile='-machinefile $PBS_NODEFILE', np='-np '+str(job.processes))
         opt = obj(
             nodefile='-machinefile $PBS_NODEFILE',
-            omp='-x OMP_NUM_THREAD',
+            omp='-x OMP_NUM_THREADS',
             np='-np {}'.format(job.processes),
             )
         job.run_options.add(**opt)
