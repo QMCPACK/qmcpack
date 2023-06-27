@@ -178,7 +178,7 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
     }
 
     if (ntot > 0 && num_non_zero_group != nat_group.size())
-      throw UniformCommunicateError("Some 'group' XML element node doesn't contain a 'size' attribute!");
+      throw UniformCommunicateError("Some 'group' XML element node doesn't contain a 'size' attribute! 'size = 0' is not allowed in the input. Make appropriate adjustments to the input or converter.");
   }
 
   { // parse all the 'attrib's to obtain or verify the total number of particles

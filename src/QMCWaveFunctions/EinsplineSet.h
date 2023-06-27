@@ -345,10 +345,10 @@ public:
   EinsplineSetExtended(const std::string& my_name)
       : EinsplineSet(my_name),
         MultiSpline(NULL),
-        ValueTimer(*timer_manager.createTimer("EinsplineSetExtended::ValueOnly")),
-        VGLTimer(*timer_manager.createTimer("EinsplineSetExtended::VGL")),
-        VGLMatTimer(*timer_manager.createTimer("EinsplineSetExtended::VGLMatrix")),
-        EinsplineTimer(*timer_manager.createTimer("libeinspline"))
+        ValueTimer(createGlobalTimer("EinsplineSetExtended::ValueOnly")),
+        VGLTimer(createGlobalTimer("EinsplineSetExtended::VGL")),
+        VGLMatTimer(createGlobalTimer("EinsplineSetExtended::VGLMatrix")),
+        EinsplineTimer(createGlobalTimer("libeinspline"))
   {
     for (int i = 0; i < OHMMS_DIM; i++)
       HalfG[i] = 0;

@@ -36,6 +36,9 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 
+#include <array>
+#include <string_view>
+
 namespace qmcplusplus
 {
 void EinsplineSetBuilder::set_metadata(int numOrbs,
@@ -64,13 +67,16 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
         TileMatrix(i, j) = (i == j) ? TileFactor[i] : 0;
-  char buff[1000];
   if (myComm->rank() == 0)
   {
-    snprintf(buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n", TileMatrix(0, 0),
-             TileMatrix(0, 1), TileMatrix(0, 2), TileMatrix(1, 0), TileMatrix(1, 1), TileMatrix(1, 2), TileMatrix(2, 0),
-             TileMatrix(2, 1), TileMatrix(2, 2));
-    app_log() << buff;
+    std::array<char, 1000> buff;
+    int length =
+        std::snprintf(buff.data(), buff.size(), "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
+                      TileMatrix(0, 0), TileMatrix(0, 1), TileMatrix(0, 2), TileMatrix(1, 0), TileMatrix(1, 1),
+                      TileMatrix(1, 2), TileMatrix(2, 0), TileMatrix(2, 1), TileMatrix(2, 2));
+    if (length < 0)
+      throw std::runtime_error("Error converting TileMatrix to a string");
+    app_log() << std::string_view(buff.data(), length);
   }
   if (numOrbs == 0)
     myComm->barrier_and_abort(
@@ -126,7 +132,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string GPUsharing = "no";
   std::string spo_object_name;
 
-  ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;

@@ -44,7 +44,8 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
       RandomGen(rg),
       branchEngine(0),
       DriftModifier(0),
-      Estimators(0)
+      Estimators(0),
+      initWalkers_timer_(createGlobalTimer("QMCUpdateBase::WalkerInit", timer_level_medium))
 {
   setDefaults();
 }
@@ -60,7 +61,8 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, Q
       RandomGen(rg),
       branchEngine(0),
       DriftModifier(0),
-      Estimators(0)
+      Estimators(0),
+      initWalkers_timer_(createGlobalTimer("QMCUpdateBase::WalkerInit", timer_level_medium))
 {
   setDefaults();
 }
@@ -89,8 +91,6 @@ void QMCUpdateBase::setDefaults()
   for (int ig = 0; ig < W.groups(); ++ig)
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       MassInvP[iat] = MassInvS[ig];
-
-  InitWalkersTimer = timer_manager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
 }
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
@@ -198,8 +198,8 @@ void QMCUpdateBase::stopBlock(bool collectall)
 
 void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
 {
+  ScopedTimer local(initWalkers_timer_);
   UpdatePbyP = false;
-  InitWalkersTimer->start();
   //ignore different mass
   //RealType tauovermass = Tau*MassInv[0];
   for (; it != it_end; ++it)
@@ -219,14 +219,13 @@ void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
     walker->Weight = 1.0;
     H.saveProperty(walker->getPropertyBase());
   }
-  InitWalkersTimer->stop();
 }
 
 void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
 {
+  ScopedTimer local(initWalkers_timer_);
   UpdatePbyP = true;
   BadState   = false;
-  InitWalkersTimer->start();
   if (it == it_end)
   {
     // a particular case, no walker enters in this call.
@@ -260,7 +259,6 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     H.saveProperty(awalker.getPropertyBase());
     awalker.Weight = 1.;
   }
-  InitWalkersTimer->stop();
 #pragma omp master
   print_mem("Memory Usage after the buffer registration", app_log());
 }

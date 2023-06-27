@@ -78,6 +78,10 @@ public:
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
+  void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        const RefVector<ValueVector>& psi_v_list) const override;
 
   void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                       const RefVectorWithLeader<ParticleSet>& P_list,
@@ -85,6 +89,12 @@ public:
                       const RefVector<ValueVector>& psi_v_list,
                       const RefVector<GradVector>& dpsi_v_list,
                       const RefVector<ValueVector>& d2psi_v_list) const override;
+
+  void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                            const RefVector<ValueVector>& psi_list,
+                            const std::vector<const ValueType*>& invRow_ptr_list,
+                            std::vector<std::vector<ValueType>>& ratios_list) const override;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,
@@ -293,6 +303,12 @@ private:
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
                               OffloadMWVGLArray& phi_vgl_v) const;
+
+  /// packed walker GEMM implementation
+  void mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                const RefVectorWithLeader<ParticleSet>& P_list,
+                                int iat,
+                                OffloadMWVArray& phi_v) const;
 
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;

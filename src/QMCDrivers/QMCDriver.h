@@ -229,7 +229,6 @@ protected:
   *
   * The unit is in steps.
   */
-  int storeConfigs;
 
   ///Period to recalculate the walker properties from scratch.
   int Period4CheckProperties;
@@ -364,7 +363,7 @@ protected:
   const std::string& get_root_name() const override { return RootName; }
 
 private:
-  NewTimer* checkpointTimer;
+  NewTimer& checkpoint_timer_;
   ///time the driver lifetime
   ScopedTimer driver_scope_timer_;
   ///profile the driver lifetime

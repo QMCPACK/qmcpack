@@ -400,8 +400,7 @@ TEST_CASE("test setup timers", "[utilities]")
 {
   FakeTimerManager tm;
   // Create  a list of timers and initialize it
-  std::vector<std::reference_wrapper<FakeTimer>> Timers;
-  setup_timers(Timers, TestTimerNames, timer_level_coarse, &tm);
+  TimerList Timers(tm, TestTimerNames, timer_level_coarse);
 
   FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.0s);
   Timers[MyTimer1].get().start();

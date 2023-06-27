@@ -382,6 +382,7 @@ bool VMCBatched::run()
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("Block " + std::to_string(block));
     endBlock();
+    recordBlock(block);
     vmc_loop.stop();
 
     bool stop_requested = false;

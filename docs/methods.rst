@@ -36,7 +36,7 @@ Quantum Monte Carlo Methods
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
   +----------------+--------------+--------------+-------------+---------------------------------+
-  | ``checkpoint`` | integer      | -1, 0, n     | -1          | Checkpoint frequency            |
+  | ``checkpoint`` | integer      | -1, 0, n     | 0           | Checkpoint frequency            |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``record``     | integer      | n            | 0           | Save configuration ever n steps |
   +----------------+--------------+--------------+-------------+---------------------------------+
@@ -69,9 +69,9 @@ Additional information:
 -  ``checkpoint``: This enables and disables checkpointing and
    specifying the frequency of output. Possible values are:
 
-   - **[-1]** No checkpoint (default setting).
+   - **[-1]** No checkpoint files are written.
 
-   - **[0]** Write the checkpoint files after the completion of the QMC section.
+   - **[0]** Write the checkpoint files after the completion of the QMC section (default).
 
    - **[n]** Write the checkpoint files after every :math:`n` blocks, and also at the end of the QMC section.
 
@@ -184,8 +184,6 @@ Variational Monte Carlo
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``samplesperthread``           | integer      | :math:`\geq 0`          | 0           | Number of samples per thread                  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``storeconfigs``               | integer      | all values              | 0           | Write configurations to files                 |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
@@ -257,9 +255,6 @@ Additional information:
   than 1 can be used to reduces that correlation. In practice, using larger substeps is cheaper than using ``stepsbetweensamples``
   to decorrelate samples.
   
-- ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
-  files.
-
 - ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
   default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
   and higher performance, but numerical errors will accumulate over time. Recomputing introduces a performance penalty
@@ -334,8 +329,6 @@ Batched ``vmc`` driver (experimental)
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``samples`` (not ready)        | integer      | :math:`\geq 0`          | 0           | Number of walker samples for in this VMC run    |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
-  | ``storeconfigs`` (not ready)   | integer      | all values              | 0           | Write configurations to files                   |
-  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency                |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing)   |
@@ -399,9 +392,6 @@ Additional information:
   simulation.
 
 - ``samples`` (not ready)
-
-- ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
-  files.
 
 - ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
   default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
@@ -1426,10 +1416,6 @@ parameters:
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``checkproperties``         | integer      | :math:`\geq 0`          | 100         | Number of steps between walker updates  |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
-  | ``fastgrad``                | text         | yes/other               | yes         | Fast gradients                          |
-  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
-  | ``storeconfigs``            | integer      | all values              | 0           | Store configurations                    |
-  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``use_nonblocking``         | string       | yes/no                  | yes         | Using nonblocking send/recv             |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``debug_disable_branching`` | string       | yes/no                  | no          | Disable branching for debugging         |
@@ -1568,9 +1554,6 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the
 -  ``MaxCopy``: When determining the number of copies of a walker to
    branch, set the number of copies equal to min(Multiplicity,MaxCopy).
 
--  ``fastgrad``: This calculates gradients with either the fast version
-   or the full-ratio version.
-
 -  ``maxDisplSq``: When running a DMC calculation with particle by
    particle, this sets the maximum displacement allowed for a single
    particle move. All distance displacements larger than the max are
@@ -1579,10 +1562,6 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the
 
 -  ``sigmaBound``: This determines the branch cutoff to limit wild
    weights based on the sigma and ``sigmaBound``.
-
--  ``storeconfigs``: If ``storeconfigs`` is set to a nonzero value, then
-   electron configurations during the DMC run will be saved. This option
-   is disabled for the OpenMP version of DMC.
 
 -  ``blocks_between_recompute``: See details in :ref:`vmc`.
 
@@ -1718,8 +1697,6 @@ Batched ``dmc`` driver (experimental)
   | ``sigmaBound``                 | 10           | :math:`\geq 0`          | 10          | Parameter to cutoff large weights               |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``reconfiguration``            | string       | yes/pure/other          | no          | Fixed population technique                      |
-  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
-  | ``storeconfigs``               | integer      | all values              | 0           | Store configurations                            |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``use_nonblocking``            | string       | yes/no                  | yes         | Using nonblocking send/recv                     |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+

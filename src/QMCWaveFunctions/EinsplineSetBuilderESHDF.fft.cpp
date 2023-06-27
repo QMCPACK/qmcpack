@@ -22,6 +22,9 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/qmc_common.h"
 
+#include <array>
+#include <string_view>
+
 namespace qmcplusplus
 {
 bool sortByIndex(BandInfo leftB, BandInfo rightB)
@@ -46,21 +49,26 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   H5File.read(Lattice, "/supercell/primitive_vectors");
   RecipLattice = 2.0 * M_PI * inverse(Lattice);
   SuperLattice = dot(TileMatrix, Lattice);
-  char buff[1000];
-  snprintf(buff, 1000,
-           "  Lattice = \n    [ %9.6f %9.6f %9.6f\n"
-           "      %9.6f %9.6f %9.6f\n"
-           "      %9.6f %9.6f %9.6f ]\n",
-           Lattice(0, 0), Lattice(0, 1), Lattice(0, 2), Lattice(1, 0), Lattice(1, 1), Lattice(1, 2), Lattice(2, 0),
-           Lattice(2, 1), Lattice(2, 2));
-  app_log() << buff;
-  snprintf(buff, 1000,
-           "  SuperLattice = \n    [ %9.6f %9.6f %9.6f\n"
-           "      %9.6f %9.6f %9.6f\n"
-           "      %9.6f %9.6f %9.6f ]\n",
-           SuperLattice(0, 0), SuperLattice(0, 1), SuperLattice(0, 2), SuperLattice(1, 0), SuperLattice(1, 1),
-           SuperLattice(1, 2), SuperLattice(2, 0), SuperLattice(2, 1), SuperLattice(2, 2));
-  app_log() << buff << std::endl;
+  std::array<char, 1000> buff;
+  int length = std::snprintf(buff.data(), buff.size(),
+                             "  Lattice = \n    [ %9.6f %9.6f %9.6f\n"
+                             "      %9.6f %9.6f %9.6f\n"
+                             "      %9.6f %9.6f %9.6f ]\n",
+                             Lattice(0, 0), Lattice(0, 1), Lattice(0, 2), Lattice(1, 0), Lattice(1, 1), Lattice(1, 2),
+                             Lattice(2, 0), Lattice(2, 1), Lattice(2, 2));
+  if (length < 0)
+    throw std::runtime_error("Error converting lattice to a string");
+  app_log() << std::string_view(buff.data(), length);
+  length =
+      std::snprintf(buff.data(), buff.size(),
+                    "  SuperLattice = \n    [ %9.6f %9.6f %9.6f\n"
+                    "      %9.6f %9.6f %9.6f\n"
+                    "      %9.6f %9.6f %9.6f ]\n",
+                    SuperLattice(0, 0), SuperLattice(0, 1), SuperLattice(0, 2), SuperLattice(1, 0), SuperLattice(1, 1),
+                    SuperLattice(1, 2), SuperLattice(2, 0), SuperLattice(2, 1), SuperLattice(2, 2));
+  if (length < 0)
+    throw std::runtime_error("Error converting SuperLattice to a string");
+  app_log() << std::string_view(buff.data(), length) << std::endl;
   if (!CheckLattice())
     throw std::runtime_error("CheckLattice failed");
   PrimCell.set(Lattice);

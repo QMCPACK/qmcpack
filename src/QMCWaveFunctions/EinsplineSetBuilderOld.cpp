@@ -24,6 +24,9 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "CPU/math.hpp"
 
+#include <array>
+#include <string_view>
+
 namespace qmcplusplus
 {
 bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
@@ -69,23 +72,28 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
   H5File.read(Lattice, parameterGroup + "/lattice");
   H5File.read(RecipLattice, parameterGroup + "/reciprocal_lattice");
   SuperLattice = dot(TileMatrix, Lattice);
-  char buff[1000];
-  snprintf(buff, 1000,
-           "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
-           "      %8.5f %8.5f %8.5f\n"
-           "      %8.5f %8.5f %8.5f ]\n",
-           Lattice(0, 0), Lattice(0, 1), Lattice(0, 2), Lattice(1, 0), Lattice(1, 1), Lattice(1, 2), Lattice(2, 0),
-           Lattice(2, 1), Lattice(2, 2));
-  app_log() << buff;
-  snprintf(buff, 1000,
-           "  SuperLattice = \n    [ %13.12f %13.12f %13.12f\n"
-           "      %13.12f %13.12f %13.12f\n"
-           "      %13.12f %13.12f %13.12f ]\n",
-           SuperLattice(0, 0), SuperLattice(0, 1), SuperLattice(0, 2), SuperLattice(1, 0), SuperLattice(1, 1),
-           SuperLattice(1, 2), SuperLattice(2, 0), SuperLattice(2, 1), SuperLattice(2, 2));
+  std::array<char, 1000> buff;
+  int length = std::snprintf(buff.data(), buff.size(),
+                             "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
+                             "      %8.5f %8.5f %8.5f\n"
+                             "      %8.5f %8.5f %8.5f ]\n",
+                             Lattice(0, 0), Lattice(0, 1), Lattice(0, 2), Lattice(1, 0), Lattice(1, 1), Lattice(1, 2),
+                             Lattice(2, 0), Lattice(2, 1), Lattice(2, 2));
+  if (length < 0)
+    throw std::runtime_error("Error generating Lattice string");
+  app_log() << std::string_view(buff.data(), length);
+  length =
+      std::snprintf(buff.data(), buff.size(),
+                    "  SuperLattice = \n    [ %13.12f %13.12f %13.12f\n"
+                    "      %13.12f %13.12f %13.12f\n"
+                    "      %13.12f %13.12f %13.12f ]\n",
+                    SuperLattice(0, 0), SuperLattice(0, 1), SuperLattice(0, 2), SuperLattice(1, 0), SuperLattice(1, 1),
+                    SuperLattice(1, 2), SuperLattice(2, 0), SuperLattice(2, 1), SuperLattice(2, 2));
+  if (length < 0)
+    throw std::runtime_error("Error generating SuperLattice string");
   if (!CheckLattice())
     APP_ABORT("CheckLattice failed");
-  app_log() << buff;
+  app_log() << std::string_view(buff.data(), length);
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       LatticeInv(i, j) = RecipLattice(i, j) / (2.0 * M_PI);
@@ -141,9 +149,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
     TinyVector<double, OHMMS_DIM> TwistAngles_DP;
     H5File.read(TwistAngles_DP, path.str());
     TwistAngles[ti] = TwistAngles_DP;
-    snprintf(buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n", TwistAngles[ti][0], TwistAngles[ti][1],
-             TwistAngles[ti][2]);
-    app_log() << buff;
+    int length      = std::snprintf(buff.data(), buff.size(), "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",
+                               TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+    if (length < 0)
+      throw std::runtime_error("Error converting twist angle to string");
+    app_log() << std::string_view(buff.data(), length);
   }
   //////////////////////////////////////////////////////////
   // If the density has not been set in TargetPtcl, and   //

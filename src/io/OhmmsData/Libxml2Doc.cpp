@@ -42,7 +42,7 @@ OhmmsXPathObject::OhmmsXPathObject(const char* expression, xmlNodePtr cur)
   else
   {
     std::array<char, 128> local;
-    if (snprintf(local.data(), local.size(), ".%s", expression) < 0)
+    if (std::snprintf(local.data(), local.size(), ".%s", expression) < 0)
       throw std::runtime_error("Error generating expression");
     put(local.data(), m_context);
   }
