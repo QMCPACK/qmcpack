@@ -301,9 +301,9 @@ void RandomNumberControl::write_parallel(const RefVector<RandomGenerator>& rng, 
   vt.reserve(nthreads * Random.state_size()); //buffer for random numbers from children[ip] of each thread
   mt.reserve(Random.state_size());            //buffer for random numbers from single Random object
 
+  std::vector<uint_type> c;
   for (int ip = 0; ip < nthreads; ++ip)
   {
-    std::vector<uint_type> c;
     rng[ip].get().save(c);
     vt.insert(vt.end(), c.begin(), c.end()); //get nums from each thread into buffer
   }
