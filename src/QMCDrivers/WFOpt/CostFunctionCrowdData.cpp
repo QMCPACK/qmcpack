@@ -58,9 +58,8 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
     rng_ptr_list_[ib] = std::make_unique<RandomGenerator>(Rng);
     h_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
     h0_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
-
-    rng_save_ptr_ = std::make_unique<RandomGenerator>(Rng);
   }
+  rng_save_ptr_ = std::make_unique<RandomGenerator>(Rng);
 }
 
 RefVector<ParticleSet> CostFunctionCrowdData::get_p_list(int len)
