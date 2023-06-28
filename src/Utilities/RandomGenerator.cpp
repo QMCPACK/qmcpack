@@ -18,6 +18,21 @@ uint32_t make_seed(int i, int n) { return static_cast<uint32_t>(std::time(0)) % 
 
 namespace qmcplusplus
 {
-FakeRandom<double> fake_random_global;
-RandomGenerator random_global;
+
+template<class RNG>
+typename RNG::result_type RNGThreadSafe<RNG>::operator()()
+{
+  result_type result;
+#pragma omp critical
+  {
+    result = RNG::operator()();
+  }
+  return result;
+}
+
+template class RNGThreadSafe<FakeRandom<OHMMS_PRECISION_FULL>>;
+template class RNGThreadSafe<RandomGenerator>;
+
+RNGThreadSafe<FakeRandom<OHMMS_PRECISION_FULL>> fake_random_global;
+RNGThreadSafe<RandomGenerator> random_global;
 } // namespace qmcplusplus

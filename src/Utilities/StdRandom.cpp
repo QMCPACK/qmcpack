@@ -48,12 +48,7 @@ void StdRandom<T>::save(std::vector<uint_type>& curstate) const
 template<typename T>
 typename StdRandom<T>::result_type StdRandom<T>::operator()()
 {
-  result_type result;
-#pragma omp critical
-  {
-    result = distribution(engine);
-  }
-  return result;
+  return distribution(engine);
 }
 
 template class StdRandom<double>;

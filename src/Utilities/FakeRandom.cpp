@@ -26,12 +26,7 @@ void FakeRandom<T>::set_value(double val)
 template<class T>
 T FakeRandom<T>::operator()()
 {
-  result_type result;
-#pragma omp critical
-  {
-    result = m_val;
-  }
-  return result;
+  return m_val;
 }
 
 template class FakeRandom<float>;
