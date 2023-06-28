@@ -199,7 +199,7 @@ int main(int argc, char** argv)
 #pragma omp parallel
   {
     int ip                     = omp_get_thread_num();
-    RandomGenerator& random_th = *RandomNumberControl::Children[ip];
+    auto& random_th = *RandomNumberControl::Children[ip];
     std::vector<uint_type> vt(random_th.state_size(), 0);
     random_th.load(vt);
   }
@@ -218,7 +218,7 @@ int main(int argc, char** argv)
 #pragma omp parallel reduction(+ : mismatch_count)
   {
     int ip                     = omp_get_thread_num();
-    RandomGenerator& random_th = myRNG[ip];
+    auto& random_th = *myRNG[ip];
     std::vector<uint_type> vt_orig(random_th.state_size());
     std::vector<uint_type> vt_load(random_th.state_size());
     random_th.save(vt_orig);
@@ -238,7 +238,7 @@ int main(int argc, char** argv)
   {
     if (mismatch_count != 0)
       std::cout << "Fail: random seeds mismatch between write and read!\n"
-                << "  state_size= " << myRNG[0].state_size() << " mismatch_cout=" << mismatch_count << std::endl;
+                << "  state_size= " << myRNG[0]->state_size() << " mismatch_cout=" << mismatch_count << std::endl;
     else
       std::cout << "Pass: random seeds match exactly between write and read!\n";
   }
