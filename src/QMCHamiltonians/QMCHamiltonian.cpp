@@ -1036,7 +1036,7 @@ void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P)
     auxH[i]->resetTargetParticleSet(P);
 }
 
-void QMCHamiltonian::setRandomGenerator(RandomGenerator* rng)
+void QMCHamiltonian::setRandomGenerator(RandomBase<double>* rng)
 {
   for (int i = 0; i < H.size(); i++)
     H[i]->setRandomGenerator(rng);

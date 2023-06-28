@@ -38,29 +38,18 @@ uint32_t make_seed(int i, int n);
 
 namespace qmcplusplus
 {
-template<class RNG>
-class RNGThreadSafe : public RNG
-{
-public:
-  using result_type = typename RNG::result_type;
-
-  /** return a random number [0,1)
-   */
-  result_type operator()();
-};
-
-extern template class RNGThreadSafe<FakeRandom>;
-extern template class RNGThreadSafe<StdRandom<double>>;
+extern template class FakeRandom<double>;
+extern template class StdRandom<double>;
 
 #if defined(USE_FAKE_RNG)
 // fake RNG redirection
-using RandomGenerator = FakeRandom;
-extern RNGThreadSafe<RandomGenerator> fake_random_global;
+using RandomGenerator = FakeRandom<OHMMS_PRECISION_FULL>;
+extern RandomGenerator fake_random_global;
 #define Random fake_random_global
 #else
 // real RNG redirection
 using RandomGenerator = StdRandom<OHMMS_PRECISION_FULL>;
-extern RNGThreadSafe<RandomGenerator> random_global;
+extern RandomGenerator random_global;
 #define Random random_global
 #endif
 } // namespace qmcplusplus

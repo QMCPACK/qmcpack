@@ -130,9 +130,9 @@ void DMC::resetUpdateEngines()
       traceClones[ip] = Traces->makeClone();
 #endif
 #ifdef USE_FAKE_RNG
-      Rng[ip] = std::make_unique<FakeRandom>();
+      Rng[ip] = std::make_unique<FakeRandom<double>>();
 #else
-      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
+      Rng[ip] = RandomNumberControl::Children[ip]->clone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
 #endif
       if (W.isSpinor())
@@ -301,7 +301,7 @@ bool DMC::run()
     {
 #ifndef USE_FAKE_RNG
       for (int ip = 0; ip < NumThreads; ip++)
-        *RandomNumberControl::Children[ip] = *Rng[ip];
+        RandomNumberControl::Children[ip] = Rng[ip]->clone();
 #endif
     }
     recordBlock(block);
@@ -325,7 +325,7 @@ bool DMC::run()
 
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ip++)
-    *RandomNumberControl::Children[ip] = *Rng[ip];
+    RandomNumberControl::Children[ip] = Rng[ip]->clone();
 #endif
   Estimators->stop();
   for (int ip = 0; ip < NumThreads; ++ip)

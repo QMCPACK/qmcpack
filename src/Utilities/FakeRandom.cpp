@@ -12,9 +12,29 @@
 
 #include "FakeRandom.h"
 
-FakeRandom::FakeRandom() : m_val(0.5) {}
+namespace qmcplusplus
+{
+template<class T>
+FakeRandom<T>::FakeRandom() = default;
 
-void FakeRandom::set_value(double val) { m_val = val; }
+template<class T>
+void FakeRandom<T>::set_value(double val)
+{
+  m_val = val;
+}
 
-double FakeRandom::operator()() { return m_val; }
-double FakeRandom::rand() { return m_val; }
+template<class T>
+T FakeRandom<T>::operator()()
+{
+  result_type result;
+#pragma omp critical
+  {
+    result = m_val;
+  }
+  return result;
+}
+
+template class FakeRandom<float>;
+template class FakeRandom<double>;
+
+} // namespace qmcplusplus

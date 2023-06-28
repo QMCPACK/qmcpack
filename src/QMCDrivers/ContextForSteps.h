@@ -33,12 +33,12 @@ namespace qmcplusplus
 class ContextForSteps
 {
 public:
-  ContextForSteps(RandomGenerator& random_gen);
+  ContextForSteps(RandomBase<double>& random_gen);
 
-  RandomGenerator& get_random_gen() { return random_gen_; }
+  RandomBase<double>& get_random_gen() { return random_gen_; }
 
 protected:
-  RandomGenerator& random_gen_;
+  RandomBase<double>& random_gen_;
 };
 
 } // namespace qmcplusplus

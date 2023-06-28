@@ -137,7 +137,7 @@ int main(int argc, char** argv)
   tile_cell(ions, tmat);
 
   RandomNumberControl::make_seeds();
-  std::vector<RandomGenerator> myRNG(NumThreads);
+  UPtrVector<RandomBase<double>> myRNG(NumThreads);
   std::vector<uint_type> mt(Random.state_size(), 0);
   std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(super_lattice));
 
@@ -148,8 +148,8 @@ int main(int argc, char** argv)
     MCWalkerConfiguration& els = elecs[ip];
 
     //create generator within the thread
-    myRNG[ip]                  = *RandomNumberControl::Children[ip];
-    RandomGenerator& random_th = myRNG[ip];
+    myRNG[ip]       = RandomNumberControl::Children[ip]->clone();
+    auto& random_th = *myRNG[ip];
 
     const int nions = ions.getTotalNum();
     const int nels  = count_electrons(ions);
@@ -175,7 +175,7 @@ int main(int argc, char** argv)
       els.saveWalker(**wi);
 
     // save random seeds and electron configurations.
-    *RandomNumberControl::Children[ip] = myRNG[ip];
+    RandomNumberControl::Children[ip] = myRNG[ip]->clone();
     //MCWalkerConfiguration els_save(els);
 
   } //end of omp parallel

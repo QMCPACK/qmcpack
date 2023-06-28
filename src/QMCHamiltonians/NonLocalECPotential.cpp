@@ -626,7 +626,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
 int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 {
   int NonLocalMoveAccepted = 0;
-  RandomGenerator& RandomGen(*myRNG);
+  auto& RandomGen(*myRNG);
   if (UseTMove == TMOVE_V0)
   {
     const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);

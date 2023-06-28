@@ -396,7 +396,7 @@ void OneBodyDensityMatrices::calcDensityDrift(const Position& r, Real& dens, Pos
 void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
                                         const RefVector<ParticleSet>& psets,
                                         const RefVector<TrialWaveFunction>& wfns,
-                                        RandomGenerator& rng)
+                                        RandomBase<double>& rng)
 {
   implAccumulate(walkers, psets, wfns, rng);
 }

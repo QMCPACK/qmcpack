@@ -34,7 +34,6 @@ public:
   bool run() override;
   bool put(xmlNodePtr cur) override;
   QMCRunType getRunType() override { return QMCRunType::VMC; }
-  //inline std::vector<RandomGenerator*>& getRng() { return Rng;}
 private:
   int prevSteps;
   int prevStepsBetweenSamples;

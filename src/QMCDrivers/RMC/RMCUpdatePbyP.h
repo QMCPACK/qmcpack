@@ -28,7 +28,7 @@ public:
   RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
-                         RandomGenerator& rg,
+                         RandomBase<double>& rg,
                          std::vector<int> act,
                          std::vector<int> tp);
   ~RMCUpdatePbyPWithDrift() override;
