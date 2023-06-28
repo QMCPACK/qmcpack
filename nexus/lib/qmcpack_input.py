@@ -2564,7 +2564,8 @@ class dmc(QIxml):
                   'en_ref','tau','alpha','gamma','max_branch','killnode','swap_walkers',
                   'swap_trigger','branching_cutoff_scheme','l2_diffusion','maxage',
                   'max_seconds']
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,    # batched
+    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,
+                      crowd_serialize_walkers=yesno,    # batched
                       nonlocalmoves=yesnostr,use_nonblocking=yesno,
                       gpu=yesno,fastgrad=yesno,completed=yesno,killnode=yesno, # legacy - batched
                       swap_walkers=yesno,l2_diffusion=yesno)
@@ -2600,7 +2601,7 @@ class dmc_batch(QIxml):
     attributes = ['method','move','profiling','kdelay','checkpoint']
     elements   = ['estimator']
     parameters = ['total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound']
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno)
+    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno)
 #end class dmc_batch
 
 class linear_batch(QIxml):
