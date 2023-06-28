@@ -241,7 +241,7 @@ MagnetizationDensity::Value MagnetizationDensity::integrateMagnetizationDensity(
 }
 
 void MagnetizationDensity::generateRandomGrid(std::vector<Real>& sgrid,
-                                              RandomBase<Real>& rng,
+                                              RandomBase<double>& rng,
                                               Real start,
                                               Real stop) const
 {

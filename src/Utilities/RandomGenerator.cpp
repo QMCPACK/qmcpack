@@ -18,9 +18,6 @@ uint32_t make_seed(int i, int n) { return static_cast<uint32_t>(std::time(0)) % 
 
 namespace qmcplusplus
 {
-template class FakeRandom<double>;
-template class StdRandom<double>;
-
 FakeRandom<double> fake_random_global;
 RandomGenerator random_global;
 } // namespace qmcplusplus

@@ -161,7 +161,7 @@ int main(int argc, char** argv)
     { //create up/down electrons
       els.create({nels / 2, nels - nels / 2});
       els.R.InUnit = PosUnit::Lattice;
-      std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
+      std::generate(&els.R[0][0], &els.R[0][0] + nels3, std::ref(random_th));
       els.convert2Cart(els.R); // convert to Cartiesian
       els.update();
     }
