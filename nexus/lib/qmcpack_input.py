@@ -2551,7 +2551,8 @@ class dmc(QIxml):
                   'gpu','multiple','warp','checkpoint','trace', # legacy - batched
                   'target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps',            # batched
+    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps',
+                  'crowd_serialize_walkers',            # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','reconfiguration',
@@ -2563,7 +2564,8 @@ class dmc(QIxml):
                   'en_ref','tau','alpha','gamma','max_branch','killnode','swap_walkers',
                   'swap_trigger','branching_cutoff_scheme','l2_diffusion','maxage',
                   'max_seconds']
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,    # batched
+    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,
+                      crowd_serialize_walkers=yesno,    # batched
                       nonlocalmoves=yesnostr,use_nonblocking=yesno,
                       gpu=yesno,fastgrad=yesno,completed=yesno,killnode=yesno, # legacy - batched
                       swap_walkers=yesno,l2_diffusion=yesno)
@@ -2598,8 +2600,8 @@ class dmc_batch(QIxml):
     tag = 'qmc'
     attributes = ['method','move','profiling','kdelay','checkpoint']
     elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound']
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno)
+    parameters = ['total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound']
+    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno)
 #end class dmc_batch
 
 class linear_batch(QIxml):
@@ -6578,6 +6580,7 @@ dmc_batched_defaults = obj(
     timestep_factor         = 0.5,    
     nonlocalmoves           = None,
     branching_cutoff_scheme = None,
+    crowd_serialize_walkers = None,
     crowds                  = None,
     reconfiguration         = None,
     maxage                  = None,
@@ -7077,6 +7080,7 @@ def generate_batched_dmc_calculations(
     timestep_factor        ,    
     nonlocalmoves          ,
     branching_cutoff_scheme,
+    crowd_serialize_walkers,
     crowds                 ,
     reconfiguration        ,
     maxage                 ,
@@ -7146,6 +7150,7 @@ def generate_batched_dmc_calculations(
         substeps                = substeps,
         nonlocalmoves           = nonlocalmoves,
         branching_cutoff_scheme = branching_cutoff_scheme,
+        crowd_serialize_walkers = crowd_serialize_walkers,
         crowds                  = crowds,
         reconfiguration         = reconfiguration,
         maxage                  = maxage,
