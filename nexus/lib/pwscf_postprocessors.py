@@ -512,7 +512,7 @@ def generate_bands(**kwargs):
 class ProjwfcNamelist(Namelist):
     namelist = 'projwfc'
     names = ['ngauss','degauss','Emin','Emax','deltaE',
-             'prefix','outdir','fildos','filproj',
+             'prefix','outdir','fildos','filproj','filpdos',
              'lsym','pawproj','lwrite_overlaps','lbinary_data']
 #end class ProjwfcNamelist
 
