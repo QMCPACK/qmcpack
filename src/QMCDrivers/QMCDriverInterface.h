@@ -39,9 +39,6 @@ public:
   virtual bool put(xmlNodePtr cur)    = 0;
   virtual void recordBlock(int block) = 0;
 
-  ///return the random generators
-  //virtual std::vector<RandomGenerator*>& getRng() = 0;
-
   ///return the i-th random generator
   virtual RandomBase<double>& getRng(int i) = 0;
 

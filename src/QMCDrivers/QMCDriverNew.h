@@ -200,9 +200,6 @@ public:
     return RngRefs;
   }
 
-  // ///return the random generators
-  //       inline std::vector<std::unique_ptr RandomGenerator*>& getRng() { return Rng; }
-
   ///return the i-th random generator
   inline RandomBase<double>& getRng(int i) override { return (*Rng[i]); }
 
