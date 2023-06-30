@@ -44,7 +44,7 @@ class SerialWalkerSet : public WalkerSetBase<device_allocator<ComplexType>, devi
 
 public:
   /// constructor
-  SerialWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, RandomBase<double>* r)
+  SerialWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, RandomBase<double>& r)
       : Base(tg_, cur, info, r, device_allocator<ComplexType>{}, shared_allocator<ComplexType>{tg_.TG_local()})
   {}
 

@@ -231,7 +231,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
     RandomGenerator rng;
-    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
     REQUIRE(std::get<1>(initial_guess.sizes()) == NMO);

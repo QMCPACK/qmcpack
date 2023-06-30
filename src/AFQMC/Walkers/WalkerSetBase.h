@@ -90,7 +90,7 @@ public:
   WalkerSetBase(afqmc::TaskGroup_& tg_,
                 xmlNodePtr cur,
                 AFQMCInfo& info,
-                RandomBase<double>* r,
+                RandomBase<double>& r,
                 Allocator alloc_,
                 BPAllocator bpalloc_)
       : AFQMCInfo(info),
@@ -744,7 +744,7 @@ public:
 protected:
   afqmc::TaskGroup_& TG;
 
-  RandomBase<double>* rng;
+  RandomBase<double>& rng;
 
   int walker_size, walker_memory_usage;
   int bp_walker_size, bp_walker_memory_usage;
