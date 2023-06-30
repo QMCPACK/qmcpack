@@ -14,6 +14,7 @@
 #include <numeric>
 #include <algorithm>
 #include <variant>
+#include <cstdint>
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
@@ -57,7 +58,7 @@ bool EstimatorManagerNew::areThereListeners() const
   return std::any_of(operator_ests_.begin(), operator_ests_.end(),
                      [](auto& oper_est) { return oper_est->isListenerRequired(); });
 }
-  
+
 template<class EstInputType, typename... Args>
 bool EstimatorManagerNew::createEstimator(EstimatorInput& input, Args&&... args)
 {
@@ -298,14 +299,14 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   // these could be replaced with a singple call MPI_struct_type some packing scheme or even
   // a pack into and out of an fp type that can be assured to hold the integral type exactly
   // IMHO they should not be primarily stored in a vector with magic indexes
-  std::vector<unsigned long> accepts_and_rejects(my_comm_->size() * 2, 0);
+  std::vector<int64_t> accepts_and_rejects(my_comm_->size() * 2, 0);
   accepts_and_rejects[my_comm_->rank()]                    = accepts;
   accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
   my_comm_->allreduce(accepts_and_rejects);
-  unsigned long total_block_accept =
+  int64_t total_block_accept =
       std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), 0);
-  unsigned long total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
-                                                     accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
+  int64_t total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
+                                               accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
 
   //Transfer FullPrecisionRead data
   const size_t n1 = AverageCache.size();
