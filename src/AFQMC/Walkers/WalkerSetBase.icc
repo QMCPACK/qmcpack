@@ -316,7 +316,7 @@ void WalkerSetBase<Alloc, Ptr>::popControl(std::vector<ComplexType>& curData)
   if (pop_control == PAIR || pop_control == SERIAL_COMB || pop_control == MIN_BRANCH)
   {
     if (TG.TG_local().root())
-      SerialBranching(*this, pop_control, min_weight, max_weight, nwalk_counts_old, Wexcess, *rng, TG.TG_heads());
+      SerialBranching(*this, pop_control, min_weight, max_weight, nwalk_counts_old, Wexcess, rng, TG.TG_heads());
 
     // distributed routines from here
   }

@@ -46,15 +46,15 @@ public:
 
   /** return a random number [0,1)
    */
-  result_type operator()();
+  result_type operator()() override;
 };
 
-extern template class RNGThreadSafe<FakeRandom>;
+extern template class RNGThreadSafe<FakeRandom<double>>;
 extern template class RNGThreadSafe<StdRandom<double>>;
 
 #if defined(USE_FAKE_RNG)
 // fake RNG redirection
-using RandomGenerator = FakeRandom;
+using RandomGenerator = FakeRandom<OHMMS_PRECISION_FULL>;
 extern RNGThreadSafe<RandomGenerator> fake_random_global;
 #define Random fake_random_global
 #else

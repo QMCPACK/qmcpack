@@ -140,9 +140,9 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     std::string prop_name("prop0");
     PropagatorFactory PropgFac(InfoMap);
     PropgFac.push(prop_name, doc5.getRoot());
-    Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, &rng);
+    Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, rng);
 
-    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
     REQUIRE(std::get<1>(initial_guess.sizes()) == NMO);

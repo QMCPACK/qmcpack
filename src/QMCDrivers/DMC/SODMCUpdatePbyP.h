@@ -23,7 +23,7 @@ public:
   SODMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                    TrialWaveFunction& psi,
                                    QMCHamiltonian& h,
-                                   RandomGenerator& rg);
+                                   RandomBase<double>& rg);
   ///destructor
   ~SODMCUpdatePbyPWithRejectionFast() override;
 
