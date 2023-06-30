@@ -39,7 +39,7 @@ const TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdat
 SODMCUpdatePbyPWithRejectionFast::SODMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                                                    TrialWaveFunction& psi,
                                                                    QMCHamiltonian& h,
-                                                                   RandomGenerator& rg)
+                                                                   RandomBase<double>& rg)
     : QMCUpdateBase(w, psi, h, rg), myTimers(getGlobalTimerManager(), SODMCTimerNames, timer_level_medium)
 
 {}

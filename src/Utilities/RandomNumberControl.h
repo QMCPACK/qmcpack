@@ -36,10 +36,10 @@ namespace qmcplusplus
 class RandomNumberControl : public OhmmsElementBase
 {
 public:
-  using uint_type = RandomGenerator::uint_type;
+  using uint_type = RandomBase<double>::uint_type;
   static PrimeNumberSet<uint_type> PrimeNumbers;
   //children random number generator
-  static std::vector<std::unique_ptr<RandomGenerator>> Children;
+  static std::vector<std::unique_ptr<RandomBase<double>>> Children;
 
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");
@@ -70,7 +70,7 @@ public:
    * @param fname file name
    * @param comm communicator
    */
-  static void write(const RefVector<RandomGenerator>& rng, const std::string& fname, Communicate* comm);
+  static void write(const RefVector<RandomBase<double>>& rng, const std::string& fname, Communicate* comm);
   /** read random state from a hdf file in parallel
    * @param hin hdf_archive set to parallel
    * @param comm communicator
@@ -80,7 +80,7 @@ public:
    * @param hdf_archive set to parallel
    * @param comm communicator
    */
-  static void write_parallel(const RefVector<RandomGenerator>& rng, hdf_archive& hout, Communicate* comm);
+  static void write_parallel(const RefVector<RandomBase<double>>& rng, hdf_archive& hout, Communicate* comm);
   /** rank 0 reads random states from a hdf file
    * and distributes them to all the other ranks
    * @param hin hdf_archive set to serial
@@ -92,7 +92,7 @@ public:
    * @param hin hdf_archive object set to serial
    * @param comm communicator
    */
-  static void write_rank_0(const RefVector<RandomGenerator>& rng, hdf_archive& hout, Communicate* comm);
+  static void write_rank_0(const RefVector<RandomBase<double>>& rng, hdf_archive& hout, Communicate* comm);
 
 private:
   bool NeverBeenInitialized;
