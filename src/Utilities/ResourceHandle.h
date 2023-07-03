@@ -27,11 +27,7 @@ public:
 
   ResourceHandle() = default;
   ResourceHandle(RS& res) { Base::emplace(res); }
-  ResourceHandle& operator=(const RS& res)
-  {
-    Base::emplace(res);
-    return *this;
-  }
+
   bool hasResource() const { return Base::has_value(); }
   operator bool() const { return Base::has_value(); }
 
