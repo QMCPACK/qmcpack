@@ -41,7 +41,7 @@ struct TinyVector : base_type
 template<class T, std::size_t N1, std::size_t N2, class base_type = std::array<std::array<T, N2>, N1>>
 struct TinyMatrix : base_type
 {
-  TinyMatrix& operator=(T t)
+  TinyMatrix& operator=(const T t)
   {
     std::array<T, N2> val;
     val.fill(t);
@@ -68,7 +68,7 @@ template<class T,
 struct Array : base_type
 {
   using base_type::base_type;
-  Array& operator=(T t)
+  Array& operator=(const T t)
   {
     base_type::operator=(t);
     return *this;
@@ -121,7 +121,7 @@ template<class T, class base_type>
 struct Array<T, 1, base_type> : base_type
 {
   using base_type::base_type;
-  Array& operator=(T t)
+  Array& operator=(const T t)
   {
     std::fill(base_type::begin(), base_type::end(), t);
     return *this;

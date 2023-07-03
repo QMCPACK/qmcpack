@@ -27,7 +27,7 @@ public:
 
   ResourceHandle() = default;
   ResourceHandle(RS& res) { Base::emplace(res); }
-  ResourceHandle& operator=(RS& res)
+  ResourceHandle& operator=(const RS& res)
   {
     Base::emplace(res);
     return *this;
