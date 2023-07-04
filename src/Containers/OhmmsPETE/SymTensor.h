@@ -119,23 +119,23 @@ public:
   ~SymTensor(){};
 
   // assignment operators
-  const SymTensor<T, D>& operator=(const SymTensor<T, D>& rhs)
+  SymTensor<T, D>& operator=(const SymTensor<T, D>& rhs)
   {
     OTAssign<SymTensor<T, D>, SymTensor<T, D>, OpAssign>::apply(*this, rhs, OpAssign());
     return *this;
   }
   template<class T1>
-  const SymTensor<T, D>& operator=(const SymTensor<T1, D>& rhs)
+  SymTensor<T, D>& operator=(const SymTensor<T1, D>& rhs)
   {
     OTAssign<SymTensor<T, D>, SymTensor<T1, D>, OpAssign>::apply(*this, rhs, OpAssign());
     return *this;
   }
-  const SymTensor<T, D>& operator=(const T& rhs)
+  SymTensor<T, D>& operator=(const T& rhs)
   {
     OTAssign<SymTensor<T, D>, T, OpAssign>::apply(*this, rhs, OpAssign());
     return *this;
   }
-  const SymTensor<T, D>& operator=(const Tensor<T, D>& rhs)
+  SymTensor<T, D>& operator=(const Tensor<T, D>& rhs)
   {
     for (int i = 0; i < D; ++i)
     {
