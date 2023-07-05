@@ -448,7 +448,6 @@ bool QMCMain::validateXML()
     {
       // second param enables batched input error checking in HamiltonianFactory
       ham_pool_->put(cur, my_project_.getDriverVersion() == ProjectData::DriverVersion::BATCH);
-batched);
     }
     else if (cname == "include")
     {
