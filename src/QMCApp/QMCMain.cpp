@@ -446,18 +446,9 @@ bool QMCMain::validateXML()
     }
     else if (cname == "hamiltonian")
     {
-      bool batched;
-      // since driver version is an enum this bool should be set explicitly for each version.
-      switch (my_project_.getDriverVersion())
-      {
-      case ProjectData::DriverVersion::LEGACY:
-        batched = false;
-        break;
-      case ProjectData::DriverVersion::BATCH:
-        batched = true;
-        break;
-      }
-      ham_pool_->put(cur, batched);
+      // second param enables batched input error checking in HamiltonianFactory
+      ham_pool_->put(cur, my_project_.getDriverVersion() == ProjectData::DriverVersion::BATCH);
+batched);
     }
     else if (cname == "include")
     {
@@ -557,20 +548,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     else if (cname == "hamiltonian")
     {
       inputnode = true;
-      // Satisfy GCC11's inability to analyze the following switch statement and stop its erroneous
-      // -Werror=maybe-uninitialized
-      bool batched{false};
-      // since driver version is an enum this bool should be set explicitly for each version.
-      switch (my_project_.getDriverVersion())
-      {
-      case ProjectData::DriverVersion::LEGACY:
-        batched = false;
-        break;
-      case ProjectData::DriverVersion::BATCH:
-        batched = true;
-        break;
-      }
-      ham_pool_->put(cur, batched);
+      ham_pool_->put(cur, my_project_.getDriverVersion() == ProjectData::DriverVersion::BATCH);
     }
     else if (cname == "estimators")
     {

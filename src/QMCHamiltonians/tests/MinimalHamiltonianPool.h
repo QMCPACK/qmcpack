@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -45,7 +45,7 @@ public:
     doc.parseFromString(hamiltonian_xml);
 
     xmlNodePtr root = doc.getRoot();
-    hpool.put(root,true);
+    hpool.put(root, true);
 
     return hpool;
   }
@@ -59,7 +59,7 @@ public:
     doc.parseFromString(hamiltonian_eeei_xml);
 
     xmlNodePtr root = doc.getRoot();
-    hpool.put(root,true);
+    hpool.put(root, true);
 
     return hpool;
   }
