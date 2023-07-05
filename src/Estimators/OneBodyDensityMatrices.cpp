@@ -195,8 +195,10 @@ size_t OneBodyDensityMatrices::calcFullDataSize(const size_t basis_size, const i
 
 void OneBodyDensityMatrices::startBlock(int steps) {}
 
-template<class RNG_GEN>
-void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps)
+void OneBodyDensityMatrices::generateSamples(const Real weight,
+                                             ParticleSet& pset_target,
+                                             RandomBase<double>& rng,
+                                             int steps)
 {
   ScopedTimer local_timer(timers_.gen_samples_timer);
 
@@ -261,8 +263,7 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
   }
 }
 
-template<typename RNG_GEN>
-inline void OneBodyDensityMatrices::generateUniformGrid(RNG_GEN& rng)
+inline void OneBodyDensityMatrices::generateUniformGrid(RandomBase<double>& rng)
 {
   Position rp;
   Position ushift = 0.0;
@@ -283,8 +284,7 @@ inline void OneBodyDensityMatrices::generateUniformGrid(RNG_GEN& rng)
   }
 }
 
-template<typename RAN_GEN>
-inline void OneBodyDensityMatrices::generateUniformSamples(RAN_GEN& rng)
+inline void OneBodyDensityMatrices::generateUniformSamples(RandomBase<double>& rng)
 {
   Position rp;
   for (int s = 0; s < samples_; ++s)
@@ -295,8 +295,10 @@ inline void OneBodyDensityMatrices::generateUniformSamples(RAN_GEN& rng)
   }
 }
 
-template<typename RAN_GEN>
-inline void OneBodyDensityMatrices::generateDensitySamples(bool save, int steps, RAN_GEN& rng, ParticleSet& pset_target)
+inline void OneBodyDensityMatrices::generateDensitySamples(bool save,
+                                                           int steps,
+                                                           RandomBase<double>& rng,
+                                                           ParticleSet& pset_target)
 {
   const auto timestep = input_.get_timestep();
   Real sqt            = std::sqrt(timestep);
@@ -352,8 +354,7 @@ inline void OneBodyDensityMatrices::generateDensitySamples(bool save, int steps,
   rhocur_ = rho;
 }
 
-template<typename RAN_GEN>
-OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt, RAN_GEN& rng)
+OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt, RandomBase<double>& rng)
 {
   Position diff;
   assignGaussRand(&diff[0], OHMMS_DIM, rng);
@@ -401,11 +402,10 @@ void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
   implAccumulate(walkers, psets, wfns, rng);
 }
 
-template<class RNG_GEN>
 void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
                                             const RefVector<ParticleSet>& psets,
                                             const RefVector<TrialWaveFunction>& wfns,
-                                            RNG_GEN& rng)
+                                            RandomBase<double>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
@@ -414,11 +414,10 @@ void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
   }
 }
 
-template<class RNG_GEN>
 void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
                                             TrialWaveFunction& psi_target,
                                             const MCPWalker& walker,
-                                            RNG_GEN& rng)
+                                            RandomBase<double>& rng)
 {
   //perform warmup sampling the first time
   warmupSampling(pset_target, rng);
@@ -548,8 +547,7 @@ inline void OneBodyDensityMatrices::updateBasisD012(const Position& r, ParticleS
     basis_laplacians_[i] *= basis_norms_[i];
 }
 
-template<class RAN_GEN>
-void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RAN_GEN& rng)
+void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RandomBase<double>& rng)
 {
   if (sampling_ == Sampling::METROPOLIS)
   {
@@ -623,32 +621,5 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
     oh.set_dimensions(my_indexes, s * spin_data_size);
   }
 }
-
-template void OneBodyDensityMatrices::generateSamples<RandomGenerator>(Real weight,
-                                                                       ParticleSet& pset_target,
-                                                                       RandomGenerator& rng,
-                                                                       int steps);
-template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator>(ParticleSet& pset_target,
-                                                                      TrialWaveFunction& psi_target,
-                                                                      const MCPWalker& walker,
-                                                                      RandomGenerator& rng);
-template void OneBodyDensityMatrices::implAccumulate<RandomGenerator>(const RefVector<MCPWalker>& walkers,
-                                                                      const RefVector<ParticleSet>& psets,
-                                                                      const RefVector<TrialWaveFunction>& wfns,
-                                                                      RandomGenerator& rng);
-#if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
-template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
-                                                                         ParticleSet& pset_target,
-                                                                         StdRandom<double>& rng,
-                                                                         int steps);
-template void OneBodyDensityMatrices::evaluateMatrix<StdRandom<double>>(ParticleSet& pset_target,
-                                                                        TrialWaveFunction& psi_target,
-                                                                        const MCPWalker& walker,
-                                                                        StdRandom<double>& rng);
-template void OneBodyDensityMatrices::implAccumulate<StdRandom<double>>(const RefVector<MCPWalker>& walkers,
-                                                                        const RefVector<ParticleSet>& psets,
-                                                                        const RefVector<TrialWaveFunction>& wfns,
-                                                                        StdRandom<double>& rng);
-#endif
 
 } // namespace qmcplusplus

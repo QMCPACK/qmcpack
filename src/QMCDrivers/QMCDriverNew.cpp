@@ -238,9 +238,8 @@ void QMCDriverNew::recordBlock(int block)
     population_.saveWalkerConfigurations(walker_configs_ref_);
     setWalkerOffsets(walker_configs_ref_, myComm);
     wOut->dump(walker_configs_ref_, block);
-#ifndef USE_FAKE_RNG
-    RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
-#endif
+    if (qmcdriver_input_.get_dump_config())
+      RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
   }
 }
 
@@ -258,10 +257,8 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   infoSummary.flush();
   infoLog.flush();
 
-#ifndef USE_FAKE_RNG
   if (DumpConfig)
     RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
-#endif
 
   return true;
 }

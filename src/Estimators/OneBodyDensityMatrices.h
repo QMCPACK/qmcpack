@@ -189,19 +189,21 @@ private:
   /** Unfortunate design RandomGenerator type aliasing and
    *  virtual inheritance requires this for testing.
    */
-  template<class RNG_GEN>
   void implAccumulate(const RefVector<MCPWalker>& walkers,
                       const RefVector<ParticleSet>& psets,
                       const RefVector<TrialWaveFunction>& wfns,
-                      RNG_GEN& rng);
+                      RandomBase<double>& rng);
 
   size_t calcFullDataSize(size_t basis_size, int num_species);
   //local functions
   void normalizeBasis(ParticleSet& pset_target);
   //  printing
   void report(const std::string& pad = "");
-  template<class RNG_GEN>
-  void evaluateMatrix(ParticleSet& pset_target, TrialWaveFunction& psi_target, const MCPWalker& walker, RNG_GEN& rng);
+
+  void evaluateMatrix(ParticleSet& pset_target,
+                      TrialWaveFunction& psi_target,
+                      const MCPWalker& walker,
+                      RandomBase<double>& rng);
   //  sample generation
   /** Dispatch method to difference methods of generating samples.
    *  dispatch determined by Integrator.
@@ -218,12 +220,9 @@ private:
    *      * update basis_values_, basis_gradients_, basis_laplacians_
    */
   // These functions deserve unit tests and likely should be pure functions.
-  template<class RNG_GEN>
-  void generateSamples(const Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps = 0);
-  template<class RNG_GEN>
-  void generateUniformGrid(RNG_GEN& rng);
-  template<class RNG_GEN>
-  void generateUniformSamples(RNG_GEN& rng);
+  void generateSamples(const Real weight, ParticleSet& pset_target, RandomBase<double>& rng, int steps = 0);
+  void generateUniformGrid(RandomBase<double>& rng);
+  void generateUniformSamples(RandomBase<double>& rng);
   /** generate samples for density integration
    *  \param[in]   save          if false throw out the samples
    *  \param[in]   steps         actually the number of samples which are basically steps.
@@ -233,14 +232,12 @@ private:
    *  sideeffects:
    *   *
    */
-  template<class RNG_GEN>
-  void generateDensitySamples(bool save, int steps, RNG_GEN& rng, ParticleSet& pset_target);
+  void generateDensitySamples(bool save, int steps, RandomBase<double>& rng, ParticleSet& pset_target);
   void generateSampleRatios(ParticleSet& pset_target,
                             TrialWaveFunction& psi_target,
                             std::vector<Matrix<Value>>& Psi_nm);
   /// produce a position difference vector from timestep
-  template<class RNG_GEN>
-  Position diffuse(const Real sqt, RNG_GEN& rng);
+  Position diffuse(const Real sqt, RandomBase<double>& rng);
   /** calculate density based on r
    *  \param[in]      r       position
    *  \param[out]   dens      density
@@ -290,8 +287,7 @@ private:
    *  sets initial rhocur_ and dpcur_
    *  Then calls generateSamples with number of input warmup samples.
    */
-  template<typename RAN_GEN>
-  void warmupSampling(ParticleSet& pset_target, RAN_GEN& rng);
+  void warmupSampling(ParticleSet& pset_target, RandomBase<double>& rng);
 
   struct OneBodyDensityMatrixTimers
   {
@@ -319,34 +315,6 @@ public:
   template<typename T>
   friend class testing::OneBodyDensityMatricesTests;
 };
-
-extern template void OneBodyDensityMatrices::generateSamples<RandomGenerator>(Real weight,
-                                                                              ParticleSet& pset_target,
-                                                                              RandomGenerator& rng,
-                                                                              int steps);
-extern template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator>(ParticleSet& pset_target,
-                                                                             TrialWaveFunction& psi_target,
-                                                                             const MCPWalker& walker,
-                                                                             RandomGenerator& rng);
-extern template void OneBodyDensityMatrices::implAccumulate<RandomGenerator>(const RefVector<MCPWalker>& walkers,
-                                                                             const RefVector<ParticleSet>& psets,
-                                                                             const RefVector<TrialWaveFunction>& wfns,
-                                                                             RandomGenerator& rng);
-#if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
-extern template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
-                                                                                ParticleSet& pset_target,
-                                                                                StdRandom<double>& rng,
-                                                                                int steps);
-extern template void OneBodyDensityMatrices::evaluateMatrix<StdRandom<double>>(ParticleSet& pset_target,
-                                                                               TrialWaveFunction& psi_target,
-                                                                               const MCPWalker& walker,
-                                                                               StdRandom<double>& rng);
-extern template void OneBodyDensityMatrices::implAccumulate<StdRandom<double>>(const RefVector<MCPWalker>& walkers,
-                                                                               const RefVector<ParticleSet>& psets,
-                                                                               const RefVector<TrialWaveFunction>& wfns,
-                                                                               StdRandom<double>& rng);
-#endif
-
 } // namespace qmcplusplus
 
 #endif

@@ -35,7 +35,7 @@ class uniform_real_distribution_as_boost
 {
 public:
   using result_type = T;
-  static_assert(std::is_floating_point<T>::value);
+  static_assert(std::is_floating_point_v<T>);
 
   uniform_real_distribution_as_boost(T min = T(0.0), T max = T(1.0)) : min_(min), max_(max) {}
   ///Generating functions.
