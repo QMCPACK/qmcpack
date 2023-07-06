@@ -25,15 +25,10 @@ hdf_path& hdf_path::append(const hdf_path& p)
     path_.clear();
   else
   {
-    if (path_.size() > 0)
-    {
-      if (path_.back() != '/')
-        path_.push_back('/');
-    }
-    else
-    {
+    if (path_.empty())
       path_.push_back('/');
-    }
+    else if (path_.back() != '/')
+      path_.push_back('/');
   }
   return concat(p);
 }
