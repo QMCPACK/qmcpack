@@ -23,8 +23,18 @@ hdf_path& hdf_path::append(const hdf_path& p)
 {
   if (p.has_root_directory())
     path_.clear();
-  else if (path_.back() != '/')
-    path_.push_back('/');
+  else
+  {
+    if (path_.size() > 0)
+    {
+      if (path_.back() != '/')
+        path_.push_back('/');
+    }
+    else
+    {
+      path_.push_back('/');
+    }
+  }
   return concat(p);
 }
 
@@ -70,7 +80,18 @@ hdf_path& hdf_path::replace_subgroup(std::string_view p)
   return append(p);
 }
 
-bool hdf_path::has_root_directory() const { return (!path_.empty() && path_[0] == '/'); }
+bool hdf_path::has_root_directory() const
+{
+  bool have_root = false;
+  if (!path_.empty())
+  {
+    if (path_[0] == '/')
+    {
+      have_root = true;
+    }
+  }
+  return have_root;
+}
 
 hdf_path operator/(const hdf_path& lhs, const hdf_path& rhs) { return hdf_path(lhs) /= rhs; }
 
