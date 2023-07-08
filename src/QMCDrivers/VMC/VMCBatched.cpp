@@ -51,7 +51,7 @@ template<CoordsType CT>
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
-                                ContextForSteps& step_context,
+                                ContextForSteps<double>& step_context,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
@@ -218,14 +218,14 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 template void VMCBatched::advanceWalkers<CoordsType::POS>(const StateForThread& sft,
                                                           Crowd& crowd,
                                                           QMCDriverNew::DriverTimers& timers,
-                                                          ContextForSteps& step_context,
+                                                          ContextForSteps<double>& step_context,
                                                           bool recompute,
                                                           bool accumulate_this_step);
 
 template void VMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThread& sft,
                                                                Crowd& crowd,
                                                                QMCDriverNew::DriverTimers& timers,
-                                                               ContextForSteps& step_context,
+                                                               ContextForSteps<double>& step_context,
                                                                bool recompute,
                                                                bool accumulate_this_step);
 
@@ -235,7 +235,7 @@ template void VMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThr
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
-                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
+                            std::vector<std::unique_ptr<ContextForSteps<double>>>& context_for_steps,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
@@ -321,7 +321,7 @@ bool VMCBatched::run()
   {
     // Run warm-up steps
     auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
-                            UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
+                            UPtrVector<ContextForSteps<double>>& context_for_steps, UPtrVector<Crowd>& crowds) {
       Crowd& crowd                    = *(crowds[crowd_id]);
       const bool recompute            = false;
       const bool accumulate_this_step = false;

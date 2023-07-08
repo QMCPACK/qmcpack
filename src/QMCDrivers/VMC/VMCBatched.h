@@ -86,7 +86,7 @@ public:
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
-                             ContextForSteps& move_context,
+                             ContextForSteps<double>& move_context,
                              bool recompute,
                              bool accumulate_this_step);
 
@@ -95,8 +95,8 @@ public:
   static void runVMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
-                         std::vector<std::unique_ptr<Crowd>>& crowds);
+                         UPtrVector<ContextForSteps<double>>& context_for_steps,
+                         UPtrVector<Crowd>& crowds);
 
   /** transitional interface on the way to better walker count adjustment handling.
    *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.

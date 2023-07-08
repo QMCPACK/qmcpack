@@ -238,8 +238,7 @@ void QMCDriverNew::recordBlock(int block)
     population_.saveWalkerConfigurations(walker_configs_ref_);
     setWalkerOffsets(walker_configs_ref_, myComm);
     wOut->dump(walker_configs_ref_, block);
-    if (qmcdriver_input_.get_dump_config())
-      RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
+    RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
   }
 }
 
@@ -313,13 +312,13 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
   for (int i = 0; i < num_crowds; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i].release());
-    step_contexts_[i] = std::make_unique<ContextForSteps>(*(Rng[i]));
+    step_contexts_[i] = std::make_unique<ContextForSteps<double>>(*(Rng[i]));
   }
 }
 
 void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<Crowd>& crowds,
-                                        UPtrVector<ContextForSteps>& context_for_steps)
+                                        UPtrVector<ContextForSteps<double>>& context_for_steps)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   if (crowd.size() == 0)

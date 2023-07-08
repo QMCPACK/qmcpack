@@ -41,6 +41,5 @@ public:
 protected:
   RandomBase<FullPrecRealType>& random_gen_;
 };
-
 } // namespace qmcplusplus
 #endif

@@ -71,7 +71,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
                                 DMCTimers& dmc_timers,
-                                ContextForSteps& step_context,
+                                ContextForSteps<double>& step_context,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
@@ -329,7 +329,7 @@ template void DMCBatched::advanceWalkers<CoordsType::POS>(const StateForThread& 
                                                           Crowd& crowd,
                                                           DriverTimers& timers,
                                                           DMCTimers& dmc_timers,
-                                                          ContextForSteps& step_context,
+                                                          ContextForSteps<double>& step_context,
                                                           bool recompute,
                                                           bool accumulate_this_step);
 
@@ -337,7 +337,7 @@ template void DMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThr
                                                                Crowd& crowd,
                                                                DriverTimers& timers,
                                                                DMCTimers& dmc_timers,
-                                                               ContextForSteps& step_context,
+                                                               ContextForSteps<double>& step_context,
                                                                bool recompute,
                                                                bool accumulate_this_step);
 
@@ -345,7 +345,7 @@ void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
                             DMCTimers& dmc_timers,
-                            UPtrVector<ContextForSteps>& context_for_steps,
+                            UPtrVector<ContextForSteps<double>>& context_for_steps,
                             UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
