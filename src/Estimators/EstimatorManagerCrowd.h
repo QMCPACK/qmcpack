@@ -100,9 +100,9 @@ private:
 
   UPtr<ScalarEstimatorBase> main_estimator_;
   ///estimators of simple scalars
-  std::vector<std::unique_ptr<ScalarEstimatorBase>> scalar_estimators_;
+  UPtrVector<ScalarEstimatorBase> scalar_estimators_;
 
-  std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
+  UPtrVector<OperatorEstBase> operator_ests_;
 };
 
 } // namespace qmcplusplus
