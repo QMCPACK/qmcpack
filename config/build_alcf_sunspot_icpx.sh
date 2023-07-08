@@ -9,7 +9,7 @@
 
 module load spack libxml2 cmake
 module load cray-hdf5/1.12.2.1
-module load oneapi/eng-compiler/2022.12.30.005
+module load oneapi/eng-compiler/2023.05.15.003
 
 module list >& module_list.txt
 
@@ -23,7 +23,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=sunspot
-Compiler=icpx20230321
+Compiler=icpx20230510
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
