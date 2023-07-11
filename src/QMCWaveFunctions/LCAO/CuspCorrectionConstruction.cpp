@@ -127,6 +127,74 @@ bool readCuspInfo(const std::string& cuspInfoFile,
   return success;
 }
 
+void saveCusp(const std::string& filename, const Matrix<CuspCorrectionParameters>& info, const std::string& id)
+{
+  const int num_centers      = info.rows();
+  const int orbital_set_size = info.cols();
+  xmlDocPtr doc              = xmlNewDoc((const xmlChar*)"1.0");
+  xmlNodePtr cuspRoot        = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+  xmlNodePtr spo             = xmlNewNode(NULL, (const xmlChar*)"sposet");
+  xmlNewProp(spo, (const xmlChar*)"name", (const xmlChar*)id.c_str());
+  xmlAddChild(cuspRoot, spo);
+  xmlDocSetRootElement(doc, cuspRoot);
+
+  for (int center_idx = 0; center_idx < num_centers; center_idx++)
+  {
+    xmlNodePtr ctr = xmlNewNode(NULL, (const xmlChar*)"center");
+    std::ostringstream num;
+    num << center_idx;
+    xmlNewProp(ctr, (const xmlChar*)"num", (const xmlChar*)num.str().c_str());
+
+    for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++)
+    {
+      std::ostringstream num0, C, sg, rc, a1, a2, a3, a4, a5;
+      xmlNodePtr orb = xmlNewNode(NULL, (const xmlChar*)"orbital");
+      num0 << mo_idx;
+      xmlNewProp(orb, (const xmlChar*)"num", (const xmlChar*)num0.str().c_str());
+
+
+      C.setf(std::ios::scientific, std::ios::floatfield);
+      C.precision(14);
+      C << info(center_idx, mo_idx).C;
+      sg.setf(std::ios::scientific, std::ios::floatfield);
+      sg.precision(14);
+      sg << info(center_idx, mo_idx).sg;
+      rc.setf(std::ios::scientific, std::ios::floatfield);
+      rc.precision(14);
+      rc << info(center_idx, mo_idx).Rc;
+      a1.setf(std::ios::scientific, std::ios::floatfield);
+      a1.precision(14);
+      a1 << info(center_idx, mo_idx).alpha[0];
+      a2.setf(std::ios::scientific, std::ios::floatfield);
+      a2.precision(14);
+      a2 << info(center_idx, mo_idx).alpha[1];
+      a3.setf(std::ios::scientific, std::ios::floatfield);
+      a3.precision(14);
+      a3 << info(center_idx, mo_idx).alpha[2];
+      a4.setf(std::ios::scientific, std::ios::floatfield);
+      a4.precision(14);
+      a4 << info(center_idx, mo_idx).alpha[3];
+      a5.setf(std::ios::scientific, std::ios::floatfield);
+      a5.precision(14);
+      a5 << info(center_idx, mo_idx).alpha[4];
+      xmlNewProp(orb, (const xmlChar*)"C", (const xmlChar*)C.str().c_str());
+      xmlNewProp(orb, (const xmlChar*)"sg", (const xmlChar*)sg.str().c_str());
+      xmlNewProp(orb, (const xmlChar*)"rc", (const xmlChar*)rc.str().c_str());
+      xmlNewProp(orb, (const xmlChar*)"a1", (const xmlChar*)a1.str().c_str());
+      xmlNewProp(orb, (const xmlChar*)"a2", (const xmlChar*)a2.str().c_str());
+      xmlNewProp(orb, (const xmlChar*)"a3", (const xmlChar*)a3.str().c_str());
+      xmlNewProp(orb, (const xmlChar*)"a4", (const xmlChar*)a4.str().c_str());
+      xmlNewProp(orb, (const xmlChar*)"a5", (const xmlChar*)a5.str().c_str());
+      xmlAddChild(ctr, orb);
+    }
+    xmlAddChild(spo, ctr);
+  }
+
+  app_log() << "Saving resulting cusp Info xml block to: " << filename << std::endl;
+  xmlSaveFormatFile(filename.c_str(), doc, 1);
+  xmlFreeDoc(doc);
+}
+
 void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int root)
 {
 #ifdef HAVE_MPI
@@ -500,7 +568,8 @@ void minimizeForRc(CuspCorrection& cusp,
 void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
                          ParticleSet& targetPtcl,
                          ParticleSet& sourcePtcl,
-                         LCAOrbitalSetWithCorrection& lcwc,
+                         LCAOrbitalSet& lcao,
+                         SoaCuspCorrection& cusp,
                          const std::string& id)
 {
   const int num_centers      = info.rows();
@@ -511,12 +580,11 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
-  LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
-  phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
+  LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcao.myBasisSet->makeClone()));
+  phi.setOrbitalSetSize(lcao.getOrbitalSetSize());
 
-  LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
-  eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-
+  LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcao.myBasisSet->makeClone()));
+  eta.setOrbitalSetSize(lcao.getOrbitalSetSize());
 
   std::vector<bool> corrCenter(num_centers, "true");
 
@@ -536,8 +604,8 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
   for (int ic = 0; ic < num_centers; ic++)
   {
-    *(eta.C) = *(lcwc.C);
-    *(phi.C) = *(lcwc.C);
+    *eta.C = *lcao.C;
+    *phi.C = *lcao.C;
 
     splitPhiEta(ic, corrCenter, phi, eta);
 
@@ -585,83 +653,15 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
         out.close();
       }
     }
-    lcwc.cusp.add(ic, std::move(cot));
+    cusp.add(ic, std::move(cot));
   }
-  removeSTypeOrbitals(corrCenter, lcwc);
-}
-
-void saveCusp(std::string filename, Matrix<CuspCorrectionParameters>& info, const std::string& id)
-{
-  const int num_centers      = info.rows();
-  const int orbital_set_size = info.cols();
-  xmlDocPtr doc              = xmlNewDoc((const xmlChar*)"1.0");
-  xmlNodePtr cuspRoot        = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-  xmlNodePtr spo             = xmlNewNode(NULL, (const xmlChar*)"sposet");
-  xmlNewProp(spo, (const xmlChar*)"name", (const xmlChar*)id.c_str());
-  xmlAddChild(cuspRoot, spo);
-  xmlDocSetRootElement(doc, cuspRoot);
-
-  for (int center_idx = 0; center_idx < num_centers; center_idx++)
-  {
-    xmlNodePtr ctr = xmlNewNode(NULL, (const xmlChar*)"center");
-    std::ostringstream num;
-    num << center_idx;
-    xmlNewProp(ctr, (const xmlChar*)"num", (const xmlChar*)num.str().c_str());
-
-    for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++)
-    {
-      std::ostringstream num0, C, sg, rc, a1, a2, a3, a4, a5;
-      xmlNodePtr orb = xmlNewNode(NULL, (const xmlChar*)"orbital");
-      num0 << mo_idx;
-      xmlNewProp(orb, (const xmlChar*)"num", (const xmlChar*)num0.str().c_str());
-
-
-      C.setf(std::ios::scientific, std::ios::floatfield);
-      C.precision(14);
-      C << info(center_idx, mo_idx).C;
-      sg.setf(std::ios::scientific, std::ios::floatfield);
-      sg.precision(14);
-      sg << info(center_idx, mo_idx).sg;
-      rc.setf(std::ios::scientific, std::ios::floatfield);
-      rc.precision(14);
-      rc << info(center_idx, mo_idx).Rc;
-      a1.setf(std::ios::scientific, std::ios::floatfield);
-      a1.precision(14);
-      a1 << info(center_idx, mo_idx).alpha[0];
-      a2.setf(std::ios::scientific, std::ios::floatfield);
-      a2.precision(14);
-      a2 << info(center_idx, mo_idx).alpha[1];
-      a3.setf(std::ios::scientific, std::ios::floatfield);
-      a3.precision(14);
-      a3 << info(center_idx, mo_idx).alpha[2];
-      a4.setf(std::ios::scientific, std::ios::floatfield);
-      a4.precision(14);
-      a4 << info(center_idx, mo_idx).alpha[3];
-      a5.setf(std::ios::scientific, std::ios::floatfield);
-      a5.precision(14);
-      a5 << info(center_idx, mo_idx).alpha[4];
-      xmlNewProp(orb, (const xmlChar*)"C", (const xmlChar*)C.str().c_str());
-      xmlNewProp(orb, (const xmlChar*)"sg", (const xmlChar*)sg.str().c_str());
-      xmlNewProp(orb, (const xmlChar*)"rc", (const xmlChar*)rc.str().c_str());
-      xmlNewProp(orb, (const xmlChar*)"a1", (const xmlChar*)a1.str().c_str());
-      xmlNewProp(orb, (const xmlChar*)"a2", (const xmlChar*)a2.str().c_str());
-      xmlNewProp(orb, (const xmlChar*)"a3", (const xmlChar*)a3.str().c_str());
-      xmlNewProp(orb, (const xmlChar*)"a4", (const xmlChar*)a4.str().c_str());
-      xmlNewProp(orb, (const xmlChar*)"a5", (const xmlChar*)a5.str().c_str());
-      xmlAddChild(ctr, orb);
-    }
-    xmlAddChild(spo, ctr);
-  }
-
-  app_log() << "Saving resulting cusp Info xml block to: " << filename << std::endl;
-  xmlSaveFormatFile(filename.c_str(), doc, 1);
-  xmlFreeDoc(doc);
+  removeSTypeOrbitals(corrCenter, lcao);
 }
 
 void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
                       const ParticleSet& targetPtcl,
                       const ParticleSet& sourcePtcl,
-                      const LCAOrbitalSetWithCorrection& lcwc,
+                      const LCAOrbitalSet& lcao,
                       const std::string& id,
                       Communicate& Comm)
 {
@@ -675,11 +675,11 @@ void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 
-  LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
-  phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
+  LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcao.myBasisSet->makeClone()));
+  phi.setOrbitalSetSize(lcao.getOrbitalSetSize());
 
-  LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
-  eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
+  LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcao.myBasisSet->makeClone()));
+  eta.setOrbitalSetSize(lcao.getOrbitalSetSize());
 
 
   std::vector<bool> corrCenter(num_centers, "true");
@@ -717,8 +717,8 @@ void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
       {
         ScopedTimer local_timer(splitPhiEtaTimer);
 
-        *(local_eta.C) = *(lcwc.C);
-        *(local_phi.C) = *(lcwc.C);
+        *local_eta.C = *lcao.C;
+        *local_phi.C = *lcao.C;
         splitPhiEta(center_idx, corrCenter, local_phi, local_eta);
       }
 

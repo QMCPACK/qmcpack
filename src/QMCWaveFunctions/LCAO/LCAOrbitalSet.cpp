@@ -902,11 +902,6 @@ void LCAOrbitalSet::evaluateGradSourceRow(const ParticleSet& P,
   }
 }
 
-void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
-{
-  APP_ABORT("LCAOrbitalSet::evaluateThirdDeriv(P,istart,istop,ggg_logdet) not implemented\n");
-}
-
 void LCAOrbitalSet::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
 {
   if (!use_stored_copy)
