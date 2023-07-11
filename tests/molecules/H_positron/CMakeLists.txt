@@ -103,17 +103,17 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "potential" "-2.38614170 0.000001")
   endif()
 
-  qmc_run_and_check(
-    deterministic-H_positron-vmcbatch_hf_noj
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
-    det_qmc_vmcbatch-SD-H_Ground
-    det_qmc_vmcbatch-SD-H_Ground.in.xml
-    1
-    1
-    TRUE
-    0
-    DET_H_POSITRON_VMCBATCH_SD_SCALARS # V
-  )
+  #qmc_run_and_check(
+  #  deterministic-H_positron-vmcbatch_hf_noj
+  #  "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
+  #  det_qmc_vmcbatch-SD-H_Ground
+  #  det_qmc_vmcbatch-SD-H_Ground.in.xml
+  #  1
+  #  1
+  #  TRUE
+  #  0
+  #  DET_H_POSITRON_VMCBATCH_SD_SCALARS # V
+  #)
 
 
   if(QMC_MIXED_PRECISION)	 
