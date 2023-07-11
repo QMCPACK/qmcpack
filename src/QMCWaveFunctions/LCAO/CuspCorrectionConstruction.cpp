@@ -293,6 +293,14 @@ void X2alpha(const TinyVector<ValueType, 5>& X, RealType Rc, TinyVector<ValueTyp
 // Eq. 16 in the paper.
 RealType getZeff(RealType Z, RealType etaAtZero, RealType phiBarAtZero) { return Z * (1.0 + etaAtZero / phiBarAtZero); }
 
+RealType phiBar(const CuspCorrection& cusp, RealType r, OneMolecularOrbital& phiMO)
+{
+  if (r <= cusp.cparam.Rc)
+    return cusp.cparam.C + cusp.Rr(r);
+  else
+    return phiMO.phi(r);
+}
+
 // Compute the effective one-electron local energy at a vector of points.
 // Eq. 15 in the paper for r < Rc.  Normal local energy for R > Rc.
 void getCurrentLocalEnergy(const ValueVector& pos,

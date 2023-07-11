@@ -176,13 +176,7 @@ void X2alpha(const TinyVector<ValueType, 5>& X, RealType Rc, TinyVector<ValueTyp
  */
 RealType getZeff(RealType Z, RealType etaAtZero, RealType phiBarAtZero);
 
-inline RealType phiBar(const CuspCorrection& cusp, RealType r, OneMolecularOrbital& phiMO)
-{
-  if (r <= cusp.cparam.Rc)
-    return cusp.cparam.C + cusp.Rr(r);
-  else
-    return phiMO.phi(r);
-}
+RealType phiBar(const CuspCorrection& cusp, RealType r, OneMolecularOrbital& phiMO);
 
 /**  Compute effective local energy at vector of points
  * @param pos input vector of radial distances
