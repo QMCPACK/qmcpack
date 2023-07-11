@@ -75,7 +75,7 @@ if(OHMMS_DIM MATCHES 3)
     set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp)
   else(QMC_COMPLEX)
     #LCAO cusp correction is not ready for complex
-    set(FERMION_SRCS ${FERMION_SRCS} LCAO/CuspCorrection.cpp LCAO/LCAOrbitalSetWithCorrection.cpp
+    set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSetWithCorrection.cpp
                      LCAO/CuspCorrectionConstruction.cpp LCAO/SoaCuspCorrection.cpp)
   endif(QMC_COMPLEX)
 
