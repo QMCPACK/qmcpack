@@ -471,7 +471,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   else
     myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
 
-  std::unique_ptr<LCAOrbitalSet> lcos;
+  std::unique_ptr<SPOSet> sposet;
   if (doCuspCorrection)
   {
 #if defined(QMC_COMPLEX)
@@ -479,12 +479,18 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
+    auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
+    loadMO(lcwc->lcao, cur);
+    lcwc->setOrbitalSetSize(lcwc->lcao.getOrbitalSetSize());
+    sposet = std::move(lcwc);
 #endif
   }
   else
-    lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet));
-  loadMO(*lcos, cur);
+  {
+    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet));
+    loadMO(*lcos, cur);
+    sposet = std::move(lcos);
+  }
 
 #if !defined(QMC_COMPLEX)
   if (doCuspCorrection)
@@ -499,9 +505,9 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     ParticleSet tmp_targetPtcl(targetPtcl);
 
     const int num_centers = sourcePtcl.getTotalNum();
-    auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
+    auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*sposet);
 
-    const int orbital_set_size = lcos->getOrbitalSetSize();
+    const int orbital_set_size = lcwc.getOrbitalSetSize();
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
     // set a default file name if not given
@@ -529,16 +535,16 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     }
     else
     {
-      generateCuspInfo(info, tmp_targetPtcl, sourcePtcl, lcwc, spo_name, *myComm);
+      generateCuspInfo(info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, spo_name, *myComm);
       if (myComm->rank() == 0)
         saveCusp(cusp_file, info, spo_name);
     }
 
-    applyCuspCorrection(info, tmp_targetPtcl, sourcePtcl, lcwc, spo_name);
+    applyCuspCorrection(info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, lcwc.cusp, spo_name);
   }
 #endif
 
-  return lcos;
+  return sposet;
 }
 
 
@@ -604,8 +610,9 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
         hin.push("PBC", false);
         PBC = true;
       }
-      catch (...)
+      catch (const std::exception& e)
       {
+        app_debug() << e.what() << std::endl;
         PBC = false;
       }
 

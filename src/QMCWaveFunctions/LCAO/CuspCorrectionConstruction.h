@@ -104,6 +104,9 @@ bool readCuspInfo(const std::string& cuspInfoFile,
                   int OrbitalSetSize,
                   Matrix<CuspCorrectionParameters>& info);
 
+/// save cusp correction info to a file.
+void saveCusp(const std::string& filename, const Matrix<CuspCorrectionParameters>& info, const std::string& id);
+
 /// Divide molecular orbital into atomic S-orbitals on this center (phi), and everything else (eta).
 void splitPhiEta(int center, const std::vector<bool>& corrCenter, LCAOrbitalSet& phi, LCAOrbitalSet& eta);
 
@@ -265,18 +268,17 @@ void minimizeForRc(CuspCorrection& cusp,
 void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
                          ParticleSet& targetPtcl,
                          ParticleSet& sourcePtcl,
-                         LCAOrbitalSetWithCorrection& lcwc,
+                         LCAOrbitalSet& lcao,
+                         SoaCuspCorrection& cusp,
                          const std::string& id);
-
-/// save cusp correction info to a file.
-void saveCusp(std::string filename, Matrix<CuspCorrectionParameters>& info, const std::string& id);
 
 void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
                       const ParticleSet& targetPtcl,
                       const ParticleSet& sourcePtcl,
-                      const LCAOrbitalSetWithCorrection& lcwc,
+                      const LCAOrbitalSet& lcao,
                       const std::string& id,
                       Communicate& Comm);
+
 } // namespace qmcplusplus
 
 #endif

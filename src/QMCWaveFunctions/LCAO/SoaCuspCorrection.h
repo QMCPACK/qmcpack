@@ -50,7 +50,7 @@ class SoaCuspCorrection
   /** Maximal number of supported MOs
    * this is not the AO basis because cusp correction is applied on the MO directly.
    */
-  int MaxOrbSize;
+  int MaxOrbSize = 0;
 
   ///COMPLEX WON'T WORK
   using COT = CuspCorrectionAtomicBasis<RealType>;
@@ -103,10 +103,7 @@ public:
   void add(int icenter, std::unique_ptr<COT> aos);
 
   void addVGL(const ParticleSet& P, int iat, VGLVector& vgl) { evaluateVGL(P, iat, vgl); }
-  void addV(const ParticleSet& P, int iat, ValueVector& psi)
-  {
-    evaluateV(P, iat, psi);
-  }
+  void addV(const ParticleSet& P, int iat, ValueVector& psi) { evaluateV(P, iat, psi); }
   void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& vals, GradMatrix& dpsi, ValueMatrix& d2psi)
   {
     evaluate_vgl(P, iat, idx, vals, dpsi, d2psi);
