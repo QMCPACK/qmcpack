@@ -192,16 +192,16 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  inline RefVector<RandomBase<double>> getRngRefs() const
+  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
   {
-    RefVector<RandomBase<double>> RngRefs;
+    RefVector<RandomBase<FullPrecRealType>> RngRefs;
     for (int i = 0; i < Rng.size(); ++i)
       RngRefs.push_back(*Rng[i]);
     return RngRefs;
   }
 
   ///return the i-th random generator
-  inline RandomBase<double>& getRng(int i) override { return (*Rng[i]); }
+  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
 
   /** intended for logging output and debugging
    *  you should base behavior on type preferably at compile time or if
@@ -426,7 +426,7 @@ protected:
   std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
 
   ///Random number generators
-  UPtrVector<RandomBase<double>> Rng;
+  UPtrVector<RandomBase<FullPrecRealType>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

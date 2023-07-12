@@ -137,7 +137,7 @@ int main(int argc, char** argv)
   tile_cell(ions, tmat);
 
   RandomNumberControl::make_seeds();
-  UPtrVector<RandomBase<double>> myRNG(NumThreads);
+  UPtrVector<RandomBase<FullPrecRealType>> myRNG(NumThreads);
   std::vector<uint_type> mt(Random.state_size(), 0);
   std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(super_lattice));
 

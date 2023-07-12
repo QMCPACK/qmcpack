@@ -78,13 +78,13 @@ public:
   bool UseDrift;
 
   /// Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomBase<double>& rg);
+  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomBase<FullPrecRealType>& rg);
   ///Alt Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w,
                 TrialWaveFunction& psi,
                 TrialWaveFunction& guide,
                 QMCHamiltonian& h,
-                RandomBase<double>& rg);
+                RandomBase<FullPrecRealType>& rg);
   ///destructor
   virtual ~QMCUpdateBase();
 
@@ -263,7 +263,7 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
   ///random number generator
-  RandomBase<double>& RandomGen;
+  RandomBase<FullPrecRealType>& RandomGen;
   ///branch engine, stateless reference to the one in QMCDriver
   const BranchEngineType* branchEngine;
   ///drift modifer, stateless reference to the one in QMCDriver

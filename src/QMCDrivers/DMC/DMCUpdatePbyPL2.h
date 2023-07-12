@@ -24,7 +24,10 @@ class DMCUpdatePbyPL2 : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  DMCUpdatePbyPL2(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomBase<double>& rg);
+  DMCUpdatePbyPL2(MCWalkerConfiguration& w,
+                  TrialWaveFunction& psi,
+                  QMCHamiltonian& h,
+                  RandomBase<FullPrecRealType>& rg);
   ///destructor
   ~DMCUpdatePbyPL2() override;
 

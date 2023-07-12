@@ -49,7 +49,7 @@ size_t MagnetizationDensity::getFullDataSize() { return npoints_ * DIM; }
 void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
                                       const RefVector<ParticleSet>& psets,
                                       const RefVector<TrialWaveFunction>& wfns,
-                                      RandomBase<double>& rng)
+                                      RandomBase<FullPrecReal>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
@@ -241,7 +241,7 @@ MagnetizationDensity::Value MagnetizationDensity::integrateMagnetizationDensity(
 }
 
 void MagnetizationDensity::generateRandomGrid(std::vector<Real>& sgrid,
-                                              RandomBase<double>& rng,
+                                              RandomBase<FullPrecReal>& rng,
                                               Real start,
                                               Real stop) const
 {

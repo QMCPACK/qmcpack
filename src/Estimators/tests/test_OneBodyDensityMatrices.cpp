@@ -280,7 +280,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   // make sure there is something in obdm's data
   OEBAccessor oeba(obdm);
   oeba[0] = 1.0;
-  testing::OneBodyDensityMatricesTests<double> obdmt;
+  testing::OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
   obdmt.testCopyConstructor(obdm);
 
   species_set = testing::makeSpeciesSet(SpeciesCases::NO_MEMBERSIZE);
@@ -317,10 +317,10 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
 
     OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
 
-    OneBodyDensityMatricesTests<double> obdmt;
+    OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
     //Get control over which rng is used.
     //we don't want FakeRandom.
-    StdRandom<double> rng;
+    StdRandom<OneBodyDensityMatrices::FullPrecRealType> rng;
     obdmt.testGenerateSamples(test_case, obDenMat, pset_target, rng);
   };
 
@@ -428,7 +428,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   for (int iw = 0; iw < nwalkers; ++iw)
     twfcs[iw] = trial_wavefunction.makeClone(psets[iw]);
 
-  StdRandom<double> rng;
+  StdRandom<OneBodyDensityMatrices::FullPrecRealType> rng;
   rng.init(101);
 
   auto updateWalker = [](auto& walker, auto& pset_target, auto& trial_wavefunction) {
@@ -445,7 +445,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   auto ref_psets(makeRefVector<ParticleSet>(psets));
   auto ref_twfcs(convertUPtrToRefVector(twfcs));
 
-  OneBodyDensityMatricesTests<double> obdmt;
+  OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
   obdmt.testAccumulate(obdm, ref_walkers, ref_psets, ref_twfcs, rng);
 
   if constexpr (dump_obdm)
@@ -493,7 +493,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
         {3.173382998, 3.651777267, 2.970916748},  {1.576967478, 2.874752045, 3.687536716},
     };
 
-    StdRandom<double> rng;
+    StdRandom<OneBodyDensityMatrices::FullPrecRealType> rng;
     rng.init(101);
     MCPWalker walker;
     // Now we have to bring the pset, trial_wavefunction and walker to valid state.
@@ -502,7 +502,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     pset_target.donePbyP();
     trial_wavefunction.evaluateLog(pset_target);
     pset_target.saveWalker(walker);
-    OneBodyDensityMatricesTests<double> obdmt;
+    OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
     obdmt.testEvaluateMatrix(obdm, pset_target, trial_wavefunction, walker, rng);
     if constexpr (dump_obdm)
       obdmt.dumpData(obdm);
@@ -539,7 +539,7 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
   auto& species_set = pset_target.getSpeciesSet();
   OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
 
-  OneBodyDensityMatricesTests<double> obdmt;
+  OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
   obdmt.testRegisterAndWrite(obdm);
 }
 

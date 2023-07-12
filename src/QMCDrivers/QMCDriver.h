@@ -81,6 +81,8 @@ public:
 
   using Walker_t = MCWalkerConfiguration::Walker_t;
   using Buffer_t = Walker_t::Buffer_t;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -183,16 +185,16 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///return the random generators
-  inline RefVector<RandomBase<double>> getRngRefs() const
+  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
   {
-    RefVector<RandomBase<double>> RngRefs;
+    RefVector<RandomBase<FullPrecRealType>> RngRefs;
     for (int i = 0; i < Rng.size(); ++i)
       RngRefs.push_back(*Rng[i]);
     return RngRefs;
   }
 
   ///return the i-th random generator
-  inline RandomBase<double>& getRng(int i) override { return (*Rng[i]); }
+  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
 
   unsigned long getDriverMode() override { return qmc_driver_mode.to_ulong(); }
 
@@ -323,7 +325,7 @@ protected:
   std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  UPtrVector<RandomBase<double>> Rng;
+  UPtrVector<RandomBase<FullPrecRealType>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

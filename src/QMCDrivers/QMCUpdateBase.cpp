@@ -34,7 +34,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& psi,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
-                             RandomBase<double>& rg)
+                             RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
       W(w),
@@ -54,7 +54,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& psi,
                              QMCHamiltonian& h,
-                             RandomBase<double>& rg)
+                             RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
       W(w),
