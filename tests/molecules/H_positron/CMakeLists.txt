@@ -92,28 +92,28 @@ if(NOT QMC_COMPLEX)
   )
 
   if(QMC_MIXED_PRECISION)
-    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "kinetic" "0.82465655 0.0003")
-    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "totenergy" "-1.56148517 0.0003")
-    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "eeenergy" "-1.56642769 0.00001")
-    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "potential" "-2.38614171 0.00001")
+    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "kinetic" "0.29681399 0.0003")
+    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "totenergy" "-0.73754911 0.0003")
+    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "eeenergy" "-0.35638538 0.00001")
+    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "potential" "-1.03436308 0.00001")
   else()
-    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "kinetic" "0.82591609 0.000001")
-    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "totenergy" "-1.56022562 0.000001")
-    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "eeenergy" "-1.56642762 0.000001")
-    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "potential" "-2.38614170 0.000001")
+    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "kinetic" "0.29671714 0.000001")
+    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "totenergy" "-0.73764449 0.000001")
+    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "eeenergy" "-0.35638597 0.000001")
+    list(APPEND DET_H_POSITRON_VMCBATCH_SD_SCALARS "potential" "-1.03436163 0.000001")
   endif()
 
-  #qmc_run_and_check(
-  #  deterministic-H_positron-vmcbatch_hf_noj
-  #  "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
-  #  det_qmc_vmcbatch-SD-H_Ground
-  #  det_qmc_vmcbatch-SD-H_Ground.in.xml
-  #  1
-  #  1
-  #  TRUE
-  #  0
-  #  DET_H_POSITRON_VMCBATCH_SD_SCALARS # V
-  #)
+  qmc_run_and_check(
+    deterministic-H_positron-vmcbatch_hf_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
+    det_qmc_vmcbatch-SD-H_Ground
+    det_qmc_vmcbatch-SD-H_Ground.in.xml
+    1
+    1
+    TRUE
+    0
+    DET_H_POSITRON_VMCBATCH_SD_SCALARS # VMC
+  )
 
 
   if(QMC_MIXED_PRECISION)	 
