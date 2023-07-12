@@ -53,14 +53,15 @@ int main(int argc, char** argv)
   qmcplusplus::hdf_error_suppression hide_hdf_errors;
 
   Communicate* myComm = OHMMS::Controller;
-  
-  using RealType    = QMCTraits::RealType;
-  using ParticlePos = ParticleSet::ParticlePos;
-  using LatticeType = ParticleSet::ParticleLayout;
-  using TensorType  = ParticleSet::TensorType;
-  using PosType     = ParticleSet::PosType;
-  using uint_type   = RandomGenerator::uint_type;
-  using Walker_t    = MCWalkerConfiguration::Walker_t;
+
+  using RealType         = QMCTraits::RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using ParticlePos      = ParticleSet::ParticlePos;
+  using LatticeType      = ParticleSet::ParticleLayout;
+  using TensorType       = ParticleSet::TensorType;
+  using PosType          = ParticleSet::PosType;
+  using uint_type        = RandomGenerator::uint_type;
+  using Walker_t         = MCWalkerConfiguration::Walker_t;
 
   //use the global generator
 
@@ -137,7 +138,7 @@ int main(int argc, char** argv)
   tile_cell(ions, tmat);
 
   RandomNumberControl::make_seeds();
-  UPtrVector<RandomBase<double>> myRNG(NumThreads);
+  UPtrVector<RandomBase<FullPrecRealType>> myRNG(NumThreads);
   std::vector<uint_type> mt(Random.state_size(), 0);
   std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(super_lattice));
 

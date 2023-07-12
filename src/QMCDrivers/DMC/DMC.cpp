@@ -130,7 +130,7 @@ void DMC::resetUpdateEngines()
       traceClones[ip] = Traces->makeClone();
 #endif
 #ifdef USE_FAKE_RNG
-      Rng[ip] = std::make_unique<FakeRandom<double>>();
+      Rng[ip] = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 #else
       Rng[ip] = RandomNumberControl::Children[ip]->clone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());

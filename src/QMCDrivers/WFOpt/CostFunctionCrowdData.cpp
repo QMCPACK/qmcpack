@@ -19,7 +19,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
                                              ParticleSet& P,
                                              TrialWaveFunction& Psi,
                                              QMCHamiltonian& H,
-                                             RandomBase<double>& Rng)
+                                             RandomBase<FullPrecRealType>& Rng)
     : h0_res_("h0 resource"), e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
 {
   P.createResource(driverwalker_resource_collection_.pset_res);

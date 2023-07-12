@@ -38,7 +38,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomBase<double>& rng) override;
+                  RandomBase<FullPrecRealType>& rng) override;
 
   UPtr<OperatorEstBase> spawnCrowdClone() const override;
   void startBlock(int steps) override;

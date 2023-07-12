@@ -40,6 +40,7 @@ class EstimatorManagerCrowd
 public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType  = EstimatorManagerNew::RealType;
+  using FullPrecRealType = EstimatorManagerNew::FullPrecRealType;
 
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
    */
@@ -77,7 +78,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomBase<double>& rng);
+                  RandomBase<FullPrecRealType>& rng);
 
   ScalarEstimatorBase& get_main_estimator() { return *main_estimator_; }
   RefVector<ScalarEstimatorBase> get_scalar_estimators() { return convertUPtrToRefVector(scalar_estimators_); }

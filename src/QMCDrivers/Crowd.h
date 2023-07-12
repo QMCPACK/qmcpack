@@ -76,14 +76,14 @@ public:
    */
   void clearWalkers();
 
-  void accumulate(RandomBase<double>& rng)
+  void accumulate(RandomBase<FullPrecRealType>& rng)
   {
     if (this->size() == 0)
       return;
     estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, rng);
   }
 
-  void setRNGForHamiltonian(RandomBase<double>& rng);
+  void setRNGForHamiltonian(RandomBase<FullPrecRealType>& rng);
 
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
