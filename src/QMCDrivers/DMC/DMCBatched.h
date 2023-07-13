@@ -114,7 +114,7 @@ public:
                          const StateForThread& sft,
                          DriverTimers& timers,
                          DMCTimers& dmc_timers,
-                         UPtrVector<ContextForSteps<double>>& move_context,
+                         UPtrVector<ContextForSteps>& move_context,
                          UPtrVector<Crowd>& crowds);
 
 
@@ -140,7 +140,7 @@ private:
                              Crowd& crowd,
                              DriverTimers& timers,
                              DMCTimers& dmc_timers,
-                             ContextForSteps<double>& move_context,
+                             ContextForSteps& move_context,
                              bool recompute,
                              bool accumulate_this_step);
 

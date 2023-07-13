@@ -312,13 +312,13 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
   for (int i = 0; i < num_crowds; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i].release());
-    step_contexts_[i] = std::make_unique<ContextForSteps<double>>(*(Rng[i]));
+    step_contexts_[i] = std::make_unique<ContextForSteps>(*(Rng[i]));
   }
 }
 
 void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<Crowd>& crowds,
-                                        UPtrVector<ContextForSteps<double>>& context_for_steps)
+                                        UPtrVector<ContextForSteps>& context_for_steps)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   if (crowd.size() == 0)

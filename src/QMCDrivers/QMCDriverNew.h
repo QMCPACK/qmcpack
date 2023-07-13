@@ -233,7 +233,7 @@ public:
 
   static void initialLogEvaluation(int crowd_id,
                                    UPtrVector<Crowd>& crowds,
-                                   UPtrVector<ContextForSteps<double>>& step_context);
+                                   UPtrVector<ContextForSteps>& step_context);
 
 
   /** should be set in input don't see a reason to set individually
@@ -425,7 +425,7 @@ protected:
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
-  UPtrVector<ContextForSteps<double>> step_contexts_;
+  UPtrVector<ContextForSteps> step_contexts_;
 
   ///Random number generators
   UPtrVector<RandomBase<FullPrecRealType>> Rng;
