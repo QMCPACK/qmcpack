@@ -192,7 +192,7 @@ private:
   void implAccumulate(const RefVector<MCPWalker>& walkers,
                       const RefVector<ParticleSet>& psets,
                       const RefVector<TrialWaveFunction>& wfns,
-                      RandomBase<double>& rng);
+                      RandomBase<FullPrecReal>& rng);
 
   size_t calcFullDataSize(size_t basis_size, int num_species);
   //local functions
@@ -203,7 +203,7 @@ private:
   void evaluateMatrix(ParticleSet& pset_target,
                       TrialWaveFunction& psi_target,
                       const MCPWalker& walker,
-                      RandomBase<double>& rng);
+                      RandomBase<FullPrecReal>& rng);
   //  sample generation
   /** Dispatch method to difference methods of generating samples.
    *  dispatch determined by Integrator.
@@ -220,9 +220,9 @@ private:
    *      * update basis_values_, basis_gradients_, basis_laplacians_
    */
   // These functions deserve unit tests and likely should be pure functions.
-  void generateSamples(const Real weight, ParticleSet& pset_target, RandomBase<double>& rng, int steps = 0);
-  void generateUniformGrid(RandomBase<double>& rng);
-  void generateUniformSamples(RandomBase<double>& rng);
+  void generateSamples(const Real weight, ParticleSet& pset_target, RandomBase<FullPrecReal>& rng, int steps = 0);
+  void generateUniformGrid(RandomBase<FullPrecReal>& rng);
+  void generateUniformSamples(RandomBase<FullPrecReal>& rng);
   /** generate samples for density integration
    *  \param[in]   save          if false throw out the samples
    *  \param[in]   steps         actually the number of samples which are basically steps.
@@ -232,12 +232,12 @@ private:
    *  sideeffects:
    *   *
    */
-  void generateDensitySamples(bool save, int steps, RandomBase<double>& rng, ParticleSet& pset_target);
+  void generateDensitySamples(bool save, int steps, RandomBase<FullPrecReal>& rng, ParticleSet& pset_target);
   void generateSampleRatios(ParticleSet& pset_target,
                             TrialWaveFunction& psi_target,
                             std::vector<Matrix<Value>>& Psi_nm);
   /// produce a position difference vector from timestep
-  Position diffuse(const Real sqt, RandomBase<double>& rng);
+  Position diffuse(const Real sqt, RandomBase<FullPrecReal>& rng);
   /** calculate density based on r
    *  \param[in]      r       position
    *  \param[out]   dens      density
@@ -287,7 +287,7 @@ private:
    *  sets initial rhocur_ and dpcur_
    *  Then calls generateSamples with number of input warmup samples.
    */
-  void warmupSampling(ParticleSet& pset_target, RandomBase<double>& rng);
+  void warmupSampling(ParticleSet& pset_target, RandomBase<FullPrecReal>& rng);
 
   struct OneBodyDensityMatrixTimers
   {

@@ -197,7 +197,7 @@ void OneBodyDensityMatrices::startBlock(int steps) {}
 
 void OneBodyDensityMatrices::generateSamples(const Real weight,
                                              ParticleSet& pset_target,
-                                             RandomBase<double>& rng,
+                                             RandomBase<FullPrecReal>& rng,
                                              int steps)
 {
   ScopedTimer local_timer(timers_.gen_samples_timer);
@@ -263,7 +263,7 @@ void OneBodyDensityMatrices::generateSamples(const Real weight,
   }
 }
 
-inline void OneBodyDensityMatrices::generateUniformGrid(RandomBase<double>& rng)
+inline void OneBodyDensityMatrices::generateUniformGrid(RandomBase<FullPrecReal>& rng)
 {
   Position rp;
   Position ushift = 0.0;
@@ -284,7 +284,7 @@ inline void OneBodyDensityMatrices::generateUniformGrid(RandomBase<double>& rng)
   }
 }
 
-inline void OneBodyDensityMatrices::generateUniformSamples(RandomBase<double>& rng)
+inline void OneBodyDensityMatrices::generateUniformSamples(RandomBase<FullPrecReal>& rng)
 {
   Position rp;
   for (int s = 0; s < samples_; ++s)
@@ -297,7 +297,7 @@ inline void OneBodyDensityMatrices::generateUniformSamples(RandomBase<double>& r
 
 inline void OneBodyDensityMatrices::generateDensitySamples(bool save,
                                                            int steps,
-                                                           RandomBase<double>& rng,
+                                                           RandomBase<FullPrecReal>& rng,
                                                            ParticleSet& pset_target)
 {
   const auto timestep = input_.get_timestep();
@@ -354,7 +354,7 @@ inline void OneBodyDensityMatrices::generateDensitySamples(bool save,
   rhocur_ = rho;
 }
 
-OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt, RandomBase<double>& rng)
+OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt, RandomBase<FullPrecReal>& rng)
 {
   Position diff;
   assignGaussRand(&diff[0], OHMMS_DIM, rng);
@@ -405,7 +405,7 @@ void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
 void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
                                             const RefVector<ParticleSet>& psets,
                                             const RefVector<TrialWaveFunction>& wfns,
-                                            RandomBase<double>& rng)
+                                            RandomBase<FullPrecReal>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
@@ -417,7 +417,7 @@ void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
 void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
                                             TrialWaveFunction& psi_target,
                                             const MCPWalker& walker,
-                                            RandomBase<double>& rng)
+                                            RandomBase<FullPrecReal>& rng)
 {
   //perform warmup sampling the first time
   warmupSampling(pset_target, rng);
@@ -547,7 +547,7 @@ inline void OneBodyDensityMatrices::updateBasisD012(const Position& r, ParticleS
     basis_laplacians_[i] *= basis_norms_[i];
 }
 
-void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RandomBase<double>& rng)
+void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RandomBase<FullPrecReal>& rng)
 {
   if (sampling_ == Sampling::METROPOLIS)
   {
