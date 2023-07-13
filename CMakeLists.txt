@@ -842,6 +842,7 @@ if(ENABLE_ROCM)
     target_link_libraries(ROCM::libraries INTERFACE roc::rocsolver roc::rocrand)
   endif()
   message("Project HIP_FLAGS: ${CMAKE_HIP_FLAGS}")
+  option(QMC_DISABLE_HIP_HOST_REGISTER "Disable hipHostRegister for pinning host memory" ON)
 endif(ENABLE_ROCM)
 
 #-------------------------------------------------------------------
