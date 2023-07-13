@@ -408,7 +408,7 @@ public:
 
   RealType get_LocalEnergy() const { return LocalEnergy; }
 
-  void setRandomGenerator(RandomBase<double>* rng);
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng);
 
   static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
   static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);

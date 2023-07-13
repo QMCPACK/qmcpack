@@ -110,7 +110,7 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
   int size_test = 7;
   std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test);
   {
-    StdRandom<double> rng;
+    StdRandom<QMCTraits::FullPrecRealType> rng;
     makeGaussRandomWithEngine(gauss_random_vals, rng);
   }
 
@@ -125,13 +125,13 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
 
   MCCoords<CoordsType::POS> mc_coords_rs(size_test);
   {
-    StdRandom<double> rng;
+    StdRandom<QMCTraits::FullPrecRealType> rng;
     makeGaussRandomWithEngine(mc_coords_rs, rng);
     checkRs(mc_coords_rs.positions);
   }
   MCCoords<CoordsType::POS_SPIN> mc_coords_rsspins(size_test);
   {
-    StdRandom<double> rng;
+    StdRandom<QMCTraits::FullPrecRealType> rng;
     makeGaussRandomWithEngine(mc_coords_rsspins, rng);
     checkRs(mc_coords_rsspins.positions);
     // Mod 2 is result of how gaussianDistribution is generated.

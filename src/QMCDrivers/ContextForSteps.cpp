@@ -14,6 +14,6 @@
 
 namespace qmcplusplus
 {
-ContextForSteps::ContextForSteps(RandomBase<double>& random_gen) : random_gen_(random_gen) {}
+ContextForSteps::ContextForSteps(RandomBase<FullPrecRealType>& random_gen) : random_gen_(random_gen) {}
 
 } // namespace qmcplusplus

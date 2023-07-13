@@ -449,7 +449,7 @@ void MomentumEstimator::resize(const std::vector<PosType>& kin, const int Min)
     phases_vPos[im].resize(kPoints.size());
 }
 
-void MomentumEstimator::setRandomGenerator(RandomBase<double>* rng)
+void MomentumEstimator::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
 {
   //simply copy it
   myRNG = rng->clone();

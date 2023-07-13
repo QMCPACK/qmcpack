@@ -26,7 +26,7 @@ namespace qmcplusplus
 SOVMCUpdatePbyP::SOVMCUpdatePbyP(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
-                                 RandomBase<double>& rg)
+                                 RandomBase<FullPrecRealType>& rg)
     : QMCUpdateBase(w, psi, h, rg),
       buffer_timer_(createGlobalTimer("SOVMCUpdatePbyP::Buffer", timer_level_medium)),
       movepbyp_timer_(createGlobalTimer("SOVMCUpdatePbyP::MovePbyP", timer_level_medium)),
