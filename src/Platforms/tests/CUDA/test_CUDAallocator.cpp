@@ -50,6 +50,7 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
     REQUIRE(attr.type == cudaMemoryTypeHost);
 #endif
   }
+#if !defined(QMC_DISABLE_HIP_HOST_REGISTER)
   { // CUDALockedPageAllocator
     Vector<double, CUDALockedPageAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
@@ -61,6 +62,7 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
 #endif
     Vector<double, CUDALockedPageAllocator<double>> vecb(vec);
   }
+#endif
   { // CUDALockedPageAllocator zero size and copy constructor
     Vector<double, CUDALockedPageAllocator<double>> vec;
     Vector<double, CUDALockedPageAllocator<double>> vecb(vec);

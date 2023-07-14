@@ -102,6 +102,9 @@
 /* Using translation of CUDA to HIP for GPU execution */
 #cmakedefine QMC_CUDA2HIP @QMC_CUDA2HIP@
 
+/* Disable hipHostRegister/hipHostUnregister */
+#cmakedefine QMC_DISABLE_HIP_HOST_REGISTER @QMC_DISABLE_HIP_HOST_REGISTER@
+
 /* Using CUDA for GPU execution, next generation */
 #cmakedefine ENABLE_CUDA @ENABLE_CUDA@
 
