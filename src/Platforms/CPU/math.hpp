@@ -98,6 +98,9 @@ inline bool iszero(T a)
   return std::fpclassify(a) == FP_ZERO;
 }
 
+bool isnan(float);
+bool isnan(double);
+
 }
 
 #endif
