@@ -1719,7 +1719,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || std::isnan(newCost))
+  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)
