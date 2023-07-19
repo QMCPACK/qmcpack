@@ -10,7 +10,9 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 # To enable a custom qmcplusplus::isnan, remove fast-math. Only the file scope CMAKE_CXX_FLAGS gets affected.
-string(REPLACE " -ffast-math" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+if(CMAKE_CXX_FLAGS MATCHES " -ffast-math")
+  string(REPLACE " -ffast-math" " -fno-fast-math" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+endif()
 
 add_library(platform_cpu_runtime math.cpp)
 target_link_libraries(platform_cpu_runtime INTERFACE Math::scalar_vector_functions)
