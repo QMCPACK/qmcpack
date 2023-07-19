@@ -78,7 +78,7 @@ public:
       std::fill_n(data.begin(), data.size(), ComplexType(0.0));
       for (int i = 0; i < nwalk; i++)
       {
-        if (std::isnan(real(wprop[0][i])))
+        if (qmcplusplus::isnan(std::real(wprop[0][i])))
           continue;
         if (importanceSampling)
         {

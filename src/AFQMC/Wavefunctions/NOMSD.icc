@@ -1830,8 +1830,8 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet&
       if (not(std::isfinite(real(DMsum[iw][0])) && std::isfinite(imag(DMsum[iw][0])) &&
               std::isfinite(real(DMsum[iw][1])) && std::isfinite(imag(DMsum[iw][1]))))
         continue;
-      if (std::isnan(real(DMsum[iw][0])) || std::isnan(imag(DMsum[iw][0])) || std::isnan(real(DMsum[iw][1])) ||
-          std::isnan(imag(DMsum[iw][1])))
+      if (qmcplusplus::isnan(std::real(DMsum[iw][0])) || qmcplusplus::isnan(std::imag(DMsum[iw][0])) ||
+          qmcplusplus::isnan(std::real(DMsum[iw][1])) || qmcplusplus::isnan(std::imag(DMsum[iw][1])))
         continue;
       if (std::isinf(real(DMsum[iw][0])) || std::isinf(imag(DMsum[iw][0])) || std::isinf(real(DMsum[iw][1])) ||
           std::isinf(imag(DMsum[iw][1])))

@@ -544,7 +544,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
   {
     ScopedTimer h_timer(my_timers_[i]);
     const auto LocalEnergyComponent = H[i]->evaluate(P);
-    if (std::isnan(LocalEnergyComponent))
+    if (qmcplusplus::isnan(LocalEnergyComponent))
     {
       std::ostringstream msg;
       msg << "QMCHamiltonian::evaluate component " << H[i]->getName() << " returns NaN." << std::endl;
@@ -573,7 +573,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
   {
     ScopedTimer h_timer(my_timers_[i]);
     const auto LocalEnergyComponent = H[i]->evaluateDeterministic(P);
-    if (std::isnan(LocalEnergyComponent))
+    if (qmcplusplus::isnan(LocalEnergyComponent))
     {
       std::ostringstream msg;
       msg << "QMCHamiltonian::evaluateDeterministic component " << H[i]->getName() << " returns NaN." << std::endl;
@@ -596,7 +596,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
 void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset)
 {
   // It's much better to be able to see where this is coming from.  It is caught just fine.
-  if (std::isnan(op.getValue()))
+  if (qmcplusplus::isnan(op.getValue()))
   {
     std::ostringstream msg;
     msg << "QMCHamiltonian::updateNonKinetic component " << op.getName() << " returns NaN." << std::endl;
@@ -655,7 +655,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
     // // 2. [] captures nothing insuring that we know these updates only depend on the three object involved.
     // auto updateNonKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
     //   // both hamiltonian and operatorbase should have operator<< overides
-    //   if (std::isnan(op.Value))
+    //   if (qmcplusplus::isnan(op.Value))
     //     APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
 
     //   // The following is a ridiculous breach of encapsulation.

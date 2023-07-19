@@ -228,7 +228,6 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
 {
   ScopedTimer local(initWalkers_timer_);
   UpdatePbyP = true;
-  BadState   = false;
   if (it == it_end)
   {
     // a particular case, no walker enters in this call.
@@ -256,7 +255,6 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     RealType logpsi = Psi.updateBuffer(W, awalker.DataSet, false);
     W.saveWalker(awalker);
     RealType eloc = H.evaluate(W);
-    BadState |= std::isnan(eloc);
     awalker.resetProperty(logpsi, Psi.getPhase(), eloc);
     H.auxHevaluate(W, awalker);
     H.saveProperty(awalker.getPropertyBase());

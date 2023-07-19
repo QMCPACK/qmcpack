@@ -9,8 +9,6 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <cmath>
-
 namespace qmcplusplus
 {
 // To make the customized qmcplusplus::isnan always effective, this file must be compiled without -ffast-math.
