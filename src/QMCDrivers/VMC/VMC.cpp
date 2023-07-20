@@ -134,7 +134,7 @@ bool VMC::run()
   //copy back the random states
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ++ip)
-    RandomNumberControl::Children[ip] = Rng[ip]->clone();
+    RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
 #endif
   ///write samples to a file
   bool wrotesamples = DumpConfig;
@@ -185,7 +185,7 @@ void VMC::resetRun()
 #ifdef USE_FAKE_RNG
       Rng[ip] = std::make_unique<FakeRandom<double>>();
 #else
-      Rng[ip] = RandomNumberControl::Children[ip]->clone();
+      Rng[ip] = RandomNumberControl::Children[ip]->makeClone();
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (W.isSpinor())

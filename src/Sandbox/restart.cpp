@@ -149,7 +149,7 @@ int main(int argc, char** argv)
     MCWalkerConfiguration& els = elecs[ip];
 
     //create generator within the thread
-    myRNG[ip]       = RandomNumberControl::Children[ip]->clone();
+    myRNG[ip]       = RandomNumberControl::Children[ip]->makeClone();
     auto& random_th = *myRNG[ip];
 
     const int nions = ions.getTotalNum();
@@ -176,7 +176,7 @@ int main(int argc, char** argv)
       els.saveWalker(**wi);
 
     // save random seeds and electron configurations.
-    RandomNumberControl::Children[ip] = myRNG[ip]->clone();
+    RandomNumberControl::Children[ip] = myRNG[ip]->makeClone();
     //MCWalkerConfiguration els_save(els);
 
   } //end of omp parallel

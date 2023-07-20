@@ -16,4 +16,6 @@ namespace qmcplusplus
 {
 ContextForSteps::ContextForSteps(RandomBase<FullPrecRealType>& random_gen) : random_gen_(random_gen) {}
 
+RandomBase<ContextForSteps::FullPrecRealType>& ContextForSteps::get_random_gen() { return random_gen_; }
+
 } // namespace qmcplusplus

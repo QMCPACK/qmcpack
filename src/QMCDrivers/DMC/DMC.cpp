@@ -132,7 +132,7 @@ void DMC::resetUpdateEngines()
 #ifdef USE_FAKE_RNG
       Rng[ip] = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 #else
-      Rng[ip] = RandomNumberControl::Children[ip]->clone();
+      Rng[ip] = RandomNumberControl::Children[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
 #endif
       if (W.isSpinor())
@@ -301,7 +301,7 @@ bool DMC::run()
     {
 #ifndef USE_FAKE_RNG
       for (int ip = 0; ip < NumThreads; ip++)
-        RandomNumberControl::Children[ip] = Rng[ip]->clone();
+        RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
 #endif
     }
     recordBlock(block);
@@ -325,7 +325,7 @@ bool DMC::run()
 
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ip++)
-    RandomNumberControl::Children[ip] = Rng[ip]->clone();
+    RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
 #endif
   Estimators->stop();
   for (int ip = 0; ip < NumThreads; ++ip)
