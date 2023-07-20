@@ -48,7 +48,7 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
     qmcestimators_unit
-    qmcham_unit
+    qmcham
     qmcwfs
     qmcparticle
     qmcwfs_omptarget
@@ -90,7 +90,7 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
     qmcestimators_unit
-    qmcham_unit
+    qmcham
     qmcwfs
     qmcparticle
     qmcwfs_omptarget
@@ -113,7 +113,7 @@ if(HAVE_MPI)
     target_link_libraries(
       ${UTEST_EXE}
       qmcestimators_unit
-      qmcham_unit
+      qmcham
       qmcwfs
       qmcparticle
       qmcwfs_omptarget

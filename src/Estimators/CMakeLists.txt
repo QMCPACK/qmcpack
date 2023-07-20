@@ -50,6 +50,6 @@ use_fake_rng(qmcestimators_unit)
 target_include_directories(qmcestimators PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(qmcestimators_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcestimators PUBLIC containers qmcham qmcparticle qmcutil)
-target_link_libraries(qmcestimators_unit PUBLIC containers qmcham_unit qmcparticle qmcutil)
+target_link_libraries(qmcestimators_unit PUBLIC containers qmcham qmcparticle qmcutil)
 
 add_subdirectory(tests)
