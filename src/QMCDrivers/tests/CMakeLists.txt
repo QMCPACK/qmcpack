@@ -47,7 +47,7 @@ target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
-    qmcestimators_unit
+    qmcestimators
     qmcham
     qmcwfs
     qmcparticle
@@ -89,7 +89,7 @@ target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
-    qmcestimators_unit
+    qmcestimators
     qmcham
     qmcwfs
     qmcparticle
@@ -112,7 +112,7 @@ if(HAVE_MPI)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
-      qmcestimators_unit
+      qmcestimators
       qmcham
       qmcwfs
       qmcparticle

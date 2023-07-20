@@ -106,7 +106,7 @@ target_include_directories(qmcdriver PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(qmcdriver_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_link_libraries(qmcdriver PUBLIC qmcham qmcestimators)
-target_link_libraries(qmcdriver_unit PUBLIC qmcham qmcestimators_unit)
+target_link_libraries(qmcdriver_unit PUBLIC qmcham qmcestimators)
 
 target_link_libraries(qmcdriver PRIVATE platform_LA Boost::boost)
 target_link_libraries(qmcdriver_unit PRIVATE platform_LA Boost::boost)
