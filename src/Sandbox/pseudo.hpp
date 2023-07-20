@@ -40,7 +40,7 @@ struct NonLocalPP
   /** positions on a sphere */
   std::vector<PosType> sgridxyz_m;
   /** default constructor with knots=12 */
-  NonLocalPP(const RandomBase<FullPrecRealType>& rng) : myRNG(rng.clone())
+  NonLocalPP(const RandomBase<FullPrecRealType>& rng) : myRNG(rng.makeClone())
   {
     //use fixed seed
     myRNG->init(11);

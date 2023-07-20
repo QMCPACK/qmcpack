@@ -35,7 +35,7 @@ public:
   virtual void load(const std::vector<uint_type>& newstate) = 0;
   virtual void save(std::vector<uint_type>& curstate) const = 0;
   virtual size_t state_size() const                         = 0;
-  virtual std::unique_ptr<RandomBase<T>> clone() const      = 0;
+  virtual std::unique_ptr<RandomBase<T>> makeClone() const  = 0;
 };
 
 } // namespace qmcplusplus

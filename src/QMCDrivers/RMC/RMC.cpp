@@ -134,7 +134,7 @@ bool RMC::run()
   Estimators->stop(estimatorClones);
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
-    RandomNumberControl::Children[ip] = Rng[ip]->clone();
+    RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
   //return nbeads and stuff to its original unset state;
   resetVars();
   return finalize(nBlocks);
@@ -223,7 +223,7 @@ void RMC::resetRun()
       std::ostringstream os;
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
-      Rng[ip] = RandomNumberControl::Children[ip]->clone();
+      Rng[ip] = RandomNumberControl::Children[ip]->makeClone();
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif

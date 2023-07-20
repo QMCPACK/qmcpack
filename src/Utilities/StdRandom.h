@@ -75,7 +75,7 @@ public:
 
   void load(const std::vector<uint_type>& newstate) override;
   void save(std::vector<uint_type>& curstate) const override;
-  std::unique_ptr<RandomBase<T>> clone() const override { return std::make_unique<StdRandom<T>>(*this); }
+  std::unique_ptr<RandomBase<T>> makeClone() const override { return std::make_unique<StdRandom<T>>(*this); }
 
   // Non const allows use of default copy constructor
   std::string ClassName{"StdRand"};
