@@ -71,7 +71,7 @@ struct NonLocalPP
   {
     //const RealType twopi(6.28318530718);
     //RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
-    RealType phi(TWOPI * (*myRNG())), psi(TWOPI * (*myRNG())), cth((*myRNG()) - 0.5);
+    RealType phi(TWOPI * (*myRNG)()), psi(TWOPI * (*myRNG)()), cth((*myRNG)() - 0.5);
     RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
         cps(std::cos(psi));
     TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
