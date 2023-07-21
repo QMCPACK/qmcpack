@@ -43,12 +43,10 @@
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
 #include "Estimators/EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
-#include "Configuration.h"
 
 
 namespace qmcplusplus
 {
-
 QMCDriverFactory::QMCDriverFactory(const ProjectData& project_data) : project_data_(project_data) {}
 
 /** Read the xml defining the driver for this QMC section

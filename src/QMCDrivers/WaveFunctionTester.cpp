@@ -89,27 +89,6 @@ template WaveFunctionTester<QMCTraits::ValueType>::WaveFunctionTester(const Proj
                                                                     ParticleSetPool& ptclPool,
                                                                     Communicate* comm);
 
-// template WaveFunctionTester<float>::WaveFunctionTester(const ProjectData& project_data,
-//                                                                     MCWalkerConfiguration& w,
-//                                                                     TrialWaveFunction& psi,
-//                                                                     QMCHamiltonian& h,
-//                                                                     ParticleSetPool& ptclPool,
-//                                                                     Communicate* comm);
-
-// template WaveFunctionTester<std::complex<double>>::WaveFunctionTester(const ProjectData& project_data,
-//                                                                     MCWalkerConfiguration& w,
-//                                                                     TrialWaveFunction& psi,
-//                                                                     QMCHamiltonian& h,
-//                                                                     ParticleSetPool& ptclPool,
-//                                                                     Communicate* comm);
-
-// template WaveFunctionTester<std::complex<float>>::WaveFunctionTester(const ProjectData& project_data,
-//                                                                     MCWalkerConfiguration& w,
-//                                                                     TrialWaveFunction& psi,
-//                                                                     QMCHamiltonian& h,
-//                                                                     ParticleSetPool& ptclPool,
-//                                                                     Communicate* comm);
-
 
 template<typename T>
 WaveFunctionTester<T>::~WaveFunctionTester() {}
