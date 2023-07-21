@@ -233,13 +233,12 @@ int main(int argc, char** argv)
   }
   catch (const std::exception& e)
   {
-    app_error() << e.what() << std::endl;
+    std::cerr << e.what() << std::endl;
     APP_ABORT("Unhandled Exception");
   }
   catch (...)
   {
-    app_error() << "Exception not derived from std::exception thrown" << std::endl;
-    APP_ABORT("Unhandled Exception");
+    APP_ABORT("Unhandled Exception (not derived from std::exception)");
   }
 
   if (OHMMS::Controller->rank() == 0)
