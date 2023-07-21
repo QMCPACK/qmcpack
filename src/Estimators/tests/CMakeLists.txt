@@ -73,7 +73,7 @@ if(HAVE_MPI)
       ${UTEST_EXE}
       qmcestimators
       qmcham
-      qmcdriver_unit
+      qmcdriver
       qmcwfs
       qmcparticle
       qmcwfs_omptarget

@@ -42,8 +42,7 @@ if(HAVE_MPI)
 endif()
 add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
 
-use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
+target_link_libraries(${UTEST_EXE} catch_main qmcdriver)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
@@ -84,8 +83,7 @@ set(DRIVER_TEST_SRC
     test_QMCCostFunctionBase.cpp
     test_WFOptDriverInput.cpp)
 add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
-use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
+target_link_libraries(${UTEST_EXE} catch_main qmcdriver)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
@@ -107,8 +105,7 @@ if(HAVE_MPI)
   #this is dependent on the directory creation and sym linking of earlier driver tests
   set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
-  use_fake_rng(${UTEST_EXE})
-  target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
+  target_link_libraries(${UTEST_EXE} catch_main qmcdriver)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
