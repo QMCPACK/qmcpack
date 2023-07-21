@@ -235,8 +235,8 @@ template void VMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThr
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
-                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
-                            std::vector<std::unique_ptr<Crowd>>& crowds)
+                            UPtrVector<ContextForSteps>& context_for_steps,
+                            UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());

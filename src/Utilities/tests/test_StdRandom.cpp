@@ -70,7 +70,7 @@ TEST_CASE("StdRandom clone", "[utilities]")
   std::stringstream stream1;
   rng.write(stream1);
 
-  auto rng2 = rng.clone();
+  auto rng2 = rng.makeClone();
   std::vector<DoubleRNG::uint_type> state2;
   rng2->save(state2);
 

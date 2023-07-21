@@ -178,7 +178,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   auto ref_wfns    = convertUPtrToRefVector(wfns);
 
   //   Setup RNG
-  RandomGenerator rng;
+  FakeRandom<OHMMS_PRECISION_FULL> rng;
 
   //   Perform accumulate
   md.accumulate(ref_walkers, ref_psets, ref_wfns, rng);

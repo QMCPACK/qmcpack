@@ -35,6 +35,7 @@ public:
       MCWalkerConfiguration& w,
       TrialWaveFunction& psi,
       QMCHamiltonian& h,
+      UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
       Communicate* comm,
       bool enable_profiling);
 
@@ -44,6 +45,8 @@ public:
   QMCRunType getRunType() override { return QMCRunType::DMC; }
 
 private:
+  //
+  UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs_;
   ///Index to determine what to do when node crossing is detected
   // does not appear to be used
   IndexType KillNodeCrossing;

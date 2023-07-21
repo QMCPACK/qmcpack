@@ -35,12 +35,9 @@ class ContextForSteps
 public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ContextForSteps(RandomBase<FullPrecRealType>& random_gen);
-
-  RandomBase<FullPrecRealType>& get_random_gen() { return random_gen_; }
-
+  RandomBase<FullPrecRealType>& get_random_gen();
 protected:
   RandomBase<FullPrecRealType>& random_gen_;
 };
-
 } // namespace qmcplusplus
 #endif

@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 ///initialize the static data members
 PrimeNumberSet<RandomBase<QMCTraits::FullPrecRealType>::uint_type> RandomNumberControl::PrimeNumbers;
-std::vector<std::unique_ptr<RandomBase<QMCTraits::FullPrecRealType>>> RandomNumberControl::Children;
+UPtrVector<RandomBase<QMCTraits::FullPrecRealType>> RandomNumberControl::Children;
 RandomBase<QMCTraits::FullPrecRealType>::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors

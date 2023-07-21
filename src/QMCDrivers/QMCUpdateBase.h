@@ -51,8 +51,6 @@ public:
   using mTensorType = TensorType;
 #endif
 
-  ///If true, terminate the simulation, but it is never checked
-  bool BadState;
   ///number of steps per measurement
   int nSubSteps;
   /// determine additional checks for debugging purpose

@@ -83,7 +83,7 @@ TEST_CASE("FakeRandom clone", "[utilities]")
   std::stringstream stream1;
   rng.write(stream1);
 
-  auto rng2 = rng.clone();
+  auto rng2 = rng.makeClone();
 
   std::stringstream stream2;
   rng2->write(stream2);
