@@ -55,11 +55,11 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
     h_ptr_list_[ib]  = H.makeClone(pCopy, psiCopy);
     h0_ptr_list_[ib] = H_KE.makeClone(pCopy, psiCopy);
 
-    rng_ptr_list_[ib] = Rng.clone();
+    rng_ptr_list_[ib] = Rng.makeClone();
     h_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
     h0_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
   }
-  rng_save_ptr_ = Rng.clone();
+  rng_save_ptr_ = Rng.makeClone();
 }
 
 RefVector<ParticleSet> CostFunctionCrowdData::get_p_list(int len)

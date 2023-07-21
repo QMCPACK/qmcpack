@@ -49,20 +49,12 @@ public:
   result_type operator()() override;
 };
 
-extern template class RNGThreadSafe<FakeRandom<double>>;
-extern template class RNGThreadSafe<StdRandom<double>>;
+extern template class RNGThreadSafe<FakeRandom<OHMMS_PRECISION_FULL>>;
+extern template class RNGThreadSafe<StdRandom<OHMMS_PRECISION_FULL>>;
 
-#if defined(USE_FAKE_RNG)
-// fake RNG redirection
-using RandomGenerator = FakeRandom<OHMMS_PRECISION_FULL>;
-extern RNGThreadSafe<RandomGenerator> fake_random_global;
-#define Random fake_random_global
-#else
-// real RNG redirection
 using RandomGenerator = StdRandom<OHMMS_PRECISION_FULL>;
 extern RNGThreadSafe<RandomGenerator> random_global;
 #define Random random_global
-#endif
 } // namespace qmcplusplus
 
 #endif

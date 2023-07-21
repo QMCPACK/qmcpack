@@ -145,7 +145,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   emc.registerListeners(ham_list);
 
   //   Setup RNG
-  RandomGenerator rng;
+  FakeRandom<OHMMS_PRECISION_FULL> rng;
 
   // Without this QMCHamiltonian::mw_evaluate segfaults
   // Because the CoulombPBCAA hamiltonian component has PtclRhoK (StructFact) that is invalid.

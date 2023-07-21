@@ -43,7 +43,7 @@ public:
   using uint_type        = RandomBase<FullPrecRealType>::uint_type;
   static PrimeNumberSet<uint_type> PrimeNumbers;
   //children random number generator
-  static std::vector<std::unique_ptr<RandomBase<FullPrecRealType>>> Children;
+  static UPtrVector<RandomBase<FullPrecRealType>> Children;
 
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");

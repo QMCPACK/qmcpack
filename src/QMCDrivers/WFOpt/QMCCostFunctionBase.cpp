@@ -93,7 +93,7 @@ void QMCCostFunctionBase::setRng(RefVector<RandomBase<FullPrecRealType>> r)
   for (int ip = 0; ip < r.size(); ++ip)
     MoverRng[ip] = &r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip)
-    RngSaved[ip] = r[ip].get().clone();
+    RngSaved[ip] = r[ip].get().makeClone();
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)

@@ -452,6 +452,6 @@ void MomentumEstimator::resize(const std::vector<PosType>& kin, const int Min)
 void MomentumEstimator::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
 {
   //simply copy it
-  myRNG = rng->clone();
+  myRNG = rng->makeClone();
 }
 } // namespace qmcplusplus

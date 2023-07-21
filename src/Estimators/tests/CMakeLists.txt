@@ -43,14 +43,13 @@ set(SRCS
     test_MagnetizationDensity.cpp)
 
 add_executable(${UTEST_EXE} ${SRCS})
-use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test sposets_for_testing)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators utilities_for_test sposets_for_testing)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
     qmcutil
-    qmcestimators_unit
-    qmcham_unit
+    qmcestimators
+    qmcham
     qmcwfs
     qmcparticle
     qmcwfs_omptarget
@@ -72,9 +71,9 @@ if(HAVE_MPI)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
-      qmcestimators_unit
-      qmcham_unit
-      qmcdriver_unit
+      qmcestimators
+      qmcham
+      qmcdriver
       qmcwfs
       qmcparticle
       qmcwfs_omptarget
@@ -83,7 +82,7 @@ if(HAVE_MPI)
       platform_omptarget_LA
       utilities_for_test)
   endif()
-  target_link_libraries(${UTEST_EXE} catch_main qmcestimators_unit)
+  target_link_libraries(${UTEST_EXE} catch_main qmcestimators)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()
