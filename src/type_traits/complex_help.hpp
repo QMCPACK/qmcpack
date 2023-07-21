@@ -20,6 +20,8 @@ struct IsComplex_t : public std::false_type
 template<typename T>
 struct IsComplex_t<std::complex<T>> : public std::true_type
 {};
+template<typename T>
+inline constexpr bool IsComplex_t_v = IsComplex_t<T>::value;
 
 template<typename T>
 using IsComplex = std::enable_if_t<IsComplex_t<T>::value, bool>;

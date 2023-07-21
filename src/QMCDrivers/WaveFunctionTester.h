@@ -20,6 +20,8 @@
 
 #include "QMCDrivers/QMCDriver.h"
 #include "Particle/ParticleSetPool.h"
+#include "Configuration.h"
+
 namespace qmcplusplus
 {
 /** Information for output of relative error in wavefunction derivatives
@@ -39,6 +41,7 @@ public:
 /** Test the correctness of TrialWaveFunction for the values,
     gradients and laplacians
 */
+template<typename T = QMCTraits::ValueType>
 class WaveFunctionTester : public QMCDriver
 {
 public:
@@ -46,14 +49,14 @@ public:
   using LogValueType = WaveFunctionComponent::LogValueType;
 
   /// Constructor.
-  WaveFunctionTester(const ProjectData& project_data,
+  WaveFunctionTester<T>(const ProjectData& project_data,
                      MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
                      Communicate* comm);
 
-  ~WaveFunctionTester() override;
+  ~WaveFunctionTester<T>() override;
 
   bool run() override;
   bool put(xmlNodePtr q) override;

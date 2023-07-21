@@ -29,6 +29,8 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/SymmetryOperations.h"
+#include "type_traits/complex_help.hpp"
+
 #include <array>
 #include <sstream>
 
@@ -36,7 +38,8 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-WaveFunctionTester::WaveFunctionTester(const ProjectData& project_data,
+template<typename T>
+WaveFunctionTester<T>::WaveFunctionTester(const ProjectData& project_data,
                                        MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
@@ -79,7 +82,37 @@ WaveFunctionTester::WaveFunctionTester(const ProjectData& project_data,
   }
 }
 
-WaveFunctionTester::~WaveFunctionTester() {}
+template WaveFunctionTester<QMCTraits::ValueType>::WaveFunctionTester(const ProjectData& project_data,
+                                                                    MCWalkerConfiguration& w,
+                                                                    TrialWaveFunction& psi,
+                                                                    QMCHamiltonian& h,
+                                                                    ParticleSetPool& ptclPool,
+                                                                    Communicate* comm);
+
+// template WaveFunctionTester<float>::WaveFunctionTester(const ProjectData& project_data,
+//                                                                     MCWalkerConfiguration& w,
+//                                                                     TrialWaveFunction& psi,
+//                                                                     QMCHamiltonian& h,
+//                                                                     ParticleSetPool& ptclPool,
+//                                                                     Communicate* comm);
+
+// template WaveFunctionTester<std::complex<double>>::WaveFunctionTester(const ProjectData& project_data,
+//                                                                     MCWalkerConfiguration& w,
+//                                                                     TrialWaveFunction& psi,
+//                                                                     QMCHamiltonian& h,
+//                                                                     ParticleSetPool& ptclPool,
+//                                                                     Communicate* comm);
+
+// template WaveFunctionTester<std::complex<float>>::WaveFunctionTester(const ProjectData& project_data,
+//                                                                     MCWalkerConfiguration& w,
+//                                                                     TrialWaveFunction& psi,
+//                                                                     QMCHamiltonian& h,
+//                                                                     ParticleSetPool& ptclPool,
+//                                                                     Communicate* comm);
+
+
+template<typename T>
+WaveFunctionTester<T>::~WaveFunctionTester() {}
 
 /*!
  * \brief Test the evaluation of the wavefunction, gradient and laplacian
@@ -97,8 +130,8 @@ WaveFunctionTester::~WaveFunctionTester() {}
  where \f$ f = \ln \Psi \f$ and \f$ \Delta r_i \f$ is a
  small displacement for the ith particle.
 */
-
-bool WaveFunctionTester::run()
+template<typename T>
+bool WaveFunctionTester<T>::run()
 {
   std::array<char, 16> fname;
   if (std::snprintf(fname.data(), fname.size(), "wftest.%03d", OHMMS::Controller->rank()) < 0)
@@ -161,7 +194,8 @@ bool WaveFunctionTester::run()
   return true;
 }
 
-void WaveFunctionTester::runCloneTest()
+template<typename T>
+void WaveFunctionTester<T>::runCloneTest()
 {
   app_log() << " ===== runCloneTest =====\n";
   for (int iter = 0; iter < 4; ++iter)
@@ -213,7 +247,8 @@ void WaveFunctionTester::runCloneTest()
   }
 }
 
-void WaveFunctionTester::printEloc()
+template<typename T>
+void WaveFunctionTester<T>::printEloc()
 {
   app_log() << " ===== printEloc =====\n";
   for (auto& [key, value] : PtclPool.getPool())
@@ -590,7 +625,8 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
 }
 
 // Compute numerical gradient and Laplacian
-void WaveFunctionTester::computeNumericalGrad(RealType delta,
+template<typename T>
+void WaveFunctionTester<T>::computeNumericalGrad(RealType delta,
                                               ParticleSet::ParticleGradient& G_fd, // finite difference
                                               ParticleSet::ParticleLaplacian& L_fd)
 {
@@ -608,12 +644,17 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
     W.R[it->index] = it->r;
     W.update();
     RealType logpsi0 = Psi.evaluateLog(W);
-#if defined(QMC_COMPLEX)
-    RealType phase0  = Psi.getPhase();
-    ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
-#else
-    ValueType logpsi = logpsi0;
-#endif
+    T logpsi;
+    if constexpr (IsComplex_t_v<T>)
+    {
+      RealType phase0  = Psi.getPhase();
+      logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
+    }
+    else
+    {
+      logpsi = logpsi0;
+    }
+
     logpsi_vals.push_back(logpsi);
 
     W.R[it->index] = r0;
@@ -627,7 +668,8 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
 // Usually
 // lower_iat = 0
 // upper_iat = nat
-bool WaveFunctionTester::checkGradients(int lower_iat,
+template<typename T>
+bool WaveFunctionTester<T>::checkGradients(int lower_iat,
                                         int upper_iat,
                                         ParticleSet::ParticleGradient& G,
                                         ParticleSet::ParticleLaplacian& L,
@@ -717,7 +759,8 @@ bool WaveFunctionTester::checkGradients(int lower_iat,
   return all_okay;
 }
 
-bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1,
+template<typename T>
+bool WaveFunctionTester<T>::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1,
                                                       std::stringstream& fail_log,
                                                       bool& ignore)
 {
@@ -756,11 +799,15 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     W.update();
     RealType logpsi0 = Psi.evaluateLog(W);
     RealType phase0  = Psi.getPhase();
-#if defined(QMC_COMPLEX)
-    ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
-#else
-    ValueType logpsi = logpsi0;
-#endif
+    ValueType logpsi;
+    if constexpr (IsComplex_t_v<T>)
+    {
+      ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
+    }
+    else
+    {
+      ValueType logpsi = logpsi0;
+    }
     logpsi_vals.push_back(logpsi);
 
     W.R[it->index] = r0;
@@ -805,11 +852,15 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       W.makeMove(it->index, zeroR);
 
       LogValueType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
-#if defined(QMC_COMPLEX)
-      ValueType logpsi(logpsi0.real(), logpsi0.imag());
-#else
-      ValueType logpsi = std::real(logpsi0);
-#endif
+      ValueType logpsi;
+      if constexpr (IsComplex_t_v<T>)
+      {
+        logpsi = ValueType(logpsi0.real(), logpsi0.imag());
+      }
+      else
+      {
+        logpsi = std::real(logpsi0);
+      }
       logpsi_vals.push_back(logpsi);
       W.rejectMove(it->index);
 
@@ -854,11 +905,15 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.update();
 
           LogValueType logpsi0 = det.evaluateLog(W, tmpG, tmpL);
-#if defined(QMC_COMPLEX)
-          ValueType logpsi(logpsi0.real(), logpsi0.imag());
-#else
-          ValueType logpsi = std::real(logpsi0);
-#endif
+          ValueType logpsi;
+          if constexpr (IsComplex_t_v<T>)
+          {
+            logpsi = ValueType(logpsi0.real(), logpsi0.imag());
+          }
+          else
+          {
+            logpsi = std::real(logpsi0);
+          }
           logpsi_vals.push_back(logpsi);
 
           W.R[it->index] = r0;
@@ -919,7 +974,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
   return all_okay;
 }
 
-void WaveFunctionTester::runBasicTest()
+template<typename T>
+void WaveFunctionTester<T>::runBasicTest()
 {
   int nat = W.getTotalNum();
   fout << "Numerical gradient and Laplacian test" << std::endl;
@@ -1051,38 +1107,39 @@ void WaveFunctionTester::runBasicTest()
     RealType psi_m   = Psi.evaluateLog(W);
     RealType phase_m = Psi.getPhase();
 
-#if defined(QMC_COMPLEX)
-    RealType ratioMag = std::exp(psi_m - psi_p);
-    RealType dphase   = phase_m - phase_p;
-    if (phaseDiff < 0.0)
-      phaseDiff += 2.0 * M_PI;
-    if (phaseDiff > 2.0 * M_PI)
-      phaseDiff -= 2.0 * M_PI;
-    if (dphase < 0.0)
-      dphase += 2.0 * M_PI;
-    if (dphase > 2.0 * M_PI)
-      dphase -= 2.0 * M_PI;
-    ValueType ratDiff = std::complex<OHMMS_PRECISION>(ratioMag * std::cos(dphase), ratioMag * std::sin(dphase));
-    // TODO - test complex ratio against a tolerance
-    fout << iat << " " << aratio / ratDiff << " " << ratDiff << " " << aratio << std::endl;
-    fout << "     ratioMag " << std::abs(aratio) / ratioMag << " " << ratioMag << std::endl;
-    fout << "     PhaseDiff " << phaseDiff / dphase << " " << phaseDiff << " " << dphase << std::endl;
-#else
-    RealType ratDiff = std::exp(psi_m - psi_p) * std::cos(phase_m - phase_p);
-    fout << iat << " " << aratio / ratDiff << " " << ratDiff << " " << aratio << std::endl;
-    if (std::abs(aratio / ratDiff - 1.0) > ratio_tol)
-    {
-      app_log() << "Wavefunction ratio exceeds tolerance " << tol << ") for particle " << iat << std::endl;
-      app_log() << "  Internally computed ratio = " << aratio << std::endl;
-      app_log() << "  Separately computed ratio = " << ratDiff << std::endl;
-      any_ratio_fail = true;
-    }
-#endif
+    if constexpr (IsComplex_t_v<T>) {
+      RealType ratioMag = std::exp(psi_m - psi_p);
+      RealType dphase   = phase_m - phase_p;
+      if (phaseDiff < 0.0)
+        phaseDiff += 2.0 * M_PI;
+      if (phaseDiff > 2.0 * M_PI)
+        phaseDiff -= 2.0 * M_PI;
+      if (dphase < 0.0)
+        dphase += 2.0 * M_PI;
+      if (dphase > 2.0 * M_PI)
+        dphase -= 2.0 * M_PI;
+      ValueType ratDiff = std::complex<OHMMS_PRECISION>(ratioMag * std::cos(dphase), ratioMag * std::sin(dphase));
+      // TODO - test complex ratio against a tolerance
+      fout << iat << " " << aratio / ratDiff << " " << ratDiff << " " << aratio << std::endl;
+      fout << "     ratioMag " << std::abs(aratio) / ratioMag << " " << ratioMag << std::endl;
+      fout << "     PhaseDiff " << phaseDiff / dphase << " " << phaseDiff << " " << dphase << std::endl;
+    } else {
+      RealType ratDiff = std::exp(psi_m - psi_p) * std::cos(phase_m - phase_p);
+      fout << iat << " " << aratio / ratDiff << " " << ratDiff << " " << aratio << std::endl;
+      if (std::abs(aratio / ratDiff - 1.0) > ratio_tol)
+      {
+        app_log() << "Wavefunction ratio exceeds tolerance " << tol << ") for particle " << iat << std::endl;
+        app_log() << "  Internally computed ratio = " << aratio << std::endl;
+        app_log() << "  Separately computed ratio = " << ratDiff << std::endl;
+        any_ratio_fail = true;
+      }
+      }
   }
   app_log() << "Ratio test: " << (any_ratio_fail ? "FAIL" : "PASS") << std::endl;
 }
 
-void WaveFunctionTester::runRatioTest()
+template<typename T>
+void WaveFunctionTester<T>::runRatioTest()
 {
 #if 0
   int nat = W.getTotalNum();
@@ -1277,7 +1334,8 @@ void WaveFunctionTester::runRatioTest()
 #endif
 }
 
-void WaveFunctionTester::runRatioTest2()
+template<typename T>
+void WaveFunctionTester<T>::runRatioTest2()
 {
   app_log() << " ===== runRatioTest2 =====\n";
   int nat = W.getTotalNum();
@@ -1372,10 +1430,11 @@ inline void randomize(ParticleAttrib<TinyVector<T, D>>& displ, T fac)
     rv[i] = fac * (rv[i] - 0.5);
 }
 
-void WaveFunctionTester::runRatioV()
+template<typename T>
+void WaveFunctionTester<T>::runRatioV()
 {
 #if 0
-  app_log() << "WaveFunctionTester::runRatioV " << std::endl;
+  app_log() << "WaveFunctionTester<T>::runRatioV " << std::endl;
   int nat = W.getTotalNum();
   Tau=0.025;
 
@@ -1435,7 +1494,8 @@ void WaveFunctionTester::runRatioV()
 #endif
 }
 
-void WaveFunctionTester::runGradSourceTest()
+template<typename T>
+void WaveFunctionTester<T>::runGradSourceTest()
 {
   app_log() << " ===== runGradSourceTest =====\n";
   for (auto& [key, value] : PtclPool.getPool())
@@ -1584,8 +1644,8 @@ void WaveFunctionTester::runGradSourceTest()
   }
 }
 
-
-void WaveFunctionTester::runZeroVarianceTest()
+template<typename T>
+void WaveFunctionTester<T>::runZeroVarianceTest()
 {
   app_log() << " ===== runZeroVarianceTest =====\n";
   for (auto& [key, value] : PtclPool.getPool())
@@ -1647,33 +1707,32 @@ void WaveFunctionTester::runZeroVarianceTest()
     W.R[0] = r1;
     fprintf(fzout, "%1.8e %1.8e %1.8e ", r1[0], r1[1], r1[2]);
     RealType log = Psi.evaluateLog(W);
-//        ValueType psi = std::cos(Psi.getPhase())*std::exp(log);//*W.PropertyList[SIGN];
-#if defined(QMC_COMPLEX)
-    RealType ratioMag = std::exp(log);
-    ValueType psi =
-        std::complex<OHMMS_PRECISION>(ratioMag * std::cos(Psi.getPhase()), ratioMag * std::sin(Psi.getPhase()));
-#else
-    ValueType psi = std::cos(Psi.getPhase()) * std::exp(log); //*W.PropertyList[SIGN];
-#endif
     double E = H.evaluate(W);
     //double KE = E - W.PropertyList[LOCALPOTENTIAL];
     double KE = -0.5 * (Sum(W.L) + Dot(W.G, W.G));
-#if defined(QMC_COMPLEX)
-    fprintf(fzout, "%16.12e %16.12e %16.12e ", psi.real(), psi.imag(), KE);
-#else
-    fprintf(fzout, "%16.12e %16.12e ", psi, KE);
-#endif
+    T psi;
+//        ValueType psi = std::cos(Psi.getPhase())*std::exp(log);//*W.PropertyList[SIGN];
+    if constexpr (IsComplex_t_v<T>) {
+      RealType ratioMag = std::exp(log);
+      psi =
+          std::complex<OHMMS_PRECISION>(ratioMag * std::cos(Psi.getPhase()), ratioMag * std::sin(Psi.getPhase()));
+      fprintf(fzout, "%16.12e %16.12e %16.12e ", psi.real(), psi.imag(), KE);
+    } else {
+      psi = std::cos(Psi.getPhase()) * std::exp(log); //*W.PropertyList[SIGN];
+      fprintf(fzout, "%16.12e %16.12e ", psi, KE);
+    }
+
     for (int isrc = 0; isrc < source.getTotalNum(); isrc++)
     {
-      GradType grad_log = Psi.evalGradSource(W, source, isrc, grad_grad, lapl_grad);
+      TinyVector<T, DIM> grad_log = Psi.evalGradSource(W, source, isrc, grad_grad, lapl_grad);
       for (int dim = 0; dim < OHMMS_DIM; dim++)
       {
         double ZV = 0.5 * Sum(lapl_grad[dim]) + Dot(grad_grad[dim], W.G);
-#if defined(QMC_COMPLEX)
-        fprintf(fzout, "%16.12e %16.12e %16.12e ", ZV, grad_log[dim].real(), grad_log[dim].imag());
-#else
-        fprintf(fzout, "%16.12e %16.12e ", ZV, grad_log[dim]);
-#endif
+        if constexpr (IsComplex_t_v<T>){
+          fprintf(fzout, "%16.12e %16.12e %16.12e ", ZV, grad_log[dim].real(), grad_log[dim].imag());
+        }else{
+          fprintf(fzout, "%16.12e %16.12e ", ZV, grad_log[dim]);
+        }
       }
     }
     fprintf(fzout, "\n");
@@ -1681,8 +1740,8 @@ void WaveFunctionTester::runZeroVarianceTest()
   fclose(fzout);
 }
 
-
-bool WaveFunctionTester::put(xmlNodePtr q)
+template<typename T>
+bool WaveFunctionTester<T>::put(xmlNodePtr q)
 {
   myNode          = q;
   xmlNodePtr tcur = q->children;
@@ -1702,7 +1761,8 @@ bool WaveFunctionTester::put(xmlNodePtr q)
   return success;
 }
 
-void WaveFunctionTester::runDerivTest()
+template<typename T>
+void WaveFunctionTester<T>::runDerivTest()
 {
   app_log() << " ===== runDerivTest =====\n";
   app_log() << " Testing derivatives" << std::endl;
@@ -1710,7 +1770,7 @@ void WaveFunctionTester::runDerivTest()
   MCWalkerConfiguration::PropertyContainer_t Properties(0, 0, 1, WP::MAXPROPERTIES);
   //pick the first walker
   const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
-  //copy the properties of the working walker
+  //copy the properties of the working walkerclea
   Properties = awalker.Properties;
   //sample a new walker configuration and copy to ParticleSet::R
   W.R = awalker.R + deltaR;
@@ -1803,8 +1863,8 @@ void WaveFunctionTester::runDerivTest()
          << std::endl;
 }
 
-
-void WaveFunctionTester::runDerivNLPPTest()
+template<typename T>
+void WaveFunctionTester<T>::runDerivNLPPTest()
 {
   app_log() << " ===== runDerivNLPPTest =====\n";
   std::array<char, 16> fname;
@@ -1919,8 +1979,8 @@ void WaveFunctionTester::runDerivNLPPTest()
     nlout << i << "  " << HGradient[i] << "  " << HDsaved[i] << "  " << (HGradient[i] - HDsaved[i]) << std::endl;
 }
 
-
-void WaveFunctionTester::runDerivCloneTest()
+template<typename T>
+void WaveFunctionTester<T>::runDerivCloneTest()
 {
   app_log() << " ===== runDerivCloneTest =====\n";
   app_log() << " Testing derivatives clone" << std::endl;
@@ -2050,7 +2110,8 @@ void WaveFunctionTester::runDerivCloneTest()
          << (HGradient[i] - std::real(HDsaved[i])) / HGradient[i] << std::endl;
 }
 
-void WaveFunctionTester::runNodePlot()
+template<typename T>
+void WaveFunctionTester<T>::runNodePlot()
 {
   app_log() << " ===== runNodePlot =====\n";
   xmlNodePtr kids = myNode->children;
