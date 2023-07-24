@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/RotatedSPOs.h"
+#include "QMCWaveFunctions/SPOSetT.h"
 #include "checkMatrix.hpp"
 #include "FakeSPO.h"
 #include <ResourceCollection.h>
@@ -645,6 +646,10 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 namespace testing
 {
 opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
+opt_variables_type& getMyVars(SPOSetT<float>& rot) { return rot.myVars; }
+opt_variables_type& getMyVars(SPOSetT<double>& rot) { return rot.myVars; }
+opt_variables_type& getMyVars(SPOSetT<std::complex<float>>& rot) { return rot.myVars; }
+opt_variables_type& getMyVars(SPOSetT<std::complex<double>>& rot) { return rot.myVars; }
 opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull; }
 std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
