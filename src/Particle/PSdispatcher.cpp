@@ -64,7 +64,7 @@ void PSdispatcher::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>
                                           bool forward_mode) const
 {
   if (use_batch_)
-    ParticleSet::mw_accept_rejectMove<CT>(p_list, iat, isAccepted, forward_mode);
+    ParticleSet::mw_accept_rejectMoveT<CT>(p_list, iat, isAccepted, forward_mode);
   else
     for (size_t iw = 0; iw < p_list.size(); iw++)
       p_list[iw].accept_rejectMove(iat, isAccepted[iw], forward_mode);

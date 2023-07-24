@@ -21,8 +21,8 @@
 #ifndef QMCPLUSPLUS_BASISSETBASE_H
 #define QMCPLUSPLUS_BASISSETBASE_H
 
-#include "Particle/ParticleSet.h"
-#include "Particle/VirtualParticleSet.h"
+#include "Particle/ParticleSetT.h"
+#include "Particle/VirtualParticleSetT.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 
@@ -113,14 +113,14 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   ///resize the basis set
   virtual void setBasisSetSize(int nbs) = 0;
 
-  virtual void evaluateWithHessian(const ParticleSet& P, int iat)            = 0;
-  virtual void evaluateWithThirdDeriv(const ParticleSet& P, int iat)         = 0;
-  virtual void evaluateThirdDerivOnly(const ParticleSet& P, int iat)         = 0;
-  virtual void evaluateForWalkerMove(const ParticleSet& P)                   = 0;
-  virtual void evaluateForWalkerMove(const ParticleSet& P, int iat)          = 0;
-  virtual void evaluateForPtclMove(const ParticleSet& P, int iat)            = 0;
-  virtual void evaluateAllForPtclMove(const ParticleSet& P, int iat)         = 0;
-  virtual void evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat) = 0;
+  virtual void evaluateWithHessian(const ParticleSetT<T>& P, int iat)            = 0;
+  virtual void evaluateWithThirdDeriv(const ParticleSetT<T>& P, int iat)         = 0;
+  virtual void evaluateThirdDerivOnly(const ParticleSetT<T>& P, int iat)         = 0;
+  virtual void evaluateForWalkerMove(const ParticleSetT<T>& P)                   = 0;
+  virtual void evaluateForWalkerMove(const ParticleSetT<T>& P, int iat)          = 0;
+  virtual void evaluateForPtclMove(const ParticleSetT<T>& P, int iat)            = 0;
+  virtual void evaluateAllForPtclMove(const ParticleSetT<T>& P, int iat)         = 0;
+  virtual void evaluateForPtclMoveWithHessian(const ParticleSetT<T>& P, int iat) = 0;
 };
 
 /** Base for real basis set
@@ -149,35 +149,35 @@ struct SoaBasisSetBase
   virtual void setBasisSetSize(int nbs)         = 0;
 
   //Evaluates value, gradient, and laplacian for electron "iat".  Parks them into a temporary data structure "vgl".
-  virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) = 0;
+  virtual void evaluateVGL(const ParticleSetT<T>& P, int iat, vgl_type& vgl) = 0;
   //Evaluates value, gradient, and laplacian for electron "iat".  places them in a offload array for batched code.
   virtual void mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<T>>& basis_list,
-                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              const RefVectorWithLeader<ParticleSetT<T>>& P_list,
                               int iat,
                               OffloadMWVGLArray& vgl) = 0;
   //Evaluates value for electron "iat".  places it in a offload array for batched code.
   virtual void mw_evaluateValue(const RefVectorWithLeader<SoaBasisSetBase<T>>& basis_list,
-                                const RefVectorWithLeader<ParticleSet>& P_list,
+                                const RefVectorWithLeader<ParticleSetT<T>>& P_list,
                                 int iat,
                                 OffloadMWVArray& v) = 0;
   //Evaluates value for all the electrons of the virtual particles. places it in a offload array for batched code.
   virtual void mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<T>>& basis_list,
-                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                   const RefVectorWithLeader<const VirtualParticleSetT<T>>& vp_list,
                                    OffloadMWVArray& v) = 0;
   //Evaluates value, gradient, and Hessian for electron "iat".  Parks them into a temporary data structure "vgh".
-  virtual void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh) = 0;
+  virtual void evaluateVGH(const ParticleSetT<T>& P, int iat, vgh_type& vgh) = 0;
   //Evaluates value, gradient, and Hessian, and Gradient Hessian for electron "iat".  Parks them into a temporary data structure "vghgh".
-  virtual void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh) = 0;
+  virtual void evaluateVGHGH(const ParticleSetT<T>& P, int iat, vghgh_type& vghgh) = 0;
   //Evaluates the x,y, and z components of ionic gradient associated with "jion" of value.  Parks the raw data into "vgl" container.
-  virtual void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl) = 0;
+  virtual void evaluateGradSourceV(const ParticleSetT<T>& P, int iat, const ParticleSetT<T>& ions, int jion, vgl_type& vgl) = 0;
   //Evaluates the x,y, and z components of ionic gradient associated with "jion" value, gradient, and laplacian.
   //    Parks the raw data into "vghgh" container.
-  virtual void evaluateGradSourceVGL(const ParticleSet& P,
+  virtual void evaluateGradSourceVGL(const ParticleSetT<T>& P,
                                      int iat,
-                                     const ParticleSet& ions,
+                                     const ParticleSetT<T>& ions,
                                      int jion,
                                      vghgh_type& vghgh)                            = 0;
-  virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals) = 0;
+  virtual void evaluateV(const ParticleSetT<T>& P, int iat, value_type* restrict vals) = 0;
 
   virtual bool is_S_orbital(int mo_idx, int ao_idx) { return false; }
 

@@ -34,12 +34,13 @@
 #endif
 #include "QMCHamiltonians/Listener.hpp"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "Particle/MCWalkerConfiguration.h"
+
 #include <bitset>
 #include <memory> // std::unique_ptr
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 
 /**@defgroup hamiltonian Hamiltonian group
  * @brief QMCHamiltonian and its component, OperatorBase

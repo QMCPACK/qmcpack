@@ -39,11 +39,14 @@ namespace qmcplusplus
 template<typename T>
 class SoaSphericalTensor
 {
+
 private:
   using OffloadVector  = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
   using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
   using OffloadArray4D = Array<T, 4, OffloadPinnedAllocator<T>>;
+  using ValueType = T;
+
   ///maximum angular momentum for the center
   int Lmax;
   /// Normalization factors

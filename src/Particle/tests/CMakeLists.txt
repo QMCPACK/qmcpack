@@ -34,7 +34,8 @@ set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 add_executable(
   ${UTEST_EXE}
   test_distance_table.cpp
-  test_SoaDistanceTableAA.cpp)
+  test_SoaDistanceTableAA.cpp
+  )
 target_link_libraries(${UTEST_EXE} catch_main qmcparticle)
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcutil qmcparticle_omptarget)

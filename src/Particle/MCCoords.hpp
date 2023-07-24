@@ -14,55 +14,13 @@
 #define QMCPLUSPLUS_MCCOORDS_HPP
 
 #include "Configuration.h"
-#include "type_traits/complex_help.hpp"
-#include <algorithm>
-
-#include <vector>
+#include "MCCoordsT.hpp"
 
 namespace qmcplusplus
 {
-enum class CoordsType
-{
-  POS,
-  POS_SPIN
-};
-
 template<CoordsType MCT>
-struct MCCoords;
+using MCCoords = MCCoordsT<QMCTraits::ValueType, MCT>;
 
-template<>
-struct MCCoords<CoordsType::POS>
-{
-  MCCoords(const std::size_t size) : positions(size) {}
-
-  MCCoords& operator+=(const MCCoords& rhs);
-
-  /** get subset of MCCoords
-   * [param,out] out
-   */
-  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS>& out) const;
-
-  std::vector<QMCTraits::PosType> positions;
-};
-
-template<>
-struct MCCoords<CoordsType::POS_SPIN>
-{
-  MCCoords(const std::size_t size) : positions(size), spins(size) {}
-
-  MCCoords& operator+=(const MCCoords& rhs);
-
-  /** get subset of MCCoords
-   * [param,out] out
-   */
-  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS_SPIN>& out) const;
-
-  std::vector<QMCTraits::PosType> positions;
-  std::vector<QMCTraits::FullPrecRealType> spins;
-};
-
-extern template struct MCCoords<CoordsType::POS>;
-extern template struct MCCoords<CoordsType::POS_SPIN>;
 } // namespace qmcplusplus
 
 #endif

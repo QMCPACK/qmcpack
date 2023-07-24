@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "BsplineFactory/EinsplineSpinorSetBuilder.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include <ResourceCollection.h>
 
 #include <stdio.h>

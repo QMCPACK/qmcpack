@@ -30,7 +30,6 @@ public:
   using TensorType = QMCTraits::TensorType;
 
   using real_type = optimize::VariableSet::real_type;
-  using opt_variables_type = optimize::VariableSet;
 
   // counting function pointers
   std::vector<std::unique_ptr<CountingGaussian>> C;

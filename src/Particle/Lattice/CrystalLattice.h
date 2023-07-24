@@ -56,7 +56,7 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
 {
   /// alias to the base class
   using Base = LRBreakupParameters<T, D>;
-
+  static_assert(std::is_floating_point_v<T>);
   ///enumeration for the dimension of the lattice
   enum
   {

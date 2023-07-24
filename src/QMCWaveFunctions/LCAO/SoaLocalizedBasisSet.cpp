@@ -93,7 +93,7 @@ RefVectorWithLeader<COT> SoaLocalizedBasisSet<COT, ORBT>::extractOneSpeciesBasis
 
 
 template<class COT, typename ORBT>
-SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
+SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSetT<ORBT>& ions, ParticleSetT<ORBT>& els)
     : ions_(ions),
       myTableIndex(els.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
       SuperTwist(0.0)
@@ -193,7 +193,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::queryOrbitalsForSType(const std::vector<bo
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
+void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSetT<ORBT>& P, int iat, vgl_type& vgl)
 {
   const auto& IonID(ions_.GroupID);
   const auto& coordR  = P.activeR(iat);
@@ -213,7 +213,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
 
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                                                     const RefVectorWithLeader<ParticleSet>& P_list,
+                                                     const RefVectorWithLeader<ParticleSetT<ORBT>>& P_list,
                                                      int iat,
                                                      OffloadMWVGLArray& vgl_v)
 {
@@ -259,7 +259,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
 
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
+void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSetT<ORBT>& P, int iat, vgh_type& vgh)
 {
   const auto& IonID(ions_.GroupID);
   const auto& d_table = P.getDistTableAB(myTableIndex);
@@ -272,7 +272,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat,
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh)
+void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSetT<ORBT>& P, int iat, vghgh_type& vghgh)
 {
   // APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
 
@@ -289,7 +289,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
 
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                          const RefVectorWithLeader<const VirtualParticleSetT<ORBT>>& vp_list,
                                                           OffloadMWVArray& vp_basis_v)
 {
   assert(this == &basis_list.getLeader());
@@ -340,7 +340,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   // vp_basis_v.updateFrom();
 }
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
+void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSetT<ORBT>& P, int iat, ORBT* restrict vals)
 {
   const auto& IonID(ions_.GroupID);
   const auto& coordR  = P.activeR(iat);
@@ -360,7 +360,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, O
 
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                                                       const RefVectorWithLeader<ParticleSet>& P_list,
+                                                       const RefVectorWithLeader<ParticleSetT<ORBT>>& P_list,
                                                        int iat,
                                                        OffloadMWVArray& vals)
 {
@@ -406,9 +406,9 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
 
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceV(const ParticleSet& P,
+void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceV(const ParticleSetT<ORBT>& P,
                                                           int iat,
-                                                          const ParticleSet& ions,
+                                                          const ParticleSetT<ORBT>& ions,
                                                           int jion,
                                                           vgl_type& vgl)
 {
@@ -439,9 +439,9 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceV(const ParticleSet& P,
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceVGL(const ParticleSet& P,
+void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceVGL(const ParticleSetT<ORBT>& P,
                                                             int iat,
-                                                            const ParticleSet& ions,
+                                                            const ParticleSetT<ORBT>& ions,
                                                             int jion,
                                                             vghgh_type& vghgh)
 {

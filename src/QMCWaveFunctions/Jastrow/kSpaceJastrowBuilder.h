@@ -16,12 +16,10 @@
 #define QMCPLUSPLUS_KSPACE_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {
-//forward declaration
-class ParticleSet;
-
 class kSpaceJastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:

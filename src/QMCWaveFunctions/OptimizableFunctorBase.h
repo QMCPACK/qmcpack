@@ -22,7 +22,7 @@
 #include "OptimizableObject.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsPETE/TinyVector.h"
-//#include <cstdio>
+#include "QMCWaveFunctions/VariableSet.h"
 #include <iostream>
 
 namespace qmcplusplus
@@ -48,8 +48,6 @@ struct OptimizableFunctorBase : public OptimizableObject
 {
   ///typedef for real values
   using real_type = optimize::VariableSet::real_type;
-  ///typedef for variableset: this is going to be replaced
-  using opt_variables_type = optimize::VariableSet;
   ///maximum cutoff
   real_type cutoff_radius = 0.0;
   ///set of variables to be optimized

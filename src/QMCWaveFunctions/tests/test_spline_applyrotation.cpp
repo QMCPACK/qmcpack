@@ -20,6 +20,7 @@
 #include "BsplineFactory/EinsplineSpinorSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
+#include "QMCWaveFunctions/SPOSet.h"
 
 #include <stdio.h>
 #include <string>

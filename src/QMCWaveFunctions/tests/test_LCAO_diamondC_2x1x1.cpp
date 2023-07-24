@@ -21,7 +21,8 @@
 #include <ResourceCollection.h>
 #include "QMCHamiltonians/NLPPJob.h"
 #include "DistanceTable.h"
-
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include <stdio.h>
 #include <string>
 #include <limits>
@@ -337,9 +338,10 @@ void test_LCAO_DiamondC_2x1x1_real()
       ratios_list[iw].resize(nvp_list[iw]);
 
     // just need dummy refvec with correct size
-    SPOSet::ValueVector tmp_psi_list(norb);
+    SPOSet::ValueVector tmp_psi_list(norb), tmp_psi_list_2(norb);
     spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
-                              RefVector<SPOSet::ValueVector>{tmp_psi_list}, invRow_ptr_list, ratios_list);
+                              RefVector<SPOSet::ValueVector>{tmp_psi_list, tmp_psi_list_2}, invRow_ptr_list,
+                              ratios_list);
 
     std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
     std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);

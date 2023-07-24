@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_PSDISPATCH_H
 #define QMCPLUSPLUS_PSDISPATCH_H
 
+#include "MCCoords.hpp"
 #include "ParticleSet.h"
 
 namespace qmcplusplus

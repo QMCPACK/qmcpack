@@ -21,13 +21,14 @@
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/RuntimeOptions.h"
+#include "Particle/ParticleSet.h"
+#include "Particle/ParticleSetPool.h"
+
 #include <map>
 #include <string>
 
 namespace qmcplusplus
 {
-class ParticleSetPool;
-class ParticleSet;
 
 /** @ingroup qmcapp
  * @brief Manage a collection of TrialWaveFunction objects

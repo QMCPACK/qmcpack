@@ -22,6 +22,7 @@
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Particle/NeighborLists.h"
+#include "Particle/DistanceTable.h"
 namespace qmcplusplus
 {
 template<typename T>

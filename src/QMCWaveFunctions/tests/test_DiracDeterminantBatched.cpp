@@ -776,7 +776,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
   //reject move and check for initial values for mw_evalGrad
   std::fill(grads.begin(), grads.end(), 0);
-  elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {false, false});
+  elec_.mw_accept_rejectMoveT<CoordsType::POS_SPIN>(p_ref_list, 1, {false, false});
   dd.mw_evalGrad(dd_ref_list, p_ref_list, 1, grads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
@@ -798,7 +798,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
   //now make and accept move, checking new values
   elec_.mw_makeMove(p_ref_list, 1, displs);
-  elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {true, true});
+  elec_.mw_accept_rejectMoveT<CoordsType::POS_SPIN>(p_ref_list, 1, {true, true});
 
   G  = 0;
   L  = 0;

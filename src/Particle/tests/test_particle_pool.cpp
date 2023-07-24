@@ -16,7 +16,7 @@
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSetPool.h"
-
+#include "Particle/MCWalkerConfiguration.h"
 
 #include <stdio.h>
 #include <string>

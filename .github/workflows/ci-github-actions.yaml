@@ -5,10 +5,12 @@ on:
     branches:
       - develop
       - main
+      - ref-add-SPOSetT
   pull_request:
     branches:
       - develop
       - main
+      - ref-add-SPOSetT
 
 jobs:
   linux:
