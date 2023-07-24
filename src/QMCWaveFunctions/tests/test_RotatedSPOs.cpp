@@ -20,6 +20,8 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/RotatedSPOs.h"
+#include "QMCWaveFunctions/RotatedSPOsT.h"
+#include "QMCWaveFunctions/SPOSetT.h"
 #include "checkMatrix.hpp"
 #include "FakeSPO.h"
 #include <ResourceCollection.h>
@@ -645,8 +647,22 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 namespace testing
 {
 opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
+opt_variables_type& getMyVars(SPOSetT<float>& rot) { return rot.myVars; }
+opt_variables_type& getMyVars(SPOSetT<double>& rot) { return rot.myVars; }
+opt_variables_type& getMyVars(SPOSetT<std::complex<float>>& rot) { return rot.myVars; }
+opt_variables_type& getMyVars(SPOSetT<std::complex<double>>& rot) { return rot.myVars; }
 opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull; }
+opt_variables_type& getMyVarsFull(RotatedSPOsT<double>& rot) { return rot.myVarsFull; }
+opt_variables_type& getMyVarsFull(RotatedSPOsT<float>& rot) { return rot.myVarsFull; }
 std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOsT<double>& rot)
+{
+  return rot.history_params_;
+}
+std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOsT<float>& rot)
+{
+  return rot.history_params_;
+}
 } // namespace testing
 
 // Test using global rotation
@@ -677,6 +693,58 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   fake_spo2->setOrbitalSetSize(4);
 
   RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  rot2.buildOptVariables(nel);
+
+  optimize::VariableSet vs2;
+  rot2.checkInVariablesExclusive(vs2);
+
+  hdf_archive hin;
+  vs2.readFromHDF("rot_vp.h5", hin);
+  rot2.readVariationalParameters(hin);
+
+  opt_variables_type& var = testing::getMyVars(rot2);
+  CHECK(var[0] == Approx(vs[0]));
+  CHECK(var[1] == Approx(vs[1]));
+  CHECK(var[2] == Approx(vs[2]));
+  CHECK(var[3] == Approx(vs[3]));
+
+  opt_variables_type& full_var = testing::getMyVarsFull(rot2);
+  CHECK(full_var[0] == Approx(vs[0]));
+  CHECK(full_var[1] == Approx(vs[1]));
+  CHECK(full_var[2] == Approx(vs[2]));
+  CHECK(full_var[3] == Approx(vs[3]));
+  CHECK(full_var[4] == Approx(0.0));
+  CHECK(full_var[5] == Approx(0.0));
+}
+
+// Test using global rotation
+TEMPLATE_TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction][template]", double, float)
+{
+  auto fake_spo = std::make_unique<FakeSPOT<TestType>>();
+  fake_spo->setOrbitalSetSize(4);
+  RotatedSPOsT<TestType> rot("fake_rot", std::move(fake_spo));
+  int nel = 2;
+  rot.buildOptVariables(nel);
+
+  optimize::VariableSet vs;
+  rot.checkInVariablesExclusive(vs);
+  vs[0] = 0.1;
+  vs[1] = 0.15;
+  vs[2] = 0.2;
+  vs[3] = 0.25;
+  rot.resetParametersExclusive(vs);
+
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp.h5", hout);
+
+    rot.writeVariationalParameters(hout);
+  }
+
+  auto fake_spo2 = std::make_unique<FakeSPOT<TestType>>();
+  fake_spo2->setOrbitalSetSize(4);
+
+  RotatedSPOsT<TestType> rot2("fake_rot", std::move(fake_spo2));
   rot2.buildOptVariables(nel);
 
   optimize::VariableSet vs2;
