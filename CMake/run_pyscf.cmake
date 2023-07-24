@@ -30,12 +30,12 @@ function(SOFTLINK_H5 SOURCE TARGET PREFIX FILENAME TEST_NAME)
   set_property(TEST LINK_${SOURCE}_TO_${TARGET} APPEND PROPERTY LABELS "converter")
 endfunction()
 
-function(PYSCF_S2C TESTNAME TEST_BINARY WORKDIR TEST_INPUT TEST_OUTPUT)
-  add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} -o ${TEST_OUTPUT} ${TEST_INPUT})
-
-  set_tests_properties(${TESTNAME} PROPERTIES WORKING_DIRECTORY ${WORKDIR})
+function(RUN_PYSCF_S2C BASE_NAME H5_INPUT TEST_NAME)	
+  set(MY_WORKDIR ${CMAKE_CURRENT_BINARY_DIR}/${BASE_NAME})
+  add_test(NAME ${TEST_NAME} COMMAND python3 ${qmcpack_SOURCE_DIR}/src/QMCTools/PyscfSphToCart.py
+	                    -o ${MY_WORKDIR}/${H5_INPUT}_cart.h5 ${MY_WORKDIR}/${H5_INPUT}_sph.h5)
   set_property(
-    TEST ${TESTNAME}
+    TEST ${TEST_NAME}
     APPEND
     PROPERTY LABELS "converter;s2c")
 endfunction()
