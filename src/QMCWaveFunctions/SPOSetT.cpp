@@ -207,6 +207,29 @@ void SPOSetT<T>::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSetT<T>>& 
 }
 
 template<class T>
+void SPOSetT<T>::evaluate_notranspose(const ParticleSet& P,
+                                      int first,
+                                      int last,
+                                      ValueMatrix& logdet,
+                                      GradMatrix& dlogdet,
+                                      HessMatrix& grad_grad_logdet)
+{
+  throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
+}
+
+template<class T>
+void SPOSetT<T>::evaluate_notranspose(const ParticleSet& P,
+                                      int first,
+                                      int last,
+                                      ValueMatrix& logdet,
+                                      GradMatrix& dlogdet,
+                                      HessMatrix& grad_grad_logdet,
+                                      GGGMatrix& grad_grad_grad_logdet)
+{
+  throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
+}
+
+template<class T>
 std::unique_ptr<SPOSetT<T>> SPOSetT<T>::makeClone() const
 {
   throw std::runtime_error("Missing  SPOSet::makeClone for " + getClassName());
@@ -363,6 +386,22 @@ void SPOSetT<T>::evaluateGradSource(const ParticleSet& P,
                                     const ParticleSet& source,
                                     int iat_src,
                                     GradMatrix& gradphi)
+{
+  if (hasIonDerivs())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateGradSource "
+                           "must be overloaded when the SPOSet has ion derivatives.");
+}
+
+template<class T>
+void SPOSetT<T>::evaluateGradSource(const ParticleSet& P,
+                                    int first,
+                                    int last,
+                                    const ParticleSet& source,
+                                    int iat_src,
+                                    GradMatrix& grad_phi,
+                                    HessMatrix& grad_grad_phi,
+                                    GradMatrix& grad_lapl_phi)
 {
   if (hasIonDerivs())
     throw std::logic_error("Bug!! " + getClassName() +

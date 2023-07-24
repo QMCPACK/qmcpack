@@ -193,15 +193,17 @@ public:
    * @param norbs number of single-particle orbitals
    * Ye: I prefer to remove this interface in the future. SPOSet builders need to handle the size correctly.
    * It doesn't make sense allowing to set the value at any place in the code.
+   * @TODO make it purely virtual
    */
-  virtual void setOrbitalSetSize(int norbs) = 0;
+  virtual void setOrbitalSetSize(int norbs){};
 
   /** evaluate the values of this single-particle orbital set
    * @param P current ParticleSet
    * @param iat active particle
    * @param psi values of the SPO
+   * @TODO make it purely virtual
    */
-  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) = 0;
+  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi){};
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -245,8 +247,9 @@ public:
    * @param psi values of the SPO
    * @param dpsi gradients of the SPO
    * @param d2psi laplacians of the SPO
+   * @TODO make this purely virtual
    */
-  virtual void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) = 0;
+  virtual void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi){};
 
   /** evaluate the values, gradients and laplacians and spin gradient of this single-particle orbital set
    * @param P current ParticleSet
@@ -393,14 +396,14 @@ public:
    * @param[out] logdet determinant matrix to be inverted
    * @param[out] dlogdet gradients
    * @param[out] d2logdet laplacians
-   *
+   * @TODO make this pure virtual
    */
   virtual void evaluate_notranspose(const ParticleSet& P,
                                     int first,
                                     int last,
                                     ValueMatrix& logdet,
                                     GradMatrix& dlogdet,
-                                    ValueMatrix& d2logdet) = 0;
+                                    ValueMatrix& d2logdet){};
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles, including the spin gradient
    * @param P current ParticleSet
@@ -551,8 +554,8 @@ public:
   /// return object name
   const std::string& getName() const { return my_name_; }
 
-  /// return class name
-  virtual std::string getClassName() const = 0;
+  /// @TODO make this purely virutal return class name
+  virtual std::string getClassName() const { return ""; };
 
 protected:
   /// name of the object, unique identifier
