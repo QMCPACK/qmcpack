@@ -58,7 +58,15 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
   app_summary() << "    Name: " << title << "   Physical : " << physical << std::endl;
   app_summary() << std::endl;
 
-  std::unique_ptr<MPC> mpc = std::make_unique<MPC>(targetPtcl, cutoff);
+  if (targetPtcl.Density_G.size() == 0)
+    myComm->barrier_and_abort("HamiltonianFactory::addMPCPotential\n"
+                              "************************\n"
+                              "** Error in MPC setup **\n"
+                              "************************\n"
+                              "    The electron density was not setup by the "
+                              "wave function builder.\n");
+
+  auto mpc = std::make_unique<MPC>(targetPtcl, cutoff);
   targetH->addOperator(std::move(mpc), "MPC", isphysical);
 #else
   APP_ABORT(
@@ -251,8 +259,8 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   {
     if (psiPool.empty())
       return;
-    app_error() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."
-                << std::endl;
+    app_warning() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."
+                  << std::endl;
     psi = psiPool.begin()->second.get();
   }
   else

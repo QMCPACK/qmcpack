@@ -292,15 +292,6 @@ void MPC::initBreakup(const ParticleSet& ptcl)
 {
   NParticles = ptcl.getTotalNum();
   app_log() << "\n  === Initializing MPC interaction === " << std::endl;
-  if (ptcl.Density_G.size() == 0)
-  {
-    app_error() << "************************\n"
-                << "** Error in MPC setup **\n"
-                << "************************\n"
-                << "    The electron density was not setup by the "
-                << "wave function builder.\n";
-    abort();
-  }
   init_gvecs(ptcl);
   init_f_G(ptcl);
   init_spline(ptcl);
