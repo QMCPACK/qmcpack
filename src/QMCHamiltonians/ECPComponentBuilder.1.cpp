@@ -183,9 +183,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
         --last;
       }
       if (last == 0)
-      {
-        app_error() << "  Illegal Local Pseudopotential " << std::endl;
-      }
+        myComm->barrier_and_abort("ECPComponentBuilder::buildLocal. Illegal Local Pseudopotential");
       //Add the reset values here
       int ng = static_cast<int>(r / 1e-3) + 1;
       app_log() << "     Use a Linear Grid: [0," << r << "] Number of points = " << ng << std::endl;
