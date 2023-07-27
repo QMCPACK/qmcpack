@@ -22,6 +22,9 @@
 #include "PrefetchedRange.h"
 #include "syclSolverInverter.hpp"
 #include "DeviceManager.h"
+#if defined(HAVE_MKL)
+#include <mkl_service.h>
+#endif
 
 //#define SYCL_BLOCKING
 
@@ -73,7 +76,12 @@ public:
   /// default constructor
   DelayedUpdateSYCL() : delay_count(0) { m_queue_ = DeviceManager::getGlobal().getSYCLDM().createQueueDefaultDevice(); }
 
-  ~DelayedUpdateSYCL() {}
+  ~DelayedUpdateSYCL()
+  {
+#if defined(HAVE_MKL)
+    mkl_free_buffers();
+#endif
+  }
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
