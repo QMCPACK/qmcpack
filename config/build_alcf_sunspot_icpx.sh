@@ -8,8 +8,8 @@
 # build_alcf_sunspot_icpx.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
 module load spack libxml2 cmake
-module load cray-hdf5/1.12.2.1
-module load oneapi/eng-compiler/2023.05.15.003
+module load cray-hdf5
+module load oneapi/eng-compiler/2023.05.15.007
 
 module list >& module_list.txt
 
@@ -23,7 +23,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=sunspot
-Compiler=icpx20230510
+Compiler=icpx20230613
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -46,6 +46,7 @@ for name in offload_sycl_real_MP offload_sycl_real offload_sycl_cplx_MP offload_
 do
 
 CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE -DMPIEXEC_PREFLAGS='--cpu-bind;depth;-d;8'"
+unset CMAKE_CXX_FLAGS
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_COMPLEX=ON"
