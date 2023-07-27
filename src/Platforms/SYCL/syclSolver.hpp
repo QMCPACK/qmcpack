@@ -12,14 +12,17 @@
 #ifndef QMCPLUSPLUS_SYCL_MKL_SOLVER_H
 #define QMCPLUSPLUS_SYCL_MKL_SOLVER_H
 
-#include "oneapi/mkl/lapack.hpp"
+#include <oneapi/mkl/lapack.hpp>
+#include <mkl_service.h>
 
 namespace qmcplusplus
 {
 namespace syclSolver
 {
 using namespace oneapi::mkl::lapack;
-}
+
+inline void freeBuffer() { mkl_free_buffers(); }
+} // namespace syclSolver
 } // namespace qmcplusplus
 
 #endif

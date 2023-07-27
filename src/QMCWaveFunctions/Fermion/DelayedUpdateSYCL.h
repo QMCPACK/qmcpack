@@ -73,7 +73,7 @@ public:
   /// default constructor
   DelayedUpdateSYCL() : delay_count(0) { m_queue_ = DeviceManager::getGlobal().getSYCLDM().createQueueDefaultDevice(); }
 
-  ~DelayedUpdateSYCL() {}
+  ~DelayedUpdateSYCL() { syclSolver::freeBuffer(); }
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
