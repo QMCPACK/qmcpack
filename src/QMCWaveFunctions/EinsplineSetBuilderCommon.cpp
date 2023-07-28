@@ -86,10 +86,7 @@ inline TinyVector<T, 3> FracPart(const TinyVector<T, 3>& twist)
 }
 
 
-EinsplineSetBuilder::~EinsplineSetBuilder()
-{
-  DEBUG_MEMORY("EinsplineSetBuilder::~EinsplineSetBuilder");
-}
+EinsplineSetBuilder::~EinsplineSetBuilder() { DEBUG_MEMORY("EinsplineSetBuilder::~EinsplineSetBuilder"); }
 
 
 bool EinsplineSetBuilder::CheckLattice()
@@ -405,25 +402,30 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       S(i, j) = (double)TileMatrix(i, j);
-  std::vector<PosType> superFracs;
-  std::vector<std::vector<int>> superSets;
-  { // build super twists
-    // This holds to which supercell kpoint each primitive k-point belongs
-    std::vector<int> superIndex;
-    const int numPrimTwists = TwistAngles.size();
-    for (int ki = 0; ki < numPrimTwists; ki++)
+
+  const int num_prim_kpoints = TwistAngles.size();
+
+  // build a list of unique super twists that all the primitive cell k-point correspond to.
+  std::vector<PosType> superFracs; // twist super twist coordinates
+  std::vector<int>
+      superIndex; // the indices of the super twists that correpsond to all the primitive cell k-points in the unique list.
+  {
+    // scan all the primitive cell k-points
+    for (int ki = 0; ki < num_prim_kpoints; ki++)
     {
       PosType primTwist  = TwistAngles[ki];
       PosType superTwist = dot(S, primTwist);
       PosType kp         = PrimCell.k_cart(primTwist);
       PosType ks         = SuperCell.k_cart(superTwist);
+      // check the consistency of tiling, primitive and super cells.
       if (dot(ks - kp, ks - kp) > 1.0e-6)
       {
         app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
         APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
       }
       PosType frac = FracPart(superTwist);
-      bool found   = false;
+      // verify if the super twist that correpsonds to this primitive cell k-point exists in the unique list or not.
+      bool found = false;
       for (int j = 0; j < superFracs.size(); j++)
       {
         PosType diff = frac - superFracs[j];
@@ -439,18 +441,14 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
         superFracs.push_back(frac);
       }
     }
-    const int numSuperTwists = superFracs.size();
-    app_log() << "Found " << numSuperTwists << " distinct supercell twists.\n";
-    // For each supercell twist, create a list of primitive twists which
-    // belong to it.
-    superSets.resize(numSuperTwists);
-    for (int ki = 0; ki < numPrimTwists; ki++)
-      superSets[superIndex[ki]].push_back(ki);
-    app_log() << "number of things" << std::endl;
-    app_log() << TwistSymmetry.size() << std::endl;
-    app_log() << TwistWeight.size() << std::endl;
-    //     for (int ki=0; ki<TwistSymmetry.size(); ki++)
-    //       fprintf (stderr, "%d %d %d\n",ki,TwistSymmetry[ki],TwistWeight[ki]);
+    assert(superIndex.size() == num_prim_kpoints);
+  }
+
+  const int numSuperTwists = superFracs.size();
+  {
+    app_log() << "Found " << numSuperTwists << " distinct supercell twist" << (numSuperTwists > 1 ? "s" : "")
+              << " based on " << num_prim_kpoints << " primitive cell k-point" << (num_prim_kpoints > 1 ? "s" : "")
+              << std::endl;
     if (myComm->rank() == 0)
     {
       int n_tot_irred(0);
@@ -466,9 +464,16 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
       }
     }
   }
-  const int numSuperTwists = superFracs.size();
 
-  { // determine twist_num_
+  // For each supercell twist, create a list of primitive twists which correspond to it.
+  std::vector<std::vector<int>> superSets;
+  {
+    superSets.resize(numSuperTwists);
+    for (int ki = 0; ki < num_prim_kpoints; ki++)
+      superSets[superIndex[ki]].push_back(ki);
+  }
+
+  { // look up a super cell twist and return its index in the unique list of super cell twists.
     std::function find_twist = [&](const TinyVector<double, OHMMS_DIM>& twist) {
       int twist_num  = -1;
       PosType gtFrac = FracPart(twist);
