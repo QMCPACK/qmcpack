@@ -19,8 +19,11 @@
  */
 #ifndef QMCPLUSPLUS_BSPLINE_READER_BASE_H
 #define QMCPLUSPLUS_BSPLINE_READER_BASE_H
+
 #include "mpi/collectives.h"
 #include "mpi/point2point.h"
+#include <einspline/bspline_base.h>
+
 namespace qmcplusplus
 {
 struct SPOSetInputInfo;
@@ -189,10 +192,6 @@ struct BsplineReaderBase
                            const std::vector<BandInfo>& bigspace,
                            SPOSetInfo& sposet,
                            std::vector<int>& band2spo);
-
-  /** export the MultiSpline to the old class EinsplineSetExtended for the GPU calculation*/
-  virtual std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() = 0;
-  virtual std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble()        = 0;
 };
 
 } // namespace qmcplusplus

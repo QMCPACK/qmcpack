@@ -29,9 +29,6 @@
 #include <fftw3.h>
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/einspline_helper.hpp"
-#if !defined(MIXED_PRECISION)
-#include "QMCWaveFunctions/EinsplineSet.h"
-#endif
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
@@ -104,8 +101,6 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
   PrimCell.set(Lattice);
   SuperCell.set(SuperLattice);
   GGt = dot(transpose(PrimCell.G), PrimCell.G);
-  for (int iat = 0; iat < AtomicOrbitals.size(); iat++)
-    AtomicOrbitals[iat].Lattice.set(Lattice);
 
   // Now, analyze the k-point mesh to figure out the what k-points  are needed
   AnalyzeTwists2(twist_num_inp, twist_inp);
@@ -149,7 +144,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a.add(spo_prec, "precision");
     a.add(truncate, "truncate");
-    a.add(use_einspline_set_extended, "use_old_spline");
     a.add(myName, "tag");
     a.add(skip_checks, "skip_checks");
 
@@ -270,9 +264,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     kid = kid->next;
   }
 
-  if (has_backflow && use_einspline_set_extended == "yes" && use_real_splines_)
-    myComm->barrier_and_abort("backflow optimization is broken with use_real_splines_");
-
   //////////////////////////////////
   // Create the OrbitalSet object
   //////////////////////////////////
@@ -316,104 +307,11 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   MixedSplineReader->setCommon(XMLRoot);
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
-  HasCoreOrbs     = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
+  bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
   auto OrbitalSet = MixedSplineReader->create_spline_set(spinSet, spo_cur);
   if (!OrbitalSet)
     myComm->barrier_and_abort("Failed to create SPOSet*");
-#if defined(MIXED_PRECISION)
-  if (use_einspline_set_extended == "yes")
-    myComm->barrier_and_abort("Option use_old_spline is not supported by the mixed precision build!");
-#else
-  if (use_einspline_set_extended == "yes")
-  {
-    std::unique_ptr<EinsplineSet> new_OrbitalSet;
-    if (use_real_splines_)
-    {
-      auto temp_OrbitalSet                      = std::make_unique<EinsplineSetExtended<double>>(spo_object_name);
-      temp_OrbitalSet->MultiSpline              = MixedSplineReader->export_MultiSplineDouble().release();
-      temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
-      temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
-      //set the flags for anti periodic boundary conditions
-      temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet&>(*OrbitalSet).getHalfG();
-      new_OrbitalSet         = std::move(temp_OrbitalSet);
-    }
-    else
-    {
-      auto temp_OrbitalSet         = std::make_unique<EinsplineSetExtended<std::complex<double>>>(spo_object_name);
-      temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineComplexDouble().release();
-      temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
-      temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
-      for (int iorb = 0, num = 0; iorb < NumDistinctOrbitals; iorb++)
-      {
-        int ti                               = (*FullBands[spinSet])[iorb].TwistIndex;
-        temp_OrbitalSet->kPoints[iorb]       = PrimCell.k_cart(-primcell_kpoints[ti]);
-        temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs - 1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
-        num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
-      }
-      new_OrbitalSet = std::move(temp_OrbitalSet);
-    }
-    //set the internal parameters
-    setTiling(new_OrbitalSet.get(), numOrbs);
-    OrbitalSet = std::move(new_OrbitalSet);
-  }
-#endif
   app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
-#ifdef Ye_debug
-#ifndef QMC_COMPLEX
-  if (myComm->rank() == 0 && OrbitalSet->MuffinTins.size() > 0)
-  {
-    FILE* fout = fopen("TestMuffins.dat", "w");
-    Vector<double> phi(numOrbs), lapl(numOrbs);
-    Vector<PosType> grad(numOrbs);
-    ParticleSet P;
-    P.R.resize(6);
-    for (int i = 0; i < P.R.size(); i++)
-      P.R[i] = PosType(0.0, 0.0, 0.0);
-    PosType N = 0.25 * PrimCell.a(0) + 0.25 * PrimCell.a(1) + 0.25 * PrimCell.a(2);
-    for (double x = -1.0; x <= 1.0; x += 0.0000500113412)
-    {
-      // for (double x=-0.003; x<=0.003; x+=0.0000011329343481381) {
-      P.R[0]    = x * (PrimCell.a(0) + 0.914 * PrimCell.a(1) + 0.781413 * PrimCell.a(2));
-      double r  = std::sqrt(dot(P.R[0], P.R[0]));
-      double rN = std::sqrt(dot(P.R[0] - N, P.R[0] - N));
-      OrbitalSet->evaluate(P, 0, phi, grad, lapl);
-      // OrbitalSet->evaluate(P, 0, phi);
-      fprintf(fout, "%1.12e ", r * x / std::abs(x));
-      for (int j = 0; j < numOrbs; j++)
-      {
-        double gmag = std::sqrt(dot(grad[j], grad[j]));
-        fprintf(fout, "%16.12e ",
-                /*phi[j]*phi[j]**/ (-5.0 / r - 0.5 * lapl[j] / phi[j]));
-        // double E = -5.0/r -0.5*lapl[j]/phi[j];
-        fprintf(fout, "%16.12e ", phi[j]);
-        fprintf(fout, "%16.12e ", gmag);
-      }
-      fprintf(fout, "\n");
-    }
-    fclose(fout);
-  }
-#endif
-#endif
-  //if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
-  //{
-  //  app_log() << "  EinsplineSetBuilder creates a ParticleSet " << sourceName << std::endl;
-  //  ParticleSet* ions=new ParticleSet;
-  //  ions->Lattice=TargetPtcl.Lattice;
-  //  ESHDFIonsParser ap(*ions,H5FileID,myComm);
-  //  ap.put(XMLRoot);
-  //  ap.expand(TileMatrix);
-  //  ions->setName(sourceName);
-  //  ParticleSets[sourceName]=ions;
-  //  //overwrite the lattice and assign random
-  //  if(TargetPtcl.Lattice.SuperCellEnum)
-  //  {
-  //    TargetPtcl.Lattice=ions->Lattice;
-  //    makeUniformRandom(TargetPtcl.R);
-  //    TargetPtcl.R.setUnit(PosUnit::LatticeUnit);
-  //    TargetPtcl.convert2Cart(TargetPtcl.R);
-  //    TargetPtcl.createSK();
-  //  }
-  //}
   OrbitalSet->finalizeConstruction();
   SPOSetMap[aset] = OrbitalSet.get();
   return OrbitalSet;

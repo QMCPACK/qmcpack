@@ -25,7 +25,6 @@
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
-#include "QMCWaveFunctions/AtomicOrbital.h"
 #include <filesystem>
 #include <map>
 
@@ -168,7 +167,6 @@ public:
   TinyVector<int, 3> Version;
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;
-  bool HasCoreOrbs;
   bool ReadOrbitalInfo(bool skipChecks = false);
   bool ReadOrbitalInfo_ESHDF(bool skipChecks = false);
   void BroadcastOrbitalInfo();
@@ -197,7 +195,7 @@ public:
 
   Tensor<double, OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice, GGt;
   UnitCellType SuperCell, PrimCell, PrimCellInv;
-  int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
+  int NumBands, NumElectrons, NumSpins, NumTwists;
   int MaxNumGvecs;
   double MeshFactor;
   RealType MatchingTol;
@@ -226,7 +224,7 @@ public:
   std::vector<int> IncludeTwists, DistinctTwists;
   /// if false, splines are conceptually complex valued
   bool use_real_splines_;
-  int NumDistinctOrbitals, NumCoreOrbs, NumValenceOrbs;
+  int NumDistinctOrbitals;
   // This is true if the corresponding twist in DistinctTwists should
   // should be used to generate two distinct orbitals from the real and
   // imaginary parts.
@@ -240,21 +238,9 @@ public:
 
   void CopyBands(int numOrbs);
 
-  /////////////////////////////
-  // Muffin-tin information  //
-  /////////////////////////////
-  int NumMuffinTins;
-  std::vector<double> MT_APW_radii;
-  std::vector<Vector<double>> MT_APW_rgrids;
-  std::vector<int> MT_APW_lmax;
-  std::vector<int> MT_APW_num_radial_points;
-  std::vector<TinyVector<double, OHMMS_DIM>> MT_centers;
-
   ////////////////////////////////
   // Atomic orbital information //
   ////////////////////////////////
-  std::vector<AtomicOrbital<std::complex<double>>> AtomicOrbitals;
-
   struct CenterInfo
   {
     std::vector<int> lmax, spline_npoints, GroupID;
@@ -281,8 +267,6 @@ public:
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi
   std::string OrbitalPath(int ti, int bi);
-  std::string CoreStatePath(int ti, int bi);
-  std::string MuffinTinPath(int ti, int bi, int tin);
 
   /////////////////////////////////////////////////////////////
   // Information to avoid storing the same orbitals twice in //
@@ -298,9 +282,8 @@ protected:
   /** broadcast SortBands
    * @param N number of state
    * @param root true if it is the i/o node
-   * @return true, if core is found
    */
-  bool bcastSortBands(int splin, int N, bool root);
+  void bcastSortBands(int splin, int N, bool root);
 
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node

@@ -97,39 +97,15 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       LatticeInv(i, j) = RecipLattice(i, j) / (2.0 * M_PI);
-  NumCoreStates = NumMuffinTins = 0;
   H5File.read(NumBands, parameterGroup + "/num_bands");
-  H5File.read(NumCoreStates, parameterGroup + "/num_core_states");
   H5File.read(NumElectrons, parameterGroup + "/num_electrons");
   H5File.read(NumSpins, parameterGroup + "/num_spins");
   H5File.read(NumTwists, parameterGroup + "/num_twists");
-  H5File.read(NumMuffinTins, parameterGroup + "/muffin_tins/num_tins");
   app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons << ", spins=" << NumSpins << ", twists=" << NumTwists
-            << ", muffin tins=" << NumMuffinTins << std::endl;
+            << std::endl;
   if (TileFactor[0] != 1 || TileFactor[1] != 1 || TileFactor[2] != 1)
     app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] << "x" << TileFactor[2] << " tiling factor.\n";
-  /////////////////////////////////
-  // Read muffin tin information //
-  /////////////////////////////////
-  MT_APW_radii.resize(NumMuffinTins);
-  MT_APW_rgrids.resize(NumMuffinTins);
-  MT_APW_lmax.resize(NumMuffinTins);
-  MT_APW_num_radial_points.resize(NumMuffinTins);
-  MT_centers.resize(NumMuffinTins);
-  for (int tin = 0; tin < NumMuffinTins; tin++)
-  {
-    std::ostringstream MTstream;
-    if (NumMuffinTins > 1)
-      MTstream << parameterGroup << "/muffin_tins/muffin_tin_" << tin;
-    else
-      MTstream << parameterGroup << "/muffin_tins/muffin_tin";
-    std::string MTgroup = MTstream.str();
-    H5File.read(MT_APW_lmax[tin], MTgroup + "/lmax");
-    H5File.read(MT_APW_num_radial_points[tin], MTgroup + "/num_radial_points");
-    H5File.read(MT_APW_radii[tin], MTgroup + "/radius");
-    H5File.read(MT_centers[tin], MTgroup + "/center");
-    H5File.read(MT_APW_rgrids[tin], MTgroup + "/r");
-  }
+
   //////////////////////////////////
   // Read ion types and locations //
   //////////////////////////////////
@@ -188,48 +164,4 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
   return true;
 }
 
-
-std::string EinsplineSetBuilder::OrbitalPath(int ti, int bi)
-{
-  std::string eigenstatesGroup;
-  if (Version[0] == 0 && Version[1] == 11)
-    eigenstatesGroup = "/eigenstates_3";
-  else if (Version[0] == 0 && Version[1] == 20)
-    eigenstatesGroup = "/eigenstates";
-  std::ostringstream groupPath;
-  if ((Version[0] == 0 && Version[1] == 11) || NumTwists > 1)
-    groupPath << eigenstatesGroup << "/twist_" << ti << "/band_" << bi << "/";
-  else if (NumBands > 1)
-    groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
-  else
-    groupPath << eigenstatesGroup << "/twist/band/";
-  return groupPath.str();
-}
-
-std::string EinsplineSetBuilder::CoreStatePath(int ti, int cs)
-{
-  std::string eigenstatesGroup;
-  if (Version[0] == 0 && Version[1] == 11)
-    eigenstatesGroup = "/eigenstates_3";
-  else if (Version[0] == 0 && Version[1] == 20)
-    eigenstatesGroup = "/eigenstates";
-  std::ostringstream groupPath;
-  if ((Version[0] == 0 && Version[1] == 11) || NumTwists > 1)
-    groupPath << eigenstatesGroup << "/twist_" << ti << "/core_state_" << cs << "/";
-  else if (NumBands > 1)
-    groupPath << eigenstatesGroup << "/twist/core_state_" << cs << "/";
-  else
-    groupPath << eigenstatesGroup << "/twist/core_state/";
-  return groupPath.str();
-}
-
-std::string EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
-{
-  std::ostringstream groupPath;
-  if (NumMuffinTins > 0)
-    groupPath << OrbitalPath(ti, bi) << "muffin_tin_" << tin << "/";
-  else
-    groupPath << OrbitalPath(ti, bi) << "muffin_tin/";
-  return groupPath.str();
-}
 } // namespace qmcplusplus
