@@ -113,7 +113,7 @@ struct BsplineReaderBase
     for (int iorb = 0; iorb < N; iorb++)
     {
       int ti                       = cur_bands[iorb].TwistIndex;
-      bspline->kPoints[iorb]       = mybuilder->PrimCell.k_cart(-mybuilder->TwistAngles[ti]);
+      bspline->kPoints[iorb]       = mybuilder->PrimCell.k_cart(-mybuilder->primcell_kpoints[ti]);
       bspline->MakeTwoCopies[iorb] = (num < (numOrbs - 1)) && cur_bands[iorb].MakeTwoCopies;
       num += bspline->MakeTwoCopies[iorb] ? 2 : 1;
     }
@@ -125,7 +125,7 @@ struct BsplineReaderBase
     if (!bspline->isComplex())
     {
       //no k-point folding, single special k point (G, L ...)
-      TinyVector<double, 3> twist0 = mybuilder->TwistAngles[bandgroup.TwistIndex];
+      TinyVector<double, 3> twist0 = mybuilder->primcell_kpoints[bandgroup.TwistIndex];
       for (int i = 0; i < 3; i++)
         if (bconds[i] && ((std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)))
           bspline->HalfG[i] = 1;

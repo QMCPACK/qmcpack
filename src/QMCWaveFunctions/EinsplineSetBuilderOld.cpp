@@ -138,7 +138,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
   ///////////////////////////
   // Read the twist angles //
   ///////////////////////////
-  TwistAngles.resize(NumTwists);
+  primcell_kpoints.resize(NumTwists);
   for (int ti = 0; ti < NumTwists; ti++)
   {
     std::ostringstream path;
@@ -146,11 +146,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
       path << eigenstatesGroup << "/twist_" << ti << "/twist_angle";
     else
       path << eigenstatesGroup << "/twist/twist_angle";
-    TinyVector<double, OHMMS_DIM> TwistAngles_DP;
-    H5File.read(TwistAngles_DP, path.str());
-    TwistAngles[ti] = TwistAngles_DP;
+    TinyVector<double, OHMMS_DIM> primcell_kpoints_DP;
+    H5File.read(primcell_kpoints_DP, path.str());
+    primcell_kpoints[ti] = primcell_kpoints_DP;
     int length      = std::snprintf(buff.data(), buff.size(), "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",
-                               TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+                               primcell_kpoints[ti][0], primcell_kpoints[ti][1], primcell_kpoints[ti][2]);
     if (length < 0)
       throw std::runtime_error("Error converting twist angle to string");
     app_log() << std::string_view(buff.data(), length);

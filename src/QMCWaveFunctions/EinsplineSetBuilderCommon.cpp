@@ -196,10 +196,10 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   //myComm->bcast(IonTypes);
   bbuffer.add(&IonPos[0][0], &IonPos[0][0] + OHMMS_DIM * numIons);
   //myComm->bcast(IonPos);
-  if (TwistAngles.size() != NumTwists)
-    TwistAngles.resize(NumTwists);
-  bbuffer.add(&TwistAngles[0][0], &TwistAngles[0][0] + OHMMS_DIM * NumTwists);
-  //myComm->bcast(TwistAngles);
+  if (primcell_kpoints.size() != NumTwists)
+    primcell_kpoints.resize(NumTwists);
+  bbuffer.add(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
+  //myComm->bcast(primcell_kpoints);
   if (TwistSymmetry.size() != NumTwists)
     TwistSymmetry.resize(NumTwists);
   bibuffer.add(&TwistSymmetry[0], &TwistSymmetry[0] + NumTwists);
@@ -236,7 +236,7 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
     for (int i = 0; i < numIons; ++i)
       bibuffer.get(IonTypes[i]);
     bbuffer.get(&IonPos[0][0], &IonPos[0][0] + OHMMS_DIM * numIons);
-    bbuffer.get(&TwistAngles[0][0], &TwistAngles[0][0] + OHMMS_DIM * NumTwists);
+    bbuffer.get(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
     bibuffer.get(&TwistSymmetry[0], &TwistSymmetry[0] + NumTwists);
     bibuffer.get(&TwistWeight[0], &TwistWeight[0] + NumTwists);
     bbuffer.get(MT_APW_radii.begin(), MT_APW_radii.end());
@@ -403,7 +403,7 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
     for (int j = 0; j < 3; j++)
       S(i, j) = (double)TileMatrix(i, j);
 
-  const int num_prim_kpoints = TwistAngles.size();
+  const int num_prim_kpoints = primcell_kpoints.size();
 
   // build a list of unique super twists that all the primitive cell k-point correspond to.
   std::vector<PosType> superFracs; // twist super twist coordinates
@@ -413,7 +413,7 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
     // scan all the primitive cell k-points
     for (int ki = 0; ki < num_prim_kpoints; ki++)
     {
-      PosType primTwist  = TwistAngles[ki];
+      PosType primTwist  = primcell_kpoints[ki];
       PosType superTwist = dot(S, primTwist);
       PosType kp         = PrimCell.k_cart(primTwist);
       PosType ks         = SuperCell.k_cart(superTwist);
@@ -577,12 +577,12 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
     int N = superSets[si].size();
     for (int i = 0; i < N; i++)
     {
-      PosType twistPrim_i  = TwistAngles[superSets[si][i]];
+      PosType twistPrim_i  = primcell_kpoints[superSets[si][i]];
       PosType twistSuper_i = dot(S, twistPrim_i);
       PosType superInt_i   = IntPart(twistSuper_i);
       for (int j = i + 1; j < N; j++)
       {
-        PosType twistPrim_j  = TwistAngles[superSets[si][j]];
+        PosType twistPrim_j  = primcell_kpoints[superSets[si][j]];
         PosType twistSuper_j = dot(S, twistPrim_j);
         PosType superInt_j   = IntPart(twistSuper_j);
         if (dot(superInt_i - superInt_j, superInt_i - superInt_j) < 1.0e-6)
@@ -606,12 +606,12 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
   for (int i = 0; i < IncludeTwists.size(); i++)
   {
     int ti          = IncludeTwists[i];
-    PosType twist_i = TwistAngles[ti];
+    PosType twist_i = primcell_kpoints[ti];
     bool distinct   = true;
     for (int j = i + 1; j < IncludeTwists.size(); j++)
     {
       int tj          = IncludeTwists[j];
-      PosType twist_j = TwistAngles[tj];
+      PosType twist_j = primcell_kpoints[tj];
       PosType sum     = twist_i + twist_j;
       PosType diff    = twist_i - twist_j;
       if (TwistPair(twist_i, twist_j))
@@ -628,11 +628,11 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
   {
     MakeTwoCopies[i] = false;
     int ti           = DistinctTwists[i];
-    PosType twist_i  = TwistAngles[ti];
+    PosType twist_i  = primcell_kpoints[ti];
     for (int j = 0; j < copyTwists.size(); j++)
     {
       int tj          = copyTwists[j];
-      PosType twist_j = TwistAngles[tj];
+      PosType twist_j = primcell_kpoints[tj];
       if (TwistPair(twist_i, twist_j))
         MakeTwoCopies[i] = true;
     }
@@ -652,7 +652,7 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
   for (int i = 0; i < DistinctTwists.size(); i++)
   {
     int ti        = DistinctTwists[i];
-    PosType twist = TwistAngles[ti];
+    PosType twist = primcell_kpoints[ti];
     for (int j = 0; j < OHMMS_DIM; j++)
       if (std::abs(twist[j] - 0.0) > MatchingTol && std::abs(twist[j] - 0.5) > MatchingTol &&
           std::abs(twist[j] + 0.5) > MatchingTol)

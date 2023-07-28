@@ -214,7 +214,8 @@ public:
   /////////////////////////////
   // The "true" twist number after analyzing twistnum, twist XML input and h5
   int twist_num_;
-  std::vector<TinyVector<double, OHMMS_DIM>> TwistAngles;
+  // primitive cell k-points from DFT calculations
+  std::vector<TinyVector<double, OHMMS_DIM>> primcell_kpoints;
   //     integer index of sym operation from the irreducible brillion zone
   std::vector<int> TwistSymmetry;
   //     number of twists equivalent to this one in the big DFT grid
