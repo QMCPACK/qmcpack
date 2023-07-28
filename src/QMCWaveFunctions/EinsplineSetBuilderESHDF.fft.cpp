@@ -75,9 +75,9 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       LatticeInv(i, j) = RecipLattice(i, j) / (2.0 * M_PI);
-  int have_dpsi         = false;
+  int have_dpsi = false;
   NumTwists = NumSpins = NumBands = 0;
-  NumElectrons = TargetPtcl.getTotalNum();
+  NumElectrons                    = TargetPtcl.getTotalNum();
   H5File.read(NumBands, "/electrons/kpoint_0/spin_0/number_of_states");
   H5File.readEntry(NumSpins, "/electrons/number_of_spins");
   H5File.read(NumTwists, "/electrons/number_of_kpoints");
@@ -411,7 +411,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   }
   if (occ_format == "energy")
   {
-    app_log() << "  Occupying bands based on energy in mode " << (Occ.size() > 0? "\"excited\"" : "\"ground\"") << std::endl;
+    app_log() << "  Occupying bands based on energy in mode " << (Occ.size() > 0 ? "\"excited\"" : "\"ground\"")
+              << std::endl;
     // To get the occupations right.
     std::vector<int> Removed(0, 0);
     std::vector<int> Added(0, 0);

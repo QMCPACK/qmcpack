@@ -123,8 +123,8 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
 {
   if (myComm->size() == 1)
     return;
-  int numIons           = IonTypes.size();
-  int numDensityGvecs   = TargetPtcl.DensityReducedGvecs.size();
+  int numIons         = IonTypes.size();
+  int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
   PooledData<double> abuffer;
   PooledData<int> aibuffer;
   aibuffer.add(Version.begin(), Version.end()); //myComm->bcast(Version);
