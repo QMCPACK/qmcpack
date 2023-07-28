@@ -177,22 +177,6 @@ public:
    */
   bool ReadGvectors_ESHDF();
 
-  /** set tiling properties of oset
-   * @param oset spline-orbital engine to be initialized
-   * @param numOrbs number of orbitals that belong to oset
-   */
-  template<typename SPE>
-  inline void setTiling(SPE* oset, int numOrbs)
-  {
-    oset->TileFactor = TileFactor;
-    oset->Tiling     = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
-    oset->PrimLattice.set(Lattice);
-    oset->SuperLattice.set(SuperLattice);
-    oset->GGt = GGt;
-    oset->setOrbitalSetSize(numOrbs);
-  }
-
-
   Tensor<double, OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice, GGt;
   UnitCellType SuperCell, PrimCell, PrimCellInv;
   int NumBands, NumElectrons, NumSpins, NumTwists;
@@ -214,12 +198,9 @@ public:
   int twist_num_;
   // primitive cell k-points from DFT calculations
   std::vector<TinyVector<double, OHMMS_DIM>> primcell_kpoints;
-
-  TinyVector<int, OHMMS_DIM> TileFactor;
+  // primitive cell to supercell tiling matrix
   Tensor<int, OHMMS_DIM> TileMatrix;
-  TinyVector<int, OHMMS_DIM> TwistMesh;
-  // This vector stores which twist indices will be used by this
-  // clone
+  // This vector stores which twist indices will be used by this clone
   std::vector<TinyVector<int, OHMMS_DIM>> UseTwists;
   std::vector<int> IncludeTwists, DistinctTwists;
   /// if false, splines are conceptually complex valued
@@ -229,14 +210,13 @@ public:
   // should be used to generate two distinct orbitals from the real and
   // imaginary parts.
   std::vector<bool> MakeTwoCopies;
-  inline bool TwistPair(PosType a, PosType b);
   // This maps a 3-integer twist index into the twist number in the file
   std::map<TinyVector<int, OHMMS_DIM>, int, Int3less> TwistMap;
+
+  bool TwistPair(PosType a, PosType b) const;
   void TileIons();
   void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks = false);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
-
-  void CopyBands(int numOrbs);
 
   ////////////////////////////////
   // Atomic orbital information //

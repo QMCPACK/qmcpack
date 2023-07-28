@@ -103,8 +103,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
   H5File.read(NumTwists, parameterGroup + "/num_twists");
   app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons << ", spins=" << NumSpins << ", twists=" << NumTwists
             << std::endl;
-  if (TileFactor[0] != 1 || TileFactor[1] != 1 || TileFactor[2] != 1)
-    app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] << "x" << TileFactor[2] << " tiling factor.\n";
 
   //////////////////////////////////
   // Read ion types and locations //

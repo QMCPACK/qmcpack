@@ -51,7 +51,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, C
       MeshFactor(1.0),
       MeshSize(0, 0, 0),
       twist_num_(-1),
-      TileFactor(1, 1, 1),
       LastSpinSet(-1),
       NumOrbitalsRead(-1),
       makeRotations(false)
@@ -319,7 +318,7 @@ void EinsplineSetBuilder::TileIons()
 }
 
 
-bool EinsplineSetBuilder::TwistPair(PosType a, PosType b)
+bool EinsplineSetBuilder::TwistPair(PosType a, PosType b) const
 {
   bool pair = true;
   for (int n = 0; n < OHMMS_DIM; n++)

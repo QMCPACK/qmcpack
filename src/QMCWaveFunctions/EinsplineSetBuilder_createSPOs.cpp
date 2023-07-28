@@ -58,12 +58,11 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       matrixNotSet = matrixNotSet && (TileMatrix(i, j) == 0);
-  // then set the matrix to what may have been specified in the
-  // tiling vector
+  // then set the matrix to identity.
   if (matrixNotSet)
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
-        TileMatrix(i, j) = (i == j) ? TileFactor[i] : 0;
+        TileMatrix(i, j) = (i == j) ? 1 : 0;
   if (myComm->rank() == 0)
   {
     std::array<char, 1000> buff;
@@ -130,9 +129,10 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
+    TinyVector<int, OHMMS_DIM> TileFactor_do_not_use;
     OhmmsAttributeSet a;
     a.add(H5FileName, "href");
-    a.add(TileFactor, "tile");
+    a.add(TileFactor_do_not_use, "tile", {}, TagStatus::DELETED);
     a.add(sortBands, "sort");
     a.add(TileMatrix, "tilematrix");
     a.add(twist_num_inp, "twistnum");
