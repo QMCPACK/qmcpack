@@ -216,10 +216,6 @@ public:
   int twist_num_;
   // primitive cell k-points from DFT calculations
   std::vector<TinyVector<double, OHMMS_DIM>> primcell_kpoints;
-  //     integer index of sym operation from the irreducible brillion zone
-  std::vector<int> TwistSymmetry;
-  //     number of twists equivalent to this one in the big DFT grid
-  std::vector<int> TwistWeight;
 
   TinyVector<int, OHMMS_DIM> TileFactor;
   Tensor<int, OHMMS_DIM> TileMatrix;

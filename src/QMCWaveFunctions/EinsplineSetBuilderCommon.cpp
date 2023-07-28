@@ -199,13 +199,6 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   if (primcell_kpoints.size() != NumTwists)
     primcell_kpoints.resize(NumTwists);
   bbuffer.add(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
-  //myComm->bcast(primcell_kpoints);
-  if (TwistSymmetry.size() != NumTwists)
-    TwistSymmetry.resize(NumTwists);
-  bibuffer.add(&TwistSymmetry[0], &TwistSymmetry[0] + NumTwists);
-  if (TwistWeight.size() != NumTwists)
-    TwistWeight.resize(NumTwists);
-  bibuffer.add(&TwistWeight[0], &TwistWeight[0] + NumTwists);
   bbuffer.add(MT_APW_radii.begin(), MT_APW_radii.end());
   bibuffer.add(MT_APW_lmax.begin(), MT_APW_lmax.end());
   bibuffer.add(MT_APW_num_radial_points.begin(), MT_APW_num_radial_points.end());
@@ -237,8 +230,6 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
       bibuffer.get(IonTypes[i]);
     bbuffer.get(&IonPos[0][0], &IonPos[0][0] + OHMMS_DIM * numIons);
     bbuffer.get(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
-    bibuffer.get(&TwistSymmetry[0], &TwistSymmetry[0] + NumTwists);
-    bibuffer.get(&TwistWeight[0], &TwistWeight[0] + NumTwists);
     bbuffer.get(MT_APW_radii.begin(), MT_APW_radii.end());
     bibuffer.get(MT_APW_lmax.begin(), MT_APW_lmax.end());
     bibuffer.get(MT_APW_num_radial_points.begin(), MT_APW_num_radial_points.end());

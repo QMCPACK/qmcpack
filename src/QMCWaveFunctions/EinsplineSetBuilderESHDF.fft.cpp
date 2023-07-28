@@ -265,8 +265,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   // Read the twist angles //
   ///////////////////////////
   primcell_kpoints.resize(NumTwists);
-  TwistSymmetry.resize(NumTwists);
-  TwistWeight.resize(NumTwists);
   for (int ti = 0; ti < NumTwists; ti++)
   {
     std::ostringstream path;
@@ -274,15 +272,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     TinyVector<double, OHMMS_DIM> primcell_kpoints_DP;
     H5File.read(primcell_kpoints_DP, path.str());
     primcell_kpoints[ti] = primcell_kpoints_DP;
-    if ((Version[0] >= 2) and (Version[1] >= 1))
-    {
-      std::ostringstream sym_path;
-      sym_path << "/electrons/kpoint_" << ti << "/symgroup";
-      H5File.readEntry(TwistSymmetry[ti], sym_path.str());
-      std::ostringstream nsym_path;
-      nsym_path << "/electrons/kpoint_" << ti << "/numsym";
-      H5File.readEntry(TwistWeight[ti], nsym_path.str());
-    }
   }
   if (qmc_common.use_density)
   {
