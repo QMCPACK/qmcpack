@@ -55,8 +55,9 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   {
     OhmmsAttributeSet a;
+    TinyVector<int, OHMMS_DIM> TileFactor_do_not_use;
     a.add(H5FileName, "href");
-    a.add(TileFactor, "tile");
+    a.add(TileFactor_do_not_use, "tile", {}, TagStatus::DELETED);
     a.add(sortBands, "sort");
     a.add(TileMatrix, "tilematrix");
     a.add(twist_num_inp, "twistnum");
