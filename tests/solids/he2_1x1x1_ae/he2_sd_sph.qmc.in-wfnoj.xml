@@ -2,6 +2,7 @@
 <simulation>
  
   <project id="he2_sd_sph" series="0"/>
+  <random seed="123"/>
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice">
