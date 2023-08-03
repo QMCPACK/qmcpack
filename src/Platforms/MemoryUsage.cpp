@@ -20,6 +20,10 @@
 #include "CUDA/CUDAallocator.hpp"
 #include "CUDA/CUDAruntime.hpp"
 #endif
+#ifdef ENABLE_SYCL
+#include "SYCL/SYCLallocator.hpp"
+#include "SYCL/SYCLruntime.hpp"
+#endif
 
 namespace qmcplusplus
 {
@@ -38,6 +42,12 @@ void print_mem(const std::string& title, std::ostream& log)
   log << "Device memory allocated via CUDA allocator : " << std::setw(7) << (getCUDAdeviceMemAllocated() >> 20)
       << " MiB" << std::endl;
   log << "Free memory available on default device    : " << std::setw(7) << (getCUDAdeviceFreeMem() >> 20) << " MiB"
+      << std::endl;
+#endif
+#ifdef ENABLE_SYCL
+  log << "Device memory allocated via SYCL allocator : " << std::setw(7) << (getSYCLdeviceMemAllocated() >> 20)
+      << " MiB" << std::endl;
+  log << "Free memory available on default device    : " << std::setw(7) << (getSYCLdeviceFreeMem() >> 20) << " MiB"
       << std::endl;
 #endif
 #ifdef ENABLE_OFFLOAD
