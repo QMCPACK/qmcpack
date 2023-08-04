@@ -1,3 +1,7 @@
+
+# Compute wavefunction values and parameter derivatives
+# for a wavefunction with STO Be orbitals, single determinant, and orbital rotation
+
 import autograd.numpy as np
 from autograd import hessian, grad
 from run_qmc import run_qmc

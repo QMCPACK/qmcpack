@@ -1,3 +1,6 @@
+
+# Evaluate STO's starting from a symbolic representation
+
 from sympy import *
 from sympy.utilities.lambdify import lambdastr
 from collections import namedtuple, defaultdict
