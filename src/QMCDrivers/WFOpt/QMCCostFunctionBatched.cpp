@@ -198,9 +198,13 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 //                             if the number of samples is not a multiple of the batch size
 void compute_batch_parameters(int sample_size, int batch_size, int& num_batches, int& final_batch_size)
 {
-  num_batches      = sample_size / batch_size;
+  if (batch_size == 0)
+    num_batches = 0;
+  else
+    num_batches = sample_size / batch_size;
+
   final_batch_size = batch_size;
-  if (sample_size % batch_size != 0)
+  if (batch_size != 0 && sample_size % batch_size != 0)
   {
     num_batches += 1;
     final_batch_size = sample_size % batch_size;

@@ -40,6 +40,11 @@ TEST_CASE("compute_batch_parameters", "[drivers]")
   compute_batch_parameters(sample_size, batch_size, num_batches, final_batch_size);
   CHECK(num_batches == 3);
   CHECK(final_batch_size == 3);
+
+  batch_size = 0;
+  compute_batch_parameters(sample_size, batch_size, num_batches, final_batch_size);
+  CHECK(num_batches == 0);
+  CHECK(final_batch_size == 0);
 }
 
 namespace testing
