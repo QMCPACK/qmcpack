@@ -139,7 +139,7 @@ set(DETERMINANT_SRC
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
 
-add_library(sposets_for_testing FakeSPO.cpp ConstantSPOSet.cpp)
+add_library(sposets_for_testing FakeSPOT.cpp FakeSPO.cpp ConstantSPOSet.cpp)
 target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(sposets_for_testing PUBLIC qmcwfs)
 
