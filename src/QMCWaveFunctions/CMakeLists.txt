@@ -35,6 +35,7 @@ set(WFBASE_SRCS
     SPOSet.cpp
     SPOSetT.cpp
     CompositeSPOSet.cpp
+    CompositeSPOSetT.cpp
     HarmonicOscillator/SHOSet.cpp
     HarmonicOscillator/SHOSetT.cpp
     HarmonicOscillator/SHOSetBuilder.cpp
