@@ -35,16 +35,17 @@ set(WFBASE_SRCS
     SPOSetT.cpp
     CompositeSPOSet.cpp
     HarmonicOscillator/SHOSet.cpp
+    HarmonicOscillator/SHOSetT.cpp
     HarmonicOscillator/SHOSetBuilder.cpp
     ExampleHeBuilder.cpp
     ExampleHeComponent.cpp)
 
 if(NOT QMC_COMPLEX)
-  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp)
+  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp RotatedSPOsT.cpp)
 endif(NOT QMC_COMPLEX)
 
 if(QMC_COMPLEX)
-  set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp)
+  set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp SpinorSetT.cpp)
 endif(QMC_COMPLEX)
 ########################
 # build jastrows
@@ -63,7 +64,7 @@ set(JASTROW_SRCS
 set(JASTROW_OMPTARGET_SRCS
     Jastrow/TwoBodyJastrow.cpp
     Jastrow/BsplineFunctor.cpp)
-set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/FreeOrbital.cpp ElectronGas/FreeOrbitalBuilder.cpp)
+set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/FreeOrbital.cpp ElectronGas/FreeOrbitalT.cpp ElectronGas/FreeOrbitalBuilder.cpp)
 
 # wavefunctions only availbale to 3-dim problems
 if(OHMMS_DIM MATCHES 3)
@@ -108,7 +109,7 @@ if(OHMMS_DIM MATCHES 3)
   if(QMC_COMPLEX)
     set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWOrbitalSet.cpp)
   else()
-    set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWRealOrbitalSet.cpp)
+    set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWRealOrbitalSet.cpp PlaneWave/PWRealOrbitalSetT.cpp)
   endif(QMC_COMPLEX)
 
   if(NOT QMC_COMPLEX)

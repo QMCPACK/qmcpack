@@ -65,6 +65,10 @@ public:
   using SPOMap            = std::map<std::string, const std::unique_ptr<const SPOSetT<T>>>;
   using OffloadMWVGLArray = Array<T, 3, OffloadPinnedAllocator<T>>; // [VGL, walker, Orbs]
   using OffloadMWVArray   = Array<T, 2, OffloadPinnedAllocator<T>>; // [walker, Orbs]
+  using PosType           = typename OrbitalSetTraits<T>::PosType;
+  using RealType          = typename OrbitalSetTraits<T>::RealType;
+  using ValueType         = typename OrbitalSetTraits<T>::ValueType;
+  using FullRealType      = typename OrbitalSetTraits<double>::RealType;
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
@@ -176,7 +180,7 @@ public:
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
                                      Vector<T>& dlogpsi,
-                                     const T& psiCurrent,
+                                     const typename QTFull::ValueType& psiCurrent,
                                      const std::vector<T>& Coeff,
                                      const std::vector<size_t>& C2node_up,
                                      const std::vector<size_t>& C2node_dn,
