@@ -71,7 +71,10 @@ set(FILES_TO_COPY
     C_diamond-twist-third.structure.xml
     C_diamond-twist-third.wfj.xml
     cartesian_order.wfnoj.xml
-    dirac_order.wfnoj.xml)
+    dirac_order.wfnoj.xml
+    rot_Be_STO.wfnoj.xml
+    rot_multi_1det_Be_STO.wfnoj.xml
+    rot_multi_2det_Be_STO.wfnoj.xml)
 
 foreach(fname ${FILES_TO_COPY})
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
