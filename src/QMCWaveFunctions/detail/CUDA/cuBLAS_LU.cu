@@ -158,14 +158,14 @@ void computeGetrf_batched(cublasHandle_t& h_cublas,
                  "cudaMemcpyAsync failed copying cuBLAS::getrf_batched infos from device");
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 
-  for (int iw = 0; iw < batch_size; ++iw)
+  if (std::all_of(host_infos, host_infos + batch_size, [](int i) { return i != 0; }))
   {
-    if (*(host_infos + iw) != 0)
-    {
-      std::ostringstream err_msg;
-      err_msg << "cuBLAS::getrf_batched failed with return code " << *(host_infos + iw);
-      throw std::runtime_error(err_msg.str());
-    }
+    std::ostringstream err_msg;
+    err_msg << "cuBLAS::getrf_batched failed! Non-zero infos:" << std::endl;
+    for (int iw = 0; iw < batch_size; ++iw)
+      if (*(host_infos + iw) != 0)
+        err_msg << "infos[" << iw << "] = " << *(host_infos + iw) << std::endl;
+    throw std::runtime_error(err_msg.str());
   }
 }
 
