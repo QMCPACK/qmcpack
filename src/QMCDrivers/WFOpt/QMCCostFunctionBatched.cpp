@@ -191,11 +191,17 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
   }
 }
 
-// Input - sample_size  - number of samples to process
-//       - batch_size  -  process samples in batch_size at a time
-// Output - num_batches - number of batches to use
-//        - final_batch_size - the last batch size.  May be smaller than batch_size
-//                             if the number of samples is not a multiple of the batch size
+  /** Compute number of batches and final batch size given the number of samples
+   *   and a batch size.
+   * \param[in] sample_size number of samples to process.
+   * \param[in] batch_size process samples in batch_size at a time (typically the number of walkers in a crowd).
+   * \param[out] num_batches number of batches to use.
+   * \param[out] final_batch_size the last batch size.  May be smaller than batch_size
+   *             if the number of samples is not a multiple of the batch size.
+   *
+   * There may be cases where the batch size is zero. One cause is when the number of walkers per
+   *  rank is less than the number of crowds.
+   */
 void compute_batch_parameters(int sample_size, int batch_size, int& num_batches, int& final_batch_size)
 {
   if (batch_size == 0)
