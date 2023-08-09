@@ -174,7 +174,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   dlogpsiWF.resize(NumOptimizables);
   j3->evaluateDerivativesWF(elec_, optvars, dlogpsiWF);
   for (int i = 0; i < NumOptimizables; i++)
-    CHECK(dlogpsi[i] == Approx(dlogpsiWF[i]));
+    CHECK(dlogpsi[i] == ValueApprox(dlogpsiWF[i]));
 
   VirtualParticleSet VP(elec_, 2);
   std::vector<PosType> newpos2(2);
