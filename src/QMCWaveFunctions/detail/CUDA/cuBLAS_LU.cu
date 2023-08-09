@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "cuBLAS_LU.hpp"
+#include <algorithm>
 #include "Platforms/CUDA/CUDAruntime.hpp"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "Platforms/CUDA/CUDATypeMapping.hpp"
@@ -158,14 +159,14 @@ void computeGetrf_batched(cublasHandle_t& h_cublas,
                  "cudaMemcpyAsync failed copying cuBLAS::getrf_batched infos from device");
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 
-  for (int iw = 0; iw < batch_size; ++iw)
+  if (std::any_of(host_infos, host_infos + batch_size, [](int i) { return i != 0; }))
   {
-    if (*(host_infos + iw) != 0)
-    {
-      std::ostringstream err_msg;
-      err_msg << "cuBLAS::getrf_batched failed with return code " << *(host_infos + iw);
-      throw std::runtime_error(err_msg.str());
-    }
+    std::ostringstream err_msg;
+    err_msg << "cuBLAS::getrf_batched failed! Non-zero infos:" << std::endl;
+    for (int iw = 0; iw < batch_size; ++iw)
+      if (*(host_infos + iw) != 0)
+        err_msg << "infos[" << iw << "] = " << *(host_infos + iw) << std::endl;
+    throw std::runtime_error(err_msg.str());
   }
 }
 
@@ -186,24 +187,37 @@ void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
   computeGetrf_batched(h_cublas, hstream, n, lda, Ms, pivots, host_infos, infos, batch_size);
   cudaErrorCheck(computeLogDet_batched_impl(hstream, n, lda, Ms, pivots, log_dets, batch_size),
                  "failed to calculate log determinant values in computeLogDet_batched_impl");
-  cublasErrorCheck(cuBLAS::getri_batched(h_cublas, n, Ms, lda, pivots, Cs, lda, infos, batch_size),
-                   "cuBLAS::getri_batched failed in computeInverseAndDetLog_batched");
-  //FIXME replace getri_batched with computeGetri_batched and computeGetri_batched should sync and check infos
-  cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+  computeGetri_batched(h_cublas, hstream, n, lda, Ms, Cs, pivots, host_infos, infos, batch_size);
 }
 
 
+template<typename T>
 void computeGetri_batched(cublasHandle_t& h_cublas,
+                          cudaStream_t& hstream,
                           const int n,
                           const int lda,
-                          double* Ms[],
-                          double* Cs[],
+                          T* Ms[],
+                          T* Cs[],
                           int* pivots,
+                          int* host_infos,
                           int* infos,
                           const int batch_size)
 {
   cublasErrorCheck(cuBLAS::getri_batched(h_cublas, n, Ms, lda, pivots, Cs, lda, infos, batch_size),
                    "cuBLAS::getri_batched failed in computeInverseAndDetLog_batched");
+  cudaErrorCheck(cudaMemcpyAsync(host_infos, infos, sizeof(int) * batch_size, cudaMemcpyDeviceToHost, hstream),
+                 "cudaMemcpyAsync failed copying cuBLAS::getri_batched infos from device");
+  cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+
+  if (std::any_of(host_infos, host_infos + batch_size, [](int i) { return i != 0; }))
+  {
+    std::ostringstream err_msg;
+    err_msg << "cuBLAS::getri_batched failed! Non-zero infos:" << std::endl;
+    for (int iw = 0; iw < batch_size; ++iw)
+      if (*(host_infos + iw) != 0)
+        err_msg << "infos[" << iw << "] = " << *(host_infos + iw) << std::endl;
+    throw std::runtime_error(err_msg.str());
+  }
 }
 
 template void computeGetrf_batched<double>(cublasHandle_t& h_cublas,
@@ -226,6 +240,27 @@ template void computeGetrf_batched<std::complex<double>>(cublasHandle_t& h_cubla
                                                          int* infos,
                                                          const int batch_size);
 
+template void computeGetri_batched<double>(cublasHandle_t& h_cublas,
+                                           cudaStream_t& hstream,
+                                           const int n,
+                                           const int lda,
+                                           double* Ms[],
+                                           double* Cs[],
+                                           int* pivots,
+                                           int* host_infos,
+                                           int* infos,
+                                           const int batch_size);
+
+template void computeGetri_batched<std::complex<double>>(cublasHandle_t& h_cublas,
+                                                         cudaStream_t& hstream,
+                                                         const int n,
+                                                         const int lda,
+                                                         std::complex<double>* Ms[],
+                                                         std::complex<double>* Cs[],
+                                                         int* pivots,
+                                                         int* host_infos,
+                                                         int* infos,
+                                                         const int batch_size);
 
 template void computeLogDet_batched<std::complex<double>>(cudaStream_t& hstream,
                                                           const int n,
