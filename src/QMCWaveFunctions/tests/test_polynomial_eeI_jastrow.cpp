@@ -151,7 +151,6 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 
   opt_variables_type optvars;
   Vector<WaveFunctionComponent::ValueType> dlogpsi;
-  Vector<WaveFunctionComponent::ValueType> dlogpsiWF;
   Vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
   for (OptimizableObject& obj : opt_obj_refs)
@@ -160,7 +159,6 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   const int NumOptimizables(optvars.size());
   j3->checkOutVariables(optvars);
   dlogpsi.resize(NumOptimizables);
-  dlogpsiWF.resize(NumOptimizables);
   dhpsioverpsi.resize(NumOptimizables);
   j3->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
@@ -172,6 +170,8 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
   CHECK(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
 
+  Vector<WaveFunctionComponent::ValueType> dlogpsiWF;
+  dlogpsiWF.resize(NumOptimizables);
   j3->evaluateDerivativesWF(elec_, optvars, dlogpsiWF);
   for (int i = 0; i < NumOptimizables; i++)
     CHECK(dlogpsi[i] == Approx(dlogpsiWF[i]));
