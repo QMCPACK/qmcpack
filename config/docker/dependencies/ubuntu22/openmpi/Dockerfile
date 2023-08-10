@@ -11,8 +11,8 @@ RUN wget https://apt.kitware.com/kitware-archive.sh &&\
     sh kitware-archive.sh
 
 RUN export DEBIAN_FRONTEND=noninteractive &&\
-    apt-get install gcc g++ \ 
-    clang \
+    apt-get install gcc-9 g++-9 \ 
+    clang-14 \
     clang-format \
     clang-tidy \
     libomp-dev \
@@ -48,6 +48,13 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
 
 RUN export DEBIAN_FRONTEND=noninteractive &&\
     pip3 install cif2cell
+
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 100
+
+# add clang-14 as clang
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100
 
 # must add a user different from root 
 # to run MPI executables
