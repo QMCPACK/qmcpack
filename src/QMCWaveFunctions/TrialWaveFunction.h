@@ -551,6 +551,8 @@ private:
   std::vector<std::reference_wrapper<NewTimer>> WFC_timers_;
   std::vector<RealType> myTwist;
 
+  static void checkOneParticleGradientsNaN(int iel, const GradType& grads, const std::string_view location);
+
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
    */
