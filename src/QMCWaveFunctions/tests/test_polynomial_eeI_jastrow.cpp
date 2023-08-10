@@ -170,6 +170,12 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
   CHECK(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
 
+  Vector<WaveFunctionComponent::ValueType> dlogpsiWF;
+  dlogpsiWF.resize(NumOptimizables);
+  j3->evaluateDerivativesWF(elec_, optvars, dlogpsiWF);
+  for (int i = 0; i < NumOptimizables; i++)
+    CHECK(dlogpsi[i] == ValueApprox(dlogpsiWF[i]));
+
   VirtualParticleSet VP(elec_, 2);
   std::vector<PosType> newpos2(2);
   std::vector<ValueType> ratios2(2);
