@@ -433,12 +433,6 @@ protected:
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
-  ///temporary storage for drift
-  ParticleSet::ParticlePos drift;
-
-  ///temporary storage for random displacement
-  ParticleSet::ParticlePos deltaR;
-
   // ///alternate method of setting QMC run parameters
   // IndexType nStepsBetweenSamples;
   // ///samples per thread
