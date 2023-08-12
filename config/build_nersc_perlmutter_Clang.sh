@@ -1,21 +1,21 @@
 #!/bin/bash
-# This recipe is intended for ALCF Polaris https://www.alcf.anl.gov/polaris
+# This recipe is intended for NERSC Perlmutter https://docs.nersc.gov/systems/perlmutter
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Aug 17th 2022
+# last revision: Aug 12th 2023
 #
 # How to invoke this script?
 # build_alcf_polaris_Clang.sh # build all the variants assuming the current directory is the source directory.
 # build_alcf_polaris_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_alcf_polaris_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
-module load mpiwrappers/cray-mpich-llvm llvm/release-15.0.0
-module load cudatoolkit-standalone/11.2.2
-module load cray-fftw/3.3.8.13
-module load cray-hdf5-parallel/1.12.1.3
-module load cmake/3.23.2
+module load PrgEnv-gnu
+module load cray-libsci
+CRAY_LIBSCI_LIB=$CRAY_LIBSCI_PREFIX_DIR/lib/libsci_gnu_mp.so
 
-export BOOST_ROOT=/soft/applications/qmcpack/boost_1_79_0
-export CMAKE_PREFIX_PATH=/soft/libraries/openblas/0.3.20-omp:$CMAKE_PREFIX_PATH
+module load PrgEnv-llvm/0.1 llvm/16
+module load cray-fftw/3.3.10.3
+module load cray-hdf5-parallel/1.12.2.3
+module load cmake/3.24.3
 
 
 echo "**********************************"
@@ -24,8 +24,8 @@ clang -v
 echo "**********************************"
 
 TYPE=Release
-Machine=polaris
-Compiler=Clang
+Machine=perlmutter
+Compiler=Clang16
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -47,7 +47,7 @@ for name in offload_cuda_real_MP offload_cuda_real offload_cuda_cplx_MP offload_
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
-CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE"
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE -DBLAS_LIBRARIES=$CRAY_LIBSCI_LIB"
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_COMPLEX=ON"
