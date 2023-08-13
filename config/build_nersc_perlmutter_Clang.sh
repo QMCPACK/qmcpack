@@ -4,9 +4,9 @@
 # last revision: Aug 12th 2023
 #
 # How to invoke this script?
-# build_alcf_polaris_Clang.sh # build all the variants assuming the current directory is the source directory.
-# build_alcf_polaris_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
-# build_alcf_polaris_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
+# build_nersc_perlmutter_Clang.sh # build all the variants assuming the current directory is the source directory.
+# build_nersc_perlmutter_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
+# build_nersc_perlmutter_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
 module load PrgEnv-gnu
 module load cray-libsci
