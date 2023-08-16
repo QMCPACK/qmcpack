@@ -147,7 +147,7 @@ if(OHMMS_DIM MATCHES 3)
   # plane wave SPO
   set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWBasisT.cpp PlaneWave/PWOrbitalSetT.cpp PlaneWave/PWRealOrbitalSetT.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalSetBuilder.cpp)
   if(QMC_COMPLEX)
-    set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWOrbitalSet.cpp)
+    set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWOrbitalSet.cpp PlaneWave/PWOrbitalSetT.cpp)
   else()
     set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWRealOrbitalSet.cpp PlaneWave/PWRealOrbitalSetT.cpp)
   endif(QMC_COMPLEX)
