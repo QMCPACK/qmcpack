@@ -1596,5 +1596,77 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   return myclone;
 }
 
+void RotatedSPOs::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                       const RefVector<ValueVector>& psi_list,
+                                       const std::vector<const ValueType*>& invRow_ptr_list,
+                                       std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  Phi->mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+}
+
+void RotatedSPOs::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   const RefVector<ValueVector>& psi_v_list) const
+{
+  Phi->mw_evaluateValue(spo_list, P_list, iat, psi_v_list);
+}
+
+void RotatedSPOs::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                 int iat,
+                                 const RefVector<ValueVector>& psi_v_list,
+                                 const RefVector<GradVector>& dpsi_v_list,
+                                 const RefVector<ValueVector>& d2psi_v_list) const
+{
+  Phi->mw_evaluateVGL(spo_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+}
+
+void RotatedSPOs::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                         int iat,
+                                         const RefVector<ValueVector>& psi_v_list,
+                                         const RefVector<GradVector>& dpsi_v_list,
+                                         const RefVector<ValueVector>& d2psi_v_list,
+                                         OffloadMatrix<ComplexType>& mw_dspin) const
+{
+  Phi->mw_evaluateVGLWithSpin(spo_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
+}
+
+void RotatedSPOs::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                                 int iat,
+                                                 const std::vector<const ValueType*>& invRow_ptr_list,
+                                                 OffloadMWVGLArray& phi_vgl_v,
+                                                 std::vector<ValueType>& ratios,
+                                                 std::vector<GradType>& grads) const
+{
+  Phi->mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
+}
+
+void RotatedSPOs::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                                         int iat,
+                                                         const std::vector<const ValueType*>& invRow_ptr_list,
+                                                         OffloadMWVGLArray& phi_vgl_v,
+                                                         std::vector<ValueType>& ratios,
+                                                         std::vector<GradType>& grads,
+                                                         std::vector<ValueType>& spingrads) const
+{
+  Phi->mw_evaluateVGLandDetRatioGradsWithSpin(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads,
+                                              spingrads);
+}
+
+void RotatedSPOs::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                                          const RefVectorWithLeader<ParticleSet>& P_list,
+                                          int first,
+                                          int last,
+                                          const RefVector<ValueMatrix>& logdet_list,
+                                          const RefVector<GradMatrix>& dlogdet_list,
+                                          const RefVector<ValueMatrix>& d2logdet_list) const
+{
+  Phi->mw_evaluate_notranspose(spo_list, P_list, first, last, logdet_list, dlogdet_list, d2logdet_list);
+}
 
 } // namespace qmcplusplus
