@@ -440,6 +440,8 @@ private:
   /// List of previously applied parameters
   std::vector<std::vector<RealType>> history_params_;
 
+  RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list) const;
+
   /// Use global rotation or history list
   bool use_global_rot_ = true;
 
