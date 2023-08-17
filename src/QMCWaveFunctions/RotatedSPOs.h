@@ -421,6 +421,12 @@ public:
                                const RefVector<ValueMatrix>& logdet_list,
                                const RefVector<GradMatrix>& dlogdet_list,
                                const RefVector<ValueMatrix>& d2logdet_list) const override;
+  
+  void createResource(ResourceCollection& collection) const override;
+
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
 
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input

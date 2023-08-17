@@ -1669,4 +1669,16 @@ void RotatedSPOs::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo
   Phi->mw_evaluate_notranspose(spo_list, P_list, first, last, logdet_list, dlogdet_list, d2logdet_list);
 }
 
+void RotatedSPOSs::createResource(ResourceCollection& collection) const { Phi->createResource(collection); }
+
+void RotatedSPOs::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  Phi->acquireResource(collection, spo_list);
+}
+
+void RotatedSPOs::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  Phi->releaseResource(collection, spo_list);
+}
+
 } // namespace qmcplusplus
