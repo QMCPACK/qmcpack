@@ -427,7 +427,10 @@ void RotatedSPOs::applyDeltaRotation(const std::vector<RealType>& delta_param,
   ValueMatrix new_rot_mat(nmo, nmo);
   constructDeltaRotation(delta_param, old_param, m_act_rot_inds, m_full_rot_inds, new_param, new_rot_mat);
 
-  Phi->applyRotation(new_rot_mat, true);
+  {
+    ScopedTimer local(rotation_timer_);
+    Phi->applyRotation(new_rot_mat, true);
+  }
 }
 
 void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_param,
