@@ -20,7 +20,12 @@
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos)
-    : SPOSet(my_name), OptimizableObject(my_name), Phi(std::move(spos)), nel_major_(0), params_supplied(false)
+    : SPOSet(my_name),
+      OptimizableObject(my_name),
+      Phi(std::move(spos)),
+      nel_major_(0),
+      params_supplied(false),
+      rotation_timer_(createGlobalTimer("RotatedSPOs::apply_rotation", timer_level_fine))
 {
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
@@ -408,7 +413,10 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     Finally, apply unitary matrix to orbs.
   */
   exponentiate_antisym_matrix(rot_mat);
-  Phi->applyRotation(rot_mat, use_stored_copy);
+  {
+    ScopedTimer local(rotation_timer_);
+    Phi->applyRotation(rot_mat, use_stored_copy);
+  }
 }
 
 void RotatedSPOs::applyDeltaRotation(const std::vector<RealType>& delta_param,
