@@ -1699,7 +1699,7 @@ void RotatedSPOs::releaseResource(ResourceCollection& collection, const RefVecto
   leader.releaseResource(collection, phi_list);
 }
 
-static RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list)
+RefVectorWithLeader<SPOSet> RotatedSPOs::extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list)
 {
   auto& spo_leader = spo_list.getCastedLeader<RotatedSPOs>();
   const auto nw    = spo_list.size();

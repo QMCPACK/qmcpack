@@ -440,6 +440,8 @@ private:
   /// List of previously applied parameters
   std::vector<std::vector<RealType>> history_params_;
 
+  static RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list);
+
   /// Use global rotation or history list
   bool use_global_rot_ = true;
 
@@ -447,7 +449,6 @@ private:
   friend std::vector<std::vector<RealType>>& testing::getHistoryParams(RotatedSPOs& rot);
 };
 
-static RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list);
 
 } //namespace qmcplusplus
 
