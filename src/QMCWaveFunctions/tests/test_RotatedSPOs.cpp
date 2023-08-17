@@ -870,7 +870,7 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     {
       CHECK(psi_v_list[iw].get()[0] == Approx(321));
       CHECK(psi_v_list[iw].get()[1] == Approx(654));
-      CHECK(psi_v_list[iw].get()[2] == Approx(789));
+      CHECK(psi_v_list[iw].get()[2] == Approx(987));
     }
   }
 }
