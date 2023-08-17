@@ -135,9 +135,8 @@ struct SoaBasisSetBase
   using vgl_type          = VectorSoaContainer<T, OHMMS_DIM + 2>;
   using vgh_type          = VectorSoaContainer<T, 10>;
   using vghgh_type        = VectorSoaContainer<T, 20>;
-  using ValueType         = QMCTraits::ValueType;
-  using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
-  using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
+  using OffloadMWVGLArray = Array<T, 3, OffloadPinnedAllocator<T>>; // [VGL, walker, Orbs]
+  using OffloadMWVArray   = Array<T, 2, OffloadPinnedAllocator<T>>; // [walker, Orbs]
 
   ///size of the basis set
   int BasisSetSize;
