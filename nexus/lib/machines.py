@@ -2314,7 +2314,7 @@ class Perlmutter(NerscMachine):
 echo $SLURM_SUBMIT_DIR
 cd $SLURM_SUBMIT_DIR
 '''
-        if job.threads>1:
+        if (job.threads>1) and ('cpu' in job.constraint):
             c+='''
 export OMP_PROC_BIND=true
 export OMP_PLACES=threads
