@@ -838,7 +838,7 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //loops over single walker APIs (which have different values enforced in
     // DummySPOSetWithoutMW
 
-    RotatedSPOs rot_spo0("rotated0", std::move(std::make_unique<DummySPOSetWithMW>("mw 0")));
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW>("mw 0"));
     RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW>("mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
