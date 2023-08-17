@@ -1678,7 +1678,7 @@ void RotatedSPOs::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo
                                           const RefVector<GradMatrix>& dlogdet_list,
                                           const RefVector<ValueMatrix>& d2logdet_list) const
 {
-  auto phi_list = extractSPORefList(spo_list);
+  auto phi_list = extractPhiRefList(spo_list);
   auto& leader = phi_list.getLeader();
   leader.mw_evaluate_notranspose(phi_list, P_list, first, last, logdet_list, dlogdet_list, d2logdet_list);
 }
