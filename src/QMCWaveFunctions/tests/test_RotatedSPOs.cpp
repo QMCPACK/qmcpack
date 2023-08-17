@@ -756,7 +756,7 @@ public:
   void setOrbitalSetSize(int norbs) override {}
   void evaluateValue(const ParticleSet& P, int iat, SPOSet::ValueVector& psi) override
   {
-    assert(psi.size() == 3);
+    assert(psi.get().size() == 3);
     psi[0] = 123;
     psi[1] = 456;
     psi[2] = 789;
@@ -783,7 +783,7 @@ public:
   {
     for (auto& psi : psi_v_list)
     {
-      assert(psi.size() == 3);
+      assert(psi.get().size() == 3);
       psi.get()[0] = 321;
       psi.get()[1] = 654;
       psi.get()[2] = 987;
