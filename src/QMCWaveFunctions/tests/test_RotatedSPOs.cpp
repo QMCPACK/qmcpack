@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #include "checkMatrix.hpp"
 #include "FakeSPO.h"
-#include "ConstantSPOSet.h"
 
 #include <stdio.h>
 #include <string>
