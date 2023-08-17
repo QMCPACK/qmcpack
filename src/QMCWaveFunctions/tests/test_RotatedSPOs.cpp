@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #include "checkMatrix.hpp"
 #include "FakeSPO.h"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -801,28 +802,23 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //In the case that the underlying SPOSet doesn't specialize the mw_ API,
     //the underlying SPOSet will fall back to the default SPOSet mw_, which is
     //just a loop over the single walker API.
-    auto spo_ptr0 = std::make_unique<DummySPOSetWithoutMW>("no mw 0");
-    RotatedSPOs rot_spo0("rotated0", std::move(spo_ptr0));
-    auto spo_ptr1 = std::make_unique<DummySPOSetWithoutMW>("no mw 1");
-    RotatedSPOs rot_spo1("rotated1", std::move(spo_ptr1));
+    RotatedSPOs rot_spo0("rotated0", std::move(std::make_unique<DummySPOSetWithoutMW>("no mw 0")));
+    RotatedSPOs rot_spo1("rotated1", std::move(std::make_unique<DummySPOSetWithoutMW>("no mw 1")));
 
-    RefVectorWithLeader<SPOSet> spo_list(rot_spo0);
-    spo_list.push_back(rot_spo0);
-    spo_list.push_back(rot_spo1);
+    RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
+    ResourceCollection spo_res("test_rot_res");
+    rot_spo0.createResource(spo_res);
+    ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
     const SimulationCell simulation_cell;
     ParticleSet elec0(simulation_cell);
     ParticleSet elec1(simulation_cell);
 
-    RefVectorWithLeader<ParticleSet> p_list(elec0);
-    p_list.push_back(elec0);
-    p_list.push_back(elec1);
+    RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});
 
     SPOSet::ValueVector psi0(3);
     SPOSet::ValueVector psi1(3);
-    RefVector<SPOSet::ValueVector> psi_v_list;
-    psi_v_list.push_back(psi0);
-    psi_v_list.push_back(psi1);
+    RefVector<SPOSet::ValueVector> psi_v_list{psi0, psi1};
 
     rot_spo0.mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
     for (int iw = 0; iw < spo_list.size(); iw++)
