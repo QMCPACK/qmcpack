@@ -1703,13 +1703,13 @@ RefVectorWithLeader<SPOSet> RotatedSPOs::extractPhiRefList(const RefVectorWithLe
 {
   auto& spo_leader      = spo_list.getCastedLeader<RotatedSPOs>();
   IndexType nw          = spo_list.size();
-  SPOSet& phi_leader = *(spo_leader->Phi);
+  SPOSet& phi_leader = *(spo_leader.Phi);
   RefVectorWithLeader<SPOSet> phi_list(phi_leader);
   phi_list.reserve(nw);
   for (int iw = 0; iw < nw; iw++)
   {
     RotatedSPOs& rot = spo_list.getCastedElement<RotatedSPOs>(iw);
-    phi_list.emplace_back(*(rot->Phi));
+    phi_list.emplace_back(*(rot.Phi));
   }
   return phi_list;
 }
