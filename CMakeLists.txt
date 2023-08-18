@@ -15,7 +15,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 3.16.9
+  VERSION 3.17.0
   LANGUAGES C CXX)
 
 # add the automatically determined parts of the RPATH
