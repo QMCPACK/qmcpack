@@ -111,6 +111,7 @@ set(SPOSET_SRC
     test_hybridrep.cpp
     test_pw.cpp
     test_ConstantSPOSet.cpp
+    test_ConstantSPOSetT.cpp
     ${MO_SRCS})
 if(NiO_a16_H5_FOUND)
   set(SPOSET_SRC ${SPOSET_SRC} test_einset_NiO_a16.cpp)
@@ -139,7 +140,7 @@ set(DETERMINANT_SRC
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
 
-add_library(sposets_for_testing FakeSPOT.cpp FakeSPO.cpp ConstantSPOSet.cpp)
+add_library(sposets_for_testing FakeSPOT.cpp FakeSPO.cpp ConstantSPOSet.cpp ConstantSPOSetT.cpp)
 target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(sposets_for_testing PUBLIC qmcwfs)
 
