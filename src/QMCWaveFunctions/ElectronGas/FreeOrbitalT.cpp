@@ -20,63 +20,6 @@
 namespace qmcplusplus
 {
 
-template<class T>
-FreeOrbitalT<T>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart) : SPOSetT<T>(my_name)
-{}
-
-//Explicit template specialization
-template<>
-FreeOrbitalT<float>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart)
-    : SPOSetT<float>(my_name),
-      kvecs(kpts_cart),
-      mink(1), // treat k=0 as special case
-      maxk(kpts_cart.size()),
-      k2neg(maxk)
-{
-  this->OrbitalSetSize = 2 * maxk - 1; // k=0 has no (cos, sin) split, SPOSet member
-  for (int ik = 0; ik < maxk; ik++)
-    k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
-}
-
-template<>
-FreeOrbitalT<double>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart)
-    : SPOSetT<double>(my_name),
-      kvecs(kpts_cart),
-      mink(1), // treat k=0 as special case
-      maxk(kpts_cart.size()),
-      k2neg(maxk)
-{
-  this->OrbitalSetSize = 2 * maxk - 1; // k=0 has no (cos, sin) split, SPOSet member
-  for (int ik = 0; ik < maxk; ik++)
-    k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
-}
-
-template<>
-FreeOrbitalT<std::complex<float>>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart)
-    : SPOSetT<std::complex<float>>(my_name),
-      kvecs(kpts_cart),
-      mink(0), // treat k=0 as special case
-      maxk(kpts_cart.size()),
-      k2neg(maxk)
-{
-  this->OrbitalSetSize = maxk; // SPOSet member
-  for (int ik = 0; ik < maxk; ik++)
-    k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
-}
-
-template<>
-FreeOrbitalT<std::complex<double>>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart)
-    : SPOSetT<std::complex<double>>(my_name),
-      kvecs(kpts_cart),
-      mink(0), // treat k=0 as special case
-      maxk(kpts_cart.size()),
-      k2neg(maxk)
-{
-  this->OrbitalSetSize = maxk; // SPOSet member
-  for (int ik = 0; ik < maxk; ik++)
-    k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
-}
-
 
 template<class T>
 void FreeOrbitalT<T>::evaluateVGL(const ParticleSet& P,
@@ -694,6 +637,59 @@ void FreeOrbitalT<T>::evaluate_notranspose(const ParticleSet& P,
     ValueVector d2p(d2phi[i], this->OrbitalSetSize);
     evaluateVGL(P, iat, p, dp, d2p);
   }
+}
+
+//Explicit template specialization
+template<>
+FreeOrbitalT<float>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart)
+    : SPOSetT<float>(my_name),
+      kvecs(kpts_cart),
+      mink(1), // treat k=0 as special case
+      maxk(kpts_cart.size()),
+      k2neg(maxk)
+{
+  this->OrbitalSetSize = 2 * maxk - 1; // k=0 has no (cos, sin) split, SPOSet member
+  for (int ik = 0; ik < maxk; ik++)
+    k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
+}
+
+template<>
+FreeOrbitalT<double>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart)
+    : SPOSetT<double>(my_name),
+      kvecs(kpts_cart),
+      mink(1), // treat k=0 as special case
+      maxk(kpts_cart.size()),
+      k2neg(maxk)
+{
+  this->OrbitalSetSize = 2 * maxk - 1; // k=0 has no (cos, sin) split, SPOSet member
+  for (int ik = 0; ik < maxk; ik++)
+    k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
+}
+
+template<>
+FreeOrbitalT<std::complex<float>>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart)
+    : SPOSetT<std::complex<float>>(my_name),
+      kvecs(kpts_cart),
+      mink(0), // treat k=0 as special case
+      maxk(kpts_cart.size()),
+      k2neg(maxk)
+{
+  this->OrbitalSetSize = maxk; // SPOSet member
+  for (int ik = 0; ik < maxk; ik++)
+    k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
+}
+
+template<>
+FreeOrbitalT<std::complex<double>>::FreeOrbitalT(const std::string& my_name, const std::vector<PosType>& kpts_cart)
+    : SPOSetT<std::complex<double>>(my_name),
+      kvecs(kpts_cart),
+      mink(0), // treat k=0 as special case
+      maxk(kpts_cart.size()),
+      k2neg(maxk)
+{
+  this->OrbitalSetSize = maxk; // SPOSet member
+  for (int ik = 0; ik < maxk; ik++)
+    k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
 }
 
 
