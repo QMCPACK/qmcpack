@@ -16,6 +16,9 @@
 
 #include "MultiDiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
+#ifndef QMC_COMPLEX
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
@@ -549,6 +552,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       offload_timer(s.offload_timer),
       transferH2D_timer(s.transferH2D_timer),
       transferD2H_timer(s.transferD2H_timer),
+      lookup_tbl(s.lookup_tbl),
       Phi(s.Phi->makeClone()),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(s.FirstIndex),
@@ -579,22 +583,22 @@ std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(Particle
  *@param spinor flag to determinane if spin arrays need to be resized and used
  */
 MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel)
-    : inverse_timer(*timer_manager.createTimer(getClassName() + "::invertRefDet")),
-      buildTable_timer(*timer_manager.createTimer(getClassName() + "::buildTable")),
-      table2ratios_timer(*timer_manager.createTimer(getClassName() + "::table2ratios")),
-      evalWalker_timer(*timer_manager.createTimer(getClassName() + "::evalWalker")),
-      evalOrbValue_timer(*timer_manager.createTimer(getClassName() + "::evalOrbValue")),
-      evalOrbVGL_timer(*timer_manager.createTimer(getClassName() + "::evalOrbVGL")),
-      updateInverse_timer(*timer_manager.createTimer(getClassName() + "::updateRefDetInv")),
-      calculateRatios_timer(*timer_manager.createTimer(getClassName() + "::calcRatios")),
-      calculateGradRatios_timer(*timer_manager.createTimer(getClassName() + "::calcGradRatios")),
-      updateRatios_timer(*timer_manager.createTimer(getClassName() + "::updateRatios")),
-      evaluateDetsForPtclMove_timer(*timer_manager.createTimer(getClassName() + "::evaluateDet")),
-      evaluateDetsAndGradsForPtclMove_timer(*timer_manager.createTimer(getClassName() + "::evaluateDetAndGrad")),
-      evaluateGrads_timer(*timer_manager.createTimer(getClassName() + "::evaluateGrad")),
-      offload_timer(*timer_manager.createTimer(getClassName() + "::offload")),
-      transferH2D_timer(*timer_manager.createTimer(getClassName() + "::transferH2D")),
-      transferD2H_timer(*timer_manager.createTimer(getClassName() + "::transferD2H")),
+    : inverse_timer(createGlobalTimer(getClassName() + "::invertRefDet")),
+      buildTable_timer(createGlobalTimer(getClassName() + "::buildTable")),
+      table2ratios_timer(createGlobalTimer(getClassName() + "::table2ratios")),
+      evalWalker_timer(createGlobalTimer(getClassName() + "::evalWalker")),
+      evalOrbValue_timer(createGlobalTimer(getClassName() + "::evalOrbValue")),
+      evalOrbVGL_timer(createGlobalTimer(getClassName() + "::evalOrbVGL")),
+      updateInverse_timer(createGlobalTimer(getClassName() + "::updateRefDetInv")),
+      calculateRatios_timer(createGlobalTimer(getClassName() + "::calcRatios")),
+      calculateGradRatios_timer(createGlobalTimer(getClassName() + "::calcGradRatios")),
+      updateRatios_timer(createGlobalTimer(getClassName() + "::updateRatios")),
+      evaluateDetsForPtclMove_timer(createGlobalTimer(getClassName() + "::evaluateDet")),
+      evaluateDetsAndGradsForPtclMove_timer(createGlobalTimer(getClassName() + "::evaluateDetAndGrad")),
+      evaluateGrads_timer(createGlobalTimer(getClassName() + "::evaluateGrad")),
+      offload_timer(createGlobalTimer(getClassName() + "::offload")),
+      transferH2D_timer(createGlobalTimer(getClassName() + "::transferH2D")),
+      transferD2H_timer(createGlobalTimer(getClassName() + "::transferD2H")),
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(first),
@@ -647,27 +651,25 @@ void MultiDiracDeterminant::createResource(ResourceCollection& collection) const
 void MultiDiracDeterminant::acquireResource(ResourceCollection& collection,
                                             const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<MultiDiracDeterminant>();
-  auto res_ptr     = dynamic_cast<MultiDiracDetMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("MultiDiracDeterminant::acquireResource dynamic_cast failed");
-  wfc_leader.mw_res_.reset(res_ptr);
+  auto& wfc_leader          = wfc_list.getCastedLeader<MultiDiracDeterminant>();
+  wfc_leader.mw_res_handle_ = collection.lendResource<MultiDiracDetMultiWalkerResource>();
+  auto& mw_res              = wfc_leader.mw_res_handle_.getResource();
 
   const size_t nw = wfc_list.size();
-  wfc_leader.mw_res_->resizeConstants(nw);
+  mw_res.resizeConstants(nw);
 
-  auto& psiV_temp_deviceptr_list    = wfc_leader.mw_res_->psiV_temp_deviceptr_list;
-  auto& psiMinv_temp_deviceptr_list = wfc_leader.mw_res_->psiMinv_temp_deviceptr_list;
-  auto& dpsiMinv_deviceptr_list     = wfc_leader.mw_res_->dpsiMinv_deviceptr_list;
-  auto& workV1_deviceptr_list       = wfc_leader.mw_res_->workV1_deviceptr_list;
-  auto& workV2_deviceptr_list       = wfc_leader.mw_res_->workV2_deviceptr_list;
+  auto& psiV_temp_deviceptr_list    = mw_res.psiV_temp_deviceptr_list;
+  auto& psiMinv_temp_deviceptr_list = mw_res.psiMinv_temp_deviceptr_list;
+  auto& dpsiMinv_deviceptr_list     = mw_res.dpsiMinv_deviceptr_list;
+  auto& workV1_deviceptr_list       = mw_res.workV1_deviceptr_list;
+  auto& workV2_deviceptr_list       = mw_res.workV2_deviceptr_list;
 
-  auto& psiV_deviceptr_list    = wfc_leader.mw_res_->psiV_deviceptr_list;
-  auto& dpsiV_deviceptr_list   = wfc_leader.mw_res_->dpsiV_deviceptr_list;
-  auto& TpsiM_deviceptr_list   = wfc_leader.mw_res_->TpsiM_deviceptr_list;
-  auto& psiM_deviceptr_list    = wfc_leader.mw_res_->psiM_deviceptr_list;
-  auto& psiMinv_deviceptr_list = wfc_leader.mw_res_->psiMinv_deviceptr_list;
-  auto& dpsiM_deviceptr_list   = wfc_leader.mw_res_->dpsiM_deviceptr_list;
+  auto& psiV_deviceptr_list    = mw_res.psiV_deviceptr_list;
+  auto& dpsiV_deviceptr_list   = mw_res.dpsiV_deviceptr_list;
+  auto& TpsiM_deviceptr_list   = mw_res.TpsiM_deviceptr_list;
+  auto& psiM_deviceptr_list    = mw_res.psiM_deviceptr_list;
+  auto& psiMinv_deviceptr_list = mw_res.psiMinv_deviceptr_list;
+  auto& dpsiM_deviceptr_list   = mw_res.dpsiM_deviceptr_list;
 
   psiV_temp_deviceptr_list.resize(nw);
   psiMinv_temp_deviceptr_list.resize(nw);
@@ -717,7 +719,7 @@ void MultiDiracDeterminant::releaseResource(ResourceCollection& collection,
                                             const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<MultiDiracDeterminant>();
-  collection.takebackResource(std::move(wfc_leader.mw_res_));
+  collection.takebackResource(wfc_leader.mw_res_handle_);
 }
 
 ///reset the size: with the number of particles and number of orbtials
@@ -787,6 +789,7 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
 
   // create active rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;
+  std::vector<std::pair<int, int>> other_rot_inds;
 
   for (int i = 0; i < nmo; i++)
     for (int j = i + 1; j < nmo; j++)
@@ -803,9 +806,25 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
                 int>(i,
                      j)); // orbital rotation parameter accepted as long as rotation isn't core-core or virtual-virtual
       }
+      else
+      {
+        other_rot_inds.push_back(std::pair<int, int>(i, j));
+      }
     }
 
-  Phi->buildOptVariables(m_act_rot_inds);
+  std::vector<std::pair<int, int>> full_rot_inds;
+
+  // Copy the adjustable rotations first
+  full_rot_inds = m_act_rot_inds;
+  // Add the other rotations at the end
+  full_rot_inds.insert(full_rot_inds.end(), other_rot_inds.begin(), other_rot_inds.end());
+
+
+#ifndef QMC_COMPLEX
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  if (rot_spo)
+    rot_spo->buildOptVariables(m_act_rot_inds, full_rot_inds);
+#endif
 }
 
 int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,

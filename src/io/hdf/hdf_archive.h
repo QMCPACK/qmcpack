@@ -70,6 +70,14 @@ private:
   hid_t lcpl_id;
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
+  ///Track group names corresponding to group_id
+  std::vector<std::string> group_names;
+
+  /** Name of file that hdf_archive thinks is open.
+   *  This may not correspond to the actual file because the open call failed,
+   *  or the file was closed. This information is useful for debugging.
+   */
+  std::string possible_filename_;
 
   ///set the access property
   void set_access_plist(Communicate* comm, bool request_pio);
@@ -146,6 +154,35 @@ public:
    */
   bool is_group(const std::string& aname);
 
+  /** check if aname is a dataset
+   * @param aname dataset's name
+   * @return true, if aname exists and it is a dataset
+   */
+  bool is_dataset(const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    int dummy_data;
+    h5data_proxy<int> e(dummy_data);
+    return e.check_existence(p, aname);
+  }
+
+  /** check if aname is a dataset of type T
+   * @param aname group's name
+   * @return true, if aname is a dataset of type T
+   */
+  template<typename T>
+  bool is_dataset_of_type(const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    T dummy_data;
+    h5data_proxy<T> e(dummy_data);
+    return e.check_type(p, aname);
+  }
+
   /** return the top of the group stack
    */
   inline hid_t top() const { return group_id.empty() ? file_id : group_id.top(); }
@@ -160,8 +197,8 @@ public:
    * @param gname name of the group
    * @param createit if true, group is create when missing
    */
-  hid_t push(const std::string& gname, bool createit = true);
-  hid_t push(const hdf_path& gname, bool createit = true);
+  void push(const std::string& gname, bool createit = true);
+  void push(const hdf_path& gname, bool createit = true);
 
 
   inline void pop()
@@ -170,10 +207,15 @@ public:
       return;
     hid_t g = group_id.top();
     group_id.pop();
+    group_names.pop_back();
     herr_t err = H5Gclose(g);
     if (err < 0)
       throw std::runtime_error("H5Gclose failed with error.");
   }
+
+  /** Return a string representation of the current group stack
+   */
+  std::string group_path_as_string() const;
 
   /** read the shape of multidimensional filespace from the group aname
    * this function can be used to query dataset for preparing containers.

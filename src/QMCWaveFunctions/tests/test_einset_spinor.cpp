@@ -44,15 +44,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   ParticleSet::ParticleLayout lattice;
   // O2 test example from pwscf non-collinear calculation.
-  lattice.R(0, 0) = 5.10509515;
-  lattice.R(0, 1) = -3.23993545;
-  lattice.R(0, 2) = 0.00000000;
-  lattice.R(1, 0) = 5.10509515;
-  lattice.R(1, 1) = 3.23993545;
-  lattice.R(1, 2) = 0.00000000;
-  lattice.R(2, 0) = -6.49690625;
-  lattice.R(2, 1) = 0.00000000;
-  lattice.R(2, 2) = 7.08268015;
+  lattice.R = {5.10509515, -3.23993545, 0.00000000, 5.10509515, 3.23993545,
+               0.00000000, -6.49690625, 0.00000000, 7.08268015};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -65,26 +58,14 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
 
-  ions_.R[0][0] = 0.00000000;
-  ions_.R[0][1] = 0.00000000;
-  ions_.R[0][2] = 1.08659253;
-  ions_.R[1][0] = 0.00000000;
-  ions_.R[1][1] = 0.00000000;
-  ions_.R[1][2] = -1.08659253;
-
+  ions_.R[0] = {0.00000000, 0.00000000, 1.08659253};
+  ions_.R[1] = {0.00000000, 0.00000000, -1.08659253};
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({3});
-  elec_.R[0][0] = 0.1;
-  elec_.R[0][1] = -0.3;
-  elec_.R[0][2] = 1.0;
-  elec_.R[1][0] = -0.1;
-  elec_.R[1][1] = 0.3;
-  elec_.R[1][2] = 1.0;
-  elec_.R[2][0] = 0.1;
-  elec_.R[2][1] = 0.2;
-  elec_.R[2][2] = 0.3;
-
+  elec_.R[0]     = {0.1, -0.3, 1.0};
+  elec_.R[1]     = {-0.1, 0.3, 1.0};
+  elec_.R[2]     = {0.1, 0.2, 0.3};
   elec_.spins[0] = 0.0;
   elec_.spins[1] = 0.2;
   elec_.spins[2] = 0.4;

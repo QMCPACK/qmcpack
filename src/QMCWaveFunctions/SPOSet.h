@@ -25,15 +25,19 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "OptimizableObject.h"
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#endif
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "DualAllocatorAliases.hpp"
 
 namespace qmcplusplus
 {
 class ResourceCollection;
+
+class SPOSet;
+namespace testing
+{
+opt_variables_type& getMyVars(SPOSet& spo);
+}
+
 
 /** base class for Single-particle orbital sets
  *
@@ -43,23 +47,17 @@ class ResourceCollection;
 class SPOSet : public QMCTraits
 {
 public:
-  using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
-  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
-  using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
-  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
-  using GradMatrix  = OrbitalSetTraits<ValueType>::GradMatrix;
-  using HessVector  = OrbitalSetTraits<ValueType>::HessVector;
-  using HessMatrix  = OrbitalSetTraits<ValueType>::HessMatrix;
-  using HessType    = OrbitalSetTraits<ValueType>::HessType;
-  using HessArray   = Array<HessType, OHMMS_DIM>;
-  using GGGType     = OrbitalSetTraits<ValueType>::GradHessType;
-  using GGGVector   = OrbitalSetTraits<ValueType>::GradHessVector;
-  using GGGMatrix   = OrbitalSetTraits<ValueType>::GradHessMatrix;
-  using VGLVector   = OrbitalSetTraits<ValueType>::VGLVector;
-  using Walker_t    = ParticleSet::Walker_t;
-  using SPOPool_t   = std::map<std::string, SPOSet*>;
-
+  using ValueVector       = OrbitalSetTraits<ValueType>::ValueVector;
+  using ValueMatrix       = OrbitalSetTraits<ValueType>::ValueMatrix;
+  using GradVector        = OrbitalSetTraits<ValueType>::GradVector;
+  using GradMatrix        = OrbitalSetTraits<ValueType>::GradMatrix;
+  using HessVector        = OrbitalSetTraits<ValueType>::HessVector;
+  using HessMatrix        = OrbitalSetTraits<ValueType>::HessMatrix;
+  using GGGVector         = OrbitalSetTraits<ValueType>::GradHessVector;
+  using GGGMatrix         = OrbitalSetTraits<ValueType>::GradHessMatrix;
+  using SPOMap            = std::map<std::string, const std::unique_ptr<const SPOSet>>;
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+  using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
@@ -113,11 +111,6 @@ public:
   /// check a few key parameters before putting the SPO into a determinant
   virtual void checkObject() const {}
 
-  /// create optimizable orbital rotation parameters
-  // Single Slater creation
-  virtual void buildOptVariables(const size_t nel) {}
-  // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
   /// return true if this SPOSet can be wrappered by RotatedSPO
   virtual bool isRotationSupported() const { return false; }
   /// store parameters before getting destroyed by rotation.
@@ -554,43 +547,6 @@ public:
   /// return class name
   virtual std::string getClassName() const = 0;
 
-#ifdef QMC_CUDA
-  /** Evaluate the SPO value at an explicit position.
-   * Ye: This is used only for debugging the CUDA code and should be removed.
-   */
-  virtual void evaluate(const ParticleSet& P, PosType& r, ValueVector& psi);
-
-  using CTS = CUDAGlobalTypes;
-
-  //////////////////////////////////////////
-  // Walker-parallel vectorized functions //
-  //////////////////////////////////////////
-  virtual void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool) {}
-
-  virtual void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi);
-
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
-                        std::vector<PosType>& new_pos,
-                        gpu::device_vector<CTS::ValueType*>& phi);
-
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
-                        std::vector<PosType>& new_pos,
-                        gpu::device_vector<CTS::ValueType*>& phi,
-                        gpu::device_vector<CTS::ValueType*>& grad_lapl_list,
-                        int row_stride);
-
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
-                        std::vector<PosType>& new_pos,
-                        gpu::device_vector<CTS::ValueType*>& phi,
-                        gpu::device_vector<CTS::ValueType*>& grad_lapl_list,
-                        int row_stride,
-                        int k,
-                        bool klinear);
-
-  virtual void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
-  virtual void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
-#endif
-
 protected:
   /// name of the object, unique identifier
   const std::string my_name_;
@@ -598,6 +554,8 @@ protected:
   IndexType OrbitalSetSize;
   /// Optimizable variables
   opt_variables_type myVars;
+
+  friend opt_variables_type& testing::getMyVars(SPOSet& spo);
 };
 
 using SPOSetPtr = SPOSet*;

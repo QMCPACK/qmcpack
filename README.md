@@ -153,28 +153,29 @@ make -j 8
                                         CMAKE_CXX_FLAGS_RELWITHDEBINFO
 ```
 
- * Key QMC build options
+ * Key QMCPACK build options
 
 ```
-     QMC_CUDA            Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
-     QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
-     QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
-                         (1:yes (GPU default), 0:no (CPU default)).
-                         The CPU support is experimental.
-                         Use float and double for base and full precision.
-                         The GPU support is quite mature.
-                         Use always double for host side base and full precision
-                         and use float and double for CUDA base and full precision.
-     ENABLE_CUDA         ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
-                         Production quality for AFQMC. Pre-production quality for real-space.
-                         Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
-     ENABLE_OFFLOAD      ON/OFF(default). Experimental feature. Enable OpenMP target offload for GPU acceleration.
-     ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
-                         to avoid potential slowdown in tiny systems.
-                         For systems beyond tiny sizes (100+ electrons) there is no risk.
+    QMC_COMPLEX           ON/OFF(default). Build the complex (general twist/k-point) version.
+    QMC_MIXED_PRECISION   ON/OFF(default). Build the mixed precision (mixing double/float) version
+                          Mixed precision calculations can be signifiantly faster but should be
+                          carefully checked validated against full double precision runs,
+                          particularly for large electron counts.
+    ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
+    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
+                          Production quality for AFQMC and real-space performance portable implementation.
+    QMC_CUDA2HIP          ON/OFF(default). Map all CUDA kernels and library calls to HIP and use ROCm libraries.
+                          Set both ENABLE_CUDA and QMC_CUDA2HIP ON to target AMD GPUs.
+    ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
+    QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
+                          "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
+                          Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
+                          from CMAKE_CUDA_ARCHITECTURES or CMAKE_HIP_ARCHITECTURES if available and then
+                          atempt to auto-detect existing GPUs.
+
 ```
 
- * Additional QMC options
+ * Additional QMCPACK options
 
 ```
      QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
@@ -187,6 +188,9 @@ make -j 8
                             saving default use of symbolic links for test files. Useful
                             if the build is on a separate filesystem from the source, as
                             required on some HPC systems.
+     ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
+                         to avoid potential slowdown in tiny systems.
+                         For systems beyond tiny sizes (100+ electrons) there is no risk.
 ```
 
   * libxml2 related

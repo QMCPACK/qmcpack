@@ -32,13 +32,11 @@ Quantum Monte Carlo Methods
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``move``       | text         | pbyp, alle   | pbyp        | Method used to move electrons   |
   +----------------+--------------+--------------+-------------+---------------------------------+
-  | ``gpu``        | text         | yes/no       | dep.        | Use the GPU                     |
-  +----------------+--------------+--------------+-------------+---------------------------------+
   | ``trace``      | text         |              | no          | ???                             |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
   +----------------+--------------+--------------+-------------+---------------------------------+
-  | ``checkpoint`` | integer      | -1, 0, n     | -1          | Checkpoint frequency            |
+  | ``checkpoint`` | integer      | -1, 0, n     | 0           | Checkpoint frequency            |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``record``     | integer      | n            | 0           | Save configuration ever n steps |
   +----------------+--------------+--------------+-------------+---------------------------------+
@@ -57,10 +55,6 @@ Additional information:
    all-electron move; namely, all the electrons are moved once for
    testing acceptance or rejection.
 
--  ``gpu``: When the executable is compiled with CUDA, the target
-   computing device can be chosen by this switch. With a regular
-   CPU-only compilation, this option is not effective.
-
 -  ``profiling``: Performance profiling tools by default profile complete application executions.
    This is largely unnecessary if the focus is a QMC section instead of any initialization
    and additional QMC sections for equilibrating walkers.
@@ -75,9 +69,9 @@ Additional information:
 -  ``checkpoint``: This enables and disables checkpointing and
    specifying the frequency of output. Possible values are:
 
-   - **[-1]** No checkpoint (default setting).
+   - **[-1]** No checkpoint files are written.
 
-   - **[0]** Write the checkpoint files after the completion of the QMC section.
+   - **[0]** Write the checkpoint files after the completion of the QMC section (default).
 
    - **[n]** Write the checkpoint files after every :math:`n` blocks, and also at the end of the QMC section.
 
@@ -190,8 +184,6 @@ Variational Monte Carlo
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``samplesperthread``           | integer      | :math:`\geq 0`          | 0           | Number of samples per thread                  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``storeconfigs``               | integer      | all values              | 0           | Write configurations to files                 |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
@@ -216,8 +208,8 @@ Additional information:
   sufficient number of ``blocks`` to perform statistical analysis.
 
 - ``warmupsteps`` - ``warmupsteps`` are used only for
-  equilibration. Property measurements are not performed during
-  warm-up steps.
+  initial equilibration and do not count against the requested step or block count.
+  Property measurements are not performed during warm-up steps.
 
 - ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
 
@@ -263,9 +255,6 @@ Additional information:
   than 1 can be used to reduces that correlation. In practice, using larger substeps is cheaper than using ``stepsbetweensamples``
   to decorrelate samples.
   
-- ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
-  files.
-
 - ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
   default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
   and higher performance, but numerical errors will accumulate over time. Recomputing introduces a performance penalty
@@ -340,8 +329,6 @@ Batched ``vmc`` driver (experimental)
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``samples`` (not ready)        | integer      | :math:`\geq 0`          | 0           | Number of walker samples for in this VMC run    |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
-  | ``storeconfigs`` (not ready)   | integer      | all values              | 0           | Write configurations to files                   |
-  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency                |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing)   |
@@ -358,13 +345,21 @@ Additional information:
 
 - ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
 
-- ``walkers_per_rank`` The number of walkers per MPI rank. The exact number of walkers will be generated before performing random walking.
-  It is not required to be a multiple of the number of OpenMP threads. However, to avoid any idle resources, it is recommended to be at
-  least the number of OpenMP threads for pure CPU runs. For GPU runs, a scan of this parameter is necessary to reach reasonable single rank
-  efficiency and also get a balanced time to solution.
-  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
+- ``walkers_per_rank`` The number of walkers per MPI rank. This number does not have to be a multiple of the number of OpenMP
+  threads. However, to avoid any idle resources, it is recommended to be at least the number of OpenMP threads for pure CPU runs.
+  For GPU runs, a scan of this parameter is necessary to reach reasonable single rank efficiency and also get a balanced time to
+  solution. For highest throughput on GPUs, expect to use hundreds of walkers_per_rank, or the largest number that will fit in GPU
+  memory.
 
-- ``total_walkers`` Total number of walkers over all MPI ranks. if not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers`` and ``walkers_per_rank`` are provided, ``total_walkers`` must be equal to ``walkers_per_rank`` times the number MPI ranks.
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are walker configurations carried over from previous QMC sections or a restart,
+  the population carried over will be used without modification.
+
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are no walker configurations carried over, ``walkers_per_rank`` is set equal to ``crowds``.
+
+- ``total_walkers`` Total number of walkers summed over all MPI ranks, or equivalently the total number of walkers in the DMC
+  calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers``
+  and ``walkers_per_rank`` are provided, which is not recommended, ``total_walkers`` must be consistently set equal to
+  ``walkers_per_rank`` times the number MPI ranks.
 
 - ``blocks`` This parameter is universal for all the QMC methods. The MC processes are divided into a number of
   ``blocks``, each containing a number of steps. At the end of each block, the statistics accumulated in the block are dumped into files,
@@ -373,15 +368,15 @@ Additional information:
   sufficient number of ``blocks`` to perform statistical analysis.
 
 - ``warmupsteps`` - ``warmupsteps`` are used only for
-  equilibration. Property measurements are not performed during
-  warm-up steps.
+  initial equilibration and do not count against the requested step or block count.
+  Property measurements are not performed during warm-up steps.
 
 - ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
 
 - ``substeps``  For each substep, an attempt is made to move each of the electrons once only by either particle-by-particle or an
   all-electron move.  Because the local energy is evaluated only at
   each full step and not each substep, ``substeps`` are computationally cheaper
-  and can be used to de-correlation at a low computational cost.
+  and can be used for decorrelation at a low computational cost.
 
 - ``usedrift`` The VMC is implemented in two algorithms with
   or without drift. In the no-drift algorithm, the move of each
@@ -397,9 +392,6 @@ Additional information:
   simulation.
 
 - ``samples`` (not ready)
-
-- ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
-  files.
 
 - ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
   default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
@@ -1254,7 +1246,7 @@ the tag is not added coefficients will not be saved.
 
   The rest of the optimization block remains the same.
 
-When running the optimization, the new coefficients will be stored in a ``*.sXXX.opt.h5`` file,  where XXX coressponds to the series number. The H5 file contains only the optimized coefficients. The corresponding ``*.sXXX.opt.xml`` will be updated for each optimization block as follows:
+When running the optimization, the new coefficients will be stored in a ``*.sXXX.opt.h5`` file,  where XXX corresponds to the series number. The H5 file contains only the optimized coefficients. The corresponding ``*.sXXX.opt.xml`` will be updated for each optimization block as follows:
 
 ::
 
@@ -1422,13 +1414,7 @@ parameters:
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``maxDisplSq``              | real         | all values              | -1          | Maximum particle move                   |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
-  | ``scaleweight``             | string       | yes/other               | yes         | Scale weights (CUDA only)               |
-  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``checkproperties``         | integer      | :math:`\geq 0`          | 100         | Number of steps between walker updates  |
-  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
-  | ``fastgrad``                | text         | yes/other               | yes         | Fast gradients                          |
-  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
-  | ``storeconfigs``            | integer      | all values              | 0           | Store configurations                    |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``use_nonblocking``         | string       | yes/no                  | yes         | Using nonblocking send/recv             |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
@@ -1456,10 +1442,6 @@ Additional information:
 
 -  ``steps``: This is the number of DMC steps in a block.
 
--  ``warmupsteps``: These are the steps at the beginning of a DMC run in
-   which the instantaneous average energy is used to update the trial
-   energy. During regular steps, E\ :math:`_{ref}` is used.
-
 -  ``timestep``: The ``timestep`` determines the accuracy of the
    imaginary time propagator. Generally, multiple time steps are used to
    extrapolate to the infinite time step limit. A good range of time
@@ -1482,24 +1464,35 @@ Additional information:
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_moves'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
--  ``energyUpdateInterval``: The default is to update the trial energy
-   at every step. Otherwise the trial energy is updated every
-   ``energyUpdateInterval`` step.
+-  ``warmupsteps``: These are the steps at the beginning of a DMC run in
+   which the instantaneous population average energy is used to update the trial
+   energy and updates happen at every step. The aim is to rapidly equilibrate the population while avoiding overly large population fluctuations.
+   Unlike VMC, these warmupsteps are included in the requested DMC step count.
 
 .. math::
 
-  E_{\text{trial}}=
-  \textrm{refEnergy}+\textrm{feedback}\cdot(\ln\texttt{targetWalkers}-\ln N)\:,
+  E_\text{trial} = E_\text{pop\_avg}+(\ln \texttt{targetwalkers}-\ln N_\text{pop}) / \texttt{timestep}
 
-where :math:`N` is the current population.
+where :math:`E_\text{pop\_avg}` is the local energy average over the walker population at the current step
+and :math:`N_\text{pop}` is the current walker population size.
+After the warm-up phase, the trial energy is updated as
+
+.. math::
+
+  E_\text{trial} = E_\text{ref}+\texttt{feedback}\cdot(\ln\texttt{targetWalkers}-\ln N_\text{pop})
+
+where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the post warm-up steps up to the current step. The update frequency is controlled by ``energyUpdateInterval``.
+
+-  ``energyUpdateInterval``: Post warm-up, the trial energy is updated every
+   ``energyUpdateInterval`` steps. Default value is 1 (every step).
 
 -  ``refEnergy``: The default reference energy is taken from the VMC run
    that precedes the DMC run. This value is updated to the current mean
    whenever branching happens.
 
 -  ``feedback``: This variable is used to determine how strong to react
-   to population fluctuations when doing population control. See the
-   equation in energyUpdateInterval for more details.
+   to population fluctuations when doing population control. Default value is 1. See the
+   equation in ``warmupsteps`` for more details.
 
 -  ``useBareTau``: The same time step is used whether or not a move is
    rejected. The default is to use an effective time step when a move is
@@ -1554,19 +1547,12 @@ where :math:`N` is the current population.
 
       The v1 and v3 algorithms are size-consistent and are important advances over the previous v0 non-size-consistent algorithm. We highly recommend investigating the importance of size-consistency.
 
-
--  ``scaleweight``: This is the scaling weight per Umrigar/Nightingale.
-   CUDA only.
-
 -  ``MaxAge``: Set the weight of a walker to min(currentweight,0.5)
    after a walker has not moved for ``MaxAge`` steps. Needed if
    persistent walkers appear during the course of a run.
 
 -  ``MaxCopy``: When determining the number of copies of a walker to
    branch, set the number of copies equal to min(Multiplicity,MaxCopy).
-
--  ``fastgrad``: This calculates gradients with either the fast version
-   or the full-ratio version.
 
 -  ``maxDisplSq``: When running a DMC calculation with particle by
    particle, this sets the maximum displacement allowed for a single
@@ -1576,10 +1562,6 @@ where :math:`N` is the current population.
 
 -  ``sigmaBound``: This determines the branch cutoff to limit wild
    weights based on the sigma and ``sigmaBound``.
-
--  ``storeconfigs``: If ``storeconfigs`` is set to a nonzero value, then
-   electron configurations during the DMC run will be saved. This option
-   is disabled for the OpenMP version of DMC.
 
 -  ``blocks_between_recompute``: See details in :ref:`vmc`.
 
@@ -1716,8 +1698,6 @@ Batched ``dmc`` driver (experimental)
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``reconfiguration``            | string       | yes/pure/other          | no          | Fixed population technique                      |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
-  | ``storeconfigs``               | integer      | all values              | 0           | Store configurations                            |
-  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``use_nonblocking``            | string       | yes/no                  | yes         | Using nonblocking send/recv                     |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``debug_disable_branching``    | string       | yes/no                  | no          | Disable branching for debugging                 |
@@ -1738,7 +1718,12 @@ Batched ``dmc`` driver (experimental)
   threads. However, to avoid any idle resources, it is recommended to be at least the number of OpenMP threads for pure CPU runs.
   For GPU runs, a scan of this parameter is necessary to reach reasonable single rank efficiency and also get a balanced time to
   solution. For highest throughput on GPUs, expect to use hundreds of walkers_per_rank, or the largest number that will fit in GPU
-  memory. If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
+  memory.
+
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are walker configurations carried over from previous QMC sections or a restart,
+  the population carried over will be used without modification.
+
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are no walker configurations carried over, ``walkers_per_rank`` is set equal to ``crowds``.
 
 - ``total_walkers`` Total number of walkers summed over all MPI ranks, or equivalently the total number of walkers in the DMC
   calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers``
@@ -1749,6 +1734,41 @@ Batched ``dmc`` driver (experimental)
 
 - ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
+
+- ``warmupsteps``: These are the steps at the beginning of a DMC run in
+  which the instantaneous population average energy is used to update the trial
+  energy and updates happen at every step. The aim is to rapidly equilibrate the population while avoiding overly large population fluctuations.
+  Unlike VMC, these warmupsteps are included in the requested DMC step count.
+
+.. math::
+
+  E_\text{trial} = E_\text{pop\_avg}+(\ln \texttt{targetwalkers}-\ln W_\text{pop}) / \texttt{timestep}
+
+where :math:`E_\text{pop\_avg}` is the local energy average over the walker population at the current step
+and :math:`W_\text{pop}` is the current population weight before the population adjustment in branching.
+After the warm-up phase, the trial energy is updated as
+
+.. math::
+
+  E_\text{trial} = E_\text{ref}+\texttt{feedback}\cdot(\ln\texttt{targetWalkers}-\ln W_\text{pop})
+
+where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the post warm-up steps up to the current step. The update frequency is controlled by ``energyUpdateInterval``.
+
+- ``energyUpdateInterval``: Post warm-up, the trial energy is updated every
+  ``energyUpdateInterval`` steps. Default value is 1 (every step).
+
+- ``refEnergy``: The default reference energy is taken from the VMC run
+  that precedes the DMC run. This value is updated to the current mean
+  whenever branching happens.
+
+- ``feedback``: This variable is used to determine how strong to react
+  to population fluctuations when doing population control. Default value is 1. See the
+  equation in ``warmupsteps`` for more details.
+
+- ``refenergy_update_scheme``: choose a scheme for updating :math:`E_\text{ref}` used in calculating :math:`E_\text{trial}`.
+  'unlimited_history' uses unweighted average of :math:`E_\text{pop\_avg}` of all the steps collected post warm-up.
+  'limited_history' uses weighted average of :math:`E_\text{pop\_avg}` of the latest at maximum
+  min(1, int(1.0 / (feedback * tau))) steps collected post warm-up. Default 'unlimited_history'.
 
 .. code-block::
   :caption: The following is an example of a minimal DMC section using the batched ``dmc`` driver
@@ -1768,7 +1788,7 @@ Reptation Monte Carlo
 ---------------------
 
 Like DMC, RMC is a projector-based method that allows sampling of the
-fixed-node wavefunciton. However, by exploiting the path-integral
+fixed-node wavefunction. However, by exploiting the path-integral
 formulation of Schrödinger’s equation, the RMC algorithm can offer some
 advantages over traditional DMC, such as sampling both the mixed and
 pure fixed-node distributions in polynomial time, as well as not having
@@ -1859,7 +1879,7 @@ declaration to ensure correct sampling:
 
 -  **Sampling**: We use Ceperley’s bounce algorithm. ``MaxAge`` is used
    in case the reptile gets stuck, at which point the code forces move
-   acceptance, stops accumulating statistics, and requilibrates the
+   acceptance, stops accumulating statistics, and reequilibrates the
    reptile. Very rarely will this be required. For move proposals, we
    use particle-by-particle VMC a total of :math:`N_e` times to generate
    a new all-electron configuration, at which point the action is

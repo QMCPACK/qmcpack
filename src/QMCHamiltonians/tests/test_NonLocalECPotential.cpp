@@ -18,6 +18,7 @@
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "TestListenerFunction.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -118,7 +119,9 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   RefVector<ParticleSet> ptcls{elec, elec2};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
 
-  TrialWaveFunction psi, psi2;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi2(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi2});
 
   bool doForces = false;

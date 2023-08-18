@@ -10,8 +10,6 @@
 
 namespace qmcplusplus
 {
-using namespace std;
-
 /** Base class for Sk parser
  *
  * parse is the only pure virtual function that must be overridden
@@ -26,19 +24,19 @@ public:
   SkParserBase();
   virtual ~SkParserBase() {}
 
-  virtual void parse(const string& fname) = 0;
+  virtual void parse(const std::string& fname) = 0;
 
 
   void get_grid(Grid_t& xgrid, Grid_t& ygrid, Grid_t& zgrid);
-  void get_sk(vector<RealType>& sk, vector<RealType>& skerr);
+  void get_sk(std::vector<RealType>& sk, std::vector<RealType>& skerr);
 
-  vector<PosType> get_grid_raw() { return kgridraw; };
-  vector<RealType> get_sk_raw() { return skraw; };
-  vector<RealType> get_skerr_raw() { return skerr_raw; };
+  std::vector<PosType> get_grid_raw() { return kgridraw; };
+  std::vector<RealType> get_sk_raw() { return skraw; };
+  std::vector<RealType> get_skerr_raw() { return skerr_raw; };
 
   void compute_sk();
-  void set_grid(const vector<PosType>& gridpoints);
-  void set_grid(const vector<TinyVector<int, OHMMS_DIM>>& gridpoints);
+  void set_grid(const std::vector<PosType>& gridpoints);
+  void set_grid(const std::vector<TinyVector<int, OHMMS_DIM>>& gridpoints);
 
   void compute_grid();
 
@@ -58,13 +56,13 @@ protected:
   Grid_t ygrid;
   Grid_t zgrid;
 
-  vector<RealType> skraw;
-  vector<RealType> skerr_raw;
-  vector<PosType> kgridraw;
+  std::vector<RealType> skraw;
+  std::vector<RealType> skerr_raw;
+  std::vector<PosType> kgridraw;
 
-  vector<RealType> sk;
-  vector<RealType> skerr;
-  vector<PosType> kgrid;
+  std::vector<RealType> sk;
+  std::vector<RealType> skerr;
+  std::vector<PosType> kgrid;
 
   std::string skname;
 };

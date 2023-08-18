@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include <array>
 #include <cassert>
 #include <stdexcept>
 #include <numeric>
@@ -53,7 +54,7 @@ TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl
                                                       {WC_send, "WalkerControl::send"},
                                                       {WC_recv, "WalkerControl::recv"}};
 
-WalkerControl::WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixed_pop)
+WalkerControl::WalkerControl(Communicate* c, RandomBase<FullPrecRealType>& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
       rng_(rng),
       use_fixed_pop_(use_fixed_pop),
@@ -65,12 +66,11 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixe
       SwapMode(0),
       use_nonblocking_(true),
       debug_disable_branching_(false),
+      my_timers_(getGlobalTimerManager(), WalkerControlTimerNames, timer_level_medium),
       saved_num_walkers_sent_(0)
 {
   num_per_rank_.resize(num_ranks_);
   fair_offset_.resize(num_ranks_ + 1);
-
-  setup_timers(my_timers_, WalkerControlTimerNames, timer_level_medium);
 }
 
 WalkerControl::~WalkerControl() = default;
@@ -79,11 +79,11 @@ void WalkerControl::start()
 {
   if (rank_num_ == 0)
   {
-    std::string hname(myComm->getName());
-    hname.append(".dmc.dat");
+    std::filesystem::path hname(myComm->getName());
+    hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
-      dmcStream = std::make_unique<std::ofstream>(hname.c_str());
+      dmcStream = std::make_unique<std::ofstream>(hname);
       dmcStream->setf(std::ios::scientific, std::ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << "# Index " << std::setw(20) << "LocalEnergy" << std::setw(20) << "Variance" << std::setw(20)
@@ -92,7 +92,7 @@ void WalkerControl::start()
       (*dmcStream) << std::setw(20) << "TrialEnergy" << std::setw(20) << "DiffEff";
       (*dmcStream) << std::setw(20) << "LivingFraction";
       (*dmcStream) << std::endl;
-      dmcFname = hname;
+      dmcFname = std::move(hname);
     }
   }
 }
@@ -111,7 +111,6 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   ensemble_property_.LivingFraction =
       static_cast<FullPrecRealType>(curData[FNSIZE_INDEX]) / static_cast<FullPrecRealType>(curData[WALKERSIZE_INDEX]);
   ensemble_property_.AlternateEnergy = FullPrecRealType(0);
-  ensemble_property_.RNSamples       = FullPrecRealType(0);
   // \\todo If WalkerControl is not exclusively for dmc then this shouldn't be here.
   // If it is it shouldn't be in QMDrivers but QMCDrivers/DMC
   if (dmcStream)
@@ -135,7 +134,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   }
 }
 
-int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
+void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   if (debug_disable_branching_)
     do_not_branch = true;
@@ -214,15 +213,15 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       size_t num_copies = static_cast<int>(walkers[iw]->Multiplicity);
       while (num_copies > 1)
       {
-        auto walker_elements   = pop.spawnWalker();
-	// save this walkers ID
-	// \todo revisit Walker assignment operator after legacy drivers removed.
-	// but in the modern scheme walker IDs are permanent after creation, what walker they
-	// were copied from is in ParentID.
-	long save_id = walker_elements.walker.ID;
-        walker_elements.walker = *walkers[iw];
-	walker_elements.walker.ParentID = walker_elements.walker.ID;
-	walker_elements.walker.ID = save_id;
+        auto walker_elements = pop.spawnWalker();
+        // save this walkers ID
+        // \todo revisit Walker assignment operator after legacy drivers removed.
+        // but in the modern scheme walker IDs are permanent after creation, what walker they
+        // were copied from is in ParentID.
+        long save_id                    = walker_elements.walker.ID;
+        walker_elements.walker          = *walkers[iw];
+        walker_elements.walker.ParentID = walker_elements.walker.ID;
+        walker_elements.walker.ID       = save_id;
         num_copies--;
       }
     }
@@ -249,8 +248,6 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 
   for (int iw = untouched_walkers; iw < pop.get_num_local_walkers(); iw++)
     pop.get_walkers()[iw]->wasTouched = true;
-
-  return pop.get_num_global_walkers();
 }
 
 void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData)
@@ -273,7 +270,7 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::ve
     wsum += wgt;
   }
   //temp is an array to perform reduction operations
-  std::fill(curData.begin(), curData.end(), 0);
+  std::fill(curData.begin(), curData.end(), 0.0);
   curData[ENERGY_INDEX]      = esum;
   curData[ENERGY_SQ_INDEX]   = e2sum;
   curData[WALKERSIZE_INDEX]  = walkers.size(); // num of all the current walkers (good+bad)
@@ -328,14 +325,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   determineNewWalkerPopulation(num_per_rank_, fair_offset_, minus, plus);
 
 #ifdef MCWALKERSET_MPI_DEBUG
-  char fname[128];
-  sprintf(fname, "test.%d", rank_num_);
-  std::ofstream fout(fname, std::ios::app);
-  //fout << NumSwaps << " " << Cur_pop << " ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << num_per_rank_[ic] << " ";
-  //fout << " | ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << fair_offset_[ic+1]-fair_offset_[ic] << " ";
-  //fout << " | ";
+  std::array<char, 128> fname;
+  if (std::snprintf(fname.data(), fname.size(), "test.%d", rank_num_) < 0)
+    throw std::runtime_error("Error generating filename");
+  std::ofstream fout(fname.data(), std::ios::app);
+
   for (int ic = 0; ic < plus.size(); ic++)
   {
     fout << plus[ic] << " ";

@@ -1,11 +1,9 @@
-#if COMPILATION_INSTRUCTIONS // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-mpic++ -O3 -std=c++14 -Wall -Wextra -D_MAKE_BOOST_SERIALIZATION_HEADER_ONLY `#-lboost_serialization` $0 -o $0x.x && time mpirun -n 3 $0x.x $@ && rm -f $0x.x; exit
-#endif
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2018-2023 Alfredo A. Correa
 
-#include "../../mpi3/main.hpp"
-#include "../../mpi3/communicator.hpp"
-#include "../../mpi3/process.hpp"
-
+#include <mpi3/communicator.hpp>
+#include <mpi3/main.hpp>
+#include <mpi3/process.hpp>
 
 namespace mpi3 = boost::mpi3;
 

@@ -33,9 +33,12 @@
 #include "Message/Communicate.h"
 #include "hdf/hdf_archive.h"
 #include "Concurrency/OpenMP.h"
-#include <map>
-#include <set>
+
 #include <algorithm>
+#include <array>
+#include <map>
+#include <memory>
+#include <set>
 
 namespace qmcplusplus
 {
@@ -1286,7 +1289,8 @@ struct TraceBuffer
     dims[1] = buffer.size(1);
     if (dims[0] > 0)
     {
-      h5d_append(f.push(top), "traces", file_pointer, buffer.dim(), dims, buffer.data());
+      f.push(top);
+      h5d_append(f.top(), "traces", file_pointer, buffer.dim(), dims, buffer.data());
       f.pop();
     }
     f.flush();
@@ -1444,9 +1448,9 @@ public:
   bool hdf_format;
   std::string file_root;
   Communicate* communicator;
-  hdf_archive* hdf_file;
+  std::unique_ptr<hdf_archive> hdf_file;
 
-  TraceManager(Communicate* comm = 0) : verbose(false), hdf_file(0)
+  TraceManager(Communicate* comm = 0) : verbose(false)
   {
     reset_permissions();
     master_copy    = true;
@@ -2064,22 +2068,25 @@ public:
       APP_ABORT("TraceManager::open_hdf_file  no trace clones exist, cannot open file");
     int nprocs = communicator->size();
     int rank   = communicator->rank();
-    char ptoken[32];
+    std::array<char, 32> ptoken;
     std::string file_name = file_root;
     if (nprocs > 1)
     {
+      int length{0};
       if (nprocs > 10000)
-        sprintf(ptoken, ".p%05d", rank);
+        length = std::snprintf(ptoken.data(), ptoken.size(), ".p%05d", rank);
       else if (nprocs > 1000)
-        sprintf(ptoken, ".p%04d", rank);
+        length = std::snprintf(ptoken.data(), ptoken.size(), ".p%04d", rank);
       else
-        sprintf(ptoken, ".p%03d", rank);
-      file_name += ptoken;
+        length = std::snprintf(ptoken.data(), ptoken.size(), ".p%03d", rank);
+      if (length < 0)
+        throw std::runtime_error("Error generating filename");
+      file_name.append(ptoken.data(), length);
     }
     file_name += ".traces.h5";
     if (verbose)
       app_log() << "TraceManager::open_hdf_file  opening traces hdf file " << file_name << std::endl;
-    hdf_file        = new hdf_archive(communicator, false);
+    hdf_file        = std::make_unique<hdf_archive>(communicator, false);
     bool successful = hdf_file->create(file_name);
     if (!successful)
       APP_ABORT("TraceManager::open_hdf_file  failed to open hdf file " + file_name);
@@ -2103,7 +2110,7 @@ public:
     }
   }
 
-  inline void close_hdf_file() { delete hdf_file; }
+  inline void close_hdf_file() { hdf_file.reset(); }
 };
 
 

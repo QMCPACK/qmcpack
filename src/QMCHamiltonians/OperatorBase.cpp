@@ -210,7 +210,7 @@ void OperatorBase::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {}
 
-void OperatorBase::setRandomGenerator(RandomGenerator* rng) {}
+void OperatorBase::setRandomGenerator(RandomBase<FullPrecRealType>* rng) {}
 
 void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
 {
@@ -224,19 +224,6 @@ void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCH
 #if !defined(REMOVE_TRACEMANAGER)
 void OperatorBase::getRequiredTraces(TraceManager& tm){};
 #endif
-
-void OperatorBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  APP_ABORT("Need specialization for " + name_ +
-            "::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
-}
-
-void OperatorBase::addEnergy(MCWalkerConfiguration& W,
-                             std::vector<RealType>& LocalEnergy,
-                             std::vector<std::vector<NonLocalData>>& Txy)
-{
-  addEnergy(W, LocalEnergy);
-}
 
 // END  FUNCTIONS //
 

@@ -18,6 +18,12 @@
 
 namespace qmcplusplus
 {
+GridExternalPotential::GridExternalPotential(ParticleSet& P) : ps_(P)
+{
+  setEnergyDomain(POTENTIAL);
+  oneBodyQuantumDomain(P);
+}
+
 bool GridExternalPotential::put(xmlNodePtr cur)
 {
   using std::sqrt;
@@ -84,7 +90,7 @@ bool GridExternalPotential::put(xmlNodePtr cur)
 
   hin.read(data, dataset_name);
 
-  spline_data.reset(create_UBspline_3d_d(grid, grid, grid, BC, BC, BC, data.data()), destroy_Bspline);
+  spline_data_.reset(create_UBspline_3d_d(grid, grid, grid, BC, BC, BC, data.data()), destroy_Bspline);
 
   return true;
 }
@@ -117,7 +123,7 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
       PosType r = P.R[i];
       P.getLattice().applyMinimumImage(r);
       double val = 0.0;
-      eval_UBspline_3d_d(spline_data.get(), r[0], r[1], r[2], &val);
+      eval_UBspline_3d_d(spline_data_.get(), r[0], r[1], r[2], &val);
 
       value_ += val;
     }
@@ -127,11 +133,30 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
   return value_;
 }
 
+GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
+{
+  return evaluate(P);
+}
 
 #if !defined(REMOVE_TRACEMANAGER)
+void GridExternalPotential::contributeParticleQuantities() { request_.contribute_array(name_); }
+
+void GridExternalPotential::checkoutParticleQuantities(TraceManager& tm)
+{
+  streaming_particles_ = request_.streaming_array(name_);
+  if (streaming_particles_)
+    v_sample_ = tm.checkout_real<1>(name_, ps_);
+}
+
+void GridExternalPotential::deleteParticleQuantities()
+{
+  if (streaming_particles_)
+    delete v_sample_;
+}
+
 GridExternalPotential::Return_t GridExternalPotential::evaluate_sp(ParticleSet& P)
 {
-  Array<TraceReal, 1>& V_samp = *V_sample;
+  Array<TraceReal, 1>& V_samp = *v_sample_;
   value_                      = 0.0;
   for (int i = 0; i < P.getTotalNum(); ++i)
   {

@@ -36,6 +36,9 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 
+#include <array>
+#include <string_view>
+
 namespace qmcplusplus
 {
 void EinsplineSetBuilder::set_metadata(int numOrbs,
@@ -64,13 +67,16 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
         TileMatrix(i, j) = (i == j) ? TileFactor[i] : 0;
-  char buff[1000];
   if (myComm->rank() == 0)
   {
-    snprintf(buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n", TileMatrix(0, 0),
-             TileMatrix(0, 1), TileMatrix(0, 2), TileMatrix(1, 0), TileMatrix(1, 1), TileMatrix(1, 2), TileMatrix(2, 0),
-             TileMatrix(2, 1), TileMatrix(2, 2));
-    app_log() << buff;
+    std::array<char, 1000> buff;
+    int length =
+        std::snprintf(buff.data(), buff.size(), "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
+                      TileMatrix(0, 0), TileMatrix(0, 1), TileMatrix(0, 2), TileMatrix(1, 0), TileMatrix(1, 1),
+                      TileMatrix(1, 2), TileMatrix(2, 0), TileMatrix(2, 1), TileMatrix(2, 2));
+    if (length < 0)
+      throw std::runtime_error("Error converting TileMatrix to a string");
+    app_log() << std::string_view(buff.data(), length);
   }
   if (numOrbs == 0)
     myComm->barrier_and_abort(
@@ -126,7 +132,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string GPUsharing = "no";
   std::string spo_object_name;
 
-  ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;
@@ -139,20 +145,13 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(sourceName, "source");
     a.add(MeshFactor, "meshfactor");
     a.add(hybrid_rep, "hybridrep");
-#if defined(QMC_CUDA)
-    useGPU = "yes";
-#else
     a.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
-#endif
     a.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a.add(spo_prec, "precision");
     a.add(truncate, "truncate");
     a.add(use_einspline_set_extended, "use_old_spline");
     a.add(myName, "tag");
     a.add(skip_checks, "skip_checks");
-#if defined(QMC_CUDA)
-    a.add(gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
-#endif
 
     a.put(XMLRoot);
     a.add(numOrbs, "size");
@@ -215,17 +214,10 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   if (Occ != last_occ)
   {
-    NewOcc  = true;
+    NewOcc = true;
   }
   else
     NewOcc = false;
-#if defined(QMC_CUDA)
-  if (hybrid_rep == "yes")
-    myComm->barrier_and_abort("The 'hybridrep' feature of spline SPO has not been enabled on GPU. Stay tuned.");
-  app_log() << "\t  QMC_CUDA=1 Overwriting the einspline storage on the host to double precision.\n";
-  spo_prec = "double"; //overwrite
-  truncate = "no";     //overwrite
-#endif
 #if defined(MIXED_PRECISION)
   app_log() << "\t  MIXED_PRECISION=1 Overwriting the einspline storage to single precision.\n";
   spo_prec = "single"; //overwrite
@@ -332,43 +324,29 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (use_einspline_set_extended == "yes")
     myComm->barrier_and_abort("Option use_old_spline is not supported by the mixed precision build!");
 #else
-#ifndef QMC_CUDA
   if (use_einspline_set_extended == "yes")
-#endif
   {
     std::unique_ptr<EinsplineSet> new_OrbitalSet;
     if (use_real_splines_)
     {
-      std::unique_ptr<EinsplineSetExtended<double>> temp_OrbitalSet;
-#if defined(QMC_CUDA)
-      if (AtomicOrbitals.size() > 0)
-        temp_OrbitalSet = std::make_unique<EinsplineSetHybrid<double>>(spo_object_name);
-      else
-#endif
-        temp_OrbitalSet = std::make_unique<EinsplineSetExtended<double>>(spo_object_name);
-      temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineDouble().release();
+      auto temp_OrbitalSet                      = std::make_unique<EinsplineSetExtended<double>>(spo_object_name);
+      temp_OrbitalSet->MultiSpline              = MixedSplineReader->export_MultiSplineDouble().release();
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
       temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet&>(*OrbitalSet).getHalfG();
-      new_OrbitalSet = std::move(temp_OrbitalSet);
+      new_OrbitalSet         = std::move(temp_OrbitalSet);
     }
     else
     {
-      std::unique_ptr<EinsplineSetExtended<std::complex<double>>> temp_OrbitalSet;
-#if defined(QMC_CUDA)
-      if (AtomicOrbitals.size() > 0)
-        temp_OrbitalSet = std::make_unique<EinsplineSetHybrid<std::complex<double>>>(spo_object_name);
-      else
-#endif
-        temp_OrbitalSet = std::make_unique<EinsplineSetExtended<std::complex<double>>>(spo_object_name);
+      auto temp_OrbitalSet         = std::make_unique<EinsplineSetExtended<std::complex<double>>>(spo_object_name);
       temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineComplexDouble().release();
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       for (int iorb = 0, num = 0; iorb < NumDistinctOrbitals; iorb++)
       {
-        int ti = (*FullBands[spinSet])[iorb].TwistIndex;
-        temp_OrbitalSet->kPoints[iorb] = PrimCell.k_cart(-TwistAngles[ti]);
+        int ti                               = (*FullBands[spinSet])[iorb].TwistIndex;
+        temp_OrbitalSet->kPoints[iorb]       = PrimCell.k_cart(-TwistAngles[ti]);
         temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs - 1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
         num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
       }
@@ -436,29 +414,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //    TargetPtcl.createSK();
   //  }
   //}
-#ifdef QMC_CUDA
-  if (useGPU == "yes" || useGPU == "1")
-  {
-    if ((GPUsharing == "yes" || GPUsharing == "1"))
-    {
-      if (!gpu::cudamps)
-      {
-        app_log() << "Warning: GPU spline sharing cannot be enabled due to missing Cuda MPS service.\n";
-        gpu::device_group_size = 1;
-      }
-      if (gpu::device_group_size > 1)
-        app_log() << "1/" << gpu::device_group_size << " of GPU spline data stored per rank.\n";
-      else
-        app_log() << "Full GPU spline data stored per rank.\n";
-    }
-    else
-    {
-      if (gpu::device_group_size > 1)
-        app_log() << "Full GPU spline data stored per rank.\n";
-      gpu::device_group_size = 1;
-    }
-  }
-#endif
   OrbitalSet->finalizeConstruction();
   SPOSetMap[aset] = OrbitalSet.get();
   return OrbitalSet;

@@ -36,9 +36,6 @@
 #else
 using TraceManager = int;
 #endif
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -57,7 +54,8 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       W(w),
       Psi(psi),
       H(h),
-      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
+      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
@@ -69,11 +67,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  Period4CheckPoint = -1;
-  storeConfigs      = 0;
-  //m_param.add(storeConfigs,"storeConfigs");
-  m_param.add(storeConfigs, "storeconfigs");
-  m_param.add(storeConfigs, "store_configs");
+  Period4CheckPoint = 0;
   Period4CheckProperties = 100;
   m_param.add(Period4CheckProperties, "checkProperties");
   m_param.add(Period4CheckProperties, "checkproperties");
@@ -130,19 +124,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   m_param.add(MaxCPUSecs, "maxcpusecs", {}, TagStatus::DEPRECATED);
   m_param.add(MaxCPUSecs, "max_seconds");
   // by default call recompute at the end of each block in the mixed precision case.
-#ifdef QMC_CUDA
-  using CTS = CUDAGlobalTypes;
-  if (typeid(CTS::RealType) == typeid(float))
-  {
-    // gpu mixed precision
-    nBlocksBetweenRecompute = 1;
-  }
-  else if (typeid(CTS::RealType) == typeid(double))
-  {
-    // gpu double precision
-    nBlocksBetweenRecompute = 10;
-  }
-#else
 #ifdef MIXED_PRECISION
   // cpu mixed precision
   nBlocksBetweenRecompute = 1;
@@ -150,14 +131,11 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   // cpu double precision
   nBlocksBetweenRecompute = 10;
 #endif
-#endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute");
   ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
-
-  checkpointTimer = timer_manager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
 QMCDriver::~QMCDriver()
@@ -285,7 +263,6 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
     myComm->allreduce(nw);
     for (int ip = 0; ip < np; ++ip)
       nwoff[ip + 1] = nwoff[ip] + nw[ip];
-    W.setGlobalNumWalkers(nwoff[np]);
     W.setWalkerOffsets(nwoff);
   }
 }
@@ -323,11 +300,10 @@ void QMCDriver::recordBlock(int block)
 {
   if (DumpConfig && block % Period4CheckPoint == 0)
   {
-    checkpointTimer->start();
+    ScopedTimer local(checkpoint_timer_);
     wOut->dump(W, block);
     branchEngine->write(RootName, true); //save energy_history
     RandomNumberControl::write(RootName, myComm);
-    checkpointTimer->stop();
   }
 }
 
@@ -390,7 +366,6 @@ void QMCDriver::setWalkerOffsets()
   myComm->allreduce(nw);
   for (int ip = 0; ip < myComm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  W.setGlobalNumWalkers(nwoff[myComm->size()]);
   W.setWalkerOffsets(nwoff);
   long id = nwoff[myComm->rank()];
   for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
@@ -426,21 +401,12 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //int oldSteps=nSteps;
 
   //set the default walker to the number of threads times 10
-  Period4CheckPoint = -1;
-  // set default for delayed update streak k to zero, meaning use the original Sherman-Morrison rank-1 update
-  // if kdelay is set to k (k>1), then the new rank-k scheme is used
-#ifdef QMC_CUDA
-  kDelay = Psi.getndelay();
-#endif
-  int defaultw = omp_get_max_threads();
+  Period4CheckPoint = 0;
+  int defaultw      = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint, "checkpoint");
   aAttrib.add(kDelay, "kdelay");
   aAttrib.put(cur);
-#ifdef QMC_CUDA
-  W.setkDelay(kDelay);
-  kDelay = W.getkDelay(); // in case number is sanitized
-#endif
   if (cur != NULL)
   {
     //initialize the parameter set
@@ -520,11 +486,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   else
   {
     app_log() << "Resetting walkers" << std::endl;
-#ifdef QMC_CUDA
-    int nths(1);
-#else
     int nths(omp_get_max_threads());
-#endif
     nTargetWalkers = (std::max(nths, (nTargetWalkers / nths) * nths));
     int nw         = W.getActiveWalkers();
     int ndiff      = 0;

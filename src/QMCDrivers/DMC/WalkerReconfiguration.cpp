@@ -43,19 +43,18 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   }
   //accumulate the energies
   FullPrecRealType esum = 0.0, e2sum = 0.0, wtot = 0.0, ecum = 0.0;
-  MCWalkerConfiguration::iterator it(W.begin());
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   for (int iw = 0; iw < nw; iw++)
   {
-    r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
-    r2_proposed += (*it)->Properties(WP::R2PROPOSED);
-    FullPrecRealType wgt((*it)->Weight);
-    FullPrecRealType e((*it)->Properties(WP::LOCALENERGY));
+    const auto &walker = W[iw];
+    r2_accepted += walker->Properties(WP::R2ACCEPTED);
+    r2_proposed += walker->Properties(WP::R2PROPOSED);
+    FullPrecRealType wgt(walker->Weight);
+    FullPrecRealType e(walker->Properties(WP::LOCALENERGY));
     esum += wgt * e;
     e2sum += wgt * e * e;
     ecum += e;
     wtot += wConf[iw] = wgt;
-    ++it;
   }
   curData[ENERGY_INDEX]     = esum;
   curData[ENERGY_SQ_INDEX]  = e2sum;
@@ -81,7 +80,6 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   FullPrecRealType wCur = 0.0;
   //surviving walkers
   int icdiff = 0;
-  it         = W.begin();
   std::vector<int> ipip(nw, 0);
   for (int iw = 0; iw < nw; iw++)
   {
@@ -176,12 +174,10 @@ int WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, FullPrecRe
   ////accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
   //set Weight and Multiplicity to default values
-  MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-  while (it != it_end)
+  for (auto& walker : W)
   {
-    (*it)->Weight       = 1.0;
-    (*it)->Multiplicity = 1.0;
-    ++it;
+    walker->Weight       = 1.0;
+    walker->Multiplicity = 1.0;
   }
   //curData[WALKERSIZE_INDEX]=nwkept;
   return nwkept;

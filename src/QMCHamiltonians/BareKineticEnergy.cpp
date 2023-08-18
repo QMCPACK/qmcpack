@@ -21,15 +21,22 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
-#ifdef QMC_CUDA
-#include "Particle/MCWalkerConfiguration.h"
-#endif
 #include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
 using WP       = WalkerProperties::Indexes;
 using Return_t = BareKineticEnergy::Return_t;
+
+struct BareKineticEnergy::MultiWalkerResource : public Resource
+{
+  MultiWalkerResource() : Resource("BareKineticEnergy") {}
+
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<MultiWalkerResource>(*this); }
+
+  Vector<RealType> t_samples;
+  Vector<std::complex<RealType>> tcmp_samples;
+};
 
 /** constructor with particleset
    * @param target particleset
@@ -439,18 +446,15 @@ void BareKineticEnergy::createResource(ResourceCollection& collection) const
 void BareKineticEnergy::acquireResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& O_leader = o_list.getCastedLeader<BareKineticEnergy>();
-  auto res_ptr   = dynamic_cast<MultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("BareKineticEnergy::acquireResource dynamic_cast failed");
-  O_leader.mw_res_.reset(res_ptr);
+  auto& O_leader   = o_list.getCastedLeader<BareKineticEnergy>();
+  O_leader.mw_res_ = collection.lendResource<MultiWalkerResource>();
 }
 
 void BareKineticEnergy::releaseResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& O_leader = o_list.getCastedLeader<BareKineticEnergy>();
-  collection.takebackResource(std::move(O_leader.mw_res_));
+  collection.takebackResource(O_leader.mw_res_);
 }
 
 void BareKineticEnergy::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
@@ -465,8 +469,8 @@ void BareKineticEnergy::mw_evaluatePerParticle(const RefVectorWithLeader<Operato
 
   auto num_particles                        = p_leader.getTotalNum();
   auto& name                                = o_leader.name_;
-  Vector<RealType>& t_samp                  = o_leader.mw_res_->t_samples;
-  Vector<std::complex<RealType>>& tcmp_samp = o_leader.mw_res_->tcmp_samples;
+  Vector<RealType>& t_samp                  = o_leader.mw_res_.getResource().t_samples;
+  Vector<std::complex<RealType>>& tcmp_samp = o_leader.mw_res_.getResource().tcmp_samples;
 
   auto num_species = p_leader.getSpeciesSet().getTotalNum();
   t_samp.resize(num_particles);
@@ -630,21 +634,4 @@ std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, Tria
   return std::make_unique<BareKineticEnergy>(qp, psi);
 }
 
-#ifdef QMC_CUDA
-////////////////////////////////
-// Vectorized version for GPU //
-////////////////////////////////
-// Nothing is done on GPU here, just copy into vector
-void BareKineticEnergy::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  auto& walkers = W.WalkerList;
-  for (int iw = 0; iw < walkers.size(); iw++)
-  {
-    Walker_t& w                                        = *(walkers[iw]);
-    RealType KE                                        = -one_over_2m_ * (Dot(w.G, w.G) + Sum(w.L));
-    w.getPropertyBase()[WP::NUMPROPERTIES + my_index_] = KE;
-    LocalEnergy[iw] += KE;
-  }
-}
-#endif
 } // namespace qmcplusplus

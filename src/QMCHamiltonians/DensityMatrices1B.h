@@ -23,17 +23,6 @@ namespace qmcplusplus
 class DensityMatrices1B : public OperatorBase
 {
 protected:
-  enum DMTimers
-  {
-    DM_eval,
-    DM_gen_samples,
-    DM_gen_sample_basis,
-    DM_gen_sample_ratios,
-    DM_gen_particle_basis,
-    DM_matrix_products,
-    DM_accumulate,
-  };
-
   TimerList_t timers;
 
 public:
@@ -151,7 +140,7 @@ public:
   PosType dpcur;
   RealType rhocur;
 
-  RandomGenerator* uniform_random;
+  RandomBase<FullPrecRealType>* uniform_random;
 
 
   //constructor/destructor
@@ -168,7 +157,7 @@ public:
 
   //optional standard interface
   void getRequiredTraces(TraceManager& tm) override;
-  void setRandomGenerator(RandomGenerator* rng) override;
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override;
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist) override;
@@ -199,9 +188,9 @@ public:
   //  sample generation
   void warmup_sampling();
   void generate_samples(RealType weight, int steps = 0);
-  void generate_uniform_grid(RandomGenerator& rng);
-  void generate_uniform_samples(RandomGenerator& rng);
-  void generate_density_samples(bool save, int steps, RandomGenerator& rng);
+  void generate_uniform_grid(RandomBase<FullPrecRealType>& rng);
+  void generate_uniform_samples(RandomBase<FullPrecRealType>& rng);
+  void generate_density_samples(bool save, int steps, RandomBase<FullPrecRealType>& rng);
   void diffusion(RealType sqt, PosType& diff);
   void density_only(const PosType& r, RealType& dens);
   void density_drift(const PosType& r, RealType& dens, PosType& drift);

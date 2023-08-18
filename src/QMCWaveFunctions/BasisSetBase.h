@@ -136,6 +136,7 @@ struct SoaBasisSetBase
   using vghgh_type        = VectorSoaContainer<T, 20>;
   using ValueType         = QMCTraits::ValueType;
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+  using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
 
   ///size of the basis set
   int BasisSetSize;
@@ -150,6 +151,8 @@ struct SoaBasisSetBase
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) = 0;
   //Evaluates value, gradient, and laplacian for electron "iat".  places them in a offload array for batched code.
   virtual void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) = 0;
+  //Evaluates value for electron "iat".  places it in a offload array for batched code.
+  virtual void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) = 0;
   //Evaluates value, gradient, and Hessian for electron "iat".  Parks them into a temporary data structure "vgh".
   virtual void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh) = 0;
   //Evaluates value, gradient, and Hessian, and Gradient Hessian for electron "iat".  Parks them into a temporary data structure "vghgh".

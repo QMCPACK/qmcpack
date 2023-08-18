@@ -27,6 +27,7 @@
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -146,7 +147,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       acomm->allreduce(nw);
       for (int ip = 0; ip < ncontexts; ++ip)
         nwoff[ip + 1] = nwoff[ip] + nw[ip];
-      walkers.setGlobalNumWalkers(nwoff[ncontexts]);
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
@@ -236,7 +236,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     //   acomm->allreduce(nw);
     //    for(int ip=0; ip<ncontexts; ++ip)
     //      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    //    W.setGlobalNumWalkers(nwoff[ncontexts]);
     //    W.setWalkerOffsets(nwoff);
     //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
     //  }
@@ -521,13 +520,6 @@ void SimpleFixedNodeBranch::reset()
   }
 }
 
-void SimpleFixedNodeBranch::setRN(bool rn)
-{
-  RN = rn;
-  WalkerController->set_write_release_nodes(rn);
-  WalkerController->start();
-}
-
 int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
   app_log() << "BRANCH resetRun" << std::endl;
@@ -628,9 +620,6 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   ToDoSteps = iParam[B_WARMUPSTEPS] = (iParam[B_WARMUPSTEPS]) ? iParam[B_WARMUPSTEPS] : 10;
   setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), 10);
   WalkerController->reset();
-#ifdef QMC_CUDA
-  reset(); // needed. Ye
-#endif
   if (BackupWalkerController)
     BackupWalkerController->reset();
 

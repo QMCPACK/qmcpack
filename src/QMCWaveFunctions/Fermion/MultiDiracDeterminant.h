@@ -51,20 +51,18 @@ public:
   template<typename DT>
   using UnpinnedOffloadMatrix = Matrix<DT, OffloadAllocator<DT>>;
 
-  using IndexVector = SPOSet::IndexVector;
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradVector  = SPOSet::GradVector;
-  using GradMatrix  = SPOSet::GradMatrix;
-  using HessMatrix  = SPOSet::HessMatrix;
-  using HessType    = SPOSet::HessType;
 
   struct MultiDiracDetMultiWalkerResource : public Resource
   {
     MultiDiracDetMultiWalkerResource() : Resource("MultiDiracDeterminant") {}
     MultiDiracDetMultiWalkerResource(const MultiDiracDetMultiWalkerResource&) : MultiDiracDetMultiWalkerResource() {}
 
-    Resource* makeClone() const override { return new MultiDiracDetMultiWalkerResource(*this); }
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<MultiDiracDetMultiWalkerResource>(*this);
+    }
 
     void resizeConstants(size_t nw)
     {
@@ -342,7 +340,6 @@ private:
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
-   * @param det0_list list of reference det value
    * @param table_matrix_list list of table_matrix
    *
    * this is a general implementation. Support abitrary excitation level
@@ -353,15 +350,19 @@ private:
                                SmallMatrixDetCalculator<ValueType>& det_calculator,
                                const OffloadVector<int>& data,
                                const OffloadVector<RealType>& sign,
-                               const OffloadVector<ValueType>& det0_list,
                                const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
                                const RefVector<OffloadVector<ValueType>>& ratios_list) const;
+
+  /** update ratios of the reference deteriminant
+   * @param det0_list list of reference det value
+   */
+  void mw_updateRatios_det0(const OffloadVector<ValueType>& det0_list,
+                            const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
 
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
-   * @param det0_list list of reference det value
    * @param table_matrix_list list of table_matrix
    *
    * this is intended to be customized based on EXT_LEVEL
@@ -371,7 +372,6 @@ private:
                        const size_t data_offset,
                        const OffloadVector<int>& data,
                        const OffloadVector<RealType>& sign,
-                       const OffloadVector<ValueType>& det0_list,
                        const OffloadVector<ValueType*>& table_matrix_deviceptr_list,
                        const size_t num_table_matrix_cols,
                        const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
@@ -602,7 +602,7 @@ private:
   /// for matrices with leading dimensions <= MaxSmallDet, compute determinant with direct expansion.
   static constexpr size_t MaxSmallDet = 5;
 
-  std::unique_ptr<MultiDiracDetMultiWalkerResource> mw_res_;
+  ResourceHandle<MultiDiracDetMultiWalkerResource> mw_res_handle_;
 };
 
 

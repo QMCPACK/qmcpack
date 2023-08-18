@@ -32,7 +32,11 @@ struct NonLocalECPotential::NonLocalECPotentialMultiWalkerResource : public Reso
 {
   NonLocalECPotentialMultiWalkerResource() : Resource("NonLocalECPotential") {}
 
-  Resource* makeClone() const override;
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<NonLocalECPotentialMultiWalkerResource>(*this);
+  }
+
 
   ResourceCollection collection{"NLPPcollection"};
   /// a crowds worth of per particle nonlocal ecp potential values
@@ -69,7 +73,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   NumIons      = ions.getTotalNum();
   //els.resizeSphere(NumIons);
   PP.resize(NumIons, nullptr);
-  prefix = "FNL";
+  prefix_ = "FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
   PulayTerm.resize(NumIons);
   update_mode_.set(NONLOCAL, 1);
@@ -198,7 +202,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
 
   if (ComputeForces)
   {
-    forces = 0;
+    forces_ = 0;
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
       Psi.prepareGroup(P, ig);
@@ -210,7 +214,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            Real pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
+            Real pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat]);
             if (Tmove)
               PP[iat]->contributeTxy(jel, tmove_xy_);
             value_ += pairpot;
@@ -336,8 +340,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
   if (listeners)
   {
-    auto& ve_samples = O_leader.mw_res_->ve_samples;
-    auto& vi_samples = O_leader.mw_res_->vi_samples;
+    auto& ve_samples = O_leader.mw_res_handle_.getResource().ve_samples;
+    auto& vi_samples = O_leader.mw_res_handle_.getResource().vi_samples;
     ve_samples.resize(nw, pset_leader.getTotalNum());
     vi_samples.resize(nw, O_leader.IonConfig.getTotalNum());
   }
@@ -397,7 +401,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       }
 
       NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                           O_leader.mw_res_->collection, O_leader.use_DLA);
+                                           O_leader.mw_res_handle_.getResource().collection, O_leader.use_DLA);
 
       // Right now this is just over walker but could and probably should be over a set
       // larger than the walker count.  The easiest way to not complicate the per particle
@@ -410,8 +414,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
         if (listeners)
         {
-          auto& ve_samples = O_leader.mw_res_->ve_samples;
-          auto& vi_samples = O_leader.mw_res_->vi_samples;
+          auto& ve_samples = O_leader.mw_res_handle_.getResource().ve_samples;
+          auto& vi_samples = O_leader.mw_res_handle_.getResource().vi_samples;
           // CAUTION! This may not be so simple in the future
           int iw = j;
           ve_samples(iw, batch_list[j].get().electron_id) += pairpots[j];
@@ -435,8 +439,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   {
     // Motivation for this repeated definition is to make factoring this listener code out easy
     // and making it ignorable when reading this function.
-    auto& ve_samples  = O_leader.mw_res_->ve_samples;
-    auto& vi_samples  = O_leader.mw_res_->vi_samples;
+    auto& ve_samples  = O_leader.mw_res_handle_.getResource().ve_samples;
+    auto& vi_samples  = O_leader.mw_res_handle_.getResource().vi_samples;
     int num_electrons = pset_leader.getTotalNum();
     for (int iw = 0; iw < nw; ++iw)
     {
@@ -465,7 +469,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
   //Dummy vector for now.  Tmoves not implemented
   bool Tmove = false;
 
-  forces    = 0;
+  forces_   = 0;
   PulayTerm = 0;
 
   value_ = 0.0;
@@ -495,7 +499,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
           value_ +=
-              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
+              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat], PulayTerm);
           if (Tmove)
             PP[iat]->contributeTxy(jel, tmove_xy_);
           NeighborIons.push_back(iat);
@@ -504,7 +508,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
     }
   }
 
-  hf_terms -= forces;
+  hf_terms -= forces_;
   pulay_terms -= PulayTerm;
 }
 
@@ -622,7 +626,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
 int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 {
   int NonLocalMoveAccepted = 0;
-  RandomGenerator& RandomGen(*myRNG);
+  auto& RandomGen(*myRNG);
   if (UseTMove == TMOVE_V0)
   {
     const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);
@@ -777,18 +781,15 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
 void NonLocalECPotential::acquireResource(ResourceCollection& collection,
                                           const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& O_leader = o_list.getCastedLeader<NonLocalECPotential>();
-  auto res_ptr   = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
-  O_leader.mw_res_.reset(res_ptr);
+  auto& O_leader          = o_list.getCastedLeader<NonLocalECPotential>();
+  O_leader.mw_res_handle_ = collection.lendResource<NonLocalECPotentialMultiWalkerResource>();
 }
 
 void NonLocalECPotential::releaseResource(ResourceCollection& collection,
                                           const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& O_leader = o_list.getCastedLeader<NonLocalECPotential>();
-  collection.takebackResource(std::move(O_leader.mw_res_));
+  collection.takebackResource(O_leader.mw_res_handle_);
 }
 
 std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -807,9 +808,9 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
   OperatorBase::addValue(plist);
   if (ComputeForces)
   {
-    if (FirstForceIndex < 0)
-      FirstForceIndex = plist.size();
-    for (int iat = 0; iat < Nnuc; iat++)
+    if (first_force_index_ < 0)
+      first_force_index_ = plist.size();
+    for (int iat = 0; iat < n_nuc_; iat++)
     {
       for (int x = 0; x < OHMMS_DIM; x++)
       {
@@ -832,11 +833,11 @@ void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5l
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
-    ndim[0] = Nnuc;
+    ndim[0] = n_nuc_;
     ndim[1] = OHMMS_DIM;
     h5list.push_back({{"FNL"s}});
     auto& h5o1 = h5list.back();
-    h5o1.set_dimensions(ndim, FirstForceIndex);
+    h5o1.set_dimensions(ndim, first_force_index_);
   }
 }
 
@@ -845,12 +846,12 @@ void NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
   OperatorBase::setObservables(plist);
   if (ComputeForces)
   {
-    int index = FirstForceIndex;
-    for (int iat = 0; iat < Nnuc; iat++)
+    int index = first_force_index_;
+    for (int iat = 0; iat < n_nuc_; iat++)
     {
       for (int x = 0; x < OHMMS_DIM; x++)
       {
-        plist[index++] = forces[iat][x];
+        plist[index++] = forces_[iat][x];
         //    plist[index++] = PulayTerm[iat][x];
       }
     }
@@ -863,21 +864,16 @@ void NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& pl
   OperatorBase::setParticlePropertyList(plist, offset);
   if (ComputeForces)
   {
-    int index = FirstForceIndex + offset;
-    for (int iat = 0; iat < Nnuc; iat++)
+    int index = first_force_index_ + offset;
+    for (int iat = 0; iat < n_nuc_; iat++)
     {
       for (int x = 0; x < OHMMS_DIM; x++)
       {
-        plist[index++] = forces[iat][x];
+        plist[index++] = forces_[iat][x];
         //        plist[index++] = PulayTerm[iat][x];
       }
     }
   }
-}
-
-Resource* NonLocalECPotential::NonLocalECPotentialMultiWalkerResource::makeClone() const
-{
-  return new NonLocalECPotentialMultiWalkerResource(*this);
 }
 
 } // namespace qmcplusplus

@@ -49,6 +49,7 @@ class LocalEnergyInput
     LocalEnergyInputSection()
     {
       section_name = "LocalEnergy";
+      section_name_alternates = {"elocal"};
       attributes   = {"name", "type", "hdf5"};
       bools        = {"hdf5"};
       strings      = {"name", "type"};
@@ -115,6 +116,7 @@ class RMCLocalEnergyInput
     RMCLocalEnergyInputSection()
     {
       section_name = "RMCLocalEnergy";
+      section_name_alternates = {"rmc"};      
       attributes   = {"name", "nobs", "type"};
       integers     = {"nobs"};
       strings      = {"name", "type"};

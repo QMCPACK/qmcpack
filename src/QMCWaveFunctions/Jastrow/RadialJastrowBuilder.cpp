@@ -16,12 +16,6 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
-
-#if defined(QMC_CUDA)
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowCUDA.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowCUDA.h"
-#endif
-
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -51,18 +45,6 @@ public:
   using J1SpinType = J1Spin<RadFuncType>;
   using J2Type     = TwoBodyJastrow<RadFuncType>;
 };
-
-#if defined(QMC_CUDA)
-template<>
-class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJastrowBuilder::detail::CUDA_LEGACY>
-{
-public:
-  using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-  using J1Type      = OneBodyJastrowCUDA<RadFuncType>;
-  using J1SpinType  = void;
-  using J2Type      = TwoBodyJastrowCUDA<RadFuncType>;
-};
-#endif
 
 template<>
 class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJastrowBuilder::detail::OMPTARGET>
@@ -244,9 +226,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
       if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
       {
-        char fname[32];
-        sprintf(fname, "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(), getGroupID());
-        std::ofstream os(fname);
+        std::array<char, 32> fname;
+        if (std::snprintf(fname.data(), fname.size(), "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(),
+                          getGroupID()) < 0)
+          throw std::runtime_error("Error generating filename");
+        std::ofstream os(fname.data());
         print(*functor, os);
       }
 
@@ -275,12 +259,13 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
   const int numPoints = 1000;
   RealType vol        = targetPtcl.getLattice().Volume;
   int nsp             = targetPtcl.groups();
-  FILE* fout          = 0;
+  FILE* fout          = nullptr;
   if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
   {
-    char fname[16];
-    sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
-    fout = fopen(fname, "w");
+    std::array<char, 16> fname;
+    if (std::snprintf(fname.data(), fname.size(), "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID()) < 0)
+      throw std::runtime_error("Error generating filename");
+    fout = fopen(fname.data(), "w");
   }
   for (int iG = 0; iG < targetPtcl.getSimulationCell().getKLists().ksq.size(); iG++)
   {
@@ -409,15 +394,19 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       app_summary() << std::endl;
       if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
       {
-        char fname[128];
+        std::array<char, 128> fname;
+        int fname_len{0};
         if (speciesB.size())
-          sprintf(fname, "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), speciesB.c_str(),
-                  getGroupID());
+          fname_len = std::snprintf(fname.data(), fname.size(), "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(),
+                                    speciesA.c_str(), speciesB.c_str(), getGroupID());
         else
-          sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
-        std::ofstream os(fname);
-        if (std::is_same<RadFuncType, PadeFunctor<RealType>>::value ||
-            std::is_same<RadFuncType, Pade2ndOrderFunctor<RealType>>::value)
+          fname_len = std::snprintf(fname.data(), fname.size(), "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(),
+                                    speciesA.c_str(), getGroupID());
+        if (fname_len < 0)
+          throw std::runtime_error("Error generating filename");
+        std::ofstream os(std::string(fname.data(), fname_len));
+        if constexpr (std::is_same_v<RadFuncType, PadeFunctor<RealType>> ||
+                      std::is_same_v<RadFuncType, Pade2ndOrderFunctor<RealType>>)
         {
           double plotextent = 10.0;
           print(*functor.get(), os, plotextent);
@@ -541,22 +530,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     if (Jastfunction == "bspline")
     {
       if (SpinOpt == "yes")
-      {
-#if defined(QMC_CUDA)
-        myComm->barrier_and_abort("RadialJastrowBuilder::buildComponent spin resolved bspline Jastrow is not supported "
-                                  "in legacy CUDA build.");
-#else
         return createJ1<BsplineFunctor<RealType>, true>(cur);
-#endif
-      }
       else
-      {
-#if defined(QMC_CUDA)
-        return createJ1<BsplineFunctor<RealType>, false, detail::CUDA_LEGACY>(cur);
-#else
         return createJ1<BsplineFunctor<RealType>>(cur);
-#endif
-      }
     }
     else if (Jastfunction == "pade")
     {
@@ -603,9 +579,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     // it's a two body jastrow factor
     if (Jastfunction == "bspline")
     {
-#if defined(QMC_CUDA)
-      return createJ2<BsplineFunctor<RealType>, detail::CUDA_LEGACY>(cur);
-#else
       if (useGPU.empty())
         useGPU = targetPtcl.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD ? "yes" : "no";
 
@@ -626,7 +599,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       }
       else
         return createJ2<BsplineFunctor<RealType>>(cur);
-#endif
     }
     else if (Jastfunction == "pade")
     {

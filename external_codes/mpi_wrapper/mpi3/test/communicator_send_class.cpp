@@ -1,9 +1,9 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2023 Alfredo A. Correa
 
-#include "../../mpi3/communicator.hpp"
-#include "../../mpi3/main.hpp"
-//#include "../../mpi3/detail/package_archive.hpp"
+#include <mpi3/communicator.hpp>
+#include <mpi3/main.hpp>
+//#include <mpi3/detail/package_archive.hpp"
 
 #include <boost/serialization/utility.hpp>  // serialize std::pair
 #include <boost/serialization/vector.hpp>
@@ -92,6 +92,13 @@ void load(Archive& ar, B& b, unsigned int const /*version*/) {  // NOLINT(google
 }
 BOOST_SERIALIZATION_SPLIT_FREE(B)
 
+template<> struct mpi3::datatype<
+	std::pair<std::complex<double>, std::complex<double>>
+> : struct_<
+	std::complex<double>,
+	std::complex<double>
+> {};
+
 auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
 
 	assert(world.size() > 1);
@@ -166,6 +173,21 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 		std::vector<B> v(5);
 		world.receive(begin(v), end(v), 0, 123);
 		assert(v[2][2] == 3.14);
+		break;
+	};
+	}
+
+	switch(world.rank()) {
+	case 0: {
+		std::vector<std::pair<std::complex<double>, std::complex<double>> > v(5);
+		v[2] = std::make_pair(std::complex<double>{3.14, 6.28}, std::complex<double>{4.0, 5.0});
+		world.send(begin(v), end(v), 1);
+		break;
+	};
+	case 1: {
+		std::vector<std::pair<std::complex<double>, std::complex<double>> > v(5);
+		world.receive(begin(v), end(v), 0);
+		assert( v[2] == std::make_pair(std::complex<double>{3.14, 6.28}, std::complex<double>{4.0, 5.0}) );
 		break;
 	};
 	}

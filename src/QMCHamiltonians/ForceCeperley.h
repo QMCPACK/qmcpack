@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_FORCE_CEPERLEY_HAMILTONIAN_H
 #define QMCPLUSPLUS_FORCE_CEPERLEY_HAMILTONIAN_H
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -68,7 +69,7 @@ public:
 
   bool get(std::ostream& os) const override
   {
-    os << "Ceperley Force Estimator Hamiltonian: " << pairName;
+    os << "Ceperley Force Estimator Hamiltonian: " << pair_name_;
     return true;
   }
 };

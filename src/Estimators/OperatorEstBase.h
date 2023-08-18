@@ -40,11 +40,11 @@ class OperatorEstBase
 {
 public:
   using QMCT      = QMCTraits;
+  using FullPrecRealType = QMCT::FullPrecRealType;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   using Data = std::vector<QMCT::RealType>;
 
-  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
   /** Shallow copy constructor!
@@ -74,7 +74,7 @@ public:
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
                           const RefVector<ParticleSet>& psets,
                           const RefVector<TrialWaveFunction>& wfns,
-                          RandomGenerator& rng) = 0;
+                          RandomBase<FullPrecRealType>& rng) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -115,7 +115,7 @@ public:
 
   /** Return the total walker weight for this block
    */
-  QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
+  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
 
   const std::string& get_my_name() const { return my_name_; }
 

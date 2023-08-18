@@ -144,13 +144,6 @@ public:
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-#ifdef QMC_CUDA
-  ////////////////////////////////
-  // Vectorized version for GPU //
-  ////////////////////////////////
-  // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
-#endif
   /** initialize a shared resource and hand it to a collection
    */
   void createResource(ResourceCollection& collection) const override;
@@ -164,16 +157,6 @@ public:
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
 private:
-  struct MultiWalkerResource : public Resource
-  {
-    MultiWalkerResource() : Resource("BareKineticEnergy") {}
-
-    Resource* makeClone() const override { return new MultiWalkerResource(*this); }
-
-    Vector<RealType> t_samples;
-    Vector<std::complex<RealType>> tcmp_samples;
-  };
-
   ///true, if all the species have the same mass
   bool same_mass_;
 
@@ -193,6 +176,7 @@ private:
 
   ParticleSet& ps_;
 
+  struct MultiWalkerResource;
   ResourceHandle<MultiWalkerResource> mw_res_;
 
   TrialWaveFunction& psi_;

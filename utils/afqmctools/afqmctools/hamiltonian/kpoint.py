@@ -50,7 +50,7 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
                         verbose=True, cas=None, max_vecs=20,
                         ortho_ao=False, exxdiv='ewald', nelec=None,
                         phdf=False):
-    tstart = time.clock()
+    tstart = time.process_time()()
 
     # Unpack pyscf data.
     # 1. core (1-body) Hamiltonian.
@@ -78,16 +78,16 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
                 qk_to_k2, kminus, verbose=verbose, nelec=nelec)
 
     if comm.rank == 0 and verbose:
-        print(" # Time to reach Cholesky: {:13.8e} s.".format(time.clock()-tstart))
+        print(" # Time to reach Cholesky: {:13.8e} s.".format(time.process_time()()-tstart))
         sys.stdout.flush()
-    tstart = time.clock()
+    tstart = time.process_time()()
 
     solver = KPCholesky(comm, cell, kpts, max_vecs, nmo_pk,
                         qk_to_k2, kminus, gtol_chol=chol_cut,
                         verbose=verbose)
     solver.run(comm, X, h5file)
     if comm.rank == 0 and verbose:
-        print(" # Time to perform Cholesky: {:13.8e} s.".format(time.clock()-tstart))
+        print(" # Time to perform Cholesky: {:13.8e} s.".format(time.process_time()()-tstart))
         sys.stdout.flush()
 
     comm.barrier()
@@ -121,7 +121,7 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
 def write_rhoG_kpoints(comm, scf_data, hdf_file, Gcut,
                         verbose=True, 
                         ortho_ao=False, phdf=False):
-    tstart = time.clock()
+    tstart = time.process_time()()
 
     # Unpack pyscf data.
     # 1. core (1-body) Hamiltonian.
@@ -302,7 +302,7 @@ class KPCholesky(object):
                   "Cholesky solver.")
             sys.exit()
         self.df = df.FFTDF(cell,kpts)
-        tstart = time.clock()
+        tstart = time.process_time()()
 
         self.nmo_pk = nmo_pk
         self.gtol_chol = gtol_chol
@@ -414,7 +414,7 @@ class KPCholesky(object):
                   "time_k3k4", "time_comp_cholv", "time_buff"]
 
         for Q in range(nkpts):
-            t0 = time.clock()
+            t0 = time.process_time()()
             if Q > self.kminus[Q]:
                 continue
             if comm.rank == 0 and self.verbose:
@@ -422,7 +422,7 @@ class KPCholesky(object):
                 print(" # Generating orbital products")
                 sys.stdout.flush()
 
-            t1 = time.clock()
+            t1 = time.process_time()()
 
             maxresidual[:] = 0
             done[:,:,:] = 0
@@ -442,7 +442,7 @@ class KPCholesky(object):
             k3, k4, i3, i4, vmax = self.find_k3k4(comm.size)
             done[k3,i3,i4] = 1
 
-            tstart = time.clock()
+            tstart = time.process_time()()
             if comm.rank == 0:
                 sys.stdout.flush()
 
@@ -452,7 +452,7 @@ class KPCholesky(object):
             numv = 0
             while more:
 
-                t0 = time.clock()
+                t0 = time.process_time()()
                 # stop condition
                 if comm.rank == 0 and self.verbose:
                     if numv == 0:
@@ -496,7 +496,7 @@ class KPCholesky(object):
                 # add new Cholesky vector
                 # 1. evaluate new column (ik|imax,kmax)
 
-                t1 = time.clock()
+                t1 = time.process_time()()
                 tadd = 0.0
                 for k in range(part.nkk):
                     k1 = k + part.kk0
@@ -504,7 +504,7 @@ class KPCholesky(object):
                     if part.ij0 > nmo_pk[k1]*nmo_pk[k2]:
                         continue
                     if numpy.sum(abs(kpts[k2]-kpts[k1]+kpts[k3]-kpts[k4])) > 1e-9:
-                        t_ = time.clock()
+                        t_ = time.process_time()()
                         q1 = kpts[k2]-kpts[k1]+kpts[k3]-kpts[k4]
                         ip = -1
                         for ii in range(27):
@@ -516,13 +516,13 @@ class KPCholesky(object):
                             sys.exit()
                         for ix in range(ngs):
                             Xkl[ix] = Xkl0[self.gmap[ip,ix]]
-                        tadd += time.clock() - t_
+                        tadd += time.process_time()() - t_
                     else:
                         Xkl[0:ngs] = Xkl0[0:ngs]
                     n_ = min(nmo_pk[k1]*nmo_pk[k2], part.ijN) - part.ij0
                     cholvecs[k,0:n_,numv] = numpy.dot(Xaoik[k,:,0:n_].T,
                                                       Xkl.conj())
-                t2 = time.clock()
+                t2 = time.process_time()()
 
                 # 2. substract projection along previous components
                 cholvecs[:,:,numv] -= numpy.dot(cholvecs[:,:,0:numv],
@@ -552,7 +552,7 @@ class KPCholesky(object):
                             i1max = (ij+part.ij0) // nmo_pk[k2]
                             i2max = (ij+part.ij0) % nmo_pk[k2]
 
-                t3 = time.clock()
+                t3 = time.process_time()()
 
                 # assemble full CV on head node
                 buff = numpy.array([k1max,k2max,i1max,i2max,maxv],
@@ -560,7 +560,7 @@ class KPCholesky(object):
                 comm.Allgather(buff, self.maxres_buff)
                 k3, k4, i3, i4, vmax = self.find_k3k4(comm.size)
 
-                t4 = time.clock()
+                t4 = time.process_time()()
 
                 # only root keeps track of residual and I/O
                 if comm.rank == 0:
@@ -570,7 +570,7 @@ class KPCholesky(object):
                     output = [vmax, t4-t0, t3-t2, t2-t1, t1-t0]
                     if self.verbose:
                         print("{:17d} ".format(numv)+format_fixed_width_floats(output))
-                    tstart = time.clock()
+                    tstart = time.process_time()()
 
                     if numv%100 == 0:
                         sys.stdout.flush()
@@ -586,7 +586,7 @@ class KPCholesky(object):
                     sys.exit()
                 done[k3,i3,i4] = 1
 
-                t6 = time.clock()
+                t6 = time.process_time()()
 
             comm.barrier()
             num_cholvecs[Q] = numv

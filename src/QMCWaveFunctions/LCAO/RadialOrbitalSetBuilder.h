@@ -182,11 +182,7 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
   std::string gridtype;
   if (myComm->rank() == 0)
   {
-    if (!hin.readEntry(gridtype, "grid_type"))
-    {
-      std::cerr << "Could not read grid_type in H5; Probably Corrupt H5 file" << std::endl;
-      exit(0);
-    }
+    hin.read(gridtype, "grid_type");
   }
   myComm->bcast(gridtype);
 

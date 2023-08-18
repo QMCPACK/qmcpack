@@ -21,16 +21,6 @@ set(SRCS ${SRCS} bspline_eval_d_std.cpp multi_bspline_eval_s_std3.cpp multi_bspl
          multi_bspline_eval_z_std3.cpp)
 
 add_library(einspline ${SRCS})
-if(QMC_CUDA)
-  set(EINSPLINE_CUDA_SRCS multi_bspline_create_cuda.cu bspline_create_cuda.cu)
-  add_library(einspline_cuda ${EINSPLINE_CUDA_SRCS})
-  if(QMC_CUDA2HIP)
-    set_source_files_properties(${EINSPLINE_CUDA_SRCS} PROPERTIES LANGUAGE HIP)
-  endif()
-  target_link_libraries(einspline_cuda PRIVATE platform_runtime)
-  target_link_libraries(einspline PRIVATE einspline_cuda)
-endif(QMC_CUDA)
-
 target_compile_definitions(einspline INTERFACE "HAVE_EINSPLINE")
 
 #ADD_EXECUTABLE(time_multi time_multi_new.c)

@@ -40,12 +40,6 @@ else()
   set(SUCCESS_STATUS_OFFLOAD TRUE)
 endif()
 
-if(QMC_CUDA)
-  set(SUCCESS_STATUS_CUDA FALSE)
-else()
-  set(SUCCESS_STATUS_CUDA TRUE)
-endif()
-
 if(BUILD_AFQMC)
   include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
   check_python_reqs("numpy;h5py;mpi4py;scipy;pyscf" afqmc_workflow add_tests)

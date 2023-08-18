@@ -21,6 +21,8 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #include "checkMatrix.hpp"
+#include "FakeSPO.h"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -48,15 +50,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ParticleSet::ParticleLayout lattice;
 
   // diamondC_1x1x1
-  lattice.R(0, 0) = 3.37316115;
-  lattice.R(0, 1) = 3.37316115;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.37316115;
-  lattice.R(1, 2) = 3.37316115;
-  lattice.R(2, 0) = 3.37316115;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.37316115;
+  lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -70,24 +64,13 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 1.68658058;
-  ions_.R[1][1] = 1.68658058;
-  ions_.R[1][2] = 1.68658058;
-
-
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0][0] = 0.0;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 1.0;
-  elec_.R[1][2] = 0.0;
-
+  elec_.R[0]                 = {0.0, 0.0, 0.0};
+  elec_.R[1]                 = {0.0, 1.0, 0.0};
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -117,8 +100,9 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   */
 
   // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
 
+  spo->storeParamsBeforeRotation();
   // 1.) Make a RotatedSPOs object so that we can use the rotation routines
   auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
@@ -302,18 +286,31 @@ TEST_CASE("RotatedSPOs createRotationIndices", "[wavefunction]")
   int nel = 1;
   int nmo = 3;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
-
   CHECK(rot_ind.size() == 2);
+
+  // Full rotation contains all rotations
+  // Size should be number of pairs of orbitals: nmo*(nmo-1)/2
+  RotatedSPOs::RotationIndices full_rot_ind;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind);
+  CHECK(full_rot_ind.size() == 3);
 
   nel = 2;
   RotatedSPOs::RotationIndices rot_ind2;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind2);
   CHECK(rot_ind2.size() == 2);
 
+  RotatedSPOs::RotationIndices full_rot_ind2;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind2);
+  CHECK(full_rot_ind2.size() == 3);
+
   nmo = 4;
   RotatedSPOs::RotationIndices rot_ind3;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind3);
   CHECK(rot_ind3.size() == 4);
+
+  RotatedSPOs::RotationIndices full_rot_ind3;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind3);
+  CHECK(full_rot_ind3.size() == 6);
 }
 
 TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
@@ -407,9 +404,10 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
 
   std::vector<SPOSet::ValueType> mat1_data = {1.0};
   SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
-  RotatedSPOs::log_antisym_matrix(m1);
+  SPOSet::ValueMatrix out_m1(1, 1);
+  RotatedSPOs::log_antisym_matrix(m1, out_m1);
   // Should always be 1.0 (the only possible anti-symmetric 1x1 matrix is 0)
-  CHECK(m1(0, 0) == ValueApprox(0.0));
+  CHECK(out_m1(0, 0) == ValueApprox(0.0));
 
   // clang-format off
   std::vector<ValueType> start_rot2 = {  0.995004165278026,  -0.0998334166468282,
@@ -420,10 +418,11 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
   // clang-format on
 
   ValueMatrix rot_m2(start_rot2.data(), 2, 2);
-  RotatedSPOs::log_antisym_matrix(rot_m2);
+  ValueMatrix out_m2(2, 2);
+  RotatedSPOs::log_antisym_matrix(rot_m2, out_m2);
 
   SPOSet::ValueMatrix m2(mat2_data.data(), 2, 2);
-  CheckMatrixResult check_matrix_result2 = checkMatrix(m2, rot_m2, true);
+  CheckMatrixResult check_matrix_result2 = checkMatrix(m2, out_m2, true);
   CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
 
   // clang-format off
@@ -436,10 +435,11 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
                                            0.1,   0.2,  0.0 };
   // clang-format on
   ValueMatrix rot_m3(start_rot3.data(), 3, 3);
-  RotatedSPOs::log_antisym_matrix(rot_m3);
+  ValueMatrix out_m3(3, 3);
+  RotatedSPOs::log_antisym_matrix(rot_m3, out_m3);
 
   SPOSet::ValueMatrix m3(m3_input_data.data(), 3, 3);
-  CheckMatrixResult check_matrix_result3 = checkMatrix(m3, rot_m3, true);
+  CheckMatrixResult check_matrix_result3 = checkMatrix(m3, out_m3, true);
   CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
 }
 
@@ -464,16 +464,17 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
 
   RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params4, rot_m4);
   ValueMatrix orig_rot_m4 = rot_m4;
+  ValueMatrix out_m4(nmo, nmo);
 
   RotatedSPOs::exponentiate_antisym_matrix(rot_m4);
 
-  RotatedSPOs::log_antisym_matrix(rot_m4);
+  RotatedSPOs::log_antisym_matrix(rot_m4, out_m4);
 
-  CheckMatrixResult check_matrix_result4 = checkMatrix(rot_m4, orig_rot_m4, true);
+  CheckMatrixResult check_matrix_result4 = checkMatrix(out_m4, orig_rot_m4, true);
   CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
 
   std::vector<ValueType> params4out(4);
-  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, rot_m4, params4out);
+  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, out_m4, params4out);
   for (int i = 0; i < params4.size(); i++)
   {
     CHECK(params4[i] == Approx(params4out[i]));
@@ -486,15 +487,8 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0) = 4.32747284;
-  lattice.R(0, 1) = 0.00000000;
-  lattice.R(0, 2) = 0.00000000;
-  lattice.R(1, 0) = -2.16373642;
-  lattice.R(1, 1) = 3.74770142;
-  lattice.R(1, 2) = 0.00000000;
-  lattice.R(2, 0) = 0.00000000;
-  lattice.R(2, 1) = 0.00000000;
-  lattice.R(2, 2) = 6.78114995;
+  lattice.R = {4.32747284, 0.00000000, 0.00000000, -2.16373642, 3.74770142,
+               0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -522,8 +516,8 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   // spline file for use in eval_bspline_spo.py
 
   const char* particles = R"(<tmp>
-<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="2">
-    <sposet type="bspline" name="spo_ud" size="2" spindataset="0" optimize="yes"/>
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double">
+      <sposet type="bspline" name="spo_ud" spindataset="0" size="2"/>
 </sposet_builder>
 </tmp>)";
 
@@ -533,12 +527,14 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
 
   xmlNodePtr root = doc.getRoot();
 
-  xmlNodePtr ein1 = xmlFirstElementChild(root);
+  xmlNodePtr sposet_builder = xmlFirstElementChild(root);
+  xmlNodePtr sposet_ptr     = xmlFirstElementChild(sposet_builder);
 
-  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, ein1);
-  auto spo = einSet.createSPOSetFromXML(ein1);
+  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, sposet_builder);
+  auto spo = einSet.createSPOSetFromXML(sposet_ptr);
   REQUIRE(spo);
 
+  spo->storeParamsBeforeRotation();
   auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
   // Sanity check for orbs. Expect 1 electron, 2 orbitals
@@ -589,5 +585,284 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   CHECK(dhpsioverpsi[0] == ValueApprox(32.96939041498753));
 }
 
+// Test construction of delta rotation
+TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  int nel = 2;
+  int nmo = 4;
+  RotatedSPOs::RotationIndices rot_ind;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+  RotatedSPOs::RotationIndices full_rot_ind;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind);
+  // rot_ind size is 4 and full rot_ind size is 6
+
+  ValueMatrix rot_m4(nmo, nmo);
+  rot_m4 = ValueType(0);
+
+  // When comparing with gen_matrix_ops.py, be aware of the order of indices
+  // in full_rot
+  // rot_ind is (0,2) (0,3) (1,2) (1,3)
+  // full_rot_ind is (0,2) (0,3) (1,2) (1,3) (0,1) (2,3)
+  // The extra indices go at the back
+  std::vector<ValueType> old_params   = {1.5, 0.2, -0.15, 0.03, -1.1, 0.05};
+  std::vector<ValueType> delta_params = {0.1, 0.3, 0.2, -0.1};
+  std::vector<ValueType> new_params(6);
+
+  RotatedSPOs::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
+
+  // clang-format off
+  std::vector<ValueType> rot_data4 =
+    { -0.371126931484737,  0.491586564957393,   -0.784780958819798,   0.0687480658200083,
+      -0.373372784561548,  0.66111547793048,     0.610450337985578,   0.225542620014052,
+       0.751270334458895,  0.566737323353515,   -0.0297901110611425, -0.336918744155143,
+       0.398058348785074,  0.00881931472604944, -0.102867783149713,   0.911531672428406 };
+  // clang-format on
+
+  ValueMatrix new_rot_m4(rot_data4.data(), 4, 4);
+
+  CheckMatrixResult check_matrix_result4 = checkMatrix(rot_m4, new_rot_m4, true);
+  CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
+
+  // Reminder: Ordering!
+  std::vector<ValueType> expected_new_param = {1.6813965019790489,   0.3623564254653294,  -0.05486544454559908,
+                                               -0.20574472941408453, -0.9542513302873077, 0.27497788909911774};
+  for (int i = 0; i < new_params.size(); i++)
+    CHECK(new_params[i] == Approx(expected_new_param[i]));
+
+
+  // Rotated back to original position
+
+  std::vector<ValueType> new_params2(6);
+  std::vector<ValueType> reverse_delta_params = {-0.1, -0.3, -0.2, 0.1};
+  RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
+  for (int i = 0; i < new_params2.size(); i++)
+    CHECK(new_params2[i] == Approx(old_params[i]));
+}
+
+namespace testing
+{
+opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
+opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull; }
+std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+} // namespace testing
+
+// Test using global rotation
+TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
+{
+  auto fake_spo = std::make_unique<FakeSPO>();
+  fake_spo->setOrbitalSetSize(4);
+  RotatedSPOs rot("fake_rot", std::move(fake_spo));
+  int nel = 2;
+  rot.buildOptVariables(nel);
+
+  optimize::VariableSet vs;
+  rot.checkInVariablesExclusive(vs);
+  vs[0] = 0.1;
+  vs[1] = 0.15;
+  vs[2] = 0.2;
+  vs[3] = 0.25;
+  rot.resetParametersExclusive(vs);
+
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp.h5", hout);
+
+    rot.writeVariationalParameters(hout);
+  }
+
+  auto fake_spo2 = std::make_unique<FakeSPO>();
+  fake_spo2->setOrbitalSetSize(4);
+
+  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  rot2.buildOptVariables(nel);
+
+  optimize::VariableSet vs2;
+  rot2.checkInVariablesExclusive(vs2);
+
+  hdf_archive hin;
+  vs2.readFromHDF("rot_vp.h5", hin);
+  rot2.readVariationalParameters(hin);
+
+  opt_variables_type& var = testing::getMyVars(rot2);
+  CHECK(var[0] == Approx(vs[0]));
+  CHECK(var[1] == Approx(vs[1]));
+  CHECK(var[2] == Approx(vs[2]));
+  CHECK(var[3] == Approx(vs[3]));
+
+  opt_variables_type& full_var = testing::getMyVarsFull(rot2);
+  CHECK(full_var[0] == Approx(vs[0]));
+  CHECK(full_var[1] == Approx(vs[1]));
+  CHECK(full_var[2] == Approx(vs[2]));
+  CHECK(full_var[3] == Approx(vs[3]));
+  CHECK(full_var[4] == Approx(0.0));
+  CHECK(full_var[5] == Approx(0.0));
+}
+
+// Test using history list.
+TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
+{
+  auto fake_spo = std::make_unique<FakeSPO>();
+  fake_spo->setOrbitalSetSize(4);
+  RotatedSPOs rot("fake_rot", std::move(fake_spo));
+  rot.set_use_global_rotation(false);
+  int nel = 2;
+  rot.buildOptVariables(nel);
+
+  optimize::VariableSet vs;
+  rot.checkInVariablesExclusive(vs);
+  vs[0] = 0.1;
+  vs[1] = 0.15;
+  vs[2] = 0.2;
+  vs[3] = 0.25;
+  rot.resetParametersExclusive(vs);
+
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp_hist.h5", hout);
+
+    rot.writeVariationalParameters(hout);
+  }
+
+  auto fake_spo2 = std::make_unique<FakeSPO>();
+  fake_spo2->setOrbitalSetSize(4);
+
+  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  rot2.buildOptVariables(nel);
+
+  optimize::VariableSet vs2;
+  rot2.checkInVariablesExclusive(vs2);
+
+  hdf_archive hin;
+  vs2.readFromHDF("rot_vp_hist.h5", hin);
+  rot2.readVariationalParameters(hin);
+
+  opt_variables_type& var = testing::getMyVars(rot2);
+  CHECK(var[0] == Approx(vs[0]));
+  CHECK(var[1] == Approx(vs[1]));
+  CHECK(var[2] == Approx(vs[2]));
+  CHECK(var[3] == Approx(vs[3]));
+
+  auto hist = testing::getHistoryParams(rot2);
+  REQUIRE(hist.size() == 1);
+  REQUIRE(hist[0].size() == 4);
+}
+
+class DummySPOSetWithoutMW : public SPOSet
+{
+public:
+  DummySPOSetWithoutMW(const std::string& my_name) : SPOSet(my_name) {}
+  void setOrbitalSetSize(int norbs) override {}
+  void evaluateValue(const ParticleSet& P, int iat, SPOSet::ValueVector& psi) override
+  {
+    assert(psi.size() == 3);
+    psi[0] = 123;
+    psi[1] = 456;
+    psi[2] = 789;
+  }
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override {}
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override
+  {}
+  std::string getClassName() const override { return my_name_; }
+};
+
+class DummySPOSetWithMW : public DummySPOSetWithoutMW
+{
+public:
+  DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW(my_name) {}
+  void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        const RefVector<ValueVector>& psi_v_list) const override
+  {
+    for (auto& psi : psi_v_list)
+    {
+      assert(psi.get().size() == 3);
+      psi.get()[0] = 321;
+      psi.get()[1] = 654;
+      psi.get()[2] = 987;
+    }
+  }
+};
+
+TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
+{
+  //checking that mw_ API works in RotatedSPOs and is not defaulting to
+  //SPOSet default implementation
+  {
+    //First check calling the mw_ APIs for RotatedSPOs, for which the
+    //underlying implementation just calls the underlying SPOSet mw_ API
+    //In the case that the underlying SPOSet doesn't specialize the mw_ API,
+    //the underlying SPOSet will fall back to the default SPOSet mw_, which is
+    //just a loop over the single walker API.
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW>("no mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW>("no mw 1"));
+    RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
+
+    ResourceCollection spo_res("test_rot_res");
+    rot_spo0.createResource(spo_res);
+    ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
+    const SimulationCell simulation_cell;
+    ParticleSet elec0(simulation_cell);
+    ParticleSet elec1(simulation_cell);
+    RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});
+
+    SPOSet::ValueVector psi0(3);
+    SPOSet::ValueVector psi1(3);
+    RefVector<SPOSet::ValueVector> psi_v_list{psi0, psi1};
+
+    rot_spo0.mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
+      CHECK(psi_v_list[iw].get()[0] == Approx(123));
+      CHECK(psi_v_list[iw].get()[1] == Approx(456));
+      CHECK(psi_v_list[iw].get()[2] == Approx(789));
+    }
+  }
+  {
+    //In the case that the underlying SPOSet DOES have mw_ specializations,
+    //we want to make sure that RotatedSPOs are triggering that appropriately
+    //This will mean that the underlying SPOSets will do the appropriate offloading
+    //To check this, DummySPOSetWithMW has an explicit mw_evaluateValue which sets
+    //different values than what gets set in evaluateValue. By doing this,
+    //we are ensuring that RotatedSPOs->mw_evaluaeValue is calling the specialization
+    //in the underlying SPO and not using the default SPOSet implementation which
+    //loops over single walker APIs (which have different values enforced in
+    // DummySPOSetWithoutMW
+
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW>("mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW>("mw 1"));
+    RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
+
+    ResourceCollection spo_res("test_rot_res");
+    rot_spo0.createResource(spo_res);
+    ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
+    const SimulationCell simulation_cell;
+    ParticleSet elec0(simulation_cell);
+    ParticleSet elec1(simulation_cell);
+    RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});
+
+    SPOSet::ValueVector psi0(3);
+    SPOSet::ValueVector psi1(3);
+    RefVector<SPOSet::ValueVector> psi_v_list{psi0, psi1};
+
+    rot_spo0.mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
+      CHECK(psi_v_list[iw].get()[0] == Approx(321));
+      CHECK(psi_v_list[iw].get()[1] == Approx(654));
+      CHECK(psi_v_list[iw].get()[2] == Approx(987));
+    }
+  }
+}
 
 } // namespace qmcplusplus

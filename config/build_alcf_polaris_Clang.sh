@@ -57,12 +57,16 @@ if [[ $name == *"_MP"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_MIXED_PRECISION=ON"
 fi
 
+if [[ $name == *"offload"* || $name == *"cuda"* ]]; then
+  CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=sm_80"
+fi
+
 if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DUSE_OBJECT_TARGET=ON -DOFFLOAD_ARCH=sm_80"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON"
 fi
 
 if [[ $name == *"cuda"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=80"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON"
 fi
 
 folder=build_${Machine}_${Compiler}_${name}

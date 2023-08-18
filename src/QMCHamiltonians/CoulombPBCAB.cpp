@@ -22,6 +22,24 @@
 
 namespace qmcplusplus
 {
+struct CoulombPBCAB::CoulombPBCABMultiWalkerResource : public Resource
+{
+  CoulombPBCABMultiWalkerResource() : Resource("CoulombPBCAB") {}
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<CoulombPBCABMultiWalkerResource>(*this);
+  }
+
+  /// a walkers worth of per ion AB potential values
+  Vector<RealType> pp_samples_src;
+  /// a walkers worth of per electron AB potential values
+  Vector<RealType> pp_samples_trg;
+  /// constant values for the source particles aka ions aka A
+  Vector<RealType> pp_consts_src;
+  /// constant values for the target particles aka electrons aka B
+  Vector<RealType> pp_consts_trg;
+};
+
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces)
     : ForceBase(ions, elns),
       myTableIndex(elns.addTable(ions)),
@@ -37,7 +55,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
   if (ComputeForces)
     pset_ions_.turnOnPerParticleSK();
   initBreakup(elns);
-  prefix = "Flocal";
+  prefix_ = "Flocal";
   app_log() << "  Rcut                " << myRcut << std::endl;
   app_log() << "  Maximum K shell     " << AB->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
@@ -106,8 +124,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
 {
   if (ComputeForces)
   {
-    forces = 0.0;
-    value_ = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
+    forces_ = 0.0;
+    value_  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
   }
   else
 #if !defined(REMOVE_TRACEMANAGER)
@@ -127,9 +145,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
 {
   if (ComputeForces)
   {
-    forces = 0.0;
-    value_ = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
-    hf_terms -= forces;
+    forces_ = 0.0;
+    value_  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
+    hf_terms -= forces_;
     //And no Pulay contribution.
   }
   else
@@ -257,7 +275,7 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                           const std::vector<ListenerVector<RealType>>& listeners,
-					  const std::vector<ListenerVector<RealType>>& ion_listeners) const
+                                          const std::vector<ListenerVector<RealType>>& ion_listeners) const
 {
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
   auto& p_leader = p_list.getLeader();
@@ -265,10 +283,11 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
   auto num_centers            = p_leader.getTotalNum();
   auto& name                  = o_leader.name_;
-  Vector<RealType>& ve_sample = o_leader.mw_res_->pp_samples_trg;
-  Vector<RealType>& vi_sample = o_leader.mw_res_->pp_samples_src;
-  const auto& ve_consts       = o_leader.mw_res_->pp_consts_trg;
-  const auto& vi_consts       = o_leader.mw_res_->pp_consts_src;
+  auto& mw_res                = o_leader.mw_res_handle_.getResource();
+  Vector<RealType>& ve_sample = mw_res.pp_samples_trg;
+  Vector<RealType>& vi_sample = mw_res.pp_samples_src;
+  const auto& ve_consts       = mw_res.pp_consts_trg;
+  const auto& vi_consts       = mw_res.pp_consts_src;
   auto num_species            = p_leader.getSpeciesSet().getTotalNum();
   ve_sample.resize(NptclB);
   vi_sample.resize(NptclA);
@@ -276,7 +295,8 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   // This lambda is mostly about getting a handle on what is being touched by the per particle evaluation.
   auto evaluate_walker = [name, &ve_sample, &vi_sample, &ve_consts,
                           &vi_consts](const int walker_index, const CoulombPBCAB& cpbcab, const ParticleSet& pset,
-                                      const std::vector<ListenerVector<RealType>>& listeners, const std::vector<ListenerVector<RealType>>& ion_listeners) -> RealType {
+                                      const std::vector<ListenerVector<RealType>>& listeners,
+                                      const std::vector<ListenerVector<RealType>>& ion_listeners) -> RealType {
     RealType Vsr = 0.0;
     RealType Vlr = 0.0;
     RealType Vc  = cpbcab.myConst;
@@ -653,7 +673,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLRwithForces(ParticleSet& P)
       grad[iat] = TinyVector<RealType, DIM>(0.0, 0.0, 0.0);
     dAB->evaluateGrad(pset_ions_, P, j, Zat, grad);
     for (int iat = 0; iat < grad.size(); iat++)
-      forces[iat] += Qspec[j] * grad[iat];
+      forces_[iat] += Qspec[j] * grad[iat];
   } // electron species
   return evalLR(P);
 }
@@ -682,9 +702,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
       frV  = fVat[a]->splint(dist[a]);
       fdrV = fdVat[a]->splint(dist[a]);
       dvdr = Qat[b] * Zat[a] * (fdrV - frV * rinv) * rinv;
-      forces[a][0] -= dvdr * dr[a][0] * rinv;
-      forces[a][1] -= dvdr * dr[a][1] * rinv;
-      forces[a][2] -= dvdr * dr[a][2] * rinv;
+      forces_[a][0] -= dvdr * dr[a][0] * rinv;
+      forces_[a][1] -= dvdr * dr[a][1] * rinv;
+      forces_[a][2] -= dvdr * dr[a][2] * rinv;
       esum += Zat[a] * rV * rinv; //Total energy accumulation
     }
     res += esum * Qat[b];
@@ -692,8 +712,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
   return res;
 }
 
-void CoulombPBCAB::evalPerParticleConsts(Vector<RealType>& pp_consts_src,
-                                         Vector<RealType>& pp_consts_trg) const
+void CoulombPBCAB::evalPerParticleConsts(Vector<RealType>& pp_consts_src, Vector<RealType>& pp_consts_trg) const
 {
   int nelns = Peln.getTotalNum();
   int nions = pset_ions_.getTotalNum();
@@ -730,18 +749,15 @@ void CoulombPBCAB::createResource(ResourceCollection& collection) const
 void CoulombPBCAB::acquireResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
-  auto res_ptr   = dynamic_cast<CoulombPBCABMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("CoulombPBCAA::acquireResource dynamic_cast failed");
-  o_leader.mw_res_.reset(res_ptr);
+  auto& o_leader          = o_list.getCastedLeader<CoulombPBCAB>();
+  o_leader.mw_res_handle_ = collection.lendResource<CoulombPBCABMultiWalkerResource>();
 }
 
 void CoulombPBCAB::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
-  collection.takebackResource(std::move(o_leader.mw_res_));
+  collection.takebackResource(o_leader.mw_res_handle_);
 }
 
 } // namespace qmcplusplus

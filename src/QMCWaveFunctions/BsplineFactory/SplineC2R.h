@@ -136,11 +136,8 @@ public:
   /** remap kPoints to pack the double copy */
   inline void resize_kpoints()
   {
-#ifndef QMC_CUDA
-    // GPU CUDA code doesn't allow a change of the ordering
     nComplexBands = this->remap_kpoints();
-#endif
-    int nk = kPoints.size();
+    const int nk  = kPoints.size();
     mKK.resize(nk);
     myKcart.resize(nk);
     for (size_t i = 0; i < nk; ++i)

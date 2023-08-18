@@ -67,15 +67,6 @@ target_compile_options(qmcparticle_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_
 
 target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
 
-if(QMC_CUDA)
-  add_library(qmcparticle_cuda accept_kernel.cu)
-  if(QMC_CUDA2HIP)
-    set_source_files_properties(accept_kernel.cu PROPERTIES LANGUAGE HIP)
-  endif()
-  target_link_libraries(qmcparticle_cuda PRIVATE platform_runtime)
-  target_link_libraries(qmcparticle PRIVATE qmcparticle_cuda)
-endif(QMC_CUDA)
-
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)
   add_subdirectory(Lattice/tests)

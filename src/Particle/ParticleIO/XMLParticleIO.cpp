@@ -178,7 +178,7 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
     }
 
     if (ntot > 0 && num_non_zero_group != nat_group.size())
-      throw UniformCommunicateError("Some 'group' XML element node doesn't contain a 'size' attribute!");
+      throw UniformCommunicateError("Some 'group' XML element node doesn't contain a 'size' attribute! 'size = 0' is not allowed in the input. Make appropriate adjustments to the input or converter.");
   }
 
   { // parse all the 'attrib's to obtain or verify the total number of particles
@@ -335,10 +335,8 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
       makeUniformRandom(ref_.R);
       ref_.R.setUnit(PosUnit::Lattice);
       ref_.convert2Cart(ref_.R);
-#if !defined(QMC_CUDA)
       makeUniformRandom(ref_.spins);
       ref_.spins *= 2 * M_PI;
-#endif
     }
     else // put them [0,1) in the cell
       ref_.applyBC(ref_.R);

@@ -14,7 +14,7 @@ FetchContent_Declare(multi GIT_REPOSITORY https://gitlab.com/correaa/boost-multi
 # FetchContent_Declare(multi URL https://gitlab.com/correaa/boost-multi/-/archive/master/boost-multi-master.zip DOWNLOAD_EXTRACT_TIMESTAMP ON)
 FetchContent_MakeAvailable(multi)
 
-find_package(MPI REQUIRED)
+find_package(MPI REQUIRED)  # install MPI, e.g. `sudo dnf install mpich-devel` or `module load mpi`
 
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_DIRS})
 link_libraries(${MPI_CXX_LIBRARIES})
@@ -43,8 +43,11 @@ endif()
 find_package(Boost REQUIRED)
 if(Boost_FOUND)
   set(HAVE_LIBBOOST 1)
-  include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-  message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
+#  include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
+#  message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
+
+  include_directories(SYSTEM ${Boost_INCLUDE_DIR})
+  message(STATUS "Setting Boost_INCLUDE_DIR=${Boost_INCLUDE_DIR}")
 endif()
 
 if(ENABLE_CUDA)
@@ -59,6 +62,7 @@ endif()
 # This list is only a subset of files.  It might be useful to divide some of the tests into
 #  different categories (MPI-1, MPI-2, etc., or something else)
 set(TEST_SRCS
+  all_reduce.cpp
 	async_interaction.cpp
   broadcast.cpp
 	cartesian.cpp
@@ -66,12 +70,13 @@ set(TEST_SRCS
 	communicator_all_gather.cpp
 	communicator_all_gatherv.cpp
 	communicator_all_gatherv_output_iterator.cpp
-	communicator_all_reduce.cpp
 	communicator_barrier.cpp
 	communicator_divide.cpp
 	datatype.cpp
+  datatype_struct_vector3.cpp
   deino_all_to_all.cpp
   deino_broadcast.cpp
+  deino_op_create.cpp
 	gather2.cpp
 	group.cpp
 	communicator_cctor.cpp
@@ -96,8 +101,10 @@ set(TEST_SRCS
 	reduce_maxloc.cpp
 	ring.cpp
 	shared_mutex.cpp
+  send_complex.cpp
 	simple_send_receive.cpp
 	simple_broadcast.cpp
+  spinor.cpp
   status.cpp
 	type_commit.cpp
 	type_size.cpp

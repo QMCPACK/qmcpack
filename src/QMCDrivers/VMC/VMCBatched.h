@@ -95,8 +95,8 @@ public:
   static void runVMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
-                         std::vector<std::unique_ptr<Crowd>>& crowds);
+                         UPtrVector<ContextForSteps>& context_for_steps,
+                         UPtrVector<Crowd>& crowds);
 
   /** transitional interface on the way to better walker count adjustment handling.
    *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.
@@ -116,9 +116,7 @@ private:
   int prevStepsBetweenSamples;
   VMCDriverInput vmcdriver_input_;
   QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
-  ///Ways to set rn constant
-  RealType logoffset, logepsilon;
-  ///copy constructor
+  /// Copy constructor
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;

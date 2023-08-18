@@ -216,7 +216,7 @@ int main(int argc, char** argv)
         abort();
       }
       //Failed to create a parser. Try with the extension
-      std::string ext = getExtension(in_file);
+      auto ext = getExtension(in_file);
       if (parser == 0)
       {
         if (ext == "Fchk")
@@ -253,7 +253,6 @@ int main(int argc, char** argv)
         std::string token;
         pos   = prefix.find(delimiter);
         token = prefix.substr(0, pos);
-        prefix.erase(0, pos + delimiter.length());
         prefix = token;
       }
       std::cout << "Using " << prefix << " to name output files" << std::endl;

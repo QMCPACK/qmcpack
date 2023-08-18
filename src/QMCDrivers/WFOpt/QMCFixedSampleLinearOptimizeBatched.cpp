@@ -86,13 +86,12 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
       freeze_parameters_(false),
-      generate_samples_timer_(
-          *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
-      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
-      involvmat_timer_(*timer_manager.createTimer("QMCLinearOptimizedBatched::invert_matrix", timer_level_medium)),
-      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
-      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
+      generate_samples_timer_(createGlobalTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
+      initialize_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
+      eigenvalue_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
+      involvmat_timer_(createGlobalTimer("QMCLinearOptimizedBatched::invert_matrix", timer_level_medium)),
+      line_min_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(createGlobalTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
@@ -759,7 +758,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+      adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                               qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
 
@@ -1598,13 +1597,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   parameterDirections.assign(N, 0.0);
 
   // compute the initial cost
-#ifdef QMC_CUDA
-  // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
-  // more investiation is needed.
-  const RealType initCost = optTarget->Cost(true);
-#else
   const RealType initCost = optTarget->computedCost();
-#endif
 
   // say what we are doing
   app_log() << std::endl
@@ -1726,7 +1719,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || std::isnan(newCost))
+  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)

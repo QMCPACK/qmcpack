@@ -71,29 +71,40 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="clangnewmpi gccnewnompi gccnewmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex gccoldmpi gccoldmpi_legacycuda gccoldnompi_legacycuda gccoldnompi_legacycuda gccoldnompi_legacycuda_complex gccoldnompi_legacycuda_full gccoldnompi_legacycuda_full_complex"
+	    buildsys="clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangoffloadnompi_offloadcuda clangoffloadmpi_offloadcuda clangoffloadmpi_offloadcuda_complex clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
 	else
-	    buildsys="clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex gccoldmpi_legacycuda gccoldmpi_legacycuda_full gccoldmpi_legacycuda_complex"
+	    buildsys="clangnewmpi gccnewmpi clangoffloadmpi_offloadcuda clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex"
 	fi
 	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
-	;;
-    nitrogen )
-	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="gccoldnompi_legacycu2hip gccoldmpi_legacycu2hip gccoldnompi_legacycu2hip_complex gccoldnompi_legacycu2hip_full gccoldnompi_legacycu2hip_full_complex clangnewmpi gccnewnompi gccnewmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex gccoldmpi gccoldmpi_legacycuda gccoldnompi_legacycuda gccoldnompi_legacycuda gccoldnompi_legacycuda_complex gccoldnompi_legacycuda_full gccoldnompi_legacycuda_full_complex"
-	else
-	    buildsys="clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex gccoldmpi_legacycuda gccoldmpi_legacycuda_full gccoldmpi_legacycuda_complex gccoldmpi_legacycu2hip gccoldmpi_legacycu2hip_full gccoldmpi_legacycu2hip_complex"
-	fi
-	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
-	export amdgpuarch=`rocminfo | awk '/gfx/ {print $2; exit;}'`
 	;;
     nitrogen2 )
+#	if [[ $jobtype == "nightly" ]]; then
+#	    buildsys="amdclangnompi_offloadhip amdclangnompi gccnewnompi_legacycu2hip gccnewnompi gccnewmpi gccoldmpi gccnewmpi_legacycu2hip clangnewmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
+#	else
+#	    buildsys="amdclangnompi_offloadhip amdclangnompi gccnewnompi_legacycu2hip gccnewmpi gccoldnompi clangnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex"
+#	fi
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="gccoldnompi_legacycu2hip gccoldmpi_legacycu2hip gccoldnompi_legacycu2hip_complex gccoldnompi_legacycu2hip_full gccoldnompi_legacycu2hip_full_complex clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
+	    buildsys="amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
 	else
-	    buildsys="gccoldmpi_legacycu2hip gccoldmpi_legacycu2hip_full gccoldmpi_legacycu2hip_complex clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex"
+	    buildsys="amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
 	fi
 	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
-	export amdgpuarch=`rocminfo | awk '/gfx/ {print $2; exit;}'`
+#	export amdgpuarch=`/usr/bin/rocminfo | awk '/gfx/ {print $2; exit;}'` # Does not work (?)
+	export amdgpuarch=gfx90a
+	;;
+    nitrogen )
+#	if [[ $jobtype == "nightly" ]]; then
+#	    buildsys="gccnewnompi gccnewmpi gccoldmpi clangnewmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
+#	else
+#	    buildsys="clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex"
+#	fi
+	if [[ $jobtype == "nightly" ]]; then
+	    buildsys="amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
+	else
+	    buildsys="amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
+	fi
+	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
+	export amdgpuarch=gfx906
 	;;
     * )
 	echo Unknown host will use gccnew only
@@ -103,16 +114,20 @@ esac
 
 case "$jobtype" in
     weekly )
-	export GLOBALTCFG="-j 48 --timeout 10800 -VV"
-	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=256"
+	export GLOBALTCFG="-j 48 --timeout 7200 -VV"
+#	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=256"
+	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=256;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=64;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=64"
 	export LIMITEDTESTS=""
 	export LESSLIMITEDTESTS=""
 	;;
     nightly )
-	export GLOBALTCFG="-j 48 --timeout 600 -VV"
-	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=64"
-	export LIMITEDTESTS="--tests-regex deterministic -E long-"
-	export LESSLIMITEDTESTS="-E long-"
+#	export GLOBALTCFG="-j 48 --timeout 900 -VV"
+	export GLOBALTCFG="-j 48 --timeout 300 -VV"
+#	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=255;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=12;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=16"
+	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=128;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=12;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=16"
+        export LIMITEDTESTS="-LE unstable --exclude-regex 'short-.*|long-.*|example.*'"
+#	export LESSLIMITEDTESTS="--exclude-regex 'long-.*'"
+	export LESSLIMITEDTESTS="-E long"
 	;;
     * )
 	echo Unknown jobtype $jobtype
@@ -135,7 +150,7 @@ export OMP_NUM_THREADS=16
 #export FI_PROVIDER=sockets
 export I_MPI_FABRICS=shm
 
-# LLVM Offload bug workaround 2021-03-02
+# LLVM Offload bug workaround
 export LIBOMP_USE_HIDDEN_HELPER_TASK=OFF
 
 module() { eval `/usr/bin/modulecmd bash $*`; }
@@ -202,7 +217,13 @@ cd build_$sys
 
 
 ourenv=env${syscompilermpi}
+echo --- Activating environment $ourenv
+spack env activate $ourenv
 echo --- Sourcing environment $ourenv
+if [ ! -e $HOME/apps/spack/var/spack/environments/$ourenv/loads ]; then
+    echo Loads file missing for environment $ourenv
+    exit 1
+fi
 source $HOME/apps/spack/var/spack/environments/$ourenv/loads    
 # Compiler sanity check:
 which gcc
@@ -211,12 +232,20 @@ which mpicc
 # Extra configuration for this build
 # All base sw should be available via the environments
 
-# Choose python on a per build type basis to minimize risk of contamination by e.g. older/newer HDF5 picked up via python modules
+# Ensure GNU C++ library available. Problem symptoms:
+# $ bin/qmcpack
+# bin/qmcpack: /lib64/libstdc++.so.6: version `GLIBCXX_3.4.26' not found (required by bin/qmcpack)
+
+echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
+echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+
+# Setup additional python paths when gccnew and therefore pyscf available. TO DO: test for module availability
 case "$sys" in
     gccnew*mpi*) echo $ourenv
 		
 		if [[ $sys != *"nompi"* ]]; then
-		    # Make PySCF available
+		    # Make PySCF workflows available
 		    export PYTHONPATH=${test_dir}/qmcpack/utils/afqmctools/:$PYTHONPATH
 		    export PYTHONPATH=${test_dir}/qmcpack/src/QMCTools/:$PYTHONPATH
 
@@ -225,9 +254,14 @@ case "$sys" in
 		fi
 		;;
     gccold*mpi*) echo $ourenv
-	
 		;;
     clangnew*mpi*) echo $ourenv
+		;;
+    clangoffload*mpi*) echo $ourenv
+		;;
+    amdclang*) echo $ourenv
+	       export ROCM_PATH=/opt/rocm
+	       export PATH=$PATH:$ROCM_PATH/bin
 		;;
     
     *) echo "Problems: Unknown build environment"
@@ -271,46 +305,59 @@ fi
 
 #Clang/LLVM
 if [[ $sys == *"clang"* ]]; then
+    if [[ $sys == *"amdclang"* ]]; then
+	clangname=amdclang
+    else
+	clangname=clang
+    fi
+    
     if [[ $sys == *"clangdev"* ]]; then
 	compilerversion=Dev
     else
-	compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version //g' -e 's/(.*//g'|sed 's/\..*//g'`
+	compilerversion=`$clangname --version|grep ^clang|sed -e 's/^.* version //g' -e 's/(.*//g'|sed 's/\..*//g'`
     fi
     if [[ $sys == *"nompi"* ]]; then
 	QMCPACK_TEST_SUBMIT_NAME=Clang${compilerversion}-NoMPI
-	CTCFG="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQMC_MPI=0"
+	CTCFG="-DCMAKE_C_COMPILER=$clangname -DCMAKE_CXX_COMPILER=$clangname++ -DQMC_MPI=0"
     else
 	QMCPACK_TEST_SUBMIT_NAME=Clang${compilerversion}
 	CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
-	export OMPI_CC=clang
-	export OMPI_CXX=clang++
+	export OMPI_CC=$clangname
+	export OMPI_CXX=$clangname++
     fi
-
+    if [[ $sys == *"amdclang"* ]]; then
+	QMCPACK_TEST_SUBMIT_NAME=AMD${QMCPACK_TEST_SUBMIT_NAME}
+    fi
+    
 # Clang OpenMP offload CUDA builds. Setup here due to clang specific arguments
     if [[ $sys == *"offloadcuda"* ]]; then
         QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Offload-CUDA
         CTCFG="$CTCFG -DCMAKE_CXX_FLAGS=-Wno-unknown-cuda-version"
-		QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DENABLE_CUDA=ON;-DCMAKE_CUDA_ARCHITECTURES=sm_70;-DCMAKE_CUDA_HOST_COMPILER=`which gcc`"
-		echo *** CHECK/FIX ME
-		exit 1
+#	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DENABLE_CUDA=ON;-DCMAKE_CUDA_ARCHITECTURES=70;-DCMAKE_CUDA_HOST_COMPILER=`which gcc`"
+	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DENABLE_CUDA=ON;-DCMAKE_CUDA_ARCHITECTURES=70"
+    fi
+    if [[ $sys == *"offloadhip"* ]]; then
+        QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Offload-CUDA2HIP
+#	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DENABLE_CUDA=ON;-DQMC_CUDA2HIP=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=$amdgpuarch"
+	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DENABLE_CUDA=ON;-DQMC_CUDA2HIP=ON;-DCMAKE_HIP_ARCHITECTURES=$amdgpuarch"
     fi
 fi
 
-#AOMP (fork of Clang/LLVM)
-if [[ $sys == *"aomp"* ]]; then
-    compilerversion=`aompversion|sed 's/-.*//g'`
-    if [[ $sys == *"nompi"* ]]; then
-	QMCPACK_TEST_SUBMIT_NAME=AOMP${compilerversion}-Offload-NoMPI
-	CTCFG="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQMC_MPI=0"
-	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=${amdgpuarch}"
-    else
-	QMCPACK_TEST_SUBMIT_NAME=AOMP${compilerversion}-Offload
-	CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
-	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=${amdgpuarch}"
-	export OMPI_CC=clang
-	export OMPI_CXX=clang++
-    fi
-fi
+#OLD#AOMP (fork of Clang/LLVM)
+#OLDif [[ $sys == *"aomp"* ]]; then
+#OLD    compilerversion=`aompversion|sed 's/-.*//g'`
+#OLD    if [[ $sys == *"nompi"* ]]; then
+#OLD	QMCPACK_TEST_SUBMIT_NAME=AOMP${compilerversion}-Offload-NoMPI
+#OLD	CTCFG="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQMC_MPI=0"
+#OLD	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=${amdgpuarch}"
+#OLD    else
+#OLD	QMCPACK_TEST_SUBMIT_NAME=AOMP${compilerversion}-Offload
+#OLD	CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
+#OLD	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=${amdgpuarch}"
+#OLD	export OMPI_CC=clang
+#OLD	export OMPI_CXX=clang++
+#OLD    fi
+#OLDfi
 
 # Intel
 if [[ $sys == *"intel"* ]]; then
@@ -366,19 +413,39 @@ export OMPI_CXX=nvc++
 fi
 fi
 
-# Legacy CUDA builds setup
+# General CUDA setup for offload and legacy cuda builds
+# Use system installed CUDA since this will match the driver. May conflict will a different version spack installed cuda
 # TODO: Ensure consistent CUDA versions for nvhpc+cuda, spack sourced compilers etc.
+
+# ASSUME CORRECT CUDA VERSION ALREADY ON PATH , e.g. correct CUDA spack module loaded
+
+#if [[ $sys == *"legacycuda"* ]]; then
+#    if [ -e /usr/local/cuda/bin/nvcc ]; then
+#        export CUDAVER=`cat /usr/local/cuda/version.json | python3 -c "import sys, json; print(json.load(sys.stdin)['cuda']['version'])"`
+#        echo --- Found nvcc in /usr/local/cuda , apparent version $CUDAVER . Adding to PATH
+#        export PATH=/usr/local/cuda/bin:${PATH}
+#        export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+#    else
+#        echo --- Did not find expected nvcc compiler for CUDA build. Error.
+#        exit 1
+#    fi
+#else
+#    if [[ $sys == *"offloadcuda"* ]]; then
+#	echo --- FORCING CUDA 11.2 FOR OFFLOAD BUILD TO WORKAROUND https://github.com/llvm/llvm-project/issues/54633
+#        if [ -e /usr/local/cuda-11.2/bin/nvcc ]; then
+#            export CUDAVER=`cat /usr/local/cuda-11.2/version.json | python3 -c "import sys, json; print(json.load(sys.stdin)['cuda']['version'])"`
+#            echo --- Found nvcc in /usr/local/cuda-11.2 , apparent version $CUDAVER . Adding to PATH
+#            export PATH=/usr/local/cuda-11.2/bin:${PATH}
+#            export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
+#        else
+#            echo --- Did not find expected nvcc compiler for CUDA build. Error.
+#            exit 1
+#        fi
+#    fi
+#fi
+
+# Legacy CUDA builds setup
 if [[ $sys == *"legacycuda"* ]]; then
-#export CUDAVER=11.6
-export CUDAVER=11.7 # HYPOTHESIS: Broken 2022-05-28
-if [ -e /usr/local/cuda-${CUDAVER}/bin/nvcc ]; then
-    echo --- Found nvcc from CUDA ${CUDAVER} . Adding to PATH
-    export PATH=/usr/local/cuda-${CUDAVER}/bin:${PATH}
-    export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64:${LD_LIBRARY_PATH}
-else
-    echo --- Did not find expected nvcc compiler for CUDA build. Error.
-    exit 1
-fi
 # Specify GPUs for testing. Obtain device IDs via "nvidia-smi -L"
 #export CUDA_VISIBLE_DEVICES=
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Legacy-CUDA
@@ -388,12 +455,10 @@ fi
 # Legacy CUDA2HIP builds setup
 # TODO: Ensure consistent CUDA versions for nvhpc+cuda, spack sourced compilers etc.
 if [[ $sys == *"legacycu2hip"* ]]; then
-#    export ROCMVER=4.5
-#    export PATH=$PATH:/opt/rocm-${ROCMVER}/bin:/opt/rocm-${ROCMVER}/opencl/bin
     export ROCM_PATH=/opt/rocm
     export PATH=${PATH}:${ROCM_PATH}/bin:${ROCM_PATH}/opencl/bin
     QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Legacy-CUDA2HIP
-    QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_CUDA=ON;-DQMC_CUDA2HIP=ON;-DCMAKE_HIP_ARCHITECTURES=${amdgpuarch}"
+    QMC_OPTIONS="${QMC_OPTIONS};-DQMC_CUDA=ON;-DQMC_CUDA2HIP=ON;-DCMAKE_HIP_ARCHITECTURES=${amdgpuarch}"
 fi
 
 # MKL
@@ -428,8 +493,8 @@ if [[ $sys == *"nompi"* ]]; then
     echo "AFQMC is disabled for this build without MPI."
     CTCFG="$CTCFG -DBUILD_AFQMC=0"
 else
-    if [[ $sys == *"cu2hip"* ]]; then
-	echo "AFQMC is disabled for this HIP build."
+    if [[ $sys == *"offload"* ]]; then
+	echo "AFQMC is disabled for this offload build."
 	CTCFG="$CTCFG -DBUILD_AFQMC=0"
     else
 	echo "AFQMC build option is enabled."
@@ -439,7 +504,7 @@ fi
 
 # Adjust which tests are run to control overall runtime
 case "$sys" in
-    *intel2020*|*gccnew*|*clangnew*|*nvhpc*|*gcc*legacycuda*|*gcc*cu2hip*) echo "Running full ("less limited") test set for $sys"
+    *intel2020*|*gccnew*|*clangnew*|*gcc*legacycuda*|*gcc*cu2hip*) echo "Running full ("less limited") test set for $sys"
 							     THETESTS=$LESSLIMITEDTESTS
 							     ;;
     *) echo "Running limited test set for $sys"
@@ -468,28 +533,14 @@ echo --- START make `date`
 make -j 96
 echo --- END make `date`
 echo --- START ctest `date` 
-#Workaround CUDA concurrency problems
-#case "$sys" in
-#    *cuda*)
-#	ctest ${GLOBALTCFG} ${THETESTS} -DN_CONCURRENT_TESTS=1
-#	;;
-#    *)
-	ctest ${GLOBALTCFG} ${THETESTS}
-#	;;
-#esac
+# To workaround any concurrency problems put -DN_CONCURRENT_TESTS=1
+ctest ${GLOBALTCFG} ${THETESTS}
 echo --- END ctest `date`
 else
 echo --- START ctest `date` 
-echo ctest ${CTCFG} ${GLOBALTCFG} -DQMC_OPTIONS=${QMC_OPTIONS} -S $PWD/../qmcpack/CMake/ctest_script.cmake,$ctestscriptarg ${THETESTS}
-#Workaround CUDA concurrency problems
-#case "$sys" in
-#    *cuda*)
-#	ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,$ctestscriptarg ${THETESTS} -DN_CONCURRENT_TESTS=1
-#	;;
-#    *)
-	ctest ${CTCFG} ${GLOBALTCFG} -DQMC_OPTIONS=${QMC_OPTIONS} -S $PWD/../qmcpack/CMake/ctest_script.cmake,$ctestscriptarg ${THETESTS}
-#	;;
-#esac
+# To workaround any concurrency problems put -DN_CONCURRENT_TESTS=1
+echo ctest ${CTCFG} ${GLOBALTCFG} -DQMC_OPTIONS=${QMC_OPTIONS} ${THETESTS} -S $PWD/../qmcpack/CMake/ctest_script.cmake,$ctestscriptarg
+     ctest ${CTCFG} ${GLOBALTCFG} -DQMC_OPTIONS=${QMC_OPTIONS} ${THETESTS} -S $PWD/../qmcpack/CMake/ctest_script.cmake,$ctestscriptarg
 echo --- END ctest `date`
 fi
 

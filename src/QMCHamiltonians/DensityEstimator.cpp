@@ -22,6 +22,8 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 
+#include <stdexcept> // std::invalid_argument
+
 namespace qmcplusplus
 {
 using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
@@ -46,7 +48,13 @@ void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 {
-  RealType wgt = t_walker_->Weight;
+  if (t_walker_ == nullptr)
+  {
+    throw std::invalid_argument("calling DensityEstimator::evaluate needs the weight of the walkers");
+  }
+
+  const RealType wgt = t_walker_->Weight;
+
   if (periodic_)
   {
     for (int iat = 0; iat < P.getTotalNum(); ++iat)
@@ -78,30 +86,6 @@ DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
     }
   }
   return 0.0;
-}
-
-void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  int nw = W.WalkerList.size();
-  int N  = W.getTotalNum();
-  if (periodic_)
-  {
-    for (int iw = 0; iw < nw; iw++)
-    {
-      Walker_t& w     = *W.WalkerList[iw];
-      RealType weight = w.Weight / nw;
-      for (int iat = 0; iat < N; iat++)
-      {
-        PosType ru;
-        ru = W.getLattice().toUnit(w.R[iat]);
-
-        const int i = static_cast<int>(delta_inv_[0] * (ru[0] - std::floor(ru[0])));
-        const int j = static_cast<int>(delta_inv_[1] * (ru[1] - std::floor(ru[1])));
-        const int k = static_cast<int>(delta_inv_[2] * (ru[2] - std::floor(ru[2])));
-        W.Collectables[getGridIndex(i, j, k)] += weight;
-      }
-    }
-  }
 }
 
 void DensityEstimator::addObservables(PropertySetType& plist) {}

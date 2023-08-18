@@ -486,7 +486,14 @@ public:
     bool success = true;
     size_t ncenter;
 
-    success = success && h5f.push("atomic_centers", false);
+    try
+    {
+      h5f.push("atomic_centers", false);
+    }
+    catch (...)
+    {
+      success = false;
+    }
     success = success && h5f.readEntry(ncenter, "number_of_centers");
     if (!success)
       return success;
@@ -497,7 +504,14 @@ public:
     {
       std::ostringstream gname;
       gname << "center_" << ic;
-      success = success && h5f.push(gname.str().c_str(), false);
+      try
+      {
+        h5f.push(gname.str().c_str(), false);
+      }
+      catch (...)
+      {
+        success = false;
+      }
       success = success && AtomicCenters[ic].read_splines(h5f);
       h5f.pop();
     }
@@ -509,14 +523,28 @@ public:
   {
     bool success = true;
     int ncenter  = AtomicCenters.size();
-    success      = success && h5f.push("atomic_centers", true);
-    success      = success && h5f.writeEntry(ncenter, "number_of_centers");
+    try
+    {
+      h5f.push("atomic_centers", true);
+    }
+    catch (...)
+    {
+      success = false;
+    }
+    success = success && h5f.writeEntry(ncenter, "number_of_centers");
     // write splines of each center
     for (int ic = 0; ic < AtomicCenters.size(); ic++)
     {
       std::ostringstream gname;
       gname << "center_" << ic;
-      success = success && h5f.push(gname.str().c_str(), true);
+      try
+      {
+        h5f.push(gname.str().c_str(), true);
+      }
+      catch (...)
+      {
+        success = false;
+      }
       success = success && AtomicCenters[ic].write_splines(h5f);
       h5f.pop();
     }
@@ -569,7 +597,8 @@ public:
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx] < myCenter.getNonOverlappingRadius();
+    return VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx] <
+        myCenter.getNonOverlappingRadius();
   }
 
   // C2C, C2R cases

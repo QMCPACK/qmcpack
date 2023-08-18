@@ -151,7 +151,7 @@ public:
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
    */
-  void setRandomGenerator(RandomGenerator* rng) override { myRNG = rng; }
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override { myRNG = rng; }
 
   void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
@@ -183,7 +183,7 @@ protected:
                               bool keepGrid = false);
 
   ///random number generator
-  RandomGenerator* myRNG;
+  RandomBase<FullPrecRealType>* myRNG;
   ///the set of local-potentials (one for each ion)
   std::vector<NonLocalECPComponent*> PP;
   ///unique NonLocalECPComponent to remove
@@ -227,7 +227,7 @@ private:
   ///NLPP job list of ion-electron pairs by spin group
   std::vector<std::vector<NLPPJob<Real>>> nlpp_jobs;
   /// mult walker shared resource
-  std::unique_ptr<NonLocalECPotentialMultiWalkerResource> mw_res_;
+  ResourceHandle<NonLocalECPotentialMultiWalkerResource> mw_res_handle_;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set

@@ -3,6 +3,7 @@
 
 #ifndef BOOST_MPI3_ENVIRONMENT_HPP
 #define BOOST_MPI3_ENVIRONMENT_HPP
+
 #pragma once
 
 #include "./communicator.hpp"
@@ -14,7 +15,7 @@
 
 #include <mpi.h>
 
-#include <iostream>
+// #include <iostream>  // for std::clog
 #include <string>
 
 namespace boost {
@@ -175,9 +176,11 @@ class environment {
  public:
 	environment() {
 		initialize_thread(thread_level::multiple);
+		// std::clog << "ctor() environment" << std::endl;
 		named_attributes_key_f() = std::make_unique<communicator::keyval<std::map<std::string, mpi3::any>>>();
 	}
 	explicit environment(thread_level required) {
+		// std::clog << "ctor(thread_level) environment" << std::endl;
 		initialize_thread(required);
 		named_attributes_key_f() = std::make_unique<communicator::keyval<std::map<std::string, mpi3::any>>>();
 	}
@@ -197,6 +200,7 @@ class environment {
 	environment& operator=(environment&&)      = delete;
 
 	~environment() noexcept {  // NOLINT(bugprone-exception-escape) finalizes throws as an instance of UB
+		// std::clog << "dtor environment" << std::endl;
 		named_attributes_key_f().reset();
 		finalize();  // cppcheck-suppress throwInNoexceptFunction ; finalizes throws as an instance of UB
 	}

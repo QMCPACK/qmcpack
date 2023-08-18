@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -81,11 +82,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
-
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations
-  // Reference values can be checked using eval_bspline_spo.py
 
   // Test the case where the number of psi values is not the orbital set size
   // or the number of electrons/2
@@ -197,6 +193,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec_.createResource(pset_res);
+  spo->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
   const int ne = elec_.R.size();
   SPOSet::ValueMatrix psi(ne, psi_size);
   SPOSet::GradMatrix dpsi(ne, psi_size);
@@ -223,163 +228,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(psi_v_list[1].get()[0][0]) == Approx(-0.8886948824));
   CHECK(std::real(psi_v_list[1].get()[1][0]) == Approx(-0.42546836868));
 
-#endif
-
-  // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
-  /* 
-     Here we test the low-level spline implementation of applyRotation().
-
-     Manually encode the unitary transformation. Ugly, but it works.
-     @TODO: Use the total rotation machinery when it's implemented
-
-     NB: This is truncated to 5 sig-figs, so there is some slop here as
-         compared to what is done in the splines via apply_rotation().
-	 So below we reduce the threshold for comparison. This can
-	 probably be ditched once we have a way to grab the actual 
-	 rotation matrix...
-  */
-  const auto orbitalsetsize = spo->getOrbitalSetSize();
-  REQUIRE(orbitalsetsize == 8);
-  SPOSet::ValueMatrix psiM_bare(elec_.R.size(), orbitalsetsize);
-  SPOSet::GradMatrix dpsiM_bare(elec_.R.size(), orbitalsetsize);
-  SPOSet::ValueMatrix d2psiM_bare(elec_.R.size(), orbitalsetsize);
-  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
-
-  // value
-  CHECK(psiM_bare[1][0] == Approx(-0.8886948824));
-  CHECK(psiM_bare[1][1] == Approx(1.4194120169));
-  // grad
-  CHECK(dpsiM_bare[1][0][0] == Approx(-0.0000183403));
-  CHECK(dpsiM_bare[1][0][1] == Approx(0.1655139178));
-  CHECK(dpsiM_bare[1][0][2] == Approx(-0.0000193077));
-  CHECK(dpsiM_bare[1][1][0] == Approx(-1.3131694794));
-  CHECK(dpsiM_bare[1][1][1] == Approx(-1.1174004078));
-  CHECK(dpsiM_bare[1][1][2] == Approx(-0.8462534547));
-  // lapl
-  CHECK(d2psiM_bare[1][0] == Approx(1.3313053846));
-  CHECK(d2psiM_bare[1][1] == Approx(-4.712583065));
-
-  SPOSet::ValueMatrix rot_mat(orbitalsetsize, orbitalsetsize);
-  rot_mat[0][0] = 0.99726;
-  rot_mat[0][1] = -0.00722;
-  rot_mat[0][2] = 0.00014;
-  rot_mat[0][3] = -0.00982;
-  rot_mat[0][4] = -0.01979;
-  rot_mat[0][5] = -0.02976;
-  rot_mat[0][6] = -0.03972;
-  rot_mat[0][7] = -0.04969;
-  rot_mat[1][0] = -0.00722;
-  rot_mat[1][1] = 0.97754;
-  rot_mat[1][2] = -0.05955;
-  rot_mat[1][3] = -0.06945;
-  rot_mat[1][4] = -0.07935;
-  rot_mat[1][5] = -0.08925;
-  rot_mat[1][6] = -0.09915;
-  rot_mat[1][7] = -0.10905;
-  rot_mat[2][0] = -0.00014;
-  rot_mat[2][1] = 0.05955;
-  rot_mat[2][2] = 0.99821;
-  rot_mat[2][3] = -0.00209;
-  rot_mat[2][4] = -0.00239;
-  rot_mat[2][5] = -0.00269;
-  rot_mat[2][6] = -0.00299;
-  rot_mat[2][7] = -0.00329;
-  rot_mat[3][0] = 0.00982;
-  rot_mat[3][1] = 0.06945;
-  rot_mat[3][2] = -0.00209;
-  rot_mat[3][3] = 0.99751;
-  rot_mat[3][4] = -0.00289;
-  rot_mat[3][5] = -0.00329;
-  rot_mat[3][6] = -0.00368;
-  rot_mat[3][7] = -0.00408;
-  rot_mat[4][0] = 0.01979;
-  rot_mat[4][1] = 0.07935;
-  rot_mat[4][2] = -0.00239;
-  rot_mat[4][3] = -0.00289;
-  rot_mat[4][4] = 0.99661;
-  rot_mat[4][5] = -0.00388;
-  rot_mat[4][6] = -0.00438;
-  rot_mat[4][7] = -0.00488;
-  rot_mat[5][0] = 0.02976;
-  rot_mat[5][1] = 0.08925;
-  rot_mat[5][2] = -0.00269;
-  rot_mat[5][3] = -0.00329;
-  rot_mat[5][4] = -0.00388;
-  rot_mat[5][5] = 0.99552;
-  rot_mat[5][6] = -0.00508;
-  rot_mat[5][7] = -0.00568;
-  rot_mat[6][0] = 0.03972;
-  rot_mat[6][1] = 0.09915;
-  rot_mat[6][2] = -0.00299;
-  rot_mat[6][3] = -0.00368;
-  rot_mat[6][4] = -0.00438;
-  rot_mat[6][5] = -0.00508;
-  rot_mat[6][6] = 0.99422;
-  rot_mat[6][7] = -0.00647;
-  rot_mat[7][0] = 0.04969;
-  rot_mat[7][1] = 0.10905;
-  rot_mat[7][2] = -0.00329;
-  rot_mat[7][3] = -0.00408;
-  rot_mat[7][4] = -0.00488;
-  rot_mat[7][5] = -0.00568;
-  rot_mat[7][6] = -0.00647;
-  rot_mat[7][7] = 0.99273;
-
-  // Apply the rotation
-  spo->applyRotation(rot_mat, false);
-
-  // Get data for rotated orbitals
-  SPOSet::ValueMatrix psiM_rot(elec_.R.size(), orbitalsetsize);
-  SPOSet::GradMatrix dpsiM_rot(elec_.R.size(), orbitalsetsize);
-  SPOSet::ValueMatrix d2psiM_rot(elec_.R.size(), orbitalsetsize);
-  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_rot, dpsiM_rot, d2psiM_rot);
-
-  // Now compute the expected values by hand using the transformation above
-  double val1 = 0.;
-  double val2 = 0.;
-  for (auto i = 0; i < rot_mat.size1(); i++)
-  {
-    val1 += psiM_bare[0][i] * rot_mat[i][0];
-    val2 += psiM_bare[1][i] * rot_mat[i][0];
-  }
-
-  // value
-  CHECK(psiM_rot[0][0] == Approx(val1));
-  CHECK(psiM_rot[1][0] == Approx(val2));
-
-  std::vector<double> grad1(3);
-  std::vector<double> grad2(3);
-  for (auto j = 0; j < grad1.size(); j++)
-  {
-    for (auto i = 0; i < rot_mat.size1(); i++)
-    {
-      grad1[j] += dpsiM_bare[0][i][j] * rot_mat[i][0];
-      grad2[j] += dpsiM_bare[1][i][j] * rot_mat[i][0];
-    }
-  }
-
-  // grad
-  CHECK(dpsiM_rot[0][0][0] == Approx(grad1[0]).epsilon(0.0001));
-  CHECK(dpsiM_rot[0][0][1] == Approx(grad1[1]).epsilon(0.0001));
-  CHECK(dpsiM_rot[0][0][2] == Approx(grad1[2]).epsilon(0.0001));
-  CHECK(dpsiM_rot[1][0][0] == Approx(grad2[0]).epsilon(0.0001));
-  CHECK(dpsiM_rot[1][0][1] == Approx(grad2[1]).epsilon(0.0001));
-  CHECK(dpsiM_rot[1][0][2] == Approx(grad2[2]).epsilon(0.0001));
-
-  double lap1 = 0.;
-  double lap2 = 0.;
-  for (auto i = 0; i < rot_mat.size1(); i++)
-  {
-    lap1 += d2psiM_bare[0][i] * rot_mat[i][0];
-    lap2 += d2psiM_bare[1][i] * rot_mat[i][0];
-  }
-
-  // Lapl
-  CHECK(d2psiM_rot[0][0] == Approx(lap1).epsilon(0.0001));
-  CHECK(d2psiM_rot[1][0] == Approx(lap2).epsilon(0.0001));
-#endif
-
 #if 0
   // Dump values of the orbitals
   int orbSize= spo->getOrbitalSetSize();
@@ -393,9 +241,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
         double x = 0.1*ix - 1.5;
         double y = 0.1*iy - 1.5;
         double z = 0.1*iz - 1.5;
-        elec_.R[0][0] = x;
-        elec_.R[0][1] = y;
-        elec_.R[0][2] = z;
+        elec_.R[0] = {x, y, z};
         elec_.update();
         SPOSet::ValueVector orbs(orbSize);
         spo->evaluate(elec_, 0, orbs);
@@ -474,7 +320,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
@@ -491,7 +336,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   // lapl
   CHECK(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
   CHECK(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
-#endif
 
 #if defined(QMC_COMPLEX)
   // imaginary part
@@ -511,7 +355,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 #endif
 
   // test batched interfaces
-
   ParticleSet elec_2(elec_);
   // interchange positions
   elec_2.R[0] = elec_.R[1];
@@ -524,6 +367,15 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
+
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec_.createResource(pset_res);
+  spo->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
   SPOSet::ValueVector psi(spo->getOrbitalSetSize());
   SPOSet::GradVector dpsi(spo->getOrbitalSetSize());
@@ -544,7 +396,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   d2psi_v_list.push_back(d2psi_2);
 
   spo->mw_evaluateVGL(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
@@ -561,7 +412,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   // lapl
   CHECK(std::real(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
   CHECK(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.4803137779));
-#endif
 
 #if defined(QMC_COMPLEX)
   // imaginary part
@@ -593,7 +443,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   SPOSet::OffloadMWVGLArray phi_vgl_v;
   phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
   spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, inv_row_ptr, phi_vgl_v, ratio_v, grads_v);
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
   CHECK(std::real(ratio_v[0]) == Approx(0.2365307168));
   CHECK(std::real(grads_v[0][0]) == Approx(-5.4095164399));
   CHECK(std::real(grads_v[0][1]) == Approx(14.37990087));

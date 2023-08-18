@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="be_vmc_nodrift" series="0">
+    <parameter name="driver_version">batch</parameter>
+  </project>
+  <include href="Be.structure.xml"/>
+	    <include href="Be_STO.wfnoj.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+      <!--  <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>-->
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+      <qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">
+      <parameter name="blocks">     100  </parameter>
+      <parameter name="warmupsteps"> 25 </parameter>
+      <parameter name="steps"> 100 </parameter>
+      <parameter name="substeps"> 10 </parameter>
+      <parameter name="timestep"> 0.5 </parameter>
+      <parameter name="useDrift">  no </parameter>
+    </qmc>
+</simulation>

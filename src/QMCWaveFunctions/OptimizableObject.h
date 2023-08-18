@@ -72,6 +72,27 @@ public:
   virtual void reportStatus(std::ostream& os) {}
 
   void setOptimization(bool state) { is_optimized_ = state; }
+
+  /** Write the variational parameters for this object to the VP HDF file
+   *
+   * The hout parameter should come from VariableSet::writeToHDF
+   *
+   * Objects can use this function to store additional information to the file.
+   *
+   * By default the parameters are saved in VariableSet::writeToHDF, and objects
+   * do not need to implement this function (yet).
+   *
+   */
+  virtual void writeVariationalParameters(hdf_archive& hout){};
+
+  /** Read the variational parameters for this object from the VP HDF file
+   *
+   * The hin parameter should come from VariableSet::readFromHDF
+   *
+   * By default the parameters are read in VariableSet::readFromHDF, and objects
+   * do not need to implement this function (yet).
+   */
+  virtual void readVariationalParameters(hdf_archive& hin){};
 };
 
 class UniqueOptObjRefs : public RefVector<OptimizableObject>

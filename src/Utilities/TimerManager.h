@@ -23,6 +23,7 @@
 #include <mutex>
 #include <map>
 #include <memory>
+#include <type_traits>
 #include "NewTimer.h"
 #include "config.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -46,7 +47,7 @@ class TimerManager
 {
 private:
   /// All the timers created by this manager
-  std::vector<std::unique_ptr<TIMER>> TimerList;
+  std::vector<std::unique_ptr<TIMER>> timer_storage_;
   /// mutex for TimerList
   std::mutex timer_list_lock_;
   /// The stack of nested active timers
@@ -137,12 +138,12 @@ public:
 extern template class TimerManager<NewTimer>;
 extern template class TimerManager<FakeTimer>;
 
-extern TimerManager<NewTimer> timer_manager;
+TimerManager<NewTimer>& getGlobalTimerManager();
+
+NewTimer& createGlobalTimer(const std::string& myname, timer_levels mylevel = timer_level_fine);
 
 // Helpers to make it easier to define a set of timers
 // See tests/test_timer.cpp for an example
-
-using TimerList_t = std::vector<std::reference_wrapper<NewTimer>>;
 
 template<class T>
 struct TimerIDName_t
@@ -154,16 +155,26 @@ struct TimerIDName_t
 template<class T>
 using TimerNameList_t = std::vector<TimerIDName_t<T>>;
 
-template<class T, class TIMER>
-void setup_timers(std::vector<std::reference_wrapper<TIMER>>& timers,
-                  TimerNameList_t<T> timer_list,
-                  timer_levels timer_level     = timer_level_fine,
-                  TimerManager<TIMER>* manager = &timer_manager)
+template<class TIMER>
+class TimerList : public std::vector<std::reference_wrapper<TIMER>>
 {
-  timers.reserve(timer_list.size());
-  for (int i = 0; i < timer_list.size(); i++)
-    timers.push_back(*manager->createTimer(timer_list[i].name, timer_level));
-}
+public:
+  template<class T>
+  TimerList(TimerManager<TIMER>& manager,
+            const TimerNameList_t<T>& timer_list,
+            timer_levels timer_level = timer_level_fine)
+  {
+    this->reserve(timer_list.size());
+    for (std::size_t i = 0; i < timer_list.size(); i++)
+    {
+      if (i != static_cast<std::underlying_type_t<T>>(timer_list[i].id))
+        throw std::runtime_error("Mismatch between index and enumeration");
+      this->push_back(*manager.createTimer(timer_list[i].name, timer_level));
+    }
+  }
+};
+
+using TimerList_t = TimerList<NewTimer>;
 
 } // namespace qmcplusplus
 #endif

@@ -24,13 +24,25 @@
 #include "Utilities/TimerManager.h"
 #include "BareKineticEnergy.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
-#ifdef QMC_CUDA
-#include "Particle/MCWalkerConfiguration.h"
-#endif
 #include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
+struct QMCHamiltonian::QMCHamiltonianMultiWalkerResource : public Resource
+{
+  QMCHamiltonianMultiWalkerResource() : Resource("QMCHamiltonian") {}
+  // the listeners represet the connection of a particular crowds estimators to the crowds lead QMCHamiltonian.
+  // So you can not clone them.
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<QMCHamiltonianMultiWalkerResource>(*this);
+  }
+  std::vector<ListenerVector<RealType>> kinetic_listeners_;
+  std::vector<ListenerVector<RealType>> potential_listeners_;
+  std::vector<ListenerVector<RealType>> ion_kinetic_listeners_;
+  std::vector<ListenerVector<RealType>> ion_potential_listeners_;
+};
+
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian(const std::string& aname)
@@ -39,11 +51,10 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       myName(aname),
       nlpp_ptr(nullptr),
       l2_ptr(nullptr),
-      ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
-      eval_vals_derivs_timer_(
-          *timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
+      ham_timer_(createGlobalTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
+      eval_vals_derivs_timer_(createGlobalTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
       eval_ion_derivs_fast_timer_(
-          *timer_manager.createTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsDeterministicFast", timer_level_medium))
+          createGlobalTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsDeterministicFast", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -102,7 +113,7 @@ void QMCHamiltonian::addOperator(std::unique_ptr<OperatorBase>&& h, const std::s
     h->setName(aname);
     H.push_back(std::move(h));
     std::string tname = "Hamiltonian:" + aname;
-    my_timers_.push_back(*timer_manager.createTimer(tname, timer_level_fine));
+    my_timers_.push_back(createGlobalTimer(tname, timer_level_fine));
   }
   else
   {
@@ -262,31 +273,30 @@ void QMCHamiltonian::registerCollectables(std::vector<ObservableHelper>& h5desc,
     auxH[i]->registerCollectables(h5desc, file);
 }
 
-void QMCHamiltonian::mw_registerKineticListener(const QMCHamiltonian& leader, ListenerVector<RealType> listener)
+void QMCHamiltonian::mw_registerKineticListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener)
 {
   // This creates a state replication burder of unknown scope when operators are cloned.
-  leader.mw_res_->kinetic_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().kinetic_listeners_.push_back(listener);
 }
 
-void QMCHamiltonian::mw_registerLocalEnergyListener(const QMCHamiltonian& leader, ListenerVector<RealType> listener)
+void QMCHamiltonian::mw_registerLocalEnergyListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener)
 {
   // This creates a state replication burder of unknown scope when operators are cloned.
   // A local energy listener listens to both the kinetic operator and all involved in the potential.
-  leader.mw_res_->kinetic_listeners_.push_back(listener);
-  leader.mw_res_->potential_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().kinetic_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().potential_listeners_.push_back(listener);
 }
 
-void QMCHamiltonian::mw_registerLocalPotentialListener(const QMCHamiltonian& leader, ListenerVector<RealType> listener)
+void QMCHamiltonian::mw_registerLocalPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener)
 {
   // This creates a state replication burder of unknown scope when operators are cloned.
-  leader.mw_res_->potential_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().potential_listeners_.push_back(listener);
 }
 
-void QMCHamiltonian::mw_registerLocalIonPotentialListener(const QMCHamiltonian& leader,
-                                                          ListenerVector<RealType> listener)
+void QMCHamiltonian::mw_registerLocalIonPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener)
 {
   // This creates a state replication burder of unknown scope when operators are cloned.
-  leader.mw_res_->ion_potential_listeners_.push_back(listener);
+  ham_leader.mw_res_handle_.getResource().ion_potential_listeners_.push_back(listener);
 }
 
 void QMCHamiltonian::informOperatorsOfListener()
@@ -534,10 +544,10 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
   {
     ScopedTimer h_timer(my_timers_[i]);
     const auto LocalEnergyComponent = H[i]->evaluate(P);
-    if (std::isnan(LocalEnergyComponent))
+    if (qmcplusplus::isnan(LocalEnergyComponent))
     {
       std::ostringstream msg;
-      msg << "QMCHamiltonian::evaluate component " <<  H[i]->getName() << " returns NaN." << std::endl;
+      msg << "QMCHamiltonian::evaluate component " << H[i]->getName() << " returns NaN." << std::endl;
       P.print(msg);
       throw std::runtime_error(msg.str());
     }
@@ -563,10 +573,10 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
   {
     ScopedTimer h_timer(my_timers_[i]);
     const auto LocalEnergyComponent = H[i]->evaluateDeterministic(P);
-    if (std::isnan(LocalEnergyComponent))
+    if (qmcplusplus::isnan(LocalEnergyComponent))
     {
       std::ostringstream msg;
-      msg << "QMCHamiltonian::evaluateDeterministic component " <<  H[i]->getName() << " returns NaN." << std::endl;
+      msg << "QMCHamiltonian::evaluateDeterministic component " << H[i]->getName() << " returns NaN." << std::endl;
       P.print(msg);
       throw std::runtime_error(msg.str());
     }
@@ -586,10 +596,10 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
 void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset)
 {
   // It's much better to be able to see where this is coming from.  It is caught just fine.
-  if (std::isnan(op.getValue()))
+  if (qmcplusplus::isnan(op.getValue()))
   {
     std::ostringstream msg;
-    msg << "QMCHamiltonian::updateNonKinetic component " <<  op.getName() << " returns NaN." << std::endl;
+    msg << "QMCHamiltonian::updateNonKinetic component " << op.getName() << " returns NaN." << std::endl;
     pset.print(msg);
     throw std::runtime_error(msg.str());
   }
@@ -624,10 +634,10 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
   {
     ScopedTimer h_timer(ham_leader.my_timers_[kinetic_index]);
     const auto HC_list(extract_HC_list(ham_list, kinetic_index));
-    if (ham_leader.mw_res_->kinetic_listeners_.size() > 0)
-      ham_leader.H[kinetic_index]->mw_evaluatePerParticle(HC_list, wf_list, p_list,
-                                                          ham_leader.mw_res_->kinetic_listeners_,
-                                                          ham_leader.mw_res_->ion_kinetic_listeners_);
+    if (ham_leader.mw_res_handle_.getResource().kinetic_listeners_.size() > 0)
+      ham_leader.H[kinetic_index]
+          ->mw_evaluatePerParticle(HC_list, wf_list, p_list, ham_leader.mw_res_handle_.getResource().kinetic_listeners_,
+                                   ham_leader.mw_res_handle_.getResource().ion_kinetic_listeners_);
     else
       ham_leader.H[kinetic_index]->mw_evaluate(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
@@ -645,7 +655,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
     // // 2. [] captures nothing insuring that we know these updates only depend on the three object involved.
     // auto updateNonKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
     //   // both hamiltonian and operatorbase should have operator<< overides
-    //   if (std::isnan(op.Value))
+    //   if (qmcplusplus::isnan(op.Value))
     //     APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
 
     //   // The following is a ridiculous breach of encapsulation.
@@ -654,9 +664,10 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
     //   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
     // };
 
-    if (ham_leader.mw_res_->potential_listeners_.size() > 0)
-      ham_leader.H[i_ham_op]->mw_evaluatePerParticle(HC_list, wf_list, p_list, ham_leader.mw_res_->potential_listeners_,
-                                                     ham_leader.mw_res_->ion_potential_listeners_);
+    if (ham_leader.mw_res_handle_.getResource().potential_listeners_.size() > 0)
+      ham_leader.H[i_ham_op]->mw_evaluatePerParticle(HC_list, wf_list, p_list,
+                                                     ham_leader.mw_res_handle_.getResource().potential_listeners_,
+                                                     ham_leader.mw_res_handle_.getResource().ion_potential_listeners_);
     else
       ham_leader.H[i_ham_op]->mw_evaluate(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
@@ -864,10 +875,11 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
   {
     ScopedTimer h_timer(ham_leader.my_timers_[kinetic_index]);
     const auto HC_list(extract_HC_list(ham_list, kinetic_index));
-    if (ham_leader.mw_res_->kinetic_listeners_.size() > 0)
-      ham_leader.H[kinetic_index]->mw_evaluatePerParticleWithToperator(HC_list, wf_list, p_list,
-                                                                       ham_leader.mw_res_->kinetic_listeners_,
-                                                                       ham_leader.mw_res_->ion_kinetic_listeners_);
+    if (ham_leader.mw_res_handle_.getResource().kinetic_listeners_.size() > 0)
+      ham_leader.H[kinetic_index]
+          ->mw_evaluatePerParticleWithToperator(HC_list, wf_list, p_list,
+                                                ham_leader.mw_res_handle_.getResource().kinetic_listeners_,
+                                                ham_leader.mw_res_handle_.getResource().ion_kinetic_listeners_);
     else
       ham_leader.H[kinetic_index]->mw_evaluateWithToperator(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
@@ -878,10 +890,11 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
   {
     ScopedTimer local_timer(ham_leader.my_timers_[i_ham_op]);
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
-    if (ham_leader.mw_res_->potential_listeners_.size() > 0)
-      ham_leader.H[i_ham_op]->mw_evaluatePerParticleWithToperator(HC_list, wf_list, p_list,
-                                                                  ham_leader.mw_res_->potential_listeners_,
-                                                                  ham_leader.mw_res_->ion_potential_listeners_);
+    if (ham_leader.mw_res_handle_.getResource().potential_listeners_.size() > 0)
+      ham_leader.H[i_ham_op]
+          ->mw_evaluatePerParticleWithToperator(HC_list, wf_list, p_list,
+                                                ham_leader.mw_res_handle_.getResource().potential_listeners_,
+                                                ham_leader.mw_res_handle_.getResource().ion_potential_listeners_);
     else
       ham_leader.H[i_ham_op]->mw_evaluateWithToperator(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); ++iw)
@@ -1023,7 +1036,7 @@ void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P)
     auxH[i]->resetTargetParticleSet(P);
 }
 
-void QMCHamiltonian::setRandomGenerator(RandomGenerator* rng)
+void QMCHamiltonian::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
 {
   for (int i = 0; i < H.size(); i++)
     H[i]->setRandomGenerator(rng);
@@ -1082,11 +1095,8 @@ void QMCHamiltonian::createResource(ResourceCollection& collection) const
 void QMCHamiltonian::acquireResource(ResourceCollection& collection,
                                      const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
-  auto& ham_leader = ham_list.getLeader();
-  ham_leader.mw_res_.reset(
-      dynamic_cast<typename decltype(ham_leader.mw_res_)::pointer>(collection.lendResource().release()));
-  if (!ham_leader.mw_res_)
-    throw std::runtime_error("QMCHamilonian::acquireResource dynamic_cast failed");
+  auto& ham_leader          = ham_list.getLeader();
+  ham_leader.mw_res_handle_ = collection.lendResource<QMCHamiltonianMultiWalkerResource>();
   for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
   {
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
@@ -1098,7 +1108,7 @@ void QMCHamiltonian::releaseResource(ResourceCollection& collection,
                                      const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
   auto& ham_leader = ham_list.getLeader();
-  collection.takebackResource(std::move(ham_leader.mw_res_));
+  collection.takebackResource(ham_leader.mw_res_handle_);
   for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
   {
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
@@ -1126,85 +1136,6 @@ std::unique_ptr<QMCHamiltonian> QMCHamiltonian::makeClone(ParticleSet& qp, Trial
   //myclone->setTau(tau);
   return myclone;
 }
-
-#ifdef QMC_CUDA
-void QMCHamiltonian::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& energyVector)
-{
-  ScopedTimer local_timer(ham_timer_);
-  auto& walkers = W.WalkerList;
-  int nw        = walkers.size();
-  if (LocalEnergyVector.size() != nw)
-  {
-    LocalEnergyVector.resize(nw);
-    AuxEnergyVector.resize(nw);
-  }
-  if (energyVector.size() != nw)
-    energyVector.resize(nw);
-  for (int i = 0; i < LocalEnergyVector.size(); i++)
-    LocalEnergyVector[i] = 0.0;
-  for (int i = 0; i < H.size(); ++i)
-  {
-    ScopedTimer h_timer(my_timers_[i]);
-    H[i]->addEnergy(W, LocalEnergyVector);
-    //H[i]->setObservables(Observables);
-  }
-
-  for (int iw = 0; iw < walkers.size(); iw++)
-  {
-    walkers[iw]->getPropertyBase()[WP::LOCALENERGY] = LocalEnergyVector[iw];
-    walkers[iw]->getPropertyBase()[WP::LOCALPOTENTIAL] =
-        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES];
-  }
-  energyVector = LocalEnergyVector;
-  // P.PropertyList[WP::WP::LOCALENERGY]=LocalEnergy;
-  // P.PropertyList[WP::LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
-  for (int i = 0; i < auxH.size(); ++i)
-  {
-    auxH[i]->addEnergy(W, AuxEnergyVector);
-    //auxH[i]->setObservables(Observables);
-  }
-}
-
-
-void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
-                              std::vector<RealType>& energyVector,
-                              std::vector<std::vector<NonLocalData>>& Txy)
-{
-  ScopedTimer local_timer(ham_timer_);
-  auto& walkers = W.WalkerList;
-  int nw        = walkers.size();
-  if (LocalEnergyVector.size() != nw)
-  {
-    LocalEnergyVector.resize(nw);
-    AuxEnergyVector.resize(nw);
-  }
-  if (energyVector.size() != nw)
-    energyVector.resize(nw);
-  std::fill(LocalEnergyVector.begin(), LocalEnergyVector.end(), 0.0);
-  //for (int i=0; i<LocalEnergyVector.size(); i++)
-  //  LocalEnergyVector[i] = 0.0;
-  for (int i = 0; i < H.size(); ++i)
-  {
-    ScopedTimer h_timer(my_timers_[i]);
-    H[i]->addEnergy(W, LocalEnergyVector, Txy);
-  }
-
-  for (int iw = 0; iw < walkers.size(); iw++)
-  {
-    walkers[iw]->getPropertyBase()[WP::LOCALENERGY] = LocalEnergyVector[iw];
-    walkers[iw]->getPropertyBase()[WP::LOCALPOTENTIAL] =
-        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES];
-  }
-  energyVector = LocalEnergyVector;
-
-  if (auxH.size())
-  {
-    std::fill(AuxEnergyVector.begin(), AuxEnergyVector.end(), 0.0);
-    for (int i = 0; i < auxH.size(); ++i)
-      auxH[i]->addEnergy(W, AuxEnergyVector);
-  }
-}
-#endif
 
 RefVectorWithLeader<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                                   int id)

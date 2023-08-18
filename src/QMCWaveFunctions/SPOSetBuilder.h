@@ -47,7 +47,6 @@ namespace qmcplusplus
 class SPOSetBuilder : public QMCTraits, public MPIObjectBase
 {
 public:
-  using SPOPool_t  = std::map<std::string, SPOSet*>;
   using indices_t  = std::vector<int>;
   using energies_t = std::vector<RealType>;
 
@@ -71,6 +70,9 @@ public:
 
   /// create an sposet from xml and save the resulting SPOSet
   std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur);
+
+  /// create orbital rotation transformation from xml and save the resulting SPOSet
+  std::unique_ptr<SPOSet> createRotatedSPOSet(xmlNodePtr cur);
 
   const std::string& getTypeName() const { return type_name_; }
 

@@ -75,7 +75,7 @@ if(OHMMS_DIM MATCHES 3)
     set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp)
   else(QMC_COMPLEX)
     #LCAO cusp correction is not ready for complex
-    set(FERMION_SRCS ${FERMION_SRCS} LCAO/CuspCorrection.cpp LCAO/LCAOrbitalSetWithCorrection.cpp
+    set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSetWithCorrection.cpp
                      LCAO/CuspCorrectionConstruction.cpp LCAO/SoaCuspCorrection.cpp)
   endif(QMC_COMPLEX)
 
@@ -140,12 +140,6 @@ set(FERMION_SRCS
     WaveFunctionFactory.cpp)
 set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTableMethod.cpp)
 
-if(QMC_CUDA)
-  set(FERMION_SRCS ${FERMION_SRCS} EinsplineSetCuda.cpp Fermion/DiracDeterminantCUDA.cpp Fermion/SlaterDetCUDA.cpp
-                   TrialWaveFunction_CUDA.cpp)
-  set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/OneBodyJastrowCUDA.cpp Jastrow/TwoBodyJastrowCUDA.cpp)
-endif()
-
 ####################################
 # create libqmcwfs
 ####################################
@@ -174,8 +168,6 @@ target_link_libraries(qmcwfs PUBLIC qmcwfs_omptarget)
 
 if(ENABLE_CUDA)
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda)
-elseif(QMC_CUDA)
-  target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda_legacy)
 elseif(ENABLE_SYCL)
   target_link_libraries(qmcwfs PRIVATE qmcwfs_sycl)
 endif()

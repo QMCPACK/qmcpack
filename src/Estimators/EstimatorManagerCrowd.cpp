@@ -25,7 +25,7 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
 void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers,
                                        const RefVector<ParticleSet>& psets,
                                        const RefVector<TrialWaveFunction>& wfns,
-                                       RandomGenerator& rng)
+                                       RandomBase<FullPrecRealType>& rng)
 {
   block_num_samples_ += walkers.size();
   for (MCPWalker& awalker : walkers)

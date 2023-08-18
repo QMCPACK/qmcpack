@@ -22,8 +22,11 @@
 
 namespace qmcplusplus
 {
-WaveFunctionPool::WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname)
-    : MPIObjectBase(c), primary_psi_(nullptr), ptcl_pool_(pset_pool)
+WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options,
+                                   ParticleSetPool& pset_pool,
+                                   Communicate* c,
+                                   const char* aname)
+    : MPIObjectBase(c), runtime_options_(runtime_options), primary_psi_(nullptr), ptcl_pool_(pset_pool)
 {
   ClassName = "WaveFunctionPool";
   myName    = aname;
@@ -46,7 +49,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
   WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
-  auto psi = psiFactory.buildTWF(cur);
+  auto psi = psiFactory.buildTWF(cur, runtime_options_);
   addFactory(std::move(psi), myPool.empty() || role == "primary");
   return true;
 }

@@ -1752,8 +1752,8 @@ class simulation(QIxml):
     attributes = ['method']
     #            rsqmc
     elements   = ['project','random','include','qmcsystem','particleset',
-                  'wavefunction','hamiltonian','init','traces','qmc','loop',
-                  'mcwalkerset','cmc']+\
+                  'wavefunction','hamiltonian','estimators','init','traces',
+                  'qmc','loop','mcwalkerset','cmc']+\
                   ['afqmcinfo','walkerset','propagator','execute'] # afqmc
     afqmc_order = ['project','random','afqmcinfo','hamiltonian',
                    'wavefunction','walkerset','propagator','execute']
@@ -1799,7 +1799,7 @@ class mcwalkerset(QIxml):
 
 class qmcsystem(QIxml):
     attributes = ['dim'] #,'wavefunction','hamiltonian']  # breaks QmcpackInput
-    elements = ['simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset']
+    elements = ['simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset','estimators']
 #end class qmcsystem
 
 
@@ -2084,6 +2084,10 @@ class override_variational_parameters(QIxml):
 #end class override_variational_parameters
 
 
+
+class estimators(QIxml):
+    elements = ['estimator']
+#end class estimators
 
 class hamiltonian(QIxml):
     #            rsqmc                              afqmc
@@ -2547,7 +2551,8 @@ class dmc(QIxml):
                   'gpu','multiple','warp','checkpoint','trace', # legacy - batched
                   'target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps',            # batched
+    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps',
+                  'crowd_serialize_walkers',            # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','reconfiguration',
@@ -2559,7 +2564,8 @@ class dmc(QIxml):
                   'en_ref','tau','alpha','gamma','max_branch','killnode','swap_walkers',
                   'swap_trigger','branching_cutoff_scheme','l2_diffusion','maxage',
                   'max_seconds']
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,    # batched
+    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,
+                      crowd_serialize_walkers=yesno,    # batched
                       nonlocalmoves=yesnostr,use_nonblocking=yesno,
                       gpu=yesno,fastgrad=yesno,completed=yesno,killnode=yesno, # legacy - batched
                       swap_walkers=yesno,l2_diffusion=yesno)
@@ -2580,7 +2586,7 @@ class vmc_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay']
+    attributes = ['method','move','profiling','kdelay','checkpoint']
     elements   = ['estimator']
     parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift']
     write_types = obj(usedrift=yesno,profiling=yesno)
@@ -2592,10 +2598,10 @@ class dmc_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay']
+    attributes = ['method','move','profiling','kdelay','checkpoint']
     elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound']
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno)
+    parameters = ['total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound']
+    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno)
 #end class dmc_batch
 
 class linear_batch(QIxml):
@@ -2710,7 +2716,7 @@ classes = [   #standard classes
     nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,rpa_jastrow,momentum,override_variational_parameters,
-    momentumdistribution,onebodydensitymatrices,
+    momentumdistribution,onebodydensitymatrices,estimators,
     # afqmc classes
     afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]
@@ -4456,14 +4462,19 @@ def generate_particlesets(electrons   = 'e',
     eup  = elns.up_electron
     edn  = elns.down_electron
 
+    particleset_groups = []
+    if eup.count > 0:
+        particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=eup.count))
+    #end if
+    if edn.count > 0:
+        particleset_groups.append(group(name=dname,charge=-1,mass=edn.mass,size=edn.count))
+    #end if
+
     particlesets = []
     eps = particleset(
         name   = ename,
         random = True,
-        groups = [
-            group(name=uname,charge=-1,mass=eup.mass,size=eup.count),
-            group(name=dname,charge=-1,mass=edn.mass,size=edn.count)
-            ]
+        groups = particleset_groups,
         )
     particlesets.append(eps)
     if len(ions)>0:
@@ -4554,8 +4565,14 @@ def generate_sposets(type           = None,
                            sposet(type=type,name=spo_down,spindataset=0,size=ndn)]
             #end if
         else:
-            sposets = [sposet(type=type,name=spo_up,  spindataset=0,size=nup),
-                       sposet(type=type,name=spo_down,spindataset=1,size=ndn)]
+            sposets_list = []
+            if nup > 0:
+                sposets_list.append(sposet(type=type,name=spo_up,  spindataset=0,size=nup))
+            #end if
+            if ndn > 0:
+                sposets_list.append(sposet(type=type,name=spo_down,spindataset=1,size=ndn))
+            #end if
+            sposets = sposets_list
         #end if
         if not spindatasets:
             for spo in sposets:
@@ -4768,22 +4785,30 @@ def generate_determinantset(up             = 'u',
         spo_u = spo_up
         spo_d = spo_down
     #end if
+    determinants_list = []
+    if nup > 0:
+        determinants_list.append(
+            determinant(
+                id     = 'updet',
+                group  = up,
+                sposet = spo_u,
+                size   = nup
+                )
+        )
+    #end if
+    if ndn > 0:
+        determinants_list.append(
+            determinant(
+                id     = 'downdet',
+                group  = down,
+                sposet = spo_d,
+                size   = ndn
+                )
+        )
+    #end if
     dset = determinantset(
         slaterdeterminant = slaterdeterminant(
-            determinants = collection(
-                determinant(
-                    id     = 'updet',
-                    group  = up,
-                    sposet = spo_u,
-                    size   = nup
-                    ),
-                determinant(
-                    id     = 'downdet',
-                    group  = down,
-                    sposet = spo_d,
-                    size   = ndn
-                    )
-                )
+            determinants = collection(*determinants_list)
             )
         )
     if delay_rank is not None:
@@ -4918,6 +4943,27 @@ def generate_determinantset_old(type           = 'bspline',
     if system!=None:
         tilematrix = system.structure.tilematrix()
     #end if
+    nup = elns.up_electron.count
+    ndn = elns.down_electron.count
+    determinants_list = []
+    if nup > 0:
+        determinants_list.append(
+            determinant(
+                id   = 'updet',
+                size = nup,
+                occupation=section(mode='ground',spindataset=0)
+                ),
+        )
+    #end if
+    if ndn > 0:
+        determinants_list.append(
+            determinant(
+                id   = 'downdet',
+                size = ndn,
+                occupation=section(mode='ground',spindataset=down_spin)
+                )
+        )
+    #end if
     dset = determinantset(
         type       = type,
         meshfactor = meshfactor,
@@ -4926,18 +4972,7 @@ def generate_determinantset_old(type           = 'bspline',
         href       = href,
         source     = source,
         slaterdeterminant = slaterdeterminant(
-            determinants = collection(
-                determinant(
-                    id   = 'updet',
-                    size = elns.up_electron.count,
-                    occupation=section(mode='ground',spindataset=0)
-                    ),
-                determinant(
-                    id   = 'downdet',
-                    size = elns.down_electron.count,
-                    occupation=section(mode='ground',spindataset=down_spin)
-                    )
-                )
+            determinants = collection(*determinants_list)
             )
         )
     if twist is not None:
@@ -6545,6 +6580,7 @@ dmc_batched_defaults = obj(
     timestep_factor         = 0.5,    
     nonlocalmoves           = None,
     branching_cutoff_scheme = None,
+    crowd_serialize_walkers = None,
     crowds                  = None,
     reconfiguration         = None,
     maxage                  = None,
@@ -7044,6 +7080,7 @@ def generate_batched_dmc_calculations(
     timestep_factor        ,    
     nonlocalmoves          ,
     branching_cutoff_scheme,
+    crowd_serialize_walkers,
     crowds                 ,
     reconfiguration        ,
     maxage                 ,
@@ -7113,6 +7150,7 @@ def generate_batched_dmc_calculations(
         substeps                = substeps,
         nonlocalmoves           = nonlocalmoves,
         branching_cutoff_scheme = branching_cutoff_scheme,
+        crowd_serialize_walkers = crowd_serialize_walkers,
         crowds                  = crowds,
         reconfiguration         = reconfiguration,
         maxage                  = maxage,
