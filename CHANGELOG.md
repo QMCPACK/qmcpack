@@ -28,6 +28,7 @@ be ported towards v4 by the core QMCPACK developers without prior arrangement. P
   of orbital rotation parameters [#4580](https://github.com/QMCPACK/qmcpack/pull/4580), support for disabled/frozen parameters
   [#4581](https://github.com/QMCPACK/qmcpack/pull/4581). 
 * Magnetization Density Estimator for non-collinear wavefunctions [#4531](https://github.com/QMCPACK/qmcpack/pull/4531)
+* Pathak-Wagner regularizer for forces [#4477](https://github.com/QMCPACK/qmcpack/pull/4477)
 * The legacy CUDA implementation, the version built with QMC_CUDA=1, has been removed from the codebase,
   [#4431](https://github.com/QMCPACK/qmcpack/pull/4431),
   [#4632](https://github.com/QMCPACK/qmcpack/pull/4632),[#4499](https://github.com/QMCPACK/qmcpack/pull/4499),
