@@ -37,7 +37,7 @@ be ported towards v4 by the core QMCPACK developers without prior arrangement. P
 * Bugfix: J1Spin indexing was wrong [#4612](https://github.com/QMCPACK/qmcpack/pull/4612)
 * Bugfix: 1RDM estimator data written to stat.h5 was incorrect [#4568](https://github.com/QMCPACK/qmcpack/pull/4568)
 * Introduced ENABLE_PPCONVERT option and skip ppconvert compilation when cross compiling. [#4601](https://github.com/QMCPACK/qmcpack/pull/4601)
-* Faster builds compared to v3.16.0 due to code refactoring
+* Faster builds compared to v3.16.0 due to code refactoring [#4682](https://github.com/QMCPACK/qmcpack/pull/4682)
 * Many refinements throughout the codebase, cleanup, improved testing.
 
 ### NEXUS
