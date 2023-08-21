@@ -25,7 +25,7 @@ RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& s
       Phi(std::move(spos)),
       nel_major_(0),
       params_supplied(false),
-      rotation_timer_(createGlobalTimer("RotatedSPOs::apply_rotation", timer_level_fine))
+      apply_rotation_timer_(createGlobalTimer("RotatedSPOs::apply_rotation", timer_level_fine))
 {
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
@@ -414,7 +414,7 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
   */
   exponentiate_antisym_matrix(rot_mat);
   {
-    ScopedTimer local(rotation_timer_);
+    ScopedTimer local(apply_rotation_timer_);
     Phi->applyRotation(rot_mat, use_stored_copy);
   }
 }
@@ -428,7 +428,7 @@ void RotatedSPOs::applyDeltaRotation(const std::vector<RealType>& delta_param,
   constructDeltaRotation(delta_param, old_param, m_act_rot_inds, m_full_rot_inds, new_param, new_rot_mat);
 
   {
-    ScopedTimer local(rotation_timer_);
+    ScopedTimer local(apply_rotation_timer_);
     Phi->applyRotation(new_rot_mat, true);
   }
 }

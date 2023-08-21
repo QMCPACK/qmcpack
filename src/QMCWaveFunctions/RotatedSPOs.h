@@ -381,7 +381,7 @@ private:
   opt_variables_type myVarsFull;
 
   /// timer for apply_rotation
-  NewTimer& rotation_timer_;
+  NewTimer& apply_rotation_timer_;
 
   /// List of previously applied parameters
   std::vector<std::vector<RealType>> history_params_;
