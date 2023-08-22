@@ -17,6 +17,7 @@
 #include "SplineR2R.h"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "Platforms/CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
@@ -56,7 +57,7 @@ void SplineR2R<ST>::storeParamsBeforeRotation()
 {
   const auto spline_ptr     = SplineInst->getSplinePtr();
   const auto coefs_tot_size = spline_ptr->coefs_size;
-  coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+  coef_copy_                = std::make_shared<std::vector<ST>>(coefs_tot_size);
 
   std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
 }
@@ -135,6 +136,12 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
       spl_coefs[cur_elem] = newval;
     }
   }
+  
+  //std::vector<ST> rot_mat_padded(Nsplines * Nsplines, 0);
+  //for (auto i = 0; i < OrbitalSetSize; i++)
+  //  for (auto j = 0; j < OrbitalSetSize; j++)
+  //     rot_mat_padded[i * Nsplines + j] = rot_mat[i][j];
+  //BLAS::gemm('N', 'N', BasisSetSize, Nsplines, Nsplines, ST(1.0), (*coef_copy_).data(), BasisSetSize, rot_mat_padded.data(), Nsplines, ST(0.0), spl_coefs, BasisSetSize);
 }
 
 
