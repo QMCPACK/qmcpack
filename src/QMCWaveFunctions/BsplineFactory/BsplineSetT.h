@@ -18,8 +18,8 @@
  *
  * BsplineSet is a SPOSet derived class and serves as a base class for B-spline SPO C2C/C2R/R2R implementation
  */
-#ifndef QMCPLUSPLUS_BSPLINESET_H
-#define QMCPLUSPLUS_BSPLINESET_H
+#ifndef QMCPLUSPLUS_BSPLINESETT_H
+#define QMCPLUSPLUS_BSPLINESETT_H
 
 #include "QMCWaveFunctions/SPOSetT.h"
 #include "spline/einspline_engine.hpp"

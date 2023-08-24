@@ -10,13 +10,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_WITH_CORRECTION_TEMP_H
-#define QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_WITH_CORRECTION_TEMP_H
+#ifndef QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_WITH_CORRECTIONT_H
+#define QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_WITH_CORRECTIONT_H
 
 #include "QMCWaveFunctions/SPOSetT.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "LCAOrbitalSetT.h"
-#include "SoaCuspCorrection.h"
+#include "SoaCuspCorrectionT.h"
 
 
 namespace qmcplusplus
@@ -69,7 +69,7 @@ public:
 private:
   LCAOrbitalSetT<T> lcao;
 
-  SoaCuspCorrection cusp;
+  SoaCuspCorrectionT<T> cusp;
 };
 } // namespace qmcplusplus
 #endif

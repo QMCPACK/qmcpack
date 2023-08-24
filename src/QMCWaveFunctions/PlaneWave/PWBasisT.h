@@ -15,8 +15,8 @@
 /** @file PWBasis.h
  * @brief Declaration of Plane-wave basis set
  */
-#ifndef QMCPLUSPLUS_PLANEWAVEBASIS_BLAS_H
-#define QMCPLUSPLUS_PLANEWAVEBASIS_BLAS_H
+#ifndef QMCPLUSPLUS_PLANEWAVEBASIST_BLAS_H
+#define QMCPLUSPLUS_PLANEWAVEBASIST_BLAS_H
 
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"

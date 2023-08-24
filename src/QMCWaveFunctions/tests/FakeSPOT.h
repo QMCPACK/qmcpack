@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_FAKESPOT_H
-#define QMCPLUSPLUS_FAKESPOT_H
+#ifndef QMCPLUSPLUS_FAKESPOTT_H
+#define QMCPLUSPLUS_FAKESPOTT_H
 
 #include "QMCWaveFunctions/SPOSetT.h"
 

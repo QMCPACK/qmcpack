@@ -10,8 +10,8 @@
 // File created by:  Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_SPINORSET_H
-#define QMCPLUSPLUS_SPINORSET_H
+#ifndef QMCPLUSPLUS_SPINORSETT_H
+#define QMCPLUSPLUS_SPINORSETT_H
 
 #include "QMCWaveFunctions/SPOSetT.h"
 #include "ResourceHandle.h"

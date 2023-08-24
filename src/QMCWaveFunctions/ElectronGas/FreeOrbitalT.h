@@ -15,8 +15,8 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_FREE_ORBITAL
-#define QMCPLUSPLUS_FREE_ORBITAL
+#ifndef QMCPLUSPLUS_FREE_ORBITALT_H
+#define QMCPLUSPLUS_FREE_ORBITALT_H
 
 #include "QMCWaveFunctions/SPOSetT.h"
 
