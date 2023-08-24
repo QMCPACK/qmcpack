@@ -121,15 +121,12 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
     std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
   }
 
-  
+
   if constexpr (std::is_same_v<ST, ValueType>)
   {
     //Here, ST should be equal to ValueType, which will be double for R2R. Using BLAS to make things faster
-    std::vector<ST> rot_mat_padded(Nsplines * Nsplines, 0);
-    for (auto i = 0; i < OrbitalSetSize; i++)
-      for (auto j = 0; j < OrbitalSetSize; j++)
-         rot_mat_padded[i * Nsplines + j] = rot_mat.data()[i * OrbitalSetSize + j];
-    BLAS::gemm('N', 'N', Nsplines, BasisSetSize, Nsplines, ST(1.0), rot_mat_padded.data(), Nsplines, (*coef_copy_).data(), Nsplines, ST(0.0), spl_coefs, Nsplines);
+    BLAS::gemm('N', 'N', OrbitalSetSize, BasisSetSize, OrbitalSetSize, ST(1.0), rot_mat.data(), OrbitalSetSize,
+               (*coef_copy_).data(), Nsplines, ST(0.0), spl_coefs, Nsplines);
   }
   else
   {
@@ -147,7 +144,6 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         spl_coefs[cur_elem] = newval;
       }
   }
-
 }
 
 
