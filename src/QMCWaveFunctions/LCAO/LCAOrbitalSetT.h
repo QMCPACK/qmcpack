@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
-#define QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
+#ifndef QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSETT_H
+#define QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSETT_H
 
 #include <memory>
 #include "QMCWaveFunctions/SPOSetT.h"

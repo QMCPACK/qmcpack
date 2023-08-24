@@ -38,6 +38,7 @@ set(WFBASE_SRCS
     HarmonicOscillator/SHOSet.cpp
     HarmonicOscillator/SHOSetT.cpp
     HarmonicOscillator/SHOSetBuilder.cpp
+    HarmonicOscillator/SHOSetBuilderT.cpp
     ExampleHeBuilder.cpp
     ExampleHeComponent.cpp)
 

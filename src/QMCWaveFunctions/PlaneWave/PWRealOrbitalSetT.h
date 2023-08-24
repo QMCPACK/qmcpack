@@ -19,8 +19,8 @@
  * This is a specialized single-particle orbital set for real trial
  * wavefunctions and enabled with QMC_COMPLEX=0
  */
-#ifndef QMCPLUSPLUS_PLANEWAVE_REALORBITALSET_BLAS_H
-#define QMCPLUSPLUS_PLANEWAVE_REALORBITALSET_BLAS_H
+#ifndef QMCPLUSPLUS_PLANEWAVE_REALORBITALSETT_BLAS_H
+#define QMCPLUSPLUS_PLANEWAVE_REALORBITALSETT_BLAS_H
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
 #include "QMCWaveFunctions/SPOSetT.h"

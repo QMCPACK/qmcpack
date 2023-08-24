@@ -11,8 +11,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_SHOSET_H
-#define QMCPLUSPLUS_SHOSET_H
+#ifndef QMCPLUSPLUS_SHOSETT_H
+#define QMCPLUSPLUS_SHOSETT_H
 
 #include "QMCWaveFunctions/SPOSetT.h"
 #include "QMCWaveFunctions/SPOInfo.h"

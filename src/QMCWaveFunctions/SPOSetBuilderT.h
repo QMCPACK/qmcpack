@@ -18,8 +18,8 @@
 /** @file SPOSetBuilderT.h
  * @brief Declaration of a base class of SPOSet Builders
  */
-#ifndef QMCPLUSPLUS_SPOSET_BUILDER_H
-#define QMCPLUSPLUS_SPOSET_BUILDER_H
+#ifndef QMCPLUSPLUS_SPOSET_BUILDERT_H
+#define QMCPLUSPLUS_SPOSET_BUILDERT_H
 
 #include <memory>
 #include <vector>

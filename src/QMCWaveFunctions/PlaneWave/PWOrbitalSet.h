@@ -15,8 +15,8 @@
 /** @file PWOrbitalSet.h
  * @brief Definition of member functions of Plane-wave basis set
  */
-#ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALSET_BLAS_H
-#define QMCPLUSPLUS_PLANEWAVE_ORBITALSET_BLAS_H
+#ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALSETT_BLAS_H
+#define QMCPLUSPLUS_PLANEWAVE_ORBITALSETT_BLAS_H
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
 #include "QMCWaveFunctions/SPOSet.h"

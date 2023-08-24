@@ -15,8 +15,8 @@
  *
  * class to handle complex splines to complex orbitals with splines of arbitrary precision
  */
-#ifndef QMCPLUSPLUS_SPLINE_C2C_H
-#define QMCPLUSPLUS_SPLINE_C2C_H
+#ifndef QMCPLUSPLUS_SPLINE_C2CT_H
+#define QMCPLUSPLUS_SPLINE_C2CT_H
 
 #include <memory>
 #include "BsplineSetT.h"
