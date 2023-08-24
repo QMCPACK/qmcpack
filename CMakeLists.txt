@@ -658,7 +658,8 @@ else()
   set(HDF5_USE_STATIC_LIBRARIES off)
 endif()
 
-find_package(HDF5 COMPONENTS C)
+find_package(HDF5 COMPONENTS C) # Note: minimum version check is done below to bypass find_package
+                                # and HDF5 version compatibility subtleties
 
 if(HDF5_FOUND)
   if(HDF5_VERSION)
