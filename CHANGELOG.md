@@ -8,11 +8,11 @@ This minor release is recommended for all users and include a couple of build fi
 
 * Improved HDF5 detection. Fixes cases where HDF5 was not identified by CMake, including on FreeBSD (thanks @yurivict for the report). [#4708](https://github.com/QMCPACK/qmcpack/pull/4708)
 
-* Fix for building with BUILD_UNIT_TESTS=OFF [#4709](https://github.com/QMCPACK/qmcpack/pull/4709)
+* Fix for building with BUILD_UNIT_TESTS=OFF. [#4709](https://github.com/QMCPACK/qmcpack/pull/4709)
 
 ### NEXUS
 
-* NEXUS: Support for spinor inputs [#4707](https://github.com/QMCPACK/qmcpack/pull/4707)
+* NEXUS: Support for spinor inputs. [#4707](https://github.com/QMCPACK/qmcpack/pull/4707)
 ## [3.17.0] - 2023-08-18
 
 This is a recommended release for all users. Thanks to everyone who contributed directly, reported an issue, or suggested an
