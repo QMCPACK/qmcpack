@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_CUSP_CORRECTION_CONSTRUCTOR_H
 
 #include "LCAOrbitalSet.h"
-#include "LCAOrbitalSetWithCorrection.h"
+#include "SoaCuspCorrection.h"
 #include "CuspCorrection.h"
 
 class Communicate;
