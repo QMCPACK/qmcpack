@@ -37,10 +37,10 @@ namespace qmcplusplus
 template<typename T>
 struct SoaSphericalTensor
 {
-  ///whether to multiply by (-1)^m (see comment below)
-  bool Addsign;
   ///maximum angular momentum for the center
   int Lmax;
+  ///whether to multiply by (-1)^m (see comment below)
+  bool Addsign;
   /// Normalization factors
   aligned_vector<T> NormFactor;
   ///pre-evaluated factor \f$1/\sqrt{(l+m)\times(l+1-m)}\f$
@@ -163,6 +163,10 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
       FactorLM[index(l, -m)] = fac2;
     }
 }
+
+///compute Ylm
+template<typename T>
+void SHEval(const T fX0, const T fY0, const T fZ, T* pSH, const int l_max, bool addsign = false);
 
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm) const
@@ -5233,7 +5237,7 @@ void SHEval19(const T fX, const T fY, const T fZ, T* pSH)
 
 // auxiliary function
 template<typename T>
-void SHEval(const T fX0, const T fY0, const T fZ, T* pSH, const int l_max, bool addsign = false)
+void SHEval(const T fX0, const T fY0, const T fZ, T* pSH, const int l_max, bool addsign)
 {
   T fX, fY;
   if (addsign)
