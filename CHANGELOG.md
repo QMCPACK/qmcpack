@@ -9,6 +9,7 @@ This minor release is recommended for all users and include a couple of build fi
 * Improved HDF5 detection. Fixes cases where HDF5 was not identified by CMake, including on FreeBSD (thanks @yurivict for the report). [#4708](https://github.com/QMCPACK/qmcpack/pull/4708)
 
 * Fix for building with BUILD_UNIT_TESTS=OFF. [#4709](https://github.com/QMCPACK/qmcpack/pull/4709)
+* Add timer for orbital rotations. [#4706](https://github.com/QMCPACK/qmcpack/pull/4706)
 
 ### NEXUS
 
