@@ -121,11 +121,32 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
     std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
   }
 
-  std::vector<ST> rot_mat_padded(Nsplines * Nsplines, 0);
-  for (auto i = 0; i < OrbitalSetSize; i++)
-    for (auto j = 0; j < OrbitalSetSize; j++)
-       rot_mat_padded[i * Nsplines + j] = rot_mat.data()[i * OrbitalSetSize + j];
-  BLAS::gemm('N', 'N', Nsplines, BasisSetSize, Nsplines, ST(1.0), rot_mat_padded.data(), Nsplines, (*coef_copy_).data(), Nsplines, ST(0.0), spl_coefs, Nsplines);
+  
+  if constexpr (std::is_same_v<ST, ValueType>)
+  {
+    //Here, ST should be equal to ValueType, which will be double for R2R. Using BLAS to make things faster
+    std::vector<ST> rot_mat_padded(Nsplines * Nsplines, 0);
+    for (auto i = 0; i < OrbitalSetSize; i++)
+      for (auto j = 0; j < OrbitalSetSize; j++)
+         rot_mat_padded[i * Nsplines + j] = rot_mat.data()[i * OrbitalSetSize + j];
+    BLAS::gemm('N', 'N', Nsplines, BasisSetSize, Nsplines, ST(1.0), rot_mat_padded.data(), Nsplines, (*coef_copy_).data(), Nsplines, ST(0.0), spl_coefs, Nsplines);
+  }
+  else
+  {
+    //Here, ST is float but ValueType is double for R2R. Due to issues with type conversions, just doing naive matrix multiplication in this case to not lose precision on rot_mat
+    for (auto i = 0; i < BasisSetSize; i++)
+      for (auto j = 0; j < OrbitalSetSize; j++)
+      {
+        const auto cur_elem = Nsplines * i + j;
+        auto newval{0.};
+        for (auto k = 0; k < OrbitalSetSize; k++)
+        {
+          const auto index = i * Nsplines + k;
+          newval += (*coef_copy_)[index] * rot_mat[k][j];
+        }
+        spl_coefs[cur_elem] = newval;
+      }
+  }
 
 }
 
