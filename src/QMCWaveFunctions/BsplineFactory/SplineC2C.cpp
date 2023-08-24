@@ -126,8 +126,9 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
     //if ST is double, go ahead and use blas to make things faster
     //Note that Nsplines needs to be divided by 2 since spl_coefs and coef_copy_ are stored as reals.
     //Also casting them as ValueType so they are complex to do the correct gemm
-    BLAS::gemm('N', 'N', OrbitalSetSize, basis_set_size, OrbitalSetSize, ValueType(1.0,0.0), rot_mat.data(), OrbitalSetSize,
-               (ValueType*)(*coef_copy_).data(), Nsplines / 2, ValueType(0.0,0.0), (ValueType*)spl_coefs, Nsplines / 2);
+    BLAS::gemm('N', 'N', OrbitalSetSize, basis_set_size, OrbitalSetSize, ValueType(1.0, 0.0), rot_mat.data(),
+               OrbitalSetSize, (ValueType*)(*coef_copy_).data(), Nsplines / 2, ValueType(0.0, 0.0),
+               (ValueType*)spl_coefs, Nsplines / 2);
   }
   else
   {
