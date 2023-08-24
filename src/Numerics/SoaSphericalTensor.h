@@ -279,6 +279,8 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
     Ylm[i] *= NormFactor[i];
   //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
 }
+// Explicitly unrolled functions based on:
+// Sloan, P., Efficient Spherical Harmonic Evaluation, Journal of Computer Graphics Techniques, vol. 2, no. 2, 84-90, 2013
 // Lmax == 0
 template<typename T>
 void SHEval0(const T fX, const T fY, const T fZ, T* pSH)
