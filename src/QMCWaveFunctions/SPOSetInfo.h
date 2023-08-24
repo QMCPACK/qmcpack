@@ -130,6 +130,8 @@ private:
   void clear();
 
   friend class SPOSetBuilder;
+  template<typename T>
+  friend class SPOSetBuilderT;
 };
 
 

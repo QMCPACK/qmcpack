@@ -19,7 +19,7 @@ LCAOrbitalSetWithCorrectionT<T>::LCAOrbitalSetWithCorrectionT(const std::string&
                                                               ParticleSet& ions,
                                                               ParticleSet& els,
                                                               std::unique_ptr<basis_type>&& bs)
-    : SPOSet(my_name), lcao(my_name + "_modified", std::move(bs)), cusp(ions, els)
+    : SPOSetT<T>(my_name), lcao(my_name + "_modified", std::move(bs)), cusp(ions, els)
 {}
 
 template<typename T>
@@ -66,5 +66,8 @@ void LCAOrbitalSetWithCorrectionT<T>::evaluate_notranspose(const ParticleSet& P,
   for (size_t i = 0, iat = first; iat < last; i++, iat++)
     cusp.add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
 }
+
+template class LCAOrbitalSetWithCorrectionT<double>;
+template class LCAOrbitalSetWithCorrectionT<float>;
 
 } // namespace qmcplusplus

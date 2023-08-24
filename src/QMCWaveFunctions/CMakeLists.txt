@@ -28,6 +28,7 @@ set(WFBASE_SRCS
     WaveFunctionComponent.cpp
     WaveFunctionComponentBuilder.cpp
     SPOSetBuilder.cpp
+    SPOSetBuilderT.cpp
     SPOInfo.cpp
     SPOSetInfo.cpp
     SPOSetInputInfo.cpp
@@ -78,7 +79,7 @@ if(OHMMS_DIM MATCHES 3)
   else(QMC_COMPLEX)
     #LCAO cusp correction is not ready for complex
     set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSetWithCorrection.cpp LCAO/LCAOrbitalSetWithCorrectionT.cpp
-                     LCAO/CuspCorrectionConstruction.cpp LCAO/SoaCuspCorrection.cpp)
+	    LCAO/CuspCorrectionConstruction.cpp LCAO/SoaCuspCorrection.cpp LCAO/SoaCuspCorrectionT.cpp)
   endif(QMC_COMPLEX)
 
   if(HAVE_EINSPLINE)

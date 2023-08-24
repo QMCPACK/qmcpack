@@ -16,7 +16,7 @@
 #include "QMCWaveFunctions/SPOSetT.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "LCAOrbitalSetT.h"
-#include "SoaCuspCorrection.h"
+#include "SoaCuspCorrectionT.h"
 
 
 namespace qmcplusplus
@@ -69,7 +69,7 @@ public:
 private:
   LCAOrbitalSetT<T> lcao;
 
-  SoaCuspCorrection cusp;
+  SoaCuspCorrectionT<T> cusp;
 };
 } // namespace qmcplusplus
 #endif
