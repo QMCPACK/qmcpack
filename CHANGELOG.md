@@ -2,6 +2,17 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [3.17.1] - 2023-08-25
+
+This minor release is recommended for all users and includes a couple of build fixes and a NEXUS improvement.
+
+* Improved HDF5 detection. Fixes cases where HDF5 was not identified by CMake, including on FreeBSD (thanks @yurivict for the report). [#4708](https://github.com/QMCPACK/qmcpack/pull/4708)
+* Fix for building with BUILD_UNIT_TESTS=OFF. [#4709](https://github.com/QMCPACK/qmcpack/pull/4709)
+* Add timer for orbital rotations. [#4706](https://github.com/QMCPACK/qmcpack/pull/4706)
+
+### NEXUS
+
+* NEXUS: Support for spinor inputs. [#4707](https://github.com/QMCPACK/qmcpack/pull/4707)
 ## [3.17.0] - 2023-08-18
 
 This is a recommended release for all users. Thanks to everyone who contributed directly, reported an issue, or suggested an
