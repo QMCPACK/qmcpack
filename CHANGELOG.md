@@ -2,9 +2,73 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [3.17.1] - 2023-08-25
 
-The legacy CUDA implementation, the version built with QMC_CUDA=1, has been removed from the codebase.
+This minor release is recommended for all users and includes a couple of build fixes and a NEXUS improvement.
+
+* Improved HDF5 detection. Fixes cases where HDF5 was not identified by CMake, including on FreeBSD (thanks @yurivict for the report). [#4708](https://github.com/QMCPACK/qmcpack/pull/4708)
+* Fix for building with BUILD_UNIT_TESTS=OFF. [#4709](https://github.com/QMCPACK/qmcpack/pull/4709)
+* Add timer for orbital rotations. [#4706](https://github.com/QMCPACK/qmcpack/pull/4706)
+
+### NEXUS
+
+* NEXUS: Support for spinor inputs. [#4707](https://github.com/QMCPACK/qmcpack/pull/4707)
+## [3.17.0] - 2023-08-18
+
+This is a recommended release for all users. Thanks to everyone who contributed directly, reported an issue, or suggested an
+improvement. There are many quality of life improvements, bug fixes throughout the application, and updates to the associated
+testing. As previously announced, the legacy CUDA support (QMC_CUDA=1) is removed in this version. For GPU support, users should
+transition to the offload code which is more capable and fully usable in production on NVIDIA GPUs.
+
+This version is intended for long-term support of v3 of QMCPACK. Development effort is now focused towards v4. Contributions of
+tests, fixes, and features from users and developers are still welcome to v3 for a potential future release. However, these will not
+be ported towards v4 by the core QMCPACK developers without prior arrangement. Please discuss options with QMCPACK developers.
+
+* Simplified checkpointing and enabled it in the batched drivers. Users now only need specify checkpoint={-1,0,N} to checkpoint
+  between blocks. [#4646](https://github.com/QMCPACK/qmcpack/pull/4646)
+* NERSC Perlmutter build recipe. [#4698](https://github.com/QMCPACK/qmcpack/pull/4698)
+* qmc-fit: Now supports parameter fitting with jackknife for e.g. DFT+U, EXX scans
+  [#4475](https://github.com/QMCPACK/qmcpack/pull/4475) and for equation of states and morse fits
+  [#4518](https://github.com/QMCPACK/qmcpack/pull/4518)
+* Improved error checking including NaN checks to protect against potentially unreliable compilers and libraries,
+  [#4697](https://github.com/QMCPACK/qmcpack/pull/4697), and checks on GPU matrix inversion
+  [#4693](https://github.com/QMCPACK/qmcpack/pull/4693)
+* Significant advances in orbital optimization capability, focusing on LCAO wavefunctions. Development is ongoing for
+  multideterminant support and for spline wavefunctions. See e.g. the Be atom orbital optimization test
+  [#4626](https://github.com/QMCPACK/qmcpack/pull/4626), [#4619](https://github.com/QMCPACK/qmcpack/pull/4619), reading and writing
+  of orbital rotation parameters [#4580](https://github.com/QMCPACK/qmcpack/pull/4580), support for disabled/frozen parameters
+  [#4581](https://github.com/QMCPACK/qmcpack/pull/4581). 
+* Magnetization Density Estimator for non-collinear wavefunctions [#4531](https://github.com/QMCPACK/qmcpack/pull/4531)
+* Pathak-Wagner regularizer for forces [#4477](https://github.com/QMCPACK/qmcpack/pull/4477)
+* The legacy CUDA implementation, the version built with QMC_CUDA=1, has been removed from the codebase,
+  [#4431](https://github.com/QMCPACK/qmcpack/pull/4431),
+  [#4632](https://github.com/QMCPACK/qmcpack/pull/4632),[#4499](https://github.com/QMCPACK/qmcpack/pull/4499),
+  [#4442](https://github.com/QMCPACK/qmcpack/pull/4442).
+* For increased performance with current AMD GPU support, new QMC_DISABLE_HIP_HOST_REGISTER option is enabled by default for
+  ROCm/HIP builds. [#4674](https://github.com/QMCPACK/qmcpack/pull/4674)
+* Bugfix: J1Spin indexing was wrong [#4612](https://github.com/QMCPACK/qmcpack/pull/4612)
+* Bugfix: 1RDM estimator data written to stat.h5 was incorrect [#4568](https://github.com/QMCPACK/qmcpack/pull/4568)
+* Introduced ENABLE_PPCONVERT option and skip ppconvert compilation when cross compiling. [#4601](https://github.com/QMCPACK/qmcpack/pull/4601)
+* Faster builds compared to v3.16.0 due to code refactoring [#4682](https://github.com/QMCPACK/qmcpack/pull/4682)
+* Many refinements throughout the codebase, cleanup, improved testing.
+
+### NEXUS
+
+* Nexus: Equilibration detection algorithm is now deterministic [#4557](https://github.com/QMCPACK/qmcpack/pull/4557)
+* Nexus: Support for Kagayaki cluster at JAIST [#4598](https://github.com/QMCPACK/qmcpack/pull/4598)
+* Nexus: GPU support fix for NERSC/Perlmutter [#4699](https://github.com/QMCPACK/qmcpack/pull/4699)
+* Nexus: Use simplices in convex_hull to support newer scipy versions [#4671](https://github.com/QMCPACK/qmcpack/pull/4671)
+* Nexus: Add pdos flag for Projwfc [#4655](https://github.com/QMCPACK/qmcpack/pull/4655)
+* Nexus: Adding crowds_serialize_walkers tag to dmc input list [#4651](https://github.com/QMCPACK/qmcpack/pull/4651)
+* Nexus: Qdens handles batched driver input/output [#4645](https://github.com/QMCPACK/qmcpack/pull/4645)
+* Nexus: Fix namelist read for Projwfc input [#4644](https://github.com/QMCPACK/qmcpack/pull/4644)
+
+### Known problems
+
+* When offload builds are compiled with CUDA toolkit versions above 11.2 using LLVM, multideterminant tests and functionality will
+  fail, seemingly due to an issue with the toolkit. This is discussed in https://github.com/llvm/llvm-project/issues/54633 . All
+  other functionality appears to work as expected. As a workaround, the CUDA toolkit 11.2 can be used. The actual NVIDIA drivers can
+  be more recent.
 
 ## [3.16.0] - 2023-01-31
 

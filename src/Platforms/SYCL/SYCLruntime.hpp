@@ -17,6 +17,9 @@
 namespace qmcplusplus
 {
 sycl::queue& getSYCLDefaultDeviceDefaultQueue();
+
+size_t getSYCLdeviceFreeMem();
+
 } // namespace qmcplusplus
 
 #endif

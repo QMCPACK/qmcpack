@@ -1810,10 +1810,10 @@ class simulationcell(QIxml):
 #end class simulationcell
 
 class particleset(QIxml):
-    attributes = ['name','size','random','random_source','randomsrc','charge','source']
+    attributes = ['name','size','random','random_source','randomsrc','charge','source','spinor']
     elements   = ['group','simulationcell']
     attribs    = ['ionid','position']
-    write_types= obj(random=yesno)
+    write_types= obj(random=yesno,spinor=yesno)
     identifier = 'name'
 #end class particleset
 
@@ -2319,7 +2319,7 @@ class dm1b(QIxml): # legacy
     tag         = 'estimator'
     identifier  = 'type'
     attributes  = ['type','name','reuse']#reuse is a temporary dummy keyword
-    parameters  = ['energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed']
+    parameters  = ['energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed','samples']
     write_types = obj(energy_matrix=yesno,check_overlap=yesno,check_derivatives=yesno,acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
 #end class dm1b
 
@@ -2327,7 +2327,7 @@ class onebodydensitymatrices(QIxml): # batched
     tag         = 'estimator'
     identifier  = 'type'
     attributes  = ['type','name','reuse']#reuse is a temporary dummy keyword
-    parameters  = ['energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed']
+    parameters  = ['energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed','samples']
     write_types = obj(energy_matrix=yesno,check_overlap=yesno,check_derivatives=yesno,acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
 #end class onebodydensitymatrices
 
@@ -2536,6 +2536,7 @@ class vmc(QIxml):
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','usedrift',
+                  'spinmass',
                   'walkers','nonlocalpp','tau','walkersperthread','reconfiguration', # legacy - batched
                   'dmcwalkersperthread','current','ratio','firststep',
                   'minimumtargetwalkers','max_seconds']
@@ -2558,6 +2559,7 @@ class dmc(QIxml):
                   'stepsbetweensamples','samplesperthread','samples','reconfiguration',
                   'nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking',
                   'branching_cutoff_scheme','feedback','sigmabound',
+                  'spinmass',
                   'walkers','nonlocalmove','pop_control','targetwalkers',               # legacy - batched
                   'minimumtargetwalkers','energybound','feedback','recordwalkers',
                   'fastgrad','popcontrol','branchinterval','usedrift','storeconfigs',
@@ -2812,6 +2814,7 @@ Names.set_expanded_names(
     l2_diffusion     = 'L2_diffusion',
     maxage           = 'MaxAge',
     sigmabound       = 'sigmaBound',
+    spinmass         = 'spinMass',
     )
 # afqmc names
 Names.set_afqmc_expanded_names(
