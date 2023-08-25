@@ -19,6 +19,8 @@
 #include "Message/MPIObjectBase.h"
 #include "ModernStringUtils.hpp"
 #include "hdf/hdf_archive.h"
+#include "LCAO/MultiQuinticSpline1D.h"
+#include "LCAO/SoaAtomicBasisSet.h"
 
 namespace qmcplusplus
 {

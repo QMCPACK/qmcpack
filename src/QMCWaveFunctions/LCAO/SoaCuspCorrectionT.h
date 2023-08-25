@@ -12,8 +12,8 @@
 
 /** @file SoaCuspCorrectionT.h
  */
-#ifndef QMCPLUSPLUS_SOA_CUSPCORRECTION_H
-#define QMCPLUSPLUS_SOA_CUSPCORRECTION_H
+#ifndef QMCPLUSPLUS_SOA_CUSPCORRECTIONT_H
+#define QMCPLUSPLUS_SOA_CUSPCORRECTIONT_H
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/SPOSetT.h"

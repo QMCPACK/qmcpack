@@ -102,7 +102,7 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(const SoaLocalizedBasisSet
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::setPBCParams(const TinyVector<int, 3>& PBCImages,
                                                    const TinyVector<double, 3> Sup_Twist,
-                                                   const std::vector<QMCTraits::ValueType>& phase_factor)
+                                                   const std::vector<ORBT>& phase_factor)
 {
   for (int i = 0; i < LOBasisSet.size(); ++i)
     LOBasisSet[i]->setPBCParams(PBCImages, Sup_Twist, phase_factor);
