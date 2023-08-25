@@ -134,15 +134,15 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   {
     // if ST is float, RealType is double and ValueType is std::complex<double> for C2C
     // Just use naive matrix multiplication in order to avoid losing precision on rotation matrix
-    for (int i = 0; i < basis_set_size; i++)
-      for (int j = 0; j < OrbitalSetSize; j++)
+    for (IndexType i = 0; i < basis_set_size; i++)
+      for (IndexType j = 0; j < OrbitalSetSize; j++)
       {
         // cur_elem points to the real componend of the coefficient.
         // Imag component is adjacent in memory.
         const auto cur_elem = Nsplines * i + 2 * j;
         ST newval_r{0.};
         ST newval_i{0.};
-        for (auto k = 0; k < OrbitalSetSize; k++)
+        for (IndexType k = 0; k < OrbitalSetSize; k++)
         {
           const auto index = Nsplines * i + 2 * k;
           ST zr            = (*coef_copy_)[index];

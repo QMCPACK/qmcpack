@@ -131,12 +131,12 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   else
   {
     //Here, ST is float but ValueType is double for R2R. Due to issues with type conversions, just doing naive matrix multiplication in this case to not lose precision on rot_mat
-    for (auto i = 0; i < BasisSetSize; i++)
-      for (auto j = 0; j < OrbitalSetSize; j++)
+    for (IndexType i = 0; i < BasisSetSize; i++)
+      for (IndexType j = 0; j < OrbitalSetSize; j++)
       {
         const auto cur_elem = Nsplines * i + j;
-        auto newval{0.};
-        for (auto k = 0; k < OrbitalSetSize; k++)
+        FullPrecValueType newval{0.};
+        for (IndexType k = 0; k < OrbitalSetSize; k++)
         {
           const auto index = i * Nsplines + k;
           newval += (*coef_copy_)[index] * rot_mat[k][j];
