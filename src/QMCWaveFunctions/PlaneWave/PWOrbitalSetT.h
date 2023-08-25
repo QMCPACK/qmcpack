@@ -29,17 +29,16 @@ namespace qmcplusplus
 template<class T>
 class PWOrbitalSetT : public SPOSetT<T>
 {
-  
 public:
-  using RealType = typename RealAlias_impl<T>::value_type;
+  using RealType    = typename SPOSetT<T>::RealType;
   using ComplexType = T;
-  using PosType = QMCTraits::PosType;
+  using PosType     = typename SPOSetT<T>::PosType;
   using ValueVector = typename SPOSetT<T>::ValueVector;
   using GradVector  = typename SPOSetT<T>::GradVector;
   using ValueMatrix = typename SPOSetT<T>::ValueMatrix;
   using GradMatrix  = typename SPOSetT<T>::GradMatrix;
-  using GradType = QMCTraits::GradType;
-  using IndexType = QMCTraits::IndexType;
+  using GradType    = typename SPOSetT<T>::GradType;
+  using IndexType   = typename SPOSetT<T>::IndexType;
 
   using BasisSet_t = PWBasisT<T>;
   using PWBasisPtr = PWBasisT<T>*;
@@ -55,7 +54,6 @@ public:
     PW_MAXINDEX = BasisSet_t::PW_MAXINDEX
   };
 
- 
 
   /** default constructor
   */
