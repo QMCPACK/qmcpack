@@ -17,6 +17,7 @@
 #include <limits>
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "OhmmsPETE/Tensor.h"
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
@@ -90,6 +91,8 @@ struct SoaSphericalTensor
   inline size_t size() const { return cYlm.size(); }
 
   inline int lmax() const { return Lmax; }
+
+  NewTimer& ST_Timer;
 };
 
 /** constructor
@@ -115,7 +118,8 @@ struct SoaSphericalTensor
  \f}
  */
 template<typename T>
-inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) : Lmax(l_max), Addsign(addsign)
+inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign)
+    : Lmax(l_max), Addsign(addsign), ST_Timer(createGlobalTimer("SphericalHarmonic:eval", timer_level_fine))
 {
   constexpr T czero(0);
   constexpr T cone(1);
@@ -171,6 +175,7 @@ void SHEval(const T fX0, const T fY0, const T fZ, T* pSH, const int l_max, bool 
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm) const
 {
+  ScopedTimer local_timer(ST_Timer);
   SHEval(x, y, z, Ylm, Lmax, Addsign);
 }
 
