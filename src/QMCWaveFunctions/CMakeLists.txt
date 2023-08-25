@@ -80,14 +80,10 @@ if(OHMMS_DIM MATCHES 3)
   endif(QMC_COMPLEX)
 
   if(HAVE_EINSPLINE)
-    if(NOT MIXED_PRECISION)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSet.cpp)
-    endif(NOT MIXED_PRECISION)
     set(FERMION_SRCS
         ${FERMION_SRCS}
         EinsplineSetBuilderCommon.cpp
         EinsplineSetBuilderOld.cpp
-        AtomicOrbital.cpp
         EinsplineSetBuilderReadBands_ESHDF.cpp
         EinsplineSetBuilderESHDF.fft.cpp
         EinsplineSetBuilder_createSPOs.cpp
