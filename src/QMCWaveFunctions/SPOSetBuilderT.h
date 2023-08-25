@@ -48,6 +48,7 @@ template<typename T>
 class SPOSetBuilderT : public QMCTraits, public MPIObjectBase
 {
 public:
+  using PosType    = typename SPOSetT<T>::PosType;
   using RealType   = typename SPOSetT<T>::RealType;
   using indices_t  = std::vector<int>;
   using energies_t = std::vector<RealType>;

@@ -64,7 +64,8 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) final;
 
-  friend class LCAOrbitalBuilder;
+  template <typename>
+  friend class LCAOrbitalBuilderT;
 
 private:
   LCAOrbitalSetT<T> lcao;
