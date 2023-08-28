@@ -68,63 +68,6 @@ struct SplineSetReader : public BsplineReaderBase
   // transform cG to radial functions
   virtual void create_atomic_centers_Gspace(Vector<std::complex<double>>& cG, Communicate& band_group_comm, int iorb) {}
 
-  /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
-   *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
-   */
-  std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() override
-  {
-    Ugrid xyz_grid[3];
-    BCtype_d xyz_bc_d[3];
-    set_grid(bspline->HalfG, xyz_grid, xyz_bc_d);
-
-    BCtype_z xyz_bc[3];
-    for (int i = 0; i < 3; i++)
-    {
-      xyz_bc[i].lCode = xyz_bc_d[i].lCode;
-      xyz_bc[i].rCode = xyz_bc_d[i].rCode;
-    }
-
-    const auto* source = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
-    std::unique_ptr<multi_UBspline_3d_z> target;
-    target.reset(einspline::create(target.get(), xyz_grid, xyz_bc, source->num_splines / 2));
-
-    if (source->x_grid.num != target->x_grid.num || source->y_grid.num != target->y_grid.num ||
-        source->z_grid.num != target->z_grid.num)
-      throw std::runtime_error("export_MultiSplineComplexDouble failed for inconsistent grid dimensions.");
-
-    if (source->coefs_size != target->coefs_size * 2)
-      throw std::runtime_error("export_MultiSplineComplexDouble failed for inconsistent coefs_size.");
-
-    std::copy_n(source->coefs, source->coefs_size, (double*)target->coefs);
-
-    return target;
-  }
-
-  /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
-   *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
-   */
-  std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble() override
-  {
-    Ugrid xyz_grid[3];
-    BCtype_d xyz_bc[3];
-    set_grid(bspline->HalfG, xyz_grid, xyz_bc);
-
-    const auto* source = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
-    std::unique_ptr<multi_UBspline_3d_d> target;
-    target.reset(einspline::create(target.get(), xyz_grid, xyz_bc, source->num_splines));
-
-    if (source->x_grid.num != target->x_grid.num || source->y_grid.num != target->y_grid.num ||
-        source->z_grid.num != target->z_grid.num)
-      throw std::runtime_error("export_MultiSplineDouble failed for inconsistent grid dimensions.");
-
-    if (source->coefs_size != target->coefs_size)
-      throw std::runtime_error("export_MultiSplineDouble failed for inconsistent coefs_size.");
-
-    std::copy_n(source->coefs, source->coefs_size, target->coefs);
-
-    return target;
-  }
-
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,
                                             const BandInfoGroup& bandgroup) override
@@ -259,7 +202,7 @@ struct SplineSetReader : public BsplineReaderBase
     if (bspline->isComplex())
     {
       if (rotate)
-        fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
+        fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->primcell_kpoints[ti], rotate_phase_r,
                              rotate_phase_i);
       else
       {
@@ -272,7 +215,7 @@ struct SplineSetReader : public BsplineReaderBase
     }
     else
     {
-      fix_phase_rotate_c2r(FFTbox, splineData_r, mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
+      fix_phase_rotate_c2r(FFTbox, splineData_r, mybuilder->primcell_kpoints[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r, splineData_r.data());
     }
   }

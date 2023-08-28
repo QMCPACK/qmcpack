@@ -2,6 +2,13 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+* Support for backflow optimization has been removed as part of refactoring and cleaning the codebase. QMC runs using backflow
+  wavefunctions are still supported. This feature is expected to eventually be reimplemented in v4. Users needing
+  backflow optimization can use previously released versions of QMCPACK or work towards its reimplementation in the modern code.
+  [#4688](https://github.com/QMCPACK/qmcpack/pull/4688)
+
 ## [3.17.1] - 2023-08-25
 
 This minor release is recommended for all users and includes a couple of build fixes and a NEXUS improvement.
