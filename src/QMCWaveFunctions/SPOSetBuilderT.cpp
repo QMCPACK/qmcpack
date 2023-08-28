@@ -15,10 +15,7 @@
 #include "SPOSetBuilderT.h"
 #include "OhmmsData/AttributeSet.h"
 #include <Message/UniformCommunicateError.h>
-
-#ifndef QMC_COMPLEX
-#include "QMCWaveFunctions/RotatedSPOsT.h"
-#endif
+#include "QMCWaveFunctions/RotatedSPOsT.h" // only for real wavefunctions
 
 namespace qmcplusplus
 {
@@ -45,96 +42,9 @@ std::unique_ptr<SPOSetT<T>> SPOSetBuilderT<T>::createSPOSet(xmlNodePtr cur, SPOS
   return 0;
 }
 
-template<typename T>
-std::unique_ptr<SPOSetT<T>> SPOSetBuilderT<T>::createSPOSet(xmlNodePtr cur)
-{
-  std::string spo_object_name;
-  std::string optimize("no");
 
-  OhmmsAttributeSet attrib;
-  attrib.add(spo_object_name, "id");
-  attrib.add(spo_object_name, "name");
-  attrib.add(optimize, "optimize");
-  attrib.put(cur);
-
-  app_summary() << std::endl;
-  app_summary() << "     Single particle orbitals (SPO)" << std::endl;
-  app_summary() << "     ------------------------------" << std::endl;
-  app_summary() << "      Name: " << spo_object_name << "   Type: " << type_name_
-                << "   Builder class name: " << ClassName << std::endl;
-  app_summary() << std::endl;
-
-  if (spo_object_name.empty())
-    myComm->barrier_and_abort("SPOSet object \"name\" attribute not given in the input!");
-
-  // read specialized sposet construction requests
-  //   and translate them into a set of orbital indices
-  SPOSetInputInfo input_info(cur);
-
-  // process general sposet construction requests
-  //   and preserve legacy interface
-  std::unique_ptr<SPOSetT<T>> sposet;
-
-  try
-  {
-    if (legacy && input_info.legacy_request)
-      sposet = createSPOSetFromXML(cur);
-    else
-      sposet = createSPOSet(cur, input_info);
-  }
-  catch (const UniformCommunicateError& ue)
-  {
-    myComm->barrier_and_abort(ue.what());
-  }
-
-  if (!sposet)
-    myComm->barrier_and_abort("SPOSetBuilderT::createSPOSet sposet creation failed");
-
-  if (optimize == "rotation" || optimize == "yes")
-  {
-#ifdef QMC_COMPLEX
-    app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
-    abort();
-#else
-    app_warning() << "Specifying orbital rotation via optimize tag is deprecated. Use the rotated_spo element instead"
-                  << std::endl;
-
-    sposet->storeParamsBeforeRotation();
-    // create sposet with rotation
-    auto& sposet_ref = *sposet;
-    app_log() << "  SPOSet " << sposet_ref.getName() << " is optimizable\n";
-    if (!sposet_ref.isRotationSupported())
-      myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet_ref.getName() + "' of type '" +
-                                sposet_ref.getClassName() + "'.");
-    auto rot_spo    = std::make_unique<RotatedSPOsT<T>>(sposet_ref.getName(), std::move(sposet));
-    xmlNodePtr tcur = cur->xmlChildrenNode;
-    while (tcur != NULL)
-    {
-      std::string cname((const char*)(tcur->name));
-      if (cname == "opt_vars")
-      {
-        std::vector<RealType> params;
-        putContent(params, tcur);
-        rot_spo->setRotationParameters(params);
-      }
-      tcur = tcur->next;
-    }
-    sposet = std::move(rot_spo);
-#endif
-  }
-
-  if (sposet->getName().empty())
-    app_warning() << "SPOSet object doesn't have a name." << std::endl;
-  if (!spo_object_name.empty() && sposet->getName() != spo_object_name)
-    app_warning() << "SPOSet object name mismatched! input name: " << spo_object_name
-                  << "   object name: " << sposet->getName() << std::endl;
-
-  sposet->checkObject();
-  return sposet;
-}
-
-template<typename T>
-std::unique_ptr<SPOSetT<T>> SPOSetBuilderT<T>::createRotatedSPOSet(xmlNodePtr cur)
+template<>
+std::unique_ptr<SPOSetT<float>> SPOSetBuilderT<float>::createRotatedSPOSet(xmlNodePtr cur)
 {
   std::string spo_object_name;
   std::string method;
@@ -143,12 +53,7 @@ std::unique_ptr<SPOSetT<T>> SPOSetBuilderT<T>::createRotatedSPOSet(xmlNodePtr cu
   attrib.add(method, "method", {"global", "history"});
   attrib.put(cur);
 
-
-#ifdef QMC_COMPLEX
-  myComm->barrier_and_abort("Orbital optimization via rotation doesn't support complex wavefunctions yet.");
-  return nullptr;
-#else
-  std::unique_ptr<SPOSetT<T>> sposet;
+  std::unique_ptr<SPOSetT<float>> sposet;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
     {
@@ -164,7 +69,7 @@ std::unique_ptr<SPOSetT<T>> SPOSetBuilderT<T>::createRotatedSPOSet(xmlNodePtr cu
                               sposet->getClassName() + "'.");
 
   sposet->storeParamsBeforeRotation();
-  auto rot_spo = std::make_unique<RotatedSPOsT<T>>(spo_object_name, std::move(sposet));
+  auto rot_spo = std::make_unique<RotatedSPOsT<float>>(spo_object_name, std::move(sposet));
 
   if (method == "history")
     rot_spo->set_use_global_rotation(false);
@@ -178,8 +83,76 @@ std::unique_ptr<SPOSetT<T>> SPOSetBuilderT<T>::createRotatedSPOSet(xmlNodePtr cu
     }
   });
   return rot_spo;
-#endif
 }
+
+template<>
+std::unique_ptr<SPOSetT<double>> SPOSetBuilderT<double>::createRotatedSPOSet(xmlNodePtr cur)
+{
+  std::string spo_object_name;
+  std::string method;
+  OhmmsAttributeSet attrib;
+  attrib.add(spo_object_name, "name");
+  attrib.add(method, "method", {"global", "history"});
+  attrib.put(cur);
+
+  std::unique_ptr<SPOSetT<double>> sposet;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
+    {
+      sposet = createSPOSet(element);
+    }
+  });
+
+  if (!sposet)
+    myComm->barrier_and_abort("Rotated SPO needs an SPOset");
+
+  if (!sposet->isRotationSupported())
+    myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet->getName() + "' of type '" +
+                              sposet->getClassName() + "'.");
+
+  sposet->storeParamsBeforeRotation();
+  auto rot_spo = std::make_unique<RotatedSPOsT<double>>(spo_object_name, std::move(sposet));
+
+  if (method == "history")
+    rot_spo->set_use_global_rotation(false);
+
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "opt_vars")
+    {
+      std::vector<RealType> params;
+      putContent(params, element);
+      rot_spo->setRotationParameters(params);
+    }
+  });
+  return rot_spo;
+}
+
+template<>
+std::unique_ptr<SPOSetT<std::complex<float>>> SPOSetBuilderT<std::complex<float>>::createRotatedSPOSet(xmlNodePtr cur)
+{
+  std::string spo_object_name;
+  std::string method;
+  OhmmsAttributeSet attrib;
+  attrib.add(spo_object_name, "name");
+  attrib.add(method, "method", {"global", "history"});
+  attrib.put(cur);
+  myComm->barrier_and_abort("Orbital optimization via rotation doesn't support complex wavefunctions yet.");
+  return nullptr;
+}
+
+template<>
+std::unique_ptr<SPOSetT<std::complex<double>>> SPOSetBuilderT<std::complex<double>>::createRotatedSPOSet(xmlNodePtr cur)
+{
+  std::string spo_object_name;
+  std::string method;
+  OhmmsAttributeSet attrib;
+  attrib.add(spo_object_name, "name");
+  attrib.add(method, "method", {"global", "history"});
+  attrib.put(cur);
+  myComm->barrier_and_abort("Orbital optimization via rotation doesn't support complex wavefunctions yet.");
+  return nullptr;
+}
+
 template class SPOSetBuilderT<double>;
 template class SPOSetBuilderT<float>;
 template class SPOSetBuilderT<std::complex<double>>;
