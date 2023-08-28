@@ -35,6 +35,7 @@ class RotatedSPOsT : public SPOSetT<T>, public OptimizableObject
 public:
   using IndexType    = typename SPOSetT<T>::IndexType;
   using RealType     = typename SPOSetT<T>::RealType;
+  using ValueType    = typename SPOSetT<T>::ValueType;
   using FullRealType = typename SPOSetT<T>::FullRealType;
   using ValueVector  = typename SPOSetT<T>::ValueVector;
   using ValueMatrix  = typename SPOSetT<T>::ValueMatrix;
@@ -200,9 +201,9 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             Vector<T>& dlogpsi,
-                             const FullRealType& psiCurrent,
-                             const std::vector<T>& Coeff,
+                             Vector<ValueType>& dlogpsi,
+                             const ValueType& psiCurrent,
+                             const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
                              const std::vector<size_t>& C2node_dn,
                              const ValueVector& detValues_up,
