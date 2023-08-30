@@ -68,6 +68,7 @@ we also check the latest Clang and GCC development versions, AMD Clang and Intel
 
 Workflow tests are currently performed with Quantum Espresso v7.2.0 and PySCF v2.2.0. These check trial wavefunction generation and
 conversion through to actual QMC runs.
+
 # Building with CMake
 
  The build system for QMCPACK is based on CMake.  It will auto-configure based on the detected compilers and libraries. Specific
