@@ -28,8 +28,6 @@ case "$parallelmode" in
 	exit 1
 	;;
 esac
-#spack module tcl refresh -y
-#spack env loads
 }
 
 here=`pwd`
@@ -80,7 +78,7 @@ spack add python%gcc@${gcc_vnew}
 spack add openmpi@${ompi_vnew}%gcc@${gcc_vnew}
 spack add hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
 spack add fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vnew} threads=openmp
+spack add openblas%gcc@${gcc_vnew} threads=openmp
 #spack add blis%gcc@${gcc_vnew} threads=openmp
 #spack add libflame%gcc@${gcc_vnew} threads=openmp
 
@@ -113,7 +111,7 @@ spack add python%gcc@${gcc_vnew}
 #spack add openmpi@${ompi_vnew}%gcc@${gcc_vnew}
 spack add hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl ~mpi
 spack add fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vnew} threads=openmp
+spack add openblas%gcc@${gcc_vnew} threads=openmp
 #spack add blis%gcc@${gcc_vnew} threads=openmp
 #spack add libflame%gcc@${gcc_vnew} threads=openmp
 
@@ -143,7 +141,7 @@ spack add python%gcc@${gcc_vold}
 #spack add openmpi@${ompi_vnew}%gcc@${gcc_vold}
 spack add hdf5@${hdf5_vold}%gcc@${gcc_vold} +fortran +hl ~mpi
 spack add fftw@${fftw_vold}%gcc@${gcc_vold} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vold} threads=openmp
+spack add openblas%gcc@${gcc_vold} threads=openmp
 #spack add blis%gcc@${gcc_vold} threads=openmp
 #spack add libflame%gcc@${gcc_vold} threads=openmp
 
@@ -173,7 +171,7 @@ spack add python%gcc@${gcc_vold}
 spack add openmpi@${ompi_vnew}%gcc@${gcc_vold}
 spack add hdf5@${hdf5_vold}%gcc@${gcc_vold} +fortran +hl +mpi
 spack add fftw@${fftw_vold}%gcc@${gcc_vold} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vold} threads=openmp
+spack add openblas%gcc@${gcc_vold} threads=openmp
 #spack add blis%gcc@${gcc_vold} threads=openmp
 #spack add libflame%gcc@${gcc_vold} threads=openmp
 
@@ -204,7 +202,7 @@ spack add python%gcc@${gcc_vnew}
 spack add openmpi@${ompi_vnew}%gcc@${gcc_vnew}
 spack add hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
 spack add fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vnew} threads=openmp
+spack add openblas%gcc@${gcc_vnew} threads=openmp
 #spack add blis%gcc@${gcc_vnew} threads=openmp
 #spack add libflame%gcc@${gcc_vnew} threads=openmp
 
@@ -229,8 +227,7 @@ spack env activate $theenv
 
 spack add gcc@${gcc_vllvmoffload}
 spack add cuda@${cuda_voffload} +allow-unsupported-compilers
-#spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} +cuda cuda_arch=70 targets=nvptx ^cuda@${cuda_voffload}
-spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} ~libcxx +compiler-rt ~lldb ~gold ~omp_as_runtime targets=all
+spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
 
 spack add hwloc
 spack add git
@@ -243,7 +240,7 @@ spack add python%gcc@${gcc_vllvmoffload}
 spack add openmpi@${ompi_vnew}%gcc@${gcc_vllvmoffload}
 spack add hdf5@${hdf5_vnew}%gcc@${gcc_vllvmoffload} +fortran +hl +mpi
 spack add fftw@${fftw_vnew}%gcc@${gcc_vllvmoffload} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vllvmoffload} threads=openmp
+spack add openblas%gcc@${gcc_vllvmoffload} threads=openmp
 #spack add blis%gcc@${gcc_vllvmoffload} threads=openmp
 #spack add libflame%gcc@${gcc_vllvmoffload} threads=openmp
 
@@ -264,8 +261,7 @@ spack env activate $theenv
 
 spack add gcc@${gcc_vllvmoffload}
 spack add cuda@${cuda_voffload} +allow-unsupported-compilers
-#OLDspack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} +cuda cuda_arch=70 targets=nvptx ^cuda@${cuda_voffload}
-spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} ~libcxx +compiler-rt ~lldb ~gold ~omp_as_runtime targets=all
+spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
 
 spack add hwloc
 spack add git
@@ -278,7 +274,7 @@ spack add python%gcc@${gcc_vllvmoffload}
 #spack add openmpi@${ompi_vnew}%gcc@${gcc_vllvmoffload}
 spack add hdf5@${hdf5_vold}%gcc@${gcc_vllvmoffload} +fortran +hl ~mpi
 spack add fftw@${fftw_vold}%gcc@${gcc_vllvmoffload} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vllvmoffload} threads=openmp
+spack add openblas%gcc@${gcc_vllvmoffload} threads=openmp
 #spack add blis%gcc@${gcc_vllvmoffload} threads=openmp
 #spack add libflame%gcc@${gcc_vllvmoffload} threads=openmp
 
@@ -310,7 +306,7 @@ spack add python%gcc@${gcc_vnew}
 spack add openmpi@${ompi_vnew}%gcc@${gcc_vnew}
 spack add hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
 spack add fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vnew} threads=openmp
+spack add openblas%gcc@${gcc_vnew} threads=openmp
 #spack add blis%gcc@${gcc_vnew} threads=openmp
 #spack add libflame%gcc@${gcc_vnew} threads=openmp
 
@@ -342,7 +338,7 @@ spack add python%gcc@${gcc_vnew}
 #spack add openmpi@${ompi_vnew}%gcc@${gcc_vnew}
 spack add hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl ~mpi
 spack add fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-spack add openblas@develop%gcc@${gcc_vnew} threads=openmp
+spack add openblas%gcc@${gcc_vnew} threads=openmp
 #spack add blis%gcc@${gcc_vnew} threads=openmp
 #spack add libflame%gcc@${gcc_vnew} threads=openmp
 
@@ -409,6 +405,7 @@ install_environment
 spack env deactivate
 fi
 
+# CAUTION: Removing build deps reveals which spack packages to not have correct deps specified and may cause breakage
 #echo --- Removing build deps
 #for f in `spack env list`
 #do
@@ -420,7 +417,6 @@ fi
 #    spack env deactivate
 #done
 
-# possibly fully redundant: loads files creation now done in install_environment function
 echo --- Making loads files
 for f in `spack env list`
 do
