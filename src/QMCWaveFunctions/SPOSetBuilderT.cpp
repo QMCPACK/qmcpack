@@ -153,8 +153,9 @@ std::unique_ptr<SPOSetT<std::complex<double>>> SPOSetBuilderT<std::complex<doubl
   return nullptr;
 }
 
-template class SPOSetBuilderT<double>;
+
 template class SPOSetBuilderT<float>;
-template class SPOSetBuilderT<std::complex<double>>;
+template class SPOSetBuilderT<double>;
 template class SPOSetBuilderT<std::complex<float>>;
+template class SPOSetBuilderT<std::complex<double>>;
 } // namespace qmcplusplus
