@@ -563,7 +563,7 @@ LCAOrbitalBuilderT<T>::createSPOSetFromXML(xmlNodePtr cur)
 #ifdef HAVE_MPI
             for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
                 for (int center_idx = 0; center_idx < num_centers; center_idx++)
-                    broadcastCuspInfo(
+                    CuspCorrectionConstructionT<T>::broadcastCuspInfo(
                         info(center_idx, orb_idx), *this->myComm, 0);
 #endif
         }

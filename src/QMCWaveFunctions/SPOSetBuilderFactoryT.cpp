@@ -30,7 +30,7 @@
 
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
-#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
+#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilderT.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
@@ -154,7 +154,7 @@ SPOSetBuilderFactoryT<T>::createSPOSetBuilder(xmlNodePtr rootNode)
             ions = pit->second.get();
         if (targetPtcl.isSpinor())
 #ifdef QMC_COMPLEX
-            bb = std::make_unique<LCAOSpinorBuilder>(
+            bb = std::make_unique<LCAOSpinorBuilderT<T>>(
                 targetPtcl, *ions, myComm, rootNode);
 #else
             PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild "
@@ -253,9 +253,11 @@ SPOSetBuilderFactoryT<T>::addSPOSet(std::unique_ptr<SPOSetT<T>> spo)
 template <typename T>
 std::string SPOSetBuilderFactoryT<T>::basisset_tag = "basisset";
 
-template class SPOSetBuilderFactoryT<double>;
-template class SPOSetBuilderFactoryT<float>;
+#ifdef QMC_COMPLEX
 template class SPOSetBuilderFactoryT<std::complex<double>>;
 template class SPOSetBuilderFactoryT<std::complex<float>>;
-
+#else
+template class SPOSetBuilderFactoryT<double>;
+template class SPOSetBuilderFactoryT<float>;
+#endif
 } // namespace qmcplusplus
