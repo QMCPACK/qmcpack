@@ -111,7 +111,7 @@ make -j 8
 The complexities of modern computer hardware and software systems are
 such that you should check that the auto-configuration system has made
 good choices and picked optimized libraries and compiler settings
-before doing significant production. i.e. Check the details below. For MPI builds we recommend
+before doing significant production. i.e. Check the details below.
 
 ## Set the environment
 
