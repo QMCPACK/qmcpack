@@ -75,23 +75,16 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       LatticeInv(i, j) = RecipLattice(i, j) / (2.0 * M_PI);
-  int have_dpsi         = false;
-  int NumAtomicOrbitals = 0;
-  NumCoreStates = NumMuffinTins = NumTwists = NumSpins = NumBands = NumAtomicOrbitals = 0;
-  NumElectrons = TargetPtcl.getTotalNum();
+  int have_dpsi = false;
+  NumTwists = NumSpins = NumBands = 0;
+  NumElectrons                    = TargetPtcl.getTotalNum();
   H5File.read(NumBands, "/electrons/kpoint_0/spin_0/number_of_states");
-  H5File.readEntry(NumCoreStates, "/electrons/kpoint_0/spin_0/number_of_core_states");
   H5File.readEntry(NumSpins, "/electrons/number_of_spins");
   H5File.read(NumTwists, "/electrons/number_of_kpoints");
-  H5File.readEntry(NumMuffinTins, "/muffin_tins/number_of_tins");
   H5File.readEntry(have_dpsi, "/electrons/have_dpsi");
-  H5File.readEntry(NumAtomicOrbitals, "/electrons/number_of_atomic_orbitals");
   HaveOrbDerivs = have_dpsi;
   app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons << ", spins=" << NumSpins << ", twists=" << NumTwists
-            << ", muffin tins=" << NumMuffinTins << ", core states=" << NumCoreStates << std::endl;
-  app_log() << "atomic orbital=" << NumAtomicOrbitals << std::endl;
-  if (TileFactor[0] != 1 || TileFactor[1] != 1 || TileFactor[2] != 1)
-    app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] << "x" << TileFactor[2] << " tiling factor.\n";
+            << std::endl;
   //////////////////////////////////
   // Read ion types and locations //
   //////////////////////////////////
@@ -229,60 +222,17 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
         AtomicCentersInfo.lmax[center_idx] = source_species(lmax_ind, my_GroupID);
     }
   }
-  /////////////////////////////////////
-  // Read atomic orbital information //
-  /////////////////////////////////////
-  AtomicOrbitals.resize(NumAtomicOrbitals);
-  for (int iat = 0; iat < NumAtomicOrbitals; iat++)
-  {
-    AtomicOrbital<std::complex<double>>& orb = AtomicOrbitals[iat];
-    int lmax, polynomial_order, spline_points;
-    RealType cutoff_radius, polynomial_radius, spline_radius;
-    PosType position;
-    double cutoff_radius_DP, polynomial_radius_DP, spline_radius_DP;
-    TinyVector<double, OHMMS_DIM> position_DP;
-    std::ostringstream groupstream;
-    groupstream << "/electrons/atomic_orbital_" << iat << "/";
-    std::string groupname = groupstream.str();
-    H5File.read(lmax, groupname + "lmax");
-    H5File.read(polynomial_order, groupname + "polynomial_order");
-    H5File.read(spline_points, groupname + "spline_points");
-    H5File.read(cutoff_radius_DP, groupname + "cutoff_radius");
-    H5File.read(polynomial_radius_DP, groupname + "polynomial_radius");
-    H5File.read(spline_radius_DP, groupname + "spline_radius");
-    H5File.read(position_DP, groupname + "position");
-    cutoff_radius     = cutoff_radius_DP;
-    polynomial_radius = polynomial_radius_DP;
-    spline_radius     = spline_radius_DP;
-    position          = position_DP;
-    orb.set_pos(position);
-    orb.set_lmax(lmax);
-    orb.set_cutoff(cutoff_radius);
-    orb.set_spline(spline_radius, spline_points);
-    orb.set_polynomial(polynomial_radius, polynomial_order);
-  }
   ///////////////////////////
   // Read the twist angles //
   ///////////////////////////
-  TwistAngles.resize(NumTwists);
-  TwistSymmetry.resize(NumTwists);
-  TwistWeight.resize(NumTwists);
+  primcell_kpoints.resize(NumTwists);
   for (int ti = 0; ti < NumTwists; ti++)
   {
     std::ostringstream path;
     path << "/electrons/kpoint_" << ti << "/reduced_k";
-    TinyVector<double, OHMMS_DIM> TwistAngles_DP;
-    H5File.read(TwistAngles_DP, path.str());
-    TwistAngles[ti] = TwistAngles_DP;
-    if ((Version[0] >= 2) and (Version[1] >= 1))
-    {
-      std::ostringstream sym_path;
-      sym_path << "/electrons/kpoint_" << ti << "/symgroup";
-      H5File.readEntry(TwistSymmetry[ti], sym_path.str());
-      std::ostringstream nsym_path;
-      nsym_path << "/electrons/kpoint_" << ti << "/numsym";
-      H5File.readEntry(TwistWeight[ti], nsym_path.str());
-    }
+    TinyVector<double, OHMMS_DIM> primcell_kpoints_DP;
+    H5File.read(primcell_kpoints_DP, path.str());
+    primcell_kpoints[ti] = primcell_kpoints_DP;
   }
   if (qmc_common.use_density)
   {
@@ -409,27 +359,10 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     for (int bi = 0; bi < NumBands; bi++)
     {
       BandInfo band;
-      band.IsCoreState   = false;
       band.TwistIndex    = tindex;
       band.BandIndex     = bi;
       band.MakeTwoCopies = MakeTwoCopies[ti];
       band.Energy        = eigvals[bi];
-      if (band.Energy > -1.0e100)
-        SortBands.push_back(band);
-      if (MakeTwoCopies[ti])
-        maxOrbs += 2;
-      else
-        maxOrbs++;
-    }
-    // Now, read core states
-    for (int cs = 0; cs < NumCoreStates; cs++)
-    {
-      BandInfo band;
-      band.IsCoreState   = true;
-      band.TwistIndex    = tindex;
-      band.BandIndex     = cs;
-      band.MakeTwoCopies = MakeTwoCopies[ti];
-      H5File.read(band.Energy, CoreStatePath(ti, cs) + "eigenvalue");
       if (band.Energy > -1.0e100)
         SortBands.push_back(band);
       if (MakeTwoCopies[ti])
@@ -478,7 +411,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   }
   if (occ_format == "energy")
   {
-    app_log() << "  Occupying bands based on energy in mode " << (Occ.size() > 0? "\"excited\"" : "\"ground\"") << std::endl;
+    app_log() << "  Occupying bands based on energy in mode " << (Occ.size() > 0 ? "\"excited\"" : "\"ground\"")
+              << std::endl;
     // To get the occupations right.
     std::vector<int> Removed(0, 0);
     std::vector<int> Added(0, 0);
@@ -605,23 +539,16 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   //}
   int orbIndex        = 0;
   int numOrbs_counter = 0;
-  NumValenceOrbs      = 0;
-  NumCoreOrbs         = 0;
   while (numOrbs_counter < numOrbs)
   {
     if (SortBands[orbIndex].MakeTwoCopies)
       numOrbs_counter += 2;
     else
       numOrbs_counter++;
-    if (SortBands[orbIndex].IsCoreState)
-      NumCoreOrbs++;
-    else
-      NumValenceOrbs++;
     orbIndex++;
   }
   NumDistinctOrbitals = orbIndex;
   app_log() << "We will read " << NumDistinctOrbitals << " distinct complex-valued orbitals from h5.\n";
-  app_log() << "There are " << NumCoreOrbs << " core states and " << NumValenceOrbs << " valence states.\n";
 }
 
 } // namespace qmcplusplus

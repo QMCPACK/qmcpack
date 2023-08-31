@@ -19,8 +19,11 @@
  */
 #ifndef QMCPLUSPLUS_BSPLINE_READER_BASE_H
 #define QMCPLUSPLUS_BSPLINE_READER_BASE_H
+
 #include "mpi/collectives.h"
 #include "mpi/point2point.h"
+#include <einspline/bspline_base.h>
+
 namespace qmcplusplus
 {
 struct SPOSetInputInfo;
@@ -113,7 +116,7 @@ struct BsplineReaderBase
     for (int iorb = 0; iorb < N; iorb++)
     {
       int ti                       = cur_bands[iorb].TwistIndex;
-      bspline->kPoints[iorb]       = mybuilder->PrimCell.k_cart(-mybuilder->TwistAngles[ti]);
+      bspline->kPoints[iorb]       = mybuilder->PrimCell.k_cart(-mybuilder->primcell_kpoints[ti]);
       bspline->MakeTwoCopies[iorb] = (num < (numOrbs - 1)) && cur_bands[iorb].MakeTwoCopies;
       num += bspline->MakeTwoCopies[iorb] ? 2 : 1;
     }
@@ -125,7 +128,7 @@ struct BsplineReaderBase
     if (!bspline->isComplex())
     {
       //no k-point folding, single special k point (G, L ...)
-      TinyVector<double, 3> twist0 = mybuilder->TwistAngles[bandgroup.TwistIndex];
+      TinyVector<double, 3> twist0 = mybuilder->primcell_kpoints[bandgroup.TwistIndex];
       for (int i = 0; i < 3; i++)
         if (bconds[i] && ((std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)))
           bspline->HalfG[i] = 1;
@@ -189,10 +192,6 @@ struct BsplineReaderBase
                            const std::vector<BandInfo>& bigspace,
                            SPOSetInfo& sposet,
                            std::vector<int>& band2spo);
-
-  /** export the MultiSpline to the old class EinsplineSetExtended for the GPU calculation*/
-  virtual std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() = 0;
-  virtual std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble()        = 0;
 };
 
 } // namespace qmcplusplus
