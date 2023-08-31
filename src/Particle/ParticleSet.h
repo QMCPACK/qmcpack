@@ -478,8 +478,8 @@ public:
   ///return the address of the i-th properties
   inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
-  inline void setTwist(SingleParticlePos& t) { myTwist = t; }
-  inline SingleParticlePos getTwist() const { return myTwist; }
+  inline void setTwist(const SingleParticlePos& t) { myTwist = t; }
+  inline const SingleParticlePos& getTwist() const { return myTwist; }
 
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
