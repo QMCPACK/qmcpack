@@ -13,18 +13,6 @@
 #	insteadOf = git://
 
 echo --- START initial setup `date`
-# Bug avoidance 20230404
-if [ -e /opt/rocm-*/bin/rocminfo ]; then
-    echo Spack LLVM16 installation will fail with ROCm present
-    echo Suggest temporarily: sudo chmod og-rx /opt/rocm-*
-    exit 1
-fi
-# Bug avoidance 20200902
-#if [ -e /usr/lib/aomp/bin/clang ]; then
-#    echo AOMP Clang install detected. This will break LLVM install.
-#    echo Suggest temporarily: sudo chmod og-rx /usr/lib/aomp
-#    exit 1
-#fi
 
 here=`pwd`
 if [ -e `dirname "$0"`/ornl_versions.sh ]; then
@@ -194,12 +182,14 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout 6edfc070926f7934eda5882de20ac3fb193e310a
-#commit 6edfc070926f7934eda5882de20ac3fb193e310a (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Alec Scott <hi@alecbcs.com>
-#Date:   Mon Apr 24 12:04:31 2023 -0700
+git checkout 74fba221f1803e25139440d6b8ed6e6a9364b626
+#commit 74fba221f1803e25139440d6b8ed6e6a9364b626 (grafted, HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Massimiliano Culpo <massimiliano.culpo@gmail.com>
+#Date:   Mon Aug 28 16:58:16 2023 +0200
 #
-#    megadock: add v4.1.1 (#37154)
+#    GnuPG: add v2.4.3 (#39654)
+#    
+#    Also updates a few dependencies
 
 echo --- Git version and last log entry
 git log -1
@@ -211,16 +201,10 @@ cd bin
 # Consider using a GCC toolset on Red Hat systems to use
 # recent compilers with better architecture support.
 # e.g. dnf install gcc-toolset-11
-#if [ -e /opt/rh/gcc-toolset-11/root/bin/gcc ]; then
-#    echo --- Added gcc-toolset-11 to path for RHEL provided GCC11 compilers
-#    export PATH=/opt/rh/gcc-toolset-11/root/bin/:$PATH
-#fi
-#else
-#if [ -e /opt/rh/gcc-toolset-10/root/bin/gcc ]; then
-#    echo --- Added gcc-toolset-10 to path for RHEL provided GCC10 compilers
-#    export PATH=/opt/rh/gcc-toolset-10/root/bin/:$PATH
-#fi
-#fi
+if [ -e /opt/rh/gcc-toolset-12/enable ]; then
+    echo --- Using gcc-toolset-12 for newer compilers
+    source /opt/rh/gcc-toolset-12/enable 
+fi
 
 export DISPLAY="" 
 export SPACK_ROOT=$HOME/apps/spack
@@ -302,7 +286,8 @@ spack unload gcc@${gcc_vllvmoffload}
 echo --- llvm@${llvm_voffload} for offload  `date`
 spack install gcc@${gcc_vllvmoffload}
 spack install cuda@${cuda_voffload} +allow-unsupported-compilers
-spack install llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} ~libcxx +compiler-rt ~lldb ~gold ~omp_as_runtime targets=all
+#spack install llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} ~libcxx +compiler-rt ~lldb ~gold ~omp_as_runtime targets=all
+spack install llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
 spack load llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload}
 spack compiler find
 spack unload llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload}
@@ -314,6 +299,3 @@ module list
 echo --- End listings
 echo --- FINISH initial setup `date`
 bash $HOME/.cron_jobs/ornl_setup_environments.sh
-
-echo --- REMEMBER REMEMBER
-echo If ROCm installed, sudo chmod og+rx /opt/rocm-*
