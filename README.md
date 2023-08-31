@@ -31,7 +31,18 @@ If you have trouble using or building QMCPACK, or have questions about its use, 
 group](https://groups.google.com/forum/#!forum/qmcpack), create a GitHub issue at https://github.com/QMCPACK/qmcpack/issues or
 contact a developer.
 
-# Prerequisites
+# Learning about Quantum Monte Carlo
+
+To learn about the fundamentals of Quantum Monte Carlo through to their practical application to molecular and solid-state systems with
+QMCPACK, see the [materials and tutorials from our most recent QMC workshop](https://github.com/QMCPACK/qmc_workshop_2021). These include a virtual machine
+to run examples without having to install QMCPACK yourself, and slides and recorded videos of introductory talks through to spin-orbit QMC.
+
+# Citing QMCPACK
+
+Please cite J. Kim _et al._ J. Phys. Cond. Mat. **30** 195901 (2018), https://doi.org/10.1088/1361-648X/aab9c3, and if space allows,
+P. Kent _et al._ J. Chem. Phys. **152**, 174105 (2020), https://doi.org/10.1063/5.0004860 . These papers are both open access.
+
+# Installation Prerequisites
 
  * C++ 17 and C99 capable compilers. 
  * CMake v3.17.0 or later, build utility, http://www.cmake.org
@@ -343,7 +354,6 @@ Individual tests can be run by specifying their name
 ctest -R name-of-test-to-run
 ```
 
-
 # Contributing
 
 Contributions of any size are very welcome. Guidance for contributing to QMCPACK is included in Chapter 1 of the manual
@@ -354,3 +364,5 @@ group](https://groups.google.com/forum/#!forum/qmcpack), to create a GitHub issu
 advance.
 
 Contributions are made under the same UIUC/NCSA open source license that covers QMCPACK. Please contact us if this is problematic.
+
+
