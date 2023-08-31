@@ -40,7 +40,7 @@ to run examples without having to install QMCPACK yourself, and slides and recor
 # Citing QMCPACK
 
 Please cite J. Kim _et al._ J. Phys. Cond. Mat. **30** 195901 (2018), https://doi.org/10.1088/1361-648X/aab9c3, and if space allows,
-P. Kent _et al._ J. Chem. Phys. **152**, 174105 (2020), https://doi.org/10.1063/5.0004860 . These papers are both open access.
+P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5.0004860 . These papers are both open access.
 
 # Installation Prerequisites
 
