@@ -71,12 +71,11 @@ conversion through to actual QMC runs.
 
 # Building with CMake
 
- The build system for QMCPACK is based on CMake.  It will auto-configure based on the detected compilers and libraries. Specific
- compile options can be specified either through specific environment or CMake variables.  When the libraries are installed in
- standard locations, e.g., /usr, /usr/local, there is no need to set environment or CMake variables for the packages.
+The build system for QMCPACK is based on CMake.  It will auto-configure based on the detected compilers and libraries. When these 
+are installed in standard locations, e.g., /usr, /usr/local, there is no need to set either environment or CMake variables.
 
- See the manual linked at https://qmcpack.readthedocs.io/en/develop/ and https://www.qmcpack.org/documentation or buildable using
- sphinx from the sources in docs/. A PDF version is still available at https://qmcpack.readthedocs.io/_/downloads/en/develop/pdf/
+See the manual linked at https://qmcpack.readthedocs.io/en/develop/ and https://www.qmcpack.org/documentation or buildable using
+sphinx from the sources in docs/. A PDF version is still available at https://qmcpack.readthedocs.io/_/downloads/en/develop/pdf/
 
 ## Quick build
 
