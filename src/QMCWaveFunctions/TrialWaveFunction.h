@@ -471,6 +471,7 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   void setTwist(const std::vector<RealType>& t) { myTwist = t; }
+  void setTwist(std::vector<RealType>&& t) { myTwist = std::move(t); }
   const std::vector<RealType>& twist() const { return myTwist; }
 
   inline void setMassTerm(ParticleSet& P)

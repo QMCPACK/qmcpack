@@ -70,7 +70,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
   SPOSetBuilderFactory sposet_builder_factory(myComm, targetPtcl, ptclPool);
 
   std::string vp_file_to_load;
-  std::vector<ParticleSet::RealType> tsts(3, 0.);
   cur = cur->children;
   while (cur != NULL)
   {
@@ -92,8 +91,9 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
           attribs.add(hdfName, "name");
           if (hdfName == "twistAngle")
           {
-            putContent(tsts, kcur);
-            targetPsi->setTwist(tsts);
+            std::vector<ParticleSet::RealType> twists(3, 0);
+            putContent(twists, kcur);
+            targetPsi->setTwist(std::move(twists));
             foundtwist = true;
           }
         }
@@ -102,9 +102,7 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
       if (!foundtwist)
       {
         //default twist is [0 0 0]
-        tsts.resize(3);
-        std::fill(std::begin(tsts), std::end(tsts), 0.);
-        targetPsi->setTwist(tsts);
+        targetPsi->setTwist(std::vector<ParticleSet::RealType>(3, 0));
       }
     }
     else if (cname == WaveFunctionComponentBuilder::jastrow_tag)
