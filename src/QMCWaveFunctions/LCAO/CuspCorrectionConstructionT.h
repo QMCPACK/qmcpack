@@ -22,7 +22,8 @@ class Communicate;
 namespace qmcplusplus
 {
 
-class ParticleSet;
+template <typename T>
+class ParticleSetT;
 
 template <typename T>
 class OneMolecularOrbitalT
@@ -64,7 +65,7 @@ public:
     }
 
     OneMolecularOrbitalT(
-        ParticleSet* targetP, ParticleSet* sourceP, SPOSetPtr Phi) :
+        ParticleSetT<T>* targetP, ParticleSetT<T>* sourceP, SPOSetPtr Phi) :
         targetPtcl(targetP),
         sourcePtcl(sourceP),
         curOrb(0),
@@ -91,9 +92,9 @@ private:
     ValueVector lap1;
 
     /// target ParticleSet
-    ParticleSet* targetPtcl;
+    ParticleSetT<T>* targetPtcl;
     /// source ParticleSet
-    ParticleSet* sourcePtcl;
+    ParticleSetT<T>* sourcePtcl;
 
     /// Index of orbital
     int curOrb;
@@ -134,8 +135,8 @@ public:
 
     /// Compute the radial part of the corrected wavefunction
     static void
-    computeRadialPhiBar(ParticleSet* targetP, ParticleSet* sourceP, int curOrb_,
-        int curCenter_, SPOSetT<T>* Phi, Vector<RealType>& xgrid,
+    computeRadialPhiBar(ParticleSetT<T>* targetP, ParticleSetT<T>* sourceP,
+        int curOrb_, int curCenter_, SPOSetT<T>* Phi, Vector<RealType>& xgrid,
         Vector<RealType>& rad_orb, const CuspCorrectionParametersT<T>& data);
 
     /** Ideal local energy at one point
@@ -274,13 +275,13 @@ public:
     // Modifies orbital set lcwc
     static void
     applyCuspCorrection(const Matrix<CuspCorrectionParametersT<T>>& info,
-        ParticleSet& targetPtcl, ParticleSet& sourcePtcl,
+        ParticleSetT<T>& targetPtcl, ParticleSetT<T>& sourcePtcl,
         LCAOrbitalSetT<T>& lcao, SoaCuspCorrectionT<T>& cusp,
         const std::string& id);
 
     static void
     generateCuspInfo(Matrix<CuspCorrectionParametersT<T>>& info,
-        const ParticleSet& targetPtcl, const ParticleSet& sourcePtcl,
+        const ParticleSetT<T>& targetPtcl, const ParticleSetT<T>& sourcePtcl,
         const LCAOrbitalSetT<T>& lcao, const std::string& id,
         Communicate& Comm);
 

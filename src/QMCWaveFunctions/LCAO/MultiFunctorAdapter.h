@@ -21,6 +21,7 @@
 #include "hdf/hdf_archive.h"
 #include "LCAO/MultiQuinticSpline1D.h"
 #include "LCAO/SoaAtomicBasisSet.h"
+#include "LCAO/SoaAtomicBasisSetT.h"
 
 namespace qmcplusplus
 {
@@ -96,6 +97,61 @@ class RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> : 
 {
 public:
   using COT             = SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>;
+  using RadialOrbital_t = MultiFunctorAdapter<FN>;
+  using single_type     = typename RadialOrbital_t::single_type;
+
+  ///true, if the RadialOrbitalType is normalized
+  bool Normalized;
+  ///orbitals to build
+  COT& m_orbitals;
+
+  ///constructor
+  RadialOrbitalSetBuilder(Communicate* comm, COT& aos) : MPIObjectBase(comm), Normalized(true), m_orbitals(aos) {}
+
+  ///implement functions used by AOBasisBuilder
+  bool addGrid(xmlNodePtr cur, const std::string& rad_type) { return true; }
+  bool addGridH5(hdf_archive& hin) { return true; }
+  bool openNumericalBasisH5(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur)
+  {
+    const std::string a(lowerCase(getXMLAttributeValue(cur, "normalized")));
+    if (a == "no")
+      Normalized = false;
+    return true;
+  }
+
+  bool addRadialOrbital(xmlNodePtr cur, const std::string& rad_type, const QuantumNumberType& nlms)
+  {
+    auto radorb = std::make_unique<single_type>(nlms[q_l], Normalized);
+    radorb->putBasisGroup(cur);
+
+    m_orbitals.RnlID.push_back(nlms);
+    m_orbitals.MultiRnl.Rnl.push_back(std::move(radorb));
+    return true;
+  }
+
+  bool addRadialOrbitalH5(hdf_archive& hin, const std::string& rad_type, const QuantumNumberType& nlms)
+  {
+    auto radorb = std::make_unique<single_type>(nlms[q_l], Normalized);
+    radorb->putBasisGroupH5(hin, *myComm);
+
+    m_orbitals.RnlID.push_back(nlms);
+    m_orbitals.MultiRnl.Rnl.push_back(std::move(radorb));
+
+    return true;
+  }
+
+  void finalize()
+  {
+    m_orbitals.setRmax(0); //set Rmax
+  }
+};
+
+template<typename FN, typename SH, typename ORBT>
+class RadialOrbitalSetBuilder<SoaAtomicBasisSetT<MultiFunctorAdapter<FN>, SH, ORBT>> : public MPIObjectBase
+{
+public:
+  using COT             = SoaAtomicBasisSetT<MultiFunctorAdapter<FN>, SH, ORBT>;
   using RadialOrbital_t = MultiFunctorAdapter<FN>;
   using single_type     = typename RadialOrbital_t::single_type;
 

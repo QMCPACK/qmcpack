@@ -29,7 +29,8 @@ class SPOSetBuilderFactoryT : public MPIObjectBase
 {
 public:
     using SPOMap = typename SPOSetT<T>::SPOMap;
-    using PSetMap = std::map<std::string, const std::unique_ptr<ParticleSet>>;
+    using PSetMap =
+        std::map<std::string, const std::unique_ptr<ParticleSetT<T>>>;
 
     /** constructor
      * \param comm communicator
@@ -37,7 +38,7 @@ public:
      * \param ions reference to the ions
      */
     SPOSetBuilderFactoryT(
-        Communicate* comm, ParticleSet& els, const PSetMap& psets);
+        Communicate* comm, ParticleSetT<T>& els, const PSetMap& psets);
 
     ~SPOSetBuilderFactoryT();
 
@@ -74,7 +75,7 @@ public:
 
 private:
     /// reference to the target particle
-    ParticleSet& targetPtcl;
+    ParticleSetT<T>& targetPtcl;
 
     /// reference to the particle pool
     const PSetMap& ptclPool;

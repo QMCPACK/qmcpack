@@ -63,8 +63,8 @@ TEST_CASE("ConstantSPOSetT", "[wavefunction]")
   }
 
 
-  const SimulationCell simulation_cell;
-  ParticleSet elec(simulation_cell);
+  const SimulationCellT<Value> simulation_cell;
+  ParticleSetT<Value> elec(simulation_cell);
 
   elec.create({nelec});
 

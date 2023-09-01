@@ -12,6 +12,9 @@
 #ifndef QMCPLUSPLUS_COMPLEX_HELP_HPP
 #define QMCPLUSPLUS_COMPLEX_HELP_HPP
 
+#include <complex>
+#include <type_traits>
+
 namespace qmcplusplus
 {
 template<typename T>

@@ -149,9 +149,9 @@ public:
 
   void assign_v(const PointType& r, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
-  void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override;
+  void evaluateValue(const ParticleSetT<T>& P, const int iat, ValueVector& psi) override;
 
-  void evaluateDetRatios(const VirtualParticleSet& VP,
+  void evaluateDetRatios(const VirtualParticleSetT<T>& VP,
                          ValueVector& psi,
                          const ValueVector& psiinv,
                          std::vector<ValueType>& ratios) override;
@@ -165,7 +165,7 @@ public:
    */
   void assign_vgl_from_l(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
-  void evaluateVGL(const ParticleSet& P,
+  void evaluateVGL(const ParticleSetT<T>& P,
                    const int iat,
                    ValueVector& psi,
                    GradVector& dpsi,
@@ -178,7 +178,7 @@ public:
                   int first,
                   int last) const;
 
-  void evaluateVGH(const ParticleSet& P,
+  void evaluateVGH(const ParticleSetT<T>& P,
                    const int iat,
                    ValueVector& psi,
                    GradVector& dpsi,
@@ -192,7 +192,7 @@ public:
                     int first = 0,
                     int last  = -1) const;
 
-  void evaluateVGHGH(const ParticleSet& P,
+  void evaluateVGHGH(const ParticleSetT<T>& P,
                      const int iat,
                      ValueVector& psi,
                      GradVector& dpsi,

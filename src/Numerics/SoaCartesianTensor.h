@@ -37,7 +37,7 @@ namespace qmcplusplus
 template<class T>
 struct SoaCartesianTensor
 {
-  using value_type = T;
+  using ValueType = T;
   using ggg_type   = TinyVector<Tensor<T, 3>, 3>;
 
   ///maximum angular momentum

@@ -24,6 +24,7 @@ add_subdirectory(detail)
 set(WFBASE_SRCS
     OptimizableFunctorBase.cpp
     VariableSet.cpp
+    VariableSetT.cpp
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
     WaveFunctionComponentBuilder.cpp
@@ -41,14 +42,16 @@ set(WFBASE_SRCS
     HarmonicOscillator/SHOSetBuilder.cpp
     HarmonicOscillator/SHOSetBuilderT.cpp
     ExampleHeBuilder.cpp
-    ExampleHeComponent.cpp)
+    ExampleHeComponent.cpp
+    RotatedSPOsT.cpp
+    SpinorSetT.cpp)
 
 if(NOT QMC_COMPLEX)
-  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp RotatedSPOsT.cpp)
+  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp)
 endif(NOT QMC_COMPLEX)
 
 if(QMC_COMPLEX)
-  set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp SpinorSetT.cpp)
+  set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp)
 endif(QMC_COMPLEX)
 ########################
 # build jastrows
@@ -85,18 +88,21 @@ if(OHMMS_DIM MATCHES 3)
       LCAO/LCAOrbitalBuilderT.cpp
       LCAO/MultiQuinticSpline1D.cpp
       LCAO/AOBasisBuilder.cpp
-      LCAO/SoaLocalizedBasisSet.cpp)
+      LCAO/AOBasisBuilderT.cpp
+      LCAO/SoaLocalizedBasisSet.cpp
+      LCAO/SoaLocalizedBasisSetT.cpp
+      LCAO/LCAOSpinorBuilderT.cpp
+      LCAO/LCAOrbitalSetWithCorrectionT.cpp
+      LCAO/CuspCorrectionConstructionT.cpp
+      LCAO/SoaCuspCorrectionT.cpp)
   if(QMC_COMPLEX)
-    set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp LCAO/LCAOSpinorBuilder.cpp)
+    set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp)
   else(QMC_COMPLEX)
     #LCAO cusp correction is not ready for complex
     set(FERMION_SRCS ${FERMION_SRCS}
         LCAO/LCAOrbitalSetWithCorrection.cpp
-        LCAO/LCAOrbitalSetWithCorrectionT.cpp
 	    LCAO/CuspCorrectionConstruction.cpp
-	    LCAO/CuspCorrectionConstructionT.cpp
-        LCAO/SoaCuspCorrection.cpp
-        LCAO/SoaCuspCorrectionT.cpp)
+        LCAO/SoaCuspCorrection.cpp)
   endif(QMC_COMPLEX)
 
   if(HAVE_EINSPLINE)
@@ -116,7 +122,7 @@ if(OHMMS_DIM MATCHES 3)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
     else(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createRealSingle.cpp BsplineFactory/createRealDouble.cpp
-        BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp BsplineFactory/SplineR2RT.cpp)
+        BsplineFactory/SplineC2R.cpp BsplineFactory/SplineC2RT.cpp BsplineFactory/SplineR2R.cpp BsplineFactory/SplineR2RT.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
     endif(QMC_COMPLEX)
 

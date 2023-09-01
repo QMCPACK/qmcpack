@@ -81,8 +81,8 @@ CuspCorrectionConstructionT<T>::removeSTypeOrbitals(
 // rc
 template <typename T>
 void
-CuspCorrectionConstructionT<T>::computeRadialPhiBar(ParticleSet* targetP,
-    ParticleSet* sourceP, int curOrb_, int curCenter_, SPOSetT<T>* Phi,
+CuspCorrectionConstructionT<T>::computeRadialPhiBar(ParticleSetT<T>* targetP,
+    ParticleSetT<T>* sourceP, int curOrb_, int curCenter_, SPOSetT<T>* Phi,
     Vector<RealType>& xgrid, Vector<RealType>& rad_orb,
     const CuspCorrectionParametersT<T>& data)
 {
@@ -363,9 +363,9 @@ CuspCorrectionConstructionT<T>::minimizeForRc(CuspCorrectionT<T>& cusp,
 template <typename T>
 void
 CuspCorrectionConstructionT<T>::applyCuspCorrection(
-    const Matrix<CuspCorrectionParametersT<T>>& info, ParticleSet& targetPtcl,
-    ParticleSet& sourcePtcl, LCAOrbitalSetT<T>& lcao,
-    SoaCuspCorrectionT<T>& cusp, const std::string& id)
+    const Matrix<CuspCorrectionParametersT<T>>& info,
+    ParticleSetT<T>& targetPtcl, ParticleSetT<T>& sourcePtcl,
+    LCAOrbitalSetT<T>& lcao, SoaCuspCorrectionT<T>& cusp, const std::string& id)
 {
     const int num_centers = info.rows();
     const int orbital_set_size = info.cols();
@@ -459,9 +459,9 @@ CuspCorrectionConstructionT<T>::applyCuspCorrection(
 template <typename T>
 void
 CuspCorrectionConstructionT<T>::generateCuspInfo(
-    Matrix<CuspCorrectionParametersT<T>>& info, const ParticleSet& targetPtcl,
-    const ParticleSet& sourcePtcl, const LCAOrbitalSetT<T>& lcao,
-    const std::string& id, Communicate& Comm)
+    Matrix<CuspCorrectionParametersT<T>>& info,
+    const ParticleSetT<T>& targetPtcl, const ParticleSetT<T>& sourcePtcl,
+    const LCAOrbitalSetT<T>& lcao, const std::string& id, Communicate& Comm)
 {
     const int num_centers = info.rows();
     const int orbital_set_size = info.cols();
@@ -507,8 +507,8 @@ CuspCorrectionConstructionT<T>::generateCuspInfo(
 #pragma omp parallel for schedule(dynamic) collapse(2)
     for (int center_idx = 0; center_idx < num_centers; center_idx++) {
         for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++) {
-            ParticleSet localTargetPtcl(targetPtcl);
-            ParticleSet localSourcePtcl(sourcePtcl);
+            ParticleSetT<T> localTargetPtcl(targetPtcl);
+            ParticleSetT<T> localSourcePtcl(sourcePtcl);
 
             LCAOrbitalSetT<T> local_phi("local_phi",
                 std::unique_ptr<typename LCAOrbitalSetT<T>::basis_type>(
@@ -684,7 +684,7 @@ CuspCorrectionConstructionT<T>::readCuspInfo(const std::string& cuspInfoFile,
                 if (cname == "orbital") {
                     int orb = -1;
                     OhmmsAttributeSet orbAttrib;
-                    QMCTraits::RealType a1(0.0), a2, a3, a4, a5, a6, a7, a8, a9;
+                    RealType a1(0.0), a2, a3, a4, a5, a6, a7, a8, a9;
                     orbAttrib.add(orb, "num");
                     orbAttrib.add(a1, "redo");
                     orbAttrib.add(a2, "C");

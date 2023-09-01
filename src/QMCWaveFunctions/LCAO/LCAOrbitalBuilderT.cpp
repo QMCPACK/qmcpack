@@ -19,22 +19,20 @@
 
 #include "LCAOrbitalBuilderT.h"
 
-#include "AOBasisBuilder.h"
+#include "AOBasisBuilderT.h"
+#include "CPU/math.hpp"
+#include "CuspCorrectionConstructionT.h"
 #include "LCAOrbitalSetT.h"
+#include "LCAOrbitalSetWithCorrectionT.h"
+#include "Message/CommOperators.h"
 #include "MultiFunctorAdapter.h"
 #include "MultiQuinticSpline1D.h"
 #include "Numerics/SoaCartesianTensor.h"
 #include "Numerics/SoaSphericalTensor.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSetT.h"
-#include "SoaAtomicBasisSet.h"
-#include "SoaLocalizedBasisSet.h"
-#if !defined(QMC_COMPLEX)
-#include "CuspCorrectionConstructionT.h"
-#include "LCAOrbitalSetWithCorrectionT.h"
-#endif
-#include "CPU/math.hpp"
-#include "Message/CommOperators.h"
+#include "SoaAtomicBasisSetT.h"
+#include "SoaLocalizedBasisSetT.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "hdf/hdf_archive.h"
 
@@ -61,8 +59,8 @@ struct ao_traits<T, ORBT, 0, 0>
 {
     using radial_type = MultiQuinticSpline1D<T>;
     using angular_type = SoaCartesianTensor<T>;
-    using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
-    using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
+    using ao_type = SoaAtomicBasisSetT<radial_type, angular_type, ORBT>;
+    using basis_type = SoaLocalizedBasisSetT<ao_type, ORBT>;
 };
 
 /** specialization for numerical-spherical AO */
@@ -71,8 +69,8 @@ struct ao_traits<T, ORBT, 0, 1>
 {
     using radial_type = MultiQuinticSpline1D<T>;
     using angular_type = SoaSphericalTensor<T>;
-    using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
-    using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
+    using ao_type = SoaAtomicBasisSetT<radial_type, angular_type, ORBT>;
+    using basis_type = SoaLocalizedBasisSetT<ao_type, ORBT>;
 };
 
 /** specialization for GTO-cartesian AO */
@@ -81,8 +79,8 @@ struct ao_traits<T, ORBT, 1, 0>
 {
     using radial_type = MultiFunctorAdapter<GaussianCombo<T>>;
     using angular_type = SoaCartesianTensor<T>;
-    using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
-    using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
+    using ao_type = SoaAtomicBasisSetT<radial_type, angular_type, ORBT>;
+    using basis_type = SoaLocalizedBasisSetT<ao_type, ORBT>;
 };
 
 /** specialization for GTO-cartesian AO */
@@ -91,8 +89,8 @@ struct ao_traits<T, ORBT, 1, 1>
 {
     using radial_type = MultiFunctorAdapter<GaussianCombo<T>>;
     using angular_type = SoaSphericalTensor<T>;
-    using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
-    using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
+    using ao_type = SoaAtomicBasisSetT<radial_type, angular_type, ORBT>;
+    using basis_type = SoaLocalizedBasisSetT<ao_type, ORBT>;
 };
 
 /** specialization for STO-spherical AO */
@@ -101,8 +99,8 @@ struct ao_traits<T, ORBT, 2, 1>
 {
     using radial_type = MultiFunctorAdapter<SlaterCombo<T>>;
     using angular_type = SoaSphericalTensor<T>;
-    using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
-    using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
+    using ao_type = SoaAtomicBasisSetT<radial_type, angular_type, ORBT>;
+    using basis_type = SoaLocalizedBasisSetT<ao_type, ORBT>;
 };
 
 inline bool
@@ -112,8 +110,8 @@ is_same(const xmlChar* a, const char* b)
 }
 
 template <typename T>
-LCAOrbitalBuilderT<T>::LCAOrbitalBuilderT(
-    ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur) :
+LCAOrbitalBuilderT<T>::LCAOrbitalBuilderT(ParticleSetT<T>& els,
+    ParticleSetT<T>& ions, Communicate* comm, xmlNodePtr cur) :
     SPOSetBuilderT<T>("LCAO", comm),
     targetPtcl(els),
     sourcePtcl(ions),
@@ -243,7 +241,7 @@ LCAOrbitalBuilderT<T>::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent)
     /** process atomicBasisSet per ion species */
     switch (radialOrbType) {
     case (0): // numerical
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic," << ylm << ">"
+        app_log() << "  LCAO: SoaAtomicBasisSetT<MultiQuintic," << ylm << ">"
                   << std::endl;
         if (ylm)
             myBasisSet = createBasisSet<0, 1>(cur);
@@ -251,7 +249,7 @@ LCAOrbitalBuilderT<T>::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent)
             myBasisSet = createBasisSet<0, 0>(cur);
         break;
     case (1): // gto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO," << ylm << ">"
+        app_log() << "  LCAO: SoaAtomicBasisSetT<MultiGTO," << ylm << ">"
                   << std::endl;
         if (ylm)
             myBasisSet = createBasisSet<1, 1>(cur);
@@ -259,12 +257,12 @@ LCAOrbitalBuilderT<T>::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent)
             myBasisSet = createBasisSet<1, 0>(cur);
         break;
     case (2): // sto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO," << ylm << ">"
+        app_log() << "  LCAO: SoaAtomicBasisSetT<MultiSTO," << ylm << ">"
                   << std::endl;
         myBasisSet = createBasisSet<2, 1>(cur);
         break;
     default:
-        PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.", true);
+        PRE.error("Cannot construct SoaAtomicBasisSetT<ROT,YLM>.", true);
         break;
     }
 
@@ -312,7 +310,7 @@ LCAOrbitalBuilderT<T>::loadBasisSetFromH5(xmlNodePtr parent)
     /** process atomicBasisSet per ion species */
     switch (radialOrbType) {
     case (0): // numerical
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic," << ylm << ">"
+        app_log() << "  LCAO: SoaAtomicBasisSetT<MultiQuintic," << ylm << ">"
                   << std::endl;
         if (ylm)
             myBasisSet = createBasisSetH5<0, 1>();
@@ -320,7 +318,7 @@ LCAOrbitalBuilderT<T>::loadBasisSetFromH5(xmlNodePtr parent)
             myBasisSet = createBasisSetH5<0, 0>();
         break;
     case (1): // gto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO," << ylm << ">"
+        app_log() << "  LCAO: SoaAtomicBasisSetT<MultiGTO," << ylm << ">"
                   << std::endl;
         if (ylm)
             myBasisSet = createBasisSetH5<1, 1>();
@@ -328,12 +326,12 @@ LCAOrbitalBuilderT<T>::loadBasisSetFromH5(xmlNodePtr parent)
             myBasisSet = createBasisSetH5<1, 0>();
         break;
     case (2): // sto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO," << ylm << ">"
+        app_log() << "  LCAO: SoaAtomicBasisSetT<MultiSTO," << ylm << ">"
                   << std::endl;
         myBasisSet = createBasisSetH5<2, 1>();
         break;
     default:
-        PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.", true);
+        PRE.error("Cannot construct SoaAtomicBasisSetT<ROT,YLM>.", true);
         break;
     }
     return std::unique_ptr<BasisSet_t>(myBasisSet);
@@ -374,7 +372,7 @@ LCAOrbitalBuilderT<T>::createBasisSet(xmlNodePtr cur)
             auto it = std::find(
                 ao_built_centers.begin(), ao_built_centers.end(), elementType);
             if (it == ao_built_centers.end()) {
-                AOBasisBuilder<ao_type> any(elementType, this->myComm);
+                AOBasisBuilderT<ao_type> any(elementType, this->myComm);
                 any.put(cur);
                 auto aoBasis = any.createAOSet(cur);
                 if (aoBasis) {
@@ -453,7 +451,7 @@ LCAOrbitalBuilderT<T>::createBasisSetH5()
         auto it = std::find(
             ao_built_centers.begin(), ao_built_centers.end(), elementType);
         if (it == ao_built_centers.end()) {
-            AOBasisBuilder<ao_type> any(elementType, this->myComm);
+            AOBasisBuilderT<ao_type> any(elementType, this->myComm);
             any.putH5(hin);
             auto aoBasis = any.createAOSetH5(hin);
             if (aoBasis) {
@@ -476,6 +474,176 @@ LCAOrbitalBuilderT<T>::createBasisSetH5()
     mBasisSet->setBasisSetSize(-1);
     mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
     return mBasisSet;
+}
+
+template <>
+std::unique_ptr<SPOSetT<double>>
+LCAOrbitalBuilderT<double>::createWithCuspCorrection(xmlNodePtr cur,
+    const std::string& spo_name, std::string cusp_file,
+    std::unique_ptr<BasisSet_t>&& myBasisSet)
+{
+    app_summary() << "        Using cusp correction." << std::endl;
+    std::unique_ptr<SPOSetT<double>> sposet;
+    {
+        auto lcwc = std::make_unique<LCAOrbitalSetWithCorrectionT<double>>(
+            spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
+        loadMO(lcwc->lcao, cur);
+        lcwc->setOrbitalSetSize(lcwc->lcao.getOrbitalSetSize());
+        sposet = std::move(lcwc);
+    }
+
+    // Create a temporary particle set to use for cusp initialization.
+    // The particle coordinates left at the end are unsuitable for further
+    // computations. The coordinates get set to nuclear positions, which
+    // leads to zero e-N distance, which causes a NaN in SoaAtomicBasisSet.h
+    // This problem only appears when the electron positions are specified
+    // in the input. The random particle placement step executes after this
+    // part of the code, overwriting the leftover positions from the cusp
+    // initialization.
+    ParticleSetT<double> tmp_targetPtcl(targetPtcl);
+
+    const int num_centers = sourcePtcl.getTotalNum();
+    auto& lcwc = dynamic_cast<LCAOrbitalSetWithCorrectionT<double>&>(*sposet);
+
+    const int orbital_set_size = lcwc.getOrbitalSetSize();
+    Matrix<CuspCorrectionParametersT<double>> info(
+        num_centers, orbital_set_size);
+
+    // set a default file name if not given
+    if (cusp_file.empty())
+        cusp_file = spo_name + ".cuspInfo.xml";
+
+    bool file_exists(
+        this->myComm->rank() == 0 && std::ifstream(cusp_file).good());
+    this->myComm->bcast(file_exists);
+    app_log() << "  Cusp correction file " << cusp_file
+              << (file_exists ? " exits." : " doesn't exist.") << std::endl;
+
+    // validate file if it exists
+    if (file_exists) {
+        bool valid = 0;
+        if (this->myComm->rank() == 0)
+            valid = CuspCorrectionConstructionT<double>::readCuspInfo(
+                cusp_file, spo_name, orbital_set_size, info);
+        this->myComm->bcast(valid);
+        if (!valid)
+            this->myComm->barrier_and_abort(
+                "Invalid cusp correction file " + cusp_file);
+#ifdef HAVE_MPI
+        for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
+            for (int center_idx = 0; center_idx < num_centers; center_idx++)
+                CuspCorrectionConstructionT<double>::broadcastCuspInfo(
+                    info(center_idx, orb_idx), *this->myComm, 0);
+#endif
+    }
+    else {
+        CuspCorrectionConstructionT<double>::generateCuspInfo(info,
+            tmp_targetPtcl, sourcePtcl, lcwc.lcao, spo_name, *this->myComm);
+        if (this->myComm->rank() == 0)
+            CuspCorrectionConstructionT<double>::saveCusp(
+                cusp_file, info, spo_name);
+    }
+
+    CuspCorrectionConstructionT<double>::applyCuspCorrection(
+        info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, lcwc.cusp, spo_name);
+
+    return sposet;
+}
+
+template <>
+std::unique_ptr<SPOSetT<float>>
+LCAOrbitalBuilderT<float>::createWithCuspCorrection(xmlNodePtr cur,
+    const std::string& spo_name, std::string cusp_file,
+    std::unique_ptr<BasisSet_t>&& myBasisSet)
+{
+    app_summary() << "        Using cusp correction." << std::endl;
+    std::unique_ptr<SPOSetT<float>> sposet;
+    {
+        auto lcwc = std::make_unique<LCAOrbitalSetWithCorrectionT<float>>(
+            spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
+        loadMO(lcwc->lcao, cur);
+        lcwc->setOrbitalSetSize(lcwc->lcao.getOrbitalSetSize());
+        sposet = std::move(lcwc);
+    }
+
+    // Create a temporary particle set to use for cusp initialization.
+    // The particle coordinates left at the end are unsuitable for further
+    // computations. The coordinates get set to nuclear positions, which
+    // leads to zero e-N distance, which causes a NaN in SoaAtomicBasisSet.h
+    // This problem only appears when the electron positions are specified
+    // in the input. The random particle placement step executes after this
+    // part of the code, overwriting the leftover positions from the cusp
+    // initialization.
+    ParticleSetT<float> tmp_targetPtcl(targetPtcl);
+
+    const int num_centers = sourcePtcl.getTotalNum();
+    auto& lcwc = dynamic_cast<LCAOrbitalSetWithCorrectionT<float>&>(*sposet);
+
+    const int orbital_set_size = lcwc.getOrbitalSetSize();
+    Matrix<CuspCorrectionParametersT<float>> info(
+        num_centers, orbital_set_size);
+
+    // set a default file name if not given
+    if (cusp_file.empty())
+        cusp_file = spo_name + ".cuspInfo.xml";
+
+    bool file_exists(
+        this->myComm->rank() == 0 && std::ifstream(cusp_file).good());
+    this->myComm->bcast(file_exists);
+    app_log() << "  Cusp correction file " << cusp_file
+              << (file_exists ? " exits." : " doesn't exist.") << std::endl;
+
+    // validate file if it exists
+    if (file_exists) {
+        bool valid = 0;
+        if (this->myComm->rank() == 0)
+            valid = CuspCorrectionConstructionT<float>::readCuspInfo(
+                cusp_file, spo_name, orbital_set_size, info);
+        this->myComm->bcast(valid);
+        if (!valid)
+            this->myComm->barrier_and_abort(
+                "Invalid cusp correction file " + cusp_file);
+#ifdef HAVE_MPI
+        for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
+            for (int center_idx = 0; center_idx < num_centers; center_idx++)
+                CuspCorrectionConstructionT<float>::broadcastCuspInfo(
+                    info(center_idx, orb_idx), *this->myComm, 0);
+#endif
+    }
+    else {
+        CuspCorrectionConstructionT<float>::generateCuspInfo(info,
+            tmp_targetPtcl, sourcePtcl, lcwc.lcao, spo_name, *this->myComm);
+        if (this->myComm->rank() == 0)
+            CuspCorrectionConstructionT<float>::saveCusp(
+                cusp_file, info, spo_name);
+    }
+
+    CuspCorrectionConstructionT<float>::applyCuspCorrection(
+        info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, lcwc.cusp, spo_name);
+
+    return sposet;
+}
+
+template <>
+std::unique_ptr<SPOSetT<std::complex<double>>>
+LCAOrbitalBuilderT<std::complex<double>>::createWithCuspCorrection(
+    xmlNodePtr, const std::string&, std::string, std::unique_ptr<BasisSet_t>&&)
+{
+    this->myComm->barrier_and_abort(
+        "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not "
+        "supported on complex LCAO.");
+    return std::unique_ptr<SPOSetT<std::complex<double>>>{};
+}
+
+template <>
+std::unique_ptr<SPOSetT<std::complex<float>>>
+LCAOrbitalBuilderT<std::complex<float>>::createWithCuspCorrection(
+    xmlNodePtr, const std::string&, std::string, std::unique_ptr<BasisSet_t>&&)
+{
+    this->myComm->barrier_and_abort(
+        "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not "
+        "supported on complex LCAO.");
+    return std::unique_ptr<SPOSetT<std::complex<float>>>{};
 }
 
 template <typename T>
@@ -501,18 +669,8 @@ LCAOrbitalBuilderT<T>::createSPOSetFromXML(xmlNodePtr cur)
 
     std::unique_ptr<SPOSetT<T>> sposet;
     if (doCuspCorrection) {
-#if defined(QMC_COMPLEX)
-        this->myComm->barrier_and_abort(
-            "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not "
-            "supported on complex LCAO.");
-#else
-        app_summary() << "        Using cusp correction." << std::endl;
-        auto lcwc = std::make_unique<LCAOrbitalSetWithCorrectionT<T>>(
-            spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
-        loadMO(lcwc->lcao, cur);
-        lcwc->setOrbitalSetSize(lcwc->lcao.getOrbitalSetSize());
-        sposet = std::move(lcwc);
-#endif
+        createWithCuspCorrection(
+            cur, spo_name, cusp_file, std::move(myBasisSet));
     }
     else {
         auto lcos = std::make_unique<LCAOrbitalSetT<T>>(
@@ -520,65 +678,6 @@ LCAOrbitalBuilderT<T>::createSPOSetFromXML(xmlNodePtr cur)
         loadMO(*lcos, cur);
         sposet = std::move(lcos);
     }
-
-#if !defined(QMC_COMPLEX)
-    if (doCuspCorrection) {
-        // Create a temporary particle set to use for cusp initialization.
-        // The particle coordinates left at the end are unsuitable for further
-        // computations. The coordinates get set to nuclear positions, which
-        // leads to zero e-N distance, which causes a NaN in SoaAtomicBasisSet.h
-        // This problem only appears when the electron positions are specified
-        // in the input. The random particle placement step executes after this
-        // part of the code, overwriting the leftover positions from the cusp
-        // initialization.
-        ParticleSet tmp_targetPtcl(targetPtcl);
-
-        const int num_centers = sourcePtcl.getTotalNum();
-        auto& lcwc = dynamic_cast<LCAOrbitalSetWithCorrectionT<T>&>(*sposet);
-
-        const int orbital_set_size = lcwc.getOrbitalSetSize();
-        Matrix<CuspCorrectionParametersT<T>> info(
-            num_centers, orbital_set_size);
-
-        // set a default file name if not given
-        if (cusp_file.empty())
-            cusp_file = spo_name + ".cuspInfo.xml";
-
-        bool file_exists(
-            this->myComm->rank() == 0 && std::ifstream(cusp_file).good());
-        this->myComm->bcast(file_exists);
-        app_log() << "  Cusp correction file " << cusp_file
-                  << (file_exists ? " exits." : " doesn't exist.") << std::endl;
-
-        // validate file if it exists
-        if (file_exists) {
-            bool valid = 0;
-            if (this->myComm->rank() == 0)
-                valid = CuspCorrectionConstructionT<T>::readCuspInfo(
-                    cusp_file, spo_name, orbital_set_size, info);
-            this->myComm->bcast(valid);
-            if (!valid)
-                this->myComm->barrier_and_abort(
-                    "Invalid cusp correction file " + cusp_file);
-#ifdef HAVE_MPI
-            for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
-                for (int center_idx = 0; center_idx < num_centers; center_idx++)
-                    CuspCorrectionConstructionT<T>::broadcastCuspInfo(
-                        info(center_idx, orb_idx), *this->myComm, 0);
-#endif
-        }
-        else {
-            CuspCorrectionConstructionT<T>::generateCuspInfo(info,
-                tmp_targetPtcl, sourcePtcl, lcwc.lcao, spo_name, *this->myComm);
-            if (this->myComm->rank() == 0)
-                CuspCorrectionConstructionT<T>::saveCusp(
-                    cusp_file, info, spo_name);
-        }
-
-        CuspCorrectionConstructionT<T>::applyCuspCorrection(
-            info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, lcwc.cusp, spo_name);
-    }
-#endif
 
     return sposet;
 }
