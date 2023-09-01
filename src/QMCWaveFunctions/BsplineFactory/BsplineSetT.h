@@ -245,5 +245,6 @@ protected:
   std::vector<int> offset;
 };
 
+
 } // namespace qmcplusplus
 #endif
