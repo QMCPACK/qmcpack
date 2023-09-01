@@ -170,7 +170,7 @@ inline void SplineC2CT<T>::assign_v(const PointType& r,
 }
 
 template<class T>
-void SplineC2CT<T>::evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi)
+void SplineC2CT<T>::evaluateValue(const ParticleSetT<T>& P, const int iat, ValueVector& psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -187,7 +187,7 @@ void SplineC2CT<T>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 }
 
 template<class T>
-void SplineC2CT<T>::evaluateDetRatios(const VirtualParticleSet& VP,
+void SplineC2CT<T>::evaluateDetRatios(const VirtualParticleSetT<T>& VP,
                                       ValueVector& psi,
                                       const ValueVector& psiinv,
                                       std::vector<ValueType>& ratios)
@@ -376,7 +376,7 @@ inline void SplineC2CT<T>::assign_vgl_from_l(const PointType& r, ValueVector& ps
 }
 
 template<class T>
-void SplineC2CT<T>::evaluateVGL(const ParticleSet& P,
+void SplineC2CT<T>::evaluateVGL(const ParticleSetT<T>& P,
                                 const int iat,
                                 ValueVector& psi,
                                 GradVector& dpsi,
@@ -517,7 +517,7 @@ void SplineC2CT<T>::assign_vgh(const PointType& r,
 }
 
 template<class T>
-void SplineC2CT<T>::evaluateVGH(const ParticleSet& P,
+void SplineC2CT<T>::evaluateVGH(const ParticleSetT<T>& P,
                                 const int iat,
                                 ValueVector& psi,
                                 GradVector& dpsi,
@@ -774,7 +774,7 @@ void SplineC2CT<T>::assign_vghgh(const PointType& r,
 }
 
 template<class T>
-void SplineC2CT<T>::evaluateVGHGH(const ParticleSet& P,
+void SplineC2CT<T>::evaluateVGHGH(const ParticleSetT<T>& P,
                                   const int iat,
                                   ValueVector& psi,
                                   GradVector& dpsi,

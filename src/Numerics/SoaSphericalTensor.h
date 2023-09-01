@@ -37,6 +37,8 @@ namespace qmcplusplus
 template<typename T>
 struct SoaSphericalTensor
 {
+  using ValueType = T;
+
   ///maximum angular momentum for the center
   int Lmax;
   /// Normalization factors

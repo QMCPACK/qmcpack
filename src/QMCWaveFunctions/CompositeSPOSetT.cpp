@@ -103,7 +103,7 @@ CompositeSPOSetT<T>::makeClone() const
 template <typename T>
 void
 CompositeSPOSetT<T>::evaluateValue(
-    const ParticleSet& P, int iat, ValueVector& psi)
+    const ParticleSetT<T>& P, int iat, ValueVector& psi)
 {
     int n = 0;
     for (int c = 0; c < components.size(); ++c) {
@@ -117,7 +117,7 @@ CompositeSPOSetT<T>::evaluateValue(
 
 template <typename T>
 void
-CompositeSPOSetT<T>::evaluateVGL(const ParticleSet& P, int iat,
+CompositeSPOSetT<T>::evaluateVGL(const ParticleSetT<T>& P, int iat,
     ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
     int n = 0;
@@ -136,7 +136,7 @@ CompositeSPOSetT<T>::evaluateVGL(const ParticleSet& P, int iat,
 
 template <typename T>
 void
-CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSet& P, int first,
+CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSetT<T>& P, int first,
     int last, ValueMatrix& logdet, GradMatrix& dlogdet, ValueMatrix& d2logdet)
 {
     const int nat = last - first;
@@ -155,7 +155,7 @@ CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSet& P, int first,
 
 template <typename T>
 void
-CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSet& P, int first,
+CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSetT<T>& P, int first,
     int last, ValueMatrix& logdet, GradMatrix& dlogdet,
     HessMatrix& grad_grad_logdet)
 {
@@ -175,7 +175,7 @@ CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSet& P, int first,
 
 template <typename T>
 void
-CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSet& P, int first,
+CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSetT<T>& P, int first,
     int last, ValueMatrix& logdet, GradMatrix& dlogdet,
     HessMatrix& grad_grad_logdet, GGGMatrix& grad_grad_grad_logdet)
 {

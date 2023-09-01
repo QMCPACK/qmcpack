@@ -1,13 +1,13 @@
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/StructFact.h"
-#include "LongRange/KContainer.h"
+#include "LongRange/KContainerT.h"
 #include "QMCWaveFunctions/ElectronGas/FreeOrbitalT.h"
 #include "QMCWaveFunctions/ElectronGas/FreeOrbitalBuilderT.h"
 
 namespace qmcplusplus
 {
 template <typename T>
-FreeOrbitalBuilderT<T>::FreeOrbitalBuilderT(ParticleSet& els, Communicate* comm, xmlNodePtr cur)
+FreeOrbitalBuilderT<T>::FreeOrbitalBuilderT(ParticleSetT<T>& els, Communicate* comm, xmlNodePtr cur)
     : SPOSetBuilderT<T>("PW", comm), targetPtcl(els)
 {}
 
@@ -55,7 +55,7 @@ std::unique_ptr<SPOSetT<T>> FreeOrbitalBuilderT<T>::createSPOSetFromXML(xmlNodeP
   // extract npw k-points from container
   // kpts_cart is sorted by magnitude
   std::vector<PosType> kpts(npw);
-  KContainer klists;
+  KContainerT<T> klists;
   RealType kcut = lattice.LR_kc; // to-do: reduce kcut to >~ kf
   klists.updateKLists(lattice, kcut, lattice.ndim, twist);
 

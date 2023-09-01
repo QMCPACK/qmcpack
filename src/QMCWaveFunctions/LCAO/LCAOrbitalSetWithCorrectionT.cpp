@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
-// This file is distributed under the University of Illinois/NCSA Open Source License.
-// See LICENSE file in top directory for details.
+// This file is distributed under the University of Illinois/NCSA Open Source
+// License. See LICENSE file in top directory for details.
 //
 // Copyright (c) 2018 Jeongnim Kim and QMCPACK developers.
 //
@@ -9,62 +9,64 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "LCAOrbitalSetWithCorrectionT.h"
 
 namespace qmcplusplus
 {
-template<typename T>
-LCAOrbitalSetWithCorrectionT<T>::LCAOrbitalSetWithCorrectionT(const std::string& my_name,
-                                                              ParticleSet& ions,
-                                                              ParticleSet& els,
-                                                              std::unique_ptr<basis_type>&& bs)
-    : SPOSetT<T>(my_name), lcao(my_name + "_modified", std::move(bs)), cusp(ions, els)
-{}
-
-template<typename T>
-void LCAOrbitalSetWithCorrectionT<T>::setOrbitalSetSize(int norbs)
+template <typename T>
+LCAOrbitalSetWithCorrectionT<T>::LCAOrbitalSetWithCorrectionT(
+    const std::string& my_name, ParticleSetT<T>& ions, ParticleSetT<T>& els,
+    std::unique_ptr<basis_type>&& bs) :
+    SPOSetT<T>(my_name),
+    lcao(my_name + "_modified", std::move(bs)),
+    cusp(ions, els)
 {
-  assert(lcao.getOrbitalSetSize() == norbs && "norbs doesn't agree with lcao!");
-  this->OrbitalSetSize = norbs;
-  cusp.setOrbitalSetSize(norbs);
 }
 
-template<typename T>
-std::unique_ptr<SPOSetT<T>> LCAOrbitalSetWithCorrectionT<T>::makeClone() const
+template <typename T>
+void
+LCAOrbitalSetWithCorrectionT<T>::setOrbitalSetSize(int norbs)
 {
-  return std::make_unique<LCAOrbitalSetWithCorrectionT<T>>(*this);
+    assert(
+        lcao.getOrbitalSetSize() == norbs && "norbs doesn't agree with lcao!");
+    this->OrbitalSetSize = norbs;
+    cusp.setOrbitalSetSize(norbs);
 }
 
-template<typename T>
-void LCAOrbitalSetWithCorrectionT<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
+template <typename T>
+std::unique_ptr<SPOSetT<T>>
+LCAOrbitalSetWithCorrectionT<T>::makeClone() const
 {
-  lcao.evaluateValue(P, iat, psi);
-  cusp.addV(P, iat, psi);
+    return std::make_unique<LCAOrbitalSetWithCorrectionT<T>>(*this);
 }
 
-template<typename T>
-void LCAOrbitalSetWithCorrectionT<T>::evaluateVGL(const ParticleSet& P,
-                                                  int iat,
-                                                  ValueVector& psi,
-                                                  GradVector& dpsi,
-                                                  ValueVector& d2psi)
+template <typename T>
+void
+LCAOrbitalSetWithCorrectionT<T>::evaluateValue(
+    const ParticleSetT<T>& P, int iat, ValueVector& psi)
 {
-  lcao.evaluateVGL(P, iat, psi, dpsi, d2psi);
-  cusp.add_vector_vgl(P, iat, psi, dpsi, d2psi);
+    lcao.evaluateValue(P, iat, psi);
+    cusp.addV(P, iat, psi);
 }
 
-template<typename T>
-void LCAOrbitalSetWithCorrectionT<T>::evaluate_notranspose(const ParticleSet& P,
-                                                           int first,
-                                                           int last,
-                                                           ValueMatrix& logdet,
-                                                           GradMatrix& dlogdet,
-                                                           ValueMatrix& d2logdet)
+template <typename T>
+void
+LCAOrbitalSetWithCorrectionT<T>::evaluateVGL(const ParticleSetT<T>& P, int iat,
+    ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
-  lcao.evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
-  for (size_t i = 0, iat = first; iat < last; i++, iat++)
-    cusp.add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
+    lcao.evaluateVGL(P, iat, psi, dpsi, d2psi);
+    cusp.add_vector_vgl(P, iat, psi, dpsi, d2psi);
+}
+
+template <typename T>
+void
+LCAOrbitalSetWithCorrectionT<T>::evaluate_notranspose(const ParticleSetT<T>& P,
+    int first, int last, ValueMatrix& logdet, GradMatrix& dlogdet,
+    ValueMatrix& d2logdet)
+{
+    lcao.evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
+    for (size_t i = 0, iat = first; iat < last; i++, iat++)
+        cusp.add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
 }
 
 template class LCAOrbitalSetWithCorrectionT<double>;

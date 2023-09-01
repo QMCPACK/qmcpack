@@ -1,15 +1,17 @@
 //////////////////////////////////////////////////////////////////////////////////////
-// This file is distributed under the University of Illinois/NCSA Open Source License.
-// See LICENSE file in top directory for details.
+// This file is distributed under the University of Illinois/NCSA Open Source
+// License. See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National
+// Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National
+//                    Laboratory
 //
-// File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+// File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National
+// Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
 
 #ifndef QMCPLUSPLUS_SHO_BASIS_BUILDERT_H
 #define QMCPLUSPLUS_SHO_BASIS_BUILDERT_H
@@ -20,43 +22,48 @@
 
 namespace qmcplusplus
 {
-template<class T>
+template <class T>
 class SHOSetBuilderT : public SPOSetBuilderT<T>
 {
 public:
-  using RealType  = typename SPOSetT<T>::RealType;
-  using PosType   = typename SPOSetT<T>::PosType;
-  using indices_t = typename SPOSetBuilderT<T>::indices_t;
+    using RealType = typename SPOSetT<T>::RealType;
+    using PosType = typename SPOSetT<T>::PosType;
+    using indices_t = typename SPOSetBuilderT<T>::indices_t;
 
-  ParticleSet& Ps;
+    ParticleSetT<T>& Ps;
 
-  RealType length;
-  RealType mass;
-  RealType energy;
-  PosType center;
+    RealType length;
+    RealType mass;
+    RealType energy;
+    PosType center;
 
-  int nstates;
-  int nmax;
-  TinyVector<int, QMCTraits::DIM> ind_dims;
+    int nstates;
+    int nmax;
+    TinyVector<int, QMCTraits::DIM> ind_dims;
 
-  SPOSetInfoSimple<SHOState> basis_states;
+    SPOSetInfoSimple<SHOState> basis_states;
 
-  //construction/destruction
-  SHOSetBuilderT(ParticleSet& P, Communicate* comm);
+    // construction/destruction
+    SHOSetBuilderT(ParticleSetT<T>& P, Communicate* comm);
 
-  ~SHOSetBuilderT() override;
+    ~SHOSetBuilderT() override;
 
-  //reset parameters
-  void reset();
+    // reset parameters
+    void
+    reset();
 
-  //SPOSetBuilder interface
-  std::unique_ptr<SPOSetT<T>> createSPOSetFromXML(xmlNodePtr cur) override;
+    // SPOSetBuilder interface
+    std::unique_ptr<SPOSetT<T>>
+    createSPOSetFromXML(xmlNodePtr cur) override;
 
-  std::unique_ptr<SPOSetT<T>> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input) override;
+    std::unique_ptr<SPOSetT<T>>
+    createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input) override;
 
-  //local functions
-  void update_basis_states(int smax);
-  void report(const std::string& pad = "");
+    // local functions
+    void
+    update_basis_states(int smax);
+    void
+    report(const std::string& pad = "");
 };
 
 } // namespace qmcplusplus

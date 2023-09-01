@@ -20,7 +20,6 @@
 #ifndef QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDERT_H
 #define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDERT_H
 
-#include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSetT.h"
 #include "QMCWaveFunctions/SPOSetBuilderT.h"
 
@@ -39,23 +38,24 @@ class LCAOrbitalBuilderT : public SPOSetBuilderT<T>
 public:
     using BasisSet_t = typename LCAOrbitalSetT<T>::basis_type;
     using RealType = typename LCAOrbitalSetT<T>::RealType;
+    using ValueType = typename LCAOrbitalSetT<T>::ValueType;
     using PosType = typename LCAOrbitalSetT<T>::PosType;
 
     /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    LCAOrbitalBuilderT(
-        ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur);
+    LCAOrbitalBuilderT(ParticleSetT<T>& els, ParticleSetT<T>& ions,
+        Communicate* comm, xmlNodePtr cur);
     ~LCAOrbitalBuilderT() override;
     std::unique_ptr<SPOSetT<T>>
     createSPOSetFromXML(xmlNodePtr cur) override;
 
 protected:
     /// target ParticleSet
-    ParticleSet& targetPtcl;
+    ParticleSetT<T>& targetPtcl;
     /// source ParticleSet
-    ParticleSet& sourcePtcl;
+    ParticleSetT<T>& sourcePtcl;
     /// localized basis set map
     std::map<std::string, std::unique_ptr<BasisSet_t>> basisset_map_;
     /// if true, add cusp correction to orbitals
@@ -125,6 +125,10 @@ protected:
         Matrix<RealType>& Creal) const;
 
 private:
+    /// enable cusp correction
+    std::unique_ptr<SPOSetT<T>>
+    createWithCuspCorrection(xmlNodePtr cur, const std::string& spo_name,
+        std::string cusp_file, std::unique_ptr<BasisSet_t>&& myBasisSet);
     /// load a basis set from XML input
     std::unique_ptr<BasisSet_t>
     loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent);

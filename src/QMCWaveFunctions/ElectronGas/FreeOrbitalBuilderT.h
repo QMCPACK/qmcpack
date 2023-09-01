@@ -12,13 +12,13 @@ public:
     using RealType = typename SPOSetBuilderT<T>::RealType;
     using PosType = typename SPOSetBuilderT<T>::PosType;
 
-  FreeOrbitalBuilderT(ParticleSet& els, Communicate* comm, xmlNodePtr cur);
+  FreeOrbitalBuilderT(ParticleSetT<T>& els, Communicate* comm, xmlNodePtr cur);
   ~FreeOrbitalBuilderT() {}
 
   std::unique_ptr<SPOSetT<T>> createSPOSetFromXML(xmlNodePtr cur) override;
 
 private:
-  ParticleSet& targetPtcl;
+  ParticleSetT<T>& targetPtcl;
   bool in_list(const int j, const std::vector<int> l);
 };
 } // namespace qmcplusplus

@@ -14,7 +14,7 @@
 
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/BasisSetBaseT.h"
 #include "QMCWaveFunctions/SPOSetT.h"
 
 #include <memory>
@@ -31,7 +31,7 @@ template <class T>
 class LCAOrbitalSetT : public SPOSetT<T>
 {
 public:
-    using basis_type = SoaBasisSetBase<T>;
+    using basis_type = SoaBasisSetBaseT<T>;
     using vgl_type = typename basis_type::vgl_type;
     using vgh_type = typename basis_type::vgh_type;
     using vghgh_type = typename basis_type::vghgh_type;
@@ -122,63 +122,63 @@ public:
     checkObject() const final;
 
     void
-    evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) final;
+    evaluateValue(const ParticleSetT<T>& P, int iat, ValueVector& psi) final;
 
     void
-    evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi,
+    evaluateVGL(const ParticleSetT<T>& P, int iat, ValueVector& psi,
         GradVector& dpsi, ValueVector& d2psi) final;
 
     void
     mw_evaluateValue(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-        const RefVectorWithLeader<ParticleSet>& P_list, int iat,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
         const RefVector<ValueVector>& psi_v_list) const final;
 
     void
     mw_evaluateVGL(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-        const RefVectorWithLeader<ParticleSet>& P_list, int iat,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
         const RefVector<ValueVector>& psi_v_list,
         const RefVector<GradVector>& dpsi_v_list,
         const RefVector<ValueVector>& d2psi_v_list) const final;
 
     void
     mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-        const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+        const RefVectorWithLeader<const VirtualParticleSetT<T>>& vp_list,
         const RefVector<ValueVector>& psi_list,
         const std::vector<const T*>& invRow_ptr_list,
         std::vector<std::vector<T>>& ratios_list) const final;
 
     void
-    evaluateDetRatios(const VirtualParticleSet& VP, ValueVector& psi,
+    evaluateDetRatios(const VirtualParticleSetT<T>& VP, ValueVector& psi,
         const ValueVector& psiinv, std::vector<T>& ratios) final;
 
     void
     mw_evaluateVGLandDetRatioGrads(
         const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-        const RefVectorWithLeader<ParticleSet>& P_list, int iat,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
         const std::vector<const T*>& invRow_ptr_list,
         OffloadMWVGLArray& phi_vgl_v, std::vector<T>& ratios,
         std::vector<GradType>& grads) const final;
 
     void
-    evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi,
+    evaluateVGH(const ParticleSetT<T>& P, int iat, ValueVector& psi,
         GradVector& dpsi, HessVector& grad_grad_psi) final;
 
     void
-    evaluateVGHGH(const ParticleSet& P, int iat, ValueVector& psi,
+    evaluateVGHGH(const ParticleSetT<T>& P, int iat, ValueVector& psi,
         GradVector& dpsi, HessVector& grad_grad_psi,
         GGGVector& grad_grad_grad_psi) final;
 
     void
-    evaluate_notranspose(const ParticleSet& P, int first, int last,
+    evaluate_notranspose(const ParticleSetT<T>& P, int first, int last,
         ValueMatrix& logdet, GradMatrix& dlogdet, ValueMatrix& d2logdet) final;
 
     void
-    evaluate_notranspose(const ParticleSet& P, int first, int last,
+    evaluate_notranspose(const ParticleSetT<T>& P, int first, int last,
         ValueMatrix& logdet, GradMatrix& dlogdet,
         HessMatrix& grad_grad_logdet) final;
 
     void
-    evaluate_notranspose(const ParticleSet& P, int first, int last,
+    evaluate_notranspose(const ParticleSetT<T>& P, int first, int last,
         ValueMatrix& logdet, GradMatrix& dlogdet, HessMatrix& grad_grad_logdet,
         GGGMatrix& grad_grad_grad_logdet) final;
 
@@ -242,8 +242,8 @@ public:
      * orbitals.
      */
     void
-    evaluateGradSource(const ParticleSet& P, int first, int last,
-        const ParticleSet& source, int iat_src, GradMatrix& grad_phi) final;
+    evaluateGradSource(const ParticleSetT<T>& P, int first, int last,
+        const ParticleSetT<T>& source, int iat_src, GradMatrix& grad_phi) final;
 
     /**
      * \brief Calculate ion derivatives of SPO's, their gradients, and their
@@ -262,13 +262,13 @@ public:
      * for all particles and all orbitals.
      */
     void
-    evaluateGradSource(const ParticleSet& P, int first, int last,
-        const ParticleSet& source, int iat_src, GradMatrix& grad_phi,
+    evaluateGradSource(const ParticleSetT<T>& P, int first, int last,
+        const ParticleSetT<T>& source, int iat_src, GradMatrix& grad_phi,
         HessMatrix& grad_grad_phi, GradMatrix& grad_lapl_phi) final;
 
     void
-    evaluateGradSourceRow(const ParticleSet& P, int iel,
-        const ParticleSet& source, int iat_src, GradVector& grad_phi) final;
+    evaluateGradSourceRow(const ParticleSetT<T>& P, int iel,
+        const ParticleSetT<T>& source, int iat_src, GradVector& grad_phi) final;
 
     void
     createResource(ResourceCollection& collection) const final;
@@ -362,13 +362,13 @@ private:
 
     void
     mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-        const RefVectorWithLeader<ParticleSet>& P_list, int iat,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
         OffloadMWVGLArray& phi_vgl_v) const;
 
     /// packed walker GEMM implementation
     void
     mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-        const RefVectorWithLeader<ParticleSet>& P_list, int iat,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
         OffloadMWVArray& phi_v) const;
 
     struct LCAOMultiWalkerMem;

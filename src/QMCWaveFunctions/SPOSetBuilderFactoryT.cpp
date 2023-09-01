@@ -26,11 +26,10 @@
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilderT.h"
 #include "QMCWaveFunctions/SPOSetScannerT.h"
 #if OHMMS_DIM == 3
+#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilderT.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilderT.h"
-
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
-#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilderT.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
@@ -45,6 +44,29 @@
 
 namespace qmcplusplus
 {
+template <typename T>
+struct LCAOSpinorBuilderMaker
+{
+    template <typename... TArgs>
+    std::unique_ptr<LCAOSpinorBuilderT<T>>
+    operator()(TArgs&&...) const
+    {
+        throw std::runtime_error(
+            "lcao spinors not compatible with non-complex value types");
+    }
+};
+
+template <typename T>
+struct LCAOSpinorBuilderMaker<std::complex<T>>
+{
+    template <typename... TArgs>
+    std::unique_ptr<LCAOSpinorBuilderT<std::complex<T>>>
+    operator()(TArgs&&... args) const
+    {
+        return std::make_unique<LCAOSpinorBuilderT<std::complex<T>>>(
+            std::forward<TArgs>(args)...);
+    }
+};
 
 template <typename T>
 const SPOSetT<T>*
@@ -67,7 +89,7 @@ SPOSetBuilderFactoryT<T>::getSPOSet(const std::string& name) const
  */
 template <typename T>
 SPOSetBuilderFactoryT<T>::SPOSetBuilderFactoryT(
-    Communicate* comm, ParticleSet& els, const PSetMap& psets) :
+    Communicate* comm, ParticleSetT<T>& els, const PSetMap& psets) :
     MPIObjectBase(comm),
     targetPtcl(els),
     ptclPool(psets)
@@ -145,21 +167,22 @@ SPOSetBuilderFactoryT<T>::createSPOSetBuilder(xmlNodePtr rootNode)
         }
     }
     else if (type == "molecularorbital" || type == "mo") {
-        ParticleSet* ions = nullptr;
+        ParticleSetT<T>* ions = nullptr;
         // initialize with the source tag
         auto pit(ptclPool.find(sourceOpt));
         if (pit == ptclPool.end())
             PRE.error("Missing basisset/@source.", true);
         else
             ions = pit->second.get();
-        if (targetPtcl.isSpinor())
-#ifdef QMC_COMPLEX
-            bb = std::make_unique<LCAOSpinorBuilderT<T>>(
-                targetPtcl, *ions, myComm, rootNode);
-#else
-            PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild "
-                      "with this option");
-#endif
+        if (targetPtcl.isSpinor()) {
+            try {
+                bb = LCAOSpinorBuilderMaker<T>{}(
+                    targetPtcl, *ions, myComm, rootNode);
+            }
+            catch (const std::exception& e) {
+                PRE.error(e.what());
+            }
+        }
         else
             bb = std::make_unique<LCAOrbitalBuilderT<T>>(
                 targetPtcl, *ions, myComm, rootNode);
@@ -253,11 +276,8 @@ SPOSetBuilderFactoryT<T>::addSPOSet(std::unique_ptr<SPOSetT<T>> spo)
 template <typename T>
 std::string SPOSetBuilderFactoryT<T>::basisset_tag = "basisset";
 
-#ifdef QMC_COMPLEX
 template class SPOSetBuilderFactoryT<std::complex<double>>;
 template class SPOSetBuilderFactoryT<std::complex<float>>;
-#else
 template class SPOSetBuilderFactoryT<double>;
 template class SPOSetBuilderFactoryT<float>;
-#endif
 } // namespace qmcplusplus
