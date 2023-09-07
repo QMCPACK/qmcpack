@@ -71,7 +71,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
@@ -170,7 +170,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
@@ -266,7 +266,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
