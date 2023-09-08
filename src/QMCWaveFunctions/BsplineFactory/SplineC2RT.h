@@ -18,11 +18,11 @@
  *
  * class to handle complex splines to real orbitals with splines of arbitrary precision
  */
-#ifndef QMCPLUSPLUS_SPLINE_C2R_H
-#define QMCPLUSPLUS_SPLINE_C2R_H
+#ifndef QMCPLUSPLUS_SPLINE_C2RT_H
+#define QMCPLUSPLUS_SPLINE_C2RT_H
 
 #include <memory>
-#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineSetT.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
 #include "Utilities/FairDivide.h"
@@ -39,7 +39,7 @@ namespace qmcplusplus
  * All the output orbitals are real (C2R). The maximal number of output orbitals is OrbitalSetSize.
  */
 template<typename ST>
-class SplineC2R : public BsplineSet
+class SplineC2RT : public BsplineSetT<ST>
 {
 public:
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
@@ -48,15 +48,16 @@ public:
   using PointType        = TinyVector<ST, 3>;
   using SingleSplineType = UBspline_3d_d;
   // types for evaluation results
-  using TT = typename BsplineSet::ValueType;
-  using BsplineSet::GGGVector;
-  using BsplineSet::GradVector;
-  using BsplineSet::HessVector;
-  using BsplineSet::ValueVector;
+  using TT = typename BsplineSetT<ST>::ValueType;
+  using ValueVector = typename BsplineSetT<ST>::ValueVector;
+  using GGGVector = typename BsplineSetT<ST>::GGGVector;
+  using GradVector = typename BsplineSetT<ST>::GradVector;
+  using HessVector = typename BsplineSetT<ST>::HessVector;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
   using hContainer_type  = VectorSoaContainer<ST, 6>;
+
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
 private:
@@ -84,18 +85,18 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2R(const std::string& my_name) : BsplineSet(my_name), nComplexBands(0) {}
+  SplineC2RT(const std::string& my_name) : BsplineSetT<ST>(my_name), nComplexBands(0) {}
 
-  SplineC2R(const SplineC2R& in);
+  SplineC2RT(const SplineC2RT& in);
   virtual std::string getClassName() const override { return "SplineC2R"; }
   virtual std::string getKeyword() const override { return "SplineC2R"; }
   bool isComplex() const override { return true; };
 
-  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2R>(*this); }
+  std::unique_ptr<SPOSetT<ST>> makeClone() const override { return std::make_unique<SplineC2RT<ST>>(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
-    init_base(n);
+    this->init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);
     myV.resize(npad);
     myG.resize(npad);
@@ -110,14 +111,14 @@ public:
   {
     if (comm->size() == 1)
       return;
-    const int Nbands      = kPoints.size();
+    const int Nbands      = this->kPoints.size();
     const int Nbandgroups = comm->size();
-    offset.resize(Nbandgroups + 1, 0);
-    FairDivideLow(Nbands, Nbandgroups, offset);
+    this->offset.resize(Nbandgroups + 1, 0);
+    FairDivideLow(Nbands, Nbandgroups, this->offset);
 
-    for (size_t ib = 0; ib < offset.size(); ib++)
-      offset[ib] = offset[ib] * 2;
-    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
+    for (size_t ib = 0; ib < this->offset.size(); ib++)
+      this->offset[ib] = this->offset[ib] * 2;
+    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, this->offset);
   }
 
   template<typename GT, typename BCT>
@@ -137,13 +138,13 @@ public:
   inline void resize_kpoints()
   {
     nComplexBands = this->remap_kpoints();
-    const int nk  = kPoints.size();
+    const int nk  = this->kPoints.size();
     mKK.resize(nk);
     myKcart.resize(nk);
     for (size_t i = 0; i < nk; ++i)
     {
-      mKK[i]     = -dot(kPoints[i], kPoints[i]);
-      myKcart(i) = kPoints[i];
+      mKK[i]     = -dot(this->kPoints[i], this->kPoints[i]);
+      myKcart(i) = this->kPoints[i];
     }
   }
 
@@ -209,9 +210,6 @@ public:
   friend struct SplineSetReader;
   friend struct BsplineReaderBase;
 };
-
-extern template class SplineC2R<float>;
-extern template class SplineC2R<double>;
 
 } // namespace qmcplusplus
 #endif
