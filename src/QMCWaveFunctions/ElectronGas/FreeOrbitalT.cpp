@@ -155,12 +155,7 @@ FreeOrbitalT<std::complex<float>>::evaluateValue(
     RealType sinkr, coskr;
     for (int ik = mink; ik < maxk; ik++) {
         sincos(dot(kvecs[ik], r), &sinkr, &coskr);
-
         pvec[ik] = std::complex<float>(coskr, sinkr);
-        const int j2 = 2 * ik;
-        const int j1 = j2 - 1;
-        pvec[j1] = coskr;
-        pvec[j2] = sinkr;
     }
 }
 
@@ -173,12 +168,7 @@ FreeOrbitalT<std::complex<double>>::evaluateValue(
     RealType sinkr, coskr;
     for (int ik = mink; ik < maxk; ik++) {
         sincos(dot(kvecs[ik], r), &sinkr, &coskr);
-
         pvec[ik] = std::complex<double>(coskr, sinkr);
-        const int j2 = 2 * ik;
-        const int j1 = j2 - 1;
-        pvec[j1] = coskr;
-        pvec[j2] = sinkr;
     }
 }
 

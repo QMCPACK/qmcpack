@@ -38,6 +38,22 @@ struct RealAlias_impl<T, IsReal<T>> { using value_type = T; };
 template <typename T>
 struct RealAlias_impl<T, IsComplex<T>> { using value_type = typename T::value_type; };
 
+template<typename T, typename = bool>
+struct FullPrec_impl
+{};
+
+template<typename T>
+struct FullPrec_impl<T, IsReal<T>>
+{
+  using value_type = double;
+};
+
+template<typename T>
+struct FullPrec_impl<T, IsComplex<T>>
+{
+  using value_type = std::complex<double>;
+};
+
 /** If you have a function templated on a value that can be real or complex
  *   and you need to get the base Real type if its complex or just the real.
  *
@@ -46,6 +62,9 @@ struct RealAlias_impl<T, IsComplex<T>> { using value_type = typename T::value_ty
  */
 template <typename T>
 using RealAlias = typename RealAlias_impl<T>::value_type;
+
+template<typename T>
+using FullPrec = typename FullPrec_impl<T>::value_type;
 
 ///real part of a scalar. Cannot be replaced by std::real due to AFQMC specific needs.
 inline float real(const float& c) { return c; }

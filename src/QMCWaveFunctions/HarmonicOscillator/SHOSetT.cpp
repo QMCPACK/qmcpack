@@ -553,9 +553,12 @@ SHOSetT<T>::evaluateGradSource(const ParticleSetT<T>& P, int first, int last,
 }
 
 // Class concrete types from ValueType
+#ifndef QMC_COMPLEX
 template class SHOSetT<double>;
 template class SHOSetT<float>;
+#else
 template class SHOSetT<std::complex<double>>;
 template class SHOSetT<std::complex<float>>;
+#endif
 
 } // namespace qmcplusplus

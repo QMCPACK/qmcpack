@@ -49,8 +49,7 @@ public:
         return "ConstantSPOSet";
     };
 
-    void
-    checkOutVariables(const OptVariablesType<T>& active) final;
+    void checkOutVariables(const OptVariablesTypeT<T>& active) final;
 
     void
     setOrbitalSetSize(int norbs) final;

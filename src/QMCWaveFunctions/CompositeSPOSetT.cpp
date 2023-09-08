@@ -183,12 +183,6 @@ CompositeSPOSetT<T>::evaluate_notranspose(const ParticleSetT<T>& P, int first,
         "evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
 }
 
-// Class concrete types from ValueType
-template class CompositeSPOSetT<double>;
-template class CompositeSPOSetT<float>;
-template class CompositeSPOSetT<std::complex<double>>;
-template class CompositeSPOSetT<std::complex<float>>;
-
 template <typename T>
 std::unique_ptr<SPOSetT<T>>
 CompositeSPOSetBuilderT<T>::createSPOSetFromXML(xmlNodePtr cur)
@@ -217,9 +211,24 @@ CompositeSPOSetBuilderT<T>::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)
     return createSPOSetFromXML(cur);
 }
 
+// Class concrete types from ValueType
+
+#ifndef QMC_COMPLEX
+#ifndef MIXED_PRECISION
+template class CompositeSPOSetT<double>;
 template class CompositeSPOSetBuilderT<double>;
+#else
+template class CompositeSPOSetT<float>;
 template class CompositeSPOSetBuilderT<float>;
+#endif
+#else
+#ifndef MIXED_PRECISION
+template class CompositeSPOSetT<std::complex<double>>;
 template class CompositeSPOSetBuilderT<std::complex<double>>;
+#else
+template class CompositeSPOSetT<std::complex<float>>;
 template class CompositeSPOSetBuilderT<std::complex<float>>;
+#endif
+#endif
 
 } // namespace qmcplusplus

@@ -19,7 +19,6 @@
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "ParticleSetTraits.h"
 #include "type_traits/template_types.hpp"
-#include "DynamicCoordinates.h"
 
 namespace qmcplusplus
 {
@@ -27,11 +26,11 @@ class ResourceCollection;
 
 /** enumerator for DynamicCoordinates kinds
  */
-// enum class DynamicCoordinateKind
-// {
-//     DC_POS, // SoA positions
-//     DC_POS_OFFLOAD, // SoA positions with OpenMP offload
-// };
+enum class DynamicCoordinateKind
+{
+  DC_POS,         // SoA positions
+  DC_POS_OFFLOAD, // SoA positions with OpenMP offload
+};
 
 /** quantum variables of all the particles
  */

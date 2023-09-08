@@ -72,10 +72,10 @@ public:
   inline void clear_states(int index = 0) { states[index]->clear(); }
 
   /// create an sposet from xml and save the resulting SPOSet
-  std::unique_ptr<SPOSetT<T>> createSPOSet(xmlNodePtr cur);
+  [[nodiscard]] std::unique_ptr<SPOSetT<T>> createSPOSet(xmlNodePtr cur);
 
   /// create orbital rotation transformation from xml and save the resulting SPOSet
-  std::unique_ptr<SPOSetT<T>> createRotatedSPOSet(xmlNodePtr cur);
+  [[nodiscard]] std::unique_ptr<SPOSetT<T>> createRotatedSPOSet(xmlNodePtr cur);
 
   const std::string& getTypeName() const { return type_name_; }
 

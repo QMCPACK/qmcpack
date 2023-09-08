@@ -117,9 +117,8 @@ RotatedSPOsT<T>::extractParamsFromAntiSymmetricMatrix(
     }
 }
 
-template <typename T>
-void
-RotatedSPOsT<T>::resetParametersExclusive(const OptVariablesType<T>& active)
+template<typename T>
+void RotatedSPOsT<T>::resetParametersExclusive(const OptVariablesTypeT<T>& active)
 {
     std::vector<RealType> delta_param(m_act_rot_inds.size());
 
@@ -658,12 +657,15 @@ RotatedSPOsT<T>::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output)
         }
 }
 
-template <typename T>
-void
-RotatedSPOsT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
-    const OptVariablesType<T>& optvars, ValueVector& psi,
-    const ValueVector& psiinv, std::vector<T>& ratios, Matrix<T>& dratios,
-    int FirstIndex, int LastIndex)
+template<typename T>
+void RotatedSPOsT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
+                                          const OptVariablesTypeT<T>& optvars,
+                                          ValueVector& psi,
+                                          const ValueVector& psiinv,
+                                          std::vector<T>& ratios,
+                                          Matrix<T>& dratios,
+                                          int FirstIndex,
+                                          int LastIndex)
 {
     Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
 
@@ -740,11 +742,12 @@ RotatedSPOsT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
     }
 }
 
-template <typename T>
-void
-RotatedSPOsT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi, int FirstIndex,
-    int LastIndex)
+template<typename T>
+void RotatedSPOsT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
+                                            const OptVariablesTypeT<T>& optvars,
+                                            Vector<T>& dlogpsi,
+                                            int FirstIndex,
+                                            int LastIndex)
 {
     const size_t nel = LastIndex - FirstIndex;
     const size_t nmo = Phi->getOrbitalSetSize();
@@ -789,11 +792,13 @@ RotatedSPOsT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
     }
 }
 
-template <typename T>
-void
-RotatedSPOsT<T>::evaluateDerivatives(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi,
-    Vector<T>& dhpsioverpsi, const int& FirstIndex, const int& LastIndex)
+template<typename T>
+void RotatedSPOsT<T>::evaluateDerivatives(ParticleSetT<T>& P,
+                                          const OptVariablesTypeT<T>& optvars,
+                                          Vector<T>& dlogpsi,
+                                          Vector<T>& dhpsioverpsi,
+                                          const int& FirstIndex,
+                                          const int& LastIndex)
 {
     const size_t nel = LastIndex - FirstIndex;
     const size_t nmo = Phi->getOrbitalSetSize();
@@ -895,21 +900,33 @@ RotatedSPOsT<T>::evaluateDerivatives(ParticleSetT<T>& P,
     }
 }
 
-template <typename T>
-void
-RotatedSPOsT<T>::evaluateDerivatives(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi,
-    Vector<T>& dhpsioverpsi, const T& psiCurrent, const std::vector<T>& Coeff,
-    const std::vector<size_t>& C2node_up, const std::vector<size_t>& C2node_dn,
-    const ValueVector& detValues_up, const ValueVector& detValues_dn,
-    const GradMatrix& grads_up, const GradMatrix& grads_dn,
-    const ValueMatrix& lapls_up, const ValueMatrix& lapls_dn,
-    const ValueMatrix& M_up, const ValueMatrix& M_dn,
-    const ValueMatrix& Minv_up, const ValueMatrix& Minv_dn,
-    const GradMatrix& B_grad, const ValueMatrix& B_lapl,
-    const std::vector<int>& detData_up, const size_t N1, const size_t N2,
-    const size_t NP1, const size_t NP2,
-    const std::vector<std::vector<int>>& lookup_tbl)
+template<typename T>
+void RotatedSPOsT<T>::evaluateDerivatives(ParticleSetT<T>& P,
+                                          const OptVariablesTypeT<T>& optvars,
+                                          Vector<T>& dlogpsi,
+                                          Vector<T>& dhpsioverpsi,
+                                          const T& psiCurrent,
+                                          const std::vector<T>& Coeff,
+                                          const std::vector<size_t>& C2node_up,
+                                          const std::vector<size_t>& C2node_dn,
+                                          const ValueVector& detValues_up,
+                                          const ValueVector& detValues_dn,
+                                          const GradMatrix& grads_up,
+                                          const GradMatrix& grads_dn,
+                                          const ValueMatrix& lapls_up,
+                                          const ValueMatrix& lapls_dn,
+                                          const ValueMatrix& M_up,
+                                          const ValueMatrix& M_dn,
+                                          const ValueMatrix& Minv_up,
+                                          const ValueMatrix& Minv_dn,
+                                          const GradMatrix& B_grad,
+                                          const ValueMatrix& B_lapl,
+                                          const std::vector<int>& detData_up,
+                                          const size_t N1,
+                                          const size_t N2,
+                                          const size_t NP1,
+                                          const size_t NP2,
+                                          const std::vector<std::vector<int>>& lookup_tbl)
 {
     bool recalculate(false);
     for (int k = 0; k < this->myVars.size(); ++k) {
@@ -970,17 +987,22 @@ RotatedSPOsT<T>::evaluateDerivatives(ParticleSetT<T>& P,
     }
 }
 
-template <typename T>
-void
-RotatedSPOsT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<ValueType>& dlogpsi,
-    const ValueType& psiCurrent, const std::vector<ValueType>& Coeff,
-    const std::vector<size_t>& C2node_up, const std::vector<size_t>& C2node_dn,
-    const ValueVector& detValues_up, const ValueVector& detValues_dn,
-    const ValueMatrix& M_up, const ValueMatrix& M_dn,
-    const ValueMatrix& Minv_up, const ValueMatrix& Minv_dn,
-    const std::vector<int>& detData_up,
-    const std::vector<std::vector<int>>& lookup_tbl)
+template<typename T>
+void RotatedSPOsT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
+                                            const OptVariablesTypeT<T>& optvars,
+                                            Vector<ValueType>& dlogpsi,
+                                            const FullValueType& psiCurrent,
+                                            const std::vector<ValueType>& Coeff,
+                                            const std::vector<size_t>& C2node_up,
+                                            const std::vector<size_t>& C2node_dn,
+                                            const ValueVector& detValues_up,
+                                            const ValueVector& detValues_dn,
+                                            const ValueMatrix& M_up,
+                                            const ValueMatrix& M_dn,
+                                            const ValueMatrix& Minv_up,
+                                            const ValueMatrix& Minv_dn,
+                                            const std::vector<int>& detData_up,
+                                            const std::vector<std::vector<int>>& lookup_tbl)
 {
     bool recalculate(false);
     for (int k = 0; k < this->myVars.size(); ++k) {

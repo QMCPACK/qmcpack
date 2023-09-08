@@ -289,7 +289,7 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
   using GradVector      = Vector<Grad>;
   using ValueMatrix     = Matrix<Value>;
   using PropertySetType = OperatorBase::PropertySetType;
-  using MCPWalker       = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker       = Walker<ParticleSetTraits<QMCTraits::ValueType>, LatticeParticleTraits<QMCTraits::ValueType>>;
   using Data            = MagnetizationDensity::Data;
   using GradMatrix      = Matrix<Grad>;
   using namespace testing;

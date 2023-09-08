@@ -33,6 +33,8 @@
 #include "ResourceCollection.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/RandomGenerator.h"
+#include "Particle/FastParticleOperators.h"
+#include "Concurrency/OpenMP.h"
 
 #include <iomanip>
 #include <numeric>
@@ -1337,10 +1339,13 @@ ParticleSetT<T>::convert2CartInBox(const ParticlePos& pin, ParticlePos& pout)
 }
 
 // explicit instantiations
+//#ifndef QMC_COMPLEX
 template class ParticleSetT<double>;
 template class ParticleSetT<float>;
+#ifdef QMC_COMPLEX
 template class ParticleSetT<std::complex<double>>;
 template class ParticleSetT<std::complex<float>>;
+#endif
 
 template void
 ParticleSetT<double>::mw_makeMove<CoordsType::POS>(

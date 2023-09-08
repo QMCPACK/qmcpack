@@ -338,9 +338,9 @@ VariableSetT<T>::readFromHDF(
     hin.pop();
 }
 
-template struct VariableSetT<double>;
-template struct VariableSetT<float>;
-template struct VariableSetT<std::complex<double>>;
-template struct VariableSetT<std::complex<float>>;
+template class VariableSetT<double>;
+template class VariableSetT<float>;
+template class VariableSetT<std::complex<double>>;
+template class VariableSetT<std::complex<float>>;
 
 } // namespace optimize

@@ -30,10 +30,10 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "io/hdf/hdf_archive.h"
 #include <bitset>
+#include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
@@ -52,7 +52,7 @@ public:
 
   using EstimatorType = ScalarEstimatorBase;
   using BufferType    = std::vector<RealType>;
-  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker     = MCWalkerConfiguration::Walker_t;
 
   ///default constructor
   EstimatorManagerBase(Communicate* c = 0);

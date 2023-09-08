@@ -59,7 +59,7 @@ MCWalkerConfigurationT<T>::MCWalkerConfigurationT(
 {
     samples.clearEnsemble();
     samples.setMaxSamples(mcw.getMaxSamples());
-    setWalkerOffsets(mcw.getWalkerOffsets());
+    this->setWalkerOffsets(mcw.getWalkerOffsets());
     this->Properties = mcw.Properties;
 }
 
@@ -70,11 +70,11 @@ template <typename T>
 void
 MCWalkerConfigurationT<T>::createWalkers(int n)
 {
-    const int old_nw = getActiveWalkers();
-    WalkerConfigurations::createWalkers(n, this->TotalNum);
+    const int old_nw = this->getActiveWalkers();
+    WalkerConfigurationsT<T>::createWalkers(n, this->TotalNum);
     // no pre-existing walkers, need to initialized based on particleset.
     if (old_nw == 0)
-        for (auto& awalker : walker_list_) {
+        for (auto& awalker : this->walker_list_) {
             awalker->R = this->R;
             awalker->spins = this->spins;
         }
@@ -85,16 +85,16 @@ template <typename T>
 void
 MCWalkerConfigurationT<T>::resize(int numWalkers, int numPtcls)
 {
-    if (this->TotalNum && walker_list_.size())
+    if (this->TotalNum && this->walker_list_.size())
         app_warning()
             << "MCWalkerConfiguration::resize cleans up the walker list."
             << std::endl;
-    const int old_nw = getActiveWalkers();
+    const int old_nw = this->getActiveWalkers();
     ParticleSetT<T>::resize(unsigned(numPtcls));
-    WalkerConfigurations::resize(numWalkers, this->TotalNum);
+    WalkerConfigurationsT<T>::resize(numWalkers, this->TotalNum);
     // no pre-existing walkers, need to initialized based on particleset.
     if (old_nw == 0)
-        for (auto& awalker : walker_list_) {
+        for (auto& awalker : this->walker_list_) {
             awalker->R = this->R;
             awalker->spins = this->spins;
         }
@@ -139,7 +139,7 @@ MCWalkerConfigurationT<T>::resetWalkerProperty(int ncopy)
         APP_ABORT("Fatal Exception");
     }
 
-    for (auto& walker : walker_list_) {
+    for (auto& walker : this->walker_list_) {
         walker->resizeProperty(ncopy, m);
         walker->Weight = 1.0;
     }
@@ -153,12 +153,12 @@ MCWalkerConfigurationT<T>::resizeWalkerHistories()
     // using std::vector<std::vector<RealType> > is too costly.
     int np = this->PropertyHistory.size();
     if (np)
-        for (int iw = 0; iw < walker_list_.size(); ++iw)
-            walker_list_[iw]->PropertyHistory = this->PropertyHistory;
+        for (int iw = 0; iw < this->walker_list_.size(); ++iw)
+            this->walker_list_[iw]->PropertyHistory = this->PropertyHistory;
     np = this->PHindex.size();
     if (np)
-        for (int iw = 0; iw < walker_list_.size(); ++iw)
-            walker_list_[iw]->PHindex = this->PHindex;
+        for (int iw = 0; iw < this->walker_list_.size(); ++iw)
+            this->walker_list_[iw]->PHindex = this->PHindex;
     ;
 }
 
@@ -179,7 +179,7 @@ template <typename T>
 void
 MCWalkerConfigurationT<T>::saveEnsemble()
 {
-    saveEnsemble(walker_list_.begin(), walker_list_.end());
+    saveEnsemble(this->walker_list_.begin(), this->walker_list_.end());
 }
 
 /** save the [first,last) walkers to SampleStack
@@ -211,14 +211,14 @@ MCWalkerConfigurationT<T>::loadEnsemble()
     int nsamples = std::min(samples.getMaxSamples(), samples.getNumSamples());
     if (samples.empty() || nsamples == 0)
         return;
-    Walker_t::PropertyContainer_t prop(
+    typename Walker_t::PropertyContainer_t prop(
         1, this->PropertyList.size(), 1, WP::MAXPROPERTIES);
-    walker_list_.resize(nsamples);
+    this->walker_list_.resize(nsamples);
     for (int i = 0; i < nsamples; ++i) {
         auto awalker = std::make_unique<Walker_t>(this->TotalNum);
         awalker->Properties.copy(prop);
         samples.getSample(i).convertToWalker(*awalker);
-        walker_list_[i] = std::move(awalker);
+        this->walker_list_[i] = std::move(awalker);
     }
     resizeWalkerHistories();
     samples.clearEnsemble();
@@ -230,7 +230,7 @@ MCWalkerConfigurationT<T>::dumpEnsemble(
     std::vector<MCWalkerConfigurationT<T>*>& others, HDFWalkerOutput& out,
     int np, int nBlock)
 {
-    WalkerConfigurations wctemp;
+    WalkerConfigurationsT<T> wctemp;
     for (auto* mcwc : others) {
         const auto& astack(mcwc->getSampleStack());
         const size_t sample_size =
@@ -277,18 +277,18 @@ MCWalkerConfigurationT<T>::loadEnsemble(
     }
     int nw_tot = off.back();
     if (nw_tot) {
-        Walker_t::PropertyContainer_t prop(
+        typename Walker_t::PropertyContainer_t prop(
             1, this->PropertyList.size(), 1, WP::MAXPROPERTIES);
-        while (walker_list_.size())
-            pop_back();
-        walker_list_.resize(nw_tot);
+        while (this->walker_list_.size())
+            this->pop_back();
+        this->walker_list_.resize(nw_tot);
         for (int i = 0; i < others.size(); ++i) {
             SampleStackT<T>& astack(others[i]->getSampleStack());
             for (int j = 0, iw = off[i]; iw < off[i + 1]; ++j, ++iw) {
                 auto awalker = std::make_unique<Walker_t>(this->TotalNum);
                 awalker->Properties.copy(prop);
                 astack.getSample(j).convertToWalker(*awalker);
-                walker_list_[iw] = std::move(awalker);
+                this->walker_list_[iw] = std::move(awalker);
             }
             if (doclean)
                 others[i]->clearEnsemble();
@@ -305,9 +305,18 @@ MCWalkerConfigurationT<T>::clearEnsemble()
     samples.clearEnsemble();
 }
 
+#ifndef QMC_COMPLEX
+#ifndef MIXED_PRECISION
 template class MCWalkerConfigurationT<double>;
+#else
 template class MCWalkerConfigurationT<float>;
+#endif
+#else
+#ifndef MIXED_PRECISION
 template class MCWalkerConfigurationT<std::complex<double>>;
+#else
 template class MCWalkerConfigurationT<std::complex<float>>;
+#endif
+#endif
 
 } // namespace qmcplusplus

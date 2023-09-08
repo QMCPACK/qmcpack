@@ -1586,6 +1586,7 @@ void EinsplineSetBuilderT<T>::createBsplineReader(bool useSingle, bool hybridRep
   }
 }
 
+#ifdef QMC_COMPLEX
 template<>
 void EinsplineSetBuilderT<std::complex<float>>::createBsplineReader(bool useSingle,
                                                                     bool hybridRep,
@@ -1613,6 +1614,7 @@ void EinsplineSetBuilderT<std::complex<double>>::createBsplineReader(bool useSin
       MixedSplineReader = createBsplineComplexDoubleT(this, hybridRep, useGPU);
   }
 }
+#endif
 
 template<typename T>
 std::unique_ptr<SPOSetT<T>> EinsplineSetBuilderT<T>::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
@@ -1788,9 +1790,11 @@ bool EinsplineSetBuilderT<T>::ReadGvectors_ESHDF()
   return hasPsig;
 }
 
+//#ifndef QMC_COMPLEX
 template class EinsplineSetBuilderT<double>;
 template class EinsplineSetBuilderT<float>;
+#ifdef QMC_COMPLEX
 template class EinsplineSetBuilderT<std::complex<double>>;
 template class EinsplineSetBuilderT<std::complex<float>>;
-
+#endif
 } // namespace qmcplusplus

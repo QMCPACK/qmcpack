@@ -18,11 +18,114 @@
 #include "Numerics/Quadrature.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitalsT.h"
-#include "QMCWaveFunctions/BsplineFactory/HybridRepSetReader.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineSetReaderT.h"
 
 namespace qmcplusplus
 {
+template<typename ST, typename LT>
+struct Gvectors
+{
+  using PosType   = TinyVector<ST, 3>;
+  using ValueType = std::complex<ST>;
+
+  const LT& Lattice;
+  std::vector<PosType> gvecs_cart; //Cartesian.
+  std::vector<ST> gmag;
+  const size_t NumGvecs;
+
+  Gvectors(const std::vector<TinyVector<int, 3>>& gvecs_in,
+           const LT& Lattice_in,
+           const TinyVector<int, 3>& HalfG,
+           size_t first,
+           size_t last)
+      : Lattice(Lattice_in), NumGvecs(last - first)
+  {
+    gvecs_cart.resize(NumGvecs);
+    gmag.resize(NumGvecs);
+#pragma omp parallel for
+    for (size_t ig = 0; ig < NumGvecs; ig++)
+    {
+      TinyVector<ST, 3> gvec_shift;
+      gvec_shift     = gvecs_in[ig + first] + HalfG * 0.5;
+      gvecs_cart[ig] = Lattice.k_cart(gvec_shift);
+      gmag[ig]       = std::sqrt(dot(gvecs_cart[ig], gvecs_cart[ig]));
+    }
+  }
+
+  template<typename YLM_ENGINE, typename VVT>
+  void calc_Ylm_G(const size_t ig, YLM_ENGINE& Ylm, VVT& YlmG) const
+  {
+    PosType Ghat(0.0, 0.0, 1.0);
+    if (gmag[ig] > 0)
+      Ghat = gvecs_cart[ig] / gmag[ig];
+    Ylm.evaluateV(Ghat[0], Ghat[1], Ghat[2], YlmG.data());
+  }
+
+  template<typename VVT>
+  inline void calc_jlm_G(const int lmax, ST& r, const size_t ig, VVT& j_lm_G) const
+  {
+    bessel_steed_array_cpu(lmax, gmag[ig] * r, j_lm_G.data());
+    for (size_t l = lmax; l > 0; l--)
+      for (size_t lm = l * l; lm < (l + 1) * (l + 1); lm++)
+        j_lm_G[lm] = j_lm_G[l];
+  }
+
+  template<typename PT, typename VT>
+  inline void calc_phase_shift(const PT& RSoA, const size_t ig, VT& phase_shift_real, VT& phase_shift_imag) const
+  {
+    const ST* restrict px = RSoA.data(0);
+    const ST* restrict py = RSoA.data(1);
+    const ST* restrict pz = RSoA.data(2);
+    ST* restrict v_r      = phase_shift_real.data();
+    ST* restrict v_i      = phase_shift_imag.data();
+    const ST& gv_x        = gvecs_cart[ig][0];
+    const ST& gv_y        = gvecs_cart[ig][1];
+    const ST& gv_z        = gvecs_cart[ig][2];
+
+#pragma omp simd aligned(px, py, pz, v_r, v_i : QMC_SIMD_ALIGNMENT)
+    for (size_t iat = 0; iat < RSoA.size(); iat++)
+      qmcplusplus::sincos(px[iat] * gv_x + py[iat] * gv_y + pz[iat] * gv_z, v_i + iat, v_r + iat);
+  }
+
+  template<typename PT>
+  ValueType evaluate_psi_r(const Vector<std::complex<double>>& cG, const PT& pos)
+  {
+    assert(cG.size() == NumGvecs);
+    std::complex<ST> val(0.0, 0.0);
+    for (size_t ig = 0; ig < NumGvecs; ig++)
+    {
+      ST s, c;
+      qmcplusplus::sincos(dot(gvecs_cart[ig], pos), &s, &c);
+      ValueType pw0(c, s);
+      val += cG[ig] * pw0;
+    }
+    return val;
+  }
+
+  template<typename PT>
+  void evaluate_psi_r(const Vector<std::complex<double>>& cG, const PT& pos, ValueType& phi, ValueType& d2phi)
+  {
+    assert(cG.size() == NumGvecs);
+    d2phi = phi = 0.0;
+    for (size_t ig = 0; ig < NumGvecs; ig++)
+    {
+      ST s, c;
+      qmcplusplus::sincos(dot(gvecs_cart[ig], pos), &s, &c);
+      ValueType pw0(c, s);
+      phi += cG[ig] * pw0;
+      d2phi += cG[ig] * pw0 * (-dot(gvecs_cart[ig], gvecs_cart[ig]));
+    }
+  }
+
+  double evaluate_KE(const Vector<std::complex<double>>& cG)
+  {
+    assert(cG.size() == NumGvecs);
+    double KE = 0;
+    for (size_t ig = 0; ig < NumGvecs; ig++)
+      KE += dot(gvecs_cart[ig], gvecs_cart[ig]) * (cG[ig].real() * cG[ig].real() + cG[ig].imag() * cG[ig].imag());
+    return KE / 2.0;
+  }
+};
 
 /** General HybridRepSetReader to handle any unitcell
  */

@@ -23,10 +23,8 @@ template <typename T>
 class RotatedSPOsT;
 namespace testing
 {
-OptVariablesType<double>&
-getMyVarsFull(RotatedSPOsT<double>& rot);
-OptVariablesType<float>&
-getMyVarsFull(RotatedSPOsT<float>& rot);
+OptVariablesTypeT<double>& getMyVarsFull(RotatedSPOsT<double>& rot);
+OptVariablesTypeT<float>& getMyVarsFull(RotatedSPOsT<float>& rot);
 std::vector<std::vector<double>>&
 getHistoryParams(RotatedSPOsT<double>& rot);
 std::vector<std::vector<float>>&
@@ -40,6 +38,7 @@ public:
     using IndexType = typename SPOSetT<T>::IndexType;
     using RealType = typename SPOSetT<T>::RealType;
     using ValueType = typename SPOSetT<T>::ValueType;
+    using FullValueType     = typename SPOSetT<T>::FullValueType;
     using GradType = typename SPOSetT<T>::GradType;
     using ComplexType = typename SPOSetT<T>::ComplexType;
     using FullRealType = typename SPOSetT<T>::FullRealType;
@@ -199,40 +198,61 @@ public:
     buildOptVariables(const RotationIndices& rotations,
         const RotationIndices& full_rotations);
 
-    void
-    evaluateDerivatives(ParticleSetT<T>& P, const OptVariablesType<T>& optvars,
-        Vector<T>& dlogpsi, Vector<T>& dhpsioverpsi, const int& FirstIndex,
-        const int& LastIndex) override;
+    void evaluateDerivatives(ParticleSetT<T>& P,
+                             const OptVariablesTypeT<T>& optvars,
+                             Vector<T>& dlogpsi,
+                             Vector<T>& dhpsioverpsi,
+                             const int& FirstIndex,
+                             const int& LastIndex) override;
 
-    void
-    evaluateDerivativesWF(ParticleSetT<T>& P,
-        const OptVariablesType<T>& optvars, Vector<T>& dlogpsi, int FirstIndex,
-        int LastIndex) override;
+    void evaluateDerivativesWF(ParticleSetT<T>& P,
+                               const OptVariablesTypeT<T>& optvars,
+                               Vector<T>& dlogpsi,
+                               int FirstIndex,
+                               int LastIndex) override;
 
-    void
-    evaluateDerivatives(ParticleSetT<T>& P, const OptVariablesType<T>& optvars,
-        Vector<T>& dlogpsi, Vector<T>& dhpsioverpsi, const T& psiCurrent,
-        const std::vector<T>& Coeff, const std::vector<size_t>& C2node_up,
-        const std::vector<size_t>& C2node_dn, const ValueVector& detValues_up,
-        const ValueVector& detValues_dn, const GradMatrix& grads_up,
-        const GradMatrix& grads_dn, const ValueMatrix& lapls_up,
-        const ValueMatrix& lapls_dn, const ValueMatrix& M_up,
-        const ValueMatrix& M_dn, const ValueMatrix& Minv_up,
-        const ValueMatrix& Minv_dn, const GradMatrix& B_grad,
-        const ValueMatrix& B_lapl, const std::vector<int>& detData_up,
-        const size_t N1, const size_t N2, const size_t NP1, const size_t NP2,
-        const std::vector<std::vector<int>>& lookup_tbl) override;
+    void evaluateDerivatives(ParticleSetT<T>& P,
+                             const OptVariablesTypeT<T>& optvars,
+                             Vector<T>& dlogpsi,
+                             Vector<T>& dhpsioverpsi,
+                             const T& psiCurrent,
+                             const std::vector<T>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn,
+                             const ValueVector& detValues_up,
+                             const ValueVector& detValues_dn,
+                             const GradMatrix& grads_up,
+                             const GradMatrix& grads_dn,
+                             const ValueMatrix& lapls_up,
+                             const ValueMatrix& lapls_dn,
+                             const ValueMatrix& M_up,
+                             const ValueMatrix& M_dn,
+                             const ValueMatrix& Minv_up,
+                             const ValueMatrix& Minv_dn,
+                             const GradMatrix& B_grad,
+                             const ValueMatrix& B_lapl,
+                             const std::vector<int>& detData_up,
+                             const size_t N1,
+                             const size_t N2,
+                             const size_t NP1,
+                             const size_t NP2,
+                             const std::vector<std::vector<int>>& lookup_tbl) override;
 
-    void
-    evaluateDerivativesWF(ParticleSetT<T>& P,
-        const OptVariablesType<T>& optvars, Vector<ValueType>& dlogpsi,
-        const ValueType& psiCurrent, const std::vector<ValueType>& Coeff,
-        const std::vector<size_t>& C2node_up,
-        const std::vector<size_t>& C2node_dn, const ValueVector& detValues_up,
-        const ValueVector& detValues_dn, const ValueMatrix& M_up,
-        const ValueMatrix& M_dn, const ValueMatrix& Minv_up,
-        const ValueMatrix& Minv_dn, const std::vector<int>& detData_up,
-        const std::vector<std::vector<int>>& lookup_tbl) override;
+    void evaluateDerivativesWF(ParticleSetT<T>& P,
+                               const OptVariablesTypeT<T>& optvars,
+                               Vector<ValueType>& dlogpsi,
+                               const FullValueType& psiCurrent,
+                               const std::vector<ValueType>& Coeff,
+                               const std::vector<size_t>& C2node_up,
+                               const std::vector<size_t>& C2node_dn,
+                               const ValueVector& detValues_up,
+                               const ValueVector& detValues_dn,
+                               const ValueMatrix& M_up,
+                               const ValueMatrix& M_dn,
+                               const ValueMatrix& Minv_up,
+                               const ValueMatrix& Minv_dn,
+                               const std::vector<int>& detData_up,
+                               const std::vector<std::vector<int>>& lookup_tbl) override;
 
     // helper function to evaluatederivative; evaluate orbital rotation
     // parameter derivative using table method
@@ -268,22 +288,16 @@ public:
         opt_obj_refs.push_back(*this);
     }
 
-    void
-    checkInVariablesExclusive(OptVariablesType<T>& active) override
+    void checkInVariablesExclusive(OptVariablesTypeT<T>& active) override
     {
         if (this->myVars.size())
             active.insertFrom(this->myVars);
     }
 
-    void
-    checkOutVariables(const OptVariablesType<T>& active) override
-    {
-        this->myVars.getIndex(active);
-    }
+    void checkOutVariables(const OptVariablesTypeT<T>& active) override { this->myVars.getIndex(active); }
 
     /// reset
-    void
-    resetParametersExclusive(const OptVariablesType<T>& active) override;
+    void resetParametersExclusive(const OptVariablesTypeT<T>& active) override;
 
     void
     writeVariationalParameters(hdf_archive& hout) override;
@@ -327,11 +341,14 @@ public:
         Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
     }
 
-    void
-    evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
-        const OptVariablesType<T>& optvars, ValueVector& psi,
-        const ValueVector& psiinv, std::vector<T>& ratios, Matrix<T>& dratios,
-        int FirstIndex, int LastIndex) override;
+    void evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
+                             const OptVariablesTypeT<T>& optvars,
+                             ValueVector& psi,
+                             const ValueVector& psiinv,
+                             std::vector<T>& ratios,
+                             Matrix<T>& dratios,
+                             int FirstIndex,
+                             int LastIndex) override;
 
     void
     evaluateVGH(const ParticleSetT<T>& P, int iat, ValueVector& psi,
@@ -474,7 +491,7 @@ private:
     std::vector<RealType> params;
 
     /// Full set of rotation matrix parameters for use in global rotation method
-    OptVariablesType<T> myVarsFull;
+    OptVariablesTypeT<T> myVarsFull;
 
     /// List of previously applied parameters
     std::vector<std::vector<RealType>> history_params_;
@@ -484,11 +501,8 @@ private:
 
     static RefVectorWithLeader<SPOSetT<T>>
     extractPhiRefList(const RefVectorWithLeader<SPOSetT<T>>& spo_list);
-
-    friend OptVariablesType<double>&
-    testing::getMyVarsFull(RotatedSPOsT<double>& rot);
-    friend OptVariablesType<float>&
-    testing::getMyVarsFull(RotatedSPOsT<float>& rot);
+    friend OptVariablesTypeT<double>& testing::getMyVarsFull(RotatedSPOsT<double>& rot);
+    friend OptVariablesTypeT<float>& testing::getMyVarsFull(RotatedSPOsT<float>& rot);
     friend std::vector<std::vector<double>>&
     testing::getHistoryParams(RotatedSPOsT<double>& rot);
     friend std::vector<std::vector<float>>&

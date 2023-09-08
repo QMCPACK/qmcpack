@@ -86,7 +86,6 @@ void test_bspline(ParticleSet& TargetPtcl, SPE1& a, SPE2& b)
 {
   int N                = a.OrbitalSetSize;
   SPOSet::RealType eps = static_cast<SPOSet::RealType>(numeric_limits<float>::epsilon());
-  //SPOSet::RealType eps=1e-6;
   SPOSet::ValueVector psi_0(N);
   SPOSet::ValueVector psi_1(N);
   SPOSet::GradVector dpsi_0(N);

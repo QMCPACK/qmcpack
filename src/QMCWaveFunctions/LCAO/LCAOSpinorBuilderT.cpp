@@ -137,26 +137,28 @@ LCAOSpinorBuilderT<T>::putFromH5(
     bool success = true;
     hdf_archive hin(this->myComm);
     if (this->myComm->rank() == 0) {
-        Matrix<RealType> upReal;
-        Matrix<RealType> upImag;
-        std::string setname = "/Super_Twist/eigenset_0";
-        this->readRealMatrixFromH5(hin, setname, upReal);
-        setname += "_imag";
-        this->readRealMatrixFromH5(hin, setname, upImag);
+      if (!hin.open(this->h5_path, H5F_ACC_RDONLY))
+        this->myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 missing or "
+                                        "incorrect path to H5 file");
 
-        if (!hin.open(this->h5_path, H5F_ACC_RDONLY))
-            this->myComm->barrier_and_abort(
-                "LCAOSpinorBuilder::putFromH5 missing or "
-                "incorrect path to H5 file");
+      Matrix<RealType> upReal;
+      Matrix<RealType> upImag;
+      std::string setname = "/Super_Twist/eigenset_0";
+      this->readRealMatrixFromH5(hin, setname, upReal);
+      setname += "_imag";
+      this->readRealMatrixFromH5(hin, setname, upImag);
 
-        assert(upReal.rows() == upImag.rows());
-        assert(upReal.cols() == upImag.cols());
 
-        Matrix<ValueType> upTemp(upReal.rows(), upReal.cols());
-        for (int i = 0; i < upTemp.rows(); i++) {
-            for (int j = 0; j < upTemp.cols(); j++) {
-                upTemp[i][j] = ValueType{upReal[i][j], upImag[i][j]};
-            }
+      assert(upReal.rows() == upImag.rows());
+      assert(upReal.cols() == upImag.cols());
+
+      Matrix<ValueType> upTemp(upReal.rows(), upReal.cols());
+      for (int i = 0; i < upTemp.rows(); i++)
+      {
+        for (int j = 0; j < upTemp.cols(); j++)
+        {
+          upTemp[i][j] = ValueType{upReal[i][j], upImag[i][j]};
+        }
         }
 
         Matrix<RealType> dnReal;
@@ -205,6 +207,11 @@ LCAOSpinorBuilderT<T>::putFromH5(
     return success;
 }
 
+#ifdef QMC_COMPLEX
+#ifndef MIXED_PRECISION
 template class LCAOSpinorBuilderT<std::complex<double>>;
+#else
 template class LCAOSpinorBuilderT<std::complex<float>>;
+#endif
+#endif
 } // namespace qmcplusplus

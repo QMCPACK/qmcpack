@@ -129,6 +129,7 @@ template <class T>
 void
 LCAOrbitalSetT<T>::createResource(ResourceCollection& collection) const
 {
+    myBasisSet->createResource(collection);
     auto resource_index =
         collection.addResource(std::make_unique<LCAOMultiWalkerMem>());
 }
@@ -140,6 +141,7 @@ LCAOrbitalSetT<T>::acquireResource(ResourceCollection& collection,
 {
     assert(this == &spo_list.getLeader());
     auto& spo_leader = spo_list.template getCastedLeader<LCAOrbitalSetT<T>>();
+    spo_leader.myBasisSet->acquireResource(collection, extractBasisRefList(spo_list));
     spo_leader.mw_mem_handle_ = collection.lendResource<LCAOMultiWalkerMem>();
 }
 
@@ -150,7 +152,19 @@ LCAOrbitalSetT<T>::releaseResource(ResourceCollection& collection,
 {
     assert(this == &spo_list.getLeader());
     auto& spo_leader = spo_list.template getCastedLeader<LCAOrbitalSetT<T>>();
+    spo_leader.myBasisSet->releaseResource(collection, extractBasisRefList(spo_list));
     collection.takebackResource(spo_leader.mw_mem_handle_);
+}
+
+template <class T>
+RefVectorWithLeader<typename LCAOrbitalSetT<T>::basis_type> LCAOrbitalSetT<T>::extractBasisRefList(
+    const RefVectorWithLeader<SPOSetT<T>>& spo_list) const
+{
+    RefVectorWithLeader<basis_type> basis_list(*spo_list.template getCastedLeader<LCAOrbitalSetT<T>>().myBasisSet);
+    basis_list.reserve(spo_list.size());
+    for (size_t iw = 0; iw < spo_list.size(); iw++)
+      basis_list.push_back(*spo_list.template getCastedElement<LCAOrbitalSetT<T>>(iw).myBasisSet);
+    return basis_list;
 }
 
 template <class T>
@@ -954,9 +968,12 @@ LCAOrbitalSetT<T>::applyRotation(
 }
 
 // Class concrete types from ValueType
+#ifndef QMC_COMPLEX
 template class LCAOrbitalSetT<double>;
 template class LCAOrbitalSetT<float>;
+#else
 template class LCAOrbitalSetT<std::complex<double>>;
 template class LCAOrbitalSetT<std::complex<float>>;
+#endif
 
 } // namespace qmcplusplus

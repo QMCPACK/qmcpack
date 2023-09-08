@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SpinorSet.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
@@ -114,11 +115,11 @@ void test_lcao_spinor()
     CHECK(d2psiM[iat][0] == ComplexApprox(vlp).epsilon(eps));
   }
 
-  /** this is a somewhat simple example. We have an ion at the origin
-   * and a gaussian basis function centered on the ion as a orbital.
-   * In this case, the ion derivative is actually just the negative of 
-   * the electron gradient. 
-   */
+  // this is a somewhat simple example. We have an ion at the origin
+  // and a gaussian basis function centered on the ion as a orbital.
+  // In this case, the ion derivative is actually just the negative of
+  // the electron gradient.
+
   SPOSet::GradMatrix gradIon(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 0, gradIon);
   for (int iat = 0; iat < 1; iat++)
@@ -146,9 +147,9 @@ void test_lcao_spinor()
   d2psi_work.resize(OrbitalSetSize);
   dspsi_work.resize(OrbitalSetSize);
 
-  //We worked hard to generate nice reference data above.  Let's generate a test for evaluateV
-  //and evaluateVGL by perturbing the electronic configuration by dR, and then make
-  //single particle moves that bring it back to our original R reference values.
+  // We worked hard to generate nice reference data above.  Let's generate a test for evaluateV
+  // and evaluateVGL by perturbing the electronic configuration by dR, and then make
+  // single particle moves that bring it back to our original R reference values.
 
   //Our perturbation vector.
   ParticleSet::ParticlePos dR;
@@ -164,7 +165,7 @@ void test_lcao_spinor()
   elec_.R = Rnew;
   elec_.update();
 
-  //Now we test evaluateValue()
+  // Now we test evaluateValue()
   for (unsigned int iat = 0; iat < 1; iat++)
   {
     psi_work = 0.0;
@@ -175,7 +176,7 @@ void test_lcao_spinor()
     elec_.rejectMove(iat);
   }
 
-  //Now we test evaluateVGL()
+  // Now we test evaluateVGL()
   for (unsigned int iat = 0; iat < 1; iat++)
   {
     psi_work   = 0.0;
@@ -195,7 +196,7 @@ void test_lcao_spinor()
     elec_.rejectMove(iat);
   }
 
-  //Now we test evaluateSpin:
+  // Now we test evaluateSpin:
 
   for (unsigned int iat = 0; iat < 1; iat++)
   {
@@ -217,11 +218,11 @@ void test_lcao_spinor()
   elec_.R = Rnew;
   elec_.update();
 
-  //make a spin displacement, just  set to zero for the test
+  // make a spin displacement, just  set to zero for the test
   ParticleSet::ParticleScalar dS;
   dS.resize(1);
 
-  //now create second walker
+  // now create second walker
   ParticleSet elec_2(elec_);
   elec_2.R[0]     = {-0.4, 1.5, -0.2};
   elec_2.spins[0] = -1.3;
@@ -248,8 +249,8 @@ void test_lcao_spinor()
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
-  //test resource APIs
-  //First resource is created, and then passed to the colleciton so it should be null
+  // test resource APIs
+  // First resource is created, and then passed to the colleciton so it should be null
   ResourceCollection spo_res("test_spo_res");
   spo->createResource(spo_res);
   SpinorSet& spinor = spo_list.getCastedLeader<SpinorSet>();
@@ -275,13 +276,13 @@ void test_lcao_spinor()
   spo->mw_evaluate_notranspose(spo_list, p_list, 0, 1, logdet_list, dlogdet_list, d2logdet_list);
   for (unsigned int iat = 0; iat < 1; iat++)
   {
-    //walker 0
+    // walker 0
     CHECK(logdet_list[0].get()[iat][0] == ComplexApprox(val).epsilon(eps));
     CHECK(dlogdet_list[0].get()[iat][0][0] == ComplexApprox(vdx).epsilon(eps));
     CHECK(dlogdet_list[0].get()[iat][0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dlogdet_list[0].get()[iat][0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2logdet_list[0].get()[iat][0] == ComplexApprox(vlp).epsilon(eps));
-    //walker 1
+    // walker 1
     CHECK(logdet_list[1].get()[iat][0] == ComplexApprox(val2).epsilon(eps));
     CHECK(dlogdet_list[1].get()[iat][0][0] == ComplexApprox(vdx2).epsilon(eps));
     CHECK(dlogdet_list[1].get()[iat][0][1] == ComplexApprox(vdy2).epsilon(eps));
@@ -289,7 +290,7 @@ void test_lcao_spinor()
     CHECK(d2logdet_list[1].get()[iat][0] == ComplexApprox(vlp2).epsilon(eps));
   }
 
-  //first, lets displace all the elec in each walker
+  // first, lets displace all the elec in each walker
   for (int iat = 0; iat < 1; iat++)
   {
     MCCoords<CoordsType::POS_SPIN> displs(2);
@@ -297,7 +298,7 @@ void test_lcao_spinor()
     displs.spins     = {dS[iat], dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
-    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+    elec_.mw_accept_rejectMoveT<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
   elec_.mw_update(p_list);
 
@@ -310,10 +311,10 @@ void test_lcao_spinor()
   RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
   SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin;
   mw_dspin.resize(2, OrbitalSetSize);
-  //check mw_evaluateVGLWithSpin
+  // check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 1; iat++)
   {
-    //reset values to zero, updates the ref vectors to zero as well
+    // reset values to zero, updates the ref vectors to zero as well
     psi_work     = 0.0;
     dpsi_work    = 0.0;
     d2psi_work   = 0.0;
@@ -327,14 +328,14 @@ void test_lcao_spinor()
     displs.spins     = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
-    //walker 0
+    // walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(val).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][0] == ComplexApprox(vdx).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2psi_v_list[0].get()[0] == ComplexApprox(vlp).epsilon(eps));
     CHECK(mw_dspin(0, 0) == ComplexApprox(vds).epsilon(eps));
-    //walker 1
+    // walker 1
     CHECK(psi_v_list[1].get()[0] == ComplexApprox(val2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][0] == ComplexApprox(vdx2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][1] == ComplexApprox(vdy2).epsilon(eps));
@@ -343,7 +344,7 @@ void test_lcao_spinor()
     CHECK(mw_dspin(1, 0) == ComplexApprox(vds2).epsilon(eps));
 
     std::vector<bool> accept = {false, false};
-    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+    elec_.mw_accept_rejectMoveT<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
 }
 
@@ -621,7 +622,7 @@ void test_lcao_spinor_excited()
     displs.spins     = {dS[iat], dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
-    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+    elec_.mw_accept_rejectMoveT<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
   elec_.mw_update(p_list);
 
@@ -666,7 +667,7 @@ void test_lcao_spinor_excited()
     CHECK(d2psi_v_list[1].get()[0] == ComplexApprox(vlp2).epsilon(eps));
     CHECK(mw_dspin(1, 0) == ComplexApprox(vds2).epsilon(eps));
     std::vector<bool> accept = {false, false};
-    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+    elec_.mw_accept_rejectMoveT<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
 }
 

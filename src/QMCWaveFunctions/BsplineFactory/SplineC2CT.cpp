@@ -33,26 +33,26 @@ inline void SplineC2CT<ST, VT>::set_spline(SingleSplineType* spline_r,
                                            int ispline,
                                            int level)
 {
-  SplineInst->copy_spline(spline_r, 2 * ispline);
-  SplineInst->copy_spline(spline_i, 2 * ispline + 1);
+    SplineInst->copy_spline(spline_r, 2 * ispline);
+    SplineInst->copy_spline(spline_i, 2 * ispline + 1);
 }
 
 template<typename ST, typename VT>
 bool SplineC2CT<ST, VT>::read_splines(hdf_archive& h5f)
 {
-  std::ostringstream o;
-  o << "spline_" << this->MyIndex;
-  einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
-  return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
+    std::ostringstream o;
+    o << "spline_" << this->MyIndex;
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
+    return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
 template<typename ST, typename VT>
 bool SplineC2CT<ST, VT>::write_splines(hdf_archive& h5f)
 {
-  std::ostringstream o;
-  o << "spline_" << this->MyIndex;
-  einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
-  return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
+    std::ostringstream o;
+    o << "spline_" << this->MyIndex;
+    einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
+    return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
 template<typename ST, typename VT>
@@ -62,7 +62,7 @@ void SplineC2CT<ST, VT>::storeParamsBeforeRotation()
   const auto coefs_tot_size = spline_ptr->coefs_size;
   coef_copy_                = std::make_shared<std::vector<ST>>(coefs_tot_size);
 
-  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+    std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
 }
 
 /*
@@ -190,8 +190,8 @@ inline void SplineC2CT<ST, VT>::assign_v(const PointType& r,
 template<typename ST, typename VT>
 void SplineC2CT<ST, VT>::evaluateValue(const ParticleSetT<VT>& P, const int iat, ValueVector& psi)
 {
-  const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+    const PointType& r = P.activeR(iat);
+    PointType ru(PrimLattice.toUnit_floor(r));
 
 #pragma omp parallel
   {
@@ -211,44 +211,46 @@ void SplineC2CT<ST, VT>::evaluateDetRatios(const VirtualParticleSetT<VT>& VP,
                                            const ValueVector& psiinv,
                                            std::vector<ValueType>& ratios)
 {
-  const bool need_resize = ratios_private.rows() < VP.getTotalNum();
+    const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
 #pragma omp parallel
-  {
-    int tid = omp_get_thread_num();
-    // initialize thread private ratios
-    if (need_resize)
     {
-      if (tid == 0) // just like #pragma omp master, but one fewer call to
-                    // the runtime
-        ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+      int tid = omp_get_thread_num();
+      // initialize thread private ratios
+      if (need_resize)
+      {
+        if (tid == 0) // just like #pragma omp master, but one fewer call to
+                      // the runtime
+          ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
 #pragma omp barrier
+      }
+        int first, last;
+        // Factor of 2 because psi is complex and the spline storage and
+        // evaluation uses a real type
+        FairDivideAligned(2 * psi.size(), getAlignment<ST>(),
+            omp_get_num_threads(), tid, first, last);
+        const int first_cplx = first / 2;
+        const int last_cplx =
+            this->kPoints.size() < last / 2 ? this->kPoints.size() : last / 2;
+
+        for (int iat = 0; iat < VP.getTotalNum(); ++iat) {
+            const PointType& r = VP.activeR(iat);
+            PointType ru(PrimLattice.toUnit_floor(r));
+
+            spline2::evaluate3d(
+                SplineInst->getSplinePtr(), ru, myV, first, last);
+            assign_v(r, myV, psi, first_cplx, last_cplx);
+            ratios_private[iat][tid] = simd::dot(psi.data() + first_cplx,
+                psiinv.data() + first_cplx, last_cplx - first_cplx);
+        }
     }
-    int first, last;
-    // Factor of 2 because psi is complex and the spline storage and
-    // evaluation uses a real type
-    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
-    const int first_cplx = first / 2;
-    const int last_cplx  = this->kPoints.size() < last / 2 ? this->kPoints.size() : last / 2;
 
-    for (int iat = 0; iat < VP.getTotalNum(); ++iat)
-    {
-      const PointType& r = VP.activeR(iat);
-      PointType ru(PrimLattice.toUnit_floor(r));
-
-      spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
-      assign_v(r, myV, psi, first_cplx, last_cplx);
-      ratios_private[iat][tid] = simd::dot(psi.data() + first_cplx, psiinv.data() + first_cplx, last_cplx - first_cplx);
+    // do the reduction manually
+    for (int iat = 0; iat < VP.getTotalNum(); ++iat) {
+        ratios[iat] = ComplexT(0);
+        for (int tid = 0; tid < ratios_private.cols(); tid++)
+            ratios[iat] += ratios_private[iat][tid];
     }
-  }
-
-  // do the reduction manually
-  for (int iat = 0; iat < VP.getTotalNum(); ++iat)
-  {
-    ratios[iat] = ComplexT(0);
-    for (int tid = 0; tid < ratios_private.cols(); tid++)
-      ratios[iat] += ratios_private[iat][tid];
-  }
 }
 
 /** assign_vgl
@@ -352,7 +354,7 @@ inline void SplineC2CT<ST, VT>::assign_vgl_from_l(const PointType& r,
   const ST* restrict g1 = myG.data(1);
   const ST* restrict g2 = myG.data(2);
 
-  const size_t N = this->last_spo - this->first_spo;
+    const size_t N = this->last_spo - this->first_spo;
 #pragma omp simd
   for (size_t j = 0; j < N; ++j)
   {
@@ -405,8 +407,8 @@ void SplineC2CT<ST, VT>::evaluateVGL(const ParticleSetT<VT>& P,
                                      GradVector& dpsi,
                                      ValueVector& d2psi)
 {
-  const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+    const PointType& r = P.activeR(iat);
+    PointType ru(PrimLattice.toUnit_floor(r));
 
 #pragma omp parallel
   {
@@ -546,8 +548,8 @@ void SplineC2CT<ST, VT>::evaluateVGH(const ParticleSetT<VT>& P,
                                      GradVector& dpsi,
                                      HessVector& grad_grad_psi)
 {
-  const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+    const PointType& r = P.activeR(iat);
+    PointType ru(PrimLattice.toUnit_floor(r));
 
 #pragma omp parallel
   {
@@ -807,8 +809,8 @@ void SplineC2CT<ST, VT>::evaluateVGHGH(const ParticleSetT<VT>& P,
                                        HessVector& grad_grad_psi,
                                        GGGVector& grad_grad_grad_psi)
 {
-  const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+    const PointType& r = P.activeR(iat);
+    PointType ru(PrimLattice.toUnit_floor(r));
 #pragma omp parallel
   {
     int first, last;

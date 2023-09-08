@@ -15,7 +15,7 @@
 // at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-/** @file BsplineReaderBase.cpp
+/** @file BsplineReaderBaseT.cpp
  *
  * Implement super function
  */

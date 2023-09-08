@@ -129,10 +129,10 @@ struct CreateComplexHelper<std::complex<T>>
       if (hybrid_rep)
       {
         app_summary() << "    Using hybrid orbital representation." << std::endl;
-        aReader = std::make_unique<HybridRepSetReaderT<HybridRepCplxT<SplineC2COMPTargetT<float, ValueType>>>>(e);
+        aReader = std::make_unique<HybridRepSetReaderT<HybridRepCplxT<SplineC2COMPTargetT<double, ValueType>>>>(e);
       }
       else
-        aReader = std::make_unique<SplineSetReaderT<SplineC2COMPTargetT<float, ValueType>>>(e);
+        aReader = std::make_unique<SplineSetReaderT<SplineC2COMPTargetT<double, ValueType>>>(e);
     }
     else
     {
@@ -192,7 +192,7 @@ std::unique_ptr<BsplineReaderBaseT<T>> createBsplineComplexDoubleT(EinsplineSetB
 {
   return CreateComplexHelper<T>::createDouble(e, hybrid_rep, useGPU);
 }
-
+#ifdef QMC_COMPLEX
 template std::unique_ptr<BsplineReaderBaseT<std::complex<float>>> createBsplineComplexDoubleT<std::complex<float>>(
     EinsplineSetBuilderT<std::complex<float>>* e,
     bool hybrid_rep,
@@ -203,6 +203,7 @@ template std::unique_ptr<BsplineReaderBaseT<std::complex<double>>> createBspline
     bool hybrid_rep,
     const std::string& useGPU);
 
+#endif
 template std::unique_ptr<BsplineReaderBaseT<float>> createBsplineComplexDoubleT<float>(EinsplineSetBuilderT<float>* e,
                                                                                        bool hybrid_rep,
                                                                                        const std::string& useGPU);
@@ -220,6 +221,7 @@ std::unique_ptr<BsplineReaderBaseT<T>> createBsplineComplexSingleT(EinsplineSetB
   return CreateComplexHelper<T>::createSingle(e, hybrid_rep, useGPU);
 }
 
+#ifdef QMC_COMPLEX
 template std::unique_ptr<BsplineReaderBaseT<std::complex<float>>> createBsplineComplexSingleT<std::complex<float>>(
     EinsplineSetBuilderT<std::complex<float>>* e,
     bool hybrid_rep,
@@ -229,6 +231,7 @@ template std::unique_ptr<BsplineReaderBaseT<std::complex<double>>> createBspline
     EinsplineSetBuilderT<std::complex<double>>* e,
     bool hybrid_rep,
     const std::string& useGPU);
+#endif
 
 template std::unique_ptr<BsplineReaderBaseT<float>> createBsplineComplexSingleT<float>(EinsplineSetBuilderT<float>* e,
                                                                                        bool hybrid_rep,

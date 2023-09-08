@@ -878,12 +878,13 @@ void XMLParticleParserT<T>::getPtclAttrib(xmlNodePtr cur, int in_offset, int cop
   }
 }
 
+#ifndef QMC_COMPLEX
 template class XMLParticleParserT<double>;
 template class XMLParticleParserT<float>;
+#else
 template class XMLParticleParserT<std::complex<double>>;
 template class XMLParticleParserT<std::complex<float>>;
-
-
+#endif
 
 XMLSaveParticle::XMLSaveParticle(Particle_t& pin) : ref_(pin) {}
 

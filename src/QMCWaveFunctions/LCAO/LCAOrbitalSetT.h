@@ -371,6 +371,9 @@ private:
         const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
         OffloadMWVArray& phi_v) const;
 
+    /// helper function for extracting a list of basis sets from a list of LCAOrbitalSet
+    RefVectorWithLeader<basis_type> extractBasisRefList(const RefVectorWithLeader<SPOSetT<T>>& spo_list) const;
+
     struct LCAOMultiWalkerMem;
     ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
     /// timer for basis set

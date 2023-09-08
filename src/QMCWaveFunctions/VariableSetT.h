@@ -20,7 +20,6 @@
 #include <vector>
 #include <iostream>
 #include <complex>
-#include "VariableSet.h"
 #include "OrbitalSetTraits.h"
 
 namespace qmcplusplus
@@ -33,23 +32,24 @@ namespace optimize
 /** An enum useful for determining the type of parameter is being optimized.
 *   knowing this in the opt routine can reduce the computational load.
 */
-// enum
-// {
-//   OTHER_P = 0,
-//   LOGLINEAR_P, //B-spline Jastrows
-//   LOGLINEAR_K, //K space Jastrows
-//   LINEAR_P,    //Multi-determinant coefficients
-//   SPO_P,       //SPO set Parameters
-//   BACKFLOW_P   //Backflow parameters
-// };
+enum
+{
+  OTHER_P = 0,
+  LOGLINEAR_P, //B-spline Jastrows
+  LOGLINEAR_K, //K space Jastrows
+  LINEAR_P,    //Multi-determinant coefficients
+  SPO_P,       //SPO set Parameters
+  BACKFLOW_P   //Backflow parameters
+};
 
 /** class to handle a set of variables that can be modified during optimizations
  *
  * A serialized container of named variables.
  */
-template <typename T>
-struct VariableSetT
+template<typename T>
+class VariableSetT
 {
+public:
   using value_type = typename qmcplusplus::OrbitalSetTraits<T>::ValueType;
   using real_type  = typename qmcplusplus::OrbitalSetTraits<T>::RealType;
 

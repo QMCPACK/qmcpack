@@ -18,7 +18,7 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
-
+#include "Particle/SampleStack.h"
 #include "Utilities/Timer.h"
 
 namespace qmcplusplus

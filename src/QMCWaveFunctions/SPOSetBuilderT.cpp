@@ -78,7 +78,7 @@ std::unique_ptr<SPOSetT<float>> SPOSetBuilderT<float>::createSPOSet(xmlNodePtr c
   }
 
   if (!sposet)
-    myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
+    myComm->barrier_and_abort("SPOSetBuilderT<float>::createSPOSet sposet creation failed");
 
   if (optimize == "rotation" || optimize == "yes")
   {
@@ -161,7 +161,7 @@ std::unique_ptr<SPOSetT<double>> SPOSetBuilderT<double>::createSPOSet(xmlNodePtr
   }
 
   if (!sposet)
-    myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
+    myComm->barrier_and_abort("SPOSetBuilderT<double>::createSPOSet sposet creation failed");
 
   if (optimize == "rotation" || optimize == "yes")
   {
@@ -244,7 +244,7 @@ std::unique_ptr<SPOSetT<std::complex<float>>> SPOSetBuilderT<std::complex<float>
   }
 
   if (!sposet)
-    myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
+    myComm->barrier_and_abort("SPOSetBuilderT<std::complex<float>>::createSPOSet sposet creation failed");
 
   if (optimize == "rotation" || optimize == "yes")
   {
@@ -305,7 +305,7 @@ std::unique_ptr<SPOSetT<std::complex<double>>> SPOSetBuilderT<std::complex<doubl
   }
 
   if (!sposet)
-    myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
+    myComm->barrier_and_abort("SPOSetBuilderT<std::complex<double>>::createSPOSet sposet creation failed");
 
   if (optimize == "rotation" || optimize == "yes")
   {
@@ -327,7 +327,7 @@ template<typename T>
 std::unique_ptr<SPOSetT<T>> SPOSetBuilderT<T>::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   myComm->barrier_and_abort("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
-  return 0;
+  return nullptr;
 }
 
 

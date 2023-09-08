@@ -54,6 +54,7 @@ struct OrbitalSetTraits //: public OrbitalTraits<T>
     DIM = OHMMS_DIM
   };
   using RealType       = RealAlias<T>;
+  using FullValueType  = FullPrec<T>;
   using ComplexType    = std::complex<RealType>;
   using ValueType      = T;
   using IndexType      = int;

@@ -306,9 +306,18 @@ InitMolecularSystemT<T>::reset()
 {
 }
 
+#ifndef QMC_COMPLEX
+#ifndef MIXED_PRECISION
 template class InitMolecularSystemT<double>;
+#else
 template class InitMolecularSystemT<float>;
+#endif
+#else
+#ifndef MIXED_PRECISION
 template class InitMolecularSystemT<std::complex<double>>;
+#else
 template class InitMolecularSystemT<std::complex<float>>;
+#endif
+#endif
 
 } // namespace qmcplusplus

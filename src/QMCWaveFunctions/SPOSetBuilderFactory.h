@@ -16,57 +16,11 @@
 #ifndef QMCPLUSPLUS_BASISSETFACTORY_H
 #define QMCPLUSPLUS_BASISSETFACTORY_H
 
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/SPOSetBuilder.h"
-#include "type_traits/template_types.hpp"
+#include "Configuration.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactoryT.h"
 
 namespace qmcplusplus
 {
-class SPOSetBuilderFactory : public MPIObjectBase
-{
-public:
-  using SPOMap = SPOSet::SPOMap;
-  using PSetMap = std::map<std::string, const std::unique_ptr<ParticleSet>>;
-
-  /** constructor
-   * \param comm communicator
-   * \param els reference to the electrons
-   * \param ions reference to the ions
-   */
-  SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PSetMap& psets);
-
-  ~SPOSetBuilderFactory();
-
-  std::unique_ptr<SPOSetBuilder> createSPOSetBuilder(xmlNodePtr rootNode);
-
-  /** returns a named sposet from the pool
-   *  only use in serial portion of execution
-   *  ie during initialization prior to threaded code
-   */
-  const SPOSet* getSPOSet(const std::string& name) const;
-
-  void buildSPOSetCollection(xmlNodePtr cur);
-
-  bool empty() const { return sposets.empty(); }
-
-  /** add an SPOSet to sposets map.
-   * This is only used to handle legacy SPOSet input styles without using sposet_collection
-   */
-  void addSPOSet(std::unique_ptr<SPOSet>);
-
-  SPOMap&& exportSPOSets() { return std::move(sposets); }
-
-private:
-  ///reference to the target particle
-  ParticleSet& targetPtcl;
-
-  ///reference to the particle pool
-  const PSetMap& ptclPool;
-
-  /// list of all sposets created by the builders of this factory
-  SPOMap sposets;
-
-  static std::string basisset_tag;
-};
+using SPOSetBuilderFactory = SPOSetBuilderFactoryT<QMCTraits::ValueType>;
 } // namespace qmcplusplus
 #endif

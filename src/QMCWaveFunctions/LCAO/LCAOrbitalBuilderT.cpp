@@ -475,7 +475,7 @@ LCAOrbitalBuilderT<T>::createBasisSetH5()
     mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
     return mBasisSet;
 }
-
+#ifndef QMC_COMPLEX
 template <>
 std::unique_ptr<SPOSetT<double>>
 LCAOrbitalBuilderT<double>::createWithCuspCorrection(xmlNodePtr cur,
@@ -624,6 +624,8 @@ LCAOrbitalBuilderT<float>::createWithCuspCorrection(xmlNodePtr cur,
     return sposet;
 }
 
+#else
+
 template <>
 std::unique_ptr<SPOSetT<std::complex<double>>>
 LCAOrbitalBuilderT<std::complex<double>>::createWithCuspCorrection(
@@ -645,6 +647,8 @@ LCAOrbitalBuilderT<std::complex<float>>::createWithCuspCorrection(
         "supported on complex LCAO.");
     return std::unique_ptr<SPOSetT<std::complex<float>>>{};
 }
+
+#endif
 
 template <typename T>
 std::unique_ptr<SPOSetT<T>>
@@ -669,8 +673,7 @@ LCAOrbitalBuilderT<T>::createSPOSetFromXML(xmlNodePtr cur)
 
     std::unique_ptr<SPOSetT<T>> sposet;
     if (doCuspCorrection) {
-        createWithCuspCorrection(
-            cur, spo_name, cusp_file, std::move(myBasisSet));
+      sposet = createWithCuspCorrection(cur, spo_name, cusp_file, std::move(myBasisSet));
     }
     else {
         auto lcos = std::make_unique<LCAOrbitalSetT<T>>(
@@ -1180,8 +1183,17 @@ LCAOrbitalBuilderT<T>::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
     }
 }
 
+#ifndef QMC_COMPLEX
+#ifndef MIXED_PRECISION
 template class LCAOrbitalBuilderT<double>;
+#else
 template class LCAOrbitalBuilderT<float>;
+#endif
+#else
+#ifndef MIXED_PRECISION
 template class LCAOrbitalBuilderT<std::complex<double>>;
+#else
 template class LCAOrbitalBuilderT<std::complex<float>>;
+#endif
+#endif
 } // namespace qmcplusplus

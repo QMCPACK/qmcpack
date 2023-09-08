@@ -31,6 +31,7 @@
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "TWFGrads.hpp"
 #include "Utilities/RuntimeOptions.h"
+#include "SPOSetT.h"
 
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions

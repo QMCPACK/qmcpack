@@ -265,8 +265,11 @@ VirtualParticleSetT<T>::mw_makeMovesWithSpin(
     ParticleSetT<T>::mw_update(p_list);
 }
 
+#ifndef QMC_COMPLEX
 template class VirtualParticleSetT<double>;
 template class VirtualParticleSetT<float>;
+#else
 template class VirtualParticleSetT<std::complex<double>>;
 template class VirtualParticleSetT<std::complex<float>>;
+#endif
 } // namespace qmcplusplus

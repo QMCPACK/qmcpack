@@ -105,7 +105,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
 
   EstimatorManagerCrowd emc(emn);
 
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker = EstimatorManagerCrowd::MCPWalker;
 
   std::vector<MCPWalker> walkers(num_walkers, MCPWalker(pset.getTotalNum()));
 

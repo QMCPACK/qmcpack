@@ -23,7 +23,7 @@
 #include "CPU/e2iphi.h"
 #include "Configuration.h"
 #include "Message/Communicate.h"
-#include "Particle/ParticleSetT.h"
+#include "Particle/ParticleSet.h"
 #include "hdf/hdf_archive.h"
 #include "type_traits/complex_help.hpp"
 

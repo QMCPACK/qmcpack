@@ -20,8 +20,8 @@
  */
 namespace qmcplusplus
 {
-template <typename T>
-using OptVariablesType = optimize::VariableSetT<T>;
+template<typename T>
+using OptVariablesTypeT = optimize::VariableSetT<T>;
 
 template <typename T>
 class OptimizableObjectT
@@ -76,28 +76,19 @@ public:
      * called through this vector and thus checkInVariablesExclusive
      * implementation should only handle non-OptimizableObject members.
      */
-    virtual void
-    checkInVariablesExclusive(OptVariablesType<T>& active) = 0;
+  virtual void checkInVariablesExclusive(OptVariablesTypeT<T>& active) = 0;
 
-    /** reset the parameters during optimizations. Exclusive, see
+  /** reset the parameters during optimizations. Exclusive, see
      * checkInVariablesExclusive
      */
-    virtual void
-    resetParametersExclusive(const OptVariablesType<T>& active) = 0;
+  virtual void resetParametersExclusive(const OptVariablesTypeT<T>& active) = 0;
 
-    /** print the state, e.g., optimizables */
-    virtual void
-    reportStatus(std::ostream& os)
-    {
-    }
+  /** print the state, e.g., optimizables */
+  virtual void reportStatus(std::ostream& os) {}
 
-    void
-    setOptimization(bool state)
-    {
-        is_optimized_ = state;
-    }
+  void setOptimization(bool state) { is_optimized_ = state; }
 
-    /** Write the variational parameters for this object to the VP HDF file
+  /** Write the variational parameters for this object to the VP HDF file
      *
      * The hout parameter should come from VariableSet::writeToHDF
      *
@@ -108,18 +99,16 @@ public:
      * objects do not need to implement this function (yet).
      *
      */
-    virtual void
-    writeVariationalParameters(hdf_archive& hout){};
+  virtual void writeVariationalParameters(hdf_archive& hout){};
 
-    /** Read the variational parameters for this object from the VP HDF file
+  /** Read the variational parameters for this object from the VP HDF file
      *
      * The hin parameter should come from VariableSet::readFromHDF
      *
      * By default the parameters are read in VariableSet::readFromHDF, and
      * objects do not need to implement this function (yet).
      */
-    virtual void
-    readVariationalParameters(hdf_archive& hin){};
+  virtual void readVariationalParameters(hdf_archive& hin){};
 };
 
 template <typename T>

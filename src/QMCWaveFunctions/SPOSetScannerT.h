@@ -13,7 +13,7 @@
 #define QMCPLUSPLUS_SPOSET_SCANNERT_H
 
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/ParticleSetT.h"
+#include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "QMCWaveFunctions/SPOSetT.h"
 

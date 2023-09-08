@@ -798,4 +798,5 @@ CuspCorrectionConstructionT<T>::saveCusp(const std::string& filename,
 template class CuspCorrectionConstructionT<double>;
 template class CuspCorrectionConstructionT<float>;
 
+
 } // namespace qmcplusplus

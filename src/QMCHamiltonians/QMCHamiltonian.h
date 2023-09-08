@@ -35,10 +35,10 @@
 #include "Estimators/TraceManager.h"
 #endif
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 class HamiltonianFactory;
 class NonLocalECPotential;
 

@@ -19,17 +19,16 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Particle/ParticleSetTraits.h"
-#include <NewTimer.h>
-#include <OMPTarget/OffloadAlignedAllocators.hpp>
-#include <Resource.h>
-#include <type_traits/template_types.hpp>
+#include "KContainer.h"
+#include "NewTimer.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "Resource.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
 template <typename T>
 class ParticleSetT;
-template <typename T>
-class KContainerT;
 template <typename T>
 struct SKMultiWalkerMemT;
 

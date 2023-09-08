@@ -22,6 +22,7 @@
 #include "Estimators/EstimatorManagerNew.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus
 {
@@ -38,7 +39,7 @@ class QMCHamiltonian;
 class EstimatorManagerCrowd
 {
 public:
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker = MCWalkerConfiguration::Walker_t;
   using RealType  = EstimatorManagerNew::RealType;
   using FullPrecRealType = EstimatorManagerNew::FullPrecRealType;
 

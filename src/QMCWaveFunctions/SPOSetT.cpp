@@ -43,7 +43,7 @@ void SPOSetT<T>::extractOptimizableObjectRefs(UniqueOptObjRefsT<T>&)
 }
 
 template<class T>
-void SPOSetT<T>::checkOutVariables(const OptVariablesType<T>& active)
+void SPOSetT<T>::checkOutVariables(const OptVariablesTypeT<T>& active)
 {
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() +
@@ -284,7 +284,7 @@ void SPOSetT<T>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
 
 template<class T>
 void SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
-                                     const OptVariablesType<T>& optvars,
+                                     const OptVariablesTypeT<T>& optvars,
                                      Vector<T>& dlogpsi,
                                      Vector<T>& dhpsioverpsi,
                                      const int& FirstIndex,
@@ -298,7 +298,7 @@ void SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
 
 template<class T>
 void SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
-                                       const OptVariablesType<T>& optvars,
+                                       const OptVariablesTypeT<T>& optvars,
                                        Vector<T>& dlogpsi,
                                        int FirstIndex,
                                        int LastIndex)
@@ -311,7 +311,7 @@ void SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
 
 template<class T>
 void SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
-                                     const OptVariablesType<T>& optvars,
+                                     const OptVariablesTypeT<T>& optvars,
                                      ValueVector& psi,
                                      const ValueVector& psiinv,
                                      std::vector<T>& ratios,
@@ -331,7 +331,7 @@ void SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
 
 template<class T>
 void SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
-                                     const OptVariablesType<T>& optvars,
+                                     const OptVariablesTypeT<T>& optvars,
                                      Vector<T>& dlogpsi,
                                      Vector<T>& dhpsioverpsi,
                                      const T& psiCurrent,
@@ -365,9 +365,9 @@ void SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
 
 template<class T>
 void SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
-                                       const OptVariablesType<T>& optvars,
+                                       const OptVariablesTypeT<T>& optvars,
                                        Vector<ValueType>& dlogpsi,
-                                       const ValueType& psiCurrent,
+                                       const FullValueType& psiCurrent,
                                        const std::vector<T>& Coeff,
                                        const std::vector<size_t>& C2node_up,
                                        const std::vector<size_t>& C2node_dn,

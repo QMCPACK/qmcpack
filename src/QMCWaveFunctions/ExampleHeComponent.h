@@ -32,7 +32,7 @@ public:
         my_table_ee_idx_(els.addTable(els, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         my_table_ei_idx_(els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST)){};
 
-  using OptVariablesType = optimize::VariableSet;
+  //using OptVariablesType = optimize::VariableSet;
   using PtclGrpIndexes   = QMCTraits::PtclGrpIndexes;
 
   std::string getClassName() const override { return "ExampleHeComponent"; }

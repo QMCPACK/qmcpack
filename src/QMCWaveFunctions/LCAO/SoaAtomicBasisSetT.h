@@ -63,7 +63,15 @@ struct SoaAtomicBasisSetT
     using RealType = typename ROT::RealType;
     using GridType = typename ROT::GridType;
     using ValueType = ORBT;
-
+    using OffloadArray4D  = Array<ValueType, 4, OffloadPinnedAllocator<ValueType>>;
+    using OffloadArray3D  = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>;
+    using OffloadMatrix   = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
+    using OffloadVector   = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
+    
+    /// multi walker shared memory buffer
+    struct SoaAtomicBSetMultiWalkerMem;
+    /// multi walker resource handle
+    ResourceHandle<SoaAtomicBSetMultiWalkerMem> mw_mem_handle_;
     /// size of the basis set
     int BasisSetSize;
     /// Number of Cell images for the evaluation of the orbital with PBC. If No
@@ -769,6 +777,47 @@ struct SoaAtomicBasisSetT
             }
         }
     }
+
+    void createResource(ResourceCollection& collection) const
+    {
+      collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>());
+    }
+
+    void acquireResource(ResourceCollection& collection,
+                         const RefVectorWithLeader<SoaAtomicBasisSetT>& atom_basis_list) const
+    {
+      assert(this == &atom_basis_list.getLeader());
+      atom_basis_list.template getCastedLeader<SoaAtomicBasisSetT>().mw_mem_handle_ =
+          collection.lendResource<SoaAtomicBSetMultiWalkerMem>();
+    }
+
+    void releaseResource(ResourceCollection& collection,
+                         const RefVectorWithLeader<SoaAtomicBasisSetT>& atom_basis_list) const
+    {
+      assert(this == &atom_basis_list.getLeader());
+      collection.takebackResource(atom_basis_list.template getCastedLeader<SoaAtomicBasisSetT>().mw_mem_handle_);
+    }
+
+    struct SoaAtomicBSetMultiWalkerMem : public Resource
+    {
+      SoaAtomicBSetMultiWalkerMem() : Resource("SoaAtomicBasisSet") {}
+
+      SoaAtomicBSetMultiWalkerMem(const SoaAtomicBSetMultiWalkerMem&) : SoaAtomicBSetMultiWalkerMem() {}
+
+      std::unique_ptr<Resource> makeClone() const override
+      {
+        return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
+      }
+
+      OffloadArray4D ylm_vgl;     // [5][Nelec][PBC][NYlm]
+      OffloadArray4D rnl_vgl;     // [5][Nelec][PBC][NRnl]
+      OffloadArray3D ylm_v;       // [Nelec][PBC][NYlm]
+      OffloadArray3D rnl_v;       // [Nelec][PBC][NRnl]
+      OffloadMatrix dr_pbc;       // [PBC][xyz]        translation vector for each image
+      OffloadArray3D dr;          // [Nelec][PBC][xyz] ion->elec displacement for each image
+      OffloadMatrix r;            // [Nelec][PBC]      ion->elec distance for each image
+      OffloadVector correctphase; // [Nelec]           overall phase
+    };
 };
 
 } // namespace qmcplusplus

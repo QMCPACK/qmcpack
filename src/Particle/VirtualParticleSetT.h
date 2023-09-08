@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_VIRTUAL_PARTICLESETT_H
 
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
-#include "Particle/ParticleSetT.h"
+#include "Particle/ParticleSet.h"
 #include <ResourceHandle.h>
 
 namespace qmcplusplus

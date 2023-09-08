@@ -66,9 +66,12 @@ class ParticleSetT : public OhmmsElementBase
 {
 public:
     using RealType = typename ParticleSetTraits<T>::RealType;
+    using ValueType        = typename ParticleSetTraits<T>::ValueType;
+    using GradType         = typename ParticleSetTraits<T>::GradType;
     using FullPrecRealType = typename ParticleSetTraits<T>::FullPrecRealType;
     using ComplexType = typename ParticleSetTraits<T>::ComplexType;
     using PosType = typename ParticleSetTraits<T>::PosType;
+    using TensorType       = typename ParticleSetTraits<T>::TensorType;
 
     using PropertySetType = typename ParticleSetTraits<T>::PropertySetType;
 
@@ -93,6 +96,8 @@ public:
     using PropertyContainer_t = typename Walker_t::PropertyContainer_t;
     /// buffer type for a serialized buffer
     using Buffer_t = PooledData<RealType>;
+
+    using SingleParticleValue = typename LatticeParticleTraits<T>::SingleParticleValue;
 
     enum quantum_domains
     {
@@ -143,163 +148,116 @@ public:
      * Walker_t::Properties.  PropertyList::Values are not
      * necessarily updated during the simulations.
      */
-    PropertySetType PropertyList;
+  PropertySetType PropertyList;
 
-    /** properties of the current walker
+  /** properties of the current walker
      *
      * The internal order is identical to PropertyList, which holds
      * the matching names.
      */
-    PropertyContainer_t Properties;
+  PropertyContainer_t Properties;
 
-    /** observables in addition to those registered in Properties/PropertyList
+  /** observables in addition to those registered in Properties/PropertyList
      *
      * Such observables as density, gofr, sk are not stored per walker but
      * collected during QMC iterations.
      */
-    Buffer_t Collectables;
+  Buffer_t Collectables;
 
-    /// Property history vector
-    std::vector<std::vector<FullPrecRealType>> PropertyHistory;
-    std::vector<int> PHindex;
-    ///@}
+  /// Property history vector
+  std::vector<std::vector<FullPrecRealType>> PropertyHistory;
+  std::vector<int> PHindex;
+  ///@}
 
-    /// current MC step
-    int current_step;
+  /// current MC step
+  int current_step;
 
-    /// default constructor
-    ParticleSetT(const SimulationCellT<T>& simulation_cell,
-        const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+  /// default constructor
+  ParticleSetT(const SimulationCellT<T>& simulation_cell,
+               const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
-    /// copy constructor
-    ParticleSetT(const ParticleSetT& p);
+  /// copy constructor
+  ParticleSetT(const ParticleSetT& p);
 
-    /// default destructor
-    ~ParticleSetT() override;
+  /// default destructor
+  ~ParticleSetT() override;
 
-    /** create grouped particles
+  /** create grouped particles
      * @param agroup number of particles per group
      */
-    void
-    create(const std::vector<int>& agroup);
+  void create(const std::vector<int>& agroup);
 
-    /** print particle coordinates to a std::ostream
+  /** print particle coordinates to a std::ostream
      * @param os output stream
      * @param maxParticlesToPrint maximal number of particles to print. Pass 0
      * to print all.
      */
-    void
-    print(std::ostream& os, const size_t maxParticlesToPrint = 0) const;
+  void print(std::ostream& os, const size_t maxParticlesToPrint = 0) const;
 
-    /// dummy. For satisfying OhmmsElementBase.
-    bool
-    get(std::ostream& os) const override;
-    /// dummy. For satisfying OhmmsElementBase.
-    bool
-    put(std::istream&) override;
-    /// dummy. For satisfying OhmmsElementBase.
-    void
-    reset() override;
+  /// dummy. For satisfying OhmmsElementBase.
+  bool get(std::ostream& os) const override;
+  /// dummy. For satisfying OhmmsElementBase.
+  bool put(std::istream&) override;
+  /// dummy. For satisfying OhmmsElementBase.
+  void reset() override;
 
-    /// initialize ParticleSet from xmlNode
-    bool
-    put(xmlNodePtr cur) override;
+  /// initialize ParticleSet from xmlNode
+  bool put(xmlNodePtr cur) override;
 
-    /// specify quantum_domain of particles
-    void
-    setQuantumDomain(quantum_domains qdomain);
+  /// specify quantum_domain of particles
+  void setQuantumDomain(quantum_domains qdomain);
 
-    void
-    set_quantum()
-    {
-        quantum_domain = quantum;
-    }
+  void set_quantum() { quantum_domain = quantum; }
 
-    inline bool
-    is_classical() const
-    {
-        return quantum_domain == classical;
-    }
+  inline bool is_classical() const { return quantum_domain == classical; }
 
-    inline bool
-    is_quantum() const
-    {
-        return quantum_domain == quantum;
-    }
+  inline bool is_quantum() const { return quantum_domain == quantum; }
 
-    /// check whether quantum domain is valid for particles
-    inline bool
-    quantumDomainValid(quantum_domains qdomain) const
-    {
-        return qdomain != no_quantum_domain;
-    }
+  /// check whether quantum domain is valid for particles
+  inline bool quantumDomainValid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
 
-    /// check whether quantum domain is valid for particles
-    inline bool
-    quantumDomainValid() const
-    {
-        return quantumDomainValid(quantum_domain);
-    }
+  /// check whether quantum domain is valid for particles
+  inline bool quantumDomainValid() const { return quantumDomainValid(quantum_domain); }
 
-    /** add a distance table
+  /** add a distance table
      * @param psrc source particle set
      * @param modes bitmask DistanceTable::DTModes
      *
      * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
      */
-    int
-    addTable(const ParticleSetT& psrc, DTModes modes = DTModes::ALL_OFF);
+  int addTable(const ParticleSetT& psrc, DTModes modes = DTModes::ALL_OFF);
 
-    /// get a distance table by table_ID
-    inline auto&
-    getDistTable(int table_ID) const
-    {
-        return *DistTables[table_ID];
-    }
-    /// get a distance table by table_ID and dyanmic_cast to DistanceTableAA
-    const DistanceTableAAT<T>&
-    getDistTableAA(int table_ID) const;
-    /// get a distance table by table_ID and dyanmic_cast to DistanceTableAB
-    const DistanceTableABT<T>&
-    getDistTableAB(int table_ID) const;
+  /// get a distance table by table_ID
+  inline auto& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  /// get a distance table by table_ID and dyanmic_cast to DistanceTableAA
+  const DistanceTableAAT<T>& getDistTableAA(int table_ID) const;
+  /// get a distance table by table_ID and dyanmic_cast to DistanceTableAB
+  const DistanceTableABT<T>& getDistTableAB(int table_ID) const;
 
-    /** reset all the collectable quantities during a MC iteration
+  /** reset all the collectable quantities during a MC iteration
      */
-    inline void
-    resetCollectables()
-    {
-        std::fill(Collectables.begin(), Collectables.end(), 0.0);
-    }
+  inline void resetCollectables() { std::fill(Collectables.begin(), Collectables.end(), 0.0); }
 
-    /** update the internal data
+  /** update the internal data
      *@param skip SK update if skipSK is true
      */
-    void
-    update(bool skipSK = false);
+  void update(bool skipSK = false);
 
-    /// batched version of update
-    static void
-    mw_update(
-        const RefVectorWithLeader<ParticleSetT>& p_list, bool skipSK = false);
+  /// batched version of update
+  static void mw_update(const RefVectorWithLeader<ParticleSetT>& p_list, bool skipSK = false);
 
-    /** create Structure Factor with PBCs
+  /** create Structure Factor with PBCs
      */
-    void
-    createSK();
+  void createSK();
 
-    bool
-    hasSK() const
-    {
-        return bool(structure_factor_);
-    }
+  bool hasSK() const { return bool(structure_factor_); }
 
-    /** return Structure Factor
+  /** return Structure Factor
      */
-    const StructFactT<T>&
-    getSK() const
-    {
-        assert(structure_factor_);
-        return *structure_factor_;
+  const StructFactT<T>& getSK() const
+  {
+    assert(structure_factor_);
+    return *structure_factor_;
     };
 
     /** Turn on per particle storage in Structure Factor

@@ -25,16 +25,14 @@
 #include "QMCWaveFunctions/ElectronGas/FreeOrbitalBuilderT.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilderT.h"
 #include "QMCWaveFunctions/SPOSetScannerT.h"
+#include "PlaneWave/PWOrbitalSetBuilder.h"
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/LCAO/LCAOSpinorBuilderT.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilderT.h"
-#if defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/BsplineFactory/EinsplineSpinorSetBuilder.h"
-#endif
-
 #if defined(HAVE_EINSPLINE)
-#include "QMCWaveFunctions/BsplineFactory/EinsplineSetBuilder.h"
+#include "QMCWaveFunctions/EinsplineSpinorSetBuilderT.h"
 #endif
+#include "QMCWaveFunctions/EinsplineSetBuilderT.h"
 #endif
 #include "Message/MPIObjectBase.h"
 #include "OhmmsData/AttributeSet.h"
@@ -101,8 +99,8 @@ std::unique_ptr<SPOSetBuilderT<T>> SPOSetBuilderFactoryT<T>::createSPOSetBuilder
 {
   ReportEngine PRE(ClassName, "createSPOSetBuilder");
   std::string sourceOpt("ion0");
-  std::string type("");
-  std::string name("");
+  std::string type;
+  std::string name;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(sourceOpt, "source");
   aAttrib.add(type, "type");
@@ -135,16 +133,21 @@ std::unique_ptr<SPOSetBuilderT<T>> SPOSetBuilderFactoryT<T>::createSPOSetBuilder
     app_log() << "Harmonic Oscillator SPO set" << std::endl;
     bb = std::make_unique<SHOSetBuilderT<T>>(targetPtcl, myComm);
   }
+  else if (type == "PWBasis" || type == "PW" || type == "pw")
+  {
+    app_log() << "Planewave basis SPO set" << std::endl;
+    bb = std::make_unique<PWOrbitalSetBuilder>(targetPtcl, myComm, rootNode);
+  }
 #if OHMMS_DIM == 3
   else if (type.find("spline") < type.size())
   {
     if (targetPtcl.isSpinor())
     {
 #ifdef QMC_COMPLEX
-      app_log() << "Einspline Spinor Set\n";
-      // FIXME
-      // bb = std::make_unique<EinsplineSpinorSetBuilder>(targetPtcl,
-      // ptclPool, myComm, rootNode);
+            app_log() << "Einspline Spinor Set\n";
+            // FIXME
+            bb = std::make_unique<EinsplineSpinorSetBuilderT<T>>(targetPtcl,
+            ptclPool, myComm, rootNode);
 #else
       PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  "
                 "Rebuild with this option");
@@ -153,11 +156,11 @@ std::unique_ptr<SPOSetBuilderT<T>> SPOSetBuilderFactoryT<T>::createSPOSetBuilder
     else
     {
 #if defined(HAVE_EINSPLINE)
-      PRE << "EinsplineSetBuilder:  using libeinspline for B-spline "
-             "orbitals.\n";
-      // FIXME
-      // bb = std::make_unique<EinsplineSetBuilder>(targetPtcl, ptclPool,
-      // myComm, rootNode);
+            PRE << "EinsplineSetBuilder:  using libeinspline for B-spline "
+                   "orbitals.\n";
+            // FIXME
+            bb = std::make_unique<EinsplineSetBuilderT<T>>(targetPtcl, ptclPool,
+            myComm, rootNode);
 #else
       PRE.error("Einspline is missing for B-spline orbitals", true);
 #endif
@@ -265,8 +268,17 @@ void SPOSetBuilderFactoryT<T>::addSPOSet(std::unique_ptr<SPOSetT<T>> spo)
 template<typename T>
 std::string SPOSetBuilderFactoryT<T>::basisset_tag = "basisset";
 
+#ifdef QMC_COMPLEX
+#ifndef MIXED_PRECISION
 template class SPOSetBuilderFactoryT<std::complex<double>>;
+#else
 template class SPOSetBuilderFactoryT<std::complex<float>>;
+#endif
+#else
+#ifndef MIXED_PRECISION
 template class SPOSetBuilderFactoryT<double>;
+#else
 template class SPOSetBuilderFactoryT<float>;
+#endif
+#endif
 } // namespace qmcplusplus

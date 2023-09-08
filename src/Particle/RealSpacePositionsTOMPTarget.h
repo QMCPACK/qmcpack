@@ -14,6 +14,7 @@
 #ifndef QMCPLUSPLUS_REALSPACE_POSITIONST_OMPTARGET_H
 #define QMCPLUSPLUS_REALSPACE_POSITIONST_OMPTARGET_H
 
+#include "Configuration.h"
 #include "OMPTarget/OMPallocator.hpp"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "Particle/DynamicCoordinatesT.h"

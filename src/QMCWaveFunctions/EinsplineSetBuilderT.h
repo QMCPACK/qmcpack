@@ -27,13 +27,13 @@
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDERT_H
 
 #include "QMCWaveFunctions/BandInfo.h"
-#include "QMCWaveFunctions/BsplineFactory/EinsplineSetBuilder.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBaseT.h"
 #include "QMCWaveFunctions/SPOSetBuilderT.h"
 
 #include <filesystem>
 #include <map>
 
-// #define PW_COEFF_NORM_TOLERANCE 1e-6
+#define PW_COEFF_NORM_TOLERANCE 1e-6
 
 class Communicate;
 
@@ -44,81 +44,75 @@ template<typename T>
 class BsplineReaderBaseT;
 
 // Helper needed for TwistMap
-// struct Int3less
-// {
-//     bool
-//     operator()(const TinyVector<int, 3>& a, const TinyVector<int, 3>& b)
-//     const
-//     {
-//         if (a[0] > b[0])
-//             return false;
-//         if (a[0] < b[0])
-//             return true;
-//         if (a[1] > b[1])
-//             return false;
-//         if (a[1] < b[1])
-//             return true;
-//         if (a[2] > b[2])
-//             return false;
-//         if (a[2] < b[2])
-//             return true;
-//         return false;
-//     }
-// };
-// struct Int4less
-// {
-//     bool
-//     operator()(const TinyVector<int, 4>& a, const TinyVector<int, 4>& b)
-//     const
-//     {
-//         for (int i = 0; i < 4; i++) {
-//             if (a[i] > b[i])
-//                 return false;
-//             if (a[i] < b[i])
-//                 return true;
-//         }
-//         return false;
-//     }
-// };
+struct Int3less
+{
+  bool operator()(const TinyVector<int, 3>& a, const TinyVector<int, 3>& b) const
+  {
+    if (a[0] > b[0])
+      return false;
+    if (a[0] < b[0])
+      return true;
+    if (a[1] > b[1])
+      return false;
+    if (a[1] < b[1])
+      return true;
+    if (a[2] > b[2])
+      return false;
+    if (a[2] < b[2])
+      return true;
+    return false;
+  }
+};
+struct Int4less
+{
+  bool operator()(const TinyVector<int, 4>& a, const TinyVector<int, 4>& b) const
+  {
+    for (int i = 0; i < 4; i++)
+    {
+      if (a[i] > b[i])
+        return false;
+      if (a[i] < b[i])
+        return true;
+    }
+    return false;
+  }
+};
 
 /** construct a name for spline SPO set
  */
-// struct H5OrbSet
-// {
-//     /// index for the spin set
-//     int SpinSet;
-//     /// number of orbitals that belong to this set
-//     int NumOrbs;
-//     /// name of the HDF5 file
-//     std::filesystem::path FileName;
-//     /** true if a < b
-//      *
-//      * The ordering
-//      * - name
-//      * - spin set
-//      * - number of orbitals
-//      */
-//     bool
-//     operator()(const H5OrbSet& a, const H5OrbSet& b) const
-//     {
-//         if (a.FileName == b.FileName) {
-//             if (a.SpinSet == b.SpinSet)
-//                 return a.NumOrbs < b.NumOrbs;
-//             else
-//                 return a.SpinSet < b.SpinSet;
-//         }
-//         else
-//             return a.FileName < b.FileName;
-//     }
+struct H5OrbSet
+{
+  /// index for the spin set
+  int SpinSet;
+  /// number of orbitals that belong to this set
+  int NumOrbs;
+  /// name of the HDF5 file
+  std::filesystem::path FileName;
+  /** true if a < b
+     *
+     * The ordering
+     * - name
+     * - spin set
+     * - number of orbitals
+     */
+  bool operator()(const H5OrbSet& a, const H5OrbSet& b) const
+  {
+    if (a.FileName == b.FileName)
+    {
+      if (a.SpinSet == b.SpinSet)
+        return a.NumOrbs < b.NumOrbs;
+      else
+        return a.SpinSet < b.SpinSet;
+    }
+    else
+      return a.FileName < b.FileName;
+  }
 
-//     H5OrbSet(std::filesystem::path name, int spinSet, int numOrbs) :
-//         SpinSet(spinSet),
-//         NumOrbs(numOrbs),
-//         FileName(std::move(name))
-//     {
-//     }
-//     H5OrbSet() = default;
-// };
+  H5OrbSet(std::filesystem::path name, int spinSet, int numOrbs)
+      : SpinSet(spinSet), NumOrbs(numOrbs), FileName(std::move(name))
+  {}
+  H5OrbSet() = default;
+};
 
 /** EinsplineSet builder
  */

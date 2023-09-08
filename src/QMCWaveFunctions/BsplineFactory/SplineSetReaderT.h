@@ -22,6 +22,10 @@
 #include "Utilities/FairDivide.h"
 #include "mpi/collectives.h"
 #include "mpi/point2point.h"
+#include "QMCWaveFunctions/BsplineFactory/einspline_helper.hpp"
+#include "Utilities/ProgressReportEngine.h"
+#include "QMCWaveFunctions/EinsplineSetBuilderT.h"
+#include "fftw3.h"
 
 namespace qmcplusplus
 {

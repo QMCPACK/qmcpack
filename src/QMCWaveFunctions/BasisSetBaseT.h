@@ -22,7 +22,7 @@
 #define QMCPLUSPLUS_BASISSETBASET_H
 
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
-#include "Particle/ParticleSetT.h"
+#include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
 namespace qmcplusplus
@@ -216,6 +216,22 @@ struct SoaBasisSetBaseT
         std::vector<bool>& is_s_orbital) const
     {
     }
+
+    /** initialize a shared resource and hand it to collection
+     */
+    virtual void createResource(ResourceCollection& collection) const {}
+
+    /** acquire a shared resource from collection
+     */
+    virtual void acquireResource(ResourceCollection& collection,
+                                 const RefVectorWithLeader<SoaBasisSetBaseT>& bset_list) const
+    {}
+
+    /** return a shared resource to collection
+     */
+    virtual void releaseResource(ResourceCollection& collection,
+                                 const RefVectorWithLeader<SoaBasisSetBaseT>& bset_list) const
+    {}
 };
 
 } // namespace qmcplusplus

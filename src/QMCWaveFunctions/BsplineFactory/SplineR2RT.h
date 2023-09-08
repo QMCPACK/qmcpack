@@ -15,8 +15,8 @@
 // at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_SPLINE_R2R_H
-#define QMCPLUSPLUS_SPLINE_R2R_H
+#ifndef QMCPLUSPLUS_SPLINE_R2RT_H
+#define QMCPLUSPLUS_SPLINE_R2RT_H
 
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSetT.h"

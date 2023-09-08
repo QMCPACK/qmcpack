@@ -22,6 +22,58 @@
 
 namespace qmcplusplus
 {
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSetT<COT, ORBT>::createResource(ResourceCollection& collection) const
+{
+  for (int i = 0; i < LOBasisSet.size(); i++)
+    LOBasisSet[i]->createResource(collection);
+}
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSetT<COT, ORBT>::acquireResource(
+    ResourceCollection& collection,
+    const RefVectorWithLeader<SoaBasisSetBaseT<ORBT>>& basisset_list) const
+{
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSetT<COT, ORBT>>();
+  auto& basisset_leader  = loc_basis_leader.LOBasisSet;
+  for (int i = 0; i < basisset_leader.size(); i++)
+  {
+    const RefVectorWithLeader<COT> one_species_basis_list(extractOneSpeciesBasisRefList(basisset_list, i));
+    basisset_leader[i]->acquireResource(collection, one_species_basis_list);
+  }
+}
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSetT<COT, ORBT>::releaseResource(
+    ResourceCollection& collection,
+    const RefVectorWithLeader<SoaBasisSetBaseT<ORBT>>& basisset_list) const
+{
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSetT<COT, ORBT>>();
+  auto& basisset_leader  = loc_basis_leader.LOBasisSet;
+  for (int i = 0; i < basisset_leader.size(); i++)
+  {
+    const RefVectorWithLeader<COT> one_species_basis_list(extractOneSpeciesBasisRefList(basisset_list, i));
+    basisset_leader[i]->releaseResource(collection, one_species_basis_list);
+  }
+}
+
+template<class COT, typename ORBT>
+RefVectorWithLeader<COT> SoaLocalizedBasisSetT<COT, ORBT>::extractOneSpeciesBasisRefList(
+    const RefVectorWithLeader<SoaBasisSetBaseT<ORBT>>& basisset_list,
+    int id)
+{
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSetT<COT, ORBT>>();
+  RefVectorWithLeader<COT> one_species_basis_list(*loc_basis_leader.LOBasisSet[id]);
+  one_species_basis_list.reserve(basisset_list.size());
+  for (size_t iw = 0; iw < basisset_list.size(); iw++)
+    one_species_basis_list.push_back(
+        *basisset_list.template getCastedElement<SoaLocalizedBasisSetT<COT, ORBT>>(iw).LOBasisSet[id]);
+  return one_species_basis_list;
+}
+
 template <class COT, typename ORBT>
 SoaLocalizedBasisSetT<COT, ORBT>::SoaLocalizedBasisSetT(
     ParticleSetT<ORBT>& ions, ParticleSetT<ORBT>& els) :
@@ -365,105 +417,124 @@ SoaLocalizedBasisSetT<COT, ORBT>::add(int icenter, std::unique_ptr<COT> aos)
 
 // TODO: this should be redone with template template parameters
 
+#ifndef QMC_COMPLEX
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiQuinticSpline1D<double>, SoaCartesianTensor<double>,
         double>,
     double>;
+template class SoaLocalizedBasisSetT<
+    SoaAtomicBasisSetT<MultiQuinticSpline1D<float>, SoaCartesianTensor<float>,
+        float>,
+    float>;
+#else
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiQuinticSpline1D<double>, SoaCartesianTensor<double>,
         std::complex<double>>,
     std::complex<double>>;
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiQuinticSpline1D<float>, SoaCartesianTensor<float>,
-        float>,
-    float>;
-template class SoaLocalizedBasisSetT<
-    SoaAtomicBasisSetT<MultiQuinticSpline1D<float>, SoaCartesianTensor<float>,
         std::complex<float>>,
     std::complex<float>>;
+#endif
 
+#ifndef QMC_COMPLEX
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiQuinticSpline1D<double>, SoaSphericalTensor<double>,
         double>,
     double>;
+template class SoaLocalizedBasisSetT<
+    SoaAtomicBasisSetT<MultiQuinticSpline1D<float>, SoaSphericalTensor<float>,
+        float>,
+    float>;
+#else
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiQuinticSpline1D<double>, SoaSphericalTensor<double>,
         std::complex<double>>,
     std::complex<double>>;
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiQuinticSpline1D<float>, SoaSphericalTensor<float>,
-        float>,
-    float>;
-template class SoaLocalizedBasisSetT<
-    SoaAtomicBasisSetT<MultiQuinticSpline1D<float>, SoaSphericalTensor<float>,
         std::complex<float>>,
     std::complex<float>>;
+#endif
 
+#ifndef QMC_COMPLEX
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<double>>,
         SoaCartesianTensor<double>, double>,
     double>;
+template class SoaLocalizedBasisSetT<
+    SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<float>>,
+        SoaCartesianTensor<float>, float>,
+    float>;
+#else
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<double>>,
         SoaCartesianTensor<double>, std::complex<double>>,
     std::complex<double>>;
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<float>>,
-        SoaCartesianTensor<float>, float>,
-    float>;
-template class SoaLocalizedBasisSetT<
-    SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<float>>,
         SoaCartesianTensor<float>, std::complex<float>>,
     std::complex<float>>;
+#endif
 
+#ifndef QMC_COMPLEX
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<double>>,
         SoaSphericalTensor<double>, double>,
     double>;
+template class SoaLocalizedBasisSetT<
+    SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<float>>,
+        SoaSphericalTensor<float>, float>,
+    float>;
+#else
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<double>>,
         SoaSphericalTensor<double>, std::complex<double>>,
     std::complex<double>>;
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<float>>,
-        SoaSphericalTensor<float>, float>,
-    float>;
-template class SoaLocalizedBasisSetT<
-    SoaAtomicBasisSetT<MultiFunctorAdapter<GaussianCombo<float>>,
         SoaSphericalTensor<float>, std::complex<float>>,
     std::complex<float>>;
+#endif
 
+#ifndef QMC_COMPLEX
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<double>>,
         SoaCartesianTensor<double>, double>,
     double>;
+template class SoaLocalizedBasisSetT<
+    SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<float>>,
+        SoaCartesianTensor<float>, float>,
+    float>;
+#else
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<double>>,
         SoaCartesianTensor<double>, std::complex<double>>,
     std::complex<double>>;
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<float>>,
-        SoaCartesianTensor<float>, float>,
-    float>;
-template class SoaLocalizedBasisSetT<
-    SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<float>>,
         SoaCartesianTensor<float>, std::complex<float>>,
     std::complex<float>>;
+#endif
 
+#ifndef QMC_COMPLEX
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<double>>,
         SoaSphericalTensor<double>, double>,
     double>;
+template class SoaLocalizedBasisSetT<
+    SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<float>>,
+        SoaSphericalTensor<float>, float>,
+    float>;
+#else
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<double>>,
         SoaSphericalTensor<double>, std::complex<double>>,
     std::complex<double>>;
 template class SoaLocalizedBasisSetT<
     SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<float>>,
-        SoaSphericalTensor<float>, float>,
-    float>;
-template class SoaLocalizedBasisSetT<
-    SoaAtomicBasisSetT<MultiFunctorAdapter<SlaterCombo<float>>,
         SoaSphericalTensor<float>, std::complex<float>>,
     std::complex<float>>;
+#endif
+
 } // namespace qmcplusplus

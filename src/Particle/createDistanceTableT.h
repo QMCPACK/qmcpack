@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_DISTANCETABLET_H
 #define QMCPLUSPLUS_DISTANCETABLET_H
 
-#include "Particle/ParticleSetT.h"
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {

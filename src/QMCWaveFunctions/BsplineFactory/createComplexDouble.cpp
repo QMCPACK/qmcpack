@@ -23,16 +23,16 @@
 #include "SplineC2COMPTarget.h"
 #include "HybridRepCplx.h"
 #include <fftw3.h>
-#include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
-#include "SplineSetReader.h"
-#include "HybridRepSetReader.h"
+#include "QMCWaveFunctions/BsplineFactory/einspline_helper.hpp"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineSetReader.h"
+#include "QMCWaveFunctions/BsplineFactory/HybridRepSetReaderT.h"
 
 namespace qmcplusplus
 {
-std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilder* e,
-                                                              bool hybrid_rep,
-                                                              const std::string& useGPU)
+std::unique_ptr<BsplineReaderBase> createBsplineComplexDoubleT(EinsplineSetBuilder* e,
+                                                               bool hybrid_rep,
+                                                               const std::string& useGPU)
 {
   using RealType = OHMMS_PRECISION;
   std::unique_ptr<BsplineReaderBase> aReader;
@@ -45,7 +45,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
     if (hybrid_rep)
     {
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2COMPTarget<double>>>>(e);
+      aReader = std::make_unique<HybridRepSetReaderT<HybridRepCplx<SplineC2COMPTarget<double>>>>(e);
     }
     else
       aReader = std::make_unique<SplineSetReader<SplineC2COMPTarget<double>>>(e);
@@ -56,7 +56,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
     if (hybrid_rep)
     {
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2C<double>>>>(e);
+      aReader = std::make_unique<HybridRepSetReaderT<HybridRepCplx<SplineC2C<double>>>>(e);
     }
     else
       aReader = std::make_unique<SplineSetReader<SplineC2C<double>>>(e);
@@ -69,7 +69,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
     if (hybrid_rep)
     {
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2ROMPTarget<double>>>>(e);
+      aReader = std::make_unique<HybridRepSetReaderT<HybridRepCplx<SplineC2ROMPTarget<double>>>>(e);
     }
     else
       aReader = std::make_unique<SplineSetReader<SplineC2ROMPTarget<double>>>(e);
@@ -80,7 +80,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
     if (hybrid_rep)
     {
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2R<double>>>>(e);
+      aReader = std::make_unique<HybridRepSetReaderT<HybridRepCplx<SplineC2R<double>>>>(e);
     }
     else
       aReader = std::make_unique<SplineSetReader<SplineC2R<double>>>(e);

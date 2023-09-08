@@ -43,9 +43,8 @@ ConstantSPOSetT<T>::makeClone() const
     return myclone;
 }
 
-template <class T>
-void
-ConstantSPOSetT<T>::checkOutVariables(const OptVariablesType<T>& active)
+template<class T>
+void ConstantSPOSetT<T>::checkOutVariables(const OptVariablesTypeT<T>& active)
 {
     APP_ABORT("ConstantSPOSet should not call checkOutVariables");
 };

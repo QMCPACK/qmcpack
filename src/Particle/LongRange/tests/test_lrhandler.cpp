@@ -15,6 +15,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
 #include "LongRange/LRHandlerBase.h"
+#include "Particle/SimulationCell.h"
 
 namespace qmcplusplus
 {

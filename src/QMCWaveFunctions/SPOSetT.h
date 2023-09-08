@@ -29,7 +29,7 @@
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OptimizableObjectT.h"
-#include "Particle/ParticleSetT.h"
+#include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSetT.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
@@ -41,14 +41,10 @@ template <class T>
 class SPOSetT;
 namespace testing
 {
-OptVariablesType<float>&
-getMyVars(SPOSetT<float>& spo);
-OptVariablesType<double>&
-getMyVars(SPOSetT<double>& spo);
-OptVariablesType<std::complex<float>>&
-getMyVars(SPOSetT<std::complex<float>>& spo);
-OptVariablesType<std::complex<double>>&
-getMyVars(SPOSetT<std::complex<double>>& spo);
+OptVariablesTypeT<float>& getMyVars(SPOSetT<float>& spo);
+OptVariablesTypeT<double>& getMyVars(SPOSetT<double>& spo);
+OptVariablesTypeT<std::complex<float>>& getMyVars(SPOSetT<std::complex<float>>& spo);
+OptVariablesTypeT<std::complex<double>>& getMyVars(SPOSetT<std::complex<double>>& spo);
 } // namespace testing
 
 /** base class for Single-particle orbital sets
@@ -81,6 +77,8 @@ public:
     using ComplexType = typename OrbitalSetTraits<T>::ComplexType;
     using ValueType = typename OrbitalSetTraits<T>::ValueType;
     using FullRealType = typename OrbitalSetTraits<double>::RealType;
+    using FullValueType = typename OrbitalSetTraits<T>::FullValueType;
+    ;
     template <typename DT>
     using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
@@ -140,8 +138,7 @@ public:
     /** check out variational optimizable variables
      * @param active a super set of optimizable variables
      */
-    virtual void
-    checkOutVariables(const OptVariablesType<T>& active);
+    virtual void checkOutVariables(const OptVariablesTypeT<T>& active);
 
     /// Query if this SPOSet uses OpenMP offload
     virtual bool
@@ -182,49 +179,70 @@ public:
 
     /// Parameter derivatives of the wavefunction and the Laplacian of the
     /// wavefunction
-    virtual void
-    evaluateDerivatives(ParticleSetT<T>& P, const OptVariablesType<T>& optvars,
-        Vector<T>& dlogpsi, Vector<T>& dhpsioverpsi, const int& FirstIndex,
-        const int& LastIndex);
+    virtual void evaluateDerivatives(ParticleSetT<T>& P,
+                                     const OptVariablesTypeT<T>& optvars,
+                                     Vector<T>& dlogpsi,
+                                     Vector<T>& dhpsioverpsi,
+                                     const int& FirstIndex,
+                                     const int& LastIndex);
 
     /// Parameter derivatives of the wavefunction
-    virtual void
-    evaluateDerivativesWF(ParticleSetT<T>& P,
-        const OptVariablesType<T>& optvars, Vector<T>& dlogpsi, int FirstIndex,
-        int LastIndex);
+    virtual void evaluateDerivativesWF(ParticleSetT<T>& P,
+                                       const OptVariablesTypeT<T>& optvars,
+                                       Vector<T>& dlogpsi,
+                                       int FirstIndex,
+                                       int LastIndex);
 
     /** Evaluate the derivative of the optimized orbitals with respect to the
      * parameters this is used only for MSD, to be refined for better serving
      * both single and multi SD
      */
-    virtual void
-    evaluateDerivatives(ParticleSetT<T>& P, const OptVariablesType<T>& optvars,
-        Vector<T>& dlogpsi, Vector<T>& dhpsioverpsi, const T& psiCurrent,
-        const std::vector<T>& Coeff, const std::vector<size_t>& C2node_up,
-        const std::vector<size_t>& C2node_dn, const ValueVector& detValues_up,
-        const ValueVector& detValues_dn, const GradMatrix& grads_up,
-        const GradMatrix& grads_dn, const ValueMatrix& lapls_up,
-        const ValueMatrix& lapls_dn, const ValueMatrix& M_up,
-        const ValueMatrix& M_dn, const ValueMatrix& Minv_up,
-        const ValueMatrix& Minv_dn, const GradMatrix& B_grad,
-        const ValueMatrix& B_lapl, const std::vector<int>& detData_up,
-        const size_t N1, const size_t N2, const size_t NP1, const size_t NP2,
-        const std::vector<std::vector<int>>& lookup_tbl);
+    virtual void evaluateDerivatives(ParticleSetT<T>& P,
+                                     const OptVariablesTypeT<T>& optvars,
+                                     Vector<T>& dlogpsi,
+                                     Vector<T>& dhpsioverpsi,
+                                     const T& psiCurrent,
+                                     const std::vector<T>& Coeff,
+                                     const std::vector<size_t>& C2node_up,
+                                     const std::vector<size_t>& C2node_dn,
+                                     const ValueVector& detValues_up,
+                                     const ValueVector& detValues_dn,
+                                     const GradMatrix& grads_up,
+                                     const GradMatrix& grads_dn,
+                                     const ValueMatrix& lapls_up,
+                                     const ValueMatrix& lapls_dn,
+                                     const ValueMatrix& M_up,
+                                     const ValueMatrix& M_dn,
+                                     const ValueMatrix& Minv_up,
+                                     const ValueMatrix& Minv_dn,
+                                     const GradMatrix& B_grad,
+                                     const ValueMatrix& B_lapl,
+                                     const std::vector<int>& detData_up,
+                                     const size_t N1,
+                                     const size_t N2,
+                                     const size_t NP1,
+                                     const size_t NP2,
+                                     const std::vector<std::vector<int>>& lookup_tbl);
 
     /** Evaluate the derivative of the optimized orbitals with respect to the
      * parameters this is used only for MSD, to be refined for better serving
      * both single and multi SD
      */
-    virtual void
-    evaluateDerivativesWF(ParticleSetT<T>& P,
-        const OptVariablesType<T>& optvars, Vector<ValueType>& dlogpsi,
-        const ValueType& psiCurrent, const std::vector<T>& Coeff,
-        const std::vector<size_t>& C2node_up,
-        const std::vector<size_t>& C2node_dn, const ValueVector& detValues_up,
-        const ValueVector& detValues_dn, const ValueMatrix& M_up,
-        const ValueMatrix& M_dn, const ValueMatrix& Minv_up,
-        const ValueMatrix& Minv_dn, const std::vector<int>& detData_up,
-        const std::vector<std::vector<int>>& lookup_tbl);
+    virtual void evaluateDerivativesWF(ParticleSetT<T>& P,
+                                       const OptVariablesTypeT<T>& optvars,
+                                       Vector<ValueType>& dlogpsi,
+                                       const FullValueType& psiCurrent,
+                                       const std::vector<T>& Coeff,
+                                       const std::vector<size_t>& C2node_up,
+                                       const std::vector<size_t>& C2node_dn,
+                                       const ValueVector& detValues_up,
+                                       const ValueVector& detValues_dn,
+                                       const ValueMatrix& M_up,
+                                       const ValueMatrix& M_dn,
+                                       const ValueMatrix& Minv_up,
+                                       const ValueMatrix& Minv_dn,
+                                       const std::vector<int>& detData_up,
+                                       const std::vector<std::vector<int>>& lookup_tbl);
 
     /** set the OrbitalSetSize
      * @param norbs number of single-particle orbitals
@@ -259,11 +277,14 @@ public:
 
     /// Determinant ratios and parameter derivatives of the wavefunction for
     /// virtual moves
-    virtual void
-    evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
-        const OptVariablesType<T>& optvars, ValueVector& psi,
-        const ValueVector& psiinv, std::vector<T>& ratios, Matrix<T>& dratios,
-        int FirstIndex, int LastIndex);
+    virtual void evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
+                                     const OptVariablesTypeT<T>& optvars,
+                                     ValueVector& psi,
+                                     const ValueVector& psiinv,
+                                     std::vector<T>& ratios,
+                                     Matrix<T>& dratios,
+                                     int FirstIndex,
+                                     int LastIndex);
 
     /** evaluate determinant ratios for virtual moves, e.g., sphere move for
      * nonlocalPP, of multiple walkers
@@ -630,16 +651,12 @@ protected:
     /// number of Single-particle orbitals
     IndexType OrbitalSetSize;
     /// Optimizable variables
-    OptVariablesType<T> myVars;
+    OptVariablesTypeT<T> myVars;
 
-    friend OptVariablesType<float>&
-    testing::getMyVars(SPOSetT<float>& spo);
-    friend OptVariablesType<double>&
-    testing::getMyVars(SPOSetT<double>& spo);
-    friend OptVariablesType<std::complex<float>>&
-    testing::getMyVars(SPOSetT<std::complex<float>>& spo);
-    friend OptVariablesType<std::complex<double>>&
-    testing::getMyVars(SPOSetT<std::complex<double>>& spo);
+    friend OptVariablesTypeT<float>& testing::getMyVars(SPOSetT<float>& spo);
+    friend OptVariablesTypeT<double>& testing::getMyVars(SPOSetT<double>& spo);
+    friend OptVariablesTypeT<std::complex<float>>& testing::getMyVars(SPOSetT<std::complex<float>>& spo);
+    friend OptVariablesTypeT<std::complex<double>>& testing::getMyVars(SPOSetT<std::complex<double>>& spo);
 };
 
 template <class T>

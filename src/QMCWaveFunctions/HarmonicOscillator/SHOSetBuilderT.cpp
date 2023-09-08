@@ -208,9 +208,12 @@ SHOSetBuilderT<T>::report(const std::string& pad)
     app_log().flush();
 }
 
+#ifndef QMC_COMPLEX
 template class SHOSetBuilderT<double>;
 template class SHOSetBuilderT<float>;
+#else
 template class SHOSetBuilderT<std::complex<double>>;
 template class SHOSetBuilderT<std::complex<float>>;
+#endif
 
 } // namespace qmcplusplus

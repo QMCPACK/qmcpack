@@ -26,7 +26,7 @@ struct ParticleSetTraits
     using PosType = TinyVector<RealType, DIM>;
     using GradType = TinyVector<ValueType, DIM>;
     // using HessType = Tensor<ValueType, DIM>;
-    // using TensorType = Tensor<ValueType, DIM>;
+    using TensorType = Tensor<ValueType, DIM>;
     // using GradHessType = TinyVector<Tensor<ValueType, DIM>, DIM>;
     // using IndexVector = Vector<IndexType>;
     // using ValueVector = Vector<ValueType>;
@@ -71,7 +71,7 @@ struct LatticeParticleTraits
     using Index_t = int;
     using Scalar_t = FullPrecRealType;
     using Complex_t = FullPrecComplexType;
-    using Tensor_t = ParticleTensorType;
+    using Tensor_t  = Tensor<RealType, OHMMS_DIM>;
 
     using ParticleIndex = ParticleAttrib<Index_t>;
     using ParticleScalar = ParticleAttrib<Scalar_t>;

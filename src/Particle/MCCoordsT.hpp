@@ -14,7 +14,6 @@
 #ifndef QMCPLUSPLUS_MCCOORDST_HPP
 #define QMCPLUSPLUS_MCCOORDST_HPP
 
-#include "MCCoords.hpp"
 #include "ParticleSetTraits.h"
 #include "type_traits/complex_help.hpp"
 
@@ -23,11 +22,11 @@
 
 namespace qmcplusplus
 {
-// enum class CoordsType
-// {
-//   POS,
-//   POS_SPIN
-// };
+enum class CoordsType
+{
+  POS,
+  POS_SPIN
+};
 
 template <typename T, CoordsType MCT>
 struct MCCoordsT;

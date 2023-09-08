@@ -29,7 +29,7 @@
 #include "Particle/ParticleSetT.h"
 #include "Particle/SampleStackT.h"
 #include "Particle/Walker.h"
-#include "Particle/WalkerConfigurations.h"
+#include "Particle/WalkerConfigurationsT.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
@@ -60,7 +60,7 @@ class ReptileT;
 template <typename T>
 class MCWalkerConfigurationT :
     public ParticleSetT<T>,
-    public WalkerConfigurations
+    public WalkerConfigurationsT<T>
 {
 public:
     /**enumeration for update*/
@@ -71,16 +71,16 @@ public:
         Update_Particle /// move a particle by particle
     };
 
-    using Walker_t = WalkerConfigurations::Walker_t;
+    using Walker_t = typename WalkerConfigurationsT<T>::Walker_t;
     /// container type of the Properties of a Walker
-    using PropertyContainer_t = Walker_t::PropertyContainer_t;
+    using PropertyContainer_t = typename Walker_t::PropertyContainer_t;
     /// container type of Walkers
     using WalkerList_t = std::vector<std::unique_ptr<Walker_t>>;
     /// FIX: a type alias of iterator for an object should not be for just one
     /// of many objects it holds.
-    using iterator = WalkerList_t::iterator;
+    using iterator = typename WalkerList_t::iterator;
     /// const_iterator of Walker container
-    using const_iterator = WalkerList_t::const_iterator;
+    using const_iterator = typename WalkerList_t::const_iterator;
 
     using ReptileList_t = UPtrVector<ReptileT<T>>;
 
@@ -104,7 +104,7 @@ public:
     resize(int numWalkers, int numPtcls);
 
     /// clean up the walker list
-    using WalkerConfigurations::clear;
+    using WalkerConfigurationsT<T>::clear;
     /// resize Walker::PropertyHistory and Walker::PHindex:
     void
     resizeWalkerHistories();
