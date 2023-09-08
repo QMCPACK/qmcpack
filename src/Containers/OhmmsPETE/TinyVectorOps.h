@@ -355,11 +355,11 @@ struct OTDot<TinyVector<T1, 4>, TinyVector<T2, 4>>
 };
 
 /** specialization for real-complex TinyVector */
-template<class T1>
-struct OTDot<TinyVector<T1, 3>, TinyVector<std::complex<T1>, 3>>
+template<class T1, class T2>
+struct OTDot<TinyVector<T1, 3>, TinyVector<std::complex<T2>, 3>>
 {
   using Type_t = T1;
-  inline static Type_t apply(const TinyVector<T1, 3>& lhs, const TinyVector<std::complex<T1>, 3>& rhs)
+  inline static Type_t apply(const TinyVector<T1, 3>& lhs, const TinyVector<std::complex<T2>, 3>& rhs)
   {
     return lhs[0] * rhs[0].real() + lhs[1] * rhs[1].real() + lhs[2] * rhs[2].real();
   }
