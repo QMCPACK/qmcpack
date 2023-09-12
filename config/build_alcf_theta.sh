@@ -1,7 +1,7 @@
 #!/bin/bash
 # This recipe is intended for ALCF Theta https://www.alcf.anl.gov/theta
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Mar 13, 2023
+# last revision: Sep 12, 2023
 #
 # How to invoke this script?
 # build_alcf_theta.sh # build all the variants assuming the current directory is the source directory.
@@ -17,7 +17,7 @@ module load cray-hdf5-parallel
 module load cmake/3.20.4
 module load intel/19.1.2.254
 
-module list >& load_modules.txt
+module list >& module_list.txt
 
 export CC=cc
 export CXX=CC
