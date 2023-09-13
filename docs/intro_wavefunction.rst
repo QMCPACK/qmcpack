@@ -955,7 +955,7 @@ Attribute:
    :name: Listing 1
 
    <sposet_collection ...>
-     <rotated_sposet id="rot_spo">
+     <rotated_sposet name="rot_spo">
        <sposet name="spo" size="8">
          ...
        </sposet>
