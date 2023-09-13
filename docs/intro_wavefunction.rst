@@ -936,11 +936,11 @@ The `rotated_sposet` element requires use of the updated `sposet_collection` sty
 .. _Table_rotated_sposet:
 .. table::
 
-     +-----------------+-----------------------+
-     | Parent elements | ``sposet_collection`` |
-     +-----------------+-----------------------+
-     | Child elements  | ``sposet``            |
-     +-----------------+-----------------------+
+     +-----------------+--------------------------+
+     | Parent elements | ``sposet_collection``    |
+     +-----------------+--------------------------+
+     | Child elements  | ``sposet``, ``opt_vars`` |
+     +-----------------+--------------------------+
 
 Attribute:
 
@@ -967,6 +967,11 @@ Attribute:
        <determinant sposet="rot_spo"/>
      </slaterdeterminant>
    </determinantset>
+
+
+The `opt_vars` element can be used to specify initial rotation parameters.
+The parameters are given as a space-separated list of numbers in the element text.
+The length of this list must match the expected number of rotation parameters.
 
 .. _backflow:
 
