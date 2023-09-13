@@ -887,6 +887,12 @@ device_pointer<T> uninitialized_copy(T* Abeg, T* Aend, device_pointer<Q> B)
   return copy_n(Abeg, std::distance(Abeg, Aend), B);
 }
 
+template<class It, typename Q>
+device_pointer<Q> uninitialized_copy(It Abeg, It Aend, device_pointer<Q> B)
+{
+  return copy_n(Abeg, std::distance(Abeg, Aend), B);
+}
+
 template<typename T>
 T* uninitialized_copy(device_pointer<T> const Abeg, device_pointer<T> const Aend, T* B)
 {
