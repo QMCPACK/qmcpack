@@ -238,31 +238,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // set the internal parameters
   if (spinSet == 0)
     set_metadata(numOrbs, twist_num_inp, twist_inp, skipChecks);
-  //if (use_complex_orb == "yes") use_real_splines_ = false; // override given user input
-
-  // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work
-  bool has_backflow = false;
-
-  xmlNodePtr wf  = XMLRoot->parent; // <wavefuntion>
-  xmlNodePtr kid = wf->children;
-  while (kid != NULL)
-  {
-    std::string tag((const char*)(kid->name));
-    if (tag == "determinantset" || tag == "sposet_builder")
-    {
-      xmlNodePtr kid1 = kid->children;
-      while (kid1 != NULL)
-      {
-        std::string tag1((const char*)(kid1->name));
-        if (tag1 == "backflow")
-        {
-          has_backflow = true;
-        }
-        kid1 = kid1->next;
-      }
-    }
-    kid = kid->next;
-  }
 
   //////////////////////////////////
   // Create the OrbitalSet object
