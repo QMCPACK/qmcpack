@@ -912,6 +912,62 @@ the associated CSF, and the excitation degree relative to the first determinant.
   scf    2022200000000000000000000000000000000000000000000000000000
   excitation degree  2
 
+.. _orbitalrotation:
+
+Orbital Rotation
+----------------
+Orbital rotation mixes orbitals between those occupied by electrons and those unoccupied by electrons.
+Because it changes the orbitals, orbital rotation can change the nodal structure and improve the fixed-node DMC energy.
+
+Combining orbitals is complicated by the need to maintain the normalization of the
+orbitals.
+A rotation matrix will preserve the normalization of the vectors in linear combinations.
+However the entries in a rotation matrix are not independent.
+A rotation matrix can be expressed as the matrix exponential of a skew-symmetric matrix.
+The entries in that skew-symmetric matrix are independent and can form an independent set of optimizable parameters.
+
+Optimizable orbitals are given in the input file by enclosing an SPO
+in an `rotated_sposet` element.  The `determinant` element `id` attribute should reference the name of the rotated sposet.
+
+The `rotated_sposet` element requires use of the updated `sposet_collection` style.
+
+``rotated_sposet`` element:
+
+.. _Table_rotated_sposet:
+.. table::
+
+     +-----------------+-----------------------+
+     | Parent elements | ``sposet_collection`` |
+     +-----------------+-----------------------+
+     | Child elements  | ``sposet``            |
+     +-----------------+-----------------------+
+
+Attribute:
+
++-----------------+----------+----------+---------+-------------------------+
+| Name            | Datatype | Values   | Default | Description             |
++=================+==========+==========+=========+=========================+
+| ``name``        | Text     |          |         | Name of rotated SPOSet  |
++-----------------+----------+----------+---------+-------------------------+
+
+.. code-block::
+   :caption: Orbital Rotation XML element.
+   :name: Listing 1
+
+   <sposet_collection ...>
+     <rotated_sposet id="rot_spo">
+       <sposet name="spo" size="8">
+         ...
+       </sposet>
+     </rotated_sposet>
+   </sposet_collection>
+   <determinantset>
+     <slaterdeterminant>
+       <determinant sposet="rot_spo"/>
+       <determinant sposet="rot_spo"/>
+     </slaterdeterminant>
+   </determinantset>
+
 .. _backflow:
 
 Backflow Wavefunctions
