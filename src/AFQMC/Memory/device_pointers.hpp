@@ -379,6 +379,14 @@ struct device_pointer : base_device_pointer
   }
   T* impl_;
 
+
+  template<class It>
+  static auto uninitialized_copy(It Abeg, It Aend, device_pointer B)
+  {
+    static_assert(std::is_trivially_copyable_v<T>);
+    return copy_n(Abeg, std::distance(Abeg, Aend), B);
+  }
+
 private:
   device_pointer(T* impl__) : impl_(impl__) {}
 };
