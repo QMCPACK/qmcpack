@@ -63,7 +63,7 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
          </group>
       </particleset>
       <wavefunction target="e" id="psi0">
-         <sposet_builder type="MolecularOrbital" source="ion0" transform="yes" name="LCAOBSet">
+         <sposet_collection type="MolecularOrbital" source="ion0" transform="yes" name="LCAOBSet">
             <basisset name="LCAOBSet">
                <atomicBasisSet type="Gaussian" elementType="Li" normalized="no" name="Gaussian-G2" angular="cartesian">
                   <grid npts="1001" type="log" ri="1e-06" rf="100.0"/>
@@ -12024,7 +12024,7 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
 0.000000000000e+00
                   </coefficient>
 	  </sposet>
-         </sposet_builder>
+         </sposet_collection>
          <determinantset>
             <slaterdeterminant>
 	      <determinant id="updet" sposet="spo-up"/>

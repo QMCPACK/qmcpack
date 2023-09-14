@@ -32,7 +32,7 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <sposet_builder type="MolecularOrbital" href="c4q.orbs.h5" source="ion0" transform="yes" name="LCAOBSet">
+         <sposet_collection type="MolecularOrbital" href="c4q.orbs.h5" source="ion0" transform="yes" name="LCAOBSet">
            <sposet name="spo-up" size="10">
              <occupation mode="ground"/>
              <coefficient size="171" spindataset="0"/>
@@ -41,7 +41,7 @@
              <occupation mode="ground"/>
              <coefficient size="171" spindataset="0"/>
            </sposet>
-         </sposet_builder>
+         </sposet_collection>
          <determinantset>
           <slaterdeterminant>
                <determinant id="updet" sposet="spo-up"/>

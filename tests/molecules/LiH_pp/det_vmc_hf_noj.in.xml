@@ -66,7 +66,7 @@ GAMESS numerical results:
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <sposet_builder type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
+         <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
             <basisset name="LCAOBSet">
                <atomicBasisSet type="Gaussian" elementType="Li" normalized="no" name="Gaussian-G2" angular="cartesian">
                   <grid npts="1001" type="log" ri="1e-06" rf="100.0"/>
@@ -2425,7 +2425,7 @@ GAMESS numerical results:
                      -5.187700000000e-02   0.000000000000e+00   0.000000000000e+00   0.000000000000e+00
                   </coefficient>
 	       </sposet>
-       </sposet_builder>
+       </sposet_collection>
 	 <determinantset>
             <slaterdeterminant>
               <determinant id="updet" sposet="spo-up"/>

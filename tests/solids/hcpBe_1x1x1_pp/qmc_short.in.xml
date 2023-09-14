@@ -37,9 +37,9 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <sposet_builder type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+         <sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
             <sposet type="bspline" name="spo_ud" size="1" spindataset="0"/>
-         </sposet_builder>
+         </sposet_collection>
          <determinantset>
 	    <slaterdeterminant>
 	       <determinant id="updet" group="u" sposet="spo_ud" size="1"/>
