@@ -917,13 +917,14 @@ the associated CSF, and the excitation degree relative to the first determinant.
 Orbital Rotation
 ----------------
 Orbital rotation mixes orbitals between those occupied by electrons and those unoccupied by electrons.
-Because it changes the orbitals, orbital rotation can change the nodal structure and improve the fixed-node DMC energy.
+Because it changes the orbitals, a well-chosen optimized orbital rotation can improve the trial wavefunction for VMC,
+can change the nodal structure, and can potentially improve the fixed-node DMC energy.
 
 Combining orbitals is complicated by the need to maintain the normalization of the
 orbitals.
 A rotation matrix will preserve the normalization of the vectors in linear combinations.
 However the entries in a rotation matrix are not independent.
-A rotation matrix can be expressed as the matrix exponential of a skew-symmetric matrix.
+A rotation matrix can alternatively be expressed as the matrix exponential of a skew-symmetric matrix.
 The entries in that skew-symmetric matrix are independent and can form an independent set of optimizable parameters.
 
 Optimizable orbitals are given in the input file by enclosing an SPO
