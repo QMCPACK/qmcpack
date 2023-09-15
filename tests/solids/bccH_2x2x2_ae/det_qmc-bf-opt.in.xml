@@ -71,8 +71,8 @@
               </transformation>
             </backflow>
             <slaterdeterminant>
-               <determinant id="updet" group="u" sposet="spo_ud" size="8"/>
-               <determinant id="downdet" group="d" sposet="spo_ud" size="8"/>
+               <determinant sposet="spo_ud"/>
+               <determinant sposet="spo_ud"/>
             </slaterdeterminant>
          </determinantset>
       </wavefunction>

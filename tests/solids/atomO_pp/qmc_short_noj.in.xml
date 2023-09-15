@@ -43,8 +43,8 @@
          </sposet_collection>
          <determinantset>
            <slaterdeterminant>
-                   <determinant id="updet" group="u" sposet="spo_u" size="4"/>
-                   <determinant id="downdet" group="d" sposet="spo_d" size="2"/>
+                   <determinant sposet="spo_u"/>
+                   <determinant sposet="spo_d"/>
             </slaterdeterminant>
          </determinantset>	      
       </wavefunction>

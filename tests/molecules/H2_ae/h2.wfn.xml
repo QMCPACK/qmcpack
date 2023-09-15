@@ -464,11 +464,11 @@
    -1.19462800000000e+00  0.00000000000000e+00  0.00000000000000e+00  0.00000000000000e+00
   </coefficient>
 	</sposet> 
-    <sposet_collection>	
+    </sposet_collection>	
     <determinantset>
       <slaterdeterminant>
-        <determinant id="det_up" sposet="spo-up"/>
-        <determinant id="det_down" sposet="spo-dn"/>
+        <determinant sposet="spo-up"/>
+        <determinant sposet="spo-dn"/>
       </slaterdeterminant>	
     </determinantset>
 

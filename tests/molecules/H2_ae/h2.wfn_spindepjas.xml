@@ -467,8 +467,8 @@
     </sposet_collection>	
     <determinantset>
       <slaterdeterminant>
-        <determinant id="det_up" sposet="spo-up"/>
-        <determinant id="det_down" sposet="spo-dn"/>
+        <determinant sposet="spo-up"/>
+        <determinant sposet="spo-dn"/>
       </slaterdeterminant>	
     </determinantset>
 

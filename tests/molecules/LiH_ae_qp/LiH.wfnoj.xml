@@ -9,8 +9,8 @@
     </sposet_collection>  
     <determinantset>
       <slaterdeterminant>
-	<determinant id="updet" sposet="spo-ud"/>
-	<determinant id="downdet" sposet="spo-ud"/>
+	<determinant sposet="spo-ud"/>
+	<determinant sposet="spo-ud"/>
       </slaterdeterminant>
     </determinantset>
   </wavefunction>

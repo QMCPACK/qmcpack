@@ -499,8 +499,8 @@
     </sposet_collection>
     <determinantset>
       <slaterdeterminant>
-        <determinant id="det_up" sposet="spo-up" size="5"/>
-        <determinant id="det_down" sposet="spo-dn" size="4"/>
+        <determinant sposet="spo-up"/>
+        <determinant sposet="spo-dn"/>
       </slaterdeterminant>
     </determinantset>
    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">

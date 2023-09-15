@@ -70,7 +70,7 @@
    </sposet_collection> 
          <determinantset>
             <slaterdeterminant>
-               <determinant id="updetA" group="u" sposet="myspo" size="12"/>
+               <determinant sposet="myspo"/>
             </slaterdeterminant>
          </determinantset>
         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">

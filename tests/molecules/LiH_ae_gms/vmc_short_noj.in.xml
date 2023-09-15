@@ -6112,8 +6112,8 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
 2.950800000000e-02 2.950800000000e-02 0.000000000000e+00 0.000000000000e+00 
 0.000000000000e+00
                   </coefficient>
-               </sposet>
-               <sposet name="spo-dn" size="2">
+              </sposet>
+              <sposet name="spo-dn" size="2">
                   <occupation mode="ground"/>
                   <coefficient id="downdetC" size="135">                     
 8.960260000000e-01 1.766000000000e-03 1.434860000000e-01 4.391000000000e-03 
@@ -12028,8 +12028,8 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
        </sposet_collection>	  
        <determinantset>
 	 <slaterdeterminant>
-           <determinant id="updet" sposet="spo-up"/>
-	   <determinant id="downdet" sposet="spo-dn"/>
+           <determinant sposet="spo-up"/>
+	   <determinant sposet="spo-dn"/>
          </slaterdeterminant>
        </determinantset>
       </wavefunction>

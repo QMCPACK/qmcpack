@@ -48,8 +48,8 @@
          </sposet_collection>
          <determinantset>
            <slaterdeterminant>
-               <determinant id="updet" group="u" sposet="spo_u" size="4"/>
-               <determinant id="downdet" group="d" sposet="spo_d"  size="4"/>
+               <determinant sposet="spo_u"/>
+               <determinant sposet="spo_d"/>
            </slaterdeterminant>
          </determinantset>	      
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">

@@ -12027,8 +12027,8 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
          </sposet_collection>
          <determinantset>
             <slaterdeterminant>
-	      <determinant id="updet" sposet="spo-up"/>
-	      <detetminant id="downdet" sposet="spo-dn"/>
+	      <determinant sposet="spo-up"/>
+	      <detetminant sposet="spo-dn"/>
             </slaterdeterminant>
          </determinantset>
       </wavefunction>

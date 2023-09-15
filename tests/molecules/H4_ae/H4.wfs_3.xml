@@ -27,8 +27,8 @@
     </sposet_collection>
     <determinantset>
       <slaterdeterminant>
-        <determinant id="det_up" sposet="spo"/>
-        <determinant id="det_down" sposet="spo"/>
+        <determinant sposet="spo"/>
+        <determinant sposet="spo"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">

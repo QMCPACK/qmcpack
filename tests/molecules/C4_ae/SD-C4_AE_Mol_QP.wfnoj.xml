@@ -13,8 +13,8 @@
      </sposet_collection>   
     <determinantset>  
      <slaterdeterminant>
-	<determinant id="updet" sposet="updet"/>
-	<determinant id="downdet" sposet="downdet"/> 
+	<determinant sposet="updet"/>
+	<determinant sposet="downdet"/> 
      </slaterdeterminant>
     </determinantset>
   </wavefunction>
