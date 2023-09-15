@@ -48,15 +48,15 @@ public:
   using PointType        = TinyVector<ST, 3>;
   using SingleSplineType = UBspline_3d_d;
   // types for evaluation results
-  using TT = typename BsplineSetT<ST>::ValueType;
+  using TT          = typename BsplineSetT<ST>::ValueType;
   using ValueVector = typename BsplineSetT<ST>::ValueVector;
-  using GGGVector = typename BsplineSetT<ST>::GGGVector;
-  using GradVector = typename BsplineSetT<ST>::GradVector;
-  using HessVector = typename BsplineSetT<ST>::HessVector;
+  using GGGVector   = typename BsplineSetT<ST>::GGGVector;
+  using GradVector  = typename BsplineSetT<ST>::GradVector;
+  using HessVector  = typename BsplineSetT<ST>::HessVector;
 
-  using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
-  using gContainer_type  = VectorSoaContainer<ST, 3>;
-  using hContainer_type  = VectorSoaContainer<ST, 6>;
+  using vContainer_type = Vector<ST, aligned_allocator<ST>>;
+  using gContainer_type = VectorSoaContainer<ST, 3>;
+  using hContainer_type = VectorSoaContainer<ST, 6>;
 
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
@@ -156,9 +156,9 @@ public:
 
   void assign_v(const PointType& r, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
-  void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override;
+  void evaluateValue(const ParticleSetT<ST>& P, const int iat, ValueVector& psi) override;
 
-  void evaluateDetRatios(const VirtualParticleSet& VP,
+  void evaluateDetRatios(const VirtualParticleSetT<ST>& VP,
                          ValueVector& psi,
                          const ValueVector& psiinv,
                          std::vector<TT>& ratios) override;
@@ -172,7 +172,7 @@ public:
    */
   void assign_vgl_from_l(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
-  void evaluateVGL(const ParticleSet& P,
+  void evaluateVGL(const ParticleSetT<ST>& P,
                    const int iat,
                    ValueVector& psi,
                    GradVector& dpsi,
@@ -185,7 +185,7 @@ public:
                   int first,
                   int last) const;
 
-  void evaluateVGH(const ParticleSet& P,
+  void evaluateVGH(const ParticleSetT<ST>& P,
                    const int iat,
                    ValueVector& psi,
                    GradVector& dpsi,
@@ -199,7 +199,7 @@ public:
                     int first = 0,
                     int last  = -1) const;
 
-  void evaluateVGHGH(const ParticleSet& P,
+  void evaluateVGHGH(const ParticleSetT<ST>& P,
                      const int iat,
                      ValueVector& psi,
                      GradVector& dpsi,
