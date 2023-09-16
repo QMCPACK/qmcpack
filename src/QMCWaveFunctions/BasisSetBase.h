@@ -171,6 +171,8 @@ struct SoaBasisSetBase
                                      vghgh_type& vghgh)                            = 0;
   virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals) = 0;
 
+  virtual void mw_evaluateV_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                OffloadMWVArray& vals) = 0;
   virtual bool is_S_orbital(int mo_idx, int ao_idx) { return false; }
 
   /// Determine which orbitals are S-type.  Used for cusp correction.

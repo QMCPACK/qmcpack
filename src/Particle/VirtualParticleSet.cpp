@@ -97,6 +97,34 @@ void VirtualParticleSet::releaseResource(ResourceCollection& collection,
   ParticleSet::releaseResource(collection, p_list);
 }
 
+
+const RefVectorWithLeader<const DistanceTableAB> VirtualParticleSet::extractDTRefList_vp(
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    int id)
+{
+  RefVectorWithLeader<const DistanceTableAB> dt_list(vp_list.getLeader().getDistTableAB(id));
+  dt_list.reserve(vp_list.size());
+  for (const VirtualParticleSet& vp : vp_list)
+  {
+    const auto& d_table = vp.getDistTableAB(id);
+    dt_list.push_back(d_table);
+  }
+  return dt_list;
+}
+
+
+const std::vector<QMCTraits::PosType> VirtualParticleSet::extractCoordsRefList_vp(
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list)
+{
+  std::vector<QMCTraits::PosType> coords_list;
+  for (const VirtualParticleSet& vp : vp_list)
+    for (int iat = 0; iat < vp.getTotalNum(); iat++)
+      coords_list.push_back(vp.activeR(iat));
+
+  return coords_list;
+}
+
+
 /// move virtual particles to new postions and update distance tables
 void VirtualParticleSet::makeMoves(const ParticleSet& refp,
                                    int jel,
