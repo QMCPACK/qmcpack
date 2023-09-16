@@ -226,7 +226,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                                            OffloadMWVArray& v)
 {
   size_t index = 0;

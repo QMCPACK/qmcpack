@@ -241,7 +241,6 @@ protected:
   vghgh_type Tempgh;
   ///Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
   vghgh_type Tempghv;
-  OffloadMWVArray psi_list_mvp;
 
 private:
   ///helper functions to handle Identity
@@ -305,8 +304,8 @@ private:
                                 int iat,
                                 OffloadMWVArray& phi_v) const;
 
-  /// packed walker GEMM implementation with multi virtual particle
-  void mw_evaluateValueImplGEMM_mvp(const RefVectorWithLeader<SPOSet>& spo_list,
+  /// packed walker GEMM implementation with multi virtual particle sets
+  void mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                     OffloadMWVArray& phi_v) const;
   struct LCAOMultiWalkerMem;

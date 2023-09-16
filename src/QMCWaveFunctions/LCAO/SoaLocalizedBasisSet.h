@@ -120,7 +120,7 @@ public:
    * @param vp_list list of quantum virtual particleset (one for each walker)
    * @param v   Array(n_walkers, BasisSetSize)
    */
-  void mw_evaluateValue_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list, OffloadMWVArray& v) override;
+  void mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list, OffloadMWVArray& v) override;
 
 
   /** compute VGL using packed array with all walkers 
