@@ -26,7 +26,7 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
 
   OffloadMWVGLArray phi_vgl_v;   // [5][NW][NumMO]
-  OffloadMWVGLArray basis_mw;    // [5][NW][NumAO]
+  OffloadMWVGLArray basis_vgl_mw;    // [5][NW][NumAO]
   OffloadMWVArray phi_v;         // [NW][NumMO]
   OffloadMWVArray basis_v_mw;    // [NW][NumAO]
   OffloadMWVArray vp_phi_v;      // [NVPs][NumMO]
@@ -431,12 +431,12 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 {
   assert(this == &spo_list.getLeader());
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
-  auto& basis_mw   = spo_leader.mw_mem_handle_.getResource().basis_mw;
-  basis_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
+  auto& basis_vgl_mw   = spo_leader.mw_mem_handle_.getResource().basis_vgl_mw;
+  basis_vgl_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
 
   {
     ScopedTimer local(basis_timer_);
-    myBasisSet->mw_evaluateVGL(P_list, iat, basis_mw);
+    myBasisSet->mw_evaluateVGL(P_list, iat, basis_vgl_mw);
   }
 
   if (Identity)
@@ -447,7 +447,7 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 
     for (size_t idim = 0; idim < DIM_VGL; idim++)
       for (int iw = 0; iw < nw; iw++)
-        std::copy_n(basis_mw.data_at(idim, iw, 0), output_size, phi_vgl_v.data_at(idim, iw, 0));
+        std::copy_n(basis_vgl_mw.data_at(idim, iw, 0), output_size, phi_vgl_v.data_at(idim, iw, 0));
   }
   else
   {
@@ -462,7 +462,7 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                  requested_orb_size,        // MOs
                  spo_list.size() * DIM_VGL, // walkers * DIM_VGL
                  BasisSetSize,              // AOs
-                 1, C_partial_view.data(), BasisSetSize, basis_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
+                 1, C_partial_view.data(), BasisSetSize, basis_vgl_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
                  requested_orb_size);
     }
   }
