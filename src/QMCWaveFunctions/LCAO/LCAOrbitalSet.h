@@ -306,8 +306,8 @@ private:
 
   /// packed walker GEMM implementation with multi virtual particle sets
   void mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
-                                    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                    OffloadMWVArray& phi_v) const;
+                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                   OffloadMWVArray& phi_v) const;
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
   /// timer for basis set

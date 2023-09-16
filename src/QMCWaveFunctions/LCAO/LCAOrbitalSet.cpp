@@ -25,12 +25,12 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
 
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
 
-  OffloadMWVGLArray phi_vgl_v;   // [5][NW][NumMO]
-  OffloadMWVGLArray basis_vgl_mw;    // [5][NW][NumAO]
-  OffloadMWVArray phi_v;         // [NW][NumMO]
-  OffloadMWVArray basis_v_mw;    // [NW][NumAO]
-  OffloadMWVArray vp_phi_v;      // [NVPs][NumMO]
-  OffloadMWVArray vp_basis_v_mw; // [NVPs][NumAO]
+  OffloadMWVGLArray phi_vgl_v;    // [5][NW][NumMO]
+  OffloadMWVGLArray basis_vgl_mw; // [5][NW][NumAO]
+  OffloadMWVArray phi_v;          // [NW][NumMO]
+  OffloadMWVArray basis_v_mw;     // [NW][NumAO]
+  OffloadMWVArray vp_phi_v;       // [NVPs][NumMO]
+  OffloadMWVArray vp_basis_v_mw;  // [NVPs][NumAO]
 };
 
 LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
@@ -430,8 +430,8 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                                            OffloadMWVGLArray& phi_vgl_v) const
 {
   assert(this == &spo_list.getLeader());
-  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
-  auto& basis_vgl_mw   = spo_leader.mw_mem_handle_.getResource().basis_vgl_mw;
+  auto& spo_leader   = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& basis_vgl_mw = spo_leader.mw_mem_handle_.getResource().basis_vgl_mw;
   basis_vgl_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
 
   {
@@ -469,8 +469,8 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 }
 
 void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
-                                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                 OffloadMWVArray& vp_phi_v) const
+                                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                OffloadMWVArray& vp_phi_v) const
 {
   assert(this == &spo_list.getLeader());
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
@@ -558,7 +558,7 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
   auto& vp_phi_v   = spo_leader.mw_mem_handle_.getResource().vp_phi_v;
 
-  const size_t nVPs = VirtualParticleSet::countVPs(vp_list);
+  const size_t nVPs               = VirtualParticleSet::countVPs(vp_list);
   const size_t requested_orb_size = psi_list[0].get().size();
   vp_phi_v.resize(nVPs, requested_orb_size);
 
