@@ -559,7 +559,8 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   auto& vp_phi_v   = spo_leader.mw_mem_handle_.getResource().vp_phi_v;
 
   const size_t nVPs = VirtualParticleSet::countVPs(vp_list);
-  vp_phi_v.resize(nVPs, OrbitalSetSize);
+  const size_t requested_orb_size = psi_list[0].get().size();
+  vp_phi_v.resize(nVPs, requested_orb_size);
 
   mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
 
@@ -567,7 +568,7 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   size_t index = 0;
   for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
-      ratios_list[iw][iat] = simd::dot(vp_phi_v.data_at(index++, 0), invRow_ptr_list[iw], psi_list[iw].get().size());
+      ratios_list[iw][iat] = simd::dot(vp_phi_v.data_at(index++, 0), invRow_ptr_list[iw], requested_orb_size);
 }
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,

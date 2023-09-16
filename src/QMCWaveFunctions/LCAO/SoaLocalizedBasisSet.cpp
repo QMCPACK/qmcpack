@@ -229,6 +229,7 @@ template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                                            OffloadMWVArray& v)
 {
+  assert(BasisSetSize == v.size(1));
   size_t index = 0;
   for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
