@@ -364,6 +364,8 @@ struct device_pointer : base_device_pointer
 
   T* to_address() const { return impl_; }
   friend decltype(auto) to_address(device_pointer const& self) { return self.to_address(); }
+  friend decltype(auto) raw_pointer_cast(device_pointer const& self) { return self.to_address(); }
+ 
   template<class Q>
   device_pointer<Q> pointer_cast()
   {
@@ -525,12 +527,77 @@ device_pointer<T> copy_n(device_pointer<T const> const A, Size n, device_pointer
 }
 */
 
-template<typename T, typename ForwardIt, typename Size>
-device_pointer<T> copy_n(ForwardIt A, Size n, device_pointer<T> B)
+// template<typename T, typename ForwardIt, typename Size>
+// device_pointer<T> copy_n(ForwardIt A, Size n, device_pointer<T> B)
+// {
+//   //std::copy(A, A + n, to_address(B));
+//   arch::memcopy(to_address(B), to_address(A), n * sizeof(T));
+//   return B + n;
+// }
+
+template<class P1, typename T2, typename Size>
+device_pointer<T2> copy_n(boost::multi::elements_iterator_t<P1, boost::multi::layout_t<1> > f, Size n, device_pointer<T2> d)
 {
-  arch::memcopy(to_address(B), to_address(A), n * sizeof(T));
+  static_assert( std::is_trivially_copyable_v<T2> );
+  if(f.layout().stride()==1){
+    auto s = cudaMemcpy(raw_pointer_cast(d), to_address(f.base()), n*sizeof(T2), cudaMemcpyDeviceToHost); assert( s == cudaSuccess );
+  }else{
+    auto s = cudaMemcpy2D(raw_pointer_cast(d), sizeof(T2), to_address(f.base()), f.layout().stride()*sizeof(T2), sizeof(T2), n, cudaMemcpyDeviceToHost);
+    assert( s == cudaSuccess );
+  }
+  return d + n;
+}
+
+template<class P1, typename T2, typename Size>
+device_pointer<T2> copy_n(boost::multi::elements_iterator_t<P1, boost::multi::layout_t<2> > A, Size n, device_pointer<T2> B)
+{
+  static_assert(sizeof(typename std::iterator_traits<P1>::value_type) == sizeof(T2) );
+  //std::copy(A, A + n, to_address(B));
+  if(A.layout().stride() != 1) throw std::runtime_error{"unimplemented"};
+  arch::memcopy(to_address(B), to_address(A.base()), n * sizeof(T2));
   return B + n;
 }
+
+template<class P1, typename T2, typename Size>
+device_pointer<T2> copy_n(boost::multi::elements_iterator_t<P1, boost::multi::layout_t<3> > A, Size n, device_pointer<T2> B)
+{
+  static_assert(sizeof(typename std::iterator_traits<P1>::value_type) == sizeof(T2) );
+  //std::copy(A, A + n, to_address(B));
+  if(A.layout().stride() != 1) throw std::runtime_error{"unimplemented"};
+  arch::memcopy(to_address(B), to_address(A.base()), n * sizeof(T2));
+  return B + n;
+}
+
+template<class P1, typename T2, typename Size>
+device_pointer<T2> copy_n(boost::multi::elements_iterator_t<P1, boost::multi::layout_t<4> > A, Size n, device_pointer<T2> B)
+{
+  static_assert(sizeof(typename std::iterator_traits<P1>::value_type) == sizeof(T2) );
+  //std::copy(A, A + n, to_address(B));
+  if(A.layout().stride() != 1) throw std::runtime_error{"unimplemented"};
+  arch::memcopy(to_address(B), to_address(A.base()), n * sizeof(T2));
+  return B + n;
+}
+
+template<class P1, typename P2, typename Size>
+auto copy_n(boost::multi::elements_iterator_t<P1, boost::multi::layout_t<2> > A, Size n, boost::multi::elements_iterator_t<P2, boost::multi::layout_t<2> > B)
+{
+  static_assert(sizeof(typename std::iterator_traits<P1>::value_type) == sizeof(typename std::iterator_traits<P2>::value_type) );
+  //std::copy(A, A + n, to_address(B));
+  if(A.layout().stride() != 1) throw std::runtime_error{"unimplemented"};
+  arch::memcopy(to_address(B), to_address(A.base()), n * sizeof(typename std::iterator_traits<P1>::value_type));
+  return B + n;
+}
+
+template<class P1, typename P2, typename Size>
+auto copy_n(boost::multi::elements_iterator_t<P1, boost::multi::layout_t<4> > A, Size n, boost::multi::elements_iterator_t<P2, boost::multi::layout_t<4> > B)
+{
+  static_assert(sizeof(typename std::iterator_traits<P1>::value_type) == sizeof(typename std::iterator_traits<P2>::value_type) );
+  //std::copy(A, A + n, to_address(B));
+  if(A.layout().stride() != 1) throw std::runtime_error{"unimplemented"};
+  arch::memcopy(to_address(B), to_address(A.base()), n * sizeof(typename std::iterator_traits<P1>::value_type));
+  return B + n;
+}
+
 
 /*
 // MAM: removing this to force copy to other pointers from the other ptr point of view
