@@ -208,7 +208,7 @@ public:
       syclBLAS::gemm(m_queue_, 'T', 'N', delay_count, norb, norb, cone, U_gpu.data(), norb,
                                        Ainv_gpu.data(), norb, czero, temp_gpu.data(), lda_Binv);
 
-      applyW_stageV_sycl(m_queue_, {}, delay_list.data(), delay_count, temp_gpu.data(),
+      applyW_stageV_sycl(m_queue_, delay_list.data(), delay_count, temp_gpu.data(),
                                              norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data());
 
       syclBLAS::gemm(m_queue_, 'N', 'N', norb, delay_count, delay_count, cone, V_gpu.data(), norb,
