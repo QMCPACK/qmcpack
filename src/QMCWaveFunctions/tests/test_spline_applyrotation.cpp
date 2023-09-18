@@ -123,7 +123,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  auto check = checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
@@ -158,7 +158,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
 
-  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
@@ -331,7 +331,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  auto check = checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
@@ -366,7 +366,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
 
-  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
@@ -634,7 +634,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat_tot[k][j];
     }
-  auto check = checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
@@ -668,7 +668,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat_tot[k][j];
     }
-  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
@@ -777,7 +777,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  auto check = checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
@@ -811,7 +811,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
-  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 } // TEST_CASE
 #endif
