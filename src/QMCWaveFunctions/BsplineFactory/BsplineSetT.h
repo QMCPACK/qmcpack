@@ -254,5 +254,7 @@ protected:
 };
 
 
+
+
 } // namespace qmcplusplus
 #endif
