@@ -17,21 +17,27 @@
 #include <string>
 #include <complex>
 #include <type_traits>
-#include <limits>
+#include <optional>
 #include "type_traits/complex_help.hpp"
 namespace qmcplusplus
 {
 
 template<typename T, IsComplex<T> = true>
-bool approxEquality(T val_a, T val_b, double eps)
+bool approxEquality(T val_a, T val_b, std::optional<double> eps)
 {
-  return val_a == ComplexApprox(val_b).epsilon(eps);
+  if (eps)
+    return val_a == ComplexApprox(val_b).epsilon(eps.value());
+  else
+    return val_a == ComplexApprox(val_b);
 }
 
 template<typename T, IsReal<T> = true>
-bool approxEquality(T val_a, T val_b, double eps)
+bool approxEquality(T val_a, T val_b, std::optional<double> eps)
 {
-  return val_a == Approx(val_b).epsilon(eps);
+  if (eps)
+    return val_a == Approx(val_b).epsilon(eps.value());
+  else
+    return val_a == Approx(val_b);
 }
 
 struct CheckMatrixResult
@@ -56,8 +62,8 @@ struct CheckMatrixResult
 template<class M1, class M2>
 CheckMatrixResult checkMatrix(M1& a_mat,
                               M2& b_mat,
-                              const bool check_all              = false,
-                              const double eps = std::numeric_limits<float>::epsilon() * 100)
+                              const bool check_all            = false,
+                              std::optional<const double> eps = std::nullopt)
 {
   // This allows use to check a padded b matrix with a nonpadded a
   if (a_mat.rows() > b_mat.rows() || a_mat.cols() > b_mat.cols())
@@ -83,13 +89,13 @@ CheckMatrixResult checkMatrix(M1& a_mat,
   return {all_elements_match, error_msg.str()};
 }
 
-extern template bool approxEquality<float>(float val_a, float val_b, double eps);
+extern template bool approxEquality<float>(float val_a, float val_b, std::optional<double> eps);
 extern template bool approxEquality<std::complex<float>>(std::complex<float> val_a,
                                                          std::complex<float> val_b,
-                                                         double eps);
-extern template bool approxEquality<double>(double val_a, double val_b, double eps);
+                                                         std::optional<double> eps);
+extern template bool approxEquality<double>(double val_a, double val_b, std::optional<double> eps);
 extern template bool approxEquality<std::complex<double>>(std::complex<double> val_a,
                                                           std::complex<double> val_b,
-                                                          double eps);
+                                                          std::optional<double> eps);
 } // namespace qmcplusplus
 #endif
