@@ -45,14 +45,13 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-        <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
-            <slaterdeterminant>
-               <determinant id="updet" size="1">
-                  <occupation mode="ground" spindataset="0"/>
-               </determinant>
-               <determinant id="downdet" size="1">
-                  <occupation mode="ground" spindataset="0"/>
-               </determinant>
+	<sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+	    <sposet type="bspline" name="spo_ud" size="1" spindataset="0"/> 	      
+        </sposet_collection>
+        <determinantset>
+	    <slaterdeterminant>
+	       <determinant sposet="spo_ud"/>
+	       <determinant sposet="spo_ud"/>
             </slaterdeterminant>
          </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">

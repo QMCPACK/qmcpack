@@ -47,17 +47,14 @@
          Li H
        </attrib>
     </particleset>
-   <wavefunction name="psi0" target="e">
-     <determinantset type="einspline" href="LiH-arb.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" source="i"  precision="double">
+    <wavefunction name="psi0" target="e">
+     <sposet_collection type="bspline" href="LiH-arb.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" source="i"  precision="double">
+       <sposet type="bspline" name="spo_ud" size="2" spindataset="0"/>
+     </sposet_collection> 
+     <determinantset>
        <slaterdeterminant>
-         <determinant id="updet" size="2" ref="updet">
-           <occupation mode="ground" spindataset="0">
-           </occupation>
-         </determinant>
-         <determinant id="downdet" size="2" ref="downdet">
-           <occupation mode="ground" spindataset="0">
-           </occupation>
-         </determinant>
+         <determinant sposet="spo_ud"/>
+         <determinant sposet="spo_ud"/>
        </slaterdeterminant>
      </determinantset>
    </wavefunction>

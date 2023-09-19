@@ -60,9 +60,9 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <sposet_builder type="bspline" href="not-orth.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0">
+         <sposet_collection type="bspline" href="not-orth.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0">
             <sposet type="bspline" name="spo_ud" size="12" spindataset="0"/>
-         </sposet_builder>
+         </sposet_collection>
          <determinantset>
             <backflow>
               <transformation name="eHB" type="e-I" function="Bspline" source="ion0">
@@ -80,8 +80,8 @@
               </transformation>
             </backflow>
             <slaterdeterminant>
-               <determinant id="updet" group="u" sposet="spo_ud" size="12"/>
-               <determinant id="downdet" group="d" sposet="spo_ud" size="12"/>
+               <determinant sposet="spo_ud"/>
+               <determinant sposet="spo_ud"/>
             </slaterdeterminant>
          </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
