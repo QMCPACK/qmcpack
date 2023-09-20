@@ -649,9 +649,6 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   spo->storeParamsBeforeRotation();
   spo->applyRotation(rot_mat, false);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
-  for (int i = 0; i < 3; i++)
-      for (int j = 0; j < 3; j++)
-          std::cout << i << " " << j << ": " << psiM[i][j] << std::endl;
   auto check = checkMatrix(psiM_rot_manual, psiM);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 }
