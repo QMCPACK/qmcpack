@@ -13,7 +13,7 @@
 
 
 #include "hipBLAS.hpp"
-#include <cassert>
+#include <stdexcept>
 #include <rocsolver/rocsolver.h>
 
 //------------------------------------------------------------------------------
@@ -69,7 +69,8 @@ hipblasStatus_t hipblasSgetrfBatched_(hipblasHandle_t handle,
                                       int* info,
                                       int batchSize)
 {
-  assert(P != nullptr && "Pivot array cannot be a null pointer!");
+  if (!P)
+    throw std::runtime_error("hipblasXgetrfBatched_ pivot array cannot be a null pointer!");
   return (hipblasStatus_t)rocsolver_sgetrf_batched((rocblas_handle)handle, (const rocblas_int)n, (const rocblas_int)n,
                                                    (float* const*)A, (const rocblas_int)lda, (rocblas_int*)P,
                                                    (const rocblas_stride)n, (rocblas_int*)info,
@@ -84,7 +85,8 @@ hipblasStatus_t hipblasDgetrfBatched_(hipblasHandle_t handle,
                                       int* info,
                                       int batchSize)
 {
-  assert(P != nullptr && "Pivot array cannot be a null pointer!");
+  if (!P)
+    throw std::runtime_error("hipblasXgetrfBatched_ pivot array cannot be a null pointer!");
   return (hipblasStatus_t)rocsolver_dgetrf_batched((rocblas_handle)handle, (const rocblas_int)n, (const rocblas_int)n,
                                                    (double* const*)A, (const rocblas_int)lda, (rocblas_int*)P,
                                                    (const rocblas_stride)n, (rocblas_int*)info,
@@ -99,7 +101,8 @@ hipblasStatus_t hipblasCgetrfBatched_(hipblasHandle_t handle,
                                       int* info,
                                       int batchSize)
 {
-  assert(P != nullptr && "Pivot array cannot be a null pointer!");
+  if (!P)
+    throw std::runtime_error("hipblasXgetrfBatched_ pivot array cannot be a null pointer!");
   return (hipblasStatus_t)rocsolver_cgetrf_batched((rocblas_handle)handle, (const rocblas_int)n, (const rocblas_int)n,
                                                    (rocblas_float_complex* const*)A, (const rocblas_int)lda,
                                                    (rocblas_int*)P, (const rocblas_stride)n, (rocblas_int*)info,
@@ -114,7 +117,8 @@ hipblasStatus_t hipblasZgetrfBatched_(hipblasHandle_t handle,
                                       int* info,
                                       int batchSize)
 {
-  assert(P != nullptr && "Pivot array cannot be a null pointer!");
+  if (!P)
+    throw std::runtime_error("hipblasXgetrfBatched_ pivot array cannot be a null pointer!");
   return (hipblasStatus_t)rocsolver_zgetrf_batched((rocblas_handle)handle, (const rocblas_int)n, (const rocblas_int)n,
                                                    (rocblas_double_complex* const*)A, (const rocblas_int)lda,
                                                    (rocblas_int*)P, (const rocblas_stride)n, (rocblas_int*)info,
@@ -132,7 +136,8 @@ hipblasStatus_t hipblasSgetriBatched_(hipblasHandle_t handle,
                                       int* info,
                                       int batchSize)
 {
-  assert(P != nullptr && "Pivot array cannot be a null pointer!");
+  if (!P)
+    throw std::runtime_error("hipblasXgetriBatched_ pivot array cannot be a null pointer!");
   return hipblasSgetriBatched(handle, n, (float* const*)A, lda, (int*)P, (float* const*)C, ldc, info, batchSize);
 }
 
@@ -146,7 +151,8 @@ hipblasStatus_t hipblasDgetriBatched_(hipblasHandle_t handle,
                                       int* info,
                                       int batchSize)
 {
-  assert(P != nullptr && "Pivot array cannot be a null pointer!");
+  if (!P)
+    throw std::runtime_error("hipblasXgetriBatched_ pivot array cannot be a null pointer!");
   return hipblasDgetriBatched(handle, n, (double* const*)A, lda, (int*)P, (double* const*)C, ldc, info, batchSize);
 }
 
@@ -160,7 +166,8 @@ hipblasStatus_t hipblasCgetriBatched_(hipblasHandle_t handle,
                                       int* info,
                                       int batchSize)
 {
-  assert(P != nullptr && "Pivot array cannot be a null pointer!");
+  if (!P)
+    throw std::runtime_error("hipblasXgetriBatched_ pivot array cannot be a null pointer!");
   return hipblasCgetriBatched(handle, n, (hipblasComplex* const*)A, lda, (int*)P, (hipblasComplex* const*)C, ldc, info,
                               batchSize);
 }
@@ -175,7 +182,8 @@ hipblasStatus_t hipblasZgetriBatched_(hipblasHandle_t handle,
                                       int* info,
                                       int batchSize)
 {
-  assert(P != nullptr && "Pivot array cannot be a null pointer!");
+  if (!P)
+    throw std::runtime_error("hipblasXgetriBatched_ pivot array cannot be a null pointer!");
   return hipblasZgetriBatched(handle, n, (hipblasDoubleComplex* const*)A, lda, (int*)P, (hipblasDoubleComplex* const*)C,
                               ldc, info, batchSize);
 }
