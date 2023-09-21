@@ -50,6 +50,7 @@ private:
   ValueVector psi_AO, d2psi_AO;
   GradVector dpsi_AO;
   Matrix<ST, aligned_allocator<ST>> multi_myV;
+  typename HYBRIDBASE::LocationSmoothingInfo info;
 
   using SPLINEBASE::myG;
   using SPLINEBASE::myH;
@@ -95,24 +96,19 @@ public:
 
   void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override
   {
-    const RealType smooth_factor = HYBRIDBASE::evaluate_v(P, iat, myV);
+    HYBRIDBASE::evaluate_v(P, iat, myV, info);
     const RealType cone(1);
-    if (smooth_factor < 0)
-    {
+    if (info.f < 0)
       SPLINEBASE::evaluateValue(P, iat, psi);
-    }
-    else if (smooth_factor == cone)
-    {
-      const PointType& r = P.activeR(iat);
-      SPLINEBASE::assign_v(r, myV, psi, 0, myV.size() / 2);
-    }
+    else if (info.f == cone)
+      SPLINEBASE::assign_v(P.activeR(iat), myV, psi, 0, myV.size() / 2);
     else
     {
       const PointType& r = P.activeR(iat);
       psi_AO.resize(psi.size());
       SPLINEBASE::assign_v(r, myV, psi_AO, 0, myV.size() / 2);
       SPLINEBASE::evaluateValue(P, iat, psi);
-      HYBRIDBASE::interpolate_buffer_v(psi, psi_AO);
+      HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info);
     }
   }
 
@@ -128,13 +124,13 @@ public:
       psi_AO.resize(psi.size());
       if (multi_myV.rows() < VP.getTotalNum())
         multi_myV.resize(VP.getTotalNum(), myV.size());
-      const RealType smooth_factor = HYBRIDBASE::evaluateValuesC2X(VP, multi_myV);
+      HYBRIDBASE::evaluateValuesC2X(VP, multi_myV, info);
       const RealType cone(1);
       for (int iat = 0; iat < VP.getTotalNum(); ++iat)
       {
-        if (smooth_factor < 0)
+        if (info.f < 0)
           SPLINEBASE::evaluateValue(VP, iat, psi);
-        else if (smooth_factor == cone)
+        else if (info.f == cone)
         {
           const PointType& r = VP.R[iat];
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
@@ -146,7 +142,7 @@ public:
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
           SPLINEBASE::assign_v(r, myV_one, psi_AO, 0, myV.size() / 2);
           SPLINEBASE::evaluateValue(VP, iat, psi);
-          HYBRIDBASE::interpolate_buffer_v(psi, psi_AO);
+          HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info);
         }
         ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
       }
@@ -172,17 +168,12 @@ public:
 
   void evaluateVGL(const ParticleSet& P, const int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
-    const RealType smooth_factor = HYBRIDBASE::evaluate_vgl(P, iat, myV, myG, myL);
+    HYBRIDBASE::evaluate_vgl(P, iat, myV, myG, myL, info);
     const RealType cone(1);
-    if (smooth_factor < 0)
-    {
+    if (info.f < 0)
       SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
-    }
-    else if (smooth_factor == cone)
-    {
-      const PointType& r = P.activeR(iat);
-      SPLINEBASE::assign_vgl_from_l(r, psi, dpsi, d2psi);
-    }
+    else if (info.f == cone)
+      SPLINEBASE::assign_vgl_from_l(P.activeR(iat), psi, dpsi, d2psi);
     else
     {
       const PointType& r = P.activeR(iat);
@@ -191,7 +182,7 @@ public:
       d2psi_AO.resize(psi.size());
       SPLINEBASE::assign_vgl_from_l(r, psi_AO, dpsi_AO, d2psi_AO);
       SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
-      HYBRIDBASE::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO);
+      HYBRIDBASE::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO, info);
     }
   }
 
@@ -223,13 +214,11 @@ public:
                    HessVector& grad_grad_psi) override
   {
     APP_ABORT("HybridRepCplx::evaluate_vgh not implemented!");
-    if (HYBRIDBASE::evaluate_vgh(P, iat, myV, myG, myH))
-    {
-      const PointType& r = P.activeR(iat);
-      SPLINEBASE::assign_vgh(r, psi, dpsi, grad_grad_psi, 0, myV.size() / 2);
-    }
-    else
+    HYBRIDBASE::evaluate_vgh(P, iat, myV, myG, myH, info);
+    if (info.f < 0)
       SPLINEBASE::evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);
+    else
+      SPLINEBASE::assign_vgh(P.activeR(iat), psi, dpsi, grad_grad_psi, 0, myV.size() / 2);
   }
 
   void evaluateVGHGH(const ParticleSet& P,
