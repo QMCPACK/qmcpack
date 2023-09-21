@@ -47,6 +47,8 @@ public:
   using typename SPLINEBASE::ValueVector;
 
 private:
+  using typename HYBRIDBASE::Region;
+
   ValueVector psi_AO, d2psi_AO;
   GradVector dpsi_AO;
   Matrix<ST, aligned_allocator<ST>> multi_myV;
@@ -97,10 +99,9 @@ public:
   void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override
   {
     HYBRIDBASE::evaluate_v(P, iat, myV, info);
-    const RealType cone(1);
-    if (info.f < 0)
+    if (info.region == Region::INTER)
       SPLINEBASE::evaluateValue(P, iat, psi);
-    else if (info.f == cone)
+    else if (info.region == Region::INSIDE)
       SPLINEBASE::assign_v(P.activeR(iat), myV, psi, 0, myV.size() / 2);
     else
     {
@@ -125,12 +126,11 @@ public:
       if (multi_myV.rows() < VP.getTotalNum())
         multi_myV.resize(VP.getTotalNum(), myV.size());
       HYBRIDBASE::evaluateValuesC2X(VP, multi_myV, info);
-      const RealType cone(1);
       for (int iat = 0; iat < VP.getTotalNum(); ++iat)
       {
-        if (info.f < 0)
+        if (info.region == Region::INTER)
           SPLINEBASE::evaluateValue(VP, iat, psi);
-        else if (info.f == cone)
+        else if (info.region == Region::INSIDE)
         {
           const PointType& r = VP.R[iat];
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
@@ -169,10 +169,9 @@ public:
   void evaluateVGL(const ParticleSet& P, const int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
     HYBRIDBASE::evaluate_vgl(P, iat, myV, myG, myL, info);
-    const RealType cone(1);
-    if (info.f < 0)
+    if (info.region == Region::INTER)
       SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
-    else if (info.f == cone)
+    else if (info.region == Region::INSIDE)
       SPLINEBASE::assign_vgl_from_l(P.activeR(iat), psi, dpsi, d2psi);
     else
     {
@@ -215,7 +214,7 @@ public:
   {
     APP_ABORT("HybridRepCplx::evaluate_vgh not implemented!");
     HYBRIDBASE::evaluate_vgh(P, iat, myV, myG, myH, info);
-    if (info.f < 0)
+    if (info.region == Region::INTER)
       SPLINEBASE::evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);
     else
       SPLINEBASE::assign_vgh(P.activeR(iat), psi, dpsi, grad_grad_psi, 0, myV.size() / 2);

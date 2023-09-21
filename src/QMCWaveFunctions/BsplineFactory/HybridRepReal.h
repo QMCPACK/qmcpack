@@ -47,6 +47,8 @@ public:
   using typename SPLINEBASE::ValueVector;
 
 private:
+  using typename HYBRIDBASE::Region;
+
   ValueVector psi_AO, d2psi_AO;
   GradVector dpsi_AO;
   Matrix<ST, aligned_allocator<ST>> multi_myV;
@@ -99,10 +101,9 @@ public:
   void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override
   {
     HYBRIDBASE::evaluate_v(P, iat, myV, info);
-    const RealType cone(1);
-    if (info.f < 0)
+    if (info.region == Region::INTER)
       SPLINEBASE::evaluateValue(P, iat, psi);
-    else if (info.f == cone)
+    else if (info.region == Region::INSIDE)
     {
       const PointType& r = P.activeR(iat);
       int bc_sign        = HYBRIDBASE::get_bc_sign(r, info.r_image, PrimLattice, HalfG);
@@ -132,12 +133,11 @@ public:
         multi_myV.resize(VP.getTotalNum(), myV.size());
       std::vector<int> bc_signs(VP.getTotalNum());
       HYBRIDBASE::evaluateValuesR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs, info);
-      const RealType cone(1);
       for (int iat = 0; iat < VP.getTotalNum(); ++iat)
       {
-        if (info.f < 0)
+        if (info.region == Region::INTER)
           SPLINEBASE::evaluateValue(VP, iat, psi);
-        else if (info.f == cone)
+        else if (info.region == Region::INSIDE)
         {
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
           SPLINEBASE::assign_v(bc_signs[iat], myV_one, psi, 0, myV.size());
@@ -172,11 +172,11 @@ public:
   void evaluateVGL(const ParticleSet& P, const int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
     HYBRIDBASE::evaluate_vgl(P, iat, myV, myG, myL, info);
-    const RealType cone(1);
-    if (info.f < 0)
+    if (info.region == Region::INTER)
       SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
-    else if (info.f == cone)
-      SPLINEBASE::assign_vgl_from_l(HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG), psi, dpsi, d2psi);
+    else if (info.region == Region::INSIDE)
+      SPLINEBASE::assign_vgl_from_l(HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG), psi,
+                                    dpsi, d2psi);
     else
     {
       const PointType& r = P.activeR(iat);
@@ -219,9 +219,9 @@ public:
   {
     APP_ABORT("HybridRepReal::evaluateVGH not implemented!");
     HYBRIDBASE::evaluate_vgh(P, iat, myV, myG, myH, info);
-
-    if (info.f < 0)
-      SPLINEBASE::assign_vgh(HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG), psi, dpsi, grad_grad_psi, 0, myV.size());
+    if (info.region == Region::INTER)
+      SPLINEBASE::assign_vgh(HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG), psi, dpsi,
+                             grad_grad_psi, 0, myV.size());
     else
       SPLINEBASE::evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);
   }

@@ -409,6 +409,13 @@ public:
   using RealType     = typename DistanceTable::RealType;
   using PosType      = typename DistanceTable::PosType;
 
+  enum class Region
+  {
+    INSIDE, // within the buffer shell
+    BUFFER, // in the buffer region
+    INTER   // interstitial area
+  };
+
   struct LocationSmoothingInfo
   {
     ///r from distance table
@@ -417,6 +424,8 @@ public:
     PosType dist_dr;
     ///for APBC
     PointType r_image;
+    /// region of the location
+    Region region;
     ///smooth function value
     RealType f;
     ///smooth function first derivative
@@ -442,20 +451,26 @@ private:
   /// smoothing function
   smoothing_functions smooth_func_id;
 
-  inline void computeSmoothingFunction(const ST& cutoff_buffer, const ST& cutoff, LocationSmoothingInfo& info) const
+  /// select a region (within the buffer shell, in the buffer, interstitial region) and compute the smoothing function if in the buffer.
+  inline void selectRegionAndComputeSmoothing(const ST& cutoff_buffer,
+                                              const ST& cutoff,
+                                              LocationSmoothingInfo& info) const
   {
     const RealType cone(1);
     const RealType r = info.dist_r;
     if (r < cutoff_buffer)
+      info.region = Region::INSIDE;
+    else if (r < cutoff)
     {
-      info.f = cone;
-      return;
+      const RealType scale = cone / (cutoff - cutoff_buffer);
+      const RealType x     = (r - cutoff_buffer) * scale;
+      info.f               = smoothing(smooth_func_id, x, info.df_dr, info.d2f_dr2);
+      info.df_dr *= scale;
+      info.d2f_dr2 *= scale * scale;
+      info.region = Region::BUFFER;
     }
-    const RealType scale = cone / (cutoff - cutoff_buffer);
-    const RealType x     = (r - cutoff_buffer) * scale;
-    info.f               = smoothing(smooth_func_id, x, info.df_dr, info.d2f_dr2);
-    info.df_dr *= scale;
-    info.d2f_dr2 *= scale * scale;
+    else
+      info.region = Region::INTER;
   }
 
 public:
@@ -594,16 +609,14 @@ public:
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
-    auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (info.dist_r < myCenter.getCutoff())
+    auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
     {
       PointType dr(-info.dist_dr[0], -info.dist_dr[1], -info.dist_dr[2]);
       info.r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_v(info.dist_r, dr, myV);
-      computeSmoothingFunction(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
     }
-    else
-      info.f = RealType(-1);
   }
 
   /* check if the batched algorithm is safe to operate
@@ -630,13 +643,9 @@ public:
     const int center_idx = VP.refSourcePtcl;
     info.dist_r          = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    if (info.dist_r < myCenter.getCutoff())
-    {
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
       myCenter.evaluateValues(VP.getDistTableAB(myTableID).getDisplacements(), center_idx, info.dist_r, multi_myV);
-      computeSmoothingFunction(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
-    }
-    else
-      info.f = RealType(-1);
   }
 
   // R2R case
@@ -651,16 +660,14 @@ public:
     const int center_idx = VP.refSourcePtcl;
     info.dist_r          = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    if (info.dist_r < myCenter.getCutoff())
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
     {
       const auto& displ = VP.getDistTableAB(myTableID).getDisplacements();
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
         bc_signs[ivp] = get_bc_sign(VP.R[ivp], myCenter.getCenterPos() - displ[ivp][center_idx], PrimLattice, HalfG);
       myCenter.evaluateValues(displ, center_idx, info.dist_r, multi_myV);
-      computeSmoothingFunction(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
     }
-    else
-      info.f = RealType(-1);
   }
 
   //evaluate only VGL
@@ -669,16 +676,14 @@ public:
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
-    auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (info.dist_r < myCenter.getCutoff())
+    auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
     {
       const PointType dr(-info.dist_dr[0], -info.dist_dr[1], -info.dist_dr[2]);
       info.r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_vgl(info.dist_r, dr, myV, myG, myL);
-      computeSmoothingFunction(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
     }
-    else
-      info.f = RealType(-1);
   }
 
   //evaluate only VGH
@@ -687,16 +692,14 @@ public:
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
-    auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (info.dist_r < myCenter.getCutoff())
+    auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
     {
       const PointType dr(-info.dist_dr[0], -info.dist_dr[1], -info.dist_dr[2]);
       info.r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_vgh(info.dist_r, dr, myV, myG, myH);
-      computeSmoothingFunction(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
     }
-    else
-      info.f = RealType(-1);
   }
 
   // interpolate buffer region, value only
