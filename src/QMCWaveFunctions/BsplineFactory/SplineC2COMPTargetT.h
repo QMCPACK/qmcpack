@@ -241,15 +241,15 @@ public:
 
   void assign_v(const PointType& r, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
-  virtual void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override;
+  virtual void evaluateValue(const ParticleSetT<ComplexT>& P, const int iat, ValueVector& psi) override;
 
-  virtual void evaluateDetRatios(const VirtualParticleSet& VP,
+  virtual void evaluateDetRatios(const VirtualParticleSetT<ComplexT>& VP,
                                  ValueVector& psi,
                                  const ValueVector& psiinv,
                                  std::vector<ValueType>& ratios) override;
 
   virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                    const RefVectorWithLeader<const VirtualParticleSetT<ComplexT>>& vp_list,
                                     const RefVector<ValueVector>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const override;
@@ -258,21 +258,21 @@ public:
    */
   void assign_vgl_from_l(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
-  virtual void evaluateVGL(const ParticleSet& P,
+  virtual void evaluateVGL(const ParticleSetT<ComplexT>& P,
                            const int iat,
                            ValueVector& psi,
                            GradVector& dpsi,
                            ValueVector& d2psi) override;
 
   virtual void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
-                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              const RefVectorWithLeader<ParticleSetT<ComplexT>>& P_list,
                               int iat,
                               const RefVector<ValueVector>& psi_v_list,
                               const RefVector<GradVector>& dpsi_v_list,
                               const RefVector<ValueVector>& d2psi_v_list) const override;
 
   virtual void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
-                                              const RefVectorWithLeader<ParticleSet>& P_list,
+                                              const RefVectorWithLeader<ParticleSetT<ComplexT>>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
                                               OffloadMWVGLArray& phi_vgl_v,
@@ -286,7 +286,7 @@ public:
                   int first,
                   int last) const;
 
-  virtual void evaluateVGH(const ParticleSet& P,
+  virtual void evaluateVGH(const ParticleSetT<ComplexT>& P,
                            const int iat,
                            ValueVector& psi,
                            GradVector& dpsi,
@@ -300,14 +300,14 @@ public:
                     int first = 0,
                     int last  = -1) const;
 
-  virtual void evaluateVGHGH(const ParticleSet& P,
+  virtual void evaluateVGHGH(const ParticleSetT<ComplexT>& P,
                              const int iat,
                              ValueVector& psi,
                              GradVector& dpsi,
                              HessVector& grad_grad_psi,
                              GGGVector& grad_grad_grad_psi) override;
 
-  virtual void evaluate_notranspose(const ParticleSet& P,
+  virtual void evaluate_notranspose(const ParticleSetT<ComplexT>& P,
                                     int first,
                                     int last,
                                     ValueMatrix& logdet,
