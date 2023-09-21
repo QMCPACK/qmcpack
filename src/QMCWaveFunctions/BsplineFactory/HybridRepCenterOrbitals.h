@@ -456,12 +456,12 @@ private:
                                               const ST& cutoff,
                                               LocationSmoothingInfo& info) const
   {
-    const RealType cone(1);
     const RealType r = info.dist_r;
     if (r < cutoff_buffer)
       info.region = Region::INSIDE;
     else if (r < cutoff)
     {
+      constexpr RealType cone(1);
       const RealType scale = cone / (cutoff - cutoff_buffer);
       const RealType x     = (r - cutoff_buffer) * scale;
       info.f               = smoothing(smooth_func_id, x, info.df_dr, info.d2f_dr2);
@@ -704,11 +704,11 @@ public:
 
   // interpolate buffer region, value only
   template<typename VV>
-  inline void interpolate_buffer_v(VV& psi, const VV& psi_AO, const LocationSmoothingInfo& info) const
+  inline void interpolate_buffer_v(VV& psi, const VV& psi_AO, const RealType f) const
   {
-    const RealType cone(1);
+    constexpr RealType cone(1);
     for (size_t i = 0; i < psi.size(); i++)
-      psi[i] = psi_AO[i] * info.f + psi[i] * (cone - info.f);
+      psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
   }
 
   // interpolate buffer region, value, gradients and laplacian
@@ -721,7 +721,7 @@ public:
                                      const VV& d2psi_AO,
                                      const LocationSmoothingInfo& info) const
   {
-    const RealType cone(1), ctwo(2);
+    constexpr RealType cone(1), ctwo(2);
     const RealType rinv(1.0 / info.dist_r);
     auto& dist_dr = info.dist_dr;
     auto& f       = info.f;

@@ -105,18 +105,16 @@ public:
       SPLINEBASE::evaluateValue(P, iat, psi);
     else if (info.region == Region::INSIDE)
     {
-      const PointType& r = P.activeR(iat);
-      int bc_sign        = HYBRIDBASE::get_bc_sign(r, info.r_image, PrimLattice, HalfG);
+      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG);
       SPLINEBASE::assign_v(bc_sign, myV, psi, 0, myV.size());
     }
     else
     {
-      const PointType& r = P.activeR(iat);
       psi_AO.resize(psi.size());
-      int bc_sign = HYBRIDBASE::get_bc_sign(r, info.r_image, PrimLattice, HalfG);
+      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG);
       SPLINEBASE::assign_v(bc_sign, myV, psi_AO, 0, myV.size());
       SPLINEBASE::evaluateValue(P, iat, psi);
-      HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info);
+      HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info.f);
     }
   }
 
@@ -147,7 +145,7 @@ public:
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
           SPLINEBASE::assign_v(bc_signs[iat], myV_one, psi_AO, 0, myV.size());
           SPLINEBASE::evaluateValue(VP, iat, psi);
-          HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info);
+          HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info.f);
         }
         ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
       }
@@ -179,11 +177,10 @@ public:
                                     dpsi, d2psi);
     else
     {
-      const PointType& r = P.activeR(iat);
       psi_AO.resize(psi.size());
       dpsi_AO.resize(psi.size());
       d2psi_AO.resize(psi.size());
-      int bc_sign = HYBRIDBASE::get_bc_sign(r, info.r_image, PrimLattice, HalfG);
+      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG);
       SPLINEBASE::assign_vgl_from_l(bc_sign, psi_AO, dpsi_AO, d2psi_AO);
       SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
       HYBRIDBASE::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO, info);
