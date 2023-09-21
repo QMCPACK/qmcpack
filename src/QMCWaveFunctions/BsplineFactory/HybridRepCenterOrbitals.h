@@ -594,8 +594,6 @@ public:
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
-    if (center_idx < 0)
-      abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
     if (info.dist_r < myCenter.getCutoff())
     {
@@ -671,8 +669,6 @@ public:
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
-    if (center_idx < 0)
-      abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
     if (info.dist_r < myCenter.getCutoff())
     {
@@ -691,8 +687,6 @@ public:
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
-    if (center_idx < 0)
-      abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
     if (info.dist_r < myCenter.getCutoff())
     {
