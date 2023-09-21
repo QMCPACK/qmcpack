@@ -553,7 +553,7 @@ public:
   }
 
   template<typename Cell>
-  inline int get_bc_sign(const PointType& r, const Cell& PrimLattice, TinyVector<int, D>& HalfG)
+  inline int get_bc_sign(const PointType& r, const Cell& PrimLattice, TinyVector<int, D>& HalfG) const
   {
     int bc_sign          = 0;
     PointType shift_unit = PrimLattice.toUnit(r - r_image);
@@ -593,7 +593,7 @@ public:
    * The batched algorthm forces the evaluation on the reference center and introduce some error.
    * In this case, the non-batched algorithm should be used.
    */
-  bool is_batched_safe(const VirtualParticleSet& VP)
+  bool is_batched_safe(const VirtualParticleSet& VP) const
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
