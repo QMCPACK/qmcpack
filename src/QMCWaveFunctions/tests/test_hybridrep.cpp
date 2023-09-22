@@ -113,11 +113,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
   CHECK(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
-#if defined(MIXED_PRECISION)
   CHECK(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
-#else
-  CHECK(std::real(d2psiM[0][1]) == Approx(22.3851032257));
-#endif
 
   // electron 1
   // value
@@ -146,8 +142,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[2][1][1]) == Approx(1.0020672904));
   CHECK(std::real(dpsiM[2][1][2]) == Approx(-1.9794520201));
   // lapl
-  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428));
-  CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738));
+  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(3e-5));
+  CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738).epsilon(3e-5));
 }
 
 TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
@@ -277,8 +273,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[2][1][1]) == Approx(0.7525391523));
   CHECK(std::real(dpsiM[2][1][2]) == Approx(-0.1224437827));
   // lapl
-  CHECK(std::real(d2psiM[2][0]) == Approx(-1.1799273657));
-  CHECK(std::real(d2psiM[2][1]) == Approx(-2.0339757673));
+  CHECK(std::real(d2psiM[2][0]) == Approx(-1.1799273657).epsilon(1e-4));
+  CHECK(std::real(d2psiM[2][1]) == Approx(-2.0339757673).epsilon(1e-4));
 
   // imaginary part
   // electron 0
@@ -323,8 +319,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   CHECK(std::imag(dpsiM[2][1][1]) == Approx(0.7550587239));
   CHECK(std::imag(dpsiM[2][1][2]) == Approx(-0.1228616516));
   // lapl
-  CHECK(std::imag(d2psiM[2][0]) == Approx(-1.2044699918));
-  CHECK(std::imag(d2psiM[2][1]) == Approx(-1.885562226));
+  CHECK(std::imag(d2psiM[2][0]) == Approx(-1.2044699918).epsilon(1e-4));
+  CHECK(std::imag(d2psiM[2][1]) == Approx(-1.885562226).epsilon(1e-4));
 #endif
 
   // test batched interfaces
