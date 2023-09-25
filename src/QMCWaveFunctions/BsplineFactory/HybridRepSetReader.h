@@ -21,6 +21,7 @@
 #include "Numerics/Quadrature.h"
 #include "Numerics/Bessel.h"
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineSetReader.h"
 #include "OhmmsData/AttributeSet.h"
 #include "CPU/math.hpp"
 #include "Concurrency/OpenMP.h"

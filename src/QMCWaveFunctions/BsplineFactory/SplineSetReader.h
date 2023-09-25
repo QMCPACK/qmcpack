@@ -28,6 +28,10 @@
 #include "mpi/collectives.h"
 #include "mpi/point2point.h"
 #include "Utilities/FairDivide.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "Utilities/ProgressReportEngine.h"
+#include "QMCWaveFunctions/BsplineFactory/einspline_helper.hpp"
+#include <fftw3.h>
 
 namespace qmcplusplus
 {

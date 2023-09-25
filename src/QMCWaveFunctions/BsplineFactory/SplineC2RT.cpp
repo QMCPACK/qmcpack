@@ -1,43 +1,47 @@
 //////////////////////////////////////////////////////////////////////////////////////
-// This file is distributed under the University of Illinois/NCSA Open Source License.
-// See LICENSE file in top directory for details.
+// This file is distributed under the University of Illinois/NCSA Open Source
+// License. See LICENSE file in top directory for details.
 //
 // Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@intel.com, University of Illinois at Urbana-Champaign
-//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-//                    Anouar Benali, benali@anl.gov, Argonne National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of
+// Illinois at Urbana-Champaign
+//                    Jeongnim Kim, jeongnim.kim@intel.com, University of
+//                    Illinois at Urbana-Champaign Ye Luo, yeluo@anl.gov,
+//                    Argonne National Laboratory Anouar Benali, benali@anl.gov,
+//                    Argonne National Laboratory Mark A. Berrill,
+//                    berrillma@ornl.gov, Oak Ridge National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois
+// at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-#include "Concurrency/OpenMP.h"
 #include "SplineC2RT.h"
-#include "spline2/MultiBsplineEval.hpp"
-#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+
 #include "CPU/math.hpp"
+#include "CPU/SIMD/inner_product.hpp"
+#include "Concurrency/OpenMP.h"
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "spline2/MultiBsplineEval.hpp"
 
 namespace qmcplusplus
 {
-template<typename ST>
-SplineC2RT<ST>::SplineC2RT(const SplineC2RT& in) = default;
+template<typename ST, typename VT>
+SplineC2RT<ST, VT>::SplineC2RT(const SplineC2RT& in) = default;
 
-template<typename ST>
-inline void SplineC2RT<ST>::set_spline(SingleSplineType* spline_r,
-                                       SingleSplineType* spline_i,
-                                       int twist,
-                                       int ispline,
-                                       int level)
+template<typename ST, typename VT>
+inline void SplineC2RT<ST, VT>::set_spline(SingleSplineType* spline_r,
+                                           SingleSplineType* spline_i,
+                                           int twist,
+                                           int ispline,
+                                           int level)
 {
   SplineInst->copy_spline(spline_r, 2 * ispline);
   SplineInst->copy_spline(spline_i, 2 * ispline + 1);
 }
 
-template<typename ST>
-bool SplineC2RT<ST>::read_splines(hdf_archive& h5f)
+template<typename ST, typename VT>
+bool SplineC2RT<ST, VT>::read_splines(hdf_archive& h5f)
 {
   std::ostringstream o;
   o << "spline_" << this->MyIndex;
@@ -45,8 +49,8 @@ bool SplineC2RT<ST>::read_splines(hdf_archive& h5f)
   return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-template<typename ST>
-bool SplineC2RT<ST>::write_splines(hdf_archive& h5f)
+template<typename ST, typename VT>
+bool SplineC2RT<ST, VT>::write_splines(hdf_archive& h5f)
 {
   std::ostringstream o;
   o << "spline_" << this->MyIndex;
@@ -54,12 +58,12 @@ bool SplineC2RT<ST>::write_splines(hdf_archive& h5f)
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-template<typename ST>
-inline void SplineC2RT<ST>::assign_v(const PointType& r,
-                                     const vContainer_type& myV,
-                                     ValueVector& psi,
-                                     int first,
-                                     int last) const
+template<typename ST, typename VT>
+inline void SplineC2RT<ST, VT>::assign_v(const PointType& r,
+                                         const vContainer_type& myV,
+                                         ValueVector& psi,
+                                         int first,
+                                         int last) const
 {
   // protect last
   last = last > this->kPoints.size() ? this->kPoints.size() : last;
@@ -99,8 +103,8 @@ inline void SplineC2RT<ST>::assign_v(const PointType& r,
   }
 }
 
-template<typename ST>
-void SplineC2RT<ST>::evaluateValue(const ParticleSetT<ST>& P, const int iat, ValueVector& psi)
+template<typename ST, typename VT>
+void SplineC2RT<ST, VT>::evaluateValue(const ParticleSetT<VT>& P, const int iat, ValueVector& psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -115,11 +119,11 @@ void SplineC2RT<ST>::evaluateValue(const ParticleSetT<ST>& P, const int iat, Val
   }
 }
 
-template<typename ST>
-void SplineC2RT<ST>::evaluateDetRatios(const VirtualParticleSetT<ST>& VP,
-                                       ValueVector& psi,
-                                       const ValueVector& psiinv,
-                                       std::vector<TT>& ratios)
+template<typename ST, typename VT>
+void SplineC2RT<ST, VT>::evaluateDetRatios(const VirtualParticleSetT<VT>& VP,
+                                           ValueVector& psi,
+                                           const ValueVector& psiinv,
+                                           std::vector<TT>& ratios)
 {
   const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
@@ -129,7 +133,8 @@ void SplineC2RT<ST>::evaluateDetRatios(const VirtualParticleSetT<ST>& VP,
     // initialize thread private ratios
     if (need_resize)
     {
-      if (tid == 0) // just like #pragma omp master, but one fewer call to the runtime
+      if (tid == 0) // just like #pragma omp master, but one fewer call to
+                    // the runtime
         ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
 #pragma omp barrier
     }
@@ -162,14 +167,14 @@ void SplineC2RT<ST>::evaluateDetRatios(const VirtualParticleSetT<ST>& VP,
 }
 
 /** assign_vgl
-   */
-template<typename ST>
-inline void SplineC2RT<ST>::assign_vgl(const PointType& r,
-                                       ValueVector& psi,
-                                       GradVector& dpsi,
-                                       ValueVector& d2psi,
-                                       int first,
-                                       int last) const
+ */
+template<typename ST, typename VT>
+inline void SplineC2RT<ST, VT>::assign_vgl(const PointType& r,
+                                           ValueVector& psi,
+                                           GradVector& dpsi,
+                                           ValueVector& d2psi,
+                                           int first,
+                                           int last) const
 {
   // protect last
   last = last > this->kPoints.size() ? this->kPoints.size() : last;
@@ -220,11 +225,11 @@ inline void SplineC2RT<ST>::assign_vgl(const PointType& r,
     const ST val_r = myV[jr];
     const ST val_i = myV[ji];
 
-    //phase
+    // phase
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    // dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -277,11 +282,11 @@ inline void SplineC2RT<ST>::assign_vgl(const PointType& r,
     const ST val_r = myV[jr];
     const ST val_i = myV[ji];
 
-    //phase
+    // phase
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    // dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -314,13 +319,14 @@ inline void SplineC2RT<ST>::assign_vgl(const PointType& r,
   }
 }
 
-/** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
-   */
-template<typename ST>
-inline void SplineC2RT<ST>::assign_vgl_from_l(const PointType& r,
-                                              ValueVector& psi,
-                                              GradVector& dpsi,
-                                              ValueVector& d2psi)
+/** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in
+ * cartesian
+ */
+template<typename ST, typename VT>
+inline void SplineC2RT<ST, VT>::assign_vgl_from_l(const PointType& r,
+                                                  ValueVector& psi,
+                                                  GradVector& dpsi,
+                                                  ValueVector& d2psi)
 {
   constexpr ST two(2);
   const ST x = r[0], y = r[1], z = r[2];
@@ -353,11 +359,11 @@ inline void SplineC2RT<ST>::assign_vgl_from_l(const PointType& r,
     const ST val_r = myV[jr];
     const ST val_i = myV[ji];
 
-    //phase
+    // phase
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    // dot(PrimLattice.G,myG[j])
     const ST dX_r = g0[jr];
     const ST dY_r = g1[jr];
     const ST dZ_r = g2[jr];
@@ -402,11 +408,11 @@ inline void SplineC2RT<ST>::assign_vgl_from_l(const PointType& r,
     const ST val_r = myV[jr];
     const ST val_i = myV[ji];
 
-    //phase
+    // phase
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    // dot(PrimLattice.G,myG[j])
     const ST dX_r = g0[jr];
     const ST dY_r = g1[jr];
     const ST dZ_r = g2[jr];
@@ -434,12 +440,12 @@ inline void SplineC2RT<ST>::assign_vgl_from_l(const PointType& r,
   }
 }
 
-template<typename ST>
-void SplineC2RT<ST>::evaluateVGL(const ParticleSetT<ST>& P,
-                                 const int iat,
-                                 ValueVector& psi,
-                                 GradVector& dpsi,
-                                 ValueVector& d2psi)
+template<typename ST, typename VT>
+void SplineC2RT<ST, VT>::evaluateVGL(const ParticleSetT<VT>& P,
+                                     const int iat,
+                                     ValueVector& psi,
+                                     GradVector& dpsi,
+                                     ValueVector& d2psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -454,13 +460,13 @@ void SplineC2RT<ST>::evaluateVGL(const ParticleSetT<ST>& P,
   }
 }
 
-template<typename ST>
-void SplineC2RT<ST>::assign_vgh(const PointType& r,
-                                ValueVector& psi,
-                                GradVector& dpsi,
-                                HessVector& grad_grad_psi,
-                                int first,
-                                int last) const
+template<typename ST, typename VT>
+void SplineC2RT<ST, VT>::assign_vgh(const PointType& r,
+                                    ValueVector& psi,
+                                    GradVector& dpsi,
+                                    HessVector& grad_grad_psi,
+                                    int first,
+                                    int last) const
 {
   // protect last
   last = last > this->kPoints.size() ? this->kPoints.size() : last;
@@ -496,11 +502,11 @@ void SplineC2RT<ST>::assign_vgh(const PointType& r,
     const ST val_r = myV[jr];
     const ST val_i = myV[ji];
 
-    //phase
+    // phase
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    // dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -600,11 +606,11 @@ void SplineC2RT<ST>::assign_vgh(const PointType& r,
     const ST val_r = myV[jr];
     const ST val_i = myV[ji];
 
-    //phase
+    // phase
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    // dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -678,12 +684,12 @@ void SplineC2RT<ST>::assign_vgh(const PointType& r,
   }
 }
 
-template<typename ST>
-void SplineC2RT<ST>::evaluateVGH(const ParticleSetT<ST>& P,
-                                 const int iat,
-                                 ValueVector& psi,
-                                 GradVector& dpsi,
-                                 HessVector& grad_grad_psi)
+template<typename ST, typename VT>
+void SplineC2RT<ST, VT>::evaluateVGH(const ParticleSetT<VT>& P,
+                                     const int iat,
+                                     ValueVector& psi,
+                                     GradVector& dpsi,
+                                     HessVector& grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -697,14 +703,14 @@ void SplineC2RT<ST>::evaluateVGH(const ParticleSetT<ST>& P,
   }
 }
 
-template<typename ST>
-void SplineC2RT<ST>::assign_vghgh(const PointType& r,
-                                  ValueVector& psi,
-                                  GradVector& dpsi,
-                                  HessVector& grad_grad_psi,
-                                  GGGVector& grad_grad_grad_psi,
-                                  int first,
-                                  int last) const
+template<typename ST, typename VT>
+void SplineC2RT<ST, VT>::assign_vghgh(const PointType& r,
+                                      ValueVector& psi,
+                                      GradVector& dpsi,
+                                      HessVector& grad_grad_psi,
+                                      GGGVector& grad_grad_grad_psi,
+                                      int first,
+                                      int last) const
 {
   // protect last
   last = last < 0 ? this->kPoints.size() : (last > this->kPoints.size() ? this->kPoints.size() : last);
@@ -739,7 +745,7 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
   const ST* restrict gh122 = mygH.data(8);
   const ST* restrict gh222 = mygH.data(9);
 
-//SIMD doesn't work quite right yet.  Comment out until further debugging.
+// SIMD doesn't work quite right yet.  Comment out until further debugging.
 #pragma omp simd
   for (size_t j = first; j < std::min(nComplexBands, last); j++)
   {
@@ -752,11 +758,11 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
     const ST val_r = myV[jr];
     const ST val_i = myV[ji];
 
-    //phase
+    // phase
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    // dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -784,7 +790,8 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
     dpsi[psiIndex + 1][1] = c * gY_i + s * gY_r;
     dpsi[psiIndex + 1][2] = c * gZ_i + s * gZ_r;
 
-    //intermediates for computation of hessian. \partial_i \partial_j phi in cartesian coordinates.
+    // intermediates for computation of hessian. \partial_i \partial_j phi
+    // in cartesian coordinates.
     const ST f_xx_r = v_m_v(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], g00, g01, g02, g00, g01, g02);
     const ST f_xy_r = v_m_v(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], g00, g01, g02, g10, g11, g12);
     const ST f_xz_r = v_m_v(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], g00, g01, g02, g20, g21, g22);
@@ -833,8 +840,10 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
     grad_grad_psi[psiIndex + 1][7] = c * h_yz_i + s * h_yz_r;
     grad_grad_psi[psiIndex + 1][8] = c * h_zz_i + s * h_zz_r;
 
-    //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
-    // third derivative w.r.t. x, _xyz, a derivative with resepect to x,y, and z, and so on.
+    // These are the real and imaginary components of the third SPO
+    // derivative.  _xxx denotes
+    //  third derivative w.r.t. x, _xyz, a derivative with resepect to x,y,
+    //  and z, and so on.
 
     const ST f3_xxx_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
                                     gh112[jr], gh122[jr], gh222[jr], g00, g01, g02, g00, g01, g02, g00, g01, g02);
@@ -878,7 +887,8 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
     const ST f3_zzz_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
                                     gh112[ji], gh122[ji], gh222[ji], g20, g21, g22, g20, g21, g22, g20, g21, g22);
 
-    //Here is where we build up the components of the physical hessian gradient, namely, d^3/dx^3(e^{-ik*r}\phi(r)
+    // Here is where we build up the components of the physical hessian
+    // gradient, namely, d^3/dx^3(e^{-ik*r}\phi(r)
     const ST gh_xxx_r = f3_xxx_r + 3 * kX * f_xx_i - 3 * kX * kX * dX_r - kX * kX * kX * val_i;
     const ST gh_xxx_i = f3_xxx_i - 3 * kX * f_xx_r - 3 * kX * kX * dX_i + kX * kX * kX * val_r;
     const ST gh_xxy_r =
@@ -986,11 +996,11 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
     const ST val_r = myV[jr];
     const ST val_i = myV[ji];
 
-    //phase
+    // phase
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    // dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -1013,7 +1023,8 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
     dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
     dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
 
-    //intermediates for computation of hessian. \partial_i \partial_j phi in cartesian coordinates.
+    // intermediates for computation of hessian. \partial_i \partial_j phi
+    // in cartesian coordinates.
     const ST f_xx_r = v_m_v(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], g00, g01, g02, g00, g01, g02);
     const ST f_xy_r = v_m_v(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], g00, g01, g02, g10, g11, g12);
     const ST f_xz_r = v_m_v(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], g00, g01, g02, g20, g21, g22);
@@ -1052,8 +1063,10 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
     grad_grad_psi[psiIndex][7] = c * h_yz_r - s * h_yz_i;
     grad_grad_psi[psiIndex][8] = c * h_zz_r - s * h_zz_i;
 
-    //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
-    // third derivative w.r.t. x, _xyz, a derivative with resepect to x,y, and z, and so on.
+    // These are the real and imaginary components of the third SPO
+    // derivative.  _xxx denotes
+    //  third derivative w.r.t. x, _xyz, a derivative with resepect to x,y,
+    //  and z, and so on.
 
     const ST f3_xxx_r = t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr],
                                     gh112[jr], gh122[jr], gh222[jr], g00, g01, g02, g00, g01, g02, g00, g01, g02);
@@ -1097,7 +1110,8 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
     const ST f3_zzz_i = t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji],
                                     gh112[ji], gh122[ji], gh222[ji], g20, g21, g22, g20, g21, g22, g20, g21, g22);
 
-    //Here is where we build up the components of the physical hessian gradient, namely, d^3/dx^3(e^{-ik*r}\phi(r)
+    // Here is where we build up the components of the physical hessian
+    // gradient, namely, d^3/dx^3(e^{-ik*r}\phi(r)
     const ST gh_xxx_r = f3_xxx_r + 3 * kX * f_xx_i - 3 * kX * kX * dX_r - kX * kX * kX * val_i;
     const ST gh_xxx_i = f3_xxx_i - 3 * kX * f_xx_r - 3 * kX * kX * dX_i + kX * kX * kX * val_r;
     const ST gh_xxy_r =
@@ -1165,13 +1179,13 @@ void SplineC2RT<ST>::assign_vghgh(const PointType& r,
   }
 }
 
-template<typename ST>
-void SplineC2RT<ST>::evaluateVGHGH(const ParticleSetT<ST>& P,
-                                   const int iat,
-                                   ValueVector& psi,
-                                   GradVector& dpsi,
-                                   HessVector& grad_grad_psi,
-                                   GGGVector& grad_grad_grad_psi)
+template<typename ST, typename VT>
+void SplineC2RT<ST, VT>::evaluateVGHGH(const ParticleSetT<VT>& P,
+                                       const int iat,
+                                       ValueVector& psi,
+                                       GradVector& dpsi,
+                                       HessVector& grad_grad_psi,
+                                       GGGVector& grad_grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -1185,7 +1199,9 @@ void SplineC2RT<ST>::evaluateVGHGH(const ParticleSetT<ST>& P,
   }
 }
 
-template class SplineC2RT<float>;
-template class SplineC2RT<double>;
+template class SplineC2RT<float, float>;
+template class SplineC2RT<float, double>;
+template class SplineC2RT<double, float>;
+template class SplineC2RT<double, double>;
 
 } // namespace qmcplusplus

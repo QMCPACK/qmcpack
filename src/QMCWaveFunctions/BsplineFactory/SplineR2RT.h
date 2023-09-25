@@ -33,29 +33,31 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of the sign of the real part of
  * the phase Internal storage ST type arrays are aligned and padded.
  */
-template <typename ST>
-class SplineR2RT : public BsplineSetT<ST>
+template <typename ST, typename VT>
+class SplineR2RT : public BsplineSetT<VT>
 {
 public:
     using SplineType = typename bspline_traits<ST, 3>::SplineType;
     using BCType = typename bspline_traits<ST, 3>::BCType;
     using DataType = ST;
+    using RealType = typename SPOSetT<VT>::RealType;
+    using IndexType = typename SPOSetT<VT>::IndexType;
+    using FullPrecValueType = double;
     using PointType = TinyVector<ST, 3>;
     using SingleSplineType = UBspline_3d_d;
+
     // types for evaluation results
-    using TT = typename BsplineSetT<ST>::ValueType;
-    using GGGVector = typename BsplineSetT<ST>::GGGVector;
-    using ValueMatrix = typename BsplineSetT<ST>::ValueMatrix;
-    using GradVector = typename BsplineSetT<ST>::GradVector;
-    using HessVector = typename BsplineSetT<ST>::HessVector;
-    using ValueVector = typename BsplineSetT<ST>::ValueVector;
+    using TT = typename BsplineSetT<VT>::ValueType;
+    using GGGVector = typename BsplineSetT<VT>::GGGVector;
+    using ValueMatrix = typename BsplineSetT<VT>::ValueMatrix;
+    using GradVector = typename BsplineSetT<VT>::GradVector;
+    using HessVector = typename BsplineSetT<VT>::HessVector;
+    using ValueVector = typename BsplineSetT<VT>::ValueVector;
 
     using vContainer_type = Vector<ST, aligned_allocator<ST>>;
     using gContainer_type = VectorSoaContainer<ST, 3>;
     using hContainer_type = VectorSoaContainer<ST, 6>;
     using ghContainer_type = VectorSoaContainer<ST, 10>;
-
-    using RealType = typename SPOSetT<ST>::RealType;
 
 private:
     bool IsGamma;
@@ -66,7 +68,7 @@ private:
     std::shared_ptr<MultiBspline<ST>> SplineInst;
 
     /// Copy of original splines for orbital rotation
-    std::shared_ptr<std::vector<RealType>> coef_copy_;
+    std::shared_ptr<std::vector<ST>> coef_copy_;
 
     /// thread private ratios for reduction when using nested threading, numVP x
     /// numThread
@@ -83,7 +85,7 @@ protected:
     ghContainer_type mygH;
 
 public:
-    SplineR2RT(const std::string& my_name) : BsplineSetT<ST>(my_name)
+    SplineR2RT(const std::string& my_name) : BsplineSetT<VT>(my_name)
     {
     }
 
@@ -109,10 +111,10 @@ public:
         return true;
     }
 
-    std::unique_ptr<SPOSetT<ST>>
+    std::unique_ptr<SPOSetT<VT>>
     makeClone() const override
     {
-        return std::make_unique<SplineR2RT<ST>>(*this);
+        return std::make_unique<SplineR2RT<ST, VT>>(*this);
     }
 
     /// Store an original copy of the spline coefficients for orbital rotation
@@ -222,10 +224,10 @@ public:
 
     void
     evaluateValue(
-        const ParticleSetT<ST>& P, const int iat, ValueVector& psi) override;
+        const ParticleSetT<VT>& P, const int iat, ValueVector& psi) override;
 
     void
-    evaluateDetRatios(const VirtualParticleSetT<ST>& VP, ValueVector& psi,
+    evaluateDetRatios(const VirtualParticleSetT<VT>& VP, ValueVector& psi,
         const ValueVector& psiinv, std::vector<TT>& ratios) override;
 
     void
@@ -240,7 +242,7 @@ public:
         int bc_sign, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
     void
-    evaluateVGL(const ParticleSetT<ST>& P, const int iat, ValueVector& psi,
+    evaluateVGL(const ParticleSetT<VT>& P, const int iat, ValueVector& psi,
         GradVector& dpsi, ValueVector& d2psi) override;
 
     void
@@ -248,7 +250,7 @@ public:
         HessVector& grad_grad_psi, int first, int last) const;
 
     void
-    evaluateVGH(const ParticleSetT<ST>& P, const int iat, ValueVector& psi,
+    evaluateVGH(const ParticleSetT<VT>& P, const int iat, ValueVector& psi,
         GradVector& dpsi, HessVector& grad_grad_psi) override;
 
     void
@@ -257,13 +259,14 @@ public:
         int last = -1) const;
 
     void
-    evaluateVGHGH(const ParticleSetT<ST>& P, const int iat, ValueVector& psi,
+    evaluateVGHGH(const ParticleSetT<VT>& P, const int iat, ValueVector& psi,
         GradVector& dpsi, HessVector& grad_grad_psi,
         GGGVector& grad_grad_grad_psi) override;
 
     template <class BSPLINESPO>
-    friend struct SplineSetReader;
-    friend struct BsplineReaderBase;
+    friend class SplineSetReaderT;
+    template <typename>
+    friend class BsplineReaderBaseT;
 };
 
 } // namespace qmcplusplus

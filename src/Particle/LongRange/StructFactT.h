@@ -28,7 +28,8 @@ namespace qmcplusplus
 {
 template <typename T>
 class ParticleSetT;
-class KContainer;
+template <typename T>
+class KContainerT;
 template <typename T>
 struct SKMultiWalkerMemT;
 
@@ -65,7 +66,7 @@ public:
      * At least in the batched version Structure factor is _NOT_ valid
      * after construction.
      */
-    StructFactT(const ParticleLayout& lattice, const KContainer& k_lists);
+    StructFactT(const ParticleLayout& lattice, const KContainerT<T>& k_lists);
     /// desructor
     ~StructFactT();
 
@@ -100,7 +101,7 @@ public:
     }
 
     /// accessor of k_lists_
-    const KContainer&
+    const KContainerT<T>&
     getKLists() const
     {
         return k_lists_;
@@ -119,7 +120,7 @@ private:
     resize(int nkpts, int num_species, int num_ptcls);
 
     /// K-Vector List.
-    const KContainer& k_lists_;
+    const KContainerT<T>& k_lists_;
     /** Whether intermediate data is stored per particle. default false
      * storing data per particle needs significant amount of memory but some
      * calculation may request it. storing data per particle specie is more

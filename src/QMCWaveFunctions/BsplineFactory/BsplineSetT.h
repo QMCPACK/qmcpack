@@ -225,8 +225,11 @@ public:
     }
 
     template <class BSPLINESPO>
-    friend struct SplineSetReader;
-    friend struct BsplineReaderBase;
+    friend class SplineSetReaderT;
+    template <typename>
+    friend class BsplineReaderBaseT;
+    template <typename>
+    friend class HybridRepSetReaderT;
 
 protected:
     static const int D = QMCTraits::DIM;
@@ -252,9 +255,6 @@ protected:
     /// band offsets used for communication
     std::vector<int> offset;
 };
-
-
-
 
 } // namespace qmcplusplus
 #endif

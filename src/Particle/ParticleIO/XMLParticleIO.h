@@ -18,6 +18,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsData/RecordProperty.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/ParticleSetT.h"
 
 namespace qmcplusplus
 {
@@ -131,6 +132,41 @@ public:
    *@param aptcl the particleset to be initialized
    */
   XMLParticleParser(Particle_t& aptcl);
+
+  bool readXML(xmlNodePtr cur);
+
+  /** reset the properties of a particle set
+   */
+  bool reset(xmlNodePtr cur);
+};
+
+template <typename T>
+class XMLParticleParserT : public ParticleTags
+{
+  using Particle_t     = ParticleSetT<T>;
+  using ParticleIndex  = typename Particle_t::ParticleIndex;
+  using ParticleScalar = typename Particle_t::ParticleScalar;
+  using ParticlePos    = typename Particle_t::ParticlePos;
+  using ParticleTensor = typename Particle_t::ParticleTensor;
+
+  Particle_t& ref_;
+  AttribListType ref_AttribList;
+
+  /** read the data of a particle attribute
+   *@param cur the xmlnode
+   *@param in_offset the location offset to read from XML element node body.
+   *@param copy_size the number of particle attributes to be read
+   *@param out_offset the current local count to which copy_size particle attributes are added.
+   */
+  void getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_size, int out_offset);
+
+  void checkGrouping(int nat, const std::vector<int>& nat_group) const;
+
+public:
+  /**constructor
+   *@param aptcl the particleset to be initialized
+   */
+  XMLParticleParserT(Particle_t& aptcl);
 
   bool readXML(xmlNodePtr cur);
 

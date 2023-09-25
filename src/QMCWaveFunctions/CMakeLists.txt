@@ -108,36 +108,48 @@ if(OHMMS_DIM MATCHES 3)
   if(HAVE_EINSPLINE)
     set(FERMION_SRCS
         ${FERMION_SRCS}
+        EinsplineSetBuilderT.cpp
         BsplineFactory/EinsplineSetBuilderCommon.cpp
         BsplineFactory/EinsplineSetBuilderESHDF.fft.cpp
         BsplineFactory/EinsplineSetBuilder_createSPOs.cpp
+        BsplineFactory/createBsplineReaderT.cpp
         BsplineFactory/createComplexDouble.cpp
         BsplineFactory/createComplexSingle.cpp
         BsplineFactory/HybridRepCenterOrbitals.cpp
+        BsplineFactory/HybridRepCenterOrbitalsT.cpp
         BandInfo.cpp
-        BsplineFactory/BsplineReaderBase.cpp)
+        BsplineFactory/SplineC2RT.cpp
+        BsplineFactory/SplineR2RT.cpp
+        BsplineFactory/SplineC2CT.cpp
+        BsplineFactory/BsplineReaderBase.cpp
+        BsplineFactory/BsplineReaderBaseT.cpp)
     set(FERMION_OMPTARGET_SRCS
         Fermion/DiracDeterminantBatched.cpp
         Fermion/MultiDiracDeterminant.2.cpp
-        BsplineFactory/SplineC2RTOMPTarget.cpp
+        BsplineFactory/SplineC2ROMPTargetT.cpp
+        BsplineFactory/SplineC2COMPTargetT.cpp
     )
     if(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp BsplineFactory/SplineC2CT.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp BsplineFactory/SplineC2COMPTargetT.cpp)
     else(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createRealSingle.cpp BsplineFactory/createRealDouble.cpp
-        BsplineFactory/SplineC2R.cpp BsplineFactory/SplineC2RT.cpp BsplineFactory/SplineR2R.cpp BsplineFactory/SplineR2RT.cpp)
-      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
+      set(FERMION_SRCS ${FERMION_SRCS}
+        BsplineFactory/createRealSingle.cpp
+        BsplineFactory/createRealDouble.cpp
+        BsplineFactory/SplineC2R.cpp
+        BsplineFactory/SplineR2R.cpp)
+      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS}
+        BsplineFactory/SplineC2ROMPTarget.cpp)
     endif(QMC_COMPLEX)
 
   endif(HAVE_EINSPLINE)
 
   # plane wave SPO
-  set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWBasisT.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalSetBuilder.cpp)
+  set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWBasisT.cpp PlaneWave/PWOrbitalSetT.cpp PlaneWave/PWRealOrbitalSetT.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalSetBuilder.cpp)
   if(QMC_COMPLEX)
-    set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWOrbitalSet.cpp PlaneWave/PWOrbitalSetT.cpp)
+    set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWOrbitalSet.cpp)
   else()
-    set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWRealOrbitalSet.cpp PlaneWave/PWRealOrbitalSetT.cpp)
+    set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWRealOrbitalSet.cpp)
   endif(QMC_COMPLEX)
 
   if(NOT QMC_COMPLEX)

@@ -78,6 +78,7 @@ public:
         Array<T, 2, OffloadPinnedAllocator<T>>; // [walker, Orbs]
     using PosType = typename OrbitalSetTraits<T>::PosType;
     using RealType = typename OrbitalSetTraits<T>::RealType;
+    using ComplexType = typename OrbitalSetTraits<T>::ComplexType;
     using ValueType = typename OrbitalSetTraits<T>::ValueType;
     using FullRealType = typename OrbitalSetTraits<double>::RealType;
     template <typename DT>

@@ -32,7 +32,7 @@ namespace qmcplusplus
 // Constructor - pass arguments to k_lists_' constructor
 template <typename T>
 StructFactT<T>::StructFactT(
-    const ParticleLayout& lattice, const KContainer& k_lists) :
+    const ParticleLayout& lattice, const KContainerT<T>& k_lists) :
     SuperCellEnum(SUPERCELL_BULK),
     k_lists_(k_lists),
     StorePerParticle(false),
