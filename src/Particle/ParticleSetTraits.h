@@ -71,6 +71,7 @@ struct LatticeParticleTraits
     using Index_t = int;
     using Scalar_t = FullPrecRealType;
     using Complex_t = FullPrecComplexType;
+    using Tensor_t = ParticleTensorType;
 
     using ParticleIndex = ParticleAttrib<Index_t>;
     using ParticleScalar = ParticleAttrib<Scalar_t>;

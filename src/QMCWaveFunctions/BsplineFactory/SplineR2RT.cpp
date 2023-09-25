@@ -23,20 +23,20 @@
 
 namespace qmcplusplus
 {
-template <typename ST>
-SplineR2RT<ST>::SplineR2RT(const SplineR2RT& in) = default;
+template <typename ST, typename VT>
+SplineR2RT<ST, VT>::SplineR2RT(const SplineR2RT& in) = default;
 
-template <typename ST>
+template <typename ST, typename VT>
 inline void
-SplineR2RT<ST>::set_spline(SingleSplineType* spline_r,
+SplineR2RT<ST, VT>::set_spline(SingleSplineType* spline_r,
     SingleSplineType* spline_i, int twist, int ispline, int level)
 {
     SplineInst->copy_spline(spline_r, ispline);
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 bool
-SplineR2RT<ST>::read_splines(hdf_archive& h5f)
+SplineR2RT<ST, VT>::read_splines(hdf_archive& h5f)
 {
     std::ostringstream o;
     o << "spline_" << this->MyIndex;
@@ -44,9 +44,9 @@ SplineR2RT<ST>::read_splines(hdf_archive& h5f)
     return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 bool
-SplineR2RT<ST>::write_splines(hdf_archive& h5f)
+SplineR2RT<ST, VT>::write_splines(hdf_archive& h5f)
 {
     std::ostringstream o;
     o << "spline_" << this->MyIndex;
@@ -54,13 +54,13 @@ SplineR2RT<ST>::write_splines(hdf_archive& h5f)
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::storeParamsBeforeRotation()
+SplineR2RT<ST, VT>::storeParamsBeforeRotation()
 {
     const auto spline_ptr = SplineInst->getSplinePtr();
     const auto coefs_tot_size = spline_ptr->coefs_size;
-    coef_copy_ = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+    coef_copy_ = std::make_shared<std::vector<ST>>(coefs_tot_size);
 
     std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
 }
@@ -104,9 +104,10 @@ SplineR2RT<ST>::storeParamsBeforeRotation()
   NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs
   "matrix" is very tall and skinny.
 */
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+SplineR2RT<ST, VT>::applyRotation(
+    const ValueMatrix& rot_mat, bool use_stored_copy)
 {
     // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
     const auto spline_ptr = SplineInst->getSplinePtr();
@@ -138,9 +139,9 @@ SplineR2RT<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 inline void
-SplineR2RT<ST>::assign_v(int bc_sign, const vContainer_type& myV,
+SplineR2RT<ST, VT>::assign_v(int bc_sign, const vContainer_type& myV,
     ValueVector& psi, int first, int last) const
 {
     // protect last
@@ -152,10 +153,10 @@ SplineR2RT<ST>::assign_v(int bc_sign, const vContainer_type& myV,
         psi[this->first_spo + j] = signed_one * myV[j];
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::evaluateValue(
-    const ParticleSetT<ST>& P, const int iat, ValueVector& psi)
+SplineR2RT<ST, VT>::evaluateValue(
+    const ParticleSetT<VT>& P, const int iat, ValueVector& psi)
 {
     const PointType& r = P.activeR(iat);
     PointType ru;
@@ -172,9 +173,9 @@ SplineR2RT<ST>::evaluateValue(
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::evaluateDetRatios(const VirtualParticleSetT<ST>& VP,
+SplineR2RT<ST, VT>::evaluateDetRatios(const VirtualParticleSetT<VT>& VP,
     ValueVector& psi, const ValueVector& psiinv, std::vector<TT>& ratios)
 {
     const bool need_resize = ratios_private.rows() < VP.getTotalNum();
@@ -216,9 +217,9 @@ SplineR2RT<ST>::evaluateDetRatios(const VirtualParticleSetT<ST>& VP,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 inline void
-SplineR2RT<ST>::assign_vgl(int bc_sign, ValueVector& psi, GradVector& dpsi,
+SplineR2RT<ST, VT>::assign_vgl(int bc_sign, ValueVector& psi, GradVector& dpsi,
     ValueVector& d2psi, int first, int last) const
 {
     // protect last
@@ -261,9 +262,9 @@ SplineR2RT<ST>::assign_vgl(int bc_sign, ValueVector& psi, GradVector& dpsi,
 /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in
  * cartesian
  */
-template <typename ST>
+template <typename ST, typename VT>
 inline void
-SplineR2RT<ST>::assign_vgl_from_l(
+SplineR2RT<ST, VT>::assign_vgl_from_l(
     int bc_sign, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
     const ST signed_one = (bc_sign & 1) ? -1 : 1;
@@ -283,9 +284,9 @@ SplineR2RT<ST>::assign_vgl_from_l(
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::evaluateVGL(const ParticleSetT<ST>& P, const int iat,
+SplineR2RT<ST, VT>::evaluateVGL(const ParticleSetT<VT>& P, const int iat,
     ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
     const PointType& r = P.activeR(iat);
@@ -304,9 +305,9 @@ SplineR2RT<ST>::evaluateVGL(const ParticleSetT<ST>& P, const int iat,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::assign_vgh(int bc_sign, ValueVector& psi, GradVector& dpsi,
+SplineR2RT<ST, VT>::assign_vgh(int bc_sign, ValueVector& psi, GradVector& dpsi,
     HessVector& grad_grad_psi, int first, int last) const
 {
     // protect last
@@ -373,9 +374,9 @@ SplineR2RT<ST>::assign_vgh(int bc_sign, ValueVector& psi, GradVector& dpsi,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::evaluateVGH(const ParticleSetT<ST>& P, const int iat,
+SplineR2RT<ST, VT>::evaluateVGH(const ParticleSetT<VT>& P, const int iat,
     ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi)
 {
     const PointType& r = P.activeR(iat);
@@ -394,11 +395,11 @@ SplineR2RT<ST>::evaluateVGH(const ParticleSetT<ST>& P, const int iat,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::assign_vghgh(int bc_sign, ValueVector& psi, GradVector& dpsi,
-    HessVector& grad_grad_psi, GGGVector& grad_grad_grad_psi, int first,
-    int last) const
+SplineR2RT<ST, VT>::assign_vghgh(int bc_sign, ValueVector& psi,
+    GradVector& dpsi, HessVector& grad_grad_psi, GGGVector& grad_grad_grad_psi,
+    int first, int last) const
 {
     // protect last
     last = last < 0 ?
@@ -574,9 +575,9 @@ SplineR2RT<ST>::assign_vghgh(int bc_sign, ValueVector& psi, GradVector& dpsi,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineR2RT<ST>::evaluateVGHGH(const ParticleSetT<ST>& P, const int iat,
+SplineR2RT<ST, VT>::evaluateVGHGH(const ParticleSetT<VT>& P, const int iat,
     ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi,
     GGGVector& grad_grad_grad_psi)
 {
@@ -597,7 +598,9 @@ SplineR2RT<ST>::evaluateVGHGH(const ParticleSetT<ST>& P, const int iat,
     }
 }
 
-template class SplineR2RT<float>;
-template class SplineR2RT<double>;
+template class SplineR2RT<float, float>;
+template class SplineR2RT<float, double>; // do we need this one?
+template class SplineR2RT<double, float>;
+template class SplineR2RT<double, double>;
 
 } // namespace qmcplusplus

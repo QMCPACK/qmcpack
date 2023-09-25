@@ -17,7 +17,8 @@
 
 namespace qmcplusplus
 {
-class ParticleSetPool;
+template <typename T>
+class ParticleSetPoolT;
 
 template <typename T>
 class SimulationCellT
@@ -65,7 +66,7 @@ private:
     /// K-Vector List.
     KContainerT<T> k_lists_;
 
-    friend class ParticleSetPool;
+    friend class ParticleSetPoolT<T>;
 };
 } // namespace qmcplusplus
 #endif

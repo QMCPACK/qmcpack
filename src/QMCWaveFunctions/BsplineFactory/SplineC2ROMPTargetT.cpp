@@ -9,7 +9,7 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "SplineC2RTOMPTarget.h"
+#include "SplineC2ROMPTargetT.h"
 
 #include "ApplyPhaseC2R.hpp"
 #include "Concurrency/OpenMP.h"
@@ -19,22 +19,22 @@
 
 namespace qmcplusplus
 {
-template <typename ST>
-SplineC2RTOMPTarget<ST>::SplineC2RTOMPTarget(
-    const SplineC2RTOMPTarget& in) = default;
+template <typename ST, typename VT>
+SplineC2ROMPTargetT<ST, VT>::SplineC2ROMPTargetT(
+    const SplineC2ROMPTargetT& in) = default;
 
-template <typename ST>
+template <typename ST, typename VT>
 inline void
-SplineC2RTOMPTarget<ST>::set_spline(SingleSplineType* spline_r,
+SplineC2ROMPTargetT<ST, VT>::set_spline(SingleSplineType* spline_r,
     SingleSplineType* spline_i, int twist, int ispline, int level)
 {
     SplineInst->copy_spline(spline_r, 2 * ispline);
     SplineInst->copy_spline(spline_i, 2 * ispline + 1);
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 bool
-SplineC2RTOMPTarget<ST>::read_splines(hdf_archive& h5f)
+SplineC2ROMPTargetT<ST, VT>::read_splines(hdf_archive& h5f)
 {
     std::ostringstream o;
     o << "spline_" << this->MyIndex;
@@ -42,9 +42,9 @@ SplineC2RTOMPTarget<ST>::read_splines(hdf_archive& h5f)
     return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 bool
-SplineC2RTOMPTarget<ST>::write_splines(hdf_archive& h5f)
+SplineC2ROMPTargetT<ST, VT>::write_splines(hdf_archive& h5f)
 {
     std::ostringstream o;
     o << "spline_" << this->MyIndex;
@@ -52,9 +52,9 @@ SplineC2RTOMPTarget<ST>::write_splines(hdf_archive& h5f)
     return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 inline void
-SplineC2RTOMPTarget<ST>::assign_v(const PointType& r,
+SplineC2ROMPTargetT<ST, VT>::assign_v(const PointType& r,
     const vContainer_type& myV, ValueVector& psi, int first, int last) const
 {
     // protect last
@@ -89,10 +89,10 @@ SplineC2RTOMPTarget<ST>::assign_v(const PointType& r,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::evaluateValue(
-    const ParticleSetT<ST>& P, const int iat, ValueVector& psi)
+SplineC2ROMPTargetT<ST, VT>::evaluateValue(
+    const ParticleSetT<VT>& P, const int iat, ValueVector& psi)
 {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -166,10 +166,11 @@ SplineC2RTOMPTarget<ST>::evaluateValue(
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::evaluateDetRatios(const VirtualParticleSetT<ST>& VP,
-    ValueVector& psi, const ValueVector& psiinv, std::vector<ValueType>& ratios)
+SplineC2ROMPTargetT<ST, VT>::evaluateDetRatios(
+    const VirtualParticleSetT<VT>& VP, ValueVector& psi,
+    const ValueVector& psiinv, std::vector<ValueType>& ratios)
 {
     const int nVP = VP.getTotalNum();
     psiinv_pos_copy.resize(psiinv.size() + nVP * 6);
@@ -271,18 +272,17 @@ SplineC2RTOMPTarget<ST>::evaluateDetRatios(const VirtualParticleSetT<ST>& VP,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::mw_evaluateDetRatios(
-    const RefVectorWithLeader<SPOSetT<ST>>& spo_list,
-    const RefVectorWithLeader<const VirtualParticleSetT<ST>>& vp_list,
+SplineC2ROMPTargetT<ST, VT>::mw_evaluateDetRatios(
+    const RefVectorWithLeader<SPOSetT<VT>>& spo_list,
+    const RefVectorWithLeader<const VirtualParticleSetT<VT>>& vp_list,
     const RefVector<ValueVector>& psi_list,
     const std::vector<const ValueType*>& invRow_ptr_list,
     std::vector<std::vector<ValueType>>& ratios_list) const
 {
     assert(this == &spo_list.getLeader());
-    auto& phi_leader =
-        spo_list.template getCastedLeader<SplineC2RTOMPTarget<ST>>();
+    auto& phi_leader = spo_list.template getCastedLeader<SplineC2ROMPTargetT>();
     auto& mw_mem = phi_leader.mw_mem_handle_.getResource();
     auto& det_ratios_buffer_H2D = mw_mem.det_ratios_buffer_H2D;
     auto& mw_ratios_private = mw_mem.mw_ratios_private;
@@ -292,7 +292,7 @@ SplineC2RTOMPTarget<ST>::mw_evaluateDetRatios(
     const size_t requested_orb_size = phi_leader.size();
 
     size_t mw_nVP = 0;
-    for (const VirtualParticleSetT<ST>& VP : vp_list)
+    for (const VirtualParticleSetT<VT>& VP : vp_list)
         mw_nVP += VP.getTotalNum();
 
     const size_t packed_size =
@@ -312,7 +312,7 @@ SplineC2RTOMPTarget<ST>::mw_evaluateDetRatios(
         nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
     size_t iVP = 0;
     for (size_t iw = 0; iw < nw; iw++) {
-        const VirtualParticleSetT<ST>& VP = vp_list[iw];
+        const VirtualParticleSetT<VT>& VP = vp_list[iw];
         assert(ratios_list[iw].size() == VP.getTotalNum());
         for (size_t iat = 0; iat < VP.getTotalNum(); ++iat, ++iVP) {
             ref_id_ptr[iVP] = iw;
@@ -420,9 +420,9 @@ SplineC2RTOMPTarget<ST>::mw_evaluateDetRatios(
 /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in
  * cartesian
  */
-template <typename ST>
+template <typename ST, typename VT>
 inline void
-SplineC2RTOMPTarget<ST>::assign_vgl_from_l(
+SplineC2ROMPTargetT<ST, VT>::assign_vgl_from_l(
     const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
     constexpr ST two(2);
@@ -539,10 +539,10 @@ SplineC2RTOMPTarget<ST>::assign_vgl_from_l(
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::evaluateVGL(const ParticleSetT<ST>& P, const int iat,
-    ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
+SplineC2ROMPTargetT<ST, VT>::evaluateVGL(const ParticleSetT<VT>& P,
+    const int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -643,9 +643,9 @@ SplineC2RTOMPTarget<ST>::evaluateVGL(const ParticleSetT<ST>& P, const int iat,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::evaluateVGLMultiPos(
+SplineC2ROMPTargetT<ST, VT>::evaluateVGLMultiPos(
     const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
     Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
     Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
@@ -771,18 +771,17 @@ SplineC2RTOMPTarget<ST>::evaluateVGLMultiPos(
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::mw_evaluateVGL(
-    const RefVectorWithLeader<SPOSetT<ST>>& sa_list,
-    const RefVectorWithLeader<ParticleSetT<ST>>& P_list, int iat,
+SplineC2ROMPTargetT<ST, VT>::mw_evaluateVGL(
+    const RefVectorWithLeader<SPOSetT<VT>>& sa_list,
+    const RefVectorWithLeader<ParticleSetT<VT>>& P_list, int iat,
     const RefVector<ValueVector>& psi_v_list,
     const RefVector<GradVector>& dpsi_v_list,
     const RefVector<ValueVector>& d2psi_v_list) const
 {
     assert(this == &sa_list.getLeader());
-    auto& phi_leader =
-        sa_list.template getCastedLeader<SplineC2RTOMPTarget<ST>>();
+    auto& phi_leader = sa_list.template getCastedLeader<SplineC2ROMPTargetT>();
     auto& mw_mem = phi_leader.mw_mem_handle_.getResource();
     auto& mw_pos_copy = mw_mem.mw_pos_copy;
     auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
@@ -806,18 +805,17 @@ SplineC2RTOMPTarget<ST>::mw_evaluateVGL(
         mw_results_scratch, psi_v_list, dpsi_v_list, d2psi_v_list);
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(
-    const RefVectorWithLeader<SPOSetT<ST>>& spo_list,
-    const RefVectorWithLeader<ParticleSetT<ST>>& P_list, int iat,
+SplineC2ROMPTargetT<ST, VT>::mw_evaluateVGLandDetRatioGrads(
+    const RefVectorWithLeader<SPOSetT<VT>>& spo_list,
+    const RefVectorWithLeader<ParticleSetT<VT>>& P_list, int iat,
     const std::vector<const ValueType*>& invRow_ptr_list,
     OffloadMWVGLArray& phi_vgl_v, std::vector<ValueType>& ratios,
     std::vector<GradType>& grads) const
 {
     assert(this == &spo_list.getLeader());
-    auto& phi_leader =
-        spo_list.template getCastedLeader<SplineC2RTOMPTarget<ST>>();
+    auto& phi_leader = spo_list.template getCastedLeader<SplineC2ROMPTargetT>();
     auto& mw_mem = phi_leader.mw_mem_handle_.getResource();
     auto& buffer_H2D = mw_mem.buffer_H2D;
     auto& rg_private = mw_mem.rg_private;
@@ -1012,9 +1010,9 @@ SplineC2RTOMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::assign_vgh(const PointType& r, ValueVector& psi,
+SplineC2ROMPTargetT<ST, VT>::assign_vgh(const PointType& r, ValueVector& psi,
     GradVector& dpsi, HessVector& grad_grad_psi, int first, int last) const
 {
     // protect last
@@ -1269,10 +1267,11 @@ SplineC2RTOMPTarget<ST>::assign_vgh(const PointType& r, ValueVector& psi,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::evaluateVGH(const ParticleSetT<ST>& P, const int iat,
-    ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi)
+SplineC2ROMPTargetT<ST, VT>::evaluateVGH(const ParticleSetT<VT>& P,
+    const int iat, ValueVector& psi, GradVector& dpsi,
+    HessVector& grad_grad_psi)
 {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -1288,16 +1287,15 @@ SplineC2RTOMPTarget<ST>::evaluateVGH(const ParticleSetT<ST>& P, const int iat,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::assign_vghgh(const PointType& r, ValueVector& psi,
+SplineC2ROMPTargetT<ST, VT>::assign_vghgh(const PointType& r, ValueVector& psi,
     GradVector& dpsi, HessVector& grad_grad_psi, GGGVector& grad_grad_grad_psi,
     int first, int last) const
 {
     // protect last
-    last = last < 0 ?
-        this->kPoints.size() :
-        (last > this->kPoints.size() ? this->kPoints.size() : last);
+    last = last < 0 ? this->kPoints.size() :
+                      (last > this->kPoints.size() ? this->kPoints.size() : last);
 
     const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1),
              g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
@@ -1847,11 +1845,11 @@ SplineC2RTOMPTarget<ST>::assign_vghgh(const PointType& r, ValueVector& psi,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::evaluateVGHGH(const ParticleSetT<ST>& P, const int iat,
-    ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi,
-    GGGVector& grad_grad_grad_psi)
+SplineC2ROMPTargetT<ST, VT>::evaluateVGHGH(const ParticleSetT<VT>& P,
+    const int iat, ValueVector& psi, GradVector& dpsi,
+    HessVector& grad_grad_psi, GGGVector& grad_grad_grad_psi)
 {
     const PointType& r = P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -1868,9 +1866,9 @@ SplineC2RTOMPTarget<ST>::evaluateVGHGH(const ParticleSetT<ST>& P, const int iat,
     }
 }
 
-template <typename ST>
+template <typename ST, typename VT>
 void
-SplineC2RTOMPTarget<ST>::evaluate_notranspose(const ParticleSetT<ST>& P,
+SplineC2ROMPTargetT<ST, VT>::evaluate_notranspose(const ParticleSetT<VT>& P,
     int first, int last, ValueMatrix& logdet, GradMatrix& dlogdet,
     ValueMatrix& d2logdet)
 {
@@ -1928,7 +1926,9 @@ SplineC2RTOMPTarget<ST>::evaluate_notranspose(const ParticleSetT<ST>& P,
     }
 }
 
-template class SplineC2RTOMPTarget<float>;
-template class SplineC2RTOMPTarget<double>;
+template class SplineC2ROMPTargetT<float, float>;
+template class SplineC2ROMPTargetT<float, double>;
+template class SplineC2ROMPTargetT<double, float>;
+template class SplineC2ROMPTargetT<double, double>;
 
 } // namespace qmcplusplus

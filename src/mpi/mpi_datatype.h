@@ -13,6 +13,8 @@
 #ifndef QMCPLUSPLUS_MPI_DATATYPEDEFINE_H
 #define QMCPLUSPLUS_MPI_DATATYPEDEFINE_H
 
+#include "Message/Communicate.h"
+
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #else

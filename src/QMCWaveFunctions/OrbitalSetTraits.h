@@ -54,6 +54,7 @@ struct OrbitalSetTraits //: public OrbitalTraits<T>
     DIM = OHMMS_DIM
   };
   using RealType       = RealAlias<T>;
+  using ComplexType    = std::complex<RealType>;
   using ValueType      = T;
   using IndexType      = int;
   using PosType        = TinyVector<RealType, DIM>;

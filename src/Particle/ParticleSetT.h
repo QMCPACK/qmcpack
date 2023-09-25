@@ -74,6 +74,7 @@ public:
 
     using Index_t = typename LatticeParticleTraits<T>::Index_t;
     using Scalar_t = typename LatticeParticleTraits<T>::Scalar_t;
+    using Tensor_t = typename LatticeParticleTraits<T>::Tensor_t;
     using ParticleLayout = typename LatticeParticleTraits<T>::ParticleLayout;
     using SingleParticlePos =
         typename LatticeParticleTraits<T>::SingleParticlePos;
@@ -84,6 +85,7 @@ public:
         typename LatticeParticleTraits<T>::ParticleGradient;
     using ParticleLaplacian =
         typename LatticeParticleTraits<T>::ParticleLaplacian;
+    using ParticleTensor = typename LatticeParticleTraits<T>::ParticleTensor;
 
     /// walker type
     using Walker_t = Walker<ParticleSetTraits<T>, LatticeParticleTraits<T>>;
@@ -98,6 +100,8 @@ public:
         classical,
         quantum
     };
+
+    static constexpr auto DIM = ParticleSetTraits<T>::DIM;
 
     /// quantum_domain of the particles, default = classical
     quantum_domains quantum_domain;
@@ -124,14 +128,14 @@ public:
     Index_t direction;
 
     /// Particle density in G-space for MPC interaction
-    std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
+    std::vector<TinyVector<int, DIM>> DensityReducedGvecs;
     std::vector<ComplexType> Density_G;
-    Array<RealType, OHMMS_DIM> Density_r;
+    Array<RealType, DIM> Density_r;
 
     /// DFT potential
-    std::vector<TinyVector<int, OHMMS_DIM>> VHXCReducedGvecs;
+    std::vector<TinyVector<int, DIM>> VHXCReducedGvecs;
     std::vector<ComplexType> VHXC_G[2];
-    Array<RealType, OHMMS_DIM> VHXC_r[2];
+    Array<RealType, DIM> VHXC_r[2];
 
     /** name-value map of Walker Properties
      *

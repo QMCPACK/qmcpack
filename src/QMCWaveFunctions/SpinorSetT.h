@@ -40,6 +40,7 @@ public:
     template <typename DT>
     using OffloadMatrix = typename SPOSetT<T>::template OffloadMatrix<DT>;
     using RealType = typename SPOSetT<T>::RealType;
+    using ComplexType = typename SPOSetT<T>::ComplexType;
     using IndexType = OHMMS_INDEXTYPE;
 
     /** constructor */
@@ -129,7 +130,7 @@ public:
         const RefVector<ValueVector>& psi_v_list,
         const RefVector<GradVector>& dpsi_v_list,
         const RefVector<ValueVector>& d2psi_v_list,
-        OffloadMatrix<QMCTraits::ComplexType>& mw_dspin) const override;
+        OffloadMatrix<ComplexType>& mw_dspin) const override;
 
     /** evaluate the values, gradients and laplacians of this single-particle
      * orbital sets and determinant ratio and grads of multiple walkers. Device

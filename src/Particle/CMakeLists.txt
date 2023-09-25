@@ -14,9 +14,11 @@
 ####################################
 set(PARTICLE
     InitMolecularSystem.cpp
+    InitMolecularSystemT.cpp
     SimulationCell.cpp
     SimulationCellT.cpp
     ParticleSetPool.cpp
+    ParticleSetPoolT.cpp
     ParticleSet.cpp
     ParticleSetT.cpp
     PSdispatcher.cpp
@@ -28,9 +30,11 @@ set(PARTICLE
     MCCoords.cpp
     MCCoordsT.cpp
     MCWalkerConfiguration.cpp
+    MCWalkerConfigurationT.cpp
     WalkerConfigurations.cpp
     SpeciesSet.cpp
     SampleStack.cpp
+    SampleStackT.cpp
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
     createDistanceTableT.cpp

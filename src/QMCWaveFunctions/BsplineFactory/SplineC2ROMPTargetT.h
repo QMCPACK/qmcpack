@@ -15,8 +15,8 @@
  * precision splines storage and computation is offloaded to accelerators using
  * OpenMP target
  */
-#ifndef QMCPLUSPLUS_SPLINE_C2RT_OMPTARGET_H
-#define QMCPLUSPLUS_SPLINE_C2RT_OMPTARGET_H
+#ifndef QMCPLUSPLUS_SPLINE_C2R_OMPTARGETT_H
+#define QMCPLUSPLUS_SPLINE_C2R_OMPTARGETT_H
 
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "OhmmsSoA/VectorSoaContainer.h"
@@ -42,8 +42,8 @@ namespace qmcplusplus
  * orbital. All the output orbitals are real (C2R). The maximal number of output
  * orbitals is OrbitalSetSize.
  */
-template <typename ST>
-class SplineC2RTOMPTarget : public BsplineSetT<ST>
+template <typename ST, typename VT>
+class SplineC2ROMPTargetT : public BsplineSetT<VT>
 {
 public:
     using SplineType = typename bspline_traits<ST, 3>::SplineType;
@@ -52,16 +52,16 @@ public:
     using PointType = TinyVector<ST, 3>;
     using SingleSplineType = UBspline_3d_d;
     // types for evaluation results
-    using TT = typename BsplineSetT<ST>::ValueType;
-    using ValueType = typename BsplineSetT<ST>::ValueType;
-    using GradType = typename BsplineSetT<ST>::GradType;
-    using GGGVector = typename BsplineSetT<ST>::GGGVector;
-    using GradVector = typename BsplineSetT<ST>::GradVector;
-    using HessVector = typename BsplineSetT<ST>::HessVector;
-    using ValueVector = typename BsplineSetT<ST>::ValueVector;
-    using ValueMatrix = typename BsplineSetT<ST>::ValueMatrix;
-    using GradMatrix = typename BsplineSetT<ST>::GradMatrix;
-    using OffloadMWVGLArray = typename BsplineSetT<ST>::OffloadMWVGLArray;
+    using TT = typename BsplineSetT<VT>::ValueType;
+    using typename BsplineSetT<VT>::ValueType;
+    using typename BsplineSetT<VT>::GradType;
+    using typename BsplineSetT<VT>::GGGVector;
+    using typename BsplineSetT<VT>::GradVector;
+    using typename BsplineSetT<VT>::GradMatrix;
+    using typename BsplineSetT<VT>::HessVector;
+    using typename BsplineSetT<VT>::ValueVector;
+    using typename BsplineSetT<VT>::ValueMatrix;
+    using typename BsplineSetT<VT>::OffloadMWVGLArray;
 
     using vContainer_type = Vector<ST, aligned_allocator<ST>>;
     using gContainer_type = VectorSoaContainer<ST, 3>;
@@ -126,8 +126,8 @@ protected:
     ghContainer_type mygH;
 
 public:
-    SplineC2RTOMPTarget(const std::string& my_name) :
-        BsplineSetT<ST>(my_name),
+    SplineC2ROMPTargetT(const std::string& my_name) :
+        BsplineSetT<VT>(my_name),
         offload_timer_(
             createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
         nComplexBands(0),
@@ -136,7 +136,7 @@ public:
     {
     }
 
-    SplineC2RTOMPTarget(const SplineC2RTOMPTarget& in);
+    SplineC2ROMPTargetT(const SplineC2ROMPTargetT& in);
 
     virtual std::string
     getClassName() const override
@@ -168,27 +168,29 @@ public:
 
     void
     acquireResource(ResourceCollection& collection,
-        const RefVectorWithLeader<SPOSetT<ST>>& spo_list) const override
+        const RefVectorWithLeader<SPOSetT<VT>>& spo_list) const override
     {
         assert(this == &spo_list.getLeader());
-        auto& phi_leader = spo_list.template getCastedLeader<SplineC2RTOMPTarget<ST>>();
+        auto& phi_leader =
+            spo_list.template getCastedLeader<SplineC2ROMPTargetT>();
         phi_leader.mw_mem_handle_ =
             collection.lendResource<SplineOMPTargetMultiWalkerMem<ST, TT>>();
     }
 
     void
     releaseResource(ResourceCollection& collection,
-        const RefVectorWithLeader<SPOSetT<ST>>& spo_list) const override
+        const RefVectorWithLeader<SPOSetT<VT>>& spo_list) const override
     {
         assert(this == &spo_list.getLeader());
-        auto& phi_leader = spo_list.template getCastedLeader<SplineC2RTOMPTarget<ST>>();
+        auto& phi_leader =
+            spo_list.template getCastedLeader<SplineC2ROMPTargetT>();
         collection.takebackResource(phi_leader.mw_mem_handle_);
     }
 
-    std::unique_ptr<SPOSetT<ST>>
+    std::unique_ptr<SPOSetT<VT>>
     makeClone() const override
     {
-        return std::make_unique<SplineC2RTOMPTarget>(*this);
+        return std::make_unique<SplineC2ROMPTargetT>(*this);
     }
 
     inline void
@@ -248,8 +250,9 @@ public:
         auto* MultiSpline = SplineInst->getSplinePtr();
         auto* restrict coefs = MultiSpline->coefs;
         // attach pointers on the device to achieve deep copy
-        PRAGMA_OFFLOAD("omp target map(always, to: MultiSpline[0:1], \
-                       coefs[0:MultiSpline->coefs_size])")
+        PRAGMA_OFFLOAD("omp target \
+                map(always, to: MultiSpline[0:1], \
+                    coefs[0:MultiSpline->coefs_size])")
         {
             MultiSpline->coefs = coefs;
         }
@@ -306,15 +309,15 @@ public:
 
     virtual void
     evaluateValue(
-        const ParticleSetT<ST>& P, const int iat, ValueVector& psi) override;
+        const ParticleSetT<VT>& P, const int iat, ValueVector& psi) override;
 
     virtual void
-    evaluateDetRatios(const VirtualParticleSetT<ST>& VP, ValueVector& psi,
+    evaluateDetRatios(const VirtualParticleSetT<VT>& VP, ValueVector& psi,
         const ValueVector& psiinv, std::vector<ValueType>& ratios) override;
 
     virtual void
-    mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT<ST>>& spo_list,
-        const RefVectorWithLeader<const VirtualParticleSetT<ST>>& vp_list,
+    mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT<VT>>& spo_list,
+        const RefVectorWithLeader<const VirtualParticleSetT<VT>>& vp_list,
         const RefVector<ValueVector>& psi_list,
         const std::vector<const ValueType*>& invRow_ptr_list,
         std::vector<std::vector<ValueType>>& ratios_list) const override;
@@ -327,20 +330,20 @@ public:
         ValueVector& d2psi);
 
     virtual void
-    evaluateVGL(const ParticleSetT<ST>& P, const int iat, ValueVector& psi,
+    evaluateVGL(const ParticleSetT<VT>& P, const int iat, ValueVector& psi,
         GradVector& dpsi, ValueVector& d2psi) override;
 
     virtual void
-    mw_evaluateVGL(const RefVectorWithLeader<SPOSetT<ST>>& sa_list,
-        const RefVectorWithLeader<ParticleSetT<ST>>& P_list, int iat,
+    mw_evaluateVGL(const RefVectorWithLeader<SPOSetT<VT>>& sa_list,
+        const RefVectorWithLeader<ParticleSetT<VT>>& P_list, int iat,
         const RefVector<ValueVector>& psi_v_list,
         const RefVector<GradVector>& dpsi_v_list,
         const RefVector<ValueVector>& d2psi_v_list) const override;
 
     virtual void
     mw_evaluateVGLandDetRatioGrads(
-        const RefVectorWithLeader<SPOSetT<ST>>& spo_list,
-        const RefVectorWithLeader<ParticleSetT<ST>>& P_list, int iat,
+        const RefVectorWithLeader<SPOSetT<VT>>& spo_list,
+        const RefVectorWithLeader<ParticleSetT<VT>>& P_list, int iat,
         const std::vector<const ValueType*>& invRow_ptr_list,
         OffloadMWVGLArray& phi_vgl_v, std::vector<ValueType>& ratios,
         std::vector<GradType>& grads) const override;
@@ -350,7 +353,7 @@ public:
         HessVector& grad_grad_psi, int first, int last) const;
 
     virtual void
-    evaluateVGH(const ParticleSetT<ST>& P, const int iat, ValueVector& psi,
+    evaluateVGH(const ParticleSetT<VT>& P, const int iat, ValueVector& psi,
         GradVector& dpsi, HessVector& grad_grad_psi) override;
 
     void
@@ -359,18 +362,20 @@ public:
         int last = -1) const;
 
     virtual void
-    evaluateVGHGH(const ParticleSetT<ST>& P, const int iat, ValueVector& psi,
+    evaluateVGHGH(const ParticleSetT<VT>& P, const int iat, ValueVector& psi,
         GradVector& dpsi, HessVector& grad_grad_psi,
         GGGVector& grad_grad_grad_psi) override;
 
     virtual void
-    evaluate_notranspose(const ParticleSetT<ST>& P, int first, int last,
+    evaluate_notranspose(const ParticleSetT<VT>& P, int first, int last,
         ValueMatrix& logdet, GradMatrix& dlogdet,
         ValueMatrix& d2logdet) override;
 
     template <class BSPLINESPO>
-    friend struct SplineSetReader;
-    friend struct BsplineReaderBase;
+    friend class SplineSetReaderT;
+    template <typename>
+    friend class BsplineReaderBaseT;
 };
+
 } // namespace qmcplusplus
 #endif
