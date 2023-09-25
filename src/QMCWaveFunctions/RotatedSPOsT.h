@@ -40,6 +40,8 @@ public:
     using IndexType = typename SPOSetT<T>::IndexType;
     using RealType = typename SPOSetT<T>::RealType;
     using ValueType = typename SPOSetT<T>::ValueType;
+    using GradType = typename SPOSetT<T>::GradType;
+    using ComplexType = typename SPOSetT<T>::ComplexType;
     using FullRealType = typename SPOSetT<T>::FullRealType;
     using ValueVector = typename SPOSetT<T>::ValueVector;
     using ValueMatrix = typename SPOSetT<T>::ValueMatrix;
@@ -49,6 +51,9 @@ public:
     using HessMatrix = typename SPOSetT<T>::HessMatrix;
     using GGGVector = typename SPOSetT<T>::GGGVector;
     using GGGMatrix = typename SPOSetT<T>::GGGMatrix;
+    using OffloadMWVGLArray = typename SPOSetT<T>::OffloadMWVGLArray;
+    template <typename DT>
+    using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
     // constructor
     RotatedSPOsT(
@@ -399,6 +404,68 @@ public:
         use_global_rot_ = use_global_rotation;
     }
 
+    void
+    mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+        const RefVectorWithLeader<const VirtualParticleSetT<T>>& vp_list,
+        const RefVector<ValueVector>& psi_list,
+        const std::vector<const ValueType*>& invRow_ptr_list,
+        std::vector<std::vector<ValueType>>& ratios_list) const override;
+
+    void
+    mw_evaluateValue(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
+        const RefVector<ValueVector>& psi_v_list) const override;
+
+    void
+    mw_evaluateVGL(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
+        const RefVector<ValueVector>& psi_v_list,
+        const RefVector<GradVector>& dpsi_v_list,
+        const RefVector<ValueVector>& d2psi_v_list) const override;
+
+    void
+    mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
+        const RefVector<ValueVector>& psi_v_list,
+        const RefVector<GradVector>& dpsi_v_list,
+        const RefVector<ValueVector>& d2psi_v_list,
+        OffloadMatrix<ComplexType>& mw_dspin) const override;
+
+    void
+    mw_evaluateVGLandDetRatioGrads(
+        const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
+        const std::vector<const ValueType*>& invRow_ptr_list,
+        OffloadMWVGLArray& phi_vgl_v, std::vector<ValueType>& ratios,
+        std::vector<GradType>& grads) const override;
+
+    void
+    mw_evaluateVGLandDetRatioGradsWithSpin(
+        const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
+        const std::vector<const ValueType*>& invRow_ptr_list,
+        OffloadMWVGLArray& phi_vgl_v, std::vector<ValueType>& ratios,
+        std::vector<GradType>& grads,
+        std::vector<ValueType>& spingrads) const override;
+
+    void
+    mw_evaluate_notranspose(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+        const RefVectorWithLeader<ParticleSetT<T>>& P_list, int first, int last,
+        const RefVector<ValueMatrix>& logdet_list,
+        const RefVector<GradMatrix>& dlogdet_list,
+        const RefVector<ValueMatrix>& d2logdet_list) const override;
+
+    void
+    createResource(ResourceCollection& collection) const override;
+
+    void
+    acquireResource(ResourceCollection& collection,
+        const RefVectorWithLeader<SPOSetT<T>>& spo_list) const override;
+
+    void
+    releaseResource(ResourceCollection& collection,
+        const RefVectorWithLeader<SPOSetT<T>>& spo_list) const override;
+
 private:
     /// true if SPO parameters (orbital rotation parameters) have been supplied
     /// by input
@@ -414,6 +481,9 @@ private:
 
     /// Use global rotation or history list
     bool use_global_rot_ = true;
+
+    static RefVectorWithLeader<SPOSetT<T>>
+    extractPhiRefList(const RefVectorWithLeader<SPOSetT<T>>& spo_list);
 
     friend OptVariablesType<double>&
     testing::getMyVarsFull(RotatedSPOsT<double>& rot);
