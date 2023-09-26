@@ -212,35 +212,39 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateV_mvp(const RefVectorWithLeader
   const auto coordR_list(vps_leader.extractCoordsRefList_vp(vp_list));
   std::vector<PosType> Tv_list;
 
-  std::vector<DistanceTableAB::DisplRow> dist_list;
+  std::vector<DistanceTableAB::DisplRow> displ_list;
+  //std::vector<DistanceTableAB::DistRow> dist_list;
+  std::vector<ValueType> correctphase_list;
 
   size_t index = 0;
   for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
     {
-      dist_list.push_back(dt_list[iw].getDisplRow(iat));
-      //index++;
-    }
-
-
-  for (size_t iw = 0; iw < vp_list.size(); iw++)
-    for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
-    {
-      const auto& dist  = dt_list[iw].getDistRow(iat);
-      const auto& displ = dt_list[iw].getDisplRow(iat);
-
       PosType Tv;
+      displ_list.push_back(dt_list[iw].getDisplRow(iat));
+      //dist_list.push_back(dt_list[iw].getDistRow(iat));
       for (int c = 0; c < NumCenters; c++)
       {
-        Tv[0] = (ions_.R[c][0] - coordR_list[index][0]) - displ[c][0];
-        Tv[1] = (ions_.R[c][1] - coordR_list[index][1]) - displ[c][1];
-        Tv[2] = (ions_.R[c][2] - coordR_list[index][2]) - displ[c][2];
-
-        LOBasisSet[IonID[c]]->evaluateV(vp_list[iw].getLattice(), dist[c], displ[c],
-                                        vals.data_at(index, 0) + BasisOffset[c], Tv);
+         Tv[0] =  (ions_.R[c][0] - coordR_list[index][0]) - displ_list[index][c][0];
+         Tv[1] =  (ions_.R[c][1] - coordR_list[index][1]) - displ_list[index][c][1];
+         Tv[2] =  (ions_.R[c][2] - coordR_list[index][2]) - displ_list[index][c][2];
+#if not defined(QMC_COMPLEX)
+         const ValueType correctphase = 1.0;
+#else
+          RealType phasearg = SuperTwist[0] * Tv[0] + SuperTwist[1] * Tv[index][1] + SuperTwist[2] * Tv[index][2];
+          RealType s, t;
+          qmcplusplus::sincos(-phasearg, &s, &t);
+          const ValueType correctphase(t, s);
+#endif
+	 correctphase_list.push_back(correctphase);
+	 
       }
       index++;
     }
+
+    for (int c = 0; c < NumCenters; c++)
+        LOBasisSet[IonID[c]]->mw_evaluateV(vp_list, displ_list,
+                                        vals, correctphase_list,BasisOffset,c);
 }
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)

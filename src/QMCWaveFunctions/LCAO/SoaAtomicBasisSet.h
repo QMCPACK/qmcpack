@@ -16,6 +16,7 @@
 
 #include "CPU/math.hpp"
 #include "OptimizableObject.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -33,6 +34,8 @@ struct SoaAtomicBasisSet
   using RealType        = typename ROT::RealType;
   using GridType        = typename ROT::GridType;
   using ValueType       = typename QMCTraits::ValueType;
+  using PosType           = typename ParticleSet::PosType;
+  using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
 
   ///size of the basis set
   int BasisSetSize;
@@ -595,6 +598,75 @@ struct SoaAtomicBasisSet
       }
     }
   }
+
+
+  /** evaluate V
+  */
+  inline void mw_evaluateV(const RefVectorWithLeader<const VirtualParticleSet>& vp_list, const std::vector<DistanceTableAB::DisplRow> displ_list, OffloadMWVArray& vals, const std::vector<ValueType> correctphase_list, const std::vector<size_t> BasisOffset, const size_t c)
+  {
+
+     const size_t nVPs = vals.size(0);
+
+     auto& vps_leader = vp_list.getLeader();
+     size_t index = 0;
+     
+     for (size_t iw = 0; iw < vp_list.size(); iw++)
+       for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+       {
+          int TransX, TransY, TransZ;
+           
+          PosType dr_new;
+          RealType r_new;
+
+    RealType* restrict ylm_v = tempS.data(0);
+    RealType* restrict phi_r = tempS.data(1);
+    //auto&  psi= (*vals + BasisOffset[c]);
+
+    for (size_t ib = 0; ib < BasisSetSize; ++ib)
+      vals[ib] = 0;
+    //Phase_idx (iter) needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax)
+    int iter = -1;
+    for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
+    {
+      //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
+      TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
+      for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
+      {
+        //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
+        TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
+        for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
+        {
+          //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
+          TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
+
+          dr_new[0] = displ_list[index][c][0] + (TransX * vp_list[index].getLattice().R(0, 0) + TransY * vp_list[index].getLattice().R(1, 0) + TransZ * vp_list[index].getLattice().R(2, 0));
+          dr_new[1] = displ_list[index][c][1] + (TransX * vp_list[index].getLattice().R(0, 1) + TransY * vp_list[index].getLattice().R(1, 1) + TransZ * vp_list[index].getLattice().R(2, 1));
+          dr_new[2] = displ_list[index][c][2] + (TransX * vp_list[index].getLattice().R(0, 2) + TransY * vp_list[index].getLattice().R(1, 2) + TransZ * vp_list[index].getLattice().R(2, 2));
+
+          r_new = std::sqrt(dot(dr_new, dr_new));
+          iter++;
+          if (r_new >= Rmax)
+            continue;
+
+          Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
+          MultiRnl.evaluate(r_new, phi_r);
+          ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
+          const ValueType Phase = periodic_image_phase_factors[iter] * correctphase_list[index];
+          for (size_t ib = 0; ib < BasisSetSize; ++ib)
+            vals[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase;
+            //psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase;
+
+	  index++;
+        }
+      }
+    }
+  }
+
+
+  }
+
+
+
 
   /** evaluate V
   */
