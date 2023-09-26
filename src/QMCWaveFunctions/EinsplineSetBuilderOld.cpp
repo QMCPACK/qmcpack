@@ -40,7 +40,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
   catch (const std::exception& e)
   {
     app_error() << e.what() << std::endl
-                << "EinsplineSetBuilder::ReadOrbitalInfo too old h5 file which is not in ESHDF format!" << std::endl;
+                << "EinsplineSetBuilder::ReadOrbitalInfo h5 file format is too old or it is not a bspline orbital file!"
+                << std::endl;
     return false;
   }
 
