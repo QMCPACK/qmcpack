@@ -15,17 +15,6 @@
 
 
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "OhmmsData/AttributeSet.h"
-#include "Utilities/Timer.h"
-#include "Message/Communicate.h"
-#include "Message/CommOperators.h"
-#include <vector>
-#include "ParticleBase/RandomSeqGenerator.h"
-#include "CPU/math.hpp"
-
-#include <array>
-#include <string_view>
 
 namespace qmcplusplus
 {
@@ -37,20 +26,26 @@ bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
     return false;
   }
 
-  // Read format
-  std::string format;
-  H5File.read(format, "/format");
-  H5File.read(Version, "/version");
-  app_log() << "  HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << "\n";
-  if (format.find("ES") < format.size())
+  try
   {
+    // Read format
+    std::string format;
+    H5File.read(format, "/format");
+    if (format.find("ES") == std::string::npos)
+      throw std::runtime_error("Format string input \"" + format + "\" doesn't contain \"ES\" keyword.");
     Format = ESHDF;
-    return ReadOrbitalInfo_ESHDF(skipChecks);
+    H5File.read(Version, "/version");
+    app_log() << "  HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << std::endl;
+  }
+  catch (const std::exception& e)
+  {
+    app_error() << e.what() << std::endl
+                << "EinsplineSetBuilder::ReadOrbitalInfo h5 file format is too old or it is not a bspline orbital file!"
+                << std::endl;
+    return false;
   }
 
-  app_error()
-      << "EinsplineSetBuilder::ReadOrbitalInfo too old h5 file which is not in ESHDF format! Regenerate the h5 file";
-  return false;
+  return ReadOrbitalInfo_ESHDF(skipChecks);
 }
 
 } // namespace qmcplusplus
