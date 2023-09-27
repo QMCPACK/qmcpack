@@ -409,6 +409,31 @@ public:
   using RealType     = typename DistanceTable::RealType;
   using PosType      = typename DistanceTable::PosType;
 
+  enum class Region
+  {
+    INSIDE, // within the buffer shell
+    BUFFER, // in the buffer region
+    INTER   // interstitial area
+  };
+
+  struct LocationSmoothingInfo
+  {
+    ///r from distance table
+    RealType dist_r;
+    ///dr from distance table
+    PosType dist_dr;
+    ///for APBC
+    PointType r_image;
+    /// region of the location
+    Region region;
+    ///smooth function value
+    RealType f;
+    ///smooth function first derivative
+    RealType df_dr;
+    ///smooth function second derivative
+    RealType d2f_dr2;
+  };
+
 private:
   ///atomic centers
   std::vector<AtomicOrbitals<ST>> AtomicCenters;
@@ -416,18 +441,6 @@ private:
   int myTableID;
   ///mapping supercell to primitive cell
   std::vector<int> Super2Prim;
-  ///r from distance table
-  RealType dist_r;
-  ///dr from distance table
-  PosType dist_dr;
-  ///for APBC
-  PointType r_image;
-  ///smooth function value
-  RealType f;
-  ///smooth function first derivative
-  RealType df_dr;
-  ///smooth function second derivative
-  RealType d2f_dr2;
   ///smoothing schemes
   enum class smoothing_schemes
   {
@@ -437,6 +450,28 @@ private:
   } smooth_scheme;
   /// smoothing function
   smoothing_functions smooth_func_id;
+
+  /// select a region (within the buffer shell, in the buffer, interstitial region) and compute the smoothing function if in the buffer.
+  inline void selectRegionAndComputeSmoothing(const ST& cutoff_buffer,
+                                              const ST& cutoff,
+                                              LocationSmoothingInfo& info) const
+  {
+    const RealType r = info.dist_r;
+    if (r < cutoff_buffer)
+      info.region = Region::INSIDE;
+    else if (r < cutoff)
+    {
+      constexpr RealType cone(1);
+      const RealType scale = cone / (cutoff - cutoff_buffer);
+      const RealType x     = (r - cutoff_buffer) * scale;
+      info.f               = smoothing(smooth_func_id, x, info.df_dr, info.d2f_dr2);
+      info.df_dr *= scale;
+      info.d2f_dr2 *= scale * scale;
+      info.region = Region::BUFFER;
+    }
+    else
+      info.region = Region::INTER;
+  }
 
 public:
   HybridRepCenterOrbitals() {}
@@ -553,7 +588,10 @@ public:
   }
 
   template<typename Cell>
-  inline int get_bc_sign(const PointType& r, const Cell& PrimLattice, TinyVector<int, D>& HalfG)
+  inline int get_bc_sign(const PointType& r,
+                         const PointType& r_image,
+                         const Cell& PrimLattice,
+                         TinyVector<int, D>& HalfG) const
   {
     int bc_sign          = 0;
     PointType shift_unit = PrimLattice.toUnit(r - r_image);
@@ -567,21 +605,18 @@ public:
 
   //evaluate only V
   template<typename VV>
-  inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& myV, LocationSmoothingInfo& info)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
-    if (center_idx < 0)
-      abort();
-    auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.getCutoff())
+    const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
+    auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
     {
-      PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.getCenterPos() + dr;
-      myCenter.evaluate_v(dist_r, dr, myV);
-      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
+      PointType dr(-info.dist_dr[0], -info.dist_dr[1], -info.dist_dr[2]);
+      info.r_image = myCenter.getCenterPos() + dr;
+      myCenter.evaluate_v(info.dist_r, dr, myV);
     }
-    return RealType(-1);
   }
 
   /* check if the batched algorithm is safe to operate
@@ -593,7 +628,7 @@ public:
    * The batched algorthm forces the evaluation on the reference center and introduce some error.
    * In this case, the non-batched algorithm should be used.
    */
-  bool is_batched_safe(const VirtualParticleSet& VP)
+  bool is_batched_safe(const VirtualParticleSet& VP) const
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
@@ -603,88 +638,75 @@ public:
 
   // C2C, C2R cases
   template<typename VM>
-  inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
+  inline void evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV, LocationSmoothingInfo& info)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
+    info.dist_r          = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.getCutoff())
-    {
-      myCenter.evaluateValues(VP.getDistTableAB(myTableID).getDisplacements(), center_idx, dist_r, multi_myV);
-      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
-    }
-    return RealType(-1);
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
+      myCenter.evaluateValues(VP.getDistTableAB(myTableID).getDisplacements(), center_idx, info.dist_r, multi_myV);
   }
 
   // R2R case
   template<typename VM, typename Cell, typename SV>
-  inline RealType evaluateValuesR2R(const VirtualParticleSet& VP,
-                                    const Cell& PrimLattice,
-                                    TinyVector<int, D>& HalfG,
-                                    VM& multi_myV,
-                                    SV& bc_signs)
+  inline void evaluateValuesR2R(const VirtualParticleSet& VP,
+                                const Cell& PrimLattice,
+                                TinyVector<int, D>& HalfG,
+                                VM& multi_myV,
+                                SV& bc_signs,
+                                LocationSmoothingInfo& info)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
+    info.dist_r          = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.getCutoff())
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
     {
       const auto& displ = VP.getDistTableAB(myTableID).getDisplacements();
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
-      {
-        r_image       = myCenter.getCenterPos() - displ[ivp][center_idx];
-        bc_signs[ivp] = get_bc_sign(VP.R[ivp], PrimLattice, HalfG);
-        ;
-      }
-      myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);
-      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
+        bc_signs[ivp] = get_bc_sign(VP.R[ivp], myCenter.getCenterPos() - displ[ivp][center_idx], PrimLattice, HalfG);
+      myCenter.evaluateValues(displ, center_idx, info.dist_r, multi_myV);
     }
-    return RealType(-1);
   }
 
   //evaluate only VGL
   template<typename VV, typename GV>
-  inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL, LocationSmoothingInfo& info)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
-    if (center_idx < 0)
-      abort();
-    auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.getCutoff())
+    const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
+    auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
     {
-      PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.getCenterPos() + dr;
-      myCenter.evaluate_vgl(dist_r, dr, myV, myG, myL);
-      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
+      const PointType dr(-info.dist_dr[0], -info.dist_dr[1], -info.dist_dr[2]);
+      info.r_image = myCenter.getCenterPos() + dr;
+      myCenter.evaluate_vgl(info.dist_r, dr, myV, myG, myL);
     }
-    return RealType(-1);
   }
 
   //evaluate only VGH
   template<typename VV, typename GV, typename HT>
-  inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
+  inline void evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH, LocationSmoothingInfo& info)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
-    if (center_idx < 0)
-      abort();
-    auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.getCutoff())
+    const int center_idx = ei_dist.get_first_neighbor(iat, info.dist_r, info.dist_dr, P.getActivePtcl() == iat);
+    auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
+    selectRegionAndComputeSmoothing(myCenter.getCutoffBuffer(), myCenter.getCutoff(), info);
+    if (info.region != Region::INTER)
     {
-      PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.getCenterPos() + dr;
-      myCenter.evaluate_vgh(dist_r, dr, myV, myG, myH);
-      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
+      const PointType dr(-info.dist_dr[0], -info.dist_dr[1], -info.dist_dr[2]);
+      info.r_image = myCenter.getCenterPos() + dr;
+      myCenter.evaluate_vgh(info.dist_r, dr, myV, myG, myH);
     }
-    return RealType(-1);
   }
 
   // interpolate buffer region, value only
   template<typename VV>
-  inline void interpolate_buffer_v(VV& psi, const VV& psi_AO) const
+  inline void interpolate_buffer_v(VV& psi, const VV& psi_AO, const RealType f) const
   {
-    const RealType cone(1);
+    constexpr RealType cone(1);
     for (size_t i = 0; i < psi.size(); i++)
       psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
   }
@@ -696,10 +718,15 @@ public:
                                      VV& d2psi,
                                      const VV& psi_AO,
                                      const GV& dpsi_AO,
-                                     const VV& d2psi_AO) const
+                                     const VV& d2psi_AO,
+                                     const LocationSmoothingInfo& info) const
   {
-    const RealType cone(1), ctwo(2);
-    const RealType rinv(1.0 / dist_r);
+    constexpr RealType cone(1), ctwo(2);
+    const RealType rinv(1.0 / info.dist_r);
+    auto& dist_dr = info.dist_dr;
+    auto& f       = info.f;
+    auto& df_dr   = info.df_dr;
+    auto& d2f_dr2 = info.d2f_dr2;
     if (smooth_scheme == smoothing_schemes::CONSISTENT)
       for (size_t i = 0; i < psi.size(); i++)
       { // psi, dpsi, d2psi are all consistent
@@ -724,19 +751,6 @@ public:
       }
     else
       throw std::runtime_error("Unknown smooth scheme!");
-  }
-
-  inline RealType smooth_function(const ST& cutoff_buffer, const ST& cutoff, const RealType r)
-  {
-    const RealType cone(1);
-    if (r < cutoff_buffer)
-      return cone;
-    const RealType scale = cone / (cutoff - cutoff_buffer);
-    const RealType x     = (r - cutoff_buffer) * scale;
-    f                    = smoothing(smooth_func_id, x, df_dr, d2f_dr2);
-    df_dr *= scale;
-    d2f_dr2 *= scale * scale;
-    return f;
   }
 
   template<class BSPLINESPO>
