@@ -62,9 +62,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create({2});
+  elec_.create({3});
   elec_.R[0]                 = {0.4, 0.0, 0.0};
   elec_.R[1]                 = {0.0, 1.0, 0.0};
+  elec_.R[2]                 = {0.0, 0.5, 0.5};
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -97,7 +98,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if defined(QMC_COMPLEX)
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // electron 0
@@ -113,11 +113,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
   CHECK(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
-#if defined(MIXED_PRECISION)
   CHECK(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
-#else
-  CHECK(std::real(d2psiM[0][1]) == Approx(22.3851032257));
-#endif
 
   // electron 1
   // value
@@ -133,7 +129,21 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   // lapl
   CHECK(std::real(d2psiM[1][0]) == Approx(1.3313053846));
   CHECK(std::real(d2psiM[1][1]) == Approx(-4.712583065));
-#endif
+
+  // electron 2
+  // value
+  CHECK(std::real(psiM[2][0]) == Approx(-0.8694150782));
+  CHECK(std::real(psiM[2][1]) == Approx(0.780789871));
+  // grad
+  CHECK(std::real(dpsiM[2][0][0]) == Approx(-0.0602699547));
+  CHECK(std::real(dpsiM[2][0][1]) == Approx(-0.2770632381));
+  CHECK(std::real(dpsiM[2][0][2]) == Approx(-0.2770632488));
+  CHECK(std::real(dpsiM[2][1][0]) == Approx(-1.5982062406));
+  CHECK(std::real(dpsiM[2][1][1]) == Approx(1.0020672904));
+  CHECK(std::real(dpsiM[2][1][2]) == Approx(-1.9794520201));
+  // lapl
+  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(3e-5));
+  CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738).epsilon(3e-5));
 }
 
 TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
@@ -170,9 +180,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create({2});
+  elec_.create({3});
   elec_.R[0]                 = {0.4, 0.0, 0.0};
   elec_.R[1]                 = {0.0, 1.0, 0.0};
+  elec_.R[2]                 = {0.0, 0.5, 0.5};
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -202,9 +213,9 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   ParticleSet::RealType r;
   ParticleSet::PosType dr;
   elec_.getDistTable(0).get_first_neighbor(0, r, dr, false);
-  std::cout << std::setprecision(14) << "check r^2 against dr^2. "
+  app_log() << std::setprecision(14) << "check r^2 against dr^2. "
             << "r = " << r << " dr = " << dr << std::endl;
-  std::cout << "abs(r^2 - dr^2) = " << std::abs(r * r - dot(dr, dr))
+  app_log() << "abs(r^2 - dr^2) = " << std::abs(r * r - dot(dr, dr))
             << " epsilon = " << std::numeric_limits<double>::epsilon() << std::endl;
 #if defined(MIXED_PRECISION)
   REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon() * 1e8);
@@ -220,9 +231,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
 #if defined(QMC_COMPLEX)
   // real part
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
-
   // electron 0
   // value
   CHECK(std::real(psiM[0][0]) == Approx(0.6776432991));
@@ -252,9 +260,22 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   // lapl
   CHECK(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
   CHECK(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
-#endif
 
-#if defined(QMC_COMPLEX)
+  // electron 2
+  // value
+  CHECK(std::real(psiM[2][0]) == Approx(0.8841851282));
+  CHECK(std::real(psiM[2][1]) == Approx(1.0331713017));
+  // grad
+  CHECK(std::real(dpsiM[2][0][0]) == Approx(0.0688574613));
+  CHECK(std::real(dpsiM[2][0][1]) == Approx(0.2735091889));
+  CHECK(std::real(dpsiM[2][0][2]) == Approx(0.2666900514));
+  CHECK(std::real(dpsiM[2][1][0]) == Approx(0.5398793935));
+  CHECK(std::real(dpsiM[2][1][1]) == Approx(0.7525391523));
+  CHECK(std::real(dpsiM[2][1][2]) == Approx(-0.1224437827));
+  // lapl
+  CHECK(std::real(d2psiM[2][0]) == Approx(-1.1799273657).epsilon(1e-4));
+  CHECK(std::real(d2psiM[2][1]) == Approx(-2.0339757673).epsilon(1e-4));
+
   // imaginary part
   // electron 0
   // value
@@ -270,6 +291,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   // lapl
   CHECK(std::imag(d2psiM[0][0]) == Approx(4.0779790878).epsilon(1e-4));
   CHECK(std::imag(d2psiM[0][1]) == Approx(-0.7897151113).epsilon(1e-4));
+
   // electron 1
   // value
   CHECK(std::imag(psiM[1][0]) == Approx(0.9008999467));
@@ -284,6 +306,21 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   // lapl
   CHECK(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
   CHECK(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
+
+  // electron 2
+  // value
+  CHECK(std::imag(psiM[2][0]) == Approx(0.8841851282));
+  CHECK(std::imag(psiM[2][1]) == Approx(1.0291547321));
+  // grad
+  CHECK(std::imag(dpsiM[2][0][0]) == Approx(0.0688574613));
+  CHECK(std::imag(dpsiM[2][0][1]) == Approx(0.2735091889));
+  CHECK(std::imag(dpsiM[2][0][2]) == Approx(0.2666900514));
+  CHECK(std::imag(dpsiM[2][1][0]) == Approx(0.5376840012));
+  CHECK(std::imag(dpsiM[2][1][1]) == Approx(0.7550587239));
+  CHECK(std::imag(dpsiM[2][1][2]) == Approx(-0.1228616516));
+  // lapl
+  CHECK(std::imag(d2psiM[2][0]) == Approx(-1.2044699918).epsilon(1e-4));
+  CHECK(std::imag(d2psiM[2][1]) == Approx(-1.885562226).epsilon(1e-4));
 #endif
 
   // test batched interfaces
