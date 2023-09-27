@@ -70,7 +70,7 @@ Control options
     Allowed:      "Exx Only" "NEB Relax" "Band Structure Only" "Psi Plot" "Plot" 
                   "Constant Pressure And Energy" "TDDFT" "Dimer Relax" "Constant 
                   Temperature And Energy" "Constant Volume And Energy" "Relax 
-                  Structure" "Quench Electrons"   
+                  Structure" "Quench Electrons" "NSCF" 
     Description:  Type of calculation to perform. 
 
     Key name:     cell_relax
@@ -3059,6 +3059,7 @@ class RmgCalcModes(DevBase):
     def __init__(self):
         self.full_calc = obj(
             scf         = 'Quench Electrons',
+            nscf        = 'NSCF',
             exx         = 'Exx Only',
             neb         = 'NEB Relax', 
             band        = 'Band Structure Only',
@@ -3553,3 +3554,9 @@ def generate_any_rmg_input(**kwargs):
 
     return ri
 #end def generate_any_rmg_input
+
+
+
+
+
+
