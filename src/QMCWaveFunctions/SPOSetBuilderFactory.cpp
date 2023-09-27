@@ -25,12 +25,12 @@
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 
 #if defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "BsplineFactory/EinsplineSpinorSetBuilder.h"
 #include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #endif
 #endif
 #include "QMCWaveFunctions/CompositeSPOSet.h"

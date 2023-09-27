@@ -22,9 +22,9 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
-#include "QMCWaveFunctions/einspline_helper.hpp"
-#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
-#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
+#include "einspline_helper.hpp"
+#include "BsplineReaderBase.h"
+#include "createBsplineReader.h"
 
 namespace qmcplusplus
 {

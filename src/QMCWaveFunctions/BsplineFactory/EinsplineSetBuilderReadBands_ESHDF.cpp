@@ -13,11 +13,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "EinsplineSetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Message/CommOperators.h"
 #include <fftw3.h>
-#include "QMCWaveFunctions/einspline_helper.hpp"
+#include "einspline_helper.hpp"
 
 namespace qmcplusplus
 {
