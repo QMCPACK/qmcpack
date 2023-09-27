@@ -633,7 +633,8 @@ TEMPLATE_TEST_CASE(
     xmlNodePtr sposet_builder = xmlFirstElementChild(root);
     xmlNodePtr sposet_ptr = xmlFirstElementChild(sposet_builder);
 
-    EinsplineSetBuilderT<TestType> einSet(elec, ptcl.getPool(), c, sposet_builder);
+    EinsplineSetBuilderT<TestType> einSet(
+        elec, ptcl.getPool(), c, sposet_builder);
     auto spo = einSet.createSPOSetFromXML(sposet_ptr);
     REQUIRE(spo);
 

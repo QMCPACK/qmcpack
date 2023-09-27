@@ -17,6 +17,7 @@
 
 #include "SplineR2RT.h"
 
+#include "CPU/BLAS.hpp"
 #include "Concurrency/OpenMP.h"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "spline2/MultiBsplineEval.hpp"
@@ -125,17 +126,27 @@ SplineR2RT<ST, VT>::applyRotation(
         std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
     }
 
-    // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
-    for (auto i = 0; i < BasisSetSize; i++) {
-        for (auto j = 0; j < this->OrbitalSetSize; j++) {
-            const auto cur_elem = Nsplines * i + j;
-            auto newval{0.};
-            for (auto k = 0; k < this->OrbitalSetSize; k++) {
-                const auto index = i * Nsplines + k;
-                newval += (*coef_copy_)[index] * rot_mat[k][j];
+    if constexpr (std::is_same_v<ST, RealType>) {
+        // Here, ST should be equal to ValueType, which will be double for R2R.
+        // Using BLAS to make things faster
+        BLAS::gemm('N', 'N', this->OrbitalSetSize, BasisSetSize,
+            this->OrbitalSetSize, ST(1.0), rot_mat.data(), this->OrbitalSetSize,
+            coef_copy_->data(), Nsplines, ST(0.0), spl_coefs, Nsplines);
+    }
+    else {
+        // Here, ST is float but ValueType is double for R2R. Due to issues with
+        // type conversions, just doing naive matrix multiplication in this case
+        // to not lose precision on rot_mat
+        for (IndexType i = 0; i < BasisSetSize; i++)
+            for (IndexType j = 0; j < this->OrbitalSetSize; j++) {
+                const auto cur_elem = Nsplines * i + j;
+                FullPrecValueType newval{0.};
+                for (IndexType k = 0; k < this->OrbitalSetSize; k++) {
+                    const auto index = i * Nsplines + k;
+                    newval += (*coef_copy_)[index] * rot_mat[k][j];
+                }
+                spl_coefs[cur_elem] = newval;
             }
-            spl_coefs[cur_elem] = newval;
-        }
     }
 }
 

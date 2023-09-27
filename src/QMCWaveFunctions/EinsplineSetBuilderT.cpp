@@ -514,19 +514,19 @@ EinsplineSetBuilderT<T>::AnalyzeTwists2(
     }
 
     TargetPtcl.setTwist(superFracs[twist_num_]);
-#ifndef QMC_COMPLEX
-    // Check to see if supercell twist is okay to use with real wave
-    // functions
-    for (int dim = 0; dim < OHMMS_DIM; dim++) {
-        double t = 2.0 * superFracs[twist_num_][dim];
-        if (std::abs(t - round(t)) > MatchingTol * 100) {
-            app_error()
-                << "Cannot use this super twist with real wavefunctions.\n"
-                << "Please recompile with QMC_COMPLEX=1.\n";
-            APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
+    if constexpr (!IsComplex_t<T>{}()) {
+        // Check to see if supercell twist is okay to use with real wave
+        // functions
+        for (int dim = 0; dim < OHMMS_DIM; dim++) {
+            double t = 2.0 * superFracs[twist_num_][dim];
+            if (std::abs(t - round(t)) > MatchingTol * 100) {
+                app_error()
+                    << "Cannot use this super twist with real wavefunctions.\n"
+                    << "Please recompile with QMC_COMPLEX=1.\n";
+                APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
+            }
         }
     }
-#endif
     // Now check to see that each supercell twist has the right twists
     // to tile the primitive cell orbitals.
     const int numTwistsNeeded = std::abs(det(TileMatrix));
@@ -574,78 +574,80 @@ EinsplineSetBuilderT<T>::AnalyzeTwists2(
         IncludeTwists.push_back(superSets[twist_num_][i]);
     // Now, find out which twists are distinct
     DistinctTwists.clear();
-#ifndef QMC_COMPLEX
-    std::vector<int> copyTwists;
-    for (int i = 0; i < IncludeTwists.size(); i++) {
-        int ti = IncludeTwists[i];
-        PosType twist_i = primcell_kpoints[ti];
-        bool distinct = true;
-        for (int j = i + 1; j < IncludeTwists.size(); j++) {
-            int tj = IncludeTwists[j];
-            PosType twist_j = primcell_kpoints[tj];
-            PosType sum = twist_i + twist_j;
-            PosType diff = twist_i - twist_j;
-            if (TwistPair(twist_i, twist_j))
-                distinct = false;
+    if constexpr (!IsComplex_t<T>{}()) {
+        std::vector<int> copyTwists;
+        for (int i = 0; i < IncludeTwists.size(); i++) {
+            int ti = IncludeTwists[i];
+            PosType twist_i = primcell_kpoints[ti];
+            bool distinct = true;
+            for (int j = i + 1; j < IncludeTwists.size(); j++) {
+                int tj = IncludeTwists[j];
+                PosType twist_j = primcell_kpoints[tj];
+                PosType sum = twist_i + twist_j;
+                PosType diff = twist_i - twist_j;
+                if (TwistPair(twist_i, twist_j))
+                    distinct = false;
+            }
+            if (distinct)
+                DistinctTwists.push_back(ti);
+            else
+                copyTwists.push_back(ti);
         }
-        if (distinct)
-            DistinctTwists.push_back(ti);
+        // Now determine which distinct twists require two copies
+        MakeTwoCopies.resize(DistinctTwists.size());
+        for (int i = 0; i < DistinctTwists.size(); i++) {
+            MakeTwoCopies[i] = false;
+            int ti = DistinctTwists[i];
+            PosType twist_i = primcell_kpoints[ti];
+            for (int j = 0; j < copyTwists.size(); j++) {
+                int tj = copyTwists[j];
+                PosType twist_j = primcell_kpoints[tj];
+                if (TwistPair(twist_i, twist_j))
+                    MakeTwoCopies[i] = true;
+            }
+            if (this->myComm->rank() == 0) {
+                std::array<char, 1000> buf;
+                int length = std::snprintf(buf.data(), buf.size(),
+                    "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
+                    MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1],
+                    twist_i[2]);
+                if (length < 0)
+                    throw std::runtime_error("Error generating string");
+                app_log() << std::string_view(buf.data(), length);
+                app_log().flush();
+            }
+        }
+        // Find out if we can make real orbitals
+        use_real_splines_ = true;
+        for (int i = 0; i < DistinctTwists.size(); i++) {
+            int ti = DistinctTwists[i];
+            PosType twist = primcell_kpoints[ti];
+            for (int j = 0; j < OHMMS_DIM; j++)
+                if (std::abs(twist[j] - 0.0) > MatchingTol &&
+                    std::abs(twist[j] - 0.5) > MatchingTol &&
+                    std::abs(twist[j] + 0.5) > MatchingTol)
+                    use_real_splines_ = false;
+        }
+        if (use_real_splines_ && (DistinctTwists.size() > 1)) {
+            app_log() << "***** Use of real orbitals is possible, but not "
+                         "currently implemented\n"
+                      << "      with more than one twist angle.\n";
+            use_real_splines_ = false;
+        }
+        if (use_real_splines_)
+            app_log() << "Using real splines.\n";
         else
-            copyTwists.push_back(ti);
+            app_log() << "Using complex splines.\n";
     }
-    // Now determine which distinct twists require two copies
-    MakeTwoCopies.resize(DistinctTwists.size());
-    for (int i = 0; i < DistinctTwists.size(); i++) {
-        MakeTwoCopies[i] = false;
-        int ti = DistinctTwists[i];
-        PosType twist_i = primcell_kpoints[ti];
-        for (int j = 0; j < copyTwists.size(); j++) {
-            int tj = copyTwists[j];
-            PosType twist_j = primcell_kpoints[tj];
-            if (TwistPair(twist_i, twist_j))
-                MakeTwoCopies[i] = true;
+    else {
+        DistinctTwists.resize(IncludeTwists.size());
+        MakeTwoCopies.resize(IncludeTwists.size());
+        for (int i = 0; i < IncludeTwists.size(); i++) {
+            DistinctTwists[i] = IncludeTwists[i];
+            MakeTwoCopies[i] = false;
         }
-        if (this->myComm->rank() == 0) {
-            std::array<char, 1000> buf;
-            int length = std::snprintf(buf.data(), buf.size(),
-                "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
-                MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
-            if (length < 0)
-                throw std::runtime_error("Error generating string");
-            app_log() << std::string_view(buf.data(), length);
-            app_log().flush();
-        }
-    }
-    // Find out if we can make real orbitals
-    use_real_splines_ = true;
-    for (int i = 0; i < DistinctTwists.size(); i++) {
-        int ti = DistinctTwists[i];
-        PosType twist = primcell_kpoints[ti];
-        for (int j = 0; j < OHMMS_DIM; j++)
-            if (std::abs(twist[j] - 0.0) > MatchingTol &&
-                std::abs(twist[j] - 0.5) > MatchingTol &&
-                std::abs(twist[j] + 0.5) > MatchingTol)
-                use_real_splines_ = false;
-    }
-    if (use_real_splines_ && (DistinctTwists.size() > 1)) {
-        app_log() << "***** Use of real orbitals is possible, but not "
-                     "currently implemented\n"
-                  << "      with more than one twist angle.\n";
         use_real_splines_ = false;
     }
-    if (use_real_splines_)
-        app_log() << "Using real splines.\n";
-    else
-        app_log() << "Using complex splines.\n";
-#else
-    DistinctTwists.resize(IncludeTwists.size());
-    MakeTwoCopies.resize(IncludeTwists.size());
-    for (int i = 0; i < IncludeTwists.size(); i++) {
-        DistinctTwists[i] = IncludeTwists[i];
-        MakeTwoCopies[i] = false;
-    }
-    use_real_splines_ = false;
-#endif
 }
 
 template <typename T>

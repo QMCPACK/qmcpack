@@ -21,8 +21,6 @@
 #ifndef QMCPLUSPLUS_PARTICLESETT_H
 #define QMCPLUSPLUS_PARTICLESETT_H
 
-#include <memory>
-
 #include "DTModes.h"
 #include "DynamicCoordinatesT.h"
 #include "MCCoordsT.hpp"
@@ -37,6 +35,8 @@
 #include "Utilities/TimerManager.h"
 #include "Walker.h"
 #include "type_traits/template_types.hpp"
+
+#include <memory>
 
 namespace qmcplusplus
 {
@@ -696,6 +696,7 @@ public:
     {
         myTwist = t;
     }
+
     inline const SingleParticlePos&
     getTwist() const
     {

@@ -40,8 +40,12 @@ public:
     using SplineType = typename bspline_traits<ST, 3>::SplineType;
     using BCType = typename bspline_traits<ST, 3>::BCType;
     using DataType = ST;
+    using RealType = typename SPOSetT<VT>::RealType;
+    using IndexType = typename SPOSetT<VT>::IndexType;
+    using FullPrecValueType = double;
     using PointType = TinyVector<ST, 3>;
     using SingleSplineType = UBspline_3d_d;
+
     // types for evaluation results
     using TT = typename BsplineSetT<VT>::ValueType;
     using GGGVector = typename BsplineSetT<VT>::GGGVector;
@@ -54,8 +58,6 @@ public:
     using gContainer_type = VectorSoaContainer<ST, 3>;
     using hContainer_type = VectorSoaContainer<ST, 6>;
     using ghContainer_type = VectorSoaContainer<ST, 10>;
-
-    using RealType = typename SPOSetT<VT>::RealType;
 
 private:
     bool IsGamma;

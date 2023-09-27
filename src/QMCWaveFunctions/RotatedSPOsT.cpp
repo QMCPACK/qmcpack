@@ -307,7 +307,6 @@ template <typename T>
 void
 RotatedSPOsT<T>::buildOptVariables(const size_t nel)
 {
-#if !defined(QMC_COMPLEX)
     /* Only rebuild optimized variables if more after-rotation orbitals are
      * needed Consider ROHF, there is only one set of SPO for both spin up and
      * down Nup > Ndown. nel_major_ will be set Nup.
@@ -332,7 +331,6 @@ RotatedSPOsT<T>::buildOptVariables(const size_t nel)
 
         buildOptVariables(created_m_act_rot_inds, created_full_rot_inds);
     }
-#endif
 }
 
 template <typename T>
@@ -340,7 +338,6 @@ void
 RotatedSPOsT<T>::buildOptVariables(
     const RotationIndices& rotations, const RotationIndices& full_rotations)
 {
-#if !defined(QMC_COMPLEX)
     const size_t nmo = Phi->getOrbitalSetSize();
 
     // create active rotations
@@ -419,7 +416,6 @@ RotatedSPOsT<T>::buildOptVariables(
             param[i] = this->myVars[i];
         apply_rotation(param, false);
     }
-#endif
 }
 
 template <typename T>
@@ -858,33 +854,32 @@ RotatedSPOsT<T>::evaluateDerivatives(ParticleSetT<T>& P,
     // possibly replace wit BLAS calls
     for (int i = 0; i < nel; i++)
         for (int j = 0; j < nmo; j++)
-            Bbar(i, j) = d2psiM_all(i, j) +
-                2.0 * dot(myG_J[i], dpsiM_all(i, j)) +
+            Bbar(i, j) = d2psiM_all(i, j) + 2 * dot(myG_J[i], dpsiM_all(i, j)) +
                 myL_J[i] * psiM_all(i, j);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
-    const T* const A(psiM_all.data());
-    const T* const Ainv(psiM_inv.data());
-    const T* const B(Bbar.data());
-    ValueMatrix T_mat;
+    const ValueType* const A(psiM_all.data());
+    const ValueType* const Ainv(psiM_inv.data());
+    const ValueType* const B(Bbar.data());
+    ValueMatrix t;
     ValueMatrix Y1;
     ValueMatrix Y2;
     ValueMatrix Y3;
     ValueMatrix Y4;
-    T_mat.resize(nel, nmo);
+    t.resize(nel, nmo);
     Y1.resize(nel, nel);
     Y2.resize(nel, nmo);
     Y3.resize(nel, nmo);
     Y4.resize(nel, nmo);
 
-    BLAS::gemm('N', 'N', nmo, nel, nel, T(1.0), A, nmo, Ainv, nel, T(0.0),
-        T_mat.data(), nmo);
-    BLAS::gemm('N', 'N', nel, nel, nel, T(1.0), B, nmo, Ainv, nel, T(0.0),
-        Y1.data(), nel);
-    BLAS::gemm('N', 'N', nmo, nel, nel, T(1.0), T_mat.data(), nmo, Y1.data(),
-        nel, T(0.0), Y2.data(), nmo);
-    BLAS::gemm('N', 'N', nmo, nel, nel, T(1.0), B, nmo, Ainv, nel, T(0.0),
-        Y3.data(), nmo);
+    BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel,
+        ValueType(0.0), t.data(), nmo);
+    BLAS::gemm('N', 'N', nel, nel, nel, ValueType(1.0), B, nmo, Ainv, nel,
+        ValueType(0.0), Y1.data(), nel);
+    BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), t.data(), nmo,
+        Y1.data(), nel, ValueType(0.0), Y2.data(), nmo);
+    BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), B, nmo, Ainv, nel,
+        ValueType(0.0), Y3.data(), nmo);
 
     // possibly replace with BLAS call
     Y4 = Y3 - Y2;
@@ -894,8 +889,8 @@ RotatedSPOsT<T>::evaluateDerivatives(ParticleSetT<T>& P,
         if (kk >= 0) {
             const int p = m_act_rot_inds.at(i).first;
             const int q = m_act_rot_inds.at(i).second;
-            dlogpsi[kk] += T_mat(p, q);
-            dhpsioverpsi[kk] += T(-0.5) * Y4(p, q);
+            dlogpsi[kk] += t(p, q);
+            dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
         }
     }
 }
