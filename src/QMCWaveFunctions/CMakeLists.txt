@@ -83,7 +83,6 @@ if(OHMMS_DIM MATCHES 3)
     set(FERMION_SRCS
         ${FERMION_SRCS}
         EinsplineSetBuilderCommon.cpp
-        EinsplineSetBuilderOld.cpp
         EinsplineSetBuilderReadBands_ESHDF.cpp
         EinsplineSetBuilderESHDF.fft.cpp
         EinsplineSetBuilder_createSPOs.cpp

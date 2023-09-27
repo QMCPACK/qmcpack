@@ -40,6 +40,35 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
     return (leftB.BandIndex < rightB.BandIndex);
 };
 
+bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
+{
+  if (!H5File.open(H5FileName, H5F_ACC_RDONLY))
+  {
+    app_error() << "Could not open HDF5 file \"" << H5FileName << "\" in EinsplineSetBuilder::ReadOrbitalInfo.\n";
+    return false;
+  }
+
+  try
+  {
+    // Read format
+    std::string format;
+    H5File.read(format, "/format");
+    if (format.find("ES") == std::string::npos)
+      throw std::runtime_error("Format string input \"" + format + "\" doesn't contain \"ES\" keyword.");
+    Format = ESHDF;
+    H5File.read(Version, "/version");
+    app_log() << "  HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << std::endl;
+  }
+  catch (const std::exception& e)
+  {
+    app_error() << e.what() << std::endl
+                << "EinsplineSetBuilder::ReadOrbitalInfo h5 file format is too old or it is not a bspline orbital file!"
+                << std::endl;
+    return false;
+  }
+
+  return ReadOrbitalInfo_ESHDF(skipChecks);
+}
 
 bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 {
