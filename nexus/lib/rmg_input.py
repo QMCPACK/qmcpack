@@ -70,7 +70,7 @@ Control options
     Allowed:      "Exx Only" "NEB Relax" "Band Structure Only" "Psi Plot" "Plot" 
                   "Constant Pressure And Energy" "TDDFT" "Dimer Relax" "Constant 
                   Temperature And Energy" "Constant Volume And Energy" "Relax 
-                  Structure" "Quench Electrons"   
+                  Structure" "Quench Electrons" "NSCF" 
     Description:  Type of calculation to perform. 
 
     Key name:     cell_relax
@@ -3059,6 +3059,7 @@ class RmgCalcModes(DevBase):
     def __init__(self):
         self.full_calc = obj(
             scf         = 'Quench Electrons',
+            nscf        = 'NSCF',
             exx         = 'Exx Only',
             neb         = 'NEB Relax', 
             band        = 'Band Structure Only',
@@ -3354,15 +3355,15 @@ def generate_any_rmg_input(**kwargs):
     kw.set_optional(generate_any_defaults[defaults])
 
     # extract keywords not appearing in RMG input file
-    text            = kw.delete_optional('text'           , None   )
-    wf_grid_spacing = kw.delete_optional('wf_grid_spacing', None   )
-    pseudos         = kw.delete_optional('pseudos'        , None   )
-    system          = kw.delete_optional('system'         , None   )
-    copy_system     = kw.delete_optional('copy_system'    , True   )
-    use_folded      = kw.delete_optional('use_folded'     , False  )
-    virtual_frac    = kw.delete_optional('virtual_frac'   , None   )
-    spin_polarized  = kw.delete_optional('spin_polarized' , None   )
-    default_units   = kw.delete_optional('default_units'  , 'bohr' )
+    text            = kw.delete_optional('text'            , None   )
+    wf_grid_spacing = kw.delete_optional('wf_grid_spacing' , None   )
+    pseudos         = kw.delete_optional('pseudos'         , None   )
+    system          = kw.delete_optional('system'          , None   )
+    copy_system     = kw.delete_optional('copy_system'     , True   )
+    use_folded      = kw.delete_optional('use_folded'      , False  )
+    virtual_frac    = kw.delete_optional('virtual_frac'    , None   )
+    spin_polarized  = kw.delete_optional('spin_polarized'  , None   )
+    default_units   = kw.delete_optional('default_units'   , 'bohr' )
 
     default_units = dict(
         a        = 'angstrom',
@@ -3385,6 +3386,9 @@ def generate_any_rmg_input(**kwargs):
         ri.read_text(text)
     #end if
     ri.assign(**kw)
+
+    if ri.calculation_mode is 'NSCF' and 'input_wave_function_file' not in ri:
+        ri.input_wave_function_file='Waves/wave.out' 
 
     # incorporate pseudopotentials details provided via "pseudos"
     if pseudos is not None:
