@@ -2583,6 +2583,17 @@ Deprecated options
     Key type:     double
     Expert:       No
     Experimental: No
+
+    Key name:     charge_pulay_scale
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    1.000000
+    Default:      0.500000
+    Description:
+
 '''
 raw_input_spec += undocumented_options
 raw_input_spec += deprecated_options
@@ -3469,7 +3480,7 @@ class RmgInput(SimulationInput):
         return text.lstrip()
     #end def write_text
 
-
+ 
     def check_valid(self,exit=True):
         msg = ''
         allowed = set(input_spec.keywords.keys())
@@ -3636,7 +3647,7 @@ def generate_any_rmg_input(**kwargs):
     ri.assign(**kw)
 
     # Special case for nscf calculation to force the read from already computed charge density. 
-    if ri.calculation_mode=='NSCF' and 'input_wave_function_file' not in ri:
+    if kw.get('calculation_mode')=='NSCF' and 'input_wave_function_file' not in ri:
         ri.input_wave_function_file='Waves/wave.out' 
 
     # incorporate pseudopotentials details provided via "pseudos"
