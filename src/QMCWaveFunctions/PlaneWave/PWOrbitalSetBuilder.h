@@ -65,7 +65,7 @@ public:
 
 private:
   bool getH5(xmlNodePtr cur, const char* aname);
-  bool createPWBasis(xmlNodePtr cur);
+  bool createPWBasis();
   std::unique_ptr<SPOSet> createPW(xmlNodePtr cur, const std::string& objname, int spinIndex);
 #if defined(QMC_COMPLEX)
   void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);

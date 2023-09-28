@@ -34,13 +34,10 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm
   //check the current href
   bool success = getH5(cur, "href");
   //Move through the XML tree and read basis information
-  cur = cur->children;
-  while (cur != nullptr)
-  {
-    std::string cname((const char*)(cur->name));
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "basisset")
     {
-      const std::string a(getXMLAttributeValue(cur, "ecut"));
+      const std::string a(getXMLAttributeValue(element, "ecut"));
       if (!a.empty())
         myParam->Ecut = std::stod(a);
     }
@@ -49,13 +46,14 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm
       //close
       if (success)
         hfile.close();
-      success = getH5(cur, "hdata");
+      success = getH5(element, "hdata");
     }
-    cur = cur->next;
-  }
+  });
 
+  if (!success)
+    throw std::runtime_error("h5 cannot be open for creating PW basis!");
   //create PW Basis
-  createPWBasis(cur);
+  createPWBasis();
 }
 
 PWOrbitalSetBuilder::~PWOrbitalSetBuilder() = default;
@@ -82,10 +80,10 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
  *   -- maximum_ecut
  * - basis
  */
-bool PWOrbitalSetBuilder::createPWBasis(xmlNodePtr cur)
+bool PWOrbitalSetBuilder::createPWBasis()
 {
   //recycle int and double reader
-  int idata;
+  int idata = 0;
   //start of parameters
   hfile.read(idata, "electrons/number_of_kpoints");
   int nkpts = idata;
@@ -110,9 +108,8 @@ bool PWOrbitalSetBuilder::createPWBasis(xmlNodePtr cur)
   hfile.read(TwistAngle_DP, "/electrons/kpoint_0/reduced_k");
   TwistAngle = TwistAngle_DP;
   if (!myBasisSet)
-  {
     myBasisSet = std::make_unique<PWBasis>(TwistAngle);
-  }
+
   //Read the planewave basisset.
   //Note that the same data is opened here for each twist angle-avoids duplication in the
   //h5 file (which may become very large).
