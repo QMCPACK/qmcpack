@@ -16,38 +16,23 @@
 /** @file
  * @brief Definition of a builder class for PWOrbitalSet
  */
-#include "PWOrbitalBuilder.h"
+#include "PWOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
 {
-PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PSetMap& psets)
-    : WaveFunctionComponentBuilder(comm, els), ptclPool(psets), myParam{std::make_unique<PWParameterSet>(comm)}, hfile{comm} {}
-
-PWOrbitalBuilder::~PWOrbitalBuilder() = default;
-
-//All data parsing is handled here, outside storage classes.
-std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
-{
-  std::unique_ptr<WaveFunctionComponent> slater_det;
-  //save the parent
-  rootNode = cur;
+PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm, xmlNodePtr cur)
+    : SPOSetBuilder("Planewave", comm), targetPtcl(p), rootNode(cur), myParam{std::make_unique<PWParameterSet>(comm)}, hfile{comm} {
   //
   //Get wavefunction data and parameters from XML and HDF5
   //
-
-  //close it if open
-  hfile.close();
+  //catch parameters
+  myParam->put(cur);
   //check the current href
   bool success = getH5(cur, "href");
-  //no file, check the root
-  if (!success)
-    success = getH5(rootNode, "href");
   //Move through the XML tree and read basis information
   cur = cur->children;
   while (cur != nullptr)
@@ -66,75 +51,26 @@ std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::buildComponent(xmlNodeP
         hfile.close();
       success = getH5(cur, "hdata");
     }
-    else if (cname == sd_tag)
-    {
-      if (!success)
-        success = getH5(cur, "href");
-      if (!success)
-      {
-        APP_ABORT("  Cannot create a SlaterDet due to missing h5 file\n");
-        OHMMS::Controller->abort();
-      }
-      createPWBasis(cur);
-      slater_det = putSlaterDet(cur);
-    }
     cur = cur->next;
   }
-  hfile.close();
-  return slater_det;
+
+  //create PW Basis
+  createPWBasis(cur);
 }
 
-std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
+PWOrbitalSetBuilder::~PWOrbitalSetBuilder() = default;
+
+std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  //catch parameters
-  myParam->put(cur);
 
-  std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
   int spin_group = 0;
-  cur            = cur->children;
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    //Which determinant?
-    if (cname == "determinant")
-    {
-      std::string id("updet");
-      std::string ref("0");
-      OhmmsAttributeSet aAttrib;
-      aAttrib.add(id, "id");
-      aAttrib.add(ref, "ref");
-      aAttrib.put(cur);
-      if (ref == "0")
-        ref = id;
-      const int firstIndex = targetPtcl.first(spin_group);
-      const int lastIndex  = targetPtcl.last(spin_group);
-      std::map<std::string, SPOSetPtr>::iterator lit(spomap.find(ref));
-      //int spin_group=0;
-      if (lit == spomap.end())
-      {
-        app_log() << "  Create a PWOrbitalSet" << std::endl;
-        std::unique_ptr<SPOSet> psi(createPW(cur, spin_group));
-        spomap[ref] = psi.get();
-        dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psi), firstIndex, lastIndex));
-      }
-      else
-      {
-        app_log() << "  Reuse a PWOrbitalSet" << std::endl;
-        std::unique_ptr<SPOSet> psi((*lit).second->makeClone());
-        dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psi), firstIndex, lastIndex));
-      }
-      app_log() << "    spin=" << spin_group << " id=" << id << " ref=" << ref << std::endl;
-      spin_group++;
-    }
-    cur = cur->next;
-  }
-
-  if (spin_group)
-    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));
-  ;
-
-  myComm->barrier_and_abort(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
-  return nullptr;
+  std::string spo_object_name;
+  OhmmsAttributeSet aAttrib;
+  aAttrib.add(spin_group, "spindataset");
+  aAttrib.add(spo_object_name, "name");
+  aAttrib.add(spo_object_name, "id");
+  aAttrib.put(cur);
+  return createPW(cur, spo_object_name, spin_group);
 }
 
 /** The read routine - get data from XML and H5. Process it and build orbitals.
@@ -146,7 +82,7 @@ std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::putSlaterDet(xmlNodePtr
  *   -- maximum_ecut
  * - basis
  */
-bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
+bool PWOrbitalSetBuilder::createPWBasis(xmlNodePtr cur)
 {
   //recycle int and double reader
   int idata;
@@ -193,7 +129,7 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   return true;
 }
 
-SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
+std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur, const std::string& objname, int spinIndex)
 {
   int nb = targetPtcl.last(spinIndex) - targetPtcl.first(spinIndex);
   std::vector<int> occBand(nb);
@@ -216,7 +152,6 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
       std::string occMode("ground");
       int bandoffset(1);
       OhmmsAttributeSet aAttrib;
-      aAttrib.add(spinIndex, "spindataset");
       aAttrib.add(occMode, "mode");
       aAttrib.add(bandoffset, "offset"); /* reserved for index offset */
       aAttrib.put(cur);
@@ -252,7 +187,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   hfile.push("electrons", false);
   hfile.push("kpoint_0", false);
   //create a single-particle orbital set
-  SPOSetType* psi = new SPOSetType(getXMLAttributeValue(cur, "name"));
+  auto psi = std::make_unique<SPOSetType>(objname);
   if (transform2grid)
   {
     nb = myParam->numBands;
@@ -314,7 +249,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
 }
 
 #if defined(QMC_COMPLEX)
-void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc)
+void PWOrbitalSetBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc)
 {
   std::ostringstream splineTag;
   splineTag << "eigenstates_" << nG[0] << "_" << nG[1] << "_" << nG[2];
@@ -380,6 +315,8 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   for (int ib = 0; ib < nb; ib++)
     inData.push_back(std::make_unique<StorageType>(nG[0], nG[1], nG[2]));
   PosType tAngle = targetPtcl.getLattice().k_cart(TwistAngle);
+  ParticleSet ptemp(targetPtcl.getSimulationCell());
+  ptemp.create({1});
   PWOrbitalSet::ValueVector phi(nb);
   for (int ig = 0; ig < nG[0]; ig++)
   {
@@ -389,9 +326,9 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
       RealType y = jg * dy;
       for (int kg = 0; kg < nG[2]; kg++)
       {
-        targetPtcl.R[0] = lattice.toCart(PosType(x, y, kg * dz));
-        pwFunc.evaluateValue(targetPtcl, 0, phi);
-        RealType x(dot(targetPtcl.R[0], tAngle));
+        ptemp.R[0] = lattice.toCart(PosType(x, y, kg * dz));
+        pwFunc.evaluateValue(ptemp, 0, phi);
+        RealType x(dot(ptemp.R[0], tAngle));
         ValueType phase(std::cos(x), -std::sin(x));
         for (int ib = 0; ib < nb; ib++)
           (*inData[ib])(ig, jg, kg) = phase * phi[ib];
@@ -419,7 +356,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 }
 #endif
 
-bool PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
+bool PWOrbitalSetBuilder::getH5(xmlNodePtr cur, const char* aname)
 {
   const std::string a(getXMLAttributeValue(cur, aname));
   if (a.empty())

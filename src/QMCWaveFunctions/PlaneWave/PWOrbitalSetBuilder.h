@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -15,15 +16,17 @@
  * @brief Declaration of a builder class for PWOrbitalSet
  *
  */
-#ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
-#define QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#ifndef QMCPLUSPLUS_PWORBITAL_BUILDER_H
+#define QMCPLUSPLUS_PWORBITAL_BUILDER_H
+
+#include "SPOSetBuilder.h"
 #include "hdf/hdf_archive.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalSet.h"
 #else
 #include "QMCWaveFunctions/PlaneWave/PWRealOrbitalSet.h"
 #endif
+
 namespace qmcplusplus
 {
 struct PWParameterSet;
@@ -31,7 +34,7 @@ class SlaterDet;
 
 /** OrbitalBuilder for Slater determinants in PW basis
 */
-class PWOrbitalBuilder : public WaveFunctionComponentBuilder
+class PWOrbitalSetBuilder : public SPOSetBuilder
 {
 private:
 #if defined(QMC_COMPLEX)
@@ -40,8 +43,8 @@ private:
   using SPOSetType = PWRealOrbitalSet;
 #endif
 
-  std::map<std::string, SPOSetPtr> spomap;
-  const PSetMap& ptclPool;
+  /// target particle set
+  const ParticleSet& targetPtcl;
   ///xml node for determinantset
   xmlNodePtr rootNode{nullptr};
   ///input twist angle
@@ -54,17 +57,16 @@ private:
   hdf_archive hfile;
 public:
   ///constructor
-  PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PSetMap& psets);
-  ~PWOrbitalBuilder() override;
+  PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm, xmlNodePtr cur);
+  ~PWOrbitalSetBuilder() override;
 
-  ///implement vritual function
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
+  /// create an sposet from xml and save the resulting SPOSet
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 
 private:
   bool getH5(xmlNodePtr cur, const char* aname);
-  std::unique_ptr<WaveFunctionComponent> putSlaterDet(xmlNodePtr cur);
   bool createPWBasis(xmlNodePtr cur);
-  SPOSet* createPW(xmlNodePtr cur, int spinIndex);
+  std::unique_ptr<SPOSet> createPW(xmlNodePtr cur, const std::string& objname, int spinIndex);
 #if defined(QMC_COMPLEX)
   void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
 #endif
