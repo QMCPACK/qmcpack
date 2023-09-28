@@ -26,7 +26,7 @@ class Rmg(Simulation):
         Simulation.__init__(self,**sim_args)
         self.sync_from_scf = False
         #calc = self.input.ontrol.get('calculation_mode',None)
-        if self.input.calculation_mode=='NSCF':
+        if self.get('calculation_mode')=='NSCF':
             self.sync_from_scf = sync_from_scf
         #end if
     #end def __init__
