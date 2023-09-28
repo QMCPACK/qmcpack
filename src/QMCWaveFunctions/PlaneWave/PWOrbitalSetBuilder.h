@@ -55,6 +55,7 @@ private:
   std::unique_ptr<PWBasis> myBasisSet;
   ///hdf5 handler to clean up
   hdf_archive hfile;
+
 public:
   ///constructor
   PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm, xmlNodePtr cur);

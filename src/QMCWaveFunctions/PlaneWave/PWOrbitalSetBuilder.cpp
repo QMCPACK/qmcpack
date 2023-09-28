@@ -25,7 +25,12 @@
 namespace qmcplusplus
 {
 PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder("Planewave", comm), targetPtcl(p), rootNode(cur), myParam{std::make_unique<PWParameterSet>(comm)}, hfile{comm} {
+    : SPOSetBuilder("Planewave", comm),
+      targetPtcl(p),
+      rootNode(cur),
+      myParam{std::make_unique<PWParameterSet>(comm)},
+      hfile{comm}
+{
   //
   //Get wavefunction data and parameters from XML and HDF5
   //
@@ -60,7 +65,6 @@ PWOrbitalSetBuilder::~PWOrbitalSetBuilder() = default;
 
 std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-
   int spin_group = 0;
   std::string spo_object_name;
   OhmmsAttributeSet aAttrib;
@@ -250,7 +254,7 @@ void PWOrbitalSetBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinInde
 {
   std::ostringstream splineTag;
   splineTag << "eigenstates_" << nG[0] << "_" << nG[1] << "_" << nG[2];
-  herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
+  herr_t status            = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
   std::string splineTagStr = splineTag.str();
   app_log() << " splineTag " << splineTagStr << std::endl;
   if (!hfile.is_group(splineTagStr))
@@ -284,7 +288,6 @@ void PWOrbitalSetBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinInde
     {
       bname = myParam->getSpinName(spinIndex);
       hfile.push(bname, true);
-      }
     }
     for (int ig = 0; ig < nG[0]; ig++)
     {

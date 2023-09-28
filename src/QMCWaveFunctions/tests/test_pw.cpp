@@ -81,11 +81,11 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  xmlNodePtr pw1 = xmlFirstElementChild(root);
+  xmlNodePtr pw1  = xmlFirstElementChild(root);
 
 
   PWOrbitalSetBuilder pw_builder(elec, c, root);
-  auto spo      = pw_builder.createSPOSet(pw1);
+  auto spo = pw_builder.createSPOSet(pw1);
   REQUIRE(spo);
 
   const int orbSize = spo->getOrbitalSetSize();
@@ -187,11 +187,11 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  xmlNodePtr pw1 = xmlFirstElementChild(root);
+  xmlNodePtr pw1  = xmlFirstElementChild(root);
 
 
   PWOrbitalSetBuilder pw_builder(elec, c, root);
-  auto spo      = pw_builder.createSPOSet(pw1);
+  auto spo = pw_builder.createSPOSet(pw1);
   REQUIRE(spo);
 
   const int orbSize = spo->getOrbitalSetSize();
