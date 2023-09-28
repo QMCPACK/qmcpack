@@ -27,9 +27,39 @@ class RmgInputSettings(DevBase):
 #       Key type : string -> formatted
 #     Hubbard_U
 #       Key type : string -> formatted
+#     kpoints  
+#       Key type : string -> formatted
 
 raw_input_spec = '''
+
 Control options
+
+    Key name:     AFM
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  If true, anti-feromagnetic will be forced by symmetry operation if 
+                  possible. 
+
+    Key name:     STM_bias
+    Required:     no
+    Key type:     string
+    Expert:       No
+    Experimental: No
+    Default:      "-1.0 1.0"
+    Allowed:      
+    Description:  Bias (in unit of Volt) for STM calculation 
+
+    Key name:     STM_height
+    Required:     no
+    Key type:     string
+    Expert:       No
+    Experimental: No
+    Default:      "2.0 4.0"
+    Allowed:      
+    Description:  Height range for STM calculation 
 
     Key name:     a_length
     Required:     no
@@ -40,6 +70,16 @@ Control options
     Max value:    unlimited
     Default:      0.000000e+00
     Description:  First lattice constant. 
+
+    Key name:     afd_cfac
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    10.000000
+    Default:      0.000000e+00
+    Description:  Manual setting for the adaptive finite differencing parameter. 
 
     Key name:     b_length
     Required:     no
@@ -67,10 +107,10 @@ Control options
     Expert:       No
     Experimental: No
     Default:      "Quench Electrons"
-    Allowed:      "Exx Only" "NEB Relax" "Band Structure Only" "Psi Plot" "Plot" 
-                  "Constant Pressure And Energy" "TDDFT" "Dimer Relax" "Constant 
-                  Temperature And Energy" "Constant Volume And Energy" "Relax 
-                  Structure" "Quench Electrons" "NSCF" 
+    Allowed:      "NSCF" "Constant Temperature And Energy" "Constant Volume And 
+                  Energy" "Dimer Relax" "TDDFT" "Relax Structure" "Constant Pressure 
+                  And Energy" "Quench Electrons" "Plot" "Psi Plot" "Band Structure 
+                  Only" "STM" "NEB Relax" "Exx Only" 
     Description:  Type of calculation to perform. 
 
     Key name:     cell_relax
@@ -117,6 +157,14 @@ Control options
     Description:  Flag indicating whether or not parallel output wavefunction file 
                   uses compressed format. 
 
+    Key name:     compute_direct
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  If true then direct energy values are computed for QMCPACK. 
+
     Key name:     description
     Required:     no
     Key type:     string
@@ -147,6 +195,16 @@ Control options
     Description:  Units to be used when writing energy values to the output file. 
                   Hartrees or Rydbergs are available. 
 
+    Key name:     epsg_guard
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    1.000000e-05
+    Default:      1.000000e-07
+    Description:  GGA guard value for low density regions. 
+
     Key name:     exx_integrals_filepath
     Required:     no
     Key type:     string
@@ -161,7 +219,7 @@ Control options
     Key type:     string
     Expert:       No
     Experimental: No
-    Default:      "Distributed fft"
+    Default:      "Local fft"
     Allowed:      "Local fft" "Distributed fft" 
     Description:  FFT mode for exact exchange computations. 
 
@@ -173,6 +231,15 @@ Control options
     Default:      "gygi-baldereschi"
     Allowed:      "none" "gygi-baldereschi" 
     Description:  Exact exchange method for handling exx divergence at G=0. 
+
+    Key name:     gpu_managed_memory
+    Required:     no
+    Key type:     boolean
+    Expert:       Yes
+    Experimental: No
+    Default:      "false"
+    Description:  Some AMD and Nvidia GPUs support managed gou memory which is 
+                  useful when GPU memory limits are exceeded. 
 
     Key name:     input_tddft_file
     Required:     no
@@ -232,7 +299,7 @@ Control options
     Expert:       No
     Experimental: No
     Default:      "false"
-    Description:  if set true, calculate noncollinear 
+    Description:  If set true, noncollinear calculation. 
 
     Key name:     nvme_orbitals
     Required:     no
@@ -334,6 +401,16 @@ Control options
     Allowed:      
     Description:  File/path for runtime disk storage of qfunctions. 
 
+    Key name:     qmc_nband
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    0
+    Max value:    2147483647
+    Default:      0
+    Description:  The number of band used in rmg-qmcpack interface. 
+
     Key name:     read_serial_restart
     Required:     no
     Key type:     boolean
@@ -354,13 +431,23 @@ Control options
     Description:  The RMS value of the change in the total potential from step to 
                   step where we assume self consistency has been achieved. 
 
+    Key name:     semilocal_projectors
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    6
+    Max value:    40
+    Default:      10
+    Description:  Controls the number of semilocal projectors. 
+
     Key name:     spinorbit
     Required:     no
     Key type:     boolean
     Expert:       No
     Experimental: No
     Default:      "false"
-    Description:  if set true, calculate with spinorbit coupling 
+    Description:  If set true, spinorbit coupling calculation. 
 
     Key name:     start_mode
     Required:     no
@@ -368,8 +455,8 @@ Control options
     Expert:       No
     Experimental: No
     Default:      "LCAO Start"
-    Allowed:      "Modified LCAO Start" "Restart TDDFT" "Start TDDFT" "Gaussian 
-                  Start" "FIREBALL Start" "LCAO Start" "Restart From File" "Random 
+    Allowed:      "Modified LCAO Start" "Restart TDDFT" "Start TDDFT" "FIREBALL 
+                  Start" "Gaussian Start" "LCAO Start" "Restart From File" "Random 
                   Start" 
     Description:  Type of run. 
 
@@ -391,15 +478,16 @@ Control options
     Default:      0.500000
     Description:  The stress criteria 
 
-    Key name:     tddft_steps
+    Key name:     system_charge
     Required:     no
-    Key type:     integer
+    Key type:     double
     Expert:       No
     Experimental: No
-    Min value:    0
-    Max value:    2147483647
-    Default:      2000
-    Description:  Maximum number of tddft steps to perform. 
+    Min value:    -unlimited
+    Max value:    unlimited
+    Default:      0.000000e+00
+    Description:  Number of excess holes in the system (useful for doped systems).
+                  Example, 2 means system is missing two electrons
 
     Key name:     time_reversal
     Required:     no
@@ -415,8 +503,17 @@ Control options
     Expert:       No
     Experimental: No
     Default:      "None"
-    Allowed:      "DFT-D3" "DFT-D2" "Grimme-D2" "None" 
+    Allowed:      "DFT-D3" "Grimme-D2" "DFT-D2" "None" 
     Description:  Type of vdw correction 
+
+    Key name:     vdwdf_grid_type
+    Required:     no
+    Key type:     string
+    Expert:       No
+    Experimental: No
+    Default:      "Coarse"
+    Allowed:      "Fine" "Coarse" 
+    Description:  Type of grid to use when computing vdw-df correlation. 
 
     Key name:     vdwdf_kernel_filepath
     Required:     no
@@ -426,6 +523,14 @@ Control options
     Default:      "vdW_kernel_table"
     Allowed:      
     Description:  File/path for vdW_kernel_table data. 
+
+    Key name:     verbose
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  Flag for writing out extra information 
 
     Key name:     wannier90
     Required:     no
@@ -452,29 +557,11 @@ Control options
     Expert:       No
     Experimental: No
     Min value:    5
-    Max value:    500
+    Max value:    50
     Default:      5
     Description:  How often to write checkpoint files during the initial quench in 
                   units of SCF steps. During structural relaxations of molecular 
                   dynamics checkpoints are written each ionic step. 
-
-    Key name:     write_eigvals_period
-    Required:     no
-    Key type:     integer
-    Expert:       No
-    Experimental: No
-    Min value:    1
-    Max value:    100
-    Default:      5
-    Description:  How often to output eigenvalues in units of scf steps. 
-
-    Key name:     write_pseudopotential_plots
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
-    Default:      "false"
-    Description:  Flag to indicate whether or not to write pseudopotential plots. 
 
     Key name:     write_qmcpack_restart
     Required:     no
@@ -521,10 +608,10 @@ Cell parameter options
     Key type:     string
     Expert:       No
     Experimental: No
-    Default:      "Orthorhombic Primitive"
-    Allowed:      "Tetragonal Primitive" "Cubic Body Centered" "Orthorhombic 
-                  Primitive" "Cubic Face Centered" "Hexagonal Primitive" "Cubic 
-                  Primitive" "None" 
+    Default:      "None"
+    Allowed:      "Orthorhombic Primitive" "Monoclinic Primitive" "Tetragonal 
+                  Primitive" "Hexagonal Primitive" "Cubic Body Centered" "Triclinic 
+                  Primitive" "Cubic Face Centered" "Cubic Primitive" "None" 
     Description:  Bravais Lattice Type. 
 
     Key name:     cell_movable
@@ -544,6 +631,15 @@ Cell parameter options
     Allowed:      "Angstrom" "Bohr" 
     Description:  Units for the atomic coordinates. 
 
+    Key name:     frac_symmetry
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "true"
+    Description:  For supercell calculation, one can disable the fractional 
+                  translation symmetry 
+
     Key name:     grid_spacing
     Required:     no
     Key type:     double
@@ -553,6 +649,18 @@ Cell parameter options
     Max value:    unlimited
     Default:      0.350000
     Description:  Approximate grid spacing (bohr). 
+
+    Key name:     kpoint_distribution
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    -2147483647
+    Max value:    2147483647
+    Default:      -1
+    Description:  This option affects kpoint parallelization. If there are M MPI 
+                  procs then N = M/kpoint_distribution procs are assigned to each 
+                  kpoint. M must be evenly divisible by kpoint_distribution. 
 
     Key name:     kpoint_is_shift
     Required:     no
@@ -576,7 +684,7 @@ Cell parameter options
     Expert:       No
     Experimental: No
     Default:      "Bohr"
-    Allowed:      "Angstrom" "Alat" "Bohr" 
+    Allowed:      "Alat" "Angstrom" "Bohr" 
     Description:  Units for the lattice vectors 
 
     Key name:     lattice_vector
@@ -585,16 +693,18 @@ Cell parameter options
     Expert:       No
     Experimental: No
     Default:      "Not done yet"
-    Description:  Lattice vectors, a0, a1, a2 
+    Description:  The simulation cell may be specified using either lattice vectors, 
+                  a0, a1, a2 or by lattice constants and a bravais lattice type. If 
+                  lattice vectors are used they should be entered as a 3x3 matrix. 
 
     Key name:     potential_grid_refinement
     Required:     no
     Key type:     integer
     Expert:       No
     Experimental: No
-    Min value:    0
+    Min value:    1
     Max value:    4
-    Default:      0
+    Default:      2
     Description:  Ratio of the potential grid density to the wavefunction grid 
                   density. For example if the wavefunction grid is (72,72,72) and 
                   potential_grid_refinement = "2" then the potential grid would be 
@@ -610,6 +720,16 @@ Cell parameter options
     Default:      "1 1 1 "
     Description:  Three-D (x,y,z) layout of the MPI processes. 
 
+    Key name:     use_symmetry  
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    0
+    Max value:    2
+    Default:      2
+    Description:  0: never use symmetry, 1: always use symmetry, 
+
     Key name:     wavefunction_grid
     Required:     no
     Key type:     integer array
@@ -620,6 +740,16 @@ Cell parameter options
                   defined on. 
 
 Pseudopotential related options
+
+    Key name:     all_electron_parm
+    Required:     no
+    Key type:     integer
+    Expert:       Yes
+    Experimental: Yes
+    Min value:    1
+    Max value:    12
+    Default:      4
+    Description:  Gygi all electron parameter. 
 
     Key name:     atomic_orbital_type
     Required:     no
@@ -640,15 +770,6 @@ Pseudopotential related options
     Default:      0.800000
     Description:  
 
-    Key name:     filter_dpot
-    Required:     no
-    Key type:     boolean
-    Expert:       Yes
-    Experimental: No
-    Default:      "false"
-    Description:  Flag indicating whether or not to filter density dependent 
-                  potentials. 
-
     Key name:     filter_factor
     Required:     no
     Key type:     double
@@ -656,8 +777,18 @@ Pseudopotential related options
     Experimental: No
     Min value:    0.060000
     Max value:    1.000000
-    Default:      0.250000
+    Default:      1.000000
     Description:  Filtering factor. 
+
+    Key name:     internal_pseudo_type
+    Required:     no
+    Key type:     string
+    Expert:       No
+    Experimental: No
+    Default:      "sg15"
+    Allowed:      "all_electron" "nc_accuracy" "sg15" "ultrasoft" 
+    Description:  Internal pseudopotential type. Choices are sg15, ultrasoft, 
+                  nc_accuracy or all_electron 
 
     Key name:     localize_localpp
     Required:     no
@@ -747,6 +878,16 @@ Pseudopotential related options
                   format uses the atomic symbol followed by the pseudopotential file 
                   name. pseudopotential = "Ni Ni.UPF O O.UPF" 
 
+    Key name:     use_bessel_projectors
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: Yes
+    Default:      "false"
+    Description:  When a semi-local pseudopotential is being used projectors will be 
+                  generated using Bloechl's procedure with Bessel functions as the 
+                  basis set if this is true. 
+
 Kohn Sham solver options
 
     Key name:     davidson_max_steps
@@ -783,6 +924,17 @@ Kohn Sham solver options
                   For very large problems the N^3 scaling makes even a factor of 2 
                   prohibitively costly and the multigrid solver is a better choice. 
 
+    Key name:     davidson_premg
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    0
+    Max value:    8
+    Default:      4
+    Description:  If the davidson solver is selected this parameter controls the 
+                  number of multigrid steps to use before enabling davidson. 
+
     Key name:     kohn_sham_coarse_time_step
     Required:     no
     Key type:     double
@@ -800,13 +952,13 @@ Kohn Sham solver options
     Expert:       Yes
     Experimental: No
     Min value:    6
-    Max value:    10
+    Max value:    12
     Default:      8
     Description:  RMG uses finite differencing to represent the kinetic energy 
                   operator and the accuracy of the representation is controllable by 
                   the kohn_sham_fd_order parameter. The default is 8 and is fine for 
-                  most purposes but higher accuracy is obtainable with 10th order at 
-                  the cost of some additional computational expense. 
+                  most purposes but higher accuracy is obtainable with 10th or 12th 
+                  order at the cost of some additional computational expense. 
 
     Key name:     kohn_sham_mg_levels
     Required:     no
@@ -905,14 +1057,13 @@ Exchange correlation options
     Expert:       No
     Experimental: No
     Default:      "AUTO_XC"
-    Allowed:      "hartree-fock" "vdw-df-c09" "sla+pw+pbe+vdw1" "VDW-DF" "vdw-df" 
-                  "gaupbe" "B3LYP" "hse" "mgga tb09" "AUTO_XC" "m06l" "VDW-DF-CX" 
-                  "tpss" "ev93" "optbk88" "sogga" "wc" "HSE" "HCTH" "hcth" "Q2D" 
-                  "q2d" "PBESOL" "tb09" "b86bpbe" "PW86PBE" "PBE0" "MGGA TB09" 
-                  "pw86pbe" "REVPBE" "pbe" "revpbe" "GGA PBE" "BLYP" "pbe0" "pbesol" 
-                  "blyp" "PBE" "GGA XP CP" "pw91" "GGA XB CP" "TB09" "optb86b" 
-                  "olyp" "BP" "GGA BLYP" "bp" "b3lyp" "LDA" "vdw-df-cx" "PW91" "PZ" 
-                  "pz" 
+    Allowed:      "hartree-fock" "VDW-DF" "vdw-df" "gaupbe" "HSE" "PBE0" "mgga tb09" 
+                  "TB09" "VDW-DF-CX" "optbk88" "AUTO_XC" "BLYP" "hse" "tb09" "GGA 
+                  BLYP" "GGA XB CP" "ev93" "GGA XP CP" "Q2D" "pbe0" "PW91" "pbe" 
+                  "bp" "vdw-df-c09" "optb86b" "pbesol" "pw91" "b86bpbe" "BP" "blyp" 
+                  "PBE" "pz" "PZ" "LDA" "hcth" "revpbe" "m06l" "REVPBE" "vdw-df-cx" 
+                  "pw86pbe" "B3LYP" "PW86PBE" "PBESOL" "sla+pw+pbe+vdw1" "sogga" 
+                  "q2d" "MGGA TB09" "GGA PBE" "wc" "tpss" "HCTH" "b3lyp" "olyp" 
     Description:  Most pseudopotentials specify the exchange correlation type they 
                   were generated with and the default value of AUTO_XC means that 
                   the type specified in the pseudopotial is what RMG will use. That 
@@ -969,7 +1120,7 @@ Orbital occupation options
     Min value:    0
     Max value:    5
     Default:      2
-    Description:  order of Methefessel Paxton occupation. 
+    Description:  Order of Methefessel Paxton occupation. 
 
     Key name:     dos_broading
     Required:     no
@@ -1017,8 +1168,8 @@ Orbital occupation options
     Expert:       No
     Experimental: No
     Default:      "Fermi Dirac"
-    Allowed:      "Error Function" "Gaussian" "Fermi Dirac" "MethfesselPaxton" "Cold 
-                  Smearing" "Fixed" 
+    Allowed:      "Tetrahedron" "MethfesselPaxton" "Cold Smearing" "Error Function" 
+                  "Gaussian" "Fermi Dirac" "Fixed" 
     Description:  RMG supports several different ways of specifying orbital 
                   occupations. For a spin polarized system one may specify the 
                   occupations for up and down separately. In the case of a non-zero 
@@ -1057,6 +1208,15 @@ Orbital occupation options
                   states_count_and_occupation. Total number of states must match 
                   spin down occupation string. 
 
+    Key name:     tetra_method
+    Required:     no
+    Key type:     string
+    Expert:       No
+    Experimental: No
+    Default:      "Bloechl"
+    Allowed:      "Optimized" "Linear" "Bloechl" 
+    Description:  tetrahedron method to use 
+
     Key name:     unoccupied_states_per_kpoint
     Required:     no
     Key type:     integer
@@ -1080,16 +1240,6 @@ Charge density mixing options
     Default:      5
     Description:  Number of previous steps to use when Broyden mixing is used to 
                   update the charge density. 
-
-    Key name:     charge_broyden_scale
-    Required:     no
-    Key type:     double
-    Expert:       No
-    Experimental: No
-    Min value:    0.000000e+00
-    Max value:    1.000000
-    Default:      0.500000
-    Description:  
 
     Key name:     charge_density_mixing
     Required:     no
@@ -1119,7 +1269,7 @@ Charge density mixing options
     Key type:     boolean
     Expert:       No
     Experimental: No
-    Default:      "false"
+    Default:      "true"
     Description:  if set true, charge density mixing the residual in G space 
 
     Key name:     charge_pulay_order
@@ -1141,16 +1291,76 @@ Charge density mixing options
     Min value:    1
     Max value:    2147483647
     Default:      100
-    Description:  
+    Description:  charge Pulay mixing reset steps. 
 
-    Key name:     charge_pulay_scale
+    Key name:     drho_precond
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "true"
+    Description:  if set true, charge density residual is preconded with 
+                  q^2/(q^2+q0^2) 
+
+    Key name:     drho_precond_q0
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    10.000000
+    Default:      0.250000
+    Description:  preconding the charge density residual by q^2/(q^2+q0^2) 
+
+    Key name:     ldau_mixing
     Required:     no
     Key type:     double
     Expert:       No
     Experimental: No
     Min value:    0.000000e+00
     Max value:    1.000000
-    Default:      0.500000
+    Default:      1.000000
+    Description:  Proportion of the current ldau occupation to replace with the new 
+                  ones after each scf step when linear mixing is used. 
+
+    Key name:     ldau_mixing_type
+    Required:     no
+    Key type:     string
+    Expert:       No
+    Experimental: No
+    Default:      "Linear"
+    Allowed:      "Broyden" "Pulay" "Linear" 
+    Description:  RMG supports Pulay and Linear mixing for DFT+U occupation mixing 
+
+    Key name:     ldau_pulay_order
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    1
+    Max value:    10
+    Default:      5
+    Description:  Number of previous steps to use when Pulay mixing is used to 
+                  update the ldau occupation . 
+
+    Key name:     ldau_pulay_refresh
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    1
+    Max value:    2147483647
+    Default:      100
+    Description:  ldau pulay mixing reset steps 
+
+    Key name:     ldau_pulay_scale
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    1.000000
+    Default:      1.000000
     Description:  
 
     Key name:     potential_acceleration_constant_step
@@ -1452,7 +1662,7 @@ Diagonalization options
     Expert:       No
     Experimental: No
     Min value:    4
-    Max value:    512
+    Max value:    2048
     Default:      32
     Description:  Block size to use with scalapack. Optimal value is dependent on 
                   matrix size and system hardware. 
@@ -1463,10 +1673,31 @@ Diagonalization options
     Expert:       No
     Experimental: No
     Default:      "auto"
-    Allowed:      "elpa" "cusolver" "auto" "scalapack" "magma" "lapack" 
+    Allowed:      "auto" "rocsolver" "elpa" "cusolver" "magma" "scalapack" "lapack" 
     Description:  Driver type used for subspace diagonalization of the eigenvectors. 
 
+    Key name:     subdiag_groups
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    1
+    Max value:    16
+    Default:      1
+    Description:  Number of scalapack or elpa groups. 
+
 Performance related options
+
+    Key name:     fd_allocation_limit
+    Required:     no
+    Key type:     integer
+    Expert:       Yes
+    Experimental: No
+    Min value:    1024
+    Max value:    262144
+    Default:      65536
+    Description:  Allocation sizes in finite difference routines less than this 
+                  value are stack rather than heap based. 
 
     Key name:     mpi_queue_mode
     Required:     no
@@ -1506,6 +1737,17 @@ Performance related options
     Description:  If set RMG assumes that sufficient huge pages are available. Bad 
                   things may happen if this is not true. 
 
+    Key name:     rmg_threads_per_node
+    Required:     no
+    Key type:     integer
+    Expert:       Yes
+    Experimental: No
+    Min value:    0
+    Max value:    64
+    Default:      0
+    Description:  Number of Multigrid/Davidson threads each MPI process will use. A 
+                  value of 0 means set automatically. 
+
     Key name:     spin_manager_thread
     Required:     no
     Key type:     boolean
@@ -1532,7 +1774,8 @@ Performance related options
     Min value:    1
     Max value:    2147483647
     Default:      64
-    Description:  state_block used in nlforce. 
+    Description:  State block size used in nlforce. Larger values require more 
+                  memory but can 
 
     Key name:     use_alt_zgemm
     Required:     no
@@ -1549,7 +1792,12 @@ Performance related options
     Expert:       No
     Experimental: No
     Default:      "true"
-    Description:  Use asynchronous allreduce if available. 
+    Description:  RMG uses MPI_Allreduce function calls in several places and for 
+                  large problems these can account for a significant fraction of the 
+                  total run time. In most cases using the asynchronous MPI versions 
+                  of the functions is faster but this is not true for all platforms 
+                  and in that casesetting this flag to false can improve 
+                  performance. 
 
     Key name:     use_hwloc
     Required:     no
@@ -1566,7 +1814,16 @@ Performance related options
     Expert:       No
     Experimental: No
     Default:      "true"
-    Description:  Use internal numa setup if available. 
+    Description:  Numa stands for Non Uniform Memory Access and means that the main 
+                  memory of a computer is organized into seperate distinct banks. 
+                  Each bank is then attached to a CPU core or group of cores and 
+                  while all cores can normally access all banks the access speed is 
+                  faster for directly attached banks. Ensuring that individual CPU 
+                  cores mostly access memory in banks they are directly attached to 
+                  can have a large impact on performance. Process mapping that does 
+                  this can normally be done when jobs are submitted and run via 
+                  arguments to mpirun/mpiexec but if this is not done RMG will 
+                  attempt to provide an optimal mapping if use_numa is set to true. 
 
 LDAU options
 
@@ -1578,7 +1835,7 @@ LDAU options
     Default:      ""
     Allowed:      
     Description:  Hubbard U parameter for each atomic species using the format 
-                  Hubbard_U="Ni 6.5" 
+                  Hubbard_U="Ni 6.5 3d 0.0 0.0 0.0" 
 
     Key name:     ldaU_mode
     Required:     no
@@ -1598,6 +1855,53 @@ LDAU options
     Max value:    12.000000
     Default:      9.000000
     Description:  Max radius of atomic orbitals to be used in LDA+U projectors. 
+
+TDDFT related options
+
+    Key name:     restart_tddft
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  restart TDDFT 
+
+    Key name:     tddft_mode
+    Required:     no
+    Key type:     string
+    Expert:       No
+    Experimental: No
+    Default:      "electric field"
+    Allowed:      "point charge" "electric field" 
+    Description:  TDDFT mode 
+
+    Key name:     tddft_qgau
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    unlimited
+    Default:      1.000000
+    Description:  Gaussian parameter for point charge to Gaussian charge 
+
+    Key name:     tddft_qpos
+    Required:     no
+    Key type:     double array
+    Expert:       No
+    Experimental: No
+    Default:      "Not done yet"
+    Description:  cartesian coordinate of the point charge for tddft 
+
+    Key name:     tddft_steps
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    0
+    Max value:    2147483647
+    Default:      2000
+    Description:  Maximum number of tddft steps to perform. 
 
 Poisson solver options
 
@@ -1664,6 +1968,16 @@ Poisson solver options
     Description:  Time step to use in the poisson multigrid solver on the finest 
                   level. 
 
+    Key name:     poisson_mg_levels
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    -1
+    Max value:    6
+    Default:      -1
+    Description:  Number of multigrid levels to use in the hartree multigrid solver. 
+
     Key name:     poisson_mucycles
     Required:     no
     Key type:     integer
@@ -1706,7 +2020,80 @@ Poisson solver options
     Allowed:      "pfft" "multigrid" 
     Description:  poisson solver. 
 
+    Key name:     charge_analysis_period
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    0
+    Max value:    500
+    Default:      0
+    Description:  How often to perform and write out charge analysis. 
+
+    Key name:     output_rho_xsf
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  Generate xsf format for electronic density. 
+
+    Key name:     write_eigvals_period
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    1
+    Max value:    100
+    Default:      5
+    Description:  How often to output eigenvalues in units of scf steps. 
+
+    Key name:     write_orbital_overlaps
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  If true the orbital overlap matrix from successive MD steps is 
+                  written. 
+
+    Key name:     write_pdos
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  Flag to write partial density of states. 
+
+    Key name:     write_pseudopotential_plots
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  Flag to indicate whether or not to write pseudopotential plots. 
+
 Testing options
+
+    Key name:     test_bond_length
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    20.000000
+    Default:      nan
+    Description:  Expected dimer bond length for testing. 
+
+    Key name:     test_bond_length_tolerance
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    1.000000e-04
+    Max value:    0.100000
+    Default:      1.000000e-03
+    Description:  Test bond length tolerance. 
 
     Key name:     test_energy
     Required:     no
@@ -1727,6 +2114,26 @@ Testing options
     Max value:    1.000000e-04
     Default:      1.000000e-07
     Description:  Test final energy tolerance. 
+
+    Key name:     test_steps
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    0
+    Max value:    1000
+    Default:      0
+    Description:  Expected number of scf steps for testing. 
+
+    Key name:     test_steps_tolerance
+    Required:     no
+    Key type:     integer
+    Expert:       No
+    Experimental: No
+    Min value:    0
+    Max value:    10
+    Default:      1
+    Description:  Test scf steps tolerance. 
 
 Miscellaneous options
 
@@ -1806,16 +2213,6 @@ Miscellaneous options
     Description:  Type of charge analysis to use. Only Voronoi deformation density 
                   is currently available. 
 
-    Key name:     charge_analysis_period
-    Required:     no
-    Key type:     integer
-    Expert:       No
-    Experimental: No
-    Min value:    0
-    Max value:    500
-    Default:      0
-    Description:  How often to perform and write out charge analysis. 
-
     Key name:     cube_pot
     Required:     no
     Key type:     boolean
@@ -1829,7 +2226,7 @@ Miscellaneous options
     Key type:     boolean
     Expert:       No
     Experimental: No
-    Default:      "true"
+    Default:      "false"
     Description:  if set true, charge density is printed out in cube format 
 
     Key name:     cube_states_list
@@ -1927,39 +2324,19 @@ Miscellaneous options
     Expert:       No
     Experimental: No
     Default:      "false"
-    Description:  if set true, calculate the exact exchange integrals 
+    Description:  If set true, calculate the exact exchange integrals. 
 
     Key name:     fast_density
     Required:     no
     Key type:     boolean
-    Expert:       No
+    Expert:       Yes
     Experimental: No
-    Default:      "true"
+    Default:      "false"
     Description:  Use a faster but less accurate method to generate the charge 
                   density from the electronic wavefunctions. As the cutoff 
                   (grid-density) increases this method improves in accuracy. This 
                   option should be set to false if you receive warnings about 
                   negative charge densities after interpolation. 
-
-    Key name:     fd_allocation_limit
-    Required:     no
-    Key type:     integer
-    Expert:       No
-    Experimental: No
-    Min value:    1024
-    Max value:    262144
-    Default:      65536
-    Description:  Allocation sizes in finite difference routines less than this 
-                  value are stack rather than heap based. 
-
-    Key name:     frac_symmetry
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
-    Default:      "true"
-    Description:  For supercell calculation, one can disable the fractional 
-                  translation symmetry 
 
     Key name:     freeze_occupied
     Required:     no
@@ -2001,31 +2378,29 @@ Miscellaneous options
     Description:  Special purpose flag which will force use of an FFT for the 
                   kinetic energy operator. 
 
-    Key name:     kpoint_distribution
-    Required:     no
-    Key type:     integer
+    Key name:     kpoints
+    Required:     yes
+    Key type:     formatted
     Expert:       No
     Experimental: No
-    Min value:    -2147483647
-    Max value:    2147483647
-    Default:      -1
-    Description:  
+    Default:      ""
+    Allowed:      
+    Description:  Normally kpoints are specified using the kpoint_mesh and 
+                  kpoint_is_shift options but one can also enter a list of kpoints 
+                  and their weights with this option. If kpoint_mesh is not 
+                  specified or this is a bandstructure calculation this is required 
+                  otherwise it is optional. 
 
-    Key name:     laplacian_autocoeff
+    Key name:     kpoints_bandstructure
     Required:     no
-    Key type:     boolean
+    Key type:     formatted
     Expert:       No
     Experimental: No
-    Default:      "false"
-    Description:  if set to true, we use LaplacianCoeff.cpp to generate coeff 
-
-    Key name:     laplacian_offdiag
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
-    Default:      "false"
-    Description:  if set to true, we use LaplacianCoeff.cpp to generate coeff 
+    Default:      ""
+    Allowed:      
+    Description:  List of kpoints to use in a bandstructure calculation. For more 
+                  detailed information look at the github wiki page on kpoint 
+                  calculations. 
 
     Key name:     lcao_use_empty_orbitals
     Required:     no
@@ -2056,32 +2431,6 @@ Miscellaneous options
     Default:      0
     Description:  number of wannier functions to be used in wannier90 
 
-    Key name:     output_rho_xsf
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
-    Default:      "false"
-    Description:  Generate xsf format for electronic density. 
-
-    Key name:     poisson_mg_levels
-    Required:     no
-    Key type:     integer
-    Expert:       No
-    Experimental: No
-    Min value:    -1
-    Max value:    6
-    Default:      -1
-    Description:  Number of multigrid levels to use in the hartree multigrid solver. 
-
-    Key name:     restart_tddft
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
-    Default:      "false"
-    Description:  restart TDDFT 
-
     Key name:     rmg2bgw
     Required:     no
     Key type:     boolean
@@ -2089,17 +2438,6 @@ Miscellaneous options
     Experimental: Yes
     Default:      "false"
     Description:  Write wavefunction in G-space to BerkeleyGW WFN file. 
-
-    Key name:     rmg_threads_per_node
-    Required:     no
-    Key type:     integer
-    Expert:       No
-    Experimental: No
-    Min value:    0
-    Max value:    64
-    Default:      0
-    Description:  Number of Multigrid/Davidson threads each MPI process will use. A 
-                  value of 0 means set automatically. 
 
     Key name:     scf_steps_offset
     Required:     no
@@ -2114,49 +2452,11 @@ Miscellaneous options
     Key name:     sqrt_interpolation
     Required:     no
     Key type:     boolean
-    Expert:       No
+    Expert:       Yes
     Experimental: No
     Default:      "false"
     Description:  Flag indicating whether or not to use square root technique for 
                   density interpolation. 
-
-    Key name:     system_charge
-    Required:     no
-    Key type:     double
-    Expert:       No
-    Experimental: No
-    Min value:    -unlimited
-    Max value:    unlimited
-    Default:      0.000000e+00
-    Description:  Number of excess holes in the system (useful for doped systems). 
-                  Example, 2 means system is missing two electrons 
-
-    Key name:     tddft_mode
-    Required:     no
-    Key type:     string
-    Expert:       No
-    Experimental: No
-    Default:      "electric field"
-    Allowed:      "point charge" "electric field" 
-    Description:  TDDFT mode 
-
-    Key name:     tddft_qgau
-    Required:     no
-    Key type:     double
-    Expert:       No
-    Experimental: No
-    Min value:    0.000000e+00
-    Max value:    unlimited
-    Default:      1.000000
-    Description:  Gaussian parameter for point charge to Gaussian charge 
-
-    Key name:     tddft_qpos
-    Required:     no
-    Key type:     double array
-    Expert:       No
-    Experimental: No
-    Default:      "Not done yet"
-    Description:  cartesian coordinate of the point charge for tddft 
 
     Key name:     total_scf_steps_offset
     Required:     no
@@ -2176,30 +2476,16 @@ Miscellaneous options
     Default:      "true"
     Description:  if set to true, we use Cpdgemr2d to change matrix distribution 
 
-    Key name:     use_symmetry
+    Key name:     use_gpu_fd
     Required:     no
     Key type:     boolean
     Expert:       No
-    Experimental: No
-    Default:      "true"
-    Description:  For non-gamma point, always true, for gamma point, optional 
-
-    Key name:     vdwdf_grid_type
-    Required:     no
-    Key type:     string
-    Expert:       No
-    Experimental: No
-    Default:      "Coarse"
-    Allowed:      "Fine" "Coarse" 
-    Description:  Type of grid to use when computing vdw-df correlation. 
-
-    Key name:     verbose
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
+    Experimental: Yes
     Default:      "false"
-    Description:  Flag for writing out extra information 
+    Description:  Use gpus for kohn-sham orbital finite differencing. Depending on 
+                  the balance of hardware characteristics this can provide a 
+                  significant speedup but individual testing is required. 
+                  Experimental. 
 
     Key name:     vxc_diag_nmax
     Required:     no
@@ -2242,55 +2528,19 @@ Miscellaneous options
     Description:  when wannier90 is used to build wannier functions, the energy 
                   window parameter 
 
-    Key name:     write_orbital_overlaps
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
-    Default:      "false"
-    Description:  If true the orbital overlap matrix from successive MD steps is 
-                  written. 
-
-    Key name:     write_pdos
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
-    Default:      "false"
-    Description:  Flag to write partial density of states. 
-
     Key name:     z_average_output_mode
     Required:     no
     Key type:     string
     Expert:       No
     Experimental: No
     Default:      "None"
-    Allowed:      "potential and charge density" "wave functions" "None" 
+    Allowed:      "wave functions" "potential and charge density" "None" 
     Description:  z_average_output_mode. 
 
-''' 
+'''
 
 undocumented_options = '''
 Undocumented options
-
-    Key name:     use_bessel_projectors
-    Required:     no
-    Key type:     boolean
-    Expert:       No
-    Experimental: No
-    Default:      "false"
-
-    Key name:     kpoints
-    Required:     no
-    Key type:     formatted
-    Expert:       No
-    Experimental: No
-
-    Key name:     kpoints_bandstructure
-    Required:     no
-    Key type:     formatted
-    Expert:       No
-    Experimental: No
 
     Key name:     atoms
     Required:     no
@@ -2333,9 +2583,7 @@ Deprecated options
     Key type:     double
     Expert:       No
     Experimental: No
-
 '''
-
 raw_input_spec += undocumented_options
 raw_input_spec += deprecated_options
 
@@ -3138,7 +3386,6 @@ class RmgInput(SimulationInput):
         #end if
     #end def __init__
 
-
     def assign(self,**values):
         unrecognized = []
         for k,v in values.items():
@@ -3364,6 +3611,7 @@ def generate_any_rmg_input(**kwargs):
     virtual_frac    = kw.delete_optional('virtual_frac'    , None   )
     spin_polarized  = kw.delete_optional('spin_polarized'  , None   )
     default_units   = kw.delete_optional('default_units'   , 'bohr' )
+    
 
     default_units = dict(
         a        = 'angstrom',
@@ -3387,7 +3635,8 @@ def generate_any_rmg_input(**kwargs):
     #end if
     ri.assign(**kw)
 
-    if ri.calculation_mode is 'NSCF' and 'input_wave_function_file' not in ri:
+    # Special case for nscf calculation to force the read from already computed charge density. 
+    if ri.calculation_mode=='NSCF' and 'input_wave_function_file' not in ri:
         ri.input_wave_function_file='Waves/wave.out' 
 
     # incorporate pseudopotentials details provided via "pseudos"
@@ -3487,16 +3736,28 @@ def generate_any_rmg_input(**kwargs):
         #end if
 
         # set kpoints
-        if len(s.kpoints)>0 and 'kpoint_mesh' not in ri:
+        if ri.calculation_mode=='NSCF':
             kpu = s.kpoints_unit()
             ri.kpoints = obj(
                 kpoints = kpu.copy(),
                 weights = s.kweights.copy(),
                 )
-            if 'kpoint_is_shift' in ri:
-                del ri.kpoint_is_shift
-            #end if
-        #end if
+            #
+            ri.use_symmetry=0
+            ri.kpoint_distribution=1
+        else:
+            if len(s.kpoints)>0 and 'kpoint_mesh' not in ri:
+                kpu = s.kpoints_unit()
+                ri.kpoints = obj(
+                   kpoints = kpu.copy(),
+                   weights = s.kweights.copy(),
+                   )
+                if 'kpoint_is_shift' in ri:
+                   del ri.kpoint_is_shift
+                #end if
+           #end if
+
+       
 
         # set wavefunction grid
         if wf_grid_spacing is not None:
