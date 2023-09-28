@@ -20,7 +20,7 @@
 #define QMCPLUSPLUS_EINSPLINE_SPINORSET_BUILDER_H
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 class Communicate;
 
 namespace qmcplusplus

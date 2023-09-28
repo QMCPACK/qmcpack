@@ -18,7 +18,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #include "checkMatrix.hpp"
 #include "FakeSPO.h"
