@@ -124,7 +124,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
   std::string useGPU;
   std::string GPUsharing = "no";
-  std::string spo_object_name;
 
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
@@ -177,8 +176,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     OhmmsAttributeSet oAttrib;
     oAttrib.add(spinSet, "spindataset");
-    oAttrib.add(spo_object_name, "name");
-    oAttrib.add(spo_object_name, "id");
     oAttrib.put(cur);
   }
 
