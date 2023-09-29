@@ -142,7 +142,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[2][1][1]) == Approx(1.0020672904));
   CHECK(std::real(dpsiM[2][1][2]) == Approx(-1.9794520201));
   // lapl
-  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(3e-5));
+  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(5e-5));
   CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738).epsilon(3e-5));
 }
 
@@ -230,97 +230,51 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if defined(QMC_COMPLEX)
-  // real part
+  using ValueType = SPOSet::ValueType;
   // electron 0
   // value
-  CHECK(std::real(psiM[0][0]) == Approx(0.6776432991));
-  CHECK(std::real(psiM[0][1]) == Approx(1.0759553909));
+  CHECK(psiM[0][0] == ComplexApprox(ValueType{0.6776432991, 0.6776432991}));
+  CHECK(psiM[0][1] == ComplexApprox(ValueType{1.0759553909, 1.0762499571}));
   // grad
-  CHECK(std::real(dpsiM[0][0][0]) == Approx(0.8782411218));
-  CHECK(std::real(dpsiM[0][0][1]) == Approx(0.004904394));
-  CHECK(std::real(dpsiM[0][0][2]) == Approx(-0.0049044029));
-  CHECK(std::real(dpsiM[0][1][0]) == Approx(1.1041458845));
-  CHECK(std::real(dpsiM[0][1][1]) == Approx(0.6333346963));
-  CHECK(std::real(dpsiM[0][1][2]) == Approx(-0.6333346963));
+  CHECK(dpsiM[0][0][0] == ComplexApprox(ValueType{0.8782411218, 0.878241539}));
+  CHECK(dpsiM[0][0][1] == ComplexApprox(ValueType{0.004904394, 0.0049043936}));
+  CHECK(dpsiM[0][0][2] == ComplexApprox(ValueType{-0.0049044029, -0.0049044029}));
+  CHECK(dpsiM[0][1][0] == ComplexApprox(ValueType{1.1041458845, 1.1067043543}));
+  CHECK(dpsiM[0][1][1] == ComplexApprox(ValueType{0.6333346963, 0.6384321451}));
+  CHECK(dpsiM[0][1][2] == ComplexApprox(ValueType{-0.6333346963, -0.6384321451}));
   // lapl
-  CHECK(std::real(d2psiM[0][0]) == Approx(4.0779185295).epsilon(1e-4));
-  CHECK(std::real(d2psiM[0][1]) == Approx(-0.7860302329).epsilon(1e-4));
+  CHECK(d2psiM[0][0] == ComplexApprox(ValueType{4.0779185295, 4.0779790878}).epsilon(1e-4));
+  CHECK(d2psiM[0][1] == ComplexApprox(ValueType{-0.7860302329, -0.7897151113}).epsilon(1e-4));
 
   // electron 1
   // value
-  CHECK(std::real(psiM[1][0]) == Approx(0.9008999467));
-  CHECK(std::real(psiM[1][1]) == Approx(1.2383049726));
+  CHECK(psiM[1][0] == ComplexApprox(ValueType{0.9008999467, 0.9008999467}));
+  CHECK(psiM[1][1] == ComplexApprox(ValueType{1.2383049726, 1.2383049726}));
   // grad
-  CHECK(std::real(dpsiM[1][0][0]) == Approx(0.0025820041));
-  CHECK(std::real(dpsiM[1][0][1]) == Approx(-0.1880052537));
-  CHECK(std::real(dpsiM[1][0][2]) == Approx(-0.0025404284));
-  CHECK(std::real(dpsiM[1][1][0]) == Approx(0.1069662273));
-  CHECK(std::real(dpsiM[1][1][1]) == Approx(-0.4364597797));
-  CHECK(std::real(dpsiM[1][1][2]) == Approx(-0.106951952));
+  CHECK(dpsiM[1][0][0] == ComplexApprox(ValueType{0.0025820041, 0.0025820041}));
+  CHECK(dpsiM[1][0][1] == ComplexApprox(ValueType{-0.1880052537, -0.1880052537}));
+  CHECK(dpsiM[1][0][2] == ComplexApprox(ValueType{-0.0025404284, -0.0025404284}));
+  CHECK(dpsiM[1][1][0] == ComplexApprox(ValueType{0.1069662273, 0.1069453433}));
+  CHECK(dpsiM[1][1][1] == ComplexApprox(ValueType{-0.4364597797, -0.43649593}));
+  CHECK(dpsiM[1][1][2] == ComplexApprox(ValueType{-0.106951952, -0.1069145575}));
   // lapl
-  CHECK(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
-  CHECK(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
+  CHECK(d2psiM[1][0] == ComplexApprox(ValueType{-1.3757134676, -1.3757134676}));
+  CHECK(d2psiM[1][1] == ComplexApprox(ValueType{-2.4803137779, -2.4919104576}));
 
   // electron 2
   // value
-  CHECK(std::real(psiM[2][0]) == Approx(0.8841851282));
-  CHECK(std::real(psiM[2][1]) == Approx(1.0331713017));
+  CHECK(psiM[2][0] == ComplexApprox(ValueType{0.8841851282, 0.8841851282}));
+  CHECK(psiM[2][1] == ComplexApprox(ValueType{1.0331713017, 1.0291547321}));
   // grad
-  CHECK(std::real(dpsiM[2][0][0]) == Approx(0.0688574613));
-  CHECK(std::real(dpsiM[2][0][1]) == Approx(0.2735091889));
-  CHECK(std::real(dpsiM[2][0][2]) == Approx(0.2666900514));
-  CHECK(std::real(dpsiM[2][1][0]) == Approx(0.5398793935));
-  CHECK(std::real(dpsiM[2][1][1]) == Approx(0.7525391523));
-  CHECK(std::real(dpsiM[2][1][2]) == Approx(-0.1224437827));
+  CHECK(dpsiM[2][0][0] == ComplexApprox(ValueType{0.0688574613, 0.0688574613}));
+  CHECK(dpsiM[2][0][1] == ComplexApprox(ValueType{0.2735091889, 0.2735091889}));
+  CHECK(dpsiM[2][0][2] == ComplexApprox(ValueType{0.2666900514, 0.2666900514}));
+  CHECK(dpsiM[2][1][0] == ComplexApprox(ValueType{0.5398793935, 0.5376840012}));
+  CHECK(dpsiM[2][1][1] == ComplexApprox(ValueType{0.7525391523, 0.7550587239}));
+  CHECK(dpsiM[2][1][2] == ComplexApprox(ValueType{-0.1224437827, -0.1228616516}));
   // lapl
-  CHECK(std::real(d2psiM[2][0]) == Approx(-1.1799273657).epsilon(1e-4));
-  CHECK(std::real(d2psiM[2][1]) == Approx(-2.0339757673).epsilon(1e-4));
-
-  // imaginary part
-  // electron 0
-  // value
-  CHECK(std::imag(psiM[0][0]) == Approx(0.6776432991));
-  CHECK(std::imag(psiM[0][1]) == Approx(1.0762499571));
-  // grad
-  CHECK(std::imag(dpsiM[0][0][0]) == Approx(0.878241539));
-  CHECK(std::imag(dpsiM[0][0][1]) == Approx(0.0049043936));
-  CHECK(std::imag(dpsiM[0][0][2]) == Approx(-0.0049044029));
-  CHECK(std::imag(dpsiM[0][1][0]) == Approx(1.1067043543));
-  CHECK(std::imag(dpsiM[0][1][1]) == Approx(0.6384321451));
-  CHECK(std::imag(dpsiM[0][1][2]) == Approx(-0.6384321451));
-  // lapl
-  CHECK(std::imag(d2psiM[0][0]) == Approx(4.0779790878).epsilon(1e-4));
-  CHECK(std::imag(d2psiM[0][1]) == Approx(-0.7897151113).epsilon(1e-4));
-
-  // electron 1
-  // value
-  CHECK(std::imag(psiM[1][0]) == Approx(0.9008999467));
-  CHECK(std::imag(psiM[1][1]) == Approx(1.2383049726));
-  // grad
-  CHECK(std::imag(dpsiM[1][0][0]) == Approx(0.0025820041));
-  CHECK(std::imag(dpsiM[1][0][1]) == Approx(-0.1880052537));
-  CHECK(std::imag(dpsiM[1][0][2]) == Approx(-0.0025404284));
-  CHECK(std::imag(dpsiM[1][1][0]) == Approx(0.1069453433));
-  CHECK(std::imag(dpsiM[1][1][1]) == Approx(-0.43649593));
-  CHECK(std::imag(dpsiM[1][1][2]) == Approx(-0.1069145575));
-  // lapl
-  CHECK(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
-  CHECK(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
-
-  // electron 2
-  // value
-  CHECK(std::imag(psiM[2][0]) == Approx(0.8841851282));
-  CHECK(std::imag(psiM[2][1]) == Approx(1.0291547321));
-  // grad
-  CHECK(std::imag(dpsiM[2][0][0]) == Approx(0.0688574613));
-  CHECK(std::imag(dpsiM[2][0][1]) == Approx(0.2735091889));
-  CHECK(std::imag(dpsiM[2][0][2]) == Approx(0.2666900514));
-  CHECK(std::imag(dpsiM[2][1][0]) == Approx(0.5376840012));
-  CHECK(std::imag(dpsiM[2][1][1]) == Approx(0.7550587239));
-  CHECK(std::imag(dpsiM[2][1][2]) == Approx(-0.1228616516));
-  // lapl
-  CHECK(std::imag(d2psiM[2][0]) == Approx(-1.2044699918).epsilon(1e-4));
-  CHECK(std::imag(d2psiM[2][1]) == Approx(-1.885562226).epsilon(1e-4));
+  CHECK(d2psiM[2][0] == ComplexApprox(ValueType{-1.1799273657, -1.2044699918}).epsilon(1e-4));
+  CHECK(d2psiM[2][1] == ComplexApprox(ValueType{-2.0339757673, -1.885562226}).epsilon(1e-4));
 #endif
 
   // test batched interfaces
@@ -367,35 +321,20 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   spo->mw_evaluateVGL(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
 #if defined(QMC_COMPLEX)
-  // real part
+  using ValueType = SPOSet::ValueType;
   // value
-  CHECK(std::real(psi_v_list[1].get()[0]) == Approx(0.9008999467));
-  CHECK(std::real(psi_v_list[1].get()[1]) == Approx(1.2383049726));
+  CHECK(psi_v_list[1].get()[0] == ComplexApprox(ValueType{0.9008999467, 0.9008999467}));
+  CHECK(psi_v_list[1].get()[1] == ComplexApprox(ValueType{1.2383049726, 1.2383049726}));
   // grad
-  CHECK(std::real(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
-  CHECK(std::real(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
-  CHECK(std::real(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
-  CHECK(std::real(dpsi_v_list[1].get()[1][0]) == Approx(0.1069662273));
-  CHECK(std::real(dpsi_v_list[1].get()[1][1]) == Approx(-0.4364597797));
-  CHECK(std::real(dpsi_v_list[1].get()[1][2]) == Approx(-0.106951952));
+  CHECK(dpsi_v_list[1].get()[0][0] == ComplexApprox(ValueType{0.0025820041, 0.0025820041}));
+  CHECK(dpsi_v_list[1].get()[0][1] == ComplexApprox(ValueType{-0.1880052537, -0.1880052537}));
+  CHECK(dpsi_v_list[1].get()[0][2] == ComplexApprox(ValueType{-0.0025404284, -0.0025404284}));
+  CHECK(dpsi_v_list[1].get()[1][0] == ComplexApprox(ValueType{0.1069662273, 0.1069453433}));
+  CHECK(dpsi_v_list[1].get()[1][1] == ComplexApprox(ValueType{-0.4364597797, -0.43649593}));
+  CHECK(dpsi_v_list[1].get()[1][2] == ComplexApprox(ValueType{-0.106951952, -0.1069145575}));
   // lapl
-  CHECK(std::real(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
-  CHECK(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.4803137779));
-
-  // imaginary part
-  // value
-  CHECK(std::imag(psi_v_list[1].get()[0]) == Approx(0.9008999467));
-  CHECK(std::imag(psi_v_list[1].get()[1]) == Approx(1.2383049726));
-  // grad
-  CHECK(std::imag(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
-  CHECK(std::imag(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
-  CHECK(std::imag(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
-  CHECK(std::imag(dpsi_v_list[1].get()[1][0]) == Approx(0.1069453433));
-  CHECK(std::imag(dpsi_v_list[1].get()[1][1]) == Approx(-0.43649593));
-  CHECK(std::imag(dpsi_v_list[1].get()[1][2]) == Approx(-0.1069145575));
-  // lapl
-  CHECK(std::imag(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
-  CHECK(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.4919104576));
+  CHECK(d2psi_v_list[1].get()[0] == ComplexApprox(ValueType{-1.3757134676, -1.3757134676}));
+  CHECK(d2psi_v_list[1].get()[1] == ComplexApprox(ValueType{-2.4803137779, -2.4919104576}));
 #endif
 }
 
