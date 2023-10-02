@@ -49,6 +49,7 @@ struct SoaSphericalTensor
   aligned_vector<T> Factor2L;
   ///composite
   VectorSoaContainer<T, 5> cYlm;
+  using xyz_type = TinyVector<T, 3>;
 
   explicit SoaSphericalTensor(const int l_max, bool addsign = false);
 
@@ -63,6 +64,16 @@ struct SoaSphericalTensor
     evaluate_bare(x, y, z, Ylm);
     for (int i = 0, nl = cYlm.size(); i < nl; i++)
       Ylm[i] *= NormFactor[i];
+  }
+
+  ///compute Ylm
+  inline void mw_evaluateV(xyz_type* xyz, T* Ylm, size_t nr, size_t nlm) const
+  {
+    for (size_t ir = 0; ir < nr; ir++)
+      evaluate_bare(xyz[ir][0], xyz[ir][1], xyz[ir][2], Ylm + (ir * nlm));
+    for (size_t ir = 0; ir < nr; ir++)
+      for (int i = 0, nl = cYlm.size(); i < nl; i++)
+        Ylm[ir * nlm + i] *= NormFactor[i];
   }
 
   ///compute Ylm

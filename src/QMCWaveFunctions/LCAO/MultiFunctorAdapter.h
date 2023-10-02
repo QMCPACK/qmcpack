@@ -57,6 +57,27 @@ struct MultiFunctorAdapter
       u[i] = Rnl[i]->f(r);
   }
 
+  inline void mw_evaluate(RealType* restrict r_list,
+                          RealType* restrict u,
+                          size_t nr,
+                          size_t maxnumsplines,
+                          RealType Rmax)
+  {
+    for (size_t ir = 0; ir < nr; ir++)
+    {
+      if (r_list[ir] >= Rmax)
+      {
+        for (size_t i = 0, n = Rnl.size(); i < n; ++i)
+          u[ir * maxnumsplines + i] = 0.0;
+      }
+      else
+      {
+        for (size_t i = 0, n = Rnl.size(); i < n; ++i)
+          u[ir * maxnumsplines + i] = Rnl[i]->f(r_list[ir]);
+      }
+    }
+  }
+
   inline void evaluate(RealType r, RealType* restrict u, RealType* restrict du, RealType* restrict d2u)
   {
     const RealType rinv = RealType(1) / r;

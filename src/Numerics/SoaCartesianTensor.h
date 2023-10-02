@@ -39,6 +39,7 @@ struct SoaCartesianTensor
 {
   using value_type = T;
   using ggg_type   = TinyVector<Tensor<T, 3>, 3>;
+  using xyz_type   = TinyVector<T, 3>;
 
   ///maximum angular momentum
   size_t Lmax;
@@ -76,6 +77,16 @@ struct SoaCartesianTensor
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z) { evaluateV(x, y, z, cXYZ.data(0)); }
+
+  inline void mw_evaluateV(xyz_type* xyz, T* XYZ, size_t nr, size_t nlm) const
+  {
+    for (size_t ir = 0; ir < nr; ir++)
+      evaluate_bare(xyz[ir][0], xyz[ir][1], xyz[ir][2], XYZ + (ir * nlm));
+    for (size_t ir = 0; ir < nr; ir++)
+      for (int i = 0, nl = cXYZ.size(); i < nl; i++)
+        XYZ[ir * nlm + i] *= NormFactor[i];
+  }
+
 
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateVGL(T x, T y, T z);
