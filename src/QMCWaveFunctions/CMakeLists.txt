@@ -75,19 +75,15 @@ if(OHMMS_DIM MATCHES 3)
     set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp)
   else(QMC_COMPLEX)
     #LCAO cusp correction is not ready for complex
-    set(FERMION_SRCS ${FERMION_SRCS} LCAO/CuspCorrection.cpp LCAO/LCAOrbitalSetWithCorrection.cpp
+    set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSetWithCorrection.cpp
                      LCAO/CuspCorrectionConstruction.cpp LCAO/SoaCuspCorrection.cpp)
   endif(QMC_COMPLEX)
 
   if(HAVE_EINSPLINE)
-    if(NOT MIXED_PRECISION)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSet.cpp)
-    endif(NOT MIXED_PRECISION)
     set(FERMION_SRCS
         ${FERMION_SRCS}
         EinsplineSetBuilderCommon.cpp
         EinsplineSetBuilderOld.cpp
-        AtomicOrbital.cpp
         EinsplineSetBuilderReadBands_ESHDF.cpp
         EinsplineSetBuilderESHDF.fft.cpp
         EinsplineSetBuilder_createSPOs.cpp

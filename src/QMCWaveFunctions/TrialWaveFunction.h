@@ -470,8 +470,9 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
-  void setTwist(std::vector<RealType> t) { myTwist = t; }
-  const std::vector<RealType> twist() { return myTwist; }
+  void setTwist(const std::vector<RealType>& t) { myTwist = t; }
+  void setTwist(std::vector<RealType>&& t) { myTwist = std::move(t); }
+  const std::vector<RealType>& twist() const { return myTwist; }
 
   inline void setMassTerm(ParticleSet& P)
   {
@@ -550,6 +551,13 @@ private:
   /// timers at WaveFunctionComponent function call level
   std::vector<std::reference_wrapper<NewTimer>> WFC_timers_;
   std::vector<RealType> myTwist;
+
+  /** check if any gradient component (x,y,z) is NaN and throw an error if yes.
+   * @param iel particle index
+   * @param grads gradients to be checked
+   * @param location usually put function name to indicate where the check is being called.
+   */
+  static void checkOneParticleGradientsNaN(int iel, const GradType& grads, const std::string_view location);
 
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction

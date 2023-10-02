@@ -31,7 +31,7 @@ class Pyscf(Simulation):
     analyzer_type      = PyscfAnalyzer
     generic_identifier = 'pyscf'
     infile_extension   = '.py'
-    application        = 'python'
+    application        = 'python3'
     application_properties = set(['serial','mpi'])
     application_results    = set(['orbitals','wavefunction'])
 

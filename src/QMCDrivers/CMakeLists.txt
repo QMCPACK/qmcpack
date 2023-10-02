@@ -95,24 +95,17 @@ endif(BUILD_LMYENGINE_INTERFACE)
 ####################################
 if(USE_OBJECT_TARGET)
   add_library(qmcdriver OBJECT ${QMCDRIVERS})
-  add_library(qmcdriver_unit OBJECT ${QMCDRIVERS})
 else()
   add_library(qmcdriver ${QMCDRIVERS})
-  add_library(qmcdriver_unit ${QMCDRIVERS})
 endif()
-use_fake_rng(qmcdriver_unit)
 
 target_include_directories(qmcdriver PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_include_directories(qmcdriver_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_link_libraries(qmcdriver PUBLIC qmcham qmcestimators)
-target_link_libraries(qmcdriver_unit PUBLIC qmcham_unit qmcestimators_unit)
 
 target_link_libraries(qmcdriver PRIVATE platform_LA Boost::boost)
-target_link_libraries(qmcdriver_unit PRIVATE platform_LA Boost::boost)
 if(BUILD_LMYENGINE_INTERFACE)
   target_link_libraries(qmcdriver PRIVATE formic_utils)
-  target_link_libraries(qmcdriver_unit PRIVATE formic_utils)
 endif()
 
 if(BUILD_UNIT_TESTS)

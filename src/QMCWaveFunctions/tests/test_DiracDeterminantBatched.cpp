@@ -66,7 +66,8 @@ void test_DiracDeterminantBatched_first()
   b(2, 1) = -0.04586322768;
   b(2, 2) = 0.3927890292;
 
-  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), b);
+  auto check = checkMatrix(b, ddb.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   ParticleSet::GradType grad;
   PsiValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
@@ -85,7 +86,8 @@ void test_DiracDeterminantBatched_first()
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), b);
+  check = checkMatrix(b, ddb.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);
@@ -259,7 +261,8 @@ void test_DiracDeterminantBatched_second()
   app_log() << ddb.getPsiMinv() << std::endl;
 #endif
 
-  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), orig_a);
+  auto check = checkMatrix(orig_a, ddb.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 }
 
 TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
@@ -356,7 +359,8 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
-  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), a_update1);
+  auto check = checkMatrix(a_update1, ddc.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   grad = ddc.evalGrad(elec, 1);
 
@@ -411,7 +415,8 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
 #endif
 
   // compare all the elements of get_ref_psiMinv() in ddc and orig_a
-  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), orig_a);
+  check = checkMatrix(orig_a, ddc.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");
@@ -446,8 +451,11 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   ddc.mw_accept_rejectMove(ddc_ref_list, p_ref_list, 0, isAccepted, true);
   ddc.mw_completeUpdates(ddc_ref_list);
 
-  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), a_update1);
-  checkMatrix(ddc_clone_ref.get_det_engine().get_ref_psiMinv(), a_update1);
+  check = checkMatrix(a_update1, ddc.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+
+  check = checkMatrix(a_update1, ddc_clone_ref.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   ddc.mw_evalGrad(ddc_ref_list, p_ref_list, 1, grad_new);
   ddc.mw_ratioGrad(ddc_ref_list, p_ref_list, 1, ratios, grad_new);
@@ -465,8 +473,11 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   ddc.mw_accept_rejectMove(ddc_ref_list, p_ref_list, 2, isAccepted, true);
   ddc.mw_completeUpdates(ddc_ref_list);
 
-  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), orig_a);
-  checkMatrix(ddc_clone_ref.get_det_engine().get_ref_psiMinv(), orig_a);
+  check = checkMatrix(orig_a, ddc.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+
+  check = checkMatrix(orig_a, ddc_clone_ref.get_det_engine().get_ref_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 }
 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")

@@ -152,7 +152,7 @@ void wfn_fac(boost::mpi3::communicator& world)
     //for(int nw=1; nw<2; nw*=2)
     {
       //nwalk=nw;
-      WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+      WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
       auto initial_guess = WfnFac.getInitialGuess(wfn_name);
       REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
       REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
@@ -290,7 +290,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       WfnFac.push(wfn_name, doc4.getRoot());
       Wavefunction& wfn2 = WfnFac.getWavefunction(TG, TG, wfn_name, type, nullptr, 1e-6, nwalk);
 
-      WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+      WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], rng);
       //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
       REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
       REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
@@ -488,7 +488,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WfnFac.push(wfn_name, doc2.getRoot());
     Wavefunction& wfn = WfnFac.getWavefunction(TGwfn, TGwfn, wfn_name, type, &ham, 1e-6, nwalk);
 
-    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
     REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
@@ -647,7 +647,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WfnFac.push(wfn_name, doc4.getRoot());
     Wavefunction& wfn2 = WfnFac.getWavefunction(TGwfn, TGwfn, wfn_name, type, nullptr, 1e-8, nwalk);
 
-    WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], rng);
     //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
     REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
@@ -867,7 +867,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
 
 #endif
 
-    WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
+    WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0)==2);
     REQUIRE(initial_guess.size(1)==NMO);

@@ -60,7 +60,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng) override;
+                  RandomBase<FullPrecReal>& rng) override;
 
   void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
   /**
@@ -145,9 +145,8 @@ private:
   * @param[in] start start of grid interval 
   * @param[in] stop end of grid interval
   */
-  template<class RAN_GEN>
-  void generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN& rng, Real start, Real stop) const;
 
+  void generateRandomGrid(std::vector<Real>& sgrid, RandomBase<FullPrecReal>& rng, Real start, Real stop) const;
 
   /**
   * For a given spatial position r and spin component s, this returns the bin for accumulating the observable.

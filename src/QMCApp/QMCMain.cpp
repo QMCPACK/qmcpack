@@ -243,7 +243,7 @@ bool QMCMain::execute()
   if (qmc_common.dryrun)
   {
     app_log() << "  dryrun == 1 Ignore qmc/loop elements " << std::endl;
-    APP_ABORT("QMCMain::execute");
+    myComm->barrier_and_abort("QMCMain::execute");
   }
   t3.stop();
   Timer t1;

@@ -21,7 +21,7 @@
 #include "Numerics/GaussianBasisSet.h"
 
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/LCAO/CuspCorrection.h"
+#include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
 
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 

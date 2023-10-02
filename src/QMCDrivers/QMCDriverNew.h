@@ -192,19 +192,16 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  inline RefVector<RandomGenerator> getRngRefs() const
+  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
   {
-    RefVector<RandomGenerator> RngRefs;
+    RefVector<RandomBase<FullPrecRealType>> RngRefs;
     for (int i = 0; i < Rng.size(); ++i)
       RngRefs.push_back(*Rng[i]);
     return RngRefs;
   }
 
-  // ///return the random generators
-  //       inline std::vector<std::unique_ptr RandomGenerator*>& getRng() { return Rng; }
-
   ///return the i-th random generator
-  inline RandomGenerator& getRng(int i) override { return (*Rng[i]); }
+  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
 
   /** intended for logging output and debugging
    *  you should base behavior on type preferably at compile time or if
@@ -234,7 +231,9 @@ public:
    */
   void process(xmlNodePtr cur) override = 0;
 
-  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
+  static void initialLogEvaluation(int crowd_id,
+                                   UPtrVector<Crowd>& crowds,
+                                   UPtrVector<ContextForSteps>& step_context);
 
 
   /** should be set in input don't see a reason to set individually
@@ -426,19 +425,13 @@ protected:
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
-  std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
+  UPtrVector<ContextForSteps> step_contexts_;
 
   ///Random number generators
-  UPtrVector<RandomGenerator> Rng;
+  UPtrVector<RandomBase<FullPrecRealType>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
-
-  ///temporary storage for drift
-  ParticleSet::ParticlePos drift;
-
-  ///temporary storage for random displacement
-  ParticleSet::ParticlePos deltaR;
 
   // ///alternate method of setting QMC run parameters
   // IndexType nStepsBetweenSamples;

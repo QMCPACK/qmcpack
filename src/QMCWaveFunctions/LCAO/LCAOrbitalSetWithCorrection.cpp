@@ -18,12 +18,13 @@ LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(const std::string& my_n
                                                          ParticleSet& ions,
                                                          ParticleSet& els,
                                                          std::unique_ptr<basis_type>&& bs)
-    : LCAOrbitalSet(my_name, std::move(bs)), cusp(ions, els)
+    : SPOSet(my_name), lcao(my_name + "_modified", std::move(bs)), cusp(ions, els)
 {}
 
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 {
-  LCAOrbitalSet::setOrbitalSetSize(norbs);
+  assert(lcao.getOrbitalSetSize() == norbs && "norbs doesn't agree with lcao!");
+  OrbitalSetSize = norbs;
   cusp.setOrbitalSetSize(norbs);
 }
 
@@ -35,7 +36,7 @@ std::unique_ptr<SPOSet> LCAOrbitalSetWithCorrection::makeClone() const
 
 void LCAOrbitalSetWithCorrection::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
-  LCAOrbitalSet::evaluateValue(P, iat, psi);
+  lcao.evaluateValue(P, iat, psi);
   cusp.addV(P, iat, psi);
 }
 
@@ -45,17 +46,8 @@ void LCAOrbitalSetWithCorrection::evaluateVGL(const ParticleSet& P,
                                               GradVector& dpsi,
                                               ValueVector& d2psi)
 {
-  LCAOrbitalSet::evaluateVGL(P, iat, psi, dpsi, d2psi);
+  lcao.evaluateVGL(P, iat, psi, dpsi, d2psi);
   cusp.add_vector_vgl(P, iat, psi, dpsi, d2psi);
-}
-
-void LCAOrbitalSetWithCorrection::evaluateVGH(const ParticleSet& P,
-                                              int iat,
-                                              ValueVector& psi,
-                                              GradVector& dpsi,
-                                              HessVector& grad_grad_psi)
-{
-  APP_ABORT("LCAOrbitalSetWithCorrection::evaluate with HessVector not implemented");
 }
 
 void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,
@@ -65,37 +57,9 @@ void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,
                                                        GradMatrix& dlogdet,
                                                        ValueMatrix& d2logdet)
 {
-  LCAOrbitalSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
+  lcao.evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   for (size_t i = 0, iat = first; iat < last; i++, iat++)
     cusp.add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
 }
 
-void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,
-                                                       int first,
-                                                       int last,
-                                                       ValueMatrix& logdet,
-                                                       GradMatrix& dlogdet,
-                                                       HessMatrix& grad_grad_logdet)
-{
-  APP_ABORT("LCAOrbitalSetWithCorrection::evaluate_notranspose with HessMatrix not implemented");
-}
-
-void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,
-                                                       int first,
-                                                       int last,
-                                                       ValueMatrix& logdet,
-                                                       GradMatrix& dlogdet,
-                                                       HessMatrix& grad_grad_logdet,
-                                                       GGGMatrix& grad_grad_grad_logdet)
-{
-  APP_ABORT("LCAOrbitalSetWithCorrection::evaluate_notranspose with GGGMatrix not implemented");
-}
-
-void LCAOrbitalSetWithCorrection::evaluateThirdDeriv(const ParticleSet& P,
-                                                     int first,
-                                                     int last,
-                                                     GGGMatrix& grad_grad_grad_logdet)
-{
-  APP_ABORT("LCAOrbitalSetWithCorrection::evaluateThirdDeriv not implemented");
-}
 } // namespace qmcplusplus

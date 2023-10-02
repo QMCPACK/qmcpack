@@ -38,6 +38,7 @@ public:
   using POLT    = PtclOnLatticeTraits;
   using Lattice = POLT::ParticleLayout;
   using QMCT    = QMCTraits;
+  using FullPrecRealType = QMCT::FullPrecRealType;
 
   /** Constructor for SpinDensityNew that contains an explicitly defined cell
    *  part of legacy input handling, Deprecated
@@ -84,7 +85,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng) override;
+                  RandomBase<FullPrecRealType>& rng) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of SpinDensityNew's data.

@@ -17,6 +17,7 @@
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+#include "RandomNumberControl.h"
 #if defined(QMC_BUILD_COMPLETE)
 //REMOVE Broken warping
 //#if !defined(QMC_COMPLEX)
@@ -40,7 +41,7 @@ std::unique_ptr<QMCDriverInterface> VMCFactory::create(const ProjectData& projec
   std::unique_ptr<QMCDriverInterface> qmc;
   if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
   {
-    qmc = std::make_unique<VMC>(project_data, w, psi, h, comm, enable_profiling);
+    qmc = std::make_unique<VMC>(project_data, w, psi, h, RandomNumberControl::Children, comm, enable_profiling);
   }
   else if (VMCMode == 2 || VMCMode == 3)
   {

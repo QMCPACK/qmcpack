@@ -19,6 +19,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include "RandomNumberControl.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCDrivers/VMC/VMC.h"
@@ -647,7 +648,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
 
   // Destroy old object to stop timer to correctly order timer with object lifetime scope
   vmcEngine.reset(nullptr);
-  vmcEngine = std::make_unique<VMC>(project_data_, W, Psi, H, myComm, false);
+  vmcEngine = std::make_unique<VMC>(project_data_, W, Psi, H, RandomNumberControl::Children, myComm, false);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
 
@@ -1373,7 +1374,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || std::isnan(newCost))
+  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)

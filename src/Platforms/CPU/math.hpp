@@ -98,6 +98,14 @@ inline bool iszero(T a)
   return std::fpclassify(a) == FP_ZERO;
 }
 
+/** return true if the value is NaN.
+ * std::isnan can be affected by compiler the -ffast-math option and return true constantly.
+ * The customized qmcplusplus::isnan should be always effective.
+ * This requires its definition compiled without -ffast-math.
+ */
+bool isnan(float);
+bool isnan(double);
+
 }
 
 #endif

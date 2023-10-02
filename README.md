@@ -16,11 +16,33 @@ particular emphasis is placed on code quality and reproducibility.
 
 # Obtaining and installing QMCPACK
 
- Obtain the latest release from https://github.com/QMCPACK/qmcpack/releases or clone the development source from
- https://github.com/QMCPACK/qmcpack. A full installation guide and steps to perform an initial QMC calculation are given in the
- [extensive online documentation for QMCPACK](https://qmcpack.readthedocs.io/en/develop/index.html).
+Obtain the latest release from https://github.com/QMCPACK/qmcpack/releases or clone the development source from
+https://github.com/QMCPACK/qmcpack. A full installation guide and steps to perform an initial QMC calculation are given in the
+[extensive online documentation for QMCPACK](https://qmcpack.readthedocs.io/en/develop/index.html).
 
-# Prerequisites
+The [CHANGELOG.md](CHANGELOG.md) describes key changes made in each release as well as any major changes to the development version.
+
+# Documentation and support
+
+For more information, consult QMCPACK pages at http://www.qmcpack.org, the manual at
+https://qmcpack.readthedocs.io/en/develop/index.html, or its sources in the docs directory.
+
+If you have trouble using or building QMCPACK, or have questions about its use, please post to the [Google QMCPACK
+group](https://groups.google.com/forum/#!forum/qmcpack), create a GitHub issue at https://github.com/QMCPACK/qmcpack/issues or
+contact a developer.
+
+# Learning about Quantum Monte Carlo
+
+To learn about the fundamentals of Quantum Monte Carlo through to their practical application to molecular and solid-state systems with
+QMCPACK, see the [materials and tutorials from our most recent QMC workshop](https://github.com/QMCPACK/qmc_workshop_2021). These include a virtual machine
+to run examples without having to install QMCPACK yourself, and slides and recorded videos of introductory talks through to spin-orbit QMC.
+
+# Citing QMCPACK
+
+Please cite J. Kim _et al._ J. Phys. Cond. Mat. **30** 195901 (2018), https://doi.org/10.1088/1361-648X/aab9c3, and if space allows,
+P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5.0004860 . These papers are both open access.
+
+# Installation Prerequisites
 
  * C++ 17 and C99 capable compilers. 
  * CMake v3.17.0 or later, build utility, http://www.cmake.org
@@ -36,39 +58,35 @@ particular emphasis is placed on code quality and reproducibility.
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
 over two years old may work but is discouraged and untested. Proprietary compilers (Intel, NVHPC) are generally supported over the
 same period but may require use of an exact version. We also aim to support the standard software environments on machines such as
-Summit at OLCF, Theta at ALCF, and Cori at NERSC. Use of the most recently released compilers and library versions is particularly
-encouraged for highest performance and easiest configuration.
+Frontier and Summit at OLCF, Aurora and Polaris at ALCF, and Perlmutter at NERSC. Use of the most recently released compilers and
+library versions is particularly encouraged for highest performance and easiest configuration.
 
-Nightly testing currently includes the following software versions on x86:
+Nightly testing currently includes at least the following software versions:
 
 * Compilers
-  * GCC 11.2.0, 9.2.0
-  * Clang/LLVM 13.0.0
-  * Intel 19.1.1.217 configured to use C++ library from GCC 9.1.0 
-  * NVIDIA HPC SDK 21.5 configured to use C++ library from GCC 9.1.0
-* Boost 1.77.0, 1.68.0
-* HDF5 1.12.1
+  * GCC 13.2.0, 11.4.0
+  * Clang/LLVM 16.0.6
+* Boost 1.83.0, 1.77.0
+* HDF5 1.14.2
 * FFTW 3.3.10, 3.3.8
-* CMake 3.21.1, 3.15.0
+* CMake 3.27.4, 3.21.3
 * MPI
-  * OpenMPI 4.1.1, 3.1.6
-  * Intel MPI 19.1.1.217
-* CUDA 11.4
+  * OpenMPI 4.1.5
+* CUDA 11.2
 
-Workflow tests are performed with Quantum Espresso v6.8.0 and PySCF v1.7.5. These check trial wavefunction generation and
+GitHub Actions-based tests include additional version combinations from within our two year support window. On a developmental basis
+we also check the latest Clang and GCC development versions, AMD Clang and Intel OneAPI compilers. 
+
+Workflow tests are currently performed with Quantum Espresso v7.2.0 and PySCF v2.2.0. These check trial wavefunction generation and
 conversion through to actual QMC runs.
-
-On a developmental basis we also check the latest Clang and GCC development versions, AMD AOMP and Intel OneAPI compilers.
 
 # Building with CMake
 
- The build system for QMCPACK is based on CMake.  It will auto-configure based on the detected compilers and libraries. Previously
- QMCPACK made extensive use of toolchains, but the system has since been updated to eliminate the use of toolchain files for most
- cases.  Specific compile options can be specified either through specific environment or CMake variables.  When the libraries are
- installed in standard locations, e.g., /usr, /usr/local, there is no need to set environment or CMake variables for the packages.
+The build system for QMCPACK is based on CMake.  It will auto-configure based on the detected compilers and libraries. When these 
+are installed in standard locations, e.g., /usr, /usr/local, there is no need to set either environment or CMake variables.
 
- See the manual linked at https://qmcpack.readthedocs.io/en/develop/ and https://www.qmcpack.org/documentation or buildable using
- sphinx from the sources in docs/. A PDF version is still available at https://qmcpack.readthedocs.io/_/downloads/en/develop/pdf/
+See the manual linked at https://qmcpack.readthedocs.io/en/develop/ and https://www.qmcpack.org/documentation or buildable using
+sphinx from the sources in docs/. A PDF version is still available at https://qmcpack.readthedocs.io/_/downloads/en/develop/pdf/
 
 ## Quick build
 
@@ -100,10 +118,10 @@ cmake ..
 make -j 8
 ```
 
- The complexities of modern computer hardware and software systems are
- such that you should check that the auto-configuration system has made
- good choices and picked optimized libraries and compiler settings
- before doing significant production. i.e. Check the details below.
+The complexities of modern computer hardware and software systems are
+such that you should check that the auto-configuration system has made
+good choices and picked optimized libraries and compiler settings
+before doing significant production. i.e. Check the details below.
 
 ## Set the environment
 
@@ -336,15 +354,6 @@ Individual tests can be run by specifying their name
 ctest -R name-of-test-to-run
 ```
 
-# Documentation and support
-
-For more information, consult QMCPACK pages at http://www.qmcpack.org, the manual at
-https://qmcpack.readthedocs.io/en/develop/index.html, or its sources in the docs directory.
-
-If you have trouble using or building QMCPACK, or have questions about its use, please post to the [Google QMCPACK
-group](https://groups.google.com/forum/#!forum/qmcpack), create a GitHub issue at https://github.com/QMCPACK/qmcpack/issues or
-contact a developer.
-
 # Contributing
 
 Contributions of any size are very welcome. Guidance for contributing to QMCPACK is included in Chapter 1 of the manual
@@ -355,3 +364,5 @@ group](https://groups.google.com/forum/#!forum/qmcpack), to create a GitHub issu
 advance.
 
 Contributions are made under the same UIUC/NCSA open source license that covers QMCPACK. Please contact us if this is problematic.
+
+

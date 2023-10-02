@@ -191,7 +191,7 @@ protected:
   {
 #if !defined(NDEBUG)
     auto g_mag = std::abs(dot(g, g));
-    if (std::isnan(g_mag))
+    if (qmcplusplus::isnan(g_mag))
       throw std::runtime_error("gradient of NaN");
     if (std::isinf(g_mag))
       throw std::runtime_error("gradient of inf");

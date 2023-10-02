@@ -6,47 +6,47 @@ on:
       - develop
       - main
   push:
-      branches:
+    branches:
       - develop
       - main
-          
+
 jobs:
   rebase:
     if: |
       contains(github.event.pull_request.body, '!-> Feel free to automatically rebase this PR. <-!')
       && github.event.pull_request.auto_merge
-       
+
     runs-on: ubuntu-latest
     steps:
-    - name: Echo Github Context To Debug
-      run: echo "$GITHUB_CONTEXT"
-      env: 
-        GITHUB_CONTEXT: ${{ toJSON(github) }}
-    - name: Checkout Action
-      uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
-    - name: Automatic Rebase
-      run: tests/test_automation/github-actions/ci/run_step.sh rebase
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        QMCPACK_BOT_GPG_KEY: ${{ secrets.QMCPACK_BOT_GPG_KEY }}
-        QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}
+      - name: Echo Github Context To Debug
+        run: echo "$GITHUB_CONTEXT"
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+      - name: Checkout Action
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
+      - name: Automatic Rebase
+        run: tests/test_automation/github-actions/ci/run_step.sh rebase
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QMCPACK_BOT_GPG_KEY: ${{ secrets.QMCPACK_BOT_GPG_KEY }}
+          QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}
 
   trigger-rebase:
     if: github.event_name == 'push'
 
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Action
-      uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
-    - name: Push Update To Opt'd in PR's
-      run: tests/test_automation/github-actions/ci/run_step.sh pull-rebase
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        QMCPACK_BOT_GPG_KEY: ${{ secrets.QMCPACK_BOT_GPG_KEY }}
-        QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}
+      - name: Checkout Action
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
+      - name: Push Update To Opt'd in PR's
+        run: tests/test_automation/github-actions/ci/run_step.sh pull-rebase
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QMCPACK_BOT_GPG_KEY: ${{ secrets.QMCPACK_BOT_GPG_KEY }}
+          QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}

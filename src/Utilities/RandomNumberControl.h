@@ -11,16 +11,19 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef OHMMS_RANDOMNUMBERCONTROL_H__
 #define OHMMS_RANDOMNUMBERCONTROL_H__
-#include <memory>
-#include <libxml/xpath.h>
+
+#include "Configuration.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
 #include "hdf/hdf_archive.h"
 #include "type_traits/template_types.hpp"
+
+#include <libxml/xpath.h>
+
+#include <memory>
 
 class Communicate;
 
@@ -36,10 +39,11 @@ namespace qmcplusplus
 class RandomNumberControl : public OhmmsElementBase
 {
 public:
-  using uint_type = RandomGenerator::uint_type;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using uint_type        = RandomBase<FullPrecRealType>::uint_type;
   static PrimeNumberSet<uint_type> PrimeNumbers;
   //children random number generator
-  static std::vector<std::unique_ptr<RandomGenerator>> Children;
+  static UPtrVector<RandomBase<FullPrecRealType>> Children;
 
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");
@@ -70,7 +74,7 @@ public:
    * @param fname file name
    * @param comm communicator
    */
-  static void write(const RefVector<RandomGenerator>& rng, const std::string& fname, Communicate* comm);
+  static void write(const RefVector<RandomBase<FullPrecRealType>>& rng, const std::string& fname, Communicate* comm);
   /** read random state from a hdf file in parallel
    * @param hin hdf_archive set to parallel
    * @param comm communicator
@@ -80,7 +84,7 @@ public:
    * @param hdf_archive set to parallel
    * @param comm communicator
    */
-  static void write_parallel(const RefVector<RandomGenerator>& rng, hdf_archive& hout, Communicate* comm);
+  static void write_parallel(const RefVector<RandomBase<FullPrecRealType>>& rng, hdf_archive& hout, Communicate* comm);
   /** rank 0 reads random states from a hdf file
    * and distributes them to all the other ranks
    * @param hin hdf_archive set to serial
@@ -92,7 +96,7 @@ public:
    * @param hin hdf_archive object set to serial
    * @param comm communicator
    */
-  static void write_rank_0(const RefVector<RandomGenerator>& rng, hdf_archive& hout, Communicate* comm);
+  static void write_rank_0(const RefVector<RandomBase<FullPrecRealType>>& rng, hdf_archive& hout, Communicate* comm);
 
 private:
   bool NeverBeenInitialized;

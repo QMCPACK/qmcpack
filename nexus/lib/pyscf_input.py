@@ -138,7 +138,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  calculation = None,     # obj w/ Calculation variables
                  chkfile     = None,     # obj w/ Calculation variables
                  twist_num   = None,     # Twist index
-                 python_exe  = 'python', # Python executable
+                 python_exe  = 'python3', # Python executable
                  ):
         if filepath is None and template is not None:
             filepath = template
