@@ -137,6 +137,40 @@ public:
     }
   }
 
+  inline void mw_evaluate(T* restrict r_list, T* restrict u, size_t nr, size_t maxnumsplines, T Rmax) const
+  {
+    for (size_t ir = 0; ir < nr; ir++)
+    {
+      if (r_list[ir] >= Rmax)
+      {
+        for (size_t i = 0; i < num_splines_; ++i)
+          u[ir * maxnumsplines + i] = 0.0;
+      }
+      else if (r_list[ir] < myGrid.lower_bound)
+      {
+        const T dr          = r_list[ir] - myGrid.lower_bound;
+        const T* restrict a = (*coeffs)[0];
+        for (size_t i = 0; i < num_splines_; ++i)
+          u[ir * maxnumsplines + i] = a[i] + first_deriv[i] * dr;
+      }
+      else
+      {
+        int loc;
+        const auto cL       = myGrid.getCLForQuintic(r_list[ir], loc);
+        const size_t offset = loc * 6;
+        //coeffs is an OhmmsMatrix and [] is a row access operator
+        //returning a pointer to 'row' which is normal type pointer []
+        const T* restrict a = (*coeffs)[offset + 0];
+        const T* restrict b = (*coeffs)[offset + 1];
+        const T* restrict c = (*coeffs)[offset + 2];
+        const T* restrict d = (*coeffs)[offset + 3];
+        const T* restrict e = (*coeffs)[offset + 4];
+        const T* restrict f = (*coeffs)[offset + 5];
+        for (size_t i = 0; i < num_splines_; ++i)
+          u[ir * maxnumsplines + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
+      }
+    }
+  }
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u) const
   {
     if (r < myGrid.lower_bound)

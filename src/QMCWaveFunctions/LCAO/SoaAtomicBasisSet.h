@@ -16,7 +16,6 @@
 
 #include "CPU/math.hpp"
 #include "OptimizableObject.h"
-#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -34,8 +33,6 @@ struct SoaAtomicBasisSet
   using RealType        = typename ROT::RealType;
   using GridType        = typename ROT::GridType;
   using ValueType       = typename QMCTraits::ValueType;
-  using PosType           = typename ParticleSet::PosType;
-  using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
 
   ///size of the basis set
   int BasisSetSize;
@@ -599,75 +596,6 @@ struct SoaAtomicBasisSet
     }
   }
 
-
-  /** evaluate V
-  */
-  inline void mw_evaluateV(const RefVectorWithLeader<const VirtualParticleSet>& vp_list, const std::vector<DistanceTableAB::DisplRow> displ_list, OffloadMWVArray& vals, const std::vector<ValueType> correctphase_list, const std::vector<size_t> BasisOffset, const size_t c)
-  {
-
-     const size_t nVPs = vals.size(0);
-
-     auto& vps_leader = vp_list.getLeader();
-     size_t index = 0;
-     
-     for (size_t iw = 0; iw < vp_list.size(); iw++)
-       for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
-       {
-          int TransX, TransY, TransZ;
-           
-          PosType dr_new;
-          RealType r_new;
-
-    RealType* restrict ylm_v = tempS.data(0);
-    RealType* restrict phi_r = tempS.data(1);
-    //auto&  psi= (*vals + BasisOffset[c]);
-
-    for (size_t ib = 0; ib < BasisSetSize; ++ib)
-      vals[ib] = 0;
-    //Phase_idx (iter) needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax)
-    int iter = -1;
-    for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
-    {
-      //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-      TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
-      for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
-      {
-        //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-        TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
-        for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
-        {
-          //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-          TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-
-          dr_new[0] = displ_list[index][c][0] + (TransX * vp_list[index].getLattice().R(0, 0) + TransY * vp_list[index].getLattice().R(1, 0) + TransZ * vp_list[index].getLattice().R(2, 0));
-          dr_new[1] = displ_list[index][c][1] + (TransX * vp_list[index].getLattice().R(0, 1) + TransY * vp_list[index].getLattice().R(1, 1) + TransZ * vp_list[index].getLattice().R(2, 1));
-          dr_new[2] = displ_list[index][c][2] + (TransX * vp_list[index].getLattice().R(0, 2) + TransY * vp_list[index].getLattice().R(1, 2) + TransZ * vp_list[index].getLattice().R(2, 2));
-
-          r_new = std::sqrt(dot(dr_new, dr_new));
-          iter++;
-          if (r_new >= Rmax)
-            continue;
-
-          Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
-          MultiRnl.evaluate(r_new, phi_r);
-          ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
-          const ValueType Phase = periodic_image_phase_factors[iter] * correctphase_list[index];
-          for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            vals[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase;
-            //psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase;
-
-	  index++;
-        }
-      }
-    }
-  }
-
-
-  }
-
-
-
-
   /** evaluate V
   */
   template<typename LAT, typename T, typename PosType, typename VT>
@@ -725,6 +653,122 @@ struct SoaAtomicBasisSet
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
             psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase;
         }
+      }
+    }
+  }
+
+  template<typename LAT, typename PosType, typename VT>
+  inline void mw_evaluateV_mvp(const LAT& lattice,
+                               const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                               VT* restrict psi,
+                               PosType* displ_list,
+                               PosType* restrict Tv_list,
+                               const size_t nVPs,
+                               const size_t nBasTot)
+  {
+    /*
+      vp_list[nw,nvp]
+      vp_basis_v[nw/nvp,nao]
+      displ_list[nw/nvp,xyz]
+      Tv_list[nw/nvp,xyz] 
+
+        images
+          walkers/VPs
+    */
+    int TransX, TransY, TransZ;
+    int Nx   = PBCImages[0] + 1;
+    int Ny   = PBCImages[1] + 1;
+    int Nz   = PBCImages[2] + 1;
+    int Nyz  = Ny * Nz;
+    int Nxyz = Nx * Nyz;
+
+
+    // TODO: manage this better? set in builder?
+    // maybe just do one image at a time?
+    size_t tmpSize = std::max(Ylm.size(), RnlID.size());
+    tempS.resize(nVPs * Nxyz * tmpSize);
+
+    RealType* restrict ylm_v = tempS.data(0);
+    RealType* restrict phi_r = tempS.data(1);
+
+    std::vector<PosType> dr_new;
+    std::vector<RealType> r_new;
+    std::vector<PosType> dr_pbc;
+    std::vector<ValueType> correctphase;
+    dr_pbc.resize(Nxyz);
+    dr_new.resize(Nxyz * nVPs);
+    r_new.resize(Nxyz * nVPs);
+    correctphase.resize(nVPs);
+
+    // should just do this once and store it (like with phase)
+    for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+    {
+      // is std::div any better than just % and / separately?
+      auto div_k  = std::div(i_xyz, Nz);
+      int k       = div_k.rem;
+      int ij      = div_k.quot;
+      auto div_ij = std::div(ij, Ny);
+      int j       = div_ij.rem;
+      int i       = div_ij.quot;
+      TransX      = ((i % 2) * 2 - 1) * ((i + 1) / 2);
+      TransY      = ((j % 2) * 2 - 1) * ((j + 1) / 2);
+      TransZ      = ((k % 2) * 2 - 1) * ((k + 1) / 2);
+      //TODO:
+      //  Trans = {TransX,Transy,TransZ};
+      //  dr_pbc[i_xyz] = dot(Trans, lattice.R);
+      dr_pbc[i_xyz][0] = (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+      dr_pbc[i_xyz][1] = (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+      dr_pbc[i_xyz][2] = (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+    }
+
+
+    size_t i_vp = 0;
+    for (size_t iw = 0; iw < vp_list.size(); iw++)
+    {
+      for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+      {
+        // clear psi vals for this center
+        // TODO: should we transpose so we have a dense block here and then copy back strided into vp_basis_v_mw?
+        for (size_t ib = 0; ib < BasisSetSize; ++ib)
+          psi[i_vp * nBasTot + ib] = 0;
+
+#if not defined(QMC_COMPLEX)
+        correctphase[i_vp] = 1.0;
+#else
+        RealType phasearg =
+            SuperTwist[0] * Tv_list[i_vp][0] + SuperTwist[1] * Tv_list[i_vp][1] + SuperTwist[2] * Tv_list[i_vp][2];
+        RealType s, c;
+        qmcplusplus::sincos(-phasearg, &s, &c);
+        correctphase[i_vp] = ValueType(c, s);
+#endif
+
+        for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+        {
+          dr_new[i_xyz + Nxyz * i_vp][0] = -(displ_list[i_vp][0] + dr_pbc[i_xyz][0]);
+          dr_new[i_xyz + Nxyz * i_vp][1] = -(displ_list[i_vp][1] + dr_pbc[i_xyz][1]);
+          dr_new[i_xyz + Nxyz * i_vp][2] = -(displ_list[i_vp][2] + dr_pbc[i_xyz][2]);
+
+          r_new[i_xyz + Nxyz * i_vp] = std::sqrt(dot(dr_new[i_xyz + Nxyz * i_vp], dr_new[i_xyz + Nxyz * i_vp]));
+        }
+        i_vp++;
+      }
+    }
+
+    // ylm_v and phi_r are nVPs * Nxyz * tmpSize
+    // tmpSize is max(Ylm.size(), RnlID.size())
+    MultiRnl.mw_evaluate(r_new.data(), phi_r, Nxyz * nVPs, tmpSize, Rmax);
+    // dr_new is [Nxyz * nVPs] postype
+    Ylm.mw_evaluateV(dr_new.data(), ylm_v, Nxyz * nVPs, tmpSize);
+    ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
+
+    for (size_t i_vp = 0; i_vp < nVPs; i_vp++)
+    {
+      for (size_t i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+      {
+        const ValueType Phase = periodic_image_phase_factors[i_xyz] * correctphase[i_vp];
+        for (size_t ib = 0; ib < BasisSetSize; ++ib)
+          psi[i_vp * nBasTot + ib] +=
+              ylm_v[(i_xyz + Nxyz * i_vp) * tmpSize + LM[ib]] * phi_r[(i_xyz + Nxyz * i_vp) * tmpSize + NL[ib]] * Phase;
       }
     }
   }
