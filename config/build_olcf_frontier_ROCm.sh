@@ -4,10 +4,15 @@
 # See https://github.com/QMCPACK/qmcpack/pull/4123 for more details on the module file if needed
 
 echo "Loading QMCPACK dependency modules for crusher"
-module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
-module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
-module load PrgEnv-amd amd/5.4.3
-module load  craype/2.7.16 # hard-coded version. 2.7.19 and 2.7.20 cause CC segfault.
+for module_name in PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd \
+                   amd amd-mixed gcc gcc-mixed cce cce-mixed
+do
+  if module is-loaded $module_name ; then module unload $module_name; fi
+done
+
+module load PrgEnv-amd amd/5.7.0
+unset HIP_PATH # it messed up clang as a HIP compiler.
+module load craype/2.7.16 # hard-coded version. 2.7.19/20/21 cause CC segfault.
 module unload cray-libsci
 module load cmake/3.22.2
 module load cray-fftw
@@ -20,7 +25,7 @@ export BOOST_ROOT=/ccs/proj/mat151/opt/boost/boost_1_81_0
 module list >& module_list.txt
 
 TYPE=Release
-Compiler=rocm543
+Compiler=rocm570
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -60,7 +65,7 @@ if [[ $name == *"cuda2hip"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DQMC_CUDA2HIP=ON -DCMAKE_HIP_ARCHITECTURES=gfx90a"
 fi
 
-folder=build_crusher_${Compiler}_${name}
+folder=build_frontier_${Compiler}_${name}
 
 if [[ -v install_folder ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX=$install_folder/$folder"

@@ -17,23 +17,24 @@
 
 
 #include "SPOSetBuilderFactory.h"
-#include "QMCWaveFunctions/SPOSetScanner.h"
-#include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
+#include "SPOSetScanner.h"
+#include "HarmonicOscillator/SHOSetBuilder.h"
+#include "PlaneWave/PWOrbitalSetBuilder.h"
 #include "ModernStringUtils.hpp"
-#include "QMCWaveFunctions/ElectronGas/FreeOrbitalBuilder.h"
+#include "ElectronGas/FreeOrbitalBuilder.h"
 #if OHMMS_DIM == 3
-#include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
+#include "LCAO/LCAOrbitalBuilder.h"
 
 #if defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
-#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
+#include "BsplineFactory/EinsplineSpinorSetBuilder.h"
+#include "LCAO/LCAOSpinorBuilder.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #endif
 #endif
-#include "QMCWaveFunctions/CompositeSPOSet.h"
+#include "CompositeSPOSet.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
@@ -104,6 +105,11 @@ std::unique_ptr<SPOSetBuilder> SPOSetBuilderFactory::createSPOSetBuilder(xmlNode
   {
     app_log() << "Harmonic Oscillator SPO set" << std::endl;
     bb = std::make_unique<SHOSetBuilder>(targetPtcl, myComm);
+  }
+  else if (type == "PWBasis" || type == "PW" || type == "pw")
+  {
+    app_log() << "Planewave basis SPO set" << std::endl;
+    bb = std::make_unique<PWOrbitalSetBuilder>(targetPtcl, myComm, rootNode);
   }
 #if OHMMS_DIM == 3
   else if (type.find("spline") < type.size())

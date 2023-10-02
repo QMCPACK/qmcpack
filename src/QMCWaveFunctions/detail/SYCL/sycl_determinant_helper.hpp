@@ -22,14 +22,14 @@ namespace qmcplusplus
 {
 template<typename T>
 sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                               const std::vector<sycl::event>& dependencies,
                                const int* delay_list_gpu,
                                const int delay_count,
                                T* temp_gpu,
                                const int numorbs,
                                const int ndelay,
                                T* V_gpu,
-                               const T* Ainv);
+                               const T* Ainv,
+                               const std::vector<sycl::event>& dependencies = {});
 
 template<typename T, typename TMAT, typename INDEX>
 std::complex<T> computeLogDet_sycl(sycl::queue& aq,

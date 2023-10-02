@@ -21,7 +21,7 @@
  * - EinsplineSetBuilder
  * -
 */
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include <Message/UniformCommunicateError.h>

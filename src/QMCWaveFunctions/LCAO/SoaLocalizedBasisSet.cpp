@@ -270,10 +270,21 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
 }
 
 template<class COT, typename ORBT>
+///<<<<<<< VirtualParticle_AO_batched
 void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                                            OffloadMWVArray& vp_basis_v)
 {
   mw_evaluateV_mvp(vp_list, vp_basis_v);
+///=======
+///void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+///                                                          OffloadMWVArray& v)
+///{
+/// assert(BasisSetSize == v.size(1));
+///  size_t index = 0;
+///  for (size_t iw = 0; iw < vp_list.size(); iw++)
+///    for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+///      evaluateV(vp_list[iw], iat, v.data_at(index++, 0));
+///>>>>>>> develop
 }
 
 
