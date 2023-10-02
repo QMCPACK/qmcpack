@@ -722,7 +722,7 @@ struct SoaAtomicBasisSet
     for (size_t iw = 0; iw < nw; iw++)
     {
       // clear psi vals for this center
-      // TODO: should we transpose so we have a dense block here and then copy back strided into vp_basis_v_mw?
+      // TODO: should we transpose so we have a dense block here and then copy back strided into basis_v_mw?
       for (size_t ib = 0; ib < BasisSetSize; ++ib)
         psi[iw * nBasTot + ib] = 0;
 
@@ -746,10 +746,10 @@ struct SoaAtomicBasisSet
       }
     }
 
-    // ylm_v and phi_r are nVPs * Nxyz * tmpSize
+    // ylm_v and phi_r are nw * Nxyz * tmpSize
     // tmpSize is max(Ylm.size(), RnlID.size())
     MultiRnl.mw_evaluate(r_new.data(), phi_r, Nxyz * nw, tmpSize, Rmax);
-    // dr_new is [Nxyz * nVPs] postype
+    // dr_new is [Nxyz * nw] postype
     Ylm.mw_evaluateV(dr_new.data(), ylm_v, Nxyz * nw, tmpSize);
     ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
 
