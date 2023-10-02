@@ -657,6 +657,114 @@ struct SoaAtomicBasisSet
     }
   }
 
+
+  template<typename LAT, typename PosType, typename VT>
+  inline void mw_evaluateV(const LAT& lattice,
+                           VT* restrict psi,
+                           PosType* displ_list,
+                           PosType* restrict Tv_list,
+                           const size_t nw,
+                           const size_t nBasTot)
+  {
+    /*
+      psi: pointer into [nw,nBastot] at [0,BasisOfset[current_center]]
+           stride by nBasTot for each walker
+    */
+    int TransX, TransY, TransZ;
+    int Nx   = PBCImages[0] + 1;
+    int Ny   = PBCImages[1] + 1;
+    int Nz   = PBCImages[2] + 1;
+    int Nyz  = Ny * Nz;
+    int Nxyz = Nx * Nyz;
+
+
+    // TODO: manage this better? set in builder?
+    // maybe just do one image at a time?
+    size_t tmpSize = std::max(Ylm.size(), RnlID.size());
+    tempS.resize(nw * Nxyz * tmpSize);
+
+    RealType* restrict ylm_v = tempS.data(0);
+    RealType* restrict phi_r = tempS.data(1);
+
+    std::vector<PosType> dr_new;
+    std::vector<RealType> r_new;
+    std::vector<PosType> dr_pbc;
+    std::vector<ValueType> correctphase;
+    dr_pbc.resize(Nxyz);
+    dr_new.resize(Nxyz * nw);
+    r_new.resize(Nxyz * nw);
+    correctphase.resize(nw);
+
+    // translation vectors over all images
+    // should just do this once and store it (like with phase)
+    for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+    {
+      // is std::div any better than just % and / separately?
+      auto div_k  = std::div(i_xyz, Nz);
+      int k       = div_k.rem;
+      int ij      = div_k.quot;
+      auto div_ij = std::div(ij, Ny);
+      int j       = div_ij.rem;
+      int i       = div_ij.quot;
+      TransX      = ((i % 2) * 2 - 1) * ((i + 1) / 2);
+      TransY      = ((j % 2) * 2 - 1) * ((j + 1) / 2);
+      TransZ      = ((k % 2) * 2 - 1) * ((k + 1) / 2);
+      //TODO:
+      //  Trans = {TransX,Transy,TransZ};
+      //  dr_pbc[i_xyz] = dot(Trans, lattice.R);
+      dr_pbc[i_xyz][0] = (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+      dr_pbc[i_xyz][1] = (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+      dr_pbc[i_xyz][2] = (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+    }
+
+
+    size_t i_vp = 0;
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      // clear psi vals for this center
+      // TODO: should we transpose so we have a dense block here and then copy back strided into basis_v_mw?
+      for (size_t ib = 0; ib < BasisSetSize; ++ib)
+        psi[iw * nBasTot + ib] = 0;
+
+#if not defined(QMC_COMPLEX)
+      correctphase[iw] = 1.0;
+#else
+      RealType phasearg =
+          SuperTwist[0] * Tv_list[iw][0] + SuperTwist[1] * Tv_list[iw][1] + SuperTwist[2] * Tv_list[iw][2];
+      RealType s, c;
+      qmcplusplus::sincos(-phasearg, &s, &c);
+      correctphase[iw] = ValueType(c, s);
+#endif
+
+      for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+      {
+        dr_new[i_xyz + Nxyz * iw][0] = -(displ_list[iw][0] + dr_pbc[i_xyz][0]);
+        dr_new[i_xyz + Nxyz * iw][1] = -(displ_list[iw][1] + dr_pbc[i_xyz][1]);
+        dr_new[i_xyz + Nxyz * iw][2] = -(displ_list[iw][2] + dr_pbc[i_xyz][2]);
+
+        r_new[i_xyz + Nxyz * iw] = std::sqrt(dot(dr_new[i_xyz + Nxyz * iw], dr_new[i_xyz + Nxyz * iw]));
+      }
+    }
+
+    // ylm_v and phi_r are nw * Nxyz * tmpSize
+    // tmpSize is max(Ylm.size(), RnlID.size())
+    MultiRnl.mw_evaluate(r_new.data(), phi_r, Nxyz * nw, tmpSize, Rmax);
+    // dr_new is [Nxyz * nw] postype
+    Ylm.mw_evaluateV(dr_new.data(), ylm_v, Nxyz * nw, tmpSize);
+    ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
+
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      for (size_t i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+      {
+        const ValueType Phase = periodic_image_phase_factors[i_xyz] * correctphase[iw];
+        for (size_t ib = 0; ib < BasisSetSize; ++ib)
+          psi[iw * nBasTot + ib] +=
+              ylm_v[(i_xyz + Nxyz * iw) * tmpSize + LM[ib]] * phi_r[(i_xyz + Nxyz * iw) * tmpSize + NL[ib]] * Phase;
+      }
+    }
+  }
+
   template<typename LAT, typename PosType, typename VT>
   inline void mw_evaluateV_mvp(const LAT& lattice,
                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
