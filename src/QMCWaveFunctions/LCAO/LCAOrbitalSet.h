@@ -109,11 +109,7 @@ public:
                                       std::vector<ValueType>& ratios,
                                       std::vector<GradType>& grads) const final;
 
-  void evaluateVGH(const ParticleSet& P,
-                   int iat,
-                   ValueVector& psi,
-                   GradVector& dpsi,
-                   HessVector& grad_grad_psi) final;
+  void evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi) final;
 
   void evaluateVGHGH(const ParticleSet& P,
                      int iat,
@@ -308,6 +304,10 @@ private:
                                 int iat,
                                 OffloadMWVArray& phi_v) const;
 
+  /// packed walker GEMM implementation with multi virtual particle sets
+  void mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                   OffloadMWVArray& phi_v) const;
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
   /// timer for basis set

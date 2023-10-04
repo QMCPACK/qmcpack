@@ -1,7 +1,7 @@
 #!/bin/bash
 # This recipe is intended for OLCF Summit https://www.olcf.ornl.gov/summit/
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Aug 29th 2022
+# last revision: Oct 3rd 2023
 #
 # How to invoke this script?
 # build_olcf_summit_Clang.sh # build all the variants assuming the current directory is the source directory.
@@ -28,13 +28,13 @@ if [[ ! -d /gpfs/alpine/mat151/world-shared/opt/modules ]] ; then
   exit 1
 fi
 module use /gpfs/alpine/mat151/world-shared/opt/modules
-module load llvm/release-15.0.0-cuda11.0
+module load llvm/release-17.0.2-cuda11.0
 
 module list >& module_list.txt
 
 TYPE=Release
 Machine=summit
-Compiler=Clang15
+Compiler=Clang17
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -67,11 +67,15 @@ if [[ $name == *"_MP"* ]]; then
 fi
 
 if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DOFFLOAD_ARCH=sm_70"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON"
 fi
 
 if [[ $name == *"cuda"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=70"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON"
+fi
+
+if [[ $name == *"offload"* || $name == *"cuda"* ]]; then
+  CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=sm_70"
 fi
 
 folder=build_${Machine}_${Compiler}_${name}
