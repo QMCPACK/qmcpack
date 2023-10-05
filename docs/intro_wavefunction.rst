@@ -924,8 +924,9 @@ Combining orbitals is complicated by the need to maintain the normalization of t
 orbitals.
 A rotation matrix will preserve the normalization of the vectors in linear combinations.
 However the entries in a rotation matrix are not independent.
-A rotation matrix can alternatively be expressed as the matrix exponential of a skew-symmetric matrix.
+A rotation matrix can alternatively be expressed as the matrix exponential of a skew-symmetric matrix: :math:`R = \exp(\kappa)`.
 The entries in that skew-symmetric matrix are independent and can form an independent set of optimizable parameters.
+
 
 Optimizable orbitals are given in the input file by enclosing an SPO
 in an `rotated_sposet` element.  The `determinant` element `id` attribute should reference the name of the rotated sposet.
@@ -945,11 +946,13 @@ The `rotated_sposet` element requires use of the updated `sposet_collection` sty
 
 Attribute:
 
-+-----------------+----------+----------+---------+-------------------------+
-| Name            | Datatype | Values   | Default | Description             |
-+=================+==========+==========+=========+=========================+
-| ``name``        | Text     |          |         | Name of rotated SPOSet  |
-+-----------------+----------+----------+---------+-------------------------+
++-----------------+----------+----------------+---------+------------------------------------+
+| Name            | Datatype | Values         | Default | Description                        |
++=================+==========+================+=========+====================================+
+| ``name``        | Text     |                |         | Name of rotated SPOSet             |
++-----------------+----------+----------------+---------+------------------------------------+
+| ``method``      | Text     | global/history | global  | Rotation matrix composition method |
++-----------------+----------+----------------+---------+------------------------------------+
 
 .. code-block::
    :caption: Orbital Rotation XML element.
@@ -973,6 +976,39 @@ Attribute:
 The `opt_vars` element can be used to specify initial rotation parameters.
 The parameters are given as a space-separated list of numbers in the element text.
 The length of this list must match the expected number of rotation parameters.
+
+Composing rotations
+~~~~~~~~~~~~~~~~~~~
+
+Rotation matrices do not commute, which consequently means the entries in the kappa matrix
+do not simply add when combining rotations.
+The parameters tracked for optimization are those for which the parameter derivatives are possibly non-zero.
+Rotations from one occupied orbital to another, or from on unoccupied orbital to another, have
+no effect on the energy, and hence have a zero parameter derivative.
+These parameters are a subset of the full number of parameters in the kappa matrix.
+When rotations are combined, the entries corresponding to zero parameter derivatives can
+take on a non-zero value (i.e. the kappa matrix gets 'filled-in').
+
+There are two ways to handle this.
+One way is to store a list of applied rotations.
+This method applies a new rotation to the coefficient matrix, and updates the coefficient matrix at each optimization step.
+This is the "history" method.
+
+.. math:: C' = \exp(\kappa_n) \dots \exp(\kappa_1) \exp(\kappa_0) C
+
+The other way is to track the full set of kappa values separately.
+After the matrix multiplication to compose the rotations, the matrix log recovers the new kappa matrix entries.
+This is the "global" method.
+This method keeps a separate copy of the coefficient matrix and updates it using the global rotation matrix at each optimization step.
+
+.. math:: \kappa_{new} &= \ln( \exp(\kappa_{\Delta}) \exp(\kappa_{old}) ) \\
+                    C' &= \exp(\kappa_{new}) C
+
+Another consequence is the rotation parameters printed in the output are meaningless past the first rotation.
+Internally, the rotation code deals only with the difference between parameters at each step.
+
+This also means that extra information needs to be stored with the results of the optimization.
+The extra information is stored in the VP HDF file.
 
 .. _backflow:
 
