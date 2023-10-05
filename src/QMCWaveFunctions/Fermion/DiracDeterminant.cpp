@@ -64,7 +64,49 @@ void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix& logdetT, ValueMatr
 {
   ScopedTimer local_timer(InverseTimer);
   if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
-    updateEng.invert_transpose(logdetT, invMat, log_value_);
+  {
+    bool success        = false;
+    int failure_counter = 0;
+    do
+    {
+      try
+      {
+        updateEng.invert_transpose(logdetT, invMat, log_value_);
+        if (failure_counter > 0)
+        {
+          std::ostringstream success_msg;
+          success_msg << "Successful rerun matrix inversion on Rank " << OHMMS::Controller->rank() << " Thread "
+                      << omp_get_thread_num() << std::endl;
+          std::cerr << success_msg.str();
+        }
+        success = true;
+      }
+      catch (const std::exception& e)
+      {
+        failure_counter++;
+        std::ostringstream err_msg;
+        err_msg << failure_counter << "th matrix inversion on Rank " << OHMMS::Controller->rank() << " Thread "
+                << omp_get_thread_num() << " which failed earlier with an error:\n  " << e.what() << std::endl;
+        std::cerr << err_msg.str();
+        if (failure_counter == 1)
+        {
+          //record the bad matrix to a file at the first failure
+          std::ostringstream matfname;
+          matfname << "badmatrix.r" << OHMMS::Controller->rank() << "t" << omp_get_thread_num() << ".txt";
+          std::ofstream matfile(matfname.str().c_str(), std::ios::app);
+          matfile << std::setprecision(14) << std::scientific;
+          for (size_t i = 0; i < logdetT.rows(); i++)
+          {
+            for (size_t j = 0; j < logdetT.cols(); j++)
+              matfile << "  " << logdetT[i][j];
+            matfile << std::endl;
+          }
+        }
+      }
+    } while (!success && failure_counter < 5); // try 5 times at maximum
+    if (!success)
+      throw std::runtime_error("Matrix inversion failed after " + std::to_string(failure_counter) + " attempts.\n");
+  }
   else
   {
     host_inverter_.invert_transpose(logdetT, invMat, log_value_);

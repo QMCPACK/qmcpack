@@ -167,7 +167,6 @@ public:
     {
       std::ostringstream err;
       err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
-      std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
     make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream_);
@@ -186,7 +185,6 @@ public:
     {
       std::ostringstream err;
       err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
-      std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
   }
