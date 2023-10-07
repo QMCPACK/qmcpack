@@ -19,7 +19,6 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsArray.h"
-#include "CPU/SIMD/simd.hpp"
 #include "CPU/BLAS.hpp"
 #include "CPU/math.hpp"
 

@@ -18,8 +18,7 @@
 #include "DiracDeterminant.h"
 #include <stdexcept>
 #include "CPU/BLAS.hpp"
-#include "CPU/SIMD/simd.hpp"
-#include "Numerics/DeterminantOperators.h"
+#include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/MatrixOperators.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #ifndef QMC_COMPLEX

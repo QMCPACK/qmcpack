@@ -20,7 +20,7 @@
 #ifndef QMC_COMPLEX
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #endif
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 #include <cassert>
 
 namespace qmcplusplus

@@ -11,7 +11,7 @@
 
 #include <type_traits>
 #include "Platforms/CPU/BLAS.hpp"
-#include "Platforms/CPU/SIMD/simd.hpp"
+#include "Platforms/CPU/SIMD/algorithm.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "type_traits/complex_help.hpp"

@@ -19,7 +19,7 @@
 #include "CPU/BLAS.hpp"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsPETE/Tensor.h"
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 #include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
