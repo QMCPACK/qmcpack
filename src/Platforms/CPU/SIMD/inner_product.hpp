@@ -24,69 +24,53 @@
 #define QMCPLUSPLUS_INNER_PRODUCT_HPP
 
 #include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/Tensor.h"
 
 namespace qmcplusplus
 {
 namespace simd
 {
-///inner product
-template<typename T1, typename T2, typename T3>
-inline T3 inner_product_n(const T1* restrict a, const T2* restrict b, int n, T3 res)
-{
-  for (int i = 0; i < n; ++i)
-    res += a[i] * b[i];
-  return res;
-}
-
 /** dot product
-     * @param a starting address of an array of type T
-     * @param b starting address of an array of type T
-     * @param n size
-     * @param res initial value, default=0.0
-     * @return  \f$ res = \sum_i a[i] b[i]\f$
-     *
-     * same as inner_product(a,a+n,b,0.0)
-     * The arguments of this inline function are different from BLAS::dot
-     * This is more efficient than BLAS::dot due to the function overhead,
-     * if a compiler knows how to inline.
-     */
-template<typename T>
-inline T dot(const T* restrict a, const T* restrict b, int n, T res = T())
+ * @param a starting address of an array of type T
+ * @param b starting address of an array of type T
+ * @param n size
+ * @param res initial value, can be used to override precision in reduction
+ * @return  \f$ res = \sum_i a[i] b[i]\f$
+ */
+template<typename T, typename TRES = T>
+inline T dot(const T* restrict a, const T* restrict b, int n, TRES res = TRES())
 {
   for (int i = 0; i < n; i++)
     res += a[i] * b[i];
   return res;
 }
 
-/** inline dot product 
-     * @param a starting address of an array of type T
-     * @param b starting address of an array of type TinyVector<T,D>
-     * @param n size
-     * @return \f$ {\bf v} = \sum_i a[i] {\bf b}[i]\f$
-     */
-template<class T, unsigned D>
-inline Tensor<T, D> dot(const T* a, const Tensor<T, D>* b, int n)
+/** inline dot product
+ * @param a starting address of an array of type T
+ * @param b starting address of an array of type TinyVector<T,D>
+ * @param n size
+ * @param res initial value, can be used to override precision in reduction
+ */
+template<class T, unsigned D, class TRES = T>
+inline TinyVector<T, D> dot(const T* a, const TinyVector<T, D>* b, int n, TinyVector<TRES, D> res = TinyVector<T, D>())
 {
-  Tensor<T, D> res;
-  //#if defined(USE_GEMV_FOR_G_DOT_V)
-  //        BLAS::gemv(n,3,b->data(),a,res.data());
-  //#else
   for (int i = 0; i < n; i++)
     res += a[i] * b[i];
-  //#endif
   return res;
 }
 
-template<class T, unsigned D>
-inline TinyVector<T, D> dot(const T* a, const TinyVector<T, D>* b, int n)
+/** inline dot product
+ * @param a starting address of an array of type T
+ * @param b starting address of an array of type Tensor<T, D>
+ * @param n size
+ * @param res initial value, can be used to override precision in reduction
+ * @return \f$ {\bf v} = \sum_i a[i] {\bf b}[i]\f$
+ */
+template<class T, unsigned D, class TRES = T>
+inline Tensor<T, D> dot(const T* a, const Tensor<T, D>* b, int n, Tensor<TRES, D> res = Tensor<TRES, D>())
 {
-  TinyVector<T, D> res;
-#if defined(USE_GEMV_FOR_G_DOT_V)
-  BLAS::gemv(n, 3, b->data(), a, res.data());
-#else
   for (int i = 0; i < n; i++)
     res += a[i] * b[i];
-#endif
   return res;
 }
 
