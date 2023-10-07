@@ -22,7 +22,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "CPU/BLAS.hpp"
-#include "CPU/SIMD/inner_product.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
 {

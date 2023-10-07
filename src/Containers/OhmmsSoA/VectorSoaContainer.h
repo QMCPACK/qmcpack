@@ -20,7 +20,6 @@
 
 #include <type_traits>
 #include "CPU/SIMD/aligned_allocator.hpp"
-#include "CPU/SIMD/algorithm.hpp"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsSoA/PosTransformer.h"
