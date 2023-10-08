@@ -187,6 +187,10 @@ public:
       err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
       throw std::runtime_error(err.str());
     }
+
+    for(int i = 0; i < norb; i++)
+      if (qmcplusplus::isnan(Ainv[i][i]))
+        throw std::runtime_error("Ainv[i][i] is NaN. i = " + std::to_string(i));
   }
 };
 } // namespace qmcplusplus
