@@ -410,8 +410,10 @@ public:
 
   void setRandomGenerator(RandomBase<FullPrecRealType>* rng);
 
-  static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
-  static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  /// accumulate local energy and update Observables and PropertyList
+  static void updateComponent(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  /// extract kinetic and potential energies.
+  static void updateKinetic(QMCHamiltonian& ham, ParticleSet& pset);
 
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
