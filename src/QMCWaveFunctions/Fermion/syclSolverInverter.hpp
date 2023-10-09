@@ -134,7 +134,7 @@ public:
     m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT)).wait();
 
     for(int i = 0; i < norb; i++)
-      if (qmcplusplus::isnan(Ainv[i][i]))
+      if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
         throw std::runtime_error("Ainv[i][i] is NaN. i = " + std::to_string(i));
   }
 };
