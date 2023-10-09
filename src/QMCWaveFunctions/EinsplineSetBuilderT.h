@@ -27,7 +27,7 @@
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDERT_H
 
 #include "QMCWaveFunctions/BandInfo.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "QMCWaveFunctions/BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderT.h"
 
 #include <filesystem>
@@ -40,7 +40,7 @@ class Communicate;
 namespace qmcplusplus
 {
 /// forward declaration of BsplineReaderBase
-template <typename T>
+template<typename T>
 class BsplineReaderBaseT;
 
 // Helper needed for TwistMap
@@ -122,211 +122,188 @@ class BsplineReaderBaseT;
 
 /** EinsplineSet builder
  */
-template <typename T>
+template<typename T>
 class EinsplineSetBuilderT : public SPOSetBuilderT<T>
 {
 public:
-    static constexpr auto DIM = ParticleSetT<T>::DIM;
+  static constexpr auto DIM = ParticleSetT<T>::DIM;
 
-    using PSetMap =
-        std::map<std::string, const std::unique_ptr<ParticleSetT<T>>>;
-    using UnitCellType =
-        CrystalLattice<typename ParticleSetT<T>::Scalar_t, DIM>;
-    using RealType = typename SPOSetBuilderT<T>::RealType;
-    using PosType = typename SPOSetBuilderT<T>::PosType;
-    using ComplexType = typename SPOSetT<T>::ComplexType;
+  using PSetMap      = std::map<std::string, const std::unique_ptr<ParticleSetT<T>>>;
+  using UnitCellType = CrystalLattice<typename ParticleSetT<T>::Scalar_t, DIM>;
+  using RealType     = typename SPOSetBuilderT<T>::RealType;
+  using PosType      = typename SPOSetBuilderT<T>::PosType;
+  using ComplexType  = typename SPOSetT<T>::ComplexType;
 
-    /// reference to the particleset pool
-    const PSetMap& ParticleSets;
-    /// quantum particle set
-    ParticleSetT<T>& TargetPtcl;
-    /// ionic system
-    ParticleSetT<T>* SourcePtcl;
+  /// reference to the particleset pool
+  const PSetMap& ParticleSets;
+  /// quantum particle set
+  ParticleSetT<T>& TargetPtcl;
+  /// ionic system
+  ParticleSetT<T>* SourcePtcl;
 
-    /**  Helper vector for sorting bands
+  /**  Helper vector for sorting bands
      */
-    std::vector<std::unique_ptr<std::vector<BandInfo>>> FullBands;
+  std::vector<std::unique_ptr<std::vector<BandInfo>>> FullBands;
 
-    /// reader to use BsplineReaderBase
-    std::unique_ptr<BsplineReaderBaseT<T>> MixedSplineReader;
+  /// reader to use BsplineReaderBase
+  std::unique_ptr<BsplineReaderBaseT<T>> MixedSplineReader;
 
-    /// This is true if we have the orbital derivatives w.r.t. the ion positions
-    bool HaveOrbDerivs;
-    /// root XML node with href, sort, tilematrix, twistnum, source,
-    /// precision,truncate,version
-    xmlNodePtr XMLRoot;
+  /// This is true if we have the orbital derivatives w.r.t. the ion positions
+  bool HaveOrbDerivs;
+  /// root XML node with href, sort, tilematrix, twistnum, source,
+  /// precision,truncate,version
+  xmlNodePtr XMLRoot;
 
-    std::map<H5OrbSet, SPOSetT<T>*, H5OrbSet> SPOSetMap;
+  std::map<H5OrbSet, SPOSetT<T>*, H5OrbSet> SPOSetMap;
 
-    /// constructor
-    EinsplineSetBuilderT(ParticleSetT<T>& p, const PSetMap& psets,
-        Communicate* comm, xmlNodePtr cur);
+  /// constructor
+  EinsplineSetBuilderT(ParticleSetT<T>& p, const PSetMap& psets, Communicate* comm, xmlNodePtr cur);
 
-    /// destructor
-    ~EinsplineSetBuilderT() override;
+  /// destructor
+  ~EinsplineSetBuilderT() override;
 
-    /** initialize the Antisymmetric wave function for electrons
+  /** initialize the Antisymmetric wave function for electrons
      * @param cur the current xml node
      */
-    std::unique_ptr<SPOSetT<T>>
-    createSPOSetFromXML(xmlNodePtr cur) override;
+  std::unique_ptr<SPOSetT<T>> createSPOSetFromXML(xmlNodePtr cur) override;
 
-    /** initialize with the existing SPOSet */
-    std::unique_ptr<SPOSetT<T>>
-    createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) override;
+  /** initialize with the existing SPOSet */
+  std::unique_ptr<SPOSetT<T>> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) override;
 
-    //////////////////////////////////////
-    // HDF5-related data  and functions //
-    //////////////////////////////////////
-    hdf_archive H5File;
-    std::filesystem::path H5FileName;
-    // HDF5 orbital file version
-    typedef enum
-    {
-        QMCPACK,
-        ESHDF
-    } FormatType;
-    FormatType Format;
-    TinyVector<int, 3> Version;
-    std::string parameterGroup, ionsGroup, eigenstatesGroup;
-    std::vector<int> Occ;
-    bool
-    ReadOrbitalInfo(bool skipChecks = false);
-    bool
-    ReadOrbitalInfo_ESHDF(bool skipChecks = false);
-    void
-    BroadcastOrbitalInfo();
-    bool
-    CheckLattice();
+  //////////////////////////////////////
+  // HDF5-related data  and functions //
+  //////////////////////////////////////
+  hdf_archive H5File;
+  std::filesystem::path H5FileName;
+  // HDF5 orbital file version
+  typedef enum
+  {
+    QMCPACK,
+    ESHDF
+  } FormatType;
+  FormatType Format;
+  TinyVector<int, 3> Version;
+  std::string parameterGroup, ionsGroup, eigenstatesGroup;
+  std::vector<int> Occ;
+  bool ReadOrbitalInfo(bool skipChecks = false);
+  bool ReadOrbitalInfo_ESHDF(bool skipChecks = false);
+  void BroadcastOrbitalInfo();
+  bool CheckLattice();
 
-    /** read gvectors for each twist
+  /** read gvectors for each twist
      * @return true, if psi_g is found
      */
-    bool
-    ReadGvectors_ESHDF();
+  bool ReadGvectors_ESHDF();
 
-    Tensor<double, OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice,
-        GGt;
-    UnitCellType SuperCell, PrimCell, PrimCellInv;
-    int NumBands, NumElectrons, NumSpins, NumTwists;
-    int MaxNumGvecs;
-    double MeshFactor;
-    RealType MatchingTol;
-    TinyVector<int, 3> MeshSize;
-    std::vector<std::vector<TinyVector<int, 3>>> Gvecs;
+  Tensor<double, OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice, GGt;
+  UnitCellType SuperCell, PrimCell, PrimCellInv;
+  int NumBands, NumElectrons, NumSpins, NumTwists;
+  int MaxNumGvecs;
+  double MeshFactor;
+  RealType MatchingTol;
+  TinyVector<int, 3> MeshSize;
+  std::vector<std::vector<TinyVector<int, 3>>> Gvecs;
 
-    Vector<int> IonTypes;
-    Vector<TinyVector<double, OHMMS_DIM>> IonPos;
-    // mapping the ions in the supercell to the primitive cell
-    std::vector<int> Super2Prim;
+  Vector<int> IonTypes;
+  Vector<TinyVector<double, OHMMS_DIM>> IonPos;
+  // mapping the ions in the supercell to the primitive cell
+  std::vector<int> Super2Prim;
 
-    /////////////////////////////
-    // Twist angle information //
-    /////////////////////////////
-    // The "true" twist number after analyzing twistnum, twist XML input and h5
-    int twist_num_;
-    // primitive cell k-points from DFT calculations
-    std::vector<TinyVector<double, OHMMS_DIM>> primcell_kpoints;
-    // primitive cell to supercell tiling matrix
-    Tensor<int, OHMMS_DIM> TileMatrix;
-    // This vector stores which twist indices will be used by this clone
-    std::vector<TinyVector<int, OHMMS_DIM>> UseTwists;
-    std::vector<int> IncludeTwists, DistinctTwists;
-    /// if false, splines are conceptually complex valued
-    bool use_real_splines_;
-    int NumDistinctOrbitals;
-    // This is true if the corresponding twist in DistinctTwists should
-    // should be used to generate two distinct orbitals from the real and
-    // imaginary parts.
-    std::vector<bool> MakeTwoCopies;
-    // This maps a 3-integer twist index into the twist number in the file
-    std::map<TinyVector<int, OHMMS_DIM>, int, Int3less> TwistMap;
+  /////////////////////////////
+  // Twist angle information //
+  /////////////////////////////
+  // The "true" twist number after analyzing twistnum, twist XML input and h5
+  int twist_num_;
+  // primitive cell k-points from DFT calculations
+  std::vector<TinyVector<double, OHMMS_DIM>> primcell_kpoints;
+  // primitive cell to supercell tiling matrix
+  Tensor<int, OHMMS_DIM> TileMatrix;
+  // This vector stores which twist indices will be used by this clone
+  std::vector<TinyVector<int, OHMMS_DIM>> UseTwists;
+  std::vector<int> IncludeTwists, DistinctTwists;
+  /// if false, splines are conceptually complex valued
+  bool use_real_splines_;
+  int NumDistinctOrbitals;
+  // This is true if the corresponding twist in DistinctTwists should
+  // should be used to generate two distinct orbitals from the real and
+  // imaginary parts.
+  std::vector<bool> MakeTwoCopies;
+  // This maps a 3-integer twist index into the twist number in the file
+  std::map<TinyVector<int, OHMMS_DIM>, int, Int3less> TwistMap;
 
-    bool
-    TwistPair(PosType a, PosType b) const;
-    void
-    TileIons();
-    void
-    OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks = false);
-    void
-    OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
+  bool TwistPair(PosType a, PosType b) const;
+  void TileIons();
+  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks = false);
+  void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
-    ////////////////////////////////
-    // Atomic orbital information //
-    ////////////////////////////////
-    struct CenterInfo
+  ////////////////////////////////
+  // Atomic orbital information //
+  ////////////////////////////////
+  struct CenterInfo
+  {
+    std::vector<int> lmax, spline_npoints, GroupID;
+    std::vector<double> spline_radius, cutoff, inner_cutoff, non_overlapping_radius;
+    std::vector<TinyVector<double, OHMMS_DIM>> ion_pos;
+    int Ncenters;
+
+    CenterInfo() : Ncenters(0){};
+
+    void resize(int ncenters)
     {
-        std::vector<int> lmax, spline_npoints, GroupID;
-        std::vector<double> spline_radius, cutoff, inner_cutoff,
-            non_overlapping_radius;
-        std::vector<TinyVector<double, OHMMS_DIM>> ion_pos;
-        int Ncenters;
+      Ncenters = ncenters;
+      lmax.resize(ncenters, -1);
+      spline_npoints.resize(ncenters, -1);
+      GroupID.resize(ncenters, 0);
+      spline_radius.resize(ncenters, -1.0);
+      inner_cutoff.resize(ncenters, -1.0);
+      non_overlapping_radius.resize(ncenters, -1.0);
+      cutoff.resize(ncenters, -1.0);
+      ion_pos.resize(ncenters);
+    }
+  } AtomicCentersInfo;
 
-        CenterInfo() : Ncenters(0){};
+  // This returns the path in the HDF5 file to the group for orbital
+  // with twist ti and band bi
+  std::string OrbitalPath(int ti, int bi);
 
-        void
-        resize(int ncenters)
-        {
-            Ncenters = ncenters;
-            lmax.resize(ncenters, -1);
-            spline_npoints.resize(ncenters, -1);
-            GroupID.resize(ncenters, 0);
-            spline_radius.resize(ncenters, -1.0);
-            inner_cutoff.resize(ncenters, -1.0);
-            non_overlapping_radius.resize(ncenters, -1.0);
-            cutoff.resize(ncenters, -1.0);
-            ion_pos.resize(ncenters);
-        }
-    } AtomicCentersInfo;
+  /////////////////////////////////////////////////////////////
+  // Information to avoid storing the same orbitals twice in //
+  // spin-restricted calculations.                           //
+  /////////////////////////////////////////////////////////////
+  int LastSpinSet, NumOrbitalsRead;
 
-    // This returns the path in the HDF5 file to the group for orbital
-    // with twist ti and band bi
-    std::string
-    OrbitalPath(int ti, int bi);
-
-    /////////////////////////////////////////////////////////////
-    // Information to avoid storing the same orbitals twice in //
-    // spin-restricted calculations.                           //
-    /////////////////////////////////////////////////////////////
-    int LastSpinSet, NumOrbitalsRead;
-
-    std::string occ_format;
-    int particle_hole_pairs;
-    bool makeRotations;
+  std::string occ_format;
+  int particle_hole_pairs;
+  bool makeRotations;
 
 protected:
-    /** broadcast SortBands
+  /** broadcast SortBands
      * @param N number of state
      * @param root true if it is the i/o node
      */
-    void
-    bcastSortBands(int splin, int N, bool root);
+  void bcastSortBands(int splin, int N, bool root);
 
-    /** a specific but clean code path in createSPOSetFromXML, for PBC, double,
+  /** a specific but clean code path in createSPOSetFromXML, for PBC, double,
      * ESHDF
      * @param cur the current xml node
      */
-    void
-    set_metadata(int numOrbs, int twist_num_inp,
-        const TinyVector<double, OHMMS_DIM>& twist_inp,
-        bool skipChecks = false);
+  void set_metadata(int numOrbs,
+                    int twist_num_inp,
+                    const TinyVector<double, OHMMS_DIM>& twist_inp,
+                    bool skipChecks = false);
 
-    void
-    createBsplineReader(
-        bool useSingle, bool hybridRep, const std::string& useGPU);
+  void createBsplineReader(bool useSingle, bool hybridRep, const std::string& useGPU);
 
-    /** analyze twists of orbitals in h5 and determinine twist_num_
+  /** analyze twists of orbitals in h5 and determinine twist_num_
      * @param twist_num_inp twistnum XML input
      * @param twist_inp twst XML input
      */
-    void
-    AnalyzeTwists2(const int twist_num_inp,
-        const TinyVector<double, OHMMS_DIM>& twist_inp);
+  void AnalyzeTwists2(const int twist_num_inp, const TinyVector<double, OHMMS_DIM>& twist_inp);
 
-    /// twistnum_inp == -9999 to indicate no given input after parsing XML
-    static constexpr int TWISTNUM_NO_INPUT = -9999;
-    /// twist_inp[i] <= -9999 to indicate no given input after parsing XML
-    static constexpr double TWIST_NO_INPUT = -9999;
+  /// twistnum_inp == -9999 to indicate no given input after parsing XML
+  static constexpr int TWISTNUM_NO_INPUT = -9999;
+  /// twist_inp[i] <= -9999 to indicate no given input after parsing XML
+  static constexpr double TWIST_NO_INPUT = -9999;
 };
 
 } // namespace qmcplusplus

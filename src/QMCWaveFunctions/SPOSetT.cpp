@@ -24,387 +24,416 @@
 
 #include "SPOSetT.h"
 
-#include "CPU/SIMD/simd.hpp" // simd::dot
+#include "CPU/SIMD/inner_product.hpp" // simd::dot
 
 namespace qmcplusplus
 {
 
-template <class T>
-SPOSetT<T>::SPOSetT(const std::string& my_name) :
-    my_name_(my_name),
-    OrbitalSetSize(0)
+template<class T>
+SPOSetT<T>::SPOSetT(const std::string& my_name) : my_name_(my_name), OrbitalSetSize(0)
+{}
+
+template<class T>
+void SPOSetT<T>::extractOptimizableObjectRefs(UniqueOptObjRefsT<T>&)
 {
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::extractOptimizableObjectRefs "
+                           "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::extractOptimizableObjectRefs(UniqueOptObjRefsT<T>&)
+template<class T>
+void SPOSetT<T>::checkOutVariables(const OptVariablesType<T>& active)
 {
-    if (isOptimizable())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::extractOptimizableObjectRefs "
-            "must be overloaded when the SPOSet is optimizable.");
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::checkOutVariables "
+                           "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::checkOutVariables(const OptVariablesType<T>& active)
+template<class T>
+void SPOSetT<T>::evaluateDetRatios(const VirtualParticleSetT<T>& VP,
+                                   ValueVector& psi,
+                                   const ValueVector& psiinv,
+                                   std::vector<T>& ratios)
 {
-    if (isOptimizable())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::checkOutVariables "
-            "must be overloaded when the SPOSet is optimizable.");
+  assert(psi.size() == psiinv.size());
+  for (int iat = 0; iat < VP.getTotalNum(); ++iat)
+  {
+    evaluateValue(VP, iat, psi);
+    ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
+  }
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDetRatios(const VirtualParticleSetT<T>& VP,
-    ValueVector& psi, const ValueVector& psiinv, std::vector<T>& ratios)
+template<class T>
+void SPOSetT<T>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                      const RefVectorWithLeader<const VirtualParticleSetT<T>>& vp_list,
+                                      const RefVector<ValueVector>& psi_list,
+                                      const std::vector<const T*>& invRow_ptr_list,
+                                      std::vector<std::vector<T>>& ratios_list) const
 {
-    assert(psi.size() == psiinv.size());
-    for (int iat = 0; iat < VP.getTotalNum(); ++iat) {
-        evaluateValue(VP, iat, psi);
-        ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
+  assert(this == &spo_list.getLeader());
+  for (int iw = 0; iw < spo_list.size(); iw++)
+  {
+    Vector<T> invRow(const_cast<T*>(invRow_ptr_list[iw]), psi_list[iw].get().size());
+    spo_list[iw].evaluateDetRatios(vp_list[iw], psi_list[iw], invRow, ratios_list[iw]);
+  }
+}
+
+template<class T>
+void SPOSetT<T>::evaluateVGL_spin(const ParticleSetT<T>& P,
+                                  int iat,
+                                  ValueVector& psi,
+                                  GradVector& dpsi,
+                                  ValueVector& d2psi,
+                                  ValueVector& dspin)
+{
+  throw std::runtime_error("Need specialization of SPOSet::evaluateVGL_spin");
+}
+
+template<class T>
+void SPOSetT<T>::mw_evaluateVGL(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                const RefVectorWithLeader<ParticleSetT<T>>& P_list,
+                                int iat,
+                                const RefVector<ValueVector>& psi_v_list,
+                                const RefVector<GradVector>& dpsi_v_list,
+                                const RefVector<ValueVector>& d2psi_v_list) const
+{
+  assert(this == &spo_list.getLeader());
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
+}
+
+template<class T>
+void SPOSetT<T>::mw_evaluateValue(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                  const RefVectorWithLeader<ParticleSetT<T>>& P_list,
+                                  int iat,
+                                  const RefVector<ValueVector>& psi_v_list) const
+{
+  assert(this == &spo_list.getLeader());
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].evaluateValue(P_list[iw], iat, psi_v_list[iw]);
+}
+
+template<class T>
+void SPOSetT<T>::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                        const RefVectorWithLeader<ParticleSetT<T>>& P_list,
+                                        int iat,
+                                        const RefVector<ValueVector>& psi_v_list,
+                                        const RefVector<GradVector>& dpsi_v_list,
+                                        const RefVector<ValueVector>& d2psi_v_list,
+                                        OffloadMatrix<ComplexType>& mw_dspin) const
+{
+  throw std::runtime_error(getClassName() + "::mw_evaluateVGLWithSpin() is not supported. \n");
+}
+
+template<class T>
+void SPOSetT<T>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                                const RefVectorWithLeader<ParticleSetT<T>>& P_list,
+                                                int iat,
+                                                const std::vector<const T*>& invRow_ptr_list,
+                                                OffloadMWVGLArray& phi_vgl_v,
+                                                std::vector<T>& ratios,
+                                                std::vector<GradType>& grads) const
+{
+  assert(this == &spo_list.getLeader());
+  assert(phi_vgl_v.size(0) == QMCTraits::DIM_VGL);
+  assert(phi_vgl_v.size(1) == spo_list.size());
+  const size_t nw             = spo_list.size();
+  const size_t norb_requested = phi_vgl_v.size(2);
+  GradVector dphi_v(norb_requested);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    ValueVector phi_v(phi_vgl_v.data_at(0, iw, 0), norb_requested);
+    ValueVector d2phi_v(phi_vgl_v.data_at(4, iw, 0), norb_requested);
+    spo_list[iw].evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
+
+    ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
+    grads[iw]  = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
+
+    // transpose the array of gradients to SoA in phi_vgl_v
+    for (size_t idim = 0; idim < DIM; idim++)
+    {
+      T* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
+      for (size_t iorb = 0; iorb < norb_requested; iorb++)
+        phi_g[iorb] = dphi_v[iorb][idim];
     }
+  }
+  phi_vgl_v.updateTo();
 }
 
-template <class T>
-void
-SPOSetT<T>::mw_evaluateDetRatios(
-    const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-    const RefVectorWithLeader<const VirtualParticleSetT<T>>& vp_list,
-    const RefVector<ValueVector>& psi_list,
-    const std::vector<const T*>& invRow_ptr_list,
-    std::vector<std::vector<T>>& ratios_list) const
+template<class T>
+void SPOSetT<T>::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                                        const RefVectorWithLeader<ParticleSetT<T>>& P_list,
+                                                        int iat,
+                                                        const std::vector<const T*>& invRow_ptr_list,
+                                                        OffloadMWVGLArray& phi_vgl_v,
+                                                        std::vector<T>& ratios,
+                                                        std::vector<GradType>& grads,
+                                                        std::vector<T>& spingrads) const
 {
-    assert(this == &spo_list.getLeader());
-    for (int iw = 0; iw < spo_list.size(); iw++) {
-        Vector<T> invRow(
-            const_cast<T*>(invRow_ptr_list[iw]), psi_list[iw].get().size());
-        spo_list[iw].evaluateDetRatios(
-            vp_list[iw], psi_list[iw], invRow, ratios_list[iw]);
-    }
+  throw std::runtime_error("Need specialization of " + getClassName() +
+                           "::mw_evaluateVGLandDetRatioGradsWithSpin(). \n");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateVGL_spin(const ParticleSetT<T>& P, int iat,
-    ValueVector& psi, GradVector& dpsi, ValueVector& d2psi, ValueVector& dspin)
+template<class T>
+void SPOSetT<T>::evaluateThirdDeriv(const ParticleSetT<T>& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
 {
-    throw std::runtime_error("Need specialization of SPOSet::evaluateVGL_spin");
+  throw std::runtime_error("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
 }
 
-template <class T>
-void
-SPOSetT<T>::mw_evaluateVGL(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-    const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
-    const RefVector<ValueVector>& psi_v_list,
-    const RefVector<GradVector>& dpsi_v_list,
-    const RefVector<ValueVector>& d2psi_v_list) const
+template<class T>
+void SPOSetT<T>::evaluate_notranspose_spin(const ParticleSetT<T>& P,
+                                           int first,
+                                           int last,
+                                           ValueMatrix& logdet,
+                                           GradMatrix& dlogdet,
+                                           ValueMatrix& d2logdet,
+                                           ValueMatrix& dspinlogdet)
 {
-    assert(this == &spo_list.getLeader());
-    for (int iw = 0; iw < spo_list.size(); iw++)
-        spo_list[iw].evaluateVGL(
-            P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
+  throw std::runtime_error("Need specialization of " + getClassName() +
+                           "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) "
+                           "(vector quantities)\n");
 }
 
-template <class T>
-void
-SPOSetT<T>::mw_evaluateValue(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-    const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
-    const RefVector<ValueVector>& psi_v_list) const
+template<class T>
+void SPOSetT<T>::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                         const RefVectorWithLeader<ParticleSetT<T>>& P_list,
+                                         int first,
+                                         int last,
+                                         const RefVector<ValueMatrix>& logdet_list,
+                                         const RefVector<GradMatrix>& dlogdet_list,
+                                         const RefVector<ValueMatrix>& d2logdet_list) const
 {
-    assert(this == &spo_list.getLeader());
-    for (int iw = 0; iw < spo_list.size(); iw++)
-        spo_list[iw].evaluateValue(P_list[iw], iat, psi_v_list[iw]);
+  assert(this == &spo_list.getLeader());
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].evaluate_notranspose(P_list[iw], first, last, logdet_list[iw], dlogdet_list[iw], d2logdet_list[iw]);
 }
 
-template <class T>
-void
-SPOSetT<T>::mw_evaluateVGLWithSpin(
-    const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-    const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
-    const RefVector<ValueVector>& psi_v_list,
-    const RefVector<GradVector>& dpsi_v_list,
-    const RefVector<ValueVector>& d2psi_v_list,
-    OffloadMatrix<ComplexType>& mw_dspin) const
+template<class T>
+void SPOSetT<T>::evaluate_notranspose(const ParticleSetT<T>& P,
+                                      int first,
+                                      int last,
+                                      ValueMatrix& logdet,
+                                      GradMatrix& dlogdet,
+                                      HessMatrix& grad_grad_logdet)
 {
-    throw std::runtime_error(
-        getClassName() + "::mw_evaluateVGLWithSpin() is not supported. \n");
+  throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for "
+                           "grad_grad_logdet. \n");
 }
 
-template <class T>
-void
-SPOSetT<T>::mw_evaluateVGLandDetRatioGrads(
-    const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-    const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
-    const std::vector<const T*>& invRow_ptr_list, OffloadMWVGLArray& phi_vgl_v,
-    std::vector<T>& ratios, std::vector<GradType>& grads) const
+template<class T>
+void SPOSetT<T>::evaluate_notranspose(const ParticleSetT<T>& P,
+                                      int first,
+                                      int last,
+                                      ValueMatrix& logdet,
+                                      GradMatrix& dlogdet,
+                                      HessMatrix& grad_grad_logdet,
+                                      GGGMatrix& grad_grad_grad_logdet)
 {
-    assert(this == &spo_list.getLeader());
-    assert(phi_vgl_v.size(0) == QMCTraits::DIM_VGL);
-    assert(phi_vgl_v.size(1) == spo_list.size());
-    const size_t nw = spo_list.size();
-    const size_t norb_requested = phi_vgl_v.size(2);
-    GradVector dphi_v(norb_requested);
-    for (int iw = 0; iw < nw; iw++) {
-        ValueVector phi_v(phi_vgl_v.data_at(0, iw, 0), norb_requested);
-        ValueVector d2phi_v(phi_vgl_v.data_at(4, iw, 0), norb_requested);
-        spo_list[iw].evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
-
-        ratios[iw] =
-            simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
-        grads[iw] =
-            simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) /
-            ratios[iw];
-
-        // transpose the array of gradients to SoA in phi_vgl_v
-        for (size_t idim = 0; idim < DIM; idim++) {
-            T* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
-            for (size_t iorb = 0; iorb < norb_requested; iorb++)
-                phi_g[iorb] = dphi_v[iorb][idim];
-        }
-    }
-    phi_vgl_v.updateTo();
+  throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for "
+                           "grad_grad_grad_logdet. \n");
 }
 
-template <class T>
-void
-SPOSetT<T>::mw_evaluateVGLandDetRatioGradsWithSpin(
-    const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-    const RefVectorWithLeader<ParticleSetT<T>>& P_list, int iat,
-    const std::vector<const T*>& invRow_ptr_list, OffloadMWVGLArray& phi_vgl_v,
-    std::vector<T>& ratios, std::vector<GradType>& grads,
-    std::vector<T>& spingrads) const
+template<class T>
+std::unique_ptr<SPOSetT<T>> SPOSetT<T>::makeClone() const
 {
-    throw std::runtime_error("Need specialization of " + getClassName() +
-        "::mw_evaluateVGLandDetRatioGradsWithSpin(). \n");
+  throw std::runtime_error("Missing  SPOSet::makeClone for " + getClassName());
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateThirdDeriv(const ParticleSetT<T>& P, int first, int last,
-    GGGMatrix& grad_grad_grad_logdet)
+template<class T>
+void SPOSetT<T>::basic_report(const std::string& pad) const
 {
-    throw std::runtime_error(
-        "Need specialization of SPOSet::evaluateThirdDeriv(). \n");
+  app_log() << pad << "size = " << size() << std::endl;
+  app_log() << pad << "state info:" << std::endl;
+  // states.report(pad+"  ");
+  app_log().flush();
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluate_notranspose_spin(const ParticleSetT<T>& P, int first,
-    int last, ValueMatrix& logdet, GradMatrix& dlogdet, ValueMatrix& d2logdet,
-    ValueMatrix& dspinlogdet)
+template<class T>
+void SPOSetT<T>::evaluateVGH(const ParticleSetT<T>& P,
+                             int iat,
+                             ValueVector& psi,
+                             GradVector& dpsi,
+                             HessVector& grad_grad_psi)
 {
-    throw std::runtime_error("Need specialization of " + getClassName() +
-        "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) "
-        "(vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + getClassName() +
+                           "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
 }
 
-template <class T>
-void
-SPOSetT<T>::mw_evaluate_notranspose(
-    const RefVectorWithLeader<SPOSetT<T>>& spo_list,
-    const RefVectorWithLeader<ParticleSetT<T>>& P_list, int first, int last,
-    const RefVector<ValueMatrix>& logdet_list,
-    const RefVector<GradMatrix>& dlogdet_list,
-    const RefVector<ValueMatrix>& d2logdet_list) const
+template<class T>
+void SPOSetT<T>::evaluateVGHGH(const ParticleSetT<T>& P,
+                               int iat,
+                               ValueVector& psi,
+                               GradVector& dpsi,
+                               HessVector& grad_grad_psi,
+                               GGGVector& grad_grad_grad_psi)
 {
-    assert(this == &spo_list.getLeader());
-    for (int iw = 0; iw < spo_list.size(); iw++)
-        spo_list[iw].evaluate_notranspose(P_list[iw], first, last,
-            logdet_list[iw], dlogdet_list[iw], d2logdet_list[iw]);
+  throw std::runtime_error("Need specialization of " + getClassName() +
+                           "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluate_notranspose(const ParticleSetT<T>& P, int first, int last,
-    ValueMatrix& logdet, GradMatrix& dlogdet, HessMatrix& grad_grad_logdet)
+template<class T>
+void SPOSetT<T>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
 {
-    throw std::runtime_error(
-        "Need specialization of SPOSet::evaluate_notranspose() for "
-        "grad_grad_logdet. \n");
+  if (isRotationSupported())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::applyRotation "
+                           "must be overloaded when the SPOSet supports rotation.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluate_notranspose(const ParticleSetT<T>& P, int first, int last,
-    ValueMatrix& logdet, GradMatrix& dlogdet, HessMatrix& grad_grad_logdet,
-    GGGMatrix& grad_grad_grad_logdet)
+template<class T>
+void SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
+                                     const OptVariablesType<T>& optvars,
+                                     Vector<T>& dlogpsi,
+                                     Vector<T>& dhpsioverpsi,
+                                     const int& FirstIndex,
+                                     const int& LastIndex)
 {
-    throw std::runtime_error(
-        "Need specialization of SPOSet::evaluate_notranspose() for "
-        "grad_grad_grad_logdet. \n");
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivatives "
+                           "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-std::unique_ptr<SPOSetT<T>>
-SPOSetT<T>::makeClone() const
+template<class T>
+void SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
+                                       const OptVariablesType<T>& optvars,
+                                       Vector<T>& dlogpsi,
+                                       int FirstIndex,
+                                       int LastIndex)
 {
-    throw std::runtime_error(
-        "Missing  SPOSet::makeClone for " + getClassName());
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivativesWF "
+                           "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::basic_report(const std::string& pad) const
+template<class T>
+void SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
+                                     const OptVariablesType<T>& optvars,
+                                     ValueVector& psi,
+                                     const ValueVector& psiinv,
+                                     std::vector<T>& ratios,
+                                     Matrix<T>& dratios,
+                                     int FirstIndex,
+                                     int LastIndex)
 {
-    app_log() << pad << "size = " << size() << std::endl;
-    app_log() << pad << "state info:" << std::endl;
-    // states.report(pad+"  ");
-    app_log().flush();
+  // Match the fallback in WaveFunctionComponent that evaluates just the
+  // ratios
+  evaluateDetRatios(VP, psi, psiinv, ratios);
+
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivRatios "
+                           "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateVGH(const ParticleSetT<T>& P, int iat, ValueVector& psi,
-    GradVector& dpsi, HessVector& grad_grad_psi)
+template<class T>
+void SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
+                                     const OptVariablesType<T>& optvars,
+                                     Vector<T>& dlogpsi,
+                                     Vector<T>& dhpsioverpsi,
+                                     const T& psiCurrent,
+                                     const std::vector<T>& Coeff,
+                                     const std::vector<size_t>& C2node_up,
+                                     const std::vector<size_t>& C2node_dn,
+                                     const ValueVector& detValues_up,
+                                     const ValueVector& detValues_dn,
+                                     const GradMatrix& grads_up,
+                                     const GradMatrix& grads_dn,
+                                     const ValueMatrix& lapls_up,
+                                     const ValueMatrix& lapls_dn,
+                                     const ValueMatrix& M_up,
+                                     const ValueMatrix& M_dn,
+                                     const ValueMatrix& Minv_up,
+                                     const ValueMatrix& Minv_dn,
+                                     const GradMatrix& B_grad,
+                                     const ValueMatrix& B_lapl,
+                                     const std::vector<int>& detData_up,
+                                     const size_t N1,
+                                     const size_t N2,
+                                     const size_t NP1,
+                                     const size_t NP2,
+                                     const std::vector<std::vector<int>>& lookup_tbl)
 {
-    throw std::runtime_error("Need specialization of " + getClassName() +
-        "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivatives "
+                           "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateVGHGH(const ParticleSetT<T>& P, int iat, ValueVector& psi,
-    GradVector& dpsi, HessVector& grad_grad_psi, GGGVector& grad_grad_grad_psi)
+template<class T>
+void SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
+                                       const OptVariablesType<T>& optvars,
+                                       Vector<ValueType>& dlogpsi,
+                                       const ValueType& psiCurrent,
+                                       const std::vector<T>& Coeff,
+                                       const std::vector<size_t>& C2node_up,
+                                       const std::vector<size_t>& C2node_dn,
+                                       const ValueVector& detValues_up,
+                                       const ValueVector& detValues_dn,
+                                       const ValueMatrix& M_up,
+                                       const ValueMatrix& M_dn,
+                                       const ValueMatrix& Minv_up,
+                                       const ValueMatrix& Minv_dn,
+                                       const std::vector<int>& detData_up,
+                                       const std::vector<std::vector<int>>& lookup_tbl)
 {
-    throw std::runtime_error("Need specialization of " + getClassName() +
-        "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivativesWF "
+                           "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+template<class T>
+void SPOSetT<T>::evaluateGradSource(const ParticleSetT<T>& P,
+                                    int first,
+                                    int last,
+                                    const ParticleSetT<T>& source,
+                                    int iat_src,
+                                    GradMatrix& gradphi)
 {
-    if (isRotationSupported())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::applyRotation "
-            "must be overloaded when the SPOSet supports rotation.");
+  if (hasIonDerivs())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateGradSource "
+                           "must be overloaded when the SPOSet has ion derivatives.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi,
-    Vector<T>& dhpsioverpsi, const int& FirstIndex, const int& LastIndex)
+template<class T>
+void SPOSetT<T>::evaluateGradSource(const ParticleSetT<T>& P,
+                                    int first,
+                                    int last,
+                                    const ParticleSetT<T>& source,
+                                    int iat_src,
+                                    GradMatrix& grad_phi,
+                                    HessMatrix& grad_grad_phi,
+                                    GradMatrix& grad_lapl_phi)
 {
-    if (isOptimizable())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::evaluateDerivatives "
-            "must be overloaded when the SPOSet is optimizable.");
+  if (hasIonDerivs())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateGradSource "
+                           "must be overloaded when the SPOSet has ion derivatives.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi, int FirstIndex,
-    int LastIndex)
+template<class T>
+void SPOSetT<T>::evaluateGradSourceRow(const ParticleSetT<T>& P,
+                                       int iel,
+                                       const ParticleSetT<T>& source,
+                                       int iat_src,
+                                       GradVector& gradphi)
 {
-    if (isOptimizable())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::evaluateDerivativesWF "
-            "must be overloaded when the SPOSet is optimizable.");
+  if (hasIonDerivs())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateGradSourceRow "
+                           "must be overloaded when the SPOSet has ion derivatives.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
-    const OptVariablesType<T>& optvars, ValueVector& psi,
-    const ValueVector& psiinv, std::vector<T>& ratios, Matrix<T>& dratios,
-    int FirstIndex, int LastIndex)
+template<class T>
+void SPOSetT<T>::evaluate_spin(const ParticleSetT<T>& P, int iat, ValueVector& psi, ValueVector& dpsi)
 {
-    // Match the fallback in WaveFunctionComponent that evaluates just the
-    // ratios
-    evaluateDetRatios(VP, psi, psiinv, ratios);
-
-    if (isOptimizable())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::evaluateDerivRatios "
-            "must be overloaded when the SPOSet is optimizable.");
-}
-
-template <class T>
-void
-SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi,
-    Vector<T>& dhpsioverpsi, const T& psiCurrent, const std::vector<T>& Coeff,
-    const std::vector<size_t>& C2node_up, const std::vector<size_t>& C2node_dn,
-    const ValueVector& detValues_up, const ValueVector& detValues_dn,
-    const GradMatrix& grads_up, const GradMatrix& grads_dn,
-    const ValueMatrix& lapls_up, const ValueMatrix& lapls_dn,
-    const ValueMatrix& M_up, const ValueMatrix& M_dn,
-    const ValueMatrix& Minv_up, const ValueMatrix& Minv_dn,
-    const GradMatrix& B_grad, const ValueMatrix& B_lapl,
-    const std::vector<int>& detData_up, const size_t N1, const size_t N2,
-    const size_t NP1, const size_t NP2,
-    const std::vector<std::vector<int>>& lookup_tbl)
-{
-    if (isOptimizable())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::evaluateDerivatives "
-            "must be overloaded when the SPOSet is optimizable.");
-}
-
-template <class T>
-void
-SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<ValueType>& dlogpsi,
-    const ValueType& psiCurrent, const std::vector<T>& Coeff,
-    const std::vector<size_t>& C2node_up, const std::vector<size_t>& C2node_dn,
-    const ValueVector& detValues_up, const ValueVector& detValues_dn,
-    const ValueMatrix& M_up, const ValueMatrix& M_dn,
-    const ValueMatrix& Minv_up, const ValueMatrix& Minv_dn,
-    const std::vector<int>& detData_up,
-    const std::vector<std::vector<int>>& lookup_tbl)
-{
-    if (isOptimizable())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::evaluateDerivativesWF "
-            "must be overloaded when the SPOSet is optimizable.");
-}
-
-template <class T>
-void
-SPOSetT<T>::evaluateGradSource(const ParticleSetT<T>& P, int first, int last,
-    const ParticleSetT<T>& source, int iat_src, GradMatrix& gradphi)
-{
-    if (hasIonDerivs())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::evaluateGradSource "
-            "must be overloaded when the SPOSet has ion derivatives.");
-}
-
-template <class T>
-void
-SPOSetT<T>::evaluateGradSource(const ParticleSetT<T>& P, int first, int last,
-    const ParticleSetT<T>& source, int iat_src, GradMatrix& grad_phi,
-    HessMatrix& grad_grad_phi, GradMatrix& grad_lapl_phi)
-{
-    if (hasIonDerivs())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::evaluateGradSource "
-            "must be overloaded when the SPOSet has ion derivatives.");
-}
-
-template <class T>
-void
-SPOSetT<T>::evaluateGradSourceRow(const ParticleSetT<T>& P, int iel,
-    const ParticleSetT<T>& source, int iat_src, GradVector& gradphi)
-{
-    if (hasIonDerivs())
-        throw std::logic_error("Bug!! " + getClassName() +
-            "::evaluateGradSourceRow "
-            "must be overloaded when the SPOSet has ion derivatives.");
-}
-
-template <class T>
-void
-SPOSetT<T>::evaluate_spin(
-    const ParticleSetT<T>& P, int iat, ValueVector& psi, ValueVector& dpsi)
-{
-    throw std::runtime_error("Need specialization of " + getClassName() +
-        "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + getClassName() +
+                           "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
 }
 
 // Class concrete types from ValueType

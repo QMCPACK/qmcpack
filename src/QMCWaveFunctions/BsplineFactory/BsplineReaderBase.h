@@ -23,7 +23,7 @@
 #include "mpi/collectives.h"
 #include "mpi/point2point.h"
 #include <einspline/bspline_base.h>
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "QMCWaveFunctions/BsplineFactory/EinsplineSetBuilder.h"
 
 namespace qmcplusplus
 {
