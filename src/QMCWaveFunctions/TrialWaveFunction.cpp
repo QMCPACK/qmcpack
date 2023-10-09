@@ -618,7 +618,8 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
       r *= Z[i]->ratioGrad(P, iat, grad_iat);
     }
 
-  checkOneParticleGradientsNaN(iat, grad_iat, "TWF::calcRatioGrad");
+  if(r != PsiValueType(0)) // grad_iat is meaningful only when r is strictly non-zero
+    checkOneParticleGradientsNaN(iat, grad_iat, "TWF::calcRatioGrad");
   LogValueType logratio = convertValueToLog(r);
   PhaseDiff             = std::imag(logratio);
   return static_cast<ValueType>(r);
@@ -694,10 +695,11 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
     }
   }
   for (int iw = 0; iw < wf_list.size(); iw++)
+  {
     wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
-
-  for (const GradType& grads : grad_new.grads_positions)
-    checkOneParticleGradientsNaN(iat, grads, "TWF::mw_calcRatioGrad");
+    if (ratios[iw] != PsiValueType(0))
+      checkOneParticleGradientsNaN(iat, grad_new.grads_positions[iw], "TWF::mw_calcRatioGrad");
+  }
 }
 
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag)
