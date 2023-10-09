@@ -25,6 +25,17 @@
 #include "Platforms/ROCm/cuda2hip.h"
 #endif
 
+// Work around for clang using gcc/glibc 12 include files in CUDA mode.
+// Clang was fixed to recognize __noinline__ as an attribute,
+// but the CUDA include files still have a define for __noinline__.
+// The attribute started to be used in gcc 12 include files, which expands
+// to __attribute__((__attribute__((noinline)))), which the compiler rejects.
+// See https://github.com/NVIDIA/thrust/issues/1703 and
+//     https://github.com/llvm/llvm-project/issues/57544
+#if defined(__clang__) && (_GLIBCXX_RELEASE >= 12)
+#undef __noinline__
+#endif
+
 #include "CUDAerror.h"
 
 size_t getCUDAdeviceFreeMem();
