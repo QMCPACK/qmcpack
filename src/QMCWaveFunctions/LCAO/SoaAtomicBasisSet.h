@@ -666,19 +666,12 @@ struct SoaAtomicBasisSet
   }
   void createResource(ResourceCollection& collection) const
   {
-    // Ylm.createResource(collection);
-    // MultiRnl.createResource(collection);
     auto resource_index = collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>());
   }
 
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list) const
   {
     assert(this == &atom_bs_list.getLeader());
-    // auto& atom_bs_leader          = atom_bs_list.getCastedLeader<SoaAtomicBasisSet>();
-    // auto& atom_bs_leader          = atom_bs_list.getCastedLeader();
-    // SoaAtomicBasisSet& atom_bs_leader          = atom_bs_list.getCastedLeader();
-    // const SoaAtomicBasisSet& atom_bs_leader          = atom_bs_list.getCastedLeader();
-    // const auto ylm_list(extractYlmRefList(atom_bs_list));
     auto& atom_bs_leader          = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet>();
     atom_bs_leader.mw_mem_handle_ = collection.lendResource<SoaAtomicBSetMultiWalkerMem>();
   }
@@ -686,8 +679,6 @@ struct SoaAtomicBasisSet
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list) const
   {
     assert(this == &atom_bs_list.getLeader());
-    // auto& atom_bs_leader = atom_bs_list.getCastedLeader();
-    // const SoaAtomicBasisSet& atom_bs_leader          = atom_bs_list.getCastedLeader();
     auto& atom_bs_leader = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet>();
     collection.takebackResource(atom_bs_leader.mw_mem_handle_);
   }
