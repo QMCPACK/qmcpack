@@ -281,6 +281,8 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
+  if (curRatio == PsiValueType(0))
+    throw std::runtime_error("DiracDeterminant::acceptMove curRatio is zero! Report a bug.\n");
   ScopedTimer local_timer(UpdateTimer);
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
