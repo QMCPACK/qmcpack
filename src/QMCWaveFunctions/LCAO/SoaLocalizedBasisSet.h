@@ -172,6 +172,24 @@ public:
    * @param aos a set of Centered Atomic Orbitals
    */
   void add(int icenter, std::unique_ptr<COT> aos);
+
+
+  /** initialize a shared resource and hand it to collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from collection
+   */
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& spo_list) const override;
+
+  /** return a shared resource to collection
+   */
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& spo_list) const override;
+
+  static RefVectorWithLeader<COT> extractLOBasisRefList(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& bs_list,
+                                                        int id);
 };
 } // namespace qmcplusplus
 #endif

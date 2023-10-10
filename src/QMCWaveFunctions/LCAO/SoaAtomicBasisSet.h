@@ -16,6 +16,7 @@
 
 #include "CPU/math.hpp"
 #include "OptimizableObject.h"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
@@ -29,10 +30,15 @@ namespace qmcplusplus
 template<typename ROT, typename SH>
 struct SoaAtomicBasisSet
 {
-  using RadialOrbital_t = ROT;
-  using RealType        = typename ROT::RealType;
-  using GridType        = typename ROT::GridType;
-  using ValueType       = typename QMCTraits::ValueType;
+  using RadialOrbital_t         = ROT;
+  using RealType                = typename ROT::RealType;
+  using GridType                = typename ROT::GridType;
+  using ValueType               = typename QMCTraits::ValueType;
+  using OffloadNelecVGLPBCArray = Array<ValueType, 4, OffloadPinnedAllocator<ValueType>>; // [VGL, elec, PBC, Rnl/Ylm]
+  using OffloadNelecVPBCArray   = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [elec, PBC, Rnl/Ylm/xyz]
+  using OffloadNelecPBCArray    = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [elec, PBC]
+  using OffloadRPBCArray        = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [xyz, PBC]
+  using OffloadVector           = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
 
   ///size of the basis set
   int BasisSetSize;
@@ -56,6 +62,8 @@ struct SoaAtomicBasisSet
   std::vector<QuantumNumberType> RnlID;
   ///temporary storage
   VectorSoaContainer<RealType, 4> tempS;
+  struct SoaAtomicBSetMultiWalkerMem;
+  ResourceHandle<SoaAtomicBSetMultiWalkerMem> mw_mem_handle_;
 
   ///the constructor
   explicit SoaAtomicBasisSet(int lmax, bool addsignforM = false) : Ylm(lmax, addsignforM) {}
@@ -656,6 +664,54 @@ struct SoaAtomicBasisSet
       }
     }
   }
+  void createResource(ResourceCollection& collection) const
+  {
+    // Ylm.createResource(collection);
+    // MultiRnl.createResource(collection);
+    auto resource_index = collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>());
+  }
+
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list) const
+  {
+    assert(this == &atom_bs_list.getLeader());
+    // auto& atom_bs_leader          = atom_bs_list.getCastedLeader<SoaAtomicBasisSet>();
+    // auto& atom_bs_leader          = atom_bs_list.getCastedLeader();
+    // SoaAtomicBasisSet& atom_bs_leader          = atom_bs_list.getCastedLeader();
+    // const SoaAtomicBasisSet& atom_bs_leader          = atom_bs_list.getCastedLeader();
+    // const auto ylm_list(extractYlmRefList(atom_bs_list));
+    auto& atom_bs_leader          = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet>();
+    atom_bs_leader.mw_mem_handle_ = collection.lendResource<SoaAtomicBSetMultiWalkerMem>();
+  }
+
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list) const
+  {
+    assert(this == &atom_bs_list.getLeader());
+    // auto& atom_bs_leader = atom_bs_list.getCastedLeader();
+    // const SoaAtomicBasisSet& atom_bs_leader          = atom_bs_list.getCastedLeader();
+    auto& atom_bs_leader = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet>();
+    collection.takebackResource(atom_bs_leader.mw_mem_handle_);
+  }
+
+  struct SoaAtomicBSetMultiWalkerMem : public Resource
+  {
+    SoaAtomicBSetMultiWalkerMem() : Resource("SoaAtomicBasisSet") {}
+
+    SoaAtomicBSetMultiWalkerMem(const SoaAtomicBSetMultiWalkerMem&) : SoaAtomicBSetMultiWalkerMem() {}
+
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
+    }
+
+    OffloadNelecVPBCArray ylm_v;     // [Nelec][PBC][NYlm]
+    OffloadNelecVPBCArray rnl_v;     // [Nelec][PBC][NRnl]
+    OffloadNelecVGLPBCArray ylm_vgl; // [5][Nelec][PBC][NYlm]
+    OffloadNelecVGLPBCArray rnl_vgl; // [5][Nelec][PBC][NRnl]
+    OffloadRPBCArray dr_pbc;         // [PBC][xyz]
+    OffloadNelecVPBCArray dr;        // [Nelec][PBC][xyz]
+    OffloadNelecPBCArray r;          // [Nelec][PBC]
+    OffloadVector correctphase;      // [Nelec]
+  };
 };
 
 } // namespace qmcplusplus
