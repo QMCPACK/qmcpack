@@ -32,7 +32,7 @@
 namespace qmcplusplus
 {
 using std::placeholders::_1;
-using WP = WalkerProperties::Indexes;
+using WP           = WalkerProperties::Indexes;
 using PsiValueType = TrialWaveFunction::PsiValueType;
 
 /** Constructor maintains proper ownership of input parameters
@@ -217,7 +217,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         isAccepted.clear();
 
         for (int iw = 0; iw < num_walkers; ++iw)
-        {
           if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
               step_context.get_random_gen()() < prob[iw])
           {
@@ -230,7 +229,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
             crowd.incReject();
             isAccepted.push_back(false);
           }
-        }
 
         twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
