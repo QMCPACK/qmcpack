@@ -188,7 +188,7 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& spo_list) const override;
 
-  static RefVectorWithLeader<COT> extractLOBasisRefList(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& bs_list,
+  static RefVectorWithLeader<COT> extractLOBasisRefList(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
                                                         int id);
 };
 } // namespace qmcplusplus
