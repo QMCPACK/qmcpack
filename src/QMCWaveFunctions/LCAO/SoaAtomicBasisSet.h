@@ -30,15 +30,14 @@ namespace qmcplusplus
 template<typename ROT, typename SH>
 struct SoaAtomicBasisSet
 {
-  using RadialOrbital_t         = ROT;
-  using RealType                = typename ROT::RealType;
-  using GridType                = typename ROT::GridType;
-  using ValueType               = typename QMCTraits::ValueType;
-  using OffloadNelecVGLPBCArray = Array<ValueType, 4, OffloadPinnedAllocator<ValueType>>; // [VGL, elec, PBC, Rnl/Ylm]
-  using OffloadNelecVPBCArray   = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [elec, PBC, Rnl/Ylm/xyz]
-  using OffloadNelecPBCArray    = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [elec, PBC]
-  using OffloadRPBCArray        = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [xyz, PBC]
-  using OffloadVector           = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using RadialOrbital_t = ROT;
+  using RealType        = typename ROT::RealType;
+  using GridType        = typename ROT::GridType;
+  using ValueType       = typename QMCTraits::ValueType;
+  using OffloadArray4   = Array<ValueType, 4, OffloadPinnedAllocator<ValueType>>;
+  using OffloadArray3   = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>;
+  using OffloadArray2   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>;
+  using OffloadVector   = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
 
   ///size of the basis set
   int BasisSetSize;
@@ -694,14 +693,14 @@ struct SoaAtomicBasisSet
       return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
     }
 
-    OffloadNelecVPBCArray ylm_v;     // [Nelec][PBC][NYlm]
-    OffloadNelecVPBCArray rnl_v;     // [Nelec][PBC][NRnl]
-    OffloadNelecVGLPBCArray ylm_vgl; // [5][Nelec][PBC][NYlm]
-    OffloadNelecVGLPBCArray rnl_vgl; // [5][Nelec][PBC][NRnl]
-    OffloadRPBCArray dr_pbc;         // [PBC][xyz]
-    OffloadNelecVPBCArray dr;        // [Nelec][PBC][xyz]
-    OffloadNelecPBCArray r;          // [Nelec][PBC]
-    OffloadVector correctphase;      // [Nelec]
+    OffloadArray3 ylm_v;        // [Nelec][PBC][NYlm]
+    OffloadArray3 rnl_v;        // [Nelec][PBC][NRnl]
+    OffloadArray4 ylm_vgl;      // [5][Nelec][PBC][NYlm]
+    OffloadArray4 rnl_vgl;      // [5][Nelec][PBC][NRnl]
+    OffloadArray2 dr_pbc;       // [PBC][xyz]
+    OffloadArray3 dr;           // [Nelec][PBC][xyz]
+    OffloadArray2 r;            // [Nelec][PBC]
+    OffloadVector correctphase; // [Nelec]
   };
 };
 
