@@ -479,7 +479,7 @@ void TrialWaveFunction::mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction
     }
   }
   for (int iw = 0; iw < wf_list.size(); iw++)
-    wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
+    wf_list[iw].PhaseDiff = std::arg(ratios[iw]);
 }
 
 void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
@@ -696,7 +696,7 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
   }
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
-    wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
+    wf_list[iw].PhaseDiff = std::arg(ratios[iw]);
     if (ratios[iw] != PsiValueType(0))
       checkOneParticleGradientsNaN(iat, grad_new.grads_positions[iw], "TWF::mw_calcRatioGrad");
   }
