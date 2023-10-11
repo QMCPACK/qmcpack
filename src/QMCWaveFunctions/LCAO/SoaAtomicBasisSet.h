@@ -34,8 +34,8 @@ struct SoaAtomicBasisSet
   using RealType        = typename ROT::RealType;
   using GridType        = typename ROT::GridType;
   using ValueType       = typename QMCTraits::ValueType;
-  using OffloadArray4   = Array<ValueType, 4, OffloadPinnedAllocator<ValueType>>;
-  using OffloadArray3   = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>;
+  using OffloadArray4D  = Array<ValueType, 4, OffloadPinnedAllocator<ValueType>>;
+  using OffloadArray3D  = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>;
   using OffloadMatrix   = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadVector   = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
 
@@ -696,12 +696,12 @@ struct SoaAtomicBasisSet
       return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
     }
 
-    OffloadArray4 ylm_vgl;      // [5][Nelec][PBC][NYlm]
-    OffloadArray4 rnl_vgl;      // [5][Nelec][PBC][NRnl]
-    OffloadArray3 ylm_v;        // [Nelec][PBC][NYlm]
-    OffloadArray3 rnl_v;        // [Nelec][PBC][NRnl]
+    OffloadArray4D ylm_vgl;     // [5][Nelec][PBC][NYlm]
+    OffloadArray4D rnl_vgl;     // [5][Nelec][PBC][NRnl]
+    OffloadArray3D ylm_v;       // [Nelec][PBC][NYlm]
+    OffloadArray3D rnl_v;       // [Nelec][PBC][NRnl]
     OffloadMatrix dr_pbc;       // [PBC][xyz]        translation vector for each image
-    OffloadArray3 dr;           // [Nelec][PBC][xyz] ion->elec displacement for each image
+    OffloadArray3D dr;          // [Nelec][PBC][xyz] ion->elec displacement for each image
     OffloadMatrix r;            // [Nelec][PBC]      ion->elec distance for each image
     OffloadVector correctphase; // [Nelec]           overall phase
   };
