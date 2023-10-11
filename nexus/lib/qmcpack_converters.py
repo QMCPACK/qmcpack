@@ -927,6 +927,88 @@ def generate_convert4qmc(**kwargs):
 
 
 
+class Convertpw4qmcInput(SimulationInput):
+    def __init__(self,data_file=None):
+        self.data_file=data_file
+    #end def __init__
+#end class Convertpw4qmcInput
+
+class Convertpw4qmcAnalyzer(SimulationAnalyzer):
+    def __init__(self,arg0):
+        if isinstance(arg0,Simulation):
+            self.infile = arg0.infile
+        else:
+            self.infile = arg0
+        #end if
+    #end def __init__
+
+    def analyze(self):
+        None
+    #end def analyze
+#end class Convertpw4qmcAnalyzer
+
+
+class Convertpw4qmc(Simulation):
+    input_type             = Convertpw4qmcInput
+    analyzer_type          = Convertpw4qmcAnalyzer
+    generic_identifier     = 'convertpw4qmc'
+    application            = 'convertpw4qmc'
+    application_properties = set(['serial'])
+    application_results    = set(['orbitals'])
+    renew_app_command      = True
+
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+    #end def set_app_name
+
+    def propagate_identifier(self):
+        None
+    #end def propagate_identifier
+
+    def check_result(self,result_name,sim):
+        return result_name=='orbitals'
+    #end def check_result
+
+    def get_result(self,result_name,sim):
+        result = obj()
+        input = self.input
+        if result_name=='orbitals':
+            wfn_file = 'eshdf.h5'
+            orbfile = os.path.join(self.locdir,wfn_file)
+            result.location = orbfile
+            result.orbfile = orbfile
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if        
+        return result
+    #end def get_result
+
+    def get_output_files(self):
+        output_files = []
+        return output_files
+    #end def get_output_files
+
+    def app_command(self):
+        app_name  = self.app_name
+        data_file = self.input.data_file 
+        command = '{} {}'.format(app_name,data_file)
+        return command
+    #end def app_command
+#end class Convertpw4qmc
+
+
+
+def generate_convert4pwqmc(**kwargs):
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
+
+    if not 'input' in sim_args:
+        sim_args.input = generate_convertpw4qmc_input(**inp_args)
+    #end if
+    sim = Convert4qmc(**sim_args)
+
+    return sim
+#end def generate_convert4pwqmc
+
 
 
 class PyscfToAfqmcInput(SimulationInput):

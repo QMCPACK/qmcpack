@@ -283,6 +283,18 @@ class Qmcpack(Simulation):
                 opt = QmcpackInput(opt_file)
                 wavefunction = input.get('wavefunction')
                 optwf = opt.qmcsystem.wavefunction
+                # handle spinor case
+                spinor = input.get('spinor')
+                if spinor is not None and spinor:
+                    # remove u-d term from optmized jastrow
+                    J2 = optwf.get('J2')
+                    if J2 is not None:
+                        corr = J2.get('correlation')
+                        if 'ud' in corr:
+                            del corr.ud
+                        #end if
+                    #end if
+                #end if
                 def process_jastrow(wf):                
                     if 'jastrow' in wf:
                         js = [wf.jastrow]
