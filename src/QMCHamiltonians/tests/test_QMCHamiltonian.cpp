@@ -27,6 +27,7 @@ namespace qmcplusplus
 {
 using QMCT = QMCTraits;
 using Real = QMCT::RealType;
+using WP   = WalkerProperties::Indexes;
 
 constexpr bool generate_test_data = false;
 
@@ -201,8 +202,12 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
 
   ParticleSet::mw_update(p_list);
 
-  QMCHamiltonian::mw_evaluate(ham_list, twf_list, p_list);
+  auto energies = QMCHamiltonian::mw_evaluate(ham_list, twf_list, p_list);
 
+  CHECK(ham_list[0].getLocalEnergy() == energies[0]);
+  CHECK(ham_list[1].getLocalEnergy() == energies[1]);
+  CHECK(ham_list[0].getLocalEnergy() == p_list[0].PropertyList[WP::LOCALENERGY]);
+  CHECK(ham_list[1].getLocalEnergy() == p_list[1].PropertyList[WP::LOCALENERGY]);
 
   if constexpr (generate_test_data)
   {
