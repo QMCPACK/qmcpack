@@ -781,7 +781,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
 
     PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(psiV_list_devptr, psiMinv_temp_list_devptr) \
-		                    map(always, from:curRatio_list_ptr[:nw])")
+		                    map(always, from:curRatio_list_ptr[:nw], ratioGradRef_list_ptr[:nw])")
     for (size_t iw = 0; iw < nw; iw++)
     {
       GradType ratioGradRef_local(0);
@@ -792,7 +792,14 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
         psiV_temp_list_ptr[iw][i] = psiV_list_devptr[iw][J];
         ratioGradRef_local += psiMinv_temp_list_devptr[iw][i * psiMinv_cols + WorkingIndex] * dpsiV_list_ptr[iw][J];
       }
-      ratioGradRef_list_ptr[iw] = ratioGradRef_local;
+
+      // Workaround for https://github.com/QMCPACK/qmcpack/issues/4767
+      // Compiler-generated assignment fails for the second component.
+      // Workaround is to assign each component individually.
+      //ratioGradRef_list_ptr[iw] = ratioGradRef_local;
+      ratioGradRef_list_ptr[iw][0] = ratioGradRef_local[0];
+      ratioGradRef_list_ptr[iw][1] = ratioGradRef_local[1];
+      ratioGradRef_list_ptr[iw][2] = ratioGradRef_local[2];
 
       ValueType c_ratio = 0.0;
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : c_ratio)")
