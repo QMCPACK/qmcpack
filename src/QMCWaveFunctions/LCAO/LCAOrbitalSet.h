@@ -310,7 +310,7 @@ private:
                                    OffloadMWVArray& phi_v) const;
 
   /// helper function for extracting a list of basis sets from a list of LCAOrbitalSet
-  RefVectorWithLeader<basis_type> extractBasRefList(const RefVectorWithLeader<SPOSet>& spo_list) const;
+  RefVectorWithLeader<basis_type> extractBasisRefList(const RefVectorWithLeader<SPOSet>& spo_list) const;
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
   /// timer for basis set
