@@ -406,8 +406,6 @@ public:
 
   bool get(std::ostream& os) const;
 
-  RealType get_LocalEnergy() const { return LocalEnergy; }
-
   void setRandomGenerator(RandomBase<FullPrecRealType>* rng);
 
   /// accumulate local energy and update Observables and PropertyList

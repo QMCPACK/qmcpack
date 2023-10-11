@@ -640,7 +640,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
 
   std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
   for (int iw = 0; iw < ham_list.size(); ++iw)
-    local_energies[iw] = ham_list[iw].get_LocalEnergy();
+    local_energies[iw] = ham_list[iw].getLocalEnergy();
 
   return local_energies;
 }
@@ -700,7 +700,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
       updateKinetic(ham_list[iw], p_list[iw]);
 
     for (int iw = 0; iw < ham_list.size(); ++iw)
-      local_energies[iw] = ham_list[iw].get_LocalEnergy();
+      local_energies[iw] = ham_list[iw].getLocalEnergy();
   }
 
   return local_energies;
@@ -855,7 +855,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
 
   std::vector<FullPrecRealType> local_energies(ham_list.size());
   for (int iw = 0; iw < ham_list.size(); ++iw)
-    local_energies[iw] = ham_list[iw].get_LocalEnergy();
+    local_energies[iw] = ham_list[iw].getLocalEnergy();
 
   return local_energies;
 }
