@@ -674,16 +674,15 @@ struct SoaAtomicBasisSet
                        const RefVectorWithLeader<SoaAtomicBasisSet>& atom_basis_list) const
   {
     assert(this == &atom_basis_list.getLeader());
-    auto& atom_basis_leader          = atom_basis_list.template getCastedLeader<SoaAtomicBasisSet>();
-    atom_basis_leader.mw_mem_handle_ = collection.lendResource<SoaAtomicBSetMultiWalkerMem>();
+    atom_basis_list.template getCastedLeader<SoaAtomicBasisSet>().mw_mem_handle_ =
+        collection.lendResource<SoaAtomicBSetMultiWalkerMem>();
   }
 
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<SoaAtomicBasisSet>& atom_basis_list) const
   {
     assert(this == &atom_basis_list.getLeader());
-    auto& atom_basis_leader = atom_basis_list.template getCastedLeader<SoaAtomicBasisSet>();
-    collection.takebackResource(atom_basis_leader.mw_mem_handle_);
+    collection.takebackResource(atom_basis_list.template getCastedLeader<SoaAtomicBasisSet>().mw_mem_handle_);
   }
 
   struct SoaAtomicBSetMultiWalkerMem : public Resource
