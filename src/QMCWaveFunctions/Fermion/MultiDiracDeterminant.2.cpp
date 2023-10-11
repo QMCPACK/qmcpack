@@ -781,7 +781,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
 
     PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(psiV_list_devptr, psiMinv_temp_list_devptr) \
-		                    map(always, from:curRatio_list_ptr[:nw], ratioGradRef_list_ptr[:nw])")
+		                    map(always, from:curRatio_list_ptr[:nw])")
     for (size_t iw = 0; iw < nw; iw++)
     {
       GradType ratioGradRef_local(0);
