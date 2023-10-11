@@ -36,9 +36,13 @@ struct SoaAtomicBasisSet
   using ValueType       = typename QMCTraits::ValueType;
   using OffloadArray4   = Array<ValueType, 4, OffloadPinnedAllocator<ValueType>>;
   using OffloadArray3   = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>;
-  using OffloadArray2   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>;
+  using OffloadMatrix   = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadVector   = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
 
+  /// multi walker shared memory buffer
+  struct SoaAtomicBSetMultiWalkerMem;
+  /// multi walker resource handle
+  ResourceHandle<SoaAtomicBSetMultiWalkerMem> mw_mem_handle_;
   ///size of the basis set
   int BasisSetSize;
   ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
@@ -61,8 +65,6 @@ struct SoaAtomicBasisSet
   std::vector<QuantumNumberType> RnlID;
   ///temporary storage
   VectorSoaContainer<RealType, 4> tempS;
-  struct SoaAtomicBSetMultiWalkerMem;
-  ResourceHandle<SoaAtomicBSetMultiWalkerMem> mw_mem_handle_;
 
   ///the constructor
   explicit SoaAtomicBasisSet(int lmax, bool addsignforM = false) : Ylm(lmax, addsignforM) {}
@@ -665,7 +667,7 @@ struct SoaAtomicBasisSet
   }
   void createResource(ResourceCollection& collection) const
   {
-    auto resource_index = collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>());
+    collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>());
   }
 
   void acquireResource(ResourceCollection& collection,
@@ -695,14 +697,14 @@ struct SoaAtomicBasisSet
       return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
     }
 
-    OffloadArray3 ylm_v;        // [Nelec][PBC][NYlm]
-    OffloadArray3 rnl_v;        // [Nelec][PBC][NRnl]
     OffloadArray4 ylm_vgl;      // [5][Nelec][PBC][NYlm]
     OffloadArray4 rnl_vgl;      // [5][Nelec][PBC][NRnl]
-    OffloadArray2 dr_pbc;       // [PBC][xyz]
-    OffloadArray3 dr;           // [Nelec][PBC][xyz]
-    OffloadArray2 r;            // [Nelec][PBC]
-    OffloadVector correctphase; // [Nelec]
+    OffloadArray3 ylm_v;        // [Nelec][PBC][NYlm]
+    OffloadArray3 rnl_v;        // [Nelec][PBC][NRnl]
+    OffloadMatrix dr_pbc;       // [PBC][xyz]        translation vector for each image
+    OffloadArray3 dr;           // [Nelec][PBC][xyz] ion->elec displacement for each image
+    OffloadMatrix r;            // [Nelec][PBC]      ion->elec distance for each image
+    OffloadVector correctphase; // [Nelec]           overall phase
   };
 };
 

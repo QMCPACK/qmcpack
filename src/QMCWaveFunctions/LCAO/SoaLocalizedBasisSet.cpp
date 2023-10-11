@@ -31,45 +31,43 @@ void SoaLocalizedBasisSet<COT, ORBT>::createResource(ResourceCollection& collect
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
     ResourceCollection& collection,
-    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list) const
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const
 {
-  auto& loc_bs_leader  = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
-  auto& atom_bs_leader = loc_bs_leader.LOBasisSet;
-  const int num_ctr    = loc_bs_leader.LOBasisSet.size();
-  for (int i = 0; i < num_ctr; i++)
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  auto& basisset_leader  = loc_basis_leader.LOBasisSet;
+  for (int i = 0; i < basisset_leader.size(); i++)
   {
-    const auto atom_basis_list(extractLOBasisRefList(basis_list, i));
-    atom_bs_leader[i]->acquireResource(collection, atom_basis_list);
+    const auto one_species_basis_list(extractOneSpeciesBasisRefList(basisset_list, i));
+    basisset_leader[i]->acquireResource(collection, one_species_basis_list);
   }
 }
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::releaseResource(
     ResourceCollection& collection,
-    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list) const
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const
 {
-  auto& loc_bs_leader  = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
-  auto& atom_bs_leader = loc_bs_leader.LOBasisSet;
-  const int num_ctr    = loc_bs_leader.LOBasisSet.size();
-  for (int i = 0; i < num_ctr; i++)
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  auto& basisset_leader  = loc_basis_leader.LOBasisSet;
+  for (int i = 0; i < basisset_leader.size(); i++)
   {
-    const auto atom_basis_list(extractLOBasisRefList(basis_list, i));
-    atom_bs_leader[i]->releaseResource(collection, atom_basis_list);
+    const auto one_species_basis_list(extractOneSpeciesBasisRefList(basisset_list, i));
+    basisset_leader[i]->releaseResource(collection, one_species_basis_list);
   }
 }
 template<class COT, typename ORBT>
-RefVectorWithLeader<COT> SoaLocalizedBasisSet<COT, ORBT>::extractLOBasisRefList(
-    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+RefVectorWithLeader<COT> SoaLocalizedBasisSet<COT, ORBT>::extractOneSpeciesBasisRefList(
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list,
     int id)
 {
-  auto& bs_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
-  RefVectorWithLeader<COT> atom_basis_list(*bs_leader.LOBasisSet[id]);
-  atom_basis_list.reserve(basis_list.size());
-  for (size_t iw = 0; iw < basis_list.size(); iw++)
-  {
-    auto& bs_i = basis_list.template getCastedElement<SoaLocalizedBasisSet<COT, ORBT>>(iw);
-    atom_basis_list.push_back(*bs_i.LOBasisSet[id]);
-  }
-  return atom_basis_list;
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  RefVectorWithLeader<COT> one_species_basis_list(*loc_basis_leader.LOBasisSet[id]);
+  one_species_basis_list.reserve(basisset_list.size());
+  for (size_t iw = 0; iw < basisset_list.size(); iw++)
+    one_species_basis_list.push_back(
+        *basisset_list.template getCastedElement<SoaLocalizedBasisSet<COT, ORBT>>(iw).LOBasisSet[id]);
+  return one_species_basis_list;
 }
 
 

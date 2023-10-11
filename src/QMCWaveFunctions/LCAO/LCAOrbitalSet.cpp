@@ -137,14 +137,10 @@ void LCAOrbitalSet::releaseResource(ResourceCollection& collection, const RefVec
 RefVectorWithLeader<typename LCAOrbitalSet::basis_type> LCAOrbitalSet::extractBasRefList(
     const RefVectorWithLeader<SPOSet>& spo_list) const
 {
-  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
-  RefVectorWithLeader<basis_type> basis_list(*spo_leader.myBasisSet);
+  RefVectorWithLeader<basis_type> basis_list(*spo_list.getCastedLeader<LCAOrbitalSet>().myBasisSet);
   basis_list.reserve(spo_list.size());
   for (size_t iw = 0; iw < spo_list.size(); iw++)
-  {
-    auto& spo_i = spo_list.getCastedElement<LCAOrbitalSet>(iw);
-    basis_list.push_back(*spo_i.myBasisSet);
-  }
+    basis_list.push_back(*spo_list.getCastedElement<LCAOrbitalSet>(iw).myBasisSet);
   return basis_list;
 }
 std::unique_ptr<SPOSet> LCAOrbitalSet::makeClone() const { return std::make_unique<LCAOrbitalSet>(*this); }

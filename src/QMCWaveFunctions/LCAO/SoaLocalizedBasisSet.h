@@ -181,15 +181,20 @@ public:
   /** acquire a shared resource from collection
    */
   void acquireResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& spo_list) const override;
+                       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const override;
 
   /** return a shared resource to collection
    */
   void releaseResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& spo_list) const override;
+                       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const override;
 
-  static RefVectorWithLeader<COT> extractLOBasisRefList(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                                                        int id);
+
+  /** helper function for extracting a list of atomic basis sets for a single species (indexed by `id`)
+   *  from a list of basis sets
+   */
+  static RefVectorWithLeader<COT> extractOneSpeciesBasisRefList(
+      const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list,
+      int id);
 };
 } // namespace qmcplusplus
 #endif
