@@ -358,9 +358,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
 }
 
 
-MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(ParticleSet& P,
-                                                                        WFBufferType& buf,
-                                                                        bool fromscratch)
+MultiDiracDeterminant::LogValue MultiDiracDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   assert(P.isSpinor() == is_spinor_);
   if (is_spinor_)
@@ -911,7 +909,7 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& optvars,
                                                   Vector<ValueType>& dlogpsi,
                                                   const MultiDiracDeterminant& pseudo_dn,
-                                                  const PsiValueType& psiCurrent,
+                                                  const PsiValue& psiCurrent,
                                                   const std::vector<ValueType>& Coeff,
                                                   const std::vector<size_t>& C2node_up,
                                                   const std::vector<size_t>& C2node_dn)
