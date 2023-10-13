@@ -446,7 +446,9 @@ WaveFunctionComponent::PsiValue MultiSlaterDetTableMethod::ratioGrad(ParticleSet
     new_psi_ratio_to_new_ref_det_ = evalGrad_impl_no_precompute(P, iat, true, dummy);
 
   const int det_id = getDetID(iat);
-  curRatio         = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
+  curRatio         = Dets[det_id]->getRefDetRatio();
+  if (curRatio != PsiValue(0))
+    curRatio *= new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
   grad_iat += dummy;
   return curRatio;
 }
@@ -467,7 +469,9 @@ WaveFunctionComponent::PsiValue MultiSlaterDetTableMethod::ratioGradWithSpin(Par
     new_psi_ratio_to_new_ref_det_ = evalGradWithSpin_impl_no_precompute(P, iat, true, dummy, spindummy);
 
   const int det_id = getDetID(iat);
-  curRatio         = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
+  curRatio         = Dets[det_id]->getRefDetRatio();
+  if (curRatio != PsiValue(0))
+    curRatio *= new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
   grad_iat += dummy;
   spingrad_iat += spindummy;
   return curRatio;
@@ -501,7 +505,10 @@ void MultiSlaterDetTableMethod::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
     auto& det                         = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
     grad_new[iw] += dummy[iw];
-    ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
+    det.curRatio = det.Dets[det_id]->getRefDetRatio();
+    if (det.curRatio != PsiValue(0))
+      det.curRatio *= psi_list[iw] / det.psi_ratio_to_ref_det_;
+    ratios[iw] = det.curRatio;
   }
 }
 
@@ -548,7 +555,9 @@ WaveFunctionComponent::PsiValue MultiSlaterDetTableMethod::ratio(ParticleSet& P,
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
   new_psi_ratio_to_new_ref_det_ = computeRatio_NewMultiDet_to_NewRefDet(det_id);
-  curRatio = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
+  curRatio                      = Dets[det_id]->getRefDetRatio();
+  if (curRatio != PsiValue(0))
+    curRatio *= new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
   return curRatio;
 }
 
@@ -605,9 +614,7 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
       PsiValue psi_local(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : psi_local)")
       for (size_t i = 0; i < ndets; i++)
-      {
         psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
-      }
       psi_list_ptr[iw] = psi_local;
     }
   }
@@ -616,7 +623,10 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
   {
     auto& det                         = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
-    ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
+    det.curRatio                      = det.Dets[det_id]->getRefDetRatio();
+    if (det.curRatio != PsiValue(0))
+      det.curRatio *= psi_list[iw] / det.psi_ratio_to_ref_det_;
+    ratios[iw] = det.curRatio;
   }
 }
 
@@ -632,7 +642,9 @@ void MultiSlaterDetTableMethod::evaluateRatios(const VirtualParticleSet& VP, std
     const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
     PsiValue psiNew = computeRatio_NewMultiDet_to_NewRefDet(det_id);
-    ratios[iat]     = Dets[det_id]->getRefDetRatio() * psiNew / psi_ratio_to_ref_det_;
+    ratios[iat]     = Dets[det_id]->getRefDetRatio();
+    if (ratios[iat] != ValueType(0))
+      ratios[iat] *= psiNew / psi_ratio_to_ref_det_;
   }
 }
 
@@ -1068,7 +1080,9 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
 
     // calculate VP ratios
     PsiValue psiNew = computeRatio_NewMultiDet_to_NewRefDet(det_id);
-    ratios[iat]     = Dets[det_id]->getRefDetRatio() * psiNew / psi_ratio_to_ref_det_;
+    ratios[iat]     = Dets[det_id]->getRefDetRatio();
+    if (ratios[iat] != ValueType(0))
+      ratios[iat] *= psiNew / psi_ratio_to_ref_det_;
 
     // calculate VP ratios derivatives
     if (recalculate)
