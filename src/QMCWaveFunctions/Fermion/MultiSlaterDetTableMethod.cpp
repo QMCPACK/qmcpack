@@ -281,7 +281,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
                     map(from: grad_now_list_ptr[:3 * nw]) \
                     map(always, to: det_value_ptr_list_ptr[:nw]) \
                     map(to: mw_grads_ptr[:mw_grads.size()])")
-    for (size_t iw = 0; iw < nw; iw++)
+    for (uint32_t iw = 0; iw < nw; iw++)
     {
       // enforce full precision reduction due to numerical sensitivity
       PsiValue psi_local(0);
@@ -600,7 +600,7 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
     ScopedTimer local_timer(det_leader.offload_timer);
     PRAGMA_OFFLOAD("omp target teams distribute map(always,from: psi_list_ptr[:nw]) \
           map(always, to: det_value_ptr_list_ptr[:nw])")
-    for (size_t iw = 0; iw < nw; iw++)
+    for (uint32_t iw = 0; iw < nw; iw++)
     {
       PsiValue psi_local(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : psi_local)")

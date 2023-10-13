@@ -443,7 +443,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
 
     PRAGMA_OFFLOAD("omp target teams distribute map(always, from:curRatio_list_ptr[:nw]) \
                     is_device_ptr(psiV_list_devptr, psiMinv_temp_list_devptr)")
-    for (size_t iw = 0; iw < nw; iw++)
+    for (uint32_t iw = 0; iw < nw; iw++)
     {
       ValueType c_ratio = 0.0;
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : c_ratio)")
@@ -780,9 +780,11 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
       throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
 
+    // Index of loop over nw must be 32 bit sized to avoid assignment-after-reduction offload bug
+    // See https://github.com/QMCPACK/qmcpack/issues/4767
     PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(psiV_list_devptr, psiMinv_temp_list_devptr) \
 		                    map(always, from:curRatio_list_ptr[:nw])")
-    for (size_t iw = 0; iw < nw; iw++)
+    for (uint32_t iw = 0; iw < nw; iw++)
     {
       GradType ratioGradRef_local(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : ratioGradRef_local)")
@@ -1048,7 +1050,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
 
       PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(psiMinv_list_devptr) \
 		                                  map(always, from: ratioG_list_ptr[:nw])")
-      for (size_t iw = 0; iw < nw; iw++)
+      for (uint32_t iw = 0; iw < nw; iw++)
       {
         ValueType ratioG_local(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+ : ratioG_local)")
