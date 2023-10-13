@@ -172,6 +172,29 @@ public:
    * @param aos a set of Centered Atomic Orbitals
    */
   void add(int icenter, std::unique_ptr<COT> aos);
+
+
+  /** initialize a shared resource and hand it to collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from collection
+   */
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const override;
+
+  /** return a shared resource to collection
+   */
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const override;
+
+
+  /** helper function for extracting a list of atomic basis sets for a single species (indexed by `id`)
+   *  from a list of basis sets
+   */
+  static RefVectorWithLeader<COT> extractOneSpeciesBasisRefList(
+      const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list,
+      int id);
 };
 } // namespace qmcplusplus
 #endif

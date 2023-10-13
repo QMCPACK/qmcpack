@@ -176,6 +176,22 @@ struct SoaBasisSetBase
 
   /// Determine which orbitals are S-type.  Used for cusp correction.
   virtual void queryOrbitalsForSType(const std::vector<bool>& corrCenter, std::vector<bool>& is_s_orbital) const {}
+
+  /** initialize a shared resource and hand it to collection
+   */
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /** acquire a shared resource from collection
+   */
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<SoaBasisSetBase>& bset_list) const
+  {}
+
+  /** return a shared resource to collection
+   */
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<SoaBasisSetBase>& bset_list) const
+  {}
 };
 
 } // namespace qmcplusplus
