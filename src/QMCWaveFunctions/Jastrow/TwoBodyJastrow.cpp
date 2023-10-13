@@ -246,9 +246,9 @@ void TwoBodyJastrow<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename FT>
-typename TwoBodyJastrow<FT>::LogValueType TwoBodyJastrow<FT>::updateBuffer(ParticleSet& P,
-                                                                           WFBufferType& buf,
-                                                                           bool fromscratch)
+typename TwoBodyJastrow<FT>::LogValue TwoBodyJastrow<FT>::updateBuffer(ParticleSet& P,
+                                                                       WFBufferType& buf,
+                                                                       bool fromscratch)
 {
   log_value_ = computeGL(P.G, P.L);
   buf.forward(Bytes_in_WFBuffer);
@@ -448,19 +448,19 @@ void TwoBodyJastrow<FT>::computeU3(const ParticleSet& P,
 }
 
 template<typename FT>
-typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratio(ParticleSet& P, int iat)
+typename TwoBodyJastrow<FT>::PsiValue TwoBodyJastrow<FT>::ratio(ParticleSet& P, int iat)
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
   cur_Uat    = computeU(P, iat, P.getDistTableAA(my_table_ID_).getTempDists());
-  return std::exp(static_cast<PsiValueType>(Uat[iat] - cur_Uat));
+  return std::exp(static_cast<PsiValue>(Uat[iat] - cur_Uat));
 }
 
 template<typename FT>
 void TwoBodyJastrow<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list,
                                       int iat,
-                                      std::vector<PsiValueType>& ratios) const
+                                      std::vector<PsiValue>& ratios) const
 {
   if (!use_offload_)
   {
@@ -489,7 +489,7 @@ void TwoBodyJastrow<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComp
   {
     auto& wfc   = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.cur_Uat = mw_vgl[iw][0];
-    ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
+    ratios[iw]  = std::exp(static_cast<PsiValue>(wfc.Uat[iat] - wfc.cur_Uat));
   }
 }
 
@@ -529,7 +529,7 @@ typename TwoBodyJastrow<FT>::GradType TwoBodyJastrow<FT>::evalGrad(ParticleSet& 
 }
 
 template<typename FT>
-typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+typename TwoBodyJastrow<FT>::PsiValue TwoBodyJastrow<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -537,14 +537,14 @@ typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratioGrad(Particle
   cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
   DiffVal = Uat[iat] - cur_Uat;
   grad_iat += accumulateG(cur_du.data(), P.getDistTableAA(my_table_ID_).getTempDispls());
-  return std::exp(static_cast<PsiValueType>(DiffVal));
+  return std::exp(static_cast<PsiValue>(DiffVal));
 }
 
 template<typename FT>
 void TwoBodyJastrow<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list,
                                       int iat,
-                                      std::vector<PsiValueType>& ratios,
+                                      std::vector<PsiValue>& ratios,
                                       std::vector<GradType>& grad_new) const
 {
   if (!use_offload_)
@@ -573,7 +573,7 @@ void TwoBodyJastrow<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComp
   {
     auto& wfc   = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.cur_Uat = mw_vgl[iw][0];
-    ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
+    ratios[iw]  = std::exp(static_cast<PsiValue>(wfc.Uat[iat] - wfc.cur_Uat));
     for (int idim = 0; idim < ndim; idim++)
       grad_new[iw][idim] += mw_vgl[iw][idim + 1];
   }
@@ -734,9 +734,9 @@ void TwoBodyJastrow<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionComp
 }
 
 template<typename FT>
-typename TwoBodyJastrow<FT>::LogValueType TwoBodyJastrow<FT>::evaluateLog(const ParticleSet& P,
-                                                                          ParticleSet::ParticleGradient& G,
-                                                                          ParticleSet::ParticleLaplacian& L)
+typename TwoBodyJastrow<FT>::LogValue TwoBodyJastrow<FT>::evaluateLog(const ParticleSet& P,
+                                                                      ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L)
 {
   recompute(P);
   return log_value_ = computeGL(G, L);
@@ -780,10 +780,10 @@ typename TwoBodyJastrow<FT>::QTFull::RealType TwoBodyJastrow<FT>::computeGL(Part
 }
 
 template<typename FT>
-WaveFunctionComponent::LogValueType TwoBodyJastrow<FT>::evaluateGL(const ParticleSet& P,
-                                                                   ParticleSet::ParticleGradient& G,
-                                                                   ParticleSet::ParticleLaplacian& L,
-                                                                   bool fromscratch)
+WaveFunctionComponent::LogValue TwoBodyJastrow<FT>::evaluateGL(const ParticleSet& P,
+                                                               ParticleSet::ParticleGradient& G,
+                                                               ParticleSet::ParticleLaplacian& L,
+                                                               bool fromscratch)
 {
   return log_value_ = computeGL(G, L);
 }

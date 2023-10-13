@@ -54,19 +54,19 @@ public:
     }
   }
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
+  inline PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     BFTrans->evaluatePbyPWithGrad(P, iat);
     //BFTrans->evaluate(P);
-    PsiValueType psi = 1.0;
+    PsiValue psi = 1.0;
     for (int i = 0; i < Dets.size(); ++i)
       psi *= Dets[i]->ratioGrad(P, iat, grad_iat);
     return psi;
@@ -111,11 +111,11 @@ public:
   }
 
 
-  inline PsiValueType ratio(ParticleSet& P, int iat) override
+  inline PsiValue ratio(ParticleSet& P, int iat) override
   {
     BFTrans->evaluatePbyP(P, iat);
     //BFTrans->evaluate(P);
-    PsiValueType ratio = 1.0;
+    PsiValue ratio = 1.0;
     for (int i = 0; i < Dets.size(); ++i)
       ratio *= Dets[i]->ratio(P, iat);
     return ratio;

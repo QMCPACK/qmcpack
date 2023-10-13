@@ -72,8 +72,8 @@ public:
   using WFBufferType = WaveFunctionComponent::WFBufferType;
   using HessType     = WaveFunctionComponent::HessType;
   using HessVector   = WaveFunctionComponent::HessVector;
-  using LogValueType = WaveFunctionComponent::LogValueType;
-  using PsiValueType = WaveFunctionComponent::PsiValueType;
+  using LogValue     = WaveFunctionComponent::LogValue;
+  using PsiValue     = WaveFunctionComponent::PsiValue;
 
   using SPOMap = SPOSet::SPOMap;
 
@@ -290,7 +290,7 @@ public:
   static void mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                            const RefVectorWithLeader<ParticleSet>& p_list,
                            int iat,
-                           std::vector<PsiValueType>& ratios,
+                           std::vector<PsiValue>& ratios,
                            ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
@@ -352,7 +352,7 @@ public:
   static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
                                int iat,
-                               std::vector<PsiValueType>& ratios,
+                               std::vector<PsiValue>& ratios,
                                TWFGrads<CT>& grads);
 
   /** Prepare internal data for updating WFC correspond to a particle group
@@ -412,7 +412,7 @@ public:
 
   /** compute gradients and laplacian of the TWF with respect to each particle.
    *  See WaveFunctionComponent::evaluateGL for more detail */
-  LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
+  LogValue evaluateGL(ParticleSet& P, bool fromscratch);
   /* batched version of evaluateGL.
    */
   static void mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

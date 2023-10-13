@@ -20,15 +20,15 @@ namespace qmcplusplus
 class ConstantOrbital : public WaveFunctionComponent
 {
 public:
-  PsiValueType FakeGradRatio;
+  PsiValue FakeGradRatio;
 
   ConstantOrbital() : FakeGradRatio(1.0) {}
 
   std::string getClassName() const override { return "ConstantOrbital"; }
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override
   {
     G = 0.0;
     L = 0.0;
@@ -39,15 +39,15 @@ public:
 
   void restore(int iat) override {}
 
-  PsiValueType ratio(ParticleSet& P, int iat) override { return 1.0; }
+  PsiValue ratio(ParticleSet& P, int iat) override { return 1.0; }
 
   GradType evalGrad(ParticleSet& P, int iat) override { return GradType(0.0); }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return FakeGradRatio; }
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return FakeGradRatio; }
 
   void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override { return 0.0; }
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override { return 0.0; }
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 

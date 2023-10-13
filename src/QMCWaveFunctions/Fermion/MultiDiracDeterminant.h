@@ -185,7 +185,7 @@ public:
                              const opt_variables_type& optvars,
                              Vector<ValueType>& dlogpsi,
                              const MultiDiracDeterminant& pseudo_dn,
-                             const PsiValueType& psiCurrent,
+                             const PsiValue& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
                              const std::vector<size_t>& C2node_dn);
@@ -193,7 +193,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -222,10 +222,10 @@ public:
    * These functions should not be called.
    ***************************************************************************/
 
-  PsiValueType ratio(ParticleSet& P, int iat) override
+  PsiValue ratio(ParticleSet& P, int iat) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return PsiValueType();
+    return PsiValue();
   }
 
   GradType evalGrad(ParticleSet& P, int iat) override
@@ -234,15 +234,15 @@ public:
     return GradType();
   }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return PsiValueType();
+    return PsiValue();
   }
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
@@ -324,8 +324,8 @@ public:
   const Matrix<ValueType>& getSpinGrads() const { return spingrads; }
   const Matrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
 
-  PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
-  LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
+  PsiValue getRefDetRatio() const { return static_cast<PsiValue>(curRatio); }
+  LogValue getLogValueRefDet() const { return log_value_ref_det_; }
 
 private:
   void mw_InverseUpdateByColumn(MultiDiracDetMultiWalkerResource& mw_res,
@@ -573,7 +573,7 @@ private:
   /// new value of the reference determinant over the old value upon a proposed move
   ValueType curRatio;
   /// log value of the reference determinant
-  LogValueType log_value_ref_det_;
+  LogValue log_value_ref_det_;
   /// store determinant grads (old and new)
   Matrix<GradType> grads, new_grads;
   /// store determinant lapls (old and new)
