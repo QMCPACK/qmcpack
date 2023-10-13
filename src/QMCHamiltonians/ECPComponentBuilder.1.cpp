@@ -45,10 +45,6 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
         {
           pp_nonloc->add(l, createVrWithBasisGroup(cur1, grid_semilocal.get()));
         }
-        //else if(cname1 == "data")
-        //{
-        //  pp_nonloc->add(l,createVrWithData(cur1,grid_semilocal));
-        //}
         cur1 = cur1->next;
       }
       NumNonLocal++;
@@ -143,12 +139,6 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
       vr.putBasisGroup(cur, vPowerCorrection);
       bareCoulomb = false;
     }
-    else if (cname == "data")
-    {
-      pp_loc = std::unique_ptr<RadialPotentialType>(createVrWithData(cur, grid_local_inp.get(), vPowerCorrection));
-      app_log() << "  Local pseduopotential in a <data/>" << std::endl;
-      return;
-    }
     cur = cur->next;
   }
   if (grid_local_inp == nullptr)
@@ -193,9 +183,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
         --last;
       }
       if (last == 0)
-      {
-        app_error() << "  Illegal Local Pseudopotential " << std::endl;
-      }
+        myComm->barrier_and_abort("ECPComponentBuilder::buildLocal. Illegal Local Pseudopotential");
       //Add the reset values here
       int ng = static_cast<int>(r / 1e-3) + 1;
       app_log() << "     Use a Linear Grid: [0," << r << "] Number of points = " << ng << std::endl;
@@ -297,59 +285,5 @@ std::unique_ptr<ECPComponentBuilder::mGridType> ECPComponentBuilder::createGrid(
   }
   return agrid;
 }
-
-/** Disable pseudo/semilocal/vps/data */
-ECPComponentBuilder::RadialPotentialType* ECPComponentBuilder::createVrWithData(xmlNodePtr cur,
-                                                                                mGridType* agrid,
-                                                                                int rCorrection)
-{
-  return nullptr;
-  //  RealType rcIn = agrid->rmax();
-  //  //use the maximum value of the grid
-  //  if(RcutMax<0) RcutMax=rcIn;
-  //  //create a new linear grid if the input grid is not good enough
-  //  GridType *newgrid=0;
-  //  if(agrid->GridTag != LINEAR_1DGRID || RcutMax < rcIn)
-  //  {
-  //    const RealType delta=1000.; // use 1/000
-  //    newgrid = new LinearGrid<RealType>;
-  //    newgrid->set(0.0,RcutMax,static_cast<int>(RcutMax*delta)+1);
-  //  }
-  //  //read the numerical data
-  //  std::vector<RealType> pdata;
-  //  putContent(pdata,cur);
-  //  if(pdata.size() != agrid->size())
-  //  {
-  //    app_error() << "  ECPComponentBuilder::createVrWithData vsp/data size does not match." << std::endl;
-  //    abort(); //FIXABORT
-  //  }
-  //  if(rCorrection == 1)
-  //  {
-  //    for(int i=0; i<agrid->size(); i++) pdata[i] *= (*agrid)[i];
-  //  }
-  //  if(newgrid)
-  //  {
-  //    OneDimCubicSpline<RealType> inFunc(grid_global,pdata);
-  //    inFunc.spline();
-  //    int ng=newgrid->size();
-  //    pdata.resize(ng);
-  //    for(int i=0; i<ng; i++)
-  //    {
-  //      RealType r((*agrid)[i]);
-  //      pdata[i]=inFunc.splint(r);
-  //    }
-  //    if(agrid->rmin()>0.0) pdata[0]=pdata[1];
-  //    RadialPotentialType *app = new RadialPotentialType(newgrid,pdata);
-  //    app->spline();
-  //    return app;
-  //  }
-  //  else
-  //  {//use Radial potential with the input grid
-  //    RadialPotentialType *app = new RadialPotentialType(agrid,pdata);
-  //    app->spline();
-  //    return app;
-  //  }
-}
-
 
 } // namespace qmcplusplus

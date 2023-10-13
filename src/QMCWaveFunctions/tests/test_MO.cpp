@@ -356,12 +356,10 @@ void test_EtOH_mw(bool transform)
   SPOSet::ValueVector d2psiref_0(n_mo);
   // Call makeMove to compute the distances
   //ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
-  //std::cout << elec.R[0] << std::endl;
   //elec.makeMove(0, newpos);
   //elec.update();
   elec.R[0] = {0.0001, 0.0, 0.0};
   elec.update();
-  std::cout << elec.R[0] << std::endl;
   // set up second walkers
   // auto elec2 = elec.makeClone();
   sposet->evaluateVGL(elec, 0, psiref_0, dpsiref_0, d2psiref_0);
@@ -423,6 +421,11 @@ void test_EtOH_mw(bool transform)
   RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
   RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
 
+  size_t nw = psi_list.size();
+  SPOSet::ValueVector psi_v_1(n_mo);
+  SPOSet::ValueVector psi_v_2(n_mo);
+  RefVector<SPOSet::ValueVector> psi_v_list{psi_v_1, psi_v_2};
+
   ResourceCollection pset_res("test_pset_res");
   ResourceCollection spo_res("test_spo_res");
 
@@ -433,9 +436,15 @@ void test_EtOH_mw(bool transform)
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
+  sposet->mw_evaluateValue(spo_list, P_list, 0, psi_v_list);
 
   for (size_t iorb = 0; iorb < n_mo; iorb++)
   {
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      // test values from OffloadMWVArray impl.
+      CHECK(std::real(psi_v_list[iw].get()[iorb]) == Approx(psi_list[iw].get()[iorb]));
+    }
     CHECK(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
     CHECK(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
     CHECK(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));
@@ -534,15 +543,10 @@ void test_Ne(bool transform)
 
     sposet->evaluateValue(elec, 0, values);
 
-    std::cout << "values = " << values << std::endl;
-
     // Generated from gen_mo.py for position [1e-05, 0.0, 0.0]
     CHECK(values[0] == Approx(-16.11819042));
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
-    std::cout << "values = " << values << std::endl;
-    std::cout << "dpsi = " << dpsi << std::endl;
-    std::cout << "d2psi = " << d2psi << std::endl;
     // Generated from gen_mo.py for position [1e-05, 0.0, 0.0]
     CHECK(values[0] == Approx(-16.11819042));
     CHECK(dpsi[0][0] == Approx(0.1747261458));

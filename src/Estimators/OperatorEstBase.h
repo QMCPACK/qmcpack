@@ -40,6 +40,7 @@ class OperatorEstBase
 {
 public:
   using QMCT      = QMCTraits;
+  using FullPrecRealType = QMCT::FullPrecRealType;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   using Data = std::vector<QMCT::RealType>;
@@ -73,7 +74,7 @@ public:
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
                           const RefVector<ParticleSet>& psets,
                           const RefVector<TrialWaveFunction>& wfns,
-                          RandomGenerator& rng) = 0;
+                          RandomBase<FullPrecRealType>& rng) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *

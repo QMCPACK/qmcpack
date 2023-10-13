@@ -47,21 +47,21 @@ public:
 
   LCAOrbitalSet(const LCAOrbitalSet& in);
 
-  virtual std::string getClassName() const override { return "LCAOrbitalSet"; }
+  std::string getClassName() const final { return "LCAOrbitalSet"; }
 
-  bool isRotationSupported() const override { return true; }
+  bool isRotationSupported() const final { return true; }
 
-  bool hasIonDerivs() const override { return true; }
+  bool hasIonDerivs() const final { return true; }
 
-  std::unique_ptr<SPOSet> makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const final;
 
-  void storeParamsBeforeRotation() override { C_copy = std::make_shared<ValueMatrix>(*C); }
+  void storeParamsBeforeRotation() final { C_copy = std::make_shared<ValueMatrix>(*C); }
 
-  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) final;
 
   /** set the OrbitalSetSize and Identity=false and initialize internal storages
     */
-  void setOrbitalSetSize(int norbs) override;
+  void setOrbitalSetSize(int norbs) final;
 
   /** return the size of the basis set
     */
@@ -72,24 +72,34 @@ public:
   /** check consistency between Identity and C
     *
     */
-  void checkObject() const override;
+  void checkObject() const final;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) final;
 
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) final;
 
+  void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        const RefVector<ValueVector>& psi_v_list) const final;
 
   void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                       const RefVectorWithLeader<ParticleSet>& P_list,
                       int iat,
                       const RefVector<ValueVector>& psi_v_list,
                       const RefVector<GradVector>& dpsi_v_list,
-                      const RefVector<ValueVector>& d2psi_v_list) const override;
+                      const RefVector<ValueVector>& d2psi_v_list) const final;
+
+  void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                            const RefVector<ValueVector>& psi_list,
+                            const std::vector<const ValueType*>& invRow_ptr_list,
+                            std::vector<std::vector<ValueType>>& ratios_list) const final;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,
                          const ValueVector& psiinv,
-                         std::vector<ValueType>& ratios) override;
+                         std::vector<ValueType>& ratios) final;
 
   void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
                                       const RefVectorWithLeader<ParticleSet>& P_list,
@@ -97,34 +107,30 @@ public:
                                       const std::vector<const ValueType*>& invRow_ptr_list,
                                       OffloadMWVGLArray& phi_vgl_v,
                                       std::vector<ValueType>& ratios,
-                                      std::vector<GradType>& grads) const override;
+                                      std::vector<GradType>& grads) const final;
 
-  void evaluateVGH(const ParticleSet& P,
-                   int iat,
-                   ValueVector& psi,
-                   GradVector& dpsi,
-                   HessVector& grad_grad_psi) override;
+  void evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi) final;
 
   void evaluateVGHGH(const ParticleSet& P,
                      int iat,
                      ValueVector& psi,
                      GradVector& dpsi,
                      HessVector& grad_grad_psi,
-                     GGGVector& grad_grad_grad_psi) override;
+                     GGGVector& grad_grad_grad_psi) final;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
-                            ValueMatrix& d2logdet) override;
+                            ValueMatrix& d2logdet) final;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
-                            HessMatrix& grad_grad_logdet) override;
+                            HessMatrix& grad_grad_logdet) final;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -132,7 +138,7 @@ public:
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
                             HessMatrix& grad_grad_logdet,
-                            GGGMatrix& grad_grad_grad_logdet) override;
+                            GGGMatrix& grad_grad_grad_logdet) final;
 
   //NOTE:  The data types get complicated here, so here's an overview of the
   //       data types associated with ionic derivatives, and how to get their data.
@@ -176,7 +182,7 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          GradMatrix& grad_phi) override;
+                          GradMatrix& grad_phi) final;
 
   /**
  * \brief Calculate ion derivatives of SPO's, their gradients, and their laplacians.
@@ -197,19 +203,17 @@ public:
                           int iat_src,
                           GradMatrix& grad_phi,
                           HessMatrix& grad_grad_phi,
-                          GradMatrix& grad_lapl_phi) override;
+                          GradMatrix& grad_lapl_phi) final;
 
   void evaluateGradSourceRow(const ParticleSet& P,
                              int iel,
                              const ParticleSet& source,
                              int iat_src,
-                             GradVector& grad_phi) override;
+                             GradVector& grad_phi) final;
 
-  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet) override;
-
-  void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+  void createResource(ResourceCollection& collection) const final;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const final;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const final;
 
 protected:
   ///number of Single-particle orbitals
@@ -294,6 +298,19 @@ private:
                               int iat,
                               OffloadMWVGLArray& phi_vgl_v) const;
 
+  /// packed walker GEMM implementation
+  void mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                const RefVectorWithLeader<ParticleSet>& P_list,
+                                int iat,
+                                OffloadMWVArray& phi_v) const;
+
+  /// packed walker GEMM implementation with multi virtual particle sets
+  void mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                   OffloadMWVArray& phi_v) const;
+
+  /// helper function for extracting a list of basis sets from a list of LCAOrbitalSet
+  RefVectorWithLeader<basis_type> extractBasisRefList(const RefVectorWithLeader<SPOSet>& spo_list) const;
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
   /// timer for basis set

@@ -446,7 +446,7 @@ public:
    * TODO: add docs
    * @param rng 
    */
-  virtual void setRandomGenerator(RandomGenerator* rng);
+  virtual void setRandomGenerator(RandomBase<FullPrecRealType>* rng);
 
   /**
    * @brief TODO: add docs

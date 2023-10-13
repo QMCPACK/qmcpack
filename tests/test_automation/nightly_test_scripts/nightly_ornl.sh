@@ -71,9 +71,9 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangoffloadnompi_offloadcuda clangoffloadmpi_offloadcuda clangoffloadmpi_offloadcuda_complex clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
+	    buildsys="clangoffloadnompi_offloadcuda clangoffloadmpi_offloadcuda clangoffloadmpi_offloadcuda_complex clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex clangoffloadmpi_offloadcuda"
 	else
-	    buildsys="clangnewmpi gccnewmpi clangoffloadmpi_offloadcuda clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex"
+	    buildsys="clangoffloadmpi_offloadcuda clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex"
 	fi
 	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
 	;;
@@ -115,18 +115,14 @@ esac
 case "$jobtype" in
     weekly )
 	export GLOBALTCFG="-j 48 --timeout 7200 -VV"
-#	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=256"
 	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=256;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=64;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=64"
 	export LIMITEDTESTS=""
 	export LESSLIMITEDTESTS=""
 	;;
     nightly )
-#	export GLOBALTCFG="-j 48 --timeout 900 -VV"
 	export GLOBALTCFG="-j 48 --timeout 300 -VV"
-#	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=255;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=12;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=16"
 	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=128;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=12;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=16"
-        export LIMITEDTESTS="-LE unstable --exclude-regex 'short-.*|long-.*|example.*'"
-#	export LESSLIMITEDTESTS="--exclude-regex 'long-.*'"
+        export LIMITEDTESTS="-E 'short-.*|long-.*|example.*'"
 	export LESSLIMITEDTESTS="-E long"
 	;;
     * )
@@ -260,8 +256,15 @@ case "$sys" in
     clangoffload*mpi*) echo $ourenv
 		;;
     amdclang*) echo $ourenv
-	       export ROCM_PATH=/opt/rocm
-	       export PATH=$PATH:$ROCM_PATH/bin
+	       for rocp in /opt/rocm /opt/rocm-5.6.1 /opt/rocm-5.6.0 /opt/rocm-5.5.1
+	       do
+		   if [ -e $rocp/bin/rocminfo ]; then
+		       echo Found rocminfo under $rocp
+		       export ROCM_PATH=$rocp
+		       break
+		   fi
+	       done
+	       export PATH=$PATH:$ROCM_PATH/bin:$ROCM_PATH/llvm/bin
 		;;
     
     *) echo "Problems: Unknown build environment"
@@ -287,18 +290,6 @@ QMCPACK_TEST_SUBMIT_NAME=GCC${compilerversion}
 CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
 export OMPI_CC=gcc
 export OMPI_CXX=g++
-
-if [[ $sys == *"gccnew"* ]]; then
-# Add QE to any gccnew MPI builds
-# Restrict to gccnew to avoid problems with mismatched libraries, mpi etc.
-CTCFG="$CTCFG -DQE_BIN=${QE_BIN}" 
-fi
-
-if [[ $sys == *"gcclegacycuda"* ]]; then
-# Add QE to any gcclegacycuda MPI builds
-# GCC compilers will be mismatched from QE and QMCPACK builds
-CTCFG="$CTCFG -DQE_BIN=${QE_BIN}" 
-fi
 
 fi
 fi
@@ -343,21 +334,6 @@ if [[ $sys == *"clang"* ]]; then
     fi
 fi
 
-#OLD#AOMP (fork of Clang/LLVM)
-#OLDif [[ $sys == *"aomp"* ]]; then
-#OLD    compilerversion=`aompversion|sed 's/-.*//g'`
-#OLD    if [[ $sys == *"nompi"* ]]; then
-#OLD	QMCPACK_TEST_SUBMIT_NAME=AOMP${compilerversion}-Offload-NoMPI
-#OLD	CTCFG="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQMC_MPI=0"
-#OLD	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=${amdgpuarch}"
-#OLD    else
-#OLD	QMCPACK_TEST_SUBMIT_NAME=AOMP${compilerversion}-Offload
-#OLD	CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
-#OLD	QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=${amdgpuarch}"
-#OLD	export OMPI_CC=clang
-#OLD	export OMPI_CXX=clang++
-#OLD    fi
-#OLDfi
 
 # Intel
 if [[ $sys == *"intel"* ]]; then
@@ -504,7 +480,7 @@ fi
 
 # Adjust which tests are run to control overall runtime
 case "$sys" in
-    *intel2020*|*gccnew*|*clangnew*|*gcc*legacycuda*|*gcc*cu2hip*) echo "Running full ("less limited") test set for $sys"
+    *intel2020*|*gccnew*|*clangnew*|*gcc*legacycuda*|*gcc*cu2hip*|amdclang*) echo "Running full ("less limited") test set for $sys"
 							     THETESTS=$LESSLIMITEDTESTS
 							     ;;
     *) echo "Running limited test set for $sys"

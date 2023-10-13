@@ -23,7 +23,10 @@ class SOVMCUpdatePbyP : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  SOVMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
+  SOVMCUpdatePbyP(MCWalkerConfiguration& w,
+                  TrialWaveFunction& psi,
+                  QMCHamiltonian& h,
+                  RandomBase<FullPrecRealType>& rg);
 
   ~SOVMCUpdatePbyP() override;
 

@@ -36,7 +36,7 @@ public:
   bool put(xmlNodePtr cur) override { return false; };
   bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
-  void setRandomGenerator(RandomGenerator* rng) override;
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override;
   //resize the internal data by input k-point list
   void resize(const std::vector<PosType>& kin, const int Min);
   ///number of samples
@@ -48,7 +48,7 @@ public:
   ///normalization factor for n(k)
   RealType norm_nofK;
   ///random generator
-  RandomGenerator myRNG;
+  std::unique_ptr<RandomBase<FullPrecRealType>> myRNG;
   ///sample positions
   std::vector<PosType> vPos;
   ///wavefunction ratios

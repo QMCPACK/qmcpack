@@ -59,7 +59,7 @@ void PerParticleHamiltonianLogger::write(CrowdLogValues& cl_values, const std::v
 void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walkers,
                                               const RefVector<ParticleSet>& psets,
                                               const RefVector<TrialWaveFunction>& wfns,
-                                              RandomGenerator& rng)
+                                              RandomBase<FullPrecRealType>& rng)
 
 {
   // The hamiltonian doesn't know the walker ID only its index in the walker elements of the crowd

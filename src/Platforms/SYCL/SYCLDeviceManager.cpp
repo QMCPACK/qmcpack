@@ -33,7 +33,7 @@ syclDeviceInfo::syclDeviceInfo(const sycl::context& context, const sycl::device&
 syclDeviceInfo::~syclDeviceInfo()
 {
 #if defined(ENABLE_OFFLOAD)
-  #pragma omp interop destroy(interop_)
+#pragma omp interop destroy(interop_)
 #endif
 }
 
@@ -128,7 +128,12 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
     else if (default_device_num != sycl_default_device_num)
       throw std::runtime_error("Inconsistent assigned SYCL devices with the previous record!");
     default_device_queue = std::make_unique<sycl::queue>(visible_devices[sycl_default_device_num].get_context(),
-                                                         visible_devices[sycl_default_device_num].get_device());
+                                                         visible_devices[sycl_default_device_num].get_device(),
+                                                         sycl::property::queue::in_order());
+    if (!visible_devices[sycl_default_device_num].get_device().has(sycl::aspect::ext_intel_free_memory))
+      app_warning()
+          << "Free memory queries always return 0 due to inactive 'oneAPI' System Resource Management (sysman). "
+          << "Set environment variable ZES_ENABLE_SYSMAN to 1 to activate the query feature." << std::endl;
   }
 }
 
@@ -141,7 +146,8 @@ sycl::queue& SYCLDeviceManager::getDefaultDeviceDefaultQueue()
 
 sycl::queue SYCLDeviceManager::createQueueDefaultDevice() const
 {
-  return sycl::queue(visible_devices[sycl_default_device_num].get_context(), visible_devices[sycl_default_device_num].get_device());
+  return sycl::queue(visible_devices[sycl_default_device_num].get_context(),
+                     visible_devices[sycl_default_device_num].get_device(), sycl::property::queue::in_order());
 }
 
 } // namespace qmcplusplus

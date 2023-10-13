@@ -141,7 +141,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     WfnFac.push(wfn_name, doc2.getRoot());
     Wavefunction& wfn = WfnFac.getWavefunction(TG, TG, wfn_name, type, &ham, 1e-6, nwalk);
 
-    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
     REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
@@ -156,7 +156,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     std::string prop_name("prop0");
     PropagatorFactory PropgFac(InfoMap);
     PropgFac.push(prop_name, doc4.getRoot());
-    Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, &rng);
+    Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, rng);
 
     std::cout << setprecision(12);
     wfn.Energy(wset);
@@ -313,7 +313,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     WfnFac.push(wfn_name, doc2.getRoot());
     Wavefunction& wfn = WfnFac.getWavefunction(TGprop, TGprop, wfn_name, type, &ham, 1e-6, nwalk);
 
-    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
     REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
@@ -330,7 +330,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     std::string prop_name("prop0");
     PropagatorFactory PropgFac(InfoMap);
     PropgFac.push(prop_name, doc4.getRoot());
-    Propagator& prop = PropgFac.getPropagator(TGprop, prop_name, wfn, &rng);
+    Propagator& prop = PropgFac.getPropagator(TGprop, prop_name, wfn, rng);
     wfn.Energy(wset);
     {
       ComplexType eav = 0, ov = 0;

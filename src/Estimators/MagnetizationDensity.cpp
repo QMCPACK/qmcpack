@@ -49,7 +49,7 @@ size_t MagnetizationDensity::getFullDataSize() { return npoints_ * DIM; }
 void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
                                       const RefVector<ParticleSet>& psets,
                                       const RefVector<TrialWaveFunction>& wfns,
-                                      RandomGenerator& rng)
+                                      RandomBase<FullPrecReal>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
@@ -240,25 +240,14 @@ MagnetizationDensity::Value MagnetizationDensity::integrateMagnetizationDensity(
   return val;
 }
 
-template<class RAN_GEN>
-void MagnetizationDensity::generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN& rng, Real start, Real stop) const
+void MagnetizationDensity::generateRandomGrid(std::vector<Real>& sgrid,
+                                              RandomBase<FullPrecReal>& rng,
+                                              Real start,
+                                              Real stop) const
 {
   size_t npoints = sgrid.size();
   for (int i = 0; i < npoints; i++)
     sgrid[i] = (stop - start) * rng();
 }
-
-
-template void MagnetizationDensity::generateRandomGrid<RandomGenerator>(std::vector<Real>& sgrid,
-                                                                        RandomGenerator& rng,
-                                                                        Real start,
-                                                                        Real stop) const;
-
-#if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
-template void MagnetizationDensity::generateRandomGrid<StdRandom<double>>(std::vector<Real>& sgrid,
-                                                                          StdRandom<double>& rng,
-                                                                          Real start,
-                                                                          Real stop) const;
-#endif
 
 } //namespace qmcplusplus

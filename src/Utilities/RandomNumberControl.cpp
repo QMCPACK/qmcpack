@@ -28,9 +28,9 @@
 namespace qmcplusplus
 {
 ///initialize the static data members
-PrimeNumberSet<RandomGenerator::uint_type> RandomNumberControl::PrimeNumbers;
-std::vector<std::unique_ptr<RandomGenerator>> RandomNumberControl::Children;
-RandomGenerator::uint_type RandomNumberControl::Offset = 11u;
+PrimeNumberSet<RandomBase<QMCTraits::FullPrecRealType>::uint_type> RandomNumberControl::PrimeNumbers;
+UPtrVector<RandomBase<QMCTraits::FullPrecRealType>> RandomNumberControl::Children;
+RandomBase<QMCTraits::FullPrecRealType>::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors
 RandomNumberControl::RandomNumberControl(const char* aname)
@@ -113,7 +113,7 @@ void RandomNumberControl::test()
   {
     const int n = 1000000;
     double sum = 0.0, sum2 = 0.0;
-    RandomGenerator& myrand(*Children[ip]);
+    auto& myrand(*Children[ip]);
     for (int i = 0; i < n; ++i)
     {
       double r = myrand();
@@ -220,7 +220,9 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 }
 
 //switch between write functions
-void RandomNumberControl::write(const RefVector<RandomGenerator>& rng, const std::string& fname, Communicate* comm)
+void RandomNumberControl::write(const RefVector<RandomBase<FullPrecRealType>>& rng,
+                                const std::string& fname,
+                                Communicate* comm)
 {
   std::string h5name = fname + ".random.h5";
   hdf_archive hout(comm, true); //attempt to write in parallel
@@ -289,7 +291,9 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
 }
 
 //Parallel write
-void RandomNumberControl::write_parallel(const RefVector<RandomGenerator>& rng, hdf_archive& hout, Communicate* comm)
+void RandomNumberControl::write_parallel(const RefVector<RandomBase<FullPrecRealType>>& rng,
+                                         hdf_archive& hout,
+                                         Communicate* comm)
 {
   // cast integer to size_t
   const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
@@ -301,9 +305,9 @@ void RandomNumberControl::write_parallel(const RefVector<RandomGenerator>& rng, 
   vt.reserve(nthreads * Random.state_size()); //buffer for random numbers from children[ip] of each thread
   mt.reserve(Random.state_size());            //buffer for random numbers from single Random object
 
+  std::vector<uint_type> c;
   for (int ip = 0; ip < nthreads; ++ip)
   {
-    std::vector<uint_type> c;
     rng[ip].get().save(c);
     vt.insert(vt.end(), c.begin(), c.end()); //get nums from each thread into buffer
   }
@@ -402,7 +406,9 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 }
 
 //scatter write
-void RandomNumberControl::write_rank_0(const RefVector<RandomGenerator>& rng, hdf_archive& hout, Communicate* comm)
+void RandomNumberControl::write_rank_0(const RefVector<RandomBase<FullPrecRealType>>& rng,
+                                       hdf_archive& hout,
+                                       Communicate* comm)
 {
   // cast integer to size_t
   const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());

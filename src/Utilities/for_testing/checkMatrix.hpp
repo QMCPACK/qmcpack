@@ -17,20 +17,27 @@
 #include <string>
 #include <complex>
 #include <type_traits>
+#include <optional>
 #include "type_traits/complex_help.hpp"
 namespace qmcplusplus
 {
 
 template<typename T, IsComplex<T> = true>
-bool approxEquality(T val_a, T val_b)
+bool approxEquality(T val_a, T val_b, std::optional<double> eps)
 {
-  return val_a == ComplexApprox(val_b);
+  if (eps)
+    return val_a == ComplexApprox(val_b).epsilon(eps.value());
+  else
+    return val_a == ComplexApprox(val_b);
 }
 
 template<typename T, IsReal<T> = true>
-bool approxEquality(T val_a, T val_b)
+bool approxEquality(T val_a, T val_b, std::optional<double> eps)
 {
-  return val_a == Approx(val_b);
+  if (eps)
+    return val_a == Approx(val_b).epsilon(eps.value());
+  else
+    return val_a == Approx(val_b);
 }
 
 struct CheckMatrixResult
@@ -50,9 +57,13 @@ struct CheckMatrixResult
  *                         left block of b_mat.
  *  \param[in] b_mat     - the matrix to check
  *  \param[in] check_all - if true continue to check matrix elements after failure
+ *  \param[in] eps       - add a tolerance for Catch Approx checks. Default to same as in Approx. 
  */
 template<class M1, class M2>
-CheckMatrixResult checkMatrix(M1& a_mat, M2& b_mat, const bool check_all = false)
+CheckMatrixResult checkMatrix(M1& a_mat,
+                              M2& b_mat,
+                              const bool check_all            = false,
+                              std::optional<const double> eps = std::nullopt)
 {
   // This allows use to check a padded b matrix with a nonpadded a
   if (a_mat.rows() > b_mat.rows() || a_mat.cols() > b_mat.cols())
@@ -66,7 +77,7 @@ CheckMatrixResult checkMatrix(M1& a_mat, M2& b_mat, const bool check_all = false
   for (int i = 0; i < a_mat.rows(); i++)
     for (int j = 0; j < a_mat.cols(); j++)
     {
-      bool approx_equality = approxEquality<typename M1::value_type>(a_mat(i, j), b_mat(i, j));
+      bool approx_equality = approxEquality<typename M1::value_type>(a_mat(i, j), b_mat(i, j), eps);
       if (!approx_equality)
       {
         matrixElementError(i, j, a_mat, b_mat);
@@ -78,9 +89,13 @@ CheckMatrixResult checkMatrix(M1& a_mat, M2& b_mat, const bool check_all = false
   return {all_elements_match, error_msg.str()};
 }
 
-extern template bool approxEquality<float>(float val_a, float val_b);
-extern template bool approxEquality<std::complex<float>>(std::complex<float> val_a, std::complex<float> val_b);
-extern template bool approxEquality<double>(double val_a, double val_b);
-extern template bool approxEquality<std::complex<double>>(std::complex<double> val_a, std::complex<double> val_b);
+extern template bool approxEquality<float>(float val_a, float val_b, std::optional<double> eps);
+extern template bool approxEquality<std::complex<float>>(std::complex<float> val_a,
+                                                         std::complex<float> val_b,
+                                                         std::optional<double> eps);
+extern template bool approxEquality<double>(double val_a, double val_b, std::optional<double> eps);
+extern template bool approxEquality<std::complex<double>>(std::complex<double> val_a,
+                                                          std::complex<double> val_b,
+                                                          std::optional<double> eps);
 } // namespace qmcplusplus
 #endif

@@ -552,6 +552,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       offload_timer(s.offload_timer),
       transferH2D_timer(s.transferH2D_timer),
       transferD2H_timer(s.transferD2H_timer),
+      lookup_tbl(s.lookup_tbl),
       Phi(s.Phi->makeClone()),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(s.FirstIndex),

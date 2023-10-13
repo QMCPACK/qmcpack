@@ -33,11 +33,12 @@
 #include "Message/Communicate.h"
 #include "hdf/hdf_archive.h"
 #include "Concurrency/OpenMP.h"
+
+#include <algorithm>
 #include <array>
 #include <map>
 #include <memory>
 #include <set>
-#include <algorithm>
 
 namespace qmcplusplus
 {
@@ -2071,13 +2072,16 @@ public:
     std::string file_name = file_root;
     if (nprocs > 1)
     {
+      int length{0};
       if (nprocs > 10000)
-        snprintf(ptoken.data(), ptoken.size(), ".p%05d", rank);
+        length = std::snprintf(ptoken.data(), ptoken.size(), ".p%05d", rank);
       else if (nprocs > 1000)
-        snprintf(ptoken.data(), ptoken.size(), ".p%04d", rank);
+        length = std::snprintf(ptoken.data(), ptoken.size(), ".p%04d", rank);
       else
-        snprintf(ptoken.data(), ptoken.size(), ".p%03d", rank);
-      file_name += ptoken.data();
+        length = std::snprintf(ptoken.data(), ptoken.size(), ".p%03d", rank);
+      if (length < 0)
+        throw std::runtime_error("Error generating filename");
+      file_name.append(ptoken.data(), length);
     }
     file_name += ".traces.h5";
     if (verbose)

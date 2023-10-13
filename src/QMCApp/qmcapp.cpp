@@ -29,6 +29,8 @@
 #include "QMCApp/QMCMain.h"
 #include "Utilities/qmc_common.h"
 
+#include <array>
+
 void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
 
 /** @file qmcapp.cpp
@@ -183,10 +185,10 @@ int main(int argc, char** argv)
     }
     if (inputs.size() > 1 && qmcComm->rank() == 0)
     {
-      char fn[128];
-      snprintf(fn, 127, "%s.g%03d.qmc", logname.str().c_str(), qmcComm->getGroupID());
-      fn[127] = '\0';
-      infoSummary.redirectToFile(fn);
+      std::array<char, 128> fn;
+      if (std::snprintf(fn.data(), fn.size(), "%s.g%03d.qmc", logname.str().c_str(), qmcComm->getGroupID()) < 0)
+        throw std::runtime_error("Error generating filename");
+      infoSummary.redirectToFile(fn.data());
       infoLog.redirectToSameStream(infoSummary);
       infoError.redirectToSameStream(infoSummary);
     }
@@ -231,13 +233,12 @@ int main(int argc, char** argv)
   }
   catch (const std::exception& e)
   {
-    app_error() << e.what() << std::endl;
+    std::cerr << e.what() << std::endl;
     APP_ABORT("Unhandled Exception");
   }
   catch (...)
   {
-    app_error() << "Exception not derived from std::exception thrown" << std::endl;
-    APP_ABORT("Unhandled Exception");
+    APP_ABORT("Unhandled Exception (not derived from std::exception)");
   }
 
   if (OHMMS::Controller->rank() == 0)

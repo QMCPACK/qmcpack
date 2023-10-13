@@ -68,7 +68,7 @@ public:
 
   void addComponent(int groupID, std::unique_ptr<SOECPComponent>&& pp);
 
-  void setRandomGenerator(RandomGenerator* rng) override { my_rng_ = rng; }
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override { my_rng_ = rng; }
 
   //initialize shared resource and hand to collection
   void createResource(ResourceCollection& collection) const override;
@@ -80,7 +80,7 @@ public:
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
 protected:
-  RandomGenerator* my_rng_;
+  RandomBase<FullPrecRealType>* my_rng_;
   std::vector<SOECPComponent*> pp_;
   std::vector<std::unique_ptr<SOECPComponent>> ppset_;
   ParticleSet& ion_config_;

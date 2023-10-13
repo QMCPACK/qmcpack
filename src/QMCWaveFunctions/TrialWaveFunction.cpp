@@ -479,7 +479,7 @@ void TrialWaveFunction::mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction
     }
   }
   for (int iw = 0; iw < wf_list.size(); iw++)
-    wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
+    wf_list[iw].PhaseDiff = std::arg(ratios[iw]);
 }
 
 void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
@@ -514,6 +514,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
     ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
     grad_iat += Z[i]->evalGrad(P, iat);
   }
+  checkOneParticleGradientsNaN(iat, grad_iat, "TWF::evalGrad");
   return grad_iat;
 }
 
@@ -527,6 +528,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, 
     ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
     grad_iat += Z[i]->evalGradWithSpin(P, iat, spingrad);
   }
+  checkOneParticleGradientsNaN(iat, grad_iat, "TWF::evalGradWithSpin");
   return grad_iat;
 }
 
@@ -553,6 +555,9 @@ void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>
     wavefunction_components[i]->mw_evalGrad(wfc_list, p_list, iat, grads_z);
     grads += grads_z;
   }
+
+  for (const GradType& grads : grads.grads_positions)
+    checkOneParticleGradientsNaN(iat, grads, "TWF::mw_evalGrad");
 }
 
 // Evaluates the gradient w.r.t. to the source of the Laplacian
@@ -612,6 +617,9 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
       ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
       r *= Z[i]->ratioGrad(P, iat, grad_iat);
     }
+
+  if(r != PsiValueType(0)) // grad_iat is meaningful only when r is strictly non-zero
+    checkOneParticleGradientsNaN(iat, grad_iat, "TWF::calcRatioGrad");
   LogValueType logratio = convertValueToLog(r);
   PhaseDiff             = std::imag(logratio);
   return static_cast<ValueType>(r);
@@ -632,6 +640,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
     r *= Z[i]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
   }
 
+  checkOneParticleGradientsNaN(iat, grad_iat, "TWF::calcRatioGradWithSpin");
   LogValueType logratio = convertValueToLog(r);
   PhaseDiff             = std::imag(logratio);
   return static_cast<ValueType>(r);
@@ -686,7 +695,11 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
     }
   }
   for (int iw = 0; iw < wf_list.size(); iw++)
-    wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
+  {
+    wf_list[iw].PhaseDiff = std::arg(ratios[iw]);
+    if (ratios[iw] != PsiValueType(0))
+      checkOneParticleGradientsNaN(iat, grad_new.grads_positions[iw], "TWF::mw_calcRatioGrad");
+  }
 }
 
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag)
@@ -1180,6 +1193,19 @@ void TrialWaveFunction::releaseResource(ResourceCollection& collection,
   {
     const auto wfc_list(extractWFCRefList(wf_list, i));
     wavefunction_components[i]->releaseResource(collection, wfc_list);
+  }
+}
+
+void TrialWaveFunction::checkOneParticleGradientsNaN(int iel, const GradType& grads, const std::string_view location)
+{
+  if (qmcplusplus::isnan(std::norm(dot(grads, grads))))
+  {
+    std::ostringstream error_message;
+    error_message << "NaN check in " << location << " found" << std::endl;
+    for (int i = 0; i < grads.size(); ++i)
+      if (qmcplusplus::isnan(std::norm(grads[i])))
+        error_message << "  particle " << iel << " grads[" << i << "] is NaN." << std::endl;
+    throw std::runtime_error(error_message.str());
   }
 }
 

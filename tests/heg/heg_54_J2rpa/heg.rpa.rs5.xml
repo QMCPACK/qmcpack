@@ -23,9 +23,9 @@ xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
       </group>
     </particleset>
     <wavefunction name="psi0" target="e">
-      <sposet_builder type="free">
+      <sposet_collection type="free">
         <sposet name="spo-ud" size="27"/>
-      </sposet_builder>
+      </sposet_collection>
 
       <determinantset>
       <slaterdeterminant>

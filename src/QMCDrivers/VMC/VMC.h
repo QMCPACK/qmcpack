@@ -29,18 +29,21 @@ public:
       MCWalkerConfiguration& w,
       TrialWaveFunction& psi,
       QMCHamiltonian& h,
+      UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
       Communicate* comm,
       bool enable_profiling);
   bool run() override;
   bool put(xmlNodePtr cur) override;
   QMCRunType getRunType() override { return QMCRunType::VMC; }
-  //inline std::vector<RandomGenerator*>& getRng() { return Rng;}
+
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
 
   ///option to enable/disable drift equation or RN for VMC
   std::string UseDrift;
+  //
+  UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs_;
   ///check the run-time environments
   void resetRun();
   ///copy constructor

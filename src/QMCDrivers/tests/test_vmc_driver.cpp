@@ -30,7 +30,6 @@
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/VMC/VMC.h"
 
-
 #include <stdio.h>
 #include <string>
 
@@ -76,7 +75,10 @@ TEST_CASE("VMC", "[drivers][vmc]")
   psi.registerData(elec, elec[0]->DataSet);
   elec[0]->DataSet.allocate();
 
-  FakeRandom rg;
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
   h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
@@ -84,9 +86,9 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(project_data, elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, rngs, c, false);
 
-  const char* vmc_input = R"(<qmc method="vmc" move="pbyp">
+  const char* vmc_input = R"(<qmc method="vmc" move="pbyp" checkpoint="-1">
    <parameter name="substeps">1</parameter>
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
@@ -158,7 +160,10 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   psi.registerData(elec, elec[0]->DataSet);
   elec[0]->DataSet.allocate();
 
-  FakeRandom rg;
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
   h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
@@ -166,9 +171,9 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(project_data, elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, rngs, c, false);
 
-  const char* vmc_input = R"(<qmc method="vmc" move="pbyp">
+  const char* vmc_input = R"(<qmc method="vmc" move="pbyp" checkpoint="-1">
    <parameter name="substeps">1</parameter>
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
@@ -245,7 +250,10 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   psi.registerData(elec, elec[0]->DataSet);
   elec[0]->DataSet.allocate();
 
-  FakeRandom rg;
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
   h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
@@ -253,9 +261,9 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(project_data, elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, rngs, c, false);
 
-  const char* vmc_input = R"(<qmc method="vmc" move="alle">
+  const char* vmc_input = R"(<qmc method="vmc" move="alle" checkpoint="-1">
    <parameter name="substeps">1</parameter>
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>

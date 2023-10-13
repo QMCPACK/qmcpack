@@ -947,6 +947,90 @@ public:
     }
   }
 
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override
+  {
+    resizeWFOptVectors();
+
+    bool recalculate(false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (optvars.recompute(kk))
+        recalculate = true;
+    }
+
+    if (recalculate)
+    {
+      constexpr valT czero(0);
+      constexpr valT cone(1);
+      constexpr valT cminus(-1);
+      constexpr valT ctwo(2);
+      constexpr valT lapfac = OHMMS_DIM - cone;
+
+      const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+      const auto& ee_dists  = ee_table.getDistances();
+      const auto& ee_displs = ee_table.getDisplacements();
+
+      build_compact_list(P);
+
+      dLogPsi    = czero;
+      gradLogPsi = PosType();
+      lapLogPsi  = czero;
+
+      for (int iat = 0; iat < Nion; ++iat)
+      {
+        const int ig = Ions.GroupID[iat];
+        for (int jg = 0; jg < eGroups; ++jg)
+          for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
+          {
+            const int jel       = elecs_inside(jg, iat)[jind];
+            const valT r_Ij     = elecs_inside_dist(jg, iat)[jind];
+            const posT disp_Ij  = cminus * elecs_inside_displ(jg, iat)[jind];
+            const valT r_Ij_inv = cone / r_Ij;
+
+            for (int kg = 0; kg < eGroups; ++kg)
+              for (int kind = 0; kind < elecs_inside(kg, iat).size(); kind++)
+              {
+                const int kel = elecs_inside(kg, iat)[kind];
+                if (kel < jel)
+                {
+                  const valT r_Ik     = elecs_inside_dist(kg, iat)[kind];
+                  const posT disp_Ik  = cminus * elecs_inside_displ(kg, iat)[kind];
+                  const valT r_Ik_inv = cone / r_Ik;
+
+                  const valT r_jk     = ee_dists[jel][kel];
+                  const posT disp_jk  = ee_displs[jel][kel];
+                  const valT r_jk_inv = cone / r_jk;
+
+                  FT& func = *F(ig, jg, kg);
+                  int idx  = J3UniqueIndex[F(ig, jg, kg)];
+                  func.evaluateDerivatives(r_jk, r_Ij, r_Ik, du_dalpha[idx], dgrad_dalpha[idx], dhess_dalpha[idx]);
+                  int first                   = VarOffset(ig, jg, kg).first;
+                  int last                    = VarOffset(ig, jg, kg).second;
+                  std::vector<RealType>& dlog = du_dalpha[idx];
+
+                  for (int p = first, ip = 0; p < last; p++, ip++)
+                  {
+                    RealType& dval = dlog[ip];
+                    dLogPsi[p] -= dval;
+                  }
+                }
+              }
+          }
+      }
+
+      for (int k = 0; k < myVars.size(); ++k)
+      {
+        int kk = myVars.where(k);
+        if (kk < 0)
+          continue;
+        dlogpsi[kk] = (ValueType)dLogPsi[k];
+      }
+    }
+  }
+
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,

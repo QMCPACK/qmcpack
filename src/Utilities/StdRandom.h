@@ -15,6 +15,8 @@
 #ifndef QMCPLUSPLUS_STDRAND_H
 #define QMCPLUSPLUS_STDRAND_H
 
+#include "RandomBase.h"
+
 #include <vector>
 #include <random>
 #include <sstream>
@@ -33,7 +35,7 @@ class uniform_real_distribution_as_boost
 {
 public:
   using result_type = T;
-  static_assert(std::is_floating_point<T>::value);
+  static_assert(std::is_floating_point_v<T>);
 
   uniform_real_distribution_as_boost(T min = T(0.0), T max = T(1.0)) : min_(min), max_(max) {}
   ///Generating functions.
@@ -50,56 +52,31 @@ private:
 };
 
 template<typename T>
-class StdRandom
+class StdRandom : public RandomBase<T>
 {
 public:
-  using result_type = T;
   using Engine      = std::mt19937;
-  using uint_type   = Engine::result_type;
+  using result_type = typename RandomBase<T>::result_type;
+  using uint_type   = typename RandomBase<T>::uint_type;
 
-  StdRandom(uint_type iseed = 911) : engine(iseed)
-  {
-    // Although MT19937 needs only 624 numbers to hold the state, C++ standard libraries may choose different
-    // ways to represent the state. libc++ uses 624 numbers but libstdc++ uses 625 numbers. The additional
-    // number is an index to the 624 numbers. So we will just count and store the number.
-    std::vector<uint_type> state;
-    state.reserve(625); // the magic number is chosen based on libstdc++ using 625 numbers while libc++ uses 624
-    std::stringstream otemp;
-    otemp << engine;
-    copy(std::istream_iterator<uint_type>(otemp), std::istream_iterator<uint_type>(), std::back_inserter(state));
-    stream_state_size = state.size();
-  }
+  StdRandom(uint_type iseed = 911);
 
-  void init(int iseed_in)
+  void init(int iseed_in) override
   {
     uint_type baseSeed = iseed_in;
     engine.seed(baseSeed);
   }
 
-  void seed(uint_type aseed) { engine.seed(aseed); }
+  void seed(uint_type aseed) override { engine.seed(aseed); }
+  result_type operator()() override;
+  void write(std::ostream& rout) const override { rout << engine; }
+  void read(std::istream& rin) override { rin >> engine; }
+  size_t state_size() const override { return stream_state_size; }
 
-  result_type operator()() { return distribution(engine); }
-  void write(std::ostream& rout) const { rout << engine; }
-  void read(std::istream& rin) { rin >> engine; }
-  size_t state_size() const { return stream_state_size; }
+  void load(const std::vector<uint_type>& newstate) override;
+  void save(std::vector<uint_type>& curstate) const override;
+  std::unique_ptr<RandomBase<T>> makeClone() const override { return std::make_unique<StdRandom<T>>(*this); }
 
-  void load(const std::vector<uint_type>& newstate)
-  {
-    std::stringstream otemp;
-    std::copy(newstate.begin(), newstate.end(), std::ostream_iterator<uint_type>(otemp, " "));
-    otemp >> engine;
-  }
-
-  void save(std::vector<uint_type>& curstate) const
-  {
-    curstate.clear();
-    std::stringstream otemp;
-    otemp << engine;
-    std::copy(std::istream_iterator<uint_type>(otemp), std::istream_iterator<uint_type>(),
-              std::back_inserter(curstate));
-  }
-
-public:
   // Non const allows use of default copy constructor
   std::string ClassName{"StdRand"};
   std::string EngineName{"std::mt19937"};

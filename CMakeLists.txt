@@ -15,7 +15,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 3.16.9
+  VERSION 3.17.9
   LANGUAGES C CXX)
 
 # add the automatically determined parts of the RPATH
@@ -658,9 +658,15 @@ else()
   set(HDF5_USE_STATIC_LIBRARIES off)
 endif()
 
-find_package(HDF5 1.10 COMPONENTS C)
+find_package(HDF5 COMPONENTS C) # Note: minimum version check is done below to bypass find_package
+                                # and HDF5 version compatibility subtleties
 
 if(HDF5_FOUND)
+  if(HDF5_VERSION)
+    if (HDF5_VERSION VERSION_LESS 1.10.0)
+      message(FATAL_ERROR "QMCPACK requires HDF5 version >= 1.10.0")
+    endif()
+  endif(HDF5_VERSION)
   if(HDF5_IS_PARALLEL)
     if(HAVE_MPI)
       message(STATUS "Parallel HDF5 library found")
@@ -842,6 +848,7 @@ if(ENABLE_ROCM)
     target_link_libraries(ROCM::libraries INTERFACE roc::rocsolver roc::rocrand)
   endif()
   message("Project HIP_FLAGS: ${CMAKE_HIP_FLAGS}")
+  option(QMC_DISABLE_HIP_HOST_REGISTER "Disable hipHostRegister for pinning host memory" ON)
 endif(ENABLE_ROCM)
 
 #-------------------------------------------------------------------

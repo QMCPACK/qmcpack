@@ -76,7 +76,10 @@ TEST_CASE("DMC", "[drivers][dmc]")
   psi.registerData(elec, elec[0]->DataSet);
   elec[0]->DataSet.allocate();
 
-  FakeRandom rg;
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
   std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
@@ -85,9 +88,9 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(project_data, elec, psi, h, c, false);
+  DMC dmc_omp(project_data, elec, psi, h, rngs, c, false);
 
-  const char* dmc_input = R"(<qmc method="dmc">
+  const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
    <parameter name="timestep">0.1</parameter>
@@ -157,7 +160,10 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   psi.registerData(elec, elec[0]->DataSet);
   elec[0]->DataSet.allocate();
 
-  FakeRandom rg;
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
   std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
@@ -166,9 +172,9 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(project_data, elec, psi, h, c, false);
+  DMC dmc_omp(project_data, elec, psi, h, rngs, c, false);
 
-  const char* dmc_input = R"(<qmc method="dmc">
+  const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
    <parameter name="timestep">0.1</parameter>

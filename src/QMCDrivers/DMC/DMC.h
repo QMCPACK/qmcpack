@@ -35,6 +35,7 @@ public:
       MCWalkerConfiguration& w,
       TrialWaveFunction& psi,
       QMCHamiltonian& h,
+      UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
       Communicate* comm,
       bool enable_profiling);
 
@@ -44,6 +45,8 @@ public:
   QMCRunType getRunType() override { return QMCRunType::DMC; }
 
 private:
+  //
+  UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs_;
   ///Index to determine what to do when node crossing is detected
   // does not appear to be used
   IndexType KillNodeCrossing;
@@ -61,8 +64,6 @@ private:
   std::string Reconfiguration;
   ///input std::string to determine to use nonlocal move
   std::string NonLocalMove;
-  ///input std::string to use fast gradient
-  std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
 

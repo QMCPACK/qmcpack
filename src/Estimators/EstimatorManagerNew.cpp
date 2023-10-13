@@ -14,6 +14,7 @@
 #include <numeric>
 #include <algorithm>
 #include <variant>
+#include <cstdint>
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
@@ -57,7 +58,7 @@ bool EstimatorManagerNew::areThereListeners() const
   return std::any_of(operator_ests_.begin(), operator_ests_.end(),
                      [](auto& oper_est) { return oper_est->isListenerRequired(); });
 }
-  
+
 template<class EstInputType, typename... Args>
 bool EstimatorManagerNew::createEstimator(EstimatorInput& input, Args&&... args)
 {
@@ -207,7 +208,8 @@ void EstimatorManagerNew::startDriverRun()
   if (!DebugArchive)
   {
     std::array<char, 128> fname;
-    if (snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank()) < 0)
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_->getName().c_str(),
+                      my_comm_->rank()) < 0)
       throw std::runtime_error("Error generating filename");
     DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
@@ -301,10 +303,10 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   accepts_and_rejects[my_comm_->rank()]                    = accepts;
   accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
   my_comm_->allreduce(accepts_and_rejects);
-  unsigned long total_block_accept =
-      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), 0);
-  unsigned long total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
-                                                     accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
+  int64_t total_block_accept =
+      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), int64_t(0));
+  int64_t total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
+                                               accepts_and_rejects.begin() + my_comm_->size() * 2, int64_t(0));
 
   //Transfer FullPrecisionRead data
   const size_t n1 = AverageCache.size();

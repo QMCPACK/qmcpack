@@ -23,9 +23,9 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <sposet_builder type="heg">
+         <sposet_collection type="heg">
             <sposet type="heg" name="spo_ud" size="7"/>
-         </sposet_builder>
+         </sposet_collection>
          <determinantset>
             <slaterdeterminant>
                <determinant id="updet" group="u" sposet="spo_ud" size="7"/>

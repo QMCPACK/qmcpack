@@ -40,28 +40,28 @@ TEST_CASE("hdf_path_append", "[hdf]")
   REQUIRE(path == hdf_path());
 
   path.append("a");
-  REQUIRE(path.string() == "/a");
-  REQUIRE(path == hdf_path("/a"));
+  REQUIRE(path.string() == "a");
+  REQUIRE(path == hdf_path("a"));
 
   path /= "b";
-  REQUIRE(path.string() == "/a/b");
-  REQUIRE(path == hdf_path("/a/b"));
+  REQUIRE(path.string() == "a/b");
+  REQUIRE(path == hdf_path("a/b"));
 
   hdf_path result = path / std::string_view("c");
-  REQUIRE(result.string() == "/a/b/c");
-  REQUIRE(result == hdf_path("/a/b/c"));
+  REQUIRE(result.string() == "a/b/c");
+  REQUIRE(result == hdf_path("a/b/c"));
 
   result = path / std::string("c");
-  REQUIRE(result.string() == "/a/b/c");
-  REQUIRE(result == hdf_path("/a/b/c"));
+  REQUIRE(result.string() == "a/b/c");
+  REQUIRE(result == hdf_path("a/b/c"));
 
   result = path / "c/";
-  REQUIRE(result.string() == "/a/b/c/");
-  REQUIRE(result == hdf_path("/a/b/c/"));
+  REQUIRE(result.string() == "a/b/c/");
+  REQUIRE(result == hdf_path("a/b/c/"));
 
   result = result / "d";
-  REQUIRE(result.string() == "/a/b/c/d");
-  REQUIRE(result == hdf_path("/a/b/c/d"));
+  REQUIRE(result.string() == "a/b/c/d");
+  REQUIRE(result == hdf_path("a/b/c/d"));
 
   result = path / "/c";
   REQUIRE(result.string() == "/c");

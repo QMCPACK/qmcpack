@@ -17,6 +17,8 @@
 #include "SplineR2R.h"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "Platforms/CPU/BLAS.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 
 namespace qmcplusplus
 {
@@ -56,7 +58,7 @@ void SplineR2R<ST>::storeParamsBeforeRotation()
 {
   const auto spline_ptr     = SplineInst->getSplinePtr();
   const auto coefs_tot_size = spline_ptr->coefs_size;
-  coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+  coef_copy_                = std::make_shared<std::vector<ST>>(coefs_tot_size);
 
   std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
 }
@@ -120,20 +122,28 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
     std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
   }
 
-  // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
-  for (auto i = 0; i < BasisSetSize; i++)
+
+  if constexpr (std::is_same_v<ST, RealType>)
   {
-    for (auto j = 0; j < OrbitalSetSize; j++)
-    {
-      const auto cur_elem = Nsplines * i + j;
-      auto newval{0.};
-      for (auto k = 0; k < OrbitalSetSize; k++)
+    //Here, ST should be equal to ValueType, which will be double for R2R. Using BLAS to make things faster
+    BLAS::gemm('N', 'N', OrbitalSetSize, BasisSetSize, OrbitalSetSize, ST(1.0), rot_mat.data(), OrbitalSetSize,
+               coef_copy_->data(), Nsplines, ST(0.0), spl_coefs, Nsplines);
+  }
+  else
+  {
+    //Here, ST is float but ValueType is double for R2R. Due to issues with type conversions, just doing naive matrix multiplication in this case to not lose precision on rot_mat
+    for (IndexType i = 0; i < BasisSetSize; i++)
+      for (IndexType j = 0; j < OrbitalSetSize; j++)
       {
-        const auto index = i * Nsplines + k;
-        newval += (*coef_copy_)[index] * rot_mat[k][j];
+        const auto cur_elem = Nsplines * i + j;
+        FullPrecValueType newval{0.};
+        for (IndexType k = 0; k < OrbitalSetSize; k++)
+        {
+          const auto index = i * Nsplines + k;
+          newval += (*coef_copy_)[index] * rot_mat[k][j];
+        }
+        spl_coefs[cur_elem] = newval;
       }
-      spl_coefs[cur_elem] = newval;
-    }
   }
 }
 

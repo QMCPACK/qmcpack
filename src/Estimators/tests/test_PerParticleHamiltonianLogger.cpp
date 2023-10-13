@@ -117,7 +117,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
     for (auto& mwt : multi_walker_talkers)
       mwt.reportVector();
 
-    RandomGenerator rng;
+    FakeRandom<OHMMS_PRECISION_FULL> rng;
 
     int crowd_id = 0;
     long walker_id = 0;

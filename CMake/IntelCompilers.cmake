@@ -36,6 +36,10 @@ endif(QMC_OMP)
 if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
   # oneAPI compiler options
 
+  # Set extra optimization specific flags
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffast-math")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
+
   # Set clang specific flags (which we always want)
   add_compile_definitions(restrict=__restrict__)
 
