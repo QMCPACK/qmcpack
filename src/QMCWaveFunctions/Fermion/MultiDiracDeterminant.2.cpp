@@ -515,9 +515,8 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
     psiMinv_temp = psiMinv;
     for (size_t i = 0; i < NumPtcls; i++)
       psiV_temp[i] = psiV[*(it++)];
-    auto ratio_old_ref_det = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
-    curRatio               = ratio_old_ref_det;
-    InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, ratio_old_ref_det);
+    curRatio = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+    InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
   }
