@@ -497,7 +497,9 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
   const size_t nVPs = vp_phi_v.size(0);
   vp_basis_v_mw.resize(nVPs, BasisSetSize);
 
-  myBasisSet->mw_evaluateValueVPs(vp_list, vp_basis_v_mw);
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValueVPs(basis_list, vp_list, vp_basis_v_mw);
+  vp_basis_v_mw.updateFrom(); // TODO: remove after offloading rest of function
 
   if (Identity)
   {

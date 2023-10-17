@@ -117,10 +117,13 @@ public:
   void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) override;
 
   /** compute V using packed array with all walkers 
++   * @param basis_list list of basis sets (one for each walker)
    * @param vp_list list of quantum virtual particleset (one for each walker)
    * @param v   Array(n_walkers, BasisSetSize)
    */
-  void mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list, OffloadMWVArray& v) override;
+  void mw_evaluateValueVPs(RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                           OffloadMWVArray& v) override;
 
 
   /** compute VGL using packed array with all walkers 

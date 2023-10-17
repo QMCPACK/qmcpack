@@ -27,7 +27,10 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsArray.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include <cassert>
 
 namespace qmcplusplus
 {
@@ -37,6 +40,7 @@ struct LogGridLight
   T lower_bound;
   T upper_bound;
   T OneOverLogDelta;
+  double LogDelta;
   std::vector<T> r_values;
 
   inline void set(T ri, T rf, int n)
@@ -47,10 +51,19 @@ struct LogGridLight
     double log_ratio  = std::log(ratio);
     double dlog_ratio = log_ratio / static_cast<double>(n - 1);
     OneOverLogDelta   = 1.0 / dlog_ratio;
+    LogDelta          = dlog_ratio;
     r_values.resize(n);
     for (int i = 0; i < n; i++)
       r_values[i] = ri * std::exp(i * dlog_ratio);
   }
+
+  PRAGMA_OFFLOAD("omp declare target")
+  static inline T getCL(T r, int& loc, double OneOverLogDelta_, T lower_bound_, double dlog_ratio_)
+  {
+    loc = static_cast<int>(std::log(r / lower_bound_) * OneOverLogDelta_);
+    return r - lower_bound_ * std::exp(loc * dlog_ratio_);
+  }
+  PRAGMA_OFFLOAD("omp end declare target")
 
   inline int locate(T r) const
   {
@@ -84,9 +97,11 @@ template<typename T>
 class MultiQuinticSpline1D
 {
 public:
-  using RealType  = T;
-  using GridType  = OneDimGridBase<T>;
-  using CoeffType = Matrix<T, aligned_allocator<T>>;
+  using RealType       = T;
+  using GridType       = OneDimGridBase<T>;
+  using CoeffType      = Matrix<T, aligned_allocator<T>>;
+  using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
+  using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
 
 private:
   ///number of splines
@@ -134,6 +149,68 @@ public:
       const T* restrict f = (*coeffs)[offset + 5];
       for (size_t i = 0; i < num_splines_; ++i)
         u[i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
+    }
+  }
+
+  inline void batched_evaluate(OffloadArray2D& r, OffloadArray3D& u, T Rmax) const
+  {
+    const size_t nElec = r.size(0);
+    const size_t Nxyz  = r.size(1); // number of PBC images
+    assert(nElec == u.size(0));
+    assert(Nxyz == u.size(1));
+    const size_t nRnl = u.size(2);    // number of splines
+    const size_t nR   = nElec * Nxyz; // total number of positions to evaluate
+
+    auto* first_deriv_ptr = first_deriv.data();
+
+    double OneOverLogDelta = myGrid.OneOverLogDelta;
+    T lower_bound          = myGrid.lower_bound;
+    T dlog_ratio           = myGrid.LogDelta;
+
+    auto* r_devptr = r.device_data();
+    auto* u_devptr = u.device_data();
+
+    auto* coeff_ptr       = coeffs->data();
+    const size_t nCols    = coeffs->cols();
+    const size_t coefsize = coeffs->size();
+
+
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(always, to:first_deriv_ptr[:num_splines_], coeff_ptr[:coefsize]) \
+                    is_device_ptr(r_devptr, u_devptr)")
+    for (size_t ir = 0; ir < nR; ir++)
+    {
+      if (r_devptr[ir] >= Rmax)
+      {
+        for (size_t i = 0; i < num_splines_; ++i)
+          u_devptr[ir * nRnl + i] = 0.0;
+      }
+      else if (r_devptr[ir] < lower_bound)
+      {
+        const T dr          = r_devptr[ir] - lower_bound;
+        const T* restrict a = coeff_ptr;
+        // const T* restrict a = (*coeffs)[0];
+        for (size_t i = 0; i < num_splines_; ++i)
+          u_devptr[ir * nRnl + i] = a[i] + first_deriv_ptr[i] * dr;
+      }
+      else
+      {
+        int loc;
+        const auto cL = LogGridLight<T>::getCL(r_devptr[ir], loc, OneOverLogDelta, lower_bound, dlog_ratio);
+        // const auto cL       = myGrid.getCLForQuintic(r_list[ir], loc);
+        const size_t offset = loc * 6;
+        //coeffs is an OhmmsMatrix and [] is a row access operator
+        //returning a pointer to 'row' which is normal type pointer []
+        // const T* restrict a = (*coeffs)[offset + 0];
+        const T* restrict a = coeff_ptr + nCols * (offset + 0);
+        const T* restrict b = coeff_ptr + nCols * (offset + 1);
+        const T* restrict c = coeff_ptr + nCols * (offset + 2);
+        const T* restrict d = coeff_ptr + nCols * (offset + 3);
+        const T* restrict e = coeff_ptr + nCols * (offset + 4);
+        const T* restrict f = coeff_ptr + nCols * (offset + 5);
+        for (size_t i = 0; i < num_splines_; ++i)
+          u_devptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
+      }
     }
   }
 
