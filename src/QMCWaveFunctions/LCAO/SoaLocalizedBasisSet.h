@@ -159,10 +159,6 @@ public:
    */
   void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals) override;
 
-  /** same as evaluateV, but specializes in Virtual ParticleSet.
-   */
-  void mw_evaluateV_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list, OffloadMWVArray& vals) override;
-
   void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl) override;
 
   void evaluateGradSourceVGL(const ParticleSet& P,

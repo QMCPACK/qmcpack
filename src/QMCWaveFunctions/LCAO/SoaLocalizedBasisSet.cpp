@@ -249,8 +249,8 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
 
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateV_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                       OffloadMWVArray& vals)
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                          OffloadMWVArray& vals)
 {
   const size_t nVPs = vals.size(0);
   const auto& IonID(ions_.GroupID);
@@ -318,13 +318,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
 {
   for (size_t iw = 0; iw < P_list.size(); iw++)
     evaluateV(P_list[iw], iat, v.data_at(iw, 0));
-}
-
-template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                          OffloadMWVArray& v)
-{
-  mw_evaluateV_mvp(vp_list, v);
 }
 
 
