@@ -45,7 +45,7 @@ struct SoaCartesianTensor
   using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
 
   ///maximum angular momentum
-  size_t Lmax;
+  int Lmax;
   ///normalization factor
   aligned_vector<T> NormFactor;
   ///composite V,Gx,Gy,Gz,[L | H00, H01, H02, H11, H12, H12]
@@ -60,13 +60,12 @@ struct SoaCartesianTensor
   explicit SoaCartesianTensor(const int l_max, bool addsign = false);
 
   ///compute Ylm
-  void evaluate_bare(T x, T y, T z, T* XYZ) const;
-  static void evaluate_bare_impl(T x, T y, T z, T* XYZ, const size_t Lmax_);
+  static void evaluate_bare(T x, T y, T z, T* XYZ, const int Lmax_);
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* XYZ) const
   {
-    evaluate_bare(x, y, z, XYZ);
+    evaluate_bare(x, y, z, XYZ, Lmax);
     for (size_t i = 0, nl = cXYZ.size(); i < nl; i++)
       XYZ[i] *= NormFactor[i];
   }
@@ -74,7 +73,7 @@ struct SoaCartesianTensor
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* XYZ)
   {
-    evaluate_bare(x, y, z, XYZ);
+    evaluate_bare(x, y, z, XYZ, Lmax);
     for (size_t i = 0, nl = cXYZ.size(); i < nl; i++)
       XYZ[i] *= NormFactor[i];
   }
@@ -108,8 +107,8 @@ struct SoaCartesianTensor
                     is_device_ptr(xyz_devptr, XYZ_devptr)")
     for (size_t ir = 0; ir < nR; ir++)
     {
-      evaluate_bare_impl(xyz_devptr[0 + 3 * ir], xyz_devptr[1 + 3 * ir], xyz_devptr[2 + 3 * ir],
-                         XYZ_devptr + (ir * Nlm), Lmax);
+      evaluate_bare(xyz_devptr[0 + 3 * ir], xyz_devptr[1 + 3 * ir], xyz_devptr[2 + 3 * ir], XYZ_devptr + (ir * Nlm),
+                    Lmax);
       for (int i = 0; i < Nlm; i++)
         XYZ_devptr[ir * Nlm + i] *= NormFactor_ptr[i];
     }
@@ -181,7 +180,7 @@ SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(
 
 PRAGMA_OFFLOAD("omp declare target")
 template<class T>
-void SoaCartesianTensor<T>::evaluate_bare_impl(T x, T y, T z, T* restrict XYZ, size_t Lmax_)
+void SoaCartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ, int Lmax_)
 {
   const T x2 = x * x, y2 = y * y, z2 = z * z;
   const T x3 = x2 * x, y3 = y2 * y, z3 = z2 * z;
@@ -283,109 +282,6 @@ void SoaCartesianTensor<T>::evaluate_bare_impl(T x, T y, T z, T* restrict XYZ, s
   }
 }
 PRAGMA_OFFLOAD("omp end declare target")
-
-template<class T>
-void SoaCartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ) const
-{
-  const T x2 = x * x, y2 = y * y, z2 = z * z;
-  const T x3 = x2 * x, y3 = y2 * y, z3 = z2 * z;
-  const T x4 = x3 * x, y4 = y3 * y, z4 = z3 * z;
-  const T x5 = x4 * x, y5 = y4 * y, z5 = z4 * z;
-  switch (Lmax)
-  {
-  case 6:
-    XYZ[83] = x2 * y2 * z2; // X2Y2Z2
-    XYZ[82] = x * y2 * z3;  // Z3Y2X
-    XYZ[81] = x2 * y * z3;  // Z3X2Y
-    XYZ[80] = x * y3 * z2;  // Y3Z2X
-    XYZ[79] = x2 * y3 * z;  // Y3X2Z
-    XYZ[78] = x3 * y * z2;  // X3Z2Y
-    XYZ[77] = x3 * y2 * z;  // X3Y2Z
-    XYZ[76] = y3 * z3;      // Y3Z3
-    XYZ[75] = x3 * z3;      // X3Z3
-    XYZ[74] = x3 * y3;      // X3Y3
-    XYZ[73] = x * y * z4;   // Z4XY
-    XYZ[72] = x * y4 * z;   // Y4XZ
-    XYZ[71] = x4 * y * z;   // X4YZ
-    XYZ[70] = y2 * z4;      // Z4Y2
-    XYZ[69] = x2 * z4;      // Z4X2
-    XYZ[68] = y4 * z2;      // Y4Z2
-    XYZ[67] = x2 * y4;      // Y4X2
-    XYZ[66] = x4 * z2;      // X4Z2
-    XYZ[65] = x4 * y2;      // X4Y2
-    XYZ[64] = y * z * z4;   // Z5Y
-    XYZ[63] = x * z * z4;   // Z5X
-    XYZ[62] = y * y4 * z;   // Y5Z
-    XYZ[61] = x * y * y4;   // Y5X
-    XYZ[60] = x * x4 * z;   // X5Z
-    XYZ[59] = x * x4 * y;   // X5Y
-    XYZ[58] = z * z5;       // Z6
-    XYZ[57] = y * y5;       // Y6
-    XYZ[56] = x * x5;       // X6
-  case 5:
-    XYZ[55] = x * y2 * z2; // YYZZX
-    XYZ[54] = x2 * y * z2; // XXZZY
-    XYZ[53] = x2 * y2 * z; // XXYYZ
-    XYZ[52] = x * y * z3;  // ZZZXY
-    XYZ[51] = x * y3 * z;  // YYYXZ
-    XYZ[50] = x3 * y * z;  // XXXYZ
-    XYZ[49] = y2 * z3;     // ZZZYY
-    XYZ[48] = x2 * z3;     // ZZZXX
-    XYZ[47] = y3 * z2;     // YYYZZ
-    XYZ[46] = x2 * y3;     // YYYXX
-    XYZ[45] = x3 * z2;     // XXXZZ
-    XYZ[44] = x3 * y2;     // XXXYY
-    XYZ[43] = y * z4;      // ZZZZY
-    XYZ[42] = x * z4;      // ZZZZX
-    XYZ[41] = y4 * z;      // YYYYZ
-    XYZ[40] = x * y4;      // YYYYX
-    XYZ[39] = x4 * z;      // XXXXZ
-    XYZ[38] = x4 * y;      // XXXXY
-    XYZ[37] = z * z4;      // ZZZZZ
-    XYZ[36] = y * y4;      // YYYYY
-    XYZ[35] = x * x4;      // XXXXX
-  case 4:
-    XYZ[34] = x * y * z2; // ZZXY
-    XYZ[33] = x * y2 * z; // YYXZ
-    XYZ[32] = x2 * y * z; // XXYZ
-    XYZ[31] = y2 * z2;    // YYZZ
-    XYZ[30] = x2 * z2;    // XXZZ
-    XYZ[29] = x2 * y2;    // XXYY
-    XYZ[28] = y * z3;     // ZZZY
-    XYZ[27] = x * z3;     // ZZZX
-    XYZ[26] = y3 * z;     // YYYZ
-    XYZ[25] = x * y3;     // YYYX
-    XYZ[24] = x3 * z;     // XXXZ
-    XYZ[23] = x3 * y;     // XXXY
-    XYZ[22] = z4;         // ZZZZ
-    XYZ[21] = y4;         // YYYY
-    XYZ[20] = x4;         // XXXX
-  case 3:
-    XYZ[19] = x * y * z; // XYZ
-    XYZ[18] = y * z2;    // ZZY
-    XYZ[17] = x * z2;    // ZZX
-    XYZ[16] = y2 * z;    // YYZ
-    XYZ[15] = x * y2;    // YYX
-    XYZ[14] = x2 * z;    // XXZ
-    XYZ[13] = x2 * y;    // XXY
-    XYZ[12] = z3;        // ZZZ
-    XYZ[11] = y3;        // YYY
-    XYZ[10] = x3;        // XXX
-  case 2:
-    XYZ[9] = y * z; // YZ
-    XYZ[8] = x * z; // XZ
-    XYZ[7] = x * y; // XY
-    XYZ[6] = z2;    // ZZ
-    XYZ[5] = y2;    // YY
-    XYZ[4] = x2;    // XX
-  case 1:
-    XYZ[3] = z; // Z
-    XYZ[2] = y; // Y
-    XYZ[1] = x; // X
-  case 0:
-    XYZ[0] = 1; // S
-  }
-}
 
 
 template<class T>
