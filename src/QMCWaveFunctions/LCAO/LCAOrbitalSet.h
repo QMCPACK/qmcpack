@@ -38,7 +38,7 @@ public:
   ///pointer to the basis set
   std::unique_ptr<basis_type> myBasisSet;
   /// pointer to matrix containing the coefficients
-  std::shared_ptr<ValueMatrix> C;
+  std::shared_ptr<OffloadValueMatrix> C;
 
   /** constructor
      * @param bs pointer to the BasisSet
@@ -55,7 +55,7 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const final;
 
-  void storeParamsBeforeRotation() final { C_copy = std::make_shared<ValueMatrix>(*C); }
+  void storeParamsBeforeRotation() final { C_copy = std::make_shared<OffloadValueMatrix>(*C); }
 
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) final;
 
@@ -219,7 +219,7 @@ protected:
   ///number of Single-particle orbitals
   const IndexType BasisSetSize;
   /// a copy of the original C before orbital rotation is applied;
-  std::shared_ptr<ValueMatrix> C_copy;
+  std::shared_ptr<OffloadValueMatrix> C_copy;
 
   ///true if C is an identity matrix
   bool Identity;
