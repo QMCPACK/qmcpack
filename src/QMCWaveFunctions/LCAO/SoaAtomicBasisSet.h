@@ -34,9 +34,9 @@ struct SoaAtomicBasisSet
   using RealType        = typename ROT::RealType;
   using GridType        = typename ROT::GridType;
   using ValueType       = typename QMCTraits::ValueType;
-  using OffloadArray4D  = Array<ValueType, 4, OffloadPinnedAllocator<ValueType>>;
-  using OffloadArray3D  = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>;
-  using OffloadArray2D  = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>;
+  using OffloadArray4D  = Array<RealType, 4, OffloadPinnedAllocator<RealType>>;
+  using OffloadArray3D  = Array<RealType, 3, OffloadPinnedAllocator<RealType>>;
+  using OffloadArray2D  = Array<RealType, 2, OffloadPinnedAllocator<RealType>>;
   using OffloadVector   = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
 
   /// multi walker shared memory buffer
