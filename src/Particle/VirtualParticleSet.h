@@ -98,10 +98,11 @@ public:
   inline size_t getTotalNum() const { return TotalNum; }
   /**Extract list of Distance Tables
     */
-  static const RefVectorWithLeader<const DistanceTableAB> extractDTRefList_vp(
+  static const RefVectorWithLeader<const DistanceTableAB> extractDTRefList(
       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
       int id);
-
+  /**Extract list of active VP coordinates, flattened over all walkers
+    */
   static const std::vector<QMCTraits::PosType> extractCoordsRefList_vp(
       const RefVectorWithLeader<const VirtualParticleSet>& vp_list);
   /** move virtual particles to new postions and update distance tables

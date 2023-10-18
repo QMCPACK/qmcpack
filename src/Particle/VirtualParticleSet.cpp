@@ -98,7 +98,7 @@ void VirtualParticleSet::releaseResource(ResourceCollection& collection,
 }
 
 
-const RefVectorWithLeader<const DistanceTableAB> VirtualParticleSet::extractDTRefList_vp(
+const RefVectorWithLeader<const DistanceTableAB> VirtualParticleSet::extractDTRefList(
     const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
     int id)
 {
