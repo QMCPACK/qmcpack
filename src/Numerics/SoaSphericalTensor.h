@@ -59,13 +59,12 @@ struct SoaSphericalTensor
   SoaSphericalTensor(const SoaSphericalTensor& rhs) = default;
 
   ///compute Ylm
-  void evaluate_bare(T x, T y, T z, T* Ylm) const;
-  static void evaluate_bare_impl(T x, T y, T z, T* Ylm, const size_t Lmax_, const T* FacL, const T* FacLM);
+  static void evaluate_bare(T x, T y, T z, T* Ylm, const int Lmax_, const T* FacL, const T* FacLM);
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* Ylm) const
   {
-    evaluate_bare(x, y, z, Ylm);
+    evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
     for (int i = 0, nl = cYlm.size(); i < nl; i++)
       Ylm[i] *= NormFactor[i];
   }
@@ -100,8 +99,8 @@ struct SoaSphericalTensor
                     is_device_ptr(xyz_devptr, Ylm_devptr)")
     for (size_t ir = 0; ir < nR; ir++)
     {
-      evaluate_bare_impl(xyz_devptr[0 + 3 * ir], xyz_devptr[1 + 3 * ir], xyz_devptr[2 + 3 * ir],
-                         Ylm_devptr + (ir * Nlm), Lmax, fl_ptr, flm_ptr);
+      evaluate_bare(xyz_devptr[0 + 3 * ir], xyz_devptr[1 + 3 * ir], xyz_devptr[2 + 3 * ir], Ylm_devptr + (ir * Nlm),
+                    Lmax, fl_ptr, flm_ptr);
       for (int i = 0; i < Nlm; i++)
         Ylm_devptr[ir * Nlm + i] *= NormFactor_ptr[i];
     }
@@ -111,7 +110,7 @@ struct SoaSphericalTensor
   inline void evaluateV(T x, T y, T z)
   {
     T* restrict Ylm = cYlm.data(0);
-    evaluate_bare(x, y, z, Ylm);
+    evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
     for (int i = 0, nl = cYlm.size(); i < nl; i++)
       Ylm[i] *= NormFactor[i];
   }
@@ -213,13 +212,13 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
 
 PRAGMA_OFFLOAD("omp declare target")
 template<typename T>
-inline void SoaSphericalTensor<T>::evaluate_bare_impl(const T x,
-                                                      const T y,
-                                                      const T z,
-                                                      T* restrict Ylm,
-                                                      const size_t Lmax_,
-                                                      const T* FactorL_ptr,
-                                                      const T* FactorLM_ptr)
+inline void SoaSphericalTensor<T>::evaluate_bare(const T x,
+                                                 const T y,
+                                                 const T z,
+                                                 T* restrict Ylm,
+                                                 const int Lmax_,
+                                                 const T* FactorL_ptr,
+                                                 const T* FactorLM_ptr)
 {
   constexpr T czero(0);
   constexpr T cone(1);
@@ -315,105 +314,10 @@ inline void SoaSphericalTensor<T>::evaluate_bare_impl(const T x,
 PRAGMA_OFFLOAD("omp end declare target")
 
 template<typename T>
-inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm) const
-{
-  constexpr T czero(0);
-  constexpr T cone(1);
-  const T pi       = 4.0 * std::atan(1.0);
-  const T omega    = 1.0 / std::sqrt(4.0 * pi);
-  constexpr T eps2 = std::numeric_limits<T>::epsilon() * std::numeric_limits<T>::epsilon();
-
-  /*  Calculate r, cos(theta), sin(theta), cos(phi), sin(phi) from input
-      coordinates. Check here the coordinate singularity at cos(theta) = +-1.
-      This also takes care of r=0 case. */
-  T cphi, sphi, ctheta;
-  T r2xy = x * x + y * y;
-  T r    = std::sqrt(r2xy + z * z);
-  if (r2xy < eps2)
-  {
-    cphi   = czero;
-    sphi   = cone;
-    ctheta = (z < czero) ? -cone : cone;
-  }
-  else
-  {
-    ctheta = z / r;
-    //protect ctheta, when ctheta is slightly >1 or <-1
-    if (ctheta > cone)
-      ctheta = cone;
-    if (ctheta < -cone)
-      ctheta = -cone;
-    T rxyi = cone / std::sqrt(r2xy);
-    cphi   = x * rxyi;
-    sphi   = y * rxyi;
-  }
-  T stheta = std::sqrt(cone - ctheta * ctheta);
-  /* Now to calculate the associated legendre functions P_lm from the
-     recursion relation from l=0 to Lmax. Conventions of J.D. Jackson,
-     Classical Electrodynamics are used. */
-  Ylm[0] = cone;
-  // calculate P_ll and P_l,l-1
-  T fac = cone;
-  int j = -1;
-  for (int l = 1; l <= Lmax; l++)
-  {
-    j += 2;
-    fac *= -j * stheta;
-    int ll  = index(l, l);
-    int l1  = index(l, l - 1);
-    int l2  = index(l - 1, l - 1);
-    Ylm[ll] = fac;
-    Ylm[l1] = j * ctheta * Ylm[l2];
-  }
-  // Use recurence to get other plm's //
-  for (int m = 0; m < Lmax - 1; m++)
-  {
-    int j = 2 * m + 1;
-    for (int l = m + 2; l <= Lmax; l++)
-    {
-      j += 2;
-      int lm  = index(l, m);
-      int l1  = index(l - 1, m);
-      int l2  = index(l - 2, m);
-      Ylm[lm] = (ctheta * j * Ylm[l1] - (l + m - 1) * Ylm[l2]) / (l - m);
-    }
-  }
-  // Now to calculate r^l Y_lm. //
-  T sphim, cphim, temp;
-  Ylm[0] = omega; //1.0/sqrt(pi4);
-  T rpow = 1.0;
-  for (int l = 1; l <= Lmax; l++)
-  {
-    rpow *= r;
-    //fac = rpow*sqrt(static_cast<T>(2*l+1))*omega;//rpow*sqrt((2*l+1)/pi4);
-    //FactorL[l] = sqrt(2*l+1)/sqrt(4*pi)
-    fac    = rpow * FactorL[l];
-    int l0 = index(l, 0);
-    Ylm[l0] *= fac;
-    cphim = cone;
-    sphim = czero;
-    for (int m = 1; m <= l; m++)
-    {
-      temp   = cphim * cphi - sphim * sphi;
-      sphim  = sphim * cphi + cphim * sphi;
-      cphim  = temp;
-      int lm = index(l, m);
-      fac *= FactorLM[lm];
-      temp    = fac * Ylm[lm];
-      Ylm[lm] = temp * cphim;
-      lm      = index(l, -m);
-      Ylm[lm] = temp * sphim;
-    }
-  }
-  //for (int i=0; i<Ylm.size(); i++)
-  //  Ylm[i]*= NormFactor[i];
-}
-
-template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
 {
   T* restrict Ylm = cYlm.data(0);
-  evaluate_bare(x, y, z, Ylm);
+  evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
 
   constexpr T czero(0);
   constexpr T ahalf(0.5);
