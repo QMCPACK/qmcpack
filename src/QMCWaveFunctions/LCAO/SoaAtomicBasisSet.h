@@ -750,12 +750,10 @@ struct SoaAtomicBasisSet
       for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
       {
         // i_xyz = k + Nz * (j + Ny * i)
-        auto div_k  = std::div(i_xyz, Nz);
-        int k       = div_k.rem;
-        int ij      = div_k.quot; // ij = (j + Ny * i)
-        auto div_ij = std::div(ij, Ny);
-        int j       = div_ij.rem;
-        int i       = div_ij.quot;
+        int ij = i_xyz / Nz;
+        int k = i_xyz - ij * Nz;
+        int i = ij / Ny;
+        int j = ij - i * Ny;
         int TransX  = ((i % 2) * 2 - 1) * ((i + 1) / 2);
         int TransY  = ((j % 2) * 2 - 1) * ((j + 1) / 2);
         int TransZ  = ((k % 2) * 2 - 1) * ((k + 1) / 2);
