@@ -443,6 +443,7 @@ ompBLAS_status ger_batched(ompBLAS_handle&                   handle,
 }
 #endif
 
+
 template<typename T>
 ompBLAS_status copy_batched_impl(ompBLAS_handle& handle,
                                  const int       n,
