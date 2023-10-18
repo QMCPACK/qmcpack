@@ -13,7 +13,6 @@
 #include "LCAOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/BLAS.hpp"
-#include "OMPTarget/ompBLAS.hpp"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -500,32 +499,23 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
 
   auto basis_list = spo_leader.extractBasisRefList(spo_list);
   myBasisSet->mw_evaluateValueVPs(basis_list, vp_list, vp_basis_v_mw);
-
-  auto* vp_basis_devptr = vp_basis_v_mw.device_data_at(0, 0);
-  auto* vp_phi_devptr   = vp_phi_v.device_data_at(0, 0);
-  int dummy_handle      = 0;
-  int success           = 0;
+  vp_basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
 
   if (Identity)
   {
-    success = ompBLAS::copy(dummy_handle, OrbitalSetSize * nVPs, vp_basis_devptr, 1, vp_phi_devptr, 1);
-    if (success != 0)
-      throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueVPsImplGEMM ompBLAS::copy failed.");
+    std::copy_n(vp_basis_v_mw.data_at(0, 0), OrbitalSetSize * nVPs, vp_phi_v.data_at(0, 0));
   }
   else
   {
     const size_t requested_orb_size = vp_phi_v.size(1);
     assert(requested_orb_size <= OrbitalSetSize);
-    C->updateTo();
-    auto* c_devptr = C->device_data();
-    success =
-        ompBLAS::gemm(dummy_handle, 'T', 'N',
-                      requested_orb_size, // MOs
-                      nVPs,               // walkers * Virtual Particles
-                      BasisSetSize,       // AOs
-                      1, c_devptr, BasisSetSize, vp_basis_devptr, BasisSetSize, 0, vp_phi_devptr, requested_orb_size);
-    if (success != 0)
-      throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueVPsImplGEMM ompBLAS::gemm failed.");
+    ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+    BLAS::gemm('T', 'N',
+               requested_orb_size, // MOs
+               nVPs,               // walkers * Virtual Particles
+               BasisSetSize,       // AOs
+               1, C_partial_view.data(), BasisSetSize, vp_basis_v_mw.data(), BasisSetSize, 0, vp_phi_v.data(),
+               requested_orb_size);
   }
 }
 void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -592,9 +582,7 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   vp_phi_v.resize(nVPs, requested_orb_size);
 
   mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
-  vp_phi_v.updateFrom(); // TODO: remove after offloading rest of function
 
-  ///To be computed on Device through new varuable mw_ratios_list, then copied to ratios_list on host.
   size_t index = 0;
   for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
