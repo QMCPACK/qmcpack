@@ -21,6 +21,56 @@
 
 namespace qmcplusplus
 {
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::createResource(ResourceCollection& collection) const
+{
+  for (int i = 0; i < LOBasisSet.size(); i++)
+    LOBasisSet[i]->createResource(collection);
+}
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
+    ResourceCollection& collection,
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const
+{
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  auto& basisset_leader  = loc_basis_leader.LOBasisSet;
+  for (int i = 0; i < basisset_leader.size(); i++)
+  {
+    const auto one_species_basis_list(extractOneSpeciesBasisRefList(basisset_list, i));
+    basisset_leader[i]->acquireResource(collection, one_species_basis_list);
+  }
+}
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::releaseResource(
+    ResourceCollection& collection,
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const
+{
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  auto& basisset_leader  = loc_basis_leader.LOBasisSet;
+  for (int i = 0; i < basisset_leader.size(); i++)
+  {
+    const auto one_species_basis_list(extractOneSpeciesBasisRefList(basisset_list, i));
+    basisset_leader[i]->releaseResource(collection, one_species_basis_list);
+  }
+}
+template<class COT, typename ORBT>
+RefVectorWithLeader<COT> SoaLocalizedBasisSet<COT, ORBT>::extractOneSpeciesBasisRefList(
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list,
+    int id)
+{
+  auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  RefVectorWithLeader<COT> one_species_basis_list(*loc_basis_leader.LOBasisSet[id]);
+  one_species_basis_list.reserve(basisset_list.size());
+  for (size_t iw = 0; iw < basisset_list.size(); iw++)
+    one_species_basis_list.push_back(
+        *basisset_list.template getCastedElement<SoaLocalizedBasisSet<COT, ORBT>>(iw).LOBasisSet[id]);
+  return one_species_basis_list;
+}
+
+
 template<class COT, typename ORBT>
 SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
     : ions_(ions),

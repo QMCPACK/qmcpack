@@ -72,8 +72,8 @@ public:
   using WFBufferType = WaveFunctionComponent::WFBufferType;
   using HessType     = WaveFunctionComponent::HessType;
   using HessVector   = WaveFunctionComponent::HessVector;
-  using LogValueType = WaveFunctionComponent::LogValueType;
-  using PsiValueType = WaveFunctionComponent::PsiValueType;
+  using LogValue     = WaveFunctionComponent::LogValue;
+  using PsiValue     = WaveFunctionComponent::PsiValue;
 
   using SPOMap = SPOSet::SPOMap;
 
@@ -290,7 +290,7 @@ public:
   static void mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                            const RefVectorWithLeader<ParticleSet>& p_list,
                            int iat,
-                           std::vector<PsiValueType>& ratios,
+                           std::vector<PsiValue>& ratios,
                            ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
@@ -328,8 +328,8 @@ public:
    * It returns a complex value if the wavefunction is complex.
    * @param P the active ParticleSet
    * @param iat the index of a particle moved to the new position.
-   * @param grad_iat gradients
-   * @return ratio value
+   * @param grad_iat gradients. The consumer must verify if ratio is non-zero.
+   * @return ratio value. The caller must reject zero ratio moves.
    */
   ValueType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
@@ -337,9 +337,9 @@ public:
    * It returns a complex value if the wavefunction is complex.
    * @param P the active ParticleSet
    * @param iat the index of a particle moved to the new position.
-   * @param grad_iat real space gradient for iat
-   * @param spingrad_iat spin gradient for iat
-   * @return ratio value
+   * @param grad_iat real space gradient for iat. The consumer must verify if ratio is non-zero.
+   * @param spingrad_iat spin gradient for iat. The consumer must verify if ratio is non-zero.
+   * @return ratio value. The caller must reject zero ratio moves.
    */
   ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat);
 
@@ -352,7 +352,7 @@ public:
   static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
                                int iat,
-                               std::vector<PsiValueType>& ratios,
+                               std::vector<PsiValue>& ratios,
                                TWFGrads<CT>& grads);
 
   /** Prepare internal data for updating WFC correspond to a particle group
@@ -412,7 +412,7 @@ public:
 
   /** compute gradients and laplacian of the TWF with respect to each particle.
    *  See WaveFunctionComponent::evaluateGL for more detail */
-  LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
+  LogValue evaluateGL(ParticleSet& P, bool fromscratch);
   /* batched version of evaluateGL.
    */
   static void mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

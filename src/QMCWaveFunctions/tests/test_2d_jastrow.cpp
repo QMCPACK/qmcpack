@@ -17,15 +17,15 @@
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
 
-using std::real;
 using std::imag;
+using std::real;
 
 namespace qmcplusplus
 {
-using RealType     = WaveFunctionComponent::RealType;
-using PsiValueType = WaveFunctionComponent::PsiValueType;
-using ValueType    = QMCTraits::ValueType; // for real and mixed precision
-using PosType      = QMCTraits::PosType;
+using RealType  = WaveFunctionComponent::RealType;
+using PsiValue  = WaveFunctionComponent::PsiValue;
+using ValueType = QMCTraits::ValueType; // for real and mixed precision
+using PosType   = QMCTraits::PosType;
 
 TEST_CASE("Jastrow 2D", "[wavefunction]")
 {
@@ -40,7 +40,7 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   //   ParticleSet( SimulationCell( CrystalLattice ) )
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
   lattice.BoxBConds = true;
-  lattice.R.diagonal(70.89815403622065); 
+  lattice.R.diagonal(70.89815403622065);
   lattice.ndim = 2;
   lattice.reset();
   const SimulationCell cell(lattice);
@@ -64,13 +64,14 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
       </group>
     </particleset>
   </tmp>)";
-  okay = doc.parseFromString(particle_text);
+  okay                      = doc.parseFromString(particle_text);
   REQUIRE(okay);
   root = doc.getRoot();
   node = xmlFirstElementChild(root);
   XMLParticleParser parse_electrons(elec);
   parse_electrons.readXML(node);
-  int itab; elec.addTable(elec);
+  int itab;
+  elec.addTable(elec);
   elec.update(); // update distance tables
   const int nelec = elec.getTotalNum();
   //    read Jastrow component from xml text
@@ -84,7 +85,7 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
         </correlation>
       </jastrow>
 </tmp>)";
-  okay = doc.parseFromString(jastrow_text);
+  okay                     = doc.parseFromString(jastrow_text);
   REQUIRE(okay);
   root = doc.getRoot();
   node = xmlFirstElementChild(root);
@@ -105,14 +106,14 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   CHECK(real(elec.G[2][1]) == Approx(0.009109497845));
   CHECK(real(elec.G[3][0]) == Approx(0.04363441629));
   CHECK(real(elec.G[3][1]) == Approx(-0.02087588652));
-  for (int i=0;i<nelec;i++)
+  for (int i = 0; i < nelec; i++)
   {
-    for (int l=0;l<OHMMS_DIM;l++)
+    for (int l = 0; l < OHMMS_DIM; l++)
       CHECK(imag(elec.G[i][l]) == Approx(0));
     CHECK(real(elec.G[i][2]) == Approx(0)); // ndim=2
   }
   const std::vector<RealType> lap_values = {-0.00916449, -0.0166369, -0.00351783, -0.0153977};
-  for (int m=0;m<nelec;m++)
+  for (int m = 0; m < nelec; m++)
     CHECK(real(elec.L[m]) == Approx(lap_values[m]));
 
   WaveFunctionComponent::HessVector grad_grad_psi;
@@ -148,13 +149,13 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   std::vector<ValueType> ratios(nelec);
   j2->evaluateRatiosAlltoOne(elec, ratios);
   std::vector<double> ratio_values = {1.46023, 1.46559, 0.444258, 1.90226};
-  for (int i=0;i<ratios.size();i++)
+  for (int i = 0; i < ratios.size(); i++)
     CHECK(real(ratios[i]) == Approx(ratio_values[i]));
 
-  for(int i=0;i<nelec;i++)
+  for (int i = 0; i < nelec; i++)
   {
-    elec.makeMove(i, newpos-elec.R[i]);
-    PsiValueType rat1 = j2->ratio(elec, i);
+    elec.makeMove(i, newpos - elec.R[i]);
+    PsiValue rat1 = j2->ratio(elec, i);
     CHECK(real(rat1) == Approx(ratio_values[i]));
     elec.rejectMove(i);
   }
@@ -181,11 +182,11 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
     app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   app_log() << std::endl;
   const std::vector<RealType> dlogpsi_values = {0, 0, 0, 0, 0, 0, -1.521258e-04, -2.194165e-01, 0, 0, -2.779981e-02, -5.327999e-01, -9.356640e-01, -4.847466e-01, -1.945081e-02, -2.453297e-01};
-  const std::vector<RealType> dhpsi_values = {0, 0, 0, 0, 0, 0, 5.953288e-03, 8.618836e-03, 0, 0, 2.572195e-02, -5.048126e-02, -3.139861e-02, 2.197638e-02, 4.319522e-02, 3.512834e-02};
+  const std::vector<RealType> dhpsi_values   = {0, 0, 0, 0, 0, 0, 5.953288e-03, 8.618836e-03, 0, 0, 2.572195e-02, -5.048126e-02, -3.139861e-02, 2.197638e-02, 4.319522e-02, 3.512834e-02};
   for (int iparam = 0; iparam < NumOptimizables; iparam++)
   {
     CHECK(real(dlogpsi[iparam]) == Approx(dlogpsi_values[iparam]));
     CHECK(real(dhpsioverpsi[iparam]) == Approx(dhpsi_values[iparam]));
   }
 }
-}
+} // namespace qmcplusplus

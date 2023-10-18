@@ -25,11 +25,11 @@ namespace qmcplusplus
 class TWFdispatcher
 {
 public:
-  using PsiValueType = TrialWaveFunction::PsiValueType;
-  using ComputeType  = TrialWaveFunction::ComputeType;
-  using ValueType    = TrialWaveFunction::ValueType;
-  using GradType     = TrialWaveFunction::GradType;
-  using Complex      = TrialWaveFunction::ComplexType;
+  using PsiValue    = TrialWaveFunction::PsiValue;
+  using ComputeType = TrialWaveFunction::ComputeType;
+  using ValueType   = TrialWaveFunction::ValueType;
+  using GradType    = TrialWaveFunction::GradType;
+  using Complex     = TrialWaveFunction::ComplexType;
 
   TWFdispatcher(bool use_batch);
 
@@ -43,7 +43,7 @@ public:
   void flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
                       int iat,
-                      std::vector<PsiValueType>& ratios,
+                      std::vector<PsiValue>& ratios,
                       ComputeType ct = ComputeType::ALL) const;
 
   void flex_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -60,7 +60,7 @@ public:
   void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                           const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
-                          std::vector<PsiValueType>& ratios,
+                          std::vector<PsiValue>& ratios,
                           TWFGrads<CT>& grads) const;
 
   void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

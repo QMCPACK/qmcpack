@@ -15,7 +15,7 @@
 #include "AGPDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 
 namespace qmcplusplus
 {
@@ -80,9 +80,9 @@ void AGPDeterminant::resize(int nup, int ndown)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-AGPDeterminant::LogValueType AGPDeterminant::evaluateLog(const ParticleSet& P,
-                                                         ParticleSet::ParticleGradient& G,
-                                                         ParticleSet::ParticleLaplacian& L)
+AGPDeterminant::LogValue AGPDeterminant::evaluateLog(const ParticleSet& P,
+                                                     ParticleSet::ParticleGradient& G,
+                                                     ParticleSet::ParticleLaplacian& L)
 {
   evaluateLogAndStore(P);
   G += myG;
@@ -172,7 +172,7 @@ void AGPDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
   //buf.add(myL.begin(), myL.end());
 }
 
-AGPDeterminant::LogValueType AGPDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+AGPDeterminant::LogValue AGPDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   evaluateLogAndStore(P);
   P.G += myG;
@@ -224,7 +224,7 @@ void AGPDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-AGPDeterminant::PsiValueType AGPDeterminant::ratio(ParticleSet& P, int iat)
+AGPDeterminant::PsiValue AGPDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_RATIO;
   //GeminalBasis->evaluate(P,iat);

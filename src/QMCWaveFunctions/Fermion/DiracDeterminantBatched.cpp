@@ -20,7 +20,7 @@
 #ifndef QMC_COMPLEX
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #endif
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 #include <cassert>
 
 namespace qmcplusplus
@@ -444,6 +444,8 @@ typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<D
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
+  if (curRatio == PsiValue(0))
+    throw std::runtime_error("DiracDeterminant::acceptMove curRatio is zero! Report a bug.\n");
   const int WorkingIndex = iat - FirstIndex;
   log_value_ += convertValueToLog(curRatio);
   {
@@ -496,6 +498,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
     {
       psiM_g_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
       psiM_l_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
+      if (det.curRatio == PsiValue(0))
+        throw std::runtime_error("DiracDeterminant::mw_accept_rejectMove det.curRatio is zero! Report a bug.\n");
       det.log_value_ += convertValueToLog(det.curRatio);
       count++;
     }

@@ -109,13 +109,18 @@ void LCAOrbitalSet::checkObject() const
 
 void LCAOrbitalSet::createResource(ResourceCollection& collection) const
 {
+  myBasisSet->createResource(collection);
+
   auto resource_index = collection.addResource(std::make_unique<LCAOMultiWalkerMem>());
 }
 
 void LCAOrbitalSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
 {
   assert(this == &spo_list.getLeader());
-  auto& spo_leader          = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+
+  spo_leader.myBasisSet->acquireResource(collection, extractBasisRefList(spo_list));
+
   spo_leader.mw_mem_handle_ = collection.lendResource<LCAOMultiWalkerMem>();
 }
 
@@ -123,9 +128,21 @@ void LCAOrbitalSet::releaseResource(ResourceCollection& collection, const RefVec
 {
   assert(this == &spo_list.getLeader());
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+
+  spo_leader.myBasisSet->releaseResource(collection, extractBasisRefList(spo_list));
+
   collection.takebackResource(spo_leader.mw_mem_handle_);
 }
 
+RefVectorWithLeader<typename LCAOrbitalSet::basis_type> LCAOrbitalSet::extractBasisRefList(
+    const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  RefVectorWithLeader<basis_type> basis_list(*spo_list.getCastedLeader<LCAOrbitalSet>().myBasisSet);
+  basis_list.reserve(spo_list.size());
+  for (size_t iw = 0; iw < spo_list.size(); iw++)
+    basis_list.push_back(*spo_list.getCastedElement<LCAOrbitalSet>(iw).myBasisSet);
+  return basis_list;
+}
 std::unique_ptr<SPOSet> LCAOrbitalSet::makeClone() const { return std::make_unique<LCAOrbitalSet>(*this); }
 
 void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)

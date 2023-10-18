@@ -165,14 +165,14 @@ public:
   void checkInVariablesExclusive(opt_variables_type& active) final;
   void resetParametersExclusive(const opt_variables_type& active) final;
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
-  PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValue ratio(ParticleSet& P, int iat) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void restore(int iat) override;
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
@@ -180,7 +180,7 @@ public:
   // Allocate per-walker data in the PooledData buffer
   void registerData(ParticleSet& P, WFBufferType& buf) override;
   // Walker move has been accepted -- update the buffer
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
