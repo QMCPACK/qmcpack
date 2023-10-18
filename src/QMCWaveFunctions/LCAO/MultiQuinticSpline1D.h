@@ -99,7 +99,7 @@ class MultiQuinticSpline1D
 public:
   using RealType       = T;
   using GridType       = OneDimGridBase<T>;
-  using CoeffType      = Matrix<T, aligned_allocator<T>>;
+  using CoeffType      = Matrix<T, OffloadPinnedAllocator<T>>;
   using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
   using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
 
@@ -170,13 +170,13 @@ public:
     auto* r_devptr = r.device_data();
     auto* u_devptr = u.device_data();
 
-    auto* coeff_ptr       = coeffs->data();
+    auto* coeff_devptr = coeffs->device_data();
     const size_t nCols    = coeffs->cols();
-    const size_t coefsize = coeffs->size();
+    // const size_t coefsize = coeffs->size();
 
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(always, to:first_deriv_ptr[:num_splines_], coeff_ptr[:coefsize]) \
+                    map(always, to:first_deriv_ptr[:num_splines_]) \
                     is_device_ptr(r_devptr, u_devptr)")
     for (size_t ir = 0; ir < nR; ir++)
     {
@@ -188,8 +188,7 @@ public:
       else if (r_devptr[ir] < lower_bound)
       {
         const T dr          = r_devptr[ir] - lower_bound;
-        const T* restrict a = coeff_ptr;
-        // const T* restrict a = (*coeffs)[0];
+        const T* restrict a = coeff_devptr;
         for (size_t i = 0; i < num_splines_; ++i)
           u_devptr[ir * nRnl + i] = a[i] + first_deriv_ptr[i] * dr;
       }
@@ -197,17 +196,13 @@ public:
       {
         int loc;
         const auto cL = LogGridLight<T>::getCL(r_devptr[ir], loc, OneOverLogDelta, lower_bound, dlog_ratio);
-        // const auto cL       = myGrid.getCLForQuintic(r_list[ir], loc);
         const size_t offset = loc * 6;
-        //coeffs is an OhmmsMatrix and [] is a row access operator
-        //returning a pointer to 'row' which is normal type pointer []
-        // const T* restrict a = (*coeffs)[offset + 0];
-        const T* restrict a = coeff_ptr + nCols * (offset + 0);
-        const T* restrict b = coeff_ptr + nCols * (offset + 1);
-        const T* restrict c = coeff_ptr + nCols * (offset + 2);
-        const T* restrict d = coeff_ptr + nCols * (offset + 3);
-        const T* restrict e = coeff_ptr + nCols * (offset + 4);
-        const T* restrict f = coeff_ptr + nCols * (offset + 5);
+        const T* restrict a = coeff_devptr + nCols * (offset + 0);
+        const T* restrict b = coeff_devptr + nCols * (offset + 1);
+        const T* restrict c = coeff_devptr + nCols * (offset + 2);
+        const T* restrict d = coeff_devptr + nCols * (offset + 3);
+        const T* restrict e = coeff_devptr + nCols * (offset + 4);
+        const T* restrict f = coeff_devptr + nCols * (offset + 5);
         for (size_t i = 0; i < num_splines_; ++i)
           u_devptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
       }
@@ -351,6 +346,7 @@ public:
         out[(i * 6 + 5) * ncols + ispline] = static_cast<T>(F[i]);
       }
     }
+    coeffs->updateTo(); // FIXME: this is overkill, probably better to just do once after all splines added
   }
 
   int getNumSplines() const { return num_splines_; }
