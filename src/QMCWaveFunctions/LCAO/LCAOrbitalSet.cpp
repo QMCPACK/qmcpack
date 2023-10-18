@@ -527,7 +527,6 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
     if (success != 0)
       throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueVPsImplGEMM ompBLAS::gemm failed.");
   }
-  vp_phi_v.updateFrom(); // TODO: remove after offloading downstream functions
 }
 void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                                      const RefVectorWithLeader<ParticleSet>& P_list,
@@ -593,6 +592,7 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   vp_phi_v.resize(nVPs, requested_orb_size);
 
   mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
+  vp_phi_v.updateFrom(); // TODO: remove after offloading rest of function
 
   ///To be computed on Device through new varuable mw_ratios_list, then copied to ratios_list on host.
   size_t index = 0;
