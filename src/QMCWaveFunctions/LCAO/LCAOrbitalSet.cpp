@@ -79,7 +79,7 @@ void LCAOrbitalSet::setOrbitalSetSize(int norbs)
 
   Identity       = false;
   OrbitalSetSize = norbs;
-  C              = std::make_shared<OffloadValueMatrix>(OrbitalSetSize, BasisSetSize);
+  C              = std::make_shared<ValueMatrix>(OrbitalSetSize, BasisSetSize);
   Tempv.resize(OrbitalSetSize);
   Temphv.resize(OrbitalSetSize);
   Tempghv.resize(OrbitalSetSize);
@@ -162,8 +162,8 @@ void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& ps
 }
 
 /** Find a better place for other user classes, Matrix should be padded as well */
-template<typename T, unsigned D, typename Alloc>
-inline void Product_ABt(const VectorSoaContainer<T, D>& A, const Matrix<T, Alloc>& B, VectorSoaContainer<T, D>& C)
+template<typename T, unsigned D>
+inline void Product_ABt(const VectorSoaContainer<T, D>& A, const Matrix<T>& B, VectorSoaContainer<T, D>& C)
 {
   constexpr char transa = 't';
   constexpr char transb = 'n';
