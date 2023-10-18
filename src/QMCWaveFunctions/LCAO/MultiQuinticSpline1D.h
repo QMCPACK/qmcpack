@@ -116,7 +116,7 @@ private:
 
   ///coeffs[6*spline_points][num_splines+padding]
   std::shared_ptr<CoeffType> coeffs;
-  aligned_vector<T> first_deriv;
+  Vector<T, OffloadPinnedAllocator<T>> first_deriv;
 
 public:
   MultiQuinticSpline1D() = default;
@@ -170,14 +170,14 @@ public:
     auto* r_devptr = r.device_data();
     auto* u_devptr = u.device_data();
 
-    auto* coeff_devptr = coeffs->device_data();
-    const size_t nCols    = coeffs->cols();
+    auto* coeff_devptr       = coeffs->device_data();
+    auto* first_deriv_devptr = first_deriv.device_data();
+    const size_t nCols       = coeffs->cols();
     // const size_t coefsize = coeffs->size();
 
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(always, to:first_deriv_ptr[:num_splines_]) \
-                    is_device_ptr(r_devptr, u_devptr)")
+                    is_device_ptr(r_devptr, u_devptr, coeff_devptr, first_deriv_devptr)")
     for (size_t ir = 0; ir < nR; ir++)
     {
       if (r_devptr[ir] >= Rmax)
@@ -187,15 +187,14 @@ public:
       }
       else if (r_devptr[ir] < lower_bound)
       {
-        const T dr          = r_devptr[ir] - lower_bound;
-        const T* restrict a = coeff_devptr;
+        const T dr = r_devptr[ir] - lower_bound;
         for (size_t i = 0; i < num_splines_; ++i)
-          u_devptr[ir * nRnl + i] = a[i] + first_deriv_ptr[i] * dr;
+          u_devptr[ir * nRnl + i] = coeff_devptr[i] + first_deriv_devptr[i] * dr;
       }
       else
       {
         int loc;
-        const auto cL = LogGridLight<T>::getCL(r_devptr[ir], loc, OneOverLogDelta, lower_bound, dlog_ratio);
+        const auto cL       = LogGridLight<T>::getCL(r_devptr[ir], loc, OneOverLogDelta, lower_bound, dlog_ratio);
         const size_t offset = loc * 6;
         const T* restrict a = coeff_devptr + nCols * (offset + 0);
         const T* restrict b = coeff_devptr + nCols * (offset + 1);
@@ -346,6 +345,7 @@ public:
         out[(i * 6 + 5) * ncols + ispline] = static_cast<T>(F[i]);
       }
     }
+    first_deriv.updateTo();
     coeffs->updateTo(); // FIXME: this is overkill, probably better to just do once after all splines added
   }
 
