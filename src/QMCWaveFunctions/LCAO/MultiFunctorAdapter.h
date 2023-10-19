@@ -69,7 +69,7 @@ struct MultiFunctorAdapter
    * for now this is all done on the host
    * 
    * @param [in] r electron distances [Nelec, Npbc]
-   * @param [out] u value of all splines at all electron distances [Nelec, Npbc, nRnl]
+   * @param [out] u value of all radial functions at all electron distances [Nelec, Npbc, nRnl]
    * @param Rmax evaluate to zero for any distance greater than or equal to Rmax
   */
   inline void batched_evaluate(OffloadArray2D& r, OffloadArray3D& u, RealType Rmax) const
