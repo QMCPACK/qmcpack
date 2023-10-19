@@ -41,6 +41,7 @@ struct SoaSphericalTensor
 {
   using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
   using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
+  using OffloadArray4D = Array<T, 4, OffloadPinnedAllocator<T>>;
   ///maximum angular momentum for the center
   int Lmax;
   /// Normalization factors
@@ -60,6 +61,16 @@ struct SoaSphericalTensor
 
   ///compute Ylm
   static void evaluate_bare(T x, T y, T z, T* Ylm, int lmax, const T* factorL, const T* factorLM);
+  static void evaluateVGL_impl(const T x,
+                               const T y,
+                               const T z,
+                               T* restrict Ylm_vgl,
+                               int lmax,
+                               const T* factorL,
+                               const T* factorLM,
+                               const T* factor2L,
+                               const T* normfactor,
+                               size_t offset);
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* Ylm) const
@@ -105,6 +116,47 @@ struct SoaSphericalTensor
         Ylm_ptr[ir * Nlm + i] *= NormFactor_ptr[i];
     }
   }
+
+  /**
+   * @brief evaluate VGL for multiple electrons and multiple pbc images
+   * 
+   * when offload is enabled, xyz is assumed to be up to date on the device before entering the function
+   * Ylm_vgl will be up to date on the device (but not host) when this function exits
+   * 
+   * @param [in] xyz electron positions [Nelec, Npbc, 3(x,y,z)]
+   * @param [out] Ylm_vgl Spherical tensor elements [5(v, gx, gy, gz, lapl), Nelec, Npbc, Nlm]
+  */
+  inline void batched_evaluateVGL(const OffloadArray3D& xyz, OffloadArray4D& Ylm_vgl) const
+  {
+    const size_t nElec = xyz.size(0);
+    const size_t Npbc  = xyz.size(1); // number of PBC images
+    assert(xyz.size(2) == 3);
+
+    assert(Ylm_vgl.size(0) == 5);
+    assert(Ylm_vgl.size(1) == nElec);
+    assert(Ylm_vgl.size(2) == Npbc);
+    const size_t Nlm = Ylm_vgl.size(3);
+    assert(NormFactor.size() == Nlm);
+
+    const size_t nR     = nElec * Npbc; // total number of positions to evaluate
+    const size_t offset = Nlm * nR;     // stride for v/gx/gy/gz/l
+
+    auto* xyz_ptr        = xyz.data();
+    auto* Ylm_vgl_ptr    = Ylm_vgl.data();
+    auto* FactorLM_ptr   = FactorLM.data();
+    auto* FactorL_ptr    = FactorL.data();
+    auto* Factor2L_ptr   = Factor2L.data();
+    auto* NormFactor_ptr = NormFactor.data();
+
+
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm], Factor2L_ptr[:Lmax+1], \
+                    xyz_ptr[:nR*3], Ylm_vgl_ptr[:5*nR*Nlm])")
+    for (size_t ir = 0; ir < nR; ir++)
+      evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_vgl_ptr + (ir * Nlm), Lmax,
+                       FactorL_ptr, FactorLM_ptr, Factor2L_ptr, NormFactor_ptr, offset);
+  }
+
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z)
@@ -314,6 +366,114 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x,
   }
   //for (int i=0; i<Ylm.size(); i++)
   //  Ylm[i]*= NormFactor[i];
+}
+PRAGMA_OFFLOAD("omp end declare target")
+
+
+PRAGMA_OFFLOAD("omp declare target")
+template<typename T>
+inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
+                                                    const T y,
+                                                    const T z,
+                                                    T* restrict Ylm_vgl,
+                                                    int lmax,
+                                                    const T* factorL,
+                                                    const T* factorLM,
+                                                    const T* factor2L,
+                                                    const T* normfactor,
+                                                    size_t offset)
+{
+  T* restrict Ylm = Ylm_vgl;
+  // T* restrict Ylm = cYlm.data(0);
+  evaluate_bare(x, y, z, Ylm, lmax, factorL, factorLM);
+  const size_t Nlm = (lmax + 1) * (lmax + 1);
+
+  constexpr T czero(0);
+  constexpr T ahalf(0.5);
+  T* restrict gYlmX = Ylm_vgl + offset * 1;
+  T* restrict gYlmY = Ylm_vgl + offset * 2;
+  T* restrict gYlmZ = Ylm_vgl + offset * 3;
+  T* restrict lYlm  = Ylm_vgl + offset * 4; // just need to set to zero
+
+  // Calculating Gradient now//
+  for (int l = 1; l <= lmax; l++)
+  {
+    //T fac = ((T) (2*l+1))/(2*l-1);
+    T fac = factor2L[l];
+    for (int m = -l; m <= l; m++)
+    {
+      int lm = index(l - 1, 0);
+      T gx, gy, gz, dpr, dpi, dmr, dmi;
+      const int ma = std::abs(m);
+      const T cp   = std::sqrt(fac * (l - ma - 1) * (l - ma));
+      const T cm   = std::sqrt(fac * (l + ma - 1) * (l + ma));
+      const T c0   = std::sqrt(fac * (l - ma) * (l + ma));
+      gz           = (l > ma) ? c0 * Ylm[lm + m] : czero;
+      if (l > ma + 1)
+      {
+        dpr = cp * Ylm[lm + ma + 1];
+        dpi = cp * Ylm[lm - ma - 1];
+      }
+      else
+      {
+        dpr = czero;
+        dpi = czero;
+      }
+      if (l > 1)
+      {
+        switch (ma)
+        {
+        case 0:
+          dmr = -cm * Ylm[lm + 1];
+          dmi = cm * Ylm[lm - 1];
+          break;
+        case 1:
+          dmr = cm * Ylm[lm];
+          dmi = czero;
+          break;
+        default:
+          dmr = cm * Ylm[lm + ma - 1];
+          dmi = cm * Ylm[lm - ma + 1];
+        }
+      }
+      else
+      {
+        dmr = cm * Ylm[lm];
+        dmi = czero;
+        //dmr = (l==1) ? cm*Ylm[lm]:0.0;
+        //dmi = 0.0;
+      }
+      if (m < 0)
+      {
+        gx = ahalf * (dpi - dmi);
+        gy = -ahalf * (dpr + dmr);
+      }
+      else
+      {
+        gx = ahalf * (dpr - dmr);
+        gy = ahalf * (dpi + dmi);
+      }
+      lm = index(l, m);
+      if (ma)
+      {
+        gYlmX[lm] = normfactor[lm] * gx;
+        gYlmY[lm] = normfactor[lm] * gy;
+        gYlmZ[lm] = normfactor[lm] * gz;
+      }
+      else
+      {
+        gYlmX[lm] = gx;
+        gYlmY[lm] = gy;
+        gYlmZ[lm] = gz;
+      }
+    }
+  }
+  for (int i = 0; i < Nlm; i++)
+  {
+    Ylm[i] *= normfactor[i];
+    lYlm[i] = 0;
+  }
+  //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
 }
 PRAGMA_OFFLOAD("omp end declare target")
 
