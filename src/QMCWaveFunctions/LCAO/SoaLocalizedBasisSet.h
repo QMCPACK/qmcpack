@@ -91,7 +91,8 @@ public:
   */
   void setPBCParams(const TinyVector<int, 3>& PBCImages,
                     const TinyVector<double, 3> Sup_Twist,
-                    const std::vector<QMCTraits::ValueType>& phase_factor);
+                    const Vector<ValueType, OffloadPinnedAllocator<ValueType>>& phase_factor,
+                    const Array<RealType, 2, OffloadPinnedAllocator<RealType>>& pbc_displacements);
 
   /** set BasisSetSize and allocate mVGL container
    */

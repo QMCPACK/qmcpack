@@ -128,7 +128,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (cuspC == "yes")
     doCuspCorrection = true;
   //Evaluate the Phase factor. Equals 1 for OBC.
-  EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors);
+  EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
 
   // no need to wait but load the basis set
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
@@ -364,7 +364,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
     cur = cur->next;
   } // done with basis set
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
   return mBasisSet;
 }
 
@@ -448,7 +448,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
     hin.close();
   }
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
   return mBasisSet;
 }
 
@@ -968,17 +968,36 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
 }
 
 /// Periodic Image Phase Factors computation to be determined
-void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
-                                                      std::vector<RealType>& LocPeriodicImagePhaseFactors)
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
+    PosType SuperTwist,
+    Vector<RealType, OffloadPinnedAllocator<RealType>>& LocPeriodicImagePhaseFactors,
+    Array<RealType, 2, OffloadPinnedAllocator<RealType>>& LocPeriodicImageDisplacements)
 {
-  const int NbImages = (PBCImages[0] + 1) * (PBCImages[1] + 1) * (PBCImages[2] + 1);
+  const int Nx       = PBCImages[0] + 1;
+  const int Ny       = PBCImages[1] + 1;
+  const int Nz       = PBCImages[2] + 1;
+  const int NbImages = Nx * Ny * Nz;
   LocPeriodicImagePhaseFactors.resize(NbImages);
-  for (size_t i = 0; i < NbImages; i++)
-    LocPeriodicImagePhaseFactors[i] = 1.0;
+  LocPeriodicImageDisplacements.resize(NbImages, 3);
+  for (size_t ix = 0; ix < Nx; ix++)
+    for (size_t iy = 0; iy < Ny; iy++)
+      for (size_t iz = 0; iz < Nz; iz++)
+      {
+        const size_t i                  = iz + Nz * (iy + Ny * ix);
+        int TransX                      = ((ix % 2) * 2 - 1) * ((ix + 1) / 2);
+        int TransY                      = ((iy % 2) * 2 - 1) * ((iy + 1) / 2);
+        int TransZ                      = ((iz % 2) * 2 - 1) * ((iz + 1) / 2);
+        LocPeriodicImagePhaseFactors[i] = 1.0;
+        for (size_t idim = 0; idim < 3; idim++)
+          LocPeriodicImageDisplacements(i, idim) =
+              TransX * Lattice(0, idim) + TransY * Lattice(1, idim) + TransZ * Lattice(2, idim);
+      }
 }
 
-void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
-                                                      std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors)
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
+    PosType SuperTwist,
+    Vector<std::complex<RealType>, OffloadPinnedAllocator<std::complex<RealType>>>& LocPeriodicImagePhaseFactors,
+    Array<RealType, 2, OffloadPinnedAllocator<RealType>>& LocPeriodicImageDisplacements)
 {
   // Allow computation to continue with no HDF file if the system has open boundary conditions.
   // The complex build is usually only used with open BC for testing.
@@ -1010,28 +1029,31 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
   int phase_idx = 0;
   int TransX, TransY, TransZ;
   RealType phase;
-
-  for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
-  {
-    TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
-    for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
-    {
-      TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
-      for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
+  const int Nx       = PBCImages[0] + 1;
+  const int Ny       = PBCImages[1] + 1;
+  const int Nz       = PBCImages[2] + 1;
+  const int NbImages = Nx * Ny * Nz;
+  LocPeriodicImageDisplacements.resize(NbImages, 3);
+  for (size_t ix = 0; ix < Nx; ix++)
+    for (size_t iy = 0; iy < Ny; iy++)
+      for (size_t iz = 0; iz < Nz; iz++)
       {
-        TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
+        const size_t i = iz + Nz * (iy + Ny * ix);
+        int TransX     = ((ix % 2) * 2 - 1) * ((ix + 1) / 2);
+        int TransY     = ((iy % 2) * 2 - 1) * ((iy + 1) / 2);
+        int TransZ     = ((iz % 2) * 2 - 1) * ((iz + 1) / 2);
         RealType s, c;
         PosType Val;
-        Val[0] = TransX * Lattice(0, 0) + TransY * Lattice(1, 0) + TransZ * Lattice(2, 0);
-        Val[1] = TransX * Lattice(0, 1) + TransY * Lattice(1, 1) + TransZ * Lattice(2, 1);
-        Val[2] = TransX * Lattice(0, 2) + TransY * Lattice(1, 2) + TransZ * Lattice(2, 2);
+        for (size_t idim = 0; idim < 3; idim++)
+        {
+          Val[idim] = TransX * Lattice(0, idim) + TransY * Lattice(1, idim) + TransZ * Lattice(2, idim);
+          LocPeriodicImageDisplacements(i, idim) = Val[idim];
+        }
 
         phase = dot(SuperTwist, Val);
         qmcplusplus::sincos(phase, &s, &c);
 
-        LocPeriodicImagePhaseFactors.emplace_back(c, s);
+        LocPeriodicImagePhaseFactors[i] = std::complex<RealType>(c, s);
       }
-    }
-  }
 }
 } // namespace qmcplusplus

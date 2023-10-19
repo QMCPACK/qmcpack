@@ -50,7 +50,8 @@ struct SoaAtomicBasisSet
   ///Coordinates of SuperTwist
   TinyVector<double, 3> SuperTwist;
   ///Phase Factor array
-  std::vector<QMCTraits::ValueType> periodic_image_phase_factors;
+  OffloadVector periodic_image_phase_factors;
+  OffloadArray2D periodic_image_displacements;
   ///maximum radius of this center
   RealType Rmax;
   ///spherical harmonics
@@ -113,11 +114,16 @@ struct SoaAtomicBasisSet
    */
   void setPBCParams(const TinyVector<int, 3>& pbc_images,
                     const TinyVector<double, 3> supertwist,
-                    const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors)
+                    const OffloadVector& PeriodicImagePhaseFactors,
+                    const OffloadArray2D& PeriodicImageDisplacements)
   {
     PBCImages                    = pbc_images;
     periodic_image_phase_factors = PeriodicImagePhaseFactors;
+    periodic_image_displacements = PeriodicImageDisplacements;
     SuperTwist                   = supertwist;
+
+    periodic_image_phase_factors.updateTo();
+    periodic_image_displacements.updateTo();
   }
 
 
@@ -690,7 +696,7 @@ struct SoaAtomicBasisSet
    * @param [in] lattice crystal lattice
    * @param [in,out] psi wavefunction values for all electrons [nElec, nBasTot]
    * @param [in] displ_list displacement from each electron to each center [NumCenters, nElec, 3] (flattened)
-   * @param [in] Tv_list translation vectors for computing overall phase factor [nElec, 3] (flattened)
+   * @param [in] Tv_list translation vectors for computing overall phase factor [NumCenters, nElec, 3] (flattened)
    * @param [in] nElec number of electrons
    * @param [in] nBasTot total number of basis functions represented in psi
    * @param [in] center_idx current center index (for indexing into displ_list)
@@ -736,14 +742,11 @@ struct SoaAtomicBasisSet
     r.resize(nElec, Nxyz);
 
     // TODO: move these outside?
-    auto& dr_pbc       = atom_bs_leader.mw_mem_handle_.getResource().dr_pbc;
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
-    dr_pbc.resize(Nxyz, 3);
     correctphase.resize(nElec);
 
-    auto* dr_pbc_ptr = dr_pbc.data();
-    auto* dr_ptr     = dr.data();
-    auto* r_ptr      = r.data();
+    auto* dr_ptr = dr.data();
+    auto* r_ptr  = r.data();
 
     auto* correctphase_ptr = correctphase.data();
 
@@ -752,27 +755,6 @@ struct SoaAtomicBasisSet
 
     // need to map Tensor<T,3> vals to device
     auto* latR_ptr = lattice.R.data();
-
-    // build dr_pbc: translation vectors to all images
-    // should just do this once and store it (like with phase)
-    {
-      ScopedTimer local(pbc_timer_);
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:latR_ptr[:9], dr_pbc_ptr[:3*Nxyz]) ")
-      for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
-      {
-        // i_xyz = k + Nz * (j + Ny * i)
-        int ij     = i_xyz / Nz;
-        int k      = i_xyz - ij * Nz;
-        int i      = ij / Ny;
-        int j      = ij - i * Ny;
-        int TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
-        int TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
-        int TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-        for (size_t i_dim = 0; i_dim < 3; i_dim++)
-          dr_pbc_ptr[i_dim + 3 * i_xyz] =
-              (TransX * latR_ptr[i_dim + 0 * 3] + TransY * latR_ptr[i_dim + 1 * 3] + TransZ * latR_ptr[i_dim + 2 * 3]);
-      }
-    }
 
 
     {
@@ -787,13 +769,13 @@ struct SoaAtomicBasisSet
       auto* SuperTwist_ptr = SuperTwist.data();
 
       PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:SuperTwist_ptr[:9], \
-		     Tv_list_ptr[:nElec*3], correctphase_ptr[:nElec]) ")
+		     Tv_list_ptr[3*nElec*center_idx:3*nElec], correctphase_ptr[:nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
         //RealType phasearg = dot(3, SuperTwist.data(), 1, Tv_list.data() + 3 * i_e, 1);
         RealType phasearg = 0;
         for (size_t i_dim = 0; i_dim < 3; i_dim++)
-          phasearg += SuperTwist[i_dim] * Tv_list_ptr[i_dim + 3 * i_e];
+          phasearg += SuperTwist[i_dim] * Tv_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)];
         RealType s, c;
         qmcplusplus::sincos(-phasearg, &s, &c);
         correctphase_devptr[i_e] = ValueType(c, s);
@@ -801,10 +783,11 @@ struct SoaAtomicBasisSet
 #endif
     }
 
+    auto* periodic_image_displacements_ptr = periodic_image_displacements.data();
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
-		    map(to: dr_ptr[:3*nElec*Nxyz], dr_pbc_ptr[:3*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
+		    map(to: dr_ptr[:3*nElec*Nxyz], periodic_image_displacements_ptr[:3*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
         for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
@@ -812,8 +795,8 @@ struct SoaAtomicBasisSet
           RealType tmp_r2 = 0.0;
           for (size_t i_dim = 0; i_dim < 3; i_dim++)
           {
-            dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] =
-                -(displ_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)] + dr_pbc_ptr[i_dim + 3 * i_xyz]);
+            dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] = -(displ_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)] +
+                                                         periodic_image_displacements_ptr[i_dim + 3 * i_xyz]);
             tmp_r2 += dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] * dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)];
           }
           r_ptr[i_xyz + Nxyz * i_e] = std::sqrt(tmp_r2);
@@ -891,11 +874,11 @@ struct SoaAtomicBasisSet
       return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
     }
 
-    OffloadArray4D ylm_vgl;     // [5][Nelec][PBC][NYlm]
-    OffloadArray4D rnl_vgl;     // [5][Nelec][PBC][NRnl]
-    OffloadArray3D ylm_v;       // [Nelec][PBC][NYlm]
-    OffloadArray3D rnl_v;       // [Nelec][PBC][NRnl]
-    OffloadArray2D dr_pbc;      // [PBC][xyz]        translation vector for each image
+    OffloadArray4D ylm_vgl; // [5][Nelec][PBC][NYlm]
+    OffloadArray4D rnl_vgl; // [5][Nelec][PBC][NRnl]
+    OffloadArray3D ylm_v;   // [Nelec][PBC][NYlm]
+    OffloadArray3D rnl_v;   // [Nelec][PBC][NRnl]
+    // OffloadArray2D dr_pbc;      // [PBC][xyz]        translation vector for each image
     OffloadArray3D dr;          // [Nelec][PBC][xyz] ion->elec displacement for each image
     OffloadArray2D r;           // [Nelec][PBC]      ion->elec distance for each image
     OffloadVector correctphase; // [Nelec]           overall phase
