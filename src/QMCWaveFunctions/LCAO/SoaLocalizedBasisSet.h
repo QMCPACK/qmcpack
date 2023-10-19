@@ -111,11 +111,15 @@ public:
   void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) override;
 
   /** compute V using packed array with all walkers 
+   * @param basis_list list of basis sets (one for each walker)
    * @param P_list list of quantum particleset (one for each walker)
    * @param iat active particle
    * @param v   Array(n_walkers, BasisSetSize)
    */
-  void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) override;
+  void mw_evaluateValue(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        OffloadMWVArray& v) override;
 
   /** compute V using packed array with all walkers 
    * @param basis_list list of basis sets (one for each walker)
@@ -128,11 +132,15 @@ public:
 
 
   /** compute VGL using packed array with all walkers 
+   * @param basis_list list of basis sets (one for each walker)
    * @param P_list list of quantum particleset (one for each walker)
    * @param iat active particle
    * @param vgl   Array(n_walkers, 5, BasisSetSize)
    */
-  void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) override;
+  void mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                      const RefVectorWithLeader<ParticleSet>& P_list,
+                      int iat,
+                      OffloadMWVGLArray& vgl) override;
 
   /** compute VGH 
    * @param P quantum particleset
