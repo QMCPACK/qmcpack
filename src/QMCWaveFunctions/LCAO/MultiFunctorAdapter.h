@@ -62,6 +62,12 @@ struct MultiFunctorAdapter
   /**
    * @brief evaluate for multiple electrons and multiple pbc images
    * 
+   * r is assumed to be up-to-date on the device before entering this function, and
+   * u needs to be updated on the device before exiting this function
+   * 
+   * Eventually, all computation should be done on the device to avoid transfers, but
+   * for now this is all done on the host
+   * 
    * @param [in] r electron distances [Nelec, Npbc]
    * @param [out] u value of all splines at all electron distances [Nelec, Npbc, nRnl]
    * @param Rmax evaluate to zero for any distance greater than or equal to Rmax
