@@ -208,11 +208,9 @@ struct VectorSoaContainer
        *
        * The same sizes are assumed.
        */
-  template<typename T1>
-  void copyIn(const Vector<TinyVector<T1, D>>& in)
+  void copyIn(const Vector<TinyVector<T, D>>& in)
   {
-    //if(nLocal!=in.size()) resize(in.size());
-    PosAoS2SoA(nLocal, D, reinterpret_cast<const T1*>(in.first_address()), D, myData, nGhosts);
+    PosAoS2SoA(nLocal, D, reinterpret_cast<const T*>(in.first_address()), D, myData, nGhosts);
   }
 
   /** SoA to AoS : copy to Vector<TinyVector<>>

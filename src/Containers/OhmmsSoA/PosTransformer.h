@@ -129,12 +129,12 @@ void PosAoS2SoA(int nrows, int ncols, const T1* restrict iptr, int lda, T2* rest
    *
    * Modeled after blas/lapack for lda/ldb
    */
-template<typename T1, typename T2>
-void PosSoA2AoS(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
+template<typename T>
+void PosSoA2AoS(int nrows, int ncols, const T* restrict iptr, int lda, T* restrict out, int ldb)
 {
-  const T1* restrict x = iptr;
-  const T1* restrict y = iptr + lda;
-  const T1* restrict z = iptr + 2 * lda;
+  const T* restrict x = iptr;
+  const T* restrict y = iptr + lda;
+  const T* restrict z = iptr + 2 * lda;
 #if !defined(__ibmxl__)
 #pragma omp simd aligned(x, y, z: QMC_SIMD_ALIGNMENT)
 #endif
