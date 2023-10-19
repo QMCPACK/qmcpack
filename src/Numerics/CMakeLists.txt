@@ -12,7 +12,7 @@
 set(NUMERICS_SRCS SmoothFunctions.cpp OneDimGridFactory.cpp SoaSphericalTensor.cpp)
 
 add_library(qmcnumerics ${NUMERICS_SRCS})
-target_link_libraries(qmcnumerics qmcio containers)
+target_link_libraries(qmcnumerics qmcio containers qmcutil)
 target_include_directories(qmcnumerics INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(BUILD_UNIT_TESTS)
