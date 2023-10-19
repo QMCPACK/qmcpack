@@ -59,8 +59,9 @@ struct SoaSphericalTensor
 
   SoaSphericalTensor(const SoaSphericalTensor& rhs) = default;
 
-  ///compute Ylm
+  ///compute Ylm for single position
   static void evaluate_bare(T x, T y, T z, T* Ylm, int lmax, const T* factorL, const T* factorLM);
+  ///compute Ylm_vgl for single position
   static void evaluateVGL_impl(const T x,
                                const T y,
                                const T z,
@@ -480,91 +481,8 @@ PRAGMA_OFFLOAD("omp end declare target")
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
 {
-  T* restrict Ylm = cYlm.data(0);
-  evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
-
-  constexpr T czero(0);
-  constexpr T ahalf(0.5);
-  T* restrict gYlmX = cYlm.data(1);
-  T* restrict gYlmY = cYlm.data(2);
-  T* restrict gYlmZ = cYlm.data(3);
-
-  // Calculating Gradient now//
-  for (int l = 1; l <= Lmax; l++)
-  {
-    //T fac = ((T) (2*l+1))/(2*l-1);
-    T fac = Factor2L[l];
-    for (int m = -l; m <= l; m++)
-    {
-      int lm = index(l - 1, 0);
-      T gx, gy, gz, dpr, dpi, dmr, dmi;
-      const int ma = std::abs(m);
-      const T cp   = std::sqrt(fac * (l - ma - 1) * (l - ma));
-      const T cm   = std::sqrt(fac * (l + ma - 1) * (l + ma));
-      const T c0   = std::sqrt(fac * (l - ma) * (l + ma));
-      gz           = (l > ma) ? c0 * Ylm[lm + m] : czero;
-      if (l > ma + 1)
-      {
-        dpr = cp * Ylm[lm + ma + 1];
-        dpi = cp * Ylm[lm - ma - 1];
-      }
-      else
-      {
-        dpr = czero;
-        dpi = czero;
-      }
-      if (l > 1)
-      {
-        switch (ma)
-        {
-        case 0:
-          dmr = -cm * Ylm[lm + 1];
-          dmi = cm * Ylm[lm - 1];
-          break;
-        case 1:
-          dmr = cm * Ylm[lm];
-          dmi = czero;
-          break;
-        default:
-          dmr = cm * Ylm[lm + ma - 1];
-          dmi = cm * Ylm[lm - ma + 1];
-        }
-      }
-      else
-      {
-        dmr = cm * Ylm[lm];
-        dmi = czero;
-        //dmr = (l==1) ? cm*Ylm[lm]:0.0;
-        //dmi = 0.0;
-      }
-      if (m < 0)
-      {
-        gx = ahalf * (dpi - dmi);
-        gy = -ahalf * (dpr + dmr);
-      }
-      else
-      {
-        gx = ahalf * (dpr - dmr);
-        gy = ahalf * (dpi + dmi);
-      }
-      lm = index(l, m);
-      if (ma)
-      {
-        gYlmX[lm] = NormFactor[lm] * gx;
-        gYlmY[lm] = NormFactor[lm] * gy;
-        gYlmZ[lm] = NormFactor[lm] * gz;
-      }
-      else
-      {
-        gYlmX[lm] = gx;
-        gYlmY[lm] = gy;
-        gYlmZ[lm] = gz;
-      }
-    }
-  }
-  for (int i = 0; i < cYlm.size(); i++)
-    Ylm[i] *= NormFactor[i];
-  //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
+  evaluateVGL_impl(x, y, z, cYlm.data(), Lmax, FactorL.data(), FactorLM.data(), Factor2L.data(), NormFactor.data(),
+                   cYlm.capacity());
 }
 
 template<typename T>
