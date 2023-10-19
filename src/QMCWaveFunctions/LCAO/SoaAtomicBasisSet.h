@@ -778,7 +778,7 @@ struct SoaAtomicBasisSet
           phasearg += SuperTwist[i_dim] * Tv_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)];
         RealType s, c;
         qmcplusplus::sincos(-phasearg, &s, &c);
-        correctphase_devptr[i_e] = ValueType(c, s);
+        correctphase_ptr[i_e] = ValueType(c, s);
       }
 #endif
     }
