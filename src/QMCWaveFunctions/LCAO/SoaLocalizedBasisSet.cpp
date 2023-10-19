@@ -264,7 +264,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
 
 
   const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
-  const auto coordR_list(vps_leader.extractCoordsRefList_vp(vp_list));
+  const auto coordR_list(vps_leader.extractVPCoords(vp_list));
 
   // make these shared resource? PinnedDualAllocator? OffloadPinnedAllocator?
   Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;

@@ -113,7 +113,7 @@ const RefVectorWithLeader<const DistanceTableAB> VirtualParticleSet::extractDTRe
 }
 
 
-const std::vector<QMCTraits::PosType> VirtualParticleSet::extractCoordsRefList_vp(
+const std::vector<QMCTraits::PosType> VirtualParticleSet::extractVPCoords(
     const RefVectorWithLeader<const VirtualParticleSet>& vp_list)
 {
   std::vector<QMCTraits::PosType> coords_list;

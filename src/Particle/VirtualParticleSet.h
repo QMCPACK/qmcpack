@@ -103,7 +103,7 @@ public:
       int id);
   /**Extract list of VP coordinates, flattened over all walkers
     */
-  static const std::vector<QMCTraits::PosType> extractCoordsRefList_vp(
+  static const std::vector<QMCTraits::PosType> extractVPCoords(
       const RefVectorWithLeader<const VirtualParticleSet>& vp_list);
   /** move virtual particles to new postions and update distance tables
      * @param refp reference particle set
