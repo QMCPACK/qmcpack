@@ -293,11 +293,11 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   displ_list_tr.updateTo();
 
   // set AO data to zero on device
-  auto* vp_basis_v_devptr = vp_basis_v.device_data();
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(vp_basis_v_devptr) ")
+  auto* vp_basis_v_ptr = vp_basis_v.data();
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:vp_basis_v_ptr[:nVPs*BasisSetSize]) ")
   for (size_t i_vp = 0; i_vp < nVPs; i_vp++)
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
-      vp_basis_v_devptr[ib + i_vp * BasisSetSize] = 0;
+      vp_basis_v_ptr[ib + i_vp * BasisSetSize] = 0;
 
   // TODO: group/sort centers by species?
   for (int c = 0; c < NumCenters; c++)
