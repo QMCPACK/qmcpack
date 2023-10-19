@@ -750,8 +750,6 @@ struct SoaAtomicBasisSet
     auto* Tv_list_ptr    = Tv_list.data();
     auto* displ_list_ptr = displ_list.data();
 
-    auto* psi_ptr = psi.data();
-
     // need to map Tensor<T,3> vals to device
     auto* latR_ptr = lattice.R.data();
 
@@ -771,7 +769,7 @@ struct SoaAtomicBasisSet
         int TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
         int TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
         for (size_t i_dim = 0; i_dim < 3; i_dim++)
-          dr_pbc_devptr[i_dim + 3 * i_xyz] =
+          dr_pbc_ptr[i_dim + 3 * i_xyz] =
               (TransX * latR_ptr[i_dim + 0 * 3] + TransY * latR_ptr[i_dim + 1 * 3] + TransZ * latR_ptr[i_dim + 2 * 3]);
       }
     }
@@ -781,21 +779,21 @@ struct SoaAtomicBasisSet
       ScopedTimer local_timer(phase_timer_);
 #if not defined(QMC_COMPLEX)
 
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for is_device_ptr(correctphase_devptr) ")
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:correctphase_ptr[:nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
-        correctphase_devptr[i_e] = 1.0;
+        correctphase_ptr[i_e] = 1.0;
 
 #else
       auto* SuperTwist_ptr = SuperTwist.data();
 
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(always, to:SuperTwist_ptr[:9]) \
-		    is_device_ptr(Tv_list_devptr, correctphase_devptr) ")
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:SuperTwist_ptr[:9], \
+		     Tv_list_ptr[:nElec*3], correctphase_ptr[:nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
         //RealType phasearg = dot(3, SuperTwist.data(), 1, Tv_list.data() + 3 * i_e, 1);
         RealType phasearg = 0;
         for (size_t i_dim = 0; i_dim < 3; i_dim++)
-          phasearg += SuperTwist[i_dim] * Tv_list_devptr[i_dim + 3 * i_e];
+          phasearg += SuperTwist[i_dim] * Tv_list_ptr[i_dim + 3 * i_e];
         RealType s, c;
         qmcplusplus::sincos(-phasearg, &s, &c);
         correctphase_devptr[i_e] = ValueType(c, s);
@@ -806,7 +804,7 @@ struct SoaAtomicBasisSet
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
-		    is_device_ptr(dr_new_devptr, dr_pbc_devptr, r_new_devptr, displ_list_devptr) ")
+		    map(to: dr_ptr[:3*nElec*Nxyz], dr_pbc_ptr[:3*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
         for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
@@ -814,11 +812,11 @@ struct SoaAtomicBasisSet
           RealType tmp_r2 = 0.0;
           for (size_t i_dim = 0; i_dim < 3; i_dim++)
           {
-            dr_new_devptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] =
-                -(displ_list_devptr[i_dim + 3 * (i_e + center_idx * nElec)] + dr_pbc_devptr[i_dim + 3 * i_xyz]);
-            tmp_r2 += dr_new_devptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] * dr_new_devptr[i_dim + 3 * (i_xyz + Nxyz * i_e)];
+            dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] =
+                -(displ_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)] + dr_pbc_ptr[i_dim + 3 * i_xyz]);
+            tmp_r2 += dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] * dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)];
           }
-          r_new_devptr[i_xyz + Nxyz * i_e] = std::sqrt(tmp_r2);
+          r_ptr[i_xyz + Nxyz * i_e] = std::sqrt(tmp_r2);
         }
       }
     }
@@ -840,22 +838,22 @@ struct SoaAtomicBasisSet
     auto* NL_ptr        = NL.data();
     auto* psi_ptr       = psi.data();
 
-    auto* ylm_devptr = ylm_v.device_data();
-    auto* rnl_devptr = rnl_v.device_data();
+    auto* ylm_ptr = ylm_v.data();
+    auto* rnl_ptr = rnl_v.data();
     {
       ScopedTimer local_timer(psi_timer_);
       PRAGMA_OFFLOAD(
-          "omp target teams distribute parallel for collapse(2) map(always, to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize]) \
-		    is_device_ptr(ylm_devptr, rnl_devptr, psi_devptr, correctphase_devptr) ")
+          "omp target teams distribute parallel for collapse(2) map(to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize], \
+		    ylm_ptr[:nYlm*nElec*Nxyz], rnl_ptr[:nRnl*nElec*Nxyz], psi_ptr[:nBasTot*nElec], correctphase_ptr[:nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
         for (size_t ib = 0; ib < BasisSetSize; ++ib)
         {
           for (size_t i_xyz = 0; i_xyz < Nxyz; i_xyz++)
           {
-            const ValueType Phase = phase_fac_ptr[i_xyz] * correctphase_devptr[i_e];
-            psi_devptr[BasisOffset + ib + i_e * nBasTot] += ylm_devptr[(i_xyz + Nxyz * i_e) * nYlm + LM_ptr[ib]] *
-                rnl_devptr[(i_xyz + Nxyz * i_e) * nRnl + NL_ptr[ib]] * Phase;
+            const ValueType Phase = phase_fac_ptr[i_xyz] * correctphase_ptr[i_e];
+            psi_ptr[BasisOffset + ib + i_e * nBasTot] += ylm_ptr[(i_xyz + Nxyz * i_e) * nYlm + LM_ptr[ib]] *
+                rnl_ptr[(i_xyz + Nxyz * i_e) * nRnl + NL_ptr[ib]] * Phase;
           }
         }
       }
