@@ -1033,6 +1033,7 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
   const int Ny       = PBCImages[1] + 1;
   const int Nz       = PBCImages[2] + 1;
   const int NbImages = Nx * Ny * Nz;
+  LocPeriodicImagePhaseFactors.resize(NbImages);
   LocPeriodicImageDisplacements.resize(NbImages, 3);
   for (size_t ix = 0; ix < Nx; ix++)
     for (size_t iy = 0; iy < Ny; iy++)
