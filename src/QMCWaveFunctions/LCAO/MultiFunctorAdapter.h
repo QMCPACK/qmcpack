@@ -63,12 +63,12 @@ struct MultiFunctorAdapter
    * @brief evaluate for multiple electrons and multiple pbc images
    * 
    * @param [in] r electron distances [Nelec, Npbc]
-   * @param [out] u value of all splines at all electron distances [Nelec, Npbc, Nsplines]
+   * @param [out] u value of all splines at all electron distances [Nelec, Npbc, nRnl]
    * @param Rmax evaluate to zero for any distance greater than or equal to Rmax
   */
-  inline void batched_evaluate(const OffloadArray2D& r, OffloadArray3D& u, RealType Rmax) const
+  inline void batched_evaluate(OffloadArray2D& r, OffloadArray3D& u, RealType Rmax) const
   {
-    r.updateFrom(); // TODO: remove after offload
+    r.updateFrom(); // TODO: remove after offload and make r const
 
     const size_t nElec = r.size(0);
     const size_t Nxyz  = r.size(1); // number of PBC images
@@ -77,16 +77,14 @@ struct MultiFunctorAdapter
     const size_t nRnl = u.size(2);    // number of splines
     const size_t nR   = nElec * Nxyz; // total number of positions to evaluate
 
-    auto* r_ptr = r.data();
-    auto* u_ptr = u.data();
-
-    for (size_t ir = 0; ir < nR; ir++)
-      if (r_ptr[ir] >= Rmax)
-        for (size_t i = 0, n = Rnl.size(); i < n; ++i)
-          u_ptr[ir * nRnl + i] = 0.0;
-      else
-        for (size_t i = 0, n = Rnl.size(); i < n; ++i)
-          u_ptr[ir * nRnl + i] = Rnl[i]->f(r_ptr[ir]);
+    for (size_t i_e = 0; i_e < nElec; i_e++)
+      for (size_t i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+        if (r(i_e, i_xyz) >= Rmax)
+          for (size_t i = 0, n = Rnl.size(); i < n; ++i)
+            u(i_e, i_xyz, i) = 0.0;
+        else
+          for (size_t i = 0, n = Rnl.size(); i < n; ++i)
+            u(i_e, i_xyz, i) = Rnl[i]->f(r(i_e, i_xyz));
 
     u.updateTo(); // TODO: remove after offload
   }
