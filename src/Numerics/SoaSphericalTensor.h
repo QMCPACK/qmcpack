@@ -59,7 +59,7 @@ struct SoaSphericalTensor
   SoaSphericalTensor(const SoaSphericalTensor& rhs) = default;
 
   ///compute Ylm
-  static void evaluate_bare(T x, T y, T z, T* Ylm, int lmax, const T* FacL, const T* FacLM);
+  static void evaluate_bare(T x, T y, T z, T* Ylm, int lmax, const T* factorL, const T* factorLM);
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* Ylm) const
