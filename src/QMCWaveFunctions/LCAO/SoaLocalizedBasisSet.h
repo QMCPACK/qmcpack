@@ -121,7 +121,7 @@ public:
    * @param vp_list list of quantum virtual particleset (one for each walker)
    * @param v   Array(n_walkers, BasisSetSize)
    */
-  void mw_evaluateValueVPs(RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+  void mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                            OffloadMWVArray& v) override;
 

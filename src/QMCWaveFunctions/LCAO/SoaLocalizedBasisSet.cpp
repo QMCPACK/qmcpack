@@ -249,7 +249,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
 
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
                                                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                                           OffloadMWVArray& vp_basis_v)
 {
@@ -280,13 +280,11 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(RefVectorWithLeader<So
     {
       const auto& displ = dt_list[iw].getDisplRow(iat);
       for (int c = 0; c < NumCenters; c++)
-      {
         for (size_t idim = 0; idim < 3; idim++)
         {
           Tv_list[idim + 3 * (index + c * nVPs)]       = (ions_.R[c][idim] - coordR_list[index][idim]) - displ[c][idim];
           displ_list_tr[idim + 3 * (index + c * nVPs)] = displ[c][idim];
         }
-      }
       index++;
     }
 #if defined(QMC_COMPLEX)
