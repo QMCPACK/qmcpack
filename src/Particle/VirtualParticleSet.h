@@ -101,7 +101,7 @@ public:
   static const RefVectorWithLeader<const DistanceTableAB> extractDTRefList(
       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
       int id);
-  /**Extract list of active VP coordinates, flattened over all walkers
+  /**Extract list of VP coordinates, flattened over all walkers
     */
   static const std::vector<QMCTraits::PosType> extractCoordsRefList_vp(
       const RefVectorWithLeader<const VirtualParticleSet>& vp_list);

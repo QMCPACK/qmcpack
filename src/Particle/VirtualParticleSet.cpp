@@ -119,7 +119,7 @@ const std::vector<QMCTraits::PosType> VirtualParticleSet::extractCoordsRefList_v
   std::vector<QMCTraits::PosType> coords_list;
   for (const VirtualParticleSet& vp : vp_list)
     for (int iat = 0; iat < vp.getTotalNum(); iat++)
-      coords_list.push_back(vp.activeR(iat));
+      coords_list.push_back(vp.R[iat]);
 
   return coords_list;
 }
