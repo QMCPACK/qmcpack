@@ -59,7 +59,14 @@ struct MultiFunctorAdapter
       u[i] = Rnl[i]->f(r);
   }
 
-  inline void batched_evaluate(OffloadArray2D& r, OffloadArray3D& u, RealType Rmax) const
+  /**
+   * @brief evaluate for multiple electrons and multiple pbc images
+   * 
+   * @param [in] r electron distances [Nelec, Npbc]
+   * @param [out] u value of all splines at all electron distances [Nelec, Npbc, Nsplines]
+   * @param Rmax evaluate to zero for any distance greater than or equal to Rmax
+  */
+  inline void batched_evaluate(const OffloadArray2D& r, OffloadArray3D& u, RealType Rmax) const
   {
     r.updateFrom(); // TODO: remove after offload
 
