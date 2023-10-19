@@ -707,7 +707,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
                                             const RefVector<ValueVector>& d2psi_v_list) const
 {
   assert(this == &sa_list.getLeader());
-  auto& phi_leader = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& phi_leader         = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
   auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
   auto& mw_pos_copy        = mw_mem.mw_pos_copy;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
@@ -866,7 +866,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
             omptarget::min(last_cplx + omptarget::min(nComplexBands_local, last_cplx), requested_orb_size);
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
-        for (size_t j = first_real; j < last_real; j++)
+        for (int j = first_real; j < last_real; j++)
         {
           out_phi[j]    = psi[j];
           out_dphi_x[j] = dpsi_x[j];
