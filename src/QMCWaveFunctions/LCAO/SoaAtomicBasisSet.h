@@ -679,6 +679,25 @@ struct SoaAtomicBasisSet
     }
   }
 
+  /**
+   * @brief evaluate for multiple electrons
+   * 
+   * This function should only assign to elements of psi in the range [[0:nElec],[BasisOffset:BasisOffset+BasisSetSize]].
+   * These elements are assumed to be zero when passed to this function.
+   * This function only uses only one center (center_idx) from displ_list
+   * 
+   * @param [in] atom_bs_list multi-walker list of SoaAtomicBasisSet [nWalkers]
+   * @param [in] lattice crystal lattice
+   * @param [in,out] psi wavefunction values for all electrons [nElec, nBasTot]
+   * @param [in] displ_list displacement from each electron to each center [NumCenters, nElec, 3] (flattened)
+   * @param [in] Tv_list translation vectors for computing overall phase factor [nElec, 3] (flattened)
+   * @param [in] nElec number of electrons
+   * @param [in] nBasTot total number of basis functions represented in psi
+   * @param [in] center_idx current center index (for indexing into displ_list)
+   * @param [in] BasisOffset index of first basis function of this center (for indexing into psi)
+   * @param [in] NumCenters total number of centers in system (for indexing into displ_list)
+   *  
+  */
   template<typename LAT, typename VT>
   inline void mw_evaluateV(const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list,
                            const LAT& lattice,
@@ -687,23 +706,18 @@ struct SoaAtomicBasisSet
                            const Vector<RealType, OffloadPinnedAllocator<RealType>>& Tv_list,
                            const size_t nElec,
                            const size_t nBasTot,
-                           const size_t c,
+                           const size_t center_idx,
                            const size_t BasisOffset,
                            const size_t NumCenters)
   {
     assert(this == &atom_bs_list.getLeader());
     auto& atom_bs_leader = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet<ROT, SH>>();
-    /*
-      psi [nElec, nBasTot] (start at [0, BasisOffset])
-      displ_list [3 * nElec * NumCenters] (start at [3*nElec*c])
-      Tv_list [3 * nElec * NumCenters]
-    */
     //TODO: use QMCTraits::DIM instead of 3?
-    int Nx   = PBCImages[0] + 1;
-    int Ny   = PBCImages[1] + 1;
-    int Nz   = PBCImages[2] + 1;
-    int Nyz  = Ny * Nz;
-    int Nxyz = Nx * Nyz;
+    //      DIM==3 is baked into so many parts here that it's probably not worth it for now
+    const int Nx   = PBCImages[0] + 1;
+    const int Ny   = PBCImages[1] + 1;
+    const int Nz   = PBCImages[2] + 1;
+    const int Nxyz = Nx * Ny * Nz;
     assert(psi.size(0) == nElec);
     assert(psi.size(1) == nBasTot);
 
@@ -713,8 +727,8 @@ struct SoaAtomicBasisSet
     auto& dr    = atom_bs_leader.mw_mem_handle_.getResource().dr;
     auto& r     = atom_bs_leader.mw_mem_handle_.getResource().r;
 
-    size_t nRnl = RnlID.size();
-    size_t nYlm = Ylm.size();
+    const size_t nRnl = RnlID.size();
+    const size_t nYlm = Ylm.size();
 
     ylm_v.resize(nElec, Nxyz, nYlm);
     rnl_v.resize(nElec, Nxyz, nRnl);
@@ -727,16 +741,16 @@ struct SoaAtomicBasisSet
     dr_pbc.resize(Nxyz, 3);
     correctphase.resize(nElec);
 
-    auto* dr_pbc_devptr = dr_pbc.device_data();
-    auto* dr_new_devptr = dr.device_data();
-    auto* r_new_devptr  = r.device_data();
+    auto* dr_pbc_ptr = dr_pbc.data();
+    auto* dr_ptr     = dr.data();
+    auto* r_ptr      = r.data();
 
-    auto* correctphase_devptr = correctphase.device_data();
+    auto* correctphase_ptr = correctphase.data();
 
-    auto* Tv_list_devptr    = Tv_list.device_data();
-    auto* displ_list_devptr = displ_list.device_data();
+    auto* Tv_list_ptr    = Tv_list.data();
+    auto* displ_list_ptr = displ_list.data();
 
-    auto* psi_devptr = psi.device_data();
+    auto* psi_ptr = psi.data();
 
     // need to map Tensor<T,3> vals to device
     auto* latR_ptr = lattice.R.data();
@@ -745,18 +759,17 @@ struct SoaAtomicBasisSet
     // should just do this once and store it (like with phase)
     {
       ScopedTimer local(pbc_timer_);
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always, to:latR_ptr[:9]) \
-        is_device_ptr(dr_pbc_devptr) ")
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:latR_ptr[:9], dr_pbc_ptr[:3*Nxyz]) ")
       for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
       {
         // i_xyz = k + Nz * (j + Ny * i)
-        int ij = i_xyz / Nz;
-        int k = i_xyz - ij * Nz;
-        int i = ij / Ny;
-        int j = ij - i * Ny;
-        int TransX  = ((i % 2) * 2 - 1) * ((i + 1) / 2);
-        int TransY  = ((j % 2) * 2 - 1) * ((j + 1) / 2);
-        int TransZ  = ((k % 2) * 2 - 1) * ((k + 1) / 2);
+        int ij     = i_xyz / Nz;
+        int k      = i_xyz - ij * Nz;
+        int i      = ij / Ny;
+        int j      = ij - i * Ny;
+        int TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
+        int TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
+        int TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
         for (size_t i_dim = 0; i_dim < 3; i_dim++)
           dr_pbc_devptr[i_dim + 3 * i_xyz] =
               (TransX * latR_ptr[i_dim + 0 * 3] + TransY * latR_ptr[i_dim + 1 * 3] + TransZ * latR_ptr[i_dim + 2 * 3]);
@@ -802,7 +815,7 @@ struct SoaAtomicBasisSet
           for (size_t i_dim = 0; i_dim < 3; i_dim++)
           {
             dr_new_devptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] =
-                -(displ_list_devptr[i_dim + 3 * (i_e + c * nElec)] + dr_pbc_devptr[i_dim + 3 * i_xyz]);
+                -(displ_list_devptr[i_dim + 3 * (i_e + center_idx * nElec)] + dr_pbc_devptr[i_dim + 3 * i_xyz]);
             tmp_r2 += dr_new_devptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] * dr_new_devptr[i_dim + 3 * (i_xyz + Nxyz * i_e)];
           }
           r_new_devptr[i_xyz + Nxyz * i_e] = std::sqrt(tmp_r2);

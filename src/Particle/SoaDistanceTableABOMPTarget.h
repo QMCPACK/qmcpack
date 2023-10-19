@@ -298,14 +298,11 @@ public:
     auto* input_ptr             = offload_input.data();
     const int num_sources_local = num_sources_;
 
-    const size_t num_r_dr = mw_r_dr.size();
-    const size_t num_offload_input = offload_input.size();
-
     {
       ScopedTimer offload(dt_leader.offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
-                        map(always, to: input_ptr[:num_offload_input]) \
-                        depend(out:r_dr_ptr[:num_r_dr]) nowait")
+                        map(always, to: input_ptr[:offload_input.size()]) \
+                        depend(out:r_dr_ptr[:mw_r_dr.size()]) nowait")
       for (int iat = 0; iat < total_targets; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -332,7 +329,7 @@ public:
       if (!(modes_ & DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST))
       {
         PRAGMA_OFFLOAD(
-            "omp target update from(r_dr_ptr[:num_r_dr]) depend(inout:r_dr_ptr[:num_r_dr]) nowait")
+            "omp target update from(r_dr_ptr[:mw_r_dr.size()]) depend(inout:r_dr_ptr[:mw_r_dr.size()]) nowait")
       }
       // wait for computing and (optional) transferring back to host.
       // It can potentially be moved to ParticleSet to fuse multiple similar taskwait
