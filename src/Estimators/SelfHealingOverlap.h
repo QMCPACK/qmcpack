@@ -43,7 +43,8 @@ public:
   /** Constructor for SelfHealingOverlapInput 
    */
   SelfHealingOverlap(SelfHealingOverlapInput&& inp,
-                       DataLocality dl = DataLocality::crowd);
+                     const TrialWaveFunction& wfn,
+                     DataLocality dl = DataLocality::crowd);
 
   /** Constructor used when spawing crowd clones
    *  needs to be public so std::make_unique can call it.

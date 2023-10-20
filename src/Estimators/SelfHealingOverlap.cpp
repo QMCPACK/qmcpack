@@ -19,9 +19,10 @@
 namespace qmcplusplus
 {
 SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_,
-                     DataLocality dl)
-    : OperatorEstBase(dl),
-      input_(std::move(inp_))
+                                       const TrialWaveFunction& wfn,
+                                       DataLocality dl)
+  : OperatorEstBase(dl),
+    input_(std::move(inp_))
 {
 
   //my_name_ = input_.get_name();

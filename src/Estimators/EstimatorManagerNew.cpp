@@ -102,7 +102,7 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
                                                      pset.getLattice()) ||
-          createEstimator<SelfHealingOverlapInput>(est_input) ||
+          createEstimator<SelfHealingOverlapInput>(est_input,twf) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
