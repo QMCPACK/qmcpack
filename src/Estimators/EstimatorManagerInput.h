@@ -24,7 +24,7 @@
 #include <libxml/tree.h>
 
 // compilation fails with incomplete type errors w/o this
-#include "SHOverlapInput.h"
+#include "SelfHealingOverlapInput.h"
 
 namespace qmcplusplus
 {
@@ -43,13 +43,13 @@ class EstimatorManagerInputTests;
 class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
-class SHOverlapInput;
+class SelfHealingOverlapInput;
 class PerParticleHamiltonianLoggerInput;
 using EstimatorInput  = std::variant<std::monostate,
                                     MomentumDistributionInput,
                                     SpinDensityInput,
                                     OneBodyDensityMatricesInput,
-                                    SHOverlapInput,
+                                    SelfHealingOverlapInput,
                                     PerParticleHamiltonianLoggerInput>;
 using EstimatorInputs = std::vector<EstimatorInput>;
 

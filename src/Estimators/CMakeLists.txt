@@ -31,7 +31,7 @@ set(QMCEST_SRC
     OneBodyDensityMatricesInput.cpp
     OneBodyDensityMatrices.cpp
     MagnetizationDensityInput.cpp
-    SHOverlap.cpp
+    SelfHealingOverlap.cpp
     PerParticleHamiltonianLoggerInput.cpp
     PerParticleHamiltonianLogger.cpp)
 

@@ -20,6 +20,6 @@
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"
 #include "PerParticleHamiltonianLoggerInput.h"
-#include "SHOverlapInput.h"
+#include "SelfHealingOverlapInput.h"
 
 #endif

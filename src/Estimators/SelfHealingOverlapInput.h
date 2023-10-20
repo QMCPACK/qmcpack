@@ -15,23 +15,23 @@
 namespace qmcplusplus
 {
 
-class SHOverlap;
+class SelfHealingOverlap;
 
 /** Native representation for Self-Healing Overlap Estimator inputs
  */
-class SHOverlapInput
+class SelfHealingOverlapInput
 {
 public:
-  using Consumer = SHOverlap;
+  using Consumer = SelfHealingOverlap;
   using Real = QMCTraits::RealType;
 
-  class SHOverlapInputSection : public InputSection
+  class SelfHealingOverlapInputSection : public InputSection
   {
   public:
     // clang-format: off
-    SHOverlapInputSection()
+    SelfHealingOverlapInputSection()
     {
-      section_name   = "SHOverlap";
+      section_name   = "SelfHealingOverlap";
       attributes     = {"type", "name"};
       strings        = {"type", "name"};
       default_values = {{"type", std::string("sh_overlap")},{"name", std::string("sh_overlap")}};
@@ -39,12 +39,12 @@ public:
     // clang-format: on
   };
 
-  SHOverlapInput(xmlNodePtr cur) { input_section_.readXML(cur); }
+  SelfHealingOverlapInput(xmlNodePtr cur) { input_section_.readXML(cur); }
   /** default copy constructor
    *  This is required due to MDI being part of a variant used as a vector element.
    */
-  SHOverlapInput(const SHOverlapInput&) = default;
-  SHOverlapInputSection input_section_;
+  SelfHealingOverlapInput(const SelfHealingOverlapInput&) = default;
+  SelfHealingOverlapInputSection input_section_;
 };
 
 } // namespace qmcplusplus

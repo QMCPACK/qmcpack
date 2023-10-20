@@ -16,7 +16,7 @@
 #include "OperatorEstBase.h"
 #include "Containers/OhmmsPETE/TinyVector.h"
 
-#include "SHOverlapInput.h"
+#include "SelfHealingOverlapInput.h"
 
 
 namespace qmcplusplus
@@ -24,7 +24,7 @@ namespace qmcplusplus
 /** Class that collects momentum distribution of electrons
  *  
  */
-class SHOverlap : public OperatorEstBase
+class SelfHealingOverlap : public OperatorEstBase
 {
 public:
   using LatticeType = PtclOnLatticeTraits::ParticleLayout;
@@ -34,22 +34,22 @@ public:
   using PosType     = QMCTraits::PosType;
 
   //data members set only during construction
-  const SHOverlapInput input_;
+  const SelfHealingOverlapInput input_;
 
-  /** @ingroup SHOverlap mutable data members
+  /** @ingroup SelfHealingOverlap mutable data members
    */
 
 public:
-  /** Constructor for SHOverlapInput 
+  /** Constructor for SelfHealingOverlapInput 
    */
-  SHOverlap(SHOverlapInput&& inp,
+  SelfHealingOverlap(SelfHealingOverlapInput&& inp,
                        DataLocality dl = DataLocality::crowd);
 
   /** Constructor used when spawing crowd clones
    *  needs to be public so std::make_unique can call it.
    *  Do not use directly unless you've really thought it through.
    */
-  SHOverlap(const SHOverlap& sh, DataLocality dl);
+  SelfHealingOverlap(const SelfHealingOverlap& sh, DataLocality dl);
 
   /** This allows us to allocate the necessary data for the DataLocality::queue 
    */
@@ -59,7 +59,7 @@ public:
    */
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 
-  /** accumulate 1 or more walkers of SHOverlap samples
+  /** accumulate 1 or more walkers of SelfHealingOverlap samples
    */
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
@@ -67,17 +67,17 @@ public:
                   RandomGenerator& rng) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
-   *  of SHOverlap's data.
+   *  of SelfHealingOverlap's data.
    *
-   *  can use base class default until crowd level SHOverlap
+   *  can use base class default until crowd level SelfHealingOverlap
    *  estimators don't have a copy of the density grid.
    */
   void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
-   *  of SHOverlap's data.
+   *  of SelfHealingOverlap's data.
    *
-   *  can use base class default until crowd level SHOverlap estimators don't have a copy of the density grid.
+   *  can use base class default until crowd level SelfHealingOverlap estimators don't have a copy of the density grid.
    */
   //void collect(const OperatorEstBase&  oeb);
 
@@ -90,7 +90,7 @@ public:
   void registerOperatorEstimator(hdf_archive& file) override;
 
 private:
-  SHOverlap(const SHOverlap& md) = default;
+  SelfHealingOverlap(const SelfHealingOverlap& md) = default;
 };
 
 } // namespace qmcplusplus

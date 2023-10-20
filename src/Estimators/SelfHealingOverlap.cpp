@@ -8,7 +8,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "SHOverlap.h"
+#include "SelfHealingOverlap.h"
 #include "TrialWaveFunction.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 
@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-SHOverlap::SHOverlap(SHOverlapInput&& inp_,
+SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_,
                      DataLocality dl)
     : OperatorEstBase(dl),
       input_(std::move(inp_))
@@ -36,12 +36,12 @@ SHOverlap::SHOverlap(SHOverlapInput&& inp_,
 
 
 
-SHOverlap::SHOverlap(const SHOverlap& sh, DataLocality dl) : SHOverlap(sh)
+SelfHealingOverlap::SelfHealingOverlap(const SelfHealingOverlap& sh, DataLocality dl) : SelfHealingOverlap(sh)
 {
   data_locality_ = dl;
 }
 
-std::unique_ptr<OperatorEstBase> SHOverlap::spawnCrowdClone() const
+std::unique_ptr<OperatorEstBase> SelfHealingOverlap::spawnCrowdClone() const
 {
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
@@ -51,22 +51,22 @@ std::unique_ptr<OperatorEstBase> SHOverlap::spawnCrowdClone() const
     // This is just a stub until a memory saving optimization is deemed necessary
     spawn_data_locality = DataLocality::queue;
     data_size           = 0;
-    throw std::runtime_error("There is no memory savings implementation for SHOverlap");
+    throw std::runtime_error("There is no memory savings implementation for SelfHealingOverlap");
   }
 
-  auto spawn = std::make_unique<SHOverlap>(*this, spawn_data_locality);
+  auto spawn = std::make_unique<SelfHealingOverlap>(*this, spawn_data_locality);
   spawn->get_data().resize(data_size);
   return spawn;
 }
 
-void SHOverlap::startBlock(int steps)
+void SelfHealingOverlap::startBlock(int steps)
 {
 }
 
 /** Gets called every step and writes to thread local data.
  *
  */
-void SHOverlap::accumulate(const RefVector<MCPWalker>& walkers,
+void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
                            const RefVector<ParticleSet>& psets,
                            const RefVector<TrialWaveFunction>& wfns,
                            RandomGenerator& rng)
@@ -94,7 +94,7 @@ void SHOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     assert(wcs_fermi.size()==1);
     WaveFunctionComponent& wf = *wcs_fermi[0];
     if(wf.getClassName()!="MultiSlaterDetTableMethod")
-      throw std::runtime_error("SHOverlap estimator requires use of multideterminant wavefunction based on MultiSlaterDetTableMethod class");
+      throw std::runtime_error("SelfHealingOverlap estimator requires use of multideterminant wavefunction based on MultiSlaterDetTableMethod class");
 
     // collect parameter derivatives: (dpsi/dc_i)/psi
     // JTK: parameter derivative of multidet wf does not include first determinant.  How to get its value?
@@ -118,12 +118,12 @@ void SHOverlap::accumulate(const RefVector<MCPWalker>& walkers,
 
   }
 
-  //throw std::runtime_error("SHOverlap accumulate");
+  //throw std::runtime_error("SelfHealingOverlap accumulate");
     
 }
 
 
-void SHOverlap::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
+void SelfHealingOverlap::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
 {
   if (data_locality_ == DataLocality::crowd)
   {
@@ -131,12 +131,12 @@ void SHOverlap::collect(const RefVector<OperatorEstBase>& type_erased_operator_e
   }
   else
   {
-    throw std::runtime_error("You cannot call collect on a SHOverlap with this DataLocality");
+    throw std::runtime_error("You cannot call collect on a SelfHealingOverlap with this DataLocality");
   }
 }
 
 
-void SHOverlap::registerOperatorEstimator(hdf_archive& file)
+void SelfHealingOverlap::registerOperatorEstimator(hdf_archive& file)
 {
   using namespace std::string_literals;
   ////descriptor for the data, 1-D data
