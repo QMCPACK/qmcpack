@@ -10,6 +10,7 @@
 
 #include "SHOverlap.h"
 #include "TrialWaveFunction.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 
 #include <iostream>
 #include <numeric>
@@ -27,14 +28,9 @@ SHOverlap::SHOverlap(SHOverlapInput&& inp_,
 
   auto& inp = this->input_.input_section_;
 
-  //auto other = inp.get<std::string>("other");
-  //app_log()<<"other: "<<other<<std::endl;
-
-
-  // allocate data storage
-  //size_t data_size = nofK.size();
-  //data_.resize(data_size, 0.0);
-
+  // JTK: how to get # of coeff in multidet at this point?
+  size_t data_size = 1486;
+  data_.resize(data_size, 0.0);
 
 }
 
@@ -94,19 +90,35 @@ void SHOverlap::accumulate(const RefVector<MCPWalker>& walkers,
       else
         wcs_jastrow.push_back(wc.get());
 
-    // accumulate weight
-    //  (required by all estimators, otherwise inf results)
+    // fermionic must have only one component, and must be multideterminant
+    assert(wcs_fermi.size()==1);
+    WaveFunctionComponent& wf = *wcs_fermi[0];
+    if(wf.getClassName()!="MultiSlaterDetTableMethod")
+      throw std::runtime_error("SHOverlap estimator requires use of multideterminant wavefunction based on MultiSlaterDetTableMethod class");
+
+    // collect parameter derivatives: (dpsi/dc_i)/psi
+    // JTK: parameter derivative of multidet wf does not include first determinant.  How to get its value?
+    Vector<ValueType> dlogpsi; // JTK: should be class variable?
+    wf.evaluateDerivativesWF_local(dlogpsi);
+    //app_log()<<"param count: "<<dlogpsi.size()<<std::endl;
+
+    // collect jastrow prefactor
+    WaveFunctionComponent::LogValueType Jval = 0.0;
+    for(auto& wc: wcs_jastrow)
+      Jval += wc->get_log_value();
+    auto Jprefactor = std::real(std::exp(-2.*Jval)); // (integer * complex) fails to compile...
+
+    // accumulate weight (required by all estimators, otherwise inf results)
     walkers_weight_ += weight;
 
-    //// accumulate data
-    //for (int ik = 0; ik < nofK.size(); ++ik)
-    //  data_[ik] += weight * nofK[ik] * norm_nofK;
+    // accumulate data
+    assert(dlogpsi.size()==data_.size());
+    for (int ic = 0; ic < dlogpsi.size(); ++ic)
+      data_[ic] += weight * Jprefactor * dlogpsi[ic];
 
-
-    
   }
 
-  throw std::runtime_error("SHOverlap accumulate");
+  //throw std::runtime_error("SHOverlap accumulate");
     
 }
 
@@ -128,15 +140,12 @@ void SHOverlap::registerOperatorEstimator(hdf_archive& file)
 {
   using namespace std::string_literals;
   ////descriptor for the data, 1-D data
-  //std::vector<int> ng(1);
-  ////add nofk
-  //ng[0] = nofK.size();
-  //h5desc_.push_back({{"nofk"s}});
-  //auto& h5o = h5desc_.back();
+  std::vector<int> ng(1);
+  ng[0] = data_.size();
+  h5desc_.push_back({{"sh_coeff"}});
+  auto& h5o = h5desc_.back();
   ////h5o.set_dimensions(ng, my_index_);
-  //h5o.set_dimensions(ng, 0); // JTK: doesn't seem right
-  //h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints", file);
-  //h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights", file);
+  h5o.set_dimensions(ng, 0); // JTK: doesn't seem right
 }
 
 

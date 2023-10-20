@@ -188,6 +188,8 @@ public:
                              const opt_variables_type& optvars,
                              Vector<ValueType>& dlogpsi) override;
 
+  void evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi) override;
+
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,

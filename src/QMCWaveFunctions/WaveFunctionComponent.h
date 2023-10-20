@@ -482,6 +482,10 @@ public:
   */
   virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
+
+  virtual void evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi);
+
+
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
       performed with the passed-in G_in gradient vector. This object is then
@@ -555,6 +559,7 @@ private:
                                     std::vector<PsiValueType>& ratios,
                                     std::vector<GradType>& grad_new,
                                     std::vector<ComplexType>& spingrad_new) const;
+
 };
 } // namespace qmcplusplus
 #endif

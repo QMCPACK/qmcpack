@@ -214,6 +214,13 @@ void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
   throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + getClassName());
 }
 
+
+void WaveFunctionComponent::evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi)
+{
+  throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF_local is not implemented by " + getClassName());
+}
+
+
 /*@todo makeClone should be a pure virtual function
  */
 std::unique_ptr<WaveFunctionComponent> WaveFunctionComponent::makeClone(ParticleSet& tpq) const
