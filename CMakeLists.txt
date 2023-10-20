@@ -33,6 +33,8 @@ include(macros)
 # Build and install options
 ######################################################################
 
+include(FindMemoryResource)
+
 #--------------------------------------------------------------------
 # Set C++ standard
 #--------------------------------------------------------------------
@@ -299,11 +301,14 @@ set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# include(FindMemoryResource)
+
 # Check that a C++ compiler is compatible with the underlying libstdc++
 include(Testlibstdc++)
 
 # Check that a C++ standard library is configured properly
-include(TestCxx17Library)
+find_package(MemoryResource REQUIRED)
+# include(TestCxx17Library)
 
 #-----------------------------------------------------------------------
 # SETUP SANITIZERS FLAGS
@@ -371,9 +376,10 @@ message(STATUS "QMC_SIMD_ALIGNMENT is set to ${QMC_SIMD_ALIGNMENT}")
 #---------------------------------------------------------
 # Determine if OpenMP taskloop works with the CXX compiler
 #---------------------------------------------------------
-include(TestOpenMPtaskloop)
-option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
-message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
+if(QMC_OMP)
+  include(TestOpenMPtaskloop)
+  option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
+  message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 
 #---------------------------------------------------------
 # Set up OpenMP offload compile options
@@ -394,6 +400,8 @@ endif()
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
 cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
                        ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
+
+endif()
 
 #-------------------------------------------------------------------------------------
 # consider making this always on if OpenMP is no longer UB with Thread Support Library
