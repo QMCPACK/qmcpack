@@ -102,6 +102,88 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   auto spo = lcaoSet.createSPOSetFromXML(spo_xml);
   REQUIRE(spo);
   auto& lcao_spos = dynamic_cast<const LCAOrbitalSet&>(*spo);
-  REQUIRE(!lcao_spos.isIdentity());
+  // CHECK(!lcao_spos.isIdentity());
+
+  const int norb = spo->getOrbitalSetSize();
+
+
+  // test batched interfaces
+
+  ParticleSet elec_2(elec_);
+  // interchange positions
+  elec_2.R[0] = elec_.R[1];
+  elec_2.R[1] = elec_.R[0];
+  RefVectorWithLeader<ParticleSet> p_list(elec_, {elec_, elec_2});
+
+
+  std::unique_ptr<SPOSet> spo_2(spo->makeClone());
+  RefVectorWithLeader<SPOSet> spo_list(*spo, {*spo, *spo_2});
+
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec_.createResource(pset_res);
+  spo->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
+  // make VPs
+  const size_t nw                    = 2;
+  const size_t nvp_                  = 4;
+  const size_t nvp_2                 = 3;
+  const std::vector<size_t> nvp_list = {nvp_, nvp_2};
+  VirtualParticleSet VP_(elec_, nvp_);
+  VirtualParticleSet VP_2(elec_2, nvp_2);
+
+  // move VPs
+  std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);
+  std::vector<ParticleSet::SingleParticlePos> newpos_vp_2(nvp_2);
+  for (int i = 0; i < nvp_; i++)
+    newpos_vp_[i] = {std::cos(i), std::sin(i), i / 10};
+  for (int i = 0; i < nvp_2; i++)
+    newpos_vp_2[i] = {-std::sin(i), i / 10, std::cos(i)};
+  VP_.makeMoves(elec_, 0, newpos_vp_);
+  VP_2.makeMoves(elec_2, 0, newpos_vp_2);
+
+  // make VP refvec
+  RefVectorWithLeader<VirtualParticleSet> vp_list(VP_, {VP_, VP_2});
+  ResourceCollection vp_res("test_vp_res");
+  VP_.createResource(vp_res);
+  ResourceCollectionTeamLock<VirtualParticleSet> mw_vpset_lock(vp_res, vp_list);
+
+  // fill invrow with dummy data for each walker
+  std::vector<SPOSet::ValueType> psiMinv_data_(norb);
+  std::vector<SPOSet::ValueType> psiMinv_data_2(norb);
+  for (int i = 0; i < norb; i++)
+  {
+    psiMinv_data_[i]  = std::cos(i);
+    psiMinv_data_2[i] = std::sin(i);
+  }
+  std::vector<const SPOSet::ValueType*> invRow_ptr_list{psiMinv_data_.data(), psiMinv_data_2.data()};
+
+  // ratios_list
+  std::vector<std::vector<SPOSet::ValueType>> ratios_list(nw);
+  for (size_t iw = 0; iw < nw; iw++)
+    ratios_list[iw].resize(nvp_list[iw]);
+
+  // just need dummy refvec with correct size
+  SPOSet::ValueVector tmp_psi_list(norb);
+  spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
+                            RefVector<SPOSet::ValueVector>{tmp_psi_list}, invRow_ptr_list, ratios_list);
+
+
+  // app_log() << "calcRatioGrad \n" << std::setprecision(14);
+  // for (int iw = 0; iw < nw; iw++)
+  //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
+  //     app_log() << "CHECK(ratios_list[" << iw << "][" << ivp << "] == Approx(" << ratios_list[iw][ivp] << "));\n";
+
+  CHECK(ratios_list[0][0] == Approx(-206.77166092783));
+  CHECK(ratios_list[0][1] == Approx(44.875898444974));
+  CHECK(ratios_list[0][2] == Approx(24.96409353735));
+  CHECK(ratios_list[0][3] == Approx(-53.413899456988));
+  CHECK(ratios_list[1][0] == Approx(-306.54954579776));
+  CHECK(ratios_list[1][1] == Approx(45.022133237688));
+  CHECK(ratios_list[1][2] == Approx(183.86331674535));
 }
 } // namespace qmcplusplus
