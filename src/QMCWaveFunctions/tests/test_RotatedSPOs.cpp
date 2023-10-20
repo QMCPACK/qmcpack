@@ -18,9 +18,11 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #include "checkMatrix.hpp"
+#include "FakeSPO.h"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -62,24 +64,13 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 1.68658058;
-  ions_.R[1][1] = 1.68658058;
-  ions_.R[1][2] = 1.68658058;
-
-
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0][0] = 0.0;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 1.0;
-  elec_.R[1][2] = 0.0;
-
+  elec_.R[0]                 = {0.0, 0.0, 0.0};
+  elec_.R[1]                 = {0.0, 1.0, 0.0};
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -649,6 +640,229 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
   RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
   for (int i = 0; i < new_params2.size(); i++)
     CHECK(new_params2[i] == Approx(old_params[i]));
+}
+
+namespace testing
+{
+opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
+opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull; }
+std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+} // namespace testing
+
+// Test using global rotation
+TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
+{
+  auto fake_spo = std::make_unique<FakeSPO>();
+  fake_spo->setOrbitalSetSize(4);
+  RotatedSPOs rot("fake_rot", std::move(fake_spo));
+  int nel = 2;
+  rot.buildOptVariables(nel);
+
+  optimize::VariableSet vs;
+  rot.checkInVariablesExclusive(vs);
+  vs[0] = 0.1;
+  vs[1] = 0.15;
+  vs[2] = 0.2;
+  vs[3] = 0.25;
+  rot.resetParametersExclusive(vs);
+
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp.h5", hout);
+
+    rot.writeVariationalParameters(hout);
+  }
+
+  auto fake_spo2 = std::make_unique<FakeSPO>();
+  fake_spo2->setOrbitalSetSize(4);
+
+  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  rot2.buildOptVariables(nel);
+
+  optimize::VariableSet vs2;
+  rot2.checkInVariablesExclusive(vs2);
+
+  hdf_archive hin;
+  vs2.readFromHDF("rot_vp.h5", hin);
+  rot2.readVariationalParameters(hin);
+
+  opt_variables_type& var = testing::getMyVars(rot2);
+  CHECK(var[0] == Approx(vs[0]));
+  CHECK(var[1] == Approx(vs[1]));
+  CHECK(var[2] == Approx(vs[2]));
+  CHECK(var[3] == Approx(vs[3]));
+
+  opt_variables_type& full_var = testing::getMyVarsFull(rot2);
+  CHECK(full_var[0] == Approx(vs[0]));
+  CHECK(full_var[1] == Approx(vs[1]));
+  CHECK(full_var[2] == Approx(vs[2]));
+  CHECK(full_var[3] == Approx(vs[3]));
+  CHECK(full_var[4] == Approx(0.0));
+  CHECK(full_var[5] == Approx(0.0));
+}
+
+// Test using history list.
+TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
+{
+  auto fake_spo = std::make_unique<FakeSPO>();
+  fake_spo->setOrbitalSetSize(4);
+  RotatedSPOs rot("fake_rot", std::move(fake_spo));
+  rot.set_use_global_rotation(false);
+  int nel = 2;
+  rot.buildOptVariables(nel);
+
+  optimize::VariableSet vs;
+  rot.checkInVariablesExclusive(vs);
+  vs[0] = 0.1;
+  vs[1] = 0.15;
+  vs[2] = 0.2;
+  vs[3] = 0.25;
+  rot.resetParametersExclusive(vs);
+
+  {
+    hdf_archive hout;
+    vs.writeToHDF("rot_vp_hist.h5", hout);
+
+    rot.writeVariationalParameters(hout);
+  }
+
+  auto fake_spo2 = std::make_unique<FakeSPO>();
+  fake_spo2->setOrbitalSetSize(4);
+
+  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  rot2.buildOptVariables(nel);
+
+  optimize::VariableSet vs2;
+  rot2.checkInVariablesExclusive(vs2);
+
+  hdf_archive hin;
+  vs2.readFromHDF("rot_vp_hist.h5", hin);
+  rot2.readVariationalParameters(hin);
+
+  opt_variables_type& var = testing::getMyVars(rot2);
+  CHECK(var[0] == Approx(vs[0]));
+  CHECK(var[1] == Approx(vs[1]));
+  CHECK(var[2] == Approx(vs[2]));
+  CHECK(var[3] == Approx(vs[3]));
+
+  auto hist = testing::getHistoryParams(rot2);
+  REQUIRE(hist.size() == 1);
+  REQUIRE(hist[0].size() == 4);
+}
+
+class DummySPOSetWithoutMW : public SPOSet
+{
+public:
+  DummySPOSetWithoutMW(const std::string& my_name) : SPOSet(my_name) {}
+  void setOrbitalSetSize(int norbs) override {}
+  void evaluateValue(const ParticleSet& P, int iat, SPOSet::ValueVector& psi) override
+  {
+    assert(psi.size() == 3);
+    psi[0] = 123;
+    psi[1] = 456;
+    psi[2] = 789;
+  }
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override {}
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override
+  {}
+  std::string getClassName() const override { return my_name_; }
+};
+
+class DummySPOSetWithMW : public DummySPOSetWithoutMW
+{
+public:
+  DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW(my_name) {}
+  void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        const RefVector<ValueVector>& psi_v_list) const override
+  {
+    for (auto& psi : psi_v_list)
+    {
+      assert(psi.get().size() == 3);
+      psi.get()[0] = 321;
+      psi.get()[1] = 654;
+      psi.get()[2] = 987;
+    }
+  }
+};
+
+TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
+{
+  //checking that mw_ API works in RotatedSPOs and is not defaulting to
+  //SPOSet default implementation
+  {
+    //First check calling the mw_ APIs for RotatedSPOs, for which the
+    //underlying implementation just calls the underlying SPOSet mw_ API
+    //In the case that the underlying SPOSet doesn't specialize the mw_ API,
+    //the underlying SPOSet will fall back to the default SPOSet mw_, which is
+    //just a loop over the single walker API.
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW>("no mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW>("no mw 1"));
+    RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
+
+    ResourceCollection spo_res("test_rot_res");
+    rot_spo0.createResource(spo_res);
+    ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
+    const SimulationCell simulation_cell;
+    ParticleSet elec0(simulation_cell);
+    ParticleSet elec1(simulation_cell);
+    RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});
+
+    SPOSet::ValueVector psi0(3);
+    SPOSet::ValueVector psi1(3);
+    RefVector<SPOSet::ValueVector> psi_v_list{psi0, psi1};
+
+    rot_spo0.mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
+      CHECK(psi_v_list[iw].get()[0] == Approx(123));
+      CHECK(psi_v_list[iw].get()[1] == Approx(456));
+      CHECK(psi_v_list[iw].get()[2] == Approx(789));
+    }
+  }
+  {
+    //In the case that the underlying SPOSet DOES have mw_ specializations,
+    //we want to make sure that RotatedSPOs are triggering that appropriately
+    //This will mean that the underlying SPOSets will do the appropriate offloading
+    //To check this, DummySPOSetWithMW has an explicit mw_evaluateValue which sets
+    //different values than what gets set in evaluateValue. By doing this,
+    //we are ensuring that RotatedSPOs->mw_evaluaeValue is calling the specialization
+    //in the underlying SPO and not using the default SPOSet implementation which
+    //loops over single walker APIs (which have different values enforced in
+    // DummySPOSetWithoutMW
+
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW>("mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW>("mw 1"));
+    RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
+
+    ResourceCollection spo_res("test_rot_res");
+    rot_spo0.createResource(spo_res);
+    ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
+    const SimulationCell simulation_cell;
+    ParticleSet elec0(simulation_cell);
+    ParticleSet elec1(simulation_cell);
+    RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});
+
+    SPOSet::ValueVector psi0(3);
+    SPOSet::ValueVector psi1(3);
+    RefVector<SPOSet::ValueVector> psi_v_list{psi0, psi1};
+
+    rot_spo0.mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
+      CHECK(psi_v_list[iw].get()[0] == Approx(321));
+      CHECK(psi_v_list[iw].get()[1] == Approx(654));
+      CHECK(psi_v_list[iw].get()[2] == Approx(987));
+    }
+  }
 }
 
 } // namespace qmcplusplus

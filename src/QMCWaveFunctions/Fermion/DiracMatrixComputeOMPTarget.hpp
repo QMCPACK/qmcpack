@@ -21,7 +21,7 @@
 #include "type_traits/complex_help.hpp"
 #include "type_traits/template_types.hpp"
 #include "Concurrency/OpenMP.h"
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 #include "ResourceCollection.h"
 
 namespace qmcplusplus
@@ -161,7 +161,7 @@ private:
 public:
   DiracMatrixComputeOMPTarget() : Resource("DiracMatrixComputeOMPTarget"), lwork_(0) {}
 
-  Resource* makeClone() const override { return new DiracMatrixComputeOMPTarget(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixComputeOMPTarget>(*this); }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
    * when VALUE_FP and TMAT are the same

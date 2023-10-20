@@ -36,12 +36,9 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(ParticleSet& w,
     : QMCCostFunctionBase(w, psi, h, comm),
       samples_(samples),
       walkers_per_crowd_(walkers_per_crowd),
-      check_config_timer_(
-          *timer_manager.createTimer("QMCCostFunctionBatched::checkConfigurations", timer_level_medium)),
-      corr_sampling_timer_(
-          *timer_manager.createTimer("QMCCostFunctionBatched::correlatedSampling", timer_level_medium)),
-      fill_timer_(
-          *timer_manager.createTimer("QMCCostFunctionBatched::fillOverlapHamiltonianMatrices", timer_level_medium))
+      check_config_timer_(createGlobalTimer("QMCCostFunctionBatched::checkConfigurations", timer_level_medium)),
+      corr_sampling_timer_(createGlobalTimer("QMCCostFunctionBatched::correlatedSampling", timer_level_medium)),
+      fill_timer_(createGlobalTimer("QMCCostFunctionBatched::fillOverlapHamiltonianMatrices", timer_level_medium))
 
 {
   app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;
@@ -194,16 +191,26 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
   }
 }
 
-// Input - sample_size  - number of samples to process
-//       - batch_size  -  process samples in batch_size at a time
-// Output - num_batches - number of batches to use
-//        - final_batch_size - the last batch size.  May be smaller than batch_size
-//                             if the number of samples is not a multiple of the batch size
+  /** Compute number of batches and final batch size given the number of samples
+   *   and a batch size.
+   * \param[in] sample_size number of samples to process.
+   * \param[in] batch_size process samples in batch_size at a time (typically the number of walkers in a crowd).
+   * \param[out] num_batches number of batches to use.
+   * \param[out] final_batch_size the last batch size.  May be smaller than batch_size
+   *             if the number of samples is not a multiple of the batch size.
+   *
+   * There may be cases where the batch size is zero. One cause is when the number of walkers per
+   *  rank is less than the number of crowds.
+   */
 void compute_batch_parameters(int sample_size, int batch_size, int& num_batches, int& final_batch_size)
 {
-  num_batches      = sample_size / batch_size;
+  if (batch_size == 0)
+    num_batches = 0;
+  else
+    num_batches = sample_size / batch_size;
+
   final_batch_size = batch_size;
-  if (sample_size % batch_size != 0)
+  if (batch_size != 0 && sample_size % batch_size != 0)
   {
     num_batches += 1;
     final_batch_size = sample_size % batch_size;

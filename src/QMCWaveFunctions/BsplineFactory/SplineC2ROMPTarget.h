@@ -82,7 +82,7 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_;
+  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_handle_;
 
   ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
@@ -113,7 +113,7 @@ protected:
 public:
   SplineC2ROMPTarget(const std::string& my_name)
       : BsplineSet(my_name),
-        offload_timer_(*timer_manager.createTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
+        offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
         nComplexBands(0),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
@@ -134,18 +134,15 @@ public:
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
     assert(this == &spo_list.getLeader());
-    auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-    auto res_ptr     = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, TT>*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("SplineC2ROMPTarget::acquireResource dynamic_cast failed");
-    phi_leader.mw_mem_.reset(res_ptr);
+    auto& phi_leader          = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+    phi_leader.mw_mem_handle_ = collection.lendResource<SplineOMPTargetMultiWalkerMem<ST, TT>>();
   }
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
     assert(this == &spo_list.getLeader());
     auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-    collection.takebackResource(std::move(phi_leader.mw_mem_));
+    collection.takebackResource(phi_leader.mw_mem_handle_);
   }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2ROMPTarget>(*this); }
@@ -205,7 +202,7 @@ public:
     PRAGMA_OFFLOAD("omp target update to(mKK_ptr[0:mKK->size()])")
     auto* myKcart_ptr = myKcart->data();
     PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
-    for (size_t i = 0; i < 9; i++)
+    for (uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];

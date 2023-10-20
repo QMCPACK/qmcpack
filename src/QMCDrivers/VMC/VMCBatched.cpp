@@ -83,7 +83,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   constexpr RealType mhalf(-0.5);
   const bool use_drift = sft.vmcdrv_input.get_use_drift();
 
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
+  std::vector<TrialWaveFunction::PsiValue> ratios(num_walkers);
   std::vector<RealType> log_gf(num_walkers);
   std::vector<RealType> log_gb(num_walkers);
   std::vector<RealType> prob(num_walkers);
@@ -235,8 +235,8 @@ template void VMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThr
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
-                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
-                            std::vector<std::unique_ptr<Crowd>>& crowds)
+                            UPtrVector<ContextForSteps>& context_for_steps,
+                            UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
@@ -382,6 +382,7 @@ bool VMCBatched::run()
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("Block " + std::to_string(block));
     endBlock();
+    recordBlock(block);
     vmc_loop.stop();
 
     bool stop_requested = false;

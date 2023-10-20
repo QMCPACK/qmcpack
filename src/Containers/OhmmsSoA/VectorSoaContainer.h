@@ -20,7 +20,6 @@
 
 #include <type_traits>
 #include "CPU/SIMD/aligned_allocator.hpp"
-#include "CPU/SIMD/algorithm.hpp"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsSoA/PosTransformer.h"
@@ -101,7 +100,7 @@ struct VectorSoaContainer
   /** need A=0.0;
        */
   template<typename T1>
-  VectorSoaContainer& operator=(T1 in)
+  VectorSoaContainer& operator=(const T1 in)
   {
     std::fill(myData, myData + nGhosts * D, static_cast<T>(in));
     return *this;
@@ -209,11 +208,9 @@ struct VectorSoaContainer
        *
        * The same sizes are assumed.
        */
-  template<typename T1>
-  void copyIn(const Vector<TinyVector<T1, D>>& in)
+  void copyIn(const Vector<TinyVector<T, D>>& in)
   {
-    //if(nLocal!=in.size()) resize(in.size());
-    PosAoS2SoA(nLocal, D, reinterpret_cast<const T1*>(in.first_address()), D, myData, nGhosts);
+    PosAoS2SoA(nLocal, D, reinterpret_cast<const T*>(in.first_address()), D, myData, nGhosts);
   }
 
   /** SoA to AoS : copy to Vector<TinyVector<>>
@@ -247,7 +244,7 @@ struct VectorSoaContainer
 
     /** assign value */
     template<typename T1>
-    inline Accessor& operator=(T1 rhs)
+    inline Accessor& operator=(const T1 rhs)
     {
 #pragma unroll
       for (size_t i = 0; i < D; ++i)

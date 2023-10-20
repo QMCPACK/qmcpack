@@ -21,6 +21,8 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
 
+#include <array>
+
 namespace qmcplusplus
 {
 /** constructor
@@ -71,22 +73,26 @@ CSEnergyEstimator* CSEnergyEstimator::clone() { return new CSEnergyEstimator(*th
    */
 void CSEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record)
 {
-  char aname[80];
+  std::array<char, 80> aname;
   FirstIndex = record.size();
 
   for (int i = 0; i < NumCopies; ++i)
   {
     for (int k = 0; k < h_components.size(); ++k)
     {
-      sprintf(aname, "%s_%i", h_components[k].c_str(), i);
-      int dummy = record.add(aname);
+      int length = std::snprintf(aname.data(), aname.size(), "%s_%i", h_components[k].c_str(), i);
+      if (length < 0)
+        throw std::runtime_error("Error generating record name");
+      record.add(std::string(aname.data(), length));
     }
   }
 
   for (int i = 0; i < NumCopies; ++i)
   {
-    sprintf(aname, "wpsi_%i", i);
-    int dummy = record.add(aname);
+    int length = std::snprintf(aname.data(), aname.size(), "wpsi_%i", i);
+    if (length < 0)
+      throw std::runtime_error("Error generating record name");
+    record.add(std::string(aname.data(), length));
   }
 
   for (int i = 0; i < NumCopies; i++)
@@ -95,8 +101,10 @@ void CSEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record)
     {
       for (int k = 0; k < h_components.size(); ++k)
       {
-        sprintf(aname, "d%s_%d_%d", h_components[k].c_str(), i, j);
-        int dummy = record.add(aname);
+        int length = std::snprintf(aname.data(), aname.size(), "d%s_%d_%d", h_components[k].c_str(), i, j);
+        if (length < 0)
+          throw std::runtime_error("Error generating record name");
+        record.add(std::string(aname.data(), length));
       }
     }
   }

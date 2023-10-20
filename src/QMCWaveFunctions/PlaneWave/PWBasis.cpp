@@ -34,10 +34,8 @@ int PWBasis::readbasis(hdf_archive& h5basisgroup,
   h5basisgroup.read(gvecs, "/electrons/kpoint_0/gvectors");
   NumPlaneWaves = std::max(gvecs.size(), kplusgvecs_cart.size());
   if (NumPlaneWaves == 0)
-  {
-    app_error() << "  PWBasis::readbasis Basis is missing. Abort " << std::endl;
-    abort(); //FIX_ABORT
-  }
+    throw std::runtime_error("  PWBasis::readbasis Basis is missing.");
+
   if (kplusgvecs_cart.empty())
   {
     kplusgvecs_cart.resize(NumPlaneWaves);

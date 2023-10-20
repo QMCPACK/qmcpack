@@ -11,13 +11,13 @@ This guide will briefly cover running QMCPACK on your machine using a docker con
 Current Images
 --------------
 
-Docker containers are identified by `domain/image:tag` and stored using `DockerHub <https://hub.docker.com/>`_.
+Docker containers are identified by `domain/image:tag` and stored using `The Github Container Registry <https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry>`_.
 Currently available containers have pre-installed QMCPACK dependencies, see the Dockerfile file link for available dependencies on each image:
 
-- `Linux containers <https://hub.docker.com/r/williamfgc/qmcpack-ci/tags>`_ 
-   - williamfgc/qmcpack-ci:ubuntu20-openmpi: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu/openmpi/Dockerfile>`_
-   - williamfgc/qmcpack-ci:ubuntu20-clang-latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu/clang-latest/Dockerfile>`_
-   - walshmm/qmcpack-ci:centos-stream-gcc11: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos-stream/Dockerfile>`_
+- `Linux containers <https://github.com/orgs/QMCPACK/packages>`_ 
+   - ghcr.io/qmcpack/ubuntu22-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu/openmpi/Dockerfile>`_
+   - ghcr.io/qmcpack/ubuntu22-clang:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu/clang-latest/Dockerfile>`_
+   - ghcr.io/qmcpack/centos-stream-gcc11:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos-stream/Dockerfile>`_
 
 
 Running Docker Containers
@@ -35,7 +35,7 @@ Running Docker Containers
 
    .. code-block:: bash
    
-      docker pull williamfgc/qmcpack-ci:ubuntu20-openmpi
+      docker pull ghcr.io/qmcpack/ubuntu22-openmpi:latest
 
 3. **Run an image**: the `docker run` command will spin up a container with using the image we just downloaded from step 2. Alternatively, `docker run` will automatically fallback to pulling the image and tag from DockerHub (requires connection).
 
@@ -43,7 +43,7 @@ Running Docker Containers
 
    .. code-block:: bash
 
-      docker run -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -it ghcr.io/qmcpack/ubuntu22-openmpi:latest /bin/bash
 
    The above will run the container in interactive mode dropping the default `user` to `/home/user` using the `bash` shell. If `sudo` access is needed (e.g. install a package `sudo apt-get install emacs`) the password for the default `user` is also `user`.
 
@@ -51,7 +51,7 @@ Running Docker Containers
 
    .. code-block:: bash
 
-      docker run -u $(id -u `stat -c "%U" .`):$(id -g `stat -c "%G" .`) -v <QMCPACK Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u $(id -u `stat -c "%U" .`):$(id -g `stat -c "%G" .`) -v <QMCPACK Source Directory>:/home/user -it ghcr.io/qmcpack/ubuntu22-openmpi:latest /bin/bash
 
 
    Flags used by `docker run` (Note: The flags -i and -t are combined above):
@@ -68,7 +68,7 @@ Running Docker Containers
 
    .. code-block:: bash
 
-      docker run -u root -v path/to/QMCPACK:home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u root -v path/to/QMCPACK:home/user -it ghcr.io/qmcpack/ubuntu22-openmpi:latest /bin/bash
 
 
 Build QMCPACK on Docker

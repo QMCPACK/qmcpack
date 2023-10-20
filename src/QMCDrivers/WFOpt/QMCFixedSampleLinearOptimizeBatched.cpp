@@ -86,13 +86,12 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
       freeze_parameters_(false),
-      generate_samples_timer_(
-          *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
-      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
-      involvmat_timer_(*timer_manager.createTimer("QMCLinearOptimizedBatched::invert_matrix", timer_level_medium)),
-      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
-      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
+      generate_samples_timer_(createGlobalTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
+      initialize_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
+      eigenvalue_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
+      involvmat_timer_(createGlobalTimer("QMCLinearOptimizedBatched::invert_matrix", timer_level_medium)),
+      line_min_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(createGlobalTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
@@ -133,17 +132,17 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   //app_log() << "construct QMCFixedSampleLinearOptimizeBatched" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
-                                                     false,  // exact sampling
-                                                     true,   // ground state?
-                                                     false,  // variance correct,
+                                                     false, // exact sampling
+                                                     true,  // ground state?
+                                                     false, // variance correct,
                                                      true,
-                                                     true,   // print matrices,
-                                                     true,   // build matrices
-                                                     false,  // spam
-                                                     false,  // use var deps?
-                                                     true,   // chase lowest
-                                                     false,  // chase closest
-                                                     false,  // eom
+                                                     true,  // print matrices,
+                                                     true,  // build matrices
+                                                     false, // spam
+                                                     false, // use var deps?
+                                                     true,  // chase lowest
+                                                     false, // chase closest
+                                                     false, // eom
                                                      false,
                                                      false,  // eom related
                                                      false,  // eom related
@@ -161,10 +160,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
                                                      1.0e-6, // convergence threshold
                                                      0.99,   // minimum S singular val
                                                      0.0, 0.0,
-                                                     10.0,   // max change allowed
-                                                     1.00,   // identity shift
-                                                     1.00,   // overlap shift
-                                                     0.3,    // max parameter change
+                                                     10.0, // max change allowed
+                                                     1.00, // identity shift
+                                                     1.00, // overlap shift
+                                                     0.3,  // max parameter change
                                                      shift_scales, app_log());
 #endif
 }
@@ -1720,7 +1719,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || std::isnan(newCost))
+  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)

@@ -33,13 +33,11 @@ namespace qmcplusplus
 class ContextForSteps
 {
 public:
-  ContextForSteps(RandomGenerator& random_gen);
-
-  RandomGenerator& get_random_gen() { return random_gen_; }
-
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  ContextForSteps(RandomBase<FullPrecRealType>& random_gen);
+  RandomBase<FullPrecRealType>& get_random_gen();
 protected:
-  RandomGenerator& random_gen_;
+  RandomBase<FullPrecRealType>& random_gen_;
 };
-
 } // namespace qmcplusplus
 #endif

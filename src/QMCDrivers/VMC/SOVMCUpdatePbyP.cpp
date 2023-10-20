@@ -26,12 +26,12 @@ namespace qmcplusplus
 SOVMCUpdatePbyP::SOVMCUpdatePbyP(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
-                                 RandomGenerator& rg)
+                                 RandomBase<FullPrecRealType>& rg)
     : QMCUpdateBase(w, psi, h, rg),
-      buffer_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::Buffer", timer_level_medium)),
-      movepbyp_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::MovePbyP", timer_level_medium)),
-      hamiltonian_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::Hamiltonian", timer_level_medium)),
-      collectables_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::Collectables", timer_level_medium))
+      buffer_timer_(createGlobalTimer("SOVMCUpdatePbyP::Buffer", timer_level_medium)),
+      movepbyp_timer_(createGlobalTimer("SOVMCUpdatePbyP::MovePbyP", timer_level_medium)),
+      hamiltonian_timer_(createGlobalTimer("SOVMCUpdatePbyP::Hamiltonian", timer_level_medium)),
+      collectables_timer_(createGlobalTimer("SOVMCUpdatePbyP::Collectables", timer_level_medium))
 {}
 
 SOVMCUpdatePbyP::~SOVMCUpdatePbyP() {}

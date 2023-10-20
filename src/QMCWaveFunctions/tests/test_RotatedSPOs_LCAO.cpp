@@ -74,6 +74,56 @@ void setupParticleSetPool(ParticleSetPool& pp)
   pp.put(part_elec);
 }
 
+// Set particles for Be atom
+void setupParticleSetPoolBe(ParticleSetPool& pp)
+{
+  // See ParticleIO/tests/test_xml_io.cpp for particle parsing
+  const char* particles = R"(<qmcsystem>
+  <particleset name="ion0" size="1">
+    <group name="Be">
+      <parameter name="charge">4</parameter>
+      <parameter name="valence">4</parameter>
+      <parameter name="atomicnumber">4</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+</attrib>
+    <attrib name="ionid" datatype="stringArray">
+ Be
+</attrib>
+  </particleset>
+
+  <particleset name="e" random="no">
+    <group name="u" size="2">
+      <parameter name="charge">-1</parameter>
+    <attrib name="position" datatype="posArray">
+      0.7 2.0 3.0
+      1.2 1.5 0.5
+    </attrib>
+    </group>
+    <group name="d" size="2">
+      <parameter name="charge">-1</parameter>
+    <attrib name="position" datatype="posArray">
+      1.5 1.6 1.5
+      0.7 1.0 1.2
+    </attrib>
+    </group>
+  </particleset>
+</qmcsystem>)";
+
+  Libxml2Document doc;
+
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  xmlNodePtr part_ion = xmlFirstElementChild(root);
+  pp.put(part_ion);
+  xmlNodePtr part_elec = xmlNextElementSibling(part_ion);
+  pp.put(part_elec);
+}
+
 std::string setupRotationXML(const std::string& rot_angle_up,
                              const std::string& rot_angle_down,
                              const std::string& coeff_up,
@@ -400,6 +450,12 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
   CHECK(dhpsioverpsi[0] == ValueApprox(32.462519534916666));
   CHECK(dhpsioverpsi[1] == ValueApprox(10.047601212881027));
   CHECK(dhpsioverpsi[2] == ValueApprox(2.0820644399551895));
+
+  // Check for out-of-bounds array access when a variable is disabled.
+  // When a variable is disabled, myVars.where() returns -1.
+  opt_vars.insert("rot-spo-up_orb_rot_0000_0001", 0.0, false);
+  psi->checkOutVariables(opt_vars);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 }
 
 // Test the case where the rotation has already been applied to
@@ -682,6 +738,221 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
   std::vector<ValueType> expected_param = {0.3998099017676912, 0.34924318065960236, -0.02261313113492491};
   for (int i = 0; i < expected_param.size(); i++)
     CHECK(new_params2[i] == Approx(expected_param[i]));
+}
+
+// Reference values from rot_be_sto_wf.py
+// Uses single determinant code path
+TEST_CASE("Rotated LCAO Be single determinant", "[qmcapp]")
+{
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPoolBe(pp);
+
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+
+  REQUIRE(wp.empty() == true);
+
+  Libxml2Document doc;
+  bool okay = doc.parse("rot_Be_STO.wfnoj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(xmlFirstElementChild(root));
+
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  opt_variables_type opt_vars;
+  psi->checkInVariables(opt_vars);
+  opt_vars.resetIndex();
+  psi->checkOutVariables(opt_vars);
+  psi->resetParameters(opt_vars);
+
+  ParticleSet* elec = pp.getParticleSet("e");
+  elec->update();
+
+
+  double logval = psi->evaluateLog(*elec);
+  CHECK(logval == Approx(-17.768474132175342));
+
+  using ValueType = QMCTraits::ValueType;
+  Vector<ValueType> dlogpsi(10);
+  Vector<ValueType> dhpsioverpsi(10);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+
+  CHECK(dlogpsi[0] == ValueApprox(0.24797938203759148));
+  CHECK(dlogpsi[1] == ValueApprox(0.41454059122930453));
+  CHECK(dlogpsi[2] == ValueApprox(0.7539626161586822));
+  CHECK(dlogpsi[3] == ValueApprox(3.13489394217799));
+  CHECK(dlogpsi[4] == ValueApprox(8.47176722646749));
+  CHECK(dlogpsi[5] == ValueApprox(-0.48182453464906033));
+  CHECK(dlogpsi[6] == ValueApprox(2.269206401396164));
+  CHECK(dlogpsi[7] == ValueApprox(-1.883221269688377));
+  CHECK(dlogpsi[8] == ValueApprox(-19.450964163527598));
+  CHECK(dlogpsi[9] == ValueApprox(-47.28198556252034));
+
+  CHECK(dhpsioverpsi[0] == ValueApprox(0.3662586398420111));
+  CHECK(dhpsioverpsi[1] == ValueApprox(-5.544323554018982));
+  CHECK(dhpsioverpsi[2] == ValueApprox(-0.7790656028274846));
+  CHECK(dhpsioverpsi[3] == ValueApprox(24.930187483208087));
+  CHECK(dhpsioverpsi[4] == ValueApprox(71.30301022344871));
+  CHECK(dhpsioverpsi[5] == ValueApprox(-1.1614358798793771));
+  CHECK(dhpsioverpsi[6] == ValueApprox(17.678711245652913));
+  CHECK(dhpsioverpsi[7] == ValueApprox(2.491238469662668));
+  CHECK(dhpsioverpsi[8] == ValueApprox(-79.37464297365679));
+  CHECK(dhpsioverpsi[9] == ValueApprox(-227.0976672502695));
+}
+
+// Reference values from rot_be_sto_wf.py
+// Uses multi-determinant code path with one determinant
+TEST_CASE("Rotated LCAO Be multi determinant with one determinant", "[qmcapp]")
+{
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPoolBe(pp);
+
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+
+  REQUIRE(wp.empty() == true);
+
+  Libxml2Document doc;
+  bool okay = doc.parse("rot_multi_1det_Be_STO.wfnoj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(xmlFirstElementChild(root));
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  opt_variables_type opt_vars;
+  psi->checkInVariables(opt_vars);
+  opt_vars.resetIndex();
+  psi->checkOutVariables(opt_vars);
+  psi->resetParameters(opt_vars);
+
+  ParticleSet* elec = pp.getParticleSet("e");
+  elec->update();
+
+
+  double logval = psi->evaluateLog(*elec);
+  CHECK(logval == Approx(-17.768474132175342));
+
+  using ValueType = QMCTraits::ValueType;
+  Vector<ValueType> dlogpsi(10);
+  Vector<ValueType> dhpsioverpsi(10);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+
+  CHECK(dlogpsi[0] == ValueApprox(0.24797938203759148));
+  CHECK(dlogpsi[1] == ValueApprox(0.41454059122930453));
+  CHECK(dlogpsi[2] == ValueApprox(0.7539626161586822));
+  CHECK(dlogpsi[3] == ValueApprox(3.13489394217799));
+  CHECK(dlogpsi[4] == ValueApprox(8.47176722646749));
+  CHECK(dlogpsi[5] == ValueApprox(-0.48182453464906033));
+  CHECK(dlogpsi[6] == ValueApprox(2.269206401396164));
+  CHECK(dlogpsi[7] == ValueApprox(-1.883221269688377));
+  CHECK(dlogpsi[8] == ValueApprox(-19.450964163527598));
+  CHECK(dlogpsi[9] == ValueApprox(-47.28198556252034));
+
+  CHECK(dhpsioverpsi[0] == ValueApprox(0.3662586398420111));
+  CHECK(dhpsioverpsi[1] == ValueApprox(-5.544323554018982));
+  CHECK(dhpsioverpsi[2] == ValueApprox(-0.7790656028274846));
+  CHECK(dhpsioverpsi[3] == ValueApprox(24.930187483208087));
+  CHECK(dhpsioverpsi[4] == ValueApprox(71.30301022344871));
+  CHECK(dhpsioverpsi[5] == ValueApprox(-1.1614358798793771));
+  CHECK(dhpsioverpsi[6] == ValueApprox(17.678711245652913));
+  CHECK(dhpsioverpsi[7] == ValueApprox(2.491238469662668));
+  CHECK(dhpsioverpsi[8] == ValueApprox(-79.37464297365679));
+  CHECK(dhpsioverpsi[9] == ValueApprox(-227.0976672502695));
+}
+
+// Reference values from rot_multi_be_sto_wf.py
+// Uses multi-determinant code path with two determinants
+TEST_CASE("Rotated LCAO Be two determinant", "[qmcapp]")
+{
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPoolBe(pp);
+
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+
+  REQUIRE(wp.empty() == true);
+
+  Libxml2Document doc;
+  bool okay = doc.parse("rot_multi_2det_Be_STO.wfnoj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(xmlFirstElementChild(root));
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  opt_variables_type opt_vars;
+  psi->checkInVariables(opt_vars);
+  opt_vars.resetIndex();
+  psi->checkOutVariables(opt_vars);
+  psi->resetParameters(opt_vars);
+
+  ParticleSet* elec = pp.getParticleSet("e");
+  elec->update();
+
+
+  double logval = psi->evaluateLog(*elec);
+  CHECK(logval == Approx(-17.762687110866413));
+
+  using ValueType = QMCTraits::ValueType;
+  Vector<ValueType> dlogpsi(16);
+  Vector<ValueType> dhpsioverpsi(16);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+
+  CHECK(dlogpsi[0] == ValueApprox(0.05770308755290168));
+  CHECK(dlogpsi[1] == ValueApprox(0.00593995768443123));
+  CHECK(dlogpsi[2] == ValueApprox(0.24654846443828843));
+  CHECK(dlogpsi[3] == ValueApprox(0.4214539468865001));
+  CHECK(dlogpsi[4] == ValueApprox(0.7484015451192123));
+  CHECK(dlogpsi[5] == ValueApprox(3.076586144487743));
+  CHECK(dlogpsi[6] == ValueApprox(8.329621106110908));
+  CHECK(dlogpsi[7] == ValueApprox(-0.4311398324864351));
+  CHECK(dlogpsi[8] == ValueApprox(2.2561123798306273));
+  CHECK(dlogpsi[9] == ValueApprox(-1.8723545015077454));
+  CHECK(dlogpsi[10] == ValueApprox(-19.33872609471596));
+  CHECK(dlogpsi[11] == ValueApprox(-47.00915390726143));
+  CHECK(dlogpsi[12] == ValueApprox(-0.05463186141658209));
+  CHECK(dlogpsi[13] == ValueApprox(0.045055811131004785));
+  CHECK(dlogpsi[14] == ValueApprox(0.46675941272234));
+  CHECK(dlogpsi[15] == ValueApprox(1.1352711502777513));
+
+
+  CHECK(dhpsioverpsi[0] == ValueApprox(0.2761674423047662));
+  CHECK(dhpsioverpsi[1] == ValueApprox(0.022999975062422046));
+  CHECK(dhpsioverpsi[2] == ValueApprox(0.3572968312376671));
+  CHECK(dhpsioverpsi[3] == ValueApprox(-5.459873357259045));
+  CHECK(dhpsioverpsi[4] == ValueApprox(-0.792225084691375));
+  CHECK(dhpsioverpsi[5] == ValueApprox(24.453138754349123));
+  CHECK(dhpsioverpsi[6] == ValueApprox(70.0280297306038));
+  CHECK(dhpsioverpsi[7] == ValueApprox(-1.0272848501840672));
+  CHECK(dhpsioverpsi[8] == ValueApprox(17.514031530576368));
+  CHECK(dhpsioverpsi[9] == ValueApprox(2.52887169464403));
+  CHECK(dhpsioverpsi[10] == ValueApprox(-78.37945447401765));
+  CHECK(dhpsioverpsi[11] == ValueApprox(-224.4814690906403));
+  CHECK(dhpsioverpsi[12] == ValueApprox(-0.6346957697642424));
+  CHECK(dhpsioverpsi[13] == ValueApprox(0.03270289146243591));
+  CHECK(dhpsioverpsi[14] == ValueApprox(3.263830358386392));
+  CHECK(dhpsioverpsi[15] == ValueApprox(8.944714289946793));
 }
 
 } // namespace qmcplusplus

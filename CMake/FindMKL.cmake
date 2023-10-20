@@ -85,7 +85,7 @@ endif(HAVE_MKL)
 if(HAVE_MKL AND ENABLE_SYCL)
   find_library(MKL_SYCL mkl_sycl
     HINTS ${MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
-    PATH_SUFFIXES lib/intel64
+    PATH_SUFFIXES lib/intel64 lib
     REQUIRED
   )
 

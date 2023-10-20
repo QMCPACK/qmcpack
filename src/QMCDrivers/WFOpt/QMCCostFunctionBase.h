@@ -24,12 +24,14 @@
 #include "Message/MPIObjectBase.h"
 
 #ifdef HAVE_LMY_ENGINE
-//#include "Eigen/Dense"
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
 
 #include "EngineHandle.h"
+
+#include <memory>
+
 namespace qmcplusplus
 {
 class DescentEngine;
@@ -67,7 +69,7 @@ public:
   };
 
   using EffectiveWeight = QMCTraits::QTFull::RealType;
-
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///Constructor.
   QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
@@ -152,7 +154,7 @@ public:
 
 #endif
 
-  void setRng(RefVector<RandomGenerator> r);
+  void setRng(RefVector<RandomBase<FullPrecRealType>> r);
 
   inline bool getneedGrads() const { return needGrads; }
 
@@ -260,7 +262,7 @@ protected:
   xmlNodePtr m_wfPtr;
   ///document node to be dumped
   xmlDocPtr m_doc_out;
-  ///parameters to be updated
+  ///parameters to be updated`
   std::map<std::string, xmlNodePtr> paramNodes;
   ///coefficients to be updated
   std::map<std::string, xmlNodePtr> coeffNodes;
@@ -270,8 +272,8 @@ protected:
   std::string RootName;
 
   ///Random number generators
-  UPtrVector<RandomGenerator> RngSaved;
-  std::vector<RandomGenerator*> MoverRng;
+  UPtrVector<RandomBase<FullPrecRealType>> RngSaved;
+  std::vector<RandomBase<FullPrecRealType>*> MoverRng;
 
   /// optimized parameter names
   std::vector<std::string> variational_subset_names;
@@ -299,7 +301,7 @@ protected:
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
   std::vector<ParticleLaplacian*> d2LogPsi;
   ///stream for debug
-  std::ostream* debug_stream;
+  std::unique_ptr<std::ostream> debug_stream;
 
   bool checkParameters();
   void updateXmlNodes();

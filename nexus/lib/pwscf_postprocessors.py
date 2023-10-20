@@ -217,6 +217,10 @@ class Namelist(DevBase):
         for line in lines:
             tokens = line.split(',')
             for t in tokens:
+                t = t.strip()
+                if len(t)==0:
+                    continue
+                #end if
                 name,value = t.split('=')
                 name  = name.strip()
                 value = value.strip()
@@ -508,7 +512,7 @@ def generate_bands(**kwargs):
 class ProjwfcNamelist(Namelist):
     namelist = 'projwfc'
     names = ['ngauss','degauss','Emin','Emax','deltaE',
-             'prefix','outdir','fildos','filproj',
+             'prefix','outdir','fildos','filproj','filpdos',
              'lsym','pawproj','lwrite_overlaps','lbinary_data']
 #end class ProjwfcNamelist
 

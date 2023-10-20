@@ -14,12 +14,18 @@
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
+#include "io/hdf/hdf_archive.h"
 
 
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos)
-    : SPOSet(my_name), OptimizableObject(my_name), Phi(std::move(spos)), nel_major_(0), params_supplied(false)
+    : SPOSet(my_name),
+      OptimizableObject(my_name),
+      Phi(std::move(spos)),
+      nel_major_(0),
+      params_supplied(false),
+      apply_rotation_timer_(createGlobalTimer("RotatedSPOs::apply_rotation", timer_level_fine))
 {
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
@@ -136,6 +142,146 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
     // Save the parameters in the history list
     history_params_.push_back(delta_param);
   }
+}
+
+void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
+{
+  hout.push("RotatedSPOs");
+  if (use_global_rot_)
+  {
+    hout.push("rotation_global");
+    std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
+
+    int nparam_full = myVarsFull.size();
+    std::vector<RealType> full_params(nparam_full);
+    for (int i = 0; i < nparam_full; i++)
+      full_params[i] = myVarsFull[i];
+
+    hout.write(full_params, rot_global_name);
+    hout.pop();
+  }
+  else
+  {
+    hout.push("rotation_history");
+    size_t rows = history_params_.size();
+    size_t cols = 0;
+    if (rows > 0)
+      cols = history_params_[0].size();
+
+    Matrix<RealType> tmp(rows, cols);
+    for (size_t i = 0; i < rows; i++)
+      for (size_t j = 0; j < cols; j++)
+        tmp(i, j) = history_params_[i][j];
+
+    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
+    hout.write(tmp, rot_hist_name);
+    hout.pop();
+  }
+
+  // Save myVars in order to restore object state exactly
+  //  The values aren't meaningful, but they need to match those saved in VariableSet
+  hout.push("rotation_params");
+  std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
+
+  int nparam = myVars.size();
+  std::vector<RealType> params(nparam);
+  for (int i = 0; i < nparam; i++)
+    params[i] = myVars[i];
+
+  hout.write(params, rot_params_name);
+  hout.pop();
+
+  hout.pop();
+}
+
+void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
+{
+  hin.push("RotatedSPOs", false);
+
+  bool grp_hist_exists   = hin.is_group("rotation_history");
+  bool grp_global_exists = hin.is_group("rotation_global");
+  if (!grp_hist_exists && !grp_global_exists)
+    app_warning() << "Rotation parameters not found in VP file";
+
+
+  if (grp_global_exists)
+  {
+    hin.push("rotation_global", false);
+    std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
+
+    std::vector<int> sizes(1);
+    if (!hin.getShape<RealType>(rot_global_name, sizes))
+      throw std::runtime_error("Failed to read rotation_global in VP file");
+
+    int nparam_full_actual = sizes[0];
+    int nparam_full        = myVarsFull.size();
+
+    if (nparam_full != nparam_full_actual)
+    {
+      std::ostringstream tmp_err;
+      tmp_err << "Expected number of full rotation parameters (" << nparam_full << ") does not match number in file ("
+              << nparam_full_actual << ")";
+      throw std::runtime_error(tmp_err.str());
+    }
+    std::vector<RealType> full_params(nparam_full);
+    hin.read(full_params, rot_global_name);
+    for (int i = 0; i < nparam_full; i++)
+      myVarsFull[i] = full_params[i];
+
+    hin.pop();
+
+    applyFullRotation(full_params, true);
+  }
+  else if (grp_hist_exists)
+  {
+    hin.push("rotation_history", false);
+    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
+    std::vector<int> sizes(2);
+    if (!hin.getShape<RealType>(rot_hist_name, sizes))
+      throw std::runtime_error("Failed to read rotation history in VP file");
+
+    int rows = sizes[0];
+    int cols = sizes[1];
+    history_params_.resize(rows);
+    Matrix<RealType> tmp(rows, cols);
+    hin.read(tmp, rot_hist_name);
+    for (size_t i = 0; i < rows; i++)
+    {
+      history_params_[i].resize(cols);
+      for (size_t j = 0; j < cols; j++)
+        history_params_[i][j] = tmp(i, j);
+    }
+
+    hin.pop();
+
+    applyRotationHistory();
+  }
+
+  hin.push("rotation_params", false);
+  std::string rot_param_name = std::string("rotation_params_") + SPOSet::getName();
+
+  std::vector<int> sizes(1);
+  if (!hin.getShape<RealType>(rot_param_name, sizes))
+    throw std::runtime_error("Failed to read rotation_params in VP file");
+
+  int nparam_actual = sizes[0];
+  int nparam        = myVars.size();
+  if (nparam != nparam_actual)
+  {
+    std::ostringstream tmp_err;
+    tmp_err << "Expected number of rotation parameters (" << nparam << ") does not match number in file ("
+            << nparam_actual << ")";
+    throw std::runtime_error(tmp_err.str());
+  }
+
+  std::vector<RealType> params(nparam);
+  hin.read(params, rot_param_name);
+  for (int i = 0; i < nparam; i++)
+    myVars[i] = params[i];
+
+  hin.pop();
+
+  hin.pop();
 }
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
@@ -267,7 +413,10 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     Finally, apply unitary matrix to orbs.
   */
   exponentiate_antisym_matrix(rot_mat);
-  Phi->applyRotation(rot_mat, use_stored_copy);
+  {
+    ScopedTimer local(apply_rotation_timer_);
+    Phi->applyRotation(rot_mat, use_stored_copy);
+  }
 }
 
 void RotatedSPOs::applyDeltaRotation(const std::vector<RealType>& delta_param,
@@ -278,7 +427,10 @@ void RotatedSPOs::applyDeltaRotation(const std::vector<RealType>& delta_param,
   ValueMatrix new_rot_mat(nmo, nmo);
   constructDeltaRotation(delta_param, old_param, m_act_rot_inds, m_full_rot_inds, new_param, new_rot_mat);
 
-  Phi->applyRotation(new_rot_mat, true);
+  {
+    ScopedTimer local(apply_rotation_timer_);
+    Phi->applyRotation(new_rot_mat, true);
+  }
 }
 
 void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_param,
@@ -312,6 +464,33 @@ void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_para
   ValueMatrix log_rot_mat(nmo, nmo);
   log_antisym_matrix(new_rot_mat, log_rot_mat);
   extractParamsFromAntiSymmetricMatrix(full_rot_inds, log_rot_mat, new_param);
+}
+
+void RotatedSPOs::applyFullRotation(const std::vector<RealType>& full_param, bool use_stored_copy)
+{
+  assert(full_param.size() == m_full_rot_inds.size());
+
+  const size_t nmo = Phi->getOrbitalSetSize();
+  ValueMatrix rot_mat(nmo, nmo);
+  rot_mat = ValueType(0);
+
+  constructAntiSymmetricMatrix(m_full_rot_inds, full_param, rot_mat);
+
+  /*
+    rot_mat is now an anti-hermitian matrix. Now we convert
+    it into a unitary matrix via rot_mat = exp(-rot_mat).
+    Finally, apply unitary matrix to orbs.
+  */
+  exponentiate_antisym_matrix(rot_mat);
+  Phi->applyRotation(rot_mat, use_stored_copy);
+}
+
+void RotatedSPOs::applyRotationHistory()
+{
+  for (auto delta_param : history_params_)
+  {
+    apply_rotation(delta_param, false);
+  }
 }
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
@@ -518,10 +697,13 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
 
     for (int i = 0; i < m_act_rot_inds.size(); i++)
     {
-      int kk           = myVars.where(i);
-      const int p      = m_act_rot_inds.at(i).first;
-      const int q      = m_act_rot_inds.at(i).second;
-      dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
+      int kk = myVars.where(i);
+      if (kk >= 0)
+      {
+        const int p      = m_act_rot_inds.at(i).first;
+        const int q      = m_act_rot_inds.at(i).second;
+        dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
+      }
     }
   }
 }
@@ -565,10 +747,13 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
 
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
-    int kk      = myVars.where(i);
-    const int p = m_act_rot_inds.at(i).first;
-    const int q = m_act_rot_inds.at(i).second;
-    dlogpsi[kk] = T(p, q);
+    int kk = myVars.where(i);
+    if (kk >= 0)
+    {
+      const int p = m_act_rot_inds.at(i).first;
+      const int q = m_act_rot_inds.at(i).second;
+      dlogpsi[kk] = T(p, q);
+    }
   }
 }
 
@@ -667,11 +852,14 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
-    int kk      = myVars.where(i);
-    const int p = m_act_rot_inds.at(i).first;
-    const int q = m_act_rot_inds.at(i).second;
-    dlogpsi[kk] += T(p, q);
-    dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+    int kk = myVars.where(i);
+    if (kk >= 0)
+    {
+      const int p = m_act_rot_inds.at(i).first;
+      const int q = m_act_rot_inds.at(i).second;
+      dlogpsi[kk] += T(p, q);
+      dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+    }
   }
 }
 
@@ -1198,35 +1386,38 @@ $
   for (int mu = 0, k = parameter_start_index; k < (parameter_start_index + parameters_size); k++, mu++)
   {
     int kk = myVars.where(k);
-    const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
-    if (i <= nel - 1 && j > nel - 1)
+    if (kk >= 0)
     {
-      dhpsioverpsi[kk] +=
-          ValueType(-0.5 * Y4(i, j) -
-                    0.5 *
-                        (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
-                         K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
-                         const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
-                         K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
-    }
-    else if (i <= nel - 1 && j <= nel - 1)
-    {
-      dhpsioverpsi[kk] += ValueType(
-          -0.5 * (Y4(i, j) - Y4(j, i)) -
-          0.5 *
-              (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
-               TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
-               K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
-               const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
-               K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
-    }
-    else
-    {
-      dhpsioverpsi[kk] += ValueType(-0.5 *
-                                    (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
+      const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+      if (i <= nel - 1 && j > nel - 1)
+      {
+        dhpsioverpsi[kk] +=
+            ValueType(-0.5 * Y4(i, j) -
+                      0.5 *
+                          (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
+                           K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
+                           const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
+                           K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
+      }
+      else if (i <= nel - 1 && j <= nel - 1)
+      {
+        dhpsioverpsi[kk] += ValueType(
+            -0.5 * (Y4(i, j) - Y4(j, i)) -
+            0.5 *
+                (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
+                 TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
+                 K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
+                 const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
+                 K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
+      }
+      else
+      {
+        dhpsioverpsi[kk] += ValueType(-0.5 *
+                                      (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
 
-                                     + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) +
-                                     const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) - K2T(i, j) + K2T(j, i)));
+                                       + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) +
+                                       const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) - K2T(i, j) + K2T(j, i)));
+      }
     }
   }
 }
@@ -1379,20 +1570,23 @@ void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
   for (int mu = 0, k = parameter_start_index; k < (parameter_start_index + parameters_size); k++, mu++)
   {
     int kk = myVars.where(k);
-    const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
-    if (i <= nel - 1 && j > nel - 1)
+    if (kk >= 0)
     {
-      dlogpsi[kk] +=
-          ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
-    }
-    else if (i <= nel - 1 && j <= nel - 1)
-    {
-      dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
-                               (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
-    }
-    else
-    {
-      dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
+      const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+      if (i <= nel - 1 && j > nel - 1)
+      {
+        dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) +
+                                 (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
+      }
+      else if (i <= nel - 1 && j <= nel - 1)
+      {
+        dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
+                                 (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
+      }
+      else
+      {
+        dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
+      }
     }
   }
 }
@@ -1413,5 +1607,121 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   return myclone;
 }
 
+void RotatedSPOs::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                       const RefVector<ValueVector>& psi_list,
+                                       const std::vector<const ValueType*>& invRow_ptr_list,
+                                       std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateDetRatios(phi_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+}
+
+void RotatedSPOs::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   const RefVector<ValueVector>& psi_v_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateValue(phi_list, P_list, iat, psi_v_list);
+}
+
+void RotatedSPOs::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                 int iat,
+                                 const RefVector<ValueVector>& psi_v_list,
+                                 const RefVector<GradVector>& dpsi_v_list,
+                                 const RefVector<ValueVector>& d2psi_v_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+}
+
+void RotatedSPOs::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                         int iat,
+                                         const RefVector<ValueVector>& psi_v_list,
+                                         const RefVector<GradVector>& dpsi_v_list,
+                                         const RefVector<ValueVector>& d2psi_v_list,
+                                         OffloadMatrix<ComplexType>& mw_dspin) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateVGLWithSpin(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
+}
+
+void RotatedSPOs::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                                 int iat,
+                                                 const std::vector<const ValueType*>& invRow_ptr_list,
+                                                 OffloadMWVGLArray& phi_vgl_v,
+                                                 std::vector<ValueType>& ratios,
+                                                 std::vector<GradType>& grads) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
+}
+
+void RotatedSPOs::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                                         int iat,
+                                                         const std::vector<const ValueType*>& invRow_ptr_list,
+                                                         OffloadMWVGLArray& phi_vgl_v,
+                                                         std::vector<ValueType>& ratios,
+                                                         std::vector<GradType>& grads,
+                                                         std::vector<ValueType>& spingrads) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateVGLandDetRatioGradsWithSpin(phi_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads,
+                                                spingrads);
+}
+
+void RotatedSPOs::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                                          const RefVectorWithLeader<ParticleSet>& P_list,
+                                          int first,
+                                          int last,
+                                          const RefVector<ValueMatrix>& logdet_list,
+                                          const RefVector<GradMatrix>& dlogdet_list,
+                                          const RefVector<ValueMatrix>& d2logdet_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluate_notranspose(phi_list, P_list, first, last, logdet_list, dlogdet_list, d2logdet_list);
+}
+
+void RotatedSPOs::createResource(ResourceCollection& collection) const { Phi->createResource(collection); }
+
+void RotatedSPOs::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.acquireResource(collection, phi_list);
+}
+
+void RotatedSPOs::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.releaseResource(collection, phi_list);
+}
+
+RefVectorWithLeader<SPOSet> RotatedSPOs::extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list)
+{
+  auto& spo_leader = spo_list.getCastedLeader<RotatedSPOs>();
+  const auto nw    = spo_list.size();
+  RefVectorWithLeader<SPOSet> phi_list(*spo_leader.Phi);
+  phi_list.reserve(nw);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    RotatedSPOs& rot = spo_list.getCastedElement<RotatedSPOs>(iw);
+    phi_list.emplace_back(*rot.Phi);
+  }
+  return phi_list;
+}
 
 } // namespace qmcplusplus

@@ -64,7 +64,8 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng) override;
+                  const RefVector<QMCHamiltonian>& hams,
+                  RandomBase<FullPrecRealType>& rng) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of SelfHealingOverlap's data.

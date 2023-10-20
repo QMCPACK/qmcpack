@@ -24,6 +24,7 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
+#include "ResourceHandle.h"
 #include "SpeciesSet.h"
 #include "Pools/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
@@ -477,8 +478,8 @@ public:
   ///return the address of the i-th properties
   inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
-  inline void setTwist(SingleParticlePos& t) { myTwist = t; }
-  inline SingleParticlePos getTwist() const { return myTwist; }
+  inline void setTwist(const SingleParticlePos& t) { myTwist = t; }
+  inline const SingleParticlePos& getTwist() const { return myTwist; }
 
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
@@ -616,7 +617,7 @@ protected:
   std::unique_ptr<StructFact> structure_factor_;
 
   ///multi walker structure factor data
-  std::unique_ptr<SKMultiWalkerMem> mw_structure_factor_data_;
+  ResourceHandle<SKMultiWalkerMem> mw_structure_factor_data_handle_;
 
   /** map to handle distance tables
    *

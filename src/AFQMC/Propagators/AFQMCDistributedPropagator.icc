@@ -128,7 +128,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     {
       int i0, iN;
       std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(RNG.num_elements()), TG.TG_local().size());
-      sampleGaussianFields_n(make_device_ptr(RNG.origin()) + i0, iN - i0, *rng);
+      sampleGaussianFields_n(make_device_ptr(RNG.origin()) + i0, iN - i0, rng);
     }
 
     for (int k = 0; k < nnodes; ++k)

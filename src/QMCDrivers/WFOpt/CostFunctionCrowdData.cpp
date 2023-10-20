@@ -19,7 +19,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
                                              ParticleSet& P,
                                              TrialWaveFunction& Psi,
                                              QMCHamiltonian& H,
-                                             RandomGenerator& Rng)
+                                             RandomBase<FullPrecRealType>& Rng)
     : h0_res_("h0 resource"), e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
 {
   P.createResource(driverwalker_resource_collection_.pset_res);
@@ -55,12 +55,11 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
     h_ptr_list_[ib]  = H.makeClone(pCopy, psiCopy);
     h0_ptr_list_[ib] = H_KE.makeClone(pCopy, psiCopy);
 
-    rng_ptr_list_[ib] = std::make_unique<RandomGenerator>(Rng);
+    rng_ptr_list_[ib] = Rng.makeClone();
     h_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
     h0_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
-
-    rng_save_ptr_ = std::make_unique<RandomGenerator>(Rng);
   }
+  rng_save_ptr_ = Rng.makeClone();
 }
 
 RefVector<ParticleSet> CostFunctionCrowdData::get_p_list(int len)

@@ -251,7 +251,7 @@ def test_generate():
         ### end generated pyscfimport text ###
         '''.format("'''")
                     
-    ref_python_exe = 'python'
+    ref_python_exe = 'python3'
 
     assert(len(pi.values)==4 and 'system' in pi.values)
     assert(len(pi.values)==4 and 'calculation' in pi.values)

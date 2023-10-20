@@ -19,6 +19,7 @@
 
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
+#include <ResourceHandle.h>
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
@@ -41,7 +42,7 @@ private:
   /// true, if virtual particles are on a sphere for NLPP
   bool onSphere;
   /// multi walker resource
-  std::unique_ptr<VPMultiWalkerMem> mw_mem_;
+  ResourceHandle<VPMultiWalkerMem> mw_mem_handle_;
 
   Vector<int, OffloadPinnedAllocator<int>>& getMultiWalkerRefPctls();
 

@@ -39,29 +39,31 @@ size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res, bool nop
   res->index_in_collection_ = index;
   if (!noprint)
     app_debug_stream() << "Multi walker shared resource \"" << res->getName() << "\" created in resource collection \""
-                << name_ << "\" index " << index << std::endl;
+                       << name_ << "\" index " << index << std::endl;
   collection_.emplace_back(std::move(res));
   return index;
 }
 
-std::unique_ptr<Resource> ResourceCollection::lendResource()
+Resource& ResourceCollection::lendResourceImpl()
 {
   if (cursor_index_ >= collection_.size())
     throw std::runtime_error("ResourceCollection::lendResource BUG no more resource to lend.");
   if (cursor_index_ != collection_[cursor_index_]->index_in_collection_)
     throw std::runtime_error(
         "ResourceCollection::lendResource BUG mismatched cursor index and recorded index in the resource.");
-  return std::move(collection_[cursor_index_++]);
+  return *collection_[cursor_index_++];
 }
 
-void ResourceCollection::takebackResource(std::unique_ptr<Resource>&& res)
+void ResourceCollection::takebackResourceImpl(Resource& res)
 {
   if (cursor_index_ >= collection_.size())
     throw std::runtime_error("ResourceCollection::takebackResource BUG cannot take back resources more than owned.");
-  if (cursor_index_ != res->index_in_collection_)
+  if (cursor_index_ != res.index_in_collection_)
     throw std::runtime_error(
         "ResourceCollection::takebackResource BUG mismatched cursor index and recorded index in the resource.");
-  collection_[cursor_index_++] = std::move(res);
+  if (&res != collection_[cursor_index_++].get())
+    throw std::runtime_error(
+        "ResourceCollection::takebackResource BUG the resource taken back mismatches the one lent.");
 }
 
 } // namespace qmcplusplus

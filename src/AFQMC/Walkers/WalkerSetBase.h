@@ -48,6 +48,9 @@ protected:
     Branching_t
   };
 
+  inline static const TimerNameList_t<WalkerSetBaseTimers> WalkerSetBaseTimerNames =
+      {{LoadBalance_t, "WalkerSetBase::loadBalance"}, {Branching_t, "WalkerSetBase::branching"}};
+
   using element       = typename std::pointer_traits<Ptr>::element_type;
   using pointer       = Ptr;
   using const_element = const element;
@@ -87,7 +90,7 @@ public:
   WalkerSetBase(afqmc::TaskGroup_& tg_,
                 xmlNodePtr cur,
                 AFQMCInfo& info,
-                RandomGenerator* r,
+                RandomBase<RealType>& r,
                 Allocator alloc_,
                 BPAllocator bpalloc_)
       : AFQMCInfo(info),
@@ -101,6 +104,7 @@ public:
         history_pos(0),
         walkerType(UNDEFINED_WALKER_TYPE),
         tot_num_walkers(0),
+        Timers(getGlobalTimerManager(), WalkerSetBaseTimerNames, timer_level_coarse),
         walker_buffer({0, 1}, alloc_),
         bp_buffer({0, 0}, bpalloc_),
         load_balance(UNDEFINED_LOAD_BALANCE),
@@ -115,10 +119,10 @@ public:
   /// destructor
   ~WalkerSetBase() {}
 
-  WalkerSetBase(WalkerSetBase const& other) = delete;
-  WalkerSetBase(WalkerSetBase&& other)      = default;
+  WalkerSetBase(WalkerSetBase const& other)            = delete;
+  WalkerSetBase(WalkerSetBase&& other)                 = default;
   WalkerSetBase& operator=(WalkerSetBase const& other) = delete;
-  WalkerSetBase& operator=(WalkerSetBase&& other) = delete;
+  WalkerSetBase& operator=(WalkerSetBase&& other)      = delete;
 
   /*
    * Returns the current number of walkers in the set.
@@ -333,8 +337,8 @@ public:
     {
       bp_buffer.reextent({bp_walker_size, std::get<0>(walker_buffer.sizes())});
       using std::fill_n;
-      fill_n(bp_buffer.origin() + data_displ[WEIGHT_FAC] * std::get<1>(bp_buffer.sizes()), wlk_desc[6] * std::get<1>(bp_buffer.sizes()),
-             bp_element(1.0));
+      fill_n(bp_buffer.origin() + data_displ[WEIGHT_FAC] * std::get<1>(bp_buffer.sizes()),
+             wlk_desc[6] * std::get<1>(bp_buffer.sizes()), bp_element(1.0));
     }
     if (nbp > 0 && (data_displ[SMN] < 0 || data_displ[SM_AUX] < 0))
     {
@@ -740,7 +744,7 @@ public:
 protected:
   afqmc::TaskGroup_& TG;
 
-  RandomGenerator* rng;
+  RandomBase<RealType>& rng;
 
   int walker_size, walker_memory_usage;
   int bp_walker_size, bp_walker_memory_usage;

@@ -38,16 +38,15 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
-            <slaterdeterminant>
-               <determinant id="updet" size="1">
-                  <occupation mode="ground" spindataset="0"/>
-               </determinant>
-               <determinant id="downdet" size="1">
-                  <occupation mode="ground" spindataset="0"/>
-               </determinant>
-            </slaterdeterminant>
-         </determinantset>
+         <sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+             <sposet type="bspline" name="spo_ud" size="1" spindataset="0"/>
+         </sposet_collection>    
+         <determinantset>
+          <slaterdeterminant>
+             <determinant id="updet" group="u" sposet="spo_ud" size="1"/>
+             <determinant id="downdet" group="d" sposet="spo_ud" size="1"/>
+          </slaterdeterminant>
+         </determinantset>	      
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="H" size="8" cusp="1.0">
                <coefficients id="eH" type="Array">                  

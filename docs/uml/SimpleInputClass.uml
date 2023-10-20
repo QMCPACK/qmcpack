@@ -1,0 +1,27 @@
+@startuml
+
+class InputSection {
+    -unordered_map<any> values_
+    +get<type>(name)
+    +void readXML(xmlNodePtr cur)
+}
+
+class SimpleInput {
+    +SimpleInput(NodePtr cur)
+    -SimpleInputSection input_section_
+}
+
+class SimpleInputSection {
+}
+
+class SimpleSimOjbect {
+SimpleEstimator(SimpleInput, ...)
+-SimpleInput& input_
+}
+
+
+InputSection <|-- SimpleInputSection
+SimpleInput::input_section_ *-- SimpleInputSection
+SimpleSimObject::SimpleSimObject o-- SimpleInput
+SimpleInput::SimpleInput ..> InputSection::read
+@enduml

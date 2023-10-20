@@ -36,7 +36,6 @@ public:
       Communicate* comm);
   bool run() override;
   bool put(xmlNodePtr cur) override;
-  //inline std::vector<RandomGenerator*>& getRng() { return Rng;}
   QMCRunType getRunType() override { return QMCRunType::RMC; }
 
 private:

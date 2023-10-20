@@ -109,8 +109,13 @@
 #define cudaMalloc                      hipMalloc
 #define cudaMallocArray                 hipMallocArray
 #define cudaMallocHost                  hipHostMalloc
+#if defined(QMC_DISABLE_HIP_HOST_REGISTER)
+#define cudaHostRegister(ptr, size, flags) hipSuccess
+#define cudaHostUnregister(ptr) hipSuccess
+#else
 #define cudaHostRegister                hipHostRegister
 #define cudaHostUnregister              hipHostUnregister
+#endif
 #define cudaHostRegisterDefault         hipHostRegisterDefault
 #define cudaMallocManaged               hipMallocManaged
 #define cudaMemAdvise                   hipMemAdvise

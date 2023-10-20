@@ -67,9 +67,10 @@ void SelfHealingOverlap::startBlock(int steps)
  *
  */
 void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
-                           const RefVector<ParticleSet>& psets,
-                           const RefVector<TrialWaveFunction>& wfns,
-                           RandomGenerator& rng)
+                                    const RefVector<ParticleSet>& psets,
+                                    const RefVector<TrialWaveFunction>& wfns,
+                                    const RefVector<QMCHamiltonian>& hams,
+                                    RandomBase<FullPrecRealType>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
@@ -103,7 +104,7 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     //app_log()<<"param count: "<<dlogpsi.size()<<std::endl;
 
     // collect jastrow prefactor
-    WaveFunctionComponent::LogValueType Jval = 0.0;
+    WaveFunctionComponent::LogValue Jval = 0.0;
     for(auto& wc: wcs_jastrow)
       Jval += wc->get_log_value();
     auto Jprefactor = std::real(std::exp(-2.*Jval)); // (integer * complex) fails to compile...

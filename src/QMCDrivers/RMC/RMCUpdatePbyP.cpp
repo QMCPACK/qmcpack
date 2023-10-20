@@ -40,16 +40,16 @@ using WP = WalkerProperties::Indexes;
 RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
-                                               RandomGenerator& rg,
+                                               RandomBase<FullPrecRealType>& rg,
                                                std::vector<int> act,
                                                std::vector<int> tp)
     : QMCUpdateBase(w, psi, h, rg),
       Action(act),
       TransProb(tp),
-      advance_timer_(*timer_manager.createTimer("RMCUpdatePbyP::advance", timer_level_medium)),
-      movepbyp_timer_(*timer_manager.createTimer("RMCUpdatePbyP::movePbyP", timer_level_medium)),
-      update_mbo_timer_(*timer_manager.createTimer("RMCUpdatePbyP::updateMBO", timer_level_medium)),
-      energy_timer_(*timer_manager.createTimer("RMCUpdatePbyP::energy", timer_level_medium))
+      advance_timer_(createGlobalTimer("RMCUpdatePbyP::advance", timer_level_medium)),
+      movepbyp_timer_(createGlobalTimer("RMCUpdatePbyP::movePbyP", timer_level_medium)),
+      update_mbo_timer_(createGlobalTimer("RMCUpdatePbyP::updateMBO", timer_level_medium)),
+      energy_timer_(createGlobalTimer("RMCUpdatePbyP::energy", timer_level_medium))
 {
   scaleDrift = false;
   actionType = SYM_ACTION;

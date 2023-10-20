@@ -195,7 +195,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 {
   assert(this == &spo_list.getLeader());
   auto& phi_leader            = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-  auto& mw_mem                = *phi_leader.mw_mem_;
+  auto& mw_mem                = phi_leader.mw_mem_handle_.getResource();
   auto& det_ratios_buffer_H2D = mw_mem.det_ratios_buffer_H2D;
   auto& mw_ratios_private     = mw_mem.mw_ratios_private;
   auto& mw_offload_scratch    = mw_mem.mw_offload_scratch;
@@ -518,8 +518,8 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first + index, padded_size);
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b,
+                                               d2c, offload_scratch_iw_ptr + first + index, padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[padded_size * SoAFields3D::LAPL + output_index] =
               SymTrace(offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS00 + output_index],
@@ -566,9 +566,8 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
                                             const RefVector<ValueVector>& d2psi_v_list) const
 {
   assert(this == &sa_list.getLeader());
-  auto& phi_leader = sa_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-  assert(phi_leader.mw_mem_);
-  auto& mw_mem             = *phi_leader.mw_mem_;
+  auto& phi_leader         = sa_list.getCastedLeader<SplineC2COMPTarget<ST>>();
+  auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
   auto& mw_pos_copy        = mw_mem.mw_pos_copy;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
   auto& mw_results_scratch = mw_mem.mw_results_scratch;
@@ -603,7 +602,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
 {
   assert(this == &spo_list.getLeader());
   auto& phi_leader         = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-  auto& mw_mem             = *phi_leader.mw_mem_;
+  auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
   auto& buffer_H2D         = mw_mem.buffer_H2D;
   auto& rg_private         = mw_mem.rg_private;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
@@ -687,8 +686,8 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first + index, padded_size);
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b,
+                                               d2c, offload_scratch_iw_ptr + first + index, padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[padded_size * SoAFields3D::LAPL + output_index] =
               SymTrace(offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS00 + output_index],
@@ -721,7 +720,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
 
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
-        for (size_t j = first_cplx; j < last_cplx; j++)
+        for (int j = first_cplx; j < last_cplx; j++)
         {
           const size_t psiIndex = first_spo_local + j;
 

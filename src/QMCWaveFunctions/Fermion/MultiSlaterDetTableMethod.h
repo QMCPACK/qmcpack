@@ -106,13 +106,13 @@ public:
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
 
-  LogValueType evaluate_vgl_impl(const ParticleSet& P,
-                                 ParticleSet::ParticleGradient& g_tmp,
-                                 ParticleSet::ParticleLaplacian& l_tmp);
+  LogValue evaluate_vgl_impl(const ParticleSet& P,
+                             ParticleSet::ParticleGradient& g_tmp,
+                             ParticleSet::ParticleLaplacian& l_tmp);
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   /*  void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
@@ -137,18 +137,18 @@ public:
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios,
+                    std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_new) const override;
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios) const override;
+                    std::vector<PsiValue>& ratios) const override;
 
-  PsiValueType ratio(ParticleSet& P, int iat) override;
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValue ratio(ParticleSet& P, int iat) override;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   //ratioGradWithSpin, but includes tthe spin gradient info
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
@@ -169,7 +169,7 @@ public:
                             bool safe_to_delay = false) const override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   void createResource(ResourceCollection& collection) const override;
@@ -184,9 +184,7 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
-                             Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
 
   void evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi) override;
 
@@ -221,31 +219,31 @@ private:
   /** an implementation shared by evalGrad and ratioGrad. Use precomputed data
    * @param newpos to distinguish evalGrad(false) ratioGrad(true)
    */
-  PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValue evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
   /// multi walker version of evalGrad_impl
   static void mw_evalGrad_impl(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                                const RefVectorWithLeader<ParticleSet>& P_list,
                                int iat,
                                bool newpos,
                                std::vector<GradType>& grad_now,
-                               std::vector<PsiValueType>& psi_list);
+                               std::vector<PsiValue>& psi_list);
 
   /** an implementation shared by evalGrad and ratioGrad. No use of precomputed data
    * @param newpos to distinguish evalGrad(false) ratioGrad(true)
    */
-  PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValue evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
   //implemtation for evalGradWithSpin
-  PsiValueType evalGradWithSpin_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at, ComplexType& sg_at);
+  PsiValue evalGradWithSpin_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at, ComplexType& sg_at);
   //implemtation for evalGradWithSpin with no precomputation
-  PsiValueType evalGradWithSpin_impl_no_precompute(ParticleSet& P,
-                                                   int iat,
-                                                   bool newpos,
-                                                   GradType& g_at,
-                                                   ComplexType& sg_at);
+  PsiValue evalGradWithSpin_impl_no_precompute(ParticleSet& P,
+                                               int iat,
+                                               bool newpos,
+                                               GradType& g_at,
+                                               ComplexType& sg_at);
 
   // compute the new multi determinant to reference determinant ratio based on temporarycoordinates.
-  PsiValueType computeRatio_NewMultiDet_to_NewRefDet(int det_id) const;
+  PsiValue computeRatio_NewMultiDet_to_NewRefDet(int det_id) const;
 
   /** precompute C_otherDs for a given particle group
    * @param P a particle set
@@ -267,9 +265,7 @@ private:
    * @param dlogpsi saved derivatives
    * @param det_id provide this argument to affect determinant group id for virtual moves
    */
-  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
-                              Vector<ValueType>& dlogpsi,
-                              int det_id = -1) const;
+  void evaluateDerivativesMSD(const PsiValue& multi_det_to_ref, Vector<ValueType>& dlogpsi, int det_id = -1) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
@@ -294,12 +290,12 @@ private:
   const bool use_pre_computing_;
 
   /// current psi over ref single det
-  PsiValueType psi_ratio_to_ref_det_;
+  PsiValue psi_ratio_to_ref_det_;
   /// new psi over new ref single det when one particle is moved
-  PsiValueType new_psi_ratio_to_new_ref_det_;
+  PsiValue new_psi_ratio_to_new_ref_det_;
 
   size_t ActiveSpin;
-  PsiValueType curRatio;
+  PsiValue curRatio;
 
   /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
   //std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
@@ -314,23 +310,8 @@ private:
   std::vector<Matrix<RealType>> dpsia, dLa;
   std::vector<Array<GradType, OHMMS_DIM>> dGa;
 
-  struct MultiSlaterDetTableMethodMultiWalkerResource : public Resource
-  {
-    MultiSlaterDetTableMethodMultiWalkerResource() : Resource("MultiSlaterDetTableMethod") {}
-    MultiSlaterDetTableMethodMultiWalkerResource(const MultiSlaterDetTableMethodMultiWalkerResource&)
-        : MultiSlaterDetTableMethodMultiWalkerResource()
-    {}
-
-    Resource* makeClone() const override { return new MultiSlaterDetTableMethodMultiWalkerResource(*this); }
-
-    /// grads of each unique determinants for multiple walkers
-    Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;
-    /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
-    OffloadVector<const ValueType*> C_otherDs_ptr_list;
-    OffloadVector<const ValueType*> det_value_ptr_list;
-  };
-
-  std::unique_ptr<MultiSlaterDetTableMethodMultiWalkerResource> mw_res_;
+  struct MultiSlaterDetTableMethodMultiWalkerResource;
+  ResourceHandle<MultiSlaterDetTableMethodMultiWalkerResource> mw_res_handle_;
 
   // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
   RefVectorWithLeader<MultiDiracDeterminant> extract_DetRef_list(

@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include <array>
 #include <cassert>
 #include <stdexcept>
 #include <numeric>
@@ -53,7 +54,7 @@ TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl
                                                       {WC_send, "WalkerControl::send"},
                                                       {WC_recv, "WalkerControl::recv"}};
 
-WalkerControl::WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixed_pop)
+WalkerControl::WalkerControl(Communicate* c, RandomBase<FullPrecRealType>& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
       rng_(rng),
       use_fixed_pop_(use_fixed_pop),
@@ -65,12 +66,11 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixe
       SwapMode(0),
       use_nonblocking_(true),
       debug_disable_branching_(false),
+      my_timers_(getGlobalTimerManager(), WalkerControlTimerNames, timer_level_medium),
       saved_num_walkers_sent_(0)
 {
   num_per_rank_.resize(num_ranks_);
   fair_offset_.resize(num_ranks_ + 1);
-
-  setup_timers(my_timers_, WalkerControlTimerNames, timer_level_medium);
 }
 
 WalkerControl::~WalkerControl() = default;
@@ -325,14 +325,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   determineNewWalkerPopulation(num_per_rank_, fair_offset_, minus, plus);
 
 #ifdef MCWALKERSET_MPI_DEBUG
-  char fname[128];
-  sprintf(fname, "test.%d", rank_num_);
-  std::ofstream fout(fname, std::ios::app);
-  //fout << NumSwaps << " " << Cur_pop << " ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << num_per_rank_[ic] << " ";
-  //fout << " | ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << fair_offset_[ic+1]-fair_offset_[ic] << " ";
-  //fout << " | ";
+  std::array<char, 128> fname;
+  if (std::snprintf(fname.data(), fname.size(), "test.%d", rank_num_) < 0)
+    throw std::runtime_error("Error generating filename");
+  std::ofstream fout(fname.data(), std::ios::app);
+
   for (int ic = 0; ic < plus.size(); ic++)
   {
     fout << plus[ic] << " ";

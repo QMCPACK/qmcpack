@@ -35,6 +35,8 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "CPU/math.hpp"
 
+#include <array>
+
 namespace qmcplusplus
 {
 /** traits for a localized basis set; used by createBasisSet
@@ -262,13 +264,14 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
-    if (!hin.push("basisset"))
-      PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file", true);
+
+    hin.push("basisset", false);
 
     std::string sph;
     std::string ElemID0 = "atomicBasisSet0";
-    if (!hin.push(ElemID0.c_str()))
-      PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file", true);
+
+    hin.push(ElemID0.c_str(), false);
+
     if (!hin.readEntry(sph, "angular"))
       PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file", true);
     ylm = (sph == "cartesian") ? 0 : 1;
@@ -390,8 +393,9 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
-    if (!hin.push("basisset"))
-      PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file", true);
+
+    hin.push("basisset", false);
+
     hin.read(Nb_Elements, "NbElements");
   }
 
@@ -409,8 +413,8 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
 
     if (myComm->rank() == 0)
     {
-      if (!hin.push(ElemType.c_str()))
-        PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file", true);
+      hin.push(ElemType.c_str(), false);
+
       if (!hin.readEntry(basiset_name, "name"))
         PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file", true);
       if (!hin.readEntry(elementType, "elementType"))
@@ -467,7 +471,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   else
     myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
 
-  std::unique_ptr<LCAOrbitalSet> lcos;
+  std::unique_ptr<SPOSet> sposet;
   if (doCuspCorrection)
   {
 #if defined(QMC_COMPLEX)
@@ -475,12 +479,18 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
+    auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
+    loadMO(lcwc->lcao, cur);
+    lcwc->setOrbitalSetSize(lcwc->lcao.getOrbitalSetSize());
+    sposet = std::move(lcwc);
 #endif
   }
   else
-    lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet));
-  loadMO(*lcos, cur);
+  {
+    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet));
+    loadMO(*lcos, cur);
+    sposet = std::move(lcos);
+  }
 
 #if !defined(QMC_COMPLEX)
   if (doCuspCorrection)
@@ -495,9 +505,9 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     ParticleSet tmp_targetPtcl(targetPtcl);
 
     const int num_centers = sourcePtcl.getTotalNum();
-    auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
+    auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*sposet);
 
-    const int orbital_set_size = lcos->getOrbitalSetSize();
+    const int orbital_set_size = lcwc.getOrbitalSetSize();
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
     // set a default file name if not given
@@ -506,7 +516,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
     bool file_exists(myComm->rank() == 0 && std::ifstream(cusp_file).good());
     myComm->bcast(file_exists);
-    app_log() << "  Cusp correction file " << cusp_file << (file_exists? " exits.": " doesn't exist.") << std::endl;
+    app_log() << "  Cusp correction file " << cusp_file << (file_exists ? " exits." : " doesn't exist.") << std::endl;
 
     // validate file if it exists
     if (file_exists)
@@ -525,16 +535,16 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     }
     else
     {
-      generateCuspInfo(info, tmp_targetPtcl, sourcePtcl, lcwc, spo_name, *myComm);
+      generateCuspInfo(info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, spo_name, *myComm);
       if (myComm->rank() == 0)
         saveCusp(cusp_file, info, spo_name);
     }
 
-    applyCuspCorrection(info, tmp_targetPtcl, sourcePtcl, lcwc, spo_name);
+    applyCuspCorrection(info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, lcwc.cusp, spo_name);
   }
 #endif
 
-  return lcos;
+  return sposet;
 }
 
 
@@ -594,18 +604,21 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     {
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
-      //TO REVIEWERS:: IDEAL BEHAVIOUR SHOULD BE:
-      /*
-         if(!hin.push("PBC")
-             PBC=false;
-         else
-            if (!hin.readEntry(PBC,"PBC"))
-                APP_ABORT("Could not read PBC dataset in H5 file. Probably corrupt file!!!.");
-        // However, it always succeeds to enter the if condition even if the group does not exists...
-        */
-      hin.push("PBC");
-      PBC = false;
-      hin.read(PBC, "PBC");
+
+      try
+      {
+        hin.push("PBC", false);
+        PBC = true;
+      }
+      catch (const std::exception& e)
+      {
+        app_debug() << e.what() << std::endl;
+        PBC = false;
+      }
+
+      if (PBC)
+        hin.read(PBC, "PBC");
+
       hin.close();
     }
     myComm->bcast(PBC);
@@ -669,7 +682,6 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
   int neigs  = spo.getBasisSetSize();
   int setVal = -1;
-  std::string setname;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
   aAttrib.add(neigs, "size");
@@ -682,15 +694,20 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
     Matrix<RealType> Ctemp;
-    char name[72];
+    std::array<char, 72> name;
+
 
     //This is to make sure of Backward compatibility with previous tags.
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
-    setname = name;
+    int name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_", setVal);
+    if (name_len < 0)
+      throw std::runtime_error("Error generating name");
+    std::string setname(name.data(), name_len);
     if (!hin.readEntry(Ctemp, setname))
     {
-      sprintf(name, "%s%d", "/KPTS_0/eigenset_", setVal);
-      setname = name;
+      name_len = std::snprintf(name.data(), name.size(), "%s%d", "/KPTS_0/eigenset_", setVal);
+      if (name_len < 0)
+        throw std::runtime_error("Error generating name");
+      setname = std::string(name.data(), name_len);
       hin.read(Ctemp, setname);
     }
     hin.close();
@@ -882,8 +899,8 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   Matrix<RealType> Creal;
   Matrix<RealType> Ccmplx;
 
-  char name[72];
-  std::string setname;
+  std::array<char, 72> name;
+  int name_len{0};
   ///When running Single Determinant calculations, MO coeff loaded based on occupation and lowest eingenvalue.
   ///However, for solids with multideterminants, orbitals are order by kpoints; first all MOs for kpoint 1, then 2 etc
   /// The multideterminants occupation is specified in the input/HDF5 and theefore as long as there is consistency between
@@ -892,11 +909,13 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   /// the orbitals labelled eigenset_unsorted.
 
   if (MultiDet == false)
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+    name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_", setVal);
   else
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+    name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+  if (name_len < 0)
+    throw std::runtime_error("Error generating name");
 
-  setname = name;
+  std::string setname(name.data(), name_len);
   readRealMatrixFromH5(hin, setname, Creal);
 
   bool IsComplex = true;
@@ -908,7 +927,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   }
   else
   {
-    setname = std::string(name) + "_imag";
+    setname += "_imag";
     readRealMatrixFromH5(hin, setname, Ccmplx);
   }
 
@@ -934,14 +953,18 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
     APP_ABORT(setname.c_str());
   }
 
-  char name[72];
+  std::array<char, 72> name;
+  int name_len{0};
   bool PBC = false;
   hin.read(PBC, "/PBC/PBC");
   if (MultiDet && PBC)
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+    name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
   else
-    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
-  readRealMatrixFromH5(hin, name, Creal);
+    name_len = std::snprintf(name.data(), name.size(), "%s%d", "/Super_Twist/eigenset_", setVal);
+  if (name_len < 0)
+    throw std::runtime_error("Error generating name");
+
+  readRealMatrixFromH5(hin, std::string(name.data(), name_len), Creal);
 }
 
 /// Periodic Image Phase Factors computation to be determined
@@ -969,8 +992,9 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
     {
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("Could not open H5 file");
-      if (!hin.push("Cell"))
-        APP_ABORT("Could not open Cell group in H5; Probably Corrupt H5 file; accessed from LCAOrbitalBuilder");
+
+      hin.push("Cell", false);
+
       hin.read(Lattice, "LatticeVectors");
       hin.close();
     }

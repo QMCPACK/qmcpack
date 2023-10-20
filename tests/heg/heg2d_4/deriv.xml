@@ -35,9 +35,9 @@
       </group>
     </particleset>
     <wavefunction name="psi0" target="e">
-      <sposet_builder type="free">
+      <sposet_collection type="free">
         <sposet name="spo-ud" twist="0 0 0" size="5"/>
-      </sposet_builder>
+      </sposet_collection>
       <determinantset>
         <slaterdeterminant>
           <determinant id="detu" sposet="spo-ud"/>

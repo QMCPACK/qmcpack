@@ -30,9 +30,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType     = WaveFunctionComponent::RealType;
-using LogValueType = WaveFunctionComponent::LogValueType;
-using PsiValueType = WaveFunctionComponent::PsiValueType;
+using RealType = WaveFunctionComponent::RealType;
+using LogValue = WaveFunctionComponent::LogValue;
+using PsiValue = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 {
@@ -53,31 +53,18 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 
   ions_.setName("ion");
   ions_.create({2});
-  ions_.R[0][0] = 2.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = -2.0;
-  ions_.R[1][1] = 0.0;
-  ions_.R[1][2] = 0.0;
+  ions_.R[0] = {2.0, 0.0, 0.0};
+  ions_.R[1] = {-2.0, 0.0, 0.0};
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
   ions_.update();
 
   elec_.setName("elec");
   elec_.create({2, 2});
-  elec_.R[0][0] = 1.00;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 0.0;
-  elec_.R[1][2] = 0.0;
-  elec_.R[2][0] = -1.00;
-  elec_.R[2][1] = 0.0;
-  elec_.R[2][2] = 0.0;
-  elec_.R[3][0] = 0.0;
-  elec_.R[3][1] = 0.0;
-  elec_.R[3][2] = 2.0;
-
+  elec_.R[0] = {1.00, 0.0, 0.0};
+  elec_.R[1] = {0.0, 0.0, 0.0};
+  elec_.R[2] = {-1.00, 0.0, 0.0};
+  elec_.R[3] = {0.0, 0.0, 2.0};
   SpeciesSet& target_species(elec_.getSpeciesSet());
   int upIdx                          = target_species.addSpecies("u");
   int downIdx                        = target_species.addSpecies("d");
@@ -138,19 +125,19 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(ratios[3]) == Approx(0.7987703724));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  PsiValueType ratio_0 = j3->ratio(elec_, 0);
+  PsiValue ratio_0 = j3->ratio(elec_, 0);
   elec_.rejectMove(0);
 
   elec_.makeMove(1, newpos - elec_.R[1]);
-  PsiValueType ratio_1 = j3->ratio(elec_, 1);
+  PsiValue ratio_1 = j3->ratio(elec_, 1);
   elec_.rejectMove(1);
 
   elec_.makeMove(2, newpos - elec_.R[2]);
-  PsiValueType ratio_2 = j3->ratio(elec_, 2);
+  PsiValue ratio_2 = j3->ratio(elec_, 2);
   elec_.rejectMove(2);
 
   elec_.makeMove(3, newpos - elec_.R[3]);
-  PsiValueType ratio_3 = j3->ratio(elec_, 3);
+  PsiValue ratio_3 = j3->ratio(elec_, 3);
   elec_.rejectMove(3);
 
   CHECK(std::real(ratio_0) == Approx(0.8744938582));
@@ -182,6 +169,12 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 
   CHECK(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
   CHECK(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
+
+  Vector<WaveFunctionComponent::ValueType> dlogpsiWF;
+  dlogpsiWF.resize(NumOptimizables);
+  j3->evaluateDerivativesWF(elec_, optvars, dlogpsiWF);
+  for (int i = 0; i < NumOptimizables; i++)
+    CHECK(dlogpsi[i] == ValueApprox(dlogpsiWF[i]));
 
   VirtualParticleSet VP(elec_, 2);
   std::vector<PosType> newpos2(2);

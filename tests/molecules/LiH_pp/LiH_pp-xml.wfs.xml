@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
+    <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
       <basisset name="LCAOBSet">
         <atomicBasisSet name="Gaussian-G2" angular="cartesian" type="Gaussian" elementType="Li" normalized="no">
           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
@@ -158,8 +158,7 @@
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-      <slaterdeterminant>
-        <determinant id="updet" size="1">
+      <sposet name="spo-up" size="1">
           <occupation mode="ground"/>
           <coefficient size="62" id="updetC">
   6.56805000000000e-01  1.71299000000000e-01  2.18040000000000e-02  6.06600000000000e-03
@@ -1279,8 +1278,8 @@
   7.73330000000000e-02  0.00000000000000e+00 -5.18770000000000e-02  0.00000000000000e+00
  -5.18770000000000e-02  0.00000000000000e+00  0.00000000000000e+00  0.00000000000000e+00
 </coefficient>
-        </determinant>
-        <determinant id="downdet" size="1">
+        </sposet>
+        <sposet name="spo-dn" size="1">
           <occupation mode="ground"/>
           <coefficient size="62" id="downdetC">
   6.56805000000000e-01  1.71299000000000e-01  2.18040000000000e-02  6.06600000000000e-03
@@ -2400,7 +2399,12 @@
   7.73330000000000e-02  0.00000000000000e+00 -5.18770000000000e-02  0.00000000000000e+00
  -5.18770000000000e-02  0.00000000000000e+00  0.00000000000000e+00  0.00000000000000e+00
 </coefficient>
-        </determinant>
+	</sposet>
+    </sposet_collection>
+    <determinantset>
+      <slaterdeterminant>
+	<determinant sposet="spo-up"/>
+	<determinant sposet="spo-dn"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">

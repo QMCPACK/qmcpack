@@ -51,8 +51,6 @@ public:
   using mTensorType = TensorType;
 #endif
 
-  ///If true, terminate the simulation, but it is never checked
-  bool BadState;
   ///number of steps per measurement
   int nSubSteps;
   /// determine additional checks for debugging purpose
@@ -78,13 +76,13 @@ public:
   bool UseDrift;
 
   /// Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
+  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomBase<FullPrecRealType>& rg);
   ///Alt Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w,
                 TrialWaveFunction& psi,
                 TrialWaveFunction& guide,
                 QMCHamiltonian& h,
-                RandomGenerator& rg);
+                RandomBase<FullPrecRealType>& rg);
   ///destructor
   virtual ~QMCUpdateBase();
 
@@ -263,7 +261,7 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
   ///random number generator
-  RandomGenerator& RandomGen;
+  RandomBase<FullPrecRealType>& RandomGen;
   ///branch engine, stateless reference to the one in QMCDriver
   const BranchEngineType* branchEngine;
   ///drift modifer, stateless reference to the one in QMCDriver
@@ -308,7 +306,7 @@ private:
   /// Copy operator (disabled).
   QMCUpdateBase& operator=(const QMCUpdateBase&) { return *this; }
   ///
-  NewTimer* InitWalkersTimer;
+  NewTimer& initWalkers_timer_;
 };
 } // namespace qmcplusplus
 

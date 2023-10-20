@@ -19,6 +19,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include "RandomNumberControl.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCDrivers/VMC/VMC.h"
@@ -93,12 +94,12 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
       Max_iterations(1),
       wfNode(NULL),
       param_tol(1e-4),
-      generate_samples_timer_(*timer_manager.createTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
-      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimize::EigenvalueSolve", timer_level_medium)),
-      involvmat_timer_(*timer_manager.createTimer("QMCLinearOptimize::invertOverlapMat", timer_level_medium)),
-      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
-      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimize::CostFunction", timer_level_medium))
+      generate_samples_timer_(createGlobalTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
+      initialize_timer_(createGlobalTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
+      eigenvalue_timer_(createGlobalTimer("QMCLinearOptimize::EigenvalueSolve", timer_level_medium)),
+      involvmat_timer_(createGlobalTimer("QMCLinearOptimize::invertOverlapMat", timer_level_medium)),
+      line_min_timer_(createGlobalTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(createGlobalTimer("QMCLinearOptimize::CostFunction", timer_level_medium))
 {
   IsQMCDriver = false;
   //set the optimization flag
@@ -131,17 +132,17 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
-                                                     false,  // exact sampling
-                                                     true,   // ground state?
-                                                     false,  // variance correct,
+                                                     false, // exact sampling
+                                                     true,  // ground state?
+                                                     false, // variance correct,
                                                      true,
-                                                     true,   // print matrices,
-                                                     true,   // build matrices
-                                                     false,  // spam
-                                                     false,  // use var deps?
-                                                     true,   // chase lowest
-                                                     false,  // chase closest
-                                                     false,  // eom
+                                                     true,  // print matrices,
+                                                     true,  // build matrices
+                                                     false, // spam
+                                                     false, // use var deps?
+                                                     true,  // chase lowest
+                                                     false, // chase closest
+                                                     false, // eom
                                                      false,
                                                      false,  // eom related
                                                      false,  // eom related
@@ -159,10 +160,10 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
                                                      1.0e-6, // convergence threshold
                                                      0.99,   // minimum S singular val
                                                      0.0, 0.0,
-                                                     10.0,   // max change allowed
-                                                     1.00,   // identity shift
-                                                     1.00,   // overlap shift
-                                                     0.3,    // max parameter change
+                                                     10.0, // max change allowed
+                                                     1.00, // identity shift
+                                                     1.00, // overlap shift
+                                                     0.3,  // max parameter change
                                                      shift_scales, app_log());
 #endif
 
@@ -647,7 +648,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
 
   // Destroy old object to stop timer to correctly order timer with object lifetime scope
   vmcEngine.reset(nullptr);
-  vmcEngine = std::make_unique<VMC>(project_data_, W, Psi, H, myComm, false);
+  vmcEngine = std::make_unique<VMC>(project_data_, W, Psi, H, RandomNumberControl::Children, myComm, false);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
 
@@ -1373,7 +1374,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || std::isnan(newCost))
+  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)

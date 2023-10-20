@@ -1,0 +1,214 @@
+.. _modernize_input_code:
+
+Modernized Input
+----------------
+
+Input Facts
+~~~~~~~~~~~
+- The user supplied input to QMCPACK can be formally thought of as a tree constructed of input nodes. These nodes have optional attributes and content. Content may be nothing, free form "text" that must be handled in an application defined manner, or one or more nodes with the same possible structure.
+  For most input classes the child nodes will consist primarily or entirely of ``parameter`` nodes.
+
+- This tree is expressed by using XML as described previously in this manual. While XML offers the possibility that a formal specification could be defined, 
+  the documentation earlier in the manual is the most formal specification of the XML input format that exists.
+
+- Parameter nodes for historical reasons can be specified in two different ways.
+
+.. xml lexers require valid xml which this fragment isn't
+.. code-block:: html
+   :caption: qmcpack parameter XML
+   :name: param_xml
+
+	    <the_parameter_name>content</the_parameter_name>
+            <parameter name="the_parameter_name">content</parameter>
+
+Legacy Input Problems
+~~~~~~~~~~~~~~~~~~~~~
+- XML input parsing, validation, and processing takes place throughout the execution of the application, as needed through `put`, `process` and other calls to existing objects. 
+- Most/All simulation objects are not valid at construction but are state machines (see :numref:`fig28`) that require many transforms to become valid.
+- This impedes unit tests of simulation objects since the process for bring objects to a valid state must be derived via extensive code review or by mocking large portions of the applications execution sequence copied.
+- This impedes unit tests of input validation since to the degree this occurs is happens primarily as side effects to the construction of simulation objects.
+- Reasoning about the state of objects when debugging or developing new features is difficult.
+- Attributes are sometimes the main content or only content of a node.
+- Multiple objects will take the same node as an argument to their ``put`` method, so ownership of nodes is unclear.
+- In different input sections, different ways to specify very similar information. i.e. grids. are used.
+- Specific implementations of grids etc. are tangled up in the extended construction of numerous simulation objects and particular input expressions,
+  this is a barrier to code reuse and improvement.
+- The XML parser catches only the most basic issues with the input document.
+- Unrecognized elements, parameter names, and attributes are silently ignored. Sometimes defaults are used instead.
+- Invalid input to recognized elements is sometimes checked, sometimes causes crashes, sometimes causes invalid answers (NaNs etc.) and sometimes is just fixed.
+
+.. _fig28:
+.. figure:: /uml/simulation_object_state.png
+  :width: 500
+  :align: left
+
+  **Simulation object state diagram** emphasizing the long period and multiple state updates required to become a valid object. Many objects
+  require more than two updates to go from constructed to valid.
+
+Modernizing Goals
+~~~~~~~~~~~~~~~~~
+
+Legacy QMCPACK input parsing is characterized by a unclear ownership of input nodes and a multistage mixture of construction, parsing, validation, and state progression of simulation objects. The handling of input and its relation to testing and error handling is a major pain point for developers. The following program is proposed:
+
+- *Simulation classes* and the input parsing and storage of input values should be refactored into 2 or more classes. Below these are refered to as *Simulation classes* and *Input classes*.
+- No input parsing should occur in *simulation* objects. i.e. **no** ``put`` methods, **no** ``XMLNodePtr`` argument types. 
+- *Simulation* objects should access input parameters as clearly defined and appropriate types through read only *Input* object accessors, they should not make local copies of these parameters.
+- Each type of Node in the input tree should have a clear relationship to some `input` class.
+- If an input class is given a node it must be able handle all content and attributes and able to handle or delegate all child nodes.
+- Anything other than white space in a node, attribute or element not consumed by the node owner or its delegates constitutes a fatal error.
+- The `Input` objects should be for practical purposes immutable after parsing.
+- After parsing the input parameters should be in appropriate native c++ types.
+- Default values should be specified in native c++ whenever practical.
+- In principle you should be able to construct an input object simply by initializing its members i.e. no input parsing necessary.
+
+The Improved Input Design
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Make input parsing and validation (to the degree feasible) distinct stages of application execution.
+
+   * Improve separation of concerns
+   * Facilitate unit testing
+   * Allow parsing and validation of input to be completed before the beginning of the simulation proper, i.e. fail fast conserve HPC resources.
+
+#. *Simulation* objects take valid *Input* objects as constructor arguments.
+
+   * Refactor to a situation where a one to one relationship holds between a given input node and a consuming input object.
+   * The *Input* class for a particular *Simulation* class should be data structure containing native data type members corresponding to a read only representation of user input need to instantiate a valid *Simulation* object.
+
+#. *Simulation* objects will be required to be valid at construction whenever possible.
+
+   * Existing pool objects should also be taken as constructor arguements.
+
+#. The *Input* object is the single source of truth for input parameters.
+
+   * The *Simulation* class should aggregate the *Input* class.
+   * Access to input values should be through the aggregated *Input*.
+   * Only values that are derived at simulation time by transformation of input values should be stored in the *Simulation* object itself.
+   * Values that are calculated using only input values should be calculated and stored as derived values in the *Input* object.
+
+#. Where a *Simulation* object requires input parameters from another simulation object, carefully consider lifetimes, and on case by case basis decide whether  the simulation object, a more restricted type,  or an input object to be taken as a constructor argument.
+
+#. A base class ``InputSection`` allowing the specification of the user input and handling most parsing of the XML input is provided.
+
+   * *Input* classes compose one or more types derived from ``InputSection``. The basic class hierarchy this results in is illustrated in (see :numref:`fig31`).
+
+.. _fig31:
+.. figure:: /uml/SimpleInputClass.png
+  :width: 500
+  :align: left
+
+  "Modern" input scheme low level class diagram. Simulation class ``SimpleSimObject``, takes input class ``SimpleInput`` as a constructor argument, in general sharing a aggregate relationship.  ``SimpleInput`` composes an input section class ``SimpleInputSection`` derived from ``InputSection`` base class. ``SimpleInput`` gains input parsing functionality from ``SimpleInputSection``.
+
+   * The ``InputSection`` class parses the string representations of input data that have been previously organized hierarchically within Libxml2 data
+     structures.
+   * Input values of are stored in a single hash table where strongly typed polymorphism is supported by ``std::any``.
+   * The parsed inputs are checked for type and name validity.
+   * Subtypes are expected to implement specific input validation by overriding the ``InputSection::checkParticularValidity`` virtual method.
+
+How to use the improved input design
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Determine for your simulation object what are the immutable parameters that are read from or
+  directly derived from user input. These will be the data members of the input class.
+  
+- If your simulation class is called ``MySimObject`` name the input class ``MySimObjectInput.``
+  - Add a constructor that takes an xmlNodePtr as an argument.  
+  - Add data members for each element of the input.
+  - Use appropriate data types, if an input is a "position" using a type ``Position`` in the *Simulation* class, then it should be parsed, translated to, stored as and if possible checked to be valid by the *Input* class. Don't store it as a string and do further parsing in the simulation class!
+  
+- Derive a class from ``InputSection`` and add it to your ``MySimObjectInput`` class. Here we'll call it ``MySimObjectInputSection``
+
+- Define your user input in ``MySimObjectInputSection``'s default constructor.
+
+ - Default the copy constructor. (This is to allow parent *Input* classes to include this *Input* class in std::variants of their delegate classes)
+
+- Add a private data member for the your input section to ``MySimObjectInput`` call it ``input_section_``
+
+- Make an implementation file if you have not, ``MySimObjectInput.cpp``.
+- In your ``MySimObjectInput::MySimObjectInput(xmlNodePtr& cur)`` call ``input_section_.readXML(cur)`` to parse input.
+- In your constructor use the ``LAMBDA_setIfInInput`` macro to copy ``MyInputSection`` variables if read to your native data members. (:numref:`lst101`),
+  the macro generated lambda is strongly typed.
+
+.. code-block:: c++
+   :caption: Basic InputClass constructor
+   :name: lst101
+
+	  class MySimObjectInput
+	  {
+            MySimObjectInput() {
+	      input_section_.readXML(cur);
+	      auto setIfInInput = LAMBDA_setIfInInput;
+	      setIfInInput(energy_matrix_, "energy_matrix");
+	    ...
+	    }
+	  };
+
+- Write unit tests ``tests/test_MySimObjectInput.cpp`` see ``src/Estimators/test_OneBodyDensityMatricesInput.cpp``
+
+Declaring input node Contents
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The constructor of the ``InputSection`` subtype uses a pseudo DSL to define the input node the section handles. Doing this lets InputSection know what type difference input parameters and attributes must be as well as what is expected, optional, and what doesn't belong in the input node at all.
+
+.. literalinclude:: input_section_dsl.cpp
+   :caption: ``InputSection`` pseudo DSL
+   :name: _input_dsl_lst
+
+Any easy way of thinking about this is you are adding your input elements to different logical sets from parsing and validation. The input breaks down into attributes and parameters for each node. So first each element is added to one of these two sets. Then required inputs should be added to the required set. If its permissible for multiple instances of an input element in the section add it to the multiples set. Then each element should be added to the type set it matches. The types supported are: strings, bools, integers, reals, positions, multi_strings, multi_reals. Two require special mention, multi_strings and multi_reals parse multiple whitespace separated values to a vector of strings or reals. If your type has a fixed number of values and you define and element as one of these types you should validate you have parsed the expected number of values in your input section subtype's ``checkParticularValidbity.``
+
+Without extension ``InputSection`` provides only a basic set of types and expects only attribute and parameter elements. There is an established API for delegation to other input classes when an included child nodes are actually complex Inputs in their own right, i.e. not just parameters and attribute. There is also an extension method through custom stream handlers for types not covered by ``InputSection`` (see :ref:`_advanced-input_section`). Any element of input that isn't declared in this fashion will cause a fatal error when the input node is parsed by the ``InputSection.`` 
+
+Special concerns if your InputClass is for an Estimator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Estimators are runtime selected *simulation* objects managed by the ``EstimatorManagerNew`` and their inputs are similarly handled by the ``EstimatorManagerInput`` object. The ``EstimatorManagerInput`` delegates particular child nodes of input at runtime to a compile time known set of input classes.  Your class will be one, lets assume its named ``MyEstimator.``
+
+This requires that in addition to creating and unit testing ``MyEstimatorInput`` as explained above, you will also need to integrate it with ``EstimatorManagerInput``, its' parent in the native input structure of QMCPACK.
+
+- Add your input class header ``MyEstimatorInput.h``  to ``EstimatorInputDelegates.h``, this makes its definition visible to compilation units that need to be able to use ``EstimatorInput`` as a complete type.
+
+.. warning::
+
+   Do not include ``EstimatorInputDelegates.h`` file in ``MyEstimatorInput.cpp`` or ``MyEstimator.cpp`` include ``MyEstimatorInput.h`` directly.
+
+- Add your ``MyEstimatorClass`` to the ``EstimatorInput`` std::variant in in ``EstimatorManagerInput.h``
+
+- In ``EstimatorManagerInput::readXML`` add a case that connects the estimator type tag your estimator uses to its ``MyEstimatorInput``.
+
+.. code:: c++
+	  
+	  else if (atype == "perparticlehamiltonianlogger")
+            appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
+	  // Your new code
+	  else if (atype == "myestimator")
+            appendEstimatorInput<MyEstimatorInput>(child);
+
+- Add a valid input section for your input class to the integration testing in ``tests/test_EstimatorManagerInput.cpp``
+
+.. _advanced-input-section:
+
+Advanced Features of :code:`InputSection`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Delegation to InputClasses
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  This is used when child node in input represents another logical input class we register a factory function for that input child class as a delegate of the input class responsible for the parent node.
+
+  The delgating class should will pass an entire node to this input class factory function and receive an input class as a ``std::any`` back. The delegate class is expected to take responsibility for complete parsing of this node. Including its own internal validation. 
+  a tag name (see :ref:`_delegating_lst`).
+
+.. literalinclude:: delegating.cpp
+   :caption: Delgating to another ``InputSection`` subtype
+   :name: _delegating_lst
+
+Custom stream handlers
+^^^^^^^^^^^^^^^^^^^^^^
+
+In the case that we just have a input parameter that is unique to a particular input class,  not for one of the types handled by ``InputSection``, and it does not logically map to a separate Input we should use a custom stream handler (see :ref:`_custom_stream_handler_lst`).
+
+
+.. literalinclude:: custom_stream_handler.cpp
+   :caption: Implementing a custom type handler for an Input class.
+   :name: _custom_stream_handler_lst
+

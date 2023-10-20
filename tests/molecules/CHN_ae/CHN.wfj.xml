@@ -1,16 +1,20 @@
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="yes" href="CHN.h5">
+    <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="yes" href="CHN.h5"> 
+      <sposet name="updet" size="7" cuspInfo="updet.cuspInfo.xml">
+          <occupation mode="ground"/>
+          <coefficient size="74" spindataset="0"/>
+      </sposet>
+      <sposet name="downdet" size="7" cuspInfo="downdet.cuspInfo.xml">
+          <occupation mode="ground"/>
+          <coefficient size="74" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="updet" size="7" cuspInfo="updet.cuspInfo.xml">
-          <occupation mode="ground"/>
-          <coefficient size="74" spindataset="0"/>
-        </determinant>
-        <determinant id="downdet" size="7" cuspInfo="downdet.cuspInfo.xml">
-          <occupation mode="ground"/>
-          <coefficient size="74" spindataset="0"/>
-        </determinant>
+	  <determinant sposet="updet"/>
+          <determinant sposet="downdet"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">

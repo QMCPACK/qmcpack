@@ -54,7 +54,8 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       W(w),
       Psi(psi),
       H(h),
-      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
+      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
@@ -66,11 +67,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  Period4CheckPoint = -1;
-  storeConfigs      = 0;
-  //m_param.add(storeConfigs,"storeConfigs");
-  m_param.add(storeConfigs, "storeconfigs");
-  m_param.add(storeConfigs, "store_configs");
+  Period4CheckPoint = 0;
   Period4CheckProperties = 100;
   m_param.add(Period4CheckProperties, "checkProperties");
   m_param.add(Period4CheckProperties, "checkproperties");
@@ -139,8 +136,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
-
-  checkpointTimer = timer_manager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
 QMCDriver::~QMCDriver()
@@ -305,11 +300,10 @@ void QMCDriver::recordBlock(int block)
 {
   if (DumpConfig && block % Period4CheckPoint == 0)
   {
-    checkpointTimer->start();
+    ScopedTimer local(checkpoint_timer_);
     wOut->dump(W, block);
     branchEngine->write(RootName, true); //save energy_history
     RandomNumberControl::write(RootName, myComm);
-    checkpointTimer->stop();
   }
 }
 
@@ -407,7 +401,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //int oldSteps=nSteps;
 
   //set the default walker to the number of threads times 10
-  Period4CheckPoint = -1;
+  Period4CheckPoint = 0;
   int defaultw      = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint, "checkpoint");

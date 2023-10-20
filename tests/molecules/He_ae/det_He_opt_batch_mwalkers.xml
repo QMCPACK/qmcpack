@@ -38,18 +38,22 @@
       </correlation>
     </jastrow>
 
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
+    <sposet_collection type="MO" key="STO" transform="no" source="ion0">
       <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
-      <basisset>
+       <sposet name="spo-up" spin="1" size="1"/>
+       <sposet name="spo-dn" spin="-1" size="1"/>
+       <basisset>
         <atomicBasisSet type="STO" elementType="He">
           <basisGroup rid="R0" n="1" l="0" m="0" type="Slater">
              <radfunc exponent="2.0"/>
           </basisGroup>
         </atomicBasisSet>
-      </basisset>
+       </basisset>
+     </sposet_collection>
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="updet" spin="1" size="1"/>
-        <determinant id="downdet" spin="-1" size="1"/>
+        <determinant sposet="spo-up"/>
+        <determinant sposet="spo-dn"/>
       </slaterdeterminant>
     </determinantset>
   </wavefunction>

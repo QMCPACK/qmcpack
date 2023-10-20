@@ -16,8 +16,8 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSpinorSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 
@@ -123,7 +123,8 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
@@ -157,7 +158,8 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
 
-  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
 
@@ -329,7 +331,8 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
@@ -363,7 +366,8 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
 
-  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
 
@@ -630,7 +634,8 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat_tot[k][j];
     }
-  checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
@@ -663,7 +668,8 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat_tot[k][j];
     }
-  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
 
@@ -771,7 +777,8 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
@@ -804,7 +811,8 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
-  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 } // TEST_CASE
 #endif
 } // namespace qmcplusplus

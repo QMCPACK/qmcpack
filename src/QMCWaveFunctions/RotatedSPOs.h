@@ -18,6 +18,13 @@
 
 namespace qmcplusplus
 {
+class RotatedSPOs;
+namespace testing
+{
+opt_variables_type& getMyVarsFull(RotatedSPOs& rot);
+std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot);
+} // namespace testing
+
 class RotatedSPOs : public SPOSet, public OptimizableObject
 {
 public:
@@ -80,6 +87,14 @@ public:
                                      const RotationIndices& full_rot_inds,
                                      std::vector<RealType>& new_param,
                                      ValueMatrix& new_rot_mat);
+
+  // When initializing the rotation from VP files
+  // This function applies the rotation history
+  void applyRotationHistory();
+
+  // This function applies the global rotation (similar to apply_rotation, but for the full
+  // set of rotation parameters)
+  void applyFullRotation(const std::vector<RealType>& full_param, bool use_stored_copy);
 
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
@@ -235,6 +250,10 @@ public:
   ///reset
   void resetParametersExclusive(const opt_variables_type& active) override;
 
+  void writeVariationalParameters(hdf_archive& hout) override;
+
+  void readVariationalParameters(hdf_archive& hin) override;
+
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
   void setOrbitalSetSize(int norbs) override { Phi->setOrbitalSetSize(norbs); }
@@ -352,6 +371,63 @@ public:
   /// Use history list (false) or global rotation (true)
   void set_use_global_rotation(bool use_global_rotation) { use_global_rot_ = use_global_rotation; }
 
+  void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                            const RefVector<ValueVector>& psi_list,
+                            const std::vector<const ValueType*>& invRow_ptr_list,
+                            std::vector<std::vector<ValueType>>& ratios_list) const override;
+
+  void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        const RefVector<ValueVector>& psi_v_list) const override;
+
+  void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                      const RefVectorWithLeader<ParticleSet>& P_list,
+                      int iat,
+                      const RefVector<ValueVector>& psi_v_list,
+                      const RefVector<GradVector>& dpsi_v_list,
+                      const RefVector<ValueVector>& d2psi_v_list) const override;
+
+  void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              const RefVector<ValueVector>& psi_v_list,
+                              const RefVector<GradVector>& dpsi_v_list,
+                              const RefVector<ValueVector>& d2psi_v_list,
+                              OffloadMatrix<ComplexType>& mw_dspin) const override;
+
+  void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                      const RefVectorWithLeader<ParticleSet>& P_list,
+                                      int iat,
+                                      const std::vector<const ValueType*>& invRow_ptr_list,
+                                      OffloadMWVGLArray& phi_vgl_v,
+                                      std::vector<ValueType>& ratios,
+                                      std::vector<GradType>& grads) const override;
+
+  void mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                              const RefVectorWithLeader<ParticleSet>& P_list,
+                                              int iat,
+                                              const std::vector<const ValueType*>& invRow_ptr_list,
+                                              OffloadMWVGLArray& phi_vgl_v,
+                                              std::vector<ValueType>& ratios,
+                                              std::vector<GradType>& grads,
+                                              std::vector<ValueType>& spingrads) const override;
+
+  void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int first,
+                               int last,
+                               const RefVector<ValueMatrix>& logdet_list,
+                               const RefVector<GradMatrix>& dlogdet_list,
+                               const RefVector<ValueMatrix>& d2logdet_list) const override;
+
+  void createResource(ResourceCollection& collection) const override;
+
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
@@ -361,12 +437,21 @@ private:
   /// Full set of rotation matrix parameters for use in global rotation method
   opt_variables_type myVarsFull;
 
+  /// timer for apply_rotation
+  NewTimer& apply_rotation_timer_;
+
   /// List of previously applied parameters
   std::vector<std::vector<RealType>> history_params_;
 
+  static RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list);
+
   /// Use global rotation or history list
   bool use_global_rot_ = true;
+
+  friend opt_variables_type& testing::getMyVarsFull(RotatedSPOs& rot);
+  friend std::vector<std::vector<RealType>>& testing::getHistoryParams(RotatedSPOs& rot);
 };
+
 
 } //namespace qmcplusplus
 

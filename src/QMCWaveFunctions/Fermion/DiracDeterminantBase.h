@@ -38,12 +38,12 @@ public:
    *@param last index of last particle
    */
   DiracDeterminantBase(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
-      : UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
-        RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
-        InverseTimer(*timer_manager.createTimer(class_name + "::inverse", timer_level_fine)),
-        BufferTimer(*timer_manager.createTimer(class_name + "::buffer", timer_level_fine)),
-        SPOVTimer(*timer_manager.createTimer(class_name + "::spoval", timer_level_fine)),
-        SPOVGLTimer(*timer_manager.createTimer(class_name + "::spovgl", timer_level_fine)),
+      : UpdateTimer(createGlobalTimer(class_name + "::update", timer_level_fine)),
+        RatioTimer(createGlobalTimer(class_name + "::ratio", timer_level_fine)),
+        InverseTimer(createGlobalTimer(class_name + "::inverse", timer_level_fine)),
+        BufferTimer(createGlobalTimer(class_name + "::buffer", timer_level_fine)),
+        SPOVTimer(createGlobalTimer(class_name + "::spoval", timer_level_fine)),
+        SPOVGLTimer(createGlobalTimer(class_name + "::spovgl", timer_level_fine)),
         Phi(std::move(spos)),
         FirstIndex(first),
         LastIndex(last),
@@ -147,7 +147,7 @@ public:
     return std::unique_ptr<DiracDeterminantBase>();
   }
 
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::ratioGradWithSpin():  Implementation required\n");
     return 0.0;
@@ -191,7 +191,7 @@ protected:
   {
 #if !defined(NDEBUG)
     auto g_mag = std::abs(dot(g, g));
-    if (std::isnan(g_mag))
+    if (qmcplusplus::isnan(g_mag))
       throw std::runtime_error("gradient of NaN");
     if (std::isinf(g_mag))
       throw std::runtime_error("gradient of inf");

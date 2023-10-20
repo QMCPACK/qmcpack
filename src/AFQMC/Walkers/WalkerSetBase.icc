@@ -133,11 +133,6 @@ void WalkerSetBase<Alloc, Ptr>::parse(xmlNodePtr cur)
 template<class Alloc, typename Ptr>
 void WalkerSetBase<Alloc, Ptr>::setup()
 {
-  TimerNameList_t<WalkerSetBaseTimers> WalkerSetBaseTimerNames = {{LoadBalance_t, "WalkerSetBase::loadBalance"},
-                                                                  {Branching_t, "WalkerSetBase::branching"}};
-
-  setup_timers(Timers, WalkerSetBaseTimerNames, timer_level_coarse);
-
   // careful! These are only used to calculate memory needs and access points/partitionings
   int ncol = NAEA;
   int nrow = NMO;
@@ -321,7 +316,7 @@ void WalkerSetBase<Alloc, Ptr>::popControl(std::vector<ComplexType>& curData)
   if (pop_control == PAIR || pop_control == SERIAL_COMB || pop_control == MIN_BRANCH)
   {
     if (TG.TG_local().root())
-      SerialBranching(*this, pop_control, min_weight, max_weight, nwalk_counts_old, Wexcess, *rng, TG.TG_heads());
+      SerialBranching(*this, pop_control, min_weight, max_weight, nwalk_counts_old, Wexcess, rng, TG.TG_heads());
 
     // distributed routines from here
   }

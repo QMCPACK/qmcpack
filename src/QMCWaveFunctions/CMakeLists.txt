@@ -75,22 +75,16 @@ if(OHMMS_DIM MATCHES 3)
     set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp)
   else(QMC_COMPLEX)
     #LCAO cusp correction is not ready for complex
-    set(FERMION_SRCS ${FERMION_SRCS} LCAO/CuspCorrection.cpp LCAO/LCAOrbitalSetWithCorrection.cpp
+    set(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSetWithCorrection.cpp
                      LCAO/CuspCorrectionConstruction.cpp LCAO/SoaCuspCorrection.cpp)
   endif(QMC_COMPLEX)
 
   if(HAVE_EINSPLINE)
-    if(NOT MIXED_PRECISION)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSet.cpp)
-    endif(NOT MIXED_PRECISION)
     set(FERMION_SRCS
         ${FERMION_SRCS}
-        EinsplineSetBuilderCommon.cpp
-        EinsplineSetBuilderOld.cpp
-        AtomicOrbital.cpp
-        EinsplineSetBuilderReadBands_ESHDF.cpp
-        EinsplineSetBuilderESHDF.fft.cpp
-        EinsplineSetBuilder_createSPOs.cpp
+        BsplineFactory/EinsplineSetBuilderCommon.cpp
+        BsplineFactory/EinsplineSetBuilderESHDF.fft.cpp
+        BsplineFactory/EinsplineSetBuilder_createSPOs.cpp
         BsplineFactory/createComplexDouble.cpp
         BsplineFactory/createComplexSingle.cpp
         BsplineFactory/HybridRepCenterOrbitals.cpp
@@ -98,7 +92,7 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/BsplineReaderBase.cpp)
     set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp Fermion/MultiDiracDeterminant.2.cpp)
     if(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
+      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
     else(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createRealSingle.cpp BsplineFactory/createRealDouble.cpp
@@ -109,7 +103,7 @@ if(OHMMS_DIM MATCHES 3)
   endif(HAVE_EINSPLINE)
 
   # plane wave SPO
-  set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalBuilder.cpp)
+  set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalSetBuilder.cpp)
   if(QMC_COMPLEX)
     set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWOrbitalSet.cpp)
   else()

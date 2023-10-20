@@ -20,7 +20,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
 #include "Utilities/ProjectData.h"
 
@@ -87,10 +87,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
 
   ions.setName("ion0");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0]                        = {0.0, 0.0, 0.0};
   SpeciesSet& tspecies             = ions.getSpeciesSet();
   int CIdx                         = tspecies.addSpecies("Be");
   int CchargeIdx                   = tspecies.addAttribute("charge");

@@ -44,7 +44,7 @@ struct TwoBodyJastrowMultiWalkerMem : public Resource
 
   TwoBodyJastrowMultiWalkerMem(const TwoBodyJastrowMultiWalkerMem&) : TwoBodyJastrowMultiWalkerMem() {}
 
-  Resource* makeClone() const override { return new TwoBodyJastrowMultiWalkerMem(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<TwoBodyJastrowMultiWalkerMem>(*this); }
 };
 
 template<typename FT>
@@ -57,13 +57,10 @@ template<typename FT>
 void TwoBodyJastrow<FT>::acquireResource(ResourceCollection& collection,
                                          const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
-  auto res_ptr     = dynamic_cast<TwoBodyJastrowMultiWalkerMem<RealType>*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
-  wfc_leader.mw_mem_.reset(res_ptr);
-  const size_t nw = wfc_list.size();
-  auto& mw_allUat = wfc_leader.mw_mem_->mw_allUat;
+  auto& wfc_leader          = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
+  wfc_leader.mw_mem_handle_ = collection.lendResource<TwoBodyJastrowMultiWalkerMem<RealType>>();
+  const size_t nw           = wfc_list.size();
+  auto& mw_allUat           = wfc_leader.mw_mem_handle_.getResource().mw_allUat;
   mw_allUat.resize(N_padded * (DIM + 2) * nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -87,7 +84,7 @@ void TwoBodyJastrow<FT>::acquireResource(ResourceCollection& collection,
     wfc.d2Uat.free();
     wfc.d2Uat.attachReference(mw_allUat.data() + nw * N_padded * (DIM + 1) + iw * N_padded, N);
   }
-  wfc_leader.mw_mem_->mw_cur_allu.resize(N_padded * 3 * nw);
+  wfc_leader.mw_mem_handle_.getResource().mw_cur_allu.resize(N_padded * 3 * nw);
 }
 
 template<typename FT>
@@ -96,7 +93,7 @@ void TwoBodyJastrow<FT>::releaseResource(ResourceCollection& collection,
 {
   auto& wfc_leader = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
   const size_t nw  = wfc_list.size();
-  auto& mw_allUat  = wfc_leader.mw_mem_->mw_allUat;
+  auto& mw_allUat  = wfc_leader.mw_mem_handle_.getResource().mw_allUat;
   for (size_t iw = 0; iw < nw; iw++)
   {
     // detach buffer and copy per walker Uat, dUat, d2Uat from shared buffer
@@ -119,7 +116,7 @@ void TwoBodyJastrow<FT>::releaseResource(ResourceCollection& collection,
     wfc.d2Uat.resize(N);
     wfc.d2Uat = d2Uat_view;
   }
-  collection.takebackResource(std::move(wfc_leader.mw_mem_));
+  collection.takebackResource(wfc_leader.mw_mem_handle_);
 }
 
 template<typename FT>
@@ -193,7 +190,7 @@ void TwoBodyJastrow<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctio
   auto& wfc_leader        = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
   auto& vp_leader         = vp_list.getLeader();
   const auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
-  auto& mw_vals           = wfc_leader.mw_mem_->mw_vals;
+  auto& mw_vals           = wfc_leader.mw_mem_handle_.getResource().mw_vals;
   const int nw            = wfc_list.size();
 
   const size_t nVPs = mw_refPctls.size();
@@ -206,7 +203,7 @@ void TwoBodyJastrow<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctio
 
   FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, wfc_leader.N, grp_ids.data(), nVPs, mw_refPctls.data(),
                    dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data(),
-                   wfc_leader.mw_mem_->transfer_buffer);
+                   wfc_leader.mw_mem_handle_.getResource().transfer_buffer);
 
   size_t ivp = 0;
   for (int iw = 0; iw < nw; ++iw)
@@ -249,9 +246,9 @@ void TwoBodyJastrow<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename FT>
-typename TwoBodyJastrow<FT>::LogValueType TwoBodyJastrow<FT>::updateBuffer(ParticleSet& P,
-                                                                           WFBufferType& buf,
-                                                                           bool fromscratch)
+typename TwoBodyJastrow<FT>::LogValue TwoBodyJastrow<FT>::updateBuffer(ParticleSet& P,
+                                                                       WFBufferType& buf,
+                                                                       bool fromscratch)
 {
   log_value_ = computeGL(P.G, P.L);
   buf.forward(Bytes_in_WFBuffer);
@@ -451,19 +448,19 @@ void TwoBodyJastrow<FT>::computeU3(const ParticleSet& P,
 }
 
 template<typename FT>
-typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratio(ParticleSet& P, int iat)
+typename TwoBodyJastrow<FT>::PsiValue TwoBodyJastrow<FT>::ratio(ParticleSet& P, int iat)
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
   cur_Uat    = computeU(P, iat, P.getDistTableAA(my_table_ID_).getTempDists());
-  return std::exp(static_cast<PsiValueType>(Uat[iat] - cur_Uat));
+  return std::exp(static_cast<PsiValue>(Uat[iat] - cur_Uat));
 }
 
 template<typename FT>
 void TwoBodyJastrow<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list,
                                       int iat,
-                                      std::vector<PsiValueType>& ratios) const
+                                      std::vector<PsiValue>& ratios) const
 {
   if (!use_offload_)
   {
@@ -478,21 +475,21 @@ void TwoBodyJastrow<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComp
   const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
 
-  auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
+  auto& mw_vgl = wfc_leader.mw_mem_handle_.getResource().mw_vgl;
   mw_vgl.resize(nw, DIM + 2);
 
-  auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
-  auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
+  auto& mw_allUat   = wfc_leader.mw_mem_handle_.getResource().mw_allUat;
+  auto& mw_cur_allu = wfc_leader.mw_mem_handle_.getResource().mw_cur_allu;
 
   FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N, grp_ids.data(), nw,
                      mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
-                     wfc_leader.mw_mem_->mw_ratiograd_buffer);
+                     wfc_leader.mw_mem_handle_.getResource().mw_ratiograd_buffer);
 
   for (int iw = 0; iw < nw; iw++)
   {
     auto& wfc   = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.cur_Uat = mw_vgl[iw][0];
-    ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
+    ratios[iw]  = std::exp(static_cast<PsiValue>(wfc.Uat[iat] - wfc.cur_Uat));
   }
 }
 
@@ -532,7 +529,7 @@ typename TwoBodyJastrow<FT>::GradType TwoBodyJastrow<FT>::evalGrad(ParticleSet& 
 }
 
 template<typename FT>
-typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+typename TwoBodyJastrow<FT>::PsiValue TwoBodyJastrow<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -540,14 +537,14 @@ typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratioGrad(Particle
   cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
   DiffVal = Uat[iat] - cur_Uat;
   grad_iat += accumulateG(cur_du.data(), P.getDistTableAA(my_table_ID_).getTempDispls());
-  return std::exp(static_cast<PsiValueType>(DiffVal));
+  return std::exp(static_cast<PsiValue>(DiffVal));
 }
 
 template<typename FT>
 void TwoBodyJastrow<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list,
                                       int iat,
-                                      std::vector<PsiValueType>& ratios,
+                                      std::vector<PsiValue>& ratios,
                                       std::vector<GradType>& grad_new) const
 {
   if (!use_offload_)
@@ -562,21 +559,21 @@ void TwoBodyJastrow<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComp
   const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
 
-  auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
+  auto& mw_vgl = wfc_leader.mw_mem_handle_.getResource().mw_vgl;
   mw_vgl.resize(nw, DIM + 2);
 
-  auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
-  auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
+  auto& mw_allUat   = wfc_leader.mw_mem_handle_.getResource().mw_allUat;
+  auto& mw_cur_allu = wfc_leader.mw_mem_handle_.getResource().mw_cur_allu;
 
   FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N, grp_ids.data(), nw,
                      mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
-                     wfc_leader.mw_mem_->mw_ratiograd_buffer);
+                     wfc_leader.mw_mem_handle_.getResource().mw_ratiograd_buffer);
 
   for (int iw = 0; iw < nw; iw++)
   {
     auto& wfc   = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.cur_Uat = mw_vgl[iw][0];
-    ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
+    ratios[iw]  = std::exp(static_cast<PsiValue>(wfc.Uat[iat] - wfc.cur_Uat));
     for (int idim = 0; idim < ndim; idim++)
       grad_new[iw][idim] += mw_vgl[iw][idim + 1];
   }
@@ -651,10 +648,10 @@ void TwoBodyJastrow<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunc
   const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
 
-  auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
+  auto& mw_vgl = wfc_leader.mw_mem_handle_.getResource().mw_vgl;
 
-  auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
-  auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
+  auto& mw_allUat   = wfc_leader.mw_mem_handle_.getResource().mw_allUat;
+  auto& mw_cur_allu = wfc_leader.mw_mem_handle_.getResource().mw_cur_allu;
 
   for (int iw = 0; iw < nw; iw++)
   {
@@ -665,7 +662,7 @@ void TwoBodyJastrow<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunc
   // this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates
   FT::mw_updateVGL(iat, isAccepted, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N,
                    grp_ids.data(), nw, mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_allUat.data(),
-                   mw_cur_allu.data(), wfc_leader.mw_mem_->mw_update_buffer);
+                   mw_cur_allu.data(), wfc_leader.mw_mem_handle_.getResource().mw_update_buffer);
 }
 
 template<typename FT>
@@ -733,13 +730,13 @@ void TwoBodyJastrow<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionComp
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (recompute[iw])
       wfc_list[iw].recompute(p_list[iw]);
-  wfc_leader.mw_mem_->mw_allUat.updateTo();
+  wfc_leader.mw_mem_handle_.getResource().mw_allUat.updateTo();
 }
 
 template<typename FT>
-typename TwoBodyJastrow<FT>::LogValueType TwoBodyJastrow<FT>::evaluateLog(const ParticleSet& P,
-                                                                          ParticleSet::ParticleGradient& G,
-                                                                          ParticleSet::ParticleLaplacian& L)
+typename TwoBodyJastrow<FT>::LogValue TwoBodyJastrow<FT>::evaluateLog(const ParticleSet& P,
+                                                                      ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L)
 {
   recompute(P);
   return log_value_ = computeGL(G, L);
@@ -783,10 +780,10 @@ typename TwoBodyJastrow<FT>::QTFull::RealType TwoBodyJastrow<FT>::computeGL(Part
 }
 
 template<typename FT>
-WaveFunctionComponent::LogValueType TwoBodyJastrow<FT>::evaluateGL(const ParticleSet& P,
-                                                                   ParticleSet::ParticleGradient& G,
-                                                                   ParticleSet::ParticleLaplacian& L,
-                                                                   bool fromscratch)
+WaveFunctionComponent::LogValue TwoBodyJastrow<FT>::evaluateGL(const ParticleSet& P,
+                                                               ParticleSet::ParticleGradient& G,
+                                                               ParticleSet::ParticleLaplacian& L,
+                                                               bool fromscratch)
 {
   return log_value_ = computeGL(G, L);
 }

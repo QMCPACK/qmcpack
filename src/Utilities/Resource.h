@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_RESOURCE_H
 
 #include <string>
+#include <memory>
 
 namespace qmcplusplus
 {
@@ -20,8 +21,8 @@ class Resource
 {
 public:
   Resource(const std::string& name) : name_(name) {}
-  virtual ~Resource()                 = default;
-  virtual Resource* makeClone() const = 0;
+  virtual ~Resource()                                 = default;
+  virtual std::unique_ptr<Resource> makeClone() const = 0;
   const std::string& getName() const { return name_; }
 
 private:
@@ -37,7 +38,7 @@ class DummyResource : public Resource
 public:
   DummyResource() : Resource("Dummy") {}
   DummyResource(const std::string& name) : Resource(name) {}
-  DummyResource* makeClone() const override { return new DummyResource(); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DummyResource>(*this); }
 };
 } // namespace qmcplusplus
 #endif

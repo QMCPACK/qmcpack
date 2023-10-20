@@ -16,8 +16,6 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <functional>
-
 #include "Particle/MCWalkerConfiguration.h"
 #include "EstimatorManagerBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -34,6 +32,10 @@
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
+
+#include <array>
+#include <functional>
+
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
 
@@ -180,9 +182,10 @@ void EstimatorManagerBase::start(int blocks, bool record)
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (record && !DebugArchive)
   {
-    char fname[128];
-    sprintf(fname, "%s.p%03d.scalar.dat", myComm->getName().c_str(), myComm->rank());
-    DebugArchive = std::make_unique<std::ofstream>(fname);
+    std::array<char, 128> fname;
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", myComm->getName().c_str(), myComm->rank()) < 0)
+      throw std::runtime_error("Error generating filename");
+    DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
   }
 #endif

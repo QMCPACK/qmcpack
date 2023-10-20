@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 
 /// Create a random 3D rotation matrix using a random generator
-inline QMCTraits::TensorType generateRandomRotationMatrix(RandomGenerator& rng)
+inline QMCTraits::TensorType generateRandomRotationMatrix(RandomBase<QMCTraits::FullPrecRealType>& rng)
 {
   auto rng1 = rng();
   auto rng2 = rng();

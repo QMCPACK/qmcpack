@@ -130,7 +130,7 @@ void test_basic_walker_features(bool serial, std::string wtype)
   bool okay = doc.parseFromString(xml_block.c_str());
   REQUIRE(okay);
 
-  WalkerSet wset(TG, doc.getRoot(), info, &rng);
+  WalkerSet wset(TG, doc.getRoot(), info, rng);
   wset.resize(nwalkers, initA, initB);
 
   REQUIRE(wset.size() == nwalkers);
@@ -429,7 +429,7 @@ void test_walker_io(std::string wtype)
   bool okay = doc.parseFromString(xml_block.c_str());
   REQUIRE(okay);
 
-  WalkerSet wset(TG, doc.getRoot(), info, &rng);
+  WalkerSet wset(TG, doc.getRoot(), info, rng);
   wset.resize(nwalkers, initA, initB);
 
   REQUIRE(wset.size() == nwalkers);
@@ -486,7 +486,7 @@ void test_walker_io(std::string wtype)
       }
     }
 
-    WalkerSet wset2(TG, doc.getRoot(), info, &rng);
+    WalkerSet wset2(TG, doc.getRoot(), info, rng);
     restartFromHDF5(wset2, nwalkers, "dummy_walkers.h5", read, true);
     for (int i = 0; i < nwalkers; i++)
     {

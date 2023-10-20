@@ -28,7 +28,6 @@
 #include "Concurrency/OpenMP.h"
 #include "Utilities/Timer.h"
 #include "Utilities/RunTimeManager.h"
-#include "RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/qmc_common.h"
 #include "Utilities/FairDivide.h"
@@ -45,9 +44,11 @@ DMC::DMC(const ProjectData& project_data,
          MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
+         UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
          Communicate* comm,
          bool enable_profiling)
     : QMCDriver(project_data, w, psi, h, comm, "DMC", enable_profiling),
+      rngs_(rngs),
       KillNodeCrossing(0),
       BranchInterval(-1),
       L2("no"),
@@ -129,12 +130,8 @@ void DMC::resetUpdateEngines()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-#ifdef USE_FAKE_RNG
-      Rng[ip] = std::make_unique<FakeRandom>();
-#else
-      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
+      Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
-#endif
       if (W.isSpinor())
       {
         spinor = true;
@@ -299,10 +296,8 @@ bool DMC::run()
     block++;
     if (DumpConfig && block % Period4CheckPoint == 0)
     {
-#ifndef USE_FAKE_RNG
       for (int ip = 0; ip < NumThreads; ip++)
-        *RandomNumberControl::Children[ip] = *Rng[ip];
-#endif
+        rngs_[ip] = Rng[ip]->makeClone();
     }
     recordBlock(block);
     dmc_loop.stop();
@@ -323,10 +318,8 @@ bool DMC::run()
 
   } while (block < nBlocks);
 
-#ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ip++)
-    *RandomNumberControl::Children[ip] = *Rng[ip];
-#endif
+    rngs_[ip] = Rng[ip]->makeClone();
   Estimators->stop();
   for (int ip = 0; ip < NumThreads; ++ip)
     Movers[ip]->stopRun2();
