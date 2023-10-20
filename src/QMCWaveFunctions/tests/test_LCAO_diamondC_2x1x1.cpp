@@ -76,18 +76,19 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   // from tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond-Twist0.wfj.xml
   const std::string wf_xml_str = R"(
   <wavefunction name="psi0" target="e">
-    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond.h5" PBCimages="5  5  5">
-      <slaterdeterminant>
-        <determinant id="updet" size="8">
-          <occupation mode="ground"/>
-          <coefficient size="116" spindataset="0"/>
-        </determinant>
-        <determinant id="downdet" size="8">
-          <occupation mode="ground"/>
-          <coefficient size="116" spindataset="0"/>
-        </determinant>
-      </slaterdeterminant>
-    </determinantset>
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" twist="0  0  0" href="C_Diamond.h5" PBCimages="5  5  5">
+      <basisset name="LCAOBSet" key="GTO" transform="no">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+      </basisset>
+      <sposet basisset="LCAOBSet" name="spo-up" size="8">
+        <occupation mode="ground"/>
+        <coefficient size="116" spindataset="0"/>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-dn" size="8">
+        <occupation mode="ground"/>
+        <coefficient size="116" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
   </wavefunction>
   )";
   Libxml2Document doc;
