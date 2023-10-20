@@ -32,6 +32,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
+                  const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecRealType>& rng) override
   {}
 

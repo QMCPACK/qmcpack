@@ -234,6 +234,7 @@ void MomentumDistribution::startBlock(int steps)
 void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
                                       const RefVector<ParticleSet>& psets,
                                       const RefVector<TrialWaveFunction>& wfns,
+                                      const RefVector<QMCHamiltonian>& hams,
                                       RandomBase<FullPrecRealType>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
