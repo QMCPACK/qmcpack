@@ -482,7 +482,9 @@ public:
   */
   virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
-
+  /** Compute the derivatives of the log of the wavefunction component with respect to the optimizable parameters.
+   *  Unlike evaluateDerivativesWF, knowledge of mappings from component parameters to the full set of wavefunction parameters is not required.
+   */
   virtual void evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi);
 
 
