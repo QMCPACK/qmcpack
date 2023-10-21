@@ -413,10 +413,10 @@ struct SoaDistanceTableAATOMPTarget :
 
         const auto num_sources_local = this->num_targets_;
         const auto num_padded = num_targets_padded_;
-        auto* rsoa_dev_list_ptr =
+        const auto* rsoa_dev_list_ptr =
             coordinates_leader.getMultiWalkerRSoADevicePtrs().data();
         auto* r_dr_ptr = mw_new_old_dist_displ.data();
-        auto* new_pos_ptr = coordinates_leader.getFusedNewPosBuffer().data();
+        const auto* new_pos_ptr = coordinates_leader.getFusedNewPosBuffer().data();
         const size_t new_pos_stride =
             coordinates_leader.getFusedNewPosBuffer().capacity();
 
@@ -424,10 +424,11 @@ struct SoaDistanceTableAATOMPTarget :
             ScopedTimer offload(offload_timer_);
             PRAGMA_OFFLOAD("omp target teams distribute collapse(2) \
                 num_teams(nw * num_teams) nowait \
+                is_device_ptr(new_pos_ptr,rsoa_dev_list_ptr) \
                 depend(out: r_dr_ptr[:mw_new_old_dist_displ.size()])")
             for (int iw = 0; iw < nw; ++iw)
                 for (int team_id = 0; team_id < num_teams; team_id++) {
-                    auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
+                    const auto* source_pos_ptr = rsoa_dev_list_ptr[iw];          
                     const size_t first = ChunkSizePerTeam * team_id;
                     const size_t last = omptarget::min(
                         first + ChunkSizePerTeam, num_sources_local);

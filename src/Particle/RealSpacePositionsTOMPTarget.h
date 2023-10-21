@@ -177,6 +177,7 @@ public:
         const size_t mw_pos_stride = mw_new_pos.capacity();
 
         PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    is_device_ptr(mw_pos_ptr, mw_rosa_ptr) \
                     map(always, to : id_array[:num_accepted])")
         for (int i = 0; i < num_accepted; i++) {
             const int iw = id_array[i];
