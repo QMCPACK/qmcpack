@@ -455,6 +455,7 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
     ScopedTimer local(basis_timer_);
     auto basis_list = spo_leader.extractBasisRefList(spo_list);
     myBasisSet->mw_evaluateVGL(basis_list, P_list, iat, basis_vgl_mw);
+    basis_vgl_mw.updateFrom(); // TODO: remove this when gemm is implemented
   }
 
   if (Identity)
