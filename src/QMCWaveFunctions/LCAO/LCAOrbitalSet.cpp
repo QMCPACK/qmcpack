@@ -597,6 +597,9 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
   Vector<ValueType> invTemp(Temp.data(1), BasisSetSize);
 
+  if (Identity)
+    BLAS::copy(psiinv.size(), psiinv.data(), invTemp.data());
+  else
   {
     ScopedTimer local(mo_timer_);
     // when only a subset of orbitals is used, extract limited rows of C.
