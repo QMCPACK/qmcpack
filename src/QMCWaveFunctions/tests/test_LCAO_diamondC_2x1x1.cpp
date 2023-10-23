@@ -292,7 +292,12 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-  //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << ratios_list[iw][ivp]
+  //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << std::real(ratios_list[iw][ivp])
+  //               << "));\n";
+  // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
+  // for (int iw = 0; iw < nw; iw++)
+  //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
+  //     app_log() << "CHECK(std::imag(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << std::imag(ratios_list[iw][ivp])
   //               << "));\n";
   app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   for (int iw = 0; iw < nw; iw++)
