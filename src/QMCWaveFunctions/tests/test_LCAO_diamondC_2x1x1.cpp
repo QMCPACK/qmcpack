@@ -109,11 +109,14 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
 
 
   // test batched interfaces
+  const size_t nw = 2;
 
   ParticleSet elec_2(elec_);
   // interchange positions
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
+  elec_.update();
+  elec_2.update();
   RefVectorWithLeader<ParticleSet> p_list(elec_, {elec_, elec_2});
 
 
@@ -130,7 +133,6 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
   // make VPs
-  const size_t nw                    = 2;
   const size_t nvp_                  = 4;
   const size_t nvp_2                 = 3;
   const std::vector<size_t> nvp_list = {nvp_, nvp_2};
@@ -182,14 +184,25 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   spo->evaluateDetRatios(VP_, tmp_psi_list, psiMinv_ref_0, ratios_ref_0);
   spo_2->evaluateDetRatios(VP_2, tmp_psi_list, psiMinv_ref_1, ratios_ref_1);
   for (int ivp = 0; ivp < nvp_; ivp++)
-    CHECK(ratios_list[0][ivp] == Approx(ratios_ref_0[ivp]));
+    CHECK(std::real(ratios_list[0][ivp]) == Approx(std::real(ratios_ref_0[ivp])));
   for (int ivp = 0; ivp < nvp_2; ivp++)
-    CHECK(ratios_list[1][ivp] == Approx(ratios_ref_1[ivp]));
+    CHECK(std::real(ratios_list[1][ivp]) == Approx(std::real(ratios_ref_1[ivp])));
+#ifdef QMC_COMPLEX
+  for (int ivp = 0; ivp < nvp_; ivp++)
+    CHECK(std::imag(ratios_list[0][ivp]) == Approx(std::imag(ratios_ref_0[ivp])));
+  for (int ivp = 0; ivp < nvp_2; ivp++)
+    CHECK(std::imag(ratios_list[1][ivp]) == Approx(std::imag(ratios_ref_1[ivp])));
+#endif
 
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-  //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << ratios_list[iw][ivp]
+  //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << std::real(ratios_list[iw][ivp])
+  //               << "));\n";
+  // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
+  // for (int iw = 0; iw < nw; iw++)
+  //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
+  //     app_log() << "CHECK(std::imag(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << std::imag(ratios_list[iw][ivp])
   //               << "));\n";
 
   CHECK(std::real(ratios_list[0][0]) == Approx(-0.11554491049855));
