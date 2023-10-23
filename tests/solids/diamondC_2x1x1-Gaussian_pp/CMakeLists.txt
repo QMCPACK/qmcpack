@@ -21,6 +21,18 @@ qmc_run_and_check(
   DIAMOND_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-vmcbatch_gaussian_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
+  qmc_short_vmcbatch
+  qmc_short_vmcbatch.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_SCALARS # VMC
+)
+
 #
 # Long tests
 #
@@ -41,6 +53,18 @@ qmc_run_and_check(
   LONG_DIAMOND_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  long-diamondC_2x1x1_pp-vmcbatch_gaussian_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
+  qmc_long_vmcbatch
+  qmc_long_vmcbatch.in.xml
+  1
+  16
+  TRUE
+  0
+  LONG_DIAMOND_SCALARS # VMC
+)
+
 # Reference DMC run in qmc-ref "-21.84712 +/-  0.00068"
 list(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-21.84712 0.009024")
 qmc_run_and_check(
@@ -48,6 +72,18 @@ qmc_run_and_check(
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
   qmc_long_vmc_dmc
   qmc_long_vmc_dmc.in.xml
+  1
+  16
+  TRUE
+  1
+  LONG_DIAMOND_DMC_SCALARS # DMC
+)
+
+qmc_run_and_check(
+  long-diamondC_2x1x1_pp-dmcbatch_gaussian_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
+  qmc_long_vmcbatch_dmcbatch
+  qmc_long_vmcbatch_dmcbatch.in.xml
   1
   16
   TRUE
@@ -81,6 +117,18 @@ qmc_run_and_check(
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
   det_qmc_short
   det_qmc_short.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  deterministic-diamondC_2x1x1_pp-vmcbatch_gaussian_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
+  det_qmc_short_vmcbatch
+  det_qmc_short_vmcbatch.in.xml
   1
   1
   TRUE
