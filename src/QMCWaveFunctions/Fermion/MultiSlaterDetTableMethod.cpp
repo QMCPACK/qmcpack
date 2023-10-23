@@ -289,7 +289,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
       PsiValue grad_local_y(0);
       PsiValue grad_local_z(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+:psi_local, grad_local_x, grad_local_y, grad_local_z)")
-      for (size_t i = 0; i < ndets; i++)
+      for (uint32_t i = 0; i < ndets; i++)
       {
         psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
         grad_local_x += C_otherDs_ptr_list_ptr[iw][i] * mw_grads_ptr[(3 * iw + 0) * ndets + i];
@@ -613,7 +613,7 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
     {
       PsiValue psi_local(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : psi_local)")
-      for (size_t i = 0; i < ndets; i++)
+      for (uint32_t i = 0; i < ndets; i++)
         psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
       psi_list_ptr[iw] = psi_local;
     }

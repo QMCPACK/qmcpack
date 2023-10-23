@@ -74,6 +74,7 @@ public:
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
                           const RefVector<ParticleSet>& psets,
                           const RefVector<TrialWaveFunction>& wfns,
+                          const RefVector<QMCHamiltonian>& hams,
                           RandomBase<FullPrecRealType>& rng) = 0;
 
   /** Reduce estimator result data from crowds to rank
