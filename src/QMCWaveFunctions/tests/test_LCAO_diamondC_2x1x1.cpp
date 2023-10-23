@@ -156,10 +156,14 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   // fill invrow with dummy data for each walker
   std::vector<SPOSet::ValueType> psiMinv_data_(norb);
   std::vector<SPOSet::ValueType> psiMinv_data_2(norb);
+  SPOSet::ValueVector psiMinv_ref_0(norb);
+  SPOSet::ValueVector psiMinv_ref_1(norb);
   for (int i = 0; i < norb; i++)
   {
     psiMinv_data_[i]  = (i % 10) / 4.5 - 1.0;
     psiMinv_data_2[i] = ((i + 5) % 10) / 4.5 - 1.0;
+    psiMinv_ref_0[i]  = psiMinv_data_[i];
+    psiMinv_ref_1[i]  = psiMinv_data_2[i];
   }
   std::vector<const SPOSet::ValueType*> invRow_ptr_list{psiMinv_data_.data(), psiMinv_data_2.data()};
 
@@ -173,18 +177,27 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
                             RefVector<SPOSet::ValueVector>{tmp_psi_list}, invRow_ptr_list, ratios_list);
 
+  std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
+  std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);
+  spo->evaluateDetRatios(VP_, tmp_psi_list, psiMinv_ref_0, ratios_ref_0);
+  spo_2->evaluateDetRatios(VP_2, tmp_psi_list, psiMinv_ref_1, ratios_ref_1);
+  for (int ivp = 0; ivp < nvp_; ivp++)
+    CHECK(ratios_list[0][ivp] == Approx(ratios_ref_0[ivp]));
+  for (int ivp = 0; ivp < nvp_2; ivp++)
+    CHECK(ratios_list[1][ivp] == Approx(ratios_ref_1[ivp]));
 
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-  //     app_log() << "CHECK(ratios_list[" << iw << "][" << ivp << "] == Approx(" << ratios_list[iw][ivp] << "));\n";
+  //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << ratios_list[iw][ivp]
+  //               << "));\n";
 
-  CHECK(ratios_list[0][0] == Approx(7.0447024716135));
-  CHECK(ratios_list[0][1] == Approx(91.946906522354));
-  CHECK(ratios_list[0][2] == Approx(34.424260462098));
-  CHECK(ratios_list[0][3] == Approx(-1.6869723113315));
-  CHECK(ratios_list[1][0] == Approx(-62.492756926476));
-  CHECK(ratios_list[1][1] == Approx(88.860599314669));
-  CHECK(ratios_list[1][2] == Approx(110.8285119408));
+  CHECK(std::real(ratios_list[0][0]) == Approx(-0.11554491049855));
+  CHECK(std::real(ratios_list[0][1]) == Approx(0.19155774810121));
+  CHECK(std::real(ratios_list[0][2]) == Approx(-0.16063724839636));
+  CHECK(std::real(ratios_list[0][3]) == Approx(-0.37105113615831));
+  CHECK(std::real(ratios_list[1][0]) == Approx(-0.12705469585615));
+  CHECK(std::real(ratios_list[1][1]) == Approx(0.67930890998428));
+  CHECK(std::real(ratios_list[1][2]) == Approx(0.83583922544552));
 }
 } // namespace qmcplusplus
