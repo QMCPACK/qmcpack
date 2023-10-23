@@ -793,7 +793,14 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
         psiV_temp_list_ptr[iw][i] = psiV_list_devptr[iw][J];
         ratioGradRef_local += psiMinv_temp_list_devptr[iw][i * psiMinv_cols + WorkingIndex] * dpsiV_list_ptr[iw][J];
       }
-      ratioGradRef_list_ptr[iw] = ratioGradRef_local;
+      // Workaround for assignment-after-reduction issue.
+      // In full precision, changing the loop variable iw to 32 bits in size works.
+      // In mixed precision, changing the loop variable iw to 16 bits would work, but is not acceptable.
+      // For that case we use the other workaround of assigning each value in the array separately.
+      // See https://github.com/QMCPACK/qmcpack/issues/4767
+      ratioGradRef_list_ptr[iw][0] = ratioGradRef_local[0];
+      ratioGradRef_list_ptr[iw][1] = ratioGradRef_local[1];
+      ratioGradRef_list_ptr[iw][2] = ratioGradRef_local[2];
 
       ValueType c_ratio = 0.0;
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : c_ratio)")
