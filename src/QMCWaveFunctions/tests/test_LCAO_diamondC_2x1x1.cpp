@@ -143,9 +143,11 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);
   std::vector<ParticleSet::SingleParticlePos> newpos_vp_2(nvp_2);
   for (int i = 0; i < nvp_; i++)
-    newpos_vp_[i] = {double(1.0 * i / nvp_), double(2.0 * i / nvp_), double(i / (2.0 * nvp_))};
+    newpos_vp_[i] = {OHMMS_PRECISION(1.0 * i / nvp_), OHMMS_PRECISION(2.0 * i / nvp_),
+                     OHMMS_PRECISION(i / (2.0 * nvp_))};
   for (int i = 0; i < nvp_2; i++)
-    newpos_vp_2[i] = {double(2.0 * i / nvp_2), double(i / (2.0 * nvp_2)), double(1.0 * i / nvp_2)};
+    newpos_vp_2[i] = {OHMMS_PRECISION(2.0 * i / nvp_2), OHMMS_PRECISION(i / (2.0 * nvp_2)),
+                      OHMMS_PRECISION(1.0 * i / nvp_2)};
   VP_.makeMoves(elec_, 0, newpos_vp_);
   VP_2.makeMoves(elec_2, 0, newpos_vp_2);
 
@@ -162,8 +164,8 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   SPOSet::ValueVector psiMinv_ref_1(norb);
   for (int i = 0; i < norb; i++)
   {
-    psiMinv_data_[i]  = (i % 10) / 4.5 - 1.0;
-    psiMinv_data_2[i] = ((i + 5) % 10) / 4.5 - 1.0;
+    psiMinv_data_[i]  = VT(i % 10) / 4.5 - 1.0;
+    psiMinv_data_2[i] = VT((i + 5) % 10) / 4.5 - 1.0;
     psiMinv_ref_0[i]  = psiMinv_data_[i];
     psiMinv_ref_1[i]  = psiMinv_data_2[i];
   }
