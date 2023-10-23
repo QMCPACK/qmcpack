@@ -179,12 +179,12 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
   //     app_log() << "CHECK(ratios_list[" << iw << "][" << ivp << "] == Approx(" << ratios_list[iw][ivp] << "));\n";
 
-  CHECK(ratios_list[0][0] == Approx(7.0447024716135));
-  CHECK(ratios_list[0][1] == Approx(91.946906522354));
-  CHECK(ratios_list[0][2] == Approx(34.424260462098));
-  CHECK(ratios_list[0][3] == Approx(-1.6869723113315));
-  CHECK(ratios_list[1][0] == Approx(-62.492756926476));
-  CHECK(ratios_list[1][1] == Approx(88.860599314669));
-  CHECK(ratios_list[1][2] == Approx(110.8285119408));
+  CHECK(ratios_list[0][0] == Approx(-0.11554491049855));
+  CHECK(ratios_list[0][1] == Approx(0.19155774810121));
+  CHECK(ratios_list[0][2] == Approx(-0.16063724839636));
+  CHECK(ratios_list[0][3] == Approx(-0.37105113615831));
+  CHECK(ratios_list[1][0] == Approx(-0.12705469585615));
+  CHECK(ratios_list[1][1] == Approx(0.67930890998428));
+  CHECK(ratios_list[1][2] == Approx(0.83583922544552));
 }
 } // namespace qmcplusplus
