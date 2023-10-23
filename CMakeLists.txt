@@ -368,10 +368,10 @@ if(alignment_remainder)
 endif()
 message(STATUS "QMC_SIMD_ALIGNMENT is set to ${QMC_SIMD_ALIGNMENT}")
 
-#---------------------------------------------------------
-# Determine if OpenMP taskloop works with the CXX compiler
-#---------------------------------------------------------
 if(QMC_OMP)
+  #---------------------------------------------------------
+  # Determine if OpenMP taskloop works with the CXX compiler
+  #---------------------------------------------------------
   include(TestOpenMPtaskloop)
   option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
   message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
