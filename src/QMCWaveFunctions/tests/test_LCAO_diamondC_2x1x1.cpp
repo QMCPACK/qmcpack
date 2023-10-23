@@ -31,6 +31,7 @@ namespace qmcplusplus
 
 TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
 {
+  using VT       = SPOSet::ValueType;
   Communicate* c = OHMMS::Controller;
 
   ParticleSet::ParticleLayout lattice;
@@ -140,9 +141,9 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);
   std::vector<ParticleSet::SingleParticlePos> newpos_vp_2(nvp_2);
   for (int i = 0; i < nvp_; i++)
-    newpos_vp_[i] = {std::cos(i), std::sin(i), i / 10};
+    newpos_vp_[i] = {double(1.0 * i / nvp_), double(2.0 * i / nvp_), double(i / (2.0 * nvp_))};
   for (int i = 0; i < nvp_2; i++)
-    newpos_vp_2[i] = {-std::sin(i), i / 10, std::cos(i)};
+    newpos_vp_2[i] = {double(2.0 * i / nvp_2), double(i / (2.0 * nvp_2)), double(1.0 * i / nvp_2)};
   VP_.makeMoves(elec_, 0, newpos_vp_);
   VP_2.makeMoves(elec_2, 0, newpos_vp_2);
 
@@ -157,8 +158,8 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   std::vector<SPOSet::ValueType> psiMinv_data_2(norb);
   for (int i = 0; i < norb; i++)
   {
-    psiMinv_data_[i]  = std::cos(i);
-    psiMinv_data_2[i] = std::sin(i);
+    psiMinv_data_[i]  = (i % 10) / 4.5 - 1.0;
+    psiMinv_data_2[i] = ((i + 5) % 10) / 4.5 - 1.0;
   }
   std::vector<const SPOSet::ValueType*> invRow_ptr_list{psiMinv_data_.data(), psiMinv_data_2.data()};
 
@@ -173,17 +174,17 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
                             RefVector<SPOSet::ValueVector>{tmp_psi_list}, invRow_ptr_list, ratios_list);
 
 
-  // app_log() << "calcRatioGrad \n" << std::setprecision(14);
+  // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
   //     app_log() << "CHECK(ratios_list[" << iw << "][" << ivp << "] == Approx(" << ratios_list[iw][ivp] << "));\n";
 
-  CHECK(ratios_list[0][0] == Approx(-206.77166092783));
-  CHECK(ratios_list[0][1] == Approx(44.875898444974));
-  CHECK(ratios_list[0][2] == Approx(24.96409353735));
-  CHECK(ratios_list[0][3] == Approx(-53.413899456988));
-  CHECK(ratios_list[1][0] == Approx(-306.54954579776));
-  CHECK(ratios_list[1][1] == Approx(45.022133237688));
-  CHECK(ratios_list[1][2] == Approx(183.86331674535));
+  CHECK(ratios_list[0][0] == Approx(7.0447024716135));
+  CHECK(ratios_list[0][1] == Approx(91.946906522354));
+  CHECK(ratios_list[0][2] == Approx(34.424260462098));
+  CHECK(ratios_list[0][3] == Approx(-1.6869723113315));
+  CHECK(ratios_list[1][0] == Approx(-62.492756926476));
+  CHECK(ratios_list[1][1] == Approx(88.860599314669));
+  CHECK(ratios_list[1][2] == Approx(110.8285119408));
 }
 } // namespace qmcplusplus
