@@ -109,11 +109,14 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
 
 
   // test batched interfaces
+  const size_t nw = 2;
 
   ParticleSet elec_2(elec_);
   // interchange positions
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
+  elec_.update();
+  elec_2.update();
   RefVectorWithLeader<ParticleSet> p_list(elec_, {elec_, elec_2});
 
 
@@ -129,8 +132,86 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
+  SPOSet::ValueVector psiref_0(norb);
+  SPOSet::GradVector dpsiref_0(norb);
+  SPOSet::ValueVector d2psiref_0(norb);
+  SPOSet::ValueVector psiref_1(norb);
+  SPOSet::GradVector dpsiref_1(norb);
+  SPOSet::ValueVector d2psiref_1(norb);
+  spo->evaluateVGL(elec_, 0, psiref_0, dpsiref_0, d2psiref_0);
+  spo_2->evaluateVGL(elec_2, 0, psiref_1, dpsiref_1, d2psiref_1);
+
+  // app_log() << "vgl_refvalues: \n" << std::setprecision(14);
+  // for (int iorb = 0; iorb < 2; iorb++)
+  // {
+  //   app_log() << "CHECK(std::real(psiref_0[" << iorb << "]) == Approx(" << psiref_0[iorb] << "));\n";
+  //   app_log() << "CHECK(std::real(d2psiref_0[" << iorb << "]) == Approx(" << d2psiref_0[iorb] << "));\n";
+  //   for (int idim = 0; idim < 3; idim++)
+  //     app_log() << "CHECK(std::real(dpsiref_0[" << iorb << "][" << idim << "]) == Approx(" << dpsiref_0[iorb][idim] << "));\n";
+  // }
+  // for (int iorb = 0; iorb < 2; iorb++)
+  // {
+  //   app_log() << "CHECK(std::real(psiref_1[" << iorb << "]) == Approx(" << psiref_1[iorb] << "));\n";
+  //   app_log() << "CHECK(std::real(d2psiref_1[" << iorb << "]) == Approx(" << d2psiref_1[iorb] << "));\n";
+  //   for (int idim = 0; idim < 3; idim++)
+  //     app_log() << "CHECK(std::real(dpsiref_1[" << iorb << "][" << idim << "]) == Approx(" << dpsiref_1[iorb][idim] << "));\n";
+  // }
+  CHECK(std::real(psiref_0[0]) == Approx(0.23966351080363));
+  CHECK(std::real(d2psiref_0[0]) == Approx(-0.52701907904562));
+  CHECK(std::real(dpsiref_0[0][0]) == Approx(-0.0057821587526225));
+  CHECK(std::real(dpsiref_0[0][1]) == Approx(-0.10996780053441));
+  CHECK(std::real(dpsiref_0[0][2]) == Approx(0.0057818514970319));
+  CHECK(std::real(psiref_0[1]) == Approx(0.26673125102484));
+  CHECK(std::real(d2psiref_0[1]) == Approx(-0.56873091511411));
+  CHECK(std::real(dpsiref_0[1][0]) == Approx(-1.5495607896545e-06));
+  CHECK(std::real(dpsiref_0[1][1]) == Approx(-0.49161303927196));
+  CHECK(std::real(dpsiref_0[1][2]) == Approx(-2.5223735120643e-07));
+
+  CHECK(std::real(psiref_1[0]) == Approx(0.22735347471476));
+  CHECK(std::real(d2psiref_1[0]) == Approx(-0.41247534585435));
+  CHECK(std::real(dpsiref_1[0][0]) == Approx(-0.0064508940042537));
+  CHECK(std::real(dpsiref_1[0][1]) == Approx(-0.13393939202647));
+  CHECK(std::real(dpsiref_1[0][2]) == Approx(0.0064505548318947));
+  CHECK(std::real(psiref_1[1]) == Approx(0.21979955506832));
+  CHECK(std::real(d2psiref_1[1]) == Approx(-0.31185449762657));
+  CHECK(std::real(dpsiref_1[1][0]) == Approx(-1.7377316644163e-06));
+  CHECK(std::real(dpsiref_1[1][1]) == Approx(-0.44562353474568));
+  CHECK(std::real(dpsiref_1[1][2]) == Approx(2.5297265181413e-07));
+
+  SPOSet::ValueVector psi_v_1(norb);
+  SPOSet::ValueVector psi_v_2(norb);
+  RefVector<SPOSet::ValueVector> psi_v_list{psi_v_1, psi_v_2};
+  spo->mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
+
+  SPOSet::ValueVector psi_1(norb);
+  SPOSet::GradVector dpsi_1(norb);
+  SPOSet::ValueVector d2psi_1(norb);
+  SPOSet::ValueVector psi_2(norb);
+  SPOSet::GradVector dpsi_2(norb);
+  SPOSet::ValueVector d2psi_2(norb);
+  RefVector<SPOSet::ValueVector> psi_list   = {psi_1, psi_2};
+  RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
+  RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
+  spo->mw_evaluateVGL(spo_list, p_list, 0, psi_list, dpsi_list, d2psi_list);
+
+  for (size_t iorb = 0; iorb < norb; iorb++)
+  {
+    CHECK(psi_list[0].get()[iorb] == Approx(psiref_0[iorb]));
+    CHECK(psi_list[1].get()[iorb] == Approx(psiref_1[iorb]));
+    CHECK(d2psi_list[0].get()[iorb] == Approx(d2psiref_0[iorb]));
+    CHECK(d2psi_list[1].get()[iorb] == Approx(d2psiref_1[iorb]));
+    for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+    {
+      CHECK(dpsi_list[0].get()[iorb][idim] == Approx(dpsiref_0[iorb][idim]));
+      CHECK(dpsi_list[1].get()[iorb][idim] == Approx(dpsiref_1[iorb][idim]));
+    }
+  }
+
+  for (size_t iorb = 0; iorb < norb; iorb++)
+    for (size_t iw = 0; iw < nw; iw++)
+      CHECK(psi_v_list[iw].get()[iorb] == Approx(psi_list[iw].get()[iorb]));
+
   // make VPs
-  const size_t nw                    = 2;
   const size_t nvp_                  = 4;
   const size_t nvp_2                 = 3;
   const std::vector<size_t> nvp_list = {nvp_, nvp_2};
