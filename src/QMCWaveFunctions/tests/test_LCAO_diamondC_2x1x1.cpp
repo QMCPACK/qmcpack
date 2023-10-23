@@ -143,11 +143,17 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);
   std::vector<ParticleSet::SingleParticlePos> newpos_vp_2(nvp_2);
   for (int i = 0; i < nvp_; i++)
-    newpos_vp_[i] = {OHMMS_PRECISION(1.0 * i / nvp_), OHMMS_PRECISION(2.0 * i / nvp_),
-                     OHMMS_PRECISION(i / (2.0 * nvp_))};
+  {
+    newpos_vp_[i][0] = 1.0 * i / nvp_;
+    newpos_vp_[i][1] = 2.0 * i / nvp_;
+    newpos_vp_[i][2] = i / (2.0 * nvp_);
+  }
   for (int i = 0; i < nvp_2; i++)
-    newpos_vp_2[i] = {OHMMS_PRECISION(2.0 * i / nvp_2), OHMMS_PRECISION(i / (2.0 * nvp_2)),
-                      OHMMS_PRECISION(1.0 * i / nvp_2)};
+  {
+    newpos_vp_2[i][0] = 2.0 * i / nvp_2;
+    newpos_vp_2[i][1] = i / (2.0 * nvp_2);
+    newpos_vp_2[i][2] = 1.0 * i / nvp_2;
+  }
   VP_.makeMoves(elec_, 0, newpos_vp_);
   VP_2.makeMoves(elec_2, 0, newpos_vp_2);
 
@@ -164,8 +170,8 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   SPOSet::ValueVector psiMinv_ref_1(norb);
   for (int i = 0; i < norb; i++)
   {
-    psiMinv_data_[i]  = VT(i % 10) / 4.5 - 1.0;
-    psiMinv_data_2[i] = VT((i + 5) % 10) / 4.5 - 1.0;
+    psiMinv_data_[i]  = 1.0 * (i % 10) / 4.5 - 1.0;
+    psiMinv_data_2[i] = 1.0 * ((i + 5) % 10) / 4.5 - 1.0;
     psiMinv_ref_0[i]  = psiMinv_data_[i];
     psiMinv_ref_1[i]  = psiMinv_data_2[i];
   }
@@ -195,7 +201,12 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   for (int ivp = 0; ivp < nvp_2; ivp++)
     CHECK(std::imag(ratios_list[1][ivp]) == Approx(std::imag(ratios_ref_1[ivp])));
 #endif
-
+  // for (int ivp = 0; ivp < nvp_; ivp++)
+  //   app_log() << "CHECK(std::real(ratios_ref_0[" << ivp << "]) == Approx(" << std::real(ratios_ref_0[ivp])
+  //             << "));\n";
+  // for (int ivp = 0; ivp < nvp_2; ivp++)
+  //   app_log() << "CHECK(std::real(ratios_ref_1[" << ivp << "]) == Approx(" << std::real(ratios_ref_1[ivp])
+  //             << "));\n";
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
@@ -214,5 +225,13 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   CHECK(std::real(ratios_list[1][0]) == Approx(-0.12705469585615));
   CHECK(std::real(ratios_list[1][1]) == Approx(0.67930890998428));
   CHECK(std::real(ratios_list[1][2]) == Approx(0.83583922544552));
+
+  CHECK(std::real(ratios_ref_0[0]) == Approx(-0.11554491049855));
+  CHECK(std::real(ratios_ref_0[1]) == Approx(0.19155774810121));
+  CHECK(std::real(ratios_ref_0[2]) == Approx(-0.16063724839636));
+  CHECK(std::real(ratios_ref_0[3]) == Approx(-0.37105113615831));
+  CHECK(std::real(ratios_ref_1[0]) == Approx(-0.12705469585615));
+  CHECK(std::real(ratios_ref_1[1]) == Approx(0.67930890998428));
+  CHECK(std::real(ratios_ref_1[2]) == Approx(0.83583922544552));
 }
 } // namespace qmcplusplus
