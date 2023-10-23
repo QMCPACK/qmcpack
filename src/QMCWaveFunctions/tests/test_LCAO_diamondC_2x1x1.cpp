@@ -194,23 +194,39 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
   spo->mw_evaluateVGL(spo_list, p_list, 0, psi_list, dpsi_list, d2psi_list);
 
+
   for (size_t iorb = 0; iorb < norb; iorb++)
   {
-    CHECK(psi_list[0].get()[iorb] == Approx(psiref_0[iorb]));
-    CHECK(psi_list[1].get()[iorb] == Approx(psiref_1[iorb]));
-    CHECK(d2psi_list[0].get()[iorb] == Approx(d2psiref_0[iorb]));
-    CHECK(d2psi_list[1].get()[iorb] == Approx(d2psiref_1[iorb]));
+    CHECK(std::real(psi_list[0].get()[iorb]) == Approx(std::real(psiref_0[iorb])));
+    CHECK(std::real(psi_list[1].get()[iorb]) == Approx(std::real(psiref_1[iorb])));
+    CHECK(std::real(d2psi_list[0].get()[iorb]) == Approx(std::real(d2psiref_0[iorb])));
+    CHECK(std::real(d2psi_list[1].get()[iorb]) == Approx(std::real(d2psiref_1[iorb])));
     for (size_t idim = 0; idim < SPOSet::DIM; idim++)
     {
-      CHECK(dpsi_list[0].get()[iorb][idim] == Approx(dpsiref_0[iorb][idim]));
-      CHECK(dpsi_list[1].get()[iorb][idim] == Approx(dpsiref_1[iorb][idim]));
+      CHECK(std::real(dpsi_list[0].get()[iorb][idim]) == Approx(std::real(dpsiref_0[iorb][idim])));
+      CHECK(std::real(dpsi_list[1].get()[iorb][idim]) == Approx(std::real(dpsiref_1[iorb][idim])));
     }
   }
-
   for (size_t iorb = 0; iorb < norb; iorb++)
     for (size_t iw = 0; iw < nw; iw++)
-      CHECK(psi_v_list[iw].get()[iorb] == Approx(psi_list[iw].get()[iorb]));
-
+      CHECK(std::real(psi_v_list[iw].get()[iorb]) == Approx(std::real(psi_list[iw].get()[iorb])));
+#ifdef QMC_COMPLEX
+  for (size_t iorb = 0; iorb < norb; iorb++)
+  {
+    CHECK(std::imag(psi_list[0].get()[iorb]) == Approx(std::imag(psiref_0[iorb])));
+    CHECK(std::imag(psi_list[1].get()[iorb]) == Approx(std::imag(psiref_1[iorb])));
+    CHECK(std::imag(d2psi_list[0].get()[iorb]) == Approx(std::imag(d2psiref_0[iorb])));
+    CHECK(std::imag(d2psi_list[1].get()[iorb]) == Approx(std::imag(d2psiref_1[iorb])));
+    for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+    {
+      CHECK(std::imag(dpsi_list[0].get()[iorb][idim]) == Approx(std::imag(dpsiref_0[iorb][idim])));
+      CHECK(std::imag(dpsi_list[1].get()[iorb][idim]) == Approx(std::imag(dpsiref_1[iorb][idim])));
+    }
+  }
+  for (size_t iorb = 0; iorb < norb; iorb++)
+    for (size_t iw = 0; iw < nw; iw++)
+      CHECK(std::imag(psi_v_list[iw].get()[iorb]) == Approx(std::imag(psi_list[iw].get()[iorb])));
+#endif
   // make VPs
   const size_t nvp_                  = 4;
   const size_t nvp_2                 = 3;
@@ -263,15 +279,26 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   spo->evaluateDetRatios(VP_, tmp_psi_list, psiMinv_ref_0, ratios_ref_0);
   spo_2->evaluateDetRatios(VP_2, tmp_psi_list, psiMinv_ref_1, ratios_ref_1);
   for (int ivp = 0; ivp < nvp_; ivp++)
-    CHECK(ratios_list[0][ivp] == Approx(ratios_ref_0[ivp]));
+    CHECK(std::real(ratios_list[0][ivp]) == Approx(std::real(ratios_ref_0[ivp])));
   for (int ivp = 0; ivp < nvp_2; ivp++)
-    CHECK(ratios_list[1][ivp] == Approx(ratios_ref_1[ivp]));
+    CHECK(std::real(ratios_list[1][ivp]) == Approx(std::real(ratios_ref_1[ivp])));
+#ifdef QMC_COMPLEX
+  for (int ivp = 0; ivp < nvp_; ivp++)
+    CHECK(std::imag(ratios_list[0][ivp]) == Approx(std::imag(ratios_ref_0[ivp])));
+  for (int ivp = 0; ivp < nvp_2; ivp++)
+    CHECK(std::imag(ratios_list[1][ivp]) == Approx(std::imag(ratios_ref_1[ivp])));
+#endif
 
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
   //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << ratios_list[iw][ivp]
   //               << "));\n";
+  app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
+  for (int iw = 0; iw < nw; iw++)
+    for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
+      app_log() << "CHECK(std::imag(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << ratios_list[iw][ivp]
+                << "));\n";
 
   CHECK(std::real(ratios_list[0][0]) == Approx(-0.11554491049855));
   CHECK(std::real(ratios_list[0][1]) == Approx(0.19155774810121));
