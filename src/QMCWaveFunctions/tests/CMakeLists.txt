@@ -25,6 +25,7 @@ set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.Multid
 set(UTEST_HDF_INPUT9 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
 set(UTEST_HDF_INPUT10 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor_molecule.h5)
 set(UTEST_HDF_INPUT11 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
+set(UTEST_HDF_INPUT12 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond.h5)
 
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
@@ -38,6 +39,7 @@ maybe_symlink(${UTEST_HDF_INPUT8} ${UTEST_DIR}/LiH.Multidet.h5)
 maybe_symlink(${UTEST_HDF_INPUT9} ${UTEST_DIR}/Bi.orbs.h5)
 maybe_symlink(${UTEST_HDF_INPUT10} ${UTEST_DIR}/lcao_spinor_molecule.h5)
 maybe_symlink(${UTEST_HDF_INPUT11} ${UTEST_DIR}/hcpBe.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT12} ${UTEST_DIR}/C_Diamond.h5)
 
 if(NOT QMC_DATA)
   message(VERBOSE "QMC_DATA not set. NiO_a16 based tests not added.")
@@ -99,6 +101,9 @@ set(TRIALWF_SRC
     test_example_he.cpp
     test_lattice_gaussian.cpp
     test_TWFGrads.cpp)
+
+set(TMP_SRC
+    test_LCAO_diamondC_2x1x1.cpp)
 
 set(SPOSET_SRC
     test_spo_collection_input_spline.cpp
@@ -166,7 +171,7 @@ if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
 
-foreach(CATEGORY common trialwf sposet jastrow determinant)
+foreach(CATEGORY common trialwf sposet jastrow determinant tmp)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   string(TOUPPER "${CATEGORY}_SRC" SOURCE_FILE_VAR_NAME)
