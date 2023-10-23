@@ -97,6 +97,7 @@ public:
 
   std::string getClassName() const override { return "MultiSlaterDetTableMethod"; }
   bool isFermionic() const final { return true; }
+  bool isMultiDet() const final { return true; }
   bool isOptimizable() const override { return true; }
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
   void checkOutVariables(const opt_variables_type& active) override;
@@ -187,6 +188,10 @@ public:
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
 
   void evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi) override;
+
+  void detRatios(Vector<ValueType>& ratios) override;
+
+  std::vector<ValueType>& detCoefficients() override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,

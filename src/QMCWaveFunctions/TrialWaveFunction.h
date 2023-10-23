@@ -111,6 +111,15 @@ public:
   inline RealType getLogPsi() const { return log_real_; }
   inline void setLogPsi(RealType LogPsi_new) { log_real_ = LogPsi_new; }
 
+  inline size_t numTerms() const 
+  {
+    size_t nterms = 1;
+    for(auto& wc:Z)
+      if(wc->isFermionic() && wc->isMultiDet())
+        nterms = wc->detCoefficients().size();
+    return nterms;
+  }
+
   /** add a WaveFunctionComponent
    * @param aterm a WaveFunctionComponent pointer
    */

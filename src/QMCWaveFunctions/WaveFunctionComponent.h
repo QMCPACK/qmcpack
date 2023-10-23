@@ -127,6 +127,9 @@ public:
   /** true, if this component is fermionic */
   virtual bool isFermionic() const { return false; }
 
+  /** true, if this component is multi-determinant */
+  virtual bool isMultiDet() const { return false; }
+
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
@@ -532,6 +535,19 @@ public:
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
+
+  
+  virtual void detRatios(Vector<ValueType>& ratios)
+  {
+    APP_ABORT("detRatios is not implemented. Perhaps wavefunctions is not a multideterminant?");
+  }
+
+  virtual std::vector<ValueType>& detCoefficients()
+  {
+    APP_ABORT("detCoefficients is not implemented. Perhaps wavefunctions is not a multideterminant?");
+    std::vector<ValueType>* Ctmp = new std::vector<ValueType>();
+    return *Ctmp;
+  }
 
 private:
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers

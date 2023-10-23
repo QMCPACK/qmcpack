@@ -29,8 +29,10 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_,
 
   auto& inp = this->input_.input_section_;
 
+
   // JTK: how to get # of coeff in multidet at this point?
-  size_t data_size = 1486;
+  //size_t data_size = 1486;
+  size_t data_size = wfn.numTerms();
   data_.resize(data_size, 0.0);
 
 }
@@ -95,14 +97,16 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     // fermionic must have only one component, and must be multideterminant
     assert(wcs_fermi.size()==1);
     WaveFunctionComponent& wf = *wcs_fermi[0];
-    if(wf.getClassName()!="MultiSlaterDetTableMethod")
-      throw std::runtime_error("SelfHealingOverlap estimator requires use of multideterminant wavefunction based on MultiSlaterDetTableMethod class");
+    //if(wf.getClassName()!="MultiSlaterDetTableMethod")
+    if(!wf.isMultiDet())
+      throw std::runtime_error("SelfHealingOverlap estimator requires use of multideterminant wavefunction");
 
     // collect parameter derivatives: (dpsi/dc_i)/psi
     // JTK: parameter derivative of multidet wf does not include first determinant.  How to get its value?
-    Vector<ValueType> dlogpsi; // JTK: should be class variable?
-    wf.evaluateDerivativesWF_local(dlogpsi);
-    //app_log()<<"param count: "<<dlogpsi.size()<<std::endl;
+    Vector<ValueType> det_ratios; // JTK: should be class variable?
+    //wf.evaluateDerivativesWF_local(det_ratios);
+    wf.detRatios(det_ratios);
+    //app_log()<<"param count: "<<det_ratios.size()<<std::endl;
 
     // collect jastrow prefactor
     WaveFunctionComponent::LogValue Jval = 0.0;
@@ -114,9 +118,9 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     walkers_weight_ += weight;
 
     // accumulate data
-    assert(dlogpsi.size()==data_.size());
-    for (int ic = 0; ic < dlogpsi.size(); ++ic)
-      data_[ic] += weight * Jprefactor * dlogpsi[ic];
+    assert(det_ratios.size()==data_.size());
+    for (int ic = 0; ic < det_ratios.size(); ++ic)
+      data_[ic] += weight * Jprefactor * det_ratios[ic];
 
   }
 

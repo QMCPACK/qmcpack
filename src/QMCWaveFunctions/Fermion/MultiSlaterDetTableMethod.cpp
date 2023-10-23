@@ -1007,6 +1007,34 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF_local(Vector<ValueType>& d
   evaluateDerivativesMSD(psi_ratio_to_ref_det_, dlogpsi);
 }
 
+void MultiSlaterDetTableMethod::detRatios(Vector<ValueType>& ratios)
+{
+  int det_id             = 0;
+  ValueType psiinv       = static_cast<ValueType>(PsiValue(1.0) / psi_ratio_to_ref_det_);
+  const auto& detValues0 = Dets[det_id]->getRatiosToRefDet();
+
+  // CI only for now
+  assert(!csf_data_);
+  ratios.resize(C->size());
+  ratios[0] = psiinv;
+  for (size_t i = 1; i < C->size(); i++)
+  {
+    ValueType cdet = psiinv * detValues0[(*C2node)[det_id][i]];
+    // assume that evaluateLog has been called in opt routine before
+    for (size_t id = 0; id < Dets.size(); id++)
+      if (id != det_id)
+        cdet *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
+    ratios[i] = cdet;
+  }
+}
+
+std::vector<WaveFunctionComponent::ValueType>& MultiSlaterDetTableMethod::detCoefficients()
+{
+  // CI only for now
+  assert(!csf_data_);
+  return *C;
+}
+
 
 void MultiSlaterDetTableMethod::evaluateDerivativesMSD(const PsiValue& multi_det_to_ref,
                                                        Vector<ValueType>& dlogpsi,
