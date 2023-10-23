@@ -308,7 +308,7 @@ include(Testlibstdc++)
 
 # Check that a C++ standard library is configured properly
 find_package(MemoryResource REQUIRED)
-# include(TestCxx17Library)
+include(TestCxx17Library)
 
 #-----------------------------------------------------------------------
 # SETUP SANITIZERS FLAGS
