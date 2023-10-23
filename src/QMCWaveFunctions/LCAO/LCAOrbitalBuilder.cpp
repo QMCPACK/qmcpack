@@ -973,6 +973,33 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
     Vector<RealType, OffloadPinnedAllocator<RealType>>& LocPeriodicImagePhaseFactors,
     Array<RealType, 2, OffloadPinnedAllocator<RealType>>& LocPeriodicImageDisplacements)
 {
+  // Allow computation to continue with no HDF file if the system has open boundary conditions.
+  // The complex build is usually only used with open BC for testing.
+  bool usesOpenBC = PBCImages[0] == 0 && PBCImages[1] == 0 && PBCImages[2] == 0;
+
+  ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
+  if (h5_path != "" && !usesOpenBC)
+  {
+    hdf_archive hin(myComm);
+    if (myComm->rank() == 0)
+    {
+      if (!hin.open(h5_path, H5F_ACC_RDONLY))
+        APP_ABORT("Could not open H5 file");
+
+      hin.push("Cell", false);
+
+      hin.read(Lattice, "LatticeVectors");
+      hin.close();
+    }
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        myComm->bcast(Lattice(i, j));
+  }
+  else if (!usesOpenBC)
+  {
+    APP_ABORT("Attempting to run PBC LCAO with no HDF5 support. Behaviour is unknown. Safer to exit");
+  }
+
   const int Nx       = PBCImages[0] + 1;
   const int Ny       = PBCImages[1] + 1;
   const int Nz       = PBCImages[2] + 1;
