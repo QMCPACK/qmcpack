@@ -59,16 +59,16 @@ class window<void> {
 		int target_count = count;
 		MPI_(Accumulate)(data(first), count, detail::basic_datatype<V>{}, target_rank, target_disp, target_count, detail::basic_datatype<V>{}, MPI_SUM, impl_);
 	}
-//	void attach(void* base, MPI_Aint size){MPI_Win_attach(impl_, base, size);}
-//	void call_errhandler(int errorcode);
+//  void attach(void* base, MPI_Aint size){MPI_Win_attach(impl_, base, size);}
+//  void call_errhandler(int errorcode);
 	void complete() const{MPI_Win_complete(impl_);}
-//	void create_errhandler(...);
-//	void create_keyval(...);
-//	void delete_attr(...);
+//  void create_errhandler(...);
+//  void create_keyval(...);
+//  void delete_attr(...);
 	void fence(int assert_mode = 0 /*MPI_MODE_NOCHECK*/) {  // NOLINT(readability-make-member-function-const) TODO(correaa)
 		MPI_Win_fence(assert_mode, impl_);
 	}
-//	void free_keyval(...);
+//  void free_keyval(...);
 
 	void flush(int rank){MPI_Win_flush(rank, impl_);}  // NOLINT(readability-make-member-function-const) TODO(correaa)
 	void flush_all(){MPI_Win_flush_all(impl_);}  // NOLINT(readability-make-member-function-const) TODO(correaa)
@@ -113,33 +113,33 @@ class window<void> {
 		MPI_(Win_lock)(MPI_LOCK_SHARED, rank, assert, impl_);
 	}
 	void lock_all(int assert = MPI_MODE_NOCHECK) const {MPI_Win_lock_all(assert, impl_);}
-//	void post(group const& g, int assert = MPI_MODE_NOCHECK) const{
-//		MPI_Win_post(g.impl_, assert, impl_);
-//	}
-//	void set_attr(...)
-//	void set_errhandler(...)
-//	void set_info(...)
-//	void set_name(...)
-//	void shared_query(...) delegated to child class
-//	void start(group const& g, int assert = MPI_MODE_NOCHECK){
-//		MPI_Win_start(g.impl_, assert, impl_);
-//	}
+//  void post(group const& g, int assert = MPI_MODE_NOCHECK) const{
+//      MPI_Win_post(g.impl_, assert, impl_);
+//  }
+//  void set_attr(...)
+//  void set_errhandler(...)
+//  void set_info(...)
+//  void set_name(...)
+//  void shared_query(...) delegated to child class
+//  void start(group const& g, int assert = MPI_MODE_NOCHECK){
+//      MPI_Win_start(g.impl_, assert, impl_);
+//  }
 	void sync() const{MPI_Win_sync(impl_);}
-//	void test(...)
+//  void test(...)
 	void unlock(int rank) const{MPI_Win_unlock(rank, impl_);}
 	void unlock_all() const{MPI_Win_unlock_all(impl_);}
 	void wait() const{MPI_Win_wait(impl_);}
-//	void fetch_and_op(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
-//		MPI_Fetch_and_op(origin, target, detail::datatype<T>{}, target_rank, target_disp, , impl_);
-//	}
-//	template<class T, class Op, class datatype = detail::datatype<T>, >
-//	void fetch_and_op(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
-//		MPI_Fetch_and_op(origin, target, datatype{}, target_rank, target_disp, , impl_);
-//	}
-//	void fetch_exchange(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
-//		MPI_Fetch_and_op(origin, target,detail::datatype<T>{}, target_rank, target_disp, MPI_REPLACE, impl_);
-//	}
-//	maybe this goes to a pointer impl
+//  void fetch_and_op(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
+//      MPI_Fetch_and_op(origin, target, detail::datatype<T>{}, target_rank, target_disp, , impl_);
+//  }
+//  template<class T, class Op, class datatype = detail::datatype<T>, >
+//  void fetch_and_op(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
+//      MPI_Fetch_and_op(origin, target, datatype{}, target_rank, target_disp, , impl_);
+//  }
+//  void fetch_exchange(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
+//      MPI_Fetch_and_op(origin, target,detail::datatype<T>{}, target_rank, target_disp, MPI_REPLACE, impl_);
+//  }
+//  maybe this goes to a pointer impl
 	template<class T>
 	void fetch_sum_value(T const& origin, T& target, int target_rank, int target_disp=0) const{
 		MPI3_CALL(MPI_Fetch_and_op)(&origin, &target, detail::basic_datatype<T>{}, target_rank, target_disp, MPI_SUM, impl_);
@@ -228,10 +228,10 @@ class window : public window<void> {
 
 template<class T>
 class panel {
-	window<T>& w_;
+	window<T>& w_; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 	int rank_;
 	panel(window<T>& w, int rank) : w_(w), rank_(rank) {}
-//	friend window;
+//  friend window;
 };
 
 template<class T> struct reference;
@@ -270,30 +270,30 @@ struct shm_pointer : window<> {
 
 //int mpi3::main(int, char*[], mpi3::communicator world){
 
-//	std::vector<double> darr(world.rank()?0:20);
-//	std::iota(darr.begin(), darr.end(), 0);
+//  std::vector<double> darr(world.rank()?0:20);
+//  std::iota(darr.begin(), darr.end(), 0);
 
-//	mpi3::window<double> win{world, darr.data(), darr.size()};
-//	if(world.rank() == 0){
-//		std::cout << win.size() << std::endl;
-//		assert( win.size() == 20 );
-//		assert( win.base()[13] == 13 );
-//	}else{
-//		assert(win.size() == 0);
-//		assert(win.base() == nullptr );
-//	}
-//	win.fence();
-//	if(world.rank() == 0){
-//		std::vector<double> a = {5., 6.};
-//		win.put(a.begin(), a.end(), 0);
-//	}
-//	mpi3::communicator{win.get_group()}.barrier();
-//	win.fence();
-//	std::vector<double> b(2);
-//	win.get(b.begin(), b.end(), 0);
-//	win.fence();
-//	assert( b[0] == 5. and b[1] == 6. );
-//	return 0;
+//  mpi3::window<double> win{world, darr.data(), darr.size()};
+//  if(world.rank() == 0){
+//      std::cout << win.size() << std::endl;
+//      assert( win.size() == 20 );
+//      assert( win.base()[13] == 13 );
+//  }else{
+//      assert(win.size() == 0);
+//      assert(win.base() == nullptr );
+//  }
+//  win.fence();
+//  if(world.rank() == 0){
+//      std::vector<double> a = {5., 6.};
+//      win.put(a.begin(), a.end(), 0);
+//  }
+//  mpi3::communicator{win.get_group()}.barrier();
+//  win.fence();
+//  std::vector<double> b(2);
+//  win.get(b.begin(), b.end(), 0);
+//  win.fence();
+//  assert( b[0] == 5. and b[1] == 6. );
+//  return 0;
 //}
 
 //#endif

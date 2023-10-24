@@ -15,6 +15,7 @@
 #include <boost/version.hpp>
 
 #include <sstream>
+#include <variant>
 
 namespace boost {
 namespace mpi3 {
@@ -23,7 +24,7 @@ namespace detail {
 
 class basic_package_iprimitive {
  protected:
-	package& p_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes) TODO(correaa)
+	package& p_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,cppcoreguidelines-avoid-const-or-ref-data-members) TODO(correaa) reevaluate if a reference here is the right thing
 
  public:
 	// we provide an optimized save for all basic (and fundamental) types
@@ -51,7 +52,7 @@ explicit basic_package_iprimitive(mpi3::detail::package& p) : p_(p) {}
 
 class basic_package_oprimitive {
  protected:
-	package& p_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes) TODO(correaa)
+	package& p_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,cppcoreguidelines-avoid-const-or-ref-data-members) TODO(correaa)
 
  public:
 	struct use_array_optimization {
@@ -169,11 +170,11 @@ class package_iarchive_impl  // NOLINT(fuchsia-multiple-inheritance) follow Boos
 		s.resize(size);
 		p_.unpack_n(s.data(), size);
 	}
-	void load(std::wstring& ws) {  // cppcheck-suppress constParameter ; TODO(correaa) implement?
+	void load(std::wstring& ws) {  // cppcheck-suppress [constParameter,constParameterReference]  ; TODO(correaa) implement?
 		const std::size_t size = ws.size();
 		*this->This() << size;
-		//  ++tokens_; //	this->This()->newtoken();
-		//  os_ += ws.size()*sizeof(wchar_t);//	os << s;
+		//  ++tokens_; //   this->This()->newtoken();
+		//  os_ += ws.size()*sizeof(wchar_t);// os << s;
 		assert(0);
 	}
 
@@ -199,7 +200,7 @@ class package_oarchive_impl  // NOLINT(fuchsia-multiple-inheritance) follow Boos
 	}
 
 	void save(boost::archive::version_type const& /*version*/) {}
-	//	void save(const boost::serialization::item_version_type&){/*save(static_cast<const unsigned int>(t));*/}
+	//  void save(const boost::serialization::item_version_type&){/*save(static_cast<const unsigned int>(t));*/}
 	void save(boost::archive::tracking_type const& /*tracking*/) { /*save(static_cast<const unsigned int>(t));*/
 	}
 	void save(boost::archive::object_id_type const& /*object_id*/) {}
@@ -211,7 +212,7 @@ class package_oarchive_impl  // NOLINT(fuchsia-multiple-inheritance) follow Boos
 
 	void save(boost::serialization::collection_size_type const& t) {
 		save(static_cast<unsigned int>(t));
-		//		save(static_cast<const unsigned int>(t));
+		//      save(static_cast<const unsigned int>(t));
 	}
 	void save(boost::serialization::item_version_type const& /*item_version*/) {}
 
@@ -221,34 +222,34 @@ class package_oarchive_impl  // NOLINT(fuchsia-multiple-inheritance) follow Boos
 		assert(0);
 		const std::size_t len = std::ostream::traits_type::length(s);
 		*this->This() << len;
-		//	++tokens_;//	this->This()->newtoken();
-		//	os_ += len*sizeof(char);//	os << s;
+		//  ++tokens_;//    this->This()->newtoken();
+		//  os_ += len*sizeof(char);//  os << s;
 		p_.pack_n(s, len);
 	}
 	void save(wchar_t const* ws) {
 		const std::size_t l = std::wcslen(ws);
 		*this->This() << l;
 		assert(0);
-		//	++tokens_; // this->This()->newtoken();
-		//	os_ += l*sizeof(wchar_t);//	os.write((const char *)ws, l * sizeof(wchar_t)/sizeof(char));
+		//  ++tokens_; // this->This()->newtoken();
+		//  os_ += l*sizeof(wchar_t);// os.write((const char *)ws, l * sizeof(wchar_t)/sizeof(char));
 	}
 	void save(std::string const& s) {
 		const std::size_t size = s.size();
-		//	*this->This() << size;
+		//  *this->This() << size;
 		p_.pack_n(&size, 1);
-		//	std::cout << " packed size = " << size << '\n';
-		//	++tokens_; // this->This()->newtoken();
-		//	os_ += s.size()*sizeof(char);//	os << s;
+		//  std::cout << " packed size = " << size << '\n';
+		//  ++tokens_; // this->This()->newtoken();
+		//  os_ += s.size()*sizeof(char);// os << s;
 		p_.pack_n(s.c_str(), size);
 	}
 	void save(std::wstring const& ws) {
 		const std::size_t size = ws.size();
 		*this->This() << size;
-		//	++tokens_; //	this->This()->newtoken();
-		//	os_ += ws.size()*sizeof(wchar_t);//	os << s;
+		//  ++tokens_; //   this->This()->newtoken();
+		//  os_ += ws.size()*sizeof(wchar_t);// os << s;
 		assert(0);
 	}
-	//	using package_oarchive_impl<package_oarchive>::save_override;
+	//  using package_oarchive_impl<package_oarchive>::save_override;
 
 #if 1
 	// Save all supported datatypes directly
@@ -296,6 +297,8 @@ struct package_iarchive
 	explicit package_iarchive(mpi3::detail::package& p, unsigned int flags = 0)
 	: package_iarchive_impl<package_iarchive>(p, flags) {}
 
+	using package_iarchive_impl<package_iarchive>::operator>>;
+
 	template<class T>
 	struct CONSUMABLE(unconsumed)
 	iterator {
@@ -313,31 +316,49 @@ struct package_iarchive
 
 	//  iterator& operator=(T const& value) { *out_archive_ << value; return *this; }
 
-	//	RETURN_TYPESTATE(consumed) 
+	//  RETURN_TYPESTATE(consumed) 
 		SET_TYPESTATE(consumed) CALLABLE_WHEN(unconsumed)
 		auto operator*() -> T&& {return std::move(current_);}
 
 		RETURN_TYPESTATE(unconsumed) SET_TYPESTATE(unconsumed)
 		auto operator++() -> iterator& {*in_archive_ >> current_; return *this;}
-	//	RETURN_TYPESTATE(unconsumed)
-	//	auto operator++(int) -> iterator& {*in_archive_ >> current_; return *this;}
+	//  RETURN_TYPESTATE(unconsumed)
+	//  auto operator++(int) -> iterator& {*in_archive_ >> current_; return *this;}
 
 		bool operator!=(iterator const& other) const = delete;
 		bool operator==(iterator const& other) const = delete;
 
-	//	bool operator==(iterator const& other) const {return     static_cast<bool>(*in_archive_);}
-	//	bool operator!=(iterator const& other) const {return not static_cast<bool>(*in_archive_);}
+	//  bool operator==(iterator const& other) const {return     static_cast<bool>(*in_archive_);}
+	//  bool operator!=(iterator const& other) const {return not static_cast<bool>(*in_archive_);}
 
 	 private:
-	 	package_iarchive* in_archive_ = nullptr;
+	    package_iarchive* in_archive_ = nullptr;
 		T current_;
 	};
+
+	template <class Variant, std::size_t I = 0>
+	static Variant variant_from_index(std::size_t index) {
+		if constexpr(I >= std::variant_size_v<Variant>) {
+			throw std::runtime_error{"Variant index " + std::to_string(I + index) + " out of bounds"};
+		} else {
+			return index == 0 ? Variant{std::in_place_index<I>} : variant_from_index<Variant, I + 1>(index - 1);
+		}
+	}
+
+	template<class... Ts>
+	void operator>>(std::variant<Ts...>& value) {
+		std::size_t idx = std::numeric_limits<std::size_t>::max();
+		*this->This() >> idx; assert( idx < std::variant_size_v<std::variant<Ts...>> );
+		value = variant_from_index<std::variant<Ts...>>(idx);
+		std::visit([self = this](auto& alternative){(*self) >> alternative;}, value);
+	}
 };
 
 struct package_oarchive : public detail::package_oarchive_impl<package_oarchive> {
 	explicit package_oarchive(mpi3::detail::package& p, unsigned int flags = 0)
 	: package_oarchive_impl<package_oarchive>(p, flags) {}
 	using package_oarchive_impl<package_oarchive>::operator&;
+	using package_oarchive_impl<package_oarchive>::operator<<;
 
 #if(BOOST_VERSION < 106100)
 	package_oarchive& operator&(boost::serialization::array<double>& /*arr*/)
@@ -347,6 +368,12 @@ struct package_oarchive : public detail::package_oarchive_impl<package_oarchive>
 	{
 		assert(0);
 		return *this;
+	}
+
+	template<class... Ts>
+	void operator<<(std::variant<Ts...> const& value) {
+		*this->This() << value.index();
+		std::visit([self = this](auto const& alternative){(*self) << alternative;}, value);
 	}
 
 	template<class T = void>
@@ -373,79 +400,11 @@ struct package_oarchive : public detail::package_oarchive_impl<package_oarchive>
 		auto operator++(int) -> iterator& {return *this;}
 
 	 private:
-	 	package_oarchive* out_archive_;
+	    package_oarchive* out_archive_;
 	};
 };
 
 }  // end namespace mpi3
 }  // end namespace boost
 
-// maybe needed for optimization to take effect?
-// BOOST_SERIALIZATION_USE_ARRAY_OPTIMIZATION(boost::archive::package_oarchive)
-
-//#ifdef _TEST_MPI3_PACKAGE_ARCHIVE
-
-//#include "../mpi3/main.hpp"
-//#include "../mpi3/process.hpp"
-
-//#include <boost/serialization/vector.hpp>
-//#include <boost/serialization/map.hpp>
-
-// namespace mpi3 = boost::mpi3;
-// using std::cout;
-
-// int mpi3::main(int, char*[], mpi3::communicator world) {
-//	assert(world.size() > 1);
-//	switch(world.rank()){
-//		case 0: {
-//			mpi3::detail::package p(world);
-//			mpi3::package_oarchive poa(p);
-//			std::string s("hello");
-//			int
-//				i = 12,
-//				j = 13
-//			;
-//			std::vector<double> v(20, 5.);
-//			std::map<int, int> m = {{1,2},{2,4},{3,4}};
-//			poa
-//				<< s
-//				<< i
-//				<< j
-//				<< v
-//				<< 5
-//				<< m
-//			;
-//			p.send(1);
-//		} break;
-//		case 1: {
-//			mpi3::detail::package p(world);
-//			mpi3::package_iarchive pia(p);
-//			p.receive(0);
-//			std::string s;
-//			int
-//				i,
-//				j
-//			;
-//			std::vector<double> v;
-//			int c;
-//			std::map<int, int> m;
-//			pia
-//				>> s
-//				>> i
-//				>> j
-//				>> v
-//				>> c
-//				>> m
-//			;
-//			assert( s == "hello" );
-//			assert( i == 12 );
-//			assert( j == 13 );
-//			assert(v.size() == 20);
-//			assert(c == 5);
-//			assert( m[3] == 4 );
-//		}
-//	}
-//	return 0;
-// }
-//#endif
 #endif
