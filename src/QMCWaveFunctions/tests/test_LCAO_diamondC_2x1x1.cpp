@@ -77,70 +77,41 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   // from tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond-Twist0.wfj.xml
   const std::string wf_xml_str = R"(
   <wavefunction name="psi0" target="e">
-      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" twist="0  0  0" href="C_Diamond.h5" PBCimages="5  5  5">
-      <basisset name="LCAOBSet" key="GTO" transform="no">
+    <determinantset type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond.h5" PBCimages="5  5  5">
+      <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
       </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="8">
-        <occupation mode="ground"/>
-        <coefficient size="116" spindataset="0"/>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-dn" size="8">
-        <occupation mode="ground"/>
-        <coefficient size="116" spindataset="0"/>
-      </sposet>
-    </sposet_collection>
-  </wavefunction>
+      <slaterdeterminant>
+        <determinant id="updet" size="8">
+          <occupation mode="ground"/>
+          <coefficient size="116" spindataset="0"/>
+        </determinant>
+        <determinant id="downdet" size="8">
+          <occupation mode="ground"/>
+          <coefficient size="116" spindataset="0"/>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    </wavefunction>
   )";
-  // const std::string wf_xml_str = R"(
-  // <wavefunction name="psi0" target="e">
-  //   <determinantset type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond.h5" PBCimages="5  5  5">
-  //     <slaterdeterminant>
-  //       <determinant id="updet" size="8">
-  //         <occupation mode="ground"/>
-  //         <coefficient size="116" spindataset="0"/>
-  //       </determinant>
-  //       <determinant id="downdet" size="8">
-  //         <occupation mode="ground"/>
-  //         <coefficient size="116" spindataset="0"/>
-  //       </determinant>
-  //     </slaterdeterminant>
-  //   </determinantset>
-  //   </wavefunction>
-  // )";
-  // const std::string wf_xml_str = R"(
-  // <wavefunction name="psi0" target="e">
-  //   <determinantset type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond.h5" PBCimages="5  5  5">
-  //     <basisset name="LCAOBSet" key="GTO" transform="no">
-  //       <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
-  //     </basisset>
-  //     <slaterdeterminant>
-  //       <determinant id="updet" size="8">
-  //         <occupation mode="ground"/>
-  //         <coefficient size="8" spindataset="0"/>
-  //       </determinant>
-  //       <determinant id="downdet" size="8">
-  //         <occupation mode="ground"/>
-  //         <coefficient size="8" spindataset="0"/>
-  //       </determinant>
-  //     </slaterdeterminant>
-  //   </determinantset>
-  //   </wavefunction>
-  // )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(wf_xml_str);
   REQUIRE(okay);
 
-  xmlNodePtr root    = doc.getRoot();
-  xmlNodePtr spo_xml = xmlFirstElementChild(root);
+  xmlNodePtr root       = doc.getRoot();
+  xmlNodePtr detset_xml = xmlFirstElementChild(root);
+  xmlNodePtr bset_xml   = xmlFirstElementChild(detset_xml);
+  xmlNodePtr sdet_xml   = xmlNextElementSibling(bset_xml);
+  xmlNodePtr det_xml    = xmlFirstElementChild(sdet_xml);
 
-  LCAOrbitalBuilder lcaoSet(elec_, ions_, c, spo_xml);
-  auto spo = lcaoSet.createSPOSetFromXML(spo_xml);
+  LCAOrbitalBuilder lcaoSet(elec_, ions_, c, detset_xml);
+  auto spo = lcaoSet.createSPOSetFromXML(det_xml);
   REQUIRE(spo);
   auto& lcao_spos = dynamic_cast<const LCAOrbitalSet&>(*spo);
-  // CHECK(!lcao_spos.isIdentity());
+  CHECK(!lcao_spos.isIdentity());
 
   const int norb = spo->getOrbitalSetSize();
+  std::cout << "norb: " << norb << std::endl;
 
 
   // test batched interfaces
@@ -179,15 +150,15 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   std::vector<ParticleSet::SingleParticlePos> newpos_vp_2(nvp_2);
   for (int i = 0; i < nvp_; i++)
   {
-    newpos_vp_[i][0] = 1.0 * i / nvp_;
-    newpos_vp_[i][1] = 2.0 * i / nvp_;
-    newpos_vp_[i][2] = i / (2.0 * nvp_);
+    newpos_vp_[i][0] = 0.1 * i;
+    newpos_vp_[i][1] = 0.2 * i;
+    newpos_vp_[i][2] = 0.3 * i;
   }
   for (int i = 0; i < nvp_2; i++)
   {
-    newpos_vp_2[i][0] = 2.0 * i / nvp_2;
-    newpos_vp_2[i][1] = i / (2.0 * nvp_2);
-    newpos_vp_2[i][2] = 1.0 * i / nvp_2;
+    newpos_vp_2[i][0] = 0.2 * i;
+    newpos_vp_2[i][1] = 0.3 * i;
+    newpos_vp_2[i][2] = 0.4 * i;
   }
   VP_.makeMoves(elec_, 0, newpos_vp_);
   VP_2.makeMoves(elec_2, 0, newpos_vp_2);
@@ -205,8 +176,8 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   SPOSet::ValueVector psiMinv_ref_1(norb);
   for (int i = 0; i < norb; i++)
   {
-    psiMinv_data_[i]  = 1.0 * (i % 10) / 4.5 - 1.0;
-    psiMinv_data_2[i] = 1.0 * ((i + 5) % 10) / 4.5 - 1.0;
+    psiMinv_data_[i]  = 0.1 * i;
+    psiMinv_data_2[i] = 0.2 * i;
     psiMinv_ref_0[i]  = psiMinv_data_[i];
     psiMinv_ref_1[i]  = psiMinv_data_2[i];
   }
@@ -237,36 +208,35 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
     CHECK(std::imag(ratios_list[1][ivp]) == Approx(std::imag(ratios_ref_1[ivp])));
 #endif
   // for (int ivp = 0; ivp < nvp_; ivp++)
-  //   app_log() << "CHECK(std::real(ratios_ref_0[" << ivp << "]) == Approx(" << std::real(ratios_ref_0[ivp])
-  //             << "));\n";
+  //   app_log() << "CHECK(std::real(ratios_ref_0[" << ivp << "]) == Approx(" << std::real(ratios_ref_0[ivp]) << "));\n";
   // for (int ivp = 0; ivp < nvp_2; ivp++)
-  //   app_log() << "CHECK(std::real(ratios_ref_1[" << ivp << "]) == Approx(" << std::real(ratios_ref_1[ivp])
-  //             << "));\n";
+  //   app_log() << "CHECK(std::real(ratios_ref_1[" << ivp << "]) == Approx(" << std::real(ratios_ref_1[ivp]) << "));\n";
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-  //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << std::real(ratios_list[iw][ivp])
-  //               << "));\n";
+  //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx("
+  //               << std::real(ratios_list[iw][ivp]) << "));\n";
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-  //     app_log() << "CHECK(std::imag(ratios_list[" << iw << "][" << ivp << "]) == Approx(" << std::imag(ratios_list[iw][ivp])
-  //               << "));\n";
+  //     app_log() << "CHECK(std::imag(ratios_list[" << iw << "][" << ivp << "]) == Approx("
+  //               << std::imag(ratios_list[iw][ivp]) << "));\n";
 
-  CHECK(std::real(ratios_list[0][0]) == Approx(-0.11554491049855));
-  CHECK(std::real(ratios_list[0][1]) == Approx(0.19155774810121));
-  CHECK(std::real(ratios_list[0][2]) == Approx(-0.16063724839636));
-  CHECK(std::real(ratios_list[0][3]) == Approx(-0.37105113615831));
-  CHECK(std::real(ratios_list[1][0]) == Approx(-0.12705469585615));
-  CHECK(std::real(ratios_list[1][1]) == Approx(0.67930890998428));
-  CHECK(std::real(ratios_list[1][2]) == Approx(0.83583922544552));
 
-  CHECK(std::real(ratios_ref_0[0]) == Approx(-0.11554491049855));
-  CHECK(std::real(ratios_ref_0[1]) == Approx(0.19155774810121));
-  CHECK(std::real(ratios_ref_0[2]) == Approx(-0.16063724839636));
-  CHECK(std::real(ratios_ref_0[3]) == Approx(-0.37105113615831));
-  CHECK(std::real(ratios_ref_1[0]) == Approx(-0.12705469585615));
-  CHECK(std::real(ratios_ref_1[1]) == Approx(0.67930890998428));
-  CHECK(std::real(ratios_ref_1[2]) == Approx(0.83583922544552));
+  CHECK(std::real(ratios_list[0][0]) == Approx(0.0020585459020934));
+  CHECK(std::real(ratios_list[0][1]) == Approx(0.0086907202392453));
+  CHECK(std::real(ratios_list[0][2]) == Approx(0.013372172641792));
+  CHECK(std::real(ratios_list[0][3]) == Approx(0.013426136583449));
+  CHECK(std::real(ratios_list[1][0]) == Approx(0.0038781653139917));
+  CHECK(std::real(ratios_list[1][1]) == Approx(0.023070564963008));
+  CHECK(std::real(ratios_list[1][2]) == Approx(0.026598625609634));
+
+  CHECK(std::real(ratios_ref_0[0]) == Approx(0.002058545902));
+  CHECK(std::real(ratios_ref_0[1]) == Approx(0.008690720239));
+  CHECK(std::real(ratios_ref_0[2]) == Approx(0.01337217264));
+  CHECK(std::real(ratios_ref_0[3]) == Approx(0.01342613658));
+  CHECK(std::real(ratios_ref_1[0]) == Approx(0.003878165314));
+  CHECK(std::real(ratios_ref_1[1]) == Approx(0.02307056496));
+  CHECK(std::real(ratios_ref_1[2]) == Approx(0.02659862561));
 }
 } // namespace qmcplusplus
