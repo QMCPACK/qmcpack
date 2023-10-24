@@ -33,6 +33,8 @@ include(macros)
 # Build and install options
 ######################################################################
 
+include(FindMemoryResource)
+
 #--------------------------------------------------------------------
 # Set C++ standard
 #--------------------------------------------------------------------
@@ -299,10 +301,13 @@ set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# include(FindMemoryResource)
+
 # Check that a C++ compiler is compatible with the underlying libstdc++
 include(Testlibstdc++)
 
 # Check that a C++ standard library is configured properly
+find_package(MemoryResource REQUIRED)
 include(TestCxx17Library)
 
 #-----------------------------------------------------------------------
