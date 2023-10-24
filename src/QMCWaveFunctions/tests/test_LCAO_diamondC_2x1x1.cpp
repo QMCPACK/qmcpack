@@ -92,6 +92,41 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
     </sposet_collection>
   </wavefunction>
   )";
+  // const std::string wf_xml_str = R"(
+  // <wavefunction name="psi0" target="e">
+  //   <determinantset type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond.h5" PBCimages="5  5  5">
+  //     <slaterdeterminant>
+  //       <determinant id="updet" size="8">
+  //         <occupation mode="ground"/>
+  //         <coefficient size="116" spindataset="0"/>
+  //       </determinant>
+  //       <determinant id="downdet" size="8">
+  //         <occupation mode="ground"/>
+  //         <coefficient size="116" spindataset="0"/>
+  //       </determinant>
+  //     </slaterdeterminant>
+  //   </determinantset>
+  //   </wavefunction>
+  // )";
+  // const std::string wf_xml_str = R"(
+  // <wavefunction name="psi0" target="e">
+  //   <determinantset type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond.h5" PBCimages="5  5  5">
+  //     <basisset name="LCAOBSet" key="GTO" transform="no">
+  //       <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+  //     </basisset>
+  //     <slaterdeterminant>
+  //       <determinant id="updet" size="8">
+  //         <occupation mode="ground"/>
+  //         <coefficient size="8" spindataset="0"/>
+  //       </determinant>
+  //       <determinant id="downdet" size="8">
+  //         <occupation mode="ground"/>
+  //         <coefficient size="8" spindataset="0"/>
+  //       </determinant>
+  //     </slaterdeterminant>
+  //   </determinantset>
+  //   </wavefunction>
+  // )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(wf_xml_str);
   REQUIRE(okay);
