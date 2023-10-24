@@ -11,6 +11,7 @@
 
 
 #include "ompBLAS.hpp"
+#include <cstdint>
 #include <stdexcept>
 #include "config.h"
 #if !defined(OPENMP_NO_COMPLEX)
