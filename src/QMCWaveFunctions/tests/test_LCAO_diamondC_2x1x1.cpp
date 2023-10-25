@@ -18,6 +18,8 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "LCAO/LCAOrbitalBuilder.h"
 #include <ResourceCollection.h>
+#include "QMCHamiltonians/NLPPJob.h"
+#include "DistanceTable.h"
 
 #include <stdio.h>
 #include <string>
@@ -64,7 +66,7 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   const int chargeIdx          = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-  // const int ei_table_index = elec_.addTable(ions_);
+  const int ei_table_index     = elec_.addTable(ions_);
 
   // diamondC_2x1x1
   // from tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond-Twist0.wfj.xml
@@ -142,14 +144,25 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
     newpos_vp_2[i][1] = 0.3 * i;
     newpos_vp_2[i][2] = 0.4 * i;
   }
-  VP_.makeMoves(elec_, 0, newpos_vp_);
-  VP_2.makeMoves(elec_2, 0, newpos_vp_2);
+
+  const auto& ei_table_  = elec_.getDistTableAB(ei_table_index);
+  const auto& ei_table_2 = elec_2.getDistTableAB(ei_table_index);
+  // make virtual move of elec 0, reference ion 1
+  NLPPJob<SPOSet::RealType> job_(1, 0, ei_table_.getDistances()[0][1], -ei_table_.getDisplacements()[0][1]);
+  // make virtual move of elec 1, reference ion 3
+  NLPPJob<SPOSet::RealType> job_2(3, 1, ei_table_2.getDistances()[1][3], -ei_table_2.getDisplacements()[1][3]);
+  // VP_.makeMoves(elec_, 0, newpos_vp_);
+  // VP_2.makeMoves(elec_2, 0, newpos_vp_2);
+
 
   // make VP refvec
   RefVectorWithLeader<VirtualParticleSet> vp_list(VP_, {VP_, VP_2});
+
+
   ResourceCollection vp_res("test_vp_res");
   VP_.createResource(vp_res);
   ResourceCollectionTeamLock<VirtualParticleSet> mw_vpset_lock(vp_res, vp_list);
+  VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
 
   // fill invrow with dummy data for each walker
   std::vector<SPOSet::ValueType> psiMinv_data_(norb);
@@ -205,20 +218,20 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   //               << std::imag(ratios_list[iw][ivp]) << "));\n";
 
 
-  CHECK(std::real(ratios_list[0][0]) == Approx(0.0020585459020934));
-  CHECK(std::real(ratios_list[0][1]) == Approx(0.0086907202392453));
+  CHECK(std::real(ratios_list[0][0]) == Approx(0.0020585459020935));
+  CHECK(std::real(ratios_list[0][1]) == Approx(0.0086907202392454));
   CHECK(std::real(ratios_list[0][2]) == Approx(0.013372172641792));
   CHECK(std::real(ratios_list[0][3]) == Approx(0.013426136583449));
-  CHECK(std::real(ratios_list[1][0]) == Approx(0.0038781653139917));
-  CHECK(std::real(ratios_list[1][1]) == Approx(0.023070564963008));
-  CHECK(std::real(ratios_list[1][2]) == Approx(0.026598625609634));
+  CHECK(std::real(ratios_list[1][0]) == Approx(0.004117091804187));
+  CHECK(std::real(ratios_list[1][1]) == Approx(0.026564850132802));
+  CHECK(std::real(ratios_list[1][2]) == Approx(0.031626101035837));
 
   CHECK(std::real(ratios_ref_0[0]) == Approx(0.002058545902));
   CHECK(std::real(ratios_ref_0[1]) == Approx(0.008690720239));
   CHECK(std::real(ratios_ref_0[2]) == Approx(0.01337217264));
   CHECK(std::real(ratios_ref_0[3]) == Approx(0.01342613658));
-  CHECK(std::real(ratios_ref_1[0]) == Approx(0.003878165314));
-  CHECK(std::real(ratios_ref_1[1]) == Approx(0.02307056496));
-  CHECK(std::real(ratios_ref_1[2]) == Approx(0.02659862561));
+  CHECK(std::real(ratios_ref_1[0]) == Approx(0.004117091804));
+  CHECK(std::real(ratios_ref_1[1]) == Approx(0.02656485013));
+  CHECK(std::real(ratios_ref_1[2]) == Approx(0.03162610104));
 }
 } // namespace qmcplusplus
