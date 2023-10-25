@@ -213,14 +213,20 @@ void test_LCAO_DiamondC_2x1x1_real()
     spo_2->evaluateDetRatios(VP_2, tmp_psi_list, psiMinv_ref_1, ratios_ref_1);
 
     for (int ivp = 0; ivp < nvp_; ivp++)
-      CHECK(std::real(ratios_list[0][ivp]) == Approx(std::real(ratios_ref_0[ivp])));
+      CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));
     for (int ivp = 0; ivp < nvp_2; ivp++)
-      CHECK(std::real(ratios_list[1][ivp]) == Approx(std::real(ratios_ref_1[ivp])));
+      CHECK(Approx(std::real(ratios_list[1][ivp])) == std::real(ratios_ref_1[ivp]));
 #ifdef QMC_COMPLEX
     for (int ivp = 0; ivp < nvp_; ivp++)
-      CHECK(std::imag(ratios_list[0][ivp]) == Approx(std::imag(ratios_ref_0[ivp])));
+    {
+      CHECK(Approx(std::imag(ratios_list[0][ivp])) == std::imag(ratios_ref_0[ivp]));
+      CHECK(Approx(std::imag(ratios_list[0][ivp])) == 0.0);
+    }
     for (int ivp = 0; ivp < nvp_2; ivp++)
-      CHECK(std::imag(ratios_list[1][ivp]) == Approx(std::imag(ratios_ref_1[ivp])));
+    {
+      CHECK(Approx(std::imag(ratios_list[1][ivp])) == std::imag(ratios_ref_1[ivp]));
+      CHECK(Approx(std::imag(ratios_list[1][ivp])) == 0.0);
+    }
 #endif
 
     CHECK(Approx(std::real(ratios_list[0][0])) == 0.19309684969511);
@@ -437,31 +443,45 @@ void test_LCAO_DiamondC_2x1x1_cplx()
     spo_2->evaluateDetRatios(VP_2, tmp_psi_list, psiMinv_ref_1, ratios_ref_1);
 
     for (int ivp = 0; ivp < nvp_; ivp++)
-      CHECK(std::real(ratios_list[0][ivp]) == Approx(std::real(ratios_ref_0[ivp])));
+      CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));
     for (int ivp = 0; ivp < nvp_2; ivp++)
-      CHECK(std::real(ratios_list[1][ivp]) == Approx(std::real(ratios_ref_1[ivp])));
-#ifdef QMC_COMPLEX
+      CHECK(Approx(std::real(ratios_list[1][ivp])) == std::real(ratios_ref_1[ivp]));
     for (int ivp = 0; ivp < nvp_; ivp++)
-      CHECK(std::imag(ratios_list[0][ivp]) == Approx(std::imag(ratios_ref_0[ivp])));
+      CHECK(Approx(std::imag(ratios_list[0][ivp])) == std::imag(ratios_ref_0[ivp]));
     for (int ivp = 0; ivp < nvp_2; ivp++)
-      CHECK(std::imag(ratios_list[1][ivp]) == Approx(std::imag(ratios_ref_1[ivp])));
-#endif
+      CHECK(Approx(std::imag(ratios_list[1][ivp])) == std::imag(ratios_ref_1[ivp]));
 
-    CHECK(Approx(std::real(ratios_list[0][0])) == 0.19309684969511);
-    CHECK(Approx(std::real(ratios_list[0][1])) == 0.19743141486366);
-    CHECK(Approx(std::real(ratios_list[0][2])) == 0.17884881050205);
-    CHECK(Approx(std::real(ratios_list[0][3])) == 0.15105783567230);
-    CHECK(Approx(std::real(ratios_list[1][0])) == 0.38619369939021);
-    CHECK(Approx(std::real(ratios_list[1][1])) == 0.38429955941922);
-    CHECK(Approx(std::real(ratios_list[1][2])) == 0.32071997896196);
+    CHECK(Approx(std::real(ratios_ref_0[0])) == 0.0963445284);
+    CHECK(Approx(std::real(ratios_ref_0[1])) == 0.0784621772);
+    CHECK(Approx(std::real(ratios_ref_0[2])) == 0.0312479567);
+    CHECK(Approx(std::real(ratios_ref_0[3])) == -0.0240189529);
+    CHECK(Approx(std::real(ratios_ref_1[0])) == 0.1926890568);
+    CHECK(Approx(std::real(ratios_ref_1[1])) == 0.1037508495);
+    CHECK(Approx(std::real(ratios_ref_1[2])) == -0.0747915097);
 
-    CHECK(Approx(std::real(ratios_ref_0[0])) == 0.1930968497);
-    CHECK(Approx(std::real(ratios_ref_0[1])) == 0.1974314149);
-    CHECK(Approx(std::real(ratios_ref_0[2])) == 0.1788488105);
-    CHECK(Approx(std::real(ratios_ref_0[3])) == 0.1510578357);
-    CHECK(Approx(std::real(ratios_ref_1[0])) == 0.3861936994);
-    CHECK(Approx(std::real(ratios_ref_1[1])) == 0.3842995594);
-    CHECK(Approx(std::real(ratios_ref_1[2])) == 0.3207199790);
+    CHECK(Approx(std::real(ratios_list[0][0])) == 0.0963445284);
+    CHECK(Approx(std::real(ratios_list[0][1])) == 0.0784621772);
+    CHECK(Approx(std::real(ratios_list[0][2])) == 0.0312479567);
+    CHECK(Approx(std::real(ratios_list[0][3])) == -0.0240189529);
+    CHECK(Approx(std::real(ratios_list[1][0])) == 0.1926890568);
+    CHECK(Approx(std::real(ratios_list[1][1])) == 0.1037508495);
+    CHECK(Approx(std::real(ratios_list[1][2])) == -0.0747915097);
+
+    CHECK(Approx(std::imag(ratios_ref_0[0])) == -0.0090812301);
+    CHECK(Approx(std::imag(ratios_ref_0[1])) == -0.0385825385);
+    CHECK(Approx(std::imag(ratios_ref_0[2])) == -0.0610830209);
+    CHECK(Approx(std::imag(ratios_ref_0[3])) == -0.0809775403);
+    CHECK(Approx(std::imag(ratios_ref_1[0])) == -0.0181624602);
+    CHECK(Approx(std::imag(ratios_ref_1[1])) == -0.0856868673);
+    CHECK(Approx(std::imag(ratios_ref_1[2])) == -0.1487774316);
+
+    CHECK(Approx(std::imag(ratios_list[0][0])) == -0.0090812301);
+    CHECK(Approx(std::imag(ratios_list[0][1])) == -0.0385825385);
+    CHECK(Approx(std::imag(ratios_list[0][2])) == -0.0610830209);
+    CHECK(Approx(std::imag(ratios_list[0][3])) == -0.0809775403);
+    CHECK(Approx(std::imag(ratios_list[1][0])) == -0.0181624602);
+    CHECK(Approx(std::imag(ratios_list[1][1])) == -0.0856868673);
+    CHECK(Approx(std::imag(ratios_list[1][2])) == -0.1487774316);
 
     // // print SW ref values
     // for (int ivp = 0; ivp < nvp_; ivp++)
@@ -472,10 +492,12 @@ void test_LCAO_DiamondC_2x1x1_cplx()
     // // print MW ref values
     // for (int iw = 0; iw < nw; iw++)
     //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-    //     app_log() << "CHECK(Approx(std::real(ratios_list[" << iw << "][" << ivp << "])) == " << std::real(ratios_list[iw][ivp]) << ");\n";
+    //     app_log() << "CHECK(Approx(std::real(ratios_list[" << iw << "][" << ivp
+    //               << "])) == " << std::real(ratios_list[iw][ivp]) << ");\n";
     // for (int iw = 0; iw < nw; iw++)
     //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-    //     app_log() << "CHECK(Approx(std::imag(ratios_list[" << iw << "][" << ivp << "])) == " << std::imag(ratios_list[iw][ivp]) << ");\n";
+    //     app_log() << "CHECK(Approx(std::imag(ratios_list[" << iw << "][" << ivp
+    //               << "])) == " << std::imag(ratios_list[iw][ivp]) << ");\n";
   }
 }
 
@@ -483,7 +505,8 @@ void test_LCAO_DiamondC_2x1x1_cplx()
 TEST_CASE("LCAOrbitalSet batched PBC DiamondC", "[wavefunction]")
 {
   SECTION("2x1x1 real") { test_LCAO_DiamondC_2x1x1_real(); }
-
-  // SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(); }
+#ifdef QMC_COMPLEX
+  SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(); }
+#endif
 }
 } // namespace qmcplusplus
