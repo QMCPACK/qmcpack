@@ -70,6 +70,7 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   const int Cidx       = ispecies.addSpecies("C");
 
   ions_.print(app_log());
+  ions_.update(); // propagate SoA.
 
   ParticleSet elec_(simcell);
   elec_.setName("elec");
