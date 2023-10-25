@@ -223,35 +223,35 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
     CHECK(std::imag(ratios_list[1][ivp]) == Approx(std::imag(ratios_ref_1[ivp])));
 #endif
   // for (int ivp = 0; ivp < nvp_; ivp++)
-  //   app_log() << "CHECK(std::real(ratios_ref_0[" << ivp << "]) == Approx(" << std::real(ratios_ref_0[ivp]) << "));\n";
+  //   app_log() << "CHECK(Approx(std::real(ratios_ref_0[" << ivp << "])) == " << std::real(ratios_ref_0[ivp]) << ");\n";
   // for (int ivp = 0; ivp < nvp_2; ivp++)
-  //   app_log() << "CHECK(std::real(ratios_ref_1[" << ivp << "]) == Approx(" << std::real(ratios_ref_1[ivp]) << "));\n";
+  //   app_log() << "CHECK(Approx(std::real(ratios_ref_1[" << ivp << "])) == " << std::real(ratios_ref_1[ivp]) << ");\n";
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-  //     app_log() << "CHECK(std::real(ratios_list[" << iw << "][" << ivp << "]) == Approx("
-  //               << std::real(ratios_list[iw][ivp]) << "));\n";
+  //     app_log() << "CHECK(Approx(std::real(ratios_list[" << iw << "][" << ivp
+  //               << "])) == " << std::real(ratios_list[iw][ivp]) << ");\n";
   // app_log() << "ratios_list refvalues: \n" << std::setprecision(14);
   // for (int iw = 0; iw < nw; iw++)
   //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-  //     app_log() << "CHECK(std::imag(ratios_list[" << iw << "][" << ivp << "]) == Approx("
-  //               << std::imag(ratios_list[iw][ivp]) << "));\n";
+  //     app_log() << "CHECK(Approx(std::imag(ratios_list[" << iw << "][" << ivp
+  //               << "])) == " << std::imag(ratios_list[iw][ivp]) << ");\n";
 
 
-  CHECK(std::real(ratios_list[0][0]) == Approx(0.0020585459020935));
-  CHECK(std::real(ratios_list[0][1]) == Approx(0.0086907202392454));
-  CHECK(std::real(ratios_list[0][2]) == Approx(0.013372172641792));
-  CHECK(std::real(ratios_list[0][3]) == Approx(0.013426136583449));
-  CHECK(std::real(ratios_list[1][0]) == Approx(0.004117091804187));
-  CHECK(std::real(ratios_list[1][1]) == Approx(0.026564850132802));
-  CHECK(std::real(ratios_list[1][2]) == Approx(0.031626101035837));
+  CHECK(Approx(std::real(ratios_list[0][0])) == 0.19309684969511);
+  CHECK(Approx(std::real(ratios_list[0][1])) == 0.19743141486366);
+  CHECK(Approx(std::real(ratios_list[0][2])) == 0.17884881050205);
+  CHECK(Approx(std::real(ratios_list[0][3])) == 0.15105783567230);
+  CHECK(Approx(std::real(ratios_list[1][0])) == 0.38619369939021);
+  CHECK(Approx(std::real(ratios_list[1][1])) == 0.38429955941922);
+  CHECK(Approx(std::real(ratios_list[1][2])) == 0.32071997896196);
 
-  CHECK(std::real(ratios_ref_0[0]) == Approx(0.002058545902));
-  CHECK(std::real(ratios_ref_0[1]) == Approx(0.008690720239));
-  CHECK(std::real(ratios_ref_0[2]) == Approx(0.01337217264));
-  CHECK(std::real(ratios_ref_0[3]) == Approx(0.01342613658));
-  CHECK(std::real(ratios_ref_1[0]) == Approx(0.004117091804));
-  CHECK(std::real(ratios_ref_1[1]) == Approx(0.02656485013));
-  CHECK(std::real(ratios_ref_1[2]) == Approx(0.03162610104));
+  CHECK(Approx(std::real(ratios_ref_0[0])) == 0.1930968497);
+  CHECK(Approx(std::real(ratios_ref_0[1])) == 0.1974314149);
+  CHECK(Approx(std::real(ratios_ref_0[2])) == 0.1788488105);
+  CHECK(Approx(std::real(ratios_ref_0[3])) == 0.1510578357);
+  CHECK(Approx(std::real(ratios_ref_1[0])) == 0.3861936994);
+  CHECK(Approx(std::real(ratios_ref_1[1])) == 0.3842995594);
+  CHECK(Approx(std::real(ratios_ref_1[2])) == 0.3207199790);
 }
 } // namespace qmcplusplus
