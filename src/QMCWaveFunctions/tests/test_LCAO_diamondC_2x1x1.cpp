@@ -12,6 +12,7 @@
 
 #include "catch.hpp"
 
+#include "ParticleIO/LatticeIO.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
@@ -35,8 +36,26 @@ TEST_CASE("LCAO DiamondC_2x1x1", "[wavefunction]")
   using VT       = SPOSet::ValueType;
   Communicate* c = OHMMS::Controller;
 
+  const char* particles = R"(<simulationcell>
+     <parameter name="lattice" units="bohr">
+        6.7463223   6.7463223   0.0
+        0.0         3.37316115  3.37316115
+        3.37316115  0.0         3.37316115
+     </parameter>
+     <parameter name="bconds">
+        p p p
+     </parameter>
+  </simulationcell>
+)";
+
+  Libxml2Document doc_lattice;
+  REQUIRE(doc_lattice.parseFromString(particles));
+
+  // read lattice
   ParticleSet::ParticleLayout lattice;
-  lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
+  LatticeParser lp(lattice);
+  lp.put(doc_lattice.getRoot());
+  lattice.print(app_log(), 0);
 
   SimulationCell simcell(lattice);
   ParticleSet ions_(simcell);
