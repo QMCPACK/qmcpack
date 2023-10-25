@@ -50,4 +50,15 @@ TEST_CASE("ReferencePointsInput::parseXML::invalid", "[estimators]")
     CHECK_THROWS_AS(constructBadRefPoints(node), UniformCommunicateError);
   }
 }
+
+TEST_CASE("ReferencePointsInput::makeReferencePointsInput", "[estimators]")
+{
+  using Input = testing::ValidReferencePointsInputs;
+  std::string value_label;
+  Libxml2Document doc;
+  bool okay       = doc.parseFromString(Input::xml[0]);
+  xmlNodePtr node = doc.getRoot();
+  makeReferencePointsInput(node, value_label);
+  CHECK(value_label == "referencepoints");
+}
 } // namespace qmcplusplus

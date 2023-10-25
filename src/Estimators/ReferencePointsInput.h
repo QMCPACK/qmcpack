@@ -94,7 +94,10 @@ private:
   static constexpr std::string_view error_tag{"ReferencePointsInput input: "};
 };
 
-std::any makeReferencePointsInput(xmlNodePtr, std::string& value_label);
+  /** factory function used by InputSection to make reference points Input
+   *  \param[out]  value_label     key value in delegating InputSection for storing the constructed Input from processed node.
+   */
+  std::any makeReferencePointsInput(xmlNodePtr, std::string& value_label);
 
 } // namespace qmcplusplus
 
