@@ -33,7 +33,7 @@ bool approxEquality(const TinyVector<T1, D>& val_a, const TinyVector<T2, D>& val
       return false;
   return true;
 }
-  
+
 TEST_CASE("ReferencePoints::DefaultConstruction", "[estimators]")
 {
   using Input = testing::ValidReferencePointsInputs;
@@ -44,7 +44,7 @@ TEST_CASE("ReferencePoints::DefaultConstruction", "[estimators]")
 
   auto lattice = testing::makeTestLattice();
   Communicate* comm;
-  comm = OHMMS::Controller;
+  comm               = OHMMS::Controller;
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto& pset         = *(particle_pool.getParticleSet("e"));
   auto& pset_ions    = *(particle_pool.getParticleSet("ion"));
@@ -107,7 +107,7 @@ TEST_CASE("ReferencePoints::Construction", "[estimators]")
 
   auto lattice = testing::makeTestLattice();
   Communicate* comm;
-  comm = OHMMS::Controller;
+  comm               = OHMMS::Controller;
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto& pset         = *(particle_pool.getParticleSet("e"));
   auto& pset_ions    = *(particle_pool.getParticleSet("ion"));
@@ -117,6 +117,7 @@ TEST_CASE("ReferencePoints::Construction", "[estimators]")
                                     {3.000459944, 3.329603408, 4.265030556}, {3.748660329, 3.63420622, 5.393637791},
                                     {3.033228526, 3.391869137, 4.654413566}, {3.114198787, 2.654334594, 5.231075822},
                                     {3.657151589, 4.883870516, 4.201243939}, {2.97317591, 4.245644974, 4.284564732}};
+
 
   RefVector<ParticleSet> ref_psets;
   ref_psets.push_back(pset_ions);
@@ -158,6 +159,97 @@ TEST_CASE("ReferencePoints::Construction", "[estimators]")
     bool coords_match = approxEquality(expected_reference_points[key], value);
     CHECK(coords_match);
   }
+}
+
+TEST_CASE("ReferencePoints::Description", "[estimators]")
+{
+  using Input = testing::ValidReferencePointsInputs;
+  Libxml2Document doc;
+  bool okay       = doc.parseFromString(Input::xml[Input::valid::CELL]);
+  xmlNodePtr node = doc.getRoot();
+  ReferencePointsInput rpi(node);
+
+  auto lattice = testing::makeTestLattice();
+  Communicate* comm;
+  comm               = OHMMS::Controller;
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto& pset         = *(particle_pool.getParticleSet("e"));
+  auto& pset_ions    = *(particle_pool.getParticleSet("ion"));
+
+  // Setup particleset
+  pset.R = ParticleSet::ParticlePos{{1.751870349, 4.381521229, 2.865202269}, {3.244515371, 4.382273176, 4.21105285},
+                                    {3.000459944, 3.329603408, 4.265030556}, {3.748660329, 3.63420622, 5.393637791},
+                                    {3.033228526, 3.391869137, 4.654413566}, {3.114198787, 2.654334594, 5.231075822},
+                                    {3.657151589, 4.883870516, 4.201243939}, {2.97317591, 4.245644974, 4.284564732}};
+
+
+  RefVector<ParticleSet> ref_psets;
+  ref_psets.push_back(pset_ions);
+  NEReferencePoints ref_points(std::move(rpi), pset, ref_psets);
+
+  std::ostringstream ostr_stream;
+  ref_points.write_description(ostr_stream, "  ");
+
+  std::string expected_description{
+      R"(  reference_points
+    a1:         3.37316115        3.37316115                 0
+    a2:                  0        3.37316115        3.37316115
+    a3:         3.37316115                 0        3.37316115
+    cmmm:        -3.37316115       -3.37316115       -3.37316115
+    cmmp:                  0       -3.37316115                 0
+    cmpm:        -3.37316115                 0                 0
+    cmpp:                  0                 0        3.37316115
+    cpmm:                  0                 0       -3.37316115
+    cpmp:         3.37316115                 0                 0
+    cppm:                  0        3.37316115                 0
+    cppp:         3.37316115        3.37316115        3.37316115
+    f1m:       -1.686580575      -1.686580575                 0
+    f1p:        1.686580575       1.686580575                 0
+    f2m:                  0      -1.686580575      -1.686580575
+    f2p:                  0       1.686580575       1.686580575
+    f3m:       -1.686580575                 0      -1.686580575
+    f3p:        1.686580575                 0       1.686580575
+    ion1:                  0                 0                 0
+    ion2:         1.68658058        1.68658058        1.68658058
+    r1:         3.37316115        3.37316115                 0
+    r2:                  0        3.37316115        3.37316115
+    r3:         3.37316115                 0        3.37316115
+    zero:                  0                 0                 0
+  end reference_points
+)"};
+  CHECK(ostr_stream.str() == expected_description);
+
+  // This subclass and function are used to generate the test data and may be useful for further test cases in future.
+  testing::TestableNEReferencePoints test_ref_points(ref_points);
+  std::ostringstream ostr_testing_stream;
+  test_ref_points.write_testable_description(ostr_testing_stream);
+  std::string expected_testable_description{R"({
+ {"a1", {      3.37316115,3.37316115,0}},
+ {"a2", {               0,3.37316115,3.37316115}},
+ {"a3", {      3.37316115,0,3.37316115}},
+ {"cmmm", {     -3.37316115,-3.37316115,-3.37316115}},
+ {"cmmp", {               0,-3.37316115,0}},
+ {"cmpm", {     -3.37316115,0,0}},
+ {"cmpp", {               0,0,3.37316115}},
+ {"cpmm", {               0,0,-3.37316115}},
+ {"cpmp", {      3.37316115,0,0}},
+ {"cppm", {               0,3.37316115,0}},
+ {"cppp", {      3.37316115,3.37316115,3.37316115}},
+ {"f1m", {    -1.686580575,-1.686580575,0}},
+ {"f1p", {     1.686580575,1.686580575,0}},
+ {"f2m", {               0,-1.686580575,-1.686580575}},
+ {"f2p", {               0,1.686580575,1.686580575}},
+ {"f3m", {    -1.686580575,0,-1.686580575}},
+ {"f3p", {     1.686580575,0,1.686580575}},
+ {"ion1", {               0,0,0}},
+ {"ion2", {      1.68658058,1.68658058,1.68658058}},
+ {"r1", {      3.37316115,3.37316115,0}},
+ {"r2", {               0,3.37316115,3.37316115}},
+ {"r3", {      3.37316115,0,3.37316115}},
+ {"zero", {               0,0,0}},
+};
+)"};
+  CHECK(ostr_testing_stream.str() == expected_testable_description);
 }
 
 
