@@ -95,8 +95,8 @@ struct SoaSphericalTensor
 
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm], \
-                    xyz_ptr[:3*nR], Ylm_ptr[:Nlm*nR])")
+                    map(always, to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm]) \
+                    map(to: xyz_ptr[:3*nR], Ylm_ptr[:Nlm*nR])")
     for (size_t ir = 0; ir < nR; ir++)
     {
       evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_ptr + (ir * Nlm), Lmax,

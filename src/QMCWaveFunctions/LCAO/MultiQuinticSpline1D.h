@@ -182,7 +182,8 @@ public:
 
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to:r_ptr[:nR], u_ptr[:nRnl*nR], coeff_ptr[:coefsize], first_deriv_ptr[:num_splines_])")
+                    map(always, to:coeff_ptr[:coefsize], first_deriv_ptr[:num_splines_]) \
+                    map(to:r_ptr[:nR], u_ptr[:nRnl*nR])")
     for (size_t ir = 0; ir < nR; ir++)
     {
       if (r_ptr[ir] >= Rmax)
