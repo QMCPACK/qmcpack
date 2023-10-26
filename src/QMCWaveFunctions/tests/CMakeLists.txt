@@ -104,9 +104,6 @@ set(TRIALWF_SRC
     test_lattice_gaussian.cpp
     test_TWFGrads.cpp)
 
-set(TMP_SRC
-    test_LCAO_diamondC_2x1x1.cpp)
-
 set(SPOSET_SRC
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp
@@ -118,6 +115,7 @@ set(SPOSET_SRC
     test_hybridrep.cpp
     test_pw.cpp
     test_ConstantSPOSet.cpp
+    test_LCAO_diamondC_2x1x1.cpp
     ${MO_SRCS})
 if(NiO_a16_H5_FOUND)
   set(SPOSET_SRC ${SPOSET_SRC} test_einset_NiO_a16.cpp)
@@ -173,7 +171,7 @@ if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
 
-foreach(CATEGORY common trialwf sposet jastrow determinant tmp)
+foreach(CATEGORY common trialwf sposet jastrow determinant)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   string(TOUPPER "${CATEGORY}_SRC" SOURCE_FILE_VAR_NAME)
