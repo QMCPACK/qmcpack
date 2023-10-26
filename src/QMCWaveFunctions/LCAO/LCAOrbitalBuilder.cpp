@@ -785,7 +785,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     if (curname == SDTag)
       MultiDet = false;
 
-  } while ((xmlTag != curname) && (curname != EndTag));
+  } while ((xmlTag != curname) && (curname != EndTag) && curname != "sposet_collection");
   if (curname == EndTag)
   {
     APP_ABORT(

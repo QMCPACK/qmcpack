@@ -77,6 +77,8 @@ class packed {
 
 template<class T> struct basic_datatype;
 
+
+#if defined(MPI_DOUBLE_COMPLEX)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define MPI3_DECLARE_DATATYPE(TypE, MpiiD) \
 template<> struct basic_datatype<TypE> { \
@@ -88,6 +90,17 @@ template<> struct basic_datatype<TypE> { \
 	auto get() const -> MPI_Datatype {return MpiiD;} \
 /*	static constexpr MPI_Datatype value = MpiiD;*/ \
 }
+#else
+#define MPI3_DECLARE_DATATYPE(TypE, MpiiD) \
+template<> struct basic_datatype<TypE> { \
+/*	constexpr*/ operator MPI_Datatype() const { \
+	assert( (MpiiD) != MPI_DATATYPE_NULL );            /* NOLINT(cert-dcl03-c,hicpp-static-assert,misc-static-assert) in some MPI distros this is not constexpr */ /*this system doesn't support this type*/ \
+		return MpiiD; \
+	} \
+	auto get() const -> MPI_Datatype {return MpiiD;} \
+/*	static constexpr MPI_Datatype value = MpiiD;*/ \
+}
+#endif
 
 // basic data types http://beige.ucs.indiana.edu/I590/node100.html
 MPI3_DECLARE_DATATYPE(char                   , MPI_CHAR);
@@ -119,19 +132,31 @@ MPI3_DECLARE_DATATYPE(bool                   , MPI_C_BOOL);  // C++ binding not 
 // MPI_UINT16_T	uint16_t
 // MPI_UINT32_T	uint32_t
 // MPI_UINT64_T	uint64_t
-
+#if defined(MPI_C_FLOAT_COMPLEX)
 MPI3_DECLARE_DATATYPE(cxx_float_complex      , MPI_C_FLOAT_COMPLEX);
 MPI3_DECLARE_DATATYPE(cxx_double_complex     , MPI_C_DOUBLE_COMPLEX);
 MPI3_DECLARE_DATATYPE(cxx_long_double_complex, MPI_C_LONG_DOUBLE_COMPLEX);
+#else
+MPI3_DECLARE_DATATYPE(cxx_float_complex      , MPI_CXX_FLOAT_COMPLEX);
+MPI3_DECLARE_DATATYPE(cxx_double_complex     , MPI_CXX_DOUBLE_COMPLEX);
+MPI3_DECLARE_DATATYPE(cxx_long_double_complex, MPI_CXX_LONG_DOUBLE_COMPLEX);
+#endif
 
 // MPI3_DECLARE_DATATYPE(cxx_2double_complex    , MPI_2DOUBLE_COMPLEX);  // not available in mpich
 
 // TODO(correaa) these types below probably don't behave correctly for reductions with multiplication
 
+#if defined(MPI_COMPLEX)
 MPI3_DECLARE_DATATYPE(float_float            , MPI_COMPLEX);  static_assert(sizeof(std::pair<float, float>) == sizeof(std::complex<float>), "checking that complex mem layout maps to pair");
 MPI3_DECLARE_DATATYPE(double_double          , MPI_DOUBLE_COMPLEX); static_assert(sizeof(std::pair<double, double>) == sizeof(std::complex<double>), "checking that complex mem layout maps to pair");
-MPI3_DECLARE_DATATYPE(decltype(std::tuple<double,double>{}), MPI_DOUBLE_COMPLEX);
+MPI3_DECLARE_DATATYPE(decltype(std::tuple<double,double>{}), MPI_DOUBLE_COMPLEX);  // TODO(correaa) is this correct? reduce (specially multiplication) will not give correct result
 MPI3_DECLARE_DATATYPE(long_double_long_double, MPI_DOUBLE_COMPLEX); static_assert(sizeof(std::pair<long double, long double>) == sizeof(std::complex<long double>), "checking that complex mem layout maps to pair");
+#else
+MPI3_DECLARE_DATATYPE(float_float            , MPI_CXX_FLOAT_COMPLEX);  static_assert(sizeof(std::pair<float, float>) == sizeof(std::complex<float>), "checking that complex mem layout maps to pair");
+MPI3_DECLARE_DATATYPE(double_double          , MPI_CXX_DOUBLE_COMPLEX); static_assert(sizeof(std::pair<double, double>) == sizeof(std::complex<double>), "checking that complex mem layout maps to pair");
+MPI3_DECLARE_DATATYPE(decltype(std::tuple<double,double>{}), MPI_CXX_DOUBLE_COMPLEX);  // TODO(correaa) is this correct? reduce (specially multiplication) will not give correct result
+MPI3_DECLARE_DATATYPE(long_double_long_double, MPI_CXX_DOUBLE_COMPLEX); static_assert(sizeof(std::pair<long double, long double>) == sizeof(std::complex<long double>), "checking that complex mem layout maps to pair");
+#endif
 
 #if defined(__NVCC__)
 MPI3_DECLARE_DATATYPE(thrust::complex<double>, MPI_DOUBLE_COMPLEX);
@@ -188,6 +213,10 @@ auto datatype_detect(...) -> default_datatype<T>;
 
 template<class T, class U, class RealType = decltype(U{}.real()), class = decltype(U{}.imag())>
 auto datatype_detect(U const&) -> default_datatype<std::complex<RealType>>;
+
+// support enums
+template<class T, class U, class UL = std::underlying_type_t<U>>
+auto datatype_detect(U const&) -> default_datatype<UL>;
 
 template<class T> class datatype :  public decltype(datatype_detect<T>(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg) detection idiom
 

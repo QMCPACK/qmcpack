@@ -1,4 +1,4 @@
-/* -*- indent-tabs-mode: t -*- */
+// Copyright 2018-2023 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_ALLOCATOR_HPP
 #define BOOST_MPI3_ALLOCATOR_HPP
@@ -17,13 +17,21 @@ struct /*__attribute__((aligned(0)))*/ bad_alloc : std::bad_alloc{using std::bad
 
 inline void* malloc(mpi3::size_t size) {
 	void* ret;  // NOLINT(cppcoreguidelines-init-variables) delayed init
+#if not defined(EXAMPI)
 	int const s = MPI_Alloc_mem(size, MPI_INFO_NULL, &ret);
 	if(s != MPI_SUCCESS) {return nullptr;}  //s throw bad_alloc();//"cannot allocate " + std::to_string(size) + " bytes");
+#else
+	ret = std::malloc(size);
+#endif
 	return ret;
 }
 
 inline void free(void* ptr){
+#if not defined(EXAMPI)
 	MPI_(Free_mem)(ptr);
+#else
+	std::free(ptr);
+#endif
 }
 
 template<class T>
@@ -87,42 +95,42 @@ constexpr std::add_const_t<T>& as_const(T& t) noexcept{return t;}
 
 //int mpi3::main(int argc, char* argv[], mpi3::communicator world){
 
-//	std::vector<double, mpi3::allocator<double>> v(1000000);
-//	std::vector<double, mpi3::uallocator<double>> uv(1000000);
-//	std::iota(v.begin(), v.end(), 0.);
-//	using boost::mpi3::data;
-//	assert( data(uv.begin()) == &*uv.begin() );
-//	assert( std::accumulate(v.begin(), v.end(), 0.) == (v.size()*(v.size() - 1))/2 );
-//	return 0;
-//	
-//	{
-//		boost::container::flat_set<double, std::less<double>, mpi3::allocator<double> > fs;
-//		fs.insert(5.);
-//		fs.insert(3.);
-//		auto it = fs.begin(); 
-//		assert(*it == 3.); 
-//		++it; 
-//		assert(*it == 5.); 
-//	}
-//	{
-//		boost::container::flat_set<int, std::less<int>, std::allocator_traits<mpi3::allocator<double>>::rebind_alloc<int>> fs;
-//		fs.insert(5);
-//		fs.insert(3);
-//		auto it = fs.begin(); 
-//		assert(*it == 3); 
-//		++it; 
-//		assert(*it == 5);
-//	} 
-//	{
-//		boost::container::flat_set<std::pair<double, double>, std::less<std::pair<double, double>>, mpi3::allocator<std::pair<double, double>>> fsp;
-//		fsp.insert({1.,2.});
-//		fsp.insert({3.,4.});
-//		auto it = fsp.begin(); 
-//		assert(*it == std::make_pair(1.,2.)); 
-//		++it; 
-//		assert(*it == std::make_pair(3.,4.)); 
-//	}
-//	return 0;
+//  std::vector<double, mpi3::allocator<double>> v(1000000);
+//  std::vector<double, mpi3::uallocator<double>> uv(1000000);
+//  std::iota(v.begin(), v.end(), 0.);
+//  using boost::mpi3::data;
+//  assert( data(uv.begin()) == &*uv.begin() );
+//  assert( std::accumulate(v.begin(), v.end(), 0.) == (v.size()*(v.size() - 1))/2 );
+//  return 0;
+//  
+//  {
+//      boost::container::flat_set<double, std::less<double>, mpi3::allocator<double> > fs;
+//      fs.insert(5.);
+//      fs.insert(3.);
+//      auto it = fs.begin(); 
+//      assert(*it == 3.); 
+//      ++it; 
+//      assert(*it == 5.); 
+//  }
+//  {
+//      boost::container::flat_set<int, std::less<int>, std::allocator_traits<mpi3::allocator<double>>::rebind_alloc<int>> fs;
+//      fs.insert(5);
+//      fs.insert(3);
+//      auto it = fs.begin(); 
+//      assert(*it == 3); 
+//      ++it; 
+//      assert(*it == 5);
+//  } 
+//  {
+//      boost::container::flat_set<std::pair<double, double>, std::less<std::pair<double, double>>, mpi3::allocator<std::pair<double, double>>> fsp;
+//      fsp.insert({1.,2.});
+//      fsp.insert({3.,4.});
+//      auto it = fsp.begin(); 
+//      assert(*it == std::make_pair(1.,2.)); 
+//      ++it; 
+//      assert(*it == std::make_pair(3.,4.)); 
+//  }
+//  return 0;
 //}
 
 //#endif
