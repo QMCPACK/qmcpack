@@ -448,6 +448,8 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
       ScopedTimer z_timer(WFC_timers_[V_TIMER + TIMER_SKIP * i]);
       r *= Z[i]->ratio(P, iat);
     }
+
+  NaNguard::checkOneParticleRatio(r, "TWF::calcRatio at particle " + std::to_string(iat));
   return static_cast<ValueType>(r);
 }
 
@@ -479,8 +481,12 @@ void TrialWaveFunction::mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction
         ratios[iw] *= ratios_z[iw];
     }
   }
+
   for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    NaNguard::checkOneParticleRatio(ratios[iw], "TWF::mw_calcRatio at particle " + std::to_string(iat));
     wf_list[iw].PhaseDiff = std::arg(ratios[iw]);
+  }
 }
 
 void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
@@ -619,6 +625,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
       r *= Z[i]->ratioGrad(P, iat, grad_iat);
     }
 
+  NaNguard::checkOneParticleRatio(r, "TWF::calcRatioGrad at particle " + std::to_string(iat));
   if (r != PsiValue(0)) // grad_iat is meaningful only when r is strictly non-zero
     NaNguard::checkOneParticleGradients(grad_iat, "TWF::calcRatioGrad at particle " + std::to_string(iat));
   LogValue logratio = convertValueToLog(r);
@@ -641,6 +648,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
     r *= Z[i]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
   }
 
+  NaNguard::checkOneParticleRatio(r, "TWF::calcRatioGradWithSpin at particle " + std::to_string(iat));
   if (r != PsiValue(0)) // grad_iat is meaningful only when r is strictly non-zero
     NaNguard::checkOneParticleGradients(grad_iat, "TWF::calcRatioGradWithSpin at particle " + std::to_string(iat));
   LogValue logratio = convertValueToLog(r);
@@ -699,6 +707,7 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
     wf_list[iw].PhaseDiff = std::arg(ratios[iw]);
+    NaNguard::checkOneParticleRatio(ratios[iw], "TWF::mw_calcRatioGrad at particle " + std::to_string(iat));
     if (ratios[iw] != PsiValue(0))
       NaNguard::checkOneParticleGradients(grad_new.grads_positions[iw], "TWF::mw_calcRatioGrad at particle " + std::to_string(iat));
   }
