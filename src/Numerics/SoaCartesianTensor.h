@@ -157,8 +157,10 @@ struct SoaCartesianTensor
     // might be more readable?
     // or just pass one ptr to evaluateVGL and apply stride/offset inside
 
-    PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:NormFactor_ptr[:Nlm], \
-                   xyz_ptr[:3*nR], XYZ_vgl_ptr[:5*nR*Nlm])")
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(always, to:NormFactor_ptr[:Nlm]) \
+                    map(to: xyz_ptr[:3*nR], XYZ_vgl_ptr[:5*nR*Nlm])")
     for (size_t ir = 0; ir < nR; ir++)
     {
       evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], XYZ_vgl_ptr + (ir * Nlm),

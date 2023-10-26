@@ -257,9 +257,10 @@ public:
     constexpr T c12(12);
     constexpr T c20(20);
 
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to: first_deriv_ptr[:num_splines_], coeff_ptr[:coefsize], \
-                    r_ptr[:nR], u_ptr[:nRnl*nR], du_ptr[:nRnl*nR], d2u_ptr[:nRnl*nR])")
+                    map(always, to: first_deriv_ptr[:num_splines_], coeff_ptr[:coefsize]) \
+                    map(to: r_ptr[:nR], u_ptr[:nRnl*nR], du_ptr[:nRnl*nR], d2u_ptr[:nRnl*nR])")
     for (size_t ir = 0; ir < nR; ir++)
     {
       if (r_ptr[ir] >= Rmax)
