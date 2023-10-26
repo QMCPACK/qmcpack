@@ -89,7 +89,7 @@ else()
   set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
 endif()
 
-set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp)
+set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp test_NaNguard.cpp)
 set(TRIALWF_SRC
     test_TrialWaveFunction.cpp
     test_wavefunction_factory.cpp
