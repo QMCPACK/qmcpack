@@ -139,103 +139,142 @@ void test_LCAO_DiamondC_2x1x1_real()
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
   ParticleSet::mw_update(p_list);
-
-  SPOSet::ValueVector psiref_0(norb);
-  SPOSet::GradVector dpsiref_0(norb);
-  SPOSet::ValueVector d2psiref_0(norb);
-  SPOSet::ValueVector psiref_1(norb);
-  SPOSet::GradVector dpsiref_1(norb);
-  SPOSet::ValueVector d2psiref_1(norb);
-  spo->evaluateVGL(elec_, 0, psiref_0, dpsiref_0, d2psiref_0);
-  spo_2->evaluateVGL(elec_2, 0, psiref_1, dpsiref_1, d2psiref_1);
-
-  // app_log() << "vgl_refvalues: \n" << std::setprecision(14);
-  // for (int iorb = 0; iorb < 2; iorb++)
-  // {
-  //   app_log() << "CHECK(std::real(psiref_0[" << iorb << "]) == Approx(" << psiref_0[iorb] << "));\n";
-  //   app_log() << "CHECK(std::real(d2psiref_0[" << iorb << "]) == Approx(" << d2psiref_0[iorb] << "));\n";
-  //   for (int idim = 0; idim < 3; idim++)
-  //     app_log() << "CHECK(std::real(dpsiref_0[" << iorb << "][" << idim << "]) == Approx(" << dpsiref_0[iorb][idim] << "));\n";
-  // }
-  // for (int iorb = 0; iorb < 2; iorb++)
-  // {
-  //   app_log() << "CHECK(std::real(psiref_1[" << iorb << "]) == Approx(" << psiref_1[iorb] << "));\n";
-  //   app_log() << "CHECK(std::real(d2psiref_1[" << iorb << "]) == Approx(" << d2psiref_1[iorb] << "));\n";
-  //   for (int idim = 0; idim < 3; idim++)
-  //     app_log() << "CHECK(std::real(dpsiref_1[" << iorb << "][" << idim << "]) == Approx(" << dpsiref_1[iorb][idim] << "));\n";
-  // }
-  CHECK(std::real(psiref_0[0]) == Approx(0.23966351080363));
-  CHECK(std::real(d2psiref_0[0]) == Approx(-0.52701907904562));
-  CHECK(std::real(dpsiref_0[0][0]) == Approx(-0.0057821587526225));
-  CHECK(std::real(dpsiref_0[0][1]) == Approx(-0.10996780053441));
-  CHECK(std::real(dpsiref_0[0][2]) == Approx(0.0057818514970319));
-  CHECK(std::real(psiref_0[1]) == Approx(0.26673125102484));
-  CHECK(std::real(d2psiref_0[1]) == Approx(-0.56873091511411));
-  CHECK(std::real(dpsiref_0[1][0]) == Approx(-1.5495607896545e-06));
-  CHECK(std::real(dpsiref_0[1][1]) == Approx(-0.49161303927196));
-  CHECK(std::real(dpsiref_0[1][2]) == Approx(-2.5223735120643e-07));
-
-  CHECK(std::real(psiref_1[0]) == Approx(0.22735347471476));
-  CHECK(std::real(d2psiref_1[0]) == Approx(-0.41247534585435));
-  CHECK(std::real(dpsiref_1[0][0]) == Approx(-0.0064508940042537));
-  CHECK(std::real(dpsiref_1[0][1]) == Approx(-0.13393939202647));
-  CHECK(std::real(dpsiref_1[0][2]) == Approx(0.0064505548318947));
-  CHECK(std::real(psiref_1[1]) == Approx(0.21979955506832));
-  CHECK(std::real(d2psiref_1[1]) == Approx(-0.31185449762657));
-  CHECK(std::real(dpsiref_1[1][0]) == Approx(-1.7377316644163e-06));
-  CHECK(std::real(dpsiref_1[1][1]) == Approx(-0.44562353474568));
-  CHECK(std::real(dpsiref_1[1][2]) == Approx(2.5297265181413e-07));
-
-  SPOSet::ValueVector psi_v_1(norb);
-  SPOSet::ValueVector psi_v_2(norb);
-  RefVector<SPOSet::ValueVector> psi_v_list{psi_v_1, psi_v_2};
-  spo->mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
-
-  SPOSet::ValueVector psi_1(norb);
-  SPOSet::GradVector dpsi_1(norb);
-  SPOSet::ValueVector d2psi_1(norb);
-  SPOSet::ValueVector psi_2(norb);
-  SPOSet::GradVector dpsi_2(norb);
-  SPOSet::ValueVector d2psi_2(norb);
-  RefVector<SPOSet::ValueVector> psi_list   = {psi_1, psi_2};
-  RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
-  RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
-  spo->mw_evaluateVGL(spo_list, p_list, 0, psi_list, dpsi_list, d2psi_list);
-
-
-  for (size_t iorb = 0; iorb < norb; iorb++)
+  SECTION("LCAOrbitalSet::mw_evaluateVGL")
   {
-    CHECK(std::real(psi_list[0].get()[iorb]) == Approx(std::real(psiref_0[iorb])));
-    CHECK(std::real(psi_list[1].get()[iorb]) == Approx(std::real(psiref_1[iorb])));
-    CHECK(std::real(d2psi_list[0].get()[iorb]) == Approx(std::real(d2psiref_0[iorb])));
-    CHECK(std::real(d2psi_list[1].get()[iorb]) == Approx(std::real(d2psiref_1[iorb])));
-    for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+    SPOSet::ValueVector psiref_0(norb);
+    SPOSet::GradVector dpsiref_0(norb);
+    SPOSet::ValueVector d2psiref_0(norb);
+    SPOSet::ValueVector psiref_1(norb);
+    SPOSet::GradVector dpsiref_1(norb);
+    SPOSet::ValueVector d2psiref_1(norb);
+
+    spo_2->evaluateVGL(elec_2, 0, psiref_1, dpsiref_1, d2psiref_1);
+    spo->evaluateVGL(elec_, 0, psiref_0, dpsiref_0, d2psiref_0);
+    SECTION("single-walker VGL")
     {
-      CHECK(std::real(dpsi_list[0].get()[iorb][idim]) == Approx(std::real(dpsiref_0[iorb][idim])));
-      CHECK(std::real(dpsi_list[1].get()[iorb][idim]) == Approx(std::real(dpsiref_1[iorb][idim])));
+      CHECK(Approx(std::real(psiref_0[0])) == 0.10203360788082);
+      CHECK(Approx(std::real(d2psiref_0[0])) == -0.14269632514649);
+      CHECK(Approx(std::real(dpsiref_0[0][0])) == 0.00031796000022);
+      CHECK(Approx(std::real(dpsiref_0[0][1])) == -0.01951178212495);
+      CHECK(Approx(std::real(dpsiref_0[0][2])) == -0.00031738324507);
+      CHECK(Approx(std::real(psiref_0[1])) == 0.14111282090404);
+      CHECK(Approx(std::real(d2psiref_0[1])) == -0.28230884342631);
+      CHECK(Approx(std::real(dpsiref_0[1][0])) == 0.01205368790709);
+      CHECK(Approx(std::real(dpsiref_0[1][1])) == -0.04876640907938);
+      CHECK(Approx(std::real(dpsiref_0[1][2])) == -0.01205402562448);
+
+      CHECK(Approx(std::real(psiref_1[0])) == 0.09954792826469);
+      CHECK(Approx(std::real(d2psiref_1[0])) == -0.10799468581785);
+      CHECK(Approx(std::real(dpsiref_1[0][0])) == 0.00024577684629);
+      CHECK(Approx(std::real(dpsiref_1[0][1])) == -0.02943596305516);
+      CHECK(Approx(std::real(dpsiref_1[0][2])) == -0.00024512723822);
+      CHECK(Approx(std::real(psiref_1[1])) == 0.13558495733438);
+      CHECK(Approx(std::real(d2psiref_1[1])) == -0.21885179829267);
+      CHECK(Approx(std::real(dpsiref_1[1][0])) == 0.00738771300147);
+      CHECK(Approx(std::real(dpsiref_1[1][1])) == -0.06080141726019);
+      CHECK(Approx(std::real(dpsiref_1[1][2])) == -0.00738811343748);
     }
-  }
-  for (size_t iorb = 0; iorb < norb; iorb++)
-    for (size_t iw = 0; iw < nw; iw++)
-      CHECK(std::real(psi_v_list[iw].get()[iorb]) == Approx(std::real(psi_list[iw].get()[iorb])));
+
+    SPOSet::ValueVector psi_v_1(norb);
+    SPOSet::ValueVector psi_v_2(norb);
+    RefVector<SPOSet::ValueVector> psi_v_list{psi_v_1, psi_v_2};
+    spo->mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
+    SECTION("multi-walker V")
+    {
+      CHECK(Approx(std::real(psi_v_list[0].get()[0])) == 0.10203360788082);
+      CHECK(Approx(std::real(psi_v_list[0].get()[1])) == 0.14111282090404);
+      CHECK(Approx(std::real(psi_v_list[1].get()[0])) == 0.09954792826469);
+      CHECK(Approx(std::real(psi_v_list[1].get()[1])) == 0.13558495733438);
+    }
+
+
+    SPOSet::ValueVector psi_1(norb);
+    SPOSet::GradVector dpsi_1(norb);
+    SPOSet::ValueVector d2psi_1(norb);
+    SPOSet::ValueVector psi_2(norb);
+    SPOSet::GradVector dpsi_2(norb);
+    SPOSet::ValueVector d2psi_2(norb);
+    RefVector<SPOSet::ValueVector> psi_list   = {psi_1, psi_2};
+    RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
+    RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
+    spo->mw_evaluateVGL(spo_list, p_list, 0, psi_list, dpsi_list, d2psi_list);
+    SECTION("multi-walker VGL")
+    {
+      CHECK(Approx(std::real(psi_list[0].get()[0])) == 0.10203360788082);
+      CHECK(Approx(std::real(d2psi_list[0].get()[0])) == -0.14269632514649);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][0])) == 0.00031796000022);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][1])) == -0.01951178212495);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][2])) == -0.00031738324507);
+      CHECK(Approx(std::real(psi_list[0].get()[1])) == 0.14111282090404);
+      CHECK(Approx(std::real(d2psi_list[0].get()[1])) == -0.28230884342631);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][0])) == 0.01205368790709);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][1])) == -0.04876640907938);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][2])) == -0.01205402562448);
+
+      CHECK(Approx(std::real(psi_list[1].get()[0])) == 0.09954792826469);
+      CHECK(Approx(std::real(d2psi_list[1].get()[0])) == -0.10799468581785);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][0])) == 0.00024577684629);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][1])) == -0.02943596305516);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][2])) == -0.00024512723822);
+      CHECK(Approx(std::real(psi_list[1].get()[1])) == 0.13558495733438);
+      CHECK(Approx(std::real(d2psi_list[1].get()[1])) == -0.21885179829267);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][0])) == 0.00738771300147);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][1])) == -0.06080141726019);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][2])) == -0.00738811343748);
+    }
+
+
+    SECTION("compare MW/SW V/VGL")
+    {
+      for (size_t iorb = 0; iorb < norb; iorb++)
+      {
+        CHECK(Approx(std::real(psi_list[0].get()[iorb])) == std::real(psiref_0[iorb]));
+        CHECK(Approx(std::real(psi_list[1].get()[iorb])) == std::real(psiref_1[iorb]));
+        CHECK(Approx(std::real(d2psi_list[0].get()[iorb])) == std::real(d2psiref_0[iorb]));
+        CHECK(Approx(std::real(d2psi_list[1].get()[iorb])) == std::real(d2psiref_1[iorb]));
+        for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+        {
+          CHECK(Approx(std::real(dpsi_list[0].get()[iorb][idim])) == std::real(dpsiref_0[iorb][idim]));
+          CHECK(Approx(std::real(dpsi_list[1].get()[iorb][idim])) == std::real(dpsiref_1[iorb][idim]));
+        }
+      }
+      for (size_t iorb = 0; iorb < norb; iorb++)
+        for (size_t iw = 0; iw < nw; iw++)
+          CHECK(Approx(std::real(psi_v_list[iw].get()[iorb])) == std::real(psi_list[iw].get()[iorb]));
 #ifdef QMC_COMPLEX
-  for (size_t iorb = 0; iorb < norb; iorb++)
-  {
-    CHECK(std::imag(psi_list[0].get()[iorb]) == Approx(std::imag(psiref_0[iorb])));
-    CHECK(std::imag(psi_list[1].get()[iorb]) == Approx(std::imag(psiref_1[iorb])));
-    CHECK(std::imag(d2psi_list[0].get()[iorb]) == Approx(std::imag(d2psiref_0[iorb])));
-    CHECK(std::imag(d2psi_list[1].get()[iorb]) == Approx(std::imag(d2psiref_1[iorb])));
-    for (size_t idim = 0; idim < SPOSet::DIM; idim++)
-    {
-      CHECK(std::imag(dpsi_list[0].get()[iorb][idim]) == Approx(std::imag(dpsiref_0[iorb][idim])));
-      CHECK(std::imag(dpsi_list[1].get()[iorb][idim]) == Approx(std::imag(dpsiref_1[iorb][idim])));
-    }
-  }
-  for (size_t iorb = 0; iorb < norb; iorb++)
-    for (size_t iw = 0; iw < nw; iw++)
-      CHECK(std::imag(psi_v_list[iw].get()[iorb]) == Approx(std::imag(psi_list[iw].get()[iorb])));
+      for (size_t iorb = 0; iorb < norb; iorb++)
+      {
+        CHECK(Approx(std::imag(psi_list[0].get()[iorb])) == std::imag(psiref_0[iorb]));
+        CHECK(Approx(std::imag(psi_list[1].get()[iorb])) == std::imag(psiref_1[iorb]));
+        CHECK(Approx(std::imag(d2psi_list[0].get()[iorb])) == std::imag(d2psiref_0[iorb]));
+        CHECK(Approx(std::imag(d2psi_list[1].get()[iorb])) == std::imag(d2psiref_1[iorb]));
+        for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+        {
+          CHECK(Approx(std::imag(dpsi_list[0].get()[iorb][idim])) == std::imag(dpsiref_0[iorb][idim]));
+          CHECK(Approx(std::imag(dpsi_list[1].get()[iorb][idim])) == std::imag(dpsiref_1[iorb][idim]));
+        }
+      }
+      for (size_t iorb = 0; iorb < norb; iorb++)
+        for (size_t iw = 0; iw < nw; iw++)
+          CHECK(Approx(std::imag(psi_v_list[iw].get()[iorb])) == std::imag(psi_list[iw].get()[iorb]));
 #endif
-
+    }
+    // app_log() << "vgl_refvalues: \n" << std::setprecision(14);
+    // for (int iorb = 0; iorb < 2; iorb++)
+    // {
+    //   app_log() << "CHECK(Approx(std::real(psiref_0[" << iorb << "])) == " << psiref_0[iorb] << ");\n";
+    //   app_log() << "CHECK(Approx(std::real(d2psiref_0[" << iorb << "])) == " << d2psiref_0[iorb] << ");\n";
+    //   for (int idim = 0; idim < 3; idim++)
+    //     app_log() << "CHECK(Approx(std::real(dpsiref_0[" << iorb << "][" << idim << "])) == " << dpsiref_0[iorb][idim] << ");\n";
+    // }
+    // for (int iorb = 0; iorb < 2; iorb++)
+    // {
+    //   app_log() << "CHECK(Approx(std::real(psiref_1[" << iorb << "])) == " << psiref_1[iorb] << ");\n";
+    //   app_log() << "CHECK(Approx(std::real(d2psiref_1[" << iorb << "])) == " << d2psiref_1[iorb] << "));\n";
+    //   for (int idim = 0; idim < 3; idim++)
+    //     app_log() << "CHECK(Approx(std::real(dpsiref_1[" << iorb << "][" << idim << "])) == " << dpsiref_1[iorb][idim] << ");\n";
+    // }
+  }
   SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
   {
     // make VPs
@@ -599,8 +638,8 @@ void test_LCAO_DiamondC_2x1x1_cplx()
 TEST_CASE("LCAOrbitalSet batched PBC DiamondC", "[wavefunction]")
 {
   SECTION("2x1x1 real") { test_LCAO_DiamondC_2x1x1_real(); }
-// #ifdef QMC_COMPLEX
-//   SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(); }
-// #endif
+  // #ifdef QMC_COMPLEX
+  //   SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(); }
+  // #endif
 }
 } // namespace qmcplusplus
