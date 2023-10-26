@@ -598,7 +598,7 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   Vector<ValueType> invTemp(Temp.data(1), BasisSetSize);
 
   if (Identity)
-    BLAS::copy(psiinv.size(), psiinv.data(), invTemp.data());
+    std::copy_n(psiinv.data(), psiinv.size(), invTemp.data());
   else
   {
     ScopedTimer local(mo_timer_);
