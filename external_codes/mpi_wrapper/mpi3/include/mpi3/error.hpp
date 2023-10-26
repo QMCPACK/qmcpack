@@ -1,5 +1,4 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2017-2022 Alfredo A. Correa
+// Copyright 2017-2023 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_ERROR_HPP
 #define BOOST_MPI3_ERROR_HPP
@@ -8,6 +7,7 @@
 
 #include <array>
 #include <system_error>
+#include <vector>
 
 namespace boost {
 namespace mpi3 {
@@ -41,10 +41,13 @@ enum class error : int {  // decltype(MPI_SUCCESS) {
 };
 
 auto inline string(enum error err) {
-	std::array<char, MPI_MAX_ERROR_STRING> estring{};
+	// std::array<char, MPI_MAX_ERROR_STRING> estring{};  // in EXAMPI MPI_MAX_ERROR_STRING is not constexpr
+	std::string estring(MPI_MAX_ERROR_STRING, '\0');
 	int len;  // NOLINT(cppcoreguidelines-init-variables) delayed initialization
-	MPI_Error_string(static_cast<int>(err), estring.data(), &len);
-	return std::string(estring.data(), static_cast<std::string::size_type>(len));
+	int s = MPI_Error_string(static_cast<int>(err), estring.data(), &len);  // do not use the MPI_() macro or mpi3::call here because they need this in the first place to capture the error message
+	if( s !=MPI_SUCCESS ) {throw std::logic_error("error while constructing error string");}
+	estring.resize(static_cast<std::size_t>(len));
+	return estring;
 }
 
 struct error_category : std::error_category {
