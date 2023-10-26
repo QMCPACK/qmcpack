@@ -720,13 +720,12 @@ struct SoaAtomicBasisSet
     assert(this == &atom_bs_list.getLeader());
     auto& atom_bs_leader = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet<ROT, SH>>();
 
-    int Nx   = PBCImages[0] + 1;
-    int Ny   = PBCImages[1] + 1;
-    int Nz   = PBCImages[2] + 1;
-    int Nyz  = Ny * Nz;
-    int Nxyz = Nx * Nyz;
+    int Nx         = PBCImages[0] + 1;
+    int Ny         = PBCImages[1] + 1;
+    int Nz         = PBCImages[2] + 1;
+    const int Nxyz = Nx * Ny * Nz;
 
-    //assert(psi_vgl.size(0) == 5);
+    assert(psi_vgl.size(0) == 5);
     assert(psi_vgl.size(1) == nElec);
     assert(psi_vgl.size(2) == nBasTot);
 
@@ -746,9 +745,7 @@ struct SoaAtomicBasisSet
 
 
     // TODO: move these outside?
-    // auto& dr_pbc       = atom_bs_leader.mw_mem_handle_.getResource().dr_pbc;
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
-    // dr_pbc.resize(Nxyz, 3);
     correctphase.resize(nElec);
 
     auto* dr_ptr = dr.data();
@@ -758,7 +755,7 @@ struct SoaAtomicBasisSet
 
     auto* Tv_list_ptr    = Tv_list.data();
     auto* displ_list_ptr = displ_list.data();
-    // TODO: should this be VT?
+
     constexpr RealType cone(1);
     constexpr RealType ctwo(2);
 
@@ -798,8 +795,10 @@ struct SoaAtomicBasisSet
     auto* periodic_image_displacements_ptr = periodic_image_displacements.data();
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
+      // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
-		    map(to: dr_ptr[:3*nElec*Nxyz], periodic_image_displacements_ptr[:3*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
+                      map(always, to:periodic_image_displacements_ptr[:3*Nxyz]) \
+                      map(to: dr_ptr[:3*nElec*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
         for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
@@ -825,7 +824,6 @@ struct SoaAtomicBasisSet
       Ylm.batched_evaluateVGL(dr, ylm_vgl);
     }
 
-
     auto* phase_fac_ptr = periodic_image_phase_factors.data();
     auto* LM_ptr        = LM.data();
     auto* NL_ptr        = NL.data();
@@ -842,9 +840,10 @@ struct SoaAtomicBasisSet
     const RealType* restrict ylm_l_ptr = ylm_vgl.data_at(4, 0, 0, 0); //lap
     {
       ScopedTimer local_timer(psi_timer_);
-      PRAGMA_OFFLOAD(
-          "omp target teams distribute parallel for collapse(2) map(to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize], \
-		       ylm_v_ptr[:nYlm*nElec*Nxyz], ylm_x_ptr[:nYlm*nElec*Nxyz], ylm_y_ptr[:nYlm*nElec*Nxyz], ylm_z_ptr[:nYlm*nElec*Nxyz], ylm_l_ptr[:nYlm*nElec*Nxyz], \
+      // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
+          map(always, to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize]) \
+		       map(to:ylm_v_ptr[:nYlm*nElec*Nxyz], ylm_x_ptr[:nYlm*nElec*Nxyz], ylm_y_ptr[:nYlm*nElec*Nxyz], ylm_z_ptr[:nYlm*nElec*Nxyz], ylm_l_ptr[:nYlm*nElec*Nxyz], \
            phi_ptr[:nRnl*nElec*Nxyz], dphi_ptr[:nRnl*nElec*Nxyz], d2phi_ptr[:nRnl*nElec*Nxyz], \
            psi_ptr[:nBasTot*nElec], dpsi_x_ptr[:nBasTot*nElec], dpsi_y_ptr[:nBasTot*nElec], dpsi_z_ptr[:nBasTot*nElec], d2psi_ptr[:nBasTot*nElec], \
            correctphase_ptr[:nElec], r_ptr[:nElec*Nxyz], dr_ptr[:3*nElec*Nxyz]) ")
