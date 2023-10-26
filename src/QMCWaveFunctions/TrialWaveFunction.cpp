@@ -23,6 +23,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Concurrency/Info.hpp"
 #include "type_traits/ConvertToReal.h"
+#include "NaNguard.h"
 
 namespace qmcplusplus
 {
@@ -514,7 +515,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
     ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
     grad_iat += Z[i]->evalGrad(P, iat);
   }
-  checkOneParticleGradientsNaN(iat, grad_iat, "TWF::evalGrad");
+  NaNguard::checkOneParticleGradients(grad_iat, "TWF::evalGrad at particle " + std::to_string(iat));
   return grad_iat;
 }
 
@@ -528,7 +529,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, 
     ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
     grad_iat += Z[i]->evalGradWithSpin(P, iat, spingrad);
   }
-  checkOneParticleGradientsNaN(iat, grad_iat, "TWF::evalGradWithSpin");
+  NaNguard::checkOneParticleGradients(grad_iat, "TWF::evalGradWithSpin at particle " + std::to_string(iat));
   return grad_iat;
 }
 
@@ -557,7 +558,7 @@ void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>
   }
 
   for (const GradType& grads : grads.grads_positions)
-    checkOneParticleGradientsNaN(iat, grads, "TWF::mw_evalGrad");
+    NaNguard::checkOneParticleGradients(grads, "TWF::mw_evalGrad at particle " + std::to_string(iat));
 }
 
 // Evaluates the gradient w.r.t. to the source of the Laplacian
@@ -619,7 +620,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
     }
 
   if (r != PsiValue(0)) // grad_iat is meaningful only when r is strictly non-zero
-    checkOneParticleGradientsNaN(iat, grad_iat, "TWF::calcRatioGrad");
+    NaNguard::checkOneParticleGradients(grad_iat, "TWF::calcRatioGrad at particle " + std::to_string(iat));
   LogValue logratio = convertValueToLog(r);
   PhaseDiff         = std::imag(logratio);
   return static_cast<ValueType>(r);
@@ -640,7 +641,8 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
     r *= Z[i]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
   }
 
-  checkOneParticleGradientsNaN(iat, grad_iat, "TWF::calcRatioGradWithSpin");
+  if (r != PsiValue(0)) // grad_iat is meaningful only when r is strictly non-zero
+    NaNguard::checkOneParticleGradients(grad_iat, "TWF::calcRatioGradWithSpin at particle " + std::to_string(iat));
   LogValue logratio = convertValueToLog(r);
   PhaseDiff         = std::imag(logratio);
   return static_cast<ValueType>(r);
@@ -698,7 +700,7 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
   {
     wf_list[iw].PhaseDiff = std::arg(ratios[iw]);
     if (ratios[iw] != PsiValue(0))
-      checkOneParticleGradientsNaN(iat, grad_new.grads_positions[iw], "TWF::mw_calcRatioGrad");
+      NaNguard::checkOneParticleGradients(grad_new.grads_positions[iw], "TWF::mw_calcRatioGrad at particle " + std::to_string(iat));
   }
 }
 
@@ -1193,19 +1195,6 @@ void TrialWaveFunction::releaseResource(ResourceCollection& collection,
   {
     const auto wfc_list(extractWFCRefList(wf_list, i));
     wavefunction_components[i]->releaseResource(collection, wfc_list);
-  }
-}
-
-void TrialWaveFunction::checkOneParticleGradientsNaN(int iel, const GradType& grads, const std::string_view location)
-{
-  if (qmcplusplus::isnan(std::norm(dot(grads, grads))))
-  {
-    std::ostringstream error_message;
-    error_message << "NaN check in " << location << " found" << std::endl;
-    for (int i = 0; i < grads.size(); ++i)
-      if (qmcplusplus::isnan(std::norm(grads[i])))
-        error_message << "  particle " << iel << " grads[" << i << "] is NaN." << std::endl;
-    throw std::runtime_error(error_message.str());
   }
 }
 

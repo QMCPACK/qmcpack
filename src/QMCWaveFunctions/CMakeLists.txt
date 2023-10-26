@@ -24,6 +24,7 @@ add_subdirectory(detail)
 set(WFBASE_SRCS
     OptimizableFunctorBase.cpp
     VariableSet.cpp
+    NaNguard.cpp
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
     WaveFunctionComponentBuilder.cpp
