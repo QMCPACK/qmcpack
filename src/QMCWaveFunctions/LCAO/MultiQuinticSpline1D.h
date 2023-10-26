@@ -180,7 +180,7 @@ public:
     const size_t nCols    = coeffs->cols();
     const size_t coefsize = coeffs->size();
 
-
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to:coeff_ptr[:coefsize], first_deriv_ptr[:num_splines_]) \
                     map(to:r_ptr[:nR], u_ptr[:nRnl*nR])")

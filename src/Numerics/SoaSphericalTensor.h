@@ -93,7 +93,7 @@ struct SoaSphericalTensor
     auto* FactorL_ptr    = FactorL.data();
     auto* NormFactor_ptr = NormFactor.data();
 
-
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm]) \
                     map(to: xyz_ptr[:3*nR], Ylm_ptr[:Nlm*nR])")

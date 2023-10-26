@@ -103,6 +103,7 @@ struct SoaCartesianTensor
     auto* XYZ_ptr        = XYZ.data();
     auto* NormFactor_ptr = NormFactor.data();
 
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to:NormFactor_ptr[:Nlm]) \
                     map(to:xyz_ptr[:3*nR], XYZ_ptr[:Nlm*nR])")

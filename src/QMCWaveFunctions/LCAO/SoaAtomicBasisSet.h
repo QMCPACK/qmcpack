@@ -786,6 +786,7 @@ struct SoaAtomicBasisSet
     auto* periodic_image_displacements_ptr = periodic_image_displacements.data();
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
+      // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
                       map(always, to:periodic_image_displacements_ptr[:3*Nxyz]) \
                       map(to: dr_ptr[:3*nElec*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
@@ -826,6 +827,7 @@ struct SoaAtomicBasisSet
     auto* rnl_ptr = rnl_v.data();
     {
       ScopedTimer local_timer(psi_timer_);
+      // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
           map(always, to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize]) \
 		      map(to:ylm_ptr[:nYlm*nElec*Nxyz], rnl_ptr[:nRnl*nElec*Nxyz], psi_ptr[:nBasTot*nElec], correctphase_ptr[:nElec])")
@@ -875,11 +877,10 @@ struct SoaAtomicBasisSet
       return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
     }
 
-    OffloadArray4D ylm_vgl; // [5][Nelec][PBC][NYlm]
-    OffloadArray4D rnl_vgl; // [5][Nelec][PBC][NRnl]
-    OffloadArray3D ylm_v;   // [Nelec][PBC][NYlm]
-    OffloadArray3D rnl_v;   // [Nelec][PBC][NRnl]
-    // OffloadArray2D dr_pbc;      // [PBC][xyz]        translation vector for each image
+    OffloadArray4D ylm_vgl;     // [5][Nelec][PBC][NYlm]
+    OffloadArray4D rnl_vgl;     // [5][Nelec][PBC][NRnl]
+    OffloadArray3D ylm_v;       // [Nelec][PBC][NYlm]
+    OffloadArray3D rnl_v;       // [Nelec][PBC][NRnl]
     OffloadArray3D dr;          // [Nelec][PBC][xyz] ion->elec displacement for each image
     OffloadArray2D r;           // [Nelec][PBC]      ion->elec distance for each image
     OffloadVector correctphase; // [Nelec]           overall phase
