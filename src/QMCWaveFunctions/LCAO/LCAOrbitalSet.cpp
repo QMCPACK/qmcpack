@@ -497,7 +497,9 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
   const size_t nVPs = vp_phi_v.size(0);
   vp_basis_v_mw.resize(nVPs, BasisSetSize);
 
-  myBasisSet->mw_evaluateValueVPs(vp_list, vp_basis_v_mw);
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValueVPs(basis_list, vp_list, vp_basis_v_mw);
+  vp_basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
 
   if (Identity)
   {
@@ -581,7 +583,6 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
   mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
 
-  ///To be computed on Device through new varuable mw_ratios_list, then copied to ratios_list on host.
   size_t index = 0;
   for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
@@ -596,6 +597,9 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
   Vector<ValueType> invTemp(Temp.data(1), BasisSetSize);
 
+  if (Identity)
+    std::copy_n(psiinv.data(), psiinv.size(), invTemp.data());
+  else
   {
     ScopedTimer local(mo_timer_);
     // when only a subset of orbitals is used, extract limited rows of C.

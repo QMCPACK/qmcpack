@@ -31,9 +31,11 @@ namespace qmcplusplus
 template<typename FN>
 struct MultiFunctorAdapter
 {
-  using RealType    = typename FN::real_type;
-  using GridType    = LogGridLight<RealType>;
-  using single_type = FN;
+  using RealType       = typename FN::real_type;
+  using GridType       = LogGridLight<RealType>;
+  using single_type    = FN;
+  using OffloadArray2D = Array<RealType, 2, OffloadPinnedAllocator<RealType>>;
+  using OffloadArray3D = Array<RealType, 3, OffloadPinnedAllocator<RealType>>;
   aligned_vector<std::unique_ptr<single_type>> Rnl;
 
   MultiFunctorAdapter() = default;
@@ -55,6 +57,42 @@ struct MultiFunctorAdapter
   {
     for (size_t i = 0, n = Rnl.size(); i < n; ++i)
       u[i] = Rnl[i]->f(r);
+  }
+
+  /**
+   * @brief evaluate for multiple electrons and multiple pbc images
+   * 
+   * r is assumed to be up-to-date on the device before entering this function, and
+   * u needs to be updated on the device before exiting this function
+   * 
+   * Eventually, all computation should be done on the device to avoid transfers, but
+   * for now this is all done on the host
+   * 
+   * @param [in] r electron distances [Nelec, Npbc]
+   * @param [out] u value of all radial functions at all electron distances [Nelec, Npbc, nRnl]
+   * @param Rmax evaluate to zero for any distance greater than or equal to Rmax
+  */
+  inline void batched_evaluate(OffloadArray2D& r, OffloadArray3D& u, RealType Rmax) const
+  {
+    r.updateFrom(); // TODO: remove after offload and make r const
+
+    const size_t nElec = r.size(0);
+    const size_t Nxyz  = r.size(1); // number of PBC images
+    assert(nElec == u.size(0));
+    assert(Nxyz == u.size(1));
+    const size_t nRnl = u.size(2);    // number of splines
+    const size_t nR   = nElec * Nxyz; // total number of positions to evaluate
+
+    for (size_t i_e = 0; i_e < nElec; i_e++)
+      for (size_t i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+        if (r(i_e, i_xyz) >= Rmax)
+          for (size_t i = 0, n = Rnl.size(); i < n; ++i)
+            u(i_e, i_xyz, i) = 0.0;
+        else
+          for (size_t i = 0, n = Rnl.size(); i < n; ++i)
+            u(i_e, i_xyz, i) = Rnl[i]->f(r(i_e, i_xyz));
+
+    u.updateTo(); // TODO: remove after offload
   }
 
   inline void evaluate(RealType r, RealType* restrict u, RealType* restrict du, RealType* restrict d2u)
