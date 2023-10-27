@@ -552,13 +552,6 @@ private:
   std::vector<std::reference_wrapper<NewTimer>> WFC_timers_;
   std::vector<RealType> myTwist;
 
-  /** check if any gradient component (x,y,z) is NaN and throw an error if yes.
-   * @param iel particle index
-   * @param grads gradients to be checked
-   * @param location usually put function name to indicate where the check is being called.
-   */
-  static void checkOneParticleGradientsNaN(int iel, const GradType& grads, const std::string_view location);
-
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
    */

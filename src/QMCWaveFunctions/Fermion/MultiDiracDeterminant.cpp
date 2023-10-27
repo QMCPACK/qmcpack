@@ -414,7 +414,11 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   assert(P.isSpinor() == is_spinor_);
   if (curRatio == ValueType(0))
-    throw std::runtime_error("MultiDiracDeterminant::acceptMove curRatio is zero! Report a bug.\n");
+  {
+    std::ostringstream msg;
+    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
   log_value_ref_det_ += convertValueToLog(curRatio);
   curRatio = ValueType(1);
   switch (UpdateMode)
