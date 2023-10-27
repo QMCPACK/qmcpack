@@ -202,6 +202,10 @@ public:
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
+
+    for(int i = 0; i < norb; i++)
+      if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
+        throw std::runtime_error("Ainv[i][i] is NaN. i = " + std::to_string(i));
   }
 };
 } // namespace qmcplusplus

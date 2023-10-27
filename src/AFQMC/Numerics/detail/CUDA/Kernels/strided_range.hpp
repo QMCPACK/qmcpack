@@ -15,15 +15,15 @@
 #ifndef AFQMC_STRIDED_RANGE_KERNELS_HPP
 #define AFQMC_STRIDED_RANGE_KERNELS_HPP
 
-namespace kernels
-{
-/* Note: Taken from thrust examples.
- */
-
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/transform_iterator.h>
 #include <thrust/iterator/permutation_iterator.h>
 #include <thrust/functional.h>
+
+namespace kernels
+{
+/* Note: Taken from thrust examples.
+ */
 
 template<typename Iterator>
 class strided_range

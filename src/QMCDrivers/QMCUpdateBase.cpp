@@ -277,7 +277,7 @@ QMCUpdateBase::RealType QMCUpdateBase::getNodeCorrection(const ParticleSet::Part
 void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, const std::string_view location)
 {
   bool success = true;
-  TrialWaveFunction::LogValueType log_value{twf.getLogPsi(), twf.getPhase()};
+  TrialWaveFunction::LogValue log_value{twf.getLogPsi(), twf.getPhase()};
   ParticleSet::ParticleGradient G_saved  = twf.G;
   ParticleSet::ParticleLaplacian L_saved = twf.L;
 
@@ -294,7 +294,7 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
   std::ostringstream msg;
   auto& ref_G = twf.G;
   auto& ref_L = twf.L;
-  TrialWaveFunction::LogValueType ref_log{twf.getLogPsi(), twf.getPhase()};
+  TrialWaveFunction::LogValue ref_log{twf.getLogPsi(), twf.getPhase()};
   if (std::abs(std::exp(log_value) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
   {
     success = false;

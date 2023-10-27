@@ -17,6 +17,8 @@
 #include <limits>
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -37,16 +39,18 @@ namespace qmcplusplus
 template<typename T>
 struct SoaSphericalTensor
 {
+  using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
+  using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
   ///maximum angular momentum for the center
   int Lmax;
   /// Normalization factors
-  aligned_vector<T> NormFactor;
+  Vector<T, OffloadPinnedAllocator<T>> NormFactor;
   ///pre-evaluated factor \f$1/\sqrt{(l+m)\times(l+1-m)}\f$
-  aligned_vector<T> FactorLM;
+  Vector<T, OffloadPinnedAllocator<T>> FactorLM;
   ///pre-evaluated factor \f$\sqrt{(2l+1)/(4\pi)}\f$
-  aligned_vector<T> FactorL;
+  Vector<T, OffloadPinnedAllocator<T>> FactorL;
   ///pre-evaluated factor \f$(2l+1)/(2l-1)\f$
-  aligned_vector<T> Factor2L;
+  Vector<T, OffloadPinnedAllocator<T>> Factor2L;
   ///composite
   VectorSoaContainer<T, 5> cYlm;
 
@@ -55,21 +59,58 @@ struct SoaSphericalTensor
   SoaSphericalTensor(const SoaSphericalTensor& rhs) = default;
 
   ///compute Ylm
-  void evaluate_bare(T x, T y, T z, T* Ylm) const;
+  static void evaluate_bare(T x, T y, T z, T* Ylm, int lmax, const T* factorL, const T* factorLM);
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* Ylm) const
   {
-    evaluate_bare(x, y, z, Ylm);
+    evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
     for (int i = 0, nl = cYlm.size(); i < nl; i++)
       Ylm[i] *= NormFactor[i];
+  }
+
+  /**
+   * @brief evaluate V for multiple electrons and multiple pbc images
+   * 
+   * @param [in] xyz electron positions [Nelec, Npbc, 3(x,y,z)]
+   * @param [out] Ylm Spherical tensor elements [Nelec, Npbc, Nlm]
+  */
+  inline void batched_evaluateV(const OffloadArray3D& xyz, OffloadArray3D& Ylm) const
+  {
+    const size_t nElec = xyz.size(0);
+    const size_t Npbc  = xyz.size(1); // number of PBC images
+    assert(xyz.size(2) == 3);
+
+    assert(Ylm.size(0) == nElec);
+    assert(Ylm.size(1) == Npbc);
+    const size_t Nlm = Ylm.size(2);
+
+    size_t nR = nElec * Npbc; // total number of positions to evaluate
+
+    auto* xyz_ptr        = xyz.data();
+    auto* Ylm_ptr        = Ylm.data();
+    auto* FactorLM_ptr   = FactorLM.data();
+    auto* FactorL_ptr    = FactorL.data();
+    auto* NormFactor_ptr = NormFactor.data();
+
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(always, to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm]) \
+                    map(to: xyz_ptr[:3*nR], Ylm_ptr[:Nlm*nR])")
+    for (size_t ir = 0; ir < nR; ir++)
+    {
+      evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_ptr + (ir * Nlm), Lmax,
+                    FactorL_ptr, FactorLM_ptr);
+      for (int i = 0; i < Nlm; i++)
+        Ylm_ptr[ir * Nlm + i] *= NormFactor_ptr[i];
+    }
   }
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z)
   {
     T* restrict Ylm = cYlm.data(0);
-    evaluate_bare(x, y, z, Ylm);
+    evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
     for (int i = 0, nl = cYlm.size(); i < nl; i++)
       Ylm[i] *= NormFactor[i];
   }
@@ -84,7 +125,7 @@ struct SoaSphericalTensor
   void evaluateVGHGH(T x, T y, T z);
 
   ///returns the index/locator for (\f$l,m\f$) combo, \f$ l(l+1)+m \f$
-  inline int index(int l, int m) const { return (l * (l + 1)) + m; }
+  static inline int index(int l, int m) { return (l * (l + 1)) + m; }
 
   /** return the starting address of the component
    *
@@ -167,10 +208,21 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
       FactorLM[index(l, m)]  = fac2;
       FactorLM[index(l, -m)] = fac2;
     }
+  NormFactor.updateTo();
+  FactorLM.updateTo();
+  FactorL.updateTo();
+  Factor2L.updateTo();
 }
 
+PRAGMA_OFFLOAD("omp declare target")
 template<typename T>
-inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm) const
+inline void SoaSphericalTensor<T>::evaluate_bare(T x,
+                                                 T y,
+                                                 T z,
+                                                 T* restrict Ylm,
+                                                 int lmax,
+                                                 const T* factorL,
+                                                 const T* factorLM)
 {
   constexpr T czero(0);
   constexpr T cone(1);
@@ -210,7 +262,7 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
   // calculate P_ll and P_l,l-1
   T fac = cone;
   int j = -1;
-  for (int l = 1; l <= Lmax; l++)
+  for (int l = 1; l <= lmax; l++)
   {
     j += 2;
     fac *= -j * stheta;
@@ -221,10 +273,10 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
     Ylm[l1] = j * ctheta * Ylm[l2];
   }
   // Use recurence to get other plm's //
-  for (int m = 0; m < Lmax - 1; m++)
+  for (int m = 0; m < lmax - 1; m++)
   {
     int j = 2 * m + 1;
-    for (int l = m + 2; l <= Lmax; l++)
+    for (int l = m + 2; l <= lmax; l++)
     {
       j += 2;
       int lm  = index(l, m);
@@ -237,12 +289,12 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
   T sphim, cphim, temp;
   Ylm[0] = omega; //1.0/sqrt(pi4);
   T rpow = 1.0;
-  for (int l = 1; l <= Lmax; l++)
+  for (int l = 1; l <= lmax; l++)
   {
     rpow *= r;
     //fac = rpow*sqrt(static_cast<T>(2*l+1))*omega;//rpow*sqrt((2*l+1)/pi4);
-    //FactorL[l] = sqrt(2*l+1)/sqrt(4*pi)
-    fac    = rpow * FactorL[l];
+    //factorL[l] = sqrt(2*l+1)/sqrt(4*pi)
+    fac    = rpow * factorL[l];
     int l0 = index(l, 0);
     Ylm[l0] *= fac;
     cphim = cone;
@@ -253,7 +305,7 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
       sphim  = sphim * cphi + cphim * sphi;
       cphim  = temp;
       int lm = index(l, m);
-      fac *= FactorLM[lm];
+      fac *= factorLM[lm];
       temp    = fac * Ylm[lm];
       Ylm[lm] = temp * cphim;
       lm      = index(l, -m);
@@ -263,12 +315,13 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
   //for (int i=0; i<Ylm.size(); i++)
   //  Ylm[i]*= NormFactor[i];
 }
+PRAGMA_OFFLOAD("omp end declare target")
 
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
 {
   T* restrict Ylm = cYlm.data(0);
-  evaluate_bare(x, y, z, Ylm);
+  evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
 
   constexpr T czero(0);
   constexpr T ahalf(0.5);

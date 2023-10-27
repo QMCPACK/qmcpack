@@ -59,19 +59,19 @@ public:
 
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
                       const RefVector<ParticleSet::ParticleGradient>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override;
 
-  LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient& G,
-                          ParticleSet::ParticleLaplacian& L,
-                          bool fromscratch) override;
+  LogValue evaluateGL(const ParticleSet& P,
+                      ParticleSet::ParticleGradient& G,
+                      ParticleSet::ParticleLaplacian& L,
+                      bool fromscratch) override;
 
   void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVectorWithLeader<ParticleSet>& p_list,
@@ -92,7 +92,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -126,14 +126,14 @@ public:
     }
   }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios,
+                    std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_now) const override;
 
   GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
@@ -189,7 +189,7 @@ public:
                             const std::vector<bool>& isAccepted,
                             bool safe_to_delay = false) const override
   {
-    constexpr LogValueType czero(0);
+    constexpr LogValue czero(0);
 
     // This log_value_ is in the slater determinant, it's still around but not consistent anymore with the
     // sum of the log_values in its determinants.  Caching the state seems like a bad call, but the wfc base class
@@ -223,12 +223,12 @@ public:
       Dets[i]->mw_completeUpdates(extract_DetRef_list(wfc_list, i));
   }
 
-  inline PsiValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
+  inline PsiValue ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios) const override
+                    std::vector<PsiValue>& ratios) const override
   {
     const int det_id = getDetID(iat);
     Dets[det_id]->mw_calcRatio(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios);

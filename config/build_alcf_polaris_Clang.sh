@@ -1,14 +1,14 @@
 #!/bin/bash
 # This recipe is intended for ALCF Polaris https://www.alcf.anl.gov/polaris
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Aug 17th 2022
+# last revision: Sep 5th 2023
 #
 # How to invoke this script?
 # build_alcf_polaris_Clang.sh # build all the variants assuming the current directory is the source directory.
 # build_alcf_polaris_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_alcf_polaris_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
-module load mpiwrappers/cray-mpich-llvm llvm/release-15.0.0
+module load mpiwrappers/cray-mpich-llvm llvm/release-17.0.0
 module load cudatoolkit-standalone/11.2.2
 module load cray-fftw/3.3.8.13
 module load cray-hdf5-parallel/1.12.1.3
@@ -17,6 +17,7 @@ module load cmake/3.23.2
 export BOOST_ROOT=/soft/applications/qmcpack/boost_1_79_0
 export CMAKE_PREFIX_PATH=/soft/libraries/openblas/0.3.20-omp:$CMAKE_PREFIX_PATH
 
+module list >& module_list.txt
 
 echo "**********************************"
 echo '$ clang -v'
@@ -25,7 +26,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=polaris
-Compiler=Clang
+Compiler=Clang17
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`

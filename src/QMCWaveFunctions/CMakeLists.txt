@@ -24,6 +24,7 @@ add_subdirectory(detail)
 set(WFBASE_SRCS
     OptimizableFunctorBase.cpp
     VariableSet.cpp
+    NaNguard.cpp
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
     WaveFunctionComponentBuilder.cpp
@@ -82,11 +83,9 @@ if(OHMMS_DIM MATCHES 3)
   if(HAVE_EINSPLINE)
     set(FERMION_SRCS
         ${FERMION_SRCS}
-        EinsplineSetBuilderCommon.cpp
-        EinsplineSetBuilderOld.cpp
-        EinsplineSetBuilderReadBands_ESHDF.cpp
-        EinsplineSetBuilderESHDF.fft.cpp
-        EinsplineSetBuilder_createSPOs.cpp
+        BsplineFactory/EinsplineSetBuilderCommon.cpp
+        BsplineFactory/EinsplineSetBuilderESHDF.fft.cpp
+        BsplineFactory/EinsplineSetBuilder_createSPOs.cpp
         BsplineFactory/createComplexDouble.cpp
         BsplineFactory/createComplexSingle.cpp
         BsplineFactory/HybridRepCenterOrbitals.cpp
@@ -94,7 +93,7 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/BsplineReaderBase.cpp)
     set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp Fermion/MultiDiracDeterminant.2.cpp)
     if(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
+      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
     else(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createRealSingle.cpp BsplineFactory/createRealDouble.cpp
@@ -105,7 +104,7 @@ if(OHMMS_DIM MATCHES 3)
   endif(HAVE_EINSPLINE)
 
   # plane wave SPO
-  set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalBuilder.cpp)
+  set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalSetBuilder.cpp)
   if(QMC_COMPLEX)
     set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWOrbitalSet.cpp)
   else()

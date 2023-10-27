@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
+    <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
       <basisset name="LCAOBSet">
         <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="C" normalized="no">
           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
@@ -2032,6 +2032,8 @@
  -1.28743930125113e-16 -3.76954572147948e-01  1.06041975120797e-15  3.72886558301529e-16
 </coefficient>
       </sposet>
+   </sposet_collection>
+   <determinantset>
       <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
         <detlist size="240" type="DETS" nca="0" ncb="0" nea="4" neb="4" nstates="58" cutoff="1e-20">
           <ci id="CIcoeff_0" coeff="-0.858667" qc_coeff="-0.858667" alpha="1111000000000000000000000000000000000000000000000000000000" beta="1111000000000000000000000000000000000000000000000000000000"/>

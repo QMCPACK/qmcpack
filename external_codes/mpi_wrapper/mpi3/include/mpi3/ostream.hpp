@@ -30,8 +30,8 @@ namespace mpi3 {
 
 struct ostream : public std::ostream {  // NOLINT(fuchsia-multiple-inheritance) bug in clang-tidy 12?
 	class streambuf : public std::stringbuf {  // http://stackoverflow.com/a/2212940/225186
-		communicator& comm_;
-		std::ostream& output;
+		communicator& comm_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+		std::ostream& output;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 		std::string   msg_;
 
 		bool doing_table      = false;
@@ -167,28 +167,28 @@ struct ostream : public std::ostream {  // NOLINT(fuchsia-multiple-inheritance) 
 	// template<class T = void>
 	// struct CONSUMABLE(unconsumed)
 	// iterator {
-	// 	using iterator_category = std::output_iterator_tag;
-	// 	using value_type = void;
-	// 	using difference_type = std::ptrdiff_t;
-	// 	using pointer = void;
-	// 	using reference = void;
-	// 	using ostream_type = ostream;
+	//  using iterator_category = std::output_iterator_tag;
+	//  using value_type = void;
+	//  using difference_type = std::ptrdiff_t;
+	//  using pointer = void;
+	//  using reference = void;
+	//  using ostream_type = ostream;
 
-	// 	RETURN_TYPESTATE(unconsumed)
-	// 	explicit iterator(package_oarchive& oa) : out_{&oa} {}
+	//  RETURN_TYPESTATE(unconsumed)
+	//  explicit iterator(package_oarchive& oa) : out_{&oa} {}
 
-	// 	iterator& operator=(T const& value) { *out_ << value; return *this; }
+	//  iterator& operator=(T const& value) { *out_ << value; return *this; }
 
-	// 	RETURN_TYPESTATE(consumed) CALLABLE_WHEN(unconsumed)
-	// 	auto operator*() -> iterator& {return *this;}
+	//  RETURN_TYPESTATE(consumed) CALLABLE_WHEN(unconsumed)
+	//  auto operator*() -> iterator& {return *this;}
 
-	// 	RETURN_TYPESTATE(unconsumed)
-	// 	auto operator++() -> iterator& {return *this;}
-	// 	RETURN_TYPESTATE(unconsumed)
-	// 	auto operator++(int) -> iterator& {return *this;}
+	//  RETURN_TYPESTATE(unconsumed)
+	//  auto operator++() -> iterator& {return *this;}
+	//  RETURN_TYPESTATE(unconsumed)
+	//  auto operator++(int) -> iterator& {return *this;}
 
 	//  private:
-	//  	ostream_type* out_;
+	//      ostream_type* out_;
 	// };
 };
 

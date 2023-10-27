@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "EinsplineSetBuilder.h"
 #include <PlatformSelector.hpp>
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
@@ -28,10 +28,10 @@
 #include "Particle/DistanceTable.h"
 #include <fftw3.h>
 #include "Utilities/ProgressReportEngine.h"
-#include "QMCWaveFunctions/einspline_helper.hpp"
-#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
-#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
-#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
+#include "einspline_helper.hpp"
+#include "BsplineReaderBase.h"
+#include "BsplineSet.h"
+#include "createBsplineReader.h"
 
 #include <array>
 #include <string_view>
@@ -124,7 +124,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
   std::string useGPU;
   std::string GPUsharing = "no";
-  std::string spo_object_name;
 
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
@@ -177,8 +176,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     OhmmsAttributeSet oAttrib;
     oAttrib.add(spinSet, "spindataset");
-    oAttrib.add(spo_object_name, "name");
-    oAttrib.add(spo_object_name, "id");
     oAttrib.put(cur);
   }
 
@@ -238,31 +235,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // set the internal parameters
   if (spinSet == 0)
     set_metadata(numOrbs, twist_num_inp, twist_inp, skipChecks);
-  //if (use_complex_orb == "yes") use_real_splines_ = false; // override given user input
-
-  // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work
-  bool has_backflow = false;
-
-  xmlNodePtr wf  = XMLRoot->parent; // <wavefuntion>
-  xmlNodePtr kid = wf->children;
-  while (kid != NULL)
-  {
-    std::string tag((const char*)(kid->name));
-    if (tag == "determinantset" || tag == "sposet_builder")
-    {
-      xmlNodePtr kid1 = kid->children;
-      while (kid1 != NULL)
-      {
-        std::string tag1((const char*)(kid1->name));
-        if (tag1 == "backflow")
-        {
-          has_backflow = true;
-        }
-        kid1 = kid1->next;
-      }
-    }
-    kid = kid->next;
-  }
 
   //////////////////////////////////
   // Create the OrbitalSet object

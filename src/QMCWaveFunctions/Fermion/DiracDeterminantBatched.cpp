@@ -20,7 +20,7 @@
 #ifndef QMC_COMPLEX
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #endif
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 #include <cassert>
 
 namespace qmcplusplus
@@ -444,6 +444,12 @@ typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<D
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
+  if (curRatio == PsiValue(0))
+  {
+    std::ostringstream msg;
+    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
   const int WorkingIndex = iat - FirstIndex;
   log_value_ += convertValueToLog(curRatio);
   {
@@ -496,6 +502,14 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
     {
       psiM_g_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
       psiM_l_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
+      if (det.curRatio == PsiValue(0))
+
+      {
+        std::ostringstream msg;
+        msg << "DiracDeterminant::mw_accept_rejectMove det.curRatio is " << det.curRatio << "! Report a bug."
+            << std::endl;
+        throw std::runtime_error(msg.str());
+      }
       det.log_value_ += convertValueToLog(det.curRatio);
       count++;
     }
@@ -657,6 +671,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeade
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
 
 #ifndef NDEBUG
+      // at this point, host and device should have exactly the same G and L values.
       GradMatrix dpsiM_from_device     = det.dpsiM;
       Matrix<Value> d2psiM_from_device = det.d2psiM;
 
@@ -664,9 +679,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeade
       auto* psiM_vgl_ptr = my_psiM_vgl.data();
       // transfer device to host, total size 4, g(3) + l(1)
       PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
-      Matrix<Value> psiM_temp_host(det.psiM_temp.data(), det.psiM_temp.rows(), det.psiM_temp.cols());
-      det.Phi->evaluate_notranspose(p_list[iw], FirstIndex, LastIndex, psiM_temp_host, det.dpsiM, det.d2psiM);
-
       assert(dpsiM_from_device == det.dpsiM);
       assert(d2psiM_from_device == det.d2psiM);
 #endif

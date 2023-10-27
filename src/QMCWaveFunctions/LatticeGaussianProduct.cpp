@@ -17,9 +17,9 @@
 
 namespace qmcplusplus
 {
-using ValueType    = LatticeGaussianProduct::ValueType;
-using GradType     = LatticeGaussianProduct::GradType;
-using PsiValueType = LatticeGaussianProduct::PsiValueType;
+using ValueType = LatticeGaussianProduct::ValueType;
+using GradType  = LatticeGaussianProduct::GradType;
+using PsiValue  = LatticeGaussianProduct::PsiValue;
 
 LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
 {
@@ -49,9 +49,9 @@ LatticeGaussianProduct::~LatticeGaussianProduct() = default;
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const ParticleSet& P,
-                                                                         ParticleSet::ParticleGradient& G,
-                                                                         ParticleSet::ParticleLaplacian& L)
+LatticeGaussianProduct::LogValue LatticeGaussianProduct::evaluateLog(const ParticleSet& P,
+                                                                     ParticleSet::ParticleGradient& G,
+                                                                     ParticleSet::ParticleLaplacian& L)
 {
   const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = 0;
@@ -82,7 +82,7 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const P
  * @param P active particle set
  * @param iat particle that has been moved.
  */
-PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
+PsiValue LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
 {
   const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
@@ -90,7 +90,7 @@ PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
     return 1.0;
   RealType newdist = d_table.getTempDists()[icent];
   curVal           = ParticleAlpha[iat] * (newdist * newdist);
-  return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
+  return std::exp(static_cast<PsiValue>(U[iat] - curVal));
 }
 
 
@@ -107,7 +107,7 @@ GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 }
 
 
-PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+PsiValue LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
@@ -119,7 +119,7 @@ PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType
   curVal           = a * newdist * newdist;
   curGrad          = -2.0 * a * newdisp;
   grad_iat += curGrad;
-  return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
+  return std::exp(static_cast<PsiValue>(U[iat] - curVal));
 }
 
 void LatticeGaussianProduct::restore(int iat) {}
@@ -171,9 +171,9 @@ void LatticeGaussianProduct::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(FirstAddressOfdU, LastAddressOfdU);
 }
 
-LatticeGaussianProduct::LogValueType LatticeGaussianProduct::updateBuffer(ParticleSet& P,
-                                                                          WFBufferType& buf,
-                                                                          bool fromscratch = false)
+LatticeGaussianProduct::LogValue LatticeGaussianProduct::updateBuffer(ParticleSet& P,
+                                                                      WFBufferType& buf,
+                                                                      bool fromscratch = false)
 {
   evaluateLogAndStore(P, P.G, P.L);
   buf.put(U.first_address(), U.last_address());

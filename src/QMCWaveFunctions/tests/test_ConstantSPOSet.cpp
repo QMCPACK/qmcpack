@@ -114,8 +114,10 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   const int last_index  = 2;
   sposet->evaluate_notranspose(elec, first_index, last_index, phimat, gphimat, lphimat);
 
-  checkMatrix(phimat, spomat);
-  checkMatrix(lphimat, laplspomat);
+  auto check = checkMatrix(phimat, spomat);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+  check = checkMatrix(lphimat, laplspomat);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   //Test of makeClone()
   auto sposet_vgl2 = sposet->makeClone();
@@ -125,8 +127,10 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
 
   sposet_vgl2->evaluate_notranspose(elec, first_index, last_index, phimat, gphimat, lphimat);
 
-  checkMatrix(phimat, spomat);
-  checkMatrix(lphimat, laplspomat);
+  check = checkMatrix(phimat, spomat);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+  check = checkMatrix(lphimat, laplspomat);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   //Lastly, check if name is correct.
   std::string myname = sposet_vgl2->getClassName();

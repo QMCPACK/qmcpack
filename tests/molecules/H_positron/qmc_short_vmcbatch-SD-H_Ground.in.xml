@@ -46,9 +46,9 @@
       </sposet_collection>
       <determinantset>
         <slaterdeterminant delay_rank="1">
-          <determinant id="updet" sposet="spo0"/>
-          <determinant id="ddet"  sposet="spo0" />
-          <determinant id="pdet"  sposet="spo2" />
+          <determinant sposet="spo0"/>
+          <determinant sposet="spo0" />
+          <determinant sposet="spo2" />
         </slaterdeterminant>
      </determinantset>
    </wavefunction>

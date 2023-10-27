@@ -19,7 +19,7 @@
 #include "CPU/BLAS.hpp"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsPETE/Tensor.h"
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 #include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
@@ -138,9 +138,9 @@ void DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& bu
   buf.add(log_value_);
 }
 
-DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
-                                                                                      WFBufferType& buf,
-                                                                                      bool fromscratch)
+DiracDeterminantWithBackflow::LogValue DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
+                                                                                  WFBufferType& buf,
+                                                                                  bool fromscratch)
 {
   // for now, always recalculate from scratch
   // enable from_scratch = true later
@@ -187,7 +187,7 @@ void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& 
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+DiracDeterminantWithBackflow::PsiValue DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
 {
   // FIX FIX FIX : code Woodbury formula
   psiM_temp = psiM;
@@ -215,10 +215,10 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratio(P
   psiMinv_temp = psiM_temp;
   // FIX FIX FIX : code Woodbury formula
   InverseTimer.start();
-  LogValueType NewLog;
+  LogValue NewLog;
   InvertWithLog(psiMinv_temp.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), NewLog);
   InverseTimer.stop();
-  return curRatio = LogToValue<PsiValueType>::convert(NewLog - log_value_);
+  return curRatio = LogToValue<PsiValue>::convert(NewLog - log_value_);
 }
 
 void DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -256,9 +256,9 @@ DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSou
   return GradType();
 }
 
-DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P,
-                                                                                   int iat,
-                                                                                   GradType& grad_iat)
+DiracDeterminantWithBackflow::PsiValue DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P,
+                                                                               int iat,
+                                                                               GradType& grad_iat)
 {
   // FIX FIX FIX : code Woodbury formula
   psiM_temp                         = psiM;
@@ -289,7 +289,7 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGr
   psiMinv_temp = psiM_temp;
   // FIX FIX FIX : code Woodbury formula
   InverseTimer.start();
-  LogValueType NewLog;
+  LogValue NewLog;
   InvertWithLog(psiMinv_temp.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), NewLog);
   InverseTimer.stop();
   // update Fmatdiag_temp
@@ -298,7 +298,7 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGr
     Fmatdiag_temp[j] = simd::dot(psiMinv_temp[j], dpsiM_temp[j], NumOrbitals);
     grad_iat += dot(BFTrans_.Amat_temp(iat, FirstIndex + j), Fmatdiag_temp[j]);
   }
-  return curRatio = LogToValue<PsiValueType>::convert(NewLog - log_value_);
+  return curRatio = LogToValue<PsiValue>::convert(NewLog - log_value_);
 }
 
 void DiracDeterminantWithBackflow::testL(ParticleSet& P)
@@ -477,9 +477,9 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(const ParticleSet& P,
-                                                                                     ParticleSet::ParticleGradient& G,
-                                                                                     ParticleSet::ParticleLaplacian& L)
+DiracDeterminantWithBackflow::LogValue DiracDeterminantWithBackflow::evaluateLog(const ParticleSet& P,
+                                                                                 ParticleSet::ParticleGradient& G,
+                                                                                 ParticleSet::ParticleLaplacian& L)
 {
   //testGG(P);
   //testL(P);

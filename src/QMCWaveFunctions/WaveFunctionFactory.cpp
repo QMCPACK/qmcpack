@@ -24,7 +24,6 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/ExampleHeBuilder.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if OHMMS_DIM == 3 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
@@ -186,10 +185,6 @@ bool WaveFunctionFactory::addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFa
     msg << "electron-gas in determinantset is deprecated";
     msg << " please use \"free\" orbitals in sposet_builder" << std::endl;
     throw std::runtime_error(msg.str());
-  }
-  else if (orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw")
-  {
-    detbuilder = std::make_unique<PWOrbitalBuilder>(myComm, targetPtcl, ptclPool);
   }
   else
     detbuilder = std::make_unique<SlaterDetBuilder>(myComm, spo_factory, targetPtcl, psi, ptclPool);

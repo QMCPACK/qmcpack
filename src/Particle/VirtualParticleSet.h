@@ -95,6 +95,16 @@ public:
                  bool sphere = false,
                  int iat     = -1);
 
+  inline size_t getTotalNum() const { return TotalNum; }
+  /**Extract list of Distance Tables
+    */
+  static const RefVectorWithLeader<const DistanceTableAB> extractDTRefList(
+      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+      int id);
+  /**Extract list of VP coordinates, flattened over all walkers
+    */
+  static const std::vector<QMCTraits::PosType> extractVPCoords(
+      const RefVectorWithLeader<const VirtualParticleSet>& vp_list);
   /** move virtual particles to new postions and update distance tables
      * @param refp reference particle set
      * @param jel reference particle that all the VP moves from

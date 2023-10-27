@@ -633,12 +633,11 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     //make a non-local move
     if (oneTMove)
     {
-      int iat = oneTMove->PID;
+      const int iat = oneTMove->PID;
       Psi.prepareGroup(P, P.getGroupID(iat));
-      if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+      GradType grad_iat;
+      if (P.makeMoveAndCheck(iat, oneTMove->Delta) && Psi.calcRatioGrad(P, iat, grad_iat) != ValueType(0))
       {
-        GradType grad_iat;
-        Psi.calcRatioGrad(P, iat, grad_iat);
         Psi.acceptMove(P, iat, true);
         P.acceptMove(iat);
         NonLocalMoveAccepted++;
@@ -658,9 +657,8 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
         const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);
         if (oneTMove)
         {
-          if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+          if (P.makeMoveAndCheck(iat, oneTMove->Delta) && Psi.calcRatioGrad(P, iat, grad_iat) != ValueType(0))
           {
-            Psi.calcRatioGrad(P, iat, grad_iat);
             Psi.acceptMove(P, iat, true);
             P.acceptMove(iat);
             NonLocalMoveAccepted++;
@@ -691,9 +689,8 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
         if (oneTMove)
         {
-          if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+          if (P.makeMoveAndCheck(iat, oneTMove->Delta) && Psi.calcRatioGrad(P, iat, grad_iat) != ValueType(0))
           {
-            Psi.calcRatioGrad(P, iat, grad_iat);
             Psi.acceptMove(P, iat, true);
             // mark all affected electrons
             markAffectedElecs(P.getDistTableAB(myTableIndex), iat);

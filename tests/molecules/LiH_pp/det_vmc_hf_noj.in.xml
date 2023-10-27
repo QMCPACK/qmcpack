@@ -66,7 +66,7 @@ GAMESS numerical results:
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
+         <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
             <basisset name="LCAOBSet">
                <atomicBasisSet type="Gaussian" elementType="Li" normalized="no" name="Gaussian-G2" angular="cartesian">
                   <grid npts="1001" type="log" ri="1e-06" rf="100.0"/>
@@ -183,8 +183,7 @@ GAMESS numerical results:
                   </basisGroup>
                </atomicBasisSet>
             </basisset>
-            <slaterdeterminant>
-               <determinant id="updet" size="1">
+            <sposet name="spo-up" size="1">
                   <occupation mode="ground"/>
                   <coefficient id="updetC" size="62">                     
                       6.568050000000e-01   1.712990000000e-01   2.180400000000e-02   6.066000000000e-03
@@ -1304,8 +1303,8 @@ GAMESS numerical results:
                       7.733300000000e-02   0.000000000000e+00  -5.187700000000e-02   0.000000000000e+00
                      -5.187700000000e-02   0.000000000000e+00   0.000000000000e+00   0.000000000000e+00
                   </coefficient>
-               </determinant>
-               <determinant id="downdet" size="1">
+               </sposet>
+               <sposet name="spo-dn" size="1">
                   <occupation mode="ground"/>
                   <coefficient id="downdetC" size="62">                     
                       6.568050000000e-01   1.712990000000e-01   2.180400000000e-02   6.066000000000e-03
@@ -2425,7 +2424,12 @@ GAMESS numerical results:
                       7.733300000000e-02   0.000000000000e+00  -5.187700000000e-02   0.000000000000e+00
                      -5.187700000000e-02   0.000000000000e+00   0.000000000000e+00   0.000000000000e+00
                   </coefficient>
-               </determinant>
+	       </sposet>
+       </sposet_collection>
+	 <determinantset>
+            <slaterdeterminant>
+              <determinant sposet="spo-up"/>
+	      <determinant sposet="spo-dn"/>
             </slaterdeterminant>
          </determinantset>
       </wavefunction>
