@@ -37,7 +37,6 @@ set(SRCS
     test_MomentumDistribution.cpp
     test_OneBodyDensityMatricesInput.cpp
     test_OneBodyDensityMatrices.cpp
-    test_PerParticleHamiltonianLogger.cpp
     test_EstimatorManagerCrowd.cpp
     test_MagnetizationDensityInput.cpp
     test_MagnetizationDensity.cpp

@@ -11,23 +11,6 @@
 # Estimators which accumulate observables
 ####################################
 
-set(QMCEST_INPUT_SRC
-  InputSection.cpp
-  EstimatorInput.cpp
-  OneBodyDensityMatricesInput.cpp
-  ReferencePointsInput.cpp
-  NEReferencePoints.cpp)
-
-if(USE_OBJECT_TARGET)
-  add_library(qmcestimators_input OBJECT ${QMCEST_INPUT_SRC})
-else()
-  add_library(qmcestimators_input ${QMCEST_INPUT_SRC})
-endif()
-
-target_include_directories(qmcestimators_input PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcestimators_input PUBLIC containers qmcham qmcparticle qmcutil)
-
-
 set(QMCEST_SRC
     InputSection.cpp
     CSEnergyEstimator.cpp
