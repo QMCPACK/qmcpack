@@ -768,7 +768,7 @@ struct SoaAtomicBasisSet
 #else
       auto* SuperTwist_ptr = SuperTwist.data();
 
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:SuperTwist_ptr[:9], \
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:SuperTwist_ptr[:SuperTwist.size()], \
 		     Tv_list_ptr[3*nElec*center_idx:3*nElec], correctphase_ptr[:nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
