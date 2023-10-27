@@ -34,6 +34,65 @@ bool approxEquality(const TinyVector<T1, D>& val_a, const TinyVector<T2, D>& val
   return true;
 }
 
+auto expectedReferencePoints()
+{
+  typename NEReferencePoints::Points expected_reference_points;
+  if constexpr (std::is_same_v<NEReferencePoints::Real, double>)
+    expected_reference_points = {
+        {"a1", {3.37316107749939, 3.37316107749939, 0}},
+        {"a2", {0, 3.37316107749939, 3.37316107749939}},
+        {"a3", {3.37316107749939, 0, 3.37316107749939}},
+        {"cmmm", {-3.37316107749939, -3.37316107749939, -3.37316107749939}},
+        {"cmmp", {0, -3.37316107749939, 0}},
+        {"cmpm", {-3.37316107749939, 0, 0}},
+        {"cmpp", {0, 0, 3.37316107749939}},
+        {"cpmm", {0, 0, -3.37316107749939}},
+        {"cpmp", {3.37316107749939, 0, 0}},
+        {"cppm", {0, 3.37316107749939, 0}},
+        {"cppp", {3.37316107749939, 3.37316107749939, 3.37316107749939}},
+        {"f1m", {-1.686580538749695, -1.686580538749695, 0}},
+        {"f1p", {1.686580538749695, 1.686580538749695, 0}},
+        {"f2m", {0, -1.686580538749695, -1.686580538749695}},
+        {"f2p", {0, 1.686580538749695, 1.686580538749695}},
+        {"f3m", {-1.686580538749695, 0, -1.686580538749695}},
+        {"f3p", {1.686580538749695, 0, 1.686580538749695}},
+        {"ion1", {0, 0, 0}},
+        {"ion2", {1.686580538749695, 1.686580538749695, 1.686580538749695}},
+        {"r1", {3.37316107749939, 3.37316107749939, 0}},
+        {"r2", {0, 3.37316107749939, 3.37316107749939}},
+        {"r3", {3.37316107749939, 0, 3.37316107749939}},
+        {"zero", {0, 0, 0}},
+    };
+  else
+    expected_reference_points = {
+        {"a1", {3.37316115, 3.37316115, 0}},
+        {"a2", {0, 3.37316115, 3.37316115}},
+        {"a3", {3.37316115, 0, 3.37316115}},
+        {"cmmm", {-3.37316115, -3.37316115, -3.37316115}},
+        {"cmmp", {0, -3.37316115, 0}},
+        {"cmpm", {-3.37316115, 0, 0}},
+        {"cmpp", {0, 0, 3.37316115}},
+        {"cpmm", {0, 0, -3.37316115}},
+        {"cpmp", {3.37316115, 0, 0}},
+        {"cppm", {0, 3.37316115, 0}},
+        {"cppp", {3.37316115, 3.37316115, 3.37316115}},
+        {"f1m", {-1.686580575, -1.686580575, 0}},
+        {"f1p", {1.686580575, 1.686580575, 0}},
+        {"f2m", {0, -1.686580575, -1.686580575}},
+        {"f2p", {0, 1.686580575, 1.686580575}},
+        {"f3m", {-1.686580575, 0, -1.686580575}},
+        {"f3p", {1.686580575, 0, 1.686580575}},
+        {"ion1", {0, 0, 0}},
+        {"ion2", {1.68658058, 1.68658058, 1.68658058}},
+        {"r1", {3.37316115, 3.37316115, 0}},
+        {"r2", {0, 3.37316115, 3.37316115}},
+        {"r3", {3.37316115, 0, 3.37316115}},
+        {"zero", {0, 0, 0}},
+    };
+  return expected_reference_points;
+}
+
+
 TEST_CASE("ReferencePoints::DefaultConstruction", "[estimators]")
 {
   using Input = testing::ValidReferencePointsInputs;
@@ -64,31 +123,9 @@ TEST_CASE("ReferencePoints::DefaultConstruction", "[estimators]")
     testing::TestableNEReferencePoints tref_points(ref_points);
     std::cout << "expected_reference_points" << tref_points;
   }
-  typename NEReferencePoints::Points expected_reference_points{
-      {"a1", {3.37316107749939, 3.37316107749939, 0}},
-      {"a2", {0, 3.37316107749939, 3.37316107749939}},
-      {"a3", {3.37316107749939, 0, 3.37316107749939}},
-      {"cmmm", {-3.37316107749939, -3.37316107749939, -3.37316107749939}},
-      {"cmmp", {0, -3.37316107749939, 0}},
-      {"cmpm", {-3.37316107749939, 0, 0}},
-      {"cmpp", {0, 0, 3.37316107749939}},
-      {"cpmm", {0, 0, -3.37316107749939}},
-      {"cpmp", {3.37316107749939, 0, 0}},
-      {"cppm", {0, 3.37316107749939, 0}},
-      {"cppp", {3.37316107749939, 3.37316107749939, 3.37316107749939}},
-      {"f1m", {-1.686580538749695, -1.686580538749695, 0}},
-      {"f1p", {1.686580538749695, 1.686580538749695, 0}},
-      {"f2m", {0, -1.686580538749695, -1.686580538749695}},
-      {"f2p", {0, 1.686580538749695, 1.686580538749695}},
-      {"f3m", {-1.686580538749695, 0, -1.686580538749695}},
-      {"f3p", {1.686580538749695, 0, 1.686580538749695}},
-      {"ion1", {0, 0, 0}},
-      {"ion2", {1.686580538749695, 1.686580538749695, 1.686580538749695}},
-      {"r1", {3.37316107749939, 3.37316107749939, 0}},
-      {"r2", {0, 3.37316107749939, 3.37316107749939}},
-      {"r3", {3.37316107749939, 0, 3.37316107749939}},
-      {"zero", {0, 0, 0}},
-  };
+
+  typename NEReferencePoints::Points expected_reference_points;
+  expected_reference_points = expectedReferencePoints();
 
   for (auto& [key, value] : ref_points.get_points())
   {
@@ -128,31 +165,9 @@ TEST_CASE("ReferencePoints::Construction", "[estimators]")
     testing::TestableNEReferencePoints tref_points(ref_points);
     std::cout << "expected_reference_points" << tref_points;
   }
-  typename NEReferencePoints::Points expected_reference_points{
-      {"a1", {3.37316107749939, 3.37316107749939, 0}},
-      {"a2", {0, 3.37316107749939, 3.37316107749939}},
-      {"a3", {3.37316107749939, 0, 3.37316107749939}},
-      {"cmmm", {-3.37316107749939, -3.37316107749939, -3.37316107749939}},
-      {"cmmp", {0, -3.37316107749939, 0}},
-      {"cmpm", {-3.37316107749939, 0, 0}},
-      {"cmpp", {0, 0, 3.37316107749939}},
-      {"cpmm", {0, 0, -3.37316107749939}},
-      {"cpmp", {3.37316107749939, 0, 0}},
-      {"cppm", {0, 3.37316107749939, 0}},
-      {"cppp", {3.37316107749939, 3.37316107749939, 3.37316107749939}},
-      {"f1m", {-1.686580538749695, -1.686580538749695, 0}},
-      {"f1p", {1.686580538749695, 1.686580538749695, 0}},
-      {"f2m", {0, -1.686580538749695, -1.686580538749695}},
-      {"f2p", {0, 1.686580538749695, 1.686580538749695}},
-      {"f3m", {-1.686580538749695, 0, -1.686580538749695}},
-      {"f3p", {1.686580538749695, 0, 1.686580538749695}},
-      {"ion1", {0, 0, 0}},
-      {"ion2", {1.686580538749695, 1.686580538749695, 1.686580538749695}},
-      {"r1", {3.37316107749939, 3.37316107749939, 0}},
-      {"r2", {0, 3.37316107749939, 3.37316107749939}},
-      {"r3", {3.37316107749939, 0, 3.37316107749939}},
-      {"zero", {0, 0, 0}},
-  };
+
+  typename NEReferencePoints::Points expected_reference_points;
+  expected_reference_points = expectedReferencePoints();
 
   for (auto& [key, value] : ref_points.get_points())
   {
@@ -190,8 +205,9 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
   std::ostringstream ostr_stream;
   ref_points.write_description(ostr_stream, "  ");
 
-  std::string expected_description{
-      R"(  reference_points
+  std::string expected_description;
+  if constexpr (std::is_same_v<NEReferencePoints::Real, double>)
+    expected_description = R"(  reference_points
     a1:         3.37316115        3.37316115                 0
     a2:                  0        3.37316115        3.37316115
     a3:         3.37316115                 0        3.37316115
@@ -216,14 +232,44 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
     r3:         3.37316115                 0        3.37316115
     zero:                  0                 0                 0
   end reference_points
-)"};
+)";
+  else
+    expected_description = R"(  reference_points
+    a1:        3.373161077       3.373161077                 0
+    a2:                  0       3.373161077       3.373161077
+    a3:        3.373161077                 0       3.373161077
+    cmmm:       -3.373161077      -3.373161077      -3.373161077
+    cmmp:                  0      -3.373161077                 0
+    cmpm:       -3.373161077                 0                 0
+    cmpp:                  0                 0       3.373161077
+    cpmm:                  0                 0      -3.373161077
+    cpmp:        3.373161077                 0                 0
+    cppm:                  0       3.373161077                 0
+    cppp:        3.373161077       3.373161077       3.373161077
+    f1m:       -1.686580539      -1.686580539                 0
+    f1p:        1.686580539       1.686580539                 0
+    f2m:                  0      -1.686580539      -1.686580539
+    f2p:                  0       1.686580539       1.686580539
+    f3m:       -1.686580539                 0      -1.686580539
+    f3p:        1.686580539                 0       1.686580539
+    ion1:                  0                 0                 0
+    ion2:        1.686580539       1.686580539       1.686580539
+    r1:        3.373161077       3.373161077                 0
+    r2:                  0       3.373161077       3.373161077
+    r3:        3.373161077                 0       3.373161077
+    zero:                  0                 0                 0
+  end reference_points
+)";
   CHECK(ostr_stream.str() == expected_description);
-
   // This subclass and function are used to generate the test data and may be useful for further test cases in future.
   testing::TestableNEReferencePoints test_ref_points(ref_points);
   std::ostringstream ostr_testing_stream;
   ostr_testing_stream << test_ref_points;
-  std::string expected_testable_description{R"({
+  std::string expected_testable_description;
+  if constexpr (std::is_same_v<NEReferencePoints::Real, double>)
+  {
+    std::cout << "NEReferencePoints::Real == double\n";
+    expected_testable_description = R"({
  {"a1", {      3.37316115,3.37316115,0}},
  {"a2", {               0,3.37316115,3.37316115}},
  {"a3", {      3.37316115,0,3.37316115}},
@@ -248,7 +294,38 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
  {"r3", {      3.37316115,0,3.37316115}},
  {"zero", {               0,0,0}},
 };
-)"};
+)";
+  }
+  else
+  {
+    std::cout << "NEReferencePoints::Real == float\n";
+    expected_testable_description = R"({
+ {"a1", {3.37316107749939,3.37316107749939,0}},
+ {"a2", {               0,3.37316107749939,3.37316107749939}},
+ {"a3", {3.37316107749939,0,3.37316107749939}},
+ {"cmmm", {-3.37316107749939,-3.37316107749939,-3.37316107749939}},
+ {"cmmp", {               0,-3.37316107749939,0}},
+ {"cmpm", {-3.37316107749939,0,0}},
+ {"cmpp", {               0,0,3.37316107749939}},
+ {"cpmm", {               0,0,-3.37316107749939}},
+ {"cpmp", {3.37316107749939,0,0}},
+ {"cppm", {               0,3.37316107749939,0}},
+ {"cppp", {3.37316107749939,3.37316107749939,3.37316107749939}},
+ {"f1m", {-1.686580538749695,-1.686580538749695,0}},
+ {"f1p", {1.686580538749695,1.686580538749695,0}},
+ {"f2m", {               0,-1.686580538749695,-1.686580538749695}},
+ {"f2p", {               0,1.686580538749695,1.686580538749695}},
+ {"f3m", {-1.686580538749695,0,-1.686580538749695}},
+ {"f3p", {1.686580538749695,0,1.686580538749695}},
+ {"ion1", {               0,0,0}},
+ {"ion2", {1.686580538749695,1.686580538749695,1.686580538749695}},
+ {"r1", {3.37316107749939,3.37316107749939,0}},
+ {"r2", {               0,3.37316107749939,3.37316107749939}},
+ {"r3", {3.37316107749939,0,3.37316107749939}},
+ {"zero", {               0,0,0}},
+};
+)";
+  }
   CHECK(ostr_testing_stream.str() == expected_testable_description);
 }
 
@@ -282,7 +359,7 @@ TEST_CASE("ReferencePoints::HDF5", "[estimators]")
   std::string test_file{"reference_points_test.hdf"};
   okay = hd.create(test_file);
   REQUIRE(okay);
-  
+
   ref_points.write(hd);
 
   hd.close();
@@ -291,7 +368,7 @@ TEST_CASE("ReferencePoints::HDF5", "[estimators]")
   bool okay_read = hd.open(test_file);
 
   hd.push("reference_points");
-  
+
   typename NEReferencePoints::Points expected_reference_points{
       {"a1", {3.37316107749939, 3.37316107749939, 0}},
       {"a2", {0, 3.37316107749939, 3.37316107749939}},
@@ -319,12 +396,12 @@ TEST_CASE("ReferencePoints::HDF5", "[estimators]")
   };
 
   for (auto& map_entry : expected_reference_points)
-    {
+  {
     std::string key{map_entry.first};
     NEReferencePoints::Point point;
     hd.readEntry(point, key);
     CHECK(approxEquality(point, map_entry.second));
-    }
+  }
   hd.close();
 }
 
