@@ -445,7 +445,11 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   if (curRatio == PsiValue(0))
-    throw std::runtime_error("DiracDeterminant::acceptMove curRatio is zero! Report a bug.\n");
+  {
+    std::ostringstream msg;
+    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
   const int WorkingIndex = iat - FirstIndex;
   log_value_ += convertValueToLog(curRatio);
   {
@@ -499,7 +503,13 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
       psiM_g_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
       psiM_l_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
       if (det.curRatio == PsiValue(0))
-        throw std::runtime_error("DiracDeterminant::mw_accept_rejectMove det.curRatio is zero! Report a bug.\n");
+
+      {
+        std::ostringstream msg;
+        msg << "DiracDeterminant::mw_accept_rejectMove det.curRatio is " << det.curRatio << "! Report a bug."
+            << std::endl;
+        throw std::runtime_error(msg.str());
+      }
       det.log_value_ += convertValueToLog(det.curRatio);
       count++;
     }
