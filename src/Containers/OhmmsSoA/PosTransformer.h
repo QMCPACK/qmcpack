@@ -102,12 +102,12 @@ namespace qmcplusplus
    *
    * Modeled after blas/lapack for lda/ldb
    */
-template<typename T1, typename T2>
-void PosAoS2SoA(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
+template<typename T>
+void PosAoS2SoA(int nrows, int ncols, const T* restrict iptr, int lda, T* restrict out, int ldb)
 {
-  T2* restrict x = out;
-  T2* restrict y = out + ldb;
-  T2* restrict z = out + 2 * ldb;
+  T* restrict x = out;
+  T* restrict y = out + ldb;
+  T* restrict z = out + 2 * ldb;
 #if !defined(__ibmxl__)
 #pragma omp simd aligned(x, y, z: QMC_SIMD_ALIGNMENT)
 #endif
