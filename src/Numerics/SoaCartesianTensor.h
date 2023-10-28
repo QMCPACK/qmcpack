@@ -119,13 +119,14 @@ struct SoaCartesianTensor
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to:NormFactor_ptr[:Nlm]) \
                     map(to:xyz_ptr[:3*nR], XYZ_ptr[:Nlm*nR])")
-    for (size_t ir = 0; ir < nR; ir++)
+    for (uint32_t ir = 0; ir < nR; ir++)
     {
       evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], XYZ_ptr + (ir * Nlm), Lmax);
-      for (int i = 0; i < Nlm; i++)
+      for (uint32_t i = 0; i < Nlm; i++)
         XYZ_ptr[ir * Nlm + i] *= NormFactor_ptr[i];
     }
   }
+
   /**
    * @brief evaluate VGL for multiple electrons and multiple pbc images
    * 
@@ -161,8 +162,16 @@ struct SoaCartesianTensor
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to:NormFactor_ptr[:Nlm]) \
                     map(to: xyz_ptr[:3*nR], XYZ_vgl_ptr[:5*nR*Nlm])")
-    for (size_t ir = 0; ir < nR; ir++)
+    for (uint32_t ir = 0; ir < nR; ir++)
     {
+      constexpr T czero(0);
+      for (uint32_t i = 0; i < Nlm; i++)
+      {
+        XYZ_vgl_ptr[ir * Nlm + offset * 1 + i] = czero;
+        XYZ_vgl_ptr[ir * Nlm + offset * 2 + i] = czero;
+        XYZ_vgl_ptr[ir * Nlm + offset * 3 + i] = czero;
+        XYZ_vgl_ptr[ir * Nlm + offset * 4 + i] = czero;
+      }
       evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], XYZ_vgl_ptr + (ir * Nlm),
                        XYZ_vgl_ptr + (ir * Nlm + offset * 1), XYZ_vgl_ptr + (ir * Nlm + offset * 2),
                        XYZ_vgl_ptr + (ir * Nlm + offset * 3), XYZ_vgl_ptr + (ir * Nlm + offset * 4), Lmax,
