@@ -228,13 +228,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
   Tv_list.updateTo();
 #endif
   displ_list_tr.updateTo();
-  // set AO data to zero on device
-  auto* vgl_v_ptr = vgl_v.data();
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) map(to:vgl_v_ptr[:5*Nw*BasisSetSize])")
-  for (size_t ivgl = 0; ivgl < 5; ivgl++)
-    for (size_t iw = 0; iw < Nw; iw++)
-      for (size_t ib = 0; ib < BasisSetSize; ib++)
-        vgl_v_ptr[ib + BasisSetSize * (iw + Nw * ivgl)] = 0;
 
   for (int c = 0; c < NumCenters; c++)
   {

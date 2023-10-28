@@ -777,7 +777,7 @@ struct SoaAtomicBasisSet
 #else
       auto* SuperTwist_ptr = SuperTwist.data();
 
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:SuperTwist_ptr[:9], \
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:SuperTwist_ptr[:SuperTwist.size()], \
 		     Tv_list_ptr[3*nElec*center_idx:3*nElec], correctphase_ptr[:nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
@@ -800,7 +800,6 @@ struct SoaAtomicBasisSet
                       map(always, to:periodic_image_displacements_ptr[:3*Nxyz]) \
                       map(to: dr_ptr[:3*nElec*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
-      {
         for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
         {
           RealType tmp_r2 = 0.0;
@@ -811,8 +810,8 @@ struct SoaAtomicBasisSet
             tmp_r2 += dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] * dr_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)];
           }
           r_ptr[i_xyz + Nxyz * i_e] = std::sqrt(tmp_r2);
+          //printf("particle %lu image %d, %lf, %lf\n", i_e, i_xyz, tmp_r2, dr_ptr[3 * (i_xyz + Nxyz * i_e)]);
         }
-      }
     }
 
     {
@@ -848,11 +847,16 @@ struct SoaAtomicBasisSet
            psi_ptr[:nBasTot*nElec], dpsi_x_ptr[:nBasTot*nElec], dpsi_y_ptr[:nBasTot*nElec], dpsi_z_ptr[:nBasTot*nElec], d2psi_ptr[:nBasTot*nElec], \
            correctphase_ptr[:nElec], r_ptr[:nElec*Nxyz], dr_ptr[:3*nElec*Nxyz]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
-      {
         for (size_t ib = 0; ib < BasisSetSize; ++ib)
         {
           const int nl(NL_ptr[ib]);
           const int lm(LM_ptr[ib]);
+          VT psi    = 0;
+          VT dpsi_x = 0;
+          VT dpsi_y = 0;
+          VT dpsi_z = 0;
+          VT d2psi  = 0;
+
           for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
           {
             const ValueType Phase    = phase_fac_ptr[i_xyz] * correctphase_ptr[i_e];
@@ -870,20 +874,25 @@ struct SoaAtomicBasisSet
             const RealType ang_z     = ylm_z_ptr[lm + nYlm * (i_xyz + Nxyz * i_e)];
             const RealType vr        = phi_ptr[nl + nRnl * (i_xyz + Nxyz * i_e)];
 
-            psi_ptr[BasisOffset + ib + i_e * nBasTot] += ang * vr * Phase;
-            dpsi_x_ptr[BasisOffset + ib + i_e * nBasTot] += (ang * gr_x + vr * ang_x) * Phase;
-            dpsi_y_ptr[BasisOffset + ib + i_e * nBasTot] += (ang * gr_y + vr * ang_y) * Phase;
-            dpsi_z_ptr[BasisOffset + ib + i_e * nBasTot] += (ang * gr_z + vr * ang_z) * Phase;
-            d2psi_ptr[BasisOffset + ib + i_e * nBasTot] +=
-                (ang * (ctwo * drnloverr + d2phi_ptr[nl + nRnl * (i_xyz + Nxyz * i_e)]) +
-                 ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-                 vr * ylm_l_ptr[lm + nYlm * (i_xyz + Nxyz * i_e)]) *
+            psi += ang * vr * Phase;
+            dpsi_x += (ang * gr_x + vr * ang_x) * Phase;
+            dpsi_y += (ang * gr_y + vr * ang_y) * Phase;
+            dpsi_z += (ang * gr_z + vr * ang_z) * Phase;
+            d2psi += (ang * (ctwo * drnloverr + d2phi_ptr[nl + nRnl * (i_xyz + Nxyz * i_e)]) +
+                      ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
+                      vr * ylm_l_ptr[lm + nYlm * (i_xyz + Nxyz * i_e)]) *
                 Phase;
           }
+
+          psi_ptr[BasisOffset + ib + i_e * nBasTot]    = psi;
+          dpsi_x_ptr[BasisOffset + ib + i_e * nBasTot] = dpsi_x;
+          dpsi_y_ptr[BasisOffset + ib + i_e * nBasTot] = dpsi_y;
+          dpsi_z_ptr[BasisOffset + ib + i_e * nBasTot] = dpsi_z;
+          d2psi_ptr[BasisOffset + ib + i_e * nBasTot]  = d2psi;
         }
-      }
     }
   }
+
   /**
    * @brief evaluate for multiple electrons
    * 
