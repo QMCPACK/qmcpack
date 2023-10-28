@@ -109,7 +109,7 @@ struct SoaSphericalTensor
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm]) \
                     map(to: xyz_ptr[:3*nR], Ylm_ptr[:Nlm*nR])")
-    for (size_t ir = 0; ir < nR; ir++)
+    for (uint32_t ir = 0; ir < nR; ir++)
     {
       evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_ptr + (ir * Nlm), Lmax,
                     FactorL_ptr, FactorLM_ptr);
@@ -153,11 +153,10 @@ struct SoaSphericalTensor
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm], Factor2L_ptr[:Lmax+1]) \
                     map(to: xyz_ptr[:nR*3], Ylm_vgl_ptr[:5*nR*Nlm])")
-    for (size_t ir = 0; ir < nR; ir++)
+    for (uint32_t ir = 0; ir < nR; ir++)
       evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_vgl_ptr + (ir * Nlm), Lmax,
                        FactorL_ptr, FactorLM_ptr, Factor2L_ptr, NormFactor_ptr, offset);
   }
-
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z)
@@ -220,7 +219,6 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
   constexpr T cone(1);
   const int ntot = (Lmax + 1) * (Lmax + 1);
   cYlm.resize(ntot);
-  cYlm = czero;
   NormFactor.resize(ntot, cone);
   const T sqrt2 = std::sqrt(2.0);
   if (addsign)
@@ -395,6 +393,11 @@ inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
   T* restrict gYlmY = Ylm_vgl + offset * 2;
   T* restrict gYlmZ = Ylm_vgl + offset * 3;
   T* restrict lYlm  = Ylm_vgl + offset * 4; // just need to set to zero
+
+  gYlmX[0] = czero;
+  gYlmY[0] = czero;
+  gYlmZ[0] = czero;
+  lYlm[0]  = czero;
 
   // Calculating Gradient now//
   for (int l = 1; l <= lmax; l++)
