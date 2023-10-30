@@ -188,21 +188,22 @@ public:
     auto* first_deriv_ptr = first_deriv_.data();
     const size_t nCols    = coeffs_.cols();
     const size_t coefsize = coeffs_.size();
+    const int nsplines   = num_splines_;
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to:coeff_ptr[:coefsize], first_deriv_ptr[:num_splines_]) \
+                    map(to:coeff_ptr[:coefsize], first_deriv_ptr[:nsplines]) \
                     map(to:r_ptr[:nR], u_ptr[:nRnl*nR])")
-    for (size_t ir = 0; ir < nR; ir++)
+    for (int ir = 0; ir < nR; ir++)
     {
       if (r_ptr[ir] >= Rmax)
       {
-        for (size_t i = 0; i < num_splines_; ++i)
+        for (int i = 0; i < nsplines; ++i)
           u_ptr[ir * nRnl + i] = 0.0;
       }
       else if (r_ptr[ir] < lower_bound)
       {
         const T dr = r_ptr[ir] - lower_bound;
-        for (size_t i = 0; i < num_splines_; ++i)
+        for (int i = 0; i < nsplines; ++i)
           u_ptr[ir * nRnl + i] = coeff_ptr[i] + first_deriv_ptr[i] * dr;
       }
       else
@@ -216,7 +217,7 @@ public:
         const T* restrict d = coeff_ptr + nCols * (offset + 3);
         const T* restrict e = coeff_ptr + nCols * (offset + 4);
         const T* restrict f = coeff_ptr + nCols * (offset + 5);
-        for (size_t i = 0; i < num_splines_; ++i)
+        for (int i = 0; i < nsplines; ++i)
           u_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
       }
     }
@@ -255,6 +256,7 @@ public:
     auto* first_deriv_ptr = first_deriv_.data();
     const size_t nCols    = coeffs_.cols();
     const size_t coefsize = coeffs_.size();
+    const auto nsplines   = num_splines_;
 
     constexpr T ctwo(2);
     constexpr T cthree(3);
@@ -265,13 +267,13 @@ public:
     constexpr T c20(20);
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to: first_deriv_ptr[:num_splines_], coeff_ptr[:coefsize]) \
+                    map(to: first_deriv_ptr[:nsplines], coeff_ptr[:coefsize]) \
                     map(to: r_ptr[:nR], u_ptr[:nRnl*nR], du_ptr[:nRnl*nR], d2u_ptr[:nRnl*nR])")
     for (size_t ir = 0; ir < nR; ir++)
     {
       if (r_ptr[ir] >= Rmax)
       {
-        for (size_t i = 0; i < num_splines_; ++i)
+        for (size_t i = 0; i < nsplines; ++i)
         {
           u_ptr[ir * nRnl + i]   = 0.0;
           du_ptr[ir * nRnl + i]  = 0.0;
@@ -283,7 +285,7 @@ public:
         const T dr          = r_ptr[ir] - lower_bound;
         const T* restrict a = coeff_ptr;
         // const T* restrict a = coeffs_[0];
-        for (size_t i = 0; i < num_splines_; ++i)
+        for (size_t i = 0; i < nsplines; ++i)
         {
           u_ptr[ir * nRnl + i]   = a[i] + first_deriv_ptr[i] * dr;
           du_ptr[ir * nRnl + i]  = first_deriv_ptr[i];
@@ -302,7 +304,7 @@ public:
         const T* restrict d = coeff_ptr + nCols * (offset + 3);
         const T* restrict e = coeff_ptr + nCols * (offset + 4);
         const T* restrict f = coeff_ptr + nCols * (offset + 5);
-        for (size_t i = 0; i < num_splines_; ++i)
+        for (size_t i = 0; i < nsplines; ++i)
         {
           u_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
           du_ptr[ir * nRnl + i] =

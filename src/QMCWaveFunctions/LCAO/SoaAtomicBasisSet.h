@@ -818,27 +818,29 @@ struct SoaAtomicBasisSet
       ScopedTimer local(rnl_timer_);
       MultiRnl.batched_evaluateVGL(r, rnl_vgl, Rmax);
     }
+
     {
       ScopedTimer local(ylm_timer_);
       Ylm.batched_evaluateVGL(dr, ylm_vgl);
     }
 
-    auto* phase_fac_ptr = periodic_image_phase_factors.data();
-    auto* LM_ptr        = LM.data();
-    auto* NL_ptr        = NL.data();
-
-    RealType* restrict phi_ptr   = rnl_vgl.data_at(0, 0, 0, 0);
-    RealType* restrict dphi_ptr  = rnl_vgl.data_at(1, 0, 0, 0);
-    RealType* restrict d2phi_ptr = rnl_vgl.data_at(2, 0, 0, 0);
-
-
-    const RealType* restrict ylm_v_ptr = ylm_vgl.data_at(0, 0, 0, 0); //value
-    const RealType* restrict ylm_x_ptr = ylm_vgl.data_at(1, 0, 0, 0); //gradX
-    const RealType* restrict ylm_y_ptr = ylm_vgl.data_at(2, 0, 0, 0); //gradY
-    const RealType* restrict ylm_z_ptr = ylm_vgl.data_at(3, 0, 0, 0); //gradZ
-    const RealType* restrict ylm_l_ptr = ylm_vgl.data_at(4, 0, 0, 0); //lap
     {
       ScopedTimer local_timer(psi_timer_);
+      auto* phase_fac_ptr = periodic_image_phase_factors.data();
+      auto* LM_ptr        = LM.data();
+      auto* NL_ptr        = NL.data();
+      const int bset_size = BasisSetSize;
+
+      RealType* restrict phi_ptr   = rnl_vgl.data_at(0, 0, 0, 0);
+      RealType* restrict dphi_ptr  = rnl_vgl.data_at(1, 0, 0, 0);
+      RealType* restrict d2phi_ptr = rnl_vgl.data_at(2, 0, 0, 0);
+
+
+      const RealType* restrict ylm_v_ptr = ylm_vgl.data_at(0, 0, 0, 0); //value
+      const RealType* restrict ylm_x_ptr = ylm_vgl.data_at(1, 0, 0, 0); //gradX
+      const RealType* restrict ylm_y_ptr = ylm_vgl.data_at(2, 0, 0, 0); //gradY
+      const RealType* restrict ylm_z_ptr = ylm_vgl.data_at(3, 0, 0, 0); //gradZ
+      const RealType* restrict ylm_l_ptr = ylm_vgl.data_at(4, 0, 0, 0); //lap
       // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
           map(always, to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize]) \
@@ -846,8 +848,8 @@ struct SoaAtomicBasisSet
            phi_ptr[:nRnl*nElec*Nxyz], dphi_ptr[:nRnl*nElec*Nxyz], d2phi_ptr[:nRnl*nElec*Nxyz], \
            psi_ptr[:nBasTot*nElec], dpsi_x_ptr[:nBasTot*nElec], dpsi_y_ptr[:nBasTot*nElec], dpsi_z_ptr[:nBasTot*nElec], d2psi_ptr[:nBasTot*nElec], \
            correctphase_ptr[:nElec], r_ptr[:nElec*Nxyz], dr_ptr[:3*nElec*Nxyz]) ")
-      for (size_t i_e = 0; i_e < nElec; i_e++)
-        for (size_t ib = 0; ib < BasisSetSize; ++ib)
+      for (int i_e = 0; i_e < nElec; i_e++)
+        for (int ib = 0; ib < bset_size; ++ib)
         {
           const int nl(NL_ptr[ib]);
           const int lm(LM_ptr[ib]);
@@ -1019,38 +1021,35 @@ struct SoaAtomicBasisSet
       ScopedTimer local(rnl_timer_);
       MultiRnl.batched_evaluate(r, rnl_v, Rmax);
     }
-    // dr_new is [3 * Nxyz * nElec] realtype
+
     {
       ScopedTimer local(ylm_timer_);
-      //Ylm.mw_evaluateV(dr.data(), ylm_v.data(), Nxyz * nElec, nYlm);
       Ylm.batched_evaluateV(dr, ylm_v);
     }
-    ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
-    auto* phase_fac_ptr = periodic_image_phase_factors.data();
-    auto* LM_ptr        = LM.data();
-    auto* NL_ptr        = NL.data();
-    auto* psi_ptr       = psi.data();
 
-    auto* ylm_ptr = ylm_v.data();
-    auto* rnl_ptr = rnl_v.data();
     {
       ScopedTimer local_timer(psi_timer_);
+      ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
+      auto* phase_fac_ptr = periodic_image_phase_factors.data();
+      auto* LM_ptr        = LM.data();
+      auto* NL_ptr        = NL.data();
+      auto* psi_ptr       = psi.data();
+      const int bset_size = BasisSetSize;
+
+      auto* ylm_ptr = ylm_v.data();
+      auto* rnl_ptr = rnl_v.data();
       // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
           map(always, to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize]) \
 		      map(to:ylm_ptr[:nYlm*nElec*Nxyz], rnl_ptr[:nRnl*nElec*Nxyz], psi_ptr[:nBasTot*nElec], correctphase_ptr[:nElec])")
-      for (size_t i_e = 0; i_e < nElec; i_e++)
-      {
-        for (size_t ib = 0; ib < BasisSetSize; ++ib)
-        {
-          for (size_t i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+      for (int i_e = 0; i_e < nElec; i_e++)
+        for (int ib = 0; ib < bset_size; ++ib)
+          for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
           {
             const ValueType Phase = phase_fac_ptr[i_xyz] * correctphase_ptr[i_e];
             psi_ptr[BasisOffset + ib + i_e * nBasTot] += ylm_ptr[(i_xyz + Nxyz * i_e) * nYlm + LM_ptr[ib]] *
                 rnl_ptr[(i_xyz + Nxyz * i_e) * nRnl + NL_ptr[ib]] * Phase;
           }
-        }
-      }
     }
   }
 
