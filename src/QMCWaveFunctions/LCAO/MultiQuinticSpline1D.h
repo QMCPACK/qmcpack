@@ -102,6 +102,7 @@ public:
   using CoeffType      = Matrix<T, OffloadPinnedAllocator<T>>;
   using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
   using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
+  using OffloadArray4D = Array<T, 4, OffloadPinnedAllocator<T>>;
 
 private:
   ///number of splines
@@ -214,6 +215,97 @@ public:
     }
   }
 
+  /**
+   * @brief evaluate value, first deriv, second deriv of MultiQuinticSpline1D for multiple electrons and multiple pbc images
+   * 
+   * r is assumed to be up-to-date on the device when entering this function, and
+   * vgl will be up to date on the device when exiting this function
+   * 
+   * @param [in] r electron distances [Nelec, Npbc]
+   * @param [out] vgl val/d1/d2 of all splines at all electron distances [3(val,d1,d2), Nelec, Npbc, Nsplines]
+   * @param Rmax spline and derivatives will evaluate to zero for any distance greater than or equal to Rmax
+  */
+  inline void batched_evaluateVGL(const OffloadArray2D& r, OffloadArray4D& vgl, T Rmax) const
+  {
+    const size_t nElec = r.size(0);
+    const size_t Nxyz  = r.size(1); // number of PBC images
+    assert(3 == vgl.size(0));
+    assert(nElec == vgl.size(1));
+    assert(Nxyz == vgl.size(2));
+    const size_t nRnl = vgl.size(3);  // number of splines
+    const size_t nR   = nElec * Nxyz; // total number of positions to evaluate
+
+    double one_over_log_delta = myGrid.OneOverLogDelta;
+    T lower_bound             = myGrid.lower_bound;
+    T dlog_ratio              = myGrid.LogDelta;
+
+    auto* r_ptr   = r.data();
+    auto* u_ptr   = vgl.data_at(0, 0, 0, 0);
+    auto* du_ptr  = vgl.data_at(1, 0, 0, 0);
+    auto* d2u_ptr = vgl.data_at(2, 0, 0, 0);
+
+    auto* coeff_ptr       = coeffs->data();
+    auto* first_deriv_ptr = first_deriv.data();
+    const size_t nCols    = coeffs->cols();
+    const size_t coefsize = coeffs->size();
+
+    constexpr T ctwo(2);
+    constexpr T cthree(3);
+    constexpr T cfour(4);
+    constexpr T cfive(5);
+    constexpr T csix(6);
+    constexpr T c12(12);
+    constexpr T c20(20);
+
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(always, to: first_deriv_ptr[:num_splines_], coeff_ptr[:coefsize]) \
+                    map(to: r_ptr[:nR], u_ptr[:nRnl*nR], du_ptr[:nRnl*nR], d2u_ptr[:nRnl*nR])")
+    for (size_t ir = 0; ir < nR; ir++)
+    {
+      if (r_ptr[ir] >= Rmax)
+      {
+        for (size_t i = 0; i < num_splines_; ++i)
+        {
+          u_ptr[ir * nRnl + i]   = 0.0;
+          du_ptr[ir * nRnl + i]  = 0.0;
+          d2u_ptr[ir * nRnl + i] = 0.0;
+        }
+      }
+      else if (r_ptr[ir] < lower_bound)
+      {
+        const T dr          = r_ptr[ir] - lower_bound;
+        const T* restrict a = coeff_ptr;
+        // const T* restrict a = (*coeffs)[0];
+        for (size_t i = 0; i < num_splines_; ++i)
+        {
+          u_ptr[ir * nRnl + i]   = a[i] + first_deriv_ptr[i] * dr;
+          du_ptr[ir * nRnl + i]  = first_deriv_ptr[i];
+          d2u_ptr[ir * nRnl + i] = 0.0;
+        }
+      }
+      else
+      {
+        int loc;
+        const auto cL = LogGridLight<T>::getCL(r_ptr[ir], loc, one_over_log_delta, lower_bound, dlog_ratio);
+        // const auto cL       = myGrid.getCLForQuintic(r_list[ir], loc);
+        const size_t offset = loc * 6;
+        const T* restrict a = coeff_ptr + nCols * (offset + 0);
+        const T* restrict b = coeff_ptr + nCols * (offset + 1);
+        const T* restrict c = coeff_ptr + nCols * (offset + 2);
+        const T* restrict d = coeff_ptr + nCols * (offset + 3);
+        const T* restrict e = coeff_ptr + nCols * (offset + 4);
+        const T* restrict f = coeff_ptr + nCols * (offset + 5);
+        for (size_t i = 0; i < num_splines_; ++i)
+        {
+          u_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
+          du_ptr[ir * nRnl + i] =
+              b[i] + cL * (ctwo * c[i] + cL * (cthree * d[i] + cL * (cfour * e[i] + cL * f[i] * cfive)));
+          d2u_ptr[ir * nRnl + i] = ctwo * c[i] + cL * (csix * d[i] + cL * (c12 * e[i] + cL * f[i] * c20));
+        }
+      }
+    }
+  }
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u) const
   {
     if (r < myGrid.lower_bound)
