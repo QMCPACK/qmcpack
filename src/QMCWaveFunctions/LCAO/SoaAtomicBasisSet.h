@@ -792,9 +792,9 @@ struct SoaAtomicBasisSet
 #endif
     }
 
-    auto* periodic_image_displacements_ptr = periodic_image_displacements.data();
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
+      auto* periodic_image_displacements_ptr = periodic_image_displacements.data();
       // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
                       map(always, to:periodic_image_displacements_ptr[:3*Nxyz]) \
@@ -993,15 +993,14 @@ struct SoaAtomicBasisSet
 #endif
     }
 
-    auto* periodic_image_displacements_ptr = periodic_image_displacements.data();
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
+      auto* periodic_image_displacements_ptr = periodic_image_displacements.data();
       // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
                       map(always, to:periodic_image_displacements_ptr[:3*Nxyz]) \
                       map(to: dr_ptr[:3*nElec*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
-      {
         for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
         {
           RealType tmp_r2 = 0.0;
@@ -1013,7 +1012,6 @@ struct SoaAtomicBasisSet
           }
           r_ptr[i_xyz + Nxyz * i_e] = std::sqrt(tmp_r2);
         }
-      }
     }
 
 
