@@ -37,7 +37,7 @@ namespace qmcplusplus
  * locator of the combination for l and m.
  */
 template<typename T>
-struct SoaSphericalTensor
+class SoaSphericalTensor
 {
 private:
   using OffloadVector  = Vector<T, OffloadPinnedAllocator<T>>;

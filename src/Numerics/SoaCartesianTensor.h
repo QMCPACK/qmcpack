@@ -37,7 +37,7 @@ namespace qmcplusplus
  *    (following Gamess order)
  */
 template<class T>
-struct SoaCartesianTensor
+class SoaCartesianTensor
 {
 private:
   using value_type     = T;
