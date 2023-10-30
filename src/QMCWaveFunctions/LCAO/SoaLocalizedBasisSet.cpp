@@ -23,8 +23,25 @@ namespace qmcplusplus
 {
 
 template<class COT, typename ORBT>
+struct SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBSetMultiWalkerMem : public Resource
+{
+    SoaLocalizedBSetMultiWalkerMem() : Resource("SoaLocalizedBasisSet") {}
+
+    SoaLocalizedBSetMultiWalkerMem(const SoaLocalizedBSetMultiWalkerMem&) : SoaLocalizedBSetMultiWalkerMem() {}
+
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<SoaLocalizedBSetMultiWalkerMem>(*this);
+    }
+
+  Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
+  Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
+};
+
+template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::createResource(ResourceCollection& collection) const
 {
+  collection.addResource(std::make_unique<SoaLocalizedBSetMultiWalkerMem>());
   for (int i = 0; i < LOBasisSet.size(); i++)
     LOBasisSet[i]->createResource(collection);
 }
@@ -33,8 +50,10 @@ void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
     ResourceCollection& collection,
     const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const
 {
-  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
   auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  assert(this == &loc_basis_leader);
+  loc_basis_leader.mw_mem_handle_ = collection.lendResource<SoaLocalizedBSetMultiWalkerMem>();
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
   auto& basisset_leader  = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
@@ -47,8 +66,10 @@ void SoaLocalizedBasisSet<COT, ORBT>::releaseResource(
     ResourceCollection& collection,
     const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const
 {
-  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
   auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  assert(this == &loc_basis_leader);
+  collection.takebackResource(loc_basis_leader.mw_mem_handle_);
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
   auto& basisset_leader  = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
@@ -154,7 +175,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::queryOrbitalsForSType(const std::vector<bo
   for (int c = 0; c < NumCenters; c++)
   {
     int idx = BasisOffset[c];
-    int bss = LOBasisSet[IonID[c]]->BasisSetSize;
+    int bss = LOBasisSet[IonID[c]]->getBasisSetSize();
     std::vector<bool> local_is_s_orbital(bss);
     LOBasisSet[IonID[c]]->queryOrbitalsForSType(local_is_s_orbital);
     for (int k = 0; k < bss; k++)
@@ -206,11 +227,10 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
   assert(vgl_v.size(1) == Nw);
   assert(vgl_v.size(2) == BasisSetSize);
 
-  Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
-  Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
+  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
-
 
   for (size_t iw = 0; iw < P_list.size(); iw++)
   {
@@ -285,9 +305,8 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
   const auto coordR_list(vps_leader.extractVPCoords(vp_list));
 
-  // make these shared resource? PinnedDualAllocator? OffloadPinnedAllocator?
-  Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
-  Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
+  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * nVPs);
   displ_list_tr.resize(3 * NumCenters * nVPs);
 
@@ -310,13 +329,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   Tv_list.updateTo();
 #endif
   displ_list_tr.updateTo();
-
-  // set AO data to zero on device
-  auto* vp_basis_v_ptr = vp_basis_v.data();
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:vp_basis_v_ptr[:nVPs*BasisSetSize]) ")
-  for (size_t i_vp = 0; i_vp < nVPs; i_vp++)
-    for (size_t ib = 0; ib < BasisSetSize; ++ib)
-      vp_basis_v_ptr[ib + i_vp * BasisSetSize] = 0;
 
   // TODO: group/sort centers by species?
   for (int c = 0; c < NumCenters; c++)
@@ -361,11 +373,10 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
   assert(vals.size(0) == Nw);
   assert(vals.size(1) == BasisSetSize);
 
-  Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
-  Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
+  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
-
 
   for (size_t iw = 0; iw < P_list.size(); iw++)
   {
@@ -384,13 +395,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
   Tv_list.updateTo();
 #endif
   displ_list_tr.updateTo();
-  // set AO data to zero on device
-  auto* vals_ptr = vals.data();
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:vals_ptr[:Nw*BasisSetSize])")
-
-  for (size_t iw = 0; iw < Nw; iw++)
-    for (size_t ib = 0; ib < BasisSetSize; ib++)
-      vals_ptr[ib + BasisSetSize * iw] = 0;
 
   for (int c = 0; c < NumCenters; c++)
   {

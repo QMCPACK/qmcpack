@@ -207,6 +207,12 @@ public:
   static RefVectorWithLeader<COT> extractOneSpeciesBasisRefList(
       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list,
       int id);
+
+private:
+  /// multi walker shared memory buffer
+  struct SoaLocalizedBSetMultiWalkerMem;
+  /// multi walker resource handle
+  ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
 };
 } // namespace qmcplusplus
 #endif

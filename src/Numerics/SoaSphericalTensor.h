@@ -37,24 +37,35 @@ namespace qmcplusplus
  * locator of the combination for l and m.
  */
 template<typename T>
-struct SoaSphericalTensor
+class SoaSphericalTensor
 {
+private:
+  using OffloadVector  = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
   using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
   using OffloadArray4D = Array<T, 4, OffloadPinnedAllocator<T>>;
   ///maximum angular momentum for the center
   int Lmax;
   /// Normalization factors
-  Vector<T, OffloadPinnedAllocator<T>> NormFactor;
+  const std::shared_ptr<OffloadVector> norm_factor_ptr_;
   ///pre-evaluated factor \f$1/\sqrt{(l+m)\times(l+1-m)}\f$
-  Vector<T, OffloadPinnedAllocator<T>> FactorLM;
+  const std::shared_ptr<OffloadVector> factorLM_ptr_;
   ///pre-evaluated factor \f$\sqrt{(2l+1)/(4\pi)}\f$
-  Vector<T, OffloadPinnedAllocator<T>> FactorL;
+  const std::shared_ptr<OffloadVector> factorL_ptr_;
   ///pre-evaluated factor \f$(2l+1)/(2l-1)\f$
-  Vector<T, OffloadPinnedAllocator<T>> Factor2L;
+  const std::shared_ptr<OffloadVector> factor2L_ptr_;
+  /// norm_factor reference
+  OffloadVector& norm_factor_;
+  /// factorLM reference
+  OffloadVector& factorLM_;
+  /// factorL reference
+  OffloadVector& factorL_;
+  /// factor2L reference
+  OffloadVector& factor2L_;
   ///composite
   VectorSoaContainer<T, 5> cYlm;
 
+public:
   explicit SoaSphericalTensor(const int l_max, bool addsign = false);
 
   SoaSphericalTensor(const SoaSphericalTensor& rhs) = default;
@@ -76,9 +87,9 @@ struct SoaSphericalTensor
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* Ylm) const
   {
-    evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
+    evaluate_bare(x, y, z, Ylm, Lmax, factorL_.data(), factorLM_.data());
     for (int i = 0, nl = cYlm.size(); i < nl; i++)
-      Ylm[i] *= NormFactor[i];
+      Ylm[i] *= norm_factor_[i];
   }
 
   /**
@@ -99,22 +110,21 @@ struct SoaSphericalTensor
 
     size_t nR = nElec * Npbc; // total number of positions to evaluate
 
-    auto* xyz_ptr        = xyz.data();
-    auto* Ylm_ptr        = Ylm.data();
-    auto* FactorLM_ptr   = FactorLM.data();
-    auto* FactorL_ptr    = FactorL.data();
-    auto* NormFactor_ptr = NormFactor.data();
+    auto* xyz_ptr          = xyz.data();
+    auto* Ylm_ptr          = Ylm.data();
+    auto* factorLM__ptr    = factorLM_.data();
+    auto* factorL__ptr     = factorL_.data();
+    auto* norm_factor__ptr = norm_factor_.data();
 
-    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(always, to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm]) \
+                    map(to:factorLM__ptr[:Nlm], factorL__ptr[:Lmax+1], norm_factor__ptr[:Nlm]) \
                     map(to: xyz_ptr[:3*nR], Ylm_ptr[:Nlm*nR])")
     for (uint32_t ir = 0; ir < nR; ir++)
     {
       evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_ptr + (ir * Nlm), Lmax,
-                    FactorL_ptr, FactorLM_ptr);
+                    factorL__ptr, factorLM__ptr);
       for (int i = 0; i < Nlm; i++)
-        Ylm_ptr[ir * Nlm + i] *= NormFactor_ptr[i];
+        Ylm_ptr[ir * Nlm + i] *= norm_factor__ptr[i];
     }
   }
 
@@ -137,34 +147,33 @@ struct SoaSphericalTensor
     assert(Ylm_vgl.size(1) == nElec);
     assert(Ylm_vgl.size(2) == Npbc);
     const size_t Nlm = Ylm_vgl.size(3);
-    assert(NormFactor.size() == Nlm);
+    assert(norm_factor_.size() == Nlm);
 
     const size_t nR     = nElec * Npbc; // total number of positions to evaluate
     const size_t offset = Nlm * nR;     // stride for v/gx/gy/gz/l
 
-    auto* xyz_ptr        = xyz.data();
-    auto* Ylm_vgl_ptr    = Ylm_vgl.data();
-    auto* FactorLM_ptr   = FactorLM.data();
-    auto* FactorL_ptr    = FactorL.data();
-    auto* Factor2L_ptr   = Factor2L.data();
-    auto* NormFactor_ptr = NormFactor.data();
+    auto* xyz_ptr          = xyz.data();
+    auto* Ylm_vgl_ptr      = Ylm_vgl.data();
+    auto* factorLM__ptr    = factorLM_.data();
+    auto* factorL__ptr     = factorL_.data();
+    auto* factor2L__ptr    = factor2L_.data();
+    auto* norm_factor__ptr = norm_factor_.data();
 
-    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(always, to:FactorLM_ptr[:Nlm], FactorL_ptr[:Lmax+1], NormFactor_ptr[:Nlm], Factor2L_ptr[:Lmax+1]) \
+                    map(to:factorLM__ptr[:Nlm], factorL__ptr[:Lmax+1], norm_factor__ptr[:Nlm], factor2L__ptr[:Lmax+1]) \
                     map(to: xyz_ptr[:nR*3], Ylm_vgl_ptr[:5*nR*Nlm])")
     for (uint32_t ir = 0; ir < nR; ir++)
       evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_vgl_ptr + (ir * Nlm), Lmax,
-                       FactorL_ptr, FactorLM_ptr, Factor2L_ptr, NormFactor_ptr, offset);
+                       factorL__ptr, factorLM__ptr, factor2L__ptr, norm_factor__ptr, offset);
   }
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z)
   {
     T* restrict Ylm = cYlm.data(0);
-    evaluate_bare(x, y, z, Ylm, Lmax, FactorL.data(), FactorLM.data());
+    evaluate_bare(x, y, z, Ylm, Lmax, factorL_.data(), factorLM_.data());
     for (int i = 0, nl = cYlm.size(); i < nl; i++)
-      Ylm[i] *= NormFactor[i];
+      Ylm[i] *= norm_factor_[i];
   }
 
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
@@ -213,23 +222,32 @@ struct SoaSphericalTensor
  \f}
  */
 template<typename T>
-inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) : Lmax(l_max)
+inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign)
+    : Lmax(l_max),
+      norm_factor_ptr_(std::make_shared<OffloadVector>()),
+      factorLM_ptr_(std::make_shared<OffloadVector>()),
+      factorL_ptr_(std::make_shared<OffloadVector>()),
+      factor2L_ptr_(std::make_shared<OffloadVector>()),
+      norm_factor_(*norm_factor_ptr_),
+      factorLM_(*factorLM_ptr_),
+      factorL_(*factorL_ptr_),
+      factor2L_(*factor2L_ptr_)
 {
   constexpr T czero(0);
   constexpr T cone(1);
   const int ntot = (Lmax + 1) * (Lmax + 1);
   cYlm.resize(ntot);
-  NormFactor.resize(ntot, cone);
+  norm_factor_.resize(ntot, cone);
   const T sqrt2 = std::sqrt(2.0);
   if (addsign)
   {
     for (int l = 0; l <= Lmax; l++)
     {
-      NormFactor[index(l, 0)] = cone;
+      norm_factor_[index(l, 0)] = cone;
       for (int m = 1; m <= l; m++)
       {
-        NormFactor[index(l, m)]  = std::pow(-cone, m) * sqrt2;
-        NormFactor[index(l, -m)] = std::pow(-cone, -m) * sqrt2;
+        norm_factor_[index(l, m)]  = std::pow(-cone, m) * sqrt2;
+        norm_factor_[index(l, -m)] = std::pow(-cone, -m) * sqrt2;
       }
     }
   }
@@ -239,30 +257,30 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
     {
       for (int m = 1; m <= l; m++)
       {
-        NormFactor[index(l, m)]  = sqrt2;
-        NormFactor[index(l, -m)] = sqrt2;
+        norm_factor_[index(l, m)]  = sqrt2;
+        norm_factor_[index(l, -m)] = sqrt2;
       }
     }
   }
-  FactorL.resize(Lmax + 1);
+  factorL_.resize(Lmax + 1);
   const T omega = 1.0 / std::sqrt(16.0 * std::atan(1.0));
   for (int l = 1; l <= Lmax; l++)
-    FactorL[l] = std::sqrt(static_cast<T>(2 * l + 1)) * omega;
-  Factor2L.resize(Lmax + 1);
+    factorL_[l] = std::sqrt(static_cast<T>(2 * l + 1)) * omega;
+  factor2L_.resize(Lmax + 1);
   for (int l = 1; l <= Lmax; l++)
-    Factor2L[l] = static_cast<T>(2 * l + 1) / static_cast<T>(2 * l - 1);
-  FactorLM.resize(ntot);
+    factor2L_[l] = static_cast<T>(2 * l + 1) / static_cast<T>(2 * l - 1);
+  factorLM_.resize(ntot);
   for (int l = 1; l <= Lmax; l++)
     for (int m = 1; m <= l; m++)
     {
-      T fac2                 = 1.0 / std::sqrt(static_cast<T>((l + m) * (l + 1 - m)));
-      FactorLM[index(l, m)]  = fac2;
-      FactorLM[index(l, -m)] = fac2;
+      T fac2                  = 1.0 / std::sqrt(static_cast<T>((l + m) * (l + 1 - m)));
+      factorLM_[index(l, m)]  = fac2;
+      factorLM_[index(l, -m)] = fac2;
     }
-  NormFactor.updateTo();
-  FactorLM.updateTo();
-  FactorL.updateTo();
-  Factor2L.updateTo();
+  norm_factor_.updateTo();
+  factorLM_.updateTo();
+  factorL_.updateTo();
+  factor2L_.updateTo();
 }
 
 PRAGMA_OFFLOAD("omp declare target")
@@ -364,7 +382,7 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x,
     }
   }
   //for (int i=0; i<Ylm.size(); i++)
-  //  Ylm[i]*= NormFactor[i];
+  //  Ylm[i]*= norm_factor_[i];
 }
 PRAGMA_OFFLOAD("omp end declare target")
 
@@ -477,14 +495,14 @@ inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
     Ylm[i] *= normfactor[i];
     lYlm[i] = 0;
   }
-  //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
+  //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= norm_factor_[i];
 }
 PRAGMA_OFFLOAD("omp end declare target")
 
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
 {
-  evaluateVGL_impl(x, y, z, cYlm.data(), Lmax, FactorL.data(), FactorLM.data(), Factor2L.data(), NormFactor.data(),
+  evaluateVGL_impl(x, y, z, cYlm.data(), Lmax, factorL_.data(), factorLM_.data(), factor2L_.data(), norm_factor_.data(),
                    cYlm.capacity());
 }
 
