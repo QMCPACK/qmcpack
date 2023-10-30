@@ -28,7 +28,7 @@ namespace qmcplusplus
    * \f$ \phi_{n,l,m}({\bf r})=R_{n,l}(r) Y_{l,m}(\theta) \f$
    */
 template<typename ROT, typename SH>
-struct SoaAtomicBasisSet
+class SoaAtomicBasisSet
 {
 public:
   using RadialOrbital_t  = ROT;
@@ -40,22 +40,6 @@ public:
   using OffloadArray2D   = Array<RealType, 2, OffloadPinnedAllocator<RealType>>;
   using OffloadVector    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadIntVector = Vector<int, OffloadPinnedAllocator<int>>;
-  ///size of the basis set
-  int BasisSetSize;
-  ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
-  TinyVector<int, 3> PBCImages;
-  ///Coordinates of SuperTwist
-  TinyVector<double, 3> SuperTwist;
-  ///maximum radius of this center
-  RealType Rmax;
-  ///spherical harmonics
-  SH Ylm;
-  ///radial orbitals
-  ROT MultiRnl;
-  ///container for the quantum-numbers
-  std::vector<QuantumNumberType> RnlID;
-  ///temporary storage
-  VectorSoaContainer<RealType, 4> tempS;
 
   ///the constructor
   explicit SoaAtomicBasisSet(int lmax, bool addsignforM = false)
@@ -1090,6 +1074,22 @@ private:
 
   /// multi walker resource handle
   ResourceHandle<SoaAtomicBSetMultiWalkerMem> mw_mem_handle_;
+  ///size of the basis set
+  int BasisSetSize;
+  ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
+  TinyVector<int, 3> PBCImages;
+  ///Coordinates of SuperTwist
+  TinyVector<double, 3> SuperTwist;
+  ///maximum radius of this center
+  RealType Rmax;
+  ///spherical harmonics
+  SH Ylm;
+  ///radial orbitals
+  ROT MultiRnl;
+  ///container for the quantum-numbers
+  std::vector<QuantumNumberType> RnlID;
+  ///temporary storage
+  VectorSoaContainer<RealType, 4> tempS;
   ///Phase Factor array of images
   std::shared_ptr<OffloadVector> periodic_image_phase_factors_ptr_;
   ///Displacements of images
@@ -1106,8 +1106,6 @@ private:
   OffloadIntVector& NL;
   /// reference to LM_ptr_
   OffloadIntVector& LM;
-
-private:
   // timers
   NewTimer& ylm_timer_;
   NewTimer& rnl_timer_;
@@ -1118,6 +1116,8 @@ private:
 
   template<typename COT>
   friend class AOBasisBuilder;
+  template<typename COT>
+  friend class RadialOrbitalSetBuilder;
 };
 
 } // namespace qmcplusplus

@@ -175,7 +175,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::queryOrbitalsForSType(const std::vector<bo
   for (int c = 0; c < NumCenters; c++)
   {
     int idx = BasisOffset[c];
-    int bss = LOBasisSet[IonID[c]]->BasisSetSize;
+    int bss = LOBasisSet[IonID[c]]->getBasisSetSize();
     std::vector<bool> local_is_s_orbital(bss);
     LOBasisSet[IonID[c]]->queryOrbitalsForSType(local_is_s_orbital);
     for (int k = 0; k < bss; k++)
