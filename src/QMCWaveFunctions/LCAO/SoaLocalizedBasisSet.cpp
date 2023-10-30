@@ -330,14 +330,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
 #endif
   displ_list_tr.updateTo();
 
-  // set AO data to zero on device
-  auto* vp_basis_v_ptr = vp_basis_v.data();
-  const int num_basis  = BasisSetSize;
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:vp_basis_v_ptr[:nVPs*BasisSetSize]) ")
-  for (int i_vp = 0; i_vp < nVPs; i_vp++)
-    for (int ib = 0; ib < num_basis; ++ib)
-      vp_basis_v_ptr[ib + i_vp * num_basis] = 0;
-
   // TODO: group/sort centers by species?
   for (int c = 0; c < NumCenters; c++)
   {
@@ -403,13 +395,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
   Tv_list.updateTo();
 #endif
   displ_list_tr.updateTo();
-  // set AO data to zero on device
-  auto* vals_ptr = vals.data();
-  const int num_basis  = BasisSetSize;
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:vals_ptr[:Nw*BasisSetSize])")
-  for (int iw = 0; iw < Nw; iw++)
-    for (int ib = 0; ib < num_basis; ib++)
-      vals_ptr[ib + num_basis * iw] = 0;
 
   for (int c = 0; c < NumCenters; c++)
   {

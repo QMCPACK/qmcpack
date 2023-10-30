@@ -1044,12 +1044,16 @@ struct SoaAtomicBasisSet
 		      map(to:ylm_ptr[:nYlm*nElec*Nxyz], rnl_ptr[:nRnl*nElec*Nxyz], psi_ptr[:nBasTot*nElec], correctphase_ptr[:nElec])")
       for (int i_e = 0; i_e < nElec; i_e++)
         for (int ib = 0; ib < bset_size; ++ib)
+        {
+          VT psi    = 0;
           for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
           {
             const ValueType Phase = phase_fac_ptr[i_xyz] * correctphase_ptr[i_e];
-            psi_ptr[BasisOffset + ib + i_e * nBasTot] += ylm_ptr[(i_xyz + Nxyz * i_e) * nYlm + LM_ptr[ib]] *
+            psi += ylm_ptr[(i_xyz + Nxyz * i_e) * nYlm + LM_ptr[ib]] *
                 rnl_ptr[(i_xyz + Nxyz * i_e) * nRnl + NL_ptr[ib]] * Phase;
           }
+          psi_ptr[BasisOffset + ib + i_e * nBasTot] = psi;
+        }
     }
   }
 
