@@ -27,7 +27,10 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsArray.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include <cassert>
 
 namespace qmcplusplus
 {
@@ -37,6 +40,7 @@ struct LogGridLight
   T lower_bound;
   T upper_bound;
   T OneOverLogDelta;
+  double LogDelta;
   std::vector<T> r_values;
 
   inline void set(T ri, T rf, int n)
@@ -47,10 +51,19 @@ struct LogGridLight
     double log_ratio  = std::log(ratio);
     double dlog_ratio = log_ratio / static_cast<double>(n - 1);
     OneOverLogDelta   = 1.0 / dlog_ratio;
+    LogDelta          = dlog_ratio;
     r_values.resize(n);
     for (int i = 0; i < n; i++)
       r_values[i] = ri * std::exp(i * dlog_ratio);
   }
+
+  PRAGMA_OFFLOAD("omp declare target")
+  static inline T getCL(T r, int& loc, double one_over_log_delta, T lower_bound, double log_delta)
+  {
+    loc = static_cast<int>(std::log(r / lower_bound) * one_over_log_delta);
+    return r - lower_bound * std::exp(loc * log_delta);
+  }
+  PRAGMA_OFFLOAD("omp end declare target")
 
   inline int locate(T r) const
   {
@@ -84,9 +97,12 @@ template<typename T>
 class MultiQuinticSpline1D
 {
 public:
-  using RealType  = T;
-  using GridType  = OneDimGridBase<T>;
-  using CoeffType = Matrix<T, aligned_allocator<T>>;
+  using RealType       = T;
+  using GridType       = OneDimGridBase<T>;
+  using CoeffType      = Matrix<T, OffloadPinnedAllocator<T>>;
+  using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
+  using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
+  using OffloadArray4D = Array<T, 4, OffloadPinnedAllocator<T>>;
 
 private:
   ///number of splines
@@ -101,7 +117,7 @@ private:
 
   ///coeffs[6*spline_points][num_splines+padding]
   std::shared_ptr<CoeffType> coeffs;
-  aligned_vector<T> first_deriv;
+  Vector<T, OffloadPinnedAllocator<T>> first_deriv;
 
 public:
   MultiQuinticSpline1D() = default;
@@ -137,6 +153,159 @@ public:
     }
   }
 
+  /**
+   * @brief evaluate MultiQuinticSpline1D for multiple electrons and multiple pbc images
+   * 
+   * @param [in] r electron distances [Nelec, Npbc]
+   * @param [out] u value of all splines at all electron distances [Nelec, Npbc, Nsplines]
+   * @param Rmax spline will evaluate to zero for any distance greater than or equal to Rmax
+  */
+  inline void batched_evaluate(const OffloadArray2D& r, OffloadArray3D& u, T Rmax) const
+  {
+    const size_t nElec = r.size(0);
+    const size_t Nxyz  = r.size(1); // number of PBC images
+    assert(nElec == u.size(0));
+    assert(Nxyz == u.size(1));
+    const size_t nRnl = u.size(2);    // number of splines
+    const size_t nR   = nElec * Nxyz; // total number of positions to evaluate
+
+    double one_over_log_delta = myGrid.OneOverLogDelta;
+    T lower_bound             = myGrid.lower_bound;
+    T log_delta               = myGrid.LogDelta;
+
+    auto* r_ptr = r.data();
+    auto* u_ptr = u.data();
+
+    auto* coeff_ptr       = coeffs->data();
+    auto* first_deriv_ptr = first_deriv.data();
+    const size_t nCols    = coeffs->cols();
+    const size_t coefsize = coeffs->size();
+
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(always, to:coeff_ptr[:coefsize], first_deriv_ptr[:num_splines_]) \
+                    map(to:r_ptr[:nR], u_ptr[:nRnl*nR])")
+    for (size_t ir = 0; ir < nR; ir++)
+    {
+      if (r_ptr[ir] >= Rmax)
+      {
+        for (size_t i = 0; i < num_splines_; ++i)
+          u_ptr[ir * nRnl + i] = 0.0;
+      }
+      else if (r_ptr[ir] < lower_bound)
+      {
+        const T dr = r_ptr[ir] - lower_bound;
+        for (size_t i = 0; i < num_splines_; ++i)
+          u_ptr[ir * nRnl + i] = coeff_ptr[i] + first_deriv_ptr[i] * dr;
+      }
+      else
+      {
+        int loc;
+        const auto cL       = LogGridLight<T>::getCL(r_ptr[ir], loc, one_over_log_delta, lower_bound, log_delta);
+        const size_t offset = loc * 6;
+        const T* restrict a = coeff_ptr + nCols * (offset + 0);
+        const T* restrict b = coeff_ptr + nCols * (offset + 1);
+        const T* restrict c = coeff_ptr + nCols * (offset + 2);
+        const T* restrict d = coeff_ptr + nCols * (offset + 3);
+        const T* restrict e = coeff_ptr + nCols * (offset + 4);
+        const T* restrict f = coeff_ptr + nCols * (offset + 5);
+        for (size_t i = 0; i < num_splines_; ++i)
+          u_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
+      }
+    }
+  }
+
+  /**
+   * @brief evaluate value, first deriv, second deriv of MultiQuinticSpline1D for multiple electrons and multiple pbc images
+   * 
+   * r is assumed to be up-to-date on the device when entering this function, and
+   * vgl will be up to date on the device when exiting this function
+   * 
+   * @param [in] r electron distances [Nelec, Npbc]
+   * @param [out] vgl val/d1/d2 of all splines at all electron distances [3(val,d1,d2), Nelec, Npbc, Nsplines]
+   * @param Rmax spline and derivatives will evaluate to zero for any distance greater than or equal to Rmax
+  */
+  inline void batched_evaluateVGL(const OffloadArray2D& r, OffloadArray4D& vgl, T Rmax) const
+  {
+    const size_t nElec = r.size(0);
+    const size_t Nxyz  = r.size(1); // number of PBC images
+    assert(3 == vgl.size(0));
+    assert(nElec == vgl.size(1));
+    assert(Nxyz == vgl.size(2));
+    const size_t nRnl = vgl.size(3);  // number of splines
+    const size_t nR   = nElec * Nxyz; // total number of positions to evaluate
+
+    double one_over_log_delta = myGrid.OneOverLogDelta;
+    T lower_bound             = myGrid.lower_bound;
+    T dlog_ratio              = myGrid.LogDelta;
+
+    auto* r_ptr   = r.data();
+    auto* u_ptr   = vgl.data_at(0, 0, 0, 0);
+    auto* du_ptr  = vgl.data_at(1, 0, 0, 0);
+    auto* d2u_ptr = vgl.data_at(2, 0, 0, 0);
+
+    auto* coeff_ptr       = coeffs->data();
+    auto* first_deriv_ptr = first_deriv.data();
+    const size_t nCols    = coeffs->cols();
+    const size_t coefsize = coeffs->size();
+
+    constexpr T ctwo(2);
+    constexpr T cthree(3);
+    constexpr T cfour(4);
+    constexpr T cfive(5);
+    constexpr T csix(6);
+    constexpr T c12(12);
+    constexpr T c20(20);
+
+    // FIXME: remove "always" after fixing MW mem to only transfer once ahead of time
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(always, to: first_deriv_ptr[:num_splines_], coeff_ptr[:coefsize]) \
+                    map(to: r_ptr[:nR], u_ptr[:nRnl*nR], du_ptr[:nRnl*nR], d2u_ptr[:nRnl*nR])")
+    for (size_t ir = 0; ir < nR; ir++)
+    {
+      if (r_ptr[ir] >= Rmax)
+      {
+        for (size_t i = 0; i < num_splines_; ++i)
+        {
+          u_ptr[ir * nRnl + i]   = 0.0;
+          du_ptr[ir * nRnl + i]  = 0.0;
+          d2u_ptr[ir * nRnl + i] = 0.0;
+        }
+      }
+      else if (r_ptr[ir] < lower_bound)
+      {
+        const T dr          = r_ptr[ir] - lower_bound;
+        const T* restrict a = coeff_ptr;
+        // const T* restrict a = (*coeffs)[0];
+        for (size_t i = 0; i < num_splines_; ++i)
+        {
+          u_ptr[ir * nRnl + i]   = a[i] + first_deriv_ptr[i] * dr;
+          du_ptr[ir * nRnl + i]  = first_deriv_ptr[i];
+          d2u_ptr[ir * nRnl + i] = 0.0;
+        }
+      }
+      else
+      {
+        int loc;
+        const auto cL = LogGridLight<T>::getCL(r_ptr[ir], loc, one_over_log_delta, lower_bound, dlog_ratio);
+        // const auto cL       = myGrid.getCLForQuintic(r_list[ir], loc);
+        const size_t offset = loc * 6;
+        const T* restrict a = coeff_ptr + nCols * (offset + 0);
+        const T* restrict b = coeff_ptr + nCols * (offset + 1);
+        const T* restrict c = coeff_ptr + nCols * (offset + 2);
+        const T* restrict d = coeff_ptr + nCols * (offset + 3);
+        const T* restrict e = coeff_ptr + nCols * (offset + 4);
+        const T* restrict f = coeff_ptr + nCols * (offset + 5);
+        for (size_t i = 0; i < num_splines_; ++i)
+        {
+          u_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
+          du_ptr[ir * nRnl + i] =
+              b[i] + cL * (ctwo * c[i] + cL * (cthree * d[i] + cL * (cfour * e[i] + cL * f[i] * cfive)));
+          d2u_ptr[ir * nRnl + i] = ctwo * c[i] + cL * (csix * d[i] + cL * (c12 * e[i] + cL * f[i] * c20));
+        }
+      }
+    }
+  }
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u) const
   {
     if (r < myGrid.lower_bound)
@@ -274,6 +443,8 @@ public:
         out[(i * 6 + 5) * ncols + ispline] = static_cast<T>(F[i]);
       }
     }
+    first_deriv.updateTo(); // FIXME: this is overkill, probably better to just do once after all splines added
+    coeffs->updateTo();     // FIXME: this is overkill, probably better to just do once after all splines added
   }
 
   int getNumSplines() const { return num_splines_; }

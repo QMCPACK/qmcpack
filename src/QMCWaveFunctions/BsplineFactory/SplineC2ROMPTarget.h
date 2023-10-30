@@ -202,7 +202,7 @@ public:
     PRAGMA_OFFLOAD("omp target update to(mKK_ptr[0:mKK->size()])")
     auto* myKcart_ptr = myKcart->data();
     PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
-    for (size_t i = 0; i < 9; i++)
+    for (uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];

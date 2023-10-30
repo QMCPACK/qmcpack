@@ -1,5 +1,5 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2023 Alfredo A. Correa
 
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
@@ -25,9 +25,6 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 			[sz = static_cast<std::size_t>(world.size())](auto& e1, auto& e2) { return e1 == e2 * sz; }
 		)
 	);
-	//	for(std::size_t i = 0; i != sz; ++i) {
-	//		assert(global[i] == local[i] * world.size());
-	//	}
 
 	auto const sum_of_ranks = (world += world.rank());
 	assert( sum_of_ranks == world.size()*(world.size()-1)/2 );
@@ -35,9 +32,7 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 	auto rank = world.rank();
 	auto sum_rank = 0;
 	world.all_reduce_n(&rank, 1, &sum_rank);
-//	world.all_reduce_n(&rank, 1, &sum_rank, std::plus<>{});
-//	world.all_reduce_n(&rank, 1, &sum_rank, mpi3::plus<>{});
-//	sum_rank = (world += rank);
+//  sum_rank = (world += rank);
 	assert(sum_rank == world.size()*(world.size()-1)/2);
 
 	auto max_rank = -1;
@@ -48,13 +43,12 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 	world.all_reduce_n(&rank, 1, &min_rank, mpi3::min<>{});
 	assert( min_rank == 0 );
 
-
 	{
 		std::vector<int> local(20, 1);
 		if(world.rank() == 2){local[1] = 0;}
 
 		std::vector<int> global(local.size());
-		world.all_reduce_n(local.begin(), local.size(), global.begin());
+		world.all_reduce_n(local.begin(), local.size(), global.begin() /*, std::plus<>{}*/);
 
 		assert(global[0] == world.size());
 		assert(global[1] == world.size() - 1);
@@ -86,8 +80,6 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 		assert( all_of == false );
 	}
 	{
-		assert(world.size() != 1);
-
 		bool const b = (world.rank() == 1);
 		bool any_of = false;
 		world.all_reduce_n(&b, 1, &any_of, std::logical_or<>{});
@@ -98,8 +90,6 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 		assert(not all_of);
 	}
 	{
-		assert(world.size() != 1);
-
 		bool const b = (world.rank() == 1);
 		bool const any_of = (world |= b);
 		assert(any_of);
