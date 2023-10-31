@@ -191,7 +191,7 @@ public:
 
   void detRatios(Vector<ValueType>& ratios) override;
 
-  std::vector<ValueType>& detCoefficients() override;
+  const std::vector<ValueType>& getLinearExpansionCoefs() const;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,

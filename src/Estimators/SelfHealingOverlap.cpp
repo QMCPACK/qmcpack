@@ -29,12 +29,16 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_,
 
   auto& inp = this->input_.input_section_;
 
+  auto msd_or_null = wfn.findMSD();
+  if(!msd_or_null)
+    throw std::runtime_error("SelfHealingOverlap only supports multi slater determinant wavefunctions which cannot be found in the trial wavefunction.");
+
+  const MultiSlaterDetTableMethod& msd = *msd_or_null;
 
   // JTK: how to get # of coeff in multidet at this point?
   //size_t data_size = 1486;
-  size_t data_size = wfn.numTerms();
+  const size_t data_size = msd.getLinearExpansionCoefs().size();
   data_.resize(data_size, 0.0);
-
 }
 
 

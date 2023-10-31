@@ -1028,7 +1028,7 @@ void MultiSlaterDetTableMethod::detRatios(Vector<ValueType>& ratios)
   }
 }
 
-std::vector<WaveFunctionComponent::ValueType>& MultiSlaterDetTableMethod::detCoefficients()
+const std::vector<WaveFunctionComponent::ValueType>& MultiSlaterDetTableMethod::getLinearExpansionCoefs() const
 {
   // CI only for now
   assert(!csf_data_);

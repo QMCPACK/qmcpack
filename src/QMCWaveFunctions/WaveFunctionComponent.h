@@ -542,13 +542,6 @@ public:
     APP_ABORT("detRatios is not implemented. Perhaps wavefunctions is not a multideterminant?");
   }
 
-  virtual std::vector<ValueType>& detCoefficients()
-  {
-    APP_ABORT("detCoefficients is not implemented. Perhaps wavefunctions is not a multideterminant?");
-    std::vector<ValueType>* Ctmp = new std::vector<ValueType>();
-    return *Ctmp;
-  }
-
 private:
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
