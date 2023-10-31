@@ -281,7 +281,11 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   if (curRatio == PsiValue(0))
-    throw std::runtime_error("DiracDeterminant::acceptMove curRatio is zero! Report a bug.\n");
+  {
+    std::ostringstream msg;
+    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
   ScopedTimer local_timer(UpdateTimer);
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
