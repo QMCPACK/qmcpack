@@ -518,7 +518,7 @@ inline void SoaSphericalTensor<T>::evaluateVGHGH(T x, T y, T z)
   throw std::runtime_error("SoaSphericalTensor<T>::evaluateVGHGH(x,y,z):  Not implemented\n");
 }
 
-extern template struct SoaSphericalTensor<float>;
-extern template struct SoaSphericalTensor<double>;
+extern template class SoaSphericalTensor<float>;
+extern template class SoaSphericalTensor<double>;
 } // namespace qmcplusplus
 #endif
