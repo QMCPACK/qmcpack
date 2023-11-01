@@ -569,7 +569,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   CHECK(dlogpsi[0] == ValueApprox(-1.41961753e-05));
   CHECK(dhpsioverpsi[0] == ValueApprox(-0.00060853));
 
-  std::vector<RealType> params = {0.1};
+  std::vector<ValueType> params = {0.1};
   rot_spo->apply_rotation(params, false);
 
   rot_spo->evaluate_notranspose(elec, 0, elec.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
@@ -612,8 +612,7 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
   std::vector<ValueType> delta_params = {0.1, 0.3, 0.2, -0.1};
   std::vector<ValueType> new_params(6);
 
-  //Debug
-  //RotatedSPOs::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
+  RotatedSPOs::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
 
   // clang-format off
   std::vector<ValueType> rot_data4 =
@@ -639,8 +638,7 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
   std::vector<ValueType> new_params2(6);
   std::vector<ValueType> reverse_delta_params = {-0.1, -0.3, -0.2, 0.1};
-  //Debug
-  //RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
+  RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
   for (int i = 0; i < new_params2.size(); i++)
     CHECK(std::real(new_params2[i]) == Approx(std::real(old_params[i])));
 }
@@ -649,7 +647,7 @@ namespace testing
 {
 opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
 opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull; }
-std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
 // Test using global rotation

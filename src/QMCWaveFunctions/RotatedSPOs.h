@@ -22,7 +22,7 @@ class RotatedSPOs;
 namespace testing
 {
 opt_variables_type& getMyVarsFull(RotatedSPOs& rot);
-std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot);
+std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot);
 } // namespace testing
 
 class RotatedSPOs : public SPOSet, public OptimizableObject
@@ -69,23 +69,23 @@ public:
                                                    std::vector<ValueType>& param);
 
   //function to perform orbital rotations
-  void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
+  void apply_rotation(const std::vector<ValueType>& param, bool use_stored_copy);
 
   // For global rotation, inputs are the old parameters and the delta parameters.
   // The corresponding rotation matrices are constructed, multiplied together,
   // and the new parameters extracted.
   // The new rotation is applied to the underlying SPO coefficients
-  void applyDeltaRotation(const std::vector<RealType>& delta_param,
-                          const std::vector<RealType>& old_param,
-                          std::vector<RealType>& new_param);
+  void applyDeltaRotation(const std::vector<ValueType>& delta_param,
+                          const std::vector<ValueType>& old_param,
+                          std::vector<ValueType>& new_param);
 
   // Perform the construction of matrices and extraction of parameters for a delta rotation.
   // Split out and made static for testing.
-  static void constructDeltaRotation(const std::vector<RealType>& delta_param,
-                                     const std::vector<RealType>& old_param,
+  static void constructDeltaRotation(const std::vector<ValueType>& delta_param,
+                                     const std::vector<ValueType>& old_param,
                                      const RotationIndices& act_rot_inds,
                                      const RotationIndices& full_rot_inds,
-                                     std::vector<RealType>& new_param,
+                                     std::vector<ValueType>& new_param,
                                      ValueMatrix& new_rot_mat);
 
   // When initializing the rotation from VP files
@@ -94,7 +94,7 @@ public:
 
   // This function applies the global rotation (similar to apply_rotation, but for the full
   // set of rotation parameters)
-  void applyFullRotation(const std::vector<RealType>& full_param, bool use_stored_copy);
+  void applyFullRotation(const std::vector<ValueType>& full_param, bool use_stored_copy);
 
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
@@ -106,7 +106,7 @@ public:
   std::unique_ptr<SPOSet> Phi;
 
   /// Set the rotation parameters (usually from input file)
-  void setRotationParameters(const std::vector<RealType>& param_list);
+  void setRotationParameters(const std::vector<ValueType>& param_list);
 
   /// the number of electrons of the majority spin
   size_t nel_major_;
@@ -432,7 +432,7 @@ private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
   /// list of supplied orbital rotation parameters
-  std::vector<RealType> params;
+  std::vector<ValueType> params;
 
   /// Full set of rotation matrix parameters for use in global rotation method
   opt_variables_type myVarsFull;
@@ -441,7 +441,7 @@ private:
   NewTimer& apply_rotation_timer_;
 
   /// List of previously applied parameters
-  std::vector<std::vector<RealType>> history_params_;
+  std::vector<std::vector<ValueType>> history_params_;
 
   static RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list);
 
@@ -449,7 +449,7 @@ private:
   bool use_global_rot_ = true;
 
   friend opt_variables_type& testing::getMyVarsFull(RotatedSPOs& rot);
-  friend std::vector<std::vector<RealType>>& testing::getHistoryParams(RotatedSPOs& rot);
+  friend std::vector<std::vector<ValueType>>& testing::getHistoryParams(RotatedSPOs& rot);
 };
 
 
