@@ -23,6 +23,39 @@
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+class TestableNEReferencePoints : public NEReferencePoints
+{
+public:
+  TestableNEReferencePoints(const NEReferencePoints& nerp) : NEReferencePoints(nerp) {}
+  void write_testable_description(std::ostream& os) const;
+};
+
+void TestableNEReferencePoints::write_testable_description(std::ostream& os) const
+{
+  os << "{" << '\n';
+  std::map<std::string, Point>::const_iterator it, end = points_.end();
+  for (it = points_.begin(); it != end; ++it)
+  {
+    os << " {\"" << it->first << "\", {" << std::setw(16) << std::setprecision(16) << it->second[0] << ","
+       << it->second[1] << "," << it->second[2] << "}}," << '\n';
+  }
+  os << "};" << '\n';
+  return;
+}
+} // namespace testing
+
+std::ostream& operator<<(std::ostream& out, const testing::TestableNEReferencePoints& rhs)
+{
+  rhs.write_testable_description(out);
+  return out;
+}
+
+
+std::ostream& operator<<(std::ostream& out, const testing::TestableNEReferencePoints& rhs);
+
 constexpr bool generate_test_data = false;
 
 template<typename T1, typename T2, unsigned D>

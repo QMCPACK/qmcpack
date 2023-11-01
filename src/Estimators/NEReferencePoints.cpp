@@ -19,8 +19,9 @@
 
 namespace qmcplusplus
 {
+
 NEReferencePoints::NEReferencePoints(const ReferencePointsInput& rp_input,
-                                     ParticleSet& pset,
+                                     const ParticleSet& pset,
                                      RefVector<ParticleSet>& ref_psets)
     : input_(rp_input)
 {
@@ -49,7 +50,7 @@ NEReferencePoints::NEReferencePoints(const ReferencePointsInput& rp_input,
     points_[key] = dot(crd, value);
 }
 
-void NEReferencePoints::processParticleSets(ParticleSet& P, RefVector<ParticleSet>& Psets)
+void NEReferencePoints::processParticleSets(const ParticleSet& P, RefVector<ParticleSet>& Psets)
 {
   //get axes and origin information from the ParticleSet
   points_["zero"] = 0 * P.getLattice().a(0);
@@ -111,28 +112,5 @@ std::ostream& operator<<(std::ostream& out, const NEReferencePoints& rhs)
   rhs.write_description(out, "");
   return out;
 }
-
-namespace testing
-{
-void TestableNEReferencePoints::write_testable_description(std::ostream& os) const
-{
-  os << "{" << '\n';
-  std::map<std::string, Point>::const_iterator it, end = points_.end();
-  for (it = points_.begin(); it != end; ++it)
-  {
-    os << " {\"" << it->first << "\", {" << std::setw(16) << std::setprecision(16) << it->second[0] << "," << it->second[1] << "," << it->second[2]
-       << "}}," << '\n';
-  }
-  os << "};" << '\n';
-  return;
-}
-} // namespace testing
-
-std::ostream& operator<<(std::ostream& out, const testing::TestableNEReferencePoints& rhs)
-{
-  rhs.write_testable_description(out);
-  return out;
-}
-
 
 } // namespace qmcplusplus

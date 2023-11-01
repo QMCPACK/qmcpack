@@ -24,6 +24,13 @@
 
 namespace qmcplusplus
 {
+
+/** This class creates, contains, and writes both user and machine readable referencepoints.
+ *  they are derived from the lattice of the pset passed and the particle positions in the ref_psets
+ *  an arbitrary number of additional points can be defined in the input that ReferencePointsInput
+ *  presents as native input.
+ *  It is a dependency of Estimators/NESpaceGrid and Estimatorss/EnergyDensityEstimator
+ */
 class NEReferencePoints
 {
 public:
@@ -32,36 +39,41 @@ public:
   using Point  = TinyVector<Real, OHMMS_DIM>;
   using Points = std::map<std::string, Point>;
   using Coord  = typename ReferencePointsInput::Coord;
-  NEReferencePoints(const ReferencePointsInput& rp_input, ParticleSet& pset, RefVector<ParticleSet>& ref_psets);
+  /** Usual constructor
+   *  \param[in] rp_input   Input object for reference points which can contain and arbitrary set of points beyond
+   *                        those take from the pset, and ref_psets
+   *  \param[in] pset       pset that supplies the lattice information for reference points
+   *  \param[in] ref_psets  pset reference vector the particle points in this/these psets are reference points
+   */
+  NEReferencePoints(const ReferencePointsInput& rp_input, const ParticleSet& pset, RefVector<ParticleSet>& ref_psets);
   NEReferencePoints(const NEReferencePoints& nerp) = default;
 
-  void processParticleSets(ParticleSet& P, RefVector<ParticleSet>& Pref);
+  /** writes a human readable representation of the reference points.
+   *  \param[inout] os       ostream to write description to
+   *  \param[in]    indent   spaces or other text to preface each line of output with.  needed to preserve
+   *                         legacy output format.
+   */
   void write_description(std::ostream& os, const std::string& indent) const;
+
+  /** machine readable output
+   *  \param[inout]  file  hdf5 file to write to.  Respects current state of file.
+   */
   void write(hdf_archive& file) const;
+
+  /** return const ref to map of reference points.
+   *  labeling scheme unchanged from legacy
+   */
   const Points& get_points() const { return points_; }
 
 protected:
   Points points_;
-
 private:
+  void processParticleSets(const ParticleSet& P, RefVector<ParticleSet>& Pref);
   Axes axes;
   ReferencePointsInput input_;
 };
 
 std::ostream& operator<<(std::ostream& out, const NEReferencePoints& rhs);
 
-namespace testing
-{
-class TestableNEReferencePoints : public NEReferencePoints
-{
-public:
-  TestableNEReferencePoints(const NEReferencePoints& nerp) : NEReferencePoints(nerp) {}
-  void write_testable_description(std::ostream& os) const;
-};
-} // namespace testing
-
-std::ostream& operator<<(std::ostream& out, const testing::TestableNEReferencePoints& rhs);
-} // namespace qmcplusplus
-
-
+}
 #endif

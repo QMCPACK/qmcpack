@@ -43,16 +43,15 @@ set(SRCS
     test_PerParticleHamiltonianLogger.cpp
     test_ReferencePointsInput.cpp
     test_ReferencePoints.cpp
+    test_MomentumDistribution.cpp
+    test_OneBodyDensityMatricesInput.cpp
+    test_OneBodyDensityMatrices.cpp
+    test_PerParticleHamiltonianLogger.cpp
+    test_EstimatorManagerCrowd.cpp
     )
 
-# Tests incompatible with DiracDeterminantCUDA
-# DiracDeterminantsCUDA cannot be copied
-if(NOT QMC_CUDA)
-  set(SRCS ${SRCS} test_MomentumDistribution.cpp test_OneBodyDensityMatricesInput.cpp test_OneBodyDensityMatrices.cpp test_PerParticleHamiltonianLogger.cpp test_EstimatorManagerCrowd.cpp)
-endif()
-
 add_executable(${UTEST_EXE} ${SRCS})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators utilities_for_test sposets_for_testing)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators utilities_for_test)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
@@ -92,7 +91,7 @@ if(HAVE_MPI)
       platform_omptarget_LA
       utilities_for_test)
   endif()
-  target_link_libraries(${UTEST_EXE} catch_main qmcestimators qmcwfs qmcparticle qmcham qmcwfs_omptarget qmcutil utilities_for_test)
+  target_link_libraries(${UTEST_EXE} catch_main qmcestimators)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()
