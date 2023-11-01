@@ -37,11 +37,12 @@ set(WFBASE_SRCS
     HarmonicOscillator/SHOSet.cpp
     HarmonicOscillator/SHOSetBuilder.cpp
     ExampleHeBuilder.cpp
-    ExampleHeComponent.cpp)
+    ExampleHeComponent.cpp
+    RotatedSPOs.cpp)
 
-if(NOT QMC_COMPLEX)
-  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp)
-endif(NOT QMC_COMPLEX)
+#if(NOT QMC_COMPLEX)
+#  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp)
+#endif(NOT QMC_COMPLEX)
 
 if(QMC_COMPLEX)
   set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp)

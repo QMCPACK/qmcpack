@@ -342,8 +342,9 @@ TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
 
   std::vector<ValueType> params_out(2);
   RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, m3, params_out);
-  CHECK(params_out[0] == Approx(0.1));
-  CHECK(params_out[1] == Approx(0.2));
+  //Using ComplexApprox handles real or complex builds.  In any case, no imaginary component expected.
+  CHECK(std::real(params_out[0]) == Approx(0.1));
+  CHECK(std::real(params_out[1]) == Approx(0.2));
 }
 
 // Expected values of the matrix exponential come from gen_matrix_ops.py
@@ -477,7 +478,7 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
   RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, out_m4, params4out);
   for (int i = 0; i < params4.size(); i++)
   {
-    CHECK(params4[i] == Approx(params4out[i]));
+    CHECK(std::real(params4[i]) == Approx(std::real(params4out[i])));
   }
 }
 
@@ -611,7 +612,8 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
   std::vector<ValueType> delta_params = {0.1, 0.3, 0.2, -0.1};
   std::vector<ValueType> new_params(6);
 
-  RotatedSPOs::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
+  //Debug
+  //RotatedSPOs::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
 
   // clang-format off
   std::vector<ValueType> rot_data4 =
@@ -630,16 +632,17 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
   std::vector<ValueType> expected_new_param = {1.6813965019790489,   0.3623564254653294,  -0.05486544454559908,
                                                -0.20574472941408453, -0.9542513302873077, 0.27497788909911774};
   for (int i = 0; i < new_params.size(); i++)
-    CHECK(new_params[i] == Approx(expected_new_param[i]));
+    CHECK(std::real(new_params[i]) == Approx(std::real(expected_new_param[i])));
 
 
   // Rotated back to original position
 
   std::vector<ValueType> new_params2(6);
   std::vector<ValueType> reverse_delta_params = {-0.1, -0.3, -0.2, 0.1};
-  RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
+  //Debug
+  //RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
   for (int i = 0; i < new_params2.size(); i++)
-    CHECK(new_params2[i] == Approx(old_params[i]));
+    CHECK(std::real(new_params2[i]) == Approx(std::real(old_params[i])));
 }
 
 namespace testing
@@ -687,18 +690,18 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   rot2.readVariationalParameters(hin);
 
   opt_variables_type& var = testing::getMyVars(rot2);
-  CHECK(var[0] == Approx(vs[0]));
-  CHECK(var[1] == Approx(vs[1]));
-  CHECK(var[2] == Approx(vs[2]));
-  CHECK(var[3] == Approx(vs[3]));
+  CHECK(std::real(var[0]) == Approx(std::real(vs[0])));
+  CHECK(std::real(var[1]) == Approx(std::real(vs[1])));
+  CHECK(std::real(var[2]) == Approx(std::real(vs[2])));
+  CHECK(std::real(var[3]) == Approx(std::real(vs[3])));
 
   opt_variables_type& full_var = testing::getMyVarsFull(rot2);
-  CHECK(full_var[0] == Approx(vs[0]));
-  CHECK(full_var[1] == Approx(vs[1]));
-  CHECK(full_var[2] == Approx(vs[2]));
-  CHECK(full_var[3] == Approx(vs[3]));
-  CHECK(full_var[4] == Approx(0.0));
-  CHECK(full_var[5] == Approx(0.0));
+  CHECK(std::real(full_var[0]) == Approx(std::real(vs[0])));
+  CHECK(std::real(full_var[1]) == Approx(std::real(vs[1])));
+  CHECK(std::real(full_var[2]) == Approx(std::real(vs[2])));
+  CHECK(std::real(full_var[3]) == Approx(std::real(vs[3])));
+  CHECK(std::real(full_var[4]) == Approx(0.0));
+  CHECK(std::real(full_var[5]) == Approx(0.0));
 }
 
 // Test using history list.
@@ -740,10 +743,10 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   rot2.readVariationalParameters(hin);
 
   opt_variables_type& var = testing::getMyVars(rot2);
-  CHECK(var[0] == Approx(vs[0]));
-  CHECK(var[1] == Approx(vs[1]));
-  CHECK(var[2] == Approx(vs[2]));
-  CHECK(var[3] == Approx(vs[3]));
+  CHECK(std::real(var[0]) == Approx(std::real(vs[0])));
+  CHECK(std::real(var[1]) == Approx(std::real(vs[1])));
+  CHECK(std::real(var[2]) == Approx(std::real(vs[2])));
+  CHECK(std::real(var[3]) == Approx(std::real(vs[3])));
 
   auto hist = testing::getHistoryParams(rot2);
   REQUIRE(hist.size() == 1);
@@ -822,9 +825,9 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     rot_spo0.mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
     for (int iw = 0; iw < spo_list.size(); iw++)
     {
-      CHECK(psi_v_list[iw].get()[0] == Approx(123));
-      CHECK(psi_v_list[iw].get()[1] == Approx(456));
-      CHECK(psi_v_list[iw].get()[2] == Approx(789));
+      CHECK(std::real(psi_v_list[iw].get()[0]) == Approx(123));
+      CHECK(std::real(psi_v_list[iw].get()[1]) == Approx(456));
+      CHECK(std::real(psi_v_list[iw].get()[2]) == Approx(789));
     }
   }
   {
@@ -858,9 +861,9 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     rot_spo0.mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
     for (int iw = 0; iw < spo_list.size(); iw++)
     {
-      CHECK(psi_v_list[iw].get()[0] == Approx(321));
-      CHECK(psi_v_list[iw].get()[1] == Approx(654));
-      CHECK(psi_v_list[iw].get()[2] == Approx(987));
+      CHECK(std::real(psi_v_list[iw].get()[0]) == Approx(321));
+      CHECK(std::real(psi_v_list[iw].get()[1]) == Approx(654));
+      CHECK(std::real(psi_v_list[iw].get()[2]) == Approx(987));
     }
   }
 }

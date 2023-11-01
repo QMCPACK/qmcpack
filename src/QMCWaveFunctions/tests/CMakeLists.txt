@@ -116,6 +116,7 @@ set(SPOSET_SRC
     test_pw.cpp
     test_ConstantSPOSet.cpp
     test_LCAO_diamondC_2x1x1.cpp
+    test_RotatedSPOs.cpp
     ${MO_SRCS})
 if(NiO_a16_H5_FOUND)
   set(SPOSET_SRC ${SPOSET_SRC} test_einset_NiO_a16.cpp)
@@ -149,11 +150,11 @@ target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DI
 target_link_libraries(sposets_for_testing PUBLIC qmcwfs)
 
 # @TODO: Remove when rotations work for complex stuff
-if(NOT QMC_COMPLEX)
-  if(NOT ENABLE_CUDA)
-    set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
-  endif()
-endif()
+#if(NOT QMC_COMPLEX)
+#  if(NOT ENABLE_CUDA)
+#    set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
+#  endif()
+#endif()
 
 if(ENABLE_CUDA)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp test_cuBLAS_LU.cpp)
