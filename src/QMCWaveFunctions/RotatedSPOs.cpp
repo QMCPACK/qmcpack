@@ -552,26 +552,28 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
         app_log() << "warning: large imaginary value in orbital rotation matrix: (i,j) = (" << i << "," << j
                   << "), im = " << mat_d[i + n * j].imag() << std::endl;
       }
+      copy_with_complex_cast(mat_d[i+n*j],mat[j][i]);
       //mat[j][i] = mat_d[i + n * j].real();
     }
 }
 
 void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output)
 {
+  #ifndef QMC_COMPLEX
   const int n = mat.rows();
-  std::vector<RealType> mat_h(n * n, 0);
-  std::vector<RealType> eval_r(n, 0);
-  std::vector<RealType> eval_i(n, 0);
-  std::vector<RealType> mat_l(n * n, 0);
-  std::vector<RealType> work(4 * n, 0);
+  std::vector<ValueType> mat_h(n * n, 0);
+  std::vector<ValueType> eval_r(n, 0);
+  std::vector<ValueType> eval_i(n, 0);
+  std::vector<ValueType> mat_l(n * n, 0);
+  std::vector<ValueType> work(4 * n, 0);
 
   std::vector<std::complex<RealType>> mat_cd(n * n, 0);
   std::vector<std::complex<RealType>> mat_cl(n * n, 0);
   std::vector<std::complex<RealType>> mat_ch(n * n, 0);
 
-//  for (int i = 0; i < n; ++i)
-//    for (int j = 0; j < n; ++j)
-//      mat_h[i + n * j] = mat[i][j];
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+      mat_h[i + n * j] = mat[i][j];
 
   // diagonalize the matrix
   char JOBL('V');
@@ -625,6 +627,7 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
       }
     //  output[i][j] = mat_cd[i + n * j].real();
     }
+   #endif
 }
 
 void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
