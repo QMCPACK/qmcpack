@@ -65,6 +65,8 @@
 #define zgesvd zgesvd_
 #define dgeev dgeev_
 #define sgeev sgeev_
+#define cgeev cgeev_
+#define zgeev zgeev_
 #define dggev dggev_
 #define sggev sggev_
 #define dger dger_
@@ -436,6 +438,21 @@ extern "C"
              double* VR,
              int* LDVR,
              double* WORK,
+             int* LWORK,
+             int* INFO);
+
+  void zgeev(char* JOBVL,
+             char* JOBVR,
+             int* N,
+             std::complex<double>* A,
+             int* LDA,
+             std::complex<double>* ALPHA,
+             std::complex<double>* VL,
+             int* LDVL,
+             std::complex<double>* VR,
+             int* LDVR,
+             std::complex<double>* WORK,
+             double* RWORK,
              int* LWORK,
              int* INFO);
 
