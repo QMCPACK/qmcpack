@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<root>
-  <node1>
-    <value1>1</value1>
-    <value2>3.2</value2>
-    <boolvalue3>true</boolvalue3>
-    <boolvalue4>false</boolvalue4>
-  </node1>
-</root>

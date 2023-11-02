@@ -1,3 +1,0 @@
-deterministic-unit_test_wavefunction_sposet 0 0
----
-deterministic-unit_test_wavefunction_sposet

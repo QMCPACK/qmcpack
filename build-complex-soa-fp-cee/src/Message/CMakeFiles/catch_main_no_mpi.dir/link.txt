@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcatch_main_no_mpi.a CMakeFiles/catch_main_no_mpi.dir/catch_main.cpp.o
-/usr/bin/ranlib libcatch_main_no_mpi.a

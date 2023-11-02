@@ -1,2 +1,0 @@
-/usr/bin/ar qc libplatform_omptarget_LA.a CMakeFiles/platform_omptarget_LA.dir/ompBLAS.cpp.o
-/usr/bin/ranlib libplatform_omptarget_LA.a

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcxx_helpers.a CMakeFiles/cxx_helpers.dir/ModernStringUtils.cpp.o
-/usr/bin/ranlib libcxx_helpers.a

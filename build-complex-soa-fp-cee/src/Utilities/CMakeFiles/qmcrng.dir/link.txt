@@ -1,2 +1,0 @@
-/usr/bin/ar qc libqmcrng.a CMakeFiles/qmcrng.dir/FakeRandom.cpp.o CMakeFiles/qmcrng.dir/RandomGenerator.cpp.o CMakeFiles/qmcrng.dir/StdRandom.cpp.o
-/usr/bin/ranlib libqmcrng.a

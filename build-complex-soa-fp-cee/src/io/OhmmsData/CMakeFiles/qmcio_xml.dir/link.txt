@@ -1,2 +1,0 @@
-/usr/bin/ar qc libqmcio_xml.a CMakeFiles/qmcio_xml.dir/Libxml2Doc.cpp.o CMakeFiles/qmcio_xml.dir/XMLParsingString.cpp.o CMakeFiles/qmcio_xml.dir/ParameterSet.cpp.o CMakeFiles/qmcio_xml.dir/libxmldefs.cpp.o
-/usr/bin/ranlib libqmcio_xml.a

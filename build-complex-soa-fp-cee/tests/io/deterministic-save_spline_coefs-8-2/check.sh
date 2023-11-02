@@ -1,1 +1,0 @@
-/gpfs/rclay/qmcpack_worktree/complex_orb_opt_fix/tests/io/save_spline_coefs/check.sh

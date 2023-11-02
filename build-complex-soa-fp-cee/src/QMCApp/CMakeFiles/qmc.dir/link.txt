@@ -1,2 +1,0 @@
-/usr/bin/ar qc libqmc.a CMakeFiles/qmc.dir/QMCAppBase.cpp.o CMakeFiles/qmc.dir/QMCMain.cpp.o
-/usr/bin/ranlib libqmc.a

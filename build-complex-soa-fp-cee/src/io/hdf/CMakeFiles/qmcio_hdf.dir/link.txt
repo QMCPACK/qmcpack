@@ -1,2 +1,0 @@
-/usr/bin/ar qc libqmcio_hdf.a CMakeFiles/qmcio_hdf.dir/hdf_archive.cpp.o CMakeFiles/qmcio_hdf.dir/hdf_path.cpp.o
-/usr/bin/ranlib libqmcio_hdf.a

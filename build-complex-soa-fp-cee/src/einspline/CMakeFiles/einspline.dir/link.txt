@@ -1,2 +1,0 @@
-/usr/bin/ar qc libeinspline.a CMakeFiles/einspline.dir/bspline_create.c.o CMakeFiles/einspline.dir/bspline_data.c.o CMakeFiles/einspline.dir/multi_bspline_create.c.o CMakeFiles/einspline.dir/multi_bspline_copy.c.o CMakeFiles/einspline.dir/bspline_eval_d_std.cpp.o CMakeFiles/einspline.dir/multi_bspline_eval_s_std3.cpp.o CMakeFiles/einspline.dir/multi_bspline_eval_d_std3.cpp.o CMakeFiles/einspline.dir/multi_bspline_eval_z_std3.cpp.o
-/usr/bin/ranlib libeinspline.a

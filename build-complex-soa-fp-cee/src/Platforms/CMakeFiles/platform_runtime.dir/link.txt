@@ -1,2 +1,0 @@
-/usr/bin/ar qc libplatform_runtime.a CMakeFiles/platform_runtime.dir/MemoryUsage.cpp.o CMakeFiles/platform_runtime.dir/DualAllocator.cpp.o CMakeFiles/platform_runtime.dir/DeviceManager.cpp.o CMakeFiles/platform_runtime.dir/PlatformSelector.cpp.o
-/usr/bin/ranlib libplatform_runtime.a

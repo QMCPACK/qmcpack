@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcatch_main.a CMakeFiles/catch_main.dir/catch_main.cpp.o
-/usr/bin/ranlib libcatch_main.a

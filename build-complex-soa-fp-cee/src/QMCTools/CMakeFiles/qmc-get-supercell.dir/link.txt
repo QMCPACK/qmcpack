@@ -1,1 +1,0 @@
-/projects/cde/v3/cee/spack/opt/spack/linux-rhel7-x86_64/intel-2021.1.2/openmpi-4.1.2-awpydu2boorwxkfkfgtkgilngfsokjy4/bin/mpic++  -qopenmp -Wno-deprecated -restrict -unroll -ip -qopt-prefetch -ftz -xHost -O3 -DNDEBUG "CMakeFiles/qmc-get-supercell.dir/getSupercell.cpp.o" -o ../../bin/qmc-get-supercell 

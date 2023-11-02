@@ -1,2 +1,0 @@
-/usr/bin/ar qc libplatform_cpu_runtime.a CMakeFiles/platform_cpu_runtime.dir/math.cpp.o
-/usr/bin/ranlib libplatform_cpu_runtime.a

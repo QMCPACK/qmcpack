@@ -1,2 +1,0 @@
-/usr/bin/ar qc libplatform_host_runtime.a CMakeFiles/platform_host_runtime.dir/sysutil.cpp.o CMakeFiles/platform_host_runtime.dir/InfoStream.cpp.o CMakeFiles/platform_host_runtime.dir/OutputManager.cpp.o
-/usr/bin/ranlib libplatform_host_runtime.a

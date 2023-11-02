@@ -1,2 +1,0 @@
-/usr/bin/ar qc libqmcnumerics.a CMakeFiles/qmcnumerics.dir/SmoothFunctions.cpp.o CMakeFiles/qmcnumerics.dir/OneDimGridFactory.cpp.o CMakeFiles/qmcnumerics.dir/SoaSphericalTensor.cpp.o
-/usr/bin/ranlib libqmcnumerics.a

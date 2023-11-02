@@ -1,2 +1,0 @@
-/usr/bin/ar qc libplatform_omptarget_runtime.a CMakeFiles/platform_omptarget_runtime.dir/OMPallocator.cpp.o CMakeFiles/platform_omptarget_runtime.dir/OMPDeviceManager.cpp.o
-/usr/bin/ranlib libplatform_omptarget_runtime.a

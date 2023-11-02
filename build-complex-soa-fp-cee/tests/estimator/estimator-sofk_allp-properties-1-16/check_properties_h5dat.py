@@ -1,1 +1,0 @@
-/gpfs/rclay/qmcpack_worktree/complex_orb_opt_fix/tests/estimator/sofk/check_properties_h5dat.py

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsposets_for_testing.a CMakeFiles/sposets_for_testing.dir/FakeSPO.cpp.o CMakeFiles/sposets_for_testing.dir/ConstantSPOSet.cpp.o
-/usr/bin/ranlib libsposets_for_testing.a
