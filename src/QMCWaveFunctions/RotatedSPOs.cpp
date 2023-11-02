@@ -559,43 +559,31 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
 
 void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output)
 {
+  #ifndef QMC_COMPLEX
   const int n = mat.rows();
   std::vector<ValueType> mat_h(n * n, 0);
   std::vector<ValueType> eval_r(n, 0);
   std::vector<ValueType> eval_i(n, 0);
   std::vector<ValueType> mat_l(n * n, 0);
-  //std::vector<ValueType> work(4 * n, 0);
-  std::vector<std::complex<double>> work(4*n,0);
+  std::vector<ValueType> work(4 * n, 0);
+
   std::vector<std::complex<RealType>> mat_cd(n * n, 0);
   std::vector<std::complex<RealType>> mat_cl(n * n, 0);
   std::vector<std::complex<RealType>> mat_ch(n * n, 0);
-  std::vector<ValueType> eval(n,0);
+
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
       mat_h[i + n * j] = mat[i][j];
 
-  for (int i = 0; i < n; ++i)
-    for (int j = 0; j < n; ++j)
-    app_log()<<i<<" "<<" "<<j<<" "<<mat_h[i+n*j]<<" "<<mat[i][j]<<std::endl;;
   // diagonalize the matrix
   char JOBL('V');
   char JOBR('N');
   int N(n);
   int LDA(n);
   int LWORK(4 * n);
-  int info = 8;
-  //double RWORK(2*n);
-  std::vector<double> RWORK(2*n,0);
-//  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval_r.at(0), &eval_i.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
-//               &work.at(0), &LWORK, &info);
-  app_log()<<"before zgeev";
-  LAPACK::zgeev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
-               &work.at(0), &LWORK, &RWORK.at(0), &info);
-  app_log()<<"\nEigenvalues:\n";
-  for (int i=0; i<n; ++i)
-    app_log()<<i<<" "<<eval[i]<<std::endl;
-  app_log()<<"Info = "<<info<<std::endl;
-/*  
+  int info = 0;
+  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval_r.at(0), &eval_i.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
+               &work.at(0), &LWORK, &info);
   if (info != 0)
   {
     std::ostringstream msg;
@@ -608,21 +596,18 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
   {
     for (int j = 0; j < n; ++j)
     {
-      //auto tmp = (i == j) ? std::log(std::complex<RealType>(eval_r[i], eval_i[i])) : std::complex<RealType>(0.0, 0.0);
-      auto tmp = (i == j) ? std::log(std::complex<RealType>(eval[i])) : std::complex<RealType>(0.0, 0.0);
+      auto tmp = (i == j) ? std::log(std::complex<RealType>(eval_r[i], eval_i[i])) : std::complex<RealType>(0.0, 0.0);
       mat_cd[i + j * n] = tmp;
 
-     // if (eval_i[j] > 0.0)
-    //  {
-        //mat_cl[i + j * n]       = std::complex<RealType>(mat_l[i + j * n], mat_l[i + (j + 1) * n]);
-        //mat_cl[i + (j + 1) * n] = std::complex<RealType>(mat_l[i + j * n], -mat_l[i + (j + 1) * n]);
-        mat_cl[i + j * n]       = mat_l[i+j*n]; 
-        mat_cl[i + (j + 1) * n] = std::conj(mat_l[i+j*n]); 
-     // }
-    //  else if (!(eval_i[j] < 0.0))
-    //  {
-    //    mat_cl[i + j * n] = std::complex<RealType>(mat_l[i + j * n], 0.0);
-    //  }
+      if (eval_i[j] > 0.0)
+      {
+        mat_cl[i + j * n]       = std::complex<RealType>(mat_l[i + j * n], mat_l[i + (j + 1) * n]);
+        mat_cl[i + (j + 1) * n] = std::complex<RealType>(mat_l[i + j * n], -mat_l[i + (j + 1) * n]);
+      }
+      else if (!(eval_i[j] < 0.0))
+      {
+        mat_cl[i + j * n] = std::complex<RealType>(mat_l[i + j * n], 0.0);
+      }
     }
   }
 
@@ -642,7 +627,7 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
       }
     //  output[i][j] = mat_cd[i + n * j].real();
     }
-   */
+   #endif
 }
 
 void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,

@@ -38,7 +38,6 @@ namespace qmcplusplus
 */
 TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 {
-  app_log()<<"!!!!!!!!!!!!!! SplineR2R !!!!!!!!!!!!!!!!!\n";
   using RealType = QMCTraits::RealType;
 
   /*
@@ -281,7 +280,6 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 
 TEST_CASE("RotatedSPOs createRotationIndices", "[wavefunction]")
 {
-  app_log()<<"!!!!!!!!!!!!!! CREATE ROTATION MATRIX !!!!!!!!!!!!!!!!!\n";
   // No active-active or virtual-virtual rotations
   // Only active-virtual
   RotatedSPOs::RotationIndices rot_ind;
@@ -317,7 +315,6 @@ TEST_CASE("RotatedSPOs createRotationIndices", "[wavefunction]")
 
 TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
 {
-  app_log()<<"!!!!!!!!!!!!!! ANTISYM MATRIX !!!!!!!!!!!!!!!!!\n";
   using ValueType   = SPOSet::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
@@ -353,7 +350,6 @@ TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
 // Expected values of the matrix exponential come from gen_matrix_ops.py
 TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
 {
-  app_log()<<"!!!!!!!!!!!!!!  EXPONENTIATE MATRIX !!!!!!!!!!!!!!!!!\n";
   using ValueType   = SPOSet::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
@@ -404,16 +400,15 @@ TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
 
 TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
 {
-  app_log()<<"!!!!!!!!!!!!!!  TEST !!!!!!!!!!!!!!!!!\n";
   using ValueType   = SPOSet::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
   std::vector<SPOSet::ValueType> mat1_data = {1.0};
   SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
   SPOSet::ValueMatrix out_m1(1, 1);
- // RotatedSPOs::log_antisym_matrix(m1, out_m1);
+  RotatedSPOs::log_antisym_matrix(m1, out_m1);
   // Should always be 1.0 (the only possible anti-symmetric 1x1 matrix is 0)
- // CHECK(out_m1(0, 0) == ValueApprox(0.0));
+  CHECK(out_m1(0, 0) == ValueApprox(0.0));
 
   // clang-format off
   std::vector<ValueType> start_rot2 = {  0.995004165278026,  -0.0998334166468282,
@@ -425,10 +420,8 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
 
   ValueMatrix rot_m2(start_rot2.data(), 2, 2);
   ValueMatrix out_m2(2, 2);
-  app_log()<<"Going into 2x2 log_antisym_matrix\n";
   RotatedSPOs::log_antisym_matrix(rot_m2, out_m2);
-  app_log()<<"Done\n";
-  app_log().flush();
+
   SPOSet::ValueMatrix m2(mat2_data.data(), 2, 2);
   CheckMatrixResult check_matrix_result2 = checkMatrix(m2, out_m2, true);
   CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
@@ -444,12 +437,11 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
   // clang-format on
   ValueMatrix rot_m3(start_rot3.data(), 3, 3);
   ValueMatrix out_m3(3, 3);
-  //RotatedSPOs::log_antisym_matrix(rot_m3, out_m3);
+  RotatedSPOs::log_antisym_matrix(rot_m3, out_m3);
 
   SPOSet::ValueMatrix m3(m3_input_data.data(), 3, 3);
   CheckMatrixResult check_matrix_result3 = checkMatrix(m3, out_m3, true);
   CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
-  app_log()<<"!!!!!!!!!  DONE !!!!!!!!!!\n";
 }
 
 // Test round trip A -> exp(A) -> log(exp(A))
@@ -458,7 +450,6 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
 //   exp(log(exp(A))) == exp(A)
 TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
 {
-  /*
   using ValueType   = SPOSet::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
@@ -489,7 +480,6 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
   {
     CHECK(std::real(params4[i]) == Approx(std::real(params4out[i])));
   }
-  */
 }
 
 TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
@@ -599,7 +589,6 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
 // Test construction of delta rotation
 TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 {
-  app_log()<<"!!!!!!!!!!!!!! CREATE DELTA MATRIX !!!!!!!!!!!!!!!!!\n";
   using ValueType   = SPOSet::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
