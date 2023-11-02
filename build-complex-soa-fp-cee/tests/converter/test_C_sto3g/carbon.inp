@@ -1,0 +1,7 @@
+ $contrl coord=cart icharg=0 mult=1 scftyp=rhf  $end
+ $basis  gbasis=sto ngauss=3  $end
+ $DATA
+A molecule.
+C1
+C 6.00       0.00000000       0.00000000       0.00000000
+ $END

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libcontainer_testing.a CMakeFiles/container_testing.dir/makeRngSpdMatrix.cpp.o
+/usr/bin/ranlib libcontainer_testing.a

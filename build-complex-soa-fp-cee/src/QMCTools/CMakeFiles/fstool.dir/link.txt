@@ -1,0 +1,2 @@
+/usr/bin/ar qc libfstool.a CMakeFiles/fstool.dir/QMCFiniteSize/QMCFiniteSize.cpp.o CMakeFiles/fstool.dir/QMCFiniteSize/SkParserBase.cpp.o CMakeFiles/fstool.dir/QMCFiniteSize/SkParserASCII.cpp.o CMakeFiles/fstool.dir/QMCFiniteSize/SkParserScalarDat.cpp.o CMakeFiles/fstool.dir/QMCFiniteSize/SkParserHDF5.cpp.o CMakeFiles/fstool.dir/QMCFiniteSize/FSUtilities.cpp.o
+/usr/bin/ranlib libfstool.a

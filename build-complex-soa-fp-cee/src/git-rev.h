@@ -1,0 +1,7 @@
+#define GIT_BRANCH_RAW complex_orb_opt_fix
+
+#define GIT_HASH_RAW 5c9b1a8d120115e3360cea0811ab45770788ea51-dirty
+
+#define GIT_COMMIT_LAST_CHANGED_RAW Thu Nov 2 14:21:43 2023 -0600
+
+#define GIT_COMMIT_SUBJECT_RAW "ZGEEV problem"

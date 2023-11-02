@@ -1,0 +1,2 @@
+/usr/bin/ar qc libutilities_for_test.a CMakeFiles/utilities_for_test.dir/RandomForTest.cpp.o CMakeFiles/utilities_for_test.dir/checkMatrix.cpp.o
+/usr/bin/ranlib libutilities_for_test.a

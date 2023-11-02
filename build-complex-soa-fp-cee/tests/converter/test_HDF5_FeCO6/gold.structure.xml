@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <particleset name="ion0" size="13">
+    <group name="Fe">
+      <parameter name="charge">16</parameter>
+      <parameter name="valence">16</parameter>
+      <parameter name="atomicnumber">26</parameter>
+    </group>
+    <group name="C">
+      <parameter name="charge">4</parameter>
+      <parameter name="valence">2</parameter>
+      <parameter name="atomicnumber">6</parameter>
+    </group>
+    <group name="O">
+      <parameter name="charge">6</parameter>
+      <parameter name="valence">4</parameter>
+      <parameter name="atomicnumber">8</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+  0.0000000000e+00 -1.3643821600e-02  4.4230737496e+00
+ -5.6691800000e-05 -7.8537012000e-02  6.5288521095e+00
+  4.3520200525e+00 -1.8897300000e-05 -1.8897300000e-05
+  6.4595558575e+00 -3.7794500000e-05 -3.7794500000e-05
+ -4.3520200525e+00  1.8897300000e-05  1.8897300000e-05
+ -6.4595369603e+00  3.7794500000e-05  3.7794500000e-05
+  0.0000000000e+00  1.3643821600e-02 -4.4230737496e+00
+  5.6691800000e-05  7.8537012000e-02 -6.5288521095e+00
+  0.0000000000e+00 -4.4162707360e+00  1.2434397000e-02
+  3.7794500000e-05 -6.5221057877e+00  7.7913402500e-02
+  0.0000000000e+00  4.4162707360e+00 -1.2434397000e-02
+ -5.6691800000e-05  6.5221057877e+00 -7.7913402500e-02
+</attrib>
+    <attrib name="ionid" datatype="stringArray">
+ Fe C O C O C O C O C O C O 
+</attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="ion0">
+    <group name="u" size="39">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="35">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+</qmcsystem>

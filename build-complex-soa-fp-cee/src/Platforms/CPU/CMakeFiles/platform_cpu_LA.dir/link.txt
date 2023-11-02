@@ -1,0 +1,2 @@
+/usr/bin/ar qc libplatform_cpu_LA.a CMakeFiles/platform_cpu_LA.dir/BlasThreadingEnv.cpp.o CMakeFiles/platform_cpu_LA.dir/OMPThreadCountProtectorLA.cpp.o
+/usr/bin/ranlib libplatform_cpu_LA.a

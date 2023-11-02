@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<resources>
+  <timing>
+    <max_stack_level_exceeded>yes</max_stack_level_exceeded>
+    <max_timers_exceeded>yes</max_timers_exceeded>
+  </timing>
+</resources>

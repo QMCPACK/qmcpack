@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <particleset name="ion0" size="1">
+    <group name="Bi">
+      <parameter name="charge">5</parameter>
+      <parameter name="valence">5</parameter>
+      <parameter name="atomicnumber">83</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+</attrib>
+    <attrib name="ionid" datatype="stringArray">
+ Bi 
+</attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="ion0" spinor="yes">
+    <group name="u" size="5">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+</qmcsystem>

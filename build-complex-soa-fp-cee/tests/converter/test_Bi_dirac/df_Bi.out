@@ -1,0 +1,2245 @@
+DIRAC serial starts by allocating 64000000 words (    488.28 MB -      0.477 GB) of memory
+    out of the allowed maximum of 2147483648 words (  16384.00 MB -     16.000 GB)
+
+Note: maximum allocatable memory for serial run can be set by pam --aw/--ag
+
+ *******************************************************************************
+ *                                                                             *
+ *                                O U T P U T                                  *
+ *                                   from                                      *
+ *                                                                             *
+ *                   @@@@@    @@   @@@@@     @@@@     @@@@@                    *
+ *                   @@  @@        @@  @@   @@  @@   @@                        *
+ *                   @@  @@   @@   @@@@@    @@@@@@   @@                        *
+ *                   @@  @@   @@   @@ @@    @@  @@   @@                        *
+ *                   @@@@@    @@   @@  @@   @@  @@    @@@@@                    *
+ *                                                                             *
+ *                                                                             *
+ %}ZS)S?$=$)]S?$%%>SS$%S$ZZ6cHHMHHHHHHHHMHHM&MHbHH6$L/:<S///</:|/:|:/::!:.::--:%
+ $?S$$%$$$$?%?$(SSS$SSSHMMMMMMMMMMMMMMMMMM6H&6S&SH&&k?6$r~::://///::::::.:::-::$
+ (%?)Z??$$$(S%$>$)S6HMMMMMMMMMMMMMMMMMMMMMMR6M]&&$6HR$&6(i::::::|i|:::::::-:-::(
+ $S?$$)$?$%?))?S/]#MMMMMMMMMMMMMMMMMMMMMMMMMMHM1HRH9R&$$$|):?:/://|:/::/:/.::.:$
+ SS$%%?$%((S)?Z[6MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM&HF$$&/)S?<~::!!:::::::/:-:|.S
+ SS%%%%S$%%%$$MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMHHHHHHM>?/S/:/:::`:/://:/::-::S
+ ?$SSSS?%SS$)MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM/4?:S:/:::/:::/:/:::.::?
+ S$(S?S$%(?$HMMMMMMMMMMMMMMMMM#&7RH99MMMMMMMMMMMMMMMMMMHHHd$/:::::/::::::-//.:.S
+ (?SS(%)S&HMMMMMMMMMMMMMMMMM#S|///???$9HHMMMMMMMMMDSZ&1S/?</>?~:///::|/!:/-:-:.(
+ $S?%?<H(MMMMMMMMMMMMMMMMR?`. :.:`::<>:``?/*?##*)$:/>       `((%://::/:::::/::/$
+ S$($$)HdMMMMMMMMMMMMMMMP: . `   `  `    `      `-            `Z<:>?::/:::::|:iS
+ c%%%&HMMMMMMMMMMMMMMMM6:                                      `$%)>%%</>!:::::c
+ S?%/MMMMMMMMMMMMMMMMMMH-                                        /ZSS>?:?~:;/::S
+ $SZ?MMMMMMMMMMMMMMMMMH?.                                        \"&((/?//?|:::$
+ $%$%&MMMMMMMMMMMMMMMMM:.                                          ?%/S:</::/::$
+ ($?}&HMMMMMMMMMMMMMMMM>:                                          $%%<?/i:|i::(
+ Z$($&MMMMMMMMMMMMMMMMHk(:.  . -                                   .S/\?\?/!:/:Z
+ (??$<HMMMMMMMMMMMMMMMFk|:   -.-.                                  :%/%/(:/:ii|(
+ SZ(S?]MMMMMMMMMMMMMMHS?:- -  ::.:                                  |/S:</::?||S
+ $%)$$(MMMMMMMMMMMMMMR):`:. :.:::`,,/bcokb/_                       :S?%?|~:/:/:$
+ %$$%$)[[?$?MMMMMMMMMM: :.:-.::::$7?<&7&MMMMMMM#/           _ .. ..:</?:(:/::::%
+ $$$?Z?HHH~|/MMMMMMMMM/`.-.:.:/:%%%%?dHMMMMMMMMMMH?,-   .,bMMMM6//./i~/~:<:::/:$
+ $($S$M//::S?ZHMMMMMH/:.`:::.:/%S/&MMHMMMMMMMMRM&><   ,HMMMMMMMF  :::?:///:|:::$
+ )[$S$S($|_i:#>::*H&?/::.::/:\"://:?>>`:&HMHSMMMM$:`-   MMHMMMMHHT .)i/?////::/)
+ $$[$$>$}:dHH&$$--?S::-:.:::--/-:``./::>%Zi?)&/?`:.`   `H?$T*\" `  /%?>%:)://ii$
+ $&=&/ZS}$RF<:?/-.|%r/:::/:/:`.-.-..|::S//!`\"``          >??:    `SS<S:)!/////$
+ Z&]>b[Z(Z?&%:::../S$$:>:::i`.`. `-.`  `                         ,>%%%:>/>/!|:/Z
+ $$&/F&1$c$?>:>?/,>?$$ZS/::/:-: ...                              |S?S)S?<~:::::$
+ &$&$&$k&>>|?<:<?((/$[/?)i~/:/. - -                              S?:%%%?/:::/::&
+ =[/Z[[Fp[MMH$>?Z&S$$$/$S///||..-           -.-                  /((S$:%<:///:/=
+ $&>1MHHMMMM6M9MMMM$Z$}$S%/:::.`.            .:/,,,dcb>/:.       ((SSSS%:)!//i|$
+ MMMMMMMMMMMR&&RRRHR&&($(?:|i::-             .:%&S&$[&H&``     ../>%;/?>??:<::>M
+ MMMMMMMMMMMMS/}S$&&H&[$SS//:::.:.   . . .v</Jq1&&D]&M&<,      :/::/?%%)S>?://:M
+ MMMMMMMMMMMM?}$/$$kMM&&$(%/?//:..`.  .|//1d/`://?*/*/\"` `     .:/(SS$%(S%)):%M
+ MMMMMMMMMMMM(}$$>&&MMHR#$S%%:?::.:|-.`:;&&b/D/$p=qpv//b/~`   :/~~%%??$=$)Z$S+;M
+ MMMMMMMMMMMM[|S$$Z1]MMMMD[$?$:>)/::: :/?:``???bD&{b<<-`     .,:/)|SS(}Z/$$?/<SM
+ MMMMMMMMMMMM||$)&7k&MMMMH9]$$??Z%|!/:i::`  `` .             SS?SS?Z/]1$/&$c/$SM
+ MMMMMMMMMMMM| -?>[&]HMMMMMMMH1[/7SS(?:/..-` ::/Sc,/_,     _<$?SS%$S/&c&&$&>//<M
+ MMMMMMMMMMMMR  `$&&&HMM9MMMMMMM&&c$%%:/:/:.:.:/\?\?/\    _MMHk/7S/]dq&1S<&&></M
+ MMMMMMMMMMMMM?  :&96MHMMMMMMMMMMMHHk[S%(<<:// `         ,MMMMMMM&/Z6H]DkH]1$&&M
+ MMMMMMMMMMMMMD    99H9HMMMMMMMMMMMMMMMb&%$<:i.:....    .MMMMMMMMM6HHHRH&H&H1SFM
+ MMMMMMMMMMMMMM|   `?HMMMMMMMMMMMMMMMMMMMHk6k&>$&Z$/?_.bHMMMMMMMMMMM&6HRM9H6]ZkM
+ MMMMMMMMMMMMMMM/    `TMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMHMH6RH&R6&M
+ MMMMMMMMMMMMMMMM    -|?HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMFHH6HMD&&M
+ MMMMMMMMMMMMMMMMk  ..:~?9MMMMMMMMMMMMM#`:MMMMMMMMMMMMMMMMMMMMMMMMMMMMM9MHkR6&FM
+ MMMMMMMMMMMMMMMMM/  .-!:%$ZHMMMMMMMMMR` dMMMMMMMMMMMMMMMMMMMMMMMMMMMMM9MRMHH9&M
+ MMMMMMMMMMMMMMMMMML,:.-|::/?&&MMMMMM` .MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMHRMH&&6M
+ MMMMMMMMMMMMMMMMMMMc%>/:::i<:SMMMMMMHdMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMHHM&969kM
+ MMMMMMMMMMMMMMMMMMMMSS/$$/(|HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMHH&HH&M
+ MMMMMMMMMMMMMMMMMMMM6S/?/MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMR96H1DR1M
+ MMMMMMMMMMMMMMMMMMMMM&$MHMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMHMH691&&M
+ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMH&R&9ZM
+ MMMMMMMMMMMMMMMMMMMMMMMMMRHMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMH&96][6M
+ MMMMMMMMMMMMMMMMMMMMMMMMp?:MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM96HH1][FM
+ MMMMMMMMMMMMMMMMMMMMMMMM> -HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMH&1k&$&M
+ *******************************************************************************
+ *                                                                             *
+ *         =========================================================           *
+ *                     Program for Atomic and Molecular                        *
+ *          Direct Iterative Relativistic All-electron Calculations            *
+ *         =========================================================           *
+ *                                                                             *
+ *                                                                             *
+ *    Written by:                                                              *
+ *                                                                             *
+ *    Andre S. P. Gomes        CNRS/Universite de Lille          France        *
+ *    Trond Saue               Universite Toulouse III           France        *
+ *    Lucas Visscher           Vrije Universiteit Amsterdam      Netherlands   *
+ *    Hans Joergen Aa. Jensen  University of Southern Denmark    Denmark       *
+ *    Radovan Bast             UiT The Arctic University of      Norway        *
+ *                                                                             *
+ *    with contributions from:                                                 *
+ *                                                                             *
+ *    Ignacio Agustin Aucar    Northeast National University     Argentina     *
+ *    Vebjoern Bakken          University of Oslo                Norway        *
+ *    Kenneth G. Dyall         Schrodinger, Inc., Portland       USA           *
+ *    Sebastien Dubillard      University of Strasbourg          France        *
+ *    Ulf Ekstroem             University of Oslo                Norway        *
+ *    Ephraim Eliav            University of Tel Aviv            Israel        *
+ *    Thomas Enevoldsen        University of Southern Denmark    Denmark       *
+ *    Elke Fasshauer           University of Aarhus              Denmark       *
+ *    Timo Fleig               Universite Toulouse III           France        *
+ *    Olav Fossgaard           UiT The Arctic University of      Norway        *
+ *    Loic Halbert             Universite de Lille               France        *
+ *    Erik D. Hedegaard        Lund University                   Sweden        *
+ *    Trygve Helgaker          University of Oslo                Norway        *
+ *    Benjamin Helmich-Paris   Max Planck Institute f. Coal Res. Germany       *
+ *    Johan Henriksson         Linkoeping University             Sweden        *
+ *    Miroslav Ilias           Matej Bel University              Slovakia      *
+ *    Christoph R. Jacob       TU Braunschweig                   Germany       *
+ *    Stefan Knecht            ETH Zuerich                       Switzerland   *
+ *    Stanislav Komorovsky     UiT The Arctic University of      Norway        *
+ *    Ossama Kullie            University of Kassel              Germany       *
+ *    Jon K. Laerdahl          University of Oslo                Norway        *
+ *    Christoffer V. Larsen    University of Southern Denmark    Denmark       *
+ *    Yoon Sup Lee             KAIST, Daejeon                    South Korea   *
+ *    Huliyar S. Nataraj       BME/Budapest Univ. Tech. & Econ.  Hungary       *
+ *    Malaya Kumar Nayak       Bhabha Atomic Research Centre     India         *
+ *    Patrick Norman           Stockholm Inst. of Technology     Sweden        *
+ *    Malgorzata Olejniczak    University of Warsaw              Poland        *
+ *    Jeppe Olsen              Aarhus University                 Denmark       *
+ *    Jogvan Magnus H. Olsen   University of Southern Denmark    Denmark       *
+ *    Young Choon Park         KAIST, Daejeon                    South Korea   *
+ *    Jesper K. Pedersen       University of Southern Denmark    Denmark       *
+ *    Markus Pernpointner      University of Heidelberg          Germany       *
+ *    Roberto Di Remigio       UiT The Arctic University of      Norway        *
+ *    Kenneth Ruud             UiT The Arctic University of      Norway        *
+ *    Pawel Salek              Stockholm Inst. of Technology     Sweden        *
+ *    Bernd Schimmelpfennig    Karlsruhe Institute of Technology Germany       *
+ *    Bruno Senjean            University of Leiden              Netherlands   *
+ *    Avijit Shee              University of Michigan            USA           *
+ *    Jetze Sikkema            Vrije Universiteit Amsterdam      Netherlands   *
+ *    Andreas J. Thorvaldsen   UiT The Arctic University of      Norway        *
+ *    Joern Thyssen            University of Southern Denmark    Denmark       *
+ *    Joost van Stralen        Vrije Universiteit Amsterdam      Netherlands   *
+ *    Marta L. Vidal           Technical University of Denmark   Denmark       *
+ *    Sebastien Villaume       Linkoeping University             Sweden        *
+ *    Olivier Visser           University of Groningen           Netherlands   *
+ *    Toke Winther             University of Southern Denmark    Denmark       *
+ *    Shigeyoshi Yamamoto      Chukyo University                 Japan         *
+ *                                                                             *
+ *    For more information about the DIRAC code see http://diracprogram.org    *
+ *                                                                             *
+ *    This is an experimental code. The authors accept no responsibility       *
+ *    for the performance of the code or for the correctness of the results.   *
+ *                                                                             *
+ *    The code (in whole or part) is not to be reproduced for further          *
+ *    distribution without the written permission of the authors or            *
+ *    their representatives.                                                   *
+ *                                                                             *
+ *    If results obtained with this code are published, an                     *
+ *    appropriate citation would be:                                           *
+ *                                                                             *
+ *    DIRAC, a relativistic ab initio electronic structure program,            *
+ *    Release DIRAC19 (2019), written by                                       *
+ *    A. S. P. Gomes, T. Saue, L. Visscher, H. J. Aa. Jensen, and R. Bast,     *
+ *    with contributions from I. A. Aucar, V. Bakken, K. G. Dyall,             *
+ *    S. Dubillard, U. Ekstroem, E. Eliav, T. Enevoldsen, E. Fasshauer,        *
+ *    T. Fleig, O. Fossgaard, L. Halbert, E. D. Hedegaard, T. Helgaker,        *
+ *    J. Henriksson, M. Ilias, Ch. R. Jacob, S. Knecht, S. Komorovsky,         *
+ *    O. Kullie, J. K. Laerdahl, C. V. Larsen, Y. S. Lee, H. S. Nataraj,       *
+ *    M. K. Nayak, P. Norman, M. Olejniczak, J. Olsen, J. M. H. Olsen,         *
+ *    Y. C. Park, J. K. Pedersen, M. Pernpointner, R. Di Remigio, K. Ruud,     *
+ *    P. Salek, B. Schimmelpfennig, B. Senjean, A. Shee, J. Sikkema,           *
+ *    A. J. Thorvaldsen, J. Thyssen, J. van Stralen, M. L. Vidal, S. Villaume, *
+ *    O. Visser, T. Winther, and S. Yamamoto (see http://diracprogram.org).    *
+ *                                                                             *
+ *******************************************************************************
+
+
+Version information
+-------------------
+
+Branch        | 
+Commit hash   | 
+Commit author | 
+Commit date   | 
+
+
+Configuration and build information
+-----------------------------------
+
+Who compiled             | cmelton
+Compiled on server       | cee-build013
+Operating system         | Linux-3.10.0-1062.9.1.el7.x86_64
+CMake version            | 3.10.3
+CMake generator          | Unix Makefiles
+CMake build type         | release
+Configuration time       | 2020-08-28 22:02:19.859135
+Python version           | 2.7.5
+Fortran compiler         | /projects/sems/install/rhel7-x86_64/sems/compiler/intel/19.0.5/base/bin/ifort
+Fortran compiler version | 19.0
+Fortran compiler flags   |  -w -assume byterecl -g -traceback -DVAR_IFORT
+C compiler               | /projects/sems/install/rhel7-x86_64/sems/compiler/intel/19.0.5/base/bin/icc
+C compiler version       | 19.0
+C compiler flags         |  -g -wd981 -wd279 -wd383 -wd1572 -wd177
+C++ compiler             | /projects/sems/install/rhel7-x86_64/sems/compiler/intel/19.0.5/base/bin/icpc
+C++ compiler version     | 19.0.5
+C++ compiler flags       |  -Wno-unknown-pragmas
+Static linking           | False
+64-bit integers          | False
+MPI parallelization      | False
+MPI launcher             | unknown
+Math libraries           | /lib64/atlas/libatlas.a;/lib64/liblapack.so;/lib64/libblas.so
+Builtin BLAS library     | OFF
+Builtin LAPACK library   | OFF
+Explicit libraries       | unknown
+Compile definitions      | HAVE_SYSTEM_NATIVE_BLAS;HAVE_ATLAS_LAPACK;SYS_LINUX;PRG_DIRAC;INSTALL_WRKMEM=64000000;BUILD_GEN1INT;HAS_PELIB;MOD_QCORR;HAS_STIELTJES
+
+
+ LAPACK integer*4/8 selftest passed
+ Selftest of ISO_C_BINDING Fortran - C/C++ interoperability PASSED
+
+Execution time and host
+-----------------------
+
+ 
+     Date and time (Linux)  : Mon Oct  4 09:54:21 2021
+     Host name              : cee-compute025                          
+
+
+Contents of the input file
+--------------------------
+
+**DIRAC                                                                                             
+.WAVE FUNCTION                                                                                      
+.ANALYZE                                                                                            
+**HAMILTONIAN                                                                                       
+.ECP                                                                                                
+**INTEGRALS                                                                                         
+*READIN                                                                                             
+.UNCONTRACT                                                                                         
+**WAVE FUNCTION                                                                                     
+.SCF                                                                                                
+.RESOLVE                                                                                            
+*SCF                                                                                                
+.CLOSED SHELL                                                                                       
+2 0                                                                                                 
+.OPEN SHELL                                                                                         
+1                                                                                                   
+3/0,6                                                                                               
+.EVCCNV                                                                                             
+1.0d-05                                                                                             
+**ANALYZE                                                                                           
+.PRIVEC                                                                                             
+.MULPOP                                                                                             
+*PRIVEC                                                                                             
+.AOLAB                                                                                              
+.VECPRI                                                                                             
+1..2                                                                                                
+1..6                                                                                                
+.PRINT                                                                                              
+ 1                                                                                                  
+*MULPOP                                                                                             
+.AOLAB                                                                                              
+.VECPOP                                                                                             
+1..2                                                                                                
+1..6                                                                                                
+.PRINT                                                                                              
+ 1                                                                                                  
+**GENERAL                                                                                           
+.PCMOUT                                                                                             
+*END OF                                                                                             
+                                                                                                    
+&GOSCIP IPRNT=5 &END                                                                                
+
+
+Contents of the molecule file
+-----------------------------
+
+INTGRL                                                                                              
+Bi                                                                                                  
+Bi STU ecp                                                                                          
+C   1                                                                                               
+       83.    1                                                                                     
+Bi     0.000000           0.00000000        0.00000000                                              
+LARGE EXPLICIT  4    1    1    1    1                                                               
+f  13  0                                                                                            
+798.633                                                                                             
+95.0023                                                                                             
+21.2520                                                                                             
+13.2919                                                                                             
+8.31210                                                                                             
+5.19476                                                                                             
+1.90972                                                                                             
+0.962271                                                                                            
+0.356026                                                                                            
+0.168327                                                                                            
+0.0784                                                                                              
+0.073265                                                                                            
+0.0297                                                                                              
+f  12  0                                                                                            
+19.2259                                                                                             
+12.0378                                                                                             
+7.53621                                                                                             
+2.16084                                                                                             
+1.13036                                                                                             
+0.566778                                                                                            
+0.4469                                                                                              
+0.271608                                                                                            
+0.117769                                                                                            
+0.0743                                                                                              
+0.049304                                                                                            
+0.0276                                                                                              
+f  9  0                                                                                             
+65.0224                                                                                             
+13.6908                                                                                             
+7.09591                                                                                             
+2.52090                                                                                             
+1.34066                                                                                             
+0.682558                                                                                            
+0.327714                                                                                            
+0.1306                                                                                              
+0.0488                                                                                              
+f  2  0                                                                                             
+0.3164                                                                                              
+0.1188                                                                                              
+ECP 78 5 3                                                                                          
+3                                                                                                   
+1 40.00000 5.0                                                                                      
+3 38.50000 200.0                                                                                    
+2 40.00000 -74.796                                                                                  
+2                                                                                                   
+2  1.994153  35.755622                                                                              
+2  0.240286  -0.404113                                                                              
+4                                                                                                   
+2  0.896039  2.688441                                                                               
+2  0.875463  5.715603                                                                               
+2  0.262580  -0.171255                                                                              
+2  0.232846  -0.150845                                                                              
+2                                                                                                   
+2  0.779775  4.060445                                                                               
+2  0.739216  5.980282                                                                               
+2                                                                                                   
+2  0.987519  -2.646547                                                                              
+2  0.959907  -3.373825                                                                              
+4                                                                                                   
+2  0.896039  -5.376883                                                                              
+2  0.875463  5.715603                                                                               
+2  0.262580  0.342510                                                                               
+2  0.232846  -0.150845                                                                              
+2                                                                                                   
+2  0.779775  -4.060445                                                                              
+2  0.739216  3.986855                                                                               
+2                                                                                                   
+2  0.987519  1.764365                                                                               
+2  0.959907  -1.686912                                                                              
+FINISH                                                                                              
+
+
+    *************************************************************************
+    ********************* DIRAC: No title specified !!! *********************
+    *************************************************************************
+
+ Jobs in this run:
+   * Wave function
+   * Analysis
+
+
+    **************************************************************************
+    ************************** General DIRAC set-up **************************
+    **************************************************************************
+
+   CODATA Recommended Values of the Fundamental Physical Constants: 1998  
+                Peter J. Mohr and Barry N. Taylor                         
+   Journal of Physical and Chemical Reference Data, Vol. 28, No. 6, 1999  
+ * The speed of light :        137.0359998
+ * Running in two-component mode
+ * Direct evaluation of the following two-electron integrals:
+   - LL-integrals
+ * Spherical transformation embedded in MO-transformation
+   for large components
+ * Transformation to scalar RKB basis embedded in
+   MO-transformation for small components
+ * Thresholds for linear dependence:
+   Large components:   1.00D-06
+   Small components:   1.00D-08
+ * MO-coefficients written to formatted file DFPCMO
+ * General print level   :   0
+
+
+    *************************************************************************
+    ****************** Output from HERMIT input processing ******************
+    *************************************************************************
+
+ Default print level:        1
+ Nuclear model: Gaussian charge distribution.
+
+ Two-electron integrals not calculated.
+
+
+ Ordinary (field-free non-relativistic) Hamiltonian integrals not calculated.
+
+
+
+ Changes of defaults for *READIN
+ -------------------------------
+
+
+ Uncontracted basis forced, irrespective of basis input file.
+
+
+
+   ***************************************************************************
+   ****************** Output from MOLECULE input processing ******************
+   ***************************************************************************
+
+
+
+  Title Cards
+  -----------
+
+  Bi                                                                      
+  Bi STU ecp                                                              
+  Nuclear Gaussian exponent for atom of charge  83.000 :    1.3729409487D+08
+  * This atomic center has RECP with  78 core electrons.
+    The charge value is changed as   5.000
+
+
+                     SYMADD: Detection of molecular symmetry
+                     ---------------------------------------
+
+ Symmetry test threshold:  5.00E-06
+
+ Symmetry point group found: D(oo,h)        
+
+ The following symmetry elements were found: X  Y  Z  
+
+
+  Symmetry Operations
+  -------------------
+
+  Symmetry operations: 3
+
+
+
+                          SYMGRP:Point group information
+                          ------------------------------
+
+Full group is:  D(oo,h)        
+Represented as: D2h
+
+   * The point group was generated by:
+
+      Reflection in the yz-plane
+      Reflection in the xz-plane
+      Reflection in the xy-plane
+
+   * Group multiplication table
+
+        |  E   C2z  C2y  C2x   i   Oxy  Oxz  Oyz
+   -----+----------------------------------------
+     E  |  E   C2z  C2y  C2x   i   Oxy  Oxz  Oyz
+    C2z | C2z   E   C2x  C2y  Oxy   i   Oyz  Oxz
+    C2y | C2y  C2x   E   C2z  Oxz  Oyz   i   Oxy
+    C2x | C2x  C2y  C2z   E   Oyz  Oxz  Oxy   i 
+     i  |  i   Oxy  Oxz  Oyz   E   C2z  C2y  C2x
+    Oxy | Oxy   i   Oyz  Oxz  C2z   E   C2x  C2y
+    Oxz | Oxz  Oyz   i   Oxy  C2y  C2x   E   C2z
+    Oyz | Oyz  Oxz  Oxy   i   C2x  C2y  C2z   E 
+
+   * Character table
+
+        |  E   C2z  C2y  C2x   i   Oxy  Oxz  Oyz
+   -----+----------------------------------------
+    Ag  |   1    1    1    1    1    1    1    1
+    B3u |   1   -1   -1    1   -1    1    1   -1
+    B2u |   1   -1    1   -1   -1    1   -1    1
+    B1g |   1    1   -1   -1    1    1   -1   -1
+    B1u |   1    1   -1   -1   -1   -1    1    1
+    B2g |   1   -1    1   -1    1   -1    1   -1
+    B3g |   1   -1   -1    1    1   -1   -1    1
+    Au  |   1    1    1    1   -1   -1   -1   -1
+
+   * Direct product table
+
+        | Ag   B3u  B2u  B1g  B1u  B2g  B3g  Au 
+   -----+----------------------------------------
+    Ag  | Ag   B3u  B2u  B1g  B1u  B2g  B3g  Au 
+    B3u | B3u  Ag   B1g  B2u  B2g  B1u  Au   B3g
+    B2u | B2u  B1g  Ag   B3u  B3g  Au   B1u  B2g
+    B1g | B1g  B2u  B3u  Ag   Au   B3g  B2g  B1u
+    B1u | B1u  B2g  B3g  Au   Ag   B3u  B2u  B1g
+    B2g | B2g  B1u  Au   B3g  B3u  Ag   B1g  B2u
+    B3g | B3g  Au   B1u  B2g  B2u  B1g  Ag   B3u
+    Au  | Au   B3g  B2g  B1u  B1g  B2u  B3u  Ag 
+
+
+                            **************************
+                            *** Output from DBLGRP ***
+                            **************************
+
+   * Two fermion irreps:  E1g  E1u
+   * Real group. NZ = 1
+   * Direct product decomposition:
+          E1g x E1g : Ag  + B1g + B2g + B3g
+          E1u x E1g : Au  + B1u + B2u + B3u
+          E1u x E1u : Ag  + B1g + B2g + B3g
+
+
+                                 Spinor structure
+                                 ----------------
+
+
+   * Fermion irrep no.: 1            * Fermion irrep no.: 2
+
+      La  |  Ag (1)  B1g(2)  |                La  |  Au (1)  B1u(2)  |
+      Sa  |  Au (1)  B1u(2)  |                Sa  |  Ag (1)  B1g(2)  |
+      Lb  |  B2g(3)  B3g(4)  |                Lb  |  B2u(3)  B3u(4)  |
+      Sb  |  B2u(3)  B3u(4)  |                Sb  |  B2g(3)  B3g(4)  |
+
+
+                              Quaternion symmetries
+                              ---------------------
+
+    Rep  T(+)
+    -----------------------------
+    Ag   1
+    B3u  k
+    B2u  j
+    B1g  i
+    B1u  i
+    B2g  j
+    B3g  k
+    Au   1
+
+  QM-QM nuclear repulsion energy :      0.000000000000
+
+
+
+                                 Isotopic Masses
+                                 ---------------
+
+                           Bi        208.980374
+
+                       Total mass:   208.980374 amu
+                       Natural abundance: 100.000 %
+
+ Center-of-mass coordinates (a.u.):       0.000000000000000   0.000000000000000   0.000000000000000
+
+
+  Atoms and basis sets
+  --------------------
+
+  Number of atom types :    1
+  Total number of atoms:    1
+
+  label    atoms   charge   prim    cont     basis   
+  ----------------------------------------------------------------------
+  Bi          1      83     123     123      L  - [13s12p9d2f|13s12p9d2f]                                        
+                              0       0      S  - No small component basis functions attached                    
+  ----------------------------------------------------------------------
+                            123     123      L  - large components
+  ----------------------------------------------------------------------
+  total:      1      83     123     123
+
+  Cartesian basis used.
+  Threshold for integrals (to be written to file):  1.00D-15
+
+
+  References for the basis sets
+  -----------------------------
+
+  Atom type   1
+  Basis set typed explicitly in input file                                        
+
+
+  Cartesian Coordinates (bohr)
+  ----------------------------
+
+  Total number of coordinates:  3
+
+
+   1   Bi       x      0.0000000000
+   2            y      0.0000000000
+   3            z      0.0000000000
+
+
+
+  Cartesian coordinates in XYZ format (Angstrom)
+  ----------------------------------------------
+
+    1
+ 
+Bi     0.0000000000   0.0000000000   0.0000000000
+
+
+  Symmetry Coordinates
+  --------------------
+
+  Number of coordinates in each symmetry:     0    1    1    0    1    0    0    0
+
+
+  Symmetry  B3u( 2)
+
+    1   Bi    x    1
+
+
+  Symmetry  B2u( 3)
+
+    2   Bi    y    2
+
+
+  Symmetry  B1u( 5)
+
+    3   Bi    z    3
+
+
+  This is an atomic calculation.
+
+
+                                GETLAB: AO-labels
+                                -----------------
+
+   * Large components:   20
+     1  L Bi  1 s        2  L Bi  1 px       3  L Bi  1 py       4  L Bi  1 pz       5  L Bi  1 dxx      6  L Bi  1 dxy 
+     7  L Bi  1 dxz      8  L Bi  1 dyy      9  L Bi  1 dyz     10  L Bi  1 dzz     11  L Bi  1 fxxx    12  L Bi  1 fxxy
+    13  L Bi  1 fxxz    14  L Bi  1 fxyy    15  L Bi  1 fxyz    16  L Bi  1 fxzz    17  L Bi  1 fyyy    18  L Bi  1 fyyz
+    19  L Bi  1 fyzz    20  L Bi  1 fzzz
+   * Small components:    0
+
+
+
+                                GETLAB: SO-labels
+                                -----------------
+
+   * Large components:   20
+     1  L Ag Bi s        2  L Ag Bi dxx      3  L Ag Bi dyy      4  L Ag Bi dzz      5  L B3uBi px       6  L B3uBi fxxx
+     7  L B3uBi fxyy     8  L B3uBi fxzz     9  L B2uBi py      10  L B2uBi fxxy    11  L B2uBi fyyy    12  L B2uBi fyzz
+    13  L B1gBi dxy     14  L B1uBi pz      15  L B1uBi fxxz    16  L B1uBi fyyz    17  L B1uBi fzzz    18  L B2gBi dxz 
+    19  L B3gBi dyz     20  L Au Bi fxyz
+   * Small components:    0
+
+
+
+  Symmetry Orbitals
+  -----------------
+
+  Number of orbitals in each symmetry:           40    18    18     9    18     9     9     2
+  Number of large orbitals in each symmetry:     40    18    18     9    18     9     9     2
+  Number of small orbitals in each symmetry:      0     0     0     0     0     0     0     0
+
+* Large component functions
+
+  Symmetry  Ag ( 1)
+
+       13 functions:    Bi s   
+        9 functions:    Bi dxx 
+        9 functions:    Bi dyy 
+        9 functions:    Bi dzz 
+
+  Symmetry  B3u( 2)
+
+       12 functions:    Bi px  
+        2 functions:    Bi fxxx
+        2 functions:    Bi fxyy
+        2 functions:    Bi fxzz
+
+  Symmetry  B2u( 3)
+
+       12 functions:    Bi py  
+        2 functions:    Bi fxxy
+        2 functions:    Bi fyyy
+        2 functions:    Bi fyzz
+
+  Symmetry  B1g( 4)
+
+        9 functions:    Bi dxy 
+
+  Symmetry  B1u( 5)
+
+       12 functions:    Bi pz  
+        2 functions:    Bi fxxz
+        2 functions:    Bi fyyz
+        2 functions:    Bi fzzz
+
+  Symmetry  B2g( 6)
+
+        9 functions:    Bi dxz 
+
+  Symmetry  B3g( 7)
+
+        9 functions:    Bi dyz 
+
+  Symmetry  Au ( 8)
+
+        2 functions:    Bi fxyz
+
+
+   ***************************************************************************
+   *************************** Hamiltonian defined ***************************
+   ***************************************************************************
+
+ * Print level:    0
+   employing effective-core-potentials (ECP)
+ * SS integrals neglected:
+   Interatomic Coulombic SS-contributions modelled by
+   classical repulsion of small component atomic charges
+   using tabulated charges.
+ * Default integral flags passed to all modules
+   - LL-integrals:     1
+   - LS-integrals:     0
+   - SS-integrals:     0
+   - GT-integrals:     0
+ * Basis set:
+   - uncontracted large component basis set
+
+
+    **************************************************************************
+    ************************** Wave function module **************************
+    **************************************************************************
+
+ Wave function types requested (in input order):
+     HF        
+     RESOLVE   
+
+ Wave function jobs in execution order (expanded):
+ * Hartree-Fock calculation
+ * Followed by resolution of open-shell states
+===========================================================================
+ *SCF: Set-up for Hartree-Fock calculation:
+===========================================================================
+ * Number of fermion irreps: 2
+ * Open shell SCF calculation using Average-of-Configuration
+
+ * Shell specifications:
+
+                                        Orbitals
+                        #electrons  irrep 1  irrep 2     f        a      alpha
+                        ----------  -------  -------  -------  -------  -------
+   Closed shell            2             1        0    1.0000   1.0000   0.0000
+   Open shell no. 1        3.00          0        3    0.5000   0.8000   0.4000
+   ----------------------------------------------------------------------------
+   Total                   5.00          1        3
+
+   f is the fraction occupation; a and alpha open shell coupling coefficients.
+
+ * Sum of atomic potentials used for start guess
+ * General print level   :   0
+
+ ***** INITIAL TRIAL SCF FUNCTION *****
+ * Trial vectors read from file DFCOEF
+ * Scaling of active-active block correction to open shell Fock operator    0.500000
+   to improve convergence (default value).
+   The final open-shell orbital energies are recalculated with 1.0 scaling,
+   such that all occupied orbital energies correspond to Koopmans' theorem ionization energies.
+
+ ***** SCF CONVERGENCE CRITERIA *****
+ * Convergence on norm of error vector (gradient).
+   Desired convergence:1.000D-05
+   Allowed convergence:1.000D-05
+
+ ***** CONVERGENCE CONTROL *****
+ * Fock matrix constructed using differential density matrix
+    with optimal parameter.
+ * DIIS (in MO basis)
+ * DIIS will be activated when convergence reaches : 1.00D+20
+   - Maximum size of B-matrix:   10
+ * Damping of Fock matrix when DIIS is not activated. 
+   Weight of old matrix    : 0.250
+ * Maximum number of SCF iterations  :   50
+ * No quadratic convergent Hartree-Fock
+ * Contributions from 2-electron integrals to Fock matrix:
+   LL-integrals.
+    ---> this is default setting from Hamiltonian input
+ ***** OUTPUT CONTROL *****
+ * Only electron eigenvalues written out.
+===========================================================================
+ RESINP: Set-up for resolution of open-shell states:
+===========================================================================
+ * General print level   :   0
+ * 4-index transformation follows scheme      :   4
+ - write (rs)-batches of half-transformed integrals 
+ (ij|rs) to disk; parallel scheme
+ * Screening threshold : 1.00E-14
+ * LS integrals not included.
+ * SS integrals not included.
+ * Gaunt integrals not included.
+
+
+   ***************************************************************************
+   ***************************** Analysis module *****************************
+   ***************************************************************************
+
+ Jobs in this run:
+ * Write vectors
+ * Mulliken population analysis
+===========================================================================
+ VECINP: Vector print
+===========================================================================
+ * Coefficients written in AO-basis
+ * Vector print:
+    - Orbitals in fermion ircop E1g :1..2                                                                    
+    - Orbitals in fermion ircop E1u :1..6                                                                    
+ * Only large component coefficients written out.
+===========================================================================
+ POPINP: Mulliken population analysis
+===========================================================================
+ * Gross populations
+ * Label definitions based on AO-labels
+ * Number of spinors analyzed:
+    - Orbitals in fermion ircop E1g :1..2                                                                    
+    - Orbitals in fermion ircop E1u :1..6                                                                    
+ * Print level:    1
+
+
+ ********************************************************************************
+ *************************** Input consistency checks ***************************
+ ********************************************************************************
+
+
+
+    *************************************************************************
+    ************************ End of input processing ************************
+    *************************************************************************
+
+
+
+    *************************************************************************
+    ************************** RECP integral start **************************
+    *************************************************************************
+
+
+
+          -----------------------------------------------------------
+          Relativistic Effective Core Potential Integral routine
+          This routine is based on ARGOS integral
+          with the permission of R. M. Pitzer (Ohio State University)
+          and maintained by Y. S. Lee and Y. C. Park (KAIST)
+          
+          Electronic mail:
+          YoonSupLee@kaist.ac.kr
+          youngc@kaist.ac.kr
+          
+          Reference:
+          Bull.Korean.Chem.Soc. v.33, p.803 (2012)
+          -----------------------------------------------------------
+
+
+ * Warning: Symmetries higher than D2h in RECP integral is not fully tested.
+            The calculation results can be erroneous.
+            Use auto-symmetry with care.
+
+ * Nuc. Center No.     :   1 (Bi )
+   Sym. distinct atoms :   1
+   Core electrons      :  78
+   AREP blocks         :   5
+   SO blocks           :   3
+ 
+ * VCORE was generated : RECP_INT_C
+ * SOX was generated   : RECP_INT_X
+ * SOY was generated   : RECP_INT_Y
+ * SOZ was generated   : RECP_INT_Z
+
+
+     ***********************************************************************
+     ************************** RECP integral end **************************
+     ***********************************************************************
+
+
+
+                      Nuclear contribution to dipole moments
+                      --------------------------------------
+
+                    All dipole components are zero by symmetry
+
+Total time used in ONEGEN (CPU)  0.02075300s and (WALL)  0.03810000s
+
+
+                       Generating Lowdin canonical matrix:
+                       -----------------------------------
+
+   L   Ag    * Deleted:          9(Proj:          9, Lindep:          0) Smin: 0.95E-05
+   L   B1g   * Deleted:          0(Proj:          0, Lindep:          0) Smin: 0.85E-02
+   L   B2g   * Deleted:          0(Proj:          0, Lindep:          0) Smin: 0.85E-02
+   L   B3g   * Deleted:          0(Proj:          0, Lindep:          0) Smin: 0.85E-02
+   L   B3u   * Deleted:          2(Proj:          2, Lindep:          0) Smin: 0.35E-04
+   L   B2u   * Deleted:          2(Proj:          2, Lindep:          0) Smin: 0.35E-04
+   L   B1u   * Deleted:          2(Proj:          2, Lindep:          0) Smin: 0.35E-04
+   L   Au    * Deleted:          0(Proj:          0, Lindep:          0) Smin: 0.41E+00
+
+
+                                Output from LINSYM
+                                ------------------
+
+
+ Parity   MJ  Functions(total) Functions(LC) Functions(SC)
+     1    1/2         31           31            0
+     1   -3/2         18           18            0
+     1    5/2          9            9            0
+    -1    1/2         28           28            0
+    -1   -3/2         16           16            0
+    -1    5/2          4            4            0
+    -1   -7/2          2            2            0
+
+
+      **********************************************************************
+      ************************* Orbital dimensions *************************
+      **********************************************************************
+
+                                   Irrep 1 Irrep 2   Sum
+No. of electronic orbitals (NESH):    58      50     108
+No. of positronic orbitals (NPSH):     0       0       0
+Total no. of orbitals      (NORB):    58      50     108
+ >>> CPU  time used in PAMSET is   0.09 seconds
+ >>> WALL time used in PAMSET is   0.16 seconds
+
+
+   ****************************************************************************
+   ************************* Hartree-Fock calculation *************************
+   ****************************************************************************
+
+
+*** INFO *** No trial vectors found.
+ Using bare nucleus approximation for initial trial vectors.
+             Improved by a sum of atomic screening potentials.
+
+
+########## START ITERATION NO.   1 ##########   Mon Oct  4 09:54:21 2021
+
+E_HOMO...E_LUMO, symmetry 1:     1  -0.15921    2   0.03934
+E_HOMO...E_LUMO, symmetry 2:    59  -0.01235   60  -0.00097   61  -0.00097   62   0.06621
+
+=> Calculating sum of orbital energies
+It.    1   -0.3327150046490      0.00D+00  0.00D+00  0.00D+00               0.08109100s   Atom. scrpot   Mon Oct  4
+
+########## START ITERATION NO.   2 ##########   Mon Oct  4 09:54:21 2021
+
+
+* GETGAB: label "GABAO1XX" not found; calling GABGEN.
+SCR        scr.thr.    Step1    Step2  Coulomb  Exchange    CPU-time
+SOfock:LL  1.00D-12   45.95%    8.94%    8.24%   31.58%   0.12168498s
+ >>> CPU  time used in SO Fock is   0.20 seconds
+ >>> WALL time used in SO Fock is   0.20 seconds
+E_HOMO...E_LUMO, symmetry 1:     1  -0.99594    2  -0.07758
+E_HOMO...E_LUMO, symmetry 2:    59  -0.51472   60  -0.41266   61  -0.41266   62  -0.01283
+>>> Total wall time:  0.23600000s, and total CPU time :  0.20531500s
+
+########## END ITERATION NO.   2 ##########   Mon Oct  4 09:54:21 2021
+
+It.    2    -4.439964146227      4.11D+00 -5.25D+00  8.14D-01               0.23600000s   LL             Mon Oct  4
+
+########## START ITERATION NO.   3 ##########   Mon Oct  4 09:54:21 2021
+
+    3 *** Differential density matrix. DCOVLP     = 0.3623
+    3 *** Differential density matrix. DVOVLP( 1) = 0.0001
+SCR        scr.thr.    Step1    Step2  Coulomb  Exchange    CPU-time
+SOfock:LL  1.00D-12   51.57%    1.27%    8.01%   30.68%   0.17886898s
+ >>> CPU  time used in SO Fock is   0.18 seconds
+ >>> WALL time used in SO Fock is   0.18 seconds
+E_HOMO...E_LUMO, symmetry 1:     1  -0.68614    2   0.03690
+E_HOMO...E_LUMO, symmetry 2:    59  -0.26637   60  -0.19578   61  -0.19578   62   0.05195
+>>> Total wall time:  0.22630000s, and total CPU time :  0.19160100s
+
+########## END ITERATION NO.   3 ##########   Mon Oct  4 09:54:22 2021
+
+It.    3    -5.208203064223      7.68D-01  7.48D-01  1.30D-01   DIIS   2    0.22630000s   LL             Mon Oct  4
+
+########## START ITERATION NO.   4 ##########   Mon Oct  4 09:54:22 2021
+
+    4 *** Differential density matrix. DCOVLP     = 0.8124
+    4 *** Differential density matrix. DVOVLP( 1) = 0.9209
+SCR        scr.thr.    Step1    Step2  Coulomb  Exchange    CPU-time
+SOfock:LL  1.00D-12   52.30%    0.18%    7.98%   30.55%   0.16209298s
+ >>> CPU  time used in SO Fock is   0.16 seconds
+ >>> WALL time used in SO Fock is   0.16 seconds
+E_HOMO...E_LUMO, symmetry 1:     1  -0.67928    2   0.04340
+E_HOMO...E_LUMO, symmetry 2:    59  -0.26280   60  -0.19229   61  -0.19229   62   0.05490
+>>> Total wall time:  0.21150000s, and total CPU time :  0.17397700s
+
+########## END ITERATION NO.   4 ##########   Mon Oct  4 09:54:22 2021
+
+It.    4    -5.221809127263      1.36D-02 -6.35D-02  1.63D-02   DIIS   3    0.21150000s   LL             Mon Oct  4
+
+########## START ITERATION NO.   5 ##########   Mon Oct  4 09:54:22 2021
+
+    5 *** Differential density matrix. DCOVLP     = 0.9857
+    5 *** Differential density matrix. DVOVLP( 1) = 1.0142
+SCR        scr.thr.    Step1    Step2  Coulomb  Exchange    CPU-time
+SOfock:LL  1.00D-12   51.57%    1.29%    8.01%   30.67%   0.13093501s
+ >>> CPU  time used in SO Fock is   0.13 seconds
+ >>> WALL time used in SO Fock is   0.13 seconds
+E_HOMO...E_LUMO, symmetry 1:     1  -0.68077    2   0.04290
+E_HOMO...E_LUMO, symmetry 2:    59  -0.26351   60  -0.19270   61  -0.19270   62   0.05440
+>>> Total wall time:  0.17780000s, and total CPU time :  0.14325700s
+
+########## END ITERATION NO.   5 ##########   Mon Oct  4 09:54:22 2021
+
+It.    5    -5.222161363780      3.52D-04 -5.18D-03  1.92D-03   DIIS   4    0.17780000s   LL             Mon Oct  4
+
+########## START ITERATION NO.   6 ##########   Mon Oct  4 09:54:22 2021
+
+    6 *** Differential density matrix. DCOVLP     = 1.0009
+    6 *** Differential density matrix. DVOVLP( 1) = 0.9933
+SCR        scr.thr.    Step1    Step2  Coulomb  Exchange    CPU-time
+SOfock:LL  1.00D-12   45.95%    9.03%    8.25%   31.37%   0.13942999s
+ >>> CPU  time used in SO Fock is   0.14 seconds
+ >>> WALL time used in SO Fock is   0.14 seconds
+E_HOMO...E_LUMO, symmetry 1:     1  -0.68092    2   0.04286
+E_HOMO...E_LUMO, symmetry 2:    59  -0.26364   60  -0.19281   61  -0.19281   62   0.05439
+>>> Total wall time:  0.18400000s, and total CPU time :  0.15098000s
+
+########## END ITERATION NO.   6 ##########   Mon Oct  4 09:54:22 2021
+
+It.    6    -5.222164254292      2.89D-06  7.10D-04  1.79D-04   DIIS   5    0.18400000s   LL             Mon Oct  4
+
+########## START ITERATION NO.   7 ##########   Mon Oct  4 09:54:22 2021
+
+    7 *** Differential density matrix. DCOVLP     = 1.0002
+    7 *** Differential density matrix. DVOVLP( 1) = 0.9994
+SCR        scr.thr.    Step1    Step2  Coulomb  Exchange    CPU-time
+SOfock:LL  1.00D-12   51.57%    1.52%    8.02%   30.61%   0.12749696s
+ >>> CPU  time used in SO Fock is   0.13 seconds
+ >>> WALL time used in SO Fock is   0.13 seconds
+E_HOMO...E_LUMO, symmetry 1:     1  -0.68094    2   0.04285
+E_HOMO...E_LUMO, symmetry 2:    59  -0.26365   60  -0.19282   61  -0.19282   62   0.05439
+>>> Total wall time:  0.17680000s, and total CPU time :  0.14083200s
+
+########## END ITERATION NO.   7 ##########   Mon Oct  4 09:54:22 2021
+
+It.    7    -5.222164303207      4.89D-08  2.27D-05  2.53D-05   DIIS   6    0.17680000s   LL             Mon Oct  4
+
+########## START ITERATION NO.   8 ##########   Mon Oct  4 09:54:22 2021
+
+    8 *** Differential density matrix. DCOVLP     = 1.0001
+    8 *** Differential density matrix. DVOVLP( 1) = 1.0001
+SCR        scr.thr.    Step1    Step2  Coulomb  Exchange    CPU-time
+SOfock:LL  1.00D-12   45.95%    9.32%    8.26%   31.45%   0.13610399s
+ >>> CPU  time used in SO Fock is   0.14 seconds
+ >>> WALL time used in SO Fock is   0.14 seconds
+>>> Total wall time:  0.17790000s, and total CPU time :  0.14569900s
+
+########## END ITERATION NO.   8 ##########   Mon Oct  4 09:54:22 2021
+
+It.    8    -5.222164304323      1.12D-09 -2.86D-06  1.48D-06   DIIS   6    0.17790000s   LL             Mon Oct  4
+
+
+                                   SCF - CYCLE
+                                   -----------
+
+* Convergence on norm of error vector (gradient).
+  Desired convergence:1.000D-05
+  Allowed convergence:1.000D-05
+
+* ERGVAL - convergence in total energy
+* FCKVAL - convergence in maximum change in total Fock matrix
+* EVCVAL - convergence in error vector (gradient)
+--------------------------------------------------------------------------------------------------------------------------------
+           Energy               ERGVAL    FCKVAL    EVCVAL      Conv.acc    CPU          Integrals   Time stamp
+--------------------------------------------------------------------------------------------------------------------------------
+It.    1   -0.3327150046490      0.00D+00  0.00D+00  0.00D+00               0.08109100s   Atom. scrpot   Mon Oct  4
+It.    2    -4.439964146227      4.11D+00 -5.25D+00  8.14D-01               0.23600000s   LL             Mon Oct  4
+It.    3    -5.208203064223      7.68D-01  7.48D-01  1.30D-01   DIIS   2    0.22630000s   LL             Mon Oct  4
+It.    4    -5.221809127263      1.36D-02 -6.35D-02  1.63D-02   DIIS   3    0.21150000s   LL             Mon Oct  4
+It.    5    -5.222161363780      3.52D-04 -5.18D-03  1.92D-03   DIIS   4    0.17780000s   LL             Mon Oct  4
+It.    6    -5.222164254292      2.89D-06  7.10D-04  1.79D-04   DIIS   5    0.18400000s   LL             Mon Oct  4
+It.    7    -5.222164303207      4.89D-08  2.27D-05  2.53D-05   DIIS   6    0.17680000s   LL             Mon Oct  4
+It.    8    -5.222164304323      1.12D-09 -2.86D-06  1.48D-06   DIIS   6    0.17790000s   LL             Mon Oct  4
+--------------------------------------------------------------------------------------------------------------------------------
+* Convergence after    8 iterations.
+* Average elapsed time per iteration: 
+      No 2-ints    :    0.09770000s
+      LL           :    0.19861429s
+
+
+                                   TOTAL ENERGY
+                                   ------------
+
+   Electronic energy                        :    -5.2221643043234707
+
+   Other contributions to the total energy
+   Nuclear repulsion energy                 :     0.0000000000000000
+
+   Sum of all contributions to the energy
+   Total energy                             :    -5.2221643043234707
+
+
+                                   Eigenvalues
+                                   -----------
+
+
+* Block   1 in E1g:  Omega =  1/2
+  * Closed shell, f = 1.0000
+   -0.680942747093  ( 2)
+  * Virtual eigenvalues, f = 0.0000
+    0.042850206906  ( 2)       0.133671484496  ( 2)       0.134794262444  ( 2)       0.212950601698  ( 2)       0.408636942362  ( 2)
+    0.415236774265  ( 2)       0.614429354016  ( 2)       1.250042481624  ( 2)       1.284246818043  ( 2)       1.598749638496  ( 2)
+    3.480256027970  ( 2)       3.564907117358  ( 2)       4.966804577762  ( 2)       7.893772735614  ( 2)       7.982631629747  ( 2)
+   13.126170760673  ( 2)      15.582825428942  ( 2)      15.615709929945  ( 2)      21.416849621897  ( 2)      32.629657469684  ( 2)
+   32.666689817034  ( 2)      36.904893461226  ( 2)      68.397033624018  ( 2)      71.303166871522  ( 2)      71.403190504837  ( 2)
+  125.083578350175  ( 2)     240.729207134018  ( 2)     240.890170689356  ( 2)     291.320904868750  ( 2)    1566.752519274441  ( 2)
+
+* Block   2 in E1g:  Omega =  3/2
+  * Virtual eigenvalues, f = 0.0000
+    0.133671484496  ( 2)       0.134794262444  ( 2)       0.408636942362  ( 2)       0.415236774265  ( 2)       1.250042481624  ( 2)
+    1.284246818043  ( 2)       3.480256027970  ( 2)       3.564907117358  ( 2)       7.893772735614  ( 2)       7.982631629747  ( 2)
+   15.582825428942  ( 2)      15.615709929945  ( 2)      32.629657469684  ( 2)      32.666689817034  ( 2)      71.303166871522  ( 2)
+   71.403190504837  ( 2)     240.729207134018  ( 2)     240.890170689356  ( 2)
+
+* Block   3 in E1g:  Omega =  5/2
+  * Virtual eigenvalues, f = 0.0000
+    0.133671484496  ( 2)       0.415236774265  ( 2)       1.284246818043  ( 2)       3.564907117358  ( 2)       7.982631629747  ( 2)
+   15.615709929945  ( 2)      32.629657469684  ( 2)      71.303166871521  ( 2)     240.729207134018  ( 2)
+
+* Block   1 in E1u:  Omega =  1/2
+  * Open shell #1, f = 0.5000
+   -0.263650341693  ( 2)      -0.192817837929  ( 2)
+  * Virtual eigenvalues, f = 0.0000
+    0.054387836921  ( 2)       0.058924110266  ( 2)       0.195148486000  ( 2)       0.211658315537  ( 2)       0.447805555145  ( 2)
+    0.448991491036  ( 2)       0.467920420798  ( 2)       0.502497778026  ( 2)       0.978081254033  ( 2)       1.050306917678  ( 2)
+    1.106660849670  ( 2)       1.108355768815  ( 2)       1.906033047310  ( 2)       2.048690699409  ( 2)       3.417967632634  ( 2)
+    3.666669348640  ( 2)       5.986321821894  ( 2)       6.347001569821  ( 2)      10.897814678559  ( 2)      11.373037433253  ( 2)
+   22.331152208116  ( 2)      22.935978728616  ( 2)      49.119247535588  ( 2)      49.808407853308  ( 2)     101.082434540067  ( 2)
+  101.819095960363  ( 2)
+
+* Block   2 in E1u:  Omega =  3/2
+  * Open shell #1, f = 0.5000
+   -0.192817837928  ( 2)
+  * Virtual eigenvalues, f = 0.0000
+    0.058924110266  ( 2)       0.211658315537  ( 2)       0.447805555145  ( 2)       0.448991491036  ( 2)       0.502497778027  ( 2)
+    1.050306917681  ( 2)       1.106660849670  ( 2)       1.108355768815  ( 2)       2.048690699415  ( 2)       3.666669348649  ( 2)
+    6.347001569831  ( 2)      11.373037433262  ( 2)      22.935978728623  ( 2)      49.808407853314  ( 2)     101.819095960374  ( 2)
+
+* Block   3 in E1u:  Omega =  5/2
+  * Virtual eigenvalues, f = 0.0000
+    0.447805555145  ( 2)       0.448991491036  ( 2)       1.106660849670  ( 2)       1.108355768815  ( 2)
+
+* Block   4 in E1u:  Omega =  7/2
+  * Virtual eigenvalues, f = 0.0000
+    0.447805555145  ( 2)       1.106660849670  ( 2)
+
+* Occupation in fermion symmetry E1g
+  * Inactive orbitals
+     1/2
+  * Virtual orbitals
+     1/2 5/2 3/2 1/2 3/2 1/2 1/2 3/2 1/2 5/2 3/2 1/2 1/2 3/2 1/2 3/2 5/2 1/2
+     1/2 3/2 1/2 5/2 1/2 3/2 1/2 3/2 1/2 5/2 3/2 1/2 1/2 3/2 1/2 5/2 3/2 1/2
+     1/2 5/2 3/2 1/2 3/2 1/2 1/2 1/2 5/2 3/2 1/2 3/2 1/2 1/2 5/2 3/2 1/2 3/2
+     1/2 1/2 1/2
+
+* Occupation in fermion symmetry E1u
+  * Active orbitals
+     1/2 1/2 3/2
+  * Virtual orbitals
+     1/2 1/2 3/2 1/2 1/2 3/2 7/2 1/2 3/2 5/2 1/2 5/2 3/2 1/2 1/2 3/2 1/2 1/2
+     3/2 3/2 1/2 7/2 5/2 1/2 3/2 5/2 1/2 1/2 3/2 1/2 1/2 3/2 1/2 1/2 3/2 1/2
+     1/2 3/2 1/2 1/2 3/2 1/2 1/2 3/2 1/2 1/2 3/2
+
+* Occupation of subblocks
+                       E1g:  1/2  3/2  5/2                                                                  
+  closed shells (f=1.0000):    1    0    0
+  open shell #1 (f=0.5000):    0    0    0
+ virtual shells (f=0.0000):   30   18    9
+tot.num. of pos.erg shells:   31   18    9
+                       E1u:  1/2  3/2  5/2  7/2                                                             
+  closed shells (f=1.0000):    0    0    0    0
+  open shell #1 (f=0.5000):    2    1    0    0
+ virtual shells (f=0.0000):   26   15    4    2
+tot.num. of pos.erg shells:   28   16    4    2
+
+
+* HOMO - LUMO gap:
+
+    E(LUMO) :     0.04285021 au (symmetry E1g)
+  - E(HOMO) :    -0.19281784 au (symmetry E1u)
+  ------------------------------------------
+    gap     :     0.23566804 au
+
+
+
+    **************************************************************************
+    ****************************** Vector print ******************************
+    **************************************************************************
+
+
+
+   Coefficients from DFCOEF
+   ------------------------
+
+
+
+                                Fermion ircop E1g
+                                -----------------
+
+
+* Electronic eigenvalue no.  1: -0.6809427470926
+====================================================
+       1  L Bi  1 s             0.0000118468        0.0000000000        0.0000000000        0.0000000000
+       2  L Bi  1 s            -0.0002761289        0.0000000000        0.0000000000        0.0000000000
+       3  L Bi  1 s             0.0078211695        0.0000000000        0.0000000000        0.0000000000
+       4  L Bi  1 s            -0.0357117702        0.0000000000        0.0000000000        0.0000000000
+       5  L Bi  1 s             0.0728822560        0.0000000000        0.0000000000        0.0000000000
+       6  L Bi  1 s            -0.0697734364        0.0000000000        0.0000000000        0.0000000000
+       7  L Bi  1 s            -0.1179067312        0.0000000000        0.0000000000        0.0000000000
+       8  L Bi  1 s             0.6499623220        0.0000000000        0.0000000000        0.0000000000
+       9  L Bi  1 s            -0.3608275864        0.0000000000        0.0000000000        0.0000000000
+      10  L Bi  1 s            -0.7264489967        0.0000000000        0.0000000000        0.0000000000
+      11  L Bi  1 s            -0.2021179484        0.0000000000        0.0000000000        0.0000000000
+      12  L Bi  1 s            -0.0472371298        0.0000000000        0.0000000000        0.0000000000
+      13  L Bi  1 s            -0.0086532154        0.0000000000        0.0000000000        0.0000000000
+
+* Electronic eigenvalue no.  2:  0.428502069E-01
+====================================================
+       1  L Bi  1 s            -0.0000123730        0.0000000000        0.0000000000        0.0000000000
+       2  L Bi  1 s             0.0002680892        0.0000000000        0.0000000000        0.0000000000
+       3  L Bi  1 s            -0.0091642464        0.0000000000        0.0000000000        0.0000000000
+       4  L Bi  1 s             0.0382679064        0.0000000000        0.0000000000        0.0000000000
+       5  L Bi  1 s            -0.0752958899        0.0000000000        0.0000000000        0.0000000000
+       6  L Bi  1 s             0.0740442548        0.0000000000        0.0000000000        0.0000000000
+       7  L Bi  1 s            -0.0539750955        0.0000000000        0.0000000000        0.0000000000
+       8  L Bi  1 s            -0.0106468363        0.0000000000        0.0000000000        0.0000000000
+       9  L Bi  1 s            -0.3753359659        0.0000000000        0.0000000000        0.0000000000
+      10  L Bi  1 s             2.0255852380        0.0000000000        0.0000000000        0.0000000000
+      11  L Bi  1 s           -32.5065105522        0.0000000000        0.0000000000        0.0000000000
+      12  L Bi  1 s            33.5179399407        0.0000000000        0.0000000000        0.0000000000
+      13  L Bi  1 s            -3.2103985119        0.0000000000        0.0000000000        0.0000000000
+
+
+                                Fermion ircop E1u
+                                -----------------
+
+
+* Electronic eigenvalue no.  1: -0.2636503416927
+====================================================
+      14  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0010664311
+      15  L Bi  1 py            0.0000000000        0.0000000000        0.0010664311        0.0000000000
+      16  L Bi  1 pz            0.0000000000       -0.0010664311        0.0000000000        0.0000000000
+      17  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0009145817
+      18  L Bi  1 py            0.0000000000        0.0000000000       -0.0009145817        0.0000000000
+      19  L Bi  1 pz            0.0000000000        0.0009145817        0.0000000000        0.0000000000
+      20  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0022787769
+      21  L Bi  1 py            0.0000000000        0.0000000000        0.0022787769        0.0000000000
+      22  L Bi  1 pz            0.0000000000       -0.0022787769        0.0000000000        0.0000000000
+      23  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0142999493
+      24  L Bi  1 py            0.0000000000        0.0000000000        0.0142999493        0.0000000000
+      25  L Bi  1 pz            0.0000000000       -0.0142999493        0.0000000000        0.0000000000
+      26  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0255353336
+      27  L Bi  1 py            0.0000000000        0.0000000000       -0.0255353336        0.0000000000
+      28  L Bi  1 pz            0.0000000000        0.0255353336        0.0000000000        0.0000000000
+      29  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0916992854
+      30  L Bi  1 py            0.0000000000        0.0000000000       -0.0916992854        0.0000000000
+      31  L Bi  1 pz            0.0000000000        0.0916992854        0.0000000000        0.0000000000
+      32  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0765564516
+      33  L Bi  1 py            0.0000000000        0.0000000000        0.0765564516        0.0000000000
+      34  L Bi  1 pz            0.0000000000       -0.0765564516        0.0000000000        0.0000000000
+      35  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.2383356284
+      36  L Bi  1 py            0.0000000000        0.0000000000        0.2383356284        0.0000000000
+      37  L Bi  1 pz            0.0000000000       -0.2383356284        0.0000000000        0.0000000000
+      38  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.3123989553
+      39  L Bi  1 py            0.0000000000        0.0000000000        0.3123989553        0.0000000000
+      40  L Bi  1 pz            0.0000000000       -0.3123989553        0.0000000000        0.0000000000
+      41  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0125555045
+      42  L Bi  1 py            0.0000000000        0.0000000000       -0.0125555045        0.0000000000
+      43  L Bi  1 pz            0.0000000000        0.0125555045        0.0000000000        0.0000000000
+      44  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.1010892747
+      45  L Bi  1 py            0.0000000000        0.0000000000        0.1010892747        0.0000000000
+      46  L Bi  1 pz            0.0000000000       -0.1010892747        0.0000000000        0.0000000000
+      47  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0007348726
+      48  L Bi  1 py            0.0000000000        0.0000000000       -0.0007348726        0.0000000000
+      49  L Bi  1 pz            0.0000000000        0.0007348726        0.0000000000        0.0000000000
+
+* Electronic eigenvalue no.  2: -0.1928178379291
+====================================================
+      14  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0004036805
+      15  L Bi  1 py            0.0000000000        0.0000000000       -0.0004036805        0.0000000000
+      16  L Bi  1 pz            0.0000000000       -0.0008073610        0.0000000000        0.0000000000
+      17  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0002003656
+      18  L Bi  1 py            0.0000000000        0.0000000000        0.0002003656        0.0000000000
+      19  L Bi  1 pz            0.0000000000        0.0004007312        0.0000000000        0.0000000000
+      20  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0007203456
+      21  L Bi  1 py            0.0000000000        0.0000000000       -0.0007203456        0.0000000000
+      22  L Bi  1 pz            0.0000000000       -0.0014406912        0.0000000000        0.0000000000
+      23  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0068774706
+      24  L Bi  1 py            0.0000000000        0.0000000000       -0.0068774706        0.0000000000
+      25  L Bi  1 pz            0.0000000000       -0.0137549412        0.0000000000        0.0000000000
+      26  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0094516522
+      27  L Bi  1 py            0.0000000000        0.0000000000        0.0094516522        0.0000000000
+      28  L Bi  1 pz            0.0000000000        0.0189033045        0.0000000000        0.0000000000
+      29  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0709138753
+      30  L Bi  1 py            0.0000000000        0.0000000000        0.0709138753        0.0000000000
+      31  L Bi  1 pz            0.0000000000        0.1418277505        0.0000000000        0.0000000000
+      32  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0328136420
+      33  L Bi  1 py            0.0000000000        0.0000000000       -0.0328136420        0.0000000000
+      34  L Bi  1 pz            0.0000000000       -0.0656272839        0.0000000000        0.0000000000
+      35  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.1285309325
+      36  L Bi  1 py            0.0000000000        0.0000000000       -0.1285309325        0.0000000000
+      37  L Bi  1 pz            0.0000000000       -0.2570618651        0.0000000000        0.0000000000
+      38  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.2159596100
+      39  L Bi  1 py            0.0000000000        0.0000000000       -0.2159596100        0.0000000000
+      40  L Bi  1 pz            0.0000000000       -0.4319192199        0.0000000000        0.0000000000
+      41  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0178843144
+      42  L Bi  1 py            0.0000000000        0.0000000000       -0.0178843144        0.0000000000
+      43  L Bi  1 pz            0.0000000000       -0.0357686287        0.0000000000        0.0000000000
+      44  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0964700414
+      45  L Bi  1 py            0.0000000000        0.0000000000       -0.0964700414        0.0000000000
+      46  L Bi  1 pz            0.0000000000       -0.1929400828        0.0000000000        0.0000000000
+      47  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0142709326
+      48  L Bi  1 py            0.0000000000        0.0000000000       -0.0142709326        0.0000000000
+      49  L Bi  1 pz            0.0000000000       -0.0285418653        0.0000000000        0.0000000000
+
+* Electronic eigenvalue no.  3: -0.1928178379281
+====================================================
+      14  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0006991951
+      15  L Bi  1 py            0.0000000000        0.0000000000       -0.0006991951        0.0000000000
+      17  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0003470434
+      18  L Bi  1 py            0.0000000000        0.0000000000        0.0003470434        0.0000000000
+      20  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0012476751
+      21  L Bi  1 py            0.0000000000        0.0000000000       -0.0012476751        0.0000000000
+      23  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0119121285
+      24  L Bi  1 py            0.0000000000        0.0000000000       -0.0119121285        0.0000000000
+      26  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0163707419
+      27  L Bi  1 py            0.0000000000        0.0000000000        0.0163707419        0.0000000000
+      29  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.1228264349
+      30  L Bi  1 py            0.0000000000        0.0000000000        0.1228264349        0.0000000000
+      32  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0568348951
+      33  L Bi  1 py            0.0000000000        0.0000000000       -0.0568348951        0.0000000000
+      35  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.2226221055
+      36  L Bi  1 py            0.0000000000        0.0000000000       -0.2226221055        0.0000000000
+      38  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.3740530169
+      39  L Bi  1 py            0.0000000000        0.0000000000       -0.3740530169        0.0000000000
+      41  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0309765411
+      42  L Bi  1 py            0.0000000000        0.0000000000       -0.0309765411        0.0000000000
+      44  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.1670910131
+      45  L Bi  1 py            0.0000000000        0.0000000000       -0.1670910131        0.0000000000
+      47  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0247179804
+      48  L Bi  1 py            0.0000000000        0.0000000000       -0.0247179804        0.0000000000
+
+* Electronic eigenvalue no.  4:  0.543878369E-01
+====================================================
+      14  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0013319044
+      15  L Bi  1 py            0.0000000000        0.0000000000        0.0013319044        0.0000000000
+      16  L Bi  1 pz            0.0000000000       -0.0013319044        0.0000000000        0.0000000000
+      17  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0040384751
+      18  L Bi  1 py            0.0000000000        0.0000000000       -0.0040384751        0.0000000000
+      19  L Bi  1 pz            0.0000000000        0.0040384751        0.0000000000        0.0000000000
+      20  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0052227269
+      21  L Bi  1 py            0.0000000000        0.0000000000        0.0052227269        0.0000000000
+      22  L Bi  1 pz            0.0000000000       -0.0052227269        0.0000000000        0.0000000000
+      23  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0152711907
+      24  L Bi  1 py            0.0000000000        0.0000000000       -0.0152711907        0.0000000000
+      25  L Bi  1 pz            0.0000000000        0.0152711907        0.0000000000        0.0000000000
+      26  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0750690662
+      27  L Bi  1 py            0.0000000000        0.0000000000        0.0750690662        0.0000000000
+      28  L Bi  1 pz            0.0000000000       -0.0750690662        0.0000000000        0.0000000000
+      29  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.6682604103
+      30  L Bi  1 py            0.0000000000        0.0000000000       -0.6682604103        0.0000000000
+      31  L Bi  1 pz            0.0000000000        0.6682604103        0.0000000000        0.0000000000
+      32  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -1.0210077023
+      33  L Bi  1 py            0.0000000000        0.0000000000        1.0210077022        0.0000000000
+      34  L Bi  1 pz            0.0000000000       -1.0210077023        0.0000000000        0.0000000000
+      35  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.6983648033
+      36  L Bi  1 py            0.0000000000        0.0000000000       -0.6983648033        0.0000000000
+      37  L Bi  1 pz            0.0000000000        0.6983648034        0.0000000000        0.0000000000
+      38  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -1.6575038167
+      39  L Bi  1 py            0.0000000000        0.0000000000        1.6575038167        0.0000000000
+      40  L Bi  1 pz            0.0000000000       -1.6575038167        0.0000000000        0.0000000000
+      41  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        3.5151843985
+      42  L Bi  1 py            0.0000000000        0.0000000000       -3.5151843985        0.0000000000
+      43  L Bi  1 pz            0.0000000000        3.5151843987        0.0000000000        0.0000000000
+      44  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -3.8003792165
+      45  L Bi  1 py            0.0000000000        0.0000000000        3.8003792165        0.0000000000
+      46  L Bi  1 pz            0.0000000000       -3.8003792166        0.0000000000        0.0000000000
+      47  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        2.0263404596
+      48  L Bi  1 py            0.0000000000        0.0000000000       -2.0263404596        0.0000000000
+      49  L Bi  1 pz            0.0000000000        2.0263404596        0.0000000000        0.0000000000
+
+* Electronic eigenvalue no.  5:  0.589241103E-01
+====================================================
+      14  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0009506600
+      15  L Bi  1 py            0.0000000000        0.0000000000       -0.0009506600        0.0000000000
+      16  L Bi  1 pz            0.0000000000       -0.0019013201        0.0000000000        0.0000000000
+      17  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0029790091
+      18  L Bi  1 py            0.0000000000        0.0000000000        0.0029790091        0.0000000000
+      19  L Bi  1 pz            0.0000000000        0.0059580182        0.0000000000        0.0000000000
+      20  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0037958004
+      21  L Bi  1 py            0.0000000000        0.0000000000       -0.0037958004        0.0000000000
+      22  L Bi  1 pz            0.0000000000       -0.0075916008        0.0000000000        0.0000000000
+      23  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0120214854
+      24  L Bi  1 py            0.0000000000        0.0000000000        0.0120214854        0.0000000000
+      25  L Bi  1 pz            0.0000000000        0.0240429707        0.0000000000        0.0000000000
+      26  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0584402700
+      27  L Bi  1 py            0.0000000000        0.0000000000       -0.0584402700        0.0000000000
+      28  L Bi  1 pz            0.0000000000       -0.1168805400        0.0000000000        0.0000000000
+      29  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.5112896978
+      30  L Bi  1 py            0.0000000000        0.0000000000        0.5112896978        0.0000000000
+      31  L Bi  1 pz            0.0000000000        1.0225793956        0.0000000000        0.0000000000
+      32  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.7720825867
+      33  L Bi  1 py            0.0000000000        0.0000000000       -0.7720825867        0.0000000000
+      34  L Bi  1 pz            0.0000000000       -1.5441651734        0.0000000000        0.0000000000
+      35  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.5358952890
+      36  L Bi  1 py            0.0000000000        0.0000000000        0.5358952890        0.0000000000
+      37  L Bi  1 pz            0.0000000000        1.0717905780        0.0000000000        0.0000000000
+      38  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        1.2671965479
+      39  L Bi  1 py            0.0000000000        0.0000000000       -1.2671965479        0.0000000000
+      40  L Bi  1 pz            0.0000000000       -2.5343930958        0.0000000000        0.0000000000
+      41  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -2.6766954804
+      42  L Bi  1 py            0.0000000000        0.0000000000        2.6766954804        0.0000000000
+      43  L Bi  1 pz            0.0000000000        5.3533909607        0.0000000000        0.0000000000
+      44  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        2.9077366750
+      45  L Bi  1 py            0.0000000000        0.0000000000       -2.9077366750        0.0000000000
+      46  L Bi  1 pz            0.0000000000       -5.8154733500        0.0000000000        0.0000000000
+      47  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -1.5051505383
+      48  L Bi  1 py            0.0000000000        0.0000000000        1.5051505383        0.0000000000
+      49  L Bi  1 pz            0.0000000000        3.0103010765        0.0000000000        0.0000000000
+
+* Electronic eigenvalue no.  6:  0.589241103E-01
+====================================================
+      14  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0016465915
+      15  L Bi  1 py            0.0000000000        0.0000000000       -0.0016465915        0.0000000000
+      17  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0051597951
+      18  L Bi  1 py            0.0000000000        0.0000000000        0.0051597951        0.0000000000
+      20  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.0065745192
+      21  L Bi  1 py            0.0000000000        0.0000000000       -0.0065745192        0.0000000000
+      23  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.0208218234
+      24  L Bi  1 py            0.0000000000        0.0000000000        0.0208218234        0.0000000000
+      26  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -0.1012215169
+      27  L Bi  1 py            0.0000000000        0.0000000000       -0.1012215169        0.0000000000
+      29  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.8855797340
+      30  L Bi  1 py            0.0000000000        0.0000000000        0.8855797339        0.0000000000
+      32  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -1.3372862678
+      33  L Bi  1 py            0.0000000000        0.0000000000       -1.3372862677        0.0000000000
+      35  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        0.9281978681
+      36  L Bi  1 py            0.0000000000        0.0000000000        0.9281978681        0.0000000000
+      38  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -2.1948488042
+      39  L Bi  1 py            0.0000000000        0.0000000000       -2.1948488041        0.0000000000
+      41  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        4.6361725683
+      42  L Bi  1 py            0.0000000000        0.0000000000        4.6361725683        0.0000000000
+      44  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000       -5.0363476561
+      45  L Bi  1 py            0.0000000000        0.0000000000       -5.0363476561        0.0000000000
+      47  L Bi  1 px            0.0000000000        0.0000000000        0.0000000000        2.6069972053
+      48  L Bi  1 py            0.0000000000        0.0000000000        2.6069972053        0.0000000000
+
+
+    **************************************************************************
+    ********************** Mulliken population analysis **********************
+    **************************************************************************
+
+
+
+                                Fermion ircop E1g
+                                -----------------
+
+
+
+                                Fermion ircop E1g
+                                -----------------
+
+
+* Electronic eigenvalue no.   1: -0.6809427470926       (Occupation : f = 1.0000)  m_j=  1/2
+============================================================================================
+
+* Gross populations greater than 0.00010
+
+Gross     Total   |    L Bi  1 s   
+--------------------------------------
+ alpha    1.0000  |      1.0000
+ beta     0.0000  |      0.0000
+
+* Electronic eigenvalue no.   2:  0.428502069E-01       (Occupation : f = 0.0000)  m_j=  1/2
+============================================================================================
+
+* Gross populations greater than 0.00010
+
+Gross     Total   |    L Bi  1 s   
+--------------------------------------
+ alpha    1.0000  |      1.0000
+ beta     0.0000  |      0.0000
+
+
+** Total gross population of fermion ircop E1g **
+
+Gross      Total    |    L Bi  1 s   
+--------------------------------------
+ total     2.00000  |      2.00000
+
+
+                                Fermion ircop E1u
+                                -----------------
+
+
+
+                                Fermion ircop E1u
+                                -----------------
+
+
+* Electronic eigenvalue no.   1: -0.2636503416927       (Occupation : f = 0.5000)  m_j=  1/2
+============================================================================================
+
+* Gross populations greater than 0.00010
+
+Gross     Total   |    L Bi  1 px     L Bi  1 py     L Bi  1 pz  
+--------------------------------------------------------------------
+ alpha    0.3333  |      0.0000         0.0000         0.3333
+ beta     0.6667  |      0.3333         0.3333         0.0000
+
+* Electronic eigenvalue no.   2: -0.1928178379291       (Occupation : f = 0.5000)  m_j=  1/2
+============================================================================================
+
+* Gross populations greater than 0.00010
+
+Gross     Total   |    L Bi  1 px     L Bi  1 py     L Bi  1 pz  
+--------------------------------------------------------------------
+ alpha    0.6667  |      0.0000         0.0000         0.6667
+ beta     0.3333  |      0.1667         0.1667         0.0000
+
+* Electronic eigenvalue no.   3: -0.1928178379281       (Occupation : f = 0.5000)  m_j= -3/2
+============================================================================================
+
+* Gross populations greater than 0.00010
+
+Gross     Total   |    L Bi  1 px     L Bi  1 py  
+-----------------------------------------------------
+ alpha    0.0000  |      0.0000         0.0000
+ beta     1.0000  |      0.5000         0.5000
+
+* Electronic eigenvalue no.   4:  0.543878369E-01       (Occupation : f = 0.0000)  m_j=  1/2
+============================================================================================
+
+* Gross populations greater than 0.00010
+
+Gross     Total   |    L Bi  1 px     L Bi  1 py     L Bi  1 pz  
+--------------------------------------------------------------------
+ alpha    0.3333  |      0.0000         0.0000         0.3333
+ beta     0.6667  |      0.3333         0.3333         0.0000
+
+* Electronic eigenvalue no.   5:  0.589241103E-01       (Occupation : f = 0.0000)  m_j=  1/2
+============================================================================================
+
+* Gross populations greater than 0.00010
+
+Gross     Total   |    L Bi  1 px     L Bi  1 py     L Bi  1 pz  
+--------------------------------------------------------------------
+ alpha    0.6667  |      0.0000         0.0000         0.6667
+ beta     0.3333  |      0.1667         0.1667         0.0000
+
+* Electronic eigenvalue no.   6:  0.589241103E-01       (Occupation : f = 0.0000)  m_j= -3/2
+============================================================================================
+
+* Gross populations greater than 0.00010
+
+Gross     Total   |    L Bi  1 px     L Bi  1 py  
+-----------------------------------------------------
+ alpha    0.0000  |      0.0000         0.0000
+ beta     1.0000  |      0.5000         0.5000
+
+
+** Total gross population of fermion ircop E1u **
+
+Gross      Total    |    L Bi  1 px     L Bi  1 py     L Bi  1 pz  
+--------------------------------------------------------------------
+ total     3.00000  |      1.00000        1.00000        1.00000
+
+
+*** Total gross population ***
+
+Gross      Total    |    L Bi  1 s      L Bi  1 px     L Bi  1 py     L Bi  1 pz  
+-----------------------------------------------------------------------------------
+ total     5.00000  |      2.00000        1.00000        1.00000        1.00000
+===========================================================================
+* PCMOUT: Coefficients read from unformatted DFCOEF 
+          and written to formatted DFPCMO
+===========================================================================
+
+
+    *************************************************************************
+    ******************** Resolution of open-shell states ********************
+    *************************************************************************
+
+- Number of active electrons:    3
+- Active orbitals:
+
+
+ * Fermion ircop E1g
+
+      No orbitals for index 1
+
+
+ * Fermion ircop E1u
+
+      Index 1    3 orbitals
+          1    2    3
+- Core orbitals:
+
+
+ * Fermion ircop E1g
+
+      Index 1    1 orbitals
+          1
+
+
+ * Fermion ircop E1u
+
+      No orbitals for index 1
+
+
+    **************************************************************************
+    **************** Transformation to Molecular Spinor Basis ****************
+    **************************************************************************
+
+
+          Written by Luuk Visscher, Jon Laerdahl & Trond Saue
+          Odense, 1997
+
+
+
+
+       ********************************************************************
+       **************** Transformation of core Fock matrix ****************
+       ********************************************************************
+
+
+ Transformation started at : Mon Oct  4 09:54:22 2021
+
+* REACMO: Coefficients read from file DFCOEF - Total energy: -5.22216430320653835
+* Heading :DIRAC: No title specified !!!                     Mon Oct  4 09:54:22 2021
+SCR        scr.thr.    Step1    Step2  Coulomb  Exchange    CPU-time
+SOfock:LL  1.00D-12   93.19%    0.94%    1.41%    2.14%   0.02173698s
+
+* REAFCK: Fock matrix read from file /home/cmelton/DIRAC_scratch_directory/cmelton/DIRAC_df_Bi_45
+* Heading :DIRAC: No title specified !!!                     Mon Oct  4 09:54:21 2021
+
+
+ Core energy (includes nuclear repulsion) :             -3.5207856104
+ - Electronic part :                                    -3.5207856104
+   - One-electron terms :                               -3.9101963154
+   - Two-electron terms :                                0.3894107050
+
+
+ MOLFDIR file MRCONEE is written
+
+
+    **************************************************************************
+    **************** Transformation to Molecular Spinor Basis ****************
+    **************************************************************************
+
+
+          Written by Luuk Visscher, Jon Laerdahl & Trond Saue
+          Odense, 1997
+
+
+
+
+     ************************************************************************
+     **************** Transformation of 2-electron integrals ****************
+     ************************************************************************
+
+
+ Transformation started at : Mon Oct  4 09:54:23 2021
+
+* REACMO: Coefficients read from file DFCOEF - Total energy: -5.22216430320653835
+* Heading :DIRAC: No title specified !!!                     Mon Oct  4 09:54:22 2021
+ - Integral class 1 : (LL|??)
+   - Beginning task   1 of   4 after      0. seconds and      0. CPU-seconds
+   - Beginning task   2 of   4 after      0. seconds and      0. CPU-seconds
+   - Beginning task   3 of   4 after      0. seconds and      0. CPU-seconds
+   - Beginning task   4 of   4 after      0. seconds and      0. CPU-seconds
+* Screening statistics:
+   (LL|LL)ints :  97.71%
+   Total       :  97.71%
+
+ - Starting symmetrization after           0.11 seconds
+ - Finished symmetrization after           0.11 seconds
+
+ - Binary  file MDCINT was written.
+
+------ Timing report (in CPU seconds) of module  integral transformation      
+
+ Time in  Initializing MS4IND file            0.002 seconds
+ Time in  Computing+transform. integral       0.089 seconds
+ Time in  Symmetrizing MO integrals           0.000 seconds
+
+
+ Total wall time used in RESOLV : 0.11310000s
+ Total CPU  time used in RESOLV : 0.09297000s
+
+ Transformation ended at : Mon Oct  4 09:54:23 2021
+GASRES: Set up the following information:
+        1g  -1g   3g  -3g   5g  -5g   7g  -7g   9g  -9g  11g -11g  13g -13g  15g -15g   1u  -1u   3u  -3u   5u  -5u   7u  -7u   9u  -9u  11u -11u  13u -13u  15u -15u
+    3    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    2    2    1    1    0    0    0    0    0    0    0    0    0    0    0
+    0
+
+
+
+ GOSCIP (Version 1.8)
+
+ Today is :     4 Oct 21
+ The time is :  09:54:23
+
+
+ &POPAN
+ THRESH  =  1.000000000000000E-003,
+ DEGEN   =  1.000000000000000E-010,
+ SELPOP  =   100.000000000000     ,
+ MAXPOP  =         100
+ /
+
+
+ All information read from MRCONEE (and input)
+
+
+ Number of electrons:    3
+ Decimal representation of frozen orbitals:   0
+
+ IACEL (number of active electrons) 
+ has been calculated from MAXE:  0
+
+
+ Breit interaction included :                    F
+ Core energy :                   -3.520785610    
+ Number of active orbitals :                     6
+
+ Orbital Representation        Orbital energy
+     1     Eu 1Eu               -0.2636503417    
+     2     Eu 1Eu               -0.1928178379    
+     3     Eu 1Eu               -0.1928178379    
+     4     Eu 2Eu               -0.2636503417    
+     5     Eu 2Eu               -0.1928178379    
+     6     Eu 2Eu               -0.1928178379    
+Number of determinants:
+   Symmetry   1g  :          0
+   Symmetry  -1g  :          0
+   Symmetry   3g  :          0
+   Symmetry  -3g  :          0
+   Symmetry   5g  :          0
+   Symmetry  -5g  :          0
+   Symmetry   7g  :          0
+   Symmetry  -7g  :          0
+   Symmetry   9g  :          0
+   Symmetry  -9g  :          0
+   Symmetry  11g  :          0
+   Symmetry -11g  :          0
+   Symmetry  13g  :          0
+   Symmetry -13g  :          0
+   Symmetry  15g  :          0
+   Symmetry -15g  :          0
+   Symmetry   1u  :          5
+   Symmetry  -1u  :          5
+   Symmetry   3u  :          4
+   Symmetry  -3u  :          4
+   Symmetry   5u  :          1
+   Symmetry  -5u  :          1
+   Symmetry   7u  :          0
+   Symmetry  -7u  :          0
+   Symmetry   9u  :          0
+   Symmetry  -9u  :          0
+   Symmetry  11u  :          0
+   Symmetry -11u  :          0
+   Symmetry  13u  :          0
+   Symmetry -13u  :          0
+   Symmetry  15u  :          0
+   Symmetry -15u  :          0
+
+ Coulomb integral file was generated at   4Oct21   09:54:23
+ Read      66 unique integrals
+
+ Representation   1u;    5 vectors written to file  MDTRIV_  1u
+
+ Eigenvalues              -5.300947773703
+                          -5.244255749591
+                          -5.222705799962
+                          -5.186731495648
+                          -5.138193550557
+
+ CPU time for this representation 
+
+ Generation of determinants :      0.0000
+ Building the CI matrix :          0.0000
+ Diagonalization :                 0.0037
+ Writing CI vectors :              0.0008
+
+ Population analysis for representation   1u
+            The first     5 vectors are analyzed
+
+       energy        det#  determinant                 norm      Re        Im
+       ------        ----  -----------                 ----      --        --
+      -5.30094777
+                        1  110100                      0.7371   -0.8586    0.0000
+                        2  110010                      0.0416    0.2040    0.0000
+                        3  101001                      0.0416   -0.2040    0.0000
+                        4  011001                      0.0547   -0.2340    0.0000
+                        5  000111                      0.1249   -0.3534    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.8204
+       2   -0.1928178379           0.8335
+       3   -0.1928178379           0.0964
+       4   -0.2636503417           0.8620
+       5   -0.1928178379           0.1665
+       6   -0.1928178379           0.2212
+       Sum of occupations :  3.0000
+ 
+      -5.24425575
+                        1  110100                      0.2246   -0.4740    0.0000
+                        2  110010                      0.1550   -0.3937    0.0000
+                        3  101001                      0.1550    0.3937    0.0000
+                        5  000111                      0.4649    0.6818    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.5346
+       2   -0.1928178379           0.3801
+       3   -0.1928178379           0.1555
+       4   -0.2636503417           0.6895
+       5   -0.1928178379           0.6199
+       6   -0.1928178379           0.6204
+       Sum of occupations :  3.0000
+ 
+      -5.22270580
+                        2  110010                      0.3000   -0.5477    0.0000
+                        3  101001                      0.3000    0.5477    0.0000
+                        5  000111                      0.4000   -0.6325    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.6000
+       2   -0.1928178379           0.3000
+       3   -0.1928178379           0.3000
+       4   -0.2636503417           0.4000
+       5   -0.1928178379           0.7000
+       6   -0.1928178379           0.7000
+       Sum of occupations :  3.0000
+ 
+      -5.18673150
+                        2  110010                      0.5000    0.7071    0.0000
+                        3  101001                      0.5000    0.7071    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           1.0000
+       2   -0.1928178379           0.5000
+       3   -0.1928178379           0.5000
+       4   -0.2636503417           0.0000
+       5   -0.1928178379           0.5000
+       6   -0.1928178379           0.5000
+       Sum of occupations :  3.0000
+ 
+      -5.13819355
+                        1  110100                      0.0382    0.1955    0.0000
+                        2  110010                      0.0034   -0.0583    0.0000
+                        3  101001                      0.0034    0.0583    0.0000
+                        4  011001                      0.9447   -0.9720    0.0000
+                        5  000111                      0.0102    0.1011    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.0450
+       2   -0.1928178379           0.9864
+       3   -0.1928178379           0.9482
+       4   -0.2636503417           0.0484
+       5   -0.1928178379           0.0136
+       6   -0.1928178379           0.9584
+       Sum of occupations :  3.0000
+ 
+
+ Representation  -1u;    5 vectors written to file  MDTRIV_ -1u
+
+ Eigenvalues              -5.300947773703
+                          -5.244255749591
+                          -5.222705799962
+                          -5.186731495648
+                          -5.138193550557
+
+ CPU time for this representation 
+
+ Generation of determinants :      0.0000
+ Building the CI matrix :          0.0000
+ Diagonalization :                 0.0035
+ Writing CI vectors :              0.0007
+
+ Population analysis for representation  -1u
+            The first     5 vectors are analyzed
+
+       energy        det#  determinant                 norm      Re        Im
+       ------        ----  -----------                 ----      --        --
+      -5.30094777
+                        1  111000                      0.1249   -0.3534    0.0000
+                        2  100110                      0.7371   -0.8586    0.0000
+                        3  010110                      0.0416    0.2040    0.0000
+                        4  001101                      0.0416   -0.2040    0.0000
+                        5  001011                      0.0547   -0.2340    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.8620
+       2   -0.1928178379           0.1665
+       3   -0.1928178379           0.2212
+       4   -0.2636503417           0.8204
+       5   -0.1928178379           0.8335
+       6   -0.1928178379           0.0964
+       Sum of occupations :  3.0000
+ 
+      -5.24425575
+                        1  111000                      0.4649    0.6818    0.0000
+                        2  100110                      0.2246   -0.4740    0.0000
+                        3  010110                      0.1550   -0.3937    0.0000
+                        4  001101                      0.1550    0.3937    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.6895
+       2   -0.1928178379           0.6199
+       3   -0.1928178379           0.6204
+       4   -0.2636503417           0.5346
+       5   -0.1928178379           0.3801
+       6   -0.1928178379           0.1555
+       Sum of occupations :  3.0000
+ 
+      -5.22270580
+                        1  111000                      0.4000    0.6325    0.0000
+                        3  010110                      0.3000    0.5477    0.0000
+                        4  001101                      0.3000   -0.5477    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.4000
+       2   -0.1928178379           0.7000
+       3   -0.1928178379           0.7000
+       4   -0.2636503417           0.6000
+       5   -0.1928178379           0.3000
+       6   -0.1928178379           0.3000
+       Sum of occupations :  3.0000
+ 
+      -5.18673150
+                        3  010110                      0.5000    0.7071    0.0000
+                        4  001101                      0.5000    0.7071    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.0000
+       2   -0.1928178379           0.5000
+       3   -0.1928178379           0.5000
+       4   -0.2636503417           1.0000
+       5   -0.1928178379           0.5000
+       6   -0.1928178379           0.5000
+       Sum of occupations :  3.0000
+ 
+      -5.13819355
+                        1  111000                      0.0102   -0.1011    0.0000
+                        2  100110                      0.0382   -0.1955    0.0000
+                        3  010110                      0.0034    0.0583    0.0000
+                        4  001101                      0.0034   -0.0583    0.0000
+                        5  001011                      0.9447    0.9720    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.0484
+       2   -0.1928178379           0.0136
+       3   -0.1928178379           0.9584
+       4   -0.2636503417           0.0450
+       5   -0.1928178379           0.9864
+       6   -0.1928178379           0.9482
+       Sum of occupations :  3.0000
+ 
+
+ Representation   3u;    4 vectors written to file  MDTRIV_  3u
+
+ Eigenvalues              -5.300947773703
+                          -5.244255749591
+                          -5.222705799962
+                          -5.138193550557
+
+ CPU time for this representation 
+
+ Generation of determinants :      0.0000
+ Building the CI matrix :          0.0000
+ Diagonalization :                 0.0035
+ Writing CI vectors :              0.0006
+
+ Population analysis for representation   3u
+            The first     4 vectors are analyzed
+
+       energy        det#  determinant                 norm      Re        Im
+       ------        ----  -----------                 ----      --        --
+      -5.30094777
+                        1  100101                      0.7371   -0.8586    0.0000
+                        2  010101                      0.1665   -0.4081    0.0000
+                        3  100011                      0.0416    0.2040    0.0000
+                        4  010011                      0.0547    0.2340    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.7788
+       2   -0.1928178379           0.2212
+       3   -0.1928178379           0.0000
+       4   -0.2636503417           0.9036
+       5   -0.1928178379           0.0964
+       6   -0.1928178379           1.0000
+       Sum of occupations :  3.0000
+ 
+      -5.24425575
+                        1  100101                      0.2246   -0.4740    0.0000
+                        2  010101                      0.6199    0.7873    0.0000
+                        3  100011                      0.1550   -0.3937    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.3796
+       2   -0.1928178379           0.6204
+       3   -0.1928178379           0.0000
+       4   -0.2636503417           0.8445
+       5   -0.1928178379           0.1555
+       6   -0.1928178379           1.0000
+       Sum of occupations :  3.0000
+ 
+      -5.22270580
+                        2  010101                      0.2000    0.4472    0.0000
+                        3  100011                      0.8000    0.8944    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.8000
+       2   -0.1928178379           0.2000
+       3   -0.1928178379           0.0000
+       4   -0.2636503417           0.2000
+       5   -0.1928178379           0.8000
+       6   -0.1928178379           1.0000
+       Sum of occupations :  3.0000
+ 
+      -5.13819355
+                        1  100101                      0.0382    0.1955    0.0000
+                        2  010101                      0.0136    0.1167    0.0000
+                        3  100011                      0.0034   -0.0583    0.0000
+                        4  010011                      0.9447    0.9720    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.0416
+       2   -0.1928178379           0.9584
+       3   -0.1928178379           0.0000
+       4   -0.2636503417           0.0518
+       5   -0.1928178379           0.9482
+       6   -0.1928178379           1.0000
+       Sum of occupations :  3.0000
+ 
+
+ Representation  -3u;    4 vectors written to file  MDTRIV_ -3u
+
+ Eigenvalues              -5.300947773703
+                          -5.244255749591
+                          -5.222705799962
+                          -5.138193550557
+
+ CPU time for this representation 
+
+ Generation of determinants :      0.0000
+ Building the CI matrix :          0.0000
+ Diagonalization :                 0.0036
+ Writing CI vectors :              0.0006
+
+ Population analysis for representation  -3u
+            The first     4 vectors are analyzed
+
+       energy        det#  determinant                 norm      Re        Im
+       ------        ----  -----------                 ----      --        --
+      -5.30094777
+                        1  101100                      0.7371    0.8586    0.0000
+                        2  011100                      0.0416   -0.2040    0.0000
+                        3  101010                      0.1665    0.4081    0.0000
+                        4  011010                      0.0547   -0.2340    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.9036
+       2   -0.1928178379           0.0964
+       3   -0.1928178379           1.0000
+       4   -0.2636503417           0.7788
+       5   -0.1928178379           0.2212
+       6   -0.1928178379           0.0000
+       Sum of occupations :  3.0000
+ 
+      -5.24425575
+                        1  101100                      0.2246    0.4740    0.0000
+                        2  011100                      0.1550    0.3937    0.0000
+                        3  101010                      0.6199   -0.7873    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.8445
+       2   -0.1928178379           0.1555
+       3   -0.1928178379           1.0000
+       4   -0.2636503417           0.3796
+       5   -0.1928178379           0.6204
+       6   -0.1928178379           0.0000
+       Sum of occupations :  3.0000
+ 
+      -5.22270580
+                        2  011100                      0.8000   -0.8944    0.0000
+                        3  101010                      0.2000   -0.4472    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.2000
+       2   -0.1928178379           0.8000
+       3   -0.1928178379           1.0000
+       4   -0.2636503417           0.8000
+       5   -0.1928178379           0.2000
+       6   -0.1928178379           0.0000
+       Sum of occupations :  3.0000
+ 
+      -5.13819355
+                        1  101100                      0.0382    0.1955    0.0000
+                        2  011100                      0.0034   -0.0583    0.0000
+                        3  101010                      0.0136    0.1167    0.0000
+                        4  011010                      0.9447    0.9720    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.0518
+       2   -0.1928178379           0.9482
+       3   -0.1928178379           1.0000
+       4   -0.2636503417           0.0416
+       5   -0.1928178379           0.9584
+       6   -0.1928178379           0.0000
+       Sum of occupations :  3.0000
+ 
+
+ Representation   5u;    1 vectors written to file  MDTRIV_  5u
+
+ Eigenvalues              -5.222705799962
+
+ CPU time for this representation 
+
+ Generation of determinants :      0.0000
+ Building the CI matrix :          0.0000
+ Diagonalization :                 0.0038
+ Writing CI vectors :              0.0005
+
+ Population analysis for representation   5u
+            The first     1 vectors are analyzed
+
+       energy        det#  determinant                 norm      Re        Im
+       ------        ----  -----------                 ----      --        --
+      -5.22270580
+                        1  110001                      1.0000    1.0000    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           1.0000
+       2   -0.1928178379           1.0000
+       3   -0.1928178379           0.0000
+       4   -0.2636503417           0.0000
+       5   -0.1928178379           0.0000
+       6   -0.1928178379           1.0000
+       Sum of occupations :  3.0000
+ 
+
+ Representation  -5u;    1 vectors written to file  MDTRIV_ -5u
+
+ Eigenvalues              -5.222705799962
+
+ CPU time for this representation 
+
+ Generation of determinants :      0.0000
+ Building the CI matrix :          0.0000
+ Diagonalization :                 0.0037
+ Writing CI vectors :              0.0005
+
+ Population analysis for representation  -5u
+            The first     1 vectors are analyzed
+
+       energy        det#  determinant                 norm      Re        Im
+       ------        ----  -----------                 ----      --        --
+      -5.22270580
+                        1  001110                      1.0000    1.0000    0.0000
+    Orb.  Orbital energy       Occupation
+       1   -0.2636503417           0.0000
+       2   -0.1928178379           0.0000
+       3   -0.1928178379           1.0000
+       4   -0.2636503417           1.0000
+       5   -0.1928178379           1.0000
+       6   -0.1928178379           0.0000
+       Sum of occupations :  3.0000
+ 
+
+ ( 1 au = 27.2113834378 eV  /  219474.631280634 cm-1)
+
+
+ Energy eigenvalues in atomic units
+
+ Level   Rel eigenvalue     Abs eigenvalue      Total Energy    Degeneracy
+
+    1     0.0000000000     -1.780162163308       -5.300947773703 (   4 * )
+    2     0.0566920241     -1.723470139197       -5.244255749591 (   4 * )
+    3     0.0782419737     -1.701920189567       -5.222705799962 (   6 * )
+    4     0.1142162781     -1.665945885253       -5.186731495648 (   2 * )
+    5     0.1627542231     -1.617407940163       -5.138193550557 (   4 * )
+
+
+ Total average:        -5.2221643043
+
+
+ Relative real eigenvalues in other units;
+ Symmetry Classification in the Abelian subgroup
+
+ Level  eigenvalue (eV)  Eigenvalue (cm-1)    1g| -1g|  3g| -3g|  5g| -5g|  7g| -7g|
+
+    1        0.000000000          0.000000     0|   0|   0|   0|   0|   0|   0|   0|
+    2        1.542668406      12442.461088     0|   0|   0|   0|   0|   0|   0|   0|
+    3        2.129072348      17172.128337     0|   0|   0|   0|   0|   0|   0|   0|
+    4        3.107982937      25067.575512     0|   0|   0|   0|   0|   0|   0|   0|
+    5        4.428767572      35720.423114     0|   0|   0|   0|   0|   0|   0|   0|
+
+
+ Relative real eigenvalues in other units;
+ Symmetry Classification in the Abelian subgroup
+
+ Level  eigenvalue (eV)  Eigenvalue (cm-1)    9g| -9g| 11g|-11g| 13g|-13g| 15g|-15g|
+
+    1        0.000000000          0.000000     0|   0|   0|   0|   0|   0|   0|   0|
+    2        1.542668406      12442.461088     0|   0|   0|   0|   0|   0|   0|   0|
+    3        2.129072348      17172.128337     0|   0|   0|   0|   0|   0|   0|   0|
+    4        3.107982937      25067.575512     0|   0|   0|   0|   0|   0|   0|   0|
+    5        4.428767572      35720.423114     0|   0|   0|   0|   0|   0|   0|   0|
+
+
+ Relative real eigenvalues in other units;
+ Symmetry Classification in the Abelian subgroup
+
+ Level  eigenvalue (eV)  Eigenvalue (cm-1)    1u| -1u|  3u| -3u|  5u| -5u|  7u| -7u|
+
+    1        0.000000000          0.000000     1|   1|   1|   1|   0|   0|   0|   0|
+    2        1.542668406      12442.461088     1|   1|   1|   1|   0|   0|   0|   0|
+    3        2.129072348      17172.128337     1|   1|   1|   1|   1|   1|   0|   0|
+    4        3.107982937      25067.575512     1|   1|   0|   0|   0|   0|   0|   0|
+    5        4.428767572      35720.423114     1|   1|   1|   1|   0|   0|   0|   0|
+
+
+ Relative real eigenvalues in other units;
+ Symmetry Classification in the Abelian subgroup
+
+ Level  eigenvalue (eV)  Eigenvalue (cm-1)    9u| -9u| 11u|-11u| 13u|-13u| 15u|-15u|
+
+    1        0.000000000          0.000000     0|   0|   0|   0|   0|   0|   0|   0|
+    2        1.542668406      12442.461088     0|   0|   0|   0|   0|   0|   0|   0|
+    3        2.129072348      17172.128337     0|   0|   0|   0|   0|   0|   0|   0|
+    4        3.107982937      25067.575512     0|   0|   0|   0|   0|   0|   0|   0|
+    5        4.428767572      35720.423114     0|   0|   0|   0|   0|   0|   0|   0|
+ =====================
+
+
+Total CPU time :                   0.0313
+
+        (NORMAL END OF PROGRAM)
+
+
+
+
+*****************************************************
+********** E N D   of   D I R A C  output  **********
+*****************************************************
+
+
+ 
+     Date and time (Linux)  : Mon Oct  4 09:54:23 2021
+     Host name              : cee-compute025                          
+
+  
+  Dynamical Memory Usage Summary for Master
+  
+  Mean allocation size (Mb) :        84.22
+  
+  Largest          10  allocations
+  
+      488.28 Mb at subroutine resolv_+0x9e                               for WORK in RESOLV                            
+      488.28 Mb at subroutine pamana_+0x97                               for WORK in PAMANA                            
+      488.28 Mb at subroutine psiscf_+0xa5                               for WORK in PSISCF                            
+      488.28 Mb at subroutine pamset_+0x1833                             for WORK in PAMSET - 2                        
+      488.28 Mb at subroutine gmotra_+0x537b                             for WORK in GMOTRA                            
+      488.28 Mb at subroutine pamset_+0x91                               for WORK in PAMSET - 1                        
+      488.28 Mb at subroutine MAIN__+0x2a8                               for test allocation of work array in DIRAC mai
+      244.14 Mb at subroutine diagh_+0x100                               for ee                                        
+      244.14 Mb at subroutine diagh_+0x100                               for ee                                        
+      244.14 Mb at subroutine diagh_+0x100                               for ee                                        
+  
+  Peak memory usage:       732.54 MB
+  Peak memory usage:        0.715 GB
+       reached at subroutine : diagh_+0x133                              
+              for variable   : e2                                        
+  
+ MEMGET high-water mark:     0.00 MB
+
+*****************************************************
+>>>> Node 0, utime: 1, stime: 0, minflt: 6592, majflt: 34, nvcsw: 639, nivcsw: 2, maxrss: 158076
+>>>> Total WALL time used in DIRAC: 2s
+DIRAC pam run in /home/cmelton/codes/qmcpack/tests/converter/test_Bi_dirac

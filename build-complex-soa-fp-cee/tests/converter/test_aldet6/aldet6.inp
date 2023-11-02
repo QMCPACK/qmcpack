@@ -1,0 +1,17 @@
+$SYSTEM MWORDS=200 MEMDDI=100 $END
+$BASIS GBASIS=dzv $END
+$CONTRL SCFTYP=mcscf ispher=1 units=bohr $END
+$mcscf cistep=aldet fullnr=.true. $end
+$DET ncore=18 nact=6 nels=6 nstate=1 $end
+$guess guess=hcore norder=1
+iorder(18)=19,18 $end
+
+$DATA
+benzene
+dnh 2
+
+H 1.0 0.000 4.685 0.000
+H 1.0 4.057 2.342 0.000
+C 6.0 0.000 2.638 0.000
+C 6.0 2.285 1.319 0.000
+$END

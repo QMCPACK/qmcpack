@@ -1,0 +1,2 @@
+/usr/bin/ar qc libqmcutil.a CMakeFiles/qmcutil.dir/qmc_common.cpp.o CMakeFiles/qmcutil.dir/OhmmsObject.cpp.o CMakeFiles/qmcutil.dir/SimpleParser.cpp.o CMakeFiles/qmcutil.dir/Clock.cpp.o CMakeFiles/qmcutil.dir/NewTimer.cpp.o CMakeFiles/qmcutil.dir/TimerManager.cpp.o CMakeFiles/qmcutil.dir/RunTimeManager.cpp.o CMakeFiles/qmcutil.dir/ProgressReportEngine.cpp.o CMakeFiles/qmcutil.dir/unit_conversion.cpp.o CMakeFiles/qmcutil.dir/ResourceCollection.cpp.o CMakeFiles/qmcutil.dir/ProjectData.cpp.o CMakeFiles/qmcutil.dir/RandomNumberControl.cpp.o
+/usr/bin/ranlib libqmcutil.a

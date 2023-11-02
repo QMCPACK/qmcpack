@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<resources>
+  <timing>
+    <max_stack_level_exceeded>no</max_stack_level_exceeded>
+    <max_timers_exceeded>no</max_timers_exceeded>
+    <timer>
+      <name>timer1</name>
+      <time_incl>5.5</time_incl>
+      <time_excl>3.3</time_excl>
+      <calls>1</calls>
+      <includes>
+        <timer>
+          <name>timer2</name>
+          <time_incl>1.1</time_incl>
+          <time_excl>1.1</time_excl>
+          <calls>1</calls>
+        </timer>
+        <timer>
+          <name>timer3</name>
+          <time_incl>1.1</time_incl>
+          <time_excl>1.1</time_excl>
+          <calls>1</calls>
+        </timer>
+      </includes>
+    </timer>
+  </timing>
+</resources>

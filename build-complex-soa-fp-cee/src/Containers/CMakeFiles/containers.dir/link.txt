@@ -1,0 +1,2 @@
+/usr/bin/ar qc libcontainers.a CMakeFiles/containers.dir/MinimalContainers/ConstantSizeMatrix.cpp.o
+/usr/bin/ranlib libcontainers.a

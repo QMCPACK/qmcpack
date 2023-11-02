@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmessage.a CMakeFiles/message.dir/Communicate.cpp.o CMakeFiles/message.dir/AppAbort.cpp.o CMakeFiles/message.dir/MPIObjectBase.cpp.o
+/usr/bin/ranlib libmessage.a

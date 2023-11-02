@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="no">
+      <basisset name="LCAOBSet">
+        <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="H" normalized="no" expandYlm="Gamess">
+          <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+          <basisGroup rid="H00" n="0" l="0" type="Gaussian">
+              <radfunc exponent="1.0" contraction="1.0"/>
+          </basisGroup>
+          <basisGroup rid="H11" n="1" l="1" type="Gaussian">
+              <radfunc exponent="1.0" contraction="1.0"/>
+          </basisGroup>
+          <basisGroup rid="H22" n="2" l="2" type="Gaussian">
+              <radfunc exponent="1.0" contraction="1.0"/>
+          </basisGroup>
+          <basisGroup rid="H33" n="3" l="3" type="Gaussian">
+              <radfunc exponent="1.0" contraction="1.0"/>
+          </basisGroup>
+          <basisGroup rid="H44" n="4" l="4" type="Gaussian">
+              <radfunc exponent="1.0" contraction="1.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant id="updet" size="1">
+          <occupation mode="ground"/>
+          <coefficient size="1" id="updetC">
+  0.5   0.3 -0.2 0.1   0.6 -0.5 0.4 -0.3 0.2 -0.1   1.0 -0.9 0.8 -0.7 0.6 -0.5 0.4 -0.3 0.2 -0.1   1.5 -1.4 1.3 -1.2 1.1 -1.0 0.9 -0.8 0.7 -0.6 0.5 -0.4 0.3 -0.2 0.1
+          </coefficient>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>
