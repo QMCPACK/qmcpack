@@ -134,6 +134,9 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
+  // should not find MSD
+  CHECK(!psi.findMSD());
+
   // initialize distance tables.
   elec_.update();
   double logpsi = psi.evaluateLog(elec_);
