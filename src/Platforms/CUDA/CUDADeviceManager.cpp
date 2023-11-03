@@ -13,8 +13,8 @@
 
 #include "CUDADeviceManager.h"
 #include <stdexcept>
-#include "CUDAruntime.hpp"
 #include "OutputManager.h"
+#include "CUDAruntime.hpp"
 #include "determineDefaultDeviceNum.h"
 
 namespace qmcplusplus
