@@ -14,7 +14,7 @@
 #include "CUDADeviceManager.h"
 #include <stdexcept>
 #include "OutputManager.h"
-#include "CUDAruntime.hpp"
+#include "CUDAruntime.hpp" // Positioned here to avoid conflict between CUDA and GCC >= 12 headers. https://github.com/QMCPACK/qmcpack/pull/4814 
 #include "determineDefaultDeviceNum.h"
 
 namespace qmcplusplus
