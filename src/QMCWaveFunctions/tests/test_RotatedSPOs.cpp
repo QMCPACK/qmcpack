@@ -523,6 +523,38 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
   {
     CHECK(std::real(params4[i]) == Approx(std::real(params4out[i])));
   }
+  
+  #ifdef QMC_COMPLEX
+  ValueMatrix rot_m4_cmplx(nmo, nmo);
+  rot_m4_cmplx = ValueType(0);
+
+  //We have to be careful with the size of the components here. Exponentiate has 
+  //a nice modulo 2pi property in it, and so log(A) is not uniquely defined without
+  //specifying a branch in the complex plane. Verified that the exp() and log() are one-to-one
+  //in this little regime. 
+  std::vector<ValueType> params4_cmplx = {ValueType(-1.1,0.3), 
+                                    ValueType(0.5,-0.2),
+                                    ValueType(0.2,1.1),
+                                    ValueType(-0.15,-.3)};
+
+  RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params4_cmplx, rot_m4_cmplx);
+  ValueMatrix orig_rot_m4_cmplx = rot_m4_cmplx;
+  ValueMatrix out_m4_cmplx(nmo, nmo);
+
+  RotatedSPOs::exponentiate_antisym_matrix(rot_m4_cmplx);
+  RotatedSPOs::log_antisym_matrix(rot_m4_cmplx, out_m4_cmplx);
+  CheckMatrixResult check_matrix_result5 = checkMatrix(out_m4_cmplx, orig_rot_m4_cmplx, true);
+  CHECKED_ELSE(check_matrix_result5.result) { FAIL(check_matrix_result5.result_message); }
+
+  std::vector<ValueType> params4out_cmplx(4);
+  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, out_m4_cmplx, params4out_cmplx);
+  for (int i = 0; i < params4_cmplx.size(); i++)
+  {
+    CHECK(params4_cmplx[i] == ValueApprox(params4out_cmplx[i]));
+  }
+  
+  
+  #endif
 }
 
 TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
