@@ -512,6 +512,9 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
   {
     for (int j = i; j < n; ++j)
     {
+      //This two liner does several things.  The first is it unpacks row-major mat into column major format.
+      //Second, it builds the hermitian matrix -i*mat.  Third, it relies on the hermiticity of -i*mat to 
+      //fill the entire -i*mat matrix (in column major form) by iterating over the upper diagonal only.  
       mat_h[i + n * j] = std::complex<RealType>(std::imag(mat[i][j]), -1.0 * std::real(mat[i][j]));
       mat_h[j + n * i] = std::complex<RealType>(-std::imag(mat[i][j]), 1.0 * std::real(mat[i][j]));
     }
@@ -523,6 +526,9 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
   int LDA(n);
   int LWORK(2 * n);
   int info = 0;
+  //Ax=lamda x.  For given A=mat_h, returns the list of *real* eigenvalues lamda=eval, and 
+  //the matrix of eigenvectors V=mat_h (overwritten).  Eigenvectors are columns of this matrix.
+  //The eigendecomposition of this matrix is thus V*LAMBDA*V^dagger.
   LAPACK::heev(JOBZ, UPLO, N, &mat_h.at(0), LDA, &eval.at(0), &work.at(0), LWORK, &rwork.at(0), info);
   if (info != 0)
   {
@@ -539,13 +545,19 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
     }
   }
   // perform matrix multiplication
-  // assume row major
+  // Everything here is column major, so normal BLAS ordering and conventions apply.
+
+  // e^{LAMBDA} * V^dagger
   BLAS::gemm('N', 'C', n, n, n, std::complex<RealType>(1.0, 0), &mat_d.at(0), n, &mat_h.at(0), n,
              std::complex<RealType>(0.0, 0.0), &mat_t.at(0), n);
+  // V * [ e^{LAMBDA} * V^dagger ] = exp(K) 
   BLAS::gemm('N', 'N', n, n, n, std::complex<RealType>(1.0, 0), &mat_h.at(0), n, &mat_t.at(0), n,
              std::complex<RealType>(0.0, 0.0), &mat_d.at(0), n);
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
+      //Copy [exp(K)]_ij in column major form to mat in row major form.
+      //For real build, the imaginary part is discarded.  For complex build, 
+      //the entire complex entry is copied.  
       copy_with_complex_cast(mat_d[i+n*j],mat[i][j]);
 }
 
@@ -564,6 +576,7 @@ void RotatedSPOs::log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealTyp
 
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
+      //we copy input mat in row major form to column major array for LAPACK consumption.
       mat_h[i + n * j] = mat[i][j];
 
   // diagonalize the matrix
@@ -650,6 +663,7 @@ void RotatedSPOs::log_antisym_matrix(const Matrix<std::complex<RealType>>& mat, 
   int LDA(n);
   int LWORK(4 * n);
   int info = 0;
+  //Generalized eigenvalue decomposition for A*x=lambda x.  
   LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
        &work.at(0), &LWORK, &rwork.at(0), &info);
   if (info != 0)
@@ -673,15 +687,16 @@ void RotatedSPOs::log_antisym_matrix(const Matrix<std::complex<RealType>>& mat, 
 
   RealType one(1.0);
   RealType zero(0.0);
+  //V*log(lambda)
   BLAS::gemm('N', 'N', n, n, n, one, &mat_l.at(0), n, &mat_cd.at(0), n, zero, &mat_ch.at(0), n);
+  //[V*log(lambda)*V^{dagger}]
   BLAS::gemm('N', 'C', n, n, n, one, &mat_ch.at(0), n, &mat_l.at(0), n, zero, &mat_cd.at(0), n);
 
 
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
-    {
+      //column major result back to row major form.
       output[i][j] = mat_cd[i + n * j];
-    }
 }
 void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
                                       const opt_variables_type& optvars,
