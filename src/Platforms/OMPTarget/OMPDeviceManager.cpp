@@ -13,13 +13,15 @@
 
 #include "OMPDeviceManager.h"
 #include <stdexcept>
+#if defined(QMC_OMP)
 #include <omp.h>
+#endif
 #include "OutputManager.h"
 #include "determineDefaultDeviceNum.h"
 
 namespace qmcplusplus
 {
-
+#if defined(QMC_OMP)
 OMPDeviceManager::OMPDeviceManager(int& default_device_num, int& num_devices, int local_rank, int local_size)
     : omp_default_device_num(-1), omp_device_count(omp_get_num_devices())
 {
@@ -41,4 +43,11 @@ OMPDeviceManager::OMPDeviceManager(int& default_device_num, int& num_devices, in
     omp_set_default_device(omp_default_device_num);
   }
 }
+#else
+OMPDeviceManager::OMPDeviceManager(int& default_device_num, int& num_devices, int local_rank, int local_size)
+    : omp_default_device_num(-1), omp_device_count(0)
+{
+  num_devices = 0;
+}
+#endif
 } // namespace qmcplusplus
