@@ -351,7 +351,7 @@ TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
 TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
 {
   using ValueType   = SPOSet::ValueType;
-  using RealType   =  SPOSet::RealType;
+  using RealType    = SPOSet::RealType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
   std::vector<SPOSet::ValueType> mat1_data = {0.0};
@@ -397,32 +397,34 @@ TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
 
   CheckMatrixResult check_matrix_result3 = checkMatrix(m3, expected_m3, true);
   CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
-  #ifdef QMC_COMPLEX
+#ifdef QMC_COMPLEX
   //Going to test exponentiating a complex antihermitian matrix.
-  using cmplx_t = std::complex<RealType>;
-  std::vector<cmplx_t> m3_input_data_cplx = { cmplx_t(0,0), cmplx_t(0.3,0.1), cmplx_t(0.1,-0.3),
-                                              cmplx_t(-0.3,0.1), cmplx_t(0,0), cmplx_t(0.2,0.01),
-                                              cmplx_t(-0.1,-0.3), cmplx_t(-0.2,0.01), cmplx_t(0,0)};
+  using cmplx_t                           = std::complex<RealType>;
+  std::vector<cmplx_t> m3_input_data_cplx = {cmplx_t(0, 0),       cmplx_t(0.3, 0.1),   cmplx_t(0.1, -0.3),
+                                             cmplx_t(-0.3, 0.1),  cmplx_t(0, 0),       cmplx_t(0.2, 0.01),
+                                             cmplx_t(-0.1, -0.3), cmplx_t(-0.2, 0.01), cmplx_t(0, 0)};
 
-  std::vector<cmplx_t> expected_rot_cmplx = { cmplx_t(0.90198269,-0.00652118), cmplx_t(0.27999104,0.12545423), cmplx_t(0.12447606,-0.27704993),
-                                              cmplx_t(-0.29632557,0.06664911), cmplx_t(0.93133822,-0.00654092), cmplx_t(0.19214149,0.05828413),
-                                              cmplx_t(-0.06763124,-0.29926537), cmplx_t(-0.19210869,-0.03907491), cmplx_t(0.93133822,-0.00654092)};
- 
-  Matrix<std::complex<RealType>> m3_cmplx(m3_input_data_cplx.data(),3,3);
-  Matrix<std::complex<RealType>> m3_cmplx_expected(expected_rot_cmplx.data(),3,3);
+  std::vector<cmplx_t> expected_rot_cmplx = {cmplx_t(0.90198269, -0.00652118),  cmplx_t(0.27999104, 0.12545423),
+                                             cmplx_t(0.12447606, -0.27704993),  cmplx_t(-0.29632557, 0.06664911),
+                                             cmplx_t(0.93133822, -0.00654092),  cmplx_t(0.19214149, 0.05828413),
+                                             cmplx_t(-0.06763124, -0.29926537), cmplx_t(-0.19210869, -0.03907491),
+                                             cmplx_t(0.93133822, -0.00654092)};
+
+  Matrix<std::complex<RealType>> m3_cmplx(m3_input_data_cplx.data(), 3, 3);
+  Matrix<std::complex<RealType>> m3_cmplx_expected(expected_rot_cmplx.data(), 3, 3);
 
   RotatedSPOs::exponentiate_antisym_matrix(m3_cmplx);
-  
+
   CheckMatrixResult check_matrix_result4 = checkMatrix(m3_cmplx, m3_cmplx_expected, true);
   CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
-  #endif
+#endif
 }
 
 TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
 {
   using ValueType   = SPOSet::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using RealType   =  SPOSet::RealType;
+  using RealType    = SPOSet::RealType;
 
   std::vector<SPOSet::ValueType> mat1_data = {1.0};
   SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
@@ -463,28 +465,28 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
   SPOSet::ValueMatrix m3(m3_input_data.data(), 3, 3);
   CheckMatrixResult check_matrix_result3 = checkMatrix(m3, out_m3, true);
   CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
-  
-  #ifdef QMC_COMPLEX
-  using cmplx_t = std::complex<RealType>;
-  std::vector<cmplx_t> m3_input_data_cplx = { cmplx_t(0,0), cmplx_t(0.3,0.1), cmplx_t(0.1,-0.3),
-                                              cmplx_t(-0.3,0.1), cmplx_t(0,0), cmplx_t(0.2,0.01),
-                                              cmplx_t(-0.1,-0.3), cmplx_t(-0.2,0.01), cmplx_t(0,0)};
 
-  std::vector<cmplx_t> start_rot_cmplx = { cmplx_t(0.90198269,-0.00652118), cmplx_t(0.27999104,0.12545423), cmplx_t(0.12447606,-0.27704993),
-                                              cmplx_t(-0.29632557,0.06664911), cmplx_t(0.93133822,-0.00654092), cmplx_t(0.19214149,0.05828413),
-                                              cmplx_t(-0.06763124,-0.29926537), cmplx_t(-0.19210869,-0.03907491), cmplx_t(0.93133822,-0.00654092)};
+#ifdef QMC_COMPLEX
+  using cmplx_t                           = std::complex<RealType>;
+  std::vector<cmplx_t> m3_input_data_cplx = {cmplx_t(0, 0),       cmplx_t(0.3, 0.1),   cmplx_t(0.1, -0.3),
+                                             cmplx_t(-0.3, 0.1),  cmplx_t(0, 0),       cmplx_t(0.2, 0.01),
+                                             cmplx_t(-0.1, -0.3), cmplx_t(-0.2, 0.01), cmplx_t(0, 0)};
 
-  //packing vector data into matrix form. 
-  Matrix<std::complex<RealType>> m3_cmplx_rot(start_rot_cmplx.data(),3,3);
-  Matrix<std::complex<RealType>> m3_cmplx_ref_data(m3_input_data_cplx.data(),3,3);
-  Matrix<std::complex<RealType>> result_matrix(3,3);
-  RotatedSPOs::log_antisym_matrix(m3_cmplx_rot,result_matrix);
-  
+  std::vector<cmplx_t> start_rot_cmplx = {cmplx_t(0.90198269, -0.00652118),  cmplx_t(0.27999104, 0.12545423),
+                                          cmplx_t(0.12447606, -0.27704993),  cmplx_t(-0.29632557, 0.06664911),
+                                          cmplx_t(0.93133822, -0.00654092),  cmplx_t(0.19214149, 0.05828413),
+                                          cmplx_t(-0.06763124, -0.29926537), cmplx_t(-0.19210869, -0.03907491),
+                                          cmplx_t(0.93133822, -0.00654092)};
+
+  //packing vector data into matrix form.
+  Matrix<std::complex<RealType>> m3_cmplx_rot(start_rot_cmplx.data(), 3, 3);
+  Matrix<std::complex<RealType>> m3_cmplx_ref_data(m3_input_data_cplx.data(), 3, 3);
+  Matrix<std::complex<RealType>> result_matrix(3, 3);
+  RotatedSPOs::log_antisym_matrix(m3_cmplx_rot, result_matrix);
+
   CheckMatrixResult check_matrix_result4 = checkMatrix(result_matrix, m3_cmplx_ref_data, true);
   CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
-  #endif
-  
-
+#endif
 }
 
 // Test round trip A -> exp(A) -> log(exp(A))
@@ -523,19 +525,17 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
   {
     CHECK(std::real(params4[i]) == Approx(std::real(params4out[i])));
   }
-  
-  #ifdef QMC_COMPLEX
+
+#ifdef QMC_COMPLEX
   ValueMatrix rot_m4_cmplx(nmo, nmo);
   rot_m4_cmplx = ValueType(0);
 
-  //We have to be careful with the size of the components here. Exponentiate has 
+  //We have to be careful with the size of the components here. Exponentiate has
   //a nice modulo 2pi property in it, and so log(A) is not uniquely defined without
   //specifying a branch in the complex plane. Verified that the exp() and log() are one-to-one
-  //in this little regime. 
-  std::vector<ValueType> params4_cmplx = {ValueType(-1.1,0.3), 
-                                    ValueType(0.5,-0.2),
-                                    ValueType(0.2,1.1),
-                                    ValueType(-0.15,-.3)};
+  //in this little regime.
+  std::vector<ValueType> params4_cmplx = {ValueType(-1.1, 0.3), ValueType(0.5, -0.2), ValueType(0.2, 1.1),
+                                          ValueType(-0.15, -.3)};
 
   RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params4_cmplx, rot_m4_cmplx);
   ValueMatrix orig_rot_m4_cmplx = rot_m4_cmplx;
@@ -552,9 +552,9 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
   {
     CHECK(params4_cmplx[i] == ValueApprox(params4out_cmplx[i]));
   }
-  
-  
-  #endif
+
+
+#endif
 }
 
 TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
@@ -644,12 +644,12 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
 
   CHECK(std::real(dlogpsi[0]) == Approx(-1.41961753e-05));
-  #ifndef QMC_COMPLEX
+#ifndef QMC_COMPLEX
   //This one value is off by 8e-5 (real part) with a 1e-5 imaginary component.  Not sure what's going on.
   //Maybe stretched the "take the real part" assumption past its limit.  Some testing is better than no
-  //testing.  
+  //testing.
   CHECK(std::real(dhpsioverpsi[0]) == Approx(-0.00060853));
-  #endif
+#endif
 
   std::vector<ValueType> params = {0.1};
   rot_spo->apply_rotation(params, false);
@@ -735,9 +735,9 @@ std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& ro
 // Test using global rotation
 TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 {
-  //There is an issue with the real<->complex parameter parsing to h5 in QMC_COMPLEX.  
-  //This needs to be fixed in a future PR.  
-  #ifndef QMC_COMPLEX
+//There is an issue with the real<->complex parameter parsing to h5 in QMC_COMPLEX.
+//This needs to be fixed in a future PR.
+#ifndef QMC_COMPLEX
   auto fake_spo = std::make_unique<FakeSPO>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
@@ -785,14 +785,14 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   CHECK(full_var[3] == ValueApprox(vs[3]));
   CHECK(full_var[4] == ValueApprox(0.0));
   CHECK(full_var[5] == ValueApprox(0.0));
-  #endif
+#endif
 }
 
 // Test using history list.
 TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
 {
-  //Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
-  #ifndef QMC_COMPLEX
+//Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
+#ifndef QMC_COMPLEX
   auto fake_spo = std::make_unique<FakeSPO>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
@@ -837,7 +837,7 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   auto hist = testing::getHistoryParams(rot2);
   REQUIRE(hist.size() == 1);
   REQUIRE(hist[0].size() == 4);
-  #endif
+#endif
 }
 
 class DummySPOSetWithoutMW : public SPOSet

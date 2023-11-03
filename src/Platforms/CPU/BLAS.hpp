@@ -37,386 +37,383 @@
  */
 namespace BLAS
 {
-  constexpr int INCX     = 1;
-  constexpr int INCY     = 1;
-  constexpr char UPLO    = 'L';
-  constexpr char TRANS   = 'T';
-  constexpr char NOTRANS = 'N';
+constexpr int INCX     = 1;
+constexpr int INCY     = 1;
+constexpr char UPLO    = 'L';
+constexpr char TRANS   = 'T';
+constexpr char NOTRANS = 'N';
 
-  constexpr float sone                 = 1.0e0;
-  constexpr float szero                = 0.0e0;
-  constexpr double done                = 1.0e0;
-  constexpr double dzero               = 0.0e0;
-  constexpr std::complex<float> cone   = 1.0e0;
-  constexpr std::complex<float> czero  = 0.0e0;
-  constexpr std::complex<double> zone  = 1.0e0;
-  constexpr std::complex<double> zzero = 0.0e0;
+constexpr float sone                 = 1.0e0;
+constexpr float szero                = 0.0e0;
+constexpr double done                = 1.0e0;
+constexpr double dzero               = 0.0e0;
+constexpr std::complex<float> cone   = 1.0e0;
+constexpr std::complex<float> czero  = 0.0e0;
+constexpr std::complex<double> zone  = 1.0e0;
+constexpr std::complex<double> zzero = 0.0e0;
 
-  inline static void axpy(int n, double x, const double* a, double* b) { daxpy(n, x, a, INCX, b, INCY); }
+inline static void axpy(int n, double x, const double* a, double* b) { daxpy(n, x, a, INCX, b, INCY); }
 
-  inline static void axpy(int n, double x, const double* a, int incx, double* b, int incy)
-  {
-    daxpy(n, x, a, incx, b, incy);
-  }
+inline static void axpy(int n, double x, const double* a, int incx, double* b, int incy)
+{
+  daxpy(n, x, a, incx, b, incy);
+}
 
-  inline static void axpy(int n, const double* a, double* b) { daxpy(n, done, a, INCX, b, INCY); }
+inline static void axpy(int n, const double* a, double* b) { daxpy(n, done, a, INCX, b, INCY); }
 
-  inline static void axpy(int n, float x, const float* a, int incx, float* b, int incy)
-  {
-    saxpy(n, x, a, incx, b, incy);
-  }
+inline static void axpy(int n, float x, const float* a, int incx, float* b, int incy) { saxpy(n, x, a, incx, b, incy); }
 
-  inline static void axpy(int n, float x, const float* a, float* b) { saxpy(n, x, a, INCX, b, INCY); }
+inline static void axpy(int n, float x, const float* a, float* b) { saxpy(n, x, a, INCX, b, INCY); }
 
-  inline static void axpy(int n,
-                          const std::complex<float> x,
-                          const std::complex<float>* a,
-                          int incx,
-                          std::complex<float>* b,
-                          int incy)
-  {
-    caxpy(n, x, a, incx, b, incy);
-  }
+inline static void axpy(int n,
+                        const std::complex<float> x,
+                        const std::complex<float>* a,
+                        int incx,
+                        std::complex<float>* b,
+                        int incy)
+{
+  caxpy(n, x, a, incx, b, incy);
+}
 
-  inline static void axpy(int n,
-                          const std::complex<double> x,
-                          const std::complex<double>* a,
-                          int incx,
-                          std::complex<double>* b,
-                          int incy)
-  {
-    zaxpy(n, x, a, incx, b, incy);
-  }
+inline static void axpy(int n,
+                        const std::complex<double> x,
+                        const std::complex<double>* a,
+                        int incx,
+                        std::complex<double>* b,
+                        int incy)
+{
+  zaxpy(n, x, a, incx, b, incy);
+}
 
-  inline static float norm2(int n, const float* a, int incx = 1) { return snrm2(n, a, incx); }
+inline static float norm2(int n, const float* a, int incx = 1) { return snrm2(n, a, incx); }
 
-  inline static float norm2(int n, const std::complex<float>* a, int incx = 1) { return scnrm2(n, a, incx); }
+inline static float norm2(int n, const std::complex<float>* a, int incx = 1) { return scnrm2(n, a, incx); }
 
-  inline static double norm2(int n, const double* a, int incx = 1) { return dnrm2(n, a, incx); }
+inline static double norm2(int n, const double* a, int incx = 1) { return dnrm2(n, a, incx); }
 
-  inline static double norm2(int n, const std::complex<double>* a, int incx = 1) { return dznrm2(n, a, incx); }
+inline static double norm2(int n, const std::complex<double>* a, int incx = 1) { return dznrm2(n, a, incx); }
 
-  inline static void scal(int n, float alpha, float* x, int incx = 1) { sscal(n, alpha, x, incx); }
+inline static void scal(int n, float alpha, float* x, int incx = 1) { sscal(n, alpha, x, incx); }
 
-  inline static void scal(int n, std::complex<float> alpha, std::complex<float>* x, int incx = 1)
-  {
-    cscal(n, alpha, x, incx);
-  }
+inline static void scal(int n, std::complex<float> alpha, std::complex<float>* x, int incx = 1)
+{
+  cscal(n, alpha, x, incx);
+}
 
-  inline static void scal(int n, double alpha, double* x, int incx = 1) { dscal(n, alpha, x, incx); }
+inline static void scal(int n, double alpha, double* x, int incx = 1) { dscal(n, alpha, x, incx); }
 
-  inline static void scal(int n, std::complex<double> alpha, std::complex<double>* x, int incx = 1)
-  {
-    zscal(n, alpha, x, incx);
-  }
+inline static void scal(int n, std::complex<double> alpha, std::complex<double>* x, int incx = 1)
+{
+  zscal(n, alpha, x, incx);
+}
 
-  inline static void scal(int n, double alpha, std::complex<double>* x, int incx = 1) { zdscal(n, alpha, x, incx); }
+inline static void scal(int n, double alpha, std::complex<double>* x, int incx = 1) { zdscal(n, alpha, x, incx); }
 
-  inline static void scal(int n, float alpha, std::complex<float>* x, int incx = 1) { csscal(n, alpha, x, incx); }
+inline static void scal(int n, float alpha, std::complex<float>* x, int incx = 1) { csscal(n, alpha, x, incx); }
 
-  // amat is [n][m] in C
-  inline static void gemv(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y)
-  {
-    dgemv(NOTRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
-  }
+// amat is [n][m] in C
+inline static void gemv(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y)
+{
+  dgemv(NOTRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
+}
 
-  inline static void gemv(int n, int m, const float* restrict amat, const float* restrict x, float* restrict y)
-  {
-    sgemv(NOTRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
-  }
+inline static void gemv(int n, int m, const float* restrict amat, const float* restrict x, float* restrict y)
+{
+  sgemv(NOTRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
+}
 
-  inline static void gemv(int n,
-                          int m,
-                          const std::complex<double>* restrict amat,
-                          const std::complex<double>* restrict x,
-                          std::complex<double>* restrict y)
-  {
-    zgemv(NOTRANS, m, n, zone, amat, m, x, INCX, zzero, y, INCY);
-  }
+inline static void gemv(int n,
+                        int m,
+                        const std::complex<double>* restrict amat,
+                        const std::complex<double>* restrict x,
+                        std::complex<double>* restrict y)
+{
+  zgemv(NOTRANS, m, n, zone, amat, m, x, INCX, zzero, y, INCY);
+}
 
-  inline static void gemv(int n,
-                          int m,
-                          const std::complex<float>* restrict amat,
-                          const std::complex<float>* restrict x,
-                          std::complex<float>* restrict y)
-  {
-    cgemv(NOTRANS, m, n, cone, amat, m, x, INCX, czero, y, INCY);
-  }
+inline static void gemv(int n,
+                        int m,
+                        const std::complex<float>* restrict amat,
+                        const std::complex<float>* restrict x,
+                        std::complex<float>* restrict y)
+{
+  cgemv(NOTRANS, m, n, cone, amat, m, x, INCX, czero, y, INCY);
+}
 
-  // amat is [n][m] in C
-  inline static void gemv_trans(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y)
-  {
-    dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
-  }
+// amat is [n][m] in C
+inline static void gemv_trans(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y)
+{
+  dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
+}
 
-  inline static void gemv_trans(int n, int m, const float* restrict amat, const float* restrict x, float* restrict y)
-  {
-    sgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
-  }
+inline static void gemv_trans(int n, int m, const float* restrict amat, const float* restrict x, float* restrict y)
+{
+  sgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
+}
 
-  inline static void gemv_trans(int n,
-                                int m,
-                                const std::complex<double>* restrict amat,
-                                const std::complex<double>* restrict x,
-                                std::complex<double>* restrict y)
-  {
-    zgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
-  }
+inline static void gemv_trans(int n,
+                              int m,
+                              const std::complex<double>* restrict amat,
+                              const std::complex<double>* restrict x,
+                              std::complex<double>* restrict y)
+{
+  zgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
+}
 
-  inline static void gemv_trans(int n,
-                                int m,
-                                const std::complex<float>* restrict amat,
-                                const std::complex<float>* restrict x,
-                                std::complex<float>* restrict y)
-  {
-    cgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
-  }
+inline static void gemv_trans(int n,
+                              int m,
+                              const std::complex<float>* restrict amat,
+                              const std::complex<float>* restrict x,
+                              std::complex<float>* restrict y)
+{
+  cgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
+}
 
-  inline static void gemv(char trans_in,
-                          int n,
-                          int m,
-                          double alpha,
-                          const double* restrict amat,
-                          int lda,
-                          const double* x,
-                          int incx,
-                          double beta,
-                          double* y,
-                          int incy)
-  {
-    dgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
-  }
+inline static void gemv(char trans_in,
+                        int n,
+                        int m,
+                        double alpha,
+                        const double* restrict amat,
+                        int lda,
+                        const double* x,
+                        int incx,
+                        double beta,
+                        double* y,
+                        int incy)
+{
+  dgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+}
 
-  inline static void gemv(char trans_in,
-                          int n,
-                          int m,
-                          float alpha,
-                          const float* restrict amat,
-                          int lda,
-                          const float* x,
-                          int incx,
-                          float beta,
-                          float* y,
-                          int incy)
-  {
-    sgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
-  }
+inline static void gemv(char trans_in,
+                        int n,
+                        int m,
+                        float alpha,
+                        const float* restrict amat,
+                        int lda,
+                        const float* x,
+                        int incx,
+                        float beta,
+                        float* y,
+                        int incy)
+{
+  sgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+}
 
-  inline static void gemv(char trans_in,
-                          int n,
-                          int m,
-                          const std::complex<double>& alpha,
-                          const std::complex<double>* restrict amat,
-                          int lda,
-                          const std::complex<double>* restrict x,
-                          int incx,
-                          const std::complex<double>& beta,
-                          std::complex<double>* y,
-                          int incy)
-  {
-    zgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
-  }
+inline static void gemv(char trans_in,
+                        int n,
+                        int m,
+                        const std::complex<double>& alpha,
+                        const std::complex<double>* restrict amat,
+                        int lda,
+                        const std::complex<double>* restrict x,
+                        int incx,
+                        const std::complex<double>& beta,
+                        std::complex<double>* y,
+                        int incy)
+{
+  zgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+}
 
-  inline static void gemv(char trans_in,
-                          int n,
-                          int m,
-                          const std::complex<float>& alpha,
-                          const std::complex<float>* restrict amat,
-                          int lda,
-                          const std::complex<float>* restrict x,
-                          int incx,
-                          const std::complex<float>& beta,
-                          std::complex<float>* y,
-                          int incy)
-  {
-    cgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
-  }
+inline static void gemv(char trans_in,
+                        int n,
+                        int m,
+                        const std::complex<float>& alpha,
+                        const std::complex<float>* restrict amat,
+                        int lda,
+                        const std::complex<float>* restrict x,
+                        int incx,
+                        const std::complex<float>& beta,
+                        std::complex<float>* y,
+                        int incy)
+{
+  cgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+}
 
-  inline static void gemm(char Atrans,
-                          char Btrans,
-                          int M,
-                          int N,
-                          int K,
-                          double alpha,
-                          const double* A,
-                          int lda,
-                          const double* restrict B,
-                          int ldb,
-                          double beta,
-                          double* restrict C,
-                          int ldc)
-  {
-    dgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
-  }
+inline static void gemm(char Atrans,
+                        char Btrans,
+                        int M,
+                        int N,
+                        int K,
+                        double alpha,
+                        const double* A,
+                        int lda,
+                        const double* restrict B,
+                        int ldb,
+                        double beta,
+                        double* restrict C,
+                        int ldc)
+{
+  dgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+}
 
-  inline static void gemm(char Atrans,
-                          char Btrans,
-                          int M,
-                          int N,
-                          int K,
-                          float alpha,
-                          const float* A,
-                          int lda,
-                          const float* restrict B,
-                          int ldb,
-                          float beta,
-                          float* restrict C,
-                          int ldc)
-  {
-    sgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
-  }
+inline static void gemm(char Atrans,
+                        char Btrans,
+                        int M,
+                        int N,
+                        int K,
+                        float alpha,
+                        const float* A,
+                        int lda,
+                        const float* restrict B,
+                        int ldb,
+                        float beta,
+                        float* restrict C,
+                        int ldc)
+{
+  sgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+}
 
-  inline static void gemm(char Atrans,
-                          char Btrans,
-                          int M,
-                          int N,
-                          int K,
-                          std::complex<double> alpha,
-                          const std::complex<double>* A,
-                          int lda,
-                          const std::complex<double>* restrict B,
-                          int ldb,
-                          std::complex<double> beta,
-                          std::complex<double>* restrict C,
-                          int ldc)
-  {
-    zgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
-  }
+inline static void gemm(char Atrans,
+                        char Btrans,
+                        int M,
+                        int N,
+                        int K,
+                        std::complex<double> alpha,
+                        const std::complex<double>* A,
+                        int lda,
+                        const std::complex<double>* restrict B,
+                        int ldb,
+                        std::complex<double> beta,
+                        std::complex<double>* restrict C,
+                        int ldc)
+{
+  zgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+}
 
-  inline static void gemm(char Atrans,
-                          char Btrans,
-                          int M,
-                          int N,
-                          int K,
-                          std::complex<float> alpha,
-                          const std::complex<float>* A,
-                          int lda,
-                          const std::complex<float>* restrict B,
-                          int ldb,
-                          std::complex<float> beta,
-                          std::complex<float>* restrict C,
-                          int ldc)
-  {
-    cgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
-  }
+inline static void gemm(char Atrans,
+                        char Btrans,
+                        int M,
+                        int N,
+                        int K,
+                        std::complex<float> alpha,
+                        const std::complex<float>* A,
+                        int lda,
+                        const std::complex<float>* restrict B,
+                        int ldb,
+                        std::complex<float> beta,
+                        std::complex<float>* restrict C,
+                        int ldc)
+{
+  cgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+}
 
-  template<typename T>
-  inline static T dot(int n, const T* restrict a, const T* restrict b)
-  {
-    T res = T(0);
-    for (int i = 0; i < n; ++i)
-      res += a[i] * b[i];
-    return res;
-  }
+template<typename T>
+inline static T dot(int n, const T* restrict a, const T* restrict b)
+{
+  T res = T(0);
+  for (int i = 0; i < n; ++i)
+    res += a[i] * b[i];
+  return res;
+}
 
-  template<typename T>
-  inline static std::complex<T> dot(int n, const std::complex<T>* restrict a, const T* restrict b)
-  {
-    std::complex<T> res = T(0);
-    for (int i = 0; i < n; ++i)
-      res += a[i] * b[i];
-    return res;
-  }
+template<typename T>
+inline static std::complex<T> dot(int n, const std::complex<T>* restrict a, const T* restrict b)
+{
+  std::complex<T> res = T(0);
+  for (int i = 0; i < n; ++i)
+    res += a[i] * b[i];
+  return res;
+}
 
-  template<typename T>
-  inline static std::complex<T> dot(int n, const std::complex<T>* restrict a, const std::complex<T>* restrict b)
-  {
-    std::complex<T> res = 0.0;
-    for (int i = 0; i < n; ++i)
-      res += a[i] * b[i];
-    return res;
-  }
+template<typename T>
+inline static std::complex<T> dot(int n, const std::complex<T>* restrict a, const std::complex<T>* restrict b)
+{
+  std::complex<T> res = 0.0;
+  for (int i = 0; i < n; ++i)
+    res += a[i] * b[i];
+  return res;
+}
 
 
-  template<typename T>
-  inline static std::complex<T> dot(int n, const T* restrict a, const std::complex<T>* restrict b)
-  {
-    std::complex<T> res = 0.0;
-    for (int i = 0; i < n; ++i)
-      res += a[i] * b[i];
-    return res;
-  }
+template<typename T>
+inline static std::complex<T> dot(int n, const T* restrict a, const std::complex<T>* restrict b)
+{
+  std::complex<T> res = 0.0;
+  for (int i = 0; i < n; ++i)
+    res += a[i] * b[i];
+  return res;
+}
 
-  template<typename T>
-  inline static T dot(int n, const T* restrict a, int incx, const T* restrict b, int incy)
-  {
-    T res = T(0);
-    for (int i = 0, ia = 0, ib = 0; i < n; ++i, ia += incx, ib += incy)
-      res += a[ia] * b[ib];
-    return res;
-  }
+template<typename T>
+inline static T dot(int n, const T* restrict a, int incx, const T* restrict b, int incy)
+{
+  T res = T(0);
+  for (int i = 0, ia = 0, ib = 0; i < n; ++i, ia += incx, ib += incy)
+    res += a[ia] * b[ib];
+  return res;
+}
 
-  template<typename T>
-  inline static std::complex<T> dot(int n, const std::complex<T>* restrict a, int incx, const T* restrict b, int incy)
-  {
-    std::complex<T> res = T(0);
-    for (int i = 0, ia = 0, ib = 0; i < n; ++i, ia += incx, ib += incy)
-      res += a[ia] * b[ib];
-    return res;
-  }
+template<typename T>
+inline static std::complex<T> dot(int n, const std::complex<T>* restrict a, int incx, const T* restrict b, int incy)
+{
+  std::complex<T> res = T(0);
+  for (int i = 0, ia = 0, ib = 0; i < n; ++i, ia += incx, ib += incy)
+    res += a[ia] * b[ib];
+  return res;
+}
 
-  template<typename T>
-  inline static std::complex<T> dot(int n, const T* restrict a, int incx, const std::complex<T>* restrict b, int incy)
-  {
-    std::complex<T> res = T(0);
-    for (int i = 0, ia = 0, ib = 0; i < n; ++i, ia += incx, ib += incy)
-      res += a[ia] * b[ib];
-    return res;
-  }
+template<typename T>
+inline static std::complex<T> dot(int n, const T* restrict a, int incx, const std::complex<T>* restrict b, int incy)
+{
+  std::complex<T> res = T(0);
+  for (int i = 0, ia = 0, ib = 0; i < n; ++i, ia += incx, ib += incy)
+    res += a[ia] * b[ib];
+  return res;
+}
 
-  template<typename T>
-  inline static std::complex<T> dot(int n,
-                                    const std::complex<T>* restrict a,
-                                    int incx,
-                                    const std::complex<T>* restrict b,
-                                    int incy)
-  {
-    std::complex<T> res = T(0);
-    for (int i = 0, ia = 0, ib = 0; i < n; ++i, ia += incx, ib += incy)
-      res += a[ia] * b[ib];
-    return res;
-  }
+template<typename T>
+inline static std::complex<T> dot(int n,
+                                  const std::complex<T>* restrict a,
+                                  int incx,
+                                  const std::complex<T>* restrict b,
+                                  int incy)
+{
+  std::complex<T> res = T(0);
+  for (int i = 0, ia = 0, ib = 0; i < n; ++i, ia += incx, ib += incy)
+    res += a[ia] * b[ib];
+  return res;
+}
 
-  template<typename T>
-  inline static void copy(int n, const T* restrict a, T* restrict b)
-  {
-    memcpy(b, a, sizeof(T) * n);
-  }
+template<typename T>
+inline static void copy(int n, const T* restrict a, T* restrict b)
+{
+  memcpy(b, a, sizeof(T) * n);
+}
 
-  /** copy using memcpy(target,source,size)
+/** copy using memcpy(target,source,size)
    * @param target starting address of the targe
    * @param source starting address of the source
    * @param number of elements to copy
    */
-  template<typename T>
-  inline static void copy(T* restrict target, const T* restrict source, int n)
-  {
-    memcpy(target, source, sizeof(T) * n);
-  }
+template<typename T>
+inline static void copy(T* restrict target, const T* restrict source, int n)
+{
+  memcpy(target, source, sizeof(T) * n);
+}
 
-  template<typename T>
-  inline static void copy(int n, const std::complex<T>* restrict a, T* restrict b)
-  {
-    for (int i = 0; i < n; ++i)
-      b[i] = a[i].real();
-  }
+template<typename T>
+inline static void copy(int n, const std::complex<T>* restrict a, T* restrict b)
+{
+  for (int i = 0; i < n; ++i)
+    b[i] = a[i].real();
+}
 
-  template<typename T>
-  inline static void copy(int n, const T* restrict a, std::complex<T>* restrict b)
-  {
-    for (int i = 0; i < n; ++i)
-      b[i] = a[i];
-  }
+template<typename T>
+inline static void copy(int n, const T* restrict a, std::complex<T>* restrict b)
+{
+  for (int i = 0; i < n; ++i)
+    b[i] = a[i];
+}
 
-  template<typename T>
-  inline static void copy(int n, const T* restrict x, int incx, T* restrict y, int incy)
-  {
-    const int xmax = incx * n;
-    for (int ic = 0, jc = 0; ic < xmax; ic += incx, jc += incy)
-      y[jc] = x[ic];
-  }
+template<typename T>
+inline static void copy(int n, const T* restrict x, int incx, T* restrict y, int incy)
+{
+  const int xmax = incx * n;
+  for (int ic = 0, jc = 0; ic < xmax; ic += incx, jc += incy)
+    y[jc] = x[ic];
+}
 
-  /*
+/*
     inline static
     void copy(int n, double x, double* a) {
       dinit(n,x,a,INCX);
@@ -434,58 +431,50 @@ namespace BLAS
     }
   */
 
-  inline static void ger(int m,
-                         int n,
-                         double alpha,
-                         const double* x,
-                         int incx,
-                         const double* y,
-                         int incy,
-                         double* a,
-                         int lda)
-  {
-    dger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
-  }
+inline static void ger(int m,
+                       int n,
+                       double alpha,
+                       const double* x,
+                       int incx,
+                       const double* y,
+                       int incy,
+                       double* a,
+                       int lda)
+{
+  dger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
+}
 
-  inline static void ger(int m,
-                         int n,
-                         float alpha,
-                         const float* x,
-                         int incx,
-                         const float* y,
-                         int incy,
-                         float* a,
-                         int lda)
-  {
-    sger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
-  }
+inline static void ger(int m, int n, float alpha, const float* x, int incx, const float* y, int incy, float* a, int lda)
+{
+  sger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
+}
 
-  inline static void ger(int m,
-                         int n,
-                         const std::complex<double>& alpha,
-                         const std::complex<double>* x,
-                         int incx,
-                         const std::complex<double>* y,
-                         int incy,
-                         std::complex<double>* a,
-                         int lda)
-  {
-    zgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
-  }
+inline static void ger(int m,
+                       int n,
+                       const std::complex<double>& alpha,
+                       const std::complex<double>* x,
+                       int incx,
+                       const std::complex<double>* y,
+                       int incy,
+                       std::complex<double>* a,
+                       int lda)
+{
+  zgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
+}
 
-  inline static void ger(int m,
-                         int n,
-                         const std::complex<float>& alpha,
-                         const std::complex<float>* x,
-                         int incx,
-                         const std::complex<float>* y,
-                         int incy,
-                         std::complex<float>* a,
-                         int lda)
-  {
-    cgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
-  }
-};
+inline static void ger(int m,
+                       int n,
+                       const std::complex<float>& alpha,
+                       const std::complex<float>* x,
+                       int incx,
+                       const std::complex<float>* y,
+                       int incy,
+                       std::complex<float>* a,
+                       int lda)
+{
+  cgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
+}
+}; // namespace BLAS
 
 struct LAPACK
 {

@@ -40,10 +40,10 @@ public:
 
   // Vector of rotation matrix indices
   using RotationIndices = std::vector<std::pair<int, int>>;
-  //NOTE:  Rotation indices are stored according to the convention (occupied,unoccupied).  
-  //So an excitation (i,j) is the excitation of an electron in orbital i to orbital j. 
-  //This list of indices, in conjunction with the vector "params", is a sparse representation 
-  //of the matrix K'.  
+  //NOTE:  Rotation indices are stored according to the convention (occupied,unoccupied).
+  //So an excitation (i,j) is the excitation of an electron in orbital i to orbital j.
+  //This list of indices, in conjunction with the vector "params", is a sparse representation
+  //of the matrix K'.
   //
   //Comparing with Umrigar and other's definitions, the object that effects the orbital rotation is K = sum_i,j k_ij E_ij,
   //where E_ij is the singlet creation operator taking an electron from orbital j to orbital i.  Comparing these two,
@@ -64,9 +64,9 @@ public:
   // Construct a list for all the matrix indices, including core->active, core->core and active->active
   static void createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices);
 
-  // Takes a sparse representation of the antisymmetric/antihermitian K' matrix ( (i->j) excitation indices rot_indices 
+  // Takes a sparse representation of the antisymmetric/antihermitian K' matrix ( (i->j) excitation indices rot_indices
   // and and coefficient vector param and constructs a dense antisymmetric/antihermitian K matrix (rot_mat).
-  // The latter is what is needed for the orbital rotation.  
+  // The latter is what is needed for the orbital rotation.
   // This function assumes rot_mat is properly sized upon input and is set to zero.
   static void constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                            const std::vector<ValueType>& param,
@@ -106,13 +106,13 @@ public:
   // set of rotation parameters)
   void applyFullRotation(const std::vector<ValueType>& full_param, bool use_stored_copy);
 
-  // Compute matrix exponential of an antisymmetric/antihermitian matrix for 
+  // Compute matrix exponential of an antisymmetric/antihermitian matrix for
   // the real/complex case.  Overwrites matrix with its exponential (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
 
-  // Compute matrix log of rotation matrix to produce antisymmetric matrix.  Technically, this 
+  // Compute matrix log of rotation matrix to produce antisymmetric matrix.  Technically, this
   // performs the log of any matrix where the eigenproblem is stable, but we only take logs of
-  // matrices of the form A=e^K, where K is antisymmetric/antihermitian. 
+  // matrices of the form A=e^K, where K is antisymmetric/antihermitian.
   static void log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealType>& output);
   static void log_antisym_matrix(const Matrix<std::complex<RealType>>& mat, Matrix<std::complex<RealType>>& output);
 
