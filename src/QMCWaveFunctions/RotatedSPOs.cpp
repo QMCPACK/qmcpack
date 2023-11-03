@@ -287,7 +287,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
-#if !defined(QMC_COMPLEX)
+//#if !defined(QMC_COMPLEX)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
    * Consider ROHF, there is only one set of SPO for both spin up and down Nup > Ndown.
    * nel_major_ will be set Nup.
@@ -312,12 +312,12 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
 
     buildOptVariables(created_m_act_rot_inds, created_full_rot_inds);
   }
-#endif
+//#endif
 }
 
 void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations)
 {
-#if !defined(QMC_COMPLEX)
+//#if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
 
   // create active rotations
@@ -391,12 +391,12 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
 
   if (params_supplied)
   {
-    std::vector<RealType> param(m_act_rot_inds.size());
+    std::vector<ValueType> param(m_act_rot_inds.size());
     for (int i = 0; i < m_act_rot_inds.size(); i++)
       param[i] = myVars[i];
     apply_rotation(param, false);
   }
-#endif
+//#endif
 }
 
 void RotatedSPOs::apply_rotation(const std::vector<ValueType>& param, bool use_stored_copy)
@@ -557,15 +557,14 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
     }
 }
 
-void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output)
+void RotatedSPOs::log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealType>& output)
 {
-  #ifndef QMC_COMPLEX
   const int n = mat.rows();
-  std::vector<ValueType> mat_h(n * n, 0);
-  std::vector<ValueType> eval_r(n, 0);
-  std::vector<ValueType> eval_i(n, 0);
-  std::vector<ValueType> mat_l(n * n, 0);
-  std::vector<ValueType> work(4 * n, 0);
+  std::vector<RealType> mat_h(n * n, 0);
+  std::vector<RealType> eval_r(n, 0);
+  std::vector<RealType> eval_i(n, 0);
+  std::vector<RealType> mat_l(n * n, 0);
+  std::vector<RealType> work(4 * n, 0);
 
   std::vector<std::complex<RealType>> mat_cd(n * n, 0);
   std::vector<std::complex<RealType>> mat_cl(n * n, 0);
@@ -625,11 +624,73 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
         app_log() << "warning: large imaginary value in antisymmetric matrix: (i,j) = (" << i << "," << j
                   << "), im = " << mat_cd[i + n * j].imag() << std::endl;
       }
-    //  output[i][j] = mat_cd[i + n * j].real();
+      output[i][j] = mat_cd[i + n * j].real();
     }
-   #endif
 }
 
+void RotatedSPOs::log_antisym_matrix(const Matrix<std::complex<RealType>>& mat, Matrix<std::complex<RealType>>& output)
+{
+  const int n = mat.rows();
+
+  //From here on out, all temporary arrays will be column major to interface with LAPACK cleanly.
+  //
+  //Temporary arrays for the eigenvalue decomposition.  
+  std::vector<std::complex<RealType>> mat_h(n * n, 0);
+  std::vector<std::complex<RealType>> eval(n, 0); //eigenvalues
+  std::vector<std::complex<RealType>> mat_l(n * n, 0); //left eigenvectors.
+  //complex work array.  Recommended to be at least 2*n according to LAPACK documentation.
+  std::vector<std::complex<RealType>> work(2 * n, 0);
+  std::vector<RealType> rwork(2 * n, 0);
+
+  std::vector<std::complex<RealType>> mat_cd(n * n, 0);
+  std::vector<std::complex<RealType>> mat_cl(n * n, 0);
+  std::vector<std::complex<RealType>> mat_ch(n * n, 0);
+
+  //Convert row major mat to column major mat_h.
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+      mat_h[i + n * j] = mat[i][j];
+
+  // diagonalize the matrix
+  char JOBL('V');
+  char JOBR('N');
+  int N(n);
+  int LDA(n);
+  int LWORK(4 * n);
+  int info = 0;
+  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
+       &work.at(0), &LWORK, &rwork.at(0), &info);
+  if (info != 0)
+  {
+    std::ostringstream msg;
+    msg << "zgeev failed with info = " << info << " in RotatedSPOs::log_antisym_matrix";
+    throw std::runtime_error(msg.str());
+  }
+
+  // iterate through diagonal matrix, take log
+  for (int i = 0; i < n; ++i)
+  {
+    for (int j = 0; j < n; ++j)
+    {
+      auto tmp = (i == j) ? std::log(eval[i]) : std::complex<RealType>(0.0, 0.0);
+      mat_cd[i + j * n] = tmp;
+      
+       
+    }
+  }
+
+  RealType one(1.0);
+  RealType zero(0.0);
+  BLAS::gemm('N', 'N', n, n, n, one, &mat_l.at(0), n, &mat_cd.at(0), n, zero, &mat_ch.at(0), n);
+  BLAS::gemm('N', 'C', n, n, n, one, &mat_ch.at(0), n, &mat_l.at(0), n, zero, &mat_cd.at(0), n);
+
+
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+    {
+      output[i][j] = mat_cd[i + n * j];
+    }
+}
 void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
                                       const opt_variables_type& optvars,
                                       ValueVector& psi,

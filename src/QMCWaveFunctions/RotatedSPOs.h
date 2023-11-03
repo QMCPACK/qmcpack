@@ -100,7 +100,8 @@ public:
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
 
   // Compute matrix log of rotation matrix to produce antisymmetric matrix
-  static void log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output);
+  static void log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealType>& output);
+  static void log_antisym_matrix(const Matrix<std::complex<RealType>>& mat, Matrix<std::complex<RealType>>& output);
 
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi;
