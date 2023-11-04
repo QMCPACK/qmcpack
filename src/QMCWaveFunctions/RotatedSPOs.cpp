@@ -287,7 +287,6 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
-  //#if !defined(QMC_COMPLEX)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
    * Consider ROHF, there is only one set of SPO for both spin up and down Nup > Ndown.
    * nel_major_ will be set Nup.
@@ -312,12 +311,10 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
 
     buildOptVariables(created_m_act_rot_inds, created_full_rot_inds);
   }
-  //#endif
 }
 
 void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations)
 {
-  //#if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
 
   // create active rotations
@@ -396,7 +393,6 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
       param[i] = myVars[i];
     apply_rotation(param, false);
   }
-  //#endif
 }
 
 void RotatedSPOs::apply_rotation(const std::vector<ValueType>& param, bool use_stored_copy)
@@ -520,8 +516,8 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
     }
   }
   // diagonalize the matrix
-  char JOBZ('V');
-  char UPLO('U');
+  char JOBZ('V'); //compute eigenvalues and eigenvectors.
+  char UPLO('U'); //store upper triangle of A.  
   int N(n);
   int LDA(n);
   int LWORK(2 * n);
@@ -580,8 +576,8 @@ void RotatedSPOs::log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealTyp
       mat_h[i + n * j] = mat[i][j];
 
   // diagonalize the matrix
-  char JOBL('V');
-  char JOBR('N');
+  char JOBL('V'); //Compute left eigenvectors.
+  char JOBR('N'); //Don't compute right eigenvectors.
   int N(n);
   int LDA(n);
   int LWORK(4 * n);
