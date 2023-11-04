@@ -893,7 +893,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   //possibly replace wit BLAS calls
   for (int i = 0; i < nel; i++)
     for (int j = 0; j < nmo; j++)
-      Bbar(i, j) = d2psiM_all(i, j) + 2.0 * dot(myG_J[i], dpsiM_all(i, j)) + myL_J[i] * psiM_all(i, j);
+      Bbar(i, j) = d2psiM_all(i, j) + ValueType(2.0) * ValueType(dot(myG_J[i], dpsiM_all(i, j))) + ValueType(myL_J[i]) * psiM_all(i, j);
 
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
