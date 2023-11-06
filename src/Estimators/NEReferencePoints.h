@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
@@ -11,9 +11,12 @@
 // File refactored from: QMCHamiltonian/ReferencePoints.h
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef QMCPLUSPLUS_NEREFERENCE_POINTS_H
 #define QMCPLUSPLUS_NEREFERENCE_POINTS_H
+
+/** @file
+ *  \todo When QMCHamiltonian/ReferencePoints is removed rename this class to ReferencePoints
+ */
 
 #include <Configuration.h>
 #include "OhmmsData/OhmmsElementBase.h"
