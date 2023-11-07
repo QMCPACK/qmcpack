@@ -68,7 +68,7 @@ public:
     SUM_INDEX_SIZE
   };
 
-  using EffectiveWeight = QMCTraits::QTFull::RealType;
+  using EffectiveWeight  = QMCTraits::QTFull::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///Constructor.
   QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);

@@ -1169,7 +1169,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // find the best shift and the corresponding update direction
   const std::vector<RealType>* bestDirection = 0;
-  int best_shift                              = -1;
+  int best_shift                             = -1;
   for (int k = 0; k < costValues.size() && std::abs((initCost - initCost) / initCost) < max_relative_cost_change; k++)
     if (is_best_cost(k, costValues, shifts_i, initCost) && good_update.at(k))
     {

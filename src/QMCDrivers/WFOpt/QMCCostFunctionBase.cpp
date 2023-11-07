@@ -271,7 +271,7 @@ void QMCCostFunctionBase::reportParametersH5()
     if (ci_size > 0)
     {
       CI_Opt = true;
-      newh5 = RootName + ".opt.h5";
+      newh5  = RootName + ".opt.h5";
       *msg_stream << "  <Ci Coeffs saved in opt_coeffs=\"" << newh5 << "\">" << std::endl;
       hdf_archive hout;
       hout.create(newh5, H5F_ACC_TRUNC);
