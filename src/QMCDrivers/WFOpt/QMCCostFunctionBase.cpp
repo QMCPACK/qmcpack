@@ -251,7 +251,7 @@ void QMCCostFunctionBase::reportParametersH5()
   if (!myComm->rank())
   {
     int ci_size = 0;
-    std::vector<opt_variables_type::value_type> CIcoeff;
+    std::vector<opt_variables_type::real_type> CIcoeff;
     for (int i = 0; i < OptVariables.size(); i++)
     {
       std::array<char, 128> Coeff;

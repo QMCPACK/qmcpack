@@ -85,7 +85,7 @@ public:
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
-  Return_t& Params(int i) override { return OptVariables[i]; }
+  Return_rt& Params(int i) override { return OptVariables[i]; }
   ///return optimization parameter i
   Return_t Params(int i) const override { return OptVariables[i]; }
   int getType(int i) const { return OptVariables.getType(i); }

@@ -561,10 +561,10 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     Optimizable = CI_Optimizable = true;
     if (csf_data_ptr)
       for (int i = 1; i < csf_data_ptr->coeffs.size(); i++)
-        myVars.insert(CItags[i], csf_data_ptr->coeffs[i], true, optimize::LINEAR_P);
+        myVars.insert(CItags[i], std::real(csf_data_ptr->coeffs[i]), true, optimize::LINEAR_P);
     else
       for (int i = 1; i < C.size(); i++)
-        myVars.insert(CItags[i], C[i], true, optimize::LINEAR_P);
+        myVars.insert(CItags[i], std::real(C[i]), true, optimize::LINEAR_P);
   }
   else
   {
