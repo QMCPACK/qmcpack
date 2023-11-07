@@ -9,7 +9,10 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(OMP_RT_SRCS OMPallocator.cpp OMPDeviceManager.cpp)
+set(OMP_RT_SRCS OMPallocator.cpp)
+if(ENABLE_OFFLOAD)
+  set(OMP_RT_SRCS ${OMP_RT_SRCS} OMPDeviceManager.cpp)
+endif(ENABLE_OFFLOAD)
 set(OMP_LA_SRCS ompBLAS.cpp)
 
 add_library(platform_omptarget_runtime ${OMP_RT_SRCS})
