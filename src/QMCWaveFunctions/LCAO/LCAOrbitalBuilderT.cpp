@@ -468,6 +468,7 @@ typename LCAOrbitalBuilderT<T>::BasisSet_t* LCAOrbitalBuilderT<T>::createBasisSe
   return mBasisSet;
 }
 #ifndef QMC_COMPLEX
+#ifndef MIXED_PRECISION
 template<>
 std::unique_ptr<SPOSetT<double>> LCAOrbitalBuilderT<double>::createWithCuspCorrection(
     xmlNodePtr cur,
@@ -484,7 +485,6 @@ std::unique_ptr<SPOSetT<double>> LCAOrbitalBuilderT<double>::createWithCuspCorre
     lcwc->setOrbitalSetSize(lcwc->lcao.getOrbitalSetSize());
     sposet = std::move(lcwc);
   }
-#ifndef MIXED_PRECISION
   // Create a temporary particle set to use for cusp initialization.
   // The particle coordinates left at the end are unsuitable for further
   // computations. The coordinates get set to nuclear positions, which

@@ -519,6 +519,41 @@ void LCAOrbitalSetT<T>::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSetT
   }
 }
 
+template<typename T>
+void LCAOrbitalSetT<T>::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                                    const RefVectorWithLeader<const VirtualParticleSetT<T>>& vp_list,
+                                                    OffloadMWVArray& vp_phi_v) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.template getCastedLeader<LCAOrbitalSetT<T>>();
+  //const size_t nw  = spo_list.size();
+  auto& vp_basis_v_mw = spo_leader.mw_mem_handle_.getResource().vp_basis_v_mw;
+  //Splatter basis_v
+  const size_t nVPs = vp_phi_v.size(0);
+  vp_basis_v_mw.resize(nVPs, BasisSetSize);
+
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValueVPs(basis_list, vp_list, vp_basis_v_mw);
+  vp_basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
+
+  if (Identity)
+  {
+    std::copy_n(vp_basis_v_mw.data_at(0, 0), this->OrbitalSetSize * nVPs, vp_phi_v.data_at(0, 0));
+  }
+  else
+  {
+    const size_t requested_orb_size = vp_phi_v.size(1);
+    assert(requested_orb_size <= this->OrbitalSetSize);
+    ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+    BLAS::gemm('T', 'N',
+               requested_orb_size, // MOs
+               nVPs,               // walkers * Virtual Particles
+               BasisSetSize,       // AOs
+               1, C_partial_view.data(), BasisSetSize, vp_basis_v_mw.data(), BasisSetSize, 0, vp_phi_v.data(),
+               requested_orb_size);
+  }
+}
+
 template<class T>
 void LCAOrbitalSetT<T>::mw_evaluateValue(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
                                          const RefVectorWithLeader<ParticleSetT<T>>& P_list,
@@ -579,15 +614,20 @@ void LCAOrbitalSetT<T>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT<T
                                              const std::vector<const T*>& invRow_ptr_list,
                                              std::vector<std::vector<T>>& ratios_list) const
 {
-  const size_t nw = spo_list.size();
-  for (size_t iw = 0; iw < nw; iw++)
-  {
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.template getCastedLeader<LCAOrbitalSetT<T>>();
+  auto& vp_phi_v   = spo_leader.mw_mem_handle_.getResource().vp_phi_v;
+
+  const size_t nVPs               = VirtualParticleSetT<T>::countVPs(vp_list);
+  const size_t requested_orb_size = psi_list[0].get().size();
+  vp_phi_v.resize(nVPs, requested_orb_size);
+
+  mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
+
+  size_t index = 0;
+  for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
-    {
-      spo_list[iw].evaluateValue(vp_list[iw], iat, psi_list[iw]);
-      ratios_list[iw][iat] = simd::dot(psi_list[iw].get().data(), invRow_ptr_list[iw], psi_list[iw].get().size());
-    }
-  }
+      ratios_list[iw][iat] = simd::dot(vp_phi_v.data_at(index++, 0), invRow_ptr_list[iw], requested_orb_size);
 }
 
 template<class T>

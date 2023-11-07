@@ -358,6 +358,11 @@ private:
                                 int iat,
                                 OffloadMWVArray& phi_v) const;
 
+  /// packed walker GEMM implementation with multi virtual particle sets
+  void mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSetT<T>>& spo_list,
+                                   const RefVectorWithLeader<const VirtualParticleSetT<T>>& vp_list,
+                                   OffloadMWVArray& phi_v) const;
+
   /// helper function for extracting a list of basis sets from a list of LCAOrbitalSet
   RefVectorWithLeader<basis_type> extractBasisRefList(const RefVectorWithLeader<SPOSetT<T>>& spo_list) const;
 
