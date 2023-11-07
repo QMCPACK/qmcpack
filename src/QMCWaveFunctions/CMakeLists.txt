@@ -40,10 +40,6 @@ set(WFBASE_SRCS
     ExampleHeComponent.cpp
     RotatedSPOs.cpp)
 
-#if(NOT QMC_COMPLEX)
-#  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp)
-#endif(NOT QMC_COMPLEX)
-
 if(QMC_COMPLEX)
   set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp)
 endif(QMC_COMPLEX)
