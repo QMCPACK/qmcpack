@@ -139,9 +139,144 @@ void test_LCAO_DiamondC_2x1x1_real()
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
-
   ParticleSet::mw_update(p_list);
 
+  SECTION("LCAOrbitalSet::mw_evaluateVGL")
+  {
+    SPOSet::ValueVector psiref_0(norb);
+    SPOSet::GradVector dpsiref_0(norb);
+    SPOSet::ValueVector d2psiref_0(norb);
+    SPOSet::ValueVector psiref_1(norb);
+    SPOSet::GradVector dpsiref_1(norb);
+    SPOSet::ValueVector d2psiref_1(norb);
+
+    spo_2->evaluateVGL(elec_2, 0, psiref_1, dpsiref_1, d2psiref_1);
+    spo->evaluateVGL(elec_, 0, psiref_0, dpsiref_0, d2psiref_0);
+    SECTION("single-walker VGL")
+    {
+      CHECK(Approx(std::real(psiref_0[0])) == 0.10203360788082);
+      CHECK(Approx(std::real(d2psiref_0[0])) == -0.14269632514649);
+      CHECK(Approx(std::real(dpsiref_0[0][0])) == 0.00031796000022);
+      CHECK(Approx(std::real(dpsiref_0[0][1])) == -0.01951178212495);
+      CHECK(Approx(std::real(dpsiref_0[0][2])) == -0.00031738324507);
+      CHECK(Approx(std::real(psiref_0[1])) == 0.14111282090404);
+      CHECK(Approx(std::real(d2psiref_0[1])) == -0.28230884342631);
+      CHECK(Approx(std::real(dpsiref_0[1][0])) == 0.01205368790709);
+      CHECK(Approx(std::real(dpsiref_0[1][1])) == -0.04876640907938);
+      CHECK(Approx(std::real(dpsiref_0[1][2])) == -0.01205402562448);
+
+      CHECK(Approx(std::real(psiref_1[0])) == 0.09954792826469);
+      CHECK(Approx(std::real(d2psiref_1[0])) == -0.10799468581785);
+      CHECK(Approx(std::real(dpsiref_1[0][0])) == 0.00024577684629);
+      CHECK(Approx(std::real(dpsiref_1[0][1])) == -0.02943596305516);
+      CHECK(Approx(std::real(dpsiref_1[0][2])) == -0.00024512723822);
+      CHECK(Approx(std::real(psiref_1[1])) == 0.13558495733438);
+      CHECK(Approx(std::real(d2psiref_1[1])) == -0.21885179829267);
+      CHECK(Approx(std::real(dpsiref_1[1][0])) == 0.00738771300147);
+      CHECK(Approx(std::real(dpsiref_1[1][1])) == -0.06080141726019);
+      CHECK(Approx(std::real(dpsiref_1[1][2])) == -0.00738811343748);
+    }
+
+    SPOSet::ValueVector psi_v_1(norb);
+    SPOSet::ValueVector psi_v_2(norb);
+    RefVector<SPOSet::ValueVector> psi_v_list{psi_v_1, psi_v_2};
+    spo->mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
+    SECTION("multi-walker V")
+    {
+      CHECK(Approx(std::real(psi_v_list[0].get()[0])) == 0.10203360788082);
+      CHECK(Approx(std::real(psi_v_list[0].get()[1])) == 0.14111282090404);
+      CHECK(Approx(std::real(psi_v_list[1].get()[0])) == 0.09954792826469);
+      CHECK(Approx(std::real(psi_v_list[1].get()[1])) == 0.13558495733438);
+    }
+
+
+    SPOSet::ValueVector psi_1(norb);
+    SPOSet::GradVector dpsi_1(norb);
+    SPOSet::ValueVector d2psi_1(norb);
+    SPOSet::ValueVector psi_2(norb);
+    SPOSet::GradVector dpsi_2(norb);
+    SPOSet::ValueVector d2psi_2(norb);
+    RefVector<SPOSet::ValueVector> psi_list   = {psi_1, psi_2};
+    RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
+    RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
+    spo->mw_evaluateVGL(spo_list, p_list, 0, psi_list, dpsi_list, d2psi_list);
+    SECTION("multi-walker VGL")
+    {
+      CHECK(Approx(std::real(psi_list[0].get()[0])) == 0.10203360788082);
+      CHECK(Approx(std::real(d2psi_list[0].get()[0])) == -0.14269632514649);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][0])) == 0.00031796000022);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][1])) == -0.01951178212495);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][2])) == -0.00031738324507);
+      CHECK(Approx(std::real(psi_list[0].get()[1])) == 0.14111282090404);
+      CHECK(Approx(std::real(d2psi_list[0].get()[1])) == -0.28230884342631);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][0])) == 0.01205368790709);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][1])) == -0.04876640907938);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][2])) == -0.01205402562448);
+
+      CHECK(Approx(std::real(psi_list[1].get()[0])) == 0.09954792826469);
+      CHECK(Approx(std::real(d2psi_list[1].get()[0])) == -0.10799468581785);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][0])) == 0.00024577684629);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][1])) == -0.02943596305516);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][2])) == -0.00024512723822);
+      CHECK(Approx(std::real(psi_list[1].get()[1])) == 0.13558495733438);
+      CHECK(Approx(std::real(d2psi_list[1].get()[1])) == -0.21885179829267);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][0])) == 0.00738771300147);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][1])) == -0.06080141726019);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][2])) == -0.00738811343748);
+    }
+
+
+    SECTION("compare MW/SW V/VGL")
+    {
+      for (size_t iorb = 0; iorb < norb; iorb++)
+      {
+        CHECK(Approx(std::real(psi_list[0].get()[iorb])) == std::real(psiref_0[iorb]));
+        CHECK(Approx(std::real(psi_list[1].get()[iorb])) == std::real(psiref_1[iorb]));
+        CHECK(Approx(std::real(d2psi_list[0].get()[iorb])) == std::real(d2psiref_0[iorb]));
+        CHECK(Approx(std::real(d2psi_list[1].get()[iorb])) == std::real(d2psiref_1[iorb]));
+        for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+        {
+          CHECK(Approx(std::real(dpsi_list[0].get()[iorb][idim])) == std::real(dpsiref_0[iorb][idim]));
+          CHECK(Approx(std::real(dpsi_list[1].get()[iorb][idim])) == std::real(dpsiref_1[iorb][idim]));
+        }
+      }
+      for (size_t iorb = 0; iorb < norb; iorb++)
+        for (size_t iw = 0; iw < nw; iw++)
+          CHECK(Approx(std::real(psi_v_list[iw].get()[iorb])) == std::real(psi_list[iw].get()[iorb]));
+#ifdef QMC_COMPLEX
+      for (size_t iorb = 0; iorb < norb; iorb++)
+      {
+        CHECK(Approx(std::imag(psi_list[0].get()[iorb])) == std::imag(psiref_0[iorb]));
+        CHECK(Approx(std::imag(psi_list[1].get()[iorb])) == std::imag(psiref_1[iorb]));
+        CHECK(Approx(std::imag(d2psi_list[0].get()[iorb])) == std::imag(d2psiref_0[iorb]));
+        CHECK(Approx(std::imag(d2psi_list[1].get()[iorb])) == std::imag(d2psiref_1[iorb]));
+        for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+        {
+          CHECK(Approx(std::imag(dpsi_list[0].get()[iorb][idim])) == std::imag(dpsiref_0[iorb][idim]));
+          CHECK(Approx(std::imag(dpsi_list[1].get()[iorb][idim])) == std::imag(dpsiref_1[iorb][idim]));
+        }
+      }
+      for (size_t iorb = 0; iorb < norb; iorb++)
+        for (size_t iw = 0; iw < nw; iw++)
+          CHECK(Approx(std::imag(psi_v_list[iw].get()[iorb])) == std::imag(psi_list[iw].get()[iorb]));
+#endif
+    }
+    // app_log() << "vgl_refvalues: \n" << std::setprecision(14);
+    // for (int iorb = 0; iorb < 2; iorb++)
+    // {
+    //   app_log() << "CHECK(Approx(std::real(psiref_0[" << iorb << "])) == " << psiref_0[iorb] << ");\n";
+    //   app_log() << "CHECK(Approx(std::real(d2psiref_0[" << iorb << "])) == " << d2psiref_0[iorb] << ");\n";
+    //   for (int idim = 0; idim < 3; idim++)
+    //     app_log() << "CHECK(Approx(std::real(dpsiref_0[" << iorb << "][" << idim << "])) == " << dpsiref_0[iorb][idim] << ");\n";
+    // }
+    // for (int iorb = 0; iorb < 2; iorb++)
+    // {
+    //   app_log() << "CHECK(Approx(std::real(psiref_1[" << iorb << "])) == " << psiref_1[iorb] << ");\n";
+    //   app_log() << "CHECK(Approx(std::real(d2psiref_1[" << iorb << "])) == " << d2psiref_1[iorb] << "));\n";
+    //   for (int idim = 0; idim < 3; idim++)
+    //     app_log() << "CHECK(Approx(std::real(dpsiref_1[" << iorb << "][" << idim << "])) == " << dpsiref_1[iorb][idim] << ");\n";
+    // }
+  }
   SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
   {
     // make VPs
@@ -369,9 +504,212 @@ void test_LCAO_DiamondC_2x1x1_cplx()
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
-
   ParticleSet::mw_update(p_list);
 
+  SECTION("LCAOrbitalSet::mw_evaluateVGL")
+  {
+    SPOSet::ValueVector psiref_0(norb);
+    SPOSet::GradVector dpsiref_0(norb);
+    SPOSet::ValueVector d2psiref_0(norb);
+    SPOSet::ValueVector psiref_1(norb);
+    SPOSet::GradVector dpsiref_1(norb);
+    SPOSet::ValueVector d2psiref_1(norb);
+
+    spo_2->evaluateVGL(elec_2, 0, psiref_1, dpsiref_1, d2psiref_1);
+    spo->evaluateVGL(elec_, 0, psiref_0, dpsiref_0, d2psiref_0);
+    SECTION("single-walker VGL")
+    {
+      CHECK(Approx(std::real(psiref_0[0])) == 0.10394953298732);
+      CHECK(Approx(std::real(d2psiref_0[0])) == -0.15355833615767);
+      CHECK(Approx(std::real(dpsiref_0[0][0])) == -0.00066360565262);
+      CHECK(Approx(std::real(dpsiref_0[0][1])) == -0.03040447635885);
+      CHECK(Approx(std::real(dpsiref_0[0][2])) == 0.00066400579544);
+      CHECK(Approx(std::real(psiref_0[1])) == 0.04007076321982);
+      CHECK(Approx(std::real(d2psiref_0[1])) == -0.13347762878346);
+      CHECK(Approx(std::real(dpsiref_0[1][0])) == 0.06427121424074);
+      CHECK(Approx(std::real(dpsiref_0[1][1])) == -0.03145499248870);
+      CHECK(Approx(std::real(dpsiref_0[1][2])) == 0.09703977123104);
+
+      CHECK(Approx(std::real(psiref_1[0])) == 0.10041826765555);
+      CHECK(Approx(std::real(d2psiref_1[0])) == -0.11271657756448);
+      CHECK(Approx(std::real(dpsiref_1[0][0])) == -0.00056949645372);
+      CHECK(Approx(std::real(dpsiref_1[0][1])) == -0.03940982127946);
+      CHECK(Approx(std::real(dpsiref_1[0][2])) == 0.00056995118020);
+      CHECK(Approx(std::real(psiref_1[1])) == 0.03692120161253);
+      CHECK(Approx(std::real(d2psiref_1[1])) == -0.10225156633271);
+      CHECK(Approx(std::real(dpsiref_1[1][0])) == 0.05862729651642);
+      CHECK(Approx(std::real(dpsiref_1[1][1])) == -0.03141220770622);
+      CHECK(Approx(std::real(dpsiref_1[1][2])) == 0.08454924955444);
+
+      CHECK(Approx(std::imag(psiref_0[0])) == 0.00920567821605);
+      CHECK(Approx(std::imag(d2psiref_0[0])) == -0.01897980702117);
+      CHECK(Approx(std::imag(dpsiref_0[0][0])) == 0.00599757336742);
+      CHECK(Approx(std::imag(dpsiref_0[0][1])) == 0.00009471083794);
+      CHECK(Approx(std::imag(dpsiref_0[0][2])) == -0.00599734141981);
+      CHECK(Approx(std::imag(psiref_0[1])) == -0.07297020296665);
+      CHECK(Approx(std::imag(d2psiref_0[1])) == 0.24972839540365);
+      CHECK(Approx(std::imag(dpsiref_0[1][0])) == -0.14785027769482);
+      CHECK(Approx(std::imag(dpsiref_0[1][1])) == 0.05546078377043);
+      CHECK(Approx(std::imag(dpsiref_0[1][2])) == -0.19276310593334);
+
+      CHECK(Approx(std::imag(psiref_1[0])) == 0.00921878891696);
+      CHECK(Approx(std::imag(d2psiref_1[0])) == -0.01501853597019);
+      CHECK(Approx(std::imag(dpsiref_1[0][0])) == 0.00531194469490);
+      CHECK(Approx(std::imag(dpsiref_1[0][1])) == 0.00017539927704);
+      CHECK(Approx(std::imag(dpsiref_1[0][2])) == -0.00531168663225);
+      CHECK(Approx(std::imag(psiref_1[1])) == -0.06736883166719);
+      CHECK(Approx(std::imag(d2psiref_1[1])) == 0.19452200419216);
+      CHECK(Approx(std::imag(dpsiref_1[1][0])) == -0.13949226666533);
+      CHECK(Approx(std::imag(dpsiref_1[1][1])) == 0.05635953434634);
+      CHECK(Approx(std::imag(dpsiref_1[1][2])) == -0.17227552311686);
+    }
+
+    SPOSet::ValueVector psi_v_1(norb);
+    SPOSet::ValueVector psi_v_2(norb);
+    RefVector<SPOSet::ValueVector> psi_v_list{psi_v_1, psi_v_2};
+    spo->mw_evaluateValue(spo_list, p_list, 0, psi_v_list);
+    SECTION("multi-walker V")
+    {
+      CHECK(Approx(std::real(psi_v_list[0].get()[0])) == 0.10394953298732);
+      CHECK(Approx(std::real(psi_v_list[0].get()[1])) == 0.04007076321982);
+      CHECK(Approx(std::real(psi_v_list[1].get()[0])) == 0.10041826765555);
+      CHECK(Approx(std::real(psi_v_list[1].get()[1])) == 0.03692120161253);
+
+      CHECK(Approx(std::imag(psi_v_list[0].get()[0])) == 0.00920567821605);
+      CHECK(Approx(std::imag(psi_v_list[0].get()[1])) == -0.07297020296665);
+      CHECK(Approx(std::imag(psi_v_list[1].get()[0])) == 0.00921878891696);
+      CHECK(Approx(std::imag(psi_v_list[1].get()[1])) == -0.06736883166719);
+    }
+
+
+    SPOSet::ValueVector psi_1(norb);
+    SPOSet::GradVector dpsi_1(norb);
+    SPOSet::ValueVector d2psi_1(norb);
+    SPOSet::ValueVector psi_2(norb);
+    SPOSet::GradVector dpsi_2(norb);
+    SPOSet::ValueVector d2psi_2(norb);
+    RefVector<SPOSet::ValueVector> psi_list   = {psi_1, psi_2};
+    RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
+    RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
+    spo->mw_evaluateVGL(spo_list, p_list, 0, psi_list, dpsi_list, d2psi_list);
+    SECTION("multi-walker VGL")
+    {
+      CHECK(Approx(std::real(psi_list[0].get()[0])) == 0.10394953298732);
+      CHECK(Approx(std::real(d2psi_list[0].get()[0])) == -0.15355833615767);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][0])) == -0.00066360565262);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][1])) == -0.03040447635885);
+      CHECK(Approx(std::real(dpsi_list[0].get()[0][2])) == 0.00066400579544);
+      CHECK(Approx(std::real(psi_list[0].get()[1])) == 0.04007076321982);
+      CHECK(Approx(std::real(d2psi_list[0].get()[1])) == -0.13347762878346);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][0])) == 0.06427121424074);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][1])) == -0.03145499248870);
+      CHECK(Approx(std::real(dpsi_list[0].get()[1][2])) == 0.09703977123104);
+
+      CHECK(Approx(std::real(psi_list[1].get()[0])) == 0.10041826765555);
+      CHECK(Approx(std::real(d2psi_list[1].get()[0])) == -0.11271657756448);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][0])) == -0.00056949645372);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][1])) == -0.03940982127946);
+      CHECK(Approx(std::real(dpsi_list[1].get()[0][2])) == 0.00056995118020);
+      CHECK(Approx(std::real(psi_list[1].get()[1])) == 0.03692120161253);
+      CHECK(Approx(std::real(d2psi_list[1].get()[1])) == -0.10225156633271);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][0])) == 0.05862729651642);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][1])) == -0.03141220770622);
+      CHECK(Approx(std::real(dpsi_list[1].get()[1][2])) == 0.08454924955444);
+
+      CHECK(Approx(std::imag(psi_list[0].get()[0])) == 0.00920567821605);
+      CHECK(Approx(std::imag(d2psi_list[0].get()[0])) == -0.01897980702117);
+      CHECK(Approx(std::imag(dpsi_list[0].get()[0][0])) == 0.00599757336742);
+      CHECK(Approx(std::imag(dpsi_list[0].get()[0][1])) == 0.00009471083794);
+      CHECK(Approx(std::imag(dpsi_list[0].get()[0][2])) == -0.00599734141981);
+      CHECK(Approx(std::imag(psi_list[0].get()[1])) == -0.07297020296665);
+      CHECK(Approx(std::imag(d2psi_list[0].get()[1])) == 0.24972839540365);
+      CHECK(Approx(std::imag(dpsi_list[0].get()[1][0])) == -0.14785027769482);
+      CHECK(Approx(std::imag(dpsi_list[0].get()[1][1])) == 0.05546078377043);
+      CHECK(Approx(std::imag(dpsi_list[0].get()[1][2])) == -0.19276310593334);
+
+      CHECK(Approx(std::imag(psi_list[1].get()[0])) == 0.00921878891696);
+      CHECK(Approx(std::imag(d2psi_list[1].get()[0])) == -0.01501853597019);
+      CHECK(Approx(std::imag(dpsi_list[1].get()[0][0])) == 0.00531194469490);
+      CHECK(Approx(std::imag(dpsi_list[1].get()[0][1])) == 0.00017539927704);
+      CHECK(Approx(std::imag(dpsi_list[1].get()[0][2])) == -0.00531168663225);
+      CHECK(Approx(std::imag(psi_list[1].get()[1])) == -0.06736883166719);
+      CHECK(Approx(std::imag(d2psi_list[1].get()[1])) == 0.19452200419216);
+      CHECK(Approx(std::imag(dpsi_list[1].get()[1][0])) == -0.13949226666533);
+      CHECK(Approx(std::imag(dpsi_list[1].get()[1][1])) == 0.05635953434634);
+      CHECK(Approx(std::imag(dpsi_list[1].get()[1][2])) == -0.17227552311686);
+    }
+
+
+    SECTION("compare MW/SW V/VGL")
+    {
+      //real
+      for (size_t iorb = 0; iorb < norb; iorb++)
+      {
+        CHECK(Approx(std::real(psi_list[0].get()[iorb])) == std::real(psiref_0[iorb]));
+        CHECK(Approx(std::real(psi_list[1].get()[iorb])) == std::real(psiref_1[iorb]));
+        CHECK(Approx(std::real(d2psi_list[0].get()[iorb])) == std::real(d2psiref_0[iorb]));
+        CHECK(Approx(std::real(d2psi_list[1].get()[iorb])) == std::real(d2psiref_1[iorb]));
+        for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+        {
+          CHECK(Approx(std::real(dpsi_list[0].get()[iorb][idim])) == std::real(dpsiref_0[iorb][idim]));
+          CHECK(Approx(std::real(dpsi_list[1].get()[iorb][idim])) == std::real(dpsiref_1[iorb][idim]));
+        }
+      }
+      for (size_t iorb = 0; iorb < norb; iorb++)
+        for (size_t iw = 0; iw < nw; iw++)
+          CHECK(Approx(std::real(psi_v_list[iw].get()[iorb])) == std::real(psi_list[iw].get()[iorb]));
+      //imag
+      for (size_t iorb = 0; iorb < norb; iorb++)
+      {
+        CHECK(Approx(std::imag(psi_list[0].get()[iorb])) == std::imag(psiref_0[iorb]));
+        CHECK(Approx(std::imag(psi_list[1].get()[iorb])) == std::imag(psiref_1[iorb]));
+        CHECK(Approx(std::imag(d2psi_list[0].get()[iorb])) == std::imag(d2psiref_0[iorb]));
+        CHECK(Approx(std::imag(d2psi_list[1].get()[iorb])) == std::imag(d2psiref_1[iorb]));
+        for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+        {
+          CHECK(Approx(std::imag(dpsi_list[0].get()[iorb][idim])) == std::imag(dpsiref_0[iorb][idim]));
+          CHECK(Approx(std::imag(dpsi_list[1].get()[iorb][idim])) == std::imag(dpsiref_1[iorb][idim]));
+        }
+      }
+      for (size_t iorb = 0; iorb < norb; iorb++)
+        for (size_t iw = 0; iw < nw; iw++)
+          CHECK(Approx(std::imag(psi_v_list[iw].get()[iorb])) == std::imag(psi_list[iw].get()[iorb]));
+    }
+    // app_log() << "vgl_refvalues: \n" << std::setprecision(14);
+    // for (int iorb = 0; iorb < 2; iorb++)
+    // {
+    //   app_log() << "CHECK(Approx(std::real(psiref_0[" << iorb << "])) == " << std::real(psiref_0[iorb]) << ");\n";
+    //   app_log() << "CHECK(Approx(std::real(d2psiref_0[" << iorb << "])) == " << std::real(d2psiref_0[iorb]) << ");\n";
+    //   for (int idim = 0; idim < 3; idim++)
+    //     app_log() << "CHECK(Approx(std::real(dpsiref_0[" << iorb << "][" << idim
+    //               << "])) == " << std::real(dpsiref_0[iorb][idim]) << ");\n";
+    // }
+    // for (int iorb = 0; iorb < 2; iorb++)
+    // {
+    //   app_log() << "CHECK(Approx(std::real(psiref_1[" << iorb << "])) == " << std::real(psiref_1[iorb]) << ");\n";
+    //   app_log() << "CHECK(Approx(std::real(d2psiref_1[" << iorb << "])) == " << std::real(d2psiref_1[iorb]) << "));\n";
+    //   for (int idim = 0; idim < 3; idim++)
+    //     app_log() << "CHECK(Approx(std::real(dpsiref_1[" << iorb << "][" << idim
+    //               << "])) == " << std::real(dpsiref_1[iorb][idim]) << ");\n";
+    // }
+    // app_log() << "vgl_refvalues: \n" << std::setprecision(14);
+    // for (int iorb = 0; iorb < 2; iorb++)
+    // {
+    //   app_log() << "CHECK(Approx(std::imag(psiref_0[" << iorb << "])) == " << std::imag(psiref_0[iorb]) << ");\n";
+    //   app_log() << "CHECK(Approx(std::imag(d2psiref_0[" << iorb << "])) == " << std::imag(d2psiref_0[iorb]) << ");\n";
+    //   for (int idim = 0; idim < 3; idim++)
+    //     app_log() << "CHECK(Approx(std::imag(dpsiref_0[" << iorb << "][" << idim
+    //               << "])) == " << std::imag(dpsiref_0[iorb][idim]) << ");\n";
+    // }
+    // for (int iorb = 0; iorb < 2; iorb++)
+    // {
+    //   app_log() << "CHECK(Approx(std::imag(psiref_1[" << iorb << "])) == " << std::imag(psiref_1[iorb]) << ");\n";
+    //   app_log() << "CHECK(Approx(std::imag(d2psiref_1[" << iorb << "])) == " << std::imag(d2psiref_1[iorb]) << "));\n";
+    //   for (int idim = 0; idim < 3; idim++)
+    //     app_log() << "CHECK(Approx(std::imag(dpsiref_1[" << iorb << "][" << idim
+    //               << "])) == " << std::imag(dpsiref_1[iorb][idim]) << ");" << std::endl;
+    // }
+  }
   SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
   {
     // make VPs

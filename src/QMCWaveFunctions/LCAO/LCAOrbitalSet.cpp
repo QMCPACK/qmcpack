@@ -453,7 +453,9 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 
   {
     ScopedTimer local(basis_timer_);
-    myBasisSet->mw_evaluateVGL(P_list, iat, basis_vgl_mw);
+    auto basis_list = spo_leader.extractBasisRefList(spo_list);
+    myBasisSet->mw_evaluateVGL(basis_list, P_list, iat, basis_vgl_mw);
+    basis_vgl_mw.updateFrom(); // TODO: remove this when gemm is implemented
   }
 
   if (Identity)
@@ -547,7 +549,9 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
   auto& basis_v_mw = spo_leader.mw_mem_handle_.getResource().basis_v_mw;
   basis_v_mw.resize(nw, BasisSetSize);
 
-  myBasisSet->mw_evaluateValue(P_list, iat, basis_v_mw);
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValue(basis_list, P_list, iat, basis_v_mw);
+  basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
 
   if (Identity)
   {
