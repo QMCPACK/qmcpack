@@ -244,7 +244,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     int rows = sizes[0];
     int cols = sizes[1];
     history_params_.resize(rows);
-    Matrix<RealType> tmp(rows, cols);
+    Matrix<ValueType> tmp(rows, cols);
     hin.read(tmp, rot_hist_name);
     for (size_t i = 0; i < rows; i++)
     {
@@ -275,7 +275,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     throw std::runtime_error(tmp_err.str());
   }
 
-  std::vector<RealType> params(nparam);
+  std::vector<ValueType> params(nparam);
   hin.read(params, rot_param_name);
   for (int i = 0; i < nparam; i++)
     myVars[i] = params[i];
