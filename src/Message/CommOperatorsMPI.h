@@ -326,6 +326,14 @@ inline void Communicate::allreduce(std::vector<double>& g)
 }
 
 template<>
+inline void Communicate::allreduce(std::vector<std::complex<float>>& g)
+{
+  std::vector<std::complex<float>> gt(g.size(), std::complex<float>(0.0));
+  MPI_Allreduce(&(g[0]), &(gt[0]), 2 * g.size(), MPI_FLOAT, MPI_SUM, myMPI);
+  g = gt;
+}
+
+template<>
 inline void Communicate::allreduce(std::vector<std::complex<double>>& g)
 {
   std::vector<std::complex<double>> gt(g.size(), std::complex<double>(0.0));
