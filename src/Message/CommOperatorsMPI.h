@@ -16,130 +16,131 @@
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #include "Pools/PooledData.h"
-#include <stdint.h>
+#include <cstdint>
+#include <stdexcept>
 ///dummy declarations to be specialized
 template<typename T>
 inline void gsum(T&, int)
 {
-  APP_ABORT("Need specialization for gsum(T&, int)");
+  throw std::runtime_error("Need specialization for gsum(T&, int)");
 }
 
 template<typename T>
 inline void Communicate::allreduce(T&)
 {
-  APP_ABORT("Need specialization for allreduce(T&)");
+  throw std::runtime_error("Need specialization for allreduce(T&)");
 }
 
 template<typename T>
 inline void Communicate::reduce(T&)
 {
-  APP_ABORT("Need specialization for reduce(T&)");
+  throw std::runtime_error("Need specialization for reduce(T&)");
 }
 
 template<typename T>
 inline void Communicate::reduce(T* restrict, T* restrict, int n)
 {
-  APP_ABORT("Need specialization for reduce(T* restrict , T* restrict, int n)");
+  throw std::runtime_error("Need specialization for reduce(T* restrict , T* restrict, int n)");
 }
 
 template<typename T>
 inline void Communicate::reduce_in_place(T* restrict, int n)
 {
-  APP_ABORT("Need specialization for reduce_in_place(T* restrict, int n)");
+  throw std::runtime_error("Need specialization for reduce_in_place(T* restrict, int n)");
 }
 
 template<typename T>
 inline void Communicate::bcast(T&)
 {
-  APP_ABORT("Need specialization for bcast(T&)");
+  throw std::runtime_error("Need specialization for bcast(T&)");
 }
 
 template<typename T>
 inline void Communicate::bcast(T* restrict, int n)
 {
-  APP_ABORT("Need specialization for bcast(T* restrict ,int n)");
+  throw std::runtime_error("Need specialization for bcast(T* restrict ,int n)");
 }
 
 template<typename T>
 inline void Communicate::send(int dest, int tag, T&)
 {
-  APP_ABORT("Need specialization for send(int, int, T& )");
+  throw std::runtime_error("Need specialization for send(int, int, T& )");
 }
 
 template<typename T>
 inline void Communicate::gather(T& sb, T& rb, int dest)
 {
-  APP_ABORT("Need specialization for gather(T&, T&, int)");
+  throw std::runtime_error("Need specialization for gather(T&, T&, int)");
 }
 
 template<typename T>
 inline void Communicate::allgather(T& sb, T& rb, int count)
 {
-  APP_ABORT("Need specialization for allgather(T&, T&, int)");
+  throw std::runtime_error("Need specialization for allgather(T&, T&, int)");
 }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T& sb, T& rb, IT&, IT&, int dest)
 {
-  APP_ABORT("Need specialization for gatherv(T&, T&, IT&, IT&, int)");
+  throw std::runtime_error("Need specialization for gatherv(T&, T&, IT&, IT&, int)");
 }
 
 template<typename T>
 inline void Communicate::scatter(T& sb, T& rb, int dest)
 {
-  APP_ABORT("Need specialization for scatter(T&, T&, int)");
+  throw std::runtime_error("Need specialization for scatter(T&, T&, int)");
 }
 
 template<typename T, typename IT>
 inline void Communicate::scatterv(T& sb, T& rb, IT&, IT&, int source)
 {
-  APP_ABORT("Need specialization for scatterv(T&, T&, IT&, IT&, int)");
+  throw std::runtime_error("Need specialization for scatterv(T&, T&, IT&, IT&, int)");
 }
 
 template<typename T>
 inline Communicate::request Communicate::irecv(int source, int tag, T&)
 {
-  APP_ABORT("Need specialization for irecv(int source, int tag, T& )");
+  throw std::runtime_error("Need specialization for irecv(int source, int tag, T& )");
   return MPI_REQUEST_NULL;
 }
 
 template<typename T>
 inline Communicate::request Communicate::isend(int dest, int tag, T&)
 {
-  APP_ABORT("Need specialization for isend(int source, int tag, T& )");
+  throw std::runtime_error("Need specialization for isend(int source, int tag, T& )");
   return MPI_REQUEST_NULL;
 }
 
 template<typename T>
 inline Communicate::request Communicate::irecv(int source, int tag, T*, int n)
 {
-  APP_ABORT("Need specialization for irecv(int source, int tag, T*, int )");
+  throw std::runtime_error("Need specialization for irecv(int source, int tag, T*, int )");
   return MPI_REQUEST_NULL;
 }
 
 template<typename T>
 inline Communicate::request Communicate::isend(int dest, int tag, T*, int n)
 {
-  APP_ABORT("Need specialization for isend(int source, int tag, T*, int )");
+  throw std::runtime_error("Need specialization for isend(int source, int tag, T*, int )");
   return MPI_REQUEST_NULL;
 }
 
 template<typename T>
 inline void Communicate::allgather(T* sb, T* rb, int count)
 {
-  APP_ABORT("Need specialization for allgather(T*, T*, int)");
+  throw std::runtime_error("Need specialization for allgather(T*, T*, int)");
 }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T* sb, T* rb, int n, IT&, IT&, int dest)
 {
-  APP_ABORT("Need specialization for gatherv(T*, T*, int, IT&, IT&, int)");
+  throw std::runtime_error("Need specialization for gatherv(T*, T*, int, IT&, IT&, int)");
 }
 
 template<typename T>
 inline void Communicate::gsum(T&)
 {
-  APP_ABORT("Need specialization for Communicate::::gsum(T&)");
+  throw std::runtime_error("Need specialization for Communicate::::gsum(T&)");
 }
 
 template<>
