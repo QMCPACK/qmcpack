@@ -153,8 +153,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (basisset_map_.size() == 0 && h5_path != "")
   {
     app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
-                  << "LCAO needs an explicit basisset XML element. "
-                  << "Fallback on loading an implicit one." << std::endl;
+                  << "LCAO needs an explicit basisset XML element. " << "Fallback on loading an implicit one."
+                  << std::endl;
     basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
   }
 
@@ -458,18 +458,31 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), cusp_file(""), optimize("no");
   std::string basisset_name("LCAOBSet");
+  size_t norbs(0);
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
   spoAttrib.add(spo_name, "id");
   spoAttrib.add(cusp_file, "cuspInfo");
   spoAttrib.add(basisset_name, "basisset");
+  spoAttrib.add(norbs, "size");
+  spoAttrib.add(norbs, "orbitals", {}, TagStatus::DELETED);
   spoAttrib.put(cur);
+
+  // look for coefficients element. If found the MO coefficients matrix is not identity
+  bool identity = true;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname.find("coeff") < cname.size() || cname == "parameter" || cname == "Var")
+      identity = false;
+  });
 
   std::unique_ptr<BasisSet_t> myBasisSet;
   if (basisset_map_.find(basisset_name) == basisset_map_.end())
     myComm->barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
   else
     myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
+
+  if (norbs == 0)
+    norbs = myBasisSet->getBasisSetSize();
 
   std::unique_ptr<SPOSet> sposet;
   if (doCuspCorrection)
@@ -479,16 +492,18 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
-    loadMO(lcwc->lcao, cur);
-    lcwc->setOrbitalSetSize(lcwc->lcao.getOrbitalSetSize());
+    auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, std::move(myBasisSet), norbs, identity,
+                                                              sourcePtcl, targetPtcl);
+    if (!identity)
+      loadMO(lcwc->lcao, cur);
     sposet = std::move(lcwc);
 #endif
   }
   else
   {
-    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet));
-    loadMO(*lcos, cur);
+    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet), norbs, identity);
+    if (!identity)
+      loadMO(*lcos, cur);
     sposet = std::move(lcos);
   }
 
@@ -561,13 +576,10 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
   ReportEngine PRE("LCAOrbitalBuilder", "put(xmlNodePtr)");
 
   //initialize the number of orbital by the basis set size
-  int norb = spo.getBasisSetSize();
   std::string debugc("no");
   double orbital_mix_magnitude = 0.0;
   bool PBC                     = false;
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(norb, "orbitals", {}, TagStatus::DELETED);
-  aAttrib.add(norb, "size");
   aAttrib.add(debugc, "debug");
   aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
@@ -592,7 +604,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     app_log() << "   Using Identity for the LCOrbitalSet " << std::endl;
     return true;
   }
-  spo.setOrbitalSetSize(norb);
   bool success = putOccupation(spo, occ_ptr);
   if (h5_path == "")
     success = putFromXML(spo, coeff_ptr);
@@ -680,12 +691,12 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
    */
 bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-  int neigs  = spo.getBasisSetSize();
   int setVal = -1;
+  int neig;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
-  aAttrib.add(neigs, "size");
-  aAttrib.add(neigs, "orbitals", {}, TagStatus::DELETED);
+  aAttrib.add(neig, "size", {}, TagStatus::DEPRECATED);
+  aAttrib.add(neig, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
   hdf_archive hin(myComm);
   if (myComm->rank() == 0)
@@ -752,19 +763,16 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
   ReportEngine PRE("LCAOrbitalBuilder", "LCAOrbitalBuilder::putPBCFromH5");
-  int norbs      = spo.getOrbitalSetSize();
-  int neigs      = spo.getBasisSetSize();
   int setVal     = -1;
+  int neig;
   bool IsComplex = false;
   bool MultiDet  = false;
-  std::string use_sorted;
   PosType SuperTwist(0.0);
   PosType SuperTwistH5(0.0);
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
-  aAttrib.add(neigs, "size");
-  aAttrib.add(neigs, "orbitals", {}, TagStatus::DELETED);
-  aAttrib.add(use_sorted, "sorted");
+  aAttrib.add(neig, "size", {}, TagStatus::DEPRECATED);
+  aAttrib.add(neig, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
   hdf_archive hin(myComm);
 
@@ -823,7 +831,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp, MultiDet);
 
     int n = 0, i = 0;
-    while (i < norbs)
+    while (i < spo.getOrbitalSetSize())
     {
       if (Occ[n] > 0.0)
       {

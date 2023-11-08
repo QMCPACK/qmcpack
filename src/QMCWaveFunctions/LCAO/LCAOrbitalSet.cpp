@@ -33,20 +33,28 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   OffloadMWVArray vp_basis_v_mw;  // [NVPs][NumAO]
 };
 
-LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
+LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity)
     : SPOSet(my_name),
       BasisSetSize(bs ? bs->getBasisSetSize() : 0),
-      Identity(true),
+      Identity(identity),
       basis_timer_(createGlobalTimer("LCAOrbitalSet::Basis", timer_level_fine)),
       mo_timer_(createGlobalTimer("LCAOrbitalSet::MO", timer_level_fine))
 {
   if (!bs)
     throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
-  myBasisSet = std::move(bs);
+  myBasisSet     = std::move(bs);
+  OrbitalSetSize = norbs;
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
   Tempgh.resize(BasisSetSize);
-  OrbitalSetSize = BasisSetSize;
+  OrbitalSetSize = norbs;
+  if (!Identity)
+  {
+    Tempv.resize(OrbitalSetSize);
+    Temphv.resize(OrbitalSetSize);
+    Tempghv.resize(OrbitalSetSize);
+    C = std::make_shared<ValueMatrix>(OrbitalSetSize, BasisSetSize);
+  }
   LCAOrbitalSet::checkObject();
 }
 
@@ -74,16 +82,7 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
 
 void LCAOrbitalSet::setOrbitalSetSize(int norbs)
 {
-  if (C)
-    throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize cannot reset existing MO coefficients");
-
-  Identity       = false;
-  OrbitalSetSize = norbs;
-  C              = std::make_shared<ValueMatrix>(OrbitalSetSize, BasisSetSize);
-  Tempv.resize(OrbitalSetSize);
-  Temphv.resize(OrbitalSetSize);
-  Tempghv.resize(OrbitalSetSize);
-  LCAOrbitalSet::checkObject();
+  throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize should not be called");
 }
 
 void LCAOrbitalSet::checkObject() const
