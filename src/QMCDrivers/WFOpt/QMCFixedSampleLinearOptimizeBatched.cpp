@@ -1344,7 +1344,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << std::endl;
 
   // for each set of shifts, solve the linear method equations for the parameter update direction
-  std::vector<std::vector<ValueType>> parameterDirections;
+  std::vector<std::vector<RealType>> parameterDirections;
 #ifdef HAVE_LMY_ENGINE
   // call the engine to perform update
   EngineObj->wfn_update_compute();
@@ -1360,7 +1360,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
     if (true)
     {
       for (int j = 0; j < N; j++)
-        parameterDirections.at(i).at(j) = EngineObj->wfn_update().at(i * N + j);
+        parameterDirections.at(i).at(j) = std::real(EngineObj->wfn_update().at(i * N + j));
     }
     else
       parameterDirections.at(i).at(0) = 1.0;
@@ -1370,7 +1370,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   //There will be updates of 0 for parameters that were filtered out before derivative ratios were used by the engine.
   if (options_LMY_.filter_param)
   {
-    std::vector<std::vector<ValueType>> tmpParameterDirections;
+    std::vector<std::vector<RealType>> tmpParameterDirections;
     tmpParameterDirections.resize(shifts_i.size());
 
     for (int i = 0; i < shifts_i.size(); i++)
@@ -1400,7 +1400,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   optTarget->setneedGrads(false);
 
   // prepare vectors to hold the initial and current parameters
-  std::vector<ValueType> currParams(numParams, 0.0);
+  std::vector<RealType> currParams(numParams, 0.0);
 
   // initialize the initial and current parameter vectors
   for (int i = 0; i < numParams; i++)
@@ -1493,8 +1493,8 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   }
 
   // find the best shift and the corresponding update direction
-  const std::vector<ValueType>* bestDirection = 0;
-  int best_shift                              = -1;
+  const std::vector<RealType>* bestDirection = 0;
+  int best_shift                             = -1;
   for (int k = 0;
        k < costValues.size() && std::abs((initCost - initCost) / initCost) < options_LMY_.max_relative_cost_change; k++)
     if (is_best_cost(k, costValues, shifts_i, initCost) && good_update.at(k))
@@ -1778,7 +1778,7 @@ bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 
   for (int i = 0; i < results.size(); i++)
   {
-    optTarget->Params(i) = results[i];
+    optTarget->Params(i) = std::real(results[i]);
   }
 
   //If descent is being run as part of a hybrid optimization, need to check if a vector of
