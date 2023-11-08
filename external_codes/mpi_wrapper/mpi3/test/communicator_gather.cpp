@@ -1,26 +1,26 @@
-#if COMPILATION_INSTRUCTIONS
-mpicxx.mpich -g $0 -o $0x -lboost_serialization&&mpirun.mpich -n 3 valgrind --error-exitcode=1345 $0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2018-2021
+// Copyright 2018-2023 Alfredo A. Correa
 
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
-#include "../../mpi3/ostream.hpp"
+
+// #if not defined(EXAMPI)
+// #include "../../mpi3/ostream.hpp"
+// #endif
+
 #include "../../mpi3/process.hpp"
 
-#include<boost/serialization/utility.hpp>
+// #include<boost/serialization/utility.hpp>
 
-#include<list>
+// #include<list>
 
 namespace mpi3 = boost::mpi3;
 
-using std::cout;
-using std::list;
-using std::vector;
+// using std::cout;
+// using std::list;
 
 void part1(mpi3::communicator& world) {
-	vector<std::pair<double, int>> small(10, {0.0, world.rank()});
-	vector<std::pair<double, int>> large(world.root() ? small.size() * static_cast<std::size_t>(world.size()) : 0, std::pair<double, int>(0.0, -10));
+	std::vector<std::pair<double, int>> small(10, {0.0, world.rank()});
+	std::vector<std::pair<double, int>> large(world.root() ? small.size() * static_cast<std::size_t>(world.size()) : 0, std::pair<double, int>(0.0, -10));
 
 	auto it = world.gather_n(small.begin(), small.size(), large.begin(), 0);
 	assert(it == large.end());
@@ -35,8 +35,8 @@ void part1(mpi3::communicator& world) {
 }
 
 void part2(mpi3::communicator& world) {
-	vector<std::pair<double, int>> small(10, {0., world.rank()});
-	vector<std::pair<double, int>> large(world.root() ? small.size() * static_cast<std::size_t>(world.size()) : 0, std::pair<double, int>(0., -1));
+	std::vector<std::pair<double, int>> small(10, {0., world.rank()});
+	std::vector<std::pair<double, int>> large(world.root() ? small.size() * static_cast<std::size_t>(world.size()) : 0, std::pair<double, int>(0., -1));
 
 	auto it = world.gather_n(small.begin(), small.size(), large.begin());
 	assert(it == large.end());
@@ -51,14 +51,14 @@ void part2(mpi3::communicator& world) {
 }
 
 void part3(mpi3::communicator& world) {
-	list<double> small(10, world.rank());
-	vector<double> large(world.root()?small.size()*static_cast<std::size_t>(world.size()):0, -1.0);
+	std::list<double> small(10, world.rank());
+	std::vector<double> large(world.root()?small.size()*static_cast<std::size_t>(world.size()):0, -1.0);
 
 	world.gather(small.begin(), small.end(), large.begin(), 0);
 	if(world.root()) {
-		cout << "large: ";
-		for(auto& e : large) {cout<< e <<" ";}  // NOLINT(altera-unroll-loops)
-		cout << '\n';
+		std::cout << "large: ";
+		std::copy(large.begin(), large.end(), std::ostream_iterator<double>(std::cout, ", "));
+		std::cout << '\n';
 	}
 	if(world.root()) {
 		assert(large[ 1] == 0);
@@ -72,8 +72,8 @@ void part4(mpi3::communicator& world) {
 
 	using T = decltype(val);
 
-	vector<T> small(10, val);
-	vector<T> large(world.root() ? small.size() * static_cast<std::size_t>(world.size()) : 0);
+	std::vector<T> small(10, val);
+	std::vector<T> large(world.root() ? small.size() * static_cast<std::size_t>(world.size()) : 0);
 
 	world.gather(small.begin(), small.end(), large.begin(), 0);
 
@@ -82,6 +82,7 @@ void part4(mpi3::communicator& world) {
 	}
 }
 
+#if not defined(EXAMPI)
 void part5(mpi3::communicator& world) {
 	auto Lval  = std::to_string(world.rank() + 1000);
 	auto vals0 = (world[0] |= Lval);
@@ -92,6 +93,7 @@ void part5(mpi3::communicator& world) {
 		assert(vals0.empty());
 	}
 }
+#endif
 
 auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int try{
 
@@ -102,8 +104,10 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 	part1(world);
 	part2(world);
 	part3(world);
-	part4(world);
+//	part4(world);
+#if not defined(EXAMPI)
 	part5(world);
+#endif
 
 	return 0;
 

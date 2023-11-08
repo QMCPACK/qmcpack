@@ -38,6 +38,8 @@
 
 namespace qmcplusplus
 {
+class MultiSlaterDetTableMethod;
+
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -502,6 +504,11 @@ public:
   /// spomap_ reference accessor
   const SPOMap& getSPOMap() const { return *spomap_; }
 
+  /** find the first MSD WFC if exists
+   * @return the first found MSD WFC
+   */
+  std::optional<std::reference_wrapper<MultiSlaterDetTableMethod>> findMSD() const;
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
@@ -551,13 +558,6 @@ private:
   /// timers at WaveFunctionComponent function call level
   std::vector<std::reference_wrapper<NewTimer>> WFC_timers_;
   std::vector<RealType> myTwist;
-
-  /** check if any gradient component (x,y,z) is NaN and throw an error if yes.
-   * @param iel particle index
-   * @param grads gradients to be checked
-   * @param location usually put function name to indicate where the check is being called.
-   */
-  static void checkOneParticleGradientsNaN(int iel, const GradType& grads, const std::string_view location);
 
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction

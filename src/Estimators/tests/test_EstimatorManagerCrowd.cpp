@@ -159,7 +159,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   for (int iw = 0; iw < num_walkers; ++iw)
     savePropertiesIntoWalker(*(hams[iw]), walkers[iw]);
 
-  emc.accumulate(walker_refs, p_refs, twf_refs, rng);
+  emc.accumulate(walker_refs, p_refs, twf_refs, ham_refs, rng);
 }
 
 

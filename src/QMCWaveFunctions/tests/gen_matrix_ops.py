@@ -93,81 +93,93 @@ def print_matrix_as_initializer_list(m):
             print(" ", end="")
 
 
-# Only have one choice for antisymmetric 1x1 matrix
-print("1x1 matrix")
-m1 = Matrix([0.0])
-m1exp = exp(-m1)
+def test_1x1():
+    # Only have one choice for antisymmetric 1x1 matrix
+    print("1x1 matrix")
+    m1 = Matrix([0.0])
+    m1exp = exp(-m1)
 
-print(m1exp)
-print()
+    print(m1exp)
+    print()
 
-print("2x2 matrix")
-m2 = create2x2_matrix(0.1)
-m2exp = exp(m2)
+def test_2x2():
+    print("2x2 matrix")
+    m2 = create2x2_matrix(0.1)
+    m2exp = exp(m2)
 
-print("Input")
-print_matrix_as_initializer_list(m2)
-print("\nExp(Input)")
-print_matrix_as_initializer_list(m2exp)
-print()
+    print("Input")
+    print_matrix_as_initializer_list(m2)
+    print("\nExp(Input)")
+    print_matrix_as_initializer_list(m2exp)
+    print()
 
-print("3x3 matrix")
-m3 = create3x3_matrix(0.3, 0.1, 0.2)
-m3exp = exp(m3)
+def test_3x3():
+    print("3x3 matrix")
+    m3 = create3x3_matrix(0.3, 0.1, 0.2)
+    m3exp = exp(m3)
 
-print("Input")
-print_matrix_as_initializer_list(m3)
-print("\nExp(Input)")
-print_matrix_as_initializer_list(m3exp)
-
-
-# Application of rotation matrix in the test "RotatedSPOs construct delta matrix" in test_RotatedSPOs.cpp
-# Sympy operations are very slow for a 4x4 matrix, and it doesn't have a matrix log.
-# Use the Scipy versions instead.
-print()
-print("4x4 rotation matrix in 'RotatedSPOs construct delta matrix' test")
-print()
-# Be aware of the order of the indices when comparing with qmcpack.
-# This system has 2 electrons and 4 orbitals.
-# The 0,1 (core->core) and 2,3 (unoccupied->unoccupied) are parameters k1 and k6, respectively,
-#  and are put at the end of the full rotation indices list.
-m4old = create4x4_matrix(-1.1, 1.5, 0.2, -0.15, 0.03, 0.05)
-m4delta = create4x4_matrix(0.0, 0.1, 0.3, 0.2, -0.1, 0.0)
-
-# Why is the order reversed compared with constructDeltaRotations?
-#  Probably has to do with the data ordering of the matrices?
-m4new = np.dot(scipy.linalg.expm(m4old), scipy.linalg.expm(m4delta))
-print("New rotation matrix")
-print_matrix_as_initializer_list(m4new)
-
-param4 = scipy.linalg.logm(m4new)
-print("Corresponding antisymmetric matrix")
-print(param4)
-ks = extract4x4parameters(param4)
-print('Extracted parameters (Reminder: ordering differs from QMCPACK)')
-print(ks)
+    print("Input")
+    print_matrix_as_initializer_list(m3)
+    print("\nExp(Input)")
+    print_matrix_as_initializer_list(m3exp)
 
 
-# Application of rotation matrix in test_RotatedSPOs_LCAO.cpp "Rotated LCAO global rotation consistency"
-print()
-print("3x3 rotation matrix in 'Rotated LCAO global rotation consistency' test")
-print()
+def test_4x4():
+    # Application of rotation matrix in the test "RotatedSPOs construct delta matrix" in test_RotatedSPOs.cpp
+    # Sympy operations are very slow for a 4x4 matrix, and it doesn't have a matrix log.
+    # Use the Scipy versions instead.
+    print()
+    print("4x4 rotation matrix in 'RotatedSPOs construct delta matrix' test")
+    print()
+    # Be aware of the order of the indices when comparing with qmcpack.
+    # This system has 2 electrons and 4 orbitals.
+    # The 0,1 (core->core) and 2,3 (unoccupied->unoccupied) are parameters k1 and k6, respectively,
+    #  and are put at the end of the full rotation indices list.
+    m4old = create4x4_matrix(-1.1, 1.5, 0.2, -0.15, 0.03, 0.05)
+    m4delta = create4x4_matrix(0.0, 0.1, 0.3, 0.2, -0.1, 0.0)
 
-# For this test, nel = 1 nmo = 3
-# The core-unoccupied rotations come first (0,1),(0,2) followed by the unoccupied-unoccupied rotations (1,2)
-# In this case they fall in the natural order for k1, k2, and k3.
-m3old = np.array(create3x3_matrix(0.1, 0.2, 0.0))
-m3next = np.array(create3x3_matrix(0.3, 0.15, 0.0))
+    # Why is the order reversed compared with constructDeltaRotations?
+    #  Probably has to do with the data ordering of the matrices?
+    m4new = np.dot(scipy.linalg.expm(m4old), scipy.linalg.expm(m4delta))
+    print("New rotation matrix")
+    print_matrix_as_initializer_list(m4new)
 
-print('Original rotation matrix')
-print_matrix_as_initializer_list(scipy.linalg.expm(m3old).T)
+    param4 = scipy.linalg.logm(m4new)
+    print("Corresponding antisymmetric matrix")
+    print(param4)
+    ks = extract4x4parameters(param4)
+    print('Extracted parameters (Reminder: ordering differs from QMCPACK)')
+    print(ks)
 
-m3new = np.dot(scipy.linalg.expm(m3next).T, scipy.linalg.expm(m3old).T)
-print('After second rotation')
-print_matrix_as_initializer_list(m3new)
 
-param3 = scipy.linalg.logm(m3new)
+def test_multiple_3x3():
+    # Application of rotation matrix in test_RotatedSPOs_LCAO.cpp "Rotated LCAO global rotation consistency"
+    print()
+    print("3x3 rotation matrix in 'Rotated LCAO global rotation consistency' test")
+    print()
 
-ks3 = extract3x3parameters(param3.T)
-print('Extracted parameters after second rotation')
-print(ks3)
+    # For this test, nel = 1 nmo = 3
+    # The core-unoccupied rotations come first (0,1),(0,2) followed by the unoccupied-unoccupied rotations (1,2)
+    # In this case they fall in the natural order for k1, k2, and k3.
+    m3old = np.array(create3x3_matrix(0.1, 0.2, 0.0))
+    m3next = np.array(create3x3_matrix(0.3, 0.15, 0.0))
+
+    print('Original rotation matrix')
+    print_matrix_as_initializer_list(scipy.linalg.expm(m3old).T)
+
+    m3new = np.dot(scipy.linalg.expm(m3next).T, scipy.linalg.expm(m3old).T)
+    print('After second rotation')
+    print_matrix_as_initializer_list(m3new)
+
+    param3 = scipy.linalg.logm(m3new)
+
+    ks3 = extract3x3parameters(param3.T)
+    print('Extracted parameters after second rotation')
+    print(ks3)
+
+if __name__ == "__main__":
+    test_1x1()
+    test_2x2()
+    test_3x3()
+    test_4x4()
+    test_multiple_3x3()

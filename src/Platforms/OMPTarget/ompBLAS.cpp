@@ -11,6 +11,7 @@
 
 
 #include "ompBLAS.hpp"
+#include <cstdint>
 #include <stdexcept>
 #include "config.h"
 #if !defined(OPENMP_NO_COMPLEX)
@@ -42,11 +43,11 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
 
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(n) is_device_ptr(A, x, y)")
-    for(size_t i = 0; i < n; i++)
+    for (uint32_t i = 0; i < n; i++)
     {
       T dot_sum(0);
       PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
-      for(size_t j = 0; j < m; j++)
+      for (uint32_t j = 0; j < m; j++)
         dot_sum += x[j] * A[i * lda + j];
       if (beta == T(0))
         y[i] = alpha * dot_sum; // protecting NaN from y
@@ -61,11 +62,11 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
 
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(n) is_device_ptr(A, x, y)")
-    for (size_t i = 0; i < m; i++)
+    for (uint32_t i = 0; i < m; i++)
     {
       T dot_sum(0);
       PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
-      for (size_t j = 0; j < n; j++)
+      for (uint32_t j = 0; j < n; j++)
         dot_sum += x[j] * A[j * lda + i];
       if (beta == T(0))
         y[i] = alpha * dot_sum; // protecting NaN from y
@@ -166,12 +167,12 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_batched_impl!");
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(batch_count * n) is_device_ptr(A, x, y, alpha, beta)")
-    for (size_t ib = 0; ib < batch_count; ib++)
-      for (size_t i = 0; i < n; i++)
+    for (uint32_t ib = 0; ib < batch_count; ib++)
+      for (uint32_t i = 0; i < n; i++)
       {
         T dot_sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
-        for (size_t j = 0; j < m; j++)
+        for (uint32_t j = 0; j < m; j++)
           dot_sum += x[ib][j] * A[ib][i * lda + j];
         if (beta[ib] == T(0))
           y[ib][i] = alpha[ib] * dot_sum; // protecting NaN from y
@@ -186,12 +187,12 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_batched_impl!");
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(batch_count * n) is_device_ptr(A, x, y, alpha, beta)")
-    for (size_t ib = 0; ib < batch_count; ib++)
-      for (size_t i = 0; i < m; i++)
+    for (uint32_t ib = 0; ib < batch_count; ib++)
+      for (uint32_t i = 0; i < m; i++)
       {
         T dot_sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
-        for (size_t j = 0; j < n; j++)
+        for (uint32_t j = 0; j < n; j++)
           dot_sum += x[ib][j] * A[ib][j * lda + i];
         if (beta[ib] == T(0))
           y[ib][i] = alpha[ib] * dot_sum; // protecting NaN from y
@@ -290,8 +291,8 @@ ompBLAS_status ger_impl(ompBLAS_handle& handle,
 
   //BLAS::ger(m, n, alpha, x, incx, y, incy, A, lda);
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(A, x, y)")
-  for(size_t i = 0; i < n; i++)
-    for(size_t j = 0; j < m; j++)
+  for (uint32_t i = 0; i < n; i++)
+    for (uint32_t j = 0; j < m; j++)
       A[i * lda + j] += alpha * x[j] * y[i];
   return 0;
 }
@@ -374,9 +375,9 @@ ompBLAS_status ger_batched_impl(ompBLAS_handle& handle,
     throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::ger_batched_impl!");
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) is_device_ptr(A, x, y, alpha)")
-  for(size_t ib = 0; ib < batch_count; ib++)
-    for(size_t i = 0; i < n; i++)
-      for(size_t j = 0; j < m; j++)
+  for (uint32_t ib = 0; ib < batch_count; ib++)
+    for (uint32_t i = 0; i < n; i++)
+      for (uint32_t j = 0; j < m; j++)
         A[ib][i * lda + j] += alpha[ib] * x[ib][j] * y[ib][i];
   return 0;
 }
@@ -456,8 +457,8 @@ ompBLAS_status copy_batched_impl(ompBLAS_handle& handle,
   if (batch_count == 0) return 0;
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(x, y)")
-  for (size_t ib = 0; ib < batch_count; ib++)
-    for (size_t i = 0; i < n; i++)
+  for (uint32_t ib = 0; ib < batch_count; ib++)
+    for (uint32_t i = 0; i < n; i++)
       y[ib][i * incy] = x[ib][i * incx];
   return 0;
 }
@@ -522,8 +523,8 @@ ompBLAS_status copy_batched_offset_impl(ompBLAS_handle& handle,
   if (batch_count == 0) return 0;
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(x, y)")
-  for (size_t ib = 0; ib < batch_count; ib++)
-    for (size_t i = 0; i < n; i++)
+  for (uint32_t ib = 0; ib < batch_count; ib++)
+    for (uint32_t i = 0; i < n; i++)
       y[ib][y_offset + i * incy] = x[ib][x_offset + i * incx];
   return 0;
 }

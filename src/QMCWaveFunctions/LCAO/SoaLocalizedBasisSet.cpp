@@ -23,8 +23,25 @@ namespace qmcplusplus
 {
 
 template<class COT, typename ORBT>
+struct SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBSetMultiWalkerMem : public Resource
+{
+    SoaLocalizedBSetMultiWalkerMem() : Resource("SoaLocalizedBasisSet") {}
+
+    SoaLocalizedBSetMultiWalkerMem(const SoaLocalizedBSetMultiWalkerMem&) : SoaLocalizedBSetMultiWalkerMem() {}
+
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<SoaLocalizedBSetMultiWalkerMem>(*this);
+    }
+
+  Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
+  Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
+};
+
+template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::createResource(ResourceCollection& collection) const
 {
+  collection.addResource(std::make_unique<SoaLocalizedBSetMultiWalkerMem>());
   for (int i = 0; i < LOBasisSet.size(); i++)
     LOBasisSet[i]->createResource(collection);
 }
@@ -33,8 +50,10 @@ void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
     ResourceCollection& collection,
     const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const
 {
-  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
   auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  assert(this == &loc_basis_leader);
+  loc_basis_leader.mw_mem_handle_ = collection.lendResource<SoaLocalizedBSetMultiWalkerMem>();
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
   auto& basisset_leader  = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
@@ -47,8 +66,10 @@ void SoaLocalizedBasisSet<COT, ORBT>::releaseResource(
     ResourceCollection& collection,
     const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list) const
 {
-  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
   auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  assert(this == &loc_basis_leader);
+  collection.takebackResource(loc_basis_leader.mw_mem_handle_);
+  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
   auto& basisset_leader  = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
@@ -100,12 +121,14 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(const SoaLocalizedBasisSet
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::setPBCParams(const TinyVector<int, 3>& PBCImages,
-                                                   const TinyVector<double, 3> Sup_Twist,
-                                                   const std::vector<QMCTraits::ValueType>& phase_factor)
+void SoaLocalizedBasisSet<COT, ORBT>::setPBCParams(
+    const TinyVector<int, 3>& PBCImages,
+    const TinyVector<double, 3> Sup_Twist,
+    const Vector<ValueType, OffloadPinnedAllocator<ValueType>>& phase_factor,
+    const Array<RealType, 2, OffloadPinnedAllocator<RealType>>& pbc_displacements)
 {
   for (int i = 0; i < LOBasisSet.size(); ++i)
-    LOBasisSet[i]->setPBCParams(PBCImages, Sup_Twist, phase_factor);
+    LOBasisSet[i]->setPBCParams(PBCImages, Sup_Twist, phase_factor, pbc_displacements);
 
   SuperTwist = Sup_Twist;
 }
@@ -152,7 +175,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::queryOrbitalsForSType(const std::vector<bo
   for (int c = 0; c < NumCenters; c++)
   {
     int idx = BasisOffset[c];
-    int bss = LOBasisSet[IonID[c]]->BasisSetSize;
+    int bss = LOBasisSet[IonID[c]]->getBasisSetSize();
     std::vector<bool> local_is_s_orbital(bss);
     LOBasisSet[IonID[c]]->queryOrbitalsForSType(local_is_s_orbital);
     for (int k = 0; k < bss; k++)
@@ -189,32 +212,48 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list,
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                                                     const RefVectorWithLeader<ParticleSet>& P_list,
                                                      int iat,
                                                      OffloadMWVGLArray& vgl_v)
 {
+  assert(this == &basis_list.getLeader());
+  auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  const auto& IonID(ions_.GroupID);
+  auto& pset_leader = P_list.getLeader();
+
+  size_t Nw = P_list.size();
+  assert(vgl_v.size(0) == 5);
+  assert(vgl_v.size(1) == Nw);
+  assert(vgl_v.size(2) == BasisSetSize);
+
+  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
+  Tv_list.resize(3 * NumCenters * Nw);
+  displ_list_tr.resize(3 * NumCenters * Nw);
+
   for (size_t iw = 0; iw < P_list.size(); iw++)
   {
-    const auto& IonID(ions_.GroupID);
     const auto& coordR  = P_list[iw].activeR(iat);
     const auto& d_table = P_list[iw].getDistTableAB(myTableIndex);
-    const auto& dist    = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
     const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
-
-    PosType Tv;
-
-    // number of walkers * BasisSetSize
-    auto stride = vgl_v.size(1) * BasisSetSize;
-    assert(BasisSetSize == vgl_v.size(2));
-    vgl_type vgl_iw(vgl_v.data_at(0, iw, 0), BasisSetSize, stride);
-
     for (int c = 0; c < NumCenters; c++)
-    {
-      Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
-      Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
-      Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
-      LOBasisSet[IonID[c]]->evaluateVGL(P_list[iw].getLattice(), dist[c], displ[c], BasisOffset[c], vgl_iw, Tv);
-    }
+      for (size_t idim = 0; idim < 3; idim++)
+      {
+        Tv_list[idim + 3 * (iw + c * Nw)]       = (ions_.R[c][idim] - coordR[idim]) - displ[c][idim];
+        displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
+      }
+  }
+#if defined(QMC_COMPLEX)
+  Tv_list.updateTo();
+#endif
+  displ_list_tr.updateTo();
+
+  for (int c = 0; c < NumCenters; c++)
+  {
+    auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, IonID[c]);
+    LOBasisSet[IonID[c]]->mw_evaluateVGL(one_species_basis_list, pset_leader.getLattice(), vgl_v, displ_list_tr,
+                                         Tv_list, Nw, BasisSetSize, c, BasisOffset[c], NumCenters);
   }
 }
 
@@ -247,6 +286,59 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
   }
 }
 
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                          OffloadMWVArray& vp_basis_v)
+{
+  assert(this == &basis_list.getLeader());
+  auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+
+  const size_t nVPs = vp_basis_v.size(0);
+  assert(vp_basis_v.size(1) == BasisSetSize);
+  const auto& IonID(ions_.GroupID);
+
+  auto& vps_leader = vp_list.getLeader();
+
+
+  const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
+  const auto coordR_list(vps_leader.extractVPCoords(vp_list));
+
+  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
+  Tv_list.resize(3 * NumCenters * nVPs);
+  displ_list_tr.resize(3 * NumCenters * nVPs);
+
+  // TODO: need one more level of indirection for offload?
+  // need to index into walkers/vps, but need walker num for distance table
+  size_t index = 0;
+  for (size_t iw = 0; iw < vp_list.size(); iw++)
+    for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+    {
+      const auto& displ = dt_list[iw].getDisplRow(iat);
+      for (int c = 0; c < NumCenters; c++)
+        for (size_t idim = 0; idim < 3; idim++)
+        {
+          Tv_list[idim + 3 * (index + c * nVPs)]       = (ions_.R[c][idim] - coordR_list[index][idim]) - displ[c][idim];
+          displ_list_tr[idim + 3 * (index + c * nVPs)] = displ[c][idim];
+        }
+      index++;
+    }
+#if defined(QMC_COMPLEX)
+  Tv_list.updateTo();
+#endif
+  displ_list_tr.updateTo();
+
+  // TODO: group/sort centers by species?
+  for (int c = 0; c < NumCenters; c++)
+  {
+    auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, IonID[c]);
+    LOBasisSet[IonID[c]]->mw_evaluateV(one_species_basis_list, vps_leader.getLattice(), vp_basis_v, displ_list_tr,
+                                       Tv_list, nVPs, BasisSetSize, c, BasisOffset[c], NumCenters);
+  }
+  // vp_basis_v.updateFrom();
+}
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
 {
@@ -267,23 +359,49 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, O
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list,
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                                                       const RefVectorWithLeader<ParticleSet>& P_list,
                                                        int iat,
-                                                       OffloadMWVArray& v)
+                                                       OffloadMWVArray& vals)
 {
-  for (size_t iw = 0; iw < P_list.size(); iw++)
-    evaluateV(P_list[iw], iat, v.data_at(iw, 0));
-}
+  assert(this == &basis_list.getLeader());
+  auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+  const auto& IonID(ions_.GroupID);
+  auto& pset_leader = P_list.getLeader();
 
-template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                          OffloadMWVArray& v)
-{
-  assert(BasisSetSize == v.size(1));
-  size_t index = 0;
-  for (size_t iw = 0; iw < vp_list.size(); iw++)
-    for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
-      evaluateV(vp_list[iw], iat, v.data_at(index++, 0));
+  size_t Nw = P_list.size();
+  assert(vals.size(0) == Nw);
+  assert(vals.size(1) == BasisSetSize);
+
+  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
+  Tv_list.resize(3 * NumCenters * Nw);
+  displ_list_tr.resize(3 * NumCenters * Nw);
+
+  for (size_t iw = 0; iw < P_list.size(); iw++)
+  {
+    const auto& coordR  = P_list[iw].activeR(iat);
+    const auto& d_table = P_list[iw].getDistTableAB(myTableIndex);
+    const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+
+    for (int c = 0; c < NumCenters; c++)
+      for (size_t idim = 0; idim < 3; idim++)
+      {
+        Tv_list[idim + 3 * (iw + c * Nw)]       = (ions_.R[c][idim] - coordR[idim]) - displ[c][idim];
+        displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
+      }
+  }
+#if defined(QMC_COMPLEX)
+  Tv_list.updateTo();
+#endif
+  displ_list_tr.updateTo();
+
+  for (int c = 0; c < NumCenters; c++)
+  {
+    auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, IonID[c]);
+    LOBasisSet[IonID[c]]->mw_evaluateV(one_species_basis_list, pset_leader.getLattice(), vals, displ_list_tr, Tv_list,
+                                       Nw, BasisSetSize, c, BasisOffset[c], NumCenters);
+  }
 }
 
 
