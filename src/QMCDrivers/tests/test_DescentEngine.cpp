@@ -44,8 +44,8 @@ TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
   optimize::VariableSet myVars;
 
   //Two fake parameters are specified
-  optimize::VariableSet::value_type first_param(1.0);
-  optimize::VariableSet::value_type second_param(-2.0);
+  optimize::VariableSet::real_type first_param(1.0);
+  optimize::VariableSet::real_type second_param(-2.0);
 
   myVars.insert("first", first_param);
   myVars.insert("second", second_param);
