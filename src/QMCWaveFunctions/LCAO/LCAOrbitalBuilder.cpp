@@ -566,7 +566,7 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
   double orbital_mix_magnitude = 0.0;
   bool PBC                     = false;
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(norb, "orbitals");
+  aAttrib.add(norb, "orbitals", {}, TagStatus::DELETED);
   aAttrib.add(norb, "size");
   aAttrib.add(debugc, "debug");
   aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
@@ -645,7 +645,7 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   int norbs = 0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norbs, "size");
-  aAttrib.add(norbs, "orbitals");
+  aAttrib.add(norbs, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
   if (norbs < spo.getOrbitalSetSize())
   {
@@ -685,7 +685,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
   aAttrib.add(neigs, "size");
-  aAttrib.add(neigs, "orbitals");
+  aAttrib.add(neigs, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
   hdf_archive hin(myComm);
   if (myComm->rank() == 0)
@@ -757,12 +757,14 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   int setVal     = -1;
   bool IsComplex = false;
   bool MultiDet  = false;
+  std::string use_sorted;
   PosType SuperTwist(0.0);
   PosType SuperTwistH5(0.0);
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
   aAttrib.add(neigs, "size");
-  aAttrib.add(neigs, "orbitals");
+  aAttrib.add(neigs, "orbitals", {}, TagStatus::DELETED);
+  aAttrib.add(use_sorted, "sorted");
   aAttrib.put(coeff_ptr);
   hdf_archive hin(myComm);
 
