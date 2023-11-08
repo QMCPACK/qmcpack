@@ -48,10 +48,9 @@ enum
  */
 struct VariableSet
 {
-  using value_type = qmcplusplus::QMCTraits::ValueType;
-  using real_type  = qmcplusplus::QMCTraits::RealType;
+  using real_type = qmcplusplus::QMCTraits::RealType;
 
-  using pair_type       = std::pair<std::string, value_type>;
+  using pair_type       = std::pair<std::string, real_type>;
   using index_pair_type = std::pair<std::string, int>;
   using iterator        = std::vector<pair_type>::iterator;
   using const_iterator  = std::vector<pair_type>::const_iterator;
@@ -131,7 +130,7 @@ struct VariableSet
     return -1;
   }
 
-  inline void insert(const std::string& vname, value_type v, bool enable = true, int type = OTHER_P)
+  inline void insert(const std::string& vname, real_type v, bool enable = true, int type = OTHER_P)
   {
     iterator loc = find(vname);
     int ind_loc  = loc - NameAndValue.begin();
@@ -169,7 +168,7 @@ struct VariableSet
 
   /** equivalent to std::map<std::string,T>[string] operator
    */
-  inline value_type& operator[](const std::string& vname)
+  inline real_type& operator[](const std::string& vname)
   {
     iterator loc = find(vname);
     if (loc == NameAndValue.end())
@@ -192,12 +191,12 @@ struct VariableSet
   /** return the i-th value
    * @param i index
    */
-  inline value_type operator[](int i) const { return NameAndValue[i].second; }
+  inline real_type operator[](int i) const { return NameAndValue[i].second; }
 
   /** assign the i-th value
    * @param i index
    */
-  inline value_type& operator[](int i) { return NameAndValue[i].second; }
+  inline real_type& operator[](int i) { return NameAndValue[i].second; }
 
   /** get the i-th parameter's type
   * @param i index
