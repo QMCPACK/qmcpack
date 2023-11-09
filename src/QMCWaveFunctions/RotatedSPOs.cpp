@@ -134,7 +134,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
 
     // Save the the params
     for (int i = 0; i < m_full_rot_inds.size(); i++)
-      myVarsFull[i] = new_param[i];
+      myVarsFull[i] = std::real(new_param[i]);
   }
   else
   {
@@ -227,7 +227,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     std::vector<ValueType> full_params(nparam_full);
     hin.read(full_params, rot_global_name);
     for (int i = 0; i < nparam_full; i++)
-      myVarsFull[i] = full_params[i];
+      myVarsFull[i] = std::real(full_params[i]);
 
     hin.pop();
 
@@ -278,7 +278,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
   std::vector<ValueType> params(nparam);
   hin.read(params, rot_param_name);
   for (int i = 0; i < nparam; i++)
-    myVars[i] = params[i];
+    myVars[i] = std::real(params[i]);
 
   hin.pop();
 
@@ -352,7 +352,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     // If the user input parameters, use those. Otherwise, initialize the parameters to zero
     if (params_supplied)
     {
-      myVars.insert(sstr.str(), params[i]);
+      myVars.insert(sstr.str(), std::real(params[i]));
     }
     else
     {
@@ -372,7 +372,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
            << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
       if (params_supplied && i < m_act_rot_inds.size())
-        myVarsFull.insert(sstr.str(), params[i]);
+        myVarsFull.insert(sstr.str(), std::real(params[i]));
       else
         myVarsFull.insert(sstr.str(), 0.0);
     }
