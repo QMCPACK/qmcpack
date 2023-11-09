@@ -1246,7 +1246,7 @@ void ParticleSetT<T>::applyBC(ParticlePos& pos)
 }
 
 template<typename T>
-void ParticleSetT<T>::applyMinimumImage(ParticlePos& pinout)
+void ParticleSetT<T>::applyMinimumImage(ParticlePos& pinout) const
 {
   if (getLattice().SuperCellEnum == SUPERCELL_OPEN)
     return;
