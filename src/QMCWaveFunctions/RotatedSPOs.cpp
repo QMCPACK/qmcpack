@@ -36,8 +36,8 @@ RotatedSPOs::~RotatedSPOs() {}
 void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
 {
   params.resize(param_list.size());
-  std::transform(param_list.begin(),param_list.end(),params.begin(), [](RealType val){return ValueType(val);});
-  
+  std::transform(param_list.begin(), param_list.end(), params.begin(), [](RealType val) { return ValueType(val); });
+
   params_supplied = true;
 }
 
@@ -519,7 +519,7 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
   }
   // diagonalize the matrix
   char JOBZ('V'); //compute eigenvalues and eigenvectors.
-  char UPLO('U'); //store upper triangle of A.  
+  char UPLO('U'); //store upper triangle of A.
   int N(n);
   int LDA(n);
   int LWORK(2 * n);
@@ -891,7 +891,8 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   //possibly replace wit BLAS calls
   for (int i = 0; i < nel; i++)
     for (int j = 0; j < nmo; j++)
-      Bbar(i, j) = d2psiM_all(i, j) + ValueType(2.0) * ValueType(dot(myG_J[i], dpsiM_all(i, j))) + ValueType(myL_J[i]) * psiM_all(i, j);
+      Bbar(i, j) = d2psiM_all(i, j) + ValueType(2.0) * ValueType(dot(myG_J[i], dpsiM_all(i, j))) +
+          ValueType(myL_J[i]) * psiM_all(i, j);
 
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
