@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "type_traits/complex_help.hpp"
 #include "Concurrency/OpenMP.h"
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
 {

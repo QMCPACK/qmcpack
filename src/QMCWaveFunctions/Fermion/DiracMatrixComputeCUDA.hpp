@@ -21,7 +21,7 @@
 #include "detail/CUDA/cuBLAS_LU.hpp"
 #include "type_traits/complex_help.hpp"
 #include "Concurrency/OpenMP.h"
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 #include "ResourceCollection.h"
 
 namespace qmcplusplus

@@ -173,15 +173,18 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   }
 
   //     Create ref vectors
+  std::vector<QMCHamiltonian> hams;
+
   auto ref_walkers = makeRefVector<MCPWalker>(walkers);
   auto ref_psets   = makeRefVector<ParticleSet>(psets);
   auto ref_wfns    = convertUPtrToRefVector(wfns);
+  auto ref_hams    = makeRefVector<QMCHamiltonian>(hams);
 
   //   Setup RNG
   FakeRandom<OHMMS_PRECISION_FULL> rng;
 
   //   Perform accumulate
-  md.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+  md.accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
 
   //   Check data
   std::vector<RealType>& data = md.get_data();

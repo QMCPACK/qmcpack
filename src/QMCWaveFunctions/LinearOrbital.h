@@ -35,9 +35,9 @@ public:
 
   std::string getClassName() const override { return "LinearOrbital"; }
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override
   {
     ValueType v = 0.0;
     for (int i = 0; i < P.R.size(); i++)
@@ -57,15 +57,15 @@ public:
 
   void restore(int iat) override {}
 
-  PsiValueType ratio(ParticleSet& P, int iat) override { return 1.0; }
+  PsiValue ratio(ParticleSet& P, int iat) override { return 1.0; }
 
   GradType evalGrad(ParticleSet& P, int iat) override { return GradType(coeff); }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return 1.0; }
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return 1.0; }
 
   void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
     return evaluateLog(P, P.G, P.L);
   }

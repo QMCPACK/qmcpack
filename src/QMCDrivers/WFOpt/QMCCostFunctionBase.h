@@ -68,7 +68,7 @@ public:
     SUM_INDEX_SIZE
   };
 
-  using EffectiveWeight = QMCTraits::QTFull::RealType;
+  using EffectiveWeight  = QMCTraits::QTFull::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///Constructor.
   QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
@@ -85,7 +85,7 @@ public:
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
-  Return_t& Params(int i) override { return OptVariables[i]; }
+  Return_rt& Params(int i) override { return OptVariables[i]; }
   ///return optimization parameter i
   Return_t Params(int i) const override { return OptVariables[i]; }
   int getType(int i) const { return OptVariables.getType(i); }

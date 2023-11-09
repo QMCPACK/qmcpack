@@ -81,27 +81,32 @@ It turns out that this interface was a very minimal change over the C version, a
 The B.MPI3 library was designed to use simultaneously (interleaved) with the standard C interface of MPI.
 In this way, changes to existing code can be made incrementally.
 
-## Installation
+## Usage
 
-The library is "header-only"; no separate compilation is necessary.
-In order to compile it requires an MPI distribution (e.g. OpenMPI or MPICH2) and the corresponding compiler-wrapper (`mpic++` or `mpicxx`).
-This library requires C++14 and the Boost library installed.
+The library is "header-only"; no separate compilation or configuration of the library is necessary.
+It requires an MPI distribution (e.g. OpenMPI or MPICH2), a C++14 compiler and Boost libraries installed.
 A typical compilation/run command looks like this:
 
 ```bash
-$ mpic++ -std=c++14 -O3 mpi3/test/communicator_send.cpp -o communicator_send.x -lboost_serialization
+$ mpic++ communicator_send.cpp -o communicator_send.x -lboost_serialization
 $ mpirun -n 8 ./communicator_send.x
 ```
 
-In a system such as Red Hat, the dependencies can by installed by
+In a system such as Red Hat or Fedora, the dependencies can by installed by `sudo dnf install gcc-c++ boost-devel openmpi-devel mpich-devel`.
 
-```bash
-dnf install gcc-c++ boost-devel openmpi-devel mpich-devel
+Alternatively, the library can be fetched on demand by the CMake project:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(bmpi3 GIT_REPOSITORY https://gitlab.com/correaa/boost-mpi3.git)  # or git@gitlab.com:correaa/boost-mpi3.git
+FetchContent_MakeAvailable(bmpi3)
+
+target_link_libraries(your_executable PRIVATE bmpi3)
 ```
 
-Some systems require loading the MPI module before compiling and using MPI programs, `module load mpi/mpich`.
+Some systems require loading the MPI module before compiling and using MPI programs, `module load mpi` (or `mpich`).
 
-The library is tested frequently against `openmpi` and `mpich`, and less frequently with `mvapich2`.
+The library is tested frequently against `openmpi` and `mpich` implementations of MPI.
 
 ## Testing
 
@@ -119,7 +124,7 @@ ctest
 ## Initialization
 
 Like MPI, B.MPI3 requires some global library initialization.
-The library includes a convenience `mpi3/main.hpp` which wraps around this initialization steps and *simulates* a main function. 
+The library includes a convenience header `mpi3/main.hpp`, which provides a "main" function that does this initialization. 
 In this way, a parallel program looks very much like normal programs, except that the main function has a third argument with the default global communicator passed in.
 
 ```cpp
@@ -129,10 +134,9 @@ In this way, a parallel program looks very much like normal programs, except tha
 #include<iostream>
 
 namespace mpi3 = boost::mpi3; 
-using std::cout;
 
-int mpi3::main(int argc, char* argv[], mpi3::communicator world){
-	if(world.rank() == 0) cout << mpi3::version() << '\n';
+int mpi3::main(int argc, char** argv, mpi3::communicator world) {
+	if(world.rank() == 0) {std::cout << mpi3::version() << '\n';}
 	return 0;
 }
 ```

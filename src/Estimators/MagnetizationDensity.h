@@ -60,6 +60,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
+                  const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecReal>& rng) override;
 
   void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
