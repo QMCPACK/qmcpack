@@ -20,6 +20,7 @@ class TestComplexHelper
   using Cmplx        = std::complex<P>;
   using Real         = RealAlias<Cmplx>;
   using CmplxRebuild = ValueAlias<P, Cmplx>;
+  using RealRebuild  = ValueAlias<P, Real>;
 
 public:
   void run()
@@ -27,6 +28,10 @@ public:
     Cmplx aa;
     CmplxRebuild bb;
     aa = bb;
+
+    Real cc;
+    RealRebuild dd(0);
+    cc = dd;
   }
 };
 
