@@ -22,7 +22,7 @@ class RotatedSPOs;
 namespace testing
 {
 opt_variables_type& getMyVarsFull(RotatedSPOs& rot);
-std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot);
+std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot);
 } // namespace testing
 
 class RotatedSPOs : public SPOSet, public OptimizableObject
@@ -40,6 +40,15 @@ public:
 
   // Vector of rotation matrix indices
   using RotationIndices = std::vector<std::pair<int, int>>;
+  //NOTE:  Rotation indices are stored according to the convention (occupied,unoccupied).
+  //So an excitation (i,j) is the excitation of an electron in orbital i to orbital j.
+  //This list of indices, in conjunction with the vector "params", is a sparse representation
+  //of the matrix K'.
+  //
+  //Comparing with Umrigar and other's definitions, the object that effects the orbital rotation is K = sum_i,j k_ij E_ij,
+  //where E_ij is the singlet creation operator taking an electron from orbital j to orbital i.  Comparing these two,
+  // <phi_i | K | phi_j> = k_ij = k'_ji.  So the real object that gets exponentiated is the transpose of what is stored and
+  // reported.  This tranpose is properly taken into account in constructAntiSymmetricMatrix(...).
 
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
@@ -55,8 +64,9 @@ public:
   // Construct a list for all the matrix indices, including core->active, core->core and active->active
   static void createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices);
 
-  // Fill in antisymmetric matrix from the list of rotation parameter indices
-  // and a list of parameter values.
+  // Takes a sparse representation of the antisymmetric/antihermitian K' matrix ( (i->j) excitation indices rot_indices
+  // and and coefficient vector param and constructs a dense antisymmetric/antihermitian K matrix (rot_mat).
+  // The latter is what is needed for the orbital rotation.
   // This function assumes rot_mat is properly sized upon input and is set to zero.
   static void constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                            const std::vector<ValueType>& param,
@@ -69,23 +79,23 @@ public:
                                                    std::vector<ValueType>& param);
 
   //function to perform orbital rotations
-  void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
+  void apply_rotation(const std::vector<ValueType>& param, bool use_stored_copy);
 
   // For global rotation, inputs are the old parameters and the delta parameters.
   // The corresponding rotation matrices are constructed, multiplied together,
   // and the new parameters extracted.
   // The new rotation is applied to the underlying SPO coefficients
-  void applyDeltaRotation(const std::vector<RealType>& delta_param,
-                          const std::vector<RealType>& old_param,
-                          std::vector<RealType>& new_param);
+  void applyDeltaRotation(const std::vector<ValueType>& delta_param,
+                          const std::vector<ValueType>& old_param,
+                          std::vector<ValueType>& new_param);
 
   // Perform the construction of matrices and extraction of parameters for a delta rotation.
   // Split out and made static for testing.
-  static void constructDeltaRotation(const std::vector<RealType>& delta_param,
-                                     const std::vector<RealType>& old_param,
+  static void constructDeltaRotation(const std::vector<ValueType>& delta_param,
+                                     const std::vector<ValueType>& old_param,
                                      const RotationIndices& act_rot_inds,
                                      const RotationIndices& full_rot_inds,
-                                     std::vector<RealType>& new_param,
+                                     std::vector<ValueType>& new_param,
                                      ValueMatrix& new_rot_mat);
 
   // When initializing the rotation from VP files
@@ -94,19 +104,23 @@ public:
 
   // This function applies the global rotation (similar to apply_rotation, but for the full
   // set of rotation parameters)
-  void applyFullRotation(const std::vector<RealType>& full_param, bool use_stored_copy);
+  void applyFullRotation(const std::vector<ValueType>& full_param, bool use_stored_copy);
 
-  // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
+  // Compute matrix exponential of an antisymmetric/antihermitian matrix for
+  // the real/complex case.  Overwrites matrix with its exponential (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
 
-  // Compute matrix log of rotation matrix to produce antisymmetric matrix
-  static void log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output);
+  // Compute matrix log of rotation matrix to produce antisymmetric matrix.  Technically, this
+  // performs the log of any matrix where the eigenproblem is stable, but we only take logs of
+  // matrices of the form A=e^K, where K is antisymmetric/antihermitian.
+  static void log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealType>& output);
+  static void log_antisym_matrix(const Matrix<std::complex<RealType>>& mat, Matrix<std::complex<RealType>>& output);
 
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi;
 
   /// Set the rotation parameters (usually from input file)
-  void setRotationParameters(const std::vector<RealType>& param_list);
+  void setRotationParameters(const std::vector<ValueType>& param_list);
 
   /// the number of electrons of the majority spin
   size_t nel_major_;
@@ -431,8 +445,8 @@ public:
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
-  /// list of supplied orbital rotation parameters
-  std::vector<RealType> params;
+  /// list of supplied orbital rotation parameters.
+  std::vector<ValueType> params;
 
   /// Full set of rotation matrix parameters for use in global rotation method
   opt_variables_type myVarsFull;
@@ -441,7 +455,7 @@ private:
   NewTimer& apply_rotation_timer_;
 
   /// List of previously applied parameters
-  std::vector<std::vector<RealType>> history_params_;
+  std::vector<std::vector<ValueType>> history_params_;
 
   static RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list);
 
@@ -449,7 +463,7 @@ private:
   bool use_global_rot_ = true;
 
   friend opt_variables_type& testing::getMyVarsFull(RotatedSPOs& rot);
-  friend std::vector<std::vector<RealType>>& testing::getHistoryParams(RotatedSPOs& rot);
+  friend std::vector<std::vector<ValueType>>& testing::getHistoryParams(RotatedSPOs& rot);
 };
 
 
