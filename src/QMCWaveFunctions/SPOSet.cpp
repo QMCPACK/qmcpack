@@ -134,7 +134,7 @@ void SPOSetT<VALUE>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SP
                                                     std::vector<Grad>& grads) const
 {
   assert(this == &spo_list.getLeader());
-  assert(phi_vgl_v.size(0) == QMCTraits::DIM_VGL);
+  assert(phi_vgl_v.size(0) == SPOSet::DIM_VGL);
   assert(phi_vgl_v.size(1) == spo_list.size());
   const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size(2);

@@ -242,7 +242,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   std::vector<const SPOSet::ValueType*> inv_row_ptr(nw, inv_row.device_data());
 
   SPOSet::OffloadMWVGLArray phi_vgl_v;
-  phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
+  phi_vgl_v.resize(SPOSet::DIM_VGL, nw, 5);
   spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, inv_row_ptr, phi_vgl_v, ratio_v, grads_v);
   phi_vgl_v.updateFrom();
 #if !defined(QMC_COMPLEX)
