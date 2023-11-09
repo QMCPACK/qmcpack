@@ -426,7 +426,7 @@ public:
   void applyBC(const ParticlePos& pin, ParticlePos& pout);
   void applyBC(ParticlePos& pos);
   void applyBC(const ParticlePos& pin, ParticlePos& pout, int first, int last);
-  void applyMinimumImage(ParticlePos& pinout);
+  void applyMinimumImage(ParticlePos& pinout) const;
 
   /** load a Walker_t to the current ParticleSet
    * @param awalker the reference to the walker to be loaded
