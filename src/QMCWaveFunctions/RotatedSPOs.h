@@ -120,7 +120,7 @@ public:
   std::unique_ptr<SPOSet> Phi;
 
   /// Set the rotation parameters (usually from input file)
-  void setRotationParameters(const std::vector<ValueType>& param_list);
+  void setRotationParameters(const std::vector<RealType>& param_list);
 
   /// the number of electrons of the majority spin
   size_t nel_major_;

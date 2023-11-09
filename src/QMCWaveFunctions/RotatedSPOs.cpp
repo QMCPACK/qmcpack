@@ -33,9 +33,11 @@ RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& s
 RotatedSPOs::~RotatedSPOs() {}
 
 
-void RotatedSPOs::setRotationParameters(const std::vector<ValueType>& param_list)
+void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
 {
-  params          = param_list;
+  params.resize(param_list.size());
+  std::transform(param_list.begin(),param_list.end(),params.begin(), [](RealType val){return ValueType(val);});
+  
   params_supplied = true;
 }
 
