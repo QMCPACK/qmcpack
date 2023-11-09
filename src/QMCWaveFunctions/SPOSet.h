@@ -62,6 +62,7 @@ public:
   using ComplexType       = Complex;
   using Value             = VALUE;
   using ValueType         = Value;
+  using FullPrecValue     = ValueAlias<OHMMS_PRECISION_FULL, Value>;
   using Grad              = typename OrbitalSetTraits<VALUE>::GradType;
   using GradType          = Grad;
   using ValueVector       = typename OrbitalSetTraits<VALUE>::ValueVector;
@@ -77,7 +78,6 @@ public:
   using OffloadMWVArray   = Array<Value, 2, OffloadPinnedAllocator<Value>>; // [walker, Orbs]
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
-  using QTFull        = QMCTraits::QTFull;
 
   /** constructor */
   SPOSetT(const std::string& my_name);
@@ -188,7 +188,7 @@ public:
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
                                      Vector<Value>& dlogpsi,
-                                     const QTFull::ValueType& psiCurrent, //FIXME it is still a compile time type
+                                     const FullPrecValue& psiCurrent, //FIXME it is still a compile time type
                                      const std::vector<Value>& Coeff,
                                      const std::vector<size_t>& C2node_up,
                                      const std::vector<size_t>& C2node_dn,

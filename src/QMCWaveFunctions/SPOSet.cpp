@@ -369,7 +369,7 @@ template<typename VALUE>
 void SPOSetT<VALUE>::evaluateDerivativesWF(ParticleSet& P,
                                            const opt_variables_type& optvars,
                                            Vector<Value>& dlogpsi,
-                                           const QMCTraits::QTFull::ValueType& psiCurrent,
+                                           const FullPrecValue& psiCurrent,
                                            const std::vector<Value>& Coeff,
                                            const std::vector<size_t>& C2node_up,
                                            const std::vector<size_t>& C2node_dn,

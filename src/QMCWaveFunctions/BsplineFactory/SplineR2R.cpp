@@ -136,7 +136,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
       for (IndexType j = 0; j < OrbitalSetSize; j++)
       {
         const auto cur_elem = Nsplines * i + j;
-        QTFull::ValueType newval{0.};
+        FullPrecValue newval{0.};
         for (IndexType k = 0; k < OrbitalSetSize; k++)
         {
           const auto index = i * Nsplines + k;
