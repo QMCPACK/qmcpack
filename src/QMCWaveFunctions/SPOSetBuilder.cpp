@@ -15,10 +15,7 @@
 #include "SPOSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include <Message/UniformCommunicateError.h>
-
-#if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/RotatedSPOs.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -91,10 +88,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   if (optimize == "rotation" || optimize == "yes")
   {
-#ifdef QMC_COMPLEX
-    app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
-    abort();
-#else
     app_warning() << "Specifying orbital rotation via optimize tag is deprecated. Use the rotated_spo element instead"
                   << std::endl;
 
@@ -112,14 +105,15 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
       std::string cname((const char*)(tcur->name));
       if (cname == "opt_vars")
       {
-        std::vector<RealType> params;
-        putContent(params, tcur);
+        std::vector<RealType> params_real;
+        putContent(params_real, tcur);
+        std::vector<ValueType> params(params_real.size());
+        for(int q=0; q<params_real.size(); q++) params[q]=params_real[q];
         rot_spo->setRotationParameters(params);
       }
       tcur = tcur->next;
     }
     sposet = std::move(rot_spo);
-#endif
   }
 
   if (sposet->getName().empty())
@@ -142,10 +136,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
   attrib.put(cur);
 
 
-#ifdef QMC_COMPLEX
-  myComm->barrier_and_abort("Orbital optimization via rotation doesn't support complex wavefunctions yet.");
-  return nullptr;
-#else
   std::unique_ptr<SPOSet> sposet;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
@@ -170,13 +160,14 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "opt_vars")
     {
-      std::vector<RealType> params;
-      putContent(params, element);
+      std::vector<RealType> params_real;
+      putContent(params_real, element);
+      std::vector<ValueType> params(params_real.size());
+      for(int q=0; q<params_real.size(); q++) params[q]=params_real[q];
       rot_spo->setRotationParameters(params);
     }
   });
   return rot_spo;
-#endif
 }
 
 } // namespace qmcplusplus
