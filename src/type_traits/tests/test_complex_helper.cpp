@@ -17,9 +17,10 @@ namespace qmcplusplus
 template<typename P>
 class TestComplexHelper
 {
-  using Cmplx = std::complex<P>;
-  using Real = RealAlias<Cmplx>;
+  using Cmplx        = std::complex<P>;
+  using Real         = RealAlias<Cmplx>;
   using CmplxRebuild = ValueAlias<P, Cmplx>;
+
 public:
   void run()
   {
