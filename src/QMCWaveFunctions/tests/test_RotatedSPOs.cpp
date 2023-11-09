@@ -653,7 +653,7 @@ std::vector<std::vector<QMCTraits::RealType>>& getHistoryParams(RotatedSPOs& rot
 // Test using global rotation
 TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 {
-  auto fake_spo = std::make_unique<FakeSPO>();
+  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
   int nel = 2;
@@ -674,7 +674,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
     rot.writeVariationalParameters(hout);
   }
 
-  auto fake_spo2 = std::make_unique<FakeSPO>();
+  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo2->setOrbitalSetSize(4);
 
   RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
@@ -705,7 +705,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 // Test using history list.
 TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
 {
-  auto fake_spo = std::make_unique<FakeSPO>();
+  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
   rot.set_use_global_rotation(false);
@@ -727,7 +727,7 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
     rot.writeVariationalParameters(hout);
   }
 
-  auto fake_spo2 = std::make_unique<FakeSPO>();
+  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo2->setOrbitalSetSize(4);
 
   RotatedSPOs rot2("fake_rot", std::move(fake_spo2));

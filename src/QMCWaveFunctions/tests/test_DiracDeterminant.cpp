@@ -51,11 +51,11 @@ void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
 template<typename DET>
 void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
 {
-  auto spo_init  = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
   DET ddb(std::move(spo_init), 0, norb, 1, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
+  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddb.getPhi());
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -159,11 +159,11 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 template<typename DET>
 void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
 {
-  auto spo_init  = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   DET ddb(std::move(spo_init), 0, norb, 1, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
+  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddb.getPhi());
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -300,12 +300,12 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 template<typename DET>
 void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
 {
-  auto spo_init  = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   // maximum delay 2
   DET ddc(std::move(spo_init), 0, norb, 2, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
+  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddc.getPhi());
 
   // occurs in call to registerData
   ddc.dpsiV.resize(norb);
