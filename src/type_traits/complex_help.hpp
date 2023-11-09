@@ -12,6 +12,9 @@
 #ifndef QMCPLUSPLUS_COMPLEX_HELP_HPP
 #define QMCPLUSPLUS_COMPLEX_HELP_HPP
 
+#include <type_traits>
+#include <complex>
+
 namespace qmcplusplus
 {
 template<typename T>
@@ -43,6 +46,22 @@ struct RealAlias_impl<T, IsComplex<T>> { using value_type = typename T::value_ty
  */
 template <typename T>
 using RealAlias = typename RealAlias_impl<T>::value_type;
+
+template <typename TREAL, typename TREF, typename = bool>
+struct ValueAlias_impl {};
+
+template <typename TREAL, typename TREF>
+struct ValueAlias_impl<TREAL, TREF, IsReal<TREF>> { using value_type = TREAL; };
+
+template <typename TREAL, typename TREF>
+struct ValueAlias_impl<TREAL, TREF, IsComplex<TREF>> { using value_type = std::complex<TREAL>; };
+
+/** If you need to make a value type of a given precision based on a reference value type
+ *  set the desired POD float point type as TREAL and set the reference type as TREF.
+ *  If TREF is real/complex, the generated Value type is real/complex.
+ */
+template <typename TREAL, typename TREF, typename = std::enable_if_t<std::is_floating_point<TREAL>::value>>
+using ValueAlias = typename ValueAlias_impl<TREAL, TREF>::value_type;
 
 ///real part of a scalar. Cannot be replaced by std::real due to AFQMC specific needs.
 inline float real(const float& c) { return c; }
