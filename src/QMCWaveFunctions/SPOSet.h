@@ -577,8 +577,12 @@ protected:
   friend opt_variables_type& testing::getMyVars<VALUE>(SPOSetT<VALUE>& spo);
 };
 
-extern template class SPOSetT<QMCTraits::QTBase::RealType>;
-extern template class SPOSetT<QMCTraits::QTBase::ComplexType>;
+#if !defined(MIXED_PRECISION)
+extern template class SPOSetT<double>;
+extern template class SPOSetT<std::complex<double>>;
+#endif
+extern template class SPOSetT<float>;
+extern template class SPOSetT<std::complex<float>>;
 
 using SPOSet    = SPOSetT<QMCTraits::QTBase::ValueType>;
 using SPOSetPtr = SPOSet*;

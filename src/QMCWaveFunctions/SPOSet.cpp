@@ -439,7 +439,11 @@ void SPOSetT<VALUE>::evaluate_spin(const ParticleSet& P, int iat, ValueVector& p
                            "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
 }
 
-template class SPOSetT<QMCTraits::QTBase::RealType>;
-template class SPOSetT<QMCTraits::QTBase::ComplexType>;
+#if !defined(MIXED_PRECISION)
+template class SPOSetT<double>;
+template class SPOSetT<std::complex<double>>;
+#endif
+template class SPOSetT<float>;
+template class SPOSetT<std::complex<float>>;
 
 } // namespace qmcplusplus

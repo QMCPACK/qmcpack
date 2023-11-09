@@ -65,8 +65,12 @@ private:
   using SPOSet::OrbitalSetSize;
 };
 
-extern template class FakeSPO<QMCTraits::QTBase::RealType>;
-extern template class FakeSPO<QMCTraits::QTBase::ComplexType>;
+#if !defined(MIXED_PRECISION)
+extern template class FakeSPO<double>;
+extern template class FakeSPO<std::complex<double>>;
+#endif
+extern template class FakeSPO<float>;
+extern template class FakeSPO<std::complex<float>>;
 
 } // namespace qmcplusplus
 #endif

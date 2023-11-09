@@ -154,7 +154,11 @@ void FakeSPO<VALUE>::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
-template class FakeSPO<QMCTraits::QTBase::RealType>;
-template class FakeSPO<QMCTraits::QTBase::ComplexType>;
+#if !defined(MIXED_PRECISION)
+template class FakeSPO<double>;
+template class FakeSPO<std::complex<double>>;
+#endif
+template class FakeSPO<float>;
+template class FakeSPO<std::complex<float>>;
 
 } // namespace qmcplusplus
