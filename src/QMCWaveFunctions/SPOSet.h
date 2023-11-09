@@ -32,12 +32,12 @@ namespace qmcplusplus
 {
 class ResourceCollection;
 
-template<typename Value>
-class SPOSet;
+template<typename VALUE>
+class SPOSetT;
 namespace testing
 {
-template<typename Value>
-opt_variables_type& getMyVars(SPOSet<Value>& spo);
+template<typename VALUE>
+opt_variables_type& getMyVars(SPOSetT<VALUE>& spo);
 }
 
 
@@ -46,36 +46,47 @@ opt_variables_type& getMyVars(SPOSet<Value>& spo);
  * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
-template<typename Value>
-class SPOSet
+template<typename VALUE>
+class SPOSetT
 {
 public:
-  using Grad              = typename OrbitalSetTraits<Value>::GradType;
-  using Complex           = std::complex<typename OrbitalSetTraits<Value>::RealType>;
+  enum
+  {
+    DIM     = OHMMS_DIM,
+    DIM_VGL = OHMMS_DIM + 2 // Value(1) + Gradients(OHMMS_DIM) + Laplacian(1)
+  };
   using PosType           = QMCTraits::QTBase::PosType;
   using IndexType         = QMCTraits::IndexType;
-  using ValueVector       = typename OrbitalSetTraits<Value>::ValueVector;
-  using ValueMatrix       = typename OrbitalSetTraits<Value>::ValueMatrix;
-  using GradVector        = typename OrbitalSetTraits<Value>::GradVector;
-  using GradMatrix        = typename OrbitalSetTraits<Value>::GradMatrix;
-  using HessVector        = typename OrbitalSetTraits<Value>::HessVector;
-  using HessMatrix        = typename OrbitalSetTraits<Value>::HessMatrix;
-  using GGGVector         = typename OrbitalSetTraits<Value>::GradHessVector;
-  using GGGMatrix         = typename OrbitalSetTraits<Value>::GradHessMatrix;
-  using SPOMap            = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+  using RealType          = typename OrbitalSetTraits<VALUE>::RealType;
+  using Complex           = std::complex<RealType>;
+  using ComplexType       = Complex;
+  using Value             = VALUE;
+  using ValueType         = Value;
+  using Grad              = typename OrbitalSetTraits<VALUE>::GradType;
+  using GradType          = Grad;
+  using ValueVector       = typename OrbitalSetTraits<VALUE>::ValueVector;
+  using ValueMatrix       = typename OrbitalSetTraits<VALUE>::ValueMatrix;
+  using GradVector        = typename OrbitalSetTraits<VALUE>::GradVector;
+  using GradMatrix        = typename OrbitalSetTraits<VALUE>::GradMatrix;
+  using HessVector        = typename OrbitalSetTraits<VALUE>::HessVector;
+  using HessMatrix        = typename OrbitalSetTraits<VALUE>::HessMatrix;
+  using GGGVector         = typename OrbitalSetTraits<VALUE>::GradHessVector;
+  using GGGMatrix         = typename OrbitalSetTraits<VALUE>::GradHessMatrix;
+  using SPOMap            = std::map<std::string, const std::unique_ptr<const SPOSetT>>;
   using OffloadMWVGLArray = Array<Value, 3, OffloadPinnedAllocator<Value>>; // [VGL, walker, Orbs]
   using OffloadMWVArray   = Array<Value, 2, OffloadPinnedAllocator<Value>>; // [walker, Orbs]
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
+  using QTFull        = QMCTraits::QTFull;
 
   /** constructor */
-  SPOSet(const std::string& my_name);
+  SPOSetT(const std::string& my_name);
 
   /** destructor
    *
    * Derived class destructor needs to pay extra attention to freeing memory shared among clones of SPOSet.
    */
-  virtual ~SPOSet() = default;
+  virtual ~SPOSetT() = default;
 
   /** return the size of the orbital set
    * Ye: this needs to be replaced by getOrbitalSetSize();
@@ -143,32 +154,33 @@ public:
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& optvars,
-                                   Vector<Value>& dlogpsi,
-                                   Vector<Value>& dhpsioverpsi,
-                                   const Value& psiCurrent, //FIXME, why is this full precision as in evaluateDerivativesWF
-                                   const std::vector<Value>& Coeff,
-                                   const std::vector<size_t>& C2node_up,
-                                   const std::vector<size_t>& C2node_dn,
-                                   const ValueVector& detValues_up,
-                                   const ValueVector& detValues_dn,
-                                   const GradMatrix& grads_up,
-                                   const GradMatrix& grads_dn,
-                                   const ValueMatrix& lapls_up,
-                                   const ValueMatrix& lapls_dn,
-                                   const ValueMatrix& M_up,
-                                   const ValueMatrix& M_dn,
-                                   const ValueMatrix& Minv_up,
-                                   const ValueMatrix& Minv_dn,
-                                   const GradMatrix& B_grad,
-                                   const ValueMatrix& B_lapl,
-                                   const std::vector<int>& detData_up,
-                                   const size_t N1,
-                                   const size_t N2,
-                                   const size_t NP1,
-                                   const size_t NP2,
-                                   const std::vector<std::vector<int>>& lookup_tbl);
+  virtual void evaluateDerivatives(
+      ParticleSet& P,
+      const opt_variables_type& optvars,
+      Vector<Value>& dlogpsi,
+      Vector<Value>& dhpsioverpsi,
+      const Value& psiCurrent, //FIXME, why is this full precision as in evaluateDerivativesWF
+      const std::vector<Value>& Coeff,
+      const std::vector<size_t>& C2node_up,
+      const std::vector<size_t>& C2node_dn,
+      const ValueVector& detValues_up,
+      const ValueVector& detValues_dn,
+      const GradMatrix& grads_up,
+      const GradMatrix& grads_dn,
+      const ValueMatrix& lapls_up,
+      const ValueMatrix& lapls_dn,
+      const ValueMatrix& M_up,
+      const ValueMatrix& M_dn,
+      const ValueMatrix& Minv_up,
+      const ValueMatrix& Minv_dn,
+      const GradMatrix& B_grad,
+      const ValueMatrix& B_lapl,
+      const std::vector<int>& detData_up,
+      const size_t N1,
+      const size_t N2,
+      const size_t NP1,
+      const size_t NP2,
+      const std::vector<std::vector<int>>& lookup_tbl);
 
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
@@ -176,7 +188,7 @@ public:
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
                                      Vector<Value>& dlogpsi,
-                                     const QMCTraits::QTFull::ValueType& psiCurrent, //FIXME it is still a compile time type
+                                     const QTFull::ValueType& psiCurrent, //FIXME it is still a compile time type
                                      const std::vector<Value>& Coeff,
                                      const std::vector<size_t>& C2node_up,
                                      const std::vector<size_t>& C2node_dn,
@@ -233,7 +245,7 @@ public:
    * @param invRow_ptr_list a list of pointers to the rows of inverse slater matrix corresponding to the particles moved virtually
    * @param ratios_list a list of returning determinant ratios
    */
-  virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+  virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT>& spo_list,
                                     const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector>& psi_list,
                                     const std::vector<const Value*>& invRow_ptr_list,
@@ -269,7 +281,7 @@ public:
    * @param iat active particle
    * @param psi_v_list the list of value vector pointers in a walker batch
    */
-  virtual void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+  virtual void mw_evaluateValue(const RefVectorWithLeader<SPOSetT>& spo_list,
                                 const RefVectorWithLeader<ParticleSet>& P_list,
                                 int iat,
                                 const RefVector<ValueVector>& psi_v_list) const;
@@ -282,7 +294,7 @@ public:
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
    */
-  virtual void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+  virtual void mw_evaluateVGL(const RefVectorWithLeader<SPOSetT>& spo_list,
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector>& psi_v_list,
@@ -299,7 +311,7 @@ public:
    * @param mw_dspin is a dual matrix of spin gradients [nw][norb]
    * Note that the device side of mw_dspin is up to date
    */
-  virtual void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+  virtual void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSetT>& spo_list,
                                       const RefVectorWithLeader<ParticleSet>& P_list,
                                       int iat,
                                       const RefVector<ValueVector>& psi_v_list,
@@ -315,7 +327,7 @@ public:
    * @param phi_vgl_v orbital values, gradients and laplacians of all the walkers
    * @param psi_ratio_grads_v determinant ratio and grads of all the walkers
    */
-  virtual void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+  virtual void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSetT>& spo_list,
                                               const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const Value*>& invRow_ptr_list,
@@ -334,7 +346,7 @@ public:
    * @param grads, spatial gradients of all walkers
    * @param spingrads, spin gradients of all walkers
    */
-  virtual void mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+  virtual void mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSetT>& spo_list,
                                                       const RefVectorWithLeader<ParticleSet>& P_list,
                                                       int iat,
                                                       const std::vector<const Value*>& invRow_ptr_list,
@@ -422,7 +434,7 @@ public:
                                          ValueMatrix& d2logdet,
                                          ValueMatrix& dspinlogdet);
 
-  virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+  virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSetT>& spo_list,
                                        const RefVectorWithLeader<ParticleSet>& P_list,
                                        int first,
                                        int last,
@@ -524,16 +536,16 @@ public:
 
   /** acquire a shared resource from collection
    */
-  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSetT>& spo_list) const {}
 
   /** return a shared resource to collection
    */
-  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSetT>& spo_list) const {}
 
   /** make a clone of itself
    * every derived class must implement this to have threading working correctly.
    */
-  [[noreturn]] virtual std::unique_ptr<SPOSet<Value>> makeClone() const;
+  [[noreturn]] virtual std::unique_ptr<SPOSetT<VALUE>> makeClone() const;
 
   /** Used only by cusp correction in AOS LCAO.
    * Ye: the SoA LCAO moves all this responsibility to the builder.
@@ -562,8 +574,13 @@ protected:
   /// Optimizable variables
   opt_variables_type myVars;
 
-  friend opt_variables_type& testing::getMyVars<Value>(SPOSet<Value>& spo);
+  friend opt_variables_type& testing::getMyVars<VALUE>(SPOSetT<VALUE>& spo);
 };
 
+extern template class SPOSetT<QMCTraits::QTBase::RealType>;
+extern template class SPOSetT<QMCTraits::QTBase::ComplexType>;
+
+using SPOSet    = SPOSetT<QMCTraits::QTBase::ValueType>;
+using SPOSetPtr = SPOSet*;
 } // namespace qmcplusplus
 #endif

@@ -441,7 +441,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   std::vector<const SPOSet::ValueType*> inv_row_ptr(nw, inv_row.device_data());
 
   SPOSet::OffloadMWVGLArray phi_vgl_v;
-  phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
+  phi_vgl_v.resize(SPOSet::DIM_VGL, nw, 5);
   spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, inv_row_ptr, phi_vgl_v, ratio_v, grads_v);
 #if !defined(QMC_COMPLEX)
   CHECK(std::real(ratio_v[0]) == Approx(0.2365307168));
