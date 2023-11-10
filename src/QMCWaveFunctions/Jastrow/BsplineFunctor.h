@@ -226,7 +226,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     r *= DeltaRInv;
     int i;
     Real t;
-    getSplineBound(r, t, i, max_index);
+    getSplineBound(r, max_index, i, t);
 
     Real sCoef0 = coefs[i + 0];
     Real sCoef1 = coefs[i + 1];
@@ -254,7 +254,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     r *= DeltaRInv;
     int i;
     Real t;
-    getSplineBound(r, t, i, max_index);
+    getSplineBound(r, max_index, i, t);
 
     Real sCoef0 = coefs[i + 0];
     Real sCoef1 = coefs[i + 1];
@@ -303,7 +303,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     r *= DeltaRInv;
     int i;
     Real t;
-    getSplineBound(r, t, i, getMaxIndex());
+    getSplineBound(r, getMaxIndex(), i, t);
     Real tp[4];
     tp[0]       = t * t * t;
     tp[1]       = t * t;
@@ -380,7 +380,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     r *= DeltaRInv;
     int i;
     Real t;
-    getSplineBound(r, t, i, getMaxIndex());
+    getSplineBound(r, getMaxIndex(), i, t);
     Real tp[4];
     tp[0] = t * t * t;
     tp[1] = t * t;
@@ -446,7 +446,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     r *= DeltaRInv;
     int i;
     Real t;
-    getSplineBound(r, t, i, getMaxIndex());
+    getSplineBound(r, getMaxIndex(), i, t);
     Real tp[4], v[4];
     tp[0]    = t * t * t;
     tp[1]    = t * t;
@@ -751,7 +751,7 @@ inline REAL BsplineFunctor<REAL>::evaluateV(const int iat,
     r *= DeltaRInv;
     int i;
     Real t;
-    getSplineBound(r, t, i, max_index);
+    getSplineBound(r, max_index, i, t);
     Real d1      = coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3);
     Real d2      = coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7);
     Real d3      = coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11);
@@ -809,7 +809,7 @@ inline void BsplineFunctor<REAL>::evaluateVGL(const int iat,
     r *= DeltaRInv;
     int iGather;
     Real t;
-    getSplineBound(r, t, iGather, max_index);
+    getSplineBound(r, max_index, iGather, t);
 
     Real sCoef0 = coefs[iGather + 0];
     Real sCoef1 = coefs[iGather + 1];
