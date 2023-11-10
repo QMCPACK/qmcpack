@@ -50,7 +50,7 @@ class SoaCuspCorrection
   /** Maximal number of supported MOs
    * this is not the AO basis because cusp correction is applied on the MO directly.
    */
-  int MaxOrbSize = 0;
+  const size_t MaxOrbSize;
 
   ///COMPLEX WON'T WORK
   using COT = CuspCorrectionAtomicBasis<RealType>;
@@ -68,15 +68,12 @@ public:
   /** constructor
    * @param ions ionic system
    * @param els electronic system
+   * @param norbs the number of orbitals this cusp correction may serve
    */
-  SoaCuspCorrection(ParticleSet& ions, ParticleSet& els);
+  SoaCuspCorrection(ParticleSet& ions, ParticleSet& els, size_t norbs);
 
   /** copy constructor */
   SoaCuspCorrection(const SoaCuspCorrection& a);
-
-  /** set the number of orbitals this cusp correction may serve. call this before adding any correction centers.
-   */
-  void setOrbitalSetSize(int norbs);
 
   /** compute VGL
    * @param P quantum particleset
