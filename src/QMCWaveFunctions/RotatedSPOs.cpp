@@ -126,8 +126,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
     delta_param[i] = (active[loc] - myVars[i]);
     myVars[i]      = active[loc];
   }
-  // imag piece
-  if (std::is_same_v<ValueType, ComplexType>)
+  if constexpr (std::is_same_v<ValueType, ComplexType>)
   {
     for (int i = 0; i < N; i++)
     {
@@ -141,7 +140,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   {
     const size_t Nfull = m_full_rot_inds.size();
     for (int i = 0; i < Nfull; i++)
-      if (std::is_same_v<ValueType, ComplexType>)
+      if constexpr (std::is_same_v<ValueType, ComplexType>)
         old_param[i] = ComplexType(myVarsFull[i], myVarsFull[i + N]);
       else
         old_param[i] = myVarsFull[i];
@@ -156,7 +155,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
         myVarsFull[i + N] = std::imag(new_param[i]);
       }
       else
-        myVarsFull[i] = std::real(new_param[i]); // constexpr might help to remove the real() here
+        myVarsFull[i] = std::real(new_param[i]);
   }
   else
   {
@@ -167,7 +166,6 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   }
 }
 
-// @TODO: make this work
 void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
 {
   hout.push("RotatedSPOs");
@@ -208,9 +206,14 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
 
   int nparam = myVars.size();
+  if constexpr (std::is_same_v<ValueType, ComplexType>)
+    nparam /= 2;
   std::vector<ValueType> params(nparam);
   for (int i = 0; i < nparam; i++)
-    params[i] = myVars[i];
+    if constexpr (std::is_same_v<ValueType, ComplexType>)
+      params[i] = ComplexType(myVars[i], myVars[i + nparam]);
+    else
+      params[i] = myVars[i];
 
   hout.write(params, rot_params_name);
   hout.pop();
@@ -386,7 +389,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   }
 
   // Build imag components of myVars
-  if (std::is_same_v<ValueType, ComplexType>)
+  if constexpr (std::is_same_v<ValueType, ComplexType>)
   {
     for (int i = 0; i < nparams_active; i++)
     {
