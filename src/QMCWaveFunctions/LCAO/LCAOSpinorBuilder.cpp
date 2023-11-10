@@ -32,10 +32,12 @@ std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), optimize("no");
   std::string basisset_name("LCAOBSet");
+  size_t norbs(0);
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
   spoAttrib.add(optimize, "optimize");
   spoAttrib.add(basisset_name, "basisset");
+  spoAttrib.add(norbs, "size");
   spoAttrib.put(cur);
 
   BasisSet_t* myBasisSet = nullptr;
@@ -48,10 +50,11 @@ std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";
 
   std::unique_ptr<LCAOrbitalSet> upspo =
-      std::make_unique<LCAOrbitalSet>(spo_name + "_up", std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()));
+      std::make_unique<LCAOrbitalSet>(spo_name + "_up", std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), norbs,
+                                      false);
   std::unique_ptr<LCAOrbitalSet> dnspo =
-      std::make_unique<LCAOrbitalSet>(spo_name + "_dn", std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()));
-
+      std::make_unique<LCAOrbitalSet>(spo_name + "_dn", std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), norbs,
+                                      false);
   loadMO(*upspo, *dnspo, cur);
 
   //create spinor and register up/dn
@@ -63,15 +66,10 @@ std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr cur)
 {
   bool PBC = false;
-  int norb = up.getBasisSetSize();
   std::string debugc("no");
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(norb, "size");
   aAttrib.add(debugc, "debug");
   aAttrib.put(cur);
-
-  up.setOrbitalSetSize(norb);
-  dn.setOrbitalSetSize(norb);
 
   xmlNodePtr occ_ptr = nullptr;
   cur                = cur->xmlChildrenNode;
