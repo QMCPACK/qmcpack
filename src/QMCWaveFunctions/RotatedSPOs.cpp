@@ -175,7 +175,7 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
     int nparam_full = myVarsFull.size();
-    std::vector<ValueType> full_params(nparam_full);
+    std::vector<RealType> full_params(nparam_full);
     for (int i = 0; i < nparam_full; i++)
       full_params[i] = myVarsFull[i];
 
@@ -190,10 +190,17 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     if (rows > 0)
       cols = history_params_[0].size();
 
-    Matrix<ValueType> tmp(rows, cols);
+    size_t flattened_cols = cols;
+    if constexpr (std::is_same_v<ValueType, ComplexType>)
+      flattened_cols = 2 * cols;
+    Matrix<RealType> tmp(rows, flattened_cols);
     for (size_t i = 0; i < rows; i++)
       for (size_t j = 0; j < cols; j++)
-        tmp(i, j) = history_params_[i][j];
+      {
+        tmp(i, j) = std::real(history_params_[i][j]);
+        if constexpr (std::is_same_v<ValueType, ComplexType>)
+          tmp(i, j + cols) = std::imag(history_params_[i][j]);
+      }
 
     std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
     hout.write(tmp, rot_hist_name);
@@ -206,14 +213,9 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
 
   int nparam = myVars.size();
-  if constexpr (std::is_same_v<ValueType, ComplexType>)
-    nparam /= 2;
-  std::vector<ValueType> params(nparam);
+  std::vector<RealType> params(nparam);
   for (int i = 0; i < nparam; i++)
-    if constexpr (std::is_same_v<ValueType, ComplexType>)
-      params[i] = ComplexType(myVars[i], myVars[i + nparam]);
-    else
-      params[i] = myVars[i];
+    params[i] = myVars[i];
 
   hout.write(params, rot_params_name);
   hout.pop();
@@ -221,7 +223,6 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   hout.pop();
 }
 
-// @TODO: make this work
 void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 {
   hin.push("RotatedSPOs", false);
@@ -251,14 +252,23 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
               << nparam_full_actual << ")";
       throw std::runtime_error(tmp_err.str());
     }
-    std::vector<ValueType> full_params(nparam_full);
+    std::vector<RealType> full_params(nparam_full);
     hin.read(full_params, rot_global_name);
     for (int i = 0; i < nparam_full; i++)
-      myVarsFull[i] = std::real(full_params[i]);
+      myVarsFull[i] = full_params[i];
 
     hin.pop();
 
-    applyFullRotation(full_params, true);
+    size_t nkappa = full_params.size();
+    if constexpr (std::is_same_v<ValueType, ComplexType>)
+        nkappa /= 2;
+    std::vector<ValueType> full_kappa(nkappa);
+    for (size_t i = 0; i < nkappa; i++)
+      if constexpr (std::is_same_v<ValueType, ComplexType>)
+        full_kappa[i] = ComplexType(full_params[i], full_params[i + nkappa]);
+      else 
+        full_kappa[i] = full_params[i];
+    applyFullRotation(full_kappa, true);
   }
   else if (grp_hist_exists)
   {
@@ -271,13 +281,23 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     int rows = sizes[0];
     int cols = sizes[1];
     history_params_.resize(rows);
-    Matrix<ValueType> tmp(rows, cols);
+    Matrix<RealType> tmp(rows, cols);
     hin.read(tmp, rot_hist_name);
     for (size_t i = 0; i < rows; i++)
     {
-      history_params_[i].resize(cols);
-      for (size_t j = 0; j < cols; j++)
-        history_params_[i][j] = tmp(i, j);
+      if constexpr (std::is_same_v<ValueType, ComplexType>)
+      {
+        size_t nkappa = cols / 2;
+        history_params_[i].resize(nkappa);
+        for (size_t j = 0; j < nkappa; j++)
+          history_params_[i][j] = ComplexType(tmp(i, j), tmp(i, j + nkappa));
+      }
+      else
+      {
+        history_params_[i].resize(cols);
+        for (size_t j = 0; j < cols; j++)
+          history_params_[i][j] = tmp(i, j);
+      }
     }
 
     hin.pop();
@@ -302,10 +322,10 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     throw std::runtime_error(tmp_err.str());
   }
 
-  std::vector<ValueType> params(nparam);
+  std::vector<RealType> params(nparam);
   hin.read(params, rot_param_name);
   for (int i = 0; i < nparam; i++)
-    myVars[i] = std::real(params[i]);
+    myVars[i] = params[i];
 
   hin.pop();
 
