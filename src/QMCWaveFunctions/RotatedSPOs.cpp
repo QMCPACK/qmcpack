@@ -126,48 +126,46 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
     delta_param[i] = (active[loc] - myVars[i]);
     myVars[i]      = active[loc];
   }
-  // imag piece
-  if ( std::is_same_v<ValueType,ComplexType> )
+  if constexpr (std::is_same_v<ValueType, ComplexType>)
+  {
+    for (int i = 0; i < N; i++)
     {
-      for (int i = 0; i < N; i++)
-	{
-	  int loc          = myVars.where(i+N);
-	  delta_param[i]  += ComplexType(0,1)*(active[loc] - myVars[i+N]);
-	  myVars[i+N]      = active[loc];
-	}
+      int loc = myVars.where(i + N);
+      delta_param[i] += ComplexType(0, 1) * (active[loc] - myVars[i + N]);
+      myVars[i + N] = active[loc];
     }
+  }
 
   if (use_global_rot_)
   {
     const size_t Nfull = m_full_rot_inds.size();
     for (int i = 0; i < Nfull; i++)
-          if ( std::is_same_v<ValueType,ComplexType> )
-	    old_param[i] = ComplexType(myVarsFull[i],myVarsFull[i+N]);
-	  else
-	    old_param[i] = myVarsFull[i];
-    
+      if constexpr (std::is_same_v<ValueType, ComplexType>)
+        old_param[i] = ComplexType(myVarsFull[i], myVarsFull[i + N]);
+      else
+        old_param[i] = myVarsFull[i];
+
     applyDeltaRotation(delta_param, old_param, new_param);
 
     // Save the the params
     for (int i = 0; i < Nfull; i++)
-      if constexpr ( std::is_same_v<ValueType,ComplexType> )
-	{
-	  myVarsFull[i]   = std::real(new_param[i]);
-	  myVarsFull[i+N] = std::imag(new_param[i]);
-	}
+      if constexpr (std::is_same_v<ValueType, ComplexType>)
+      {
+        myVarsFull[i]     = std::real(new_param[i]);
+        myVarsFull[i + N] = std::imag(new_param[i]);
+      }
       else
-	myVarsFull[i] = std::real(new_param[i]);   // constexpr might help to remove the real() here
+        myVarsFull[i] = std::real(new_param[i]);
   }
   else
-    {
-      apply_rotation(delta_param, false);
-      
-      // Save the parameters in the history list
-      history_params_.push_back(delta_param);
-    }
+  {
+    apply_rotation(delta_param, false);
+
+    // Save the parameters in the history list
+    history_params_.push_back(delta_param);
+  }
 }
 
-  // @TODO: make this work 
 void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
 {
   hout.push("RotatedSPOs");
@@ -177,7 +175,7 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
     int nparam_full = myVarsFull.size();
-    std::vector<ValueType> full_params(nparam_full);
+    std::vector<RealType> full_params(nparam_full);
     for (int i = 0; i < nparam_full; i++)
       full_params[i] = myVarsFull[i];
 
@@ -192,10 +190,17 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     if (rows > 0)
       cols = history_params_[0].size();
 
-    Matrix<ValueType> tmp(rows, cols);
+    size_t flattened_cols = cols;
+    if constexpr (std::is_same_v<ValueType, ComplexType>)
+      flattened_cols = 2 * cols;
+    Matrix<RealType> tmp(rows, flattened_cols);
     for (size_t i = 0; i < rows; i++)
       for (size_t j = 0; j < cols; j++)
-        tmp(i, j) = history_params_[i][j];
+      {
+        tmp(i, j) = std::real(history_params_[i][j]);
+        if constexpr (std::is_same_v<ValueType, ComplexType>)
+          tmp(i, j + cols) = std::imag(history_params_[i][j]);
+      }
 
     std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
     hout.write(tmp, rot_hist_name);
@@ -208,7 +213,7 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
 
   int nparam = myVars.size();
-  std::vector<ValueType> params(nparam);
+  std::vector<RealType> params(nparam);
   for (int i = 0; i < nparam; i++)
     params[i] = myVars[i];
 
@@ -218,7 +223,6 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   hout.pop();
 }
 
-// @TODO: make this work 
 void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 {
   hin.push("RotatedSPOs", false);
@@ -248,14 +252,23 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
               << nparam_full_actual << ")";
       throw std::runtime_error(tmp_err.str());
     }
-    std::vector<ValueType> full_params(nparam_full);
+    std::vector<RealType> full_params(nparam_full);
     hin.read(full_params, rot_global_name);
     for (int i = 0; i < nparam_full; i++)
-      myVarsFull[i] = std::real(full_params[i]);
+      myVarsFull[i] = full_params[i];
 
     hin.pop();
 
-    applyFullRotation(full_params, true);
+    size_t nkappa = full_params.size();
+    if constexpr (std::is_same_v<ValueType, ComplexType>)
+        nkappa /= 2;
+    std::vector<ValueType> full_kappa(nkappa);
+    for (size_t i = 0; i < nkappa; i++)
+      if constexpr (std::is_same_v<ValueType, ComplexType>)
+        full_kappa[i] = ComplexType(full_params[i], full_params[i + nkappa]);
+      else 
+        full_kappa[i] = full_params[i];
+    applyFullRotation(full_kappa, true);
   }
   else if (grp_hist_exists)
   {
@@ -268,13 +281,23 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     int rows = sizes[0];
     int cols = sizes[1];
     history_params_.resize(rows);
-    Matrix<ValueType> tmp(rows, cols);
+    Matrix<RealType> tmp(rows, cols);
     hin.read(tmp, rot_hist_name);
     for (size_t i = 0; i < rows; i++)
     {
-      history_params_[i].resize(cols);
-      for (size_t j = 0; j < cols; j++)
-        history_params_[i][j] = tmp(i, j);
+      if constexpr (std::is_same_v<ValueType, ComplexType>)
+      {
+        size_t nkappa = cols / 2;
+        history_params_[i].resize(nkappa);
+        for (size_t j = 0; j < nkappa; j++)
+          history_params_[i][j] = ComplexType(tmp(i, j), tmp(i, j + nkappa));
+      }
+      else
+      {
+        history_params_[i].resize(cols);
+        for (size_t j = 0; j < cols; j++)
+          history_params_[i][j] = tmp(i, j);
+      }
     }
 
     hin.pop();
@@ -299,10 +322,10 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     throw std::runtime_error(tmp_err.str());
   }
 
-  std::vector<ValueType> params(nparam);
+  std::vector<RealType> params(nparam);
   hin.read(params, rot_param_name);
   for (int i = 0; i < nparam; i++)
-    myVars[i] = std::real(params[i]);
+    myVars[i] = params[i];
 
   hin.pop();
 
@@ -386,28 +409,28 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   }
 
   // Build imag components of myVars
-  if ( std::is_same_v<ValueType,ComplexType> )
+  if constexpr (std::is_same_v<ValueType, ComplexType>)
+  {
+    for (int i = 0; i < nparams_active; i++)
     {
-      for (int i = 0; i < nparams_active; i++)
-	{
-	  p = m_act_rot_inds[i].first;
-	  q = m_act_rot_inds[i].second;
-	  std::stringstream sstr;
-	  sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
-	       << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_i";
-	  
-	  // If the user input parameters, use those. Otherwise, initialize the parameters to zero
-	  if (params_supplied)
-	    {
-	      myVars.insert(sstr.str(), std::imag(params[i]));
-	    }
-	  else
-	    {
-	      myVars.insert(sstr.str(), 0.0);
-	    }
-	}
+      p = m_act_rot_inds[i].first;
+      q = m_act_rot_inds[i].second;
+      std::stringstream sstr;
+      sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
+           << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_i";
+
+      // If the user input parameters, use those. Otherwise, initialize the parameters to zero
+      if (params_supplied)
+      {
+        myVars.insert(sstr.str(), std::imag(params[i]));
+      }
+      else
+      {
+        myVars.insert(sstr.str(), 0.0);
+      }
     }
-  
+  }
+
   if (use_global_rot_)
   {
     myVarsFull.clear();
@@ -426,22 +449,22 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
         myVarsFull.insert(sstr.str(), 0.0);
     }
     // Build imag terms
-    if ( std::is_same_v<ValueType,ComplexType> )
+    if (std::is_same_v<ValueType, ComplexType>)
+    {
+      for (int i = 0; i < N; i++)
       {
-	for (int i = 0; i < N; i++)
-	  {
-	    p = m_full_rot_inds[i].first;
-	    q = m_full_rot_inds[i].second;
-	    std::stringstream sstr;
-	    sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
-		 << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_i";
-	    
-	    if (params_supplied && i < m_act_rot_inds.size())
-	      myVarsFull.insert(sstr.str(), std::imag(params[i]));
-	    else
-	      myVarsFull.insert(sstr.str(), 0.0);
-	  }
+        p = m_full_rot_inds[i].first;
+        q = m_full_rot_inds[i].second;
+        std::stringstream sstr;
+        sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
+             << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_i";
+
+        if (params_supplied && i < m_act_rot_inds.size())
+          myVarsFull.insert(sstr.str(), std::imag(params[i]));
+        else
+          myVarsFull.insert(sstr.str(), 0.0);
       }
+    }
   }
 
   //Printing the parameters
@@ -456,10 +479,10 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     const size_t N = m_act_rot_inds.size();
     std::vector<ValueType> param(N);
     for (int i = 0; i < N; i++)
-      if ( std::is_same_v<ValueType, ComplexType> )
-	param[i] = ComplexType(myVars[i], myVars[i+N]);
+      if (std::is_same_v<ValueType, ComplexType>)
+        param[i] = ComplexType(myVars[i], myVars[i + N]);
       else
-	param[i] = myVars[i];
+        param[i] = myVars[i];
     apply_rotation(param, false);
   }
 }
@@ -586,7 +609,7 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
   }
   // diagonalize the matrix
   char JOBZ('V'); //compute eigenvalues and eigenvectors.
-  char UPLO('U'); //store upper triangle of A.  
+  char UPLO('U'); //store upper triangle of A.
   int N(n);
   int LDA(n);
   int LWORK(2 * n);
@@ -842,19 +865,19 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
       }
     }
 
-    if ( std::is_same_v<ValueType,ComplexType> )
+    if (std::is_same_v<ValueType, ComplexType>)
+    {
+      for (int i = 0; i < N; i++)
       {
-	for (int i = 0; i < N; i++)
-	  {
-	    int kk = myVars.where(i+N);
-	    if (kk >= 0)
-	      {
-		const int p      = m_act_rot_inds.at(i).first;
-		const int q      = m_act_rot_inds.at(i).second;
-		dratios(iat, kk) = ComplexType(0,1)*(T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
-	      }
-	  }
+        int kk = myVars.where(i + N);
+        if (kk >= 0)
+        {
+          const int p      = m_act_rot_inds.at(i).first;
+          const int q      = m_act_rot_inds.at(i).second;
+          dratios(iat, kk) = ComplexType(0, 1) * (T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
+        }
       }
+    }
   }
 }
 
@@ -906,19 +929,19 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
       dlogpsi[kk] = T(p, q);
     }
   }
-  if ( std::is_same_v<ValueType,ComplexType> )
+  if (std::is_same_v<ValueType, ComplexType>)
+  {
+    for (int i = 0; i < N; i++)
     {
-      for (int i = 0; i < N; i++)
-	{
-	  int kk = myVars.where(i+N);
-	  if (kk >= 0)
-	    {
-	      const int p = m_act_rot_inds.at(i).first;
-	      const int q = m_act_rot_inds.at(i).second;
-	      dlogpsi[kk] = ComplexType(0,1)*T(p, q);
-	    }
-	}
+      int kk = myVars.where(i + N);
+      if (kk >= 0)
+      {
+        const int p = m_act_rot_inds.at(i).first;
+        const int q = m_act_rot_inds.at(i).second;
+        dlogpsi[kk] = ComplexType(0, 1) * T(p, q);
+      }
     }
+  }
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
@@ -987,7 +1010,8 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   //possibly replace wit BLAS calls
   for (int i = 0; i < nel; i++)
     for (int j = 0; j < nmo; j++)
-      Bbar(i, j) = d2psiM_all(i, j) + ValueType(2.0) * ValueType(dot(myG_J[i], dpsiM_all(i, j))) + ValueType(myL_J[i]) * psiM_all(i, j);
+      Bbar(i, j) = d2psiM_all(i, j) + ValueType(2.0) * ValueType(dot(myG_J[i], dpsiM_all(i, j))) +
+          ValueType(myL_J[i]) * psiM_all(i, j);
 
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
@@ -1026,20 +1050,20 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
       dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
     }
   }
-  if ( std::is_same_v<ValueType,ComplexType> )
+  if (std::is_same_v<ValueType, ComplexType>)
+  {
+    for (int i = 0; i < N; i++)
     {
-      for (int i = 0; i < N; i++)
-	{
-	  int kk = myVars.where(i+N);
-	  if (kk >= 0)
-	    {
-	      const int p = m_act_rot_inds.at(i).first;
-	      const int q = m_act_rot_inds.at(i).second;
-	      dlogpsi[kk] += ComplexType(0,1)*T(p, q);
-	      dhpsioverpsi[kk] += ComplexType(0,1)*(ValueType(-0.5) * Y4(p, q));
-	    }
-	}
+      int kk = myVars.where(i + N);
+      if (kk >= 0)
+      {
+        const int p = m_act_rot_inds.at(i).first;
+        const int q = m_act_rot_inds.at(i).second;
+        dlogpsi[kk] += ComplexType(0, 1) * T(p, q);
+        dhpsioverpsi[kk] += ComplexType(0, 1) * (ValueType(-0.5) * Y4(p, q));
+      }
     }
+  }
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
