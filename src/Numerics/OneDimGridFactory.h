@@ -14,15 +14,17 @@
 
 #ifndef QMCPLUSPLUS_ONEDIMGRIDFACTORY_H
 #define QMCPLUSPLUS_ONEDIMGRIDFACTORY_H
-#include "Configuration.h"
 #include "Numerics/OneDimGridFunctor.h"
+#include "Numerics/LibxmlNumericIO.h"
 
 namespace qmcplusplus
 {
 /** Factory class using Singleton pattern
  */
-struct OneDimGridFactory : public QMCTraits
+template <typename T>
+struct OneDimGridFactory
 {
+  using RealType = T;
   ///typedef of the one-dimensional grid
   using GridType = OneDimGridBase<RealType>;
 

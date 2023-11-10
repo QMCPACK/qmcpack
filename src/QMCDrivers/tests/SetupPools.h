@@ -15,11 +15,10 @@
 #include "Message/Communicate.h"
 #include "type_traits/template_types.hpp"
 #include "OhmmsData/Libxml2Doc.h"
+#include "Particle/ParticleSetPool.h"
 
 namespace qmcplusplus
 {
-
-class ParticleSetPool;
 class WaveFunctionPool;
 class HamiltonianPool;
 

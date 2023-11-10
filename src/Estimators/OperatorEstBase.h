@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/DataLocality.h"
 #include "hdf/hdf_archive.h"
+#include "Particle/MCWalkerConfiguration.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -41,7 +42,7 @@ class OperatorEstBase
 public:
   using QMCT      = QMCTraits;
   using FullPrecRealType = QMCT::FullPrecRealType;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker = MCWalkerConfiguration::Walker_t;
 
   using Data = std::vector<QMCT::RealType>;
 

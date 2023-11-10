@@ -13,19 +13,21 @@
 
 
 #include "OneDimGridFactory.h"
+#include "Configuration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
-std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNodePtr cur)
+template <typename T>
+std::unique_ptr<typename OneDimGridFactory<T>::GridType> OneDimGridFactory<T>::createGrid(xmlNodePtr cur)
 {
   std::unique_ptr<GridType> agrid;
   RealType ri     = 1e-5;
   RealType rf     = 100.0;
   RealType ascale = -1.0e0;
   RealType astep  = 1.25e-2;
-  IndexType npts  = 1001;
+  QMCTraits::IndexType npts  = 1001;
   std::string gridType("log");
   std::string gridID("invalid");
   OhmmsAttributeSet radAttrib;
@@ -74,4 +76,7 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
   }
   return agrid;
 }
+
+template struct OneDimGridFactory<double>;
+template struct OneDimGridFactory<float>;
 } // namespace qmcplusplus

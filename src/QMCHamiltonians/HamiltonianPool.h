@@ -20,15 +20,16 @@
 #include "QMCHamiltonians/HamiltonianFactory.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
+#include "Particle/ParticleSet.h"
+#include "Particle/ParticleSetPool.h"
+#include "Particle/MCWalkerConfiguration.h"
+
 #include <map>
 
 struct Libxml2Document;
 
 namespace qmcplusplus
 {
-class ParticleSet;
-class MCWalkerConfiguration;
-class ParticleSetPool;
 class WaveFunctionPool;
 
 /** @ingroup qmcapp

@@ -19,10 +19,10 @@
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/SOECPotential.h"
 #include "QMCHamiltonians/L2Potential.h"
+#include "Particle/ParticleSet.h"
 namespace qmcplusplus
 {
 class QMCHamiltonian;
-class ParticleSet;
 class TrialWaveFunction;
 
 struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits

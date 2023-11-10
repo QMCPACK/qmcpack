@@ -35,6 +35,8 @@
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "Particle/MCWalkerConfiguration.h"
+
 class Communicate;
 
 namespace qmcplusplus
@@ -59,7 +61,6 @@ namespace qmcplusplus
  */
 
 //forward declarations: Do not include headers if not needed
-class MCWalkerConfiguration;
 class HDFWalkerOutput;
 class TraceManager;
 

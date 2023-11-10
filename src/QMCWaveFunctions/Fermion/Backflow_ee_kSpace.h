@@ -26,10 +26,6 @@ namespace qmcplusplus
 class Backflow_ee_kSpace : public BackflowFunctionBase
 {
   using ComplexType = QMCTraits::ComplexType;
-  ///typedef for real values
-  //using real_type = optimize::VariableSet::real_type;
-  ///typedef for variableset: this is going to be replaced
-  using opt_variables_type = optimize::VariableSet;
 
 public:
   //number of groups of the target particleset

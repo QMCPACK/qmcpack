@@ -129,7 +129,8 @@ private:
   /// empty collection and render mutable
   void clear();
 
-  friend class SPOSetBuilder;
+  template<typename T>
+  friend class SPOSetBuilderT;
 };
 
 

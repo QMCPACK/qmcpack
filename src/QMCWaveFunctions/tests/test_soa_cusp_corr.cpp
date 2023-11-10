@@ -21,8 +21,8 @@
 #include "Numerics/GaussianBasisSet.h"
 
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
-
+#include "QMCWaveFunctions/LCAO/CuspCorrectionConstructionT.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
@@ -33,12 +33,13 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
 
   using GridType = OneDimGridBase<double>;
 
-  Matrix<CuspCorrectionParameters> info;
+  Matrix<CuspCorrectionParametersT<double>> info;
   int num_center       = 3;
   int orbital_set_size = 7;
   info.resize(num_center, orbital_set_size);
 
-  bool okay = readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
+  bool okay =
+      CuspCorrectionConstructionT<double>::readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
   REQUIRE(okay);
 
   // N
@@ -60,7 +61,6 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
   // H
   CHECK(info(2, 4).alpha[4] == Approx(-404.733151049101)); // a5
 }
-
 
 TEST_CASE("applyCuspInfo", "[wavefunction]")
 {
@@ -138,16 +138,17 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   using RealType = QMCTraits::RealType;
 
-  splitPhiEta(center_idx, corrCenter, phi, eta);
+  CuspCorrectionConstructionT<double>::splitPhiEta(center_idx, corrCenter, phi, eta);
 
   // 1S orbital on N
   CHECK((*phi.C)(0, 0) == Approx(1.00180500));
   CHECK((*eta.C)(0, 0) == Approx(0.0));
 
   int orbital_set_size = 7;
-  Matrix<CuspCorrectionParameters> info;
+  Matrix<CuspCorrectionParametersT<double>> info;
   info.resize(num_center, orbital_set_size);
-  okay = readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
+  okay =
+      CuspCorrectionConstructionT<double>::readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
 
   REQUIRE(okay);
   Vector<RealType> xgrid;
@@ -162,7 +163,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   rad_orb.resize(ngrid);
 
   int mo_idx = 0;
-  computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb, info(center_idx, mo_idx));
+  CuspCorrectionConstructionT<double>::computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb,
+                                                           info(center_idx, mo_idx));
 
   // Comparisons generated from gen_cusp_corr.py
   //  Center  0  MO 0 rc =  0.07691307008
@@ -179,7 +181,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
 
   mo_idx = 1;
-  computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb, info(center_idx, mo_idx));
+  CuspCorrectionConstructionT<double>::computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb,
+                                                           info(center_idx, mo_idx));
 
   //  Center  0  MO 1 rc =  0.060909477888
   CHECK(rad_orb[0] == Approx(-0.0099816961)); // x = 0.012
@@ -202,14 +205,15 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   // C is second atom
   center_idx = 1;
-  splitPhiEta(center_idx, corrCenter, phi, eta);
+  CuspCorrectionConstructionT<double>::splitPhiEta(center_idx, corrCenter, phi, eta);
 
   // 1S orbital on N
   CHECK((*phi.C)(0, 0) == Approx(0.0));
   CHECK((*eta.C)(0, 0) == Approx(1.00180500));
 
   mo_idx = 0;
-  computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb, info(center_idx, mo_idx));
+  CuspCorrectionConstructionT<double>::computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb,
+                                                           info(center_idx, mo_idx));
 
   //  Center  1  MO 0 rc =  0.105
   CHECK(rad_orb[0] == Approx(0.0017535517)); // x = 0.012
@@ -224,7 +228,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   CHECK(rad_orb[9] == Approx(0.0010837868)); // x = 0.12
 
 
-  removeSTypeOrbitals(corrCenter, lcob);
+  CuspCorrectionConstructionT<double>::removeSTypeOrbitals(corrCenter, lcob);
 
   CHECK((*lcob.C)(0, 0) == Approx(0.0));
   CHECK((*lcob.C)(0, 1) == Approx(0.0));
@@ -551,7 +555,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 TEST_CASE("broadcastCuspInfo", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
-  CuspCorrectionParameters cp;
+  CuspCorrectionParametersT<double> cp;
   int root = 0;
   if (c->rank() == root)
   {
@@ -566,7 +570,7 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
     cp.redo     = 1;
   }
 
-  broadcastCuspInfo(cp, *c, root);
+  CuspCorrectionConstructionT<double>::broadcastCuspInfo(cp, *c, root);
 
   CHECK(cp.Rc == Approx(2.0));
   CHECK(cp.C == Approx(3.0));

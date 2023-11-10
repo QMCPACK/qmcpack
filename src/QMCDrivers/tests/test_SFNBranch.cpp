@@ -26,7 +26,7 @@
 
 namespace qmcplusplus
 {
-using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+using MCPWalker = MCPopulation::MCPWalker;
 using RealType  = double;
 
 namespace testing

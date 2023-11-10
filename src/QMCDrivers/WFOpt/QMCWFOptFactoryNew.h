@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_WFOPTFACTORYNEW_H
 
 #include "QMCDrivers/QMCDriverInterface.h"
+#include "Particle/SampleStack.h"
 
 class Communicate;
 
@@ -22,7 +23,6 @@ class MCPopulation;
 class WaveFunctionPool;
 class QMCHamiltonian;
 class TrialWaveFunction;
-class SampleStack;
 class QMCFixedSampleLinearOptimizeBatched;
 class ProjectData;
 

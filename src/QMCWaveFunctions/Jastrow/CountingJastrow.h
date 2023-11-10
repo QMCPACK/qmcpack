@@ -16,6 +16,7 @@
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/CountingGaussianRegion.h"
+#include "QMCWaveFunctions/OptimizableObject.h"
 
 namespace qmcplusplus
 {

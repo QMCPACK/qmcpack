@@ -17,6 +17,7 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Configuration.h"
+#include "ParticleSetTraits.h"
 
 namespace qmcplusplus
 {
@@ -27,6 +28,18 @@ class LatticeParser
 
 public:
   LatticeParser(ParticleLayout& lat) : ref_(lat) {}
+  bool put(xmlNodePtr cur);
+};
+
+
+template <typename T>
+class LatticeParserT
+{
+  using ParticleLayout = typename LatticeParticleTraits<T>::ParticleLayout;
+  ParticleLayout& ref_;
+
+public:
+  LatticeParserT(ParticleLayout& lat) : ref_(lat) {}
   bool put(xmlNodePtr cur);
 };
 

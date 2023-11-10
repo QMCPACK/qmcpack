@@ -29,7 +29,7 @@ TEST_CASE("SoaDistanceTableAA compute_size", "[distance_table]")
   elec.create({6, 4});
   
   // using open BC
-  SoaDistanceTableAA<OHMMS_PRECISION, OHMMS_DIM, SUPERCELL_OPEN + SOA_OFFSET> dt_ee(elec);
+  SoaDistanceTableAAT<QMCTraits::ValueType, OHMMS_DIM, SUPERCELL_OPEN + SOA_OFFSET> dt_ee(elec);
 
   const size_t Alignment = getAlignment<OHMMS_PRECISION>();
 

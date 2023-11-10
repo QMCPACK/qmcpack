@@ -14,48 +14,12 @@
 #ifndef QMCPLUSPLUS_SHO_BASIS_BUILDER_H
 #define QMCPLUSPLUS_SHO_BASIS_BUILDER_H
 
-#include "QMCWaveFunctions/HarmonicOscillator/SHOSet.h"
-#include "QMCWaveFunctions/SPOSetBuilder.h"
-#include "QMCWaveFunctions/SPOSetInfo.h"
+#include "Configuration.h"
+#include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilderT.h"
 
 namespace qmcplusplus
 {
-struct SHOSetBuilder : public SPOSetBuilder
-{
-  //enum{DIM=OHMMS_DIM}
-
-  ParticleSet& Ps;
-
-  RealType length;
-  RealType mass;
-  RealType energy;
-  PosType center;
-
-  int nstates;
-  int nmax;
-  TinyVector<int, DIM> ind_dims;
-
-  SPOSetInfoSimple<SHOState> basis_states;
-
-  //construction/destruction
-  SHOSetBuilder(ParticleSet& P, Communicate* comm);
-
-  ~SHOSetBuilder() override;
-
-  //reset parameters
-  void reset();
-
-  //SPOSetBuilder interface
-  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
-
-  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input) override;
-
-  //local functions
-  void update_basis_states(int smax);
-  void report(const std::string& pad = "");
-};
-
+using SHOSetBuilder = SHOSetBuilderT<QMCTraits::ValueType>;
 } // namespace qmcplusplus
-
 
 #endif

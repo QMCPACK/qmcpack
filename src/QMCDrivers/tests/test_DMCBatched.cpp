@@ -20,6 +20,7 @@
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 #include "Platforms/Host/OutputManager.h"
+#include "SampleStack.h"
 
 namespace qmcplusplus
 {

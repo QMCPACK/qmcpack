@@ -21,8 +21,10 @@
 #include <ResourceCollection.h>
 #include "QMCHamiltonians/NLPPJob.h"
 #include "DistanceTable.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <limits>
 

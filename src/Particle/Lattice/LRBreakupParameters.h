@@ -57,7 +57,7 @@ public:
       T beta2 = (dot(v1, v1) * dot(c, v2) - dot(v1, v2) * dot(c, v1)) /
           (dot(v1, v1) * dot(v2, v2) - dot(v1, v2) * dot(v1, v2));
       TinyVector<T, 3> p = beta1 * v1 + beta2 * v2;
-      T dist             = sqrt(dot(p - c, p - c));
+      T dist             = std::sqrt(dot(p - c, p - c));
       LR_rc              = std::min(LR_rc, dist);
     }
     //Set KC for structure-factor and LRbreakups.

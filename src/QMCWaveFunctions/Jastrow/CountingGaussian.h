@@ -14,6 +14,8 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include "VariableSet.h"
+#include "QMCWaveFunctions/OptimizableObject.h"
+
 #include <array>
 
 namespace qmcplusplus
@@ -28,7 +30,6 @@ class CountingGaussian
   using TensorType = QMCTraits::TensorType;
 
   using real_type = optimize::VariableSet::real_type;
-  using opt_variables_type = optimize::VariableSet;
 
   // enumerations for axis parameters
   enum A_vars

@@ -44,7 +44,7 @@ public:
   using vgl_type          = typename BaseType::vgl_type;
   using vgh_type          = typename BaseType::vgh_type;
   using vghgh_type        = typename BaseType::vghgh_type;
-  using PosType           = typename ParticleSet::PosType;
+  using PosType           = typename ParticleSetT<ORBT>::PosType;
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
   using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
 
@@ -55,7 +55,7 @@ public:
   ///number of quantum particles
   size_t NumTargets;
   ///ion particle set
-  const ParticleSet& ions_;
+  const ParticleSetT<ORBT>& ions_;
   ///number of quantum particles
   const int myTableIndex;
   ///Global Coordinate of Supertwist read from HDF5
@@ -77,7 +77,7 @@ public:
    * @param ions ionic system
    * @param els electronic system
    */
-  SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els);
+  SoaLocalizedBasisSet(ParticleSetT<ORBT>& ions, ParticleSetT<ORBT>& els);
 
   /** copy constructor */
   SoaLocalizedBasisSet(const SoaLocalizedBasisSet& a);
@@ -108,7 +108,7 @@ public:
    * @param vgl Matrix(5,BasisSetSize)
    * @param trialMove if true, use getTempDists()/getTempDispls()
    */
-  void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) override;
+  void evaluateVGL(const ParticleSetT<ORBT>& P, int iat, vgl_type& vgl) override;
 
   /** compute V using packed array with all walkers 
    * @param basis_list list of basis sets (one for each walker)
@@ -117,7 +117,7 @@ public:
    * @param v   Array(n_walkers, BasisSetSize)
    */
   void mw_evaluateValue(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        const RefVectorWithLeader<ParticleSetT<ORBT>>& P_list,
                         int iat,
                         OffloadMWVArray& v) override;
 
@@ -127,7 +127,7 @@ public:
    * @param v   Array(n_walkers, BasisSetSize)
    */
   void mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                           const RefVectorWithLeader<const VirtualParticleSetT<ORBT>>& vp_list,
                            OffloadMWVArray& v) override;
 
 
@@ -138,7 +138,7 @@ public:
    * @param vgl   Array(n_walkers, 5, BasisSetSize)
    */
   void mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                      const RefVectorWithLeader<ParticleSet>& P_list,
+                      const RefVectorWithLeader<ParticleSetT<ORBT>>& P_list,
                       int iat,
                       OffloadMWVGLArray& vgl) override;
 
@@ -148,7 +148,7 @@ public:
    * @param vgl Matrix(10,BasisSetSize)
    * @param trialMove if true, use getTempDists()/getTempDispls()
    */
-  void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh) override;
+  void evaluateVGH(const ParticleSetT<ORBT>& P, int iat, vgh_type& vgh) override;
 
   /** compute VGHGH 
    * @param P quantum particleset
@@ -156,7 +156,7 @@ public:
    * @param vghgh Matrix(20,BasisSetSize)
    * @param trialMove if true, use getTempDists()/getTempDispls()
    */
-  void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh) override;
+  void evaluateVGHGH(const ParticleSetT<ORBT>& P, int iat, vghgh_type& vghgh) override;
 
   /** compute values for the iat-paricle move
    *
@@ -169,13 +169,13 @@ public:
    * displacement. We need to keep track of Tv because it must be add
    * as a phase factor, i.e., exp(i*k*Tv).
    */
-  void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals) override;
+  void evaluateV(const ParticleSetT<ORBT>& P, int iat, ORBT* restrict vals) override;
 
-  void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl) override;
+  void evaluateGradSourceV(const ParticleSetT<ORBT>& P, int iat, const ParticleSetT<ORBT>& ions, int jion, vgl_type& vgl) override;
 
-  void evaluateGradSourceVGL(const ParticleSet& P,
+  void evaluateGradSourceVGL(const ParticleSetT<ORBT>& P,
                              int iat,
-                             const ParticleSet& ions,
+                             const ParticleSetT<ORBT>& ions,
                              int jion,
                              vghgh_type& vghgh) override;
 

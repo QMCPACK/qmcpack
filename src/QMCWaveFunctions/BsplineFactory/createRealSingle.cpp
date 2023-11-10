@@ -18,16 +18,16 @@
 #include "SplineR2R.h"
 #include "HybridRepReal.h"
 #include <fftw3.h>
-#include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
-#include "SplineSetReader.h"
-#include "HybridRepSetReader.h"
+#include "QMCWaveFunctions/BsplineFactory/einspline_helper.hpp"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineSetReader.h"
+#include "QMCWaveFunctions/BsplineFactory/HybridRepSetReaderT.h"
 
 namespace qmcplusplus
 {
-std::unique_ptr<BsplineReaderBase> createBsplineRealSingle(EinsplineSetBuilder* e,
-                                                           bool hybrid_rep,
-                                                           const std::string& useGPU)
+std::unique_ptr<BsplineReaderBase> createBsplineRealSingleT(EinsplineSetBuilder* e,
+                                                            bool hybrid_rep,
+                                                            const std::string& useGPU)
 {
   app_summary() << "    Using real valued spline SPOs with real single precision storage (R2R)." << std::endl;
   if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
@@ -39,7 +39,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineRealSingle(EinsplineSetBuilder* 
   if (hybrid_rep)
   {
     app_summary() << "    Using hybrid orbital representation." << std::endl;
-    aReader = std::make_unique<HybridRepSetReader<HybridRepReal<SplineR2R<float>>>>(e);
+    aReader = std::make_unique<HybridRepSetReaderT<HybridRepReal<SplineR2R<float>>>>(e);
   }
   else
     aReader = std::make_unique<SplineSetReader<SplineR2R<float>>>(e);

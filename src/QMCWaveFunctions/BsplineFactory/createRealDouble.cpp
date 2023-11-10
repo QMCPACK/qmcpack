@@ -18,10 +18,10 @@
 #include "SplineR2R.h"
 #include "HybridRepReal.h"
 #include <fftw3.h>
-#include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
-#include "SplineSetReader.h"
-#include "HybridRepSetReader.h"
+#include "QMCWaveFunctions/BsplineFactory/einspline_helper.hpp"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineSetReader.h"
+#include "QMCWaveFunctions/BsplineFactory/HybridRepSetReaderT.h"
 
 namespace qmcplusplus
 {
@@ -39,7 +39,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineRealDouble(EinsplineSetBuilder* 
   if (hybrid_rep)
   {
     app_summary() << "    Using hybrid orbital representation." << std::endl;
-    aReader = std::make_unique<HybridRepSetReader<HybridRepReal<SplineR2R<double>>>>(e);
+    aReader = std::make_unique<HybridRepSetReaderT<HybridRepReal<SplineR2R<double>>>>(e);
   }
   else
     aReader = std::make_unique<SplineSetReader<SplineR2R<double>>>(e);

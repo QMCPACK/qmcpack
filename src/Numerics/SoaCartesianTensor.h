@@ -29,7 +29,7 @@
 namespace qmcplusplus
 {
 /** CartesianTensor according to Gamess order
- * @tparam T, value_type, e.g. double
+ * @tparam T, ValueType, e.g. double
  *
  * Original implementation Numerics/CartesianTensor.h
  * Modified to use SoA for cXYZ and used by SoaAtomicBasisSet
@@ -40,12 +40,12 @@ template<class T>
 class SoaCartesianTensor
 {
 private:
-  using value_type     = T;
   using ggg_type       = TinyVector<Tensor<T, 3>, 3>;
   using OffloadVector  = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
   using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
   using OffloadArray4D = Array<T, 4, OffloadPinnedAllocator<T>>;
+  using ValueType = T;
 
   ///maximum angular momentum
   int Lmax;

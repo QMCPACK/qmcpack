@@ -24,12 +24,7 @@
 #include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Utilities/FairDivide.h"
-
-// forward declaration
-namespace optimize
-{
-struct VariableSet;
-}
+#include "QMCWaveFunctions/VariableSet.h"
 
 namespace qmcplusplus
 {
@@ -38,13 +33,12 @@ class QMCHamiltonian;
 class MCPopulation
 {
 public:
-  using MCPWalker          = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker          = MCWalkerConfiguration::Walker_t;
   using WFBuffer           = MCPWalker::WFBuffer_t;
   using RealType           = QMCTraits::RealType;
   using Properties         = MCPWalker::PropertyContainer_t;
   using IndexType          = QMCTraits::IndexType;
   using FullPrecRealType   = QMCTraits::FullPrecRealType;
-  using opt_variables_type = optimize::VariableSet;
 
 private:
   // Potential thread safety issue

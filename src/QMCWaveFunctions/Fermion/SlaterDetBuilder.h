@@ -19,7 +19,10 @@
 #include <vector>
 #include "Configuration.h"
 #include "WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include <hdf/hdf_archive.h>
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
 {
@@ -28,9 +31,6 @@ class BackflowTransformation;
 class DiracDeterminantBase;
 class MultiSlaterDetTableMethod;
 struct CSFData;
-class SPOSet;
-class SPOSetBuilder;
-class SPOSetBuilderFactory;
 struct ci_configuration;
 
 /** derived class from WaveFunctionComponentBuilder

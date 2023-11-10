@@ -14,11 +14,12 @@
 #ifndef QMCPLUSPLUS_EEI_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_EEI_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "ParticleSet.h"
 
 namespace qmcplusplus
 {
 //forward declaration
-class ParticleSet;
+
 
 class eeI_JastrowBuilder : public WaveFunctionComponentBuilder
 {

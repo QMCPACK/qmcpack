@@ -26,13 +26,13 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Particle/ParticleSetPool.h"
 #include "Estimators/EstimatorManagerInput.h"
+#include "Particle/MCWalkerConfiguration.h"
 
 class Communicate;
 
 namespace qmcplusplus
 {
 //forward declaration
-class MCWalkerConfiguration;
 class QMCDriverInterface;
 class WaveFunctionPool;
 class HamiltonianPool;

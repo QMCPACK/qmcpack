@@ -24,6 +24,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
+#include "QMCWaveFunctions/VariableSet.h"
 
 namespace qmcplusplus
 {

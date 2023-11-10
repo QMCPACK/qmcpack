@@ -29,7 +29,7 @@ namespace testing
 class CrowdWithWalkers
 {
 public:
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker = Crowd::MCPWalker;
 
   EstimatorManagerNew em;
   UPtr<Crowd> crowd_ptr;

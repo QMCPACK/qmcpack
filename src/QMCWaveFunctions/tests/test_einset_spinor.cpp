@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SpinorSet.h"
-
+#include "QMCWaveFunctions/SPOSet.h"
 #include <stdio.h>
 #include <string>
 #include <limits>
@@ -531,7 +531,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
-    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+    elec_.mw_accept_rejectMoveT<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
   elec_.mw_update(p_list);
 
@@ -612,7 +612,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(mw_dspin[1][2] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][2]).epsilon(h));
 
     std::vector<bool> accept = {false, false};
-    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+    elec_.mw_accept_rejectMoveT<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
 }
 

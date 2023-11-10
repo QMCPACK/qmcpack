@@ -11,6 +11,7 @@
 
 
 #include "OMPTarget/OMPTargetMath.hpp"
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 
 namespace qmcplusplus
 {
