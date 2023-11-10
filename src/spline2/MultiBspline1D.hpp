@@ -125,7 +125,7 @@ inline void MultiBspline1D<T>::evaluate_v_impl(T x, T* restrict vals) const
   x -= spline_m->x_grid.start;
   T tx;
   int ix;
-  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 2);
+  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, spline_m->x_grid.num - 2, ix, tx);
 
   T a[4];
   spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
@@ -148,7 +148,7 @@ inline void MultiBspline1D<T>::evaluate_vgl_impl(T x, T* restrict vals, T* restr
   x -= spline_m->x_grid.start;
   T tx;
   int ix;
-  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 2);
+  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, spline_m->x_grid.num - 2, ix, tx);
 
   T a[4], da[4], d2a[4];
   spline2::MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);

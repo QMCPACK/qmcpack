@@ -46,9 +46,9 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
   x -= spline_m->x_grid.start;
   y -= spline_m->y_grid.start;
   z -= spline_m->z_grid.start;
-  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
-  qmcplusplus::getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
-  qmcplusplus::getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
+  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, spline_m->x_grid.num - 1, ix, tx);
+  qmcplusplus::getSplineBound(y * spline_m->y_grid.delta_inv, spline_m->y_grid.num - 1, iy, ty);
+  qmcplusplus::getSplineBound(z * spline_m->z_grid.delta_inv, spline_m->z_grid.num - 1, iz, tz);
 
   MultiBsplineData<T>::compute_prefactors(a, da, d2a, d3a, tx);
   MultiBsplineData<T>::compute_prefactors(b, db, d2b, d3b, ty);

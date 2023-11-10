@@ -18,9 +18,9 @@ namespace qmcplusplus
 
 /** break x into the integer part and residual part and apply bounds
  * @param x input coordinate
- * @param dx fractional part
- * @param ind integer part
- * @param nmax upper bound of the integer part
+ * @param nmax input upper bound of the integer part
+ * @param ind output integer part
+ * @param dx output fractional part
  *
  * x in the range of [0, nmax+1) will be split correctly.
  * x < 0, ind = 0, dx = 0
@@ -34,7 +34,7 @@ namespace qmcplusplus
  * because the end point should be excluded and the last grid point has an index ng - 2.
  */
 template<typename T, typename TRESIDUAL>
-inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int nmax)
+inline void getSplineBound(const T x, const int nmax, int& ind, TRESIDUAL& dx)
 {
   // lower bound
   if (x < 0)

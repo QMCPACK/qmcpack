@@ -22,24 +22,24 @@ void test_spline_bounds()
   T dx;
   int ind;
   int ng = 10;
-  getSplineBound(x, dx, ind, ng);
+  getSplineBound(x, ng, ind, dx);
   CHECK(dx == Approx(0.2));
   REQUIRE(ind == 2);
 
   // check clamping to a maximum index value
   x = 10.5;
-  getSplineBound(x, dx, ind, ng);
+  getSplineBound(x, ng, ind, dx);
   CHECK(dx == Approx(0.5));
   REQUIRE(ind == 10);
 
   x = 11.5;
-  getSplineBound(x, dx, ind, ng);
+  getSplineBound(x, ng, ind, dx);
   CHECK(dx == Approx(1.0));
   REQUIRE(ind == 10);
 
   // check clamping to a zero index value
   x = -1.3;
-  getSplineBound(x, dx, ind, ng);
+  getSplineBound(x, ng, ind, dx);
   CHECK(dx == Approx(0.0));
   REQUIRE(ind == 0);
 }
