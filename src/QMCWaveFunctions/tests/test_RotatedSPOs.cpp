@@ -728,7 +728,7 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 namespace testing
 {
 opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
-opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull; }
+opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
 std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
