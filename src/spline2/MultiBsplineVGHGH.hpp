@@ -46,9 +46,9 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
   x -= spline_m->x_grid.start;
   y -= spline_m->y_grid.start;
   z -= spline_m->z_grid.start;
-  getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
-  getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
-  getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
+  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, spline_m->x_grid.num - 1, ix, tx);
+  qmcplusplus::getSplineBound(y * spline_m->y_grid.delta_inv, spline_m->y_grid.num - 1, iy, ty);
+  qmcplusplus::getSplineBound(z * spline_m->z_grid.delta_inv, spline_m->z_grid.num - 1, iz, tz);
 
   MultiBsplineData<T>::compute_prefactors(a, da, d2a, d3a, tx);
   MultiBsplineData<T>::compute_prefactors(b, db, d2b, d3b, ty);
@@ -126,7 +126,8 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
 
 
 #pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz, gh_xxx, gh_xxy, \
-                         gh_xxz, gh_xyy, gh_xyz, gh_xzz, gh_yyy, gh_yyz, gh_yzz, gh_zzz, vals: QMC_SIMD_ALIGNMENT)
+                             gh_xxz, gh_xyy, gh_xyz, gh_xzz, gh_yyy, gh_yyz, gh_yzz, gh_zzz,                           \
+                             vals : QMC_SIMD_ALIGNMENT)
       for (int n = 0; n < num_splines; n++)
       {
         T coefsv    = coefs[n];
@@ -150,15 +151,15 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
         gh_yzz[n] += pre01 * sum2;
         gh_zzz[n] += pre00 * sum3;
 
-        hxx[n]  += pre20 * sum0;
-        hxy[n]  += pre11 * sum0;
-        hxz[n]  += pre10 * sum1;
-        hyy[n]  += pre02 * sum0;
-        hyz[n]  += pre01 * sum1;
-        hzz[n]  += pre00 * sum2;
-        gx[n]   += pre10 * sum0;
-        gy[n]   += pre01 * sum0;
-        gz[n]   += pre00 * sum1;
+        hxx[n] += pre20 * sum0;
+        hxy[n] += pre11 * sum0;
+        hxz[n] += pre10 * sum1;
+        hyy[n] += pre02 * sum0;
+        hyz[n] += pre01 * sum1;
+        hzz[n] += pre00 * sum2;
+        gx[n] += pre10 * sum0;
+        gy[n] += pre01 * sum0;
+        gz[n] += pre00 * sum1;
         vals[n] += pre00 * sum0;
       }
     }
@@ -185,12 +186,12 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
   const T dzzz = dzInv * dzInv * dzInv;
 
 #pragma omp simd aligned(gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz, gh_xxx, gh_xxy, gh_xxz, gh_xyy, gh_xyz, gh_xzz, \
-                         gh_yyy, gh_yyz, gh_yzz, gh_zzz: QMC_SIMD_ALIGNMENT)
+                             gh_yyy, gh_yyz, gh_yzz, gh_zzz : QMC_SIMD_ALIGNMENT)
   for (int n = 0; n < num_splines; n++)
   {
-    gx[n]  *= dxInv;
-    gy[n]  *= dyInv;
-    gz[n]  *= dzInv;
+    gx[n] *= dxInv;
+    gy[n] *= dyInv;
+    gz[n] *= dzInv;
     hxx[n] *= dxx;
     hyy[n] *= dyy;
     hzz[n] *= dzz;
