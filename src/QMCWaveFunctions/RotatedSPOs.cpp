@@ -979,7 +979,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     myG_J = 0.0;
     myL_J.resize(NP);
     myL_J            = 0.0;
-    const size_t nmo = Phi->getOrbitalSetSize();
+    const size_t nmo = Phi_->getOrbitalSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     const RealType* restrict C_p = Coeff.data();
@@ -1050,7 +1050,7 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
   }
   if (recalculate)
   {
-    const size_t nmo = Phi->getOrbitalSetSize();
+    const size_t nmo = Phi_->getOrbitalSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     table_method_evalWF(dlogpsi, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn, M_up,
@@ -1235,7 +1235,7 @@ $
   K5T.resize(nmo, nmo);
   TK5T.resize(nel, nmo);
 
-  const int parameters_size(m_act_rot_inds.size());
+  const int parameters_size(m_act_rot_inds_.size());
   const int parameter_start_index(0);
 
   const size_t num_unique_up_dets(detValues_up.size());
@@ -1459,7 +1459,7 @@ $
     int kk = myVars.where(k);
     if (kk >= 0)
     {
-      const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+      const int i(m_act_rot_inds_[mu].first), j(m_act_rot_inds_[mu].second);
       if (i <= nel - 1 && j > nel - 1)
       {
         dhpsioverpsi[kk] +=
@@ -1523,7 +1523,7 @@ void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
   K4T.resize(nmo, nmo);
   TK4T.resize(nel, nmo);
 
-  const int parameters_size(m_act_rot_inds.size());
+  const int parameters_size(m_act_rot_inds_.size());
   const int parameter_start_index(0);
 
   const size_t num_unique_up_dets(detValues_up.size());
@@ -1645,7 +1645,7 @@ void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
     int kk = myVars.where(k);
     if (kk >= 0)
     {
-      const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+      const int i(m_act_rot_inds_[mu].first), j(m_act_rot_inds_[mu].second);
       if (i <= nel - 1 && j > nel - 1)
       {
         dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) +
