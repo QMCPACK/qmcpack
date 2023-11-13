@@ -517,7 +517,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-  std::vector<TrialWaveFunction::LogValueType> log_values(walker_twfs.size());
+  std::vector<TrialWaveFunction::LogValue> log_values(walker_twfs.size());
   std::vector<ParticleSet::ParticleGradient> Gs;
   std::vector<ParticleSet::ParticleLaplacian> Ls;
   Gs.reserve(log_values.size());
@@ -545,7 +545,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   {
     auto& ref_G = walker_twfs[iw].G;
     auto& ref_L = walker_twfs[iw].L;
-    TrialWaveFunction::LogValueType ref_log{walker_twfs[iw].getLogPsi(), walker_twfs[iw].getPhase()};
+    TrialWaveFunction::LogValue ref_log{walker_twfs[iw].getLogPsi(), walker_twfs[iw].getPhase()};
     if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
     {
       success = false;

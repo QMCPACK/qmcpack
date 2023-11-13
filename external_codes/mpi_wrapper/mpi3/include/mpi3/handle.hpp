@@ -1,4 +1,3 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 // Copyright 2018-2023 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_DETAIL_HANDLE_HPP
@@ -43,10 +42,11 @@ struct caller {
 		return ret;
 	}
 	template<int(*F)(Impl, int, char*)> std::string call(int n) const {
-		std::array<char, MPI_MAX_INFO_KEY> ret{};
+		std::string ret(MPI_MAX_INFO_KEY, '\0');
 		int const status = F(impl(), n, ret.data());
 		if(status != 0) {throw std::runtime_error{"error "+ std::to_string(status)};}
-		return std::string{ret.data()};
+		ret.resize(static_cast<std::string::size_type>(n));
+		return ret;
 	}
 	template<int(*F)(Impl, char const*, int*, int*)> std::pair<int, int> call(std::string const& key) const {
 		int flag;  // NOLINT(cppcoreguidelines-init-variables) delayed init
@@ -57,11 +57,12 @@ struct caller {
 	}
 	template<int(*F)(Impl, char const*, int, char*, int*)>
 	std::pair<std::string, int> call(std::string const& key, int valuelen) const {
-		std::array<char,  MPI_MAX_INFO_VAL> value{};
+		std::string ret(MPI_MAX_INFO_VAL, '\0');
 		int flag;  // NOLINT(cppcoreguidelines-init-variables) delayed init
-		int const status = F(impl(), key.c_str(), valuelen, value.data(), &flag);
+		int const status = F(impl(), key.c_str(), valuelen, ret.data(), &flag);
+		ret.resize(static_cast<std::size_t>(valuelen));
 		if(status != 0) {throw std::runtime_error{"error "+ std::to_string(status)};}
-		return {std::string(value.data(), static_cast<std::string::size_type>(valuelen)), flag};
+		return {ret, flag};
 	}
 	template<int(*F)(Impl, char const*)> void call(std::string const& key) const {
 		int const status = F(impl(), key.c_str());

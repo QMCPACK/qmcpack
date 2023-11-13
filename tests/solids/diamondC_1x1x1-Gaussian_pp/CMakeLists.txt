@@ -20,6 +20,18 @@ qmc_run_and_check(
   DIAMOND_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_gaussian_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+  qmc_short_vmcbatch
+  qmc_short_vmcbatch.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_SCALARS # VMC
+)
+
 #
 # Long tests
 #
@@ -38,6 +50,18 @@ qmc_run_and_check(
   LONG_DIAMOND_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  long-diamondC_1x1x1_pp-vmcbatch_gaussian_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+  qmc_long_vmcbatch
+  qmc_long_vmcbatch.in.xml
+  1
+  16
+  TRUE
+  0
+  LONG_DIAMOND_SCALARS # VMC
+)
+
 # Reference DMC run in qmc-ref "-10.532497 0.000470"
 list(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.532497 0.006127")
 
@@ -46,6 +70,18 @@ qmc_run_and_check(
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   qmc_long_vmc_dmc
   qmc_long_vmc_dmc.in.xml
+  1
+  16
+  TRUE
+  1
+  LONG_DIAMOND_DMC_SCALARS # DMC
+)
+
+qmc_run_and_check(
+  long-diamondC_1x1x1_pp-dmcbatch_gaussian_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+  qmc_long_vmcbatch_dmcbatch
+  qmc_long_vmcbatch_dmcbatch.in.xml
   1
   16
   TRUE
@@ -84,4 +120,36 @@ qmc_run_and_check(
   TRUE
   0
   DET_DIAMOND_SCALARS # VMC
+)
+
+if(QMC_MIXED_PRECISION)
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "totenergy" "-10.82674512 0.000222")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "kinetic" "12.23702380 0.000221")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "potential" "-23.06376891 0.000015")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "eeenergy" "-3.00267948 0.000003")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "ionion" "-12.77567012 0.000001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "localecp" "-7.99462588 0.00002")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "nonlocalecp" "0.70920650 0.00001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "samples" "9 0.0")
+else()
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "totenergy" "-10.82674404 0.000001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "kinetic" "12.23702514 0.000001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "potential" "-23.06376918 0.000001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "eeenergy" "-3.00267968 0.000001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "ionion" "-12.77566743 0.000001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "localecp" "-7.99462875 0.000001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "nonlocalecp" "0.70920645 0.000001")
+  list(APPEND DET_DIAMOND_VMCBATCH_SCALARS "samples" "9 0.0")
+endif()
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmcbatch_gaussian_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+  det_qmc_short_vmcbatch
+  det_qmc_short_vmcbatch.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_VMCBATCH_SCALARS # VMC
 )

@@ -28,19 +28,10 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
                             int first,
                             int last)
 {
-  x -= spline_m->x_grid.start;
-  y -= spline_m->y_grid.start;
-  z -= spline_m->z_grid.start;
-  T tx, ty, tz;
   int ix, iy, iz;
-  spline2::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
-  spline2::getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
-  spline2::getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
   T a[4], b[4], c[4];
 
-  spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
-  spline2::MultiBsplineData<T>::compute_prefactors(b, ty);
-  spline2::MultiBsplineData<T>::compute_prefactors(c, tz);
+  computeLocationAndFractional(spline_m, x, y, z, ix, iy, iz, a, b, c);
 
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;

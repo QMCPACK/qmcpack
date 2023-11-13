@@ -206,9 +206,9 @@ void RPAJastrow::checkOutVariables(const opt_variables_type& active)
   ShortRangeRPA->checkOutVariables(active);
 }
 
-RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
-                                                 ParticleSet::ParticleGradient& G,
-                                                 ParticleSet::ParticleLaplacian& L)
+RPAJastrow::LogValue RPAJastrow::evaluateLog(const ParticleSet& P,
+                                             ParticleSet::ParticleGradient& G,
+                                             ParticleSet::ParticleLaplacian& L)
 {
   log_value_ = 0.0;
   for (int i = 0; i < Psi.size(); i++)
@@ -216,12 +216,12 @@ RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
   return log_value_;
 }
 
-RPAJastrow::PsiValueType RPAJastrow::ratio(ParticleSet& P, int iat)
+RPAJastrow::PsiValue RPAJastrow::ratio(ParticleSet& P, int iat)
 {
   ValueType r(1.0);
   for (int i = 0; i < Psi.size(); i++)
     r *= Psi[i]->ratio(P, iat);
-  return static_cast<PsiValueType>(r);
+  return static_cast<PsiValue>(r);
 }
 
 RPAJastrow::GradType RPAJastrow::evalGrad(ParticleSet& P, int iat)
@@ -232,14 +232,14 @@ RPAJastrow::GradType RPAJastrow::evalGrad(ParticleSet& P, int iat)
   return grad;
 }
 
-RPAJastrow::PsiValueType RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+RPAJastrow::PsiValue RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ValueType r(1);
   for (int i = 0; i < Psi.size(); i++)
   {
     r *= Psi[i]->ratioGrad(P, iat, grad_iat);
   }
-  return static_cast<PsiValueType>(r);
+  return static_cast<PsiValue>(r);
 }
 
 
@@ -261,7 +261,7 @@ void RPAJastrow::registerData(ParticleSet& P, WFBufferType& buf)
     Psi[i]->registerData(P, buf);
 }
 
-RPAJastrow::LogValueType RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+RPAJastrow::LogValue RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   log_value_ = 0.0;
   for (int i = 0; i < Psi.size(); i++)

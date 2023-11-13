@@ -423,12 +423,14 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
   for (int iw = 0; iw < nwalkers; iw++)
     updateWalker(walkers[iw], psets[iw], *(twfcs[iw]));
 
+  std::vector<QMCHamiltonian> hams;
   auto ref_walkers(makeRefVector<MCPWalker>(walkers));
   auto ref_psets(makeRefVector<ParticleSet>(psets));
   auto ref_twfcs(convertUPtrToRefVector(twfcs));
+  auto ref_hams(makeRefVector<QMCHamiltonian>(hams));
 
   FakeRandom rng;
-  magdensity.accumulate(ref_walkers, ref_psets, ref_twfcs, rng);
+  magdensity.accumulate(ref_walkers, ref_psets, ref_twfcs, ref_hams, rng);
 
   //Now the reference data
   //

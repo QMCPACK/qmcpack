@@ -51,7 +51,7 @@ static auto decompose(Matrix&& A, Permutation&& P, double tol = std::numeric_lim
 			);
 		}
 	}
-	return std::move(ret);
+	return A({0, N}, {0, N});
 }
 
 template<class Matrix, class Permutation, class VectorSol>

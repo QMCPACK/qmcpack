@@ -10,7 +10,7 @@ namespace mpi3 = boost::mpi3;
 
 int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 	{
-		mpi3::type t = mpi3::int_;
+		mpi3::type const& t = mpi3::int_;
 		assert( t.size() == sizeof(int) );
 		assert( t.extent() == sizeof(int) );
 		assert( t.lower_bound() == 0 );
@@ -41,7 +41,7 @@ int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 		assert( t.extent() == sizeof(std::complex<double>)*3 );
 	}
 	{
-		mpi3::type t = mpi3::float_int;
+		mpi3::type const& t = mpi3::float_int;
 		assert( t.size() == sizeof(std::pair<float, int>) );
 		struct foo_t {
 			float a;

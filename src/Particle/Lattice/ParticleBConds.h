@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_PARTICLE_BCONDS_H
 
 #include <config.h>
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/vmath.hpp"
 #include "Lattice/CrystalLattice.h"
 
 namespace qmcplusplus

@@ -151,11 +151,18 @@ struct SoaBasisSetBase
   //Evaluates value, gradient, and laplacian for electron "iat".  Parks them into a temporary data structure "vgl".
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) = 0;
   //Evaluates value, gradient, and laplacian for electron "iat".  places them in a offload array for batched code.
-  virtual void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) = 0;
+  virtual void mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<T>>& basis_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              OffloadMWVGLArray& vgl) = 0;
   //Evaluates value for electron "iat".  places it in a offload array for batched code.
-  virtual void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) = 0;
+  virtual void mw_evaluateValue(const RefVectorWithLeader<SoaBasisSetBase<T>>& basis_list,
+                                const RefVectorWithLeader<ParticleSet>& P_list,
+                                int iat,
+                                OffloadMWVArray& v) = 0;
   //Evaluates value for all the electrons of the virtual particles. places it in a offload array for batched code.
-  virtual void mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+  virtual void mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<T>>& basis_list,
+                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                    OffloadMWVArray& v) = 0;
   //Evaluates value, gradient, and Hessian for electron "iat".  Parks them into a temporary data structure "vgh".
   virtual void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh) = 0;
@@ -176,6 +183,22 @@ struct SoaBasisSetBase
 
   /// Determine which orbitals are S-type.  Used for cusp correction.
   virtual void queryOrbitalsForSType(const std::vector<bool>& corrCenter, std::vector<bool>& is_s_orbital) const {}
+
+  /** initialize a shared resource and hand it to collection
+   */
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /** acquire a shared resource from collection
+   */
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<SoaBasisSetBase>& bset_list) const
+  {}
+
+  /** return a shared resource to collection
+   */
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<SoaBasisSetBase>& bset_list) const
+  {}
 };
 
 } // namespace qmcplusplus
