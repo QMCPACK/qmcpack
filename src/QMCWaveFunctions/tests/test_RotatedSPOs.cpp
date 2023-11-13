@@ -140,7 +140,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 	 
 	 For 2 electrons in 8 orbs, we expect 2*(8-2) = 12 params.
   */
-  const auto rot_size = rot_spo->m_act_rot_inds.size();
+  const auto rot_size = rot_spo->m_act_rot_inds_.size();
   REQUIRE(rot_size == 12); // = Nelec*(Norbs - Nelec) = 2*(8-2) = 12
   std::vector<RealType> param(rot_size);
   for (auto i = 0; i < rot_size; i++)
