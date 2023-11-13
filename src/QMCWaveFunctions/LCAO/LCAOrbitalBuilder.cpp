@@ -101,6 +101,16 @@ struct ao_traits<T, ORBT, 2, 1>
   using basis_type   = SoaLocalizedBasisSet<ao_type, ORBT>;
 };
 
+/** specialization for STO-cartesian AO */
+template<typename T, typename ORBT>
+struct ao_traits<T, ORBT, 2, 0>
+{
+  using radial_type  = MultiFunctorAdapter<SlaterCombo<T>>;
+  using angular_type = SoaCartesianTensor<T>;
+  using ao_type      = SoaAtomicBasisSet<radial_type, angular_type>;
+  using basis_type   = SoaLocalizedBasisSet<ao_type, ORBT>;
+};
+
 
 inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const char*)a, b); }
 
@@ -244,7 +254,10 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
     break;
   case (2): //sto
     app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO," << ylm << ">" << std::endl;
-    myBasisSet = createBasisSet<2, 1>(cur);
+    if (ylm)
+      myBasisSet = createBasisSet<2, 1>(cur);
+    else
+      myBasisSet = createBasisSet<2, 0>(cur);
     break;
   default:
     PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.", true);
