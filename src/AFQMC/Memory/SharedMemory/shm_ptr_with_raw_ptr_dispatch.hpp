@@ -481,7 +481,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(It1 f, Size n, shm_ptr_wit
 }
 
 template<class T, class Size, typename It2>
-shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(shm_ptr_with_raw_ptr_dispatch<T> f, Size n, It2 d)
+It2 uninitialized_copy_n(shm_ptr_with_raw_ptr_dispatch<T> f, Size n, It2 d)
 {
   if (n == 0)
     return d;
