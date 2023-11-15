@@ -48,6 +48,9 @@ set(SRCS
     test_OneBodyDensityMatrices.cpp
     test_PerParticleHamiltonianLogger.cpp
     test_EstimatorManagerCrowd.cpp
+    test_NESpaceGrid.cpp
+    test_ParseGridInput.cpp
+    test_SpaceGridInput.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})

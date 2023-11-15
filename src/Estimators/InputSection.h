@@ -37,7 +37,8 @@ public:
 
   InputSection()                          = default;
   InputSection(const InputSection& other) = default;
-
+  InputSection& operator=(const InputSection& other) = default;
+  
 protected:
   // Internal data below comprise the input specification.
   //   Most apply attributes to input variables.
@@ -233,11 +234,11 @@ protected:
   static std::any lookupAnyEnum(const std::string& enum_name,
                                 const std::string& enum_value,
                                 const std::unordered_map<std::string, std::any>& enum_map);
-
 protected:
   // Simple dump of contents. Useful for developing and as
   // debugging function useful when input sections local error reports
   // may be insufficient.
+  void report() const;
   void report(std::ostream& out) const;
 
 private:

@@ -1,8 +1,8 @@
-//////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -49,7 +49,6 @@ void InputSection::readAttributes(xmlNodePtr cur,
       setFromStreamCustom(element_name, qualified_name, stream);
     else
       setFromStream(qualified_name, stream);
-
     att = att->next;
   }
 }
@@ -65,6 +64,7 @@ void InputSection::handleDelegate(const std::string& ename, const xmlNodePtr ele
 
 void InputSection::readXML(xmlNodePtr cur)
 {
+  assert(cur != nullptr);
   // For historical reasons that actual "type" of the element/input section is expressed in a very inconsistent way.
   // It could be coded via the element name i.e. the tag, or at minimum a method, type, or name attribute.
   std::string section_ename{lowerCase(castXMLCharToChar(cur->name))};
@@ -204,6 +204,13 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
       real_values.push_back(static_cast<Real>(value));
     assignValue(name, real_values);
   }
+  else if (isMultiReal(name))
+  {
+    std::vector<Real> real_values;
+    for (Real value; svalue >> value;)
+      real_values.push_back(value);
+    values_[name] = real_values;
+  }
   else if (isBool(name))
   {
     std::string sval;
@@ -249,7 +256,7 @@ void InputSection::assignValue(const std::string& name, const T& value)
   else
   {
     if (has(name))
-      std::any_cast<std::vector<T>>(values_[name]).push_back(value);
+      std::any_cast<std::vector<T>&>(values_[name]).push_back(value);
     else
       values_[name] = std::vector<T>{value};
   }
@@ -316,6 +323,12 @@ void InputSection::report(std::ostream& out) const
       out << std::any_cast<Real>(value);
   }
   out << "\n\n";
+}
+
+void InputSection::report() const
+{
+  auto& out = app_log();
+  report(out);
 }
 
 std::any InputSection::lookupAnyEnum(const std::string& enum_name,

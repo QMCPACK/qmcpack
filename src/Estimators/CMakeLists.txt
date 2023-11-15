@@ -35,7 +35,10 @@ set(QMCEST_SRC
     PerParticleHamiltonianLoggerInput.cpp
     PerParticleHamiltonianLogger.cpp
     ReferencePointsInput.cpp
-    NEReferencePoints.cpp)
+    NEReferencePoints.cpp
+    SpaceGridInput.cpp
+    ParseGridInput.cpp
+    NESpaceGrid.cpp)
 
 ####################################
 # create libqmcestimators
