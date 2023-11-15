@@ -25,6 +25,7 @@
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "BsplineFactory/EinsplineSpinorSetBuilder.h"
 #include <ResourceCollection.h>
+#include "Utilities/for_testing/checkMatrix.hpp"
 
 using std::string;
 
@@ -144,6 +145,34 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   // lapl
   CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(5e-5));
   CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738).epsilon(3e-5));
+
+  //Let's also add test for orbital optimzation
+   SPOSet::ValueVector row0{0.56752158, -0.3152607 ,  0.03525207, -0.75979421};
+   SPOSet::ValueVector row1{0.21452916,  0.75299027, -0.59552084, -0.17982718};
+   SPOSet::ValueVector row2{0.24049122,  0.55674778,  0.79497536, -0.01449368};
+   SPOSet::ValueVector row3{0.75766778, -0.1537799 , -0.11011992,  0.62463179};
+   SPOSet::ValueMatrix rot_mat(4, 4);
+   for (int iorb = 0; iorb < 3; iorb++)
+   {
+     rot_mat(0, iorb) = row0[iorb];
+     rot_mat(1, iorb) = row1[iorb];
+     rot_mat(2, iorb) = row2[iorb];
+     rot_mat(3, iorb) = row3[iorb];
+   }
+   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), spo->size());
+   for (int i = 0; i < elec_.R.size(); i++)
+     for (int j = 0; j < spo->size(); j++)
+     {
+       psiM_rot_manual[i][j] = 0.;
+       for (int k = 0; k < spo->size(); k++)
+         psiM_rot_manual[i][j] += psiM[i][k] * rot_mat[k][j];
+     }
+
+   spo->storeParamsBeforeRotation();
+   spo->applyRotation(rot_mat, false);
+   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+   auto check = checkMatrix(psiM_rot_manual, psiM, true);
+   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 }
 
 TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
