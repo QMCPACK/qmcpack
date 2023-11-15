@@ -19,17 +19,6 @@
 #include <iostream>
 using std::string;
 #include <time.h>
-
-// Dummy version of getHostName, in case its needed
-#if 0
-#if defined(_CRAYMPI) || defined(XT_CATAMOUNT)
-string getHostName()
-{
-  return "jaguar";
-}
-#endif
-#endif
-
 #include <sys/utsname.h>
 
 string getHostName()
