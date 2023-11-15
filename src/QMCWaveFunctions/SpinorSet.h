@@ -32,7 +32,7 @@ public:
   bool isOptimizable() const override { return spo_up->isOptimizable() || spo_dn->isOptimizable(); }
   bool isOMPoffload() const override { return spo_up->isOMPoffload() || spo_dn->isOMPoffload(); }
   bool hasIonDerivs() const override { return spo_up->hasIonDerivs() || spo_dn->hasIonDerivs(); }
-  bool isRotationSupported() const override { return spo_up->isRotationSupported() || spo_dn->isRotationSupported(); }
+  bool isRotationSupported() const override { return spo_up->isRotationSupported() && spo_dn->isRotationSupported(); }
 
   void storeParamsBeforeRotation() override;
 
