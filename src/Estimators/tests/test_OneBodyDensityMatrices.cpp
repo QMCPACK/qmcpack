@@ -340,6 +340,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   samplingCaseRunner(valid_obdm_input_grid);
 }
 
+#ifdef QMC_COMPLEX
 TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
 {
   using namespace testing;
@@ -379,6 +380,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
   //Spin sampling only added for density sampling
   samplingCaseRunner(valid_obdm_input);
 }
+#endif
 
 TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
 {
