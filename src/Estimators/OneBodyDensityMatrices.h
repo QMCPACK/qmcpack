@@ -148,9 +148,9 @@ private:
   Real rhocur_ = 0.0;
 
   //spin related variables
-  Real spcur_;
-  Real dspcur_;
-  bool is_spinor_;
+  Real spcur_ = 0.0;
+  Real dspcur_ = 0.0;
+  const bool is_spinor_;
 
 public:
   /** Standard Constructor
