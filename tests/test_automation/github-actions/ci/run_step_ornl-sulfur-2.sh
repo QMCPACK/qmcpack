@@ -60,8 +60,8 @@ case "$1" in
 
         LLVM_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/llvm-16.0.2-ltjkfjdu6p2cfcyw3zalz4x5sz5do3cr
         
-        echo "Set PATHs to cuda-12.1"
-        export PATH=/usr/local/cuda-12.1/bin:$PATH
+        echo "Set PATHs to cuda-11.2"
+        export PATH=$HOME/opt/cuda/11.2/bin:$PATH
         export OMPI_CC=$LLVM_DIR/bin/clang
         export OMPI_CXX=$LLVM_DIR/bin/clang++
 
@@ -71,7 +71,7 @@ case "$1" in
         echo "OMPI_CC=$OMPI_CC" >> $GITHUB_ENV
         echo "OMPI_CXX=$OMPI_CXX" >> $GITHUB_ENV
 
-        # Confirm that cuda 12.1 gets picked up by the compiler
+        # Confirm that cuda 11.2 gets picked up by the compiler
         $OMPI_CXX -v
 
         cmake -GNinja \
