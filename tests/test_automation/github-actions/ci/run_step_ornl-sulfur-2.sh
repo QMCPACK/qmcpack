@@ -77,6 +77,7 @@ case "$1" in
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+              -DCMAKE_EXE_LINKER_FLAGS="-L $LLVM_DIR/lib" \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBOOST_ROOT=$BOOST_DIR \
               -DBUILD_AFQMC=ON \
@@ -87,7 +88,7 @@ case "$1" in
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
+              ${GITHUB_WORKSPACE} || cmake_exit_code=$?
       ;;
 
       *"V100-GCC11-MPI-CUDA"*)
@@ -112,9 +113,18 @@ case "$1" in
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
+              ${GITHUB_WORKSPACE} || cmake_exit_code=$?
       ;;
     esac
+    if [ $cmake_exit_code -ne 0 ]; then
+      ls CMakeFiles
+      cmake --version
+      echo "int main() {}" > test.cpp
+      /usr/lib64/openmpi/bin/mpicxx -fopenmp --offload-arch=sm_70 -Wno-linker-warnings -Wno-unknown-cuda-version -fopenmp-assume-no-thread-state -fopenmp-assume-no-nested-parallelism test.cpp -v
+      if [ -f CMakeFiles/CMakeError.log ]; then cat CMakeFiles/CMakeError.log; fi
+      if [ -f CMakeFiles/CMakeOutput.log ]; then cat CMakeFiles/CMakeOutput.log; fi
+    fi
+    exit $cmake_exit_code
     ;;
 
   build)
