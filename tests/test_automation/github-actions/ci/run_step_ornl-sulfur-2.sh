@@ -19,14 +19,14 @@ case "$1" in
     # caused by LLVM + GCC libstdc++ mismatch
     BOOST_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/boost-1.74.0-gdhlc5uynyw5un6mniss7nfjdyqqjd7p
     
-    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
+    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build-2 ]
     then
-      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
-      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build
+      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build-2, removing"
+      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build-2
     fi
 
-    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build"
-    cd ${GITHUB_WORKSPACE}/.. && mkdir qmcpack-build && cd qmcpack-build
+    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build-2"
+    cd ${GITHUB_WORKSPACE}/.. && mkdir qmcpack-build-2 && cd qmcpack-build-2
     
     # Build variants
     # Real or Complex configuration
@@ -120,7 +120,7 @@ case "$1" in
   build)
     # Verify nvcc 
     which nvcc
-    cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    cd ${GITHUB_WORKSPACE}/../qmcpack-build-2
     ninja
     ;;
    
@@ -136,7 +136,7 @@ case "$1" in
     export LIBOMP_USE_HIDDEN_HELPER_TASK=0
 
     echo "Running deterministic tests"
-    cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    cd ${GITHUB_WORKSPACE}/../qmcpack-build-2
     ctest --output-on-failure -E ppconvert -L deterministic -j 32
     ;;
     
