@@ -14,7 +14,7 @@ set(SRC_DIR type_traits)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-set(TEST_SRCS test_qmctypes.cpp test_template_types.cpp)
+set(TEST_SRCS test_qmctypes.cpp test_template_types.cpp test_complex_helper.cpp)
 add_executable(${UTEST_EXE} ${TEST_SRCS})
 target_link_libraries(${UTEST_EXE} catch_main containers)
 

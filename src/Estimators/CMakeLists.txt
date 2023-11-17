@@ -34,7 +34,9 @@ set(QMCEST_SRC
     MagnetizationDensityInput.cpp
     SelfHealingOverlap.cpp
     PerParticleHamiltonianLoggerInput.cpp
-    PerParticleHamiltonianLogger.cpp)
+    PerParticleHamiltonianLogger.cpp
+    ReferencePointsInput.cpp
+    NEReferencePoints.cpp)
 
 ####################################
 # create libqmcestimators

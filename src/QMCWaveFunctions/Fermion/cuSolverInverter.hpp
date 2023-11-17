@@ -106,7 +106,7 @@ public:
                                    cudaMemcpyDeviceToHost, hstream_),
                    "cudaMemcpyAsync failed!");
     // check LU success
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!");
+    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize after getrf failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -124,7 +124,8 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), cudaMemcpyDeviceToHost,
                                    hstream_),
                    "cudaMemcpyAsync failed!");
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+    // check solve success
+    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize after getrs failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -162,7 +163,7 @@ public:
                                    cudaMemcpyDeviceToHost, hstream_),
                    "cudaMemcpyAsync failed!");
     // check LU success
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!");
+    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize after getrf failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -180,7 +181,8 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), cudaMemcpyDeviceToHost,
                                    hstream_),
                    "cudaMemcpyAsync failed!");
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+    // check solve success
+    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize after getrs failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -188,9 +190,12 @@ public:
       throw std::runtime_error(err.str());
     }
 
+    std::ostringstream nan_msg;
     for(int i = 0; i < norb; i++)
       if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
-        throw std::runtime_error("Ainv[i][i] is NaN. i = " + std::to_string(i));
+        nan_msg << "  Ainv["<< i << "][" << i << "] has bad value " << Ainv[i][i] << std::endl;
+    if (const std::string str = nan_msg.str(); !str.empty())
+      throw std::runtime_error("Inverse matrix diagonal check found:\n" + str);
   }
 };
 } // namespace qmcplusplus

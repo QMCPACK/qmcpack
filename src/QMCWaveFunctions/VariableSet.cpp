@@ -54,7 +54,7 @@ void VariableSet::insertFrom(const VariableSet& input)
 
 void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& input_2)
 {
-  value_type sum_val;
+  real_type sum_val;
   std::string vname;
 
   // Check that objects to be summed together have the same number of active
@@ -94,7 +94,7 @@ void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& i
 
 void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& input_2)
 {
-  value_type diff_val;
+  real_type diff_val;
   std::string vname;
 
   // Check that objects to be subtracted have the same number of active
@@ -259,7 +259,7 @@ void VariableSet::writeToHDF(const std::string& filename, qmcplusplus::hdf_archi
 
   hout.push("name_value_lists");
 
-  std::vector<qmcplusplus::QMCTraits::ValueType> param_values;
+  std::vector<qmcplusplus::QMCTraits::RealType> param_values;
   std::vector<std::string> param_names;
   for (auto& pair_it : NameAndValue)
   {
@@ -292,7 +292,7 @@ void VariableSet::readFromHDF(const std::string& filename, qmcplusplus::hdf_arch
     throw std::runtime_error(err_msg.str());
   }
 
-  std::vector<qmcplusplus::QMCTraits::ValueType> param_values;
+  std::vector<qmcplusplus::QMCTraits::RealType> param_values;
   hin.read(param_values, "parameter_values");
 
   std::vector<std::string> param_names;
