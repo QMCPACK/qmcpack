@@ -366,9 +366,9 @@ void kSpaceJastrow::setCoefficients(std::vector<RealType>& oneBodyCoefs, std::ve
 //                  Evaluation functions                     //
 ///////////////////////////////////////////////////////////////
 
-kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(const ParticleSet& P,
-                                                       ParticleSet::ParticleGradient& G,
-                                                       ParticleSet::ParticleLaplacian& L)
+kSpaceJastrow::LogValue kSpaceJastrow::evaluateLog(const ParticleSet& P,
+                                                   ParticleSet::ParticleGradient& G,
+                                                   ParticleSet::ParticleLaplacian& L)
 {
   RealType J1(0.0), J2(0.0);
   int N = P.getTotalNum();
@@ -481,7 +481,7 @@ kSpaceJastrow::GradType kSpaceJastrow::evalGrad(ParticleSet& P, int iat)
   return G;
 }
 
-kSpaceJastrow::PsiValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+kSpaceJastrow::PsiValue kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ComplexType eye(0.0, 1.0);
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
@@ -527,13 +527,13 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, Gr
     grad_iat += -Prefactor * 2.0 * TwoBodyGvecs[i] * TwoBodyCoefs[i] *
         imag(qmcplusplus::conj(TwoBody_rhoG[i]) * TwoBody_e2iGr_new[i]);
   }
-  return std::exp(static_cast<PsiValueType>(J1new + J2new - (J1old + J2old)));
+  return std::exp(static_cast<PsiValue>(J1new + J2new - (J1old + J2old)));
 }
 
 /* evaluate the ratio with P.R[iat]
  *
  */
-kSpaceJastrow::PsiValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
+kSpaceJastrow::PsiValue kSpaceJastrow::ratio(ParticleSet& P, int iat)
 {
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
   const PosType &rnew(P.getActivePos()), &rold(P.R[iat]);
@@ -567,7 +567,7 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
     ComplexType rho_G = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
     J2new += Prefactor * TwoBodyCoefs[i] * std::norm(rho_G);
   }
-  return std::exp(static_cast<PsiValueType>(J1new + J2new - (J1old + J2old)));
+  return std::exp(static_cast<PsiValue>(J1new + J2new - (J1old + J2old)));
 }
 
 /** evaluate the ratio
@@ -645,7 +645,7 @@ void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
   // return LogValue;
 }
 
-kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+kSpaceJastrow::LogValue kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   log_value_ = evaluateLog(P, P.G, P.L);
   // for(int iat=0; iat<NumPtcls; iat++)

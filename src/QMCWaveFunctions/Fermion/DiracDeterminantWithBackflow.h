@@ -80,7 +80,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -88,11 +88,11 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValue ratio(ParticleSet& P, int iat) override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   GradType evalGrad(ParticleSet& P, int iat) override;
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
@@ -110,9 +110,9 @@ public:
    */
   void restore(int iat) override;
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   /** cloning function
    * @param tqp target particleset
@@ -189,7 +189,7 @@ private:
   GradVector dpsiV;
   ValueVector d2psiV;
 
-  PsiValueType curRatio;
+  PsiValue curRatio;
   ParticleSet::SingleParticleValue* FirstAddressOfG;
   ParticleSet::SingleParticleValue* LastAddressOfG;
   ValueType* FirstAddressOfdV;

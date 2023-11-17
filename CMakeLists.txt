@@ -368,32 +368,48 @@ if(alignment_remainder)
 endif()
 message(STATUS "QMC_SIMD_ALIGNMENT is set to ${QMC_SIMD_ALIGNMENT}")
 
-#---------------------------------------------------------
-# Determine if OpenMP taskloop works with the CXX compiler
-#---------------------------------------------------------
-include(TestOpenMPtaskloop)
-option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
-message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
+if(QMC_OMP)
+  #---------------------------------------------------------
+  # Determine if OpenMP taskloop works with the CXX compiler
+  #---------------------------------------------------------
+  include(TestOpenMPtaskloop)
+  option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
+  message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 
-#---------------------------------------------------------
-# Set up OpenMP offload compile options
-#---------------------------------------------------------
-set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
-if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
-  message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
-  if(${COMPILER} MATCHES "Clang"
-     AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "gfx"
-     AND QMC_CUDA2HIP)
-    # As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers
-    # when using OpenMP offload to AMD GPU together with HIP.
-    set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
+  #---------------------------------------------------------
+  # Set up OpenMP offload compile options
+  #---------------------------------------------------------
+  set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
+  if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
+    message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
+    if(${COMPILER} MATCHES "Clang"
+	AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "gfx"
+	AND QMC_CUDA2HIP)
+      # As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers
+      # when using OpenMP offload to AMD GPU together with HIP.
+      set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
+    endif()
   endif()
+  # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
+  # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
+  cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
+    ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
+
+  #--------------------------------------------------------------
+  # Workaround for breakage of OMP Target kernels at -O0 by Clang
+  #--------------------------------------------------------------
+  # When the build type is Debug, default -O0 compilation is broken by
+  # Clang 15 as of 5d2ce7663b10c107328a4ae0c678165209e64619.
+  # Previous compilers are not suggested for clang offload builds.
+  #
+  # You can set this option to false on the command line to check
+  # if this problem has been fixed.
+  if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
+    option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
+  endif()
+  mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
 endif()
-# Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
-# A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
-                       ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
 
 #-------------------------------------------------------------------------------------
 # consider making this always on if OpenMP is no longer UB with Thread Support Library
@@ -408,8 +424,23 @@ if(QMC_EXP_THREADING)
   add_definitions(-DQMC_EXP_THREADING)
 endif(QMC_EXP_THREADING)
 
+#--------------------------------------------------------------
+# final test for compile options before searching for libraries
+#--------------------------------------------------------------
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("int main(){}" TEST_CXX_COMPILE_MAIN)
+if(NOT TEST_CXX_COMPILE_MAIN)
+  unset(TEST_CXX_COMPILE_MAIN CACHE)
+  message(FATAL_ERROR "Failed in compiling a main() function likely due to incorrect compile options. "
+                      "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
+endif()
+
+######################################################################
+# Check external libraries.
+######################################################################
+
 #-------------------------------------------------------------------
-# Check MPI installation. MPI is treated as a part of compiler
+# Check MPI installation. MPI is treated as a library
 #-------------------------------------------------------------------
 if(QMC_MPI)
   # for backward compatibility with MPIEXEC
@@ -487,36 +518,6 @@ else(QMC_MPI)
   set(HAVE_MPI 0)
   message(STATUS "MPI is disabled")
 endif(QMC_MPI)
-
-#--------------------------------------------------------------
-# final test for compile options before searching for libraries
-#--------------------------------------------------------------
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles("int main(){}" TEST_CXX_COMPILE_MAIN)
-if(NOT TEST_CXX_COMPILE_MAIN)
-  unset(TEST_CXX_COMPILE_MAIN CACHE)
-  message(FATAL_ERROR "Failed in compiling a main() function likely due to incorrect compile options. "
-                      "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
-endif()
-
-#--------------------------------------------------------------
-# Workaround for breakage of OMP Target kernels at -O0 by Clang
-#--------------------------------------------------------------
-# When the build type is Debug, default -O0 compilation is broken by
-# Clang 15 as of 5d2ce7663b10c107328a4ae0c678165209e64619.
-# Previous compilers are not suggested for clang offload builds.
-#
-# You can set this option to false on the command line to check
-# if this problem has been fixed.
-
-if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
-  option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
-endif()
-mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
-
-######################################################################
-# Check external libraries.
-######################################################################
 
 #-------------------------------------------------------------------
 # check OS related libraries

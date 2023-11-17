@@ -25,6 +25,8 @@ set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.Multid
 set(UTEST_HDF_INPUT9 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
 set(UTEST_HDF_INPUT10 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor_molecule.h5)
 set(UTEST_HDF_INPUT11 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
+set(UTEST_HDF_INPUT12 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond.h5)
+set(UTEST_HDF_INPUT13 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx/C_diamond-tiled-cplx.h5)
 
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
@@ -38,6 +40,8 @@ maybe_symlink(${UTEST_HDF_INPUT8} ${UTEST_DIR}/LiH.Multidet.h5)
 maybe_symlink(${UTEST_HDF_INPUT9} ${UTEST_DIR}/Bi.orbs.h5)
 maybe_symlink(${UTEST_HDF_INPUT10} ${UTEST_DIR}/lcao_spinor_molecule.h5)
 maybe_symlink(${UTEST_HDF_INPUT11} ${UTEST_DIR}/hcpBe.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT12} ${UTEST_DIR}/C_Diamond_2x1x1-Gaussian.h5)
+maybe_symlink(${UTEST_HDF_INPUT13} ${UTEST_DIR}/C_Diamond_2x1x1-Gaussian-tiled-cplx.h5)
 
 if(NOT QMC_DATA)
   message(VERBOSE "QMC_DATA not set. NiO_a16 based tests not added.")
@@ -89,7 +93,7 @@ else()
   set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
 endif()
 
-set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp)
+set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp test_NaNguard.cpp)
 set(TRIALWF_SRC
     test_TrialWaveFunction.cpp
     test_wavefunction_factory.cpp
@@ -111,6 +115,7 @@ set(SPOSET_SRC
     test_hybridrep.cpp
     test_pw.cpp
     test_ConstantSPOSet.cpp
+    test_LCAO_diamondC_2x1x1.cpp
     ${MO_SRCS})
 if(NiO_a16_H5_FOUND)
   set(SPOSET_SRC ${SPOSET_SRC} test_einset_NiO_a16.cpp)

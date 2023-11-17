@@ -37,11 +37,11 @@ private:
   ///define the real type
   using real_type = typename bspline_traits<T, 1>::real_type;
   ///actual einspline multi-bspline object
-  SplineType *spline_m;
+  SplineType* spline_m;
 
 public:
   MultiBspline1D() : spline_m(nullptr) {}
-  MultiBspline1D(const MultiBspline1D& in) = delete;
+  MultiBspline1D(const MultiBspline1D& in)            = delete;
   MultiBspline1D& operator=(const MultiBspline1D& in) = delete;
 
   ~MultiBspline1D()
@@ -125,7 +125,7 @@ inline void MultiBspline1D<T>::evaluate_v_impl(T x, T* restrict vals) const
   x -= spline_m->x_grid.start;
   T tx;
   int ix;
-  spline2::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 2);
+  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, spline_m->x_grid.num - 2, ix, tx);
 
   T a[4];
   spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
@@ -137,7 +137,7 @@ inline void MultiBspline1D<T>::evaluate_v_impl(T x, T* restrict vals) const
   const T* restrict coefs2 = spline_m->coefs + ((ix + 2) * xs);
   const T* restrict coefs3 = spline_m->coefs + ((ix + 3) * xs);
 
-#pragma omp simd aligned(vals, coefs0, coefs1, coefs2, coefs3: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(vals, coefs0, coefs1, coefs2, coefs3 : QMC_SIMD_ALIGNMENT)
   for (int n = 0; n < spline_m->num_splines; n++)
     vals[n] = a[0] * coefs0[n] + a[1] * coefs1[n] + a[2] * coefs2[n] + a[3] * coefs3[n];
 }
@@ -148,7 +148,7 @@ inline void MultiBspline1D<T>::evaluate_vgl_impl(T x, T* restrict vals, T* restr
   x -= spline_m->x_grid.start;
   T tx;
   int ix;
-  spline2::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 2);
+  qmcplusplus::getSplineBound(x * spline_m->x_grid.delta_inv, spline_m->x_grid.num - 2, ix, tx);
 
   T a[4], da[4], d2a[4];
   spline2::MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
@@ -161,7 +161,7 @@ inline void MultiBspline1D<T>::evaluate_vgl_impl(T x, T* restrict vals, T* restr
   const T* restrict coefs2 = spline_m->coefs + ((ix + 2) * xs);
   const T* restrict coefs3 = spline_m->coefs + ((ix + 3) * xs);
 
-#pragma omp simd aligned(vals, grads, lapl, coefs0, coefs1, coefs2, coefs3: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(vals, grads, lapl, coefs0, coefs1, coefs2, coefs3 : QMC_SIMD_ALIGNMENT)
   for (int n = 0; n < spline_m->num_splines; n++)
   {
     const T coef_0 = coefs0[n];

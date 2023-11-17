@@ -358,9 +358,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
 }
 
 
-MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(ParticleSet& P,
-                                                                        WFBufferType& buf,
-                                                                        bool fromscratch)
+MultiDiracDeterminant::LogValue MultiDiracDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   assert(P.isSpinor() == is_spinor_);
   if (is_spinor_)
@@ -415,6 +413,12 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   assert(P.isSpinor() == is_spinor_);
+  if (curRatio == ValueType(0))
+  {
+    std::ostringstream msg;
+    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
   log_value_ref_det_ += convertValueToLog(curRatio);
   curRatio = ValueType(1);
   switch (UpdateMode)
@@ -911,7 +915,7 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& optvars,
                                                   Vector<ValueType>& dlogpsi,
                                                   const MultiDiracDeterminant& pseudo_dn,
-                                                  const PsiValueType& psiCurrent,
+                                                  const PsiValue& psiCurrent,
                                                   const std::vector<ValueType>& Coeff,
                                                   const std::vector<size_t>& C2node_up,
                                                   const std::vector<size_t>& C2node_dn)

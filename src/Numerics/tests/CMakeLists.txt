@@ -26,6 +26,7 @@ set(UTEST_SRCS
     test_OneDimCubicSplineLinearGrid.cpp
     test_one_dim_cubic_spline.cpp
     test_Quadrature.cpp
+    test_SplineBound.cpp
     test_RotationMatrix3D.cpp)
 
 # Run gen_gto.py to create these files.  They may take a long time to compile.

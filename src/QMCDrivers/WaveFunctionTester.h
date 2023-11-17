@@ -43,7 +43,7 @@ class WaveFunctionTester : public QMCDriver
 {
 public:
   /// type definition
-  using LogValueType = WaveFunctionComponent::LogValueType;
+  using LogValue = WaveFunctionComponent::LogValue;
 
   /// Constructor.
   WaveFunctionTester(const ProjectData& project_data,

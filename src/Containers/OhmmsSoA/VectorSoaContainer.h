@@ -20,7 +20,6 @@
 
 #include <type_traits>
 #include "CPU/SIMD/aligned_allocator.hpp"
-#include "CPU/SIMD/algorithm.hpp"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsSoA/PosTransformer.h"
@@ -209,21 +208,18 @@ struct VectorSoaContainer
        *
        * The same sizes are assumed.
        */
-  template<typename T1>
-  void copyIn(const Vector<TinyVector<T1, D>>& in)
+  void copyIn(const Vector<TinyVector<T, D>>& in)
   {
-    //if(nLocal!=in.size()) resize(in.size());
-    PosAoS2SoA(nLocal, D, reinterpret_cast<const T1*>(in.first_address()), D, myData, nGhosts);
+    PosAoS2SoA(nLocal, D, reinterpret_cast<const T*>(in.first_address()), D, myData, nGhosts);
   }
 
   /** SoA to AoS : copy to Vector<TinyVector<>>
        *
        * The same sizes are assumed.
        */
-  template<typename T1>
-  void copyOut(Vector<TinyVector<T1, D>>& out) const
+  void copyOut(Vector<TinyVector<T, D>>& out) const
   {
-    PosSoA2AoS(nLocal, D, myData, nGhosts, reinterpret_cast<T1*>(out.first_address()), D);
+    PosSoA2AoS(nLocal, D, myData, nGhosts, reinterpret_cast<T*>(out.first_address()), D);
   }
 
   /** return TinyVector<T,D>

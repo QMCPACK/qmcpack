@@ -23,7 +23,9 @@ struct default_request {
 		ret.set_source(MPI_UNDEFINED);
 		ret.set_tag(MPI_UNDEFINED);
 		ret.set_cancelled();
+	#if not defined(EXAMPI)
 		ret.set_elements<char>(0);
+	#endif
 		return ret;
 	}
 	void free() {}
@@ -65,7 +67,9 @@ struct generalized_request : request{
 		);
 		if(s != MPI_SUCCESS) {throw std::runtime_error("cannot create generalized request");}
 	}
+#if not defined(EXAMPI)
 	void complete() { MPI_(Grequest_complete)(impl_); }
+#endif
 };
 
 }  // end namespace mpi3

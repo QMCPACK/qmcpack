@@ -1,4 +1,4 @@
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2023 Alfredo A. Correa
 
 #include "../../mpi3/communicator.hpp"
 

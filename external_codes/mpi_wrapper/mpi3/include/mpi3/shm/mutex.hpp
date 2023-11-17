@@ -11,7 +11,7 @@ namespace mpi3 {
 namespace shm {
 
 class mutex {
-	mpi3::shared_communicator& scomm_;
+	mpi3::shared_communicator& scomm_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 	using allocator_type = mpi3::shm::allocator<std::atomic_flag>;
 	allocator_type alloc_;
 	mpi3::shm::ptr<std::atomic_flag> f_;
@@ -52,18 +52,18 @@ class mutex {
 //using std::cout; 
 
 //int mpi3::main(int argc, char* argv[], mpi3::communicator world){
-//	mpi3::shared_communicator node = world.split_shared();
-//	
-//	mpi3::shm::mutex m(node);
-//	using namespace std::chrono_literals;
-//	{
-//		std::lock_guard<mpi3::shm::mutex> guard(m);
-//		cout << "I am rank "; 
-//		std::this_thread::sleep_for(2s);
-//		cout << node.rank() << '\n';
-//	}
+//  mpi3::shared_communicator node = world.split_shared();
+//  
+//  mpi3::shm::mutex m(node);
+//  using namespace std::chrono_literals;
+//  {
+//      std::lock_guard<mpi3::shm::mutex> guard(m);
+//      cout << "I am rank "; 
+//      std::this_thread::sleep_for(2s);
+//      cout << node.rank() << '\n';
+//  }
 
-//	return 0;
+//  return 0;
 //}
 //#endif
 #endif
