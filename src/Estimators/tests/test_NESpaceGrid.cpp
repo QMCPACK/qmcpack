@@ -20,8 +20,9 @@
 #include "Particle/tests/MinimalParticlePool.h"
 
 /** \file
- *  This is a postfacto unit testing written for NESpaceGrid during porting of EnergyDensity
- *  to the batched version of the estimators.
+ *  Unit testing written for NESpaceGrid first written during porting of EnergyDensityEstimator
+ *  to the batched version of the estimators. Represents a best guess as to the
+ *  correct behavior since legacy had no unit level tests.
  */
 
 namespace qmcplusplus
@@ -33,10 +34,10 @@ template<typename T>
 class NESpaceGridTests
 {
 public:
-  static const auto& getData(const NESpaceGrid& nesg) { return nesg.data_; }
-  static int getBufferStart(const NESpaceGrid& nesg) { return nesg.buffer_start_; }
-  static int getBufferEnd(const NESpaceGrid& nesg) { return nesg.buffer_end_; }
-  static auto* getOdu(const NESpaceGrid& nesg) { return nesg.odu_; }
+  static const auto& getData(const NESpaceGrid<T>& nesg) { return nesg.data_; }
+  static int getBufferStart(const NESpaceGrid<T>& nesg) { return nesg.buffer_start_; }
+  static int getBufferEnd(const NESpaceGrid<T>& nesg) { return nesg.buffer_end_; }
+  static auto* getOdu(const NESpaceGrid<T>& nesg) { return nesg.odu_; }
 };
 
 template<ValidSpaceGridInput::valid VALID>
@@ -88,7 +89,7 @@ TEST_CASE("SpaceGrid::Construction", "[estimators]")
 
   // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
   // It is a smell.
-  NESpaceGrid space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
 
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
@@ -110,7 +111,7 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
@@ -245,7 +246,7 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
 
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
@@ -285,7 +286,7 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
