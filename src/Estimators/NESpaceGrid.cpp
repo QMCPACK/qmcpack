@@ -15,6 +15,7 @@
 
 #include <type_traits>
 #include <hdf5.h>
+#include <algorithm>
 
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/string_utils.h"
