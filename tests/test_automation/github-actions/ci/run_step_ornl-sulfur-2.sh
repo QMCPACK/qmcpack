@@ -117,10 +117,7 @@ case "$1" in
       ;;
     esac
     if [ $cmake_exit_code -ne 0 ]; then
-      ls CMakeFiles
-      cmake --version
-      echo "int main() {}" > test.cpp
-      /usr/lib64/openmpi/bin/mpicxx -fopenmp --offload-arch=sm_70 -Wno-linker-warnings -Wno-unknown-cuda-version -fopenmp-assume-no-thread-state -fopenmp-assume-no-nested-parallelism test.cpp -v
+      # for debugging purpose
       if [ -f CMakeFiles/CMakeError.log ]; then cat CMakeFiles/CMakeError.log; fi
       if [ -f CMakeFiles/CMakeOutput.log ]; then cat CMakeFiles/CMakeOutput.log; fi
     fi
