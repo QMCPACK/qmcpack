@@ -19,14 +19,14 @@ case "$1" in
     # caused by LLVM + GCC libstdc++ mismatch
     BOOST_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/boost-1.74.0-gdhlc5uynyw5un6mniss7nfjdyqqjd7p
     
-    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
+    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build-2 ]
     then
-      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
-      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build
+      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build-2, removing"
+      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build-2
     fi
 
-    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build"
-    cd ${GITHUB_WORKSPACE}/.. && mkdir qmcpack-build && cd qmcpack-build
+    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build-2"
+    cd ${GITHUB_WORKSPACE}/.. && mkdir qmcpack-build-2 && cd qmcpack-build-2
     
     # Build variants
     # Real or Complex configuration
@@ -60,9 +60,8 @@ case "$1" in
 
         LLVM_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/llvm-16.0.2-ltjkfjdu6p2cfcyw3zalz4x5sz5do3cr
         
-        echo "Set PATHs to cuda 11.2 due to a regression bug in 11.6"
-        export PATH=$HOME/opt/cuda/11.2/bin:$PATH
-        export LD_LIBRARY_PATH=$HOME/opt/cuda/11.2/lib64:$LD_LIBRARY_PATH
+        echo "Set PATHs to cuda-12.1"
+        export PATH=/usr/local/cuda-12.1/bin:$PATH
         export OMPI_CC=$LLVM_DIR/bin/clang
         export OMPI_CXX=$LLVM_DIR/bin/clang++
 
@@ -72,7 +71,7 @@ case "$1" in
         echo "OMPI_CC=$OMPI_CC" >> $GITHUB_ENV
         echo "OMPI_CXX=$OMPI_CXX" >> $GITHUB_ENV
 
-        # Confirm that cuda 11.2 gets picked up by the compiler
+        # Confirm that cuda 12.1 gets picked up by the compiler
         $OMPI_CXX -v
 
         cmake -GNinja \
@@ -97,7 +96,6 @@ case "$1" in
 
         echo "Set PATHs to cuda-12.1"
         export PATH=/usr/local/cuda-12.1/bin:$PATH
-        export LD_LIBRARY_PATH=/usr/local/cuda-12.1/bin:$LD_LIBRARY_PATH
 
         # Make current environment variables available to subsequent steps
         echo "PATH=$PATH" >> $GITHUB_ENV
@@ -122,7 +120,7 @@ case "$1" in
   build)
     # Verify nvcc 
     which nvcc
-    cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    cd ${GITHUB_WORKSPACE}/../qmcpack-build-2
     ninja
     ;;
    
@@ -138,7 +136,7 @@ case "$1" in
     export LIBOMP_USE_HIDDEN_HELPER_TASK=0
 
     echo "Running deterministic tests"
-    cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    cd ${GITHUB_WORKSPACE}/../qmcpack-build-2
     ctest --output-on-failure -E ppconvert -L deterministic -j 32
     ;;
     
