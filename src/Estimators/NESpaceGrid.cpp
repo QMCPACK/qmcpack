@@ -756,7 +756,9 @@ bool NESpaceGrid<REAL>::check_grid(void)
   return ok;
 }
 
-template class NESpaceGrid<double>;
+#ifndef QMC_MIXED_PRECISION
+ template class NESpaceGrid<double>;
+#endif
 template class NESpaceGrid<float>;
 
 } // namespace qmcplusplus
