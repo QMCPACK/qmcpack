@@ -62,7 +62,11 @@ public:
   using Points       = typename NEReferencePoints::Points;
   using BufferType   = PooledData<Real>;
   using POLT         = PtclOnLatticeTraits;
-  using ParticlePos  = POLT::ParticlePos;
+  // We can't test double for a mixed precision build if we take OHMMS_PRECISION
+  // so we can't use PtclOnLatticeTraits
+  using ParticleLayout = CrystalLattice<REAL, OHMMS_DIM>;
+  using SingleParticlePos   = typename ParticleLayout::SingleParticlePos;
+  using ParticlePos    = ParticleAttrib<SingleParticlePos>;
   using AxTensor     = Tensor<Real, OHMMS_DIM>;
   enum class ReferenceEnergy
   {
@@ -247,7 +251,9 @@ public:
   friend class testing::NESpaceGridTests;
 };
 
+#ifndef QMC_MIXED_PRECISION
 extern template class NESpaceGrid<double>;
+#endif
 extern template class NESpaceGrid<float>;
 
 } // namespace qmcplusplus

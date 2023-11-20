@@ -77,9 +77,9 @@ public:
 } // namespace testing
 
 constexpr bool generate_test_data = false;
-using Real                        = double;
 
-TEST_CASE("SpaceGrid::Construction", "[estimators]")
+template<typename REAL>
+void testSpaceGridConstruction()
 {
   using Input = testing::ValidSpaceGridInput;
   Communicate* comm;
@@ -89,7 +89,7 @@ TEST_CASE("SpaceGrid::Construction", "[estimators]")
 
   // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
   // It is a smell.
-  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
+  NESpaceGrid<REAL> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
 
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
@@ -104,14 +104,15 @@ TEST_CASE("SpaceGrid::Construction", "[estimators]")
   // CHECK(buffer_end == 7999);
 }
 
-TEST_CASE("SpaceGrid::Basic", "[estimators]")
+template<typename REAL>
+void testSpaceGridBasic()
 {
   using Input = testing::ValidSpaceGridInput;
   Communicate* comm;
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<REAL> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
@@ -123,7 +124,7 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
   //CHECK(buffer_start == 0);
   //CHECK(buffer_end == 23999);
 
-  Matrix<Real> values;
+  Matrix<REAL> values;
   values.resize(sge.pset_elec_.getTotalNum(), num_values);
 
   for (int ip = 0; ip < sge.pset_elec_.getTotalNum(); ++ip)
@@ -232,21 +233,22 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
   // //std::array<hsize_t, 2> ng{1, nvalues};
   // hdf_path hdf_name{"space_grid_3"};
   // file.push(hdf_name);
-  // Vector<Real> data;
+  // Vector<REAL> data;
   // std::size_t offset = 0;
   // data.attachReference(grid_data, nvalues);
   // file.write(data, "value");
   // file.pop();
 }
 
-TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
+template<typename REAL>
+void testSpaceGridBadPeriodic()
 {
   using Input = testing::ValidSpaceGridInput;
   Communicate* comm;
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<REAL> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
 
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
@@ -259,7 +261,7 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
   // CHECK(buffer_start == Approx(0));
   // CHECK(buffer_end == Approx(23999));
 
-  Matrix<Real> values;
+  Matrix<REAL> values;
   values.resize(sge.pset_elec_.getTotalNum(), num_values);
 
   for (int ip = 0; ip < sge.pset_elec_.getTotalNum(); ++ip)
@@ -279,14 +281,15 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
                   std::runtime_error);
 }
 
-TEST_CASE("SpaceGrid::hdf5", "[estimators]")
+template<typename REAL>
+void testSpaceGridHdf5()
 {
   using Input = testing::ValidSpaceGridInput;
   Communicate* comm;
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<REAL> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
@@ -298,7 +301,7 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
   //CHECK(buffer_start == 0);
   //CHECK(buffer_end == 23999);
 
-  Matrix<Real> values;
+  Matrix<REAL> values;
   values.resize(sge.pset_elec_.getTotalNum(), num_values);
 
   for (int ip = 0; ip < sge.pset_elec_.getTotalNum(); ++ip)
@@ -328,15 +331,15 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
   bool okay_read = hd.open(test_file);
   hd.push("spacegrid1");
   //hdf5 values always end up as doubles
-  Matrix<double> read_values(1,24000);
+  Matrix<REAL> read_values(1, 24000);
   hd.readEntry(read_values, "value");
 
-  auto tensorAccessor = [](const auto& grid_data, int i, int j, int k, int iv) -> double {
+  auto tensorAccessor = [](const auto& grid_data, int i, int j, int k, int iv) -> REAL {
     return grid_data.data()[1200 * i + 60 * j + 3 * k + iv];
   };
 
   auto value = tensorAccessor(read_values, 10, 17, 9, 0);
-  
+
   CHECK(tensorAccessor(read_values, 10, 17, 9, 0) == Approx(2.0));
   CHECK(tensorAccessor(read_values, 10, 17, 9, 1) == Approx(2.1));
   CHECK(tensorAccessor(read_values, 10, 17, 9, 2) == Approx(2.2));
@@ -361,4 +364,43 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
 
   /// \todo add additional hdf5 output checks
 }
+
+TEST_CASE("SpaceGrid::Construction", "[estimators]")
+{
+#ifdef QMC_MIXED_PRECISION
+  testSpaceGridConstruction<OHMMS_PRECISION>();
+#else
+  testSpaceGridConstruction<OHMMS_PRECISION>();
+  testSpaceGridConstruction<OHMMS_PRECISION_FULL>();
+#endif
+}
+
+TEST_CASE("SpaceGrid::Basic", "[estimators]")
+{
+#ifdef QMC_MIXED_PRECISION
+  testSpaceGridBasic<OHMMS_PRECISION>();
+#else
+  testSpaceGridBasic<OHMMS_PRECISION>();
+  testSpaceGridBasic<OHMMS_PRECISION_FULL>();
+#endif
+}
+
+TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]") {
+#ifdef QMC_MIXED_PRECISION
+  testSpaceGridBadPeriodic<OHMMS_PRECISION>();
+#else
+  testSpaceGridBadPeriodic<OHMMS_PRECISION>();
+  testSpaceGridBadPeriodic<OHMMS_PRECISION_FULL>();
+#endif
+}
+
+TEST_CASE("SpaceGrid::hdf5", "[estimators]") {
+#ifdef QMC_MIXED_PRECISION
+  testSpaceGridHdf5<OHMMS_PRECISION>();
+#else
+  testSpaceGridHdf5<OHMMS_PRECISION>();
+  testSpaceGridHdf5<OHMMS_PRECISION_FULL>();
+#endif
+}
+
 } // namespace qmcplusplus
