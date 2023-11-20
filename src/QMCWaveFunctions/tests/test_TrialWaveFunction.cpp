@@ -135,7 +135,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   psi.addComponent(jb.buildComponent(jas1));
 
   // should not find MSD
-  CHECK(!psi.findMSD());
+  CHECK(psi.findMSD().empty());
 
   // initialize distance tables.
   elec_.update();

@@ -32,6 +32,11 @@ public:
   bool isOptimizable() const override { return spo_up->isOptimizable() || spo_dn->isOptimizable(); }
   bool isOMPoffload() const override { return spo_up->isOMPoffload() || spo_dn->isOMPoffload(); }
   bool hasIonDerivs() const override { return spo_up->hasIonDerivs() || spo_dn->hasIonDerivs(); }
+  bool isRotationSupported() const override { return spo_up->isRotationSupported() && spo_dn->isRotationSupported(); }
+
+  void storeParamsBeforeRotation() override;
+
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
   //This class is initialized by separately building the up and down channels of the spinor set and
   //then registering them.
