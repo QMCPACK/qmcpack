@@ -797,8 +797,8 @@ device_pointer<T> uninitialized_copy(device_pointer<T> first, device_pointer<T> 
 }
 */
 // only trivial types for now, no placement new yet
-template<typename T, typename Size>
-device_pointer<T> uninitialized_copy_n(device_pointer<T> A, Size n, device_pointer<T> B)
+template<typename T1, typename Size, typename T2>
+device_pointer<T2> uninitialized_copy_n(device_pointer<T1> A, Size n, device_pointer<T2> B)
 {
   return copy_n(A, n, B);
 }
