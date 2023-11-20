@@ -113,8 +113,7 @@ public:
   // Compute matrix log of rotation matrix to produce antisymmetric matrix.  Technically, this
   // performs the log of any matrix where the eigenproblem is stable, but we only take logs of
   // matrices of the form A=e^K, where K is antisymmetric/antihermitian.
-  static void log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealType>& output);
-  static void log_antisym_matrix(const Matrix<std::complex<RealType>>& mat, Matrix<std::complex<RealType>>& output);
+  static void log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output);
 
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi_;

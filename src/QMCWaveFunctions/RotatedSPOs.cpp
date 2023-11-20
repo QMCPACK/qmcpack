@@ -558,15 +558,11 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
       copy_with_complex_cast(mat_d[i + n * j], mat[i][j]);
 }
 
-void RotatedSPOs::log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealType>& output)
+void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output)
 {
   const int n = mat.rows();
-  std::vector<RealType> mat_h(n * n, 0);
-  std::vector<RealType> eval_r(n, 0);
-  std::vector<RealType> eval_i(n, 0);
+  std::vector<ValueType> mat_h(n * n, 0);
   std::vector<RealType> mat_l(n * n, 0);
-  std::vector<RealType> work(4 * n, 0);
-
   std::vector<std::complex<RealType>> mat_cd(n * n, 0);
   std::vector<std::complex<RealType>> mat_cl(n * n, 0);
   std::vector<std::complex<RealType>> mat_ch(n * n, 0);
@@ -583,8 +579,20 @@ void RotatedSPOs::log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealTyp
   int LDA(n);
   int LWORK(4 * n);
   int info = 0;
+
+  #ifndef QMC_COMPLEX
+  std::vector<RealType> eval_r(n, 0);
+  std::vector<RealType> eval_i(n, 0);
+  std::vector<RealType> work(4 * n, 0);
   LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval_r.at(0), &eval_i.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
                &work.at(0), &LWORK, &info);
+  #else
+  std::vector<ValueType> eval(n,0);
+  std::vector<ValueType> work(2 * n, 0);
+  std::vector<RealType> rwork(2 * n, 0);
+  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_cl.at(0), &LDA, nullptr, &LDA, &work.at(0),
+               &LWORK, &rwork.at(0), &info);
+  #endif
   if (info != 0)
   {
     std::ostringstream msg;
@@ -597,9 +605,8 @@ void RotatedSPOs::log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealTyp
   {
     for (int j = 0; j < n; ++j)
     {
+      #ifndef QMC_COMPLEX
       auto tmp = (i == j) ? std::log(std::complex<RealType>(eval_r[i], eval_i[i])) : std::complex<RealType>(0.0, 0.0);
-      mat_cd[i + j * n] = tmp;
-
       if (eval_i[j] > 0.0)
       {
         mat_cl[i + j * n]       = std::complex<RealType>(mat_l[i + j * n], mat_l[i + (j + 1) * n]);
@@ -609,6 +616,11 @@ void RotatedSPOs::log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealTyp
       {
         mat_cl[i + j * n] = std::complex<RealType>(mat_l[i + j * n], 0.0);
       }
+      #else
+      auto tmp = (i == j) ? std::log(eval[i]) : ValueType(0.0);
+      #endif
+      mat_cd[i + j * n] = tmp;
+
     }
   }
 
@@ -621,76 +633,19 @@ void RotatedSPOs::log_antisym_matrix(const Matrix<RealType>& mat, Matrix<RealTyp
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
     {
+      #ifndef QMC_COMPLEX
       if (mat_cd[i + n * j].imag() > 1e-12)
       {
         app_log() << "warning: large imaginary value in antisymmetric matrix: (i,j) = (" << i << "," << j
                   << "), im = " << mat_cd[i + n * j].imag() << std::endl;
       }
       output[i][j] = mat_cd[i + n * j].real();
-    }
-}
-
-void RotatedSPOs::log_antisym_matrix(const Matrix<std::complex<RealType>>& mat, Matrix<std::complex<RealType>>& output)
-{
-  const int n = mat.rows();
-
-  //From here on out, all temporary arrays will be column major to interface with LAPACK cleanly.
-  //
-  //Temporary arrays for the eigenvalue decomposition.
-  std::vector<std::complex<RealType>> mat_h(n * n, 0);
-  std::vector<std::complex<RealType>> eval(n, 0);      //eigenvalues
-  std::vector<std::complex<RealType>> mat_l(n * n, 0); //left eigenvectors.
-  //complex work array.  Recommended to be at least 2*n according to LAPACK documentation.
-  std::vector<std::complex<RealType>> work(2 * n, 0);
-  std::vector<RealType> rwork(2 * n, 0);
-
-  std::vector<std::complex<RealType>> mat_cd(n * n, 0);
-  std::vector<std::complex<RealType>> mat_cl(n * n, 0);
-  std::vector<std::complex<RealType>> mat_ch(n * n, 0);
-
-  //Convert row major mat to column major mat_h.
-  for (int i = 0; i < n; ++i)
-    for (int j = 0; j < n; ++j)
-      mat_h[i + n * j] = mat[i][j];
-
-  // diagonalize the matrix
-  char JOBL('V');
-  char JOBR('N');
-  int N(n);
-  int LDA(n);
-  int LWORK(4 * n);
-  int info = 0;
-  //Generalized eigenvalue decomposition for A*x=lambda x.
-  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_l.at(0), &LDA, nullptr, &LDA, &work.at(0),
-               &LWORK, &rwork.at(0), &info);
-  if (info != 0)
-  {
-    std::ostringstream msg;
-    msg << "zgeev failed with info = " << info << " in RotatedSPOs::log_antisym_matrix";
-    throw std::runtime_error(msg.str());
-  }
-
-  // iterate through diagonal matrix, take log
-  for (int i = 0; i < n; ++i)
-  {
-    for (int j = 0; j < n; ++j)
-    {
-      auto tmp          = (i == j) ? std::log(eval[i]) : std::complex<RealType>(0.0, 0.0);
-      mat_cd[i + j * n] = tmp;
-    }
-  }
-
-  //V*log(lambda)
-  BLAS::gemm('N', 'N', n, n, n, 1.0, &mat_l.at(0), n, &mat_cd.at(0), n, 0.0, &mat_ch.at(0), n);
-  //[V*log(lambda)*V^{dagger}]
-  BLAS::gemm('N', 'C', n, n, n, 1.0, &mat_ch.at(0), n, &mat_l.at(0), n, 0.0, &mat_cd.at(0), n);
-
-
-  for (int i = 0; i < n; ++i)
-    for (int j = 0; j < n; ++j)
-      //column major result back to row major form.
+      #else
       output[i][j] = mat_cd[i + n * j];
+      #endif
+    }
 }
+
 void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
                                       const opt_variables_type& optvars,
                                       ValueVector& psi,
