@@ -18,29 +18,25 @@
 
 namespace qmcplusplus
 {
-SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_,
-                                       const TrialWaveFunction& wfn,
-                                       DataLocality dl)
-  : OperatorEstBase(dl),
-    input_(std::move(inp_))
+SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const TrialWaveFunction& wfn, DataLocality dl)
+    : OperatorEstBase(dl), input_(std::move(inp_))
 {
-
   //my_name_ = input_.get_name();
 
   auto& inp = this->input_.input_section_;
 
-  auto msd_or_null = wfn.findMSD();
-  if(!msd_or_null)
-    throw std::runtime_error("SelfHealingOverlap only supports multi slater determinant wavefunctions which cannot be found in the trial wavefunction.");
+  auto msd_refvec = wfn.findMSD();
+  if (msd_refvec.size() != 1)
+    throw std::runtime_error(
+        "SelfHealingOverlap requires one and only one multi slater determinant component in the trial wavefunction.");
 
-  const MultiSlaterDetTableMethod& msd = *msd_or_null;
+  const MultiSlaterDetTableMethod& msd = msd_refvec[0];
 
   // JTK: how to get # of coeff in multidet at this point?
   //size_t data_size = 1486;
   const size_t data_size = msd.getLinearExpansionCoefs().size();
   data_.resize(data_size, 0.0);
 }
-
 
 
 SelfHealingOverlap::SelfHealingOverlap(const SelfHealingOverlap& sh, DataLocality dl) : SelfHealingOverlap(sh)
@@ -66,9 +62,7 @@ std::unique_ptr<OperatorEstBase> SelfHealingOverlap::spawnCrowdClone() const
   return spawn;
 }
 
-void SelfHealingOverlap::startBlock(int steps)
-{
-}
+void SelfHealingOverlap::startBlock(int steps) {}
 
 /** Gets called every step and writes to thread local data.
  *
@@ -92,17 +86,17 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     // separate jastrow and fermi wavefunction components
     std::vector<WaveFunctionComponent*> wcs_jastrow;
     std::vector<WaveFunctionComponent*> wcs_fermi;
-    for(auto& wc: wcs)
-      if(wc->isFermionic())
+    for (auto& wc : wcs)
+      if (wc->isFermionic())
         wcs_fermi.push_back(wc.get());
       else
         wcs_jastrow.push_back(wc.get());
 
     // fermionic must have only one component, and must be multideterminant
-    assert(wcs_fermi.size()==1);
+    assert(wcs_fermi.size() == 1);
     WaveFunctionComponent& wf = *wcs_fermi[0];
     //if(wf.getClassName()!="MultiSlaterDetTableMethod")
-    if(!wf.isMultiDet())
+    if (!wf.isMultiDet())
       throw std::runtime_error("SelfHealingOverlap estimator requires use of multideterminant wavefunction");
 
     // collect parameter derivatives: (dpsi/dc_i)/psi
@@ -114,22 +108,20 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
 
     // collect jastrow prefactor
     WaveFunctionComponent::LogValue Jval = 0.0;
-    for(auto& wc: wcs_jastrow)
+    for (auto& wc : wcs_jastrow)
       Jval += wc->get_log_value();
-    auto Jprefactor = std::real(std::exp(-2.*Jval)); // (integer * complex) fails to compile...
+    auto Jprefactor = std::real(std::exp(-2. * Jval)); // (integer * complex) fails to compile...
 
     // accumulate weight (required by all estimators, otherwise inf results)
     walkers_weight_ += weight;
 
     // accumulate data
-    assert(det_ratios.size()==data_.size());
+    assert(det_ratios.size() == data_.size());
     for (int ic = 0; ic < det_ratios.size(); ++ic)
       data_[ic] += weight * Jprefactor * det_ratios[ic];
-
   }
 
   //throw std::runtime_error("SelfHealingOverlap accumulate");
-    
 }
 
 
