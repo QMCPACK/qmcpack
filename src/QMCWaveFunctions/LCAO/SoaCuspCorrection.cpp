@@ -17,20 +17,16 @@
 
 namespace qmcplusplus
 {
-SoaCuspCorrection::SoaCuspCorrection(ParticleSet& ions, ParticleSet& els) : myTableIndex(els.addTable(ions))
+SoaCuspCorrection::SoaCuspCorrection(ParticleSet& ions, ParticleSet& els, size_t norbs)
+    : myTableIndex(els.addTable(ions)), MaxOrbSize(norbs)
 {
   NumCenters = ions.getTotalNum();
   NumTargets = els.getTotalNum();
   LOBasisSet.resize(NumCenters);
+  myVGL.resize(5, MaxOrbSize);
 }
 
 SoaCuspCorrection::SoaCuspCorrection(const SoaCuspCorrection& a) = default;
-
-void SoaCuspCorrection::setOrbitalSetSize(int norbs)
-{
-  MaxOrbSize = norbs;
-  myVGL.resize(5, MaxOrbSize);
-}
 
 inline void SoaCuspCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVector& vgl)
 {
