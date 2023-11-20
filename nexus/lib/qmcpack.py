@@ -44,6 +44,7 @@ from debug import ci,ls,gs
 from developer import unavailable
 from nexus_base import nexus_core
 from copy import deepcopy
+from rmg import Rmg 
 try:
     import h5py
 except:
@@ -174,7 +175,7 @@ class Qmcpack(Simulation):
         input = self.input
         system = self.system
         if result_name=='orbitals':
-            if isinstance(sim,Pw2qmcpack):
+            if isinstance(sim,(Pw2qmcpack,Rmg)):
 
                 h5file = result.h5file
 
@@ -273,7 +274,6 @@ class Qmcpack(Simulation):
                     #end if
                 #end if
                 qs.wavefunction = newwfn
-
             else:
                 self.error('incorporating orbitals from '+sim.__class__.__name__+' has not been implemented')
             #end if
