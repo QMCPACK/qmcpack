@@ -504,10 +504,8 @@ public:
   /// spomap_ reference accessor
   const SPOMap& getSPOMap() const { return *spomap_; }
 
-  /** find the first MSD WFC if exists
-   * @return the first found MSD WFC
-   */
-  std::optional<std::reference_wrapper<MultiSlaterDetTableMethod>> findMSD() const;
+  /// find MSD WFCs if exist
+  RefVector<MultiSlaterDetTableMethod> findMSD() const;
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);

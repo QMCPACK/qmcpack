@@ -75,15 +75,20 @@ QMCMain::QMCMain(Communicate* c)
   // assign accelerators within a node
   DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
-  app_summary() << "\n=====================================================\n"
-                << "                    QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
-                << QMCPACK_VERSION_PATCH << "\n\n"
-                << "       (c) Copyright 2003-  QMCPACK developers\n\n"
-                << "                    Please cite:\n"
-                << " J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
-                << "      https://doi.org/10.1088/1361-648X/aab9c3\n";
+  app_summary() << "================================================================\n"
+                << "                        QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
+                << QMCPACK_VERSION_PATCH << "\n"
+                << "\n"
+                << "          (c) Copyright 2003-2023 QMCPACK developers\n"
+                << "\n"
+                << "                         Please cite:\n"
+                << "      J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
+                << "           https://doi.org/10.1088/1361-648X/aab9c3\n"
+                << "                             and\n"
+                << "       P. Kent et al. J. Chem. Phys. 152 174105 (2020)\n"
+                << "              https://doi.org/10.1063/5.0004860\n";
   qmc_common.print_git_info_if_present(app_summary());
-  app_summary() << "=====================================================\n";
+  app_summary() << "================================================================\n";
   qmc_common.print_options(app_log());
   // clang-format off
   app_summary()
