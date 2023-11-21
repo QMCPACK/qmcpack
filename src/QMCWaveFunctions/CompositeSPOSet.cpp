@@ -134,7 +134,7 @@ void CompositeSPOSet::evaluateVGL_spin(const ParticleSet& P,
     std::copy(values.begin(), values.end(), psi.begin() + n);
     std::copy(gradients.begin(), gradients.end(), dpsi.begin() + n);
     std::copy(laplacians.begin(), laplacians.end(), d2psi.begin() + n);
-    std::copy(spin_gradients.begin(), spin_gradients.end(), spin_gradients.begin() + n);
+    std::copy(spin_gradients.begin(), spin_gradients.end(), dspin_psi.begin() + n);
     n += component.size();
   }
 }
