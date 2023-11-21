@@ -28,8 +28,8 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType     = QMCTraits::RealType;
-using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+using RealType = QMCTraits::RealType;
+using LogValue = std::complex<QMCTraits::QTFull::RealType>;
 
 TEST_CASE("lattice gaussian", "[wavefunction]")
 {
@@ -115,7 +115,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   ions.update();
   elec.update();
 
-  LogValueType logpsi = LGP->evaluateLog(elec, elec.G, elec.L);
+  LogValue logpsi = LGP->evaluateLog(elec, elec.G, elec.L);
   // check answer
   RealType r2  = Dot(elec.R, elec.R);
   double wfval = std::exp(-alpha * r2);

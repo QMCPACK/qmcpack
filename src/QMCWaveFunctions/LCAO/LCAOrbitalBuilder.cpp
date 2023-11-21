@@ -138,7 +138,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (cuspC == "yes")
     doCuspCorrection = true;
   //Evaluate the Phase factor. Equals 1 for OBC.
-  EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors);
+  EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
 
   // no need to wait but load the basis set
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
@@ -163,8 +163,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (basisset_map_.size() == 0 && h5_path != "")
   {
     app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
-                  << "LCAO needs an explicit basisset XML element. "
-                  << "Fallback on loading an implicit one." << std::endl;
+                  << "LCAO needs an explicit basisset XML element. " << "Fallback on loading an implicit one."
+                  << std::endl;
     basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
   }
 
@@ -377,7 +377,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
     cur = cur->next;
   } // done with basis set
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
   return mBasisSet;
 }
 
@@ -461,7 +461,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
     hin.close();
   }
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
   return mBasisSet;
 }
 
@@ -471,18 +471,31 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), cusp_file(""), optimize("no");
   std::string basisset_name("LCAOBSet");
+  size_t norbs(0);
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
   spoAttrib.add(spo_name, "id");
   spoAttrib.add(cusp_file, "cuspInfo");
   spoAttrib.add(basisset_name, "basisset");
+  spoAttrib.add(norbs, "size");
+  spoAttrib.add(norbs, "orbitals", {}, TagStatus::DELETED);
   spoAttrib.put(cur);
+
+  // look for coefficients element. If found the MO coefficients matrix is not identity
+  bool identity = true;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname.find("coeff") < cname.size() || cname == "parameter" || cname == "Var")
+      identity = false;
+  });
 
   std::unique_ptr<BasisSet_t> myBasisSet;
   if (basisset_map_.find(basisset_name) == basisset_map_.end())
     myComm->barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
   else
     myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
+
+  if (norbs == 0)
+    norbs = myBasisSet->getBasisSetSize();
 
   std::unique_ptr<SPOSet> sposet;
   if (doCuspCorrection)
@@ -492,16 +505,18 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
-    loadMO(lcwc->lcao, cur);
-    lcwc->setOrbitalSetSize(lcwc->lcao.getOrbitalSetSize());
+    auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, std::move(myBasisSet), norbs, identity,
+                                                              sourcePtcl, targetPtcl);
+    if (!identity)
+      loadMO(lcwc->lcao, cur);
     sposet = std::move(lcwc);
 #endif
   }
   else
   {
-    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet));
-    loadMO(*lcos, cur);
+    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet), norbs, identity);
+    if (!identity)
+      loadMO(*lcos, cur);
     sposet = std::move(lcos);
   }
 
@@ -574,13 +589,10 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
   ReportEngine PRE("LCAOrbitalBuilder", "put(xmlNodePtr)");
 
   //initialize the number of orbital by the basis set size
-  int norb = spo.getBasisSetSize();
   std::string debugc("no");
   double orbital_mix_magnitude = 0.0;
   bool PBC                     = false;
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(norb, "orbitals");
-  aAttrib.add(norb, "size");
   aAttrib.add(debugc, "debug");
   aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
@@ -605,7 +617,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     app_log() << "   Using Identity for the LCOrbitalSet " << std::endl;
     return true;
   }
-  spo.setOrbitalSetSize(norb);
   bool success = putOccupation(spo, occ_ptr);
   if (h5_path == "")
     success = putFromXML(spo, coeff_ptr);
@@ -658,7 +669,7 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   int norbs = 0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norbs, "size");
-  aAttrib.add(norbs, "orbitals");
+  aAttrib.add(norbs, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
   if (norbs < spo.getOrbitalSetSize())
   {
@@ -693,12 +704,12 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
    */
 bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-  int neigs  = spo.getBasisSetSize();
   int setVal = -1;
+  int neig;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
-  aAttrib.add(neigs, "size");
-  aAttrib.add(neigs, "orbitals");
+  aAttrib.add(neig, "size", {}, TagStatus::DEPRECATED);
+  aAttrib.add(neig, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
   hdf_archive hin(myComm);
   if (myComm->rank() == 0)
@@ -765,17 +776,16 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
   ReportEngine PRE("LCAOrbitalBuilder", "LCAOrbitalBuilder::putPBCFromH5");
-  int norbs      = spo.getOrbitalSetSize();
-  int neigs      = spo.getBasisSetSize();
   int setVal     = -1;
+  int neig;
   bool IsComplex = false;
   bool MultiDet  = false;
   PosType SuperTwist(0.0);
   PosType SuperTwistH5(0.0);
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setVal, "spindataset");
-  aAttrib.add(neigs, "size");
-  aAttrib.add(neigs, "orbitals");
+  aAttrib.add(neig, "size", {}, TagStatus::DEPRECATED);
+  aAttrib.add(neig, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
   hdf_archive hin(myComm);
 
@@ -798,7 +808,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     if (curname == SDTag)
       MultiDet = false;
 
-  } while ((xmlTag != curname) && (curname != EndTag));
+  } while ((xmlTag != curname) && (curname != EndTag) && curname != "sposet_collection");
   if (curname == EndTag)
   {
     APP_ABORT(
@@ -834,7 +844,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp, MultiDet);
 
     int n = 0, i = 0;
-    while (i < norbs)
+    while (i < spo.getOrbitalSetSize())
     {
       if (Occ[n] > 0.0)
       {
@@ -981,17 +991,63 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
 }
 
 /// Periodic Image Phase Factors computation to be determined
-void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
-                                                      std::vector<RealType>& LocPeriodicImagePhaseFactors)
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
+    PosType SuperTwist,
+    Vector<RealType, OffloadPinnedAllocator<RealType>>& LocPeriodicImagePhaseFactors,
+    Array<RealType, 2, OffloadPinnedAllocator<RealType>>& LocPeriodicImageDisplacements)
 {
-  const int NbImages = (PBCImages[0] + 1) * (PBCImages[1] + 1) * (PBCImages[2] + 1);
+  // Allow computation to continue with no HDF file if the system has open boundary conditions.
+  // The complex build is usually only used with open BC for testing.
+  bool usesOpenBC = PBCImages[0] == 0 && PBCImages[1] == 0 && PBCImages[2] == 0;
+
+  ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
+  if (h5_path != "" && !usesOpenBC)
+  {
+    hdf_archive hin(myComm);
+    if (myComm->rank() == 0)
+    {
+      if (!hin.open(h5_path, H5F_ACC_RDONLY))
+        APP_ABORT("Could not open H5 file");
+
+      hin.push("Cell", false);
+
+      hin.read(Lattice, "LatticeVectors");
+      hin.close();
+    }
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        myComm->bcast(Lattice(i, j));
+  }
+  else if (!usesOpenBC)
+  {
+    APP_ABORT("Attempting to run PBC LCAO with no HDF5 support. Behaviour is unknown. Safer to exit");
+  }
+
+  const int Nx       = PBCImages[0] + 1;
+  const int Ny       = PBCImages[1] + 1;
+  const int Nz       = PBCImages[2] + 1;
+  const int NbImages = Nx * Ny * Nz;
   LocPeriodicImagePhaseFactors.resize(NbImages);
-  for (size_t i = 0; i < NbImages; i++)
-    LocPeriodicImagePhaseFactors[i] = 1.0;
+  LocPeriodicImageDisplacements.resize(NbImages, 3);
+  for (size_t ix = 0; ix < Nx; ix++)
+    for (size_t iy = 0; iy < Ny; iy++)
+      for (size_t iz = 0; iz < Nz; iz++)
+      {
+        const size_t i                  = iz + Nz * (iy + Ny * ix);
+        int TransX                      = ((ix % 2) * 2 - 1) * ((ix + 1) / 2);
+        int TransY                      = ((iy % 2) * 2 - 1) * ((iy + 1) / 2);
+        int TransZ                      = ((iz % 2) * 2 - 1) * ((iz + 1) / 2);
+        LocPeriodicImagePhaseFactors[i] = 1.0;
+        for (size_t idim = 0; idim < 3; idim++)
+          LocPeriodicImageDisplacements(i, idim) =
+              TransX * Lattice(0, idim) + TransY * Lattice(1, idim) + TransZ * Lattice(2, idim);
+      }
 }
 
-void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
-                                                      std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors)
+void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
+    PosType SuperTwist,
+    Vector<std::complex<RealType>, OffloadPinnedAllocator<std::complex<RealType>>>& LocPeriodicImagePhaseFactors,
+    Array<RealType, 2, OffloadPinnedAllocator<RealType>>& LocPeriodicImageDisplacements)
 {
   // Allow computation to continue with no HDF file if the system has open boundary conditions.
   // The complex build is usually only used with open BC for testing.
@@ -1023,28 +1079,32 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
   int phase_idx = 0;
   int TransX, TransY, TransZ;
   RealType phase;
-
-  for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
-  {
-    TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
-    for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
-    {
-      TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
-      for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
+  const int Nx       = PBCImages[0] + 1;
+  const int Ny       = PBCImages[1] + 1;
+  const int Nz       = PBCImages[2] + 1;
+  const int NbImages = Nx * Ny * Nz;
+  LocPeriodicImagePhaseFactors.resize(NbImages);
+  LocPeriodicImageDisplacements.resize(NbImages, 3);
+  for (size_t ix = 0; ix < Nx; ix++)
+    for (size_t iy = 0; iy < Ny; iy++)
+      for (size_t iz = 0; iz < Nz; iz++)
       {
-        TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
+        const size_t i = iz + Nz * (iy + Ny * ix);
+        int TransX     = ((ix % 2) * 2 - 1) * ((ix + 1) / 2);
+        int TransY     = ((iy % 2) * 2 - 1) * ((iy + 1) / 2);
+        int TransZ     = ((iz % 2) * 2 - 1) * ((iz + 1) / 2);
         RealType s, c;
         PosType Val;
-        Val[0] = TransX * Lattice(0, 0) + TransY * Lattice(1, 0) + TransZ * Lattice(2, 0);
-        Val[1] = TransX * Lattice(0, 1) + TransY * Lattice(1, 1) + TransZ * Lattice(2, 1);
-        Val[2] = TransX * Lattice(0, 2) + TransY * Lattice(1, 2) + TransZ * Lattice(2, 2);
+        for (size_t idim = 0; idim < 3; idim++)
+        {
+          Val[idim] = TransX * Lattice(0, idim) + TransY * Lattice(1, idim) + TransZ * Lattice(2, idim);
+          LocPeriodicImageDisplacements(i, idim) = Val[idim];
+        }
 
         phase = dot(SuperTwist, Val);
         qmcplusplus::sincos(phase, &s, &c);
 
-        LocPeriodicImagePhaseFactors.emplace_back(c, s);
+        LocPeriodicImagePhaseFactors[i] = std::complex<RealType>(c, s);
       }
-    }
-  }
 }
 } // namespace qmcplusplus

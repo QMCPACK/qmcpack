@@ -16,7 +16,6 @@
 
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "DistanceTable.h"
-#include "CPU/SIMD/algorithm.hpp"
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"

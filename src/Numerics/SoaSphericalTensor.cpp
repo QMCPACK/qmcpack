@@ -14,6 +14,6 @@
 
 namespace qmcplusplus
 {
-template struct SoaSphericalTensor<float>;
-template struct SoaSphericalTensor<double>;
+template class SoaSphericalTensor<float>;
+template class SoaSphericalTensor<double>;
 } // namespace qmcplusplus

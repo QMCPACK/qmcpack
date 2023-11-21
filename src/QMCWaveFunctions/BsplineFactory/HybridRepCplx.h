@@ -19,6 +19,8 @@
 #define QMCPLUSPLUS_HYBRIDREP_CPLX_H
 
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
+#include "CPU/SIMD/inner_product.hpp"
+
 namespace qmcplusplus
 {
 /** hybrid representation orbitals combining B-spline orbitals on a grid and atomic centered orbitals.

@@ -1,8 +1,7 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 // Copyright 2018-2023 Alfredo A. Correa
 
-#ifndef BOOST_MPI3_PROCESS_HPP
-#define BOOST_MPI3_PROCESS_HPP
+#ifndef BMPI3_PROCESS_HPP
+#define BMPI3_PROCESS_HPP
 
 #include "../mpi3/communicator.hpp"
 
@@ -16,9 +15,9 @@ namespace mpi3 {
 using std::optional;
 
 class process {
-	communicator& comm_;
+	communicator& comm_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 	int rank_;
-	friend boost::mpi3::communicator;
+	friend mpi3::communicator;
 
 	process(communicator& comm, int rank) : comm_{comm}, rank_{rank} {}
 
@@ -36,7 +35,7 @@ class process {
 	template<class T>
 	process& operator>>(T& t) & {
 		comm_.receive_n(&t, 1, rank_);
-	//	comm_.receive_value(t, rank_);
+	//  comm_.receive_value(t, rank_);
 		return *this;  // NOLINT(hicpp-move-const-arg,performance-move-const-arg) TODO(correaa)
 	}
 	template<class T>
@@ -70,7 +69,7 @@ template<class T>
 auto operator&(communicator& comm, T&& t)
 ->decltype(comm.all_to_all(begin(std::forward<T>(t))), std::forward<T>(t)) {
 	assert( t.size() == comm.size() );
-//	using std::begin;
+//  using std::begin;
 	auto e = comm.all_to_all(begin(std::forward<T>(t)));
 	using std::end;
 	assert( e == end(t) );
@@ -93,7 +92,7 @@ auto operator||(process&& self, T& t) {self.comm().broadcast_value(t, self.rank(
 template<class T>
 communicator& operator>>(communicator& comm, T& t) {
 	comm.receive_n(&t, 1);
-//	comm.receive_value(t);
+//  comm.receive_value(t);
 	return comm;
 }
 template<class T>

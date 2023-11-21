@@ -73,14 +73,16 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
     }
 
     std::vector<TrialWaveFunction> wfns;
+    std::vector<QMCHamiltonian> hams;
 
     auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
     auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
+    auto ref_hams    = makeRefVector<QMCHamiltonian>(hams);
 
     FakeRandom<OHMMS_PRECISION_FULL> rng;
 
-    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
   }
 }
 
@@ -111,14 +113,15 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
     }
 
     std::vector<TrialWaveFunction> wfns;
-
+    std::vector<QMCHamiltonian> hams;
     auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
     auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
+    auto ref_hams    = makeRefVector<QMCHamiltonian>(hams);
 
     FakeRandom<OHMMS_PRECISION_FULL> rng;
 
-    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
   }
 }
 
@@ -215,14 +218,16 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   }
 
   std::vector<TrialWaveFunction> wfns;
+  std::vector<QMCHamiltonian> hams;
 
   auto ref_walkers = makeRefVector<MCPWalker>(walkers);
   auto ref_psets   = makeRefVector<ParticleSet>(psets);
   auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
+  auto ref_hams    = makeRefVector<QMCHamiltonian>(hams);
 
   FakeRandom<OHMMS_PRECISION_FULL> rng;
 
-  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
 
   std::vector<QMCT::RealType>& data_ref = sdn.get_data();
   // There should be a check that the discretization of particle locations expressed in lattice coords

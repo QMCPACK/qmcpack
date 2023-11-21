@@ -22,8 +22,7 @@
 #include <getopt.h>
 using namespace std;
 #include "CPU/SIMD/aligned_allocator.hpp"
-#include "CPU/SIMD/simd.hpp"
-#include "CPU/SIMD/algorithm.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 using namespace qmcplusplus;

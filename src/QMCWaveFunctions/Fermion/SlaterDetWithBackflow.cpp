@@ -50,9 +50,9 @@ void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<V
     Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
-SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(const ParticleSet& P,
-                                                                       ParticleSet::ParticleGradient& G,
-                                                                       ParticleSet::ParticleLaplacian& L)
+SlaterDetWithBackflow::LogValue SlaterDetWithBackflow::evaluateLog(const ParticleSet& P,
+                                                                   ParticleSet::ParticleGradient& G,
+                                                                   ParticleSet::ParticleLaplacian& L)
 {
   BFTrans->evaluate(P);
   log_value_ = 0.0;
@@ -68,9 +68,7 @@ void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
     Dets[i]->registerData(P, buf);
 }
 
-SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(ParticleSet& P,
-                                                                        WFBufferType& buf,
-                                                                        bool fromscratch)
+SlaterDetWithBackflow::LogValue SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   BFTrans->updateBuffer(P, buf, fromscratch);
   log_value_ = 0.0;
@@ -122,9 +120,9 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   L0.resize(P.getTotalNum());
   L1.resize(P.getTotalNum());
   L2.resize(P.getTotalNum());
-  LogValueType psi1 = 1.0;
-  LogValueType psi2 = 1.0;
-  RealType dh       = 0.00001;
+  LogValue psi1 = 1.0;
+  LogValue psi2 = 1.0;
+  RealType dh   = 0.00001;
   for (int k = 0; k < Dets.size(); k++)
   {
     DiracDeterminantWithBackflow* Dets_ = dynamic_cast<DiracDeterminantWithBackflow*>(Dets[k].get());

@@ -1,9 +1,9 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -O3 -Wall -Wextra `#-Wfatal-errors` $0 -o $0x.x -lboost_serialization && time mpirun -n 1 $0x.x $@ && rm -f $0x.x; exit
-#endif
+// Copyright 2017-2023 Alfredo A. Correa
 
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/cartesian_communicator.hpp"
+
+#include<list>
 
 namespace mpi3 = boost::mpi3;
 

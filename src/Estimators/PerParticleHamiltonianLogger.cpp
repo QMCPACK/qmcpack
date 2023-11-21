@@ -59,6 +59,7 @@ void PerParticleHamiltonianLogger::write(CrowdLogValues& cl_values, const std::v
 void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walkers,
                                               const RefVector<ParticleSet>& psets,
                                               const RefVector<TrialWaveFunction>& wfns,
+                                              const RefVector<QMCHamiltonian>& hams,
                                               RandomBase<FullPrecRealType>& rng)
 
 {

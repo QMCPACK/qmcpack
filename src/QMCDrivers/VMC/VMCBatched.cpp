@@ -83,7 +83,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   constexpr RealType mhalf(-0.5);
   const bool use_drift = sft.vmcdrv_input.get_use_drift();
 
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
+  std::vector<TrialWaveFunction::PsiValue> ratios(num_walkers);
   std::vector<RealType> log_gf(num_walkers);
   std::vector<RealType> log_gb(num_walkers);
   std::vector<RealType> prob(num_walkers);

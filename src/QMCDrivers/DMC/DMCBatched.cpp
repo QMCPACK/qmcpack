@@ -32,7 +32,8 @@
 namespace qmcplusplus
 {
 using std::placeholders::_1;
-using WP = WalkerProperties::Indexes;
+using WP       = WalkerProperties::Indexes;
+using PsiValue = TrialWaveFunction::PsiValue;
 
 /** Constructor maintains proper ownership of input parameters
  *
@@ -118,7 +119,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   //This generates an entire steps worth of deltas.
   makeGaussRandomWithEngine(walker_deltas, step_context.get_random_gen());
 
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
+  std::vector<PsiValue> ratios(num_walkers, PsiValue(0.0));
   std::vector<RealType> log_gf(num_walkers, 0.0);
   std::vector<RealType> log_gb(num_walkers, 0.0);
   std::vector<RealType> prob(num_walkers, 0.0);
@@ -194,8 +195,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
         computeLogGreensFunction(drifts_reverse, taus, log_gb);
 
-        auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
-          if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
+        auto checkPhaseChanged = [&sft](const PsiValue& ratio, int& is_reject) {
+          if (ratio == PsiValue(0) || sft.branch_engine.phaseChanged(std::arg(ratio)))
             is_reject = 1;
           else
             is_reject = 0;
@@ -205,7 +206,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
         for (int iw = 0; iw < num_walkers; ++iw)
         {
-          checkPhaseChanged(walker_twfs[iw], rejects[iw]);
+          checkPhaseChanged(ratios[iw], rejects[iw]);
           //This is just convenient to do here
           rr_proposed[iw] += rr[iw];
         }
@@ -216,7 +217,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         isAccepted.clear();
 
         for (int iw = 0; iw < num_walkers; ++iw)
-        {
           if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
               step_context.get_random_gen()() < prob[iw])
           {
@@ -229,7 +229,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
             crowd.incReject();
             isAccepted.push_back(false);
           }
-        }
 
         twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
