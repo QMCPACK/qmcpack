@@ -51,7 +51,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   bool okay = doc.parseFromString(wf_xml_num_cart);
   REQUIRE(okay);
 
-  LCAOrbitalBuilder lcaob_num_cart = LCAOrbitalBuilder(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_num_cart(elec, ions, c, doc.getRoot());
 
 
   // Radial basis: Numerical (Transform to grid)    Angular part: Spherical
@@ -70,7 +70,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   okay = doc.parseFromString(wf_xml_num_sph);
   REQUIRE(okay);
 
-  LCAOrbitalBuilder lcaob_num_sph = LCAOrbitalBuilder(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_num_sph(elec, ions, c, doc.getRoot());
 
 
   // Radial basis: GTO    Angular part: Cartesian
@@ -91,7 +91,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   okay = doc.parseFromString(wf_xml_gto_cart);
   REQUIRE(okay);
 
-  LCAOrbitalBuilder lcaob_gto_cart = LCAOrbitalBuilder(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_gto_cart(elec, ions, c, doc.getRoot());
 
 
   // Radial basis: GTO    Angular part: Spherical
@@ -112,7 +112,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   okay = doc.parseFromString(wf_xml_gto_sph);
   REQUIRE(okay);
 
-  LCAOrbitalBuilder lcaob_gto_sph = LCAOrbitalBuilder(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_gto_sph(elec, ions, c, doc.getRoot());
 
 
   // Radial basis: STO    Angular part: Cartesian
@@ -131,7 +131,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   okay = doc.parseFromString(wf_xml_sto_cart);
   REQUIRE(okay);
 
-  LCAOrbitalBuilder lcaob_sto_cart = LCAOrbitalBuilder(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_sto_cart(elec, ions, c, doc.getRoot());
 
 
   // Radial basis: STO    Angular part: Spherical
@@ -150,7 +150,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   okay = doc.parseFromString(wf_xml_sto_sph);
   REQUIRE(okay);
 
-  LCAOrbitalBuilder lcaob_sto_sph = LCAOrbitalBuilder(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_sto_sph(elec, ions, c, doc.getRoot());
 }
 
 } // namespace qmcplusplus
