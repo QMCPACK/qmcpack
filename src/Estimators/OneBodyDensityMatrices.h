@@ -147,9 +147,9 @@ private:
   /// current density
   Real rhocur_ = 0.0;
 
-  //spin related variables
-  Real spcur_ = 0.0;
-  Real dspcur_ = 0.0;
+  ///spin related variables
+  Real spcur_;
+  Real dspcur_;
   const bool is_spinor_;
 
 public:
@@ -242,7 +242,7 @@ private:
    */
   void generateDensitySamples(bool save, int steps, RandomBase<FullPrecReal>& rng, ParticleSet& pset_target);
 
-  //same as above, but with spin variables included
+  /// same as above, but with spin variables included
   void generateDensitySamplesWithSpin(bool save, int steps, RandomBase<FullPrecReal>& rng, ParticleSet& pset_target);
 
   void generateSampleRatios(ParticleSet& pset_target,
@@ -264,7 +264,7 @@ private:
    *    * updateBasis is called
    */
   void calcDensity(const Position& r, Real& dens, ParticleSet& pset_target);
-  //same as above, but with spin move
+  /// same as above, but with spin move
   void calcDensityWithSpin(const Position& r, const Real& s, Real& dens, ParticleSet& pset_target);
   /** calculate density and drift bashed on r
    *  \param[in]      r       position
@@ -278,7 +278,7 @@ private:
    *    * updateBasisD012 is called
    */
   void calcDensityDrift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target);
-
+  /// same as above, but with spin move
   void calcDensityDriftWithSpin(const Position& r,
                                 const Real& s,
                                 Real& dens,
@@ -298,9 +298,9 @@ private:
    */
   void generateParticleBasis(ParticleSet& pset_target, std::vector<Matrix<Value>>& phi_nb);
 
-  //  basis set updates
+  ///  basis set updates
   void updateBasis(const Position& r, ParticleSet& pset_target);
-  //  basis set updates with spin
+  ///  basis set updates with spin
   void updateBasisWithSpin(const Position& r, const Real& s, ParticleSet& pset_target);
   /** evaluates vgl on basis_functions_ for r
    *  sideeffects:
@@ -308,7 +308,7 @@ private:
    *      all are normalized by basis norms_
    */
   void updateBasisD012(const Position& r, ParticleSet& pset_target);
-  // same as above, but includes spin gradients
+  /// same as above, but includes spin gradients
   void updateBasisD012WithSpin(const Position& r, const Real& s, ParticleSet& pset_target);
   /** does some warmup sampling i.e. samples but throws away the results
    *  Only when integrator_ = Integrator::DENSITY
