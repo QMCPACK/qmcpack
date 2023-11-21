@@ -14,6 +14,7 @@ endif()
 if(QMC_OMP)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+  add_link_options("-L${OpenMP_LIB_DIR}")
 
   if(ENABLE_OFFLOAD)
     if(DEFINED OFFLOAD_TARGET)

@@ -239,6 +239,8 @@ if(QMC_OMP)
       FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
                   "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
   endif()
+  cmake_path(GET OpenMP_CXX_LIBRARIES PARENT_PATH OpenMP_LIB_DIR)
+  message(STATUS "Found OpenMP_LIB_DIR: ${OpenMP_LIB_DIR}")
 endif(QMC_OMP)
 
 #-------------------------------------------------------------------------------
