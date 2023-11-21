@@ -19,6 +19,12 @@ def create3x3_matrix(k1, k2, k3):
                    [k1,  0.0, -k3],
                    [k2,   k3, 0.0]])
 
+#We are keeping + upper diagonal convention for this.
+def create3x3_matrix_complex(k1, k2, k3):
+    return np.array([[0.0, k1, k2],
+                   [-np.conj(k1),  0.0, k3],
+                   [-np.conj(k2),   -np.conj(k3), 0.0]])
+
 def extract3x3parameters(m3):
     k1 = m3[1,0]
     k2 = m3[2,0]
@@ -92,6 +98,30 @@ def print_matrix_as_initializer_list(m):
             print()
             print(" ", end="")
 
+def print_matrix_as_initializer_list_complex(m):
+    try:
+        # Sympy matrices
+        rows = m.rows
+        cols = m.cols
+    except AttributeError:
+        # Numpy arrays
+        rows = m.shape[0]
+        cols = m.shape[1]
+
+    print("{", end="")
+    comma = ","
+    for i in range(rows):
+        for j in range(cols):
+            # Skip comma after the last entry
+            if i == rows-1 and j == cols-1:
+                comma = ""
+            print(" cmplx_t({:>12.9g}{comma}{:>12.9g}){comma}".format(float(m[i,j].real),float(m[i,j].imag), comma=comma), end="")
+        if i == rows-1:
+            print(" };")
+        else:
+            print()
+            print(" ", end="")
+
 
 def test_1x1():
     # Only have one choice for antisymmetric 1x1 matrix
@@ -122,8 +152,19 @@ def test_3x3():
     print_matrix_as_initializer_list(m3)
     print("\nExp(Input)")
     print_matrix_as_initializer_list(m3exp)
+    print()
 
-
+def test_3x3_complex():
+    print("3x3 complex")
+    m3_cmplx = create3x3_matrix_complex(0.3+0.1j, 0.1-0.3j, 0.2+0.01j)
+    m3exp_cmplx = scipy.linalg.expm(np.array(m3_cmplx))
+    
+    print("Input")
+    print_matrix_as_initializer_list_complex(m3_cmplx)
+    print("\nExp(Input)")
+    print_matrix_as_initializer_list_complex(m3exp_cmplx)
+    print()
+     
 def test_4x4():
     # Application of rotation matrix in the test "RotatedSPOs construct delta matrix" in test_RotatedSPOs.cpp
     # Sympy operations are very slow for a 4x4 matrix, and it doesn't have a matrix log.
@@ -181,5 +222,6 @@ if __name__ == "__main__":
     test_1x1()
     test_2x2()
     test_3x3()
+    test_3x3_complex()
     test_4x4()
     test_multiple_3x3()
