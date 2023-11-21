@@ -24,7 +24,8 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 {
   Communicate* c = OHMMS::Controller;
 
-  using Real = QMCTraits::RealType;
+  using Real      = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
 
 
   const SimulationCell sim_cell;
@@ -59,7 +60,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   LCAOrbitalBuilder lcaob_num_cart(elec, ions, c, doc.getRoot());
   const auto& bs = lcaob_num_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<
-            SoaLocalizedBasisSet<SoaAtomicBasisSet<MultiQuinticSpline1D<Real>, SoaCartesianTensor<Real>>, Real>*>(
+            SoaLocalizedBasisSet<SoaAtomicBasisSet<MultiQuinticSpline1D<Real>, SoaCartesianTensor<Real>>, ValueType>*>(
             bs.get()) != nullptr);
 
 
@@ -82,7 +83,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   LCAOrbitalBuilder lcaob_num_sph(elec, ions, c, doc.getRoot());
   const auto& bs2 = lcaob_num_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<
-            SoaLocalizedBasisSet<SoaAtomicBasisSet<MultiQuinticSpline1D<Real>, SoaSphericalTensor<Real>>, Real>*>(
+            SoaLocalizedBasisSet<SoaAtomicBasisSet<MultiQuinticSpline1D<Real>, SoaSphericalTensor<Real>>, ValueType>*>(
             bs2.get()) != nullptr);
 
 
@@ -107,8 +108,8 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   LCAOrbitalBuilder lcaob_gto_cart(elec, ions, c, doc.getRoot());
   const auto& bs3 = lcaob_gto_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
-            SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<Real>>, SoaCartesianTensor<Real>>, Real>*>(bs3.get()) !=
-        nullptr);
+            SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<Real>>, SoaCartesianTensor<Real>>, ValueType>*>(
+            bs3.get()) != nullptr);
 
 
   // Radial basis: GTO    Angular part: Spherical
@@ -132,8 +133,8 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   LCAOrbitalBuilder lcaob_gto_sph(elec, ions, c, doc.getRoot());
   const auto& bs4 = lcaob_gto_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
-            SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<Real>>, SoaSphericalTensor<Real>>, Real>*>(bs4.get()) !=
-        nullptr);
+            SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<Real>>, SoaSphericalTensor<Real>>, ValueType>*>(
+            bs4.get()) != nullptr);
 
 
   // Radial basis: STO    Angular part: Cartesian
@@ -155,8 +156,8 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   LCAOrbitalBuilder lcaob_sto_cart(elec, ions, c, doc.getRoot());
   const auto& bs5 = lcaob_sto_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
-            SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<Real>>, SoaCartesianTensor<Real>>, Real>*>(bs5.get()) !=
-        nullptr);
+            SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<Real>>, SoaCartesianTensor<Real>>, ValueType>*>(
+            bs5.get()) != nullptr);
 
 
   // Radial basis: STO    Angular part: Spherical
@@ -178,8 +179,8 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   LCAOrbitalBuilder lcaob_sto_sph(elec, ions, c, doc.getRoot());
   const auto& bs6 = lcaob_sto_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
-            SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<Real>>, SoaSphericalTensor<Real>>, Real>*>(bs6.get()) !=
-        nullptr);
+            SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<Real>>, SoaSphericalTensor<Real>>, ValueType>*>(
+            bs6.get()) != nullptr);
 }
 
 } // namespace qmcplusplus
