@@ -15,7 +15,16 @@
 #include "Configuration.h"
 #include "Message/Communicate.h"
 
-#include "LCAO/LCAOrbitalBuilder.cpp"
+#include "LCAO/LCAOrbitalBuilder.h"
+#include "LCAO/MultiQuinticSpline1D.h"
+#include "Numerics/SoaCartesianTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
+#include "LCAO/SoaAtomicBasisSet.h"
+#include "LCAO/SoaLocalizedBasisSet.h"
+#include "LCAO/AOBasisBuilder.h"
+#include "LCAO/MultiFunctorAdapter.h"
+
+
 namespace qmcplusplus
 {
 
