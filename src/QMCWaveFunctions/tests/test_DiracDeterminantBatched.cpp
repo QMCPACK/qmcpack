@@ -37,11 +37,11 @@ template<class DET_ENGINE>
 void test_DiracDeterminantBatched_first()
 {
   using DetType  = DiracDeterminantBatched<DET_ENGINE>;
-  auto spo_init  = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
   DetType ddb(std::move(spo_init), 0, norb);
-  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
+  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddb.getPhi());
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -141,11 +141,11 @@ template<class DET_ENGINE>
 void test_DiracDeterminantBatched_second()
 {
   using DetType  = DiracDeterminantBatched<DET_ENGINE>;
-  auto spo_init  = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   DetType ddb(std::move(spo_init), 0, norb);
-  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
+  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddb.getPhi());
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -277,11 +277,11 @@ template<class DET_ENGINE>
 void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor matrix_inverter_kind)
 {
   using DetType  = DiracDeterminantBatched<DET_ENGINE>;
-  auto spo_init  = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   DetType ddc(std::move(spo_init), 0, norb, delay_rank, matrix_inverter_kind);
-  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
+  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddc.getPhi());
 
   // occurs in call to registerData
   ddc.dpsiV.resize(norb);
