@@ -26,7 +26,7 @@ namespace qmcplusplus
 /** hybrid representation orbitals combining B-spline orbitals on a grid and atomic centered orbitals.
  * @tparam SPLINEBASE B-spline orbital class.
  *
- * Only works with SPLINEBASE class containing real splinesHybrid
+ * Only works with SPLINEBASE class containing real splines
  */
 template<typename SPLINEBASE>
 class HybridRepReal : public SPLINEBASE, private HybridRepCenterOrbitals<typename SPLINEBASE::DataType>
