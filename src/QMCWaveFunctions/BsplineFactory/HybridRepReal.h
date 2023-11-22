@@ -26,7 +26,7 @@ namespace qmcplusplus
 /** hybrid representation orbitals combining B-spline orbitals on a grid and atomic centered orbitals.
  * @tparam SPLINEBASE B-spline orbital class.
  *
- * Only works with SPLINEBASE class containing real splines
+ * Only works with SPLINEBASE class containing real splinesHybrid
  */
 template<typename SPLINEBASE>
 class HybridRepReal : public SPLINEBASE, private HybridRepCenterOrbitals<typename SPLINEBASE::DataType>
@@ -65,6 +65,18 @@ private:
 
 public:
   HybridRepReal(const std::string& my_name) : SPLINEBASE(my_name) {}
+
+  bool isRotationSupported() const override { return true; }
+  void storeParamsBeforeRotation() override
+  {
+    SPLINEBASE::storeParamsBeforeRotation();
+    HYBRIDBASE::storeParamsBeforeRotation();
+  }
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override
+  {
+    SPLINEBASE::applyRotation(rot_mat, use_stored_copy);
+    HYBRIDBASE::applyRotation(rot_mat, use_stored_copy);
+  }
 
   std::string getClassName() const final { return "Hybrid" + SPLINEBASE::getClassName(); }
   std::string getKeyword() const final { return "Hybrid" + SPLINEBASE::getKeyword(); }

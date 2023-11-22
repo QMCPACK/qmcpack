@@ -23,6 +23,8 @@
 #include "spline2/MultiBspline1D.hpp"
 #include "Numerics/SmoothFunctions.hpp"
 #include "hdf/hdf_archive.h"
+#include <memory>
+#include <vector>
 
 namespace qmcplusplus
 {
@@ -57,6 +59,8 @@ private:
   vContainer_type r_power_minus_l;
   ///1D spline of radial functions of all the orbitals
   std::shared_ptr<MultiBspline1D<ST>> SplineInst;
+  ///coef copy for orbital rotation
+  std::shared_ptr<std::vector<ST>> coef_copy_;
 
   vContainer_type localV, localG, localL;
 
@@ -398,6 +402,49 @@ public:
     //Needed to do tensor product here
     APP_ABORT("AtomicOrbitals::evaluate_vgh");
   }
+
+  void storeParamsBeforeRotation()
+  {
+    const auto spline_ptr     = SplineInst->getSplinePtr();
+    const auto coefs_tot_size = spline_ptr->coefs_size;
+    coef_copy_                = std::make_shared<std::vector<ST>>(coefs_tot_size);
+    std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+  }
+
+  template<typename VM>
+  void applyRotation(const VM& rot_mat, bool use_stored_copy)
+  {
+    // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
+    const auto spline_ptr = SplineInst->getSplinePtr();
+    assert(spline_ptr != nullptr);
+    const auto spl_coefs      = spline_ptr->coefs;
+    const auto Nsplines       = spline_ptr->num_splines; // May include padding
+    const auto coefs_tot_size = spline_ptr->coefs_size;
+    const auto BasisSetSize   = coefs_tot_size / Nsplines;
+    const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
+
+    if (!use_stored_copy)
+    {
+      assert(coef_copy_ != nullptr);
+      std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
+    }
+
+    std::cout << BasisSetSize << " " << TrueNOrbs << " " << coefs_tot_size << " " << Nsplines  << std::endl;
+
+    //Here, ST is float but ValueType is double for R2R. Due to issues with type conversions, just doing naive matrix multiplication in this case to not lose precision on rot_mat
+    for (size_t i = 0; i < BasisSetSize; i++)
+      for (size_t j = 0; j < TrueNOrbs; j++)
+      {
+        const auto cur_elem = Nsplines * i + j;
+        ParticleSet::FullPrecValueType newval{0.};
+        for (size_t k = 0; k < TrueNOrbs; k++)
+        {
+          const auto index = i * Nsplines + k;
+          newval += (*coef_copy_)[index] * rot_mat[k][j];
+        }
+        spl_coefs[cur_elem] = newval;
+      }
+  }
 };
 
 template<typename ST>
@@ -475,6 +522,19 @@ private:
 
 public:
   HybridRepCenterOrbitals() {}
+
+  void storeParamsBeforeRotation()
+  {
+    for (auto& atomic_center : AtomicCenters)
+      atomic_center.storeParamsBeforeRotation();
+  }
+
+  template<typename VM>
+  void applyRotation(const VM& rot_mat, bool use_stored_copy)
+  {
+    for (auto& atomic_center : AtomicCenters)
+      atomic_center.applyRotation(rot_mat, use_stored_copy);
+  }
 
   void set_info(const ParticleSet& ions, ParticleSet& els, const std::vector<int>& mapping)
   {
