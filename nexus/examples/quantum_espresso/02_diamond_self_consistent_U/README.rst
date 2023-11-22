@@ -53,3 +53,6 @@ hp = generate_hp(
 Here, the important part is the "dependencies = (sims[-1], 'other')" line which ensures that the last sim
 prior to the hp.x calculation (which is always the SCF calculation here) is used as a dependency. 
 
+As a final warning, the new Hubbard input is very specific about the angular momentum channels defined in the
+pseudopotential. For the C-diamond example to work, I have modified the C.BFD.upf file converting the "0s"->"2S" and 
+"0p"->"2P" in the PP_HEADER and PP_PSWFC sections. You may need to update your pps by hand to make it work. 
