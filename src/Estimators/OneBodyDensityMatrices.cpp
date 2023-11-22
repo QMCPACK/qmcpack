@@ -372,8 +372,6 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
   Position r          = rpcur_;  //current position
   Position d          = dpcur_;  //current drift
   Real rho            = rhocur_; //current density
-  Real spin           = spcur_;  //current spin
-  Real dspin          = dspcur_; //current spindrift
   for (int s = 0; s < steps; ++s)
   {
     nmoves_++;
@@ -393,18 +391,18 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
     if (input_.get_use_drift())
     {
       rp    = r + diff + d;                                               //update trial position
-      spinp = spin + sdiff + dspin;                                       //update trial spin
+      spinp = spcur_ + sdiff + dspcur_;                                       //update trial spin
       calcDensityDriftWithSpin(rp, spinp, rhop, dp, dspinp, pset_target); //get trial drift and density
       ratio   = rhop / rho;                                               //density ratio
       ds      = dp + d;                                                   //drift sum
-      spin_ds = dspinp + dspin;                                           //spin drift sum
+      spin_ds = dspinp + dspcur_;                                           //spin drift sum
       Pacc    = ratio * std::exp(-ot * (dot(diff, ds) + .5 * dot(ds, ds))) *
           std::exp(-ot * (sdiff * spin_ds) + 0.5 * spin_ds * spin_ds); //acceptance probability
     }
     else
     {
       rp    = r + diff;                                  //update trial position
-      spinp = spin + sdiff;                              //update trial spin
+      spinp = spcur_ + sdiff;                              //update trial spin
       calcDensityWithSpin(rp, spinp, rhop, pset_target); //get trial density
       ratio = rhop / rho;                                //density ratio
       Pacc  = ratio;                                     //acceptance probability
@@ -413,8 +411,8 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
     { //accept move
       r     = rp;
       d     = dp;
-      spin  = spinp;
-      dspin = dspinp;
+      spcur_  = spinp;
+      dspcur_ = dspinp;
       rho   = rhop;
       naccepted_++;
     }
@@ -422,7 +420,7 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
     {
       rsamples_[s]        = r;
       samples_weights_[s] = 1.0 / rho;
-      ssamples_[s]        = spin;
+      ssamples_[s]        = spcur_;
     }
   }
   acceptance_ratio_ = Real(naccepted_) / nmoves_;
@@ -433,8 +431,6 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
   rpcur_  = r;
   dpcur_  = d;
   rhocur_ = rho;
-  spcur_  = spin;
-  dspcur_ = dspin;
 }
 
 OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt, RandomBase<FullPrecReal>& rng)
