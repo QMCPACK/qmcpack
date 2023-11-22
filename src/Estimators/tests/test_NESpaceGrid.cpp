@@ -91,7 +91,7 @@ void testSpaceGridConstruction()
   // It is a smell.
   NESpaceGrid<REAL> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
 
-  using NES         = testing::NESpaceGridTests<double>;
+  using NES         = testing::NESpaceGridTests<REAL>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
   space_grid.write_description(std::cout, std::string(""));
@@ -113,7 +113,7 @@ void testSpaceGridBasic()
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
   NESpaceGrid<REAL> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
-  using NES         = testing::NESpaceGridTests<double>;
+  using NES         = testing::NESpaceGridTests<REAL>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
   space_grid.write_description(std::cout, std::string(""));
@@ -250,7 +250,7 @@ void testSpaceGridBadPeriodic()
   int num_values = 3;
   NESpaceGrid<REAL> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
 
-  using NES         = testing::NESpaceGridTests<double>;
+  using NES         = testing::NESpaceGridTests<REAL>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
   space_grid.write_description(std::cout, std::string(""));
@@ -290,7 +290,7 @@ void testSpaceGridHdf5()
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
   NESpaceGrid<REAL> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
-  using NES         = testing::NESpaceGridTests<double>;
+  using NES         = testing::NESpaceGridTests<REAL>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
   space_grid.write_description(std::cout, std::string(""));

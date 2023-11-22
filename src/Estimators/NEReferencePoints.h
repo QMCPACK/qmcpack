@@ -37,7 +37,7 @@ namespace qmcplusplus
 class NEReferencePoints
 {
 public:
-  using Real   = QMCTraits::RealType;
+  using Real   = QMCTraits::FullPrecRealType;
   using Axes   = Tensor<Real, OHMMS_DIM>;
   using Point  = TinyVector<Real, OHMMS_DIM>;
   using Points = std::map<std::string, Point>;

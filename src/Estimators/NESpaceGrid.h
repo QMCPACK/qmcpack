@@ -64,7 +64,7 @@ public:
   using POLT         = PtclOnLatticeTraits;
   // We can't test double for a mixed precision build if we take OHMMS_PRECISION
   // so we can't use PtclOnLatticeTraits
-  using ParticleLayout = CrystalLattice<REAL, OHMMS_DIM>;
+  using ParticleLayout = PtclOnLatticeTraits; //CrystalLattice<REAL, OHMMS_DIM>;
   using SingleParticlePos   = typename ParticleLayout::SingleParticlePos;
   using ParticlePos    = ParticleAttrib<SingleParticlePos>;
   using AxTensor     = Tensor<Real, OHMMS_DIM>;
