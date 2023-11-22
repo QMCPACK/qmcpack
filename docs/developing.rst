@@ -7,6 +7,12 @@ Development Guide
 The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
 addition of a Jastrow function or a new QMC method.
 
+.. admonition:: Definitions
+
+   * **Legacy**: code from previous work usually not in line current coding standards or design. It is mostly functional and correct within the context of legacy operations. Most has been modified piecemeal for years to extend functionality.
+   * **Refactoring**: Process of redesigning code in place through incremental changes toward current design and functionality goals.
+
+
 QMCPACK coding standards
 ------------------------
 
@@ -767,6 +773,25 @@ During Jastrow optimization, any update to the parameter data managed by the sha
 the Jastrow objects. In another example, spline coefficients are managed by a shared pointer which achieves a single copy in
 memory shared by an SPOSet and all of its clones.
 
+Log and error output
+~~~~~~~~~~~~~~~~~~~~
+
+``app_log``, ``app_warning``, ``app_err`` and ``app_debug`` print out messages only on rank 0 to avoid repetitive messages from
+every MPI rank. For this reason, they are only suitable for outputing messages identical to all MPI ranks. ``app_debug`` prints only
+when ``--verbosity=debug`` command line option is used. Messages that come from only one or a few MPI ranks should use ``std::cout``
+and ``std::cerr``.
+
+If the code needs to be stopped after an unrecoverable error that happens uniformly on all the MPI ranks, a bad input for example,
+avoid using ``app_err`` together with ``Communicate::abort(msg)`` or ``APP_ABORT(msg)`` because any MPI rank other than rank 0 may
+stop the whole run before rank 0 is able to print out the error message. To secure the printout before stopping, use
+``Communicate::barrier_and_abort(msg)`` if an MPI communicator is available or throw a custom exception ``UniformCommunicateError``
+and capture it where ``Communicate::barrier_and_abort()`` can be used. Note that ``UniformCommunicateError`` can only be used for
+uniform error, improper use may cause QMCPACK hanging.
+
+In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
+
+.. include:: input_code.txt
+
 .. _distance-tables:
 
 Particles and distance tables
@@ -1027,8 +1052,11 @@ three body Jastrow factors in QMCPACK only needs the row [iel][0:Nelec).
 In ``ratioGrad``, the new distances are stored in the ``Temp_r`` and
 ``Temp_dr`` members of the distance tables.
 
-Setup
-~~~~~
+Legacy Setup
+~~~~~~~~~~~~
+.. warning::
+   The following describes a deprecated method of handling user input.
+   It is not to be used for new code.
 
 A builder processes XML input, creates the wavefunction, and adds it to
 ``targetPsi``. Builders derive from ``WaveFunctionComponentBuilder``.

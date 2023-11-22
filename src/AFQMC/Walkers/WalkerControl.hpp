@@ -207,8 +207,10 @@ inline int swapWalkersAsync(WlkBucket& wset,
  * Implements Cafarrel's minimum branching algorithm.
  *   - buff: array of walker info (weight,num).
  */
-template<class Random>
-inline void min_branch(std::vector<std::pair<double, int>>& buff, Random& rng, double max_c, double min_c)
+inline void min_branch(std::vector<std::pair<double, int>>& buff,
+                       RandomBase<QMCTraits::FullPrecRealType>& rng,
+                       double max_c,
+                       double min_c)
 {
   APP_ABORT(" Error: min_branch not implemented yet. \n\n\n");
 }
@@ -217,8 +219,7 @@ inline void min_branch(std::vector<std::pair<double, int>>& buff, Random& rng, d
  * Implements Cafarrel's minimum branching algorithm.
  *   - buff: array of walker info (weight,num).
  */
-template<class Random>
-inline void serial_comb(std::vector<std::pair<double, int>>& buff, Random& rng)
+inline void serial_comb(std::vector<std::pair<double, int>>& buff, RandomBase<QMCTraits::FullPrecRealType>& rng)
 {
   APP_ABORT(" Error: serial_comb not implemented yet. \n\n\n");
 }
@@ -229,8 +230,10 @@ inline void serial_comb(std::vector<std::pair<double, int>>& buff, Random& rng)
  * and number of times the walker should appear in the new list.
  *   - buff: array of walker info (weight,num).
  */
-template<class Random>
-inline void pair_branch(std::vector<std::pair<double, int>>& buff, Random& rng, double max_c, double min_c)
+inline void pair_branch(std::vector<std::pair<double, int>>& buff,
+                        RandomBase<QMCTraits::FullPrecRealType>& rng,
+                        double max_c,
+                        double min_c)
 {
   using tp    = std::tuple<double, int, int>;
   using tp_it = std::vector<tp>::iterator;
@@ -299,7 +302,6 @@ inline void pair_branch(std::vector<std::pair<double, int>>& buff, Random& rng, 
  */
 template<class WalkerSet,
          class Mat,
-         class Random,
          typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type,
          typename = typename std::enable_if<(WalkerSet::fixed_population)>::type>
 inline void SerialBranching(WalkerSet& wset,
@@ -308,7 +310,7 @@ inline void SerialBranching(WalkerSet& wset,
                             double max_,
                             std::vector<int>& wlk_counts,
                             Mat& Wexcess,
-                            Random& rng,
+                            RandomBase<QMCTraits::FullPrecRealType>& rng,
                             communicator& comm)
 {
   std::vector<std::pair<double, int>> buffer(wset.get_global_target_population());
@@ -363,14 +365,13 @@ inline void SerialBranching(WalkerSet& wset,
  */
 template<class WalkerSet,
          class Mat,
-         class Random,
          typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type,
          typename = typename std::enable_if<(WalkerSet::fixed_population)>::type>
 inline void CombBranching(WalkerSet& wset,
                           BRANCHING_ALGORITHM type,
                           std::vector<int>& wlk_counts,
                           Mat& Wexcess,
-                          Random& rng,
+                          RandomBase<QMCTraits::FullPrecRealType>& rng,
                           communicator& comm)
 {
   APP_ABORT("Error: comb not implemented yet. \n");

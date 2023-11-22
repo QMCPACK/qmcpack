@@ -109,7 +109,7 @@ protected:
 public:
   SplineC2COMPTarget(const std::string& my_name)
       : BsplineSet(my_name),
-        offload_timer_(*timer_manager.createTimer("SplineC2COMPTarget::offload", timer_level_fine)),
+        offload_timer_(createGlobalTimer("SplineC2COMPTarget::offload", timer_level_fine)),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
   {}
@@ -197,7 +197,7 @@ public:
     PRAGMA_OFFLOAD("omp target update to(mKK_ptr[0:mKK->size()])")
     auto* myKcart_ptr = myKcart->data();
     PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
-    for (size_t i = 0; i < 9; i++)
+    for (uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];

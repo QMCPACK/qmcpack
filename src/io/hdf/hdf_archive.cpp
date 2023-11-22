@@ -38,6 +38,7 @@ void hdf_archive::close()
   {
     hid_t gid = group_id.top();
     group_id.pop();
+    group_names.pop_back();
     H5Gclose(gid);
   }
   if (file_id != is_closed)
@@ -138,6 +139,7 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 
 bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 {
+  possible_filename_ = fname;
   if (Mode[NOIO])
     return true;
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
@@ -149,6 +151,7 @@ bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 
 bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
 {
+  possible_filename_ = fname;
   if (Mode[NOIO])
     return true;
   close();
@@ -189,11 +192,16 @@ bool hdf_archive::is_group(const std::string& aname)
   }
 }
 
-hid_t hdf_archive::push(const std::string& gname, bool createit)
+void hdf_archive::push(const std::string& gname, bool createit)
 {
   hid_t g = is_closed;
-  if (Mode[NOIO] || file_id == is_closed)
-    return is_closed;
+  if (Mode[NOIO])
+    return;
+
+  if (file_id == is_closed)
+    throw std::runtime_error("Failed to open group \"" + gname +
+                             "\" because file is not open.  Expected file: " + possible_filename_);
+
   hid_t p = group_id.empty() ? file_id : group_id.top();
 
 #if H5_VERSION_GE(1, 12, 0)
@@ -220,10 +228,29 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
     g = H5Gopen2(p, gname.c_str(), H5P_DEFAULT);
   }
   if (g != is_closed)
+  {
     group_id.push(g);
-  return g;
+    group_names.push_back(gname);
+  }
+
+  if (!createit && g < 0)
+    throw std::runtime_error("Group \"" + gname + "\" not found in file " + possible_filename_ +
+                             ". Group path: " + group_path_as_string());
 }
 
-hid_t hdf_archive::push(const hdf_path& gname, bool createit) { return push(gname.string(), createit); }
+void hdf_archive::push(const hdf_path& gname, bool createit) { push(gname.string(), createit); }
+
+std::string hdf_archive::group_path_as_string() const
+{
+  std::string group_path;
+  for (auto it = group_names.begin(); it != group_names.end(); it++)
+  {
+    group_path += *it;
+    if (it != group_names.end() - 1)
+      group_path += "/";
+  }
+
+  return group_path;
+}
 
 } // namespace qmcplusplus

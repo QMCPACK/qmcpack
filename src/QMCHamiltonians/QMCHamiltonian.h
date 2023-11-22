@@ -406,12 +406,12 @@ public:
 
   bool get(std::ostream& os) const;
 
-  RealType get_LocalEnergy() const { return LocalEnergy; }
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng);
 
-  void setRandomGenerator(RandomGenerator* rng);
-
-  static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
-  static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  /// accumulate local energy and update Observables and PropertyList
+  static void updateComponent(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  /// extract kinetic and potential energies.
+  static void updateKinetic(QMCHamiltonian& ham, ParticleSet& pset);
 
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
@@ -459,7 +459,7 @@ private:
   /// Total timer for H ion deriv evaluation;
   NewTimer& eval_ion_derivs_fast_timer_;
   /// timers for H components
-  TimerList_t my_timers_;
+  std::vector<std::reference_wrapper<NewTimer>> my_timers_;
   ///types of component operators
   std::map<std::string, std::string> operator_types;
   ///data

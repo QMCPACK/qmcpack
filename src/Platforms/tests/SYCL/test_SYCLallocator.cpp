@@ -26,15 +26,11 @@ TEST_CASE("SYCL_allocator", "[SYCL]")
   Vector<double, SYCLAllocator<double>> vec(1024);
   Vector<double> vec_h(1024);
 
-  sycl::event e;
-  {
-    double* V = vec.data();
-
-    e = m_queue.parallel_for(sycl::range<1>{1024}, [=](sycl::id<1> item) { V[item] = item + 1; });
-  }
+  double* V = vec.data();
+  m_queue.parallel_for(sycl::range<1>{1024}, [=](sycl::id<1> item) { V[item] = item + 1; });
 
   //copy to host
-  m_queue.memcpy(vec_h.data(), vec.data(), 1024 * sizeof(double), {e}).wait();
+  m_queue.memcpy(vec_h.data(), vec.data(), 1024 * sizeof(double)).wait();
 
   CHECK(vec_h[0] == 1);
   CHECK(vec_h[77] == 78);
@@ -46,10 +42,8 @@ TEST_CASE("SYCL_host_allocator", "[SYCL]")
   // SYCLHostAllocator
   Vector<double, SYCLHostAllocator<double>> vec(1024, 1);
 
-  {
-    double* V = vec.data();
-    m_queue.parallel_for(sycl::range<1>{1024}, [=](sycl::id<1> item) { V[item] += item + 1; }).wait();
-  }
+  double* V = vec.data();
+  m_queue.parallel_for(sycl::range<1>{1024}, [=](sycl::id<1> item) { V[item] += item + 1; }).wait();
 
   CHECK(vec[0] == 2);
   CHECK(vec[77] == 79);

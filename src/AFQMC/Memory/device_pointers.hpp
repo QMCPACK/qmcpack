@@ -379,6 +379,14 @@ struct device_pointer : base_device_pointer
   }
   T* impl_;
 
+
+  template<class It>
+  static auto uninitialized_copy(It Abeg, It Aend, device_pointer B)
+  {
+    static_assert(std::is_trivially_copyable_v<T>);
+    return copy_n(Abeg, std::distance(Abeg, Aend), B);
+  }
+
 private:
   device_pointer(T* impl__) : impl_(impl__) {}
 };
@@ -789,8 +797,8 @@ device_pointer<T> uninitialized_copy(device_pointer<T> first, device_pointer<T> 
 }
 */
 // only trivial types for now, no placement new yet
-template<typename T, typename Size>
-device_pointer<T> uninitialized_copy_n(device_pointer<T> A, Size n, device_pointer<T> B)
+template<typename T1, typename Size, typename T2>
+device_pointer<T2> uninitialized_copy_n(device_pointer<T1> A, Size n, device_pointer<T2> B)
 {
   return copy_n(A, n, B);
 }
@@ -883,6 +891,12 @@ device_pointer<T> uninitialized_copy(device_pointer<T> const Abeg, device_pointe
 
 template<typename T, typename Q>
 device_pointer<T> uninitialized_copy(T* Abeg, T* Aend, device_pointer<Q> B)
+{
+  return copy_n(Abeg, std::distance(Abeg, Aend), B);
+}
+
+template<class It, typename Q>
+device_pointer<Q> uninitialized_copy(It Abeg, It Aend, device_pointer<Q> B)
 {
   return copy_n(Abeg, std::distance(Abeg, Aend), B);
 }

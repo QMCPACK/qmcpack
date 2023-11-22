@@ -40,6 +40,11 @@ TEST_CASE("compute_batch_parameters", "[drivers]")
   compute_batch_parameters(sample_size, batch_size, num_batches, final_batch_size);
   CHECK(num_batches == 3);
   CHECK(final_batch_size == 3);
+
+  batch_size = 0;
+  compute_batch_parameters(sample_size, batch_size, num_batches, final_batch_size);
+  CHECK(num_batches == 0);
+  CHECK(final_batch_size == 0);
 }
 
 namespace testing
@@ -63,7 +68,7 @@ public:
 
   std::vector<QMCCostFunctionBase::Return_rt>& getSumValue() { return costFn.SumValue; }
   Matrix<QMCCostFunctionBase::Return_rt>& getRecordsOnNode() { return costFn.RecordsOnNode_; }
-  Matrix<QMCCostFunctionBase::Return_rt>& getDerivRecords() { return costFn.DerivRecords_; }
+  Matrix<QMCCostFunctionBase::Return_t>& getDerivRecords() { return costFn.DerivRecords_; }
   Matrix<QMCCostFunctionBase::Return_rt>& getHDerivRecords() { return costFn.HDerivRecords_; }
 
   void set_samples_and_param(int nsamples, int nparam)

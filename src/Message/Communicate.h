@@ -106,32 +106,32 @@ public:
 
 #if defined(HAVE_MPI)
   ///operator for implicit conversion to MPI_Comm
-  inline operator MPI_Comm() const { return myMPI; }
+  operator MPI_Comm() const { return myMPI; }
 #endif
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
-  inline mpi_comm_type getMPI() const { return myMPI; }
+  mpi_comm_type getMPI() const { return myMPI; }
 
   ///return the rank
-  inline int rank() const { return d_mycontext; }
+  int rank() const { return d_mycontext; }
   ///return the number of tasks
-  inline int size() const { return d_ncontexts; }
+  int size() const { return d_ncontexts; }
 
   ///return the group id
-  inline int getGroupID() const { return d_groupid; }
+  int getGroupID() const { return d_groupid; }
   ///return the number of intra_comms which belong to the same group
-  inline int getNumGroups() const { return d_ngroups; }
-  //inline bool master() const { return (d_mycontext == 0);}
-  //intra_comm_type split(int n);
-  void cleanupMessage(void*);
-  inline void setNodeID(int i) { d_mycontext = i; }
-  inline void setNumNodes(int n) { d_ncontexts = n; }
+  int getNumGroups() const { return d_ngroups; }
 
-  inline void setName(const std::string& aname) { myName = aname; }
-  inline const std::string& getName() const { return myName; }
+  void cleanupMessage(void*);
+  void setNodeID(int i) { d_mycontext = i; }
+  void setNumNodes(int n) { d_ncontexts = n; }
+
+  void setName(const std::string& aname) { myName = aname; }
+  void setName(const char* aname, int alen) { myName = std::string(aname, alen); }
+  const std::string& getName() const { return myName; }
 
   ///return true if the current MPI rank is the group lead
-  inline bool isGroupLeader() { return d_mycontext == 0; }
+  bool isGroupLeader() { return d_mycontext == 0; }
 
   // MMORALES: leaving this here temprarily, but it doesn;t belong here.
   // MMORALES: FIX FIX FIX
@@ -155,7 +155,7 @@ public:
    *  and managing the communicator directly
    *  \todo THIS MUST BE FIXED!!!
    */
-  inline void split_comm(int key, MPI_Comm& comm)
+  void split_comm(int key, MPI_Comm& comm)
   {
     int myrank = rank();
     MPI_Comm_split(myMPI, key, myrank, &comm);

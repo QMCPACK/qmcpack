@@ -22,6 +22,9 @@
 #include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
 #include "Message/UniformCommunicateError.h"
+
+#include <array>
+
 //#define QMCCOSTFUNCTION_DEBUG
 
 
@@ -50,23 +53,21 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
       targetExcitedStr("no"),
       targetExcited(false),
       omega_shift(0.0),
-      msg_stream(0),
-      m_wfPtr(NULL),
-      m_doc_out(NULL),
-      debug_stream(0),
+      msg_stream(nullptr),
+      m_wfPtr(nullptr),
+      m_doc_out(nullptr),
       do_override_output(true)
 {
-  GEVType = "mixed";
-  //paramList.resize(10);
-  //costList.resize(10,0.0);
   //default: don't check fo MinNumWalkers
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
   IsValid = true;
 #if defined(QMCCOSTFUNCTION_DEBUG)
-  char fname[16];
-  sprintf(fname, "optdebug.p%d", OHMMS::Controller->mycontext());
-  debug_stream = new std::ofstream(fname);
+  std::array<char, 16> fname;
+  int length = std::snprintf(fname.data(), fname.size(), "optdebug.p%d", OHMMS::Controller->rank());
+  if (length < 0)
+    throw std::runtime_error("Error generating filename");
+  debug_stream = std::make_unique<std::ofstream>(fname.data());
   debug_stream->setf(std::ios::scientific, std::ios::floatfield);
   debug_stream->precision(8);
 #endif
@@ -77,13 +78,12 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
 {
   delete_iter(dLogPsi.begin(), dLogPsi.end());
   delete_iter(d2LogPsi.begin(), d2LogPsi.end());
-  if (m_doc_out != NULL)
+  if (m_doc_out != nullptr)
     xmlFreeDoc(m_doc_out);
-  if (debug_stream)
-    delete debug_stream;
+  debug_stream.reset();
 }
 
-void QMCCostFunctionBase::setRng(RefVector<RandomGenerator> r)
+void QMCCostFunctionBase::setRng(RefVector<RandomBase<FullPrecRealType>> r)
 {
   if (MoverRng.size() < r.size())
   {
@@ -93,7 +93,7 @@ void QMCCostFunctionBase::setRng(RefVector<RandomGenerator> r)
   for (int ip = 0; ip < r.size(); ++ip)
     MoverRng[ip] = &r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip)
-    RngSaved[ip] = std::make_unique<RandomGenerator>(r[ip].get());
+    RngSaved[ip] = r[ip].get().makeClone();
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
@@ -178,12 +178,15 @@ void QMCCostFunctionBase::Report()
   if (!myComm->rank())
   {
     updateXmlNodes();
-    char newxml[128];
+    std::array<char, 128> newxml;
+    int length{0};
     if (Write2OneXml)
-      sprintf(newxml, "%s.opt.xml", RootName.c_str());
+      length = std::snprintf(newxml.data(), newxml.size(), "%s.opt.xml", RootName.c_str());
     else
-      sprintf(newxml, "%s.opt.%d.xml", RootName.c_str(), ReportCounter);
-    xmlSaveFormatFile(newxml, m_doc_out, 1);
+      length = std::snprintf(newxml.data(), newxml.size(), "%s.opt.%d.xml", RootName.c_str(), ReportCounter);
+    if (length < 0)
+      throw std::runtime_error("Error generating fileroot");
+    xmlSaveFormatFile(newxml.data(), m_doc_out, 1);
     if (msg_stream)
     {
       msg_stream->precision(8);
@@ -222,13 +225,12 @@ void QMCCostFunctionBase::reportParameters()
     for (auto opt_obj : opt_obj_refs)
       opt_obj.get().writeVariationalParameters(hout);
 
-    char newxml[128];
-    sprintf(newxml, "%s.opt.xml", RootName.c_str());
+    std::string newxml = RootName + ".opt.xml";
     *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
     OptVariables.print(*msg_stream);
     *msg_stream << "  </optVariables>" << std::endl;
     updateXmlNodes();
-    xmlSaveFormatFile(newxml, m_doc_out, 1);
+    xmlSaveFormatFile(newxml.c_str(), m_doc_out, 1);
   }
 }
 /** This function stores optimized CI coefficients in HDF5 
@@ -249,12 +251,13 @@ void QMCCostFunctionBase::reportParametersH5()
   if (!myComm->rank())
   {
     int ci_size = 0;
-    std::vector<opt_variables_type::value_type> CIcoeff;
+    std::vector<opt_variables_type::real_type> CIcoeff;
     for (int i = 0; i < OptVariables.size(); i++)
     {
-      char Coeff[128];
-      sprintf(Coeff, "CIcoeff_%d", ci_size + 1);
-      if (Coeff != OptVariables.name(i))
+      std::array<char, 128> Coeff;
+      if (std::snprintf(Coeff.data(), Coeff.size(), "CIcoeff_%d", ci_size + 1) < 0)
+        throw std::runtime_error("Error generating fileroot");
+      if (OptVariables.name(i) != Coeff.data())
       {
         if (ci_size > 0)
           break;
@@ -268,8 +271,7 @@ void QMCCostFunctionBase::reportParametersH5()
     if (ci_size > 0)
     {
       CI_Opt = true;
-      //         sprintf(newh5, "%s.opt.h5", RootName.c_str());
-      newh5 = RootName + ".opt.h5";
+      newh5  = RootName + ".opt.h5";
       *msg_stream << "  <Ci Coeffs saved in opt_coeffs=\"" << newh5 << "\">" << std::endl;
       hdf_archive hout;
       hout.create(newh5, H5F_ACC_TRUNC);
@@ -695,12 +697,15 @@ void QMCCostFunctionBase::updateXmlNodes()
           pAttrib.add(i, "i");
           pAttrib.add(j, "j");
           pAttrib.put(cur);
-          char lambda_id[32];
+          std::array<char, 32> lambda_id;
+          int length{0};
           if (j < 0)
-            sprintf(lambda_id, "%s_%d", rname.c_str(), i);
+            length = std::snprintf(lambda_id.data(), lambda_id.size(), "%s_%d", rname.c_str(), i);
           else
-            sprintf(lambda_id, "%s_%d_%d", rname.c_str(), i, j);
-          opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id));
+            length = std::snprintf(lambda_id.data(), lambda_id.size(), "%s_%d_%d", rname.c_str(), i, j);
+          if (length < 0)
+            throw std::runtime_error("Error generating lambda_id");
+          opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id.data()));
           if (vTarget != OptVariablesForPsi.end())
           {
             std::ostringstream vout;

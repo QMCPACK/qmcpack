@@ -33,8 +33,8 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType     = WaveFunctionComponent::RealType;
-using PsiValueType = WaveFunctionComponent::PsiValueType;
+using RealType = WaveFunctionComponent::RealType;
+using PsiValue = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("BSpline functor zero", "[wavefunction]")
 {
@@ -68,10 +68,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 
   ions_.setName("ion");
   ions_.create({1});
-  ions_.R[0][0] = 2.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-
+  ions_.R[0]                 = {2.0, 0.0, 0.0};
   SpeciesSet& ispecies       = ions_.getSpeciesSet();
   int CIdx                   = ispecies.addSpecies("C");
   int ichargeIdx             = ispecies.addAttribute("charge");
@@ -81,13 +78,8 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 
   elec_.setName("elec");
   elec_.create({1, 1});
-  elec_.R[0][0] = 1.00;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 0.0;
-  elec_.R[1][2] = 0.0;
-
+  elec_.R[0]                   = {1.00, 0.0, 0.0};
+  elec_.R[1]                   = {0.0, 0.0, 0.0};
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -296,14 +288,14 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(ratios[1]) == Approx(1.0040884258));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  PsiValueType ratio_0 = j1->ratio(elec_, 0);
+  PsiValue ratio_0 = j1->ratio(elec_, 0);
   elec_.rejectMove(0);
 
   CHECK(std::real(ratio_0) == Approx(0.9819208747));
 
   // test acceptMove results
   elec_.makeMove(1, newpos - elec_.R[1]);
-  PsiValueType ratio_1 = j1->ratio(elec_, 1);
+  PsiValue ratio_1 = j1->ratio(elec_, 1);
   j1->acceptMove(elec_, 1);
   elec_.acceptMove(1);
 

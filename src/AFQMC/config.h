@@ -58,7 +58,7 @@ enum AFQMCTimerIDs
   T7_t,
   T8_t
 };
-extern TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames;
+extern const TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames;
 
 namespace afqmc
 {

@@ -627,6 +627,43 @@ struct LAPACK
     sgeev(jobvl, jobvr, n, a, lda, alphar, alphai, vl, ldvl, vr, ldvr, work, lwork, info);
   }
 
+  inline static void geev(char* jobvl,
+                          char* jobvr,
+                          int* n,
+                          std::complex<double>* a,
+                          int* lda,
+                          std::complex<double>* alpha,
+                          std::complex<double>* vl,
+                          int* ldvl,
+                          std::complex<double>* vr,
+                          int* ldvr,
+                          std::complex<double>* work,
+                          int* lwork,
+                          double* rwork,
+                          int* info)
+  {
+    zgeev(jobvl, jobvr, n, a, lda, alpha, vl, ldvl, vr, ldvr, work, lwork, rwork, info);
+  }
+
+  inline static void geev(char* jobvl,
+                          char* jobvr,
+                          int* n,
+                          std::complex<float>* a,
+                          int* lda,
+                          std::complex<float>* alpha,
+                          std::complex<float>* vl,
+                          int* ldvl,
+                          std::complex<float>* vr,
+                          int* ldvr,
+                          std::complex<float>* work,
+                          int* lwork,
+                          float* rwork,
+                          int* info)
+  {
+    cgeev(jobvl, jobvr, n, a, lda, alpha, vl, ldvl, vr, ldvr, work, lwork, rwork, info);
+  }
+
+
   inline static void ggev(char* jobvl,
                           char* jobvr,
                           int* n,

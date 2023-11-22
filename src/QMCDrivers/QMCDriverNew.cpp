@@ -58,7 +58,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
       timers_(timer_prefix),
-      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
       walker_configs_ref_(wc),
@@ -235,10 +235,10 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
+    population_.saveWalkerConfigurations(walker_configs_ref_);
+    setWalkerOffsets(walker_configs_ref_, myComm);
     wOut->dump(walker_configs_ref_, block);
-#ifndef USE_FAKE_RNG
     RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
-#endif
   }
 }
 
@@ -256,10 +256,8 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   infoSummary.flush();
   infoLog.flush();
 
-#ifndef USE_FAKE_RNG
   if (DumpConfig)
     RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
-#endif
 
   return true;
 }
@@ -443,7 +441,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
       awc.walkers_per_rank[rank_id] = requested_walkers_per_rank;
     else if (current_configs) // requested_walkers_per_rank == 0 and current_configs > 0
       awc.walkers_per_rank[rank_id] = current_configs;
-    else                      // requested_walkers_per_rank == 0 and current_configs == 0
+    else // requested_walkers_per_rank == 0 and current_configs == 0
       awc.walkers_per_rank[rank_id] = num_crowds;
     comm.allreduce(awc.walkers_per_rank);
     awc.global_walkers = std::accumulate(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(), 0);
@@ -519,7 +517,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-  std::vector<TrialWaveFunction::LogValueType> log_values(walker_twfs.size());
+  std::vector<TrialWaveFunction::LogValue> log_values(walker_twfs.size());
   std::vector<ParticleSet::ParticleGradient> Gs;
   std::vector<ParticleSet::ParticleLaplacian> Ls;
   Gs.reserve(log_values.size());
@@ -547,7 +545,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   {
     auto& ref_G = walker_twfs[iw].G;
     auto& ref_L = walker_twfs[iw].L;
-    TrialWaveFunction::LogValueType ref_log{walker_twfs[iw].getLogPsi(), walker_twfs[iw].getPhase()};
+    TrialWaveFunction::LogValue ref_log{walker_twfs[iw].getLogPsi(), walker_twfs[iw].getPhase()};
     if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
     {
       success = false;

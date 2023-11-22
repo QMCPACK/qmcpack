@@ -989,7 +989,10 @@ def simplestats(x,dim=None,full=False):
 #end def simplestats
 
 
-def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True):
+def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,seed_from_hash=True):
+    if seed_from_hash:
+        np.random.seed(hash(tuple(x))%(2**32))
+    #end if
     bounces = max(1,bounces)
     eqlen = 0
     nx = len(x)
@@ -1383,7 +1386,11 @@ def convex_hull(points,dimension=None,tol=None):
             i = ns.index(-1)
             inds = all_inds.copy()
             inds[i] = False
-            v = tri.vertices[ni]
+            try:
+                v = tri.simplices[ni]
+            except:
+                v = tri.vertices[ni]
+            #end try
             if have_tol:
                 iv = list(range(d1))
                 iv.pop(i)

@@ -20,7 +20,7 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
   if (grid_global == 0)
   {
     app_error() << "    Global grid needs to be defined." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildL2");
+    myComm->barrier_and_abort("ECPComponentBuilder::buildL2");
   }
 
   // read <L2> attributes
@@ -52,12 +52,12 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
   else
   {
     app_error() << "  Unrecognized format \"" << format << "\" in PP file." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildL2");
+    myComm->barrier_and_abort("ECPComponentBuilder::buildL2");
   }
   if (rcut < 0.0)
   {
     app_error() << "  L2 attribute cutoff is missing or negative.  Cutoff must be a positive real number." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildL2");
+    myComm->barrier_and_abort("ECPComponentBuilder::buildL2");
   }
   int npts = grid_global->size();
 

@@ -102,6 +102,7 @@
 #define cudaPointerAttributes           hipPointerAttribute_t
 #define cudaMemoryTypeHost              hipMemoryTypeHost
 #define cudaMemoryTypeDevice            hipMemoryTypeDevice
+#define cudaMemoryTypeManaged           hipMemoryTypeManaged
 #define cudaIpcGetMemHandle             hipIpcGetMemHandle
 #define cudaIpcMemHandle_t              hipIpcMemHandle_t
 #define cudaIpcMemLazyEnablePeerAccess  hipIpcMemLazyEnablePeerAccess
@@ -109,8 +110,13 @@
 #define cudaMalloc                      hipMalloc
 #define cudaMallocArray                 hipMallocArray
 #define cudaMallocHost                  hipHostMalloc
+#if defined(QMC_DISABLE_HIP_HOST_REGISTER)
+#define cudaHostRegister(ptr, size, flags) hipSuccess
+#define cudaHostUnregister(ptr) hipSuccess
+#else
 #define cudaHostRegister                hipHostRegister
 #define cudaHostUnregister              hipHostUnregister
+#endif
 #define cudaHostRegisterDefault         hipHostRegisterDefault
 #define cudaMallocManaged               hipMallocManaged
 #define cudaMemAdvise                   hipMemAdvise

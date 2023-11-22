@@ -17,10 +17,13 @@
  *
  * Implement super function
  */
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "EinsplineSetBuilder.h"
 #include "BsplineReaderBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+
+#include <array>
+#include <filesystem>
 
 namespace qmcplusplus
 {
@@ -201,12 +204,12 @@ void BsplineReaderBase::initialize_spo2band(int spin,
   if (comm->rank())
     return;
 
-  std::string aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix,
-                                             comm->getGroupID());
+  std::filesystem::path aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->twist_num_,
+                                                       mybuilder->TileMatrix, comm->getGroupID());
   aname += ".bandinfo.dat";
 
   std::ofstream o(aname.c_str());
-  char s[1024];
+  std::array<char, 1024> s;
   ns            = 0;
   using PosType = QMCTraits::PosType;
   o << "#  Band    State   TwistIndex BandIndex Energy      Kx      Ky      Kz      K1      K2      K3    KmK "
@@ -217,10 +220,13 @@ void BsplineReaderBase::initialize_spo2band(int spin,
     int bi    = bigspace[i].BandIndex;
     double e  = bigspace[i].Energy;
     int nd    = (bigspace[i].MakeTwoCopies) ? 2 : 1;
-    PosType k = mybuilder->PrimCell.k_cart(mybuilder->TwistAngles[ti]);
-    sprintf(s, "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n", i, ns, ti, bi, e, k[0], k[1], k[2],
-            mybuilder->TwistAngles[ti][0], mybuilder->TwistAngles[ti][1], mybuilder->TwistAngles[ti][2], nd);
-    o << s;
+    PosType k = mybuilder->PrimCell.k_cart(mybuilder->primcell_kpoints[ti]);
+    int s_size = std::snprintf(s.data(), s.size(), "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n",
+                               i, ns, ti, bi, e, k[0], k[1], k[2], mybuilder->primcell_kpoints[ti][0],
+                               mybuilder->primcell_kpoints[ti][1], mybuilder->primcell_kpoints[ti][2], nd);
+    if (s_size < 0)
+      throw std::runtime_error("Error generating bandinfo");
+    o << s.data();
     ns += nd;
   }
 }

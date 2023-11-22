@@ -37,10 +37,7 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -75,13 +72,8 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.88972614;
-  ions.R[1][1] = 1.88972614;
-  ions.R[1][2] = 1.88972614;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.88972614, 1.88972614, 1.88972614};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -115,10 +107,7 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({1});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.5;
-  elec.R[0][2] = 0.0;
-
+  elec.R[0]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");

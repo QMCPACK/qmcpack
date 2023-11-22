@@ -14,6 +14,10 @@
 
 #include "ParticleIOUtility.h"
 #include "Utilities/ProgressReportEngine.h"
+
+#include <array>
+#include <string_view>
+
 namespace qmcplusplus
 {
 
@@ -29,10 +33,12 @@ void expandSuperCell(const ParticleSet& in, const Tensor<int, OHMMS_DIM>& tmat, 
 {
   app_log() << "  Expanding a simulation cell from " << in.getName() << " to " << out.getName() << std::endl;
   {
-    char buff[500];
-    snprintf(buff, 500, "   tilematrix= %4d %4d %4d %4d %4d %4d %4d %4d %4d\n", tmat[0], tmat[1], tmat[2], tmat[3],
-             tmat[4], tmat[5], tmat[6], tmat[7], tmat[8]);
-    app_log() << buff << std::endl;
+    std::array<char, 500> buff;
+    int length = std::snprintf(buff.data(), buff.size(), "   tilematrix= %4d %4d %4d %4d %4d %4d %4d %4d %4d\n",
+                               tmat[0], tmat[1], tmat[2], tmat[3], tmat[4], tmat[5], tmat[6], tmat[7], tmat[8]);
+    if (length < 0)
+      throw std::runtime_error("Error converting tilematrix to string");
+    app_log() << std::string_view(buff.data(), length) << std::endl;
   }
 
   if (in.R.InUnit != PosUnit::Lattice)
@@ -68,10 +74,13 @@ void expandSuperCell(const ParticleSet& in, const Tensor<int, OHMMS_DIM>& tmat, 
             if ((uSuper[0] >= -1.0e-6) && (uSuper[0] < 0.9999) && (uSuper[1] >= -1.0e-6) && (uSuper[1] < 0.9999) &&
                 (uSuper[2] >= -1.0e-6) && (uSuper[2] < 0.9999))
             {
-              char buff[500];
-              snprintf(buff, 500, "  %10.4f  %10.4f %10.4f   %12.6f %12.6f %12.6f %d\n", uSuper[0], uSuper[1],
-                       uSuper[2], r[0], r[1], r[2], ns);
-              app_log() << buff;
+              std::array<char, 500> buff;
+              int length =
+                  std::snprintf(buff.data(), buff.size(), "  %10.4f  %10.4f %10.4f   %12.6f %12.6f %12.6f %d\n",
+                                uSuper[0], uSuper[1], uSuper[2], r[0], r[1], r[2], ns);
+              if (length < 0)
+                throw std::runtime_error("Error converting coordinates to strings");
+              app_log() << std::string_view(buff.data(), length);
               out.R[index]       = r;
               out.GroupID[index] = ns; //primTypes[iat];
               index++;

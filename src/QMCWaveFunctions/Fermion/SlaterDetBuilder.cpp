@@ -561,10 +561,10 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     Optimizable = CI_Optimizable = true;
     if (csf_data_ptr)
       for (int i = 1; i < csf_data_ptr->coeffs.size(); i++)
-        myVars.insert(CItags[i], csf_data_ptr->coeffs[i], true, optimize::LINEAR_P);
+        myVars.insert(CItags[i], std::real(csf_data_ptr->coeffs[i]), true, optimize::LINEAR_P);
     else
       for (int i = 1; i < C.size(); i++)
-        myVars.insert(CItags[i], C[i], true, optimize::LINEAR_P);
+        myVars.insert(CItags[i], std::real(C[i]), true, optimize::LINEAR_P);
   }
   else
   {
@@ -825,7 +825,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
             }
           } // if(name=="det")
           csf = csf->next;
-        }   // csf loop
+        } // csf loop
         if (DetsPerCSF.back() == 0)
         {
           APP_ABORT("Found empty CSF (no det blocks).");
@@ -1059,11 +1059,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     abort();
   }
 
-  if (!hin.push("MultiDet"))
-  {
-    std::cerr << "Could not open Multidet Group in H5 file" << std::endl;
-    abort();
-  }
+
+  hin.push("MultiDet", false);
 
   hin.read(H5_ndets, "NbDet");
   if (ndets != H5_ndets)
@@ -1105,11 +1102,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
       abort();
     }
 
-    if (!coeffin.push("MultiDet"))
-    {
-      std::cerr << "Could not open Multidet Group in H5 file" << std::endl;
-      abort();
-    }
+    coeffin.push("MultiDet", false);
+
     coeffin.read(OptCiSize, "NbDet");
     CIcoeffopt.resize(OptCiSize);
 

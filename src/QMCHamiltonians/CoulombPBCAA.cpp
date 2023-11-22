@@ -54,9 +54,9 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       Ps(ref),
       use_offload_(active && !computeForces && use_offload),
       d_aa_ID(ref.addTable(ref, use_offload_ ? DTModes::ALL_OFF : DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
-      evalLR_timer_(*timer_manager.createTimer("CoulombPBCAA::LongRange", timer_level_fine)),
-      evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine)),
-      offload_timer_(*timer_manager.createTimer("CoulombPBCAA::offload", timer_level_fine))
+      evalLR_timer_(createGlobalTimer("CoulombPBCAA::LongRange", timer_level_fine)),
+      evalSR_timer_(createGlobalTimer("CoulombPBCAA::ShortRange", timer_level_fine)),
+      offload_timer_(createGlobalTimer("CoulombPBCAA::offload", timer_level_fine))
 {
   if (use_offload_)
     assert(ref.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD);
@@ -704,12 +704,12 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
       ScopedTimer offload_scope(caa_leader.offload_timer_);
 
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw)")
-      for (size_t iw = 0; iw < nw; iw++)
+      for (uint32_t iw = 0; iw < nw; iw++)
       {
         mRealType SR = 0.0;
         PRAGMA_OFFLOAD("omp parallel for reduction(+ : SR)")
-        for (size_t jcol = 0; jcol < total_num; jcol++)
-          for (size_t irow = first; irow < last; irow++)
+        for (uint32_t jcol = 0; jcol < total_num; jcol++)
+          for (uint32_t irow = first; irow < last; irow++)
           {
             const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
             if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))

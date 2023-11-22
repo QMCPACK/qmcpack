@@ -13,20 +13,36 @@
 #ifndef FAKERANDOM_H
 #define FAKERANDOM_H
 
+#include "RandomBase.h"
+
 // Deterministic generator for testing.
 
-class FakeRandom
+namespace qmcplusplus
+{
+template<typename T = double>
+class FakeRandom : public RandomBase<T>
 {
 public:
-  using result_type = double;
+  using result_type = typename RandomBase<T>::result_type;
+  using uint_type   = typename RandomBase<T>::uint_type;
+
   FakeRandom();
-  using uint_type = unsigned int;
-  double operator()();
-  double rand();
+  T operator()() override;
+
+  void init(int iseed) override{};
+  void seed(uint_fast32_t aseed) override{};
+  void write(std::ostream& rout) const override { rout << m_val; };
+  void read(std::istream& rin) override { rin >> m_val; };
+  void load(const std::vector<uint_type>& newstate) override{};
+  void save(std::vector<uint_type>& curstate) const override{};
+  size_t state_size() const override { return 0; };
+  std::unique_ptr<RandomBase<T>> makeClone() const override { return std::make_unique<FakeRandom<T>>(*this); }
+
   void set_value(double val);
 
 private:
-  double m_val;
+  T m_val{0.5};
 };
 
+} // namespace qmcplusplus
 #endif

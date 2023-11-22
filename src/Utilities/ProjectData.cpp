@@ -22,6 +22,8 @@
 #include "Message/UniformCommunicateError.h"
 #include "ModernStringUtils.hpp"
 
+#include <array>
+
 namespace qmcplusplus
 {
 
@@ -98,48 +100,55 @@ void ProjectData::reset()
   int nproc   = my_comm_->size();
   int nodeid  = my_comm_->rank();
   int groupid = my_comm_->getGroupID();
-  char fileroot[256], nextroot[256];
+  std::array<char, 256> fileroot;
+  std::array<char, 256> nextroot;
 
   bool no_gtag = (qmc_common.mpi_groups == 1);
-  int length{0};
+  int file_len{0};
   if (no_gtag) //qnproc_g == nproc)
-    length = sprintf(fileroot, "%s.s%03d", title_.c_str(), series_);
+    file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", title_.c_str(), series_);
   else
-    length = sprintf(fileroot, "%s.g%03d.s%03d", title_.c_str(), groupid, series_);
+    file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", title_.c_str(), groupid, series_);
 
-  project_main_ = std::string(fileroot, length);
+  project_main_ = std::string(fileroot.data(), file_len);
   //set the communicator name
-  my_comm_->setName(fileroot);
+  my_comm_->setName(fileroot.data(), file_len);
+  int next_len{0};
   if (no_gtag)
   {
     if (nproc > 1)
     {
-      sprintf(fileroot, ".s%03d.p%03d", series_, nodeid);
-      sprintf(nextroot, ".s%03d.p%03d", series_ + 1, nodeid);
+      file_len = std::snprintf(fileroot.data(), fileroot.size(), ".s%03d.p%03d", series_, nodeid);
+      next_len = std::snprintf(nextroot.data(), nextroot.size(), ".s%03d.p%03d", series_ + 1, nodeid);
     }
     else
     {
-      sprintf(fileroot, ".s%03d", series_);
-      sprintf(nextroot, ".s%03d", series_ + 1);
+      file_len = std::snprintf(fileroot.data(), fileroot.size(), ".s%03d", series_);
+      next_len = std::snprintf(nextroot.data(), nextroot.size(), ".s%03d", series_ + 1);
     }
   }
   else
   {
     if (nproc > 1)
     {
-      sprintf(fileroot, ".g%03d.s%03d.p%03d", groupid, series_, nodeid);
-      sprintf(nextroot, ".g%03d.s%03d.p%03d", groupid, series_ + 1, nodeid);
+      file_len = std::snprintf(fileroot.data(), fileroot.size(), ".g%03d.s%03d.p%03d", groupid, series_, nodeid);
+      next_len = std::snprintf(nextroot.data(), nextroot.size(), ".g%03d.s%03d.p%03d", groupid, series_ + 1, nodeid);
     }
     else
     {
-      sprintf(fileroot, ".g%03d.s%03d", groupid, series_);
-      sprintf(nextroot, ".g%03d.s%03d", groupid, series_ + 1);
+      file_len = std::snprintf(fileroot.data(), fileroot.size(), ".g%03d.s%03d", groupid, series_);
+      next_len = std::snprintf(nextroot.data(), nextroot.size(), ".g%03d.s%03d", groupid, series_ + 1);
     }
   }
+  if (file_len < 0)
+    throw std::runtime_error("Error generating project_root");
+  if (next_len < 0)
+    throw std::runtime_error("Error generating next_root");
+
   project_root_ = title_;
-  project_root_.append(fileroot);
+  project_root_.append(fileroot.data(), file_len);
   next_root_ = title_;
-  next_root_.append(nextroot);
+  next_root_.append(nextroot.data(), next_len);
   std::stringstream s;
   s << series_ + 1;
   if (cur_)
@@ -151,29 +160,31 @@ bool ProjectData::previousRoot(std::string& oldroot) const
   oldroot.clear();
   if (series_)
   {
-    char fileroot[128];
     //int nproc_g = OHMMS::Controller->size();
     int nproc    = my_comm_->size();
     int nodeid   = my_comm_->rank();
     int groupid  = my_comm_->getGroupID();
     bool no_gtag = (qmc_common.mpi_groups == 1);
-
+    std::array<char, 128> fileroot;
+    int file_len{0};
     if (no_gtag)
     {
       if (nproc > 1)
-        sprintf(fileroot, ".s%03d.p%03d", series_ - 1, nodeid);
+        file_len = std::snprintf(fileroot.data(), fileroot.size(), ".s%03d.p%03d", series_ - 1, nodeid);
       else
-        sprintf(fileroot, ".s%03d", series_ - 1);
+        file_len = std::snprintf(fileroot.data(), fileroot.size(), ".s%03d", series_ - 1);
     }
     else
     {
       if (nproc > 1)
-        sprintf(fileroot, ".g%03d.s%03d.p%03d", groupid, series_ - 1, nodeid);
+        file_len = std::snprintf(fileroot.data(), fileroot.size(), ".g%03d.s%03d.p%03d", groupid, series_ - 1, nodeid);
       else
-        sprintf(fileroot, ".g%03d.s%03d", groupid, series_ - 1);
+        file_len = std::snprintf(fileroot.data(), fileroot.size(), ".g%03d.s%03d", groupid, series_ - 1);
     }
+    if (file_len < 0)
+      throw std::runtime_error("Error generating olfroot");
     oldroot = title_;
-    oldroot.append(fileroot);
+    oldroot.append(fileroot.data(), file_len);
     return true;
   }
   else

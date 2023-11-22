@@ -19,6 +19,8 @@
 #include "mpi/collectives.h"
 #include "Utilities/FairDivide.h"
 
+#include <array>
+
 namespace qmcplusplus
 {
 HDFWalkerInput_0_4::HDFWalkerInput_0_4(WalkerConfigurations& wc_list,
@@ -72,7 +74,8 @@ void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur)
         {
           // 2 chars for '.p', 11 chars for pid, 1 char for \0
           std::array<char, 14> h5name;
-          snprintf(h5name.data(), h5name.size(), ".p%03d", pid++);
+          if (std::snprintf(h5name.data(), h5name.size(), ".p%03d", pid++) < 0)
+            throw std::runtime_error("Error generating filename");
           auto fname = std::filesystem::path(froot).concat(h5name.data());
           FileStack.push(std::move(fname));
           pid += nprocs_now;
@@ -83,7 +86,8 @@ void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur)
         int pid = myComm->rank() % i_info.nprocs;
         // 2 chars for '.p', 11 chars for pid, 1 char for \0
         std::array<char, 14> h5name;
-        snprintf(h5name.data(), h5name.size(), ".p%03d", pid);
+        if (std::snprintf(h5name.data(), h5name.size(), ".p%03d", pid) < 0)
+          throw std::runtime_error("Error generating filename");
         auto fname = std::filesystem::path(froot).concat(h5name.data());
         FileStack.push(std::move(fname));
       }

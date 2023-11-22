@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
@@ -33,9 +33,9 @@ using DiracDet = DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTra
 using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
-using LogValueType = TrialWaveFunction::LogValueType;
-using PsiValueType = TrialWaveFunction::PsiValueType;
-using GradType     = TrialWaveFunction::GradType;
+using LogValue = TrialWaveFunction::LogValue;
+using PsiValue = TrialWaveFunction::PsiValue;
+using GradType = TrialWaveFunction::GradType;
 
 TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
@@ -133,6 +133,9 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
+
+  // should not find MSD
+  CHECK(psi.findMSD().empty());
 
   // initialize distance tables.
   elec_.update();
@@ -285,12 +288,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   displs = {delta_zero, delta};
   ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displs);
 
-  std::vector<PsiValueType> ratios(2);
+  std::vector<PsiValue> ratios(2);
   TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
   app_log() << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 #if defined(QMC_COMPLEX)
-  CHECK(ratios[0] == ComplexApprox(PsiValueType(1, 0)));
-  CHECK(ratios[1] == ComplexApprox(PsiValueType(1.6538214581548, 0.54849918598717)));
+  CHECK(ratios[0] == ComplexApprox(PsiValue(1, 0)));
+  CHECK(ratios[1] == ComplexApprox(PsiValue(1.6538214581548, 0.54849918598717)));
 #else
   CHECK(ratios[0] == Approx(1));
   CHECK(ratios[1] == Approx(2.3055913093424));

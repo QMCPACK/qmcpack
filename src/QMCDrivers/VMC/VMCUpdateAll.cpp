@@ -21,7 +21,10 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
+VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w,
+                           TrialWaveFunction& psi,
+                           QMCHamiltonian& h,
+                           RandomBase<FullPrecRealType>& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;

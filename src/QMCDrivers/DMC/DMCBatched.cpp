@@ -32,7 +32,8 @@
 namespace qmcplusplus
 {
 using std::placeholders::_1;
-using WP = WalkerProperties::Indexes;
+using WP       = WalkerProperties::Indexes;
+using PsiValue = TrialWaveFunction::PsiValue;
 
 /** Constructor maintains proper ownership of input parameters
  *
@@ -118,7 +119,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   //This generates an entire steps worth of deltas.
   makeGaussRandomWithEngine(walker_deltas, step_context.get_random_gen());
 
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
+  std::vector<PsiValue> ratios(num_walkers, PsiValue(0.0));
   std::vector<RealType> log_gf(num_walkers, 0.0);
   std::vector<RealType> log_gb(num_walkers, 0.0);
   std::vector<RealType> prob(num_walkers, 0.0);
@@ -194,8 +195,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
         computeLogGreensFunction(drifts_reverse, taus, log_gb);
 
-        auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
-          if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
+        auto checkPhaseChanged = [&sft](const PsiValue& ratio, int& is_reject) {
+          if (ratio == PsiValue(0) || sft.branch_engine.phaseChanged(std::arg(ratio)))
             is_reject = 1;
           else
             is_reject = 0;
@@ -205,7 +206,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
         for (int iw = 0; iw < num_walkers; ++iw)
         {
-          checkPhaseChanged(walker_twfs[iw], rejects[iw]);
+          checkPhaseChanged(ratios[iw], rejects[iw]);
           //This is just convenient to do here
           rr_proposed[iw] += rr[iw];
         }
@@ -216,7 +217,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         isAccepted.clear();
 
         for (int iw = 0; iw < num_walkers; ++iw)
-        {
           if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
               step_context.get_random_gen()() < prob[iw])
           {
@@ -229,7 +229,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
             crowd.incReject();
             isAccepted.push_back(false);
           }
-        }
 
         twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
@@ -458,41 +457,43 @@ bool DMCBatched::run()
 
   for (int block = 0; block < num_blocks; ++block)
   {
-    dmc_loop.start();
-    estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
-
-    dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
-        ? qmcdriver_input_.get_recalculate_properties_period()
-        : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
-                 ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
-                 : false;
-
-    for (UPtr<Crowd>& crowd : crowds_)
-      crowd->startBlock(qmcdriver_input_.get_max_steps());
-
-    for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
     {
-      ScopedTimer local_timer(timers_.run_steps_timer);
-      dmc_state.step = step;
-      crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
-                 std::ref(crowds_));
+      ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
+      estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
+      dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
+          ? qmcdriver_input_.get_recalculate_properties_period()
+          : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
+      dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
+                   ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+                   : false;
+
+      for (UPtr<Crowd>& crowd : crowds_)
+        crowd->startBlock(qmcdriver_input_.get_max_steps());
+
+      for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
       {
-        const int iter = block * qmcdriver_input_.get_max_steps() + step;
-        walker_controller_->branch(iter, population_, iter == 0);
-        branch_engine_->updateParamAfterPopControl(walker_controller_->get_ensemble_property(),
-                                                   population_.get_golden_electrons().getTotalNum());
-        walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
-      }
+        ScopedTimer local_timer(timers_.run_steps_timer);
+        dmc_state.step = step;
+        crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
+                   std::ref(crowds_));
 
-      population_.redistributeWalkers(crowds_);
+        {
+          const int iter = block * qmcdriver_input_.get_max_steps() + step;
+          walker_controller_->branch(iter, population_, iter == 0);
+          branch_engine_->updateParamAfterPopControl(walker_controller_->get_ensemble_property(),
+                                                     population_.get_golden_electrons().getTotalNum());
+          walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
+        }
+
+        population_.redistributeWalkers(crowds_);
+      }
+      print_mem("DMCBatched after a block", app_debug_stream());
+      if (qmcdriver_input_.get_measure_imbalance())
+        measureImbalance("Block " + std::to_string(block));
+      endBlock();
+      recordBlock(block);
     }
-    print_mem("DMCBatched after a block", app_debug_stream());
-    if (qmcdriver_input_.get_measure_imbalance())
-      measureImbalance("Block " + std::to_string(block));
-    endBlock();
-    dmc_loop.stop();
 
     bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached

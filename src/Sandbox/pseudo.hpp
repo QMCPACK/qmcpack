@@ -14,6 +14,9 @@
  */
 #ifndef QMCPLUSPLUS_MINIAPPS_PSEUDO_H
 #define QMCPLUSPLUS_MINIAPPS_PSEUDO_H
+
+#include <memory>
+
 namespace qmcplusplus
 {
 template<typename T>
@@ -26,20 +29,21 @@ struct NonLocalPP
   };
   /** typedefs */
   using RealType   = T;
+  using FullPrecRealType = double;
   using PosType    = TinyVector<T, D>;
   using TensorType = Tensor<T, D>;
 
   /** random number generator */
-  RandomGenerator myRNG;
+  std::unique_ptr<RandomBase<FullPrecRealType>> myRNG;
   /** weight ot each point on the sphere */
   std::vector<RealType> weight_m;
   /** positions on a sphere */
   std::vector<PosType> sgridxyz_m;
   /** default constructor with knots=12 */
-  NonLocalPP(const RandomGenerator& rng) : myRNG(rng)
+  NonLocalPP(const RandomBase<FullPrecRealType>& rng) : myRNG(rng.makeClone())
   {
     //use fixed seed
-    myRNG.init(11);
+    myRNG->init(11);
     weight_m.resize(12);
     sgridxyz_m.resize(12);
     const RealType w = RealType(1.0 / 12.0);
@@ -67,7 +71,7 @@ struct NonLocalPP
   {
     //const RealType twopi(6.28318530718);
     //RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
-    RealType phi(TWOPI * (myRNG())), psi(TWOPI * (myRNG())), cth((myRNG()) - 0.5);
+    RealType phi(TWOPI * (*myRNG)()), psi(TWOPI * (*myRNG)()), cth((*myRNG)() - 0.5);
     RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
         cps(std::cos(psi));
     TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,

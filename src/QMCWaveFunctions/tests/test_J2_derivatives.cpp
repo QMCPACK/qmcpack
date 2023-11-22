@@ -293,22 +293,12 @@ TEST_CASE("TwoBodyJastrow Jastrow three particles of three types", "[wavefunctio
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({1, 1, 1});
-  elec.R[0][0] = -0.28;
-  elec.R[0][1] = 0.0225;
-  elec.R[0][2] = -2.709;
-  elec.R[1][0] = -1.08389;
-  elec.R[1][1] = 1.9679;
-  elec.R[1][2] = -0.0128914;
-  elec.R[2][0] = -2.08389;
-  elec.R[2][1] = 0.9679;
-  elec.R[2][2] = 0.0128914;
-
+  elec.R[0] = {-0.28, 0.0225, -2.709};
+  elec.R[1] = {-1.08389, 1.9679, -0.0128914};
+  elec.R[2] = {-2.08389, 0.9679, 0.0128914};
   TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
   // 0 uu  (0,0)

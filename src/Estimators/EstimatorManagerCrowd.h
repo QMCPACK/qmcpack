@@ -40,6 +40,7 @@ class EstimatorManagerCrowd
 public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType  = EstimatorManagerNew::RealType;
+  using FullPrecRealType = EstimatorManagerNew::FullPrecRealType;
 
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
    */
@@ -63,6 +64,7 @@ public:
    *  \param[in]     walkers         walkers in crowd
    *  \param[in]     psets           walker particle sets
    *  \param[in]     wfns            walker wavefunctions
+   *  \param[in]     hams            walker Hamiltonians
    *  \param[inout]  rng             crowd scope RandomGenerator
    *
    *  walkers is especially questionable since its really just hiding the full sweep hamiltonian values from
@@ -77,7 +79,8 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng);
+                  const RefVector<QMCHamiltonian>& hams,
+                  RandomBase<FullPrecRealType>& rng);
 
   ScalarEstimatorBase& get_main_estimator() { return *main_estimator_; }
   RefVector<ScalarEstimatorBase> get_scalar_estimators() { return convertUPtrToRefVector(scalar_estimators_); }
@@ -99,9 +102,9 @@ private:
 
   UPtr<ScalarEstimatorBase> main_estimator_;
   ///estimators of simple scalars
-  std::vector<std::unique_ptr<ScalarEstimatorBase>> scalar_estimators_;
+  UPtrVector<ScalarEstimatorBase> scalar_estimators_;
 
-  std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
+  UPtrVector<OperatorEstBase> operator_ests_;
 };
 
 } // namespace qmcplusplus

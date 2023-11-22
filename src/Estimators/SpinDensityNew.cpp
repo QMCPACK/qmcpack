@@ -117,7 +117,8 @@ void SpinDensityNew::startBlock(int steps)
 void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
                                 const RefVector<ParticleSet>& psets,
                                 const RefVector<TrialWaveFunction>& wfns,
-                                RandomGenerator& rng)
+                                const RefVector<QMCHamiltonian>& hams,
+                                RandomBase<FullPrecRealType>& rng)
 {
   auto& dp_ = derived_parameters_;
   for (int iw = 0; iw < walkers.size(); ++iw)

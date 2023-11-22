@@ -70,7 +70,7 @@ public:
   boost::multi::array<SPComplexType, 1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix* Alpha, PsiT_Matrix* Beta)
   {
     throw std::runtime_error("calling visitor on dummy object");
-    return boost::multi::array<ComplexType, 1>(iextensions<1u>{1});
+    return boost::multi::array<SPComplexType, 1>(iextensions<1u>{1});
   }
 
   SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type,

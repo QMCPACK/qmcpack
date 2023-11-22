@@ -8,7 +8,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 //  See http://www.boost.org for updates, documentation, and revision history.
-// NOLINTBEGIN(altera-id-dependent-backward-branch,altera-unroll-loops,misc-const-correctness) external code
+// NOLINTBEGIN(altera-id-dependent-backward-branch,altera-unroll-loops,misc-const-correctness,cppcoreguidelines-avoid-do-while) external code
 #include <algorithm>
 #include <cstddef> // NULL
 #include <set>
@@ -165,4 +165,4 @@ extended_type_info_typeid_0::get_extended_type_info(  // NOLINT(readability-conv
 }  // end namespace typeid_system
 }  // end namespace serialization
 }  // end namespace boost
-// NOLINTEND(altera-id-dependent-backward-branch,altera-unroll-loops,misc-const-correctness) external code
+// NOLINTEND(altera-id-dependent-backward-branch,altera-unroll-loops,misc-const-correctness,cppcoreguidelines-avoid-do-while) external code

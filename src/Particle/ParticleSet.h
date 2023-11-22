@@ -426,7 +426,7 @@ public:
   void applyBC(const ParticlePos& pin, ParticlePos& pout);
   void applyBC(ParticlePos& pos);
   void applyBC(const ParticlePos& pin, ParticlePos& pout, int first, int last);
-  void applyMinimumImage(ParticlePos& pinout);
+  void applyMinimumImage(ParticlePos& pinout) const;
 
   /** load a Walker_t to the current ParticleSet
    * @param awalker the reference to the walker to be loaded
@@ -478,8 +478,8 @@ public:
   ///return the address of the i-th properties
   inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
-  inline void setTwist(SingleParticlePos& t) { myTwist = t; }
-  inline SingleParticlePos getTwist() const { return myTwist; }
+  inline void setTwist(const SingleParticlePos& t) { myTwist = t; }
+  inline const SingleParticlePos& getTwist() const { return myTwist; }
 
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet

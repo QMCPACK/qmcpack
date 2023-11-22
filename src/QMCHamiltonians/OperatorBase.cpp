@@ -210,7 +210,7 @@ void OperatorBase::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {}
 
-void OperatorBase::setRandomGenerator(RandomGenerator* rng) {}
+void OperatorBase::setRandomGenerator(RandomBase<FullPrecRealType>* rng) {}
 
 void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
 {
