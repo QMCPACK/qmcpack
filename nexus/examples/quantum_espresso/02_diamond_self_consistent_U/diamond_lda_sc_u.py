@@ -1,18 +1,4 @@
 #! /usr/bin/env python3
-import sys 
-sys.path = ['/Users/ksu/Documents/GitHub/qmcpack/nexus/lib', 
-            '/Users/ksu/Documents/GitHub/qmcpack/nexus/examples/quantum_espresso/01_diamond_scf',
-            '/Users/ksu/Documents/GitHub/qmcpack/nexus', 
-            # '/Users/ksu/Software/qmcpack/latest/nexus/lib', 
-            '/Users/ksu/Documents/GitHub/pyqmc/pyqmc', 
-            '/Users/ksu/Documents/GitHub/pyscf/pyscf', 
-            '/Users/ksu/Documents/GitHub/qmcpack/nexus/examples/quantum_espresso/01_diamond_scf',
-            '/usr/local/anaconda3/lib/python39.zip',
-            '/usr/local/anaconda3/lib/python3.9',
-            '/usr/local/anaconda3/lib/python3.9/lib-dynload',
-            '/Users/ksu/.local/lib/python3.9/site-packages',
-            '/usr/local/anaconda3/lib/python3.9/site-packages',
-            '/usr/local/anaconda3/lib/python3.9/site-packages/aeosa']
 from nexus import settings,job,run_project,obj
 from nexus import generate_physical_system
 from nexus import generate_pwscf, generate_hp
@@ -36,19 +22,26 @@ system = generate_physical_system(
     C        = 4,
     )
 
+num_steps = 4
 sims = []
-for step in range(4):
+for step in range(num_steps):
     if step > 0:
         hubbard_result = (sims[-1], 'hubbard_parameters')
         hubbard      = None
     else:
         hubbard_result = []
         hubbard      = {'V' : {('C-2p', 'C-2p'): 1e-8}}
+        # Other use examples
+        # hubbard      = {'V' : {('C-2p', 'C-2p'): [{'indices':(1,2), 'value':1e-8},
+        #                                           {'indices':(2,1), 'value':1e-8}]}}
+        # hubbard      = {'U':{'C-2p': 1.0},
+        #                 'V':{('C-2p', 'C-2p'): 1e-8}}
+    #end if
 
     scf = generate_pwscf(
         identifier   = 'scf',
         path         = 'diamond/scf_step_{}'.format(step),
-        job          = job(cores=16,app='/Users/ksu/Software/qe-7.1/build_mpi/bin/pw.x'),
+        job          = job(cores=16,app='pw.x'),
         input_type   = 'generic',
         calculation  = 'scf',
         input_dft    = 'lda', 
@@ -62,6 +55,7 @@ for step in range(4):
         hubbard      = hubbard,
         dependencies = hubbard_result
     )
+    scf.show_input()
     sims.append(scf)
 
     hp = generate_hp(
@@ -69,7 +63,7 @@ for step in range(4):
         nq2          = 2,
         nq3          = 2,
         lmin         = 0,
-        job          = job(cores=16,app='/Users/ksu/Software/qe-7.1/build_mpi/bin/hp.x'),
+        job          = job(cores=16,app='hp.x'),
         path         = 'diamond/scf_step_{}'.format(step),
         dependencies = (sims[-1], 'other')
     )

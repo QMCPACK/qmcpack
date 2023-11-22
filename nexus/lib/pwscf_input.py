@@ -48,7 +48,7 @@ import os
 import inspect
 from copy import deepcopy
 from superstring import string2val
-from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray, where
+from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray, where, append, unique
 from numpy.linalg import inv
 from unit_converter import convert
 from generic import obj
@@ -59,7 +59,7 @@ from developer import DevBase,log,warn,error
 from pseudopotential import pp_elem_label
 from simulation import SimulationInput
 from debug import *
-
+from itertools import combinations
 
 def read_str(sv):
     return sv.strip('"').strip("'")
@@ -1426,26 +1426,18 @@ class hubbard(Card):
                             elem = self.system.structure.elem
                             index1 = where(elem == atom1)[0] + 1
                             index2 = where(elem == atom2)[0] + 1
-                            for ind1 in index1:
-                                for ind2 in index2:
-                                    contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {value}\n"
-                                #end for
+                            all_indices = unique(append(index1, index2))
+                            combs = combinations(all_indices, 2)
+                            print(all_indices)
+                            for ind1, ind2 in combs:
+                                contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {value}\n"
                             #end for
                     elif isinstance(value, list):
-                        positive_only = True
                         for val in value:
                             ind1 = val['indices'][0]
                             ind2 = val['indices'][1]
                             val = val['value']
-                            write_line = False
-                            if positive_only:
-                                if val > 0:
-                                    write_line = True
-                            else:
-                                write_line = True
-                            #end if
-                            if write_line:
-                                contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {val}\n"
+                            contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {val}\n"
                             #end if 
                         #end for
                     else:
