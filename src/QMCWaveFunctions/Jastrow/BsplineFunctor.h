@@ -30,6 +30,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Numerics/LinearFit.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "Numerics/SplineBound.hpp"
 
 namespace qmcplusplus
 {
@@ -93,6 +94,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
   void setCusp(Real c) override { CuspValue = c; }
 
   void setPeriodic(bool p) override { periodic = p; }
+
+  /// return the max allowed beginning index to access spline coefficients
+  int getMaxIndex() const { return spline_coefs_->size() - 4; }
 
   void resize(int n)
   {
@@ -217,12 +221,12 @@ struct BsplineFunctor : public OptimizableFunctorBase
                            REAL* mw_vals,
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer);
 
-  inline static Real evaluate_impl(Real r, const Real* coefs, const Real DeltaRInv)
+  inline static Real evaluate_impl(Real r, const Real* coefs, const Real DeltaRInv, const int max_index)
   {
     r *= DeltaRInv;
-    REAL ipart;
-    const REAL t = std::modf(r, &ipart);
-    const int i  = (int)ipart;
+    int i;
+    Real t;
+    getSplineBound(r, max_index, i, t);
 
     Real sCoef0 = coefs[i + 0];
     Real sCoef1 = coefs[i + 1];
@@ -237,7 +241,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
   {
     Real u(0);
     if (r < cutoff_radius)
-      u = evaluate_impl(r, spline_coefs_->data(), DeltaRInv);
+      u = evaluate_impl(r, spline_coefs_->data(), DeltaRInv, getMaxIndex());
     return u;
   }
 
@@ -245,12 +249,12 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
   inline void evaluateAll(Real r, Real rinv) { Y = evaluate(r, dY, d2Y); }
 
-  inline static Real evaluate_impl(Real r, const Real* coefs, const Real DeltaRInv, Real& dudr, Real& d2udr2)
+  inline static Real evaluate_impl(Real r, const Real* coefs, const Real DeltaRInv, const int max_index, Real& dudr, Real& d2udr2)
   {
     r *= DeltaRInv;
-    REAL ipart;
-    const REAL t = std::modf(r, &ipart);
-    const int i  = (int)ipart;
+    int i;
+    Real t;
+    getSplineBound(r, max_index, i, t);
 
     Real sCoef0 = coefs[i + 0];
     Real sCoef1 = coefs[i + 1];
@@ -277,7 +281,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     d2udr2 = Real(0);
 
     if (r < cutoff_radius)
-      u = evaluate_impl(r, spline_coefs_->data(), DeltaRInv, dudr, d2udr2);
+      u = evaluate_impl(r, spline_coefs_->data(), DeltaRInv, getMaxIndex(), dudr, d2udr2);
     return u;
   }
 
@@ -297,9 +301,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
     //         -2.0*evaluate(r-0.5*eps)
     //         +1.0*evaluate(r-1.0*eps))/(eps*eps*eps);
     r *= DeltaRInv;
-    Real ipart, t;
-    t     = std::modf(r, &ipart);
-    int i = (int)ipart;
+    int i;
+    Real t;
+    getSplineBound(r, getMaxIndex(), i, t);
     Real tp[4];
     tp[0]       = t * t * t;
     tp[1]       = t * t;
@@ -374,16 +378,15 @@ struct BsplineFunctor : public OptimizableFunctorBase
     if (r >= cutoff_radius)
       return false;
     r *= DeltaRInv;
-    Real ipart, t;
-    t     = std::modf(r, &ipart);
-    int i = (int)ipart;
+    int i;
+    Real t;
+    getSplineBound(r, getMaxIndex(), i, t);
     Real tp[4];
     tp[0] = t * t * t;
     tp[1] = t * t;
     tp[2] = t;
     tp[3] = 1.0;
 
-    auto& coefs     = *spline_coefs_;
     SplineDerivs[0] = TinyVector<Real, 3>(0.0);
     // d/dp_i u(r)
     SplineDerivs[i + 0][0] = A0 * tp[0] + A1 * tp[1] + A2 * tp[2] + A3 * tp[3];
@@ -440,8 +443,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
   {
     if (r >= cutoff_radius)
       return false;
-    Real tp[4], v[4], ipart, t;
-    t        = std::modf(r * DeltaRInv, &ipart);
+    r *= DeltaRInv;
+    int i;
+    Real t;
+    getSplineBound(r, getMaxIndex(), i, t);
+    Real tp[4], v[4];
     tp[0]    = t * t * t;
     tp[1]    = t * t;
     tp[2]    = t;
@@ -450,7 +456,6 @@ struct BsplineFunctor : public OptimizableFunctorBase
     v[1]     = A4 * tp[0] + A5 * tp[1] + A6 * tp[2] + A7 * tp[3];
     v[2]     = A8 * tp[0] + A9 * tp[1] + A10 * tp[2] + A11 * tp[3];
     v[3]     = A12 * tp[0] + A13 * tp[1] + A14 * tp[2] + A15 * tp[3];
-    int i    = (int)ipart;
     int imin = std::max(i, 1);
     int imax = std::min(i + 4, NumParams + 1) - 1;
     int n = imin - 1, j = imin - i;
@@ -738,13 +743,15 @@ inline REAL BsplineFunctor<REAL>::evaluateV(const int iat,
 
   Real d      = 0.0;
   auto& coefs = *spline_coefs_;
+  const int max_index = getMaxIndex();
 #pragma omp simd reduction(+ : d)
   for (int jat = 0; jat < iCount; jat++)
   {
     Real r = distArrayCompressed[jat];
     r *= DeltaRInv;
-    const int i  = (int)r;
-    const Real t = r - Real(i);
+    int i;
+    Real t;
+    getSplineBound(r, max_index, i, t);
     Real d1      = coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3);
     Real d2      = coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7);
     Real d3      = coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11);
@@ -792,6 +799,7 @@ inline void BsplineFunctor<REAL>::evaluateVGL(const int iat,
   }
 
   auto& coefs = *spline_coefs_;
+  const int max_index = getMaxIndex();
 #pragma omp simd
   for (int j = 0; j < iCount; j++)
   {
@@ -799,8 +807,9 @@ inline void BsplineFunctor<REAL>::evaluateVGL(const int iat,
     int iScatter = distIndices[j];
     Real rinv    = cOne / r;
     r *= DeltaRInv;
-    const int iGather = (int)r;
-    const Real t      = r - Real(iGather);
+    int iGather;
+    Real t;
+    getSplineBound(r, max_index, iGather, t);
 
     Real sCoef0 = coefs[iGather + 0];
     Real sCoef1 = coefs[iGather + 1];

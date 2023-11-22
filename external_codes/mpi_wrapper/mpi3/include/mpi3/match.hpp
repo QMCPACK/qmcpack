@@ -1,6 +1,5 @@
-/* -*- indent-tabs-mode: t -*- */
-#ifndef MPI3_MATCH_HPP
-#define MPI3_MATCH_HPP
+#ifndef BMPI3_MATCH_HPP
+#define BMPI3_MATCH_HPP
 
 #include "../mpi3/message.hpp"
 #include "../mpi3/status.hpp"
@@ -10,6 +9,7 @@
 namespace boost{
 namespace mpi3{
 
+#if not defined(EXAMPI)
 struct match : public message, public status {  // NOLINT(fuchsia-multiple-inheritance)
 	friend class communicator;
 	template<class It>
@@ -20,6 +20,7 @@ struct match : public message, public status {  // NOLINT(fuchsia-multiple-inher
 		);
 	}
 };
+#endif
 
 }  // end namespace mpi3
 }  // end namespace boost

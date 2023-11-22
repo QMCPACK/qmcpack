@@ -171,9 +171,9 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
-                                                                                      int iat,
-                                                                                      GradType& grad_iat)
+typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
+                                                                                  int iat,
+                                                                                  GradType& grad_iat)
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
@@ -183,8 +183,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGrad_compute(int iat,
-                                                                                              GradType& grad_iat)
+typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGrad_compute(int iat, GradType& grad_iat)
 {
   ScopedTimer local_timer(RatioTimer);
 
@@ -201,16 +200,16 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
     updateEng.getInvRow(psiM, WorkingIndex, invRow);
   }
   curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
-  grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+  grad_iat += static_cast<ValueType>(static_cast<PsiValue>(1.0) / curRatio) *
       simd::dot(invRow.data(), dpsiV.data(), invRow.size());
   return curRatio;
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(ParticleSet& P,
-                                                                                              int iat,
-                                                                                              GradType& grad_iat,
-                                                                                              ComplexType& spingrad_iat)
+typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGradWithSpin(ParticleSet& P,
+                                                                                          int iat,
+                                                                                          GradType& grad_iat,
+                                                                                          ComplexType& spingrad_iat)
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
@@ -231,10 +230,10 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
       updateEng.getInvRow(psiM, WorkingIndex, invRow);
     }
     curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
-    grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+    grad_iat += static_cast<ValueType>(static_cast<PsiValue>(1.0) / curRatio) *
         simd::dot(invRow.data(), dpsiV.data(), invRow.size());
 
-    spingrad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+    spingrad_iat += static_cast<ValueType>(static_cast<PsiValue>(1.0) / curRatio) *
         simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
   }
 
@@ -245,7 +244,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                              const RefVectorWithLeader<ParticleSet>& p_list,
                                              int iat,
-                                             std::vector<PsiValueType>& ratios,
+                                             std::vector<PsiValue>& ratios,
                                              std::vector<GradType>& grad_new) const
 {
   {
@@ -281,8 +280,12 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
-  if (curRatio == PsiValueType(0))
-    throw std::runtime_error("DiracDeterminant::acceptMove curRatio is zero! Report a bug.\n");
+  if (curRatio == PsiValue(0))
+  {
+    std::ostringstream msg;
+    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
   ScopedTimer local_timer(UpdateTimer);
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
@@ -368,11 +371,10 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateGL(
-    const ParticleSet& P,
-    ParticleSet::ParticleGradient& G,
-    ParticleSet::ParticleLaplacian& L,
-    bool fromscratch)
+typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::evaluateGL(const ParticleSet& P,
+                                                                                   ParticleSet::ParticleGradient& G,
+                                                                                   ParticleSet::ParticleLaplacian& L,
+                                                                                   bool fromscratch)
 {
   if (fromscratch)
     evaluateLog(P, G, L);
@@ -382,9 +384,9 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::eval
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
-                                                                                         WFBufferType& buf,
-                                                                                         bool fromscratch)
+typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
+                                                                                     WFBufferType& buf,
+                                                                                     bool fromscratch)
 {
   evaluateGL(P, P.G, P.L, fromscratch);
   {
@@ -419,7 +421,7 @@ void DiracDeterminant<DU_TYPE>::registerTWFFastDerivWrapper(const ParticleSet& P
  * @param iat the particle thas is being moved
  */
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
+typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
@@ -693,10 +695,9 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
  *for local energy calculations.
  */
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateLog(
-    const ParticleSet& P,
-    ParticleSet::ParticleGradient& G,
-    ParticleSet::ParticleLaplacian& L)
+typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::evaluateLog(const ParticleSet& P,
+                                                                                    ParticleSet::ParticleGradient& G,
+                                                                                    ParticleSet::ParticleLaplacian& L)
 {
   recompute(P);
 

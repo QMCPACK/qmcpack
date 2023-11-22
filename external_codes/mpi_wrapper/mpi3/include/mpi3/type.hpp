@@ -1,4 +1,3 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 // Copyright 2018-2023 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_TYPE_HPP
@@ -43,9 +42,11 @@ struct committed_type {
 
 struct type {
 	explicit type(MPI_Datatype const& dt) noexcept : impl_{dt} {  // NOLINT(bugprone-exception-escape) TODO(correaa) improve this global initialization
-	 	if(mpi3::initialized()) {  // cppcheck-suppress[throwInNoexceptFunction]; TODO(correaa) improve this global initialization
-	 		MPI_(Type_dup)(dt, &impl_);
-	 	}
+	    if(mpi3::initialized()) {  // cppcheck-suppress[throwInNoexceptFunction]; TODO(correaa) improve this global initialization
+		#if not defined(EXAMPI)
+	        MPI_(Type_dup)(dt, &impl_);
+		#endif
+	    }
 	}
 
 	template<class T>
@@ -99,14 +100,21 @@ struct type {
 	MPI_Datatype impl_ = MPI_DATATYPE_NULL;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa)
 
 	type() = default;// {std::clog << "ctor type()" << std::endl;}
+
+	#if not defined(EXAMPI)
 	type(type const& other) { MPI_Type_dup(other.impl_, &impl_); }
+	#endif
+
 	type(type&& other) noexcept : impl_{std::exchange(other.impl_, MPI_DATATYPE_NULL)} {}  // TODO(correaa) consider not making it default constructible or movable
 
+	#if not defined(EXAMPI)
 	type& operator=(type const& other) {
 		type tmp(other);
 		swap(tmp);
 		return *this;
 	}
+	#endif
+
 	type& operator=(type&& other) noexcept {  // TODO(correaa) consider not making it default constructible or movable
 		type tmp(std::move(other));
 		swap(tmp);
@@ -177,8 +185,8 @@ struct type {
 		std::vector<int>      blocklen(il.size(), 1);
 		std::vector<MPI_Aint> disp;
 		disp.reserve(il.size());
-		//	std::vector<MPI_Datatype> array_of_types;
-		//	array_of_types.reserve(il.size());
+		//  std::vector<MPI_Datatype> array_of_types;
+		//  array_of_types.reserve(il.size());
 		MPI_Aint    current_disp = 0;
 		std::string new_name     = "{";
 		std::for_each(il.begin(), il.end(), [&il, &disp, &current_disp, &new_name](auto const& e) {
@@ -202,7 +210,7 @@ struct type {
 
 	type operator[](int count) const { return contiguous(count); }
 	type operator()(int stride) const {
-		//	assert( stride == 2 );
+		//  assert( stride == 2 );
 		return vector(1, 1, stride);
 	}
 	int size() const {
@@ -212,10 +220,11 @@ struct type {
 	}
 
 	std::string name() const {
-		std::array<char, MPI_MAX_OBJECT_NAME> name{};
-		int                                   namelen;  // NOLINT(cppcoreguidelines-init-variables) delayed init
-		MPI_Type_get_name(impl_, name.data(), &namelen);
-		return {name.data(), static_cast<std::size_t>(namelen)};
+		std::string ret(MPI_MAX_OBJECT_NAME, '\0');
+		int namelen;  // NOLINT(cppcoreguidelines-init-variables) delayed init
+		MPI_Type_get_name(impl_, ret.data(), &namelen);  // TODO(correaa) use MPI_(Type_get_name)
+		ret.resize(static_cast<std::string::size_type>(namelen));
+		return ret;
 	}
 	void name(std::string const& s) { set_name(s); }
 	void set_name(std::string const& s) { MPI_Type_set_name(impl_, s.c_str()); }  // NOLINT(readability-make-member-function-const) this is not really const
@@ -258,7 +267,7 @@ struct type {
 		MPI_Type_set_name(ret.impl_, newname.c_str());
 		return ret;
 	}
-	//	static std::map<std::type_index, type const&> registered;
+	//  static std::map<std::type_index, type const&> registered;
 };
 
 // vvv TODO(correaa)
@@ -266,7 +275,7 @@ struct type {
 // NOLINTBEGIN(fuchsia-statically-constructed-objects)
 static type const  char_{MPI_CHAR};  // NOLINT(fuchsia-statically-constructed-objects)
 static type const  unsigned_char{MPI_UNSIGNED_CHAR};
-static type const& unsigned_char_ = unsigned_char;  // NOLINT(fuchsia-statically-constructed-objects)
+[[deprecated("use unsigned_char (no underscore)")]] static type const& unsigned_char_ = unsigned_char;  // NOLINT(fuchsia-statically-constructed-objects)
 static type const  short_{MPI_SHORT};  // NOLINT(fuchsia-statically-constructed-objects)
 static type const  unsigned_short{MPI_UNSIGNED_SHORT};
 static type const& unsigned_short_ = unsigned_short;  // NOLINT(fuchsia-statically-constructed-objects)
@@ -289,51 +298,28 @@ static type const  short_int{MPI_SHORT_INT};  // NOLINT(fuchsia-statically-const
 static type const  int_int{MPI_2INT};
 static type const& _2int = int_int;  // NOLINT(fuchsia-statically-constructed-objects)
 static type const  long_double_int{MPI_LONG_DOUBLE_INT};  // NOLINT(fuchsia-statically-constructed-objects)
+static type const  float_complex{MPI_CXX_FLOAT_COMPLEX};
+static type const  double_complex{MPI_CXX_DOUBLE_COMPLEX};
 // NOLINTEND(fuchsia-statically-constructed-objects)
 
-template<class T> auto make_type() -> type;
+template<class T> auto make_type() -> type const&;
 
-template<> inline auto make_type<char>() -> type { return type{MPI_CHAR}; }
-template<> inline auto make_type<unsigned char>() -> type { return type{MPI_UNSIGNED_CHAR}; }
+template<> inline auto make_type<         char>() -> type const& { return mpi3::         char_; }
+template<> inline auto make_type<unsigned char>() -> type const& { return mpi3::unsigned_char ; }// type{MPI_UNSIGNED_CHAR}; }
 
-template<> inline auto make_type<std::complex<float>>() -> type { return type{MPI_CXX_FLOAT_COMPLEX}; }
-template<> inline auto make_type<std::complex<double>>() -> type { return type{MPI_CXX_DOUBLE_COMPLEX}; }
+template<> inline auto make_type<std::complex<float >>() -> type const& { return mpi3::float_complex; } // type{MPI_CXX_FLOAT_COMPLEX}; }
+template<> inline auto make_type<std::complex<double>>() -> type const& { return mpi3::double_complex; }  // type{MPI_CXX_DOUBLE_COMPLEX}; }
 
 // template<Complex, class = std::enable_if_t<std::is_same<decltype(Complex{}.real())> > > inline auto make_type<Complex>() -> type { return type{MPI_CXX_FLOAT_COMPLEX}; }
 // template<Complex, class = std::enable_if_t<std::is_same<> > inline auto make_type<std::complex<double>>() -> type { return type{MPI_CXX_DOUBLE_COMPLEX}; }
 
 #if defined(__NVCC__)
-template<> inline auto make_type<thrust::complex<float>>() -> type { return type{MPI_CXX_FLOAT_COMPLEX}; }
-template<> inline auto make_type<thrust::complex<double>>() -> type { return type{MPI_CXX_DOUBLE_COMPLEX}; }
+template<> inline auto make_type<thrust::complex<float>>() -> type const& { return mpi3::float_complex; }
+template<> inline auto make_type<thrust::complex<double>>() -> type const& { return mpi3::double_complex; }
 #endif
 
-template<> inline type make_type<double>() { return mpi3::double_; }
-template<> inline type make_type<int>() { return mpi3::int_; }
-
-// // TODO(correaa) remove this?
-// template<class T> class datatype<T[2]> {  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-//  public:
-// 	template<class R = decltype(boost::mpi3::type{mpi3::datatype<T>{}()}[2].get())>
-// 	R operator()() const {
-// 		static auto ret = std::invoke([]() {
-// 			assert(boost::mpi3::initialized());
-// 			return boost::mpi3::type{mpi3::datatype<T>{}()}[2].commit().get();
-// 		});
-// 		return ret;
-// 	}
-// };
-
-// template<class T, std::size_t D> class datatype<std::array<T, D>> {
-//  public:
-// 	template<class R = decltype(boost::mpi3::type{mpi3::datatype<T>{}()}[D].get())>
-// 	R operator()() const {
-// 		static auto ret = std::invoke([]() {
-// 			assert(boost::mpi3::initialized());
-// 			return boost::mpi3::type{mpi3::datatype<T>{}()}[D].commit().get();  // cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays
-// 		});
-// 		return ret;
-// 	}
-// };
+template<> inline auto make_type<double>() -> type const& { return mpi3::double_; }
+template<> inline auto make_type<int   >() -> type const& { return mpi3::int_;    }
 
 template<class... Ts> struct struct_;
 
@@ -415,108 +401,4 @@ template<class T1, class T2, class T3> struct struct_<T1, T2, T3> {
 }  // end namespace mpi3
 }  // end namespace boost
 
-// #if not __INCLUDE_LEVEL__
-
-// #include "../mpi3/main.hpp"
-// #include "../mpi3/communicator.hpp"
-// #include "../mpi3/process.hpp"
-
-// #include<iostream>
-
-// namespace mpi3 = boost::mpi3;
-// using std::cout;
-
-// struct A{
-//	double d[6];
-//	long l[20];
-// };
-
-// struct B{
-//	double d[7];
-//	long l[9];
-// };
-
-// template<class Archive>
-// void serialize(Archive& ar, A& a, const unsigned int){
-//	ar & boost::serialization::make_array(a.d, 6);
-//	ar & boost::serialization::make_array(a.l, 20);
-// }
-
-// int mpi3::main(int argc, char* argv[], mpi3::communicator world){
-
-//	assert(world.size() >= 2);
-//	{
-//		int value = -1;
-//		if(world.rank() == 0){
-//			value = 5;
-//			world[1] << value; //	world.send_value(value, 1);
-//		}else{
-//			assert(value == -1);
-//			world[0] >> value; //world.receive(&value, &value + 1, 0);
-//			assert(value == 5);
-//		}
-//	}
-//	{
-//		int buffer[100]; std::fill(&buffer[0], &buffer[100], 0);
-//		if(world.rank() == 0){
-//			std::iota(&buffer[0], &buffer[100], 0);
-//			world[1] << buffer; // world.send_value(buffer, 1);
-//		}else{
-//			assert(buffer[11]==0);
-//			world[0] >> buffer; //	world.receive_value(buffer, 0);
-//		//	assert(buffer[11]==11);
-//		}
-//	}
-//	{
-//	//	auto Atype = (
-//	//		mpi3::double_[6],
-//	//		mpi3::long_[20]
-//	//	);
-//	//	Atype.commit_as<A>();
-
-//		A particle;
-//		particle.d[2] = 0.;
-//		if(world.rank()==0){
-//			particle.d[2] = 5.1;
-//			world[1] << particle;
-//		}else{
-//			assert(particle.d[2]==0.);
-//			world[0] >> particle;
-//		}
-//	}
-///*	{
-//		auto Btype = (
-//			mpi3::double_[6],
-//			mpi3::long_[20]
-//		);
-//		Btype.commit_as<B>();
-//		B b;
-//		b.d[2] = 0.;
-//		if(world.rank()==0){
-//			b.d[2] = 5.1;
-//			world[1] << b;
-//		}else{
-//			assert(b.d[2]==0.);
-//			world[0] >> b;
-//		}
-//	}*/
-//	return 0;
-// #if 0
-//	{
-//		std::vector<double> v(100);
-//		mpi3::type d100 = mpi3::type::double_[100];
-//		d100.commit();
-//		if(world.rank()==0){
-//			v[5] = 6.;
-//		//	world.send_n(v.data(), 1, d100);
-//		}else{
-//		//	world.receive_n(v.data(), 1, d100);
-//			assert(v[5] == 6.);
-//		}
-//	}
-// #endif
-//	return 0;
-//}
-
-// #endif
 #endif

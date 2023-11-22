@@ -23,6 +23,18 @@ if(QMC_COMPLEX)
     diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS #VMC
   )
 
+  qmc_run_and_check(
+    long-diamondC_1x1x1-Gaussian_pp_Tw_cplx-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
+    vmcbatch_long
+    vmcbatch_long.in.xml
+    1
+    16
+    TRUE
+    0
+    diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS #VMC
+  )
+
   # VMC short run with no Jastrows
   # Compare directly to Hartree Fock Energy of: E=-11.187187769284947
   #Data generated using utils/make_ref_data.sh  diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT qmc_ref/qmc_short.s000.scalar.dat  qmc_ref/qmc_ref_long.s000.scalar.dat
@@ -39,6 +51,18 @@ if(QMC_COMPLEX)
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
     vmc_short
     vmc_short.in.xml
+    1
+    16
+    TRUE
+    0
+    diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS #VMC
+  )
+
+  qmc_run_and_check(
+    short-diamondC_1x1x1-Gaussian_pp_Tw_cplx-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
+    vmcbatch_short
+    vmcbatch_short.in.xml
     1
     16
     TRUE

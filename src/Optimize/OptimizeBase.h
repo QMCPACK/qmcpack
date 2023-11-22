@@ -42,7 +42,7 @@ public:
 
   virtual int getNumParams() const = 0;
 
-  virtual Return_t& Params(int i) = 0;
+  virtual Return_rt& Params(int i) = 0;
 
   virtual Return_t Params(int i) const = 0;
 
