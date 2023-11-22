@@ -37,10 +37,18 @@ set(SRCS
     test_MomentumDistribution.cpp
     test_OneBodyDensityMatricesInput.cpp
     test_OneBodyDensityMatrices.cpp
-    test_PerParticleHamiltonianLogger.cpp
     test_EstimatorManagerCrowd.cpp
     test_MagnetizationDensityInput.cpp
-    test_MagnetizationDensity.cpp)
+    test_MagnetizationDensity.cpp
+    test_PerParticleHamiltonianLogger.cpp
+    test_ReferencePointsInput.cpp
+    test_ReferencePoints.cpp
+    test_MomentumDistribution.cpp
+    test_OneBodyDensityMatricesInput.cpp
+    test_OneBodyDensityMatrices.cpp
+    test_PerParticleHamiltonianLogger.cpp
+    test_EstimatorManagerCrowd.cpp
+    )
 
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators utilities_for_test sposets_for_testing)
@@ -71,6 +79,7 @@ if(HAVE_MPI)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
+      qmcutil
       qmcestimators
       qmcham
       qmcdriver

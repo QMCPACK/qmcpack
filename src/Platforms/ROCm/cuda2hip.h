@@ -102,6 +102,7 @@
 #define cudaPointerAttributes           hipPointerAttribute_t
 #define cudaMemoryTypeHost              hipMemoryTypeHost
 #define cudaMemoryTypeDevice            hipMemoryTypeDevice
+#define cudaMemoryTypeManaged           hipMemoryTypeManaged
 #define cudaIpcGetMemHandle             hipIpcGetMemHandle
 #define cudaIpcMemHandle_t              hipIpcMemHandle_t
 #define cudaIpcMemLazyEnablePeerAccess  hipIpcMemLazyEnablePeerAccess

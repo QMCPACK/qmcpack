@@ -375,15 +375,15 @@ public:
           }
   }
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override
   {
     recompute(P);
     return log_value_ = computeGL(G, L);
   }
 
-  PsiValueType ratio(ParticleSet& P, int iat) override
+  PsiValue ratio(ParticleSet& P, int iat) override
   {
     UpdateMode = ORB_PBYP_RATIO;
 
@@ -391,7 +391,7 @@ public:
     const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
     cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTempDists(), ee_table.getTempDists(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
-    return std::exp(static_cast<PsiValueType>(DiffVal));
+    return std::exp(static_cast<PsiValue>(DiffVal));
   }
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
@@ -435,7 +435,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override { return GradType(dUat[iat]); }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -445,7 +445,7 @@ public:
               ee_table.getTempDispls(), cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     grad_iat += cur_dUat;
-    return std::exp(static_cast<PsiValueType>(DiffVal));
+    return std::exp(static_cast<PsiValue>(DiffVal));
   }
 
   inline void restore(int iat) override {}
@@ -804,7 +804,7 @@ public:
     }
   }
 
-  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
+  inline LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
     log_value_ = computeGL(P.G, P.L);
     buf.forward(Bytes_in_WFBuffer);
@@ -819,10 +819,10 @@ public:
     build_compact_list(P);
   }
 
-  LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient& G,
-                          ParticleSet::ParticleLaplacian& L,
-                          bool fromscratch = false) override
+  LogValue evaluateGL(const ParticleSet& P,
+                      ParticleSet::ParticleGradient& G,
+                      ParticleSet::ParticleLaplacian& L,
+                      bool fromscratch = false) override
   {
     return log_value_ = computeGL(G, L);
   }
@@ -1136,12 +1136,12 @@ public:
       source.update();
       P.update();
 
-      LogValueType log_p = evaluateLog(P, tempG, tempL);
+      LogValue log_p = evaluateLog(P, tempG, tempL);
 
       source.R[isrc][iondim] = rI[iondim] - delta;
       source.update();
       P.update();
-      LogValueType log_m = evaluateLog(P, tempG, tempL);
+      LogValue log_m = evaluateLog(P, tempG, tempL);
 
       QTFull::RealType log_p_r(0.0), log_m_r(0.0);
 
@@ -1191,12 +1191,12 @@ public:
       source.update();
       P.update();
 
-      LogValueType log_p = evaluateLog(P, Gp, Lp);
+      LogValue log_p = evaluateLog(P, Gp, Lp);
 
       source.R[isrc][iondim] = rI[iondim] - delta;
       source.update();
       P.update();
-      LogValueType log_m = evaluateLog(P, Gm, Lm);
+      LogValue log_m = evaluateLog(P, Gm, Lm);
       QTFull::RealType log_p_r(0.0), log_m_r(0.0);
 
       log_p_r = log_p.real();

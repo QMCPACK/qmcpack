@@ -147,7 +147,7 @@ public:
     return std::unique_ptr<DiracDeterminantBase>();
   }
 
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::ratioGradWithSpin():  Implementation required\n");
     return 0.0;

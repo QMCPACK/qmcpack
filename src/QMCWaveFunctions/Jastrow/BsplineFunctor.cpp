@@ -43,22 +43,25 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
      * Bspline coefs device pointer sizeof(T*), DeltaRInv sizeof(T) and cutoff_radius sizeof(T)
      * these contents change based on the group of the target particle, so it is prepared per call.
      */
-  transfer_buffer.resize((sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+  transfer_buffer.resize((sizeof(REAL*) + sizeof(REAL) * 2 + sizeof(int)) * num_groups);
   REAL** mw_coefs_ptr        = reinterpret_cast<REAL**>(transfer_buffer.data());
   REAL* mw_DeltaRInv_ptr     = reinterpret_cast<REAL*>(transfer_buffer.data() + sizeof(REAL*) * num_groups);
   REAL* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
+  int* mw_max_index_ptr      = reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
   for (int ig = 0; ig < num_groups; ig++)
     if (functors[ig])
     {
       mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
       mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
       mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
+      mw_max_index_ptr[ig]     = functors[ig]->getMaxIndex();
     }
     else
     {
       mw_coefs_ptr[ig]         = nullptr;
       mw_DeltaRInv_ptr[ig]     = 0.0;
       mw_cutoff_radius_ptr[ig] = 0.0; // important! Prevent spline evaluation to access nullptr.
+      mw_max_index_ptr[ig]     = 0;
     }
 
   auto* transfer_buffer_ptr = transfer_buffer.data();
@@ -84,6 +87,7 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
     REAL** mw_coefs        = reinterpret_cast<REAL**>(transfer_buffer_ptr);
     REAL* mw_DeltaRInv     = reinterpret_cast<REAL*>(transfer_buffer_ptr + sizeof(REAL*) * num_groups);
     REAL* mw_cutoff_radius = mw_DeltaRInv + num_groups;
+    int* mw_max_index      = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
 
     REAL* cur_allu = mw_cur_allu + ip * n_padded * 3;
 
@@ -96,6 +100,7 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
       const REAL* coefs  = mw_coefs[ig];
       REAL DeltaRInv     = mw_DeltaRInv[ig];
       REAL cutoff_radius = mw_cutoff_radius[ig];
+      const int max_index  = mw_max_index[ig];
 
       REAL r = dist[j];
       REAL u(0);
@@ -103,7 +108,7 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
       REAL d2udr2(0);
       if (r < cutoff_radius)
       {
-        u = evaluate_impl(dist[j], coefs, DeltaRInv, dudr, d2udr2);
+        u = evaluate_impl(r, coefs, DeltaRInv, max_index, dudr, d2udr2);
         dudr *= REAL(1) / r;
       }
       // save u, dudr/r and d2udr2 to cur_allu
@@ -142,22 +147,25 @@ void BsplineFunctor<REAL>::mw_evaluateV(const int num_groups,
      * Bspline coefs device pointer sizeof(REAL*), DeltaRInv sizeof(REAL), cutoff_radius sizeof(REAL)
      * these contents change based on the group of the target particle, so it is prepared per call.
      */
-  transfer_buffer.resize((sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+  transfer_buffer.resize((sizeof(REAL*) + sizeof(REAL) * 2 + sizeof(int)) * num_groups);
   REAL** mw_coefs_ptr        = reinterpret_cast<REAL**>(transfer_buffer.data());
   REAL* mw_DeltaRInv_ptr     = reinterpret_cast<REAL*>(transfer_buffer.data() + sizeof(REAL*) * num_groups);
   REAL* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
+  int* mw_max_index_ptr      = reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
   for (int ig = 0; ig < num_groups; ig++)
     if (functors[ig])
     {
       mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
       mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
       mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
+      mw_max_index_ptr[ig]     = functors[ig]->getMaxIndex();
     }
     else
     {
       mw_coefs_ptr[ig]         = nullptr;
       mw_DeltaRInv_ptr[ig]     = 0.0;
       mw_cutoff_radius_ptr[ig] = 0.0; // important! Prevent spline evaluation to access nullptr.
+      mw_max_index_ptr[ig]     = 0;
     }
 
   auto* transfer_buffer_ptr = transfer_buffer.data();
@@ -173,6 +181,7 @@ void BsplineFunctor<REAL>::mw_evaluateV(const int num_groups,
     REAL** mw_coefs        = reinterpret_cast<REAL**>(transfer_buffer_ptr);
     REAL* mw_DeltaRInv     = reinterpret_cast<REAL*>(transfer_buffer_ptr + sizeof(REAL*) * num_groups);
     REAL* mw_cutoff_radius = mw_DeltaRInv + num_groups;
+    int* mw_max_index      = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
     PRAGMA_OFFLOAD("omp parallel for reduction(+: sum)")
     for (int j = 0; j < n_src; j++)
     {
@@ -180,18 +189,11 @@ void BsplineFunctor<REAL>::mw_evaluateV(const int num_groups,
       const REAL* coefs  = mw_coefs[ig];
       REAL DeltaRInv     = mw_DeltaRInv[ig];
       REAL cutoff_radius = mw_cutoff_radius[ig];
+      const int max_index  = mw_max_index[ig];
 
       REAL r = dist[j];
       if (j != ref_at[ip] && r < cutoff_radius)
-      {
-        r *= DeltaRInv;
-        REAL ipart;
-        const REAL t = std::modf(r, &ipart);
-        const int i  = (int)ipart;
-        sum += coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3) + coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7) +
-            coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11) +
-            coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
-      }
+        sum += evaluate_impl(r, coefs, DeltaRInv, max_index);
     }
     mw_vals[ip] = sum;
   }
@@ -221,12 +223,12 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
      * and packed accept list at most nw * sizeof(int)
      * these contents change based on the group of the target particle, so it is prepared per call.
      */
-  transfer_buffer.resize((sizeof(REAL*) + sizeof(REAL) * 2) * num_groups + nw * sizeof(int));
+  transfer_buffer.resize((sizeof(REAL*) + sizeof(REAL) * 2 + sizeof(int)) * num_groups + nw * sizeof(int));
   REAL** mw_coefs_ptr        = reinterpret_cast<REAL**>(transfer_buffer.data());
   REAL* mw_DeltaRInv_ptr     = reinterpret_cast<REAL*>(transfer_buffer.data() + sizeof(REAL*) * num_groups);
   REAL* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
-  int* accepted_indices =
-      reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+  int* mw_max_index_ptr      = reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+  int* accepted_indices  = mw_max_index_ptr + num_groups;
 
   for (int ig = 0; ig < num_groups; ig++)
     if (functors[ig])
@@ -234,12 +236,14 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
       mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
       mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
       mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
+      mw_max_index_ptr[ig]     = functors[ig]->getMaxIndex();
     }
     else
     {
       mw_coefs_ptr[ig]         = nullptr;
       mw_DeltaRInv_ptr[ig]     = 0.0;
       mw_cutoff_radius_ptr[ig] = 0.0; // important! Prevent spline evaluation to access nullptr.
+      mw_max_index_ptr[ig]     = 0;
     }
 
   int nw_accepted = 0;
@@ -259,8 +263,8 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
     REAL** mw_coefs        = reinterpret_cast<REAL**>(transfer_buffer_ptr);
     REAL* mw_DeltaRInv     = reinterpret_cast<REAL*>(transfer_buffer_ptr + sizeof(REAL*) * num_groups);
     REAL* mw_cutoff_radius = mw_DeltaRInv + num_groups;
-    int* accepted_indices =
-        reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+    int* mw_max_index      = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+    int* accepted_indices  = mw_max_index + num_groups;
     const int ip = accepted_indices[iw];
 
     const REAL* dist_new   = mw_dist + ip * dist_stride;
@@ -290,6 +294,7 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
       const REAL* coefs  = mw_coefs[ig];
       REAL DeltaRInv     = mw_DeltaRInv[ig];
       REAL cutoff_radius = mw_cutoff_radius[ig];
+      const int max_index  = mw_max_index[ig];
 
       REAL r = dist_old[j];
       REAL u(0);
@@ -297,7 +302,7 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
       REAL d2udr2(0);
       if (r < cutoff_radius)
       {
-        u = evaluate_impl(dist_old[j], coefs, DeltaRInv, dudr, d2udr2);
+        u = evaluate_impl(dist_old[j], coefs, DeltaRInv, max_index, dudr, d2udr2);
         dudr *= REAL(1) / r;
       }
       // update Uat, dUat, d2Uat

@@ -80,7 +80,7 @@ public:
   {
     if (this->size() == 0)
       return;
-    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, rng);
+    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, walker_hamiltonians_, rng);
   }
 
   void setRNGForHamiltonian(RandomBase<FullPrecRealType>& rng);

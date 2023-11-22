@@ -56,7 +56,7 @@ protected:
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  std::vector<Matrix<Return_rt>*> DerivRecords;
+  std::vector<Matrix<Return_t>*> DerivRecords;
   std::vector<Matrix<Return_rt>*> HDerivRecords;
   Return_rt CSWeight;
 

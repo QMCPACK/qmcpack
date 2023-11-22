@@ -20,40 +20,6 @@
 
 namespace qmcplusplus
 {
-template<typename T>
-void test_spline_bounds()
-{
-  T x = 2.2;
-  T dx;
-  int ind;
-  int ng = 10;
-  spline2::getSplineBound(x, dx, ind, ng);
-  CHECK(dx == Approx(0.2));
-  REQUIRE(ind == 2);
-
-  // check clamping to a maximum index value
-  x = 10.5;
-  spline2::getSplineBound(x, dx, ind, ng);
-  CHECK(dx == Approx(0.5));
-  REQUIRE(ind == 10);
-
-  x = 11.5;
-  spline2::getSplineBound(x, dx, ind, ng);
-  CHECK(dx == Approx(1.0));
-  REQUIRE(ind == 10);
-
-  // check clamping to a zero index value
-  x = -1.3;
-  spline2::getSplineBound(x, dx, ind, ng);
-  CHECK(dx == Approx(0.0));
-  REQUIRE(ind == 0);
-}
-
-TEST_CASE("getSplineBound double", "[spline2]") { test_spline_bounds<double>(); }
-
-
-TEST_CASE("getSplineBound float", "[spline2]") { test_spline_bounds<float>(); }
-
 
 TEST_CASE("SymTrace", "[spline2]")
 {

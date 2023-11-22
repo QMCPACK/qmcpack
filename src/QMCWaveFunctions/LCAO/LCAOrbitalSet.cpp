@@ -33,20 +33,28 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   OffloadMWVArray vp_basis_v_mw;  // [NVPs][NumAO]
 };
 
-LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
+LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity)
     : SPOSet(my_name),
       BasisSetSize(bs ? bs->getBasisSetSize() : 0),
-      Identity(true),
+      Identity(identity),
       basis_timer_(createGlobalTimer("LCAOrbitalSet::Basis", timer_level_fine)),
       mo_timer_(createGlobalTimer("LCAOrbitalSet::MO", timer_level_fine))
 {
   if (!bs)
     throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
-  myBasisSet = std::move(bs);
+  myBasisSet     = std::move(bs);
+  OrbitalSetSize = norbs;
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
   Tempgh.resize(BasisSetSize);
-  OrbitalSetSize = BasisSetSize;
+  OrbitalSetSize = norbs;
+  if (!Identity)
+  {
+    Tempv.resize(OrbitalSetSize);
+    Temphv.resize(OrbitalSetSize);
+    Tempghv.resize(OrbitalSetSize);
+    C = std::make_shared<ValueMatrix>(OrbitalSetSize, BasisSetSize);
+  }
   LCAOrbitalSet::checkObject();
 }
 
@@ -74,16 +82,7 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
 
 void LCAOrbitalSet::setOrbitalSetSize(int norbs)
 {
-  if (C)
-    throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize cannot reset existing MO coefficients");
-
-  Identity       = false;
-  OrbitalSetSize = norbs;
-  C              = std::make_shared<ValueMatrix>(OrbitalSetSize, BasisSetSize);
-  Tempv.resize(OrbitalSetSize);
-  Temphv.resize(OrbitalSetSize);
-  Tempghv.resize(OrbitalSetSize);
-  LCAOrbitalSet::checkObject();
+  throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize should not be called");
 }
 
 void LCAOrbitalSet::checkObject() const
@@ -453,7 +452,9 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 
   {
     ScopedTimer local(basis_timer_);
-    myBasisSet->mw_evaluateVGL(P_list, iat, basis_vgl_mw);
+    auto basis_list = spo_leader.extractBasisRefList(spo_list);
+    myBasisSet->mw_evaluateVGL(basis_list, P_list, iat, basis_vgl_mw);
+    basis_vgl_mw.updateFrom(); // TODO: remove this when gemm is implemented
   }
 
   if (Identity)
@@ -497,7 +498,9 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
   const size_t nVPs = vp_phi_v.size(0);
   vp_basis_v_mw.resize(nVPs, BasisSetSize);
 
-  myBasisSet->mw_evaluateValueVPs(vp_list, vp_basis_v_mw);
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValueVPs(basis_list, vp_list, vp_basis_v_mw);
+  vp_basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
 
   if (Identity)
   {
@@ -545,7 +548,9 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
   auto& basis_v_mw = spo_leader.mw_mem_handle_.getResource().basis_v_mw;
   basis_v_mw.resize(nw, BasisSetSize);
 
-  myBasisSet->mw_evaluateValue(P_list, iat, basis_v_mw);
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValue(basis_list, P_list, iat, basis_v_mw);
+  basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
 
   if (Identity)
   {
@@ -581,7 +586,6 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
   mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
 
-  ///To be computed on Device through new varuable mw_ratios_list, then copied to ratios_list on host.
   size_t index = 0;
   for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
@@ -596,6 +600,9 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
   Vector<ValueType> invTemp(Temp.data(1), BasisSetSize);
 
+  if (Identity)
+    std::copy_n(psiinv.data(), psiinv.size(), invTemp.data());
+  else
   {
     ScopedTimer local(mo_timer_);
     // when only a subset of orbitals is used, extract limited rows of C.

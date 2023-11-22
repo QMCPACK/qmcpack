@@ -38,6 +38,8 @@
 
 namespace qmcplusplus
 {
+class MultiSlaterDetTableMethod;
+
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -72,8 +74,8 @@ public:
   using WFBufferType = WaveFunctionComponent::WFBufferType;
   using HessType     = WaveFunctionComponent::HessType;
   using HessVector   = WaveFunctionComponent::HessVector;
-  using LogValueType = WaveFunctionComponent::LogValueType;
-  using PsiValueType = WaveFunctionComponent::PsiValueType;
+  using LogValue     = WaveFunctionComponent::LogValue;
+  using PsiValue     = WaveFunctionComponent::PsiValue;
 
   using SPOMap = SPOSet::SPOMap;
 
@@ -290,7 +292,7 @@ public:
   static void mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                            const RefVectorWithLeader<ParticleSet>& p_list,
                            int iat,
-                           std::vector<PsiValueType>& ratios,
+                           std::vector<PsiValue>& ratios,
                            ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
@@ -352,7 +354,7 @@ public:
   static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
                                int iat,
-                               std::vector<PsiValueType>& ratios,
+                               std::vector<PsiValue>& ratios,
                                TWFGrads<CT>& grads);
 
   /** Prepare internal data for updating WFC correspond to a particle group
@@ -412,7 +414,7 @@ public:
 
   /** compute gradients and laplacian of the TWF with respect to each particle.
    *  See WaveFunctionComponent::evaluateGL for more detail */
-  LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
+  LogValue evaluateGL(ParticleSet& P, bool fromscratch);
   /* batched version of evaluateGL.
    */
   static void mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -502,6 +504,9 @@ public:
   /// spomap_ reference accessor
   const SPOMap& getSPOMap() const { return *spomap_; }
 
+  /// find MSD WFCs if exist
+  RefVector<MultiSlaterDetTableMethod> findMSD() const;
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
@@ -551,13 +556,6 @@ private:
   /// timers at WaveFunctionComponent function call level
   std::vector<std::reference_wrapper<NewTimer>> WFC_timers_;
   std::vector<RealType> myTwist;
-
-  /** check if any gradient component (x,y,z) is NaN and throw an error if yes.
-   * @param iel particle index
-   * @param grads gradients to be checked
-   * @param location usually put function name to indicate where the check is being called.
-   */
-  static void checkOneParticleGradientsNaN(int iel, const GradType& grads, const std::string_view location);
 
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction

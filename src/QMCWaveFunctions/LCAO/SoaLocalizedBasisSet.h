@@ -91,7 +91,8 @@ public:
   */
   void setPBCParams(const TinyVector<int, 3>& PBCImages,
                     const TinyVector<double, 3> Sup_Twist,
-                    const std::vector<QMCTraits::ValueType>& phase_factor);
+                    const Vector<ValueType, OffloadPinnedAllocator<ValueType>>& phase_factor,
+                    const Array<RealType, 2, OffloadPinnedAllocator<RealType>>& pbc_displacements);
 
   /** set BasisSetSize and allocate mVGL container
    */
@@ -110,25 +111,36 @@ public:
   void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) override;
 
   /** compute V using packed array with all walkers 
+   * @param basis_list list of basis sets (one for each walker)
    * @param P_list list of quantum particleset (one for each walker)
    * @param iat active particle
    * @param v   Array(n_walkers, BasisSetSize)
    */
-  void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) override;
+  void mw_evaluateValue(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                        const RefVectorWithLeader<ParticleSet>& P_list,
+                        int iat,
+                        OffloadMWVArray& v) override;
 
   /** compute V using packed array with all walkers 
+   * @param basis_list list of basis sets (one for each walker)
    * @param vp_list list of quantum virtual particleset (one for each walker)
    * @param v   Array(n_walkers, BasisSetSize)
    */
-  void mw_evaluateValueVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list, OffloadMWVArray& v) override;
+  void mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                           OffloadMWVArray& v) override;
 
 
   /** compute VGL using packed array with all walkers 
+   * @param basis_list list of basis sets (one for each walker)
    * @param P_list list of quantum particleset (one for each walker)
    * @param iat active particle
    * @param vgl   Array(n_walkers, 5, BasisSetSize)
    */
-  void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) override;
+  void mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                      const RefVectorWithLeader<ParticleSet>& P_list,
+                      int iat,
+                      OffloadMWVGLArray& vgl) override;
 
   /** compute VGH 
    * @param P quantum particleset
@@ -195,6 +207,12 @@ public:
   static RefVectorWithLeader<COT> extractOneSpeciesBasisRefList(
       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list,
       int id);
+
+private:
+  /// multi walker shared memory buffer
+  struct SoaLocalizedBSetMultiWalkerMem;
+  /// multi walker resource handle
+  ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
 };
 } // namespace qmcplusplus
 #endif
