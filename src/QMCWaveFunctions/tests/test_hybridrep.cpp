@@ -159,24 +159,17 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
     rot_mat[2][iorb] = row2[iorb];
     rot_mat[3][iorb] = row3[iorb];
   }
-  std::cout << "rot_mat" << std::endl;
-  std::cout << rot_mat << std::endl;
   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), spo->size());
-  std::cout << spo->size() << std::endl;
   for (int i = 0; i < elec_.R.size(); i++)
     for (int j = 0; j < spo->size(); j++)
     {
-      std::cout << i << " " << j << std::endl;
       psiM_rot_manual[i][j] = 0.0;
       for (int k = 0; k < spo->size(); k++)
         psiM_rot_manual[i][j] += psiM[i][k] * rot_mat[k][j];
     }
 
-  std::cout << "psiM before" << std::endl;
+  std::cout << "psiM before " << std::endl;
   std::cout << psiM << std::endl;
-  std::cout << "psiM_rot_manual" << std::endl;
-  std::cout << psiM_rot_manual << std::endl;
-
   spo->storeParamsBeforeRotation();
   spo->applyRotation(rot_mat, false);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
