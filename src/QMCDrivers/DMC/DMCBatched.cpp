@@ -457,42 +457,43 @@ bool DMCBatched::run()
 
   for (int block = 0; block < num_blocks; ++block)
   {
-    dmc_loop.start();
-    estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
-
-    dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
-        ? qmcdriver_input_.get_recalculate_properties_period()
-        : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
-                 ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
-                 : false;
-
-    for (UPtr<Crowd>& crowd : crowds_)
-      crowd->startBlock(qmcdriver_input_.get_max_steps());
-
-    for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
     {
-      ScopedTimer local_timer(timers_.run_steps_timer);
-      dmc_state.step = step;
-      crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
-                 std::ref(crowds_));
+      ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
+      estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
+      dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
+          ? qmcdriver_input_.get_recalculate_properties_period()
+          : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
+      dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
+                   ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+                   : false;
+
+      for (UPtr<Crowd>& crowd : crowds_)
+        crowd->startBlock(qmcdriver_input_.get_max_steps());
+
+      for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
       {
-        const int iter = block * qmcdriver_input_.get_max_steps() + step;
-        walker_controller_->branch(iter, population_, iter == 0);
-        branch_engine_->updateParamAfterPopControl(walker_controller_->get_ensemble_property(),
-                                                   population_.get_golden_electrons().getTotalNum());
-        walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
-      }
+        ScopedTimer local_timer(timers_.run_steps_timer);
+        dmc_state.step = step;
+        crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
+                   std::ref(crowds_));
 
-      population_.redistributeWalkers(crowds_);
+        {
+          const int iter = block * qmcdriver_input_.get_max_steps() + step;
+          walker_controller_->branch(iter, population_, iter == 0);
+          branch_engine_->updateParamAfterPopControl(walker_controller_->get_ensemble_property(),
+                                                     population_.get_golden_electrons().getTotalNum());
+          walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
+        }
+
+        population_.redistributeWalkers(crowds_);
+      }
+      print_mem("DMCBatched after a block", app_debug_stream());
+      if (qmcdriver_input_.get_measure_imbalance())
+        measureImbalance("Block " + std::to_string(block));
+      endBlock();
+      recordBlock(block);
     }
-    print_mem("DMCBatched after a block", app_debug_stream());
-    if (qmcdriver_input_.get_measure_imbalance())
-      measureImbalance("Block " + std::to_string(block));
-    endBlock();
-    recordBlock(block);
-    dmc_loop.stop();
 
     bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
