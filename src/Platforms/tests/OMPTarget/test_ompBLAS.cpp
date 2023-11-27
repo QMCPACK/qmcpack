@@ -71,7 +71,7 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
                 M);
   C.updateFrom();
 
-  BLAS::gemm(transa, transb, M, N, K, alpha, A.data(), a0, B.data(), b0, beta, C.data(), M);
+  BLAS::gemm(transa, transb, M, N, K, alpha, A.data(), a0, B.data(), b0, beta, D.data(), M);
 
   for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
