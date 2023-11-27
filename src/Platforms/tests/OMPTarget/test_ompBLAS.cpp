@@ -51,7 +51,7 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
       B[j][i] = i * 2 + j * 5;
 
   // Fill C and D with 0
-  for (int j = 0; i < M; i++)
+  for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
       C[j][i] = D[j][i] = T(0);
 
@@ -63,15 +63,17 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
   T beta(0);
 
   // in Fortran, B[M][N] is viewed as B^T
-  // when trans == 'T', the actual calculation is B * A[N] = C[M]
-  // when trans == 'N', the actual calculation is B^T * A[M] = C[N]
+  // transa/transb == 'N'/'N', the actual calculation is A[K,M] * B[N,K] = C[M,N]
+  // transa/transb == 'N'/'T', the actual calculation is A[K,M] * B[K,N] = C[M,N]
+  // transa/transb == 'T'/'N', the actual calculation is A[M,K] * B[N,K] = C[M,N]
+  // transa/transb == 'T'/'T', the actual calculation is A[M,K] * B[K,N] = C[M,N]
   ompBLAS::gemm(handle, transa, transb, M, N, K, alpha, A.device_data(), a0, B.device_data(), b0, beta, C.device_data(),
                 M);
   C.updateFrom();
 
   BLAS::gemm(transa, transb, M, N, K, alpha, A.data(), a0, B.data(), b0, beta, C.data(), M);
 
-  for (int j = 0; i < M; i++)
+  for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
       CHECK(C[j][i] == D[j][i]);
 }
@@ -80,7 +82,7 @@ TEST_CASE("OmpBLAS gemm", "[OMP]")
 {
   const int M = 137;
   const int N = 79;
-  const int K = 93
+  const int K = 93;
 
   // Non-batched test
   std::cout << "Testing NN gemm" << std::endl;
