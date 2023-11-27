@@ -455,9 +455,40 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
     ScopedTimer local(basis_timer_);
     auto basis_list = spo_leader.extractBasisRefList(spo_list);
     myBasisSet->mw_evaluateVGL(basis_list, P_list, iat, basis_vgl_mw);
-    basis_vgl_mw.updateFrom(); // TODO: remove this when gemm is implemented
   }
+  // basis_vgl_mw correct on device
+#if defined(ENABLE_OFFLOAD)
+  int dummy_handle = 0;
+  int success      = 0;
 
+  if (Identity)
+  {
+    const size_t output_size = phi_vgl_v.size(2);
+    const size_t nw          = phi_vgl_v.size(1);
+    for (size_t idim = 0; idim < DIM_VGL; idim +)
+    {
+      success = ompBLAS::copy(dummy_handle, output_size * nw, basis_vgl_v.device_data_at(idim, 0, 0), 1,
+                              phi_vgl_v.device_data_at(idim, 0, 0), 1);
+      if (success != 0)
+        throw std::runtime_error("In LCAOrbitalSet::mw_evaluateVGLImplGEMM ompBLAS::copy failed.");
+    }
+  }
+  else
+  {
+    const size_t requested_orb_size = phi_vgl_v.size(2);
+    assert(requested_orb_size <= OrbitalSetSize);
+
+    auto* c_devptr = C->device_data();
+    success        = ompBLAS::gemm(dummy_handle, 'T', 'N',
+                                   requested_orb_size,        // MOs
+                                   spo_list.size() * DIM_VGL, // walkers * DIM_VGL
+                                   BasisSetSize,              // AOs
+                                   1, c_devptr, BasisSetSize, basis_vgl_mw.device_data(), BasisSetSize, 0,
+                                   phi_vgl_v.device_data(), requested_orb_size);
+    if (success != 0)
+      throw std::runtime_error("In LCAOrbitalSet::mw_evaluateVGLImplGEMM ompBLAS::gemm failed.");
+  }
+#else
   if (Identity)
   {
     // output_size can be smaller than BasisSetSize
@@ -485,6 +516,8 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                  requested_orb_size);
     }
   }
+#endif
+  // phi_vgl_v correct on device if ENABLE_OFFLOAD
 }
 
 void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -504,14 +537,13 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
 
 #if defined(ENABLE_OFFLOAD)
 
-  auto* vp_basis_devptr = vp_basis_v_mw.device_data_at(0, 0);
-  auto* vp_phi_devptr   = vp_phi_v.device_data_at(0, 0);
   int dummy_handle = 0;
   int success      = 0;
 
   if (Identity)
   {
-    success = ompBLAS::copy(dummy_handle, OrbitalSetSize * nVPs, vp_basis_devptr, 1, vp_phi_devptr, 1);
+    success =
+        ompBLAS::copy(dummy_handle, OrbitalSetSize * nVPs, vp_basis_v_mw.device_data(), 1, vp_phi_v.device_data(), 1);
     if (success != 0)
       throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueVPsImplGEMM ompBLAS::copy failed.");
   }
@@ -521,18 +553,16 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
     assert(requested_orb_size <= OrbitalSetSize);
 
     auto* c_devptr = C->device_data();
-     success =
-        ompBLAS::gemm(dummy_handle, 'T', 'N',
-                      requested_orb_size, // MOs
-                      nVPs,               // walkers * Virtual Particles
-                      BasisSetSize,       // AOs
-                      1, c_devptr, BasisSetSize, vp_basis_devptr, BasisSetSize, 0, vp_phi_devptr, requested_orb_size);
+    success        = ompBLAS::gemm(dummy_handle, 'T', 'N',
+                                   requested_orb_size, // MOs
+                                   nVPs,               // walkers * Virtual Particles
+                                   BasisSetSize,       // AOs
+                                   1, c_devptr, BasisSetSize, vp_basis_v_mw.device_data(), BasisSetSize, 0,
+                                   vp_phi_v.device_data(), requested_orb_size);
     if (success != 0)
       throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueVPsImplGEMM ompBLAS::gemm failed.");
   }
 #else
-  vp_basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
-
   if (Identity)
   {
     std::copy_n(vp_basis_v_mw.data_at(0, 0), OrbitalSetSize * nVPs, vp_phi_v.data_at(0, 0));
@@ -582,8 +612,34 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
 
   auto basis_list = spo_leader.extractBasisRefList(spo_list);
   myBasisSet->mw_evaluateValue(basis_list, P_list, iat, basis_v_mw);
-  basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
 
+#if defined(ENABLE_OFFLOAD)
+  auto* basis_devptr = basis_v_mw.device_data_at(0, 0);
+  auto* phi_devptr   = phi_v.device_data_at(0, 0);
+  int dummy_handle   = 0;
+  int success        = 0;
+
+  if (Identity)
+  {
+    success = ompBLAS::copy(dummy_handle, OrbitalSetSize * nw, basis_devptr, 1, phi_devptr, 1);
+    if (success != 0)
+      throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueImplGEMM ompBLAS::copy failed.");
+  }
+  else
+  {
+    const size_t requested_orb_size = phi_v.size(1);
+    assert(requested_orb_size <= OrbitalSetSize);
+
+    auto* c_devptr = C->device_data();
+    success        = ompBLAS::gemm(dummy_handle, 'T', 'N',
+                                   requested_orb_size, // MOs
+                                   nw,                 // walkers
+                                   BasisSetSize,       // AOs
+                                   1, c_devptr, BasisSetSize, basis_devptr, BasisSetSize, 0, phi_devptr, requested_orb_size);
+    if (success != 0)
+      throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueImplGEMM ompBLAS::gemm failed.");
+  }
+#else
   if (Identity)
   {
     std::copy_n(basis_v_mw.data_at(0, 0), OrbitalSetSize * nw, phi_v.data_at(0, 0));
@@ -600,6 +656,7 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
                1, C_partial_view.data(), BasisSetSize, basis_v_mw.data(), BasisSetSize, 0, phi_v.data(),
                requested_orb_size);
   }
+#endif
 }
 
 void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -666,7 +723,7 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
 
   mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
   // Device data of phi_vgl_v must be up-to-date upon return
-  phi_vgl_v.updateTo();
+  // phi_vgl_v.updateTo(); // moved updateTo to mw_evaluateVGLImplGEMM
 
   const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size(2);

@@ -50,6 +50,10 @@ public:
 
   LCAOrbitalSet(const LCAOrbitalSet& in);
 
+#if defined(ENABLE_OFFLOAD)
+  bool isOMPoffload() const override { return true; }
+#endif
+
   std::string getClassName() const final { return "LCAOrbitalSet"; }
 
   bool isRotationSupported() const final { return true; }
