@@ -48,7 +48,7 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
 
   for (int j = 0; j < b0; j++)
     for (int i = 0; i < b1; i++)
-      B[j][i] = i * 2 + j * 5;
+      B[j][i] = i * 4 + j * 5;
 
   // Fill C and D with 0
   for (int j = 0; j < M; j++)
@@ -80,9 +80,9 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
 
 TEST_CASE("OmpBLAS gemm", "[OMP]")
 {
-  const int M = 137;
-  const int N = 79;
-  const int K = 93;
+  const int M = 37;
+  const int N = 71;
+  const int K = 23;
 
   // Non-batched test
   std::cout << "Testing NN gemm" << std::endl;
