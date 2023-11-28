@@ -700,8 +700,8 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
 
   ValueMatrix new_rot_m0(rot_data0.data(), 3, 3);
 
-  LCAOrbitalSet* lcao1       = dynamic_cast<LCAOrbitalSet*>(rot_spo->Phi.get());
-  LCAOrbitalSet* lcao_global = dynamic_cast<LCAOrbitalSet*>(global_rot_spo->Phi.get());
+  LCAOrbitalSet* lcao1       = dynamic_cast<LCAOrbitalSet*>(rot_spo->Phi_.get());
+  LCAOrbitalSet* lcao_global = dynamic_cast<LCAOrbitalSet*>(global_rot_spo->Phi_.get());
 
   CheckMatrixResult check_matrix_result = checkMatrix(*lcao1->C, *lcao_global->C, true);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }

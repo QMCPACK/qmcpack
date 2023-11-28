@@ -140,7 +140,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 	 
 	 For 2 electrons in 8 orbs, we expect 2*(8-2) = 12 params.
   */
-  const auto rot_size = rot_spo->m_act_rot_inds.size();
+  const auto rot_size = rot_spo->m_act_rot_inds_.size();
   REQUIRE(rot_size == 12); // = Nelec*(Norbs - Nelec) = 2*(8-2) = 12
   std::vector<RealType> param(rot_size);
   for (auto i = 0; i < rot_size; i++)
@@ -594,7 +594,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   // spline file for use in eval_bspline_spo.py
 
   const char* particles = R"(<tmp>
-<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double">
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" gpu="no">
       <sposet type="bspline" name="spo_ud" spindataset="0" size="2"/>
 </sposet_builder>
 </tmp>)";
@@ -728,7 +728,7 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 namespace testing
 {
 opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
-opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull; }
+opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
 std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
