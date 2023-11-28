@@ -30,6 +30,18 @@ struct SpinorSet::SpinorSetMultiWalkerResource : public Resource
 SpinorSet::SpinorSet(const std::string& my_name) : SPOSet(my_name), spo_up(nullptr), spo_dn(nullptr) {}
 SpinorSet::~SpinorSet() = default;
 
+void SpinorSet::storeParamsBeforeRotation()
+{
+  spo_up->storeParamsBeforeRotation();
+  spo_dn->storeParamsBeforeRotation();
+}
+
+void SpinorSet::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+{
+  spo_up->applyRotation(rot_mat, use_stored_copy);
+  spo_dn->applyRotation(rot_mat, use_stored_copy);
+}
+
 void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&& dn)
 {
   //Sanity check for input SPO's.  They need to be the same size or

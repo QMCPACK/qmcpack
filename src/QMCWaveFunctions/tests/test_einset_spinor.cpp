@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SpinorSet.h"
+#include "Utilities/for_testing/checkMatrix.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -614,6 +615,42 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     std::vector<bool> accept = {false, false};
     elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
+
+  //Need to remember that the electrons are distored from initial positions
+  //Move them back for rotation test
+  Rnew    = elec_.R - dR;
+  elec_.R = Rnew;
+  elec_.update();
+
+  //Let's also test orbital rotation
+  //random unitary
+  SPOSet::ValueVector row0 = {ValueType(0.47586834, 0.07134236), ValueType(-0.35882226, -0.6570473),
+                              ValueType(-0.30699602, -0.3372662)};
+  SPOSet::ValueVector row1 = {ValueType(-0.09062269, -0.23061815), ValueType(0.52931815, 0.07182243),
+                              ValueType(-0.79260564, -0.15825018)};
+  SPOSet::ValueVector row2 = {ValueType(0.3187019, -0.7781333), ValueType(0.315927, -0.23321542),
+                              ValueType(0.36577135, 0.07035348)};
+  SPOSet::ValueMatrix rot_mat(3, 3);
+  for (int iorb = 0; iorb < 3; iorb++)
+  {
+    rot_mat(0, iorb) = row0[iorb];
+    rot_mat(1, iorb) = row1[iorb];
+    rot_mat(2, iorb) = row2[iorb];
+  }
+  SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), spo->size());
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < spo->size(); j++)
+    {
+      psiM_rot_manual[i][j] = 0.;
+      for (int k = 0; k < spo->size(); k++)
+        psiM_rot_manual[i][j] += psiM_ref[i][k] * rot_mat[k][j];
+    }
+ 
+  spo->storeParamsBeforeRotation();
+  spo->applyRotation(rot_mat, false);
+  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+  auto check = checkMatrix(psiM_rot_manual, psiM, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 }
 
 #endif //QMC_COMPLEX
