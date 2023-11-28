@@ -35,8 +35,15 @@ RotatedSPOs::~RotatedSPOs() {}
 
 void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
 {
+#ifdef QMC_COMPLEX
+  const size_t num_param = param_list.size() / 2;
+  params_.resize(num_param);
+  for (size_t iparam = 0; iparam < num_param; iparam++)
+    params_[iparam] = ValueType(param_list[iparam], param_list[iparam + num_param]);
+#else
   params_.resize(param_list.size());
   std::transform(param_list.begin(), param_list.end(), params_.begin(), [](RealType val) { return ValueType(val); });
+#endif
 
   params_supplied_ = true;
 }
@@ -148,7 +155,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
 #ifdef QMC_COMPLEX
       old_param[i] = ComplexType(myVarsFull_[i], myVarsFull_[i + Nfull]);
 #else
-      old_param[i]  = myVarsFull_[i];
+      old_param[i]   = myVarsFull_[i];
 #endif
     }
 
@@ -676,19 +683,19 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
   int LWORK(4 * n);
   int info = 0;
 
-  #ifndef QMC_COMPLEX
+#ifndef QMC_COMPLEX
   std::vector<RealType> eval_r(n, 0);
   std::vector<RealType> eval_i(n, 0);
   std::vector<RealType> work(4 * n, 0);
   LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval_r.at(0), &eval_i.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
                &work.at(0), &LWORK, &info);
-  #else
-  std::vector<ValueType> eval(n,0);
+#else
+  std::vector<ValueType> eval(n, 0);
   std::vector<ValueType> work(2 * n, 0);
   std::vector<RealType> rwork(2 * n, 0);
   LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_cl.at(0), &LDA, nullptr, &LDA, &work.at(0),
                &LWORK, &rwork.at(0), &info);
-  #endif
+#endif
   if (info != 0)
   {
     std::ostringstream msg;
@@ -701,7 +708,7 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
   {
     for (int j = 0; j < n; ++j)
     {
-      #ifndef QMC_COMPLEX
+#ifndef QMC_COMPLEX
       auto tmp = (i == j) ? std::log(std::complex<RealType>(eval_r[i], eval_i[i])) : std::complex<RealType>(0.0, 0.0);
       if (eval_i[j] > 0.0)
       {
@@ -712,11 +719,10 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
       {
         mat_cl[i + j * n] = std::complex<RealType>(mat_l[i + j * n], 0.0);
       }
-      #else
-      auto tmp = (i == j) ? std::log(eval[i]) : ValueType(0.0);
-      #endif
+#else
+      auto tmp     = (i == j) ? std::log(eval[i]) : ValueType(0.0);
+#endif
       mat_cd[i + j * n] = tmp;
-
     }
   }
 
@@ -729,16 +735,16 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
     {
-      #ifndef QMC_COMPLEX
+#ifndef QMC_COMPLEX
       if (mat_cd[i + n * j].imag() > 1e-12)
       {
         app_log() << "warning: large imaginary value in antisymmetric matrix: (i,j) = (" << i << "," << j
                   << "), im = " << mat_cd[i + n * j].imag() << std::endl;
       }
       output[i][j] = mat_cd[i + n * j].real();
-      #else
+#else
       output[i][j] = mat_cd[i + n * j];
-      #endif
+#endif
     }
 }
 
@@ -1766,10 +1772,10 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   myclone->params_supplied_ = this->params_supplied_;
   myclone->m_act_rot_inds_  = this->m_act_rot_inds_;
   myclone->m_full_rot_inds_ = this->m_full_rot_inds_;
-  myclone->myVars          = this->myVars;
+  myclone->myVars           = this->myVars;
   myclone->myVarsFull_      = this->myVarsFull_;
-  myclone->history_params_ = this->history_params_;
-  myclone->use_global_rot_ = this->use_global_rot_;
+  myclone->history_params_  = this->history_params_;
+  myclone->use_global_rot_  = this->use_global_rot_;
   return myclone;
 }
 
