@@ -639,8 +639,12 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   rot_spo->resetParametersExclusive(opt_vars);
 
   using ValueType = QMCTraits::ValueType;
-  Vector<ValueType> dlogpsi(1);
-  Vector<ValueType> dhpsioverpsi(1);
+  size_t dim = 1;
+  #ifdef QMC_COMPLEX
+  dim = 2;  // real and imag stored separately
+  #endif
+  Vector<ValueType> dlogpsi(dim);
+  Vector<ValueType> dhpsioverpsi(dim);
   rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
 
   CHECK(std::real(dlogpsi[0]) == Approx(-1.41961753e-05));
