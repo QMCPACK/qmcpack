@@ -639,10 +639,10 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   rot_spo->resetParametersExclusive(opt_vars);
 
   using ValueType = QMCTraits::ValueType;
-  size_t dim = 1;
-  #ifdef QMC_COMPLEX
+  size_t dim      = 1;
+#ifdef QMC_COMPLEX 
   dim = 2;  // real and imag stored separately
-  #endif
+#endif
   Vector<ValueType> dlogpsi(dim);
   Vector<ValueType> dhpsioverpsi(dim);
   rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
