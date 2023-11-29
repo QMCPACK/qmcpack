@@ -168,10 +168,12 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     hout.push("rotation_global");
     std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
+    //Store in h5 as ValueType
     int nparam_full = myVarsFull_.size();
-    std::vector<RealType> full_params(nparam_full);
+    std::vector<ValueType> full_params(nparam_full);
+    auto* full_params_data_real = (RealType*)full_params.data();
     for (int i = 0; i < nparam_full; i++)
-      full_params[i] = myVarsFull_[i];
+      full_params_data_real[i] = myVarsFull_[i];
 
     hout.write(full_params, rot_global_name);
     hout.pop();
@@ -184,21 +186,10 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     if (rows > 0)
       cols = history_params_[0].size();
 
-#ifdef QMC_COMPLEX
-    size_t flattened_cols = 2 * cols;
-    Matrix<RealType> tmp(rows, flattened_cols);
+    Matrix<ValueType> tmp(rows, cols);
     for (size_t i = 0; i < rows; i++)
       for (size_t j = 0; j < cols; j++)
-      {
-        tmp(i, j)        = std::real(history_params_[i][j]);
-        tmp(i, j + cols) = std::imag(history_params_[i][j]);
-      }
-#else
-    Matrix<RealType> tmp(rows, cols);
-    for (size_t i = 0; i < rows; i++)
-      for (size_t j = 0; j < cols; j++)
-        tmp(i, j) = history_params_[i][j];
-#endif
+        tmp[i][j] = history_params_[i][j];
     std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
     hout.write(tmp, rot_hist_name);
     hout.pop();
@@ -210,9 +201,10 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
 
   int nparam = myVars.size();
-  std::vector<RealType> params(nparam);
+  std::vector<ValueType> params(nparam);
+  auto* params_data_real = (RealType*)params.data();
   for (int i = 0; i < nparam; i++)
-    params[i] = myVars[i];
+    params_data_real[i] = myVars[i];
 
   hout.write(params, rot_params_name);
   hout.pop();
