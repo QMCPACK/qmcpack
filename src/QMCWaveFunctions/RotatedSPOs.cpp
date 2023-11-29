@@ -15,7 +15,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 #include "io/hdf/hdf_archive.h"
-
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
@@ -35,15 +35,12 @@ RotatedSPOs::~RotatedSPOs() {}
 
 void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
 {
-#ifdef QMC_COMPLEX
-  const size_t num_param = param_list.size() / 2;
+  const size_t num_param = IsComplex_t<ValueType>::value ? param_list.size() / 2 : param_list.size();
   params_.resize(num_param);
-  for (size_t iparam = 0; iparam < num_param; iparam++)
-    params_[iparam] = ValueType(param_list[iparam], param_list[iparam + num_param]);
-#else
-  params_.resize(param_list.size());
-  std::transform(param_list.begin(), param_list.end(), params_.begin(), [](RealType val) { return ValueType(val); });
-#endif
+
+  //handling both real and complex by casting data to RealType*, since laid out as real_0, imag_0, real_1, imag_1, etc
+  auto* params_data_real = (RealType*)params_.data();
+  std::copy(param_list.begin(), param_list.end(), params_data_real);
 
   params_supplied_ = true;
 }
@@ -128,49 +125,31 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   std::vector<ValueType> old_param(psize);
   std::vector<ValueType> new_param(psize);
 
-#ifdef QMC_COMPLEX
-  for (int i = 0; i < N; i++)
+  //cast ValueType to RealType for delta param
+  //allows us to work with both real and complex since
+  //active and myVars are stored as only reals
+  auto* delta_param_data_real = (RealType*)delta_param.data();
+  for (int i = 0; i < myVars.size(); i++)
   {
-    int loc0       = myVars.where(i);
-    int loc1       = myVars.where(i + N);
-    delta_param[i] = ComplexType(active[loc0] - myVars[i], active[loc1] - myVars[i + N]);
-    myVars[i]      = active[loc0];
-    myVars[i + N]  = active[loc1];
+    int loc                  = myVars.where(i);
+    delta_param_data_real[i] = active[loc] - myVars[i];
+    myVars[i]                = active[loc];
   }
-#else
-  for (int i = 0; i < N; i++)
-  {
-    int loc        = myVars.where(i);
-    delta_param[i] = (active[loc] - myVars[i]);
-    myVars[i]      = active[loc];
-  }
-#endif
-
 
   if (use_global_rot_)
   {
-    const size_t Nfull = m_full_rot_inds_.size();
-    for (int i = 0; i < Nfull; i++)
-    {
-#ifdef QMC_COMPLEX
-      old_param[i] = ComplexType(myVarsFull_[i], myVarsFull_[i + Nfull]);
-#else
-      old_param[i]   = myVarsFull_[i];
-#endif
-    }
+    //can do this trick since params are stored as p0_r, p0_i, p1_r, p1_i, ...
+    auto* old_param_data_real = (RealType*)old_param.data();
+    //cant use std::copy here because myVarsFull is pair type
+    for (int i = 0; i < myVarsFull_.size(); i++)
+      old_param_data_real[i] = myVarsFull_[i];
 
     applyDeltaRotation(delta_param, old_param, new_param);
 
     // Save the the params
-    for (int i = 0; i < Nfull; i++)
-    {
-#ifdef QMC_COMPLEX
-      myVarsFull_[i]         = std::real(new_param[i]);
-      myVarsFull_[i + Nfull] = std::imag(new_param[i]);
-#else
-      myVarsFull_[i] = new_param[i];
-#endif
-    }
+    auto* new_param_data_real = (RealType*)new_param.data();
+    for (int i = 0; i < myVarsFull_.size(); i++)
+      myVarsFull_[i] = new_param_data_real[i];
   }
   else
   {
@@ -189,10 +168,11 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     hout.push("rotation_global");
     std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
-    int nparam_full = myVarsFull_.size();
-    std::vector<RealType> full_params(nparam_full);
-    for (int i = 0; i < nparam_full; i++)
-      full_params[i] = myVarsFull_[i];
+    //Store in h5 as ValueType
+    std::vector<ValueType> full_params(m_full_rot_inds_.size());
+    auto* full_params_data_real = (RealType*)full_params.data();
+    for (int i = 0; i < myVarsFull_.size(); i++)
+      full_params_data_real[i] = myVarsFull_[i];
 
     hout.write(full_params, rot_global_name);
     hout.pop();
@@ -205,21 +185,10 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     if (rows > 0)
       cols = history_params_[0].size();
 
-#ifdef QMC_COMPLEX
-    size_t flattened_cols = 2 * cols;
-    Matrix<RealType> tmp(rows, flattened_cols);
+    Matrix<ValueType> tmp(rows, cols);
     for (size_t i = 0; i < rows; i++)
       for (size_t j = 0; j < cols; j++)
-      {
-        tmp(i, j)        = std::real(history_params_[i][j]);
-        tmp(i, j + cols) = std::imag(history_params_[i][j]);
-      }
-#else
-    Matrix<RealType> tmp(rows, cols);
-    for (size_t i = 0; i < rows; i++)
-      for (size_t j = 0; j < cols; j++)
-        tmp(i, j) = history_params_[i][j];
-#endif
+        tmp[i][j] = history_params_[i][j];
     std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
     hout.write(tmp, rot_hist_name);
     hout.pop();
@@ -230,10 +199,10 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   hout.push("rotation_params");
   std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
 
-  int nparam = myVars.size();
-  std::vector<RealType> params(nparam);
-  for (int i = 0; i < nparam; i++)
-    params[i] = myVars[i];
+  std::vector<ValueType> params(m_act_rot_inds_.size());
+  auto* params_data_real = (RealType*)params.data();
+  for (int i = 0; i < myVars.size(); i++)
+    params_data_real[i] = myVars[i];
 
   hout.write(params, rot_params_name);
   hout.pop();
@@ -260,7 +229,9 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     if (!hin.getShape<RealType>(rot_global_name, sizes))
       throw std::runtime_error("Failed to read rotation_global in VP file");
 
-    int nparam_full_actual = sizes[0];
+    //h5 is storing std::vector<ComplexType>vec as {vec.size(), 2}
+    //So sizes[0] needs to be doubled if complex for storage into myVarsFull_
+    int nparam_full_actual = IsComplex_t<ValueType>::value ? 2 * sizes[0] : sizes[0];
     int nparam_full        = myVarsFull_.size();
 
     if (nparam_full != nparam_full_actual)
@@ -270,22 +241,17 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
               << nparam_full_actual << ")";
       throw std::runtime_error(tmp_err.str());
     }
-    std::vector<RealType> full_params(nparam_full);
+    std::vector<ValueType> full_params(sizes[0]);
     hin.read(full_params, rot_global_name);
+
+    //values stored as ValueType. Now unpack into reals
+    auto* full_params_data_real = (RealType*)full_params.data();
     for (int i = 0; i < nparam_full; i++)
-      myVarsFull_[i] = full_params[i];
+      myVarsFull_[i] = full_params_data_real[i];
 
     hin.pop();
 
-#ifdef QMC_COMPLEX
-    size_t nkappa = full_params.size() / 2;
-    std::vector<ValueType> full_kappa(nkappa);
-    for (size_t i = 0; i < nkappa; i++)
-      full_kappa[i] = ComplexType(full_params[i], full_params[i + nkappa]);
-    applyFullRotation(full_kappa, true);
-#else
     applyFullRotation(full_params, true);
-#endif
   }
   else if (grp_hist_exists)
   {
@@ -298,20 +264,13 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     int rows = sizes[0];
     int cols = sizes[1];
     history_params_.resize(rows);
-    Matrix<RealType> tmp(rows, cols);
+    Matrix<ValueType> tmp(rows, cols);
     hin.read(tmp, rot_hist_name);
     for (size_t i = 0; i < rows; i++)
     {
-#ifdef QMC_COMPLEX
-      size_t nkappa = cols / 2;
-      history_params_[i].resize(nkappa);
-      for (size_t j = 0; j < nkappa; j++)
-        history_params_[i][j] = ComplexType(tmp(i, j), tmp(i, j + nkappa));
-#else
       history_params_[i].resize(cols);
       for (size_t j = 0; j < cols; j++)
         history_params_[i][j] = tmp(i, j);
-#endif
     }
 
     hin.pop();
@@ -326,7 +285,8 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
   if (!hin.getShape<RealType>(rot_param_name, sizes))
     throw std::runtime_error("Failed to read rotation_params in VP file");
 
-  int nparam_actual = sizes[0];
+  //values stored as ValueType. Now unpack into reals
+  int nparam_actual = IsComplex_t<ValueType>::value ? 2 * sizes[0] : sizes[0];
   int nparam        = myVars.size();
   if (nparam != nparam_actual)
   {
@@ -336,10 +296,11 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     throw std::runtime_error(tmp_err.str());
   }
 
-  std::vector<RealType> params(nparam);
+  std::vector<ValueType> params(sizes[0]);
   hin.read(params, rot_param_name);
+  auto* params_data_real = (RealType*)params.data();
   for (int i = 0; i < nparam; i++)
-    myVars[i] = params[i];
+    myVars[i] = params_data_real[i];
 
   hin.pop();
 
@@ -400,47 +361,35 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
           "The number of supplied orbital rotation parameters does not match number prdouced by the slater "
           "expansion. \n");
 
+
+  auto registerParameter = [this](const int i, const int p, const int q, opt_variables_type& optvars,
+                                  std::vector<ValueType>& params, bool real_part) {
+    std::stringstream sstr;
+    std::string label = real_part ? "_r" : "_i";
+    sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
+         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << label;
+
+    // If the user input parameters, use those. Otherwise, initialize the parameters to zero
+    if (params_supplied_)
+    {
+      RealType x = real_part ? std::real(params[i]) : std::imag(params[i]);
+      optvars.insert(sstr.str(), x);
+    }
+    else
+    {
+      optvars.insert(sstr.str(), 0.0);
+    }
+  };
+
   myVars.clear();
-  // Build real components of myVars
   for (int i = 0; i < nparams_active; i++)
   {
     p = m_act_rot_inds_[i].first;
     q = m_act_rot_inds_[i].second;
-    std::stringstream sstr;
-    sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
-         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_r";
-
-    // If the user input parameters, use those. Otherwise, initialize the parameters to zero
-    if (params_supplied_)
-    {
-      myVars.insert(sstr.str(), std::real(params_[i]));
-    }
-    else
-    {
-      myVars.insert(sstr.str(), 0.0);
-    }
+    registerParameter(i, p, q, myVars, params_, true);
+    if constexpr (IsComplex_t<ValueType>::value)
+      registerParameter(i, p, q, myVars, params_, false);
   }
-
-#ifdef QMC_COMPLEX
-  for (int i = 0; i < nparams_active; i++)
-  {
-    p = m_act_rot_inds_[i].first;
-    q = m_act_rot_inds_[i].second;
-    std::stringstream sstr;
-    sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
-         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_i";
-
-    // If the user input parameters, use those. Otherwise, initialize the parameters to zero
-    if (params_supplied_)
-    {
-      myVars.insert(sstr.str(), std::imag(params_[i]));
-    }
-    else
-    {
-      myVars.insert(sstr.str(), 0.0);
-    }
-  }
-#endif
 
   if (use_global_rot_)
   {
@@ -450,30 +399,10 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     {
       p = m_full_rot_inds_[i].first;
       q = m_full_rot_inds_[i].second;
-      std::stringstream sstr;
-      sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
-           << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_r";
-
-      if (params_supplied_ && i < m_act_rot_inds_.size())
-        myVarsFull_.insert(sstr.str(), std::real(params_[i]));
-      else
-        myVarsFull_.insert(sstr.str(), 0.0);
+      registerParameter(i, p, q, myVarsFull_, params_, true);
+      if constexpr (IsComplex_t<ValueType>::value)
+        registerParameter(i, p, q, myVarsFull_, params_, false);
     }
-#ifdef QMC_COMPLEX
-    for (int i = 0; i < N; i++)
-    {
-      p = m_full_rot_inds_[i].first;
-      q = m_full_rot_inds_[i].second;
-      std::stringstream sstr;
-      sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
-           << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_i";
-
-      if (params_supplied_ && i < m_act_rot_inds_.size())
-        myVarsFull_.insert(sstr.str(), std::imag(params_[i]));
-      else
-        myVarsFull_.insert(sstr.str(), 0.0);
-    }
-#endif
   }
 
   //Printing the parameters
@@ -487,14 +416,11 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   {
     const size_t N = m_act_rot_inds_.size();
     std::vector<ValueType> param(N);
-    for (int i = 0; i < N; i++)
-    {
-#ifdef QMC_COMPLEX
-      param[i] = ComplexType(myVars[i], myVars[i + N]);
-#else
-      param[i] = myVars[i];
-#endif
-    }
+    //cast as RealType to copy from myVars into real or complex param vector
+    auto* param_data = (RealType*)param.data();
+    //couldn't easily use std::copy since myVars is vector of pairs
+    for (size_t i = 0; i < myVars.size(); i++)
+      param_data[i] = myVars[i];
     apply_rotation(param, false);
   }
 }
@@ -817,8 +743,7 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
     // This multiply could be reduced to Ainv and the non-square part of A.
     BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
 
-    const size_t N = m_act_rot_inds_.size();
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i < m_act_rot_inds_.size(); i++)
     {
       int kk = myVars.where(i);
       if (kk >= 0)
@@ -826,21 +751,11 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
         const int p      = m_act_rot_inds_.at(i).first;
         const int q      = m_act_rot_inds_.at(i).second;
         dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
-      }
-    }
-
 #ifdef QMC_COMPLEX
-    for (int i = 0; i < N; i++)
-    {
-      int kk = myVars.where(i + N);
-      if (kk >= 0)
-      {
-        const int p      = m_act_rot_inds_.at(i).first;
-        const int q      = m_act_rot_inds_.at(i).second;
-        dratios(iat, kk) = ComplexType(0, 1) * (T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
+        dratios(iat, kk + 1) = ComplexType(0, 1) * (T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
+#endif
       }
     }
-#endif
   }
 }
 
@@ -881,8 +796,7 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
 
   BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
 
-  const size_t N = m_act_rot_inds_.size();
-  for (int i = 0; i < N; i++)
+  for (int i = 0; i < m_act_rot_inds_.size(); i++)
   {
     int kk = myVars.where(i);
     if (kk >= 0)
@@ -890,20 +804,11 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
       const int p = m_act_rot_inds_.at(i).first;
       const int q = m_act_rot_inds_.at(i).second;
       dlogpsi[kk] = T(p, q);
-    }
-  }
 #ifdef QMC_COMPLEX
-  for (int i = 0; i < N; i++)
-  {
-    int kk = myVars.where(i + N);
-    if (kk >= 0)
-    {
-      const int p = m_act_rot_inds_.at(i).first;
-      const int q = m_act_rot_inds_.at(i).second;
-      dlogpsi[kk] = ComplexType(0, 1) * T(p, q);
+      dlogpsi[kk + 1] = ComplexType(0, 1) * T(p, q);
+#endif
     }
   }
-#endif
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
@@ -1000,8 +905,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   //possibly replace with BLAS call
   Y4 = Y3 - Y2;
 
-  const size_t N = m_act_rot_inds_.size();
-  for (int i = 0; i < N; i++)
+  for (int i = 0; i < m_act_rot_inds_.size(); i++)
   {
     int kk = myVars.where(i);
     if (kk >= 0)
@@ -1010,21 +914,13 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
       const int q = m_act_rot_inds_.at(i).second;
       dlogpsi[kk] += T(p, q);
       dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
-    }
-  }
 #ifdef QMC_COMPLEX
-  for (int i = 0; i < N; i++)
-  {
-    int kk = myVars.where(i + N);
-    if (kk >= 0)
-    {
-      const int p = m_act_rot_inds_.at(i).first;
-      const int q = m_act_rot_inds_.at(i).second;
-      dlogpsi[kk] += ComplexType(0, 1) * T(p, q);
-      dhpsioverpsi[kk] += ComplexType(0, 1) * (ValueType(-0.5) * Y4(p, q));
+      //imaginary part should be adjacent to real part
+      dlogpsi[kk + 1] += ComplexType(0, 1) * T(p, q);
+      dhpsioverpsi[kk + 1] += ComplexType(0, 1) * ValueType(-0.5) * Y4(p, q);
+#endif
     }
   }
-#endif
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
