@@ -419,7 +419,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
       q = m_full_rot_inds_[i].second;
       registerParameter(p, q, myVarsFull_, params_[i], true);
       if constexpr (IsComplex_t<ValueType>::value)
-        registerParameter(p, q, myVars, params_[i], false);
+        registerParameter(p, q, myVarsFull_, params_[i], false);
     }
   }
 
