@@ -743,17 +743,18 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
     // This multiply could be reduced to Ainv and the non-square part of A.
     BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
 
-    for (int i = 0; i < m_act_rot_inds_.size(); i++)
+    for (int i = 0; i < myVars.size(); i++)
     {
       int kk = myVars.where(i);
       if (kk >= 0)
       {
-        const int p      = m_act_rot_inds_.at(i).first;
-        const int q      = m_act_rot_inds_.at(i).second;
+        int j       = IsComplex_t<ValueType>::value ? i / 2 : i;
+        const int p      = m_act_rot_inds_.at(j).first;
+        const int q      = m_act_rot_inds_.at(j).second;
         dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
-#ifdef QMC_COMPLEX
-        dratios(iat, kk + 1) = ComplexType(0, 1) * (T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
-#endif
+        if constexpr (IsComplex_t<ValueType>::value)
+          if (i % 2 == 1)
+            dratios(iat, kk) *= ComplexType(0, 1);
       }
     }
   }
@@ -796,17 +797,18 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
 
   BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
 
-  for (int i = 0; i < m_act_rot_inds_.size(); i++)
+  for (int i = 0; i < myVars.size(); i++)
   {
     int kk = myVars.where(i);
     if (kk >= 0)
     {
-      const int p = m_act_rot_inds_.at(i).first;
-      const int q = m_act_rot_inds_.at(i).second;
+      int j       = IsComplex_t<ValueType>::value ? i / 2 : i;
+      const int p = m_act_rot_inds_.at(j).first;
+      const int q = m_act_rot_inds_.at(j).second;
       dlogpsi[kk] = T(p, q);
-#ifdef QMC_COMPLEX
-      dlogpsi[kk + 1] = ComplexType(0, 1) * T(p, q);
-#endif
+      if constexpr (IsComplex_t<ValueType>::value)
+        if (i % 2 == 1)
+          dlogpsi[kk] = ComplexType(0, 1);
     }
   }
 }
@@ -905,20 +907,22 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   //possibly replace with BLAS call
   Y4 = Y3 - Y2;
 
-  for (int i = 0; i < m_act_rot_inds_.size(); i++)
+  for (int i = 0; i < myVars.size(); i++)
   {
     int kk = myVars.where(i);
     if (kk >= 0)
     {
-      const int p = m_act_rot_inds_.at(i).first;
-      const int q = m_act_rot_inds_.at(i).second;
+      int j       = IsComplex_t<ValueType>::value ? i / 2 : i;
+      const int p = m_act_rot_inds_.at(j).first;
+      const int q = m_act_rot_inds_.at(j).second;
       dlogpsi[kk] += T(p, q);
       dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
-#ifdef QMC_COMPLEX
-      //imaginary part should be adjacent to real part
-      dlogpsi[kk + 1] += ComplexType(0, 1) * T(p, q);
-      dhpsioverpsi[kk + 1] += ComplexType(0, 1) * ValueType(-0.5) * Y4(p, q);
-#endif
+      if constexpr (IsComplex_t<ValueType>::value)
+        if (i % 2 == 1)
+        {
+          dlogpsi[kk] *= ComplexType(0, 1);
+          dhpsioverpsi[kk] *= ComplexType(0, 1);
+        }
     }
   }
 }

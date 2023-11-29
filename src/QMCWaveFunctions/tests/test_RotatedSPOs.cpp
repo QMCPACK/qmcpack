@@ -778,15 +778,13 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   for (size_t i = 0; i < vs.size(); i++)
     CHECK(var[i] == Approx(vs[i]));
 
-  /*
+  //add extra parameters for full set 
+  vs_values.push_back(0.0);
+  vs_values.push_back(0.0);
   opt_variables_type& full_var = testing::getMyVarsFull(rot2);
-  CHECK(full_var[0] == Approx(vs[0]));
-  CHECK(full_var[1] == Approx(vs[1]));
-  CHECK(full_var[2] == Approx(vs[2]));
-  CHECK(full_var[3] == Approx(vs[3]));
-  CHECK(full_var[4] == Approx(0.0));
-  CHECK(full_var[5] == Approx(0.0));
-  */
+  vs_values_data_real = (SPOSet::RealType*)vs_values.data();
+  for (size_t i = 0; i < full_var.size(); i++)
+    CHECK(full_var[i] == Approx(vs_values_data_real[i]));
 }
 
 // Test using history list.
@@ -830,10 +828,8 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   rot2.readVariationalParameters(hin);
 
   opt_variables_type& var = testing::getMyVars(rot2);
-  CHECK(var[0] == Approx(vs[0]));
-  CHECK(var[1] == Approx(vs[1]));
-  CHECK(var[2] == Approx(vs[2]));
-  CHECK(var[3] == Approx(vs[3]));
+  for (size_t i = 0; i < var.size(); i++)
+    CHECK(var[i] == Approx(vs[i]));
 
   auto hist = testing::getHistoryParams(rot2);
   REQUIRE(hist.size() == 1);
