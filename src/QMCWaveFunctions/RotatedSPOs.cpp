@@ -321,7 +321,6 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
 
   // This will add the orbital rotation parameters to myVars
   // and will also read in initial parameter values supplied in input file
-  int p, q;
   int nparams_active = m_act_rot_inds_.size();
 
   if (params_supplied_)
@@ -348,8 +347,8 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   myVars.clear();
   for (int i = 0; i < nparams_active; i++)
   {
-    p = m_act_rot_inds_[i].first;
-    q = m_act_rot_inds_[i].second;
+    const int p = m_act_rot_inds_[i].first;
+    const int q = m_act_rot_inds_[i].second;
     registerParameter(i, p, q, myVars, params_, true);
     if constexpr (IsComplex_t<ValueType>::value)
       registerParameter(i, p, q, myVars, params_, false);
@@ -360,15 +359,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     const size_t N = m_full_rot_inds_.size();
     myVarsFull_.resize(N);
     for (int i = 0; i < N; i++)
-    {
-      p = m_full_rot_inds_[i].first;
-      q = m_full_rot_inds_[i].second;
-
-      if (params_supplied_)
-        myVarsFull_[i] = params_[i];
-      else
-        myVarsFull_[i] = 0.0;
-    }
+      myVarsFull_[i] = params_supplied_ ? params_[i] : 0.0;
   }
 
   //Printing the parameters
