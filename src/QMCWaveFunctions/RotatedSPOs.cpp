@@ -131,9 +131,9 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   auto* delta_param_data_real = (RealType*)delta_param.data();
   for (int i = 0; i < myVars.size(); i++)
   {
-    int loc = myVars.where(i);
+    int loc                  = myVars.where(i);
     delta_param_data_real[i] = active[loc] - myVars[i];
-    myVars[i] = active[loc];
+    myVars[i]                = active[loc];
   }
 
   if (use_global_rot_)
@@ -379,7 +379,6 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
           "The number of supplied orbital rotation parameters does not match number prdouced by the slater "
           "expansion. \n");
 
-  myVars.clear();
 
   auto registerParameter = [this](const int p, const int q, opt_variables_type& optvars, const ValueType val,
                                   bool real_part) {
@@ -400,10 +399,12 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     }
   };
 
+  myVars.clear();
   for (int i = 0; i < nparams_active; i++)
   {
     p = m_act_rot_inds_[i].first;
     q = m_act_rot_inds_[i].second;
+    std::cout << p << " " << q << " " << i << std::endl;
     registerParameter(p, q, myVars, params_[i], true);
     if constexpr (IsComplex_t<ValueType>::value)
       registerParameter(p, q, myVars, params_[i], false);
@@ -438,7 +439,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     auto* param_data = (RealType*)param.data();
     //couldn't easily use std::copy since myVars is vector of pairs
     for (size_t i = 0; i < myVars.size(); i++)
-       param_data[i] = myVars[i];
+      param_data[i] = myVars[i];
     apply_rotation(param, false);
   }
 }
@@ -761,8 +762,7 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
     // This multiply could be reduced to Ainv and the non-square part of A.
     BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
 
-    const size_t N = m_act_rot_inds_.size();
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i < m_act_rot_inds_.size(); i++)
     {
       int kk = myVars.where(i);
       if (kk >= 0)
@@ -770,21 +770,10 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
         const int p      = m_act_rot_inds_.at(i).first;
         const int q      = m_act_rot_inds_.at(i).second;
         dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
+        if constexpr (IsComplex_t<ValueType>::value)
+          dratios(iat, kk + 1) = ComplexType(0, 1) * (T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
       }
     }
-
-#ifdef QMC_COMPLEX
-    for (int i = 0; i < N; i++)
-    {
-      int kk = myVars.where(i + N);
-      if (kk >= 0)
-      {
-        const int p      = m_act_rot_inds_.at(i).first;
-        const int q      = m_act_rot_inds_.at(i).second;
-        dratios(iat, kk) = ComplexType(0, 1) * (T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
-      }
-    }
-#endif
   }
 }
 
@@ -825,8 +814,7 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
 
   BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
 
-  const size_t N = m_act_rot_inds_.size();
-  for (int i = 0; i < N; i++)
+  for (int i = 0; i < m_act_rot_inds_.size(); i++)
   {
     int kk = myVars.where(i);
     if (kk >= 0)
@@ -834,20 +822,10 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
       const int p = m_act_rot_inds_.at(i).first;
       const int q = m_act_rot_inds_.at(i).second;
       dlogpsi[kk] = T(p, q);
+      if constexpr (IsComplex_t<ValueType>::value)
+        dlogpsi[kk + 1] = ComplexType(0, 1) * T(p, q);
     }
   }
-#ifdef QMC_COMPLEX
-  for (int i = 0; i < N; i++)
-  {
-    int kk = myVars.where(i + N);
-    if (kk >= 0)
-    {
-      const int p = m_act_rot_inds_.at(i).first;
-      const int q = m_act_rot_inds_.at(i).second;
-      dlogpsi[kk] = ComplexType(0, 1) * T(p, q);
-    }
-  }
-#endif
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
@@ -944,8 +922,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   //possibly replace with BLAS call
   Y4 = Y3 - Y2;
 
-  const size_t N = m_act_rot_inds_.size();
-  for (int i = 0; i < N; i++)
+  for (int i = 0; i < m_act_rot_inds_.size(); i++)
   {
     int kk = myVars.where(i);
     if (kk >= 0)
@@ -954,21 +931,14 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
       const int q = m_act_rot_inds_.at(i).second;
       dlogpsi[kk] += T(p, q);
       dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+      //imaginary part should be adjacent to real part
+      if constexpr (IsComplex_t<ValueType>::value)
+      {
+        dlogpsi[kk + 1] += ComplexType(0, 1) * T(p, q);
+        dhpsioverpsi[kk + 1] += ComplexType(0, 1) * ValueType(-0.5) * Y4(p, q);
+      }
     }
   }
-#ifdef QMC_COMPLEX
-  for (int i = 0; i < N; i++)
-  {
-    int kk = myVars.where(i + N);
-    if (kk >= 0)
-    {
-      const int p = m_act_rot_inds_.at(i).first;
-      const int q = m_act_rot_inds_.at(i).second;
-      dlogpsi[kk] += ComplexType(0, 1) * T(p, q);
-      dhpsioverpsi[kk] += ComplexType(0, 1) * (ValueType(-0.5) * Y4(p, q));
-    }
-  }
-#endif
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
