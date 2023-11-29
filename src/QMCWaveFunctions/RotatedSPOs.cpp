@@ -363,7 +363,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
           "expansion. \n");
 
 
-  auto registerParameter = [this](const int p, const int q, opt_variables_type& optvars, const ValueType val,
+  auto registerParameter = [this](const int i, const int p, const int q, opt_variables_type& optvars, std::vector<ValueType>& params,
                                   bool real_part) {
     std::stringstream sstr;
     std::string label = real_part ? "_r" : "_i";
@@ -373,7 +373,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     // If the user input parameters, use those. Otherwise, initialize the parameters to zero
     if (params_supplied_)
     {
-      RealType x = real_part ? std::real(val) : std::imag(val);
+      RealType x = real_part ? std::real(params[i]) : std::imag(params[i]);
       optvars.insert(sstr.str(), x);
     }
     else
@@ -387,10 +387,10 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   {
     p = m_act_rot_inds_[i].first;
     q = m_act_rot_inds_[i].second;
-    std::cout << p << " " << q << " " << i << std::endl;
-    registerParameter(p, q, myVars, params_[i], true);
+    std::cout << p << " " << q << " " << i <<  " " << params_.size() << std::endl;
+    registerParameter(i, p, q, myVars, params_, true);
     if constexpr (IsComplex_t<ValueType>::value)
-      registerParameter(p, q, myVars, params_[i], false);
+      registerParameter(i, p, q, myVars, params_, false);
   }
 
   if (use_global_rot_)
@@ -401,9 +401,9 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     {
       p = m_full_rot_inds_[i].first;
       q = m_full_rot_inds_[i].second;
-      registerParameter(p, q, myVarsFull_, params_[i], true);
+      registerParameter(i, p, q, myVarsFull_, params_, true);
       if constexpr (IsComplex_t<ValueType>::value)
-        registerParameter(p, q, myVarsFull_, params_[i], false);
+        registerParameter(i, p, q, myVarsFull_, params_, false);
     }
   }
 
