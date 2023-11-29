@@ -16,7 +16,6 @@
 #include "CPU/BLAS.hpp"
 #include "io/hdf/hdf_archive.h"
 
-
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos)
