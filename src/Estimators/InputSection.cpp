@@ -200,16 +200,9 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   else if (isMultiReal(name))
   {
     std::vector<Real> real_values;
-    for (FullPrecReal value; svalue >> value;)
+    for (Real value; svalue >> value;)
       real_values.push_back(static_cast<Real>(value));
     assignValue(name, real_values);
-  }
-  else if (isMultiReal(name))
-  {
-    std::vector<Real> real_values;
-    for (Real value; svalue >> value;)
-      real_values.push_back(value);
-    values_[name] = real_values;
   }
   else if (isBool(name))
   {
@@ -226,7 +219,7 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   }
   else if (isReal(name))
   {
-    FullPrecReal value;
+    Real value;
     svalue >> value;
     assignValue(name, Real(value));
   }

@@ -94,8 +94,8 @@ public:
     std::any assignAnyEnum(const std::string& name) const override;
   };
 
-  using Position = QMCTraits::PosType;
-  using Real     = QMCTraits::RealType;
+  using Real     = QMCTraits::FullPrecRealType;
+  using Position = TinyVector<Real, OHMMS_DIM>;
 
   /** default copy constructor
    *  This is required due to OBDMI being part of a variant used as a vector element.

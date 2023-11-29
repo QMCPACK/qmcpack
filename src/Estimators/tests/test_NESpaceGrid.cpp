@@ -77,6 +77,7 @@ public:
 } // namespace testing
 
 constexpr bool generate_test_data = false;
+using FPREAL                      = QMCTraits::FullPrecRealType;
 
 template<typename REAL>
 void testSpaceGridConstruction()
@@ -385,7 +386,8 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
 #endif
 }
 
-TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]") {
+TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
+{
 #ifdef QMC_MIXED_PRECISION
   testSpaceGridBadPeriodic<OHMMS_PRECISION>();
 #else
@@ -394,7 +396,8 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]") {
 #endif
 }
 
-TEST_CASE("SpaceGrid::hdf5", "[estimators]") {
+TEST_CASE("SpaceGrid::hdf5", "[estimators]")
+{
 #ifdef QMC_MIXED_PRECISION
   testSpaceGridHdf5<OHMMS_PRECISION>();
 #else

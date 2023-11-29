@@ -67,7 +67,7 @@ public:
   using ParticleLayout = PtclOnLatticeTraits; //CrystalLattice<REAL, OHMMS_DIM>;
   using SingleParticlePos   = typename ParticleLayout::SingleParticlePos;
   using ParticlePos    = ParticleAttrib<SingleParticlePos>;
-  using AxTensor     = Tensor<Real, OHMMS_DIM>;
+  using AxTensor     = Tensor<FullPrecReal, OHMMS_DIM>;
   enum class ReferenceEnergy
   {
     vacuum,
@@ -218,8 +218,8 @@ private:
    *  as derived inputs.  i.e. they are immutable and only based on the input.
    *  Alternately they would be appropriate to calculate at construction time.
    *  @{ */
-  Matrix<Real> domain_volumes_;
-  Matrix<Real> domain_centers_;
+  Matrix<FullPrecReal> domain_volumes_;
+  Matrix<FullPrecReal> domain_centers_;
   //really only used for cartesian-like grids
   Point origin_;
   AxTensor axes_;
@@ -227,13 +227,13 @@ private:
 
   /// @}
 
-  Real volume_;
-  Matrix<Real> domain_uwidths_;
+  FullPrecReal volume_;
+  Matrix<FullPrecReal> domain_uwidths_;
   std::string axlabel_[OHMMS_DIM];
   std::array<std::vector<int>, 3> gmap_;
-  Real odu_[OHMMS_DIM];
-  Real umin_[OHMMS_DIM];
-  Real umax_[OHMMS_DIM];
+  FullPrecReal odu_[OHMMS_DIM];
+  FullPrecReal umin_[OHMMS_DIM];
+  FullPrecReal umax_[OHMMS_DIM];
   int dm_[OHMMS_DIM];
   ReferenceEnergy reference_energy_;
   std::vector<Real> data_;

@@ -24,7 +24,7 @@ class MomentumDistributionInput
 {
 public:
   using Consumer = MomentumDistribution;
-  using Real = QMCTraits::RealType;
+  using Real = QMCTraits::FullPrecRealType;
 
   class MomentumDistributionInputSection : public InputSection
   {
