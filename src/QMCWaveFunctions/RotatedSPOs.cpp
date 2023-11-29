@@ -231,7 +231,8 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     if (!hin.getShape<RealType>(rot_global_name, sizes))
       throw std::runtime_error("Failed to read rotation_global in VP file");
 
-    int nparam_full_actual = sizes[0];
+    //myVarsFull_ is real type, need to double nparam_full_actual size if complex
+    int nparam_full_actual = IsComplex_t<ValueType>::value ? 2 * sizes[0] : sizes[0];
     int nparam_full        = myVarsFull_.size();
 
     if (nparam_full != nparam_full_actual)
@@ -241,22 +242,17 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
               << nparam_full_actual << ")";
       throw std::runtime_error(tmp_err.str());
     }
-    std::vector<RealType> full_params(nparam_full);
+    std::vector<ValueType> full_params(sizes[0]);
     hin.read(full_params, rot_global_name);
+
+    //values stored as ValueType. Now unpack into reals
+    auto* full_params_data_real = (RealType*)full_params.data();
     for (int i = 0; i < nparam_full; i++)
-      myVarsFull_[i] = full_params[i];
+      myVarsFull_[i] = full_params_data_real[i];
 
     hin.pop();
 
-#ifdef QMC_COMPLEX
-    size_t nkappa = full_params.size() / 2;
-    std::vector<ValueType> full_kappa(nkappa);
-    for (size_t i = 0; i < nkappa; i++)
-      full_kappa[i] = ComplexType(full_params[i], full_params[i + nkappa]);
-    applyFullRotation(full_kappa, true);
-#else
     applyFullRotation(full_params, true);
-#endif
   }
   else if (grp_hist_exists)
   {
@@ -269,20 +265,13 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     int rows = sizes[0];
     int cols = sizes[1];
     history_params_.resize(rows);
-    Matrix<RealType> tmp(rows, cols);
+    Matrix<ValueType> tmp(rows, cols);
     hin.read(tmp, rot_hist_name);
     for (size_t i = 0; i < rows; i++)
     {
-#ifdef QMC_COMPLEX
-      size_t nkappa = cols / 2;
-      history_params_[i].resize(nkappa);
-      for (size_t j = 0; j < nkappa; j++)
-        history_params_[i][j] = ComplexType(tmp(i, j), tmp(i, j + nkappa));
-#else
       history_params_[i].resize(cols);
       for (size_t j = 0; j < cols; j++)
         history_params_[i][j] = tmp(i, j);
-#endif
     }
 
     hin.pop();
@@ -297,7 +286,8 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
   if (!hin.getShape<RealType>(rot_param_name, sizes))
     throw std::runtime_error("Failed to read rotation_params in VP file");
 
-  int nparam_actual = sizes[0];
+  //values stored as ValueType. Now unpack into reals
+  int nparam_actual = IsComplex_t<ValueType>::value ? 2 * sizes[0] : sizes[0];
   int nparam        = myVars.size();
   if (nparam != nparam_actual)
   {
@@ -307,10 +297,11 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     throw std::runtime_error(tmp_err.str());
   }
 
-  std::vector<RealType> params(nparam);
+  std::vector<ValueType> params(sizes[0]);
   hin.read(params, rot_param_name);
+  auto* params_data_real = (RealType*)params.data();
   for (int i = 0; i < nparam; i++)
-    myVars[i] = params[i];
+    myVars[i] = params_data_real[i];
 
   hin.pop();
 
