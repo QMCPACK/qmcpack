@@ -748,13 +748,14 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
       int kk = myVars.where(i);
       if (kk >= 0)
       {
-        int j       = IsComplex_t<ValueType>::value ? i / 2 : i;
+        int j            = IsComplex_t<ValueType>::value ? i / 2 : i;
         const int p      = m_act_rot_inds_.at(j).first;
         const int q      = m_act_rot_inds_.at(j).second;
         dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
-        if constexpr (IsComplex_t<ValueType>::value)
-          if (i % 2 == 1)
-            dratios(iat, kk) *= ComplexType(0, 1);
+#ifdef QMC_COMPLEX
+        if (i % 2 == 1)
+          dratios(iat, kk) *= ComplexType(0, 1);
+#endif
       }
     }
   }
@@ -806,9 +807,10 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
       const int p = m_act_rot_inds_.at(j).first;
       const int q = m_act_rot_inds_.at(j).second;
       dlogpsi[kk] = T(p, q);
-      if constexpr (IsComplex_t<ValueType>::value)
-        if (i % 2 == 1)
-          dlogpsi[kk] = ComplexType(0, 1);
+#ifdef QMC_COMPLEX
+      if (i % 2 == 1)
+        dlogpsi[kk] = ComplexType(0, 1);
+#endif
     }
   }
 }
@@ -917,12 +919,13 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
       const int q = m_act_rot_inds_.at(j).second;
       dlogpsi[kk] += T(p, q);
       dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
-      if constexpr (IsComplex_t<ValueType>::value)
-        if (i % 2 == 1)
-        {
-          dlogpsi[kk] *= ComplexType(0, 1);
-          dhpsioverpsi[kk] *= ComplexType(0, 1);
-        }
+#ifdef QMC_COMPLEX
+      if (i % 2 == 1)
+      {
+        dlogpsi[kk] *= ComplexType(0, 1);
+        dhpsioverpsi[kk] *= ComplexType(0, 1);
+      }
+#endif
     }
   }
 }
