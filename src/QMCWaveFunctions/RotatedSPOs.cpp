@@ -363,8 +363,8 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
           "expansion. \n");
 
 
-  auto registerParameter = [this](const int i, const int p, const int q, opt_variables_type& optvars, std::vector<ValueType>& params,
-                                  bool real_part) {
+  auto registerParameter = [this](const int i, const int p, const int q, opt_variables_type& optvars,
+                                  std::vector<ValueType>& params, bool real_part) {
     std::stringstream sstr;
     std::string label = real_part ? "_r" : "_i";
     sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
@@ -387,7 +387,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   {
     p = m_act_rot_inds_[i].first;
     q = m_act_rot_inds_[i].second;
-    std::cout << p << " " << q << " " << i <<  " " << params_.size() << std::endl;
+    std::cout << p << " " << q << " " << i << " " << params_.size() << std::endl;
     registerParameter(i, p, q, myVars, params_, true);
     if constexpr (IsComplex_t<ValueType>::value)
       registerParameter(i, p, q, myVars, params_, false);
@@ -753,8 +753,9 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
         const int p      = m_act_rot_inds_.at(i).first;
         const int q      = m_act_rot_inds_.at(i).second;
         dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
-        if constexpr (IsComplex_t<ValueType>::value)
-          dratios(iat, kk + 1) = ComplexType(0, 1) * (T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
+#ifdef QMC_COMPLEX
+        dratios(iat, kk + 1) = ComplexType(0, 1) * (T(p, q) - T_orig(p, q)); // dratio size is (nknot, num_vars)
+#endif
       }
     }
   }
@@ -805,8 +806,9 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
       const int p = m_act_rot_inds_.at(i).first;
       const int q = m_act_rot_inds_.at(i).second;
       dlogpsi[kk] = T(p, q);
-      if constexpr (IsComplex_t<ValueType>::value)
-        dlogpsi[kk + 1] = ComplexType(0, 1) * T(p, q);
+#ifdef QMC_COMPLEX
+      dlogpsi[kk + 1] = ComplexType(0, 1) * T(p, q);
+#endif
     }
   }
 }
@@ -914,12 +916,11 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
       const int q = m_act_rot_inds_.at(i).second;
       dlogpsi[kk] += T(p, q);
       dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+#ifdef QMC_COMPLEX
       //imaginary part should be adjacent to real part
-      if constexpr (IsComplex_t<ValueType>::value)
-      {
-        dlogpsi[kk + 1] += ComplexType(0, 1) * T(p, q);
-        dhpsioverpsi[kk + 1] += ComplexType(0, 1) * ValueType(-0.5) * Y4(p, q);
-      }
+      dlogpsi[kk + 1] += ComplexType(0, 1) * T(p, q);
+      dhpsioverpsi[kk + 1] += ComplexType(0, 1) * ValueType(-0.5) * Y4(p, q);
+#endif
     }
   }
 }
