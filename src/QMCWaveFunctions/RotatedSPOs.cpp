@@ -169,10 +169,9 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
     std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
     //Store in h5 as ValueType
-    int nparam_full = myVarsFull_.size();
-    std::vector<ValueType> full_params(nparam_full);
+    std::vector<ValueType> full_params(m_full_rot_inds_.size());
     auto* full_params_data_real = (RealType*)full_params.data();
-    for (int i = 0; i < nparam_full; i++)
+    for (int i = 0; i < myVarsFull_.size(); i++)
       full_params_data_real[i] = myVarsFull_[i];
 
     hout.write(full_params, rot_global_name);
@@ -200,10 +199,9 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   hout.push("rotation_params");
   std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
 
-  int nparam = myVars.size();
-  std::vector<ValueType> params(nparam);
+  std::vector<ValueType> params(m_act_rot_inds_.size());
   auto* params_data_real = (RealType*)params.data();
-  for (int i = 0; i < nparam; i++)
+  for (int i = 0; i < myVars.size(); i++)
     params_data_real[i] = myVars[i];
 
   hout.write(params, rot_params_name);
@@ -231,7 +229,8 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     if (!hin.getShape<RealType>(rot_global_name, sizes))
       throw std::runtime_error("Failed to read rotation_global in VP file");
 
-    //myVarsFull_ is real type, need to double nparam_full_actual size if complex
+    //h5 is storing std::vector<ComplexType>vec as {vec.size(), 2}
+    //So sizes[0] needs to be doubled if complex for storage into myVarsFull_
     int nparam_full_actual = IsComplex_t<ValueType>::value ? 2 * sizes[0] : sizes[0];
     int nparam_full        = myVarsFull_.size();
 
@@ -387,7 +386,6 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   {
     p = m_act_rot_inds_[i].first;
     q = m_act_rot_inds_[i].second;
-    std::cout << p << " " << q << " " << i << " " << params_.size() << std::endl;
     registerParameter(i, p, q, myVars, params_, true);
     if constexpr (IsComplex_t<ValueType>::value)
       registerParameter(i, p, q, myVars, params_, false);
