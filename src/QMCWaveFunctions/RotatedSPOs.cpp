@@ -15,6 +15,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 #include "io/hdf/hdf_archive.h"
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
@@ -34,15 +35,12 @@ RotatedSPOs::~RotatedSPOs() {}
 
 void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
 {
-#ifdef QMC_COMPLEX
-  const size_t num_param = param_list.size() / 2;
+  const size_t num_param = IsComplex_t<ValueType>::value ? param_list.size() / 2 : param_list.size();
   params_.resize(num_param);
-  for (size_t iparam = 0; iparam < num_param; iparam++)
-    params_[iparam] = ValueType(param_list[iparam], param_list[iparam + num_param]);
-#else
-  params_.resize(param_list.size());
-  std::transform(param_list.begin(), param_list.end(), params_.begin(), [](RealType val) { return ValueType(val); });
-#endif
+
+  //handling both real and complex by casting data to RealType*, since laid out as real_0, imag_0, real_1, imag_1, etc
+  auto* params_data_real = (RealType*)params_.data();
+  std::copy(param_list.begin(), param_list.end(), params_data_real);
 
   params_supplied_ = true;
 }
@@ -127,49 +125,31 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   std::vector<ValueType> old_param(psize);
   std::vector<ValueType> new_param(psize);
 
-#ifdef QMC_COMPLEX
-  for (int i = 0; i < N; i++)
+  //cast ValueType to RealType for delta param
+  //allows us to work with both real and complex since
+  //active and myVars are stored as only reals
+  auto* delta_param_data_real = (RealType*)delta_param.data();
+  for (int i = 0; i < myVars.size(); i++)
   {
-    int loc0       = myVars.where(i);
-    int loc1       = myVars.where(i + N);
-    delta_param[i] = ComplexType(active[loc0] - myVars[i], active[loc1] - myVars[i + N]);
-    myVars[i]      = active[loc0];
-    myVars[i + N]  = active[loc1];
+    int loc = myVars.where(i);
+    delta_param_data_real[i] = active[loc] - myVars[i];
+    myVars[i] = active[loc];
   }
-#else
-  for (int i = 0; i < N; i++)
-  {
-    int loc        = myVars.where(i);
-    delta_param[i] = (active[loc] - myVars[i]);
-    myVars[i]      = active[loc];
-  }
-#endif
-
 
   if (use_global_rot_)
   {
-    const size_t Nfull = m_full_rot_inds_.size();
-    for (int i = 0; i < Nfull; i++)
-    {
-#ifdef QMC_COMPLEX
-      old_param[i] = ComplexType(myVarsFull_[i], myVarsFull_[i + Nfull]);
-#else
-      old_param[i]   = myVarsFull_[i];
-#endif
-    }
+    //can do this trick since params are stored as p0_r, p0_i, p1_r, p1_i, ...
+    auto* old_param_data_real = (RealType*)old_param.data();
+    //cant use std::copy here because myVarsFull is pair type
+    for (int i = 0; i < myVarsFull_.size(); i++)
+      old_param_data_real[i] = myVarsFull_[i];
 
     applyDeltaRotation(delta_param, old_param, new_param);
 
     // Save the the params
-    for (int i = 0; i < Nfull; i++)
-    {
-#ifdef QMC_COMPLEX
-      myVarsFull_[i]         = std::real(new_param[i]);
-      myVarsFull_[i + Nfull] = std::imag(new_param[i]);
-#else
-      myVarsFull_[i] = new_param[i];
-#endif
-    }
+    auto* new_param_data_real = (RealType*)new_param.data();
+    for (int i = 0; i < myVarsFull_.size(); i++)
+      myVarsFull_[i] = new_param_data_real[i];
   }
   else
   {
@@ -400,46 +380,34 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
           "expansion. \n");
 
   myVars.clear();
-  // Build real components of myVars
-  for (int i = 0; i < nparams_active; i++)
-  {
-    p = m_act_rot_inds_[i].first;
-    q = m_act_rot_inds_[i].second;
+
+  auto registerParameter = [this](const int p, const int q, opt_variables_type& optvars, const ValueType val,
+                                  bool real_part) {
     std::stringstream sstr;
+    std::string label = real_part ? "_r" : "_i";
     sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
-         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_r";
+         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << label;
 
     // If the user input parameters, use those. Otherwise, initialize the parameters to zero
     if (params_supplied_)
     {
-      myVars.insert(sstr.str(), std::real(params_[i]));
+      RealType x = real_part ? std::real(val) : std::imag(val);
+      optvars.insert(sstr.str(), x);
     }
     else
     {
-      myVars.insert(sstr.str(), 0.0);
+      optvars.insert(sstr.str(), 0.0);
     }
-  }
+  };
 
-#ifdef QMC_COMPLEX
   for (int i = 0; i < nparams_active; i++)
   {
     p = m_act_rot_inds_[i].first;
     q = m_act_rot_inds_[i].second;
-    std::stringstream sstr;
-    sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
-         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_i";
-
-    // If the user input parameters, use those. Otherwise, initialize the parameters to zero
-    if (params_supplied_)
-    {
-      myVars.insert(sstr.str(), std::imag(params_[i]));
-    }
-    else
-    {
-      myVars.insert(sstr.str(), 0.0);
-    }
+    registerParameter(p, q, myVars, params_[i], true);
+    if constexpr (IsComplex_t<ValueType>::value)
+      registerParameter(p, q, myVars, params_[i], false);
   }
-#endif
 
   if (use_global_rot_)
   {
@@ -449,30 +417,10 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     {
       p = m_full_rot_inds_[i].first;
       q = m_full_rot_inds_[i].second;
-      std::stringstream sstr;
-      sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
-           << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_r";
-
-      if (params_supplied_ && i < m_act_rot_inds_.size())
-        myVarsFull_.insert(sstr.str(), std::real(params_[i]));
-      else
-        myVarsFull_.insert(sstr.str(), 0.0);
+      registerParameter(p, q, myVarsFull_, params_[i], true);
+      if constexpr (IsComplex_t<ValueType>::value)
+        registerParameter(p, q, myVars, params_[i], false);
     }
-#ifdef QMC_COMPLEX
-    for (int i = 0; i < N; i++)
-    {
-      p = m_full_rot_inds_[i].first;
-      q = m_full_rot_inds_[i].second;
-      std::stringstream sstr;
-      sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
-           << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << "_i";
-
-      if (params_supplied_ && i < m_act_rot_inds_.size())
-        myVarsFull_.insert(sstr.str(), std::imag(params_[i]));
-      else
-        myVarsFull_.insert(sstr.str(), 0.0);
-    }
-#endif
   }
 
   //Printing the parameters
@@ -486,14 +434,11 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   {
     const size_t N = m_act_rot_inds_.size();
     std::vector<ValueType> param(N);
-    for (int i = 0; i < N; i++)
-    {
-#ifdef QMC_COMPLEX
-      param[i] = ComplexType(myVars[i], myVars[i + N]);
-#else
-      param[i] = myVars[i];
-#endif
-    }
+    //cast as RealType to copy from myVars into real or complex param vector
+    auto* param_data = (RealType*)param.data();
+    //couldn't easily use std::copy since myVars is vector of pairs
+    for (size_t i = 0; i < myVars.size(); i++)
+       param_data[i] = myVars[i];
     apply_rotation(param, false);
   }
 }
