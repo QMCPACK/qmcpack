@@ -32,6 +32,7 @@ template<typename SPLINEBASE>
 class HybridRepCplx : public SPLINEBASE, private HybridRepCenterOrbitals<typename SPLINEBASE::DataType>
 {
 public:
+  using SplineBase       = SPLINEBASE;
   using HYBRIDBASE       = HybridRepCenterOrbitals<typename SPLINEBASE::DataType>;
   using ST               = typename SPLINEBASE::DataType;
   using PointType        = typename SPLINEBASE::PointType;
@@ -70,12 +71,6 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<HybridRepCplx>(*this); }
 
-  inline void resizeStorage(size_t n, size_t nvals)
-  {
-    SPLINEBASE::resizeStorage(n, nvals);
-    HYBRIDBASE::resizeStorage(myV.size());
-  }
-
   void bcast_tables(Communicate* comm)
   {
     SPLINEBASE::bcast_tables(comm);
@@ -91,12 +86,6 @@ public:
   bool read_splines(hdf_archive& h5f) { return HYBRIDBASE::read_splines(h5f) && SPLINEBASE::read_splines(h5f); }
 
   bool write_splines(hdf_archive& h5f) { return HYBRIDBASE::write_splines(h5f) && SPLINEBASE::write_splines(h5f); }
-
-  inline void flush_zero()
-  {
-    //SPLINEBASE::flush_zero();
-    HYBRIDBASE::flush_zero();
-  }
 
   void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override
   {

@@ -28,29 +28,12 @@
 namespace qmcplusplus
 {
 BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
-    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false), rotate(true)
+    : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true)
 {
   myComm = mybuilder->getCommunicator();
 }
 
-void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<std::complex<double>>& cG)
-{
-  int ncg = 0;
-  if (myComm->rank() == 0)
-  {
-    std::string path = psi_g_path(ti, spin, ib);
-    mybuilder->H5File.read(cG, path);
-    ncg = cG.size();
-  }
-  myComm->bcast(ncg);
-  if (ncg != mybuilder->MaxNumGvecs)
-  {
-    APP_ABORT("Failed : ncg != MaxNumGvecs");
-  }
-  myComm->bcast(cG);
-}
-
-BsplineReaderBase::~BsplineReaderBase() {}
+BsplineReaderBase::~BsplineReaderBase() = default;
 
 inline std::string make_bandinfo_filename(const std::string& root,
                                           int spin,
@@ -216,11 +199,11 @@ void BsplineReaderBase::initialize_spo2band(int spin,
     << std::endl;
   for (int i = 0; i < bigspace.size(); ++i)
   {
-    int ti    = bigspace[i].TwistIndex;
-    int bi    = bigspace[i].BandIndex;
-    double e  = bigspace[i].Energy;
-    int nd    = (bigspace[i].MakeTwoCopies) ? 2 : 1;
-    PosType k = mybuilder->PrimCell.k_cart(mybuilder->primcell_kpoints[ti]);
+    int ti     = bigspace[i].TwistIndex;
+    int bi     = bigspace[i].BandIndex;
+    double e   = bigspace[i].Energy;
+    int nd     = (bigspace[i].MakeTwoCopies) ? 2 : 1;
+    PosType k  = mybuilder->PrimCell.k_cart(mybuilder->primcell_kpoints[ti]);
     int s_size = std::snprintf(s.data(), s.size(), "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n",
                                i, ns, ti, bi, e, k[0], k[1], k[2], mybuilder->primcell_kpoints[ti][0],
                                mybuilder->primcell_kpoints[ti][1], mybuilder->primcell_kpoints[ti][2], nd);

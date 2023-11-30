@@ -136,22 +136,73 @@ struct Gvectors
 /** General HybridRepSetReader to handle any unitcell
  */
 template<typename SA>
-class HybridRepSetReader : public SplineSetReader<SA>
+class HybridRepSetReader : public BsplineReaderBase
 {
+  using SplineReader = SplineSetReader<typename SA::SplineBase>;
+  using DataType     = typename SplineReader::DataType;
+  SplineReader spline_reader_;
+
 public:
-  using BaseReader = SplineSetReader<SA>;
+  HybridRepSetReader(EinsplineSetBuilder* e) : BsplineReaderBase(e), spline_reader_(e) {}
 
-  using BaseReader::bspline;
-  using BaseReader::mybuilder;
-  using BaseReader::rotate_phase_i;
-  using BaseReader::rotate_phase_r;
-  using typename BaseReader::DataType;
+  std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
+                                            int spin,
+                                            const BandInfoGroup& bandgroup) override
+  {
+    auto bspline = std::make_unique<SA>(my_name);
+    app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
+    // set info for Hybrid
+    initialize_hybridrep_atomic_centers(*bspline);
+    bool foundspline = spline_reader_.fill_spline_set(*bspline, spin, bandgroup);
+    typename SA::HYBRIDBASE& hybrid_center_orbs = *bspline;
+    hybrid_center_orbs.resizeStorage(bspline->myV.size());
+    if (foundspline)
+    {
+      Timer now;
+      hdf_archive h5f(myComm);
+      const auto splinefile = getSplineDumpFileName(bandgroup);
+      h5f.open(splinefile, H5F_ACC_RDONLY);
+      foundspline = bspline->read_splines(h5f);
+      if (foundspline)
+        app_log() << "  Successfully restored 3D B-spline coefficients from " << splinefile << ". The reading time is "
+                  << now.elapsed() << " sec." << std::endl;
+    }
 
-  HybridRepSetReader(EinsplineSetBuilder* e) : BaseReader(e) {}
+    if (!foundspline)
+    {
+      hybrid_center_orbs.flush_zero();
+      initialize_hybrid_pio_gather(spin, bandgroup, *bspline);
+
+      if (saveSplineCoefs && myComm->rank() == 0)
+      {
+        Timer now;
+        const std::string splinefile(getSplineDumpFileName(bandgroup));
+        hdf_archive h5f;
+        h5f.create(splinefile);
+        std::string classname = bspline->getClassName();
+        h5f.write(classname, "class_name");
+        int sizeD = sizeof(DataType);
+        h5f.write(sizeD, "sizeof");
+        bspline->write_splines(h5f);
+        h5f.close();
+        app_log() << "  Stored spline coefficients in " << splinefile << " for potential reuse. The writing time is "
+                  << now.elapsed() << " sec." << std::endl;
+      }
+    }
+
+    {
+      Timer now;
+      bspline->bcast_tables(myComm);
+      app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
+    }
+    return bspline;
+  }
 
   /** initialize basic parameters of atomic orbitals */
-  void initialize_hybridrep_atomic_centers() override
+  void initialize_hybridrep_atomic_centers(SA& bspline) const
   {
+    auto& mybuilder = spline_reader_.mybuilder;
+
     OhmmsAttributeSet a;
     std::string scheme_name("Consistent");
     std::string s_function_name("LEKS2018");
@@ -160,30 +211,30 @@ public:
     a.put(mybuilder->XMLRoot);
     // assign smooth_scheme
     if (scheme_name == "Consistent")
-      bspline->smooth_scheme = SA::smoothing_schemes::CONSISTENT;
+      bspline.smooth_scheme = SA::smoothing_schemes::CONSISTENT;
     else if (scheme_name == "SmoothAll")
-      bspline->smooth_scheme = SA::smoothing_schemes::SMOOTHALL;
+      bspline.smooth_scheme = SA::smoothing_schemes::SMOOTHALL;
     else if (scheme_name == "SmoothPartial")
-      bspline->smooth_scheme = SA::smoothing_schemes::SMOOTHPARTIAL;
+      bspline.smooth_scheme = SA::smoothing_schemes::SMOOTHPARTIAL;
     else
       APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_scheme name! Only allows Consistent, SmoothAll or "
                 "SmoothPartial.");
 
     // assign smooth_function
     if (s_function_name == "LEKS2018")
-      bspline->smooth_func_id = smoothing_functions::LEKS2018;
+      bspline.smooth_func_id = smoothing_functions::LEKS2018;
     else if (s_function_name == "coscos")
-      bspline->smooth_func_id = smoothing_functions::COSCOS;
+      bspline.smooth_func_id = smoothing_functions::COSCOS;
     else if (s_function_name == "linear")
-      bspline->smooth_func_id = smoothing_functions::LINEAR;
+      bspline.smooth_func_id = smoothing_functions::LINEAR;
     else
       APP_ABORT(
           "initialize_hybridrep_atomic_centers wrong smoothing_function name! Only allows LEKS2018, coscos or linear.");
     app_log() << "Hybrid orbital representation uses " << scheme_name << " smoothing scheme and " << s_function_name
               << " smoothing function." << std::endl;
 
-    bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
-    auto& centers = bspline->AtomicCenters;
+    bspline.set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
+    auto& centers = bspline.AtomicCenters;
     auto& ACInfo  = mybuilder->AtomicCentersInfo;
     // load atomic center info only when it is not initialized
     if (centers.size() == 0)
@@ -277,9 +328,11 @@ public:
           ACInfo.lmax[center_idx]           = 0;
         }
       }
+
       if (!success)
-        BaseReader::myComm->barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
-                                              "in hybrid orbital representation!");
+        spline_reader_.myComm->barrier_and_abort(
+            "initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
+            "in hybrid orbital representation!");
 
       for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
       {
@@ -293,13 +346,18 @@ public:
   }
 
   /** initialize construct atomic orbital radial functions from plane waves */
-  inline void create_atomic_centers_Gspace(Vector<std::complex<double>>& cG,
+  inline void create_atomic_centers_Gspace(const Vector<std::complex<double>>& cG,
                                            Communicate& band_group_comm,
-                                           int iorb) override
+                                           const int iorb,
+                                           const std::complex<double>& rotate_phase,
+                                           SA& bspline) const
   {
+    auto& mybuilder       = spline_reader_.mybuilder;
+    double rotate_phase_r = rotate_phase.real();
+    double rotate_phase_i = rotate_phase.imag();
+
     band_group_comm.bcast(rotate_phase_r);
     band_group_comm.bcast(rotate_phase_i);
-    band_group_comm.bcast(cG);
     //distribute G-vectors over processor groups
     const int Ngvecs      = mybuilder->Gvecs[0].size();
     const int Nprocs      = band_group_comm.size();
@@ -312,11 +370,11 @@ public:
 
     // prepare Gvecs Ylm(G)
     using UnitCellType = typename EinsplineSetBuilder::UnitCellType;
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG, gvec_first,
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline.HalfG, gvec_first,
                                          gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
 
-    std::vector<AtomicOrbitals<DataType>>& centers = bspline->AtomicCenters;
+    std::vector<AtomicOrbitals<DataType>>& centers = bspline.AtomicCenters;
     app_log() << "Transforming band " << iorb << " on Rank 0" << std::endl;
     // collect atomic centers by group
     std::vector<int> uniq_species;
@@ -538,7 +596,7 @@ public:
             splineData_r[ip] = all_vals[idx][ip][lm];
           atomic_spline_r = einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(),
                                               ((lm == 0) || (lm > 3)));
-          if (!bspline->isComplex())
+          if (!bspline.isComplex())
           {
             mycenter.set_spline(atomic_spline_r, lm, iorb);
             einspline::destroy(atomic_spline_r);
@@ -558,6 +616,49 @@ public:
           }
         }
       }
+    }
+  }
+
+  void initialize_hybrid_pio_gather(const int spin, const BandInfoGroup& bandgroup, SA& bspline) const
+  {
+    auto& mybuilder = spline_reader_.mybuilder;
+    //distribute bands over processor groups
+    int Nbands            = bandgroup.getNumDistinctOrbitals();
+    const int Nprocs      = myComm->size();
+    const int Nbandgroups = std::min(Nbands, Nprocs);
+    Communicate band_group_comm(*myComm, Nbandgroups);
+    std::vector<int> band_groups(Nbandgroups + 1, 0);
+    FairDivideLow(Nbands, Nbandgroups, band_groups);
+    int iorb_first = band_groups[band_group_comm.getGroupID()];
+    int iorb_last  = band_groups[band_group_comm.getGroupID() + 1];
+
+    app_log() << "Start transforming plane waves to 3D B-splines and atomic radial orbital 1D B-splines." << std::endl;
+    OneSplineOrbData oneband(mybuilder->MeshSize, bspline.HalfG, bspline.isComplex());
+    hdf_archive h5f(&band_group_comm, false);
+    Vector<std::complex<double>> cG(mybuilder->Gvecs[0].size());
+    const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
+    if (band_group_comm.isGroupLeader())
+      h5f.open(mybuilder->H5FileName, H5F_ACC_RDONLY);
+    for (int iorb = iorb_first; iorb < iorb_last; iorb++)
+    {
+      if (band_group_comm.isGroupLeader())
+      {
+        const auto& cur_band = cur_bands[bspline.BandIndexMap[iorb]];
+        const int ti         = cur_band.TwistIndex;
+        spline_reader_.readOneOrbitalCoefs(psi_g_path(ti, spin, cur_band.BandIndex), h5f, cG);
+        oneband.fft_spline(cG, mybuilder->Gvecs[0], mybuilder->primcell_kpoints[ti], rotate);
+        bspline.set_spline(&oneband.get_spline_r(), &oneband.get_spline_i(), cur_band.TwistIndex, iorb, 0);
+      }
+      band_group_comm.bcast(cG);
+      create_atomic_centers_Gspace(cG, band_group_comm, iorb, oneband.getRotatePhase(), bspline);
+    }
+
+    myComm->barrier();
+    if (band_group_comm.isGroupLeader())
+    {
+      Timer now;
+      bspline.gather_tables(band_group_comm.getGroupLeaderComm());
+      app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;
     }
   }
 };
