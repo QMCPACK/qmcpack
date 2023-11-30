@@ -123,9 +123,9 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   auto* delta_param_data_alias = (RealType*)delta_param.data();
   for (int i = 0; i < myVars.size(); i++)
   {
-    int loc                  = myVars.where(i);
+    int loc                   = myVars.where(i);
     delta_param_data_alias[i] = active[loc] - myVars[i];
-    myVars[i]                = active[loc];
+    myVars[i]                 = active[loc];
   }
 
   if (use_global_rot_)
@@ -226,7 +226,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
     hin.push("rotation_history", false);
     std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
     std::vector<int> sizes(2);
-    if (!hin.getShape<RealType>(rot_hist_name, sizes))
+    if (!hin.getShape<ValueType>(rot_hist_name, sizes))
       throw std::runtime_error("Failed to read rotation history in VP file");
 
     int rows = sizes[0];
@@ -250,7 +250,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
   std::string rot_param_name = std::string("rotation_params_") + SPOSet::getName();
 
   std::vector<int> sizes(1);
-  if (!hin.getShape<RealType>(rot_param_name, sizes))
+  if (!hin.getShape<ValueType>(rot_param_name, sizes))
     throw std::runtime_error("Failed to read rotation_params in VP file");
 
   //values stored as ValueType. Now unpack into reals
@@ -358,7 +358,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     const size_t nfull_rot = m_full_rot_inds_.size();
     myVarsFull_.resize(nfull_rot);
     for (int i = 0; i < nfull_rot; i++)
-      myVarsFull_[i] = params_supplied_ ? params_[i] : 0.0;
+      myVarsFull_[i] = (params_supplied_ && i < m_act_rot_inds_.size()) ? params_[i] : 0.0;
   }
 
   //Printing the parameters
@@ -765,7 +765,7 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
       dlogpsi[kk] = T(p, q);
 #ifdef QMC_COMPLEX
       if (i % 2 == 1)
-        dlogpsi[kk] = ComplexType(0, 1);
+        dlogpsi[kk] *= ComplexType(0, 1);
 #endif
     }
   }
