@@ -730,7 +730,7 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 namespace testing
 {
 opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
-opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
+std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
 std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
@@ -781,10 +781,9 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   //add extra parameters for full set 
   vs_values.push_back(0.0);
   vs_values.push_back(0.0);
-  opt_variables_type& full_var = testing::getMyVarsFull(rot2);
-  vs_values_data_real = (SPOSet::RealType*)vs_values.data();
+  std::vector<SPOSet::ValueType>& full_var = testing::getMyVarsFull(rot2);
   for (size_t i = 0; i < full_var.size(); i++)
-    CHECK(full_var[i] == Approx(vs_values_data_real[i]));
+    CHECK(full_var[i] == ValueApprox(vs_values[i]));
 }
 
 // Test using history list.
