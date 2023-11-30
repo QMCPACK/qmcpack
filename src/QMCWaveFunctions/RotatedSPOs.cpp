@@ -114,9 +114,6 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   const size_t nact_rot = m_act_rot_inds_.size();
   std::vector<ValueType> delta_param(nact_rot);
 
-  const size_t psize = use_global_rot_ ? m_full_rot_inds_.size() : nact_rot;
-  assert(psize >= nact_rot);
-
   //cast ValueType to RealType for delta param
   //allows us to work with both real and complex since
   //active and myVars are stored as only reals
@@ -130,7 +127,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
 
   if (use_global_rot_)
   {
-    std::vector<ValueType> old_param(psize);
+    std::vector<ValueType> old_param(m_full_rot_inds_.size());
     std::copy_n(myVarsFull_.data(), myVarsFull_.size(), old_param.data());
 
     applyDeltaRotation(delta_param, old_param, myVarsFull_);
@@ -214,7 +211,6 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
               << ") does not match number in file (" << sizes[0] << ")";
       throw std::runtime_error(tmp_err.str());
     }
-    std::vector<ValueType> full_params(sizes[0]);
     hin.read(myVarsFull_, rot_global_name);
 
     hin.pop();
@@ -873,15 +869,18 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
       int j       = IsComplex_t<ValueType>::value ? i / 2 : i;
       const int p = m_act_rot_inds_.at(j).first;
       const int q = m_act_rot_inds_.at(j).second;
-      dlogpsi[kk] += T(p, q);
-      dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+
+      ValueType pref1 = ValueType(1.0);
+      ValueType pref2 = ValueType(-0.5);
 #ifdef QMC_COMPLEX
       if (i % 2 == 1)
       {
-        dlogpsi[kk] *= ComplexType(0, 1);
-        dhpsioverpsi[kk] *= ComplexType(0, 1);
+        pref1 *= ComplexType(0, 1);
+        pref2 *= ComplexType(0, 1);
       }
 #endif
+      dlogpsi[kk] += pref1 * T(p, q);
+      dhpsioverpsi[kk] += pref2 * Y4(p, q);
     }
   }
 }
