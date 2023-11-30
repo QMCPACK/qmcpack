@@ -123,13 +123,13 @@ public:
 /** General SplineSetReader to handle any unitcell
  */
 template<typename SA>
-class SplineSetReader : public BsplineReaderBase
+class SplineSetReader : public BsplineReader
 {
 public:
   using DataType   = typename SA::DataType;
   using SplineType = typename SA::SplineType;
 
-  SplineSetReader(EinsplineSetBuilder* e) : BsplineReaderBase(e) {}
+  SplineSetReader(EinsplineSetBuilder* e) : BsplineReader(e) {}
 
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,
@@ -137,7 +137,7 @@ public:
   {
     auto bspline = std::make_unique<SA>(my_name);
     app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
-    bool foundspline = fill_spline_set(*bspline, spin, bandgroup);
+    bool foundspline = createSplineDataSpaceLookforDumpFile(bandgroup, *bspline);
     if (foundspline)
     {
       Timer now;
@@ -184,11 +184,13 @@ public:
     return bspline;
   }
 
-  bool fill_spline_set(SA& bspline, int spin, const BandInfoGroup& bandgroup) const
+  /** create data space in the spline object and try open spline dump files.
+   * @param bandgroup band info
+   * @param bspline the spline object being worked on
+   * @return true if dumpfile pass class name and data type size check
+   */
+  bool createSplineDataSpaceLookforDumpFile(const BandInfoGroup& bandgroup, SA& bspline) const
   {
-    ReportEngine PRE("SplineSetReader", "create_spline_set(spin,SPE*)");
-    //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
-    //double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
     if (bspline.isComplex())
       app_log() << "  Using complex einspline table" << std::endl;
     else
@@ -230,6 +232,11 @@ public:
     return foundspline;
   }
 
+  /** read planewave coefficients from h5 file
+   * @param s data set full path in h5
+   * @param h5f hdf5 file handle
+   * @param cG vector to store coefficients
+   */
   void readOneOrbitalCoefs(const std::string& s, hdf_archive& h5f, Vector<std::complex<double>>& cG) const
   {
     if (!h5f.readEntry(cG, s))
@@ -251,7 +258,10 @@ public:
     }
   }
 
-  /** initialize the splines
+  /** transforming planewave orbitals to 3D B-spline orbitals in real space.
+   * @param spin orbital dataset spin index
+   * @param bandgroup band info
+   * @param bspline the spline object being worked on
    */
   void initialize_spline_pio_gather(const int spin, const BandInfoGroup& bandgroup, SA& bspline) const
   {
@@ -281,8 +291,9 @@ public:
         oneband.fft_spline(cG, mybuilder->Gvecs[0], mybuilder->primcell_kpoints[ti], rotate);
         bspline.set_spline(&oneband.get_spline_r(), &oneband.get_spline_i(), cur_band.TwistIndex, iorb, 0);
       }
-      band_group_comm.getGroupLeaderComm()->barrier();
+
       {
+        band_group_comm.getGroupLeaderComm()->barrier();
         Timer now;
         bspline.gather_tables(band_group_comm.getGroupLeaderComm());
         app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;

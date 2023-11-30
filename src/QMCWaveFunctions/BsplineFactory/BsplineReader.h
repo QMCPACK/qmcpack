@@ -13,12 +13,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file BsplineReaderBase.h
+/** @file BsplineReader.h
  *
  * base class to read data and manage spline tables
  */
-#ifndef QMCPLUSPLUS_BSPLINE_READER_BASE_H
-#define QMCPLUSPLUS_BSPLINE_READER_BASE_H
+#ifndef QMCPLUSPLUS_BSPLINE_READER_H
+#define QMCPLUSPLUS_BSPLINE_READER_H
 
 #include "mpi/collectives.h"
 #include "mpi/point2point.h"
@@ -29,13 +29,13 @@ namespace qmcplusplus
 struct SPOSetInputInfo;
 
 /**
- * Each SplineC2X needs a reader derived from BsplineReaderBase.
+ * Each SplineC2X needs a reader derived from BsplineReader.
  * This base class handles common chores
  * - check_twists : read gvectors, set twists for folded bands if needed, and set the phase for the special K
  * - set_grid : create the basic grid and boundary conditions for einspline
  * Note that template is abused but it works.
  */
-struct BsplineReaderBase
+struct BsplineReader
 {
   ///pointer to the EinsplineSetBuilder
   EinsplineSetBuilder* mybuilder;
@@ -51,9 +51,9 @@ struct BsplineReaderBase
   ///map from spo index to band index
   std::vector<std::vector<int>> spo2band;
 
-  BsplineReaderBase(EinsplineSetBuilder* e);
+  BsplineReader(EinsplineSetBuilder* e);
 
-  virtual ~BsplineReaderBase();
+  virtual ~BsplineReader();
 
   std::string getSplineDumpFileName(const BandInfoGroup& bandgroup) const
   {

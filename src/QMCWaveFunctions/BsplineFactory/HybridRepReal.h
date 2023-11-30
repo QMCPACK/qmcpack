@@ -239,7 +239,7 @@ public:
   friend class HybridRepSetReader;
   template<class BSPLINESPO>
   friend class SplineSetReader;
-  friend struct BsplineReaderBase;
+  friend struct BsplineReader;
 };
 
 } // namespace qmcplusplus

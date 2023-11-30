@@ -219,7 +219,7 @@ public:
 
   template<class BSPLINESPO>
   friend class SplineSetReader;
-  friend struct BsplineReaderBase;
+  friend struct BsplineReader;
 };
 
 extern template class SplineC2C<float>;

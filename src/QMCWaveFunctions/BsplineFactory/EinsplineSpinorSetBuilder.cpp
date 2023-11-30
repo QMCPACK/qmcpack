@@ -23,7 +23,7 @@
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
 #include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
+#include "BsplineReader.h"
 #include "createBsplineReader.h"
 
 namespace qmcplusplus

@@ -19,13 +19,13 @@
 #include "HybridRepReal.h"
 #include <fftw3.h>
 #include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
+#include "BsplineReader.h"
 #include "SplineSetReader.h"
 #include "HybridRepSetReader.h"
 
 namespace qmcplusplus
 {
-std::unique_ptr<BsplineReaderBase> createBsplineRealSingle(EinsplineSetBuilder* e,
+std::unique_ptr<BsplineReader> createBsplineRealSingle(EinsplineSetBuilder* e,
                                                            bool hybrid_rep,
                                                            const std::string& useGPU)
 {
@@ -35,7 +35,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineRealSingle(EinsplineSetBuilder* 
                   << std::endl;
   app_summary() << "    Running on CPU." << std::endl;
 
-  std::unique_ptr<BsplineReaderBase> aReader;
+  std::unique_ptr<BsplineReader> aReader;
   if (hybrid_rep)
   {
     app_summary() << "    Using hybrid orbital representation." << std::endl;

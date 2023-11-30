@@ -136,14 +136,14 @@ struct Gvectors
 /** General HybridRepSetReader to handle any unitcell
  */
 template<typename SA>
-class HybridRepSetReader : public BsplineReaderBase
+class HybridRepSetReader : public BsplineReader
 {
   using SplineReader = SplineSetReader<typename SA::SplineBase>;
   using DataType     = typename SplineReader::DataType;
   SplineReader spline_reader_;
 
 public:
-  HybridRepSetReader(EinsplineSetBuilder* e) : BsplineReaderBase(e), spline_reader_(e) {}
+  HybridRepSetReader(EinsplineSetBuilder* e) : BsplineReader(e), spline_reader_(e) {}
 
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,
@@ -153,7 +153,7 @@ public:
     app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
     // set info for Hybrid
     initialize_hybridrep_atomic_centers(*bspline);
-    bool foundspline = spline_reader_.fill_spline_set(*bspline, spin, bandgroup);
+    bool foundspline = spline_reader_.createSplineDataSpaceLookforDumpFile(bandgroup, *bspline);
     typename SA::HYBRIDBASE& hybrid_center_orbs = *bspline;
     hybrid_center_orbs.resizeStorage(bspline->myV.size());
     if (foundspline)
@@ -619,6 +619,11 @@ public:
     }
   }
 
+  /** transforming planewave orbitals to 3D B-spline orbitals and 1D B-spline radial orbitals in real space.
+   * @param spin orbital dataset spin index
+   * @param bandgroup band info
+   * @param bspline the spline object being worked on
+   */
   void initialize_hybrid_pio_gather(const int spin, const BandInfoGroup& bandgroup, SA& bspline) const
   {
     auto& mybuilder = spline_reader_.mybuilder;
