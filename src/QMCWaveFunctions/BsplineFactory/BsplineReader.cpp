@@ -13,12 +13,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file BsplineReaderBase.cpp
+/** @file BsplineReader.cpp
  *
  * Implement super function
  */
 #include "EinsplineSetBuilder.h"
-#include "BsplineReaderBase.h"
+#include "BsplineReader.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 
@@ -27,13 +27,13 @@
 
 namespace qmcplusplus
 {
-BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
+BsplineReader::BsplineReader(EinsplineSetBuilder* e)
     : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true)
 {
   myComm = mybuilder->getCommunicator();
 }
 
-BsplineReaderBase::~BsplineReaderBase() = default;
+BsplineReader::~BsplineReader() = default;
 
 inline std::string make_bandinfo_filename(const std::string& root,
                                           int spin,
@@ -65,7 +65,7 @@ inline std::string make_bandgroup_name(const std::string& root,
   return oo.str();
 }
 
-void BsplineReaderBase::setCommon(xmlNodePtr cur)
+void BsplineReader::setCommon(xmlNodePtr cur)
 {
   // check orbital normalization by default
   std::string checkOrbNorm("yes");
@@ -84,7 +84,7 @@ void BsplineReaderBase::setCommon(xmlNodePtr cur)
   saveSplineCoefs = saveCoefs == "yes";
 }
 
-std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur)
 {
   int ns(0);
   std::string spo_object_name;
@@ -120,7 +120,7 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
   return create_spline_set(spo_object_name, spin, vals);
 }
 
-std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   std::string spo_object_name;
   OhmmsAttributeSet a;
@@ -160,7 +160,7 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
    *
    * At gamma or arbitrary kpoints with complex wavefunctions, spo2band[i]==i
    */
-void BsplineReaderBase::initialize_spo2band(int spin,
+void BsplineReader::initialize_spo2band(int spin,
                                             const std::vector<BandInfo>& bigspace,
                                             SPOSetInfo& sposet,
                                             std::vector<int>& spo2band)

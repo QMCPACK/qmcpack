@@ -24,18 +24,18 @@
 #include "HybridRepCplx.h"
 #include <fftw3.h>
 #include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
+#include "BsplineReader.h"
 #include "SplineSetReader.h"
 #include "HybridRepSetReader.h"
 
 namespace qmcplusplus
 {
-std::unique_ptr<BsplineReaderBase> createBsplineComplexSingle(EinsplineSetBuilder* e,
+std::unique_ptr<BsplineReader> createBsplineComplexSingle(EinsplineSetBuilder* e,
                                                               bool hybrid_rep,
                                                               const std::string& useGPU)
 {
   using RealType = OHMMS_PRECISION;
-  std::unique_ptr<BsplineReaderBase> aReader;
+  std::unique_ptr<BsplineReader> aReader;
 
 #if defined(QMC_COMPLEX)
   app_summary() << "    Using complex valued spline SPOs with complex single precision storage (C2C)." << std::endl;

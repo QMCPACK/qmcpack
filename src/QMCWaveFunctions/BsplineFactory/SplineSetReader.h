@@ -123,13 +123,13 @@ public:
 /** General SplineSetReader to handle any unitcell
  */
 template<typename SA>
-class SplineSetReader : public BsplineReaderBase
+class SplineSetReader : public BsplineReader
 {
 public:
   using DataType   = typename SA::DataType;
   using SplineType = typename SA::SplineType;
 
-  SplineSetReader(EinsplineSetBuilder* e) : BsplineReaderBase(e) {}
+  SplineSetReader(EinsplineSetBuilder* e) : BsplineReader(e) {}
 
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,

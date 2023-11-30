@@ -136,14 +136,14 @@ struct Gvectors
 /** General HybridRepSetReader to handle any unitcell
  */
 template<typename SA>
-class HybridRepSetReader : public BsplineReaderBase
+class HybridRepSetReader : public BsplineReader
 {
   using SplineReader = SplineSetReader<typename SA::SplineBase>;
   using DataType     = typename SplineReader::DataType;
   SplineReader spline_reader_;
 
 public:
-  HybridRepSetReader(EinsplineSetBuilder* e) : BsplineReaderBase(e), spline_reader_(e) {}
+  HybridRepSetReader(EinsplineSetBuilder* e) : BsplineReader(e), spline_reader_(e) {}
 
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,

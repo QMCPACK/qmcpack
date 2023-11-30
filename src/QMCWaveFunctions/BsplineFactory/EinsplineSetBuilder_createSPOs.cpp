@@ -29,7 +29,7 @@
 #include <fftw3.h>
 #include "Utilities/ProgressReportEngine.h"
 #include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
+#include "BsplineReader.h"
 #include "BsplineSet.h"
 #include "createBsplineReader.h"
 

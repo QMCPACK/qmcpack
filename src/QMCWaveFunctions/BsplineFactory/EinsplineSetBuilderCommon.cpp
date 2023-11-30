@@ -25,7 +25,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include <Message/UniformCommunicateError.h>
-#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReader.h"
 #include "Particle/DistanceTable.h"
 
 #include <array>

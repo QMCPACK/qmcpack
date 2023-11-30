@@ -87,7 +87,7 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/createComplexSingle.cpp
         BsplineFactory/HybridRepCenterOrbitals.cpp
         BandInfo.cpp
-        BsplineFactory/BsplineReaderBase.cpp)
+        BsplineFactory/BsplineReader.cpp)
     set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp Fermion/MultiDiracDeterminant.2.cpp)
     if(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
