@@ -311,7 +311,7 @@ public:
                                     ValueMatrix& d2logdet) override;
 
   template<class BSPLINESPO>
-  friend struct SplineSetReader;
+  friend class SplineSetReader;
   friend struct BsplineReaderBase;
 };
 
