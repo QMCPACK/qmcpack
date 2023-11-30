@@ -24,6 +24,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "CPU/math.hpp"
 #include "Concurrency/OpenMP.h"
+#include <Timer.h>
+#include "OneSplineOrbData.hpp"
 
 namespace qmcplusplus
 {

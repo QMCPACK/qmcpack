@@ -20,9 +20,10 @@
 #ifndef QMCPLUSPLUS_BSPLINE_READER_H
 #define QMCPLUSPLUS_BSPLINE_READER_H
 
-#include "mpi/collectives.h"
-#include "mpi/point2point.h"
+#include <vector>
 #include <einspline/bspline_base.h>
+#include <BandInfo.h>
+#include "EinsplineSetBuilder.h"
 
 namespace qmcplusplus
 {
