@@ -21,7 +21,7 @@ namespace qmcplusplus
 class RotatedSPOs;
 namespace testing
 {
-opt_variables_type& getMyVarsFull(RotatedSPOs& rot);
+std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot);
 std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot);
 } // namespace testing
 
@@ -450,7 +450,7 @@ private:
   std::vector<ValueType> params_;
 
   /// Full set of rotation matrix parameters for use in global rotation method
-  opt_variables_type myVarsFull_;
+  std::vector<ValueType> myVarsFull_;
 
   /// timer for apply_rotation
   NewTimer& apply_rotation_timer_;
@@ -463,7 +463,7 @@ private:
   /// Use global rotation or history list
   bool use_global_rot_ = true;
 
-  friend opt_variables_type& testing::getMyVarsFull(RotatedSPOs& rot);
+  friend std::vector<ValueType>& testing::getMyVarsFull(RotatedSPOs& rot);
   friend std::vector<std::vector<ValueType>>& testing::getHistoryParams(RotatedSPOs& rot);
 };
 
