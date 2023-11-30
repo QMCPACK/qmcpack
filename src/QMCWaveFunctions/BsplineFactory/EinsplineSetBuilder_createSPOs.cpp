@@ -283,7 +283,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   auto OrbitalSet = MixedSplineReader->create_spline_set(spinSet, spo_cur);
   if (!OrbitalSet)
     myComm->barrier_and_abort("Failed to create SPOSet*");
-  app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
+  app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << " sec" << std::endl;
   OrbitalSet->finalizeConstruction();
   SPOSetMap[aset] = OrbitalSet.get();
   return OrbitalSet;
