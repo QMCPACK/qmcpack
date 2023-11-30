@@ -161,9 +161,9 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cu
    * At gamma or arbitrary kpoints with complex wavefunctions, spo2band[i]==i
    */
 void BsplineReader::initialize_spo2band(int spin,
-                                            const std::vector<BandInfo>& bigspace,
-                                            SPOSetInfo& sposet,
-                                            std::vector<int>& spo2band)
+                                        const std::vector<BandInfo>& bigspace,
+                                        SPOSetInfo& sposet,
+                                        std::vector<int>& spo2band)
 {
   spo2band.reserve(bigspace.size());
   int ns = 0;
