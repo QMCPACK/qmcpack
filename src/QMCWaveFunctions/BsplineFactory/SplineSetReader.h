@@ -27,26 +27,31 @@
 #define QMCPLUSPLUS_SPLINESET_READER_H
 
 #include "BsplineReader.h"
-#if defined(QMC_COMPLEX)
-#include "SplineC2C.h"
-#include "SplineC2COMPTarget.h"
-#else
-#include "SplineR2R.h"
-#include "SplineC2R.h"
-#include "SplineC2ROMPTarget.h"
-#endif
 
 namespace qmcplusplus
 {
+
+// forward declaration
+#if defined(QMC_COMPLEX)
+template<typename ST>
+class SplineC2C;
+template<typename ST>
+class SplineC2COMPTarget;
+#else
+template<typename ST>
+class SplineR2R;
+template<typename ST>
+class SplineC2R;
+template<typename ST>
+class SplineC2ROMPTarget;
+#endif
+
 /** General SplineSetReader to handle any unitcell
  */
 template<typename SA>
 class SplineSetReader : public BsplineReader
 {
 public:
-  using DataType   = typename SA::DataType;
-  using SplineType = typename SA::SplineType;
-
   SplineSetReader(EinsplineSetBuilder* e);
 
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,

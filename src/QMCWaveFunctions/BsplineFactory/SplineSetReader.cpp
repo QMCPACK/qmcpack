@@ -19,6 +19,14 @@
 #include "Utilities/FairDivide.h"
 #include "einspline_helper.hpp"
 #include <Timer.h>
+#if defined(QMC_COMPLEX)
+#include "SplineC2C.h"
+#include "SplineC2COMPTarget.h"
+#else
+#include "SplineR2R.h"
+#include "SplineC2R.h"
+#include "SplineC2ROMPTarget.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -61,7 +69,7 @@ template<typename SA>
         h5f.create(splinefile);
         std::string classname = bspline->getClassName();
         h5f.write(classname, "class_name");
-        int sizeD = sizeof(DataType);
+        int sizeD = sizeof(typename SA::DataType);
         h5f.write(sizeD, "sizeof");
         bspline->write_splines(h5f);
         h5f.close();
@@ -115,7 +123,7 @@ template<typename SA>
       {
         int sizeD   = 0;
         foundspline = h5f.readEntry(sizeD, "sizeof");
-        foundspline = (sizeD == sizeof(DataType));
+        foundspline = (sizeD == sizeof(typename SA::DataType));
       }
       h5f.close();
     }

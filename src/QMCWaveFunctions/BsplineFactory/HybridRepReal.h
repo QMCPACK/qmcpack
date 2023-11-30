@@ -35,6 +35,7 @@ public:
   using SplineBase       = SPLINEBASE;
   using HYBRIDBASE       = HybridRepCenterOrbitals<typename SPLINEBASE::DataType>;
   using ST               = typename SPLINEBASE::DataType;
+  using DataType         = typename SPLINEBASE::DataType;
   using PointType        = typename SPLINEBASE::PointType;
   using SingleSplineType = typename SPLINEBASE::SingleSplineType;
   using RealType         = typename SPLINEBASE::RealType;

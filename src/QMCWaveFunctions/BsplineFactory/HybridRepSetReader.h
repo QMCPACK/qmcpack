@@ -141,7 +141,7 @@ template<typename SA>
 class HybridRepSetReader : public BsplineReader
 {
   using SplineReader = SplineSetReader<typename SA::SplineBase>;
-  using DataType     = typename SplineReader::DataType;
+  using DataType     = typename SA::DataType;
   SplineReader spline_reader_;
 
 public:
