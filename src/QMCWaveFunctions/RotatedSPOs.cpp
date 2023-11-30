@@ -39,8 +39,8 @@ void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
   params_.resize(num_param);
 
   //handling both real and complex by casting data to RealType*, since laid out as real_0, imag_0, real_1, imag_1, etc
-  auto* params_data_real = (RealType*)params_.data();
-  std::copy(param_list.begin(), param_list.end(), params_data_real);
+  auto* params_data_alias = (RealType*)params_.data();
+  std::copy(param_list.begin(), param_list.end(), params_data_alias);
 
   params_supplied_ = true;
 }
@@ -120,11 +120,11 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   //cast ValueType to RealType for delta param
   //allows us to work with both real and complex since
   //active and myVars are stored as only reals
-  auto* delta_param_data_real = (RealType*)delta_param.data();
+  auto* delta_param_data_alias = (RealType*)delta_param.data();
   for (int i = 0; i < myVars.size(); i++)
   {
     int loc                  = myVars.where(i);
-    delta_param_data_real[i] = active[loc] - myVars[i];
+    delta_param_data_alias[i] = active[loc] - myVars[i];
     myVars[i]                = active[loc];
   }
 
@@ -178,9 +178,9 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
   std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
 
   std::vector<ValueType> params(m_act_rot_inds_.size());
-  auto* params_data_real = (RealType*)params.data();
+  auto* params_data_alias = (RealType*)params.data();
   for (int i = 0; i < myVars.size(); i++)
-    params_data_real[i] = myVars[i];
+    params_data_alias[i] = myVars[i];
 
   hout.write(params, rot_params_name);
   hout.pop();
@@ -266,9 +266,9 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 
   std::vector<ValueType> params(sizes[0]);
   hin.read(params, rot_param_name);
-  auto* params_data_real = (RealType*)params.data();
+  auto* params_data_alias = (RealType*)params.data();
   for (int i = 0; i < nparam; i++)
-    myVars[i] = params_data_real[i];
+    myVars[i] = params_data_alias[i];
 
   hin.pop();
 
@@ -373,10 +373,10 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     const size_t N = m_act_rot_inds_.size();
     std::vector<ValueType> param(N);
     //cast as RealType to copy from myVars into real or complex param vector
-    auto* param_data = (RealType*)param.data();
+    auto* param_data_alias = (RealType*)param.data();
     //couldn't easily use std::copy since myVars is vector of pairs
     for (size_t i = 0; i < myVars.size(); i++)
-      param_data[i] = myVars[i];
+      param_data_alias[i] = myVars[i];
     apply_rotation(param, false);
   }
 }
