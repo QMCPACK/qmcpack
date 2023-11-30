@@ -87,6 +87,7 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/createComplexSingle.cpp
         BsplineFactory/HybridRepCenterOrbitals.cpp
         BsplineFactory/SplineSetReader.cpp
+        BsplineFactory/HybridRepSetReader.cpp
         BsplineFactory/OneSplineOrbData.cpp
         BandInfo.cpp
         BsplineFactory/BsplineReader.cpp)

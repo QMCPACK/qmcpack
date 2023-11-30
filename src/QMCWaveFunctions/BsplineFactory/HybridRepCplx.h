@@ -20,6 +20,7 @@
 
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "CPU/SIMD/inner_product.hpp"
+#include "BsplineSet.h"
 
 namespace qmcplusplus
 {

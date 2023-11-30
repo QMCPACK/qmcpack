@@ -88,12 +88,12 @@ extern template class SplineSetReader<SplineC2C<double>>;
 extern template class SplineSetReader<SplineC2COMPTarget<double>>;
 #endif
 #else
-extern template class SplineSetReader<SplineC2R<float>>;
 extern template class SplineSetReader<SplineR2R<float>>;
+extern template class SplineSetReader<SplineC2R<float>>;
 extern template class SplineSetReader<SplineC2ROMPTarget<float>>;
 #if !defined(QMC_MIXED_PRECISION)
-extern template class SplineSetReader<SplineC2R<double>>;
 extern template class SplineSetReader<SplineR2R<double>>;
+extern template class SplineSetReader<SplineC2R<double>>;
 extern template class SplineSetReader<SplineC2ROMPTarget<double>>;
 #endif
 #endif
