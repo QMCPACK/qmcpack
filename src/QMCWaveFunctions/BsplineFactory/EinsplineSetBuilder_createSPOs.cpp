@@ -26,8 +26,6 @@
 #include "Utilities/Timer.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTable.h"
-#include <fftw3.h>
-#include "Utilities/ProgressReportEngine.h"
 #include "einspline_helper.hpp"
 #include "BsplineReader.h"
 #include "BsplineSet.h"

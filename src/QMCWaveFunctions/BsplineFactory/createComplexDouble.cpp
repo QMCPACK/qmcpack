@@ -14,7 +14,6 @@
 #include <PlatformSelector.hpp>
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
-#include "Utilities/ProgressReportEngine.h"
 #include "EinsplineSetBuilder.h"
 #include "BsplineSet.h"
 #include "SplineC2R.h"
@@ -22,7 +21,6 @@
 #include "SplineC2ROMPTarget.h"
 #include "SplineC2COMPTarget.h"
 #include "HybridRepCplx.h"
-#include <fftw3.h>
 #include "einspline_helper.hpp"
 #include "BsplineReader.h"
 #include "SplineSetReader.h"

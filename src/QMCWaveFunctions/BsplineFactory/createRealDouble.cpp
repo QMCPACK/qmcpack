@@ -12,12 +12,10 @@
 
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 #include <PlatformSelector.hpp>
-#include "Utilities/ProgressReportEngine.h"
 #include "EinsplineSetBuilder.h"
 #include "BsplineSet.h"
 #include "SplineR2R.h"
 #include "HybridRepReal.h"
-#include <fftw3.h>
 #include "einspline_helper.hpp"
 #include "BsplineReader.h"
 #include "SplineSetReader.h"
