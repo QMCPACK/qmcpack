@@ -26,8 +26,6 @@
 #include "Utilities/Timer.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTable.h"
-#include <fftw3.h>
-#include "Utilities/ProgressReportEngine.h"
 #include "einspline_helper.hpp"
 #include "BsplineReader.h"
 #include "BsplineSet.h"
@@ -257,23 +255,13 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
     if (MixedSplineReader == 0)
-    {
-      if (use_single)
-        MixedSplineReader = createBsplineRealSingle(this, hybrid_rep == "yes", useGPU);
-      else
-        MixedSplineReader = createBsplineRealDouble(this, hybrid_rep == "yes", useGPU);
-    }
+      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes", useGPU);
   }
   else
 #endif
   {
     if (MixedSplineReader == 0)
-    {
-      if (use_single)
-        MixedSplineReader = createBsplineComplexSingle(this, hybrid_rep == "yes", useGPU);
-      else
-        MixedSplineReader = createBsplineComplexDouble(this, hybrid_rep == "yes", useGPU);
-    }
+      MixedSplineReader = createBsplineComplex(this, use_single, hybrid_rep == "yes", useGPU);
   }
 
   MixedSplineReader->setCommon(XMLRoot);

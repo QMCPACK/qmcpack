@@ -177,23 +177,13 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   if (use_real_splines_)
   {
     if (MixedSplineReader == 0)
-    {
-      if (use_single)
-        MixedSplineReader = createBsplineRealSingle(this, hybrid_rep == "yes", useGPU);
-      else
-        MixedSplineReader = createBsplineRealDouble(this, hybrid_rep == "yes", useGPU);
-    }
+      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes", useGPU);
   }
   else
 #endif
   {
     if (MixedSplineReader == 0)
-    {
-      if (use_single)
-        MixedSplineReader = createBsplineComplexSingle(this, hybrid_rep == "yes", useGPU);
-      else
-        MixedSplineReader = createBsplineComplexDouble(this, hybrid_rep == "yes", useGPU);
-    }
+      MixedSplineReader = createBsplineComplex(this, use_single, hybrid_rep == "yes", useGPU);
   }
 
   MixedSplineReader->setCommon(XMLRoot);

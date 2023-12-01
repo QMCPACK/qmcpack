@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
@@ -20,9 +20,10 @@
 #ifndef QMCPLUSPLUS_BSPLINE_READER_H
 #define QMCPLUSPLUS_BSPLINE_READER_H
 
-#include "mpi/collectives.h"
-#include "mpi/point2point.h"
+#include <vector>
 #include <einspline/bspline_base.h>
+#include <BandInfo.h>
+#include "EinsplineSetBuilder.h"
 
 namespace qmcplusplus
 {

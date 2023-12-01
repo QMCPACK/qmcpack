@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
@@ -161,9 +161,9 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cu
    * At gamma or arbitrary kpoints with complex wavefunctions, spo2band[i]==i
    */
 void BsplineReader::initialize_spo2band(int spin,
-                                            const std::vector<BandInfo>& bigspace,
-                                            SPOSetInfo& sposet,
-                                            std::vector<int>& spo2band)
+                                        const std::vector<BandInfo>& bigspace,
+                                        SPOSetInfo& sposet,
+                                        std::vector<int>& spo2band)
 {
   spo2band.reserve(bigspace.size());
   int ns = 0;

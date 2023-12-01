@@ -20,6 +20,7 @@
 
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "CPU/SIMD/inner_product.hpp"
+#include "BsplineSet.h"
 
 namespace qmcplusplus
 {
@@ -35,6 +36,7 @@ public:
   using SplineBase       = SPLINEBASE;
   using HYBRIDBASE       = HybridRepCenterOrbitals<typename SPLINEBASE::DataType>;
   using ST               = typename SPLINEBASE::DataType;
+  using DataType         = typename SPLINEBASE::DataType;
   using PointType        = typename SPLINEBASE::PointType;
   using SingleSplineType = typename SPLINEBASE::SingleSplineType;
   using RealType         = typename SPLINEBASE::RealType;
