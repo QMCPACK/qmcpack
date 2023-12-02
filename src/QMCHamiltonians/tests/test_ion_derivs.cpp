@@ -1344,8 +1344,10 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
+  
+  OhmmsXPathObject wfnode("//wavefunction[@name='psi0']", wfdoc.getXPathContext());
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
+  psi_map.emplace("psi0", wff.buildTWF(wfnode[0], runtime_options));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
