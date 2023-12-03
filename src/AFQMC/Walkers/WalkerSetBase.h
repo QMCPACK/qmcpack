@@ -54,7 +54,7 @@ protected:
   using element       = typename std::pointer_traits<Ptr>::element_type;
   using pointer       = Ptr;
   using const_element = const element;
-  using const_pointer = const Ptr;
+  using const_pointer = typename std::pointer_traits<Ptr>::rebind<const_element>;
   using Allocator     = Alloc;
 
   using bp_element       = SPComplexType;  //typename std::pointer_traits<BPPtr>::element_type;
