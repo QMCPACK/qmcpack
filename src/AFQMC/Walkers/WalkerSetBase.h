@@ -656,7 +656,7 @@ public:
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
     if (v.num_elements() < tot_num_walkers)
       APP_ABORT("Error: getProperty(v):: v.size < tot_num_walkers.\n");
-    auto W_(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+    auto W_(boost::multi::static_array_cast<element, const_pointer>(walker_buffer));
     ma::copy(W_({0, tot_num_walkers}, data_displ[id]), v.sliced(0, tot_num_walkers));
   }
 
