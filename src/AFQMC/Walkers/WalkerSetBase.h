@@ -210,7 +210,7 @@ public:
     if (i < 0 || i > tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(std::get<1>(walker_buffer.sizes()) == walker_size);
-    return const_reference(walker_buffer.static_array_cast<element, const_pointer>().const_array_cast<element, pointer>()[i], data_displ, wlk_desc);
+    return const_reference(walker_buffer.template static_array_cast<element, const_pointer>().template const_array_cast<element, pointer>()[i], data_displ, wlk_desc);
   }
 
   // cleans state of object.
