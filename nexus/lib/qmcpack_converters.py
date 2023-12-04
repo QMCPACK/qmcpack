@@ -998,16 +998,16 @@ class Convertpw4qmc(Simulation):
 
 
 
-def generate_convert4pwqmc(**kwargs):
+def generate_convertpw4qmc(**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
     if not 'input' in sim_args:
         sim_args.input = generate_convertpw4qmc_input(**inp_args)
     #end if
-    sim = Convert4qmc(**sim_args)
+    sim = Convertpw4qmc(**sim_args)
 
     return sim
-#end def generate_convert4pwqmc
+#end def generate_convertpw4qmc
 
 
 
