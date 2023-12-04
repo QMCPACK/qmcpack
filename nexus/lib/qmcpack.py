@@ -39,7 +39,7 @@ from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,g
 from qmcpack_input import generate_opt,generate_opts
 from qmcpack_input import check_excitation_type
 from qmcpack_analyzer import QmcpackAnalyzer
-from qmcpack_converters import Pw2qmcpack,Convert4qmc,PyscfToAfqmc
+from qmcpack_converters import Pw2qmcpack,Convert4qmc,Convertpw4qmc,PyscfToAfqmc
 from debug import ci,ls,gs
 from developer import unavailable
 from nexus_base import nexus_core
@@ -174,7 +174,7 @@ class Qmcpack(Simulation):
         input = self.input
         system = self.system
         if result_name=='orbitals':
-            if isinstance(sim,Pw2qmcpack):
+            if isinstance(sim,Pw2qmcpack) or isinstance(sim, Convertpw4qmc):
 
                 h5file = result.h5file
 

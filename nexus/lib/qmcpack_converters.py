@@ -998,7 +998,7 @@ class Convertpw4qmc(Simulation):
             wfn_file = 'eshdf.h5'
             orbfile = os.path.join(self.locdir,wfn_file)
             result.location = orbfile
-            result.orbfile = orbfile
+            result.h5file = orbfile
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if        
@@ -1075,7 +1075,6 @@ class Convertpw4qmc(Simulation):
 
         self.finished = files_exist and self.job.finished
     #end def check_sim_status
-
 #end class Convertpw4qmc
 
 
