@@ -15,7 +15,6 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInput.h"
-#include "SetIfInInput.hpp"
 
 namespace qmcplusplus
 {

@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "InputSection.h"
-#include "SetIfInInput.hpp"
 #include "Message/UniformCommunicateError.h"
 #include "ModernStringUtils.hpp"
 #include "Utilities/string_utils.h"
@@ -292,18 +291,6 @@ template bool InputSection::setIfInInput<int>(int& var, const std::string& tag);
 template bool InputSection::setIfInInput<float>(float& var, const std::string& tag);
 template bool InputSection::setIfInInput<double>(double& var, const std::string& tag);
 template bool InputSection::setIfInInput<std::string>(std::string& var, const std::string& tag);
-// template<typename T, typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
-// bool InputSection::setIfInInput<T>(T& var, const std::string& tag)
-// {
-//   if (has(tag))
-//   {
-//     var = get<FullPrecReal>(tag);
-//     return true;
-//   }
-//   else
-//     return false;
-// }
-
   
 void InputSection::checkValid()
 {

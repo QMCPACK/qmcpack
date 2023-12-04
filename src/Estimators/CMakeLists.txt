@@ -11,19 +11,20 @@
 # Estimators which accumulate observables
 ####################################
 
-set(QMCINPUTSECTION_SRC
-  InputSection.cpp)
+# set(QMCINPUTSECTION_SRC
+#   InputSection.cpp)
 
-if(USE_OBJECT_TARGET)
-  add_library(qmc_input_section OBJECT ${QMCINPUTSECTION_SRC})
-else()
-  add_library(qmc_input_section ${QMCINPUTSECTION_SRC})
-endif()
+# if(USE_OBJECT_TARGET)
+#   add_library(qmc_input_section OBJECT ${QMCINPUTSECTION_SRC})
+# else()
+#   add_library(qmc_input_section ${QMCINPUTSECTION_SRC})
+# endif()
 
-target_include_directories(qmc_input_section PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmc_input_section PUBLIC containers qmcio)
+# target_include_directories(qmc_input_section PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+# target_link_libraries(qmc_input_section PUBLIC containers qmcio)
 
 set(QMCEST_SRC
+    InputSection.cpp
     CSEnergyEstimator.cpp
     LocalEnergyEstimator.cpp
     RMCLocalEnergyEstimator.cpp
@@ -61,7 +62,7 @@ else()
 endif()
 
 target_include_directories(qmcestimators PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcestimators PUBLIC qmc_input_section containers qmcham qmcparticle qmcutil)
+target_link_libraries(qmcestimators PUBLIC containers qmcham qmcparticle qmcutil)
 
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)

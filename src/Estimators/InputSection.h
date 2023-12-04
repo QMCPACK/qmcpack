@@ -119,6 +119,7 @@ public:
    */
   template<typename T> //, typename = void>
   bool setIfInInput(T& var, const std::string& tag);
+
   /** Read variable values (initialize) from XML input, call checkValid.
    *
    *  Ideally this will always be called from the constructor of an input class the InputSection
@@ -287,10 +288,28 @@ private:
   void checkValid();
 };
 
-// template extern bool InputSection::setIfInInput<std::string>(std::string& var, const std::string& tag);
-// template extern bool InputSection::setIfInInput<double>(double& var, const std::string& tag);
-// template extern bool InputSection::setIfInInput<float>(float& var, const std::string& tag);
+template<>
+inline bool InputSection::setIfInInput<float>(float& var, const std::string& tag)
+{
+  if (has(tag))
+  {
+    var = get<FullPrecReal>(tag);
+    return true;
+  }
+  else
+    return false;
+}
 
-
+template<typename T>
+inline bool InputSection::setIfInInput(T& var, const std::string& tag)
+{
+  if (has(tag))
+  {
+    var = get<T>(tag);
+    return true;
+  }
+  else
+    return false;
+}
 } // namespace qmcplusplus
 #endif /* INPUTSECTION_H */
