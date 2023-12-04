@@ -98,7 +98,7 @@ void create_C_pbc_particlesets(ParticleSet& elec, ParticleSet& ions)
   ions.create({2});
   ions.R[0] = {0.1, 0.1, 0.1};
   ions.R[1] = {1.6865805750, 1.6865805750, 1.6865805750};
-  ions.R[0][0]+=-1e-5;
+  ions.R[0][0] += -1e-5;
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("C");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -107,15 +107,15 @@ void create_C_pbc_particlesets(ParticleSet& elec, ParticleSet& ions)
   ion_species(iatnumber, pIdx)  = 6;
 
   elec.setName("e");
-  elec.create({4,4});
-  elec.R[0]  = {3.6006741306e+00,  1.0104445324e+00,  3.9141099719e+00};
-  elec.R[1]  = {2.6451694427e+00,  3.4448681473e+00,  5.8351296103e+00};
-  elec.R[2]  = {2.5458446692e+00,  4.5219372791e+00,  4.4785209995e+00};
-  elec.R[3]  = {2.8301650128e+00,  1.5351128324e+00,  1.5004137310e+00};
-  elec.R[4]  = {5.6422291182e+00,  2.9968904592e+00,  3.3039907052e+00}; 
-  elec.R[5]  = {2.6062992989e+00,  4.0493925313e-01,  2.5900053291e+00};
-  elec.R[6]  = {8.1001577415e-01,  9.7303865512e-01,  1.3901383112e+00};
-  elec.R[7]  = {1.6343332400e+00,  6.1895704609e-01,  1.2145253306e+00};
+  elec.create({4, 4});
+  elec.R[0] = {3.6006741306e+00, 1.0104445324e+00, 3.9141099719e+00};
+  elec.R[1] = {2.6451694427e+00, 3.4448681473e+00, 5.8351296103e+00};
+  elec.R[2] = {2.5458446692e+00, 4.5219372791e+00, 4.4785209995e+00};
+  elec.R[3] = {2.8301650128e+00, 1.5351128324e+00, 1.5004137310e+00};
+  elec.R[4] = {5.6422291182e+00, 2.9968904592e+00, 3.3039907052e+00};
+  elec.R[5] = {2.6062992989e+00, 4.0493925313e-01, 2.5900053291e+00};
+  elec.R[6] = {8.1001577415e-01, 9.7303865512e-01, 1.3901383112e+00};
+  elec.R[7] = {1.6343332400e+00, 6.1895704609e-01, 1.2145253306e+00};
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -130,13 +130,11 @@ void create_C_pbc_particlesets(ParticleSet& elec, ParticleSet& ions)
 
   ions.resetGroups();
   elec.resetGroups();
-  ions.createSK(); 
+  ions.createSK();
   elec.createSK();
   elec.addTable(elec);
   elec.addTable(ions);
   elec.update();
-
-
 }
 
 //Takes a HamiltonianFactory and handles the XML I/O to get a QMCHamiltonian pointer.  For CN molecule with pseudopotentials.
@@ -1307,7 +1305,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 #ifdef QMC_COMPLEX
 TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 {
-  using RealType  = QMCTraits::RealType;
+  using RealType = QMCTraits::RealType;
   app_log() << "====Ion Derivative Test: Single Slater No Jastrow Complex PBC====\n";
   std::ostringstream section_name;
   section_name << "Carbon diamond off gamma unit test: ";
@@ -1315,12 +1313,12 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
-  lattice.BoxBConds[0] = 1; // periodic
-  lattice.BoxBConds[1] = 1; // periodic
-  lattice.BoxBConds[2] = 1; // periodic
-  RealType lat_const=3.37316115000000e+00;
-  lattice.R = {lat_const, lat_const, 0, 0, lat_const, lat_const, lat_const, 0, lat_const};
-  lattice.LR_dim_cutoff = 30;
+  lattice.BoxBConds[0]             = 1; // periodic
+  lattice.BoxBConds[1]             = 1; // periodic
+  lattice.BoxBConds[2]             = 1; // periodic
+  RealType lat_const               = 3.37316115000000e+00;
+  lattice.R                        = {lat_const, lat_const, 0, 0, lat_const, lat_const, lat_const, 0, lat_const};
+  lattice.LR_dim_cutoff            = 30;
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
   lattice.reset();
   const SimulationCell simulation_cell(lattice);
@@ -1330,7 +1328,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   create_C_pbc_particlesets(elec, ions);
 
-  
+
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
@@ -1346,7 +1344,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
-  
+
   OhmmsXPathObject wfnode("//wavefunction[@name='psi0']", wfdoc.getXPathContext());
   HamiltonianFactory::PsiPoolType psi_map;
   psi_map.emplace("psi0", wff.buildTWF(wfnode[0], runtime_options));
@@ -1362,7 +1360,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
          <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
            <pseudo elementType=\"C\" href=\"C.BFD.xml\"/> \
          </pairpot> \
-         </hamiltonian>"; 
+         </hamiltonian>";
 
 
   Libxml2Document hdoc;
@@ -1373,12 +1371,12 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   hf.put(hroot);
 
   QMCHamiltonian& ham = *hf.getH();
-  
-  
+
+
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
   RealType logpsi = psi->evaluateLog(elec);
-  app_log()<<" LOGPSI = "<<logpsi<<std::endl;
+  app_log() << " LOGPSI = " << logpsi << std::endl;
   RealType eloc = ham.evaluateDeterministic(elec);
   enum observ_id
   {
@@ -1388,13 +1386,13 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
     ELECELEC,
     IONION
   };
-  
-  app_log()<<"LocalEnergy = "<<std::setprecision(13)<<eloc<<std::endl;  
-  app_log()<<"Kinetic = "<<std::setprecision(13)<<ham.getObservable(KINETIC)<<std::endl; 
-  app_log()<<"LocalECP = "<<std::setprecision(13)<<ham.getObservable(LOCALECP)<<std::endl; 
-  app_log()<<"NonLocalECP = "<<std::setprecision(13)<<ham.getObservable(NONLOCALECP)<<std::endl; 
-  app_log()<<"ELECELEC = "<<std::setprecision(13)<<ham.getObservable(ELECELEC)<<std::endl; 
-  app_log()<<"IonIon = "<<std::setprecision(13)<<ham.getObservable(IONION)<<std::endl; 
+
+  app_log() << "LocalEnergy = " << std::setprecision(13) << eloc << std::endl;
+  app_log() << "Kinetic = " << std::setprecision(13) << ham.getObservable(KINETIC) << std::endl;
+  app_log() << "LocalECP = " << std::setprecision(13) << ham.getObservable(LOCALECP) << std::endl;
+  app_log() << "NonLocalECP = " << std::setprecision(13) << ham.getObservable(NONLOCALECP) << std::endl;
+  app_log() << "ELECELEC = " << std::setprecision(13) << ham.getObservable(ELECELEC) << std::endl;
+  app_log() << "IonIon = " << std::setprecision(13) << ham.getObservable(IONION) << std::endl;
 
   //Now for the derivative tests
   ParticleSet::ParticleGradient wfgradraw;
@@ -1455,7 +1453,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   twf.getM(elec, matlist);
 
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
-  app_log()<<kinop<<std::endl;
+  app_log() << kinop << std::endl;
   kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
 
@@ -1608,7 +1606,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   CHECK(fnlpp[1][2] == Approx(0.0252567500));
 #endif
 
-//  ham.evaluateIonDerivsDeterministicFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
+  //  ham.evaluateIonDerivsDeterministicFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
 }
 #endif
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")

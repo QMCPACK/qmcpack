@@ -21,18 +21,17 @@
 
 namespace qmcplusplus
 {
-
 template<class COT, typename ORBT>
 struct SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBSetMultiWalkerMem : public Resource
 {
-    SoaLocalizedBSetMultiWalkerMem() : Resource("SoaLocalizedBasisSet") {}
+  SoaLocalizedBSetMultiWalkerMem() : Resource("SoaLocalizedBasisSet") {}
 
-    SoaLocalizedBSetMultiWalkerMem(const SoaLocalizedBSetMultiWalkerMem&) : SoaLocalizedBSetMultiWalkerMem() {}
+  SoaLocalizedBSetMultiWalkerMem(const SoaLocalizedBSetMultiWalkerMem&) : SoaLocalizedBSetMultiWalkerMem() {}
 
-    std::unique_ptr<Resource> makeClone() const override
-    {
-      return std::make_unique<SoaLocalizedBSetMultiWalkerMem>(*this);
-    }
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<SoaLocalizedBSetMultiWalkerMem>(*this);
+  }
 
   Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
   Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
@@ -54,7 +53,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
   assert(this == &loc_basis_leader);
   loc_basis_leader.mw_mem_handle_ = collection.lendResource<SoaLocalizedBSetMultiWalkerMem>();
   // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
-  auto& basisset_leader  = loc_basis_leader.LOBasisSet;
+  auto& basisset_leader = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
     const auto one_species_basis_list(extractOneSpeciesBasisRefList(basisset_list, i));
@@ -70,7 +69,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::releaseResource(
   assert(this == &loc_basis_leader);
   collection.takebackResource(loc_basis_leader.mw_mem_handle_);
   // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
-  auto& basisset_leader  = loc_basis_leader.LOBasisSet;
+  auto& basisset_leader = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
     const auto one_species_basis_list(extractOneSpeciesBasisRefList(basisset_list, i));
@@ -227,7 +226,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
   assert(vgl_v.size(1) == Nw);
   assert(vgl_v.size(2) == BasisSetSize);
 
-  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
@@ -315,7 +314,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
   const auto coordR_list(vps_leader.extractVPCoords(vp_list));
 
-  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * nVPs);
   displ_list_tr.resize(3 * NumCenters * nVPs);
@@ -383,7 +382,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
   assert(vals.size(0) == Nw);
   assert(vals.size(1) == BasisSetSize);
 
-  auto& Tv_list    = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
@@ -439,7 +438,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceV(const ParticleSet& P,
   const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
-  const auto& coordR  = P.activeR(iat);
+  const auto& coordR = P.activeR(iat);
 
   PosType Tv;
   Tv[0] = (ions_.R[jion][0] - coordR[0]) - displ[jion][0];
@@ -520,7 +519,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceVGL(const ParticleSet& P
   //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
   //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
 
-  const auto& coordR  = P.activeR(iat);
+  const auto& coordR = P.activeR(iat);
 
   PosType Tv;
   Tv[0] = (ions_.R[jion][0] - coordR[0]) - displ[jion][0];

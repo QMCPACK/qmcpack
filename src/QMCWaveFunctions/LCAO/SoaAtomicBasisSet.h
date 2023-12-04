@@ -403,7 +403,12 @@ public:
   }
 
   template<typename LAT, typename T, typename PosType, typename VGHGH>
-  inline void evaluateVGHGH(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGHGH& vghgh, PosType Tv)
+  inline void evaluateVGHGH(const LAT& lattice,
+                            const T r,
+                            const PosType& dr,
+                            const size_t offset,
+                            VGHGH& vghgh,
+                            PosType Tv)
   {
     int TransX, TransY, TransZ;
 
@@ -616,21 +621,28 @@ public:
             dhpsi_zz[ib] += (gr_zz * ang + ang_zz * vr + ctwo * gr_z * ang_z) * Phase;
 
             dghpsi_xxx[ib] += (gr_xxx * ang + vr * ang_xxx + cthree * gr_xx * ang_x + cthree * gr_x * ang_xx) * Phase;
-            dghpsi_xxy[ib] +=
-                (gr_xxy * ang + vr * ang_xxy + gr_xx * ang_y + ang_xx * gr_y + ctwo * gr_xy * ang_x + ctwo * ang_xy * gr_x) * Phase;
-            dghpsi_xxz[ib] +=
-                (gr_xxz * ang + vr * ang_xxz + gr_xx * ang_z + ang_xx * gr_z + ctwo * gr_xz * ang_x + ctwo * ang_xz * gr_x) * Phase;
-            dghpsi_xyy[ib] +=
-                (gr_xyy * ang + vr * ang_xyy + gr_yy * ang_x + ang_yy * gr_x + ctwo * gr_xy * ang_y + ctwo * ang_xy * gr_y) * Phase;
+            dghpsi_xxy[ib] += (gr_xxy * ang + vr * ang_xxy + gr_xx * ang_y + ang_xx * gr_y + ctwo * gr_xy * ang_x +
+                               ctwo * ang_xy * gr_x) *
+                Phase;
+            dghpsi_xxz[ib] += (gr_xxz * ang + vr * ang_xxz + gr_xx * ang_z + ang_xx * gr_z + ctwo * gr_xz * ang_x +
+                               ctwo * ang_xz * gr_x) *
+                Phase;
+            dghpsi_xyy[ib] += (gr_xyy * ang + vr * ang_xyy + gr_yy * ang_x + ang_yy * gr_x + ctwo * gr_xy * ang_y +
+                               ctwo * ang_xy * gr_y) *
+                Phase;
             dghpsi_xyz[ib] += (gr_xyz * ang + vr * ang_xyz + gr_xy * ang_z + ang_xy * gr_z + gr_yz * ang_x +
-                ang_yz * gr_x + gr_xz * ang_y + ang_xz * gr_y) * Phase;
-            dghpsi_xzz[ib] +=
-                (gr_xzz * ang + vr * ang_xzz + gr_zz * ang_x + ang_zz * gr_x + ctwo * gr_xz * ang_z + ctwo * ang_xz * gr_z) * Phase;
+                               ang_yz * gr_x + gr_xz * ang_y + ang_xz * gr_y) *
+                Phase;
+            dghpsi_xzz[ib] += (gr_xzz * ang + vr * ang_xzz + gr_zz * ang_x + ang_zz * gr_x + ctwo * gr_xz * ang_z +
+                               ctwo * ang_xz * gr_z) *
+                Phase;
             dghpsi_yyy[ib] += (gr_yyy * ang + vr * ang_yyy + cthree * gr_yy * ang_y + cthree * gr_y * ang_yy) * Phase;
-            dghpsi_yyz[ib] +=
-                (gr_yyz * ang + vr * ang_yyz + gr_yy * ang_z + ang_yy * gr_z + ctwo * gr_yz * ang_y + ctwo * ang_yz * gr_y) * Phase;
-            dghpsi_yzz[ib] +=
-                (gr_yzz * ang + vr * ang_yzz + gr_zz * ang_y + ang_zz * gr_y + ctwo * gr_yz * ang_z + ctwo * ang_yz * gr_z) * Phase;
+            dghpsi_yyz[ib] += (gr_yyz * ang + vr * ang_yyz + gr_yy * ang_z + ang_yy * gr_z + ctwo * gr_yz * ang_y +
+                               ctwo * ang_yz * gr_y) *
+                Phase;
+            dghpsi_yzz[ib] += (gr_yzz * ang + vr * ang_yzz + gr_zz * ang_y + ang_zz * gr_y + ctwo * gr_yz * ang_z +
+                               ctwo * ang_yz * gr_z) *
+                Phase;
             dghpsi_zzz[ib] += (gr_zzz * ang + vr * ang_zzz + cthree * gr_zz * ang_z + cthree * gr_z * ang_zz) * Phase;
           }
         }
