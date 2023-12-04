@@ -206,8 +206,8 @@ public:
                      GGGVector& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
-  friend struct SplineSetReader;
-  friend struct BsplineReaderBase;
+  friend class SplineSetReader;
+  friend struct BsplineReader;
 };
 
 extern template class SplineC2R<float>;

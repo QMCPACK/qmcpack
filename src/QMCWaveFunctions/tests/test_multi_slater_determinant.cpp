@@ -96,7 +96,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   elec_.update();
 
   auto& twf(*twf_ptr);
-  CHECK(twf.findMSD());
+  CHECK(twf.findMSD().size() == 1);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 

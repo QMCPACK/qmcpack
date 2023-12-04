@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.17.0)
+cmake_minimum_required(VERSION 3.21.0)
 # Note that cmake_minimum_required affects policy defaults.
 # All policies known to the running version of CMake and introduced in
 # cmake_minimum_required version or earlier will be set to use NEW behavior
@@ -82,14 +82,8 @@ endif(ENABLE_CUDA AND ENABLE_SYCL)
 if(ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "ENABLE_CUDA enabled, QMC_CUDA2HIP enabled")
-    if(CMAKE_VERSION VERSION_LESS 3.21.0)
-      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.21.0 or later")
-    endif()
   else(QMC_CUDA2HIP)
     message(STATUS "ENABLE_CUDA enabled, QMC_CUDA2HIP disabled")
-    if(CMAKE_VERSION VERSION_LESS 3.18.0)
-      message(FATAL_ERROR "ENABLE_CUDA require CMake 3.18.0 or later")
-    endif()
   endif()
 else(ENABLE_CUDA)
   if(QMC_CUDA2HIP)

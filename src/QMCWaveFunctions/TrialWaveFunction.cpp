@@ -107,12 +107,13 @@ const SPOSet& TrialWaveFunction::getSPOSet(const std::string& name) const
   return *spoit->second;
 }
 
-std::optional<std::reference_wrapper<MultiSlaterDetTableMethod>> TrialWaveFunction::findMSD() const
+RefVector<MultiSlaterDetTableMethod> TrialWaveFunction::findMSD() const
 {
+  RefVector<MultiSlaterDetTableMethod> refs;
   for (auto& component : Z)
     if (auto* comp_ptr = dynamic_cast<MultiSlaterDetTableMethod*>(component.get()); comp_ptr)
-      return *comp_ptr;
-  return std::nullopt;
+      refs.push_back(*comp_ptr);
+  return refs;
 }
 
 /** return log(|psi|)
