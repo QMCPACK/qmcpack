@@ -1302,8 +1302,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 }
 
 //This will be very similar to the previous tests, but we will check its behavior
-//in periodic boundary conditions.  First for gamma point:
+//in periodic boundary conditions.  Complex (1/4,1/4,1/4) twist for C diamond:
 //
+#ifdef QMC_COMPLEX
 TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 {
   using RealType  = QMCTraits::RealType;
@@ -1610,6 +1611,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
 //  ham.evaluateIonDerivsDeterministicFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
 }
+#endif
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
