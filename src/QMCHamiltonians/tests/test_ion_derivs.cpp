@@ -1531,7 +1531,6 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   //Reference values are from finite difference (step size 1e-5) from a different code path.
 #if defined(MIXED_PRECISION)
-  CHECK(fkin[1][2] == Approx(5.8844148870917925).epsilon(1e-4));
   CHECK(fkin[0][0] == Approx(-3.0056583106).epsilon(1e-4));
   CHECK(fkin[0][1] == Approx(2.3690133680).epsilon(1e-4));
   CHECK(fkin[0][2] == Approx(-1.3344162436).epsilon(1e-4));
