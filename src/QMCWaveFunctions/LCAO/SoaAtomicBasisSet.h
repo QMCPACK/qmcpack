@@ -257,7 +257,8 @@ public:
     PosType dr_new;
     T r_new;
 
-    constexpr T cone(1);
+    constexpr T cone(1.);
+    constexpr T ctwo(2.);
 
 #if not defined(QMC_COMPLEX)
     const ValueType correctphase = 1;
@@ -389,12 +390,12 @@ public:
 
             // \partial_i \partial_j (R*Y) = Y \partial_i \partial_j R + R \partial_i \partial_j Y
             //                             + (\partial_i R) (\partial_j Y) + (\partial_j R)(\partial_i Y)
-            dhpsi_xx[ib] += (gr_xx * ang + ang_xx * vr + 2.0 * gr_x * ang_x) * Phase;
+            dhpsi_xx[ib] += (gr_xx * ang + ang_xx * vr + ctwo * gr_x * ang_x) * Phase;
             dhpsi_xy[ib] += (gr_xy * ang + ang_xy * vr + gr_x * ang_y + gr_y * ang_x) * Phase;
             dhpsi_xz[ib] += (gr_xz * ang + ang_xz * vr + gr_x * ang_z + gr_z * ang_x) * Phase;
-            dhpsi_yy[ib] += (gr_yy * ang + ang_yy * vr + 2.0 * gr_y * ang_y) * Phase;
+            dhpsi_yy[ib] += (gr_yy * ang + ang_yy * vr + ctwo * gr_y * ang_y) * Phase;
             dhpsi_yz[ib] += (gr_yz * ang + ang_yz * vr + gr_y * ang_z + gr_z * ang_y) * Phase;
-            dhpsi_zz[ib] += (gr_zz * ang + ang_zz * vr + 2.0 * gr_z * ang_z) * Phase;
+            dhpsi_zz[ib] += (gr_zz * ang + ang_zz * vr + ctwo * gr_z * ang_z) * Phase;
           }
         }
       }
@@ -409,10 +410,12 @@ public:
     PosType dr_new;
     T r_new;
 
-    constexpr T cone(1);
+    constexpr T cone(1.0);
+    constexpr T ctwo(2.0);
+    constexpr T cthree(3.0);
 
 #if not defined(QMC_COMPLEX)
-    const ValueType correctphase = 1;
+    const ValueType correctphase = 1.0;
 #else
 
     RealType phasearg = SuperTwist[0] * Tv[0] + SuperTwist[1] * Tv[1] + SuperTwist[2] * Tv[2];
@@ -558,7 +561,7 @@ public:
             const T gr_zz = z * zu * gr2_tmp + drnloverr;
 
             //This is q(r) in the notes.
-            const T gr3_tmp = d3phi[nl] - 3.0 * gr2_tmp;
+            const T gr3_tmp = d3phi[nl] - cthree * gr2_tmp;
 
             const T gr_xxx = xu * xu * xu * gr3_tmp + gr2_tmp * (3. * xu);
             const T gr_xxy = xu * xu * yu * gr3_tmp + gr2_tmp * yu;
@@ -605,30 +608,30 @@ public:
 
             // \partial_i \partial_j (R*Y) = Y \partial_i \partial_j R + R \partial_i \partial_j Y
             //                             + (\partial_i R) (\partial_j Y) + (\partial_j R)(\partial_i Y)
-            dhpsi_xx[ib] += (gr_xx * ang + ang_xx * vr + 2.0 * gr_x * ang_x) * Phase;
+            dhpsi_xx[ib] += (gr_xx * ang + ang_xx * vr + ctwo * gr_x * ang_x) * Phase;
             dhpsi_xy[ib] += (gr_xy * ang + ang_xy * vr + gr_x * ang_y + gr_y * ang_x) * Phase;
             dhpsi_xz[ib] += (gr_xz * ang + ang_xz * vr + gr_x * ang_z + gr_z * ang_x) * Phase;
-            dhpsi_yy[ib] += (gr_yy * ang + ang_yy * vr + 2.0 * gr_y * ang_y) * Phase;
+            dhpsi_yy[ib] += (gr_yy * ang + ang_yy * vr + ctwo * gr_y * ang_y) * Phase;
             dhpsi_yz[ib] += (gr_yz * ang + ang_yz * vr + gr_y * ang_z + gr_z * ang_y) * Phase;
-            dhpsi_zz[ib] += (gr_zz * ang + ang_zz * vr + 2.0 * gr_z * ang_z) * Phase;
+            dhpsi_zz[ib] += (gr_zz * ang + ang_zz * vr + ctwo * gr_z * ang_z) * Phase;
 
-            dghpsi_xxx[ib] += (gr_xxx * ang + vr * ang_xxx + 3.0 * gr_xx * ang_x + 3.0 * gr_x * ang_xx) * Phase;
+            dghpsi_xxx[ib] += (gr_xxx * ang + vr * ang_xxx + cthree * gr_xx * ang_x + cthree * gr_x * ang_xx) * Phase;
             dghpsi_xxy[ib] +=
-                (gr_xxy * ang + vr * ang_xxy + gr_xx * ang_y + ang_xx * gr_y + 2.0 * gr_xy * ang_x + 2.0 * ang_xy * gr_x) * Phase;
+                (gr_xxy * ang + vr * ang_xxy + gr_xx * ang_y + ang_xx * gr_y + ctwo * gr_xy * ang_x + ctwo * ang_xy * gr_x) * Phase;
             dghpsi_xxz[ib] +=
-                (gr_xxz * ang + vr * ang_xxz + gr_xx * ang_z + ang_xx * gr_z + 2.0 * gr_xz * ang_x + 2.0 * ang_xz * gr_x) * Phase;
+                (gr_xxz * ang + vr * ang_xxz + gr_xx * ang_z + ang_xx * gr_z + ctwo * gr_xz * ang_x + ctwo * ang_xz * gr_x) * Phase;
             dghpsi_xyy[ib] +=
-                (gr_xyy * ang + vr * ang_xyy + gr_yy * ang_x + ang_yy * gr_x + 2.0 * gr_xy * ang_y + 2.0 * ang_xy * gr_y) * Phase;
+                (gr_xyy * ang + vr * ang_xyy + gr_yy * ang_x + ang_yy * gr_x + ctwo * gr_xy * ang_y + ctwo * ang_xy * gr_y) * Phase;
             dghpsi_xyz[ib] += (gr_xyz * ang + vr * ang_xyz + gr_xy * ang_z + ang_xy * gr_z + gr_yz * ang_x +
                 ang_yz * gr_x + gr_xz * ang_y + ang_xz * gr_y) * Phase;
             dghpsi_xzz[ib] +=
-                (gr_xzz * ang + vr * ang_xzz + gr_zz * ang_x + ang_zz * gr_x + 2.0 * gr_xz * ang_z + 2.0 * ang_xz * gr_z) * Phase;
-            dghpsi_yyy[ib] += (gr_yyy * ang + vr * ang_yyy + 3.0 * gr_yy * ang_y + 3.0 * gr_y * ang_yy) * Phase;
+                (gr_xzz * ang + vr * ang_xzz + gr_zz * ang_x + ang_zz * gr_x + ctwo * gr_xz * ang_z + ctwo * ang_xz * gr_z) * Phase;
+            dghpsi_yyy[ib] += (gr_yyy * ang + vr * ang_yyy + cthree * gr_yy * ang_y + cthree * gr_y * ang_yy) * Phase;
             dghpsi_yyz[ib] +=
-                (gr_yyz * ang + vr * ang_yyz + gr_yy * ang_z + ang_yy * gr_z + 2.0 * gr_yz * ang_y + 2.0 * ang_yz * gr_y) * Phase;
+                (gr_yyz * ang + vr * ang_yyz + gr_yy * ang_z + ang_yy * gr_z + ctwo * gr_yz * ang_y + ctwo * ang_yz * gr_y) * Phase;
             dghpsi_yzz[ib] +=
-                (gr_yzz * ang + vr * ang_yzz + gr_zz * ang_y + ang_zz * gr_y + 2.0 * gr_yz * ang_z + 2.0 * ang_yz * gr_z) * Phase;
-            dghpsi_zzz[ib] += (gr_zzz * ang + vr * ang_zzz + 3.0 * gr_zz * ang_z + 3.0 * gr_z * ang_zz) * Phase;
+                (gr_yzz * ang + vr * ang_yzz + gr_zz * ang_y + ang_zz * gr_y + ctwo * gr_yz * ang_z + ctwo * ang_yz * gr_z) * Phase;
+            dghpsi_zzz[ib] += (gr_zzz * ang + vr * ang_zzz + cthree * gr_zz * ang_z + cthree * gr_z * ang_zz) * Phase;
           }
         }
       }
