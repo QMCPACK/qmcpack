@@ -28,10 +28,10 @@ jobs:
             GCC9-NoMPI-Sandbox-Real,
             GCC9-MPI-Gcov-Real,
             GCC9-MPI-Gcov-Complex,
-            GCC11-NoMPI-Werror-Real,
-            GCC11-NoMPI-Werror-Complex,
-            GCC11-NoMPI-Werror-Real-Mixed,
-            GCC11-NoMPI-Werror-Complex-Mixed,
+            GCC12-NoMPI-Werror-Real,
+            GCC12-NoMPI-Werror-Complex,
+            GCC12-NoMPI-Werror-Real-Mixed,
+            GCC12-NoMPI-Werror-Complex-Mixed,
             Clang14-NoMPI-ASan-Real,
             Clang14-NoMPI-ASan-Complex,
             Clang14-NoMPI-UBSan-Real,
@@ -68,24 +68,24 @@ jobs:
               image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
-          - jobname: GCC11-NoMPI-Werror-Real
+          - jobname: GCC12-NoMPI-Werror-Real
             container:
-              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
+              image: ghcr.io/qmcpack/ubuntu22-serial:latest
               options: -u 1001
 
-          - jobname: GCC11-NoMPI-Werror-Complex
+          - jobname: GCC12-NoMPI-Werror-Complex
             container:
-              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
+              image: ghcr.io/qmcpack/ubuntu22-serial:latest
               options: -u 1001
 
-          - jobname: GCC11-NoMPI-Werror-Real-Mixed
+          - jobname: GCC12-NoMPI-Werror-Real-Mixed
             container:
-              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
+              image: ghcr.io/qmcpack/ubuntu22-serial:latest
               options: -u 1001
 
-          - jobname: GCC11-NoMPI-Werror-Complex-Mixed
+          - jobname: GCC12-NoMPI-Werror-Complex-Mixed
             container:
-              image: ghcr.io/qmcpack/ubuntu2110-serial:latest
+              image: ghcr.io/qmcpack/ubuntu22-serial:latest
               options: -u 1001
 
           - jobname: Clang14-NoMPI-ASan-Real
