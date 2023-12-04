@@ -1306,6 +1306,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 //
 TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 {
+  using RealType  = QMCTraits::RealType;
   app_log() << "====Ion Derivative Test: Single Slater No Jastrow Complex PBC====\n";
   std::ostringstream section_name;
   section_name << "Carbon diamond off gamma unit test: ";
@@ -1316,7 +1317,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   lattice.BoxBConds[0] = 1; // periodic
   lattice.BoxBConds[1] = 1; // periodic
   lattice.BoxBConds[2] = 1; // periodic
-  double lat_const=3.37316115000000e+00;
+  RealType lat_const=3.37316115000000e+00;
   lattice.R = {lat_const, lat_const, 0, 0, lat_const, lat_const, lat_const, 0, lat_const};
   lattice.LR_dim_cutoff = 30;
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
