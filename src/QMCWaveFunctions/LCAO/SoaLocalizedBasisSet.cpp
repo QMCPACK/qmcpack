@@ -272,7 +272,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat,
     Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
     Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
     Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
-    LOBasisSet[IonID[c]]->evaluateVGL(P.getLattice(), dist[c], displ[c], BasisOffset[c], vgh, Tv);
+    LOBasisSet[IonID[c]]->evaluateVGH(P.getLattice(), dist[c], displ[c], BasisOffset[c], vgh, Tv);
   }
 }
 
