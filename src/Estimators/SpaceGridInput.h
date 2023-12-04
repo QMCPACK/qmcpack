@@ -19,6 +19,7 @@
 #include "InputSection.h"
 #include "EstimatorInput.h"
 #include "ParseGridInput.hpp" //for AxisGrid
+#include "SetIfInInput.hpp"
 
 namespace qmcplusplus
 {
@@ -27,6 +28,8 @@ namespace testing
 template<typename T>
 class EnergyDensityTests;
 }
+
+template bool InputSection::setIfInInput<AxisGrid<double>>(AxisGrid<double>& var, const std::string& tag);  
 
 class SpaceGrid;
 

@@ -12,10 +12,13 @@
 #include "string_utils.h"
 #include "EstimatorInput.h"
 #include "OneBodyDensityMatricesInput.h"
-
+#include "SetIfInInput.hpp"
 namespace qmcplusplus
 {
 
+template bool InputSection::setIfInInput<qmcplusplus::OneBodyDensityMatricesInput::Integrator>(qmcplusplus::OneBodyDensityMatricesInput::Integrator& var, const std::string& tag);
+
+  
 OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
 {
   // This results in checkParticularValidity being called on OneBodyDensityMatrixInputSection

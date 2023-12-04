@@ -17,9 +17,12 @@
 
 #include "EstimatorInput.h"
 #include "ModernStringUtils.hpp"
+#include "SetIfInInput.hpp"
 
 namespace qmcplusplus
 {
+template bool InputSection::setIfInInput<ReferencePointsInput::Coord>(ReferencePointsInput::Coord& var,
+                                                                      const std::string& tag);
 
 ReferencePointsInput::ReferencePointsInput(xmlNodePtr cur)
 {

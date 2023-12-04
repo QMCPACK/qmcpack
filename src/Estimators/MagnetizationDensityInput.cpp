@@ -15,8 +15,14 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInput.h"
+#include "SetIfInInput.hpp"
+
 namespace qmcplusplus
 {
+template bool InputSection::setIfInInput<qmcplusplus::MagnetizationDensityInput::Integrator>(
+    qmcplusplus::MagnetizationDensityInput::Integrator& var,
+    const std::string& tag);
+
 MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr cur)
 {
   input_section_.readXML(cur);

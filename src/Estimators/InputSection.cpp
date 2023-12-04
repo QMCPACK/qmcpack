@@ -10,13 +10,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "InputSection.h"
+#include "SetIfInInput.hpp"
 #include "Message/UniformCommunicateError.h"
 #include "ModernStringUtils.hpp"
 #include "Utilities/string_utils.h"
 
 namespace qmcplusplus
 {
-
 void InputSection::readAttributes(xmlNodePtr cur,
                                   const std::string& element_name,
                                   const std::vector<std::string>& do_not_consume)
@@ -74,21 +74,22 @@ void InputSection::readXML(xmlNodePtr cur)
   // at anyrate one of these must match the section_name.
   std::string lcase_section_name{lowerCase(section_name)};
 
-  auto checkSectionName = [&section_name = section_name, &section_name_alternates = section_name_alternates](auto& possible_sname){
+  auto checkSectionName = [&section_name            = section_name,
+                           &section_name_alternates = section_name_alternates](auto& possible_sname) {
     std::string lcase_section_name{lowerCase(section_name)};
     if (possible_sname == lcase_section_name)
       return true;
     if (section_name_alternates.size() > 0)
       return std::any_of(section_name_alternates.begin(), section_name_alternates.end(),
-                      [&possible_sname](auto& name_alternate) {
-                        std::string lcase_alternate{lowerCase(name_alternate)};
-                        return possible_sname == lcase_alternate;
-                      });
+                         [&possible_sname](auto& name_alternate) {
+                           std::string lcase_alternate{lowerCase(name_alternate)};
+                           return possible_sname == lcase_alternate;
+                         });
     return false;
   };
 
-  if (!(checkSectionName(section_ename) || checkSectionName(section_method) ||
-        checkSectionName(section_type) || checkSectionName(section_name_actual)))
+  if (!(checkSectionName(section_ename) || checkSectionName(section_method) || checkSectionName(section_type) ||
+        checkSectionName(section_name_actual)))
     throw UniformCommunicateError("Input is invalid  " + lcase_section_name + " does not match input node!");
 
   // these attributes don't get an element name passed to them because by convention we save and define them unqualified.
@@ -199,9 +200,9 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   }
   else if (isMultiReal(name))
   {
-    std::vector<Real> real_values;
-    for (Real value; svalue >> value;)
-      real_values.push_back(static_cast<Real>(value));
+    std::vector<FullPrecReal> real_values;
+    for (FullPrecReal value; svalue >> value;)
+      real_values.push_back(static_cast<FullPrecReal>(value));
     assignValue(name, real_values);
   }
   else if (isBool(name))
@@ -219,9 +220,9 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   }
   else if (isReal(name))
   {
-    Real value;
+    FullPrecReal value;
     svalue >> value;
-    assignValue(name, Real(value));
+    assignValue(name, FullPrecReal(value));
   }
   else if (isPosition(name))
   {
@@ -270,7 +271,7 @@ void InputSection::setFromValue(const std::string& name, const std::any& value)
     else if (isInteger(name))
       assignValue(name, std::any_cast<int>(value));
     else if (isReal(name))
-      assignValue(name, std::any_cast<Real>(value));
+      assignValue(name, std::any_cast<FullPrecReal>(value));
     else if (isPosition(name))
       assignValue(name, std::any_cast<Position>(value));
     else
@@ -286,6 +287,24 @@ void InputSection::setFromValue(const std::string& name, const std::any& value)
   }
 }
 
+template bool InputSection::setIfInInput<bool>(bool& var, const std::string& tag);
+template bool InputSection::setIfInInput<int>(int& var, const std::string& tag);
+template bool InputSection::setIfInInput<float>(float& var, const std::string& tag);
+template bool InputSection::setIfInInput<double>(double& var, const std::string& tag);
+template bool InputSection::setIfInInput<std::string>(std::string& var, const std::string& tag);
+// template<typename T, typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
+// bool InputSection::setIfInInput<T>(T& var, const std::string& tag)
+// {
+//   if (has(tag))
+//   {
+//     var = get<FullPrecReal>(tag);
+//     return true;
+//   }
+//   else
+//     return false;
+// }
+
+  
 void InputSection::checkValid()
 {
   // check that all required inputs are present
@@ -313,7 +332,7 @@ void InputSection::report(std::ostream& out) const
     else if (isInteger(name))
       out << std::any_cast<int>(value);
     else if (isReal(name))
-      out << std::any_cast<Real>(value);
+      out << std::any_cast<FullPrecReal>(value);
   }
   out << "\n\n";
 }
