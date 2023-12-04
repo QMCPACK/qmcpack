@@ -2502,7 +2502,7 @@ class linear(QIxml):
                   'tries','min_walkers','samplesperthread',
                   'shift_i','shift_s','max_relative_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
-                  'nkept','max_seconds'
+                  'nkept','max_seconds', 'spinmass'
                   ]
     costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
