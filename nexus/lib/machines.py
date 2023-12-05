@@ -2812,8 +2812,6 @@ class SnlMachine(Supercomputer):
         c+='#SBATCH --job-name '+str(job.name)+'\n'
         c+='#SBATCH --account='+str(job.account)+'\n'
         c+='#SBATCH -N '+str(job.nodes)+'\n'
-        #c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        #c+='#SBATCH --cpus-per-task={0}\n'.format(cpus_per_task)
         c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
         c+='#SBATCH -o {0}\n'.format(job.outfile)
         c+='#SBATCH -e {0}\n'.format(job.errfile)
@@ -2839,6 +2837,18 @@ class Eclipse(SnlMachine):
 class Attaway(SnlMachine):
     name = 'attaway'
 #end class Attaway
+
+class Manzano(SnlMachine):
+    name = 'manzano'
+#end class Manzano
+
+class Ghost(SnlMachine):
+    name = 'ghost'
+#end class Ghost
+
+class Amber(SnlMachine):
+    name = 'amber'
+#end class Amber
 
 class Uno(SnlMachine):
     name = 'uno'
@@ -3634,6 +3644,9 @@ Chama(        1232,   2,     8,   64, 1000,   'mpiexec',   'sbatch',  'squeue', 
 Uno(           168,   2,     8,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
 Eclipse(      1488,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
 Attaway(      1488,   2,    18,  192, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
+Manzano(      1488,   2,    24,  192, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
+Ghost(         740,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
+Amber(        1496,   2,    56,  256, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
 Skybridge(    1848,   2,     8,   64, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
 Solo(          374,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
