@@ -257,6 +257,9 @@ public:
     PosType dr_new;
     T r_new;
 
+    //This is needed because of mixed precision builds.  Putting 1.0 and 2.0 directly into final
+    //dpsi and dhpsi assignments at the end of this function can occasionally cause whole RHS
+    //to be typed as double, which is bad.   
     constexpr T cone(1.);
     constexpr T ctwo(2.);
 
@@ -415,6 +418,9 @@ public:
     PosType dr_new;
     T r_new;
 
+    //This is needed because of mixed precision builds.  Putting 1.0, 2.0, and 3.0 directly into final
+    //dpsi, dhpsi, and dghpsi assignments at the end of this function can occasionally cause whole RHS
+    //to be typed as double, which is bad.   
     constexpr T cone(1.0);
     constexpr T ctwo(2.0);
     constexpr T cthree(3.0);
