@@ -2502,7 +2502,7 @@ class linear(QIxml):
                   'tries','min_walkers','samplesperthread',
                   'shift_i','shift_s','max_relative_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
-                  'nkept','max_seconds'
+                  'nkept','max_seconds', 'spinmass'
                   ]
     costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
@@ -4433,6 +4433,7 @@ def generate_particlesets(electrons   = 'e',
                           ions        = 'ion0',
                           up          = 'u',
                           down        = 'd',
+                          spinor      = None,
                           system      = None,
                           randomsrc   = True,
                           hybrid_rcut = None,
@@ -4465,12 +4466,21 @@ def generate_particlesets(electrons   = 'e',
     eup  = elns.up_electron
     edn  = elns.down_electron
 
+    use_spinor = spinor is not None and spinor
+
     particleset_groups = []
-    if eup.count > 0:
-        particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=eup.count))
-    #end if
-    if edn.count > 0:
-        particleset_groups.append(group(name=dname,charge=-1,mass=edn.mass,size=edn.count))
+    if not use_spinor:
+        if eup.count > 0:
+            particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=eup.count))
+        #end if
+        if edn.count > 0:
+            particleset_groups.append(group(name=dname,charge=-1,mass=edn.mass,size=edn.count))
+        #end if
+    else:
+        ecount = eup.count+edn.count
+        if ecount>0:
+            particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=ecount))
+        #end if
     #end if
 
     particlesets = []
@@ -4479,6 +4489,9 @@ def generate_particlesets(electrons   = 'e',
         random = True,
         groups = particleset_groups,
         )
+    if use_spinor:
+        eps.spinor = True
+    #end if
     particlesets.append(eps)
     if len(ions)>0:
         # maintain consistent order
@@ -4542,12 +4555,14 @@ def generate_sposets(type           = None,
                      spo_down       = 'spo_d',
                      system         = None,
                      sposets        = None,
-                     spindatasets   = False):
+                     spindatasets   = False,
+                     spinor         = None,
+                     ):
     ndn = ndown
     if type is None:
         QmcpackInput.class_error('cannot generate sposets\n  type of sposet not specified')
     #end if
-    if sposets!=None:
+    if sposets is not None:
         for spo in sposets:
             spo.type = type
         #end for
@@ -4559,23 +4574,30 @@ def generate_sposets(type           = None,
             elns = system.particles.get_electrons()
             nup  = elns.up_electron.count
             ndn  = elns.down_electron.count
+        else:
+            ndn = ndown
         #end if
-        if not spin_polarized:
-            if nup==ndn:
-                sposets = [sposet(type=type,name='spo_ud',spindataset=0,size=nup)]
+        use_spinor = spinor is not None and spinor
+        if not use_spinor:
+            if not spin_polarized:
+                if nup==ndn:
+                    sposets = [sposet(type=type,name='spo_ud',spindataset=0,size=nup)]
+                else:
+                    sposets = [sposet(type=type,name=spo_up,  spindataset=0,size=nup),
+                               sposet(type=type,name=spo_down,spindataset=0,size=ndn)]
+                #end if
             else:
-                sposets = [sposet(type=type,name=spo_up,  spindataset=0,size=nup),
-                           sposet(type=type,name=spo_down,spindataset=0,size=ndn)]
+                sposets_list = []
+                if nup > 0:
+                    sposets_list.append(sposet(type=type,name=spo_up,  spindataset=0,size=nup))
+                #end if
+                if ndn > 0:
+                    sposets_list.append(sposet(type=type,name=spo_down,spindataset=1,size=ndn))
+                #end if
+                sposets = sposets_list
             #end if
         else:
-            sposets_list = []
-            if nup > 0:
-                sposets_list.append(sposet(type=type,name=spo_up,  spindataset=0,size=nup))
-            #end if
-            if ndn > 0:
-                sposets_list.append(sposet(type=type,name=spo_down,spindataset=1,size=ndn))
-            #end if
-            sposets = sposets_list
+            sposets = [sposet(type=type,name='spo_u',spindataset=0,size=nup+ndn)]
         #end if
         if not spindatasets:
             for spo in sposets:
@@ -4619,9 +4641,10 @@ def generate_bspline_builder(type           = 'bspline',
                              system         = None,
                              orbitals_cpu   = None,
                              gpusharing     = None,
+                             spinor         = None,
                              ):
     tilematrix = identity(3,dtype=int)
-    if system!=None:
+    if system is not None:
         tilematrix = system.structure.tilematrix()
     #end if
     bsb = bspline_builder(
@@ -4639,7 +4662,8 @@ def generate_bspline_builder(type           = 'bspline',
             spin_polarized = spin_polarized,
             system         = system,
             sposets        = sposets,
-            spindatasets   = True
+            spindatasets   = True,
+            spinor         = spinor,
             )
         )
     if sort is not None:
@@ -4773,7 +4797,8 @@ def generate_determinantset(up             = 'u',
                             spin_polarized = False,
                             delay_rank     = None,
                             matrix_inv_cpu = None,
-                            system         = None
+                            system         = None,
+                            spinor         = None,
                             ):
     if system is None:
         QmcpackInput.class_error('generate_determinantset argument system must not be None')
@@ -4781,7 +4806,8 @@ def generate_determinantset(up             = 'u',
     elns = system.particles.get_electrons()
     nup  = elns.up_electron.count
     ndn  = elns.down_electron.count
-    if not spin_polarized and nup==ndn:
+    use_spinor = spinor is not None and spinor
+    if not spin_polarized and nup==ndn and not use_spinor:  
         spo_u = 'spo_ud'
         spo_d = 'spo_ud'
     else:
@@ -4789,25 +4815,38 @@ def generate_determinantset(up             = 'u',
         spo_d = spo_down
     #end if
     determinants_list = []
-    if nup > 0:
-        determinants_list.append(
-            determinant(
-                id     = 'updet',
-                group  = up,
-                sposet = spo_u,
-                size   = nup
-                )
-        )
-    #end if
-    if ndn > 0:
-        determinants_list.append(
-            determinant(
-                id     = 'downdet',
-                group  = down,
-                sposet = spo_d,
-                size   = ndn
-                )
-        )
+    if not use_spinor:
+        if nup > 0:
+            determinants_list.append(
+                determinant(
+                    id     = 'updet',
+                    group  = up,
+                    sposet = spo_u,
+                    size   = nup
+                    )
+            )
+        #end if
+        if ndn > 0:
+            determinants_list.append(
+                determinant(
+                    id     = 'downdet',
+                    group  = down,
+                    sposet = spo_d,
+                    size   = ndn
+                    )
+            )
+        #end if
+    else:
+        if nup+ndn > 0:
+            determinants_list.append(
+                determinant(
+                    id     = 'updet',
+                    group  = up,
+                    sposet = spo_u,
+                    size   = nup+ndn,
+                    )
+            )
+        #end if
     #end if
     dset = determinantset(
         slaterdeterminant = slaterdeterminant(
@@ -4932,7 +4971,8 @@ def generate_determinantset_old(type           = 'bspline',
                                 excitation     = None,
                                 delay_rank     = None,
                                 gpusharing     = None,
-                                system         = None
+                                system         = None,
+                                spinor         = None,
                                 ):
     if system is None:
         QmcpackInput.class_error('generate_determinantset argument system must not be None')
@@ -4946,26 +4986,39 @@ def generate_determinantset_old(type           = 'bspline',
     if system!=None:
         tilematrix = system.structure.tilematrix()
     #end if
+    use_spinor = spinor is not None and spinor
     nup = elns.up_electron.count
     ndn = elns.down_electron.count
     determinants_list = []
-    if nup > 0:
-        determinants_list.append(
-            determinant(
-                id   = 'updet',
-                size = nup,
-                occupation=section(mode='ground',spindataset=0)
-                ),
-        )
-    #end if
-    if ndn > 0:
-        determinants_list.append(
-            determinant(
-                id   = 'downdet',
-                size = ndn,
-                occupation=section(mode='ground',spindataset=down_spin)
-                )
-        )
+    if not use_spinor:
+        if nup > 0:
+            determinants_list.append(
+                determinant(
+                    id   = 'updet',
+                    size = nup,
+                    occupation=section(mode='ground',spindataset=0)
+                    ),
+            )
+        #end if
+        if ndn > 0:
+            determinants_list.append(
+                determinant(
+                    id   = 'downdet',
+                    size = ndn,
+                    occupation=section(mode='ground',spindataset=down_spin)
+                    )
+            )
+        #end if
+    else:
+        if nup+ndn > 0:
+            determinants_list.append(
+                determinant(
+                    id   = 'updet',
+                    size = nup+ndn,
+                    occupation=section(mode='ground',spindataset=0)
+                    ),
+            )
+        #end if
     #end if
     dset = determinantset(
         type       = type,
@@ -6346,6 +6399,7 @@ shared_opt_legacy_defaults = obj(
     timestep             = 0.3,
     usedrift             = False,  
     max_seconds          = None,
+    spinmass             = None,
     )
 
 linear_quartic_legacy_defaults = obj(
@@ -6402,6 +6456,7 @@ vmc_legacy_defaults = obj(
     checkpoint  = -1,
     usedrift    = None,
     max_seconds = None,
+    spinmass    = None,
     )
 vmc_test_legacy_defaults = obj(
     warmupsteps = 10,
@@ -6430,6 +6485,7 @@ dmc_legacy_defaults = obj(
     vmc_timestep            = 0.3,
     vmc_usedrift            = None,
     vmc_checkpoint          = -1,
+    vmc_spinmass            = None,
     eq_dmc                  = False,
     eq_warmupsteps          = 20,
     eq_blocks               = 20,
@@ -6444,6 +6500,7 @@ dmc_legacy_defaults = obj(
     feedback                = None,
     sigmabound              = None,
     max_seconds             = None,
+    spinmass                = None,
     )
 dmc_test_legacy_defaults = obj(
     vmc_warmupsteps = 10,
@@ -6486,7 +6543,8 @@ shared_opt_batched_defaults = obj(
     steps                = 1,                  
     substeps             = 10,                 
     timestep             = 0.3,
-    usedrift             = False,  
+    usedrift             = False,
+    spinmass             = None,
     )
 
 linear_quartic_batched_defaults = obj(
@@ -6545,6 +6603,7 @@ vmc_batched_defaults = obj(
     checkpoint       = None,
     maxcpusecs       = None,
     crowds           = None,
+    spinmass         = None,
     )
 vmc_test_batched_defaults = obj(
     warmupsteps = 10,
@@ -6573,6 +6632,7 @@ dmc_batched_defaults = obj(
     vmc_timestep            = 0.3,
     vmc_usedrift            = False,
     vmc_checkpoint          = None,
+    vmc_spinmass            = None,
     eq_dmc                  = False,
     eq_warmupsteps          = 20,
     eq_blocks               = 20,
@@ -6589,6 +6649,7 @@ dmc_batched_defaults = obj(
     maxage                  = None,
     feedback                = None,
     sigmabound              = None,
+    spinmass                = None,
     )
 dmc_test_batched_defaults = obj(
     vmc_warmupsteps = 10,
@@ -6782,17 +6843,18 @@ def generate_legacy_opt_calculations(
 
 
 def generate_legacy_vmc_calculations(
-    walkers    ,
-    warmupsteps,
-    blocks     ,
-    steps      ,
-    substeps   ,
-    timestep   ,
-    checkpoint ,
-    usedrift   ,
-    max_seconds,
-    loc        = 'generate_vmc_calculations',
-    ):
+        walkers    ,
+        warmupsteps,
+        blocks     ,
+        steps      ,
+        substeps   ,
+        timestep   ,
+        checkpoint ,
+        usedrift   ,
+        max_seconds,
+        spinmass,    
+        loc        = 'generate_vmc_calculations',
+        ):
 
     vmc_calc = vmc(
         walkers     = walkers,
@@ -6810,6 +6872,9 @@ def generate_legacy_vmc_calculations(
     if max_seconds is not None:
         vmc_calc.max_seconds = max_seconds
     #end if
+    if spinmass is not None:
+        vmc_calc.spinmass = spinmass
+    #end if
 
     vmc_calcs = [vmc_calc]
 
@@ -6819,37 +6884,39 @@ def generate_legacy_vmc_calculations(
 
 
 def generate_legacy_dmc_calculations(
-    warmupsteps            ,
-    blocks                 ,
-    steps                  ,
-    timestep               ,
-    checkpoint             ,
-    vmc_samples            ,
-    vmc_samplesperthread   , 
-    vmc_walkers            ,
-    vmc_warmupsteps        ,
-    vmc_blocks             ,
-    vmc_steps              ,
-    vmc_substeps           ,
-    vmc_timestep           ,
-    vmc_usedrift           ,
-    vmc_checkpoint         ,
-    eq_dmc                 ,
-    eq_warmupsteps         ,
-    eq_blocks              ,
-    eq_steps               ,
-    eq_timestep            ,
-    eq_checkpoint          ,
-    ntimesteps             ,
-    timestep_factor        ,    
-    nonlocalmoves          ,
-    branching_cutoff_scheme,
-    maxage                 ,
-    feedback               ,
-    sigmabound             ,
-    max_seconds            ,
-    loc                 = 'generate_dmc_calculations',
-    ):
+        warmupsteps            ,
+        blocks                 ,
+        steps                  ,
+        timestep               ,
+        checkpoint             ,
+        vmc_samples            ,
+        vmc_samplesperthread   , 
+        vmc_walkers            ,
+        vmc_warmupsteps        ,
+        vmc_blocks             ,
+        vmc_steps              ,
+        vmc_substeps           ,
+        vmc_timestep           ,
+        vmc_usedrift           ,
+        vmc_checkpoint         ,
+        vmc_spinmass           ,
+        eq_dmc                 ,
+        eq_warmupsteps         ,
+        eq_blocks              ,
+        eq_steps               ,
+        eq_timestep            ,
+        eq_checkpoint          ,
+        ntimesteps             ,
+        timestep_factor        ,    
+        nonlocalmoves          ,
+        branching_cutoff_scheme,
+        maxage                 ,
+        feedback               ,
+        sigmabound             ,
+        max_seconds            ,
+        spinmass               ,
+        loc                 = 'generate_dmc_calculations',
+        ):
 
     if vmc_samples is None and vmc_samplesperthread is None and vmc_walkers is None:
         error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread, vmc_walkers',loc)
@@ -6877,6 +6944,9 @@ def generate_legacy_dmc_calculations(
     #end if
     if max_seconds is not None:
         vmc_calc.max_seconds = max_seconds
+    #end if
+    if vmc_spinmass is not None:
+        vmc_calc.spinmass = vmc_spinmass
     #end if
 
     dmc_calcs = [vmc_calc]
@@ -6913,6 +6983,7 @@ def generate_legacy_dmc_calculations(
         feedback                = feedback  ,
         sigmabound              = sigmabound,
         max_seconds             = max_seconds,
+        spinmass                = spinmass,
         )
     for calc in dmc_calcs:
         if isinstance(calc,dmc):
@@ -6930,17 +7001,23 @@ def generate_legacy_dmc_calculations(
 
 
 def generate_batched_opt_calculations(
-    method     ,
-    cost       ,
-    cycles     ,
-    var_cycles ,
-    var_samples,
-    init_cycles,
-    init_samples,
-    init_minwalkers,
-    loc        = 'generate_opt_calculations',
-    **opt_inputs
-    ):
+        method     ,
+        cost       ,
+        cycles     ,
+        var_cycles ,
+        var_samples,
+        init_cycles,
+        init_samples,
+        init_minwalkers,
+        loc        = 'generate_opt_calculations',
+        **opt_inputs
+        ):
+
+    for k in list(opt_inputs.keys()):
+        if opt_inputs[k] is None:
+            del opt_inputs[k]
+        #end if
+    #end for
 
     methods = obj(linear=linear)
     if method not in methods:
@@ -7011,19 +7088,20 @@ def generate_batched_opt_calculations(
 
 
 def generate_batched_vmc_calculations(
-    total_walkers    ,
-    walkers_per_rank ,     
-    warmupsteps      ,
-    blocks           ,
-    steps            ,
-    substeps         ,
-    timestep         ,
-    usedrift         ,
-    checkpoint       ,
-    maxcpusecs       ,
-    crowds           ,
-    loc              = 'generate_vmc_calculations',
-    ):
+        total_walkers    ,
+        walkers_per_rank ,     
+        warmupsteps      ,
+        blocks           ,
+        steps            ,
+        substeps         ,
+        timestep         ,
+        usedrift         ,
+        checkpoint       ,
+        maxcpusecs       ,
+        crowds           ,
+        spinmass         ,
+        loc              = 'generate_vmc_calculations',
+        ):
     
     if total_walkers is not None and walkers_per_rank is not None:
         error('Only one of "total_walkers" and "walkers_per_rank" may be provided.',loc)
@@ -7043,6 +7121,7 @@ def generate_batched_vmc_calculations(
         #checkpoint       = checkpoint, # no checkpointing support yet
         maxcpusecs       = maxcpusecs,
         crowds           = crowds,
+        spinmass         = spinmass,
         )
     for name,value in optional_vmc_inputs.items():
         if value is not None:
@@ -7058,39 +7137,41 @@ def generate_batched_vmc_calculations(
 
 
 def generate_batched_dmc_calculations(
-    total_walkers          ,
-    walkers_per_rank       ,
-    warmupsteps            ,
-    blocks                 ,
-    steps                  ,
-    substeps               ,
-    timestep               ,
-    checkpoint             ,
-    vmc_warmupsteps        ,
-    vmc_blocks             ,
-    vmc_steps              ,
-    vmc_substeps           ,
-    vmc_timestep           ,
-    vmc_usedrift           ,
-    vmc_checkpoint         ,
-    eq_dmc                 ,
-    eq_warmupsteps         ,
-    eq_blocks              ,
-    eq_steps               ,
-    eq_timestep            ,
-    eq_checkpoint          ,
-    ntimesteps             ,
-    timestep_factor        ,    
-    nonlocalmoves          ,
-    branching_cutoff_scheme,
-    crowd_serialize_walkers,
-    crowds                 ,
-    reconfiguration        ,
-    maxage                 ,
-    feedback               ,
-    sigmabound             ,
-    loc                 = 'generate_dmc_calculations',
-    ):
+        total_walkers          ,
+        walkers_per_rank       ,
+        warmupsteps            ,
+        blocks                 ,
+        steps                  ,
+        substeps               ,
+        timestep               ,
+        checkpoint             ,
+        vmc_warmupsteps        ,
+        vmc_blocks             ,
+        vmc_steps              ,
+        vmc_substeps           ,
+        vmc_timestep           ,
+        vmc_usedrift           ,
+        vmc_checkpoint         ,
+        vmc_spinmass           ,
+        eq_dmc                 ,
+        eq_warmupsteps         ,
+        eq_blocks              ,
+        eq_steps               ,
+        eq_timestep            ,
+        eq_checkpoint          ,
+        ntimesteps             ,
+        timestep_factor        ,    
+        nonlocalmoves          ,
+        branching_cutoff_scheme,
+        crowd_serialize_walkers,
+        crowds                 ,
+        reconfiguration        ,
+        maxage                 ,
+        feedback               ,
+        sigmabound             ,
+        spinmass               ,
+        loc                 = 'generate_dmc_calculations',
+        ):
 
     if total_walkers is None and walkers_per_rank is None:
         error('DMC walker count not specified via "total_walkers" or "walkers_per_rank".\nPlease provide at least one of these.\n\nWarning: use care in the selection of these parameters.\nPerformance critically depends on the walker count and the batched QMCPACK \ndrivers make no effort to prevent substantial under-utilization.',loc)
@@ -7110,6 +7191,7 @@ def generate_batched_dmc_calculations(
         total_walkers    = total_walkers,
         walkers_per_rank = walkers_per_rank,
         crowds           = crowds,
+        spinmass         = vmc_spinmass,
         #checkpoint       = vmc_checkpoint, # not supported yet
         )
     for name,value in optional_vmc_inputs.items():
@@ -7159,6 +7241,7 @@ def generate_batched_dmc_calculations(
         maxage                  = maxage,
         feedback                = feedback,
         sigmabound              = sigmabound,
+        spinmass                = spinmass,
         )
     for calc in dmc_calcs:
         if isinstance(calc,dmc):
@@ -7237,6 +7320,7 @@ gen_basic_input_defaults = obj(
     excitation     = None,             
     system         = 'missing',        
     pseudos        = None,
+    spinor         = None,
     dla            = None,
     delay_rank     = None,
     jastrows       = 'generateJ12',    
@@ -7324,7 +7408,7 @@ def generate_basic_input(**kwargs):
             kw.bconds = 'ppp'
         #end if
     #end if
-    if kw.corrections=='default' and tuple(kw.bconds)==tuple('ppp'):
+    if kw.corrections=='default' and tuple(kw.bconds)==tuple('ppp') and not kw.spinor:
         if not batched:
             kw.corrections = ['mpc','chiesa']
         else:
@@ -7388,6 +7472,7 @@ def generate_basic_input(**kwargs):
             randomsrc   = kw.randomsrc,
             hybrid_rcut = kw.hybrid_rcut,
             hybrid_lmax = kw.hybrid_lmax,
+            spinor      = kw.spinor,
             )
     #end if
 
@@ -7430,6 +7515,7 @@ def generate_basic_input(**kwargs):
                 system         = kw.system,
                 orbitals_cpu   = kw.orbitals_cpu,
                 gpusharing     = kw.gpusharing,
+                spinor         = kw.spinor,
                 )
         #end if
         if kw.partition is None:
@@ -7447,6 +7533,7 @@ def generate_basic_input(**kwargs):
             delay_rank     = kw.delay_rank,
             matrix_inv_cpu = kw.matrix_inv_cpu,
             system         = kw.system,
+            spinor         = kw.spinor,
             )
     elif kw.det_format=='old':
         spobuilders = None
@@ -7465,6 +7552,7 @@ def generate_basic_input(**kwargs):
             delay_rank     = kw.delay_rank,
             gpusharing     = kw.gpusharing,
             system         = kw.system,
+            spinor         = kw.spinor,
             )
     else:
         QmcpackInput.class_error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(det_format),'generate_qmcpack_input')
@@ -7509,6 +7597,14 @@ def generate_basic_input(**kwargs):
     if kw.jastrows is not None:
         wfn.jastrows = generate_jastrows(kw.jastrows,kw.system,check_ions=True)
     #end if
+
+    if kw.spinor is not None and kw.spinor:
+      # remove u-d 
+      J2 = wfn.jastrows.get('J2')
+      if J2 is not None:
+        corr = J2.get('correlation')
+        if 'ud' in corr:
+          del corr.ud
 
     h_estimators = kw.estimators
     d_estimators = None
