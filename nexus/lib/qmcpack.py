@@ -174,7 +174,7 @@ class Qmcpack(Simulation):
         input = self.input
         system = self.system
         if result_name=='orbitals':
-            if isinstance(sim,Pw2qmcpack) or isinstance(sim, Convertpw4qmc):
+            if isinstance(sim,Pw2qmcpack) or isinstance(sim,Convertpw4qmc):
 
                 h5file = result.h5file
 

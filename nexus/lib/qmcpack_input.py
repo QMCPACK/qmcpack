@@ -4806,14 +4806,14 @@ def generate_determinantset(up             = 'u',
     elns = system.particles.get_electrons()
     nup  = elns.up_electron.count
     ndn  = elns.down_electron.count
-    if not spin_polarized and nup==ndn:
+    use_spinor = spinor is not None and spinor
+    if not spin_polarized and nup==ndn and not use_spinor:  
         spo_u = 'spo_ud'
         spo_d = 'spo_ud'
     else:
         spo_u = spo_up
         spo_d = spo_down
     #end if
-    use_spinor = spinor is not None and spinor
     determinants_list = []
     if not use_spinor:
         if nup > 0:
@@ -7597,6 +7597,14 @@ def generate_basic_input(**kwargs):
     if kw.jastrows is not None:
         wfn.jastrows = generate_jastrows(kw.jastrows,kw.system,check_ions=True)
     #end if
+
+    if kw.spinor is not None and kw.spinor:
+      # remove u-d 
+      J2 = wfn.jastrows.get('J2')
+      if J2 is not None:
+        corr = J2.get('correlation')
+        if 'ud' in corr:
+          del corr.ud
 
     h_estimators = kw.estimators
     d_estimators = None
