@@ -7408,7 +7408,7 @@ def generate_basic_input(**kwargs):
             kw.bconds = 'ppp'
         #end if
     #end if
-    if kw.corrections=='default' and tuple(kw.bconds)==tuple('ppp'):
+    if kw.corrections=='default' and tuple(kw.bconds)==tuple('ppp') and not kw.spinor:
         if not batched:
             kw.corrections = ['mpc','chiesa']
         else:
