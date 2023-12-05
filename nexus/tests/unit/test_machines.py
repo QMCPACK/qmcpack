@@ -1093,6 +1093,12 @@ def test_job_run_command():
         ('cori'           , 'n2_t2'         ) : 'srun test.x',
         ('cori'           , 'n2_t2_e'       ) : 'srun test.x',
         ('cori'           , 'n2_t2_p2'      ) : 'srun test.x',
+        ('daint'          , 'n1'            ) : 'srun -N 1 -n 12 test.x',
+        ('daint'          , 'n1_p1'         ) : 'srun -N 1 -n 1 test.x',
+        ('daint'          , 'n2'            ) : 'srun -N 2 -n 24 test.x',
+        ('daint'          , 'n2_t2'         ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 12 test.x',
+        ('daint'          , 'n2_t2_e'       ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 12 test.x',
+        ('daint'          , 'n2_t2_p2'      ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 4 test.x',
         ('eclipse'        , 'n1'            ) : 'srun test.x',
         ('eclipse'        , 'n1_p1'         ) : 'srun test.x',
         ('eclipse'        , 'n2'            ) : 'srun test.x',
@@ -1550,6 +1556,33 @@ cd $SLURM_SUBMIT_DIR
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 srun test.x''',
+        daint = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=12
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --partition=normal
+#SBATCH --constraint=gpu
+#SBATCH --hint=nomultithread
+#SBATCH --ntasks-per-core=1
+
+cd $SLURM_SUBMIT_DIR
+
+echo JobID : $SLURM_JOBID 
+echo Number of nodes requested: $SLURM_JOB_NUM_NODES 
+echo List of nodes assigned to the job: $SLURM_NODELIST 
+
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+export CRAY_CUDA_MPS=1
+ulimit -s unlimited\n
+
+srun -N 2 -n 64 test.x''',
         eclipse = '''#!/bin/bash
 #SBATCH -p batch
 #SBATCH --job-name jobname
