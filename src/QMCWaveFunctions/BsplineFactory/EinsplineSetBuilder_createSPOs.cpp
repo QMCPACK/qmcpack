@@ -26,10 +26,8 @@
 #include "Utilities/Timer.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTable.h"
-#include <fftw3.h>
-#include "Utilities/ProgressReportEngine.h"
 #include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
+#include "BsplineReader.h"
 #include "BsplineSet.h"
 #include "createBsplineReader.h"
 
@@ -257,23 +255,13 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
     if (MixedSplineReader == 0)
-    {
-      if (use_single)
-        MixedSplineReader = createBsplineRealSingle(this, hybrid_rep == "yes", useGPU);
-      else
-        MixedSplineReader = createBsplineRealDouble(this, hybrid_rep == "yes", useGPU);
-    }
+      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes", useGPU);
   }
   else
 #endif
   {
     if (MixedSplineReader == 0)
-    {
-      if (use_single)
-        MixedSplineReader = createBsplineComplexSingle(this, hybrid_rep == "yes", useGPU);
-      else
-        MixedSplineReader = createBsplineComplexDouble(this, hybrid_rep == "yes", useGPU);
-    }
+      MixedSplineReader = createBsplineComplex(this, use_single, hybrid_rep == "yes", useGPU);
   }
 
   MixedSplineReader->setCommon(XMLRoot);
@@ -283,7 +271,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   auto OrbitalSet = MixedSplineReader->create_spline_set(spinSet, spo_cur);
   if (!OrbitalSet)
     myComm->barrier_and_abort("Failed to create SPOSet*");
-  app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
+  app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << " sec" << std::endl;
   OrbitalSet->finalizeConstruction();
   SPOSetMap[aset] = OrbitalSet.get();
   return OrbitalSet;
