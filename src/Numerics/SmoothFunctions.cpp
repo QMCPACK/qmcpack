@@ -12,7 +12,7 @@
 
 #include <stdexcept>
 
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 #include "SmoothFunctions.hpp"
 
 namespace qmcplusplus

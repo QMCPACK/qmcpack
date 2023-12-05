@@ -86,7 +86,7 @@ struct cuda_ooc_allocator
   template<class U>
   struct rebind
   {
-    typedef cuda_ooc_allocator<U> other;
+    using other = cuda_ooc_allocator<U>;
   };
   using value_type       = T;
   using const_value_type = T const;

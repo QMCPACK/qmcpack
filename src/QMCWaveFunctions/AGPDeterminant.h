@@ -28,12 +28,12 @@ class AGPDeterminant : public WaveFunctionComponent
 {
 public:
   ///define BasisSetType with RealType
-  typedef BasisSetBase<RealType> BasisSetType;
-  typedef BasisSetType::IndexVector_t IndexVector_t;
-  typedef BasisSetType::ValueVector_t ValueVector_t;
-  typedef BasisSetType::ValueMatrix_t ValueMatrix_t;
-  typedef BasisSetType::GradVector_t GradVector_t;
-  typedef BasisSetType::GradMatrix_t GradMatrix_t;
+  using BasisSetType = BasisSetBase<RealType>;
+  using IndexVector  = BasisSetType::IndexVector;
+  using ValueVector  = BasisSetType::ValueVector;
+  using ValueMatrix  = BasisSetType::ValueMatrix;
+  using GradVector   = BasisSetType::GradVector;
+  using GradMatrix   = BasisSetType::GradMatrix;
 
   BasisSetType* GeminalBasis;
 
@@ -41,30 +41,27 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  AGPDeterminant(BasisSetType* bs = 0);
+  AGPDeterminant(BasisSetType* bs = nullptr);
 
   ///default destructor
-  ~AGPDeterminant();
+  ~AGPDeterminant() override;
 
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os);
+  std::string getClassName() const override { return "AGPDeterminant"; }
 
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nup, int ndown);
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  PsiValueType ratio(ParticleSet& P, int iat);
+  PsiValue ratio(ParticleSet& P, int iat) override;
 
   void ratioUp(ParticleSet& P, int iat);
 
@@ -72,11 +69,11 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   /** move was rejected. copy the real container to the temporary to move on
    */
-  void restore(int iat);
+  void restore(int iat) override;
 
   void resizeByWalkers(int nwalkers);
 
@@ -90,9 +87,17 @@ public:
    *contribution of the determinant to G(radient) and L(aplacian)
    *for local energy calculations.
    */
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
+  {}
 
   ///Total number of particles
   int NumPtcls;
@@ -110,13 +115,13 @@ public:
   //ValueType CurrentDet;
 
   ///coefficient of the up/down block
-  ValueMatrix_t Lambda;
+  ValueMatrix Lambda;
 
   ///coefficient of the major block
-  ValueMatrix_t LambdaUP;
+  ValueMatrix LambdaUP;
 
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM, psiM_temp;
+  Matrix<ValueType> psiM, psiM_temp;
 
 
   /**  Transient data for gradient and laplacian evaluation
@@ -124,34 +129,35 @@ public:
    * \f$phiD(j,k) = \sum_{j^{'}} \lambda_{j^{'},j} \phi_k(r_j) \f$
    * j runs over the particle index index
    */
-  ValueMatrix_t phiT;
+  ValueMatrix phiT;
 
   /// temporary container for testing
-  ValueMatrix_t psiMinv;
+  ValueMatrix psiMinv;
   /// store gradients
-  GradMatrix_t dY;
+  GradMatrix dY;
   /// store laplacians
-  ValueMatrix_t d2Y;
+  ValueMatrix d2Y;
   /// temporary determinant-related matrix for gradients
-  GradMatrix_t dpsiU, dpsiD;
+  GradMatrix dpsiU, dpsiD;
   /// temporary determinant-related matrix for laplacians
-  ValueMatrix_t d2psiU, d2psiD;
+  ValueMatrix d2psiU, d2psiD;
 
   /// value of single-particle orbital for particle-by-particle update
   /** temporary vector for a particle-by-particle move
    *
    * phiTv = Lambda Y(iat)
    */
-  ValueVector_t phiTv;
-  ValueVector_t psiU, psiD;
-  GradVector_t dpsiUv, dpsiDv;
-  ValueVector_t d2psiUv, d2psiDv;
-  ValueVector_t workV1, workV2;
-  ValueVector_t WorkSpace;
-  IndexVector_t Pivot;
+  ValueVector phiTv;
+  ValueVector psiU;
+  Vector<ValueType> psiD;
+  GradVector dpsiUv, dpsiDv;
+  ValueVector d2psiUv, d2psiDv;
+  Vector<ValueType> workV1, workV2;
+  ValueVector WorkSpace;
+  IndexVector Pivot;
 
   ///current ratio
-  PsiValueType curRatio;
+  PsiValue curRatio;
   ///cummulate ratio for particle-by-particle update
   RealType cumRatio;
   ///address of  dpsiU[0][0]
@@ -163,18 +169,18 @@ public:
   ///address of FirstAddressOfdVD+OHMMS_DIM*Ndown*Nup
   BasisSetType::ValueType* LastAddressOfdVD;
   ///address of myG[0][0]
-  ParticleSet::SingleParticleValue_t* FirstAddressOfG;
+  ParticleSet::SingleParticleValue* FirstAddressOfG;
   ///address of FirstAddressOfG+OHMMS_DIM*NumPtcls
-  ParticleSet::SingleParticleValue_t* LastAddressOfG;
+  ParticleSet::SingleParticleValue* LastAddressOfG;
   ///address of dY[0][0]
   BasisSetType::ValueType* FirstAddressOfdY;
   ///address of FirstAddressOfdY+NumPtcls*BasisSize
   BasisSetType::ValueType* LastAddressOfdY;
 
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
+  ParticleSet::ParticleGradient myG, myG_temp;
+  ParticleSet::ParticleLaplacian myL, myL_temp;
 
-  void evaluateLogAndStore(ParticleSet& P);
+  void evaluateLogAndStore(const ParticleSet& P);
 };
 } // namespace qmcplusplus
 #endif

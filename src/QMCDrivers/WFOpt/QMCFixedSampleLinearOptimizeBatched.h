@@ -18,14 +18,20 @@
 #ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 #define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 
-#include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
+#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
 #include "Optimize/NRCOptimization.h"
+#include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
+#include "OutputMatrix.h"
+#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
@@ -36,33 +42,62 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched,
-                                            private NRCOptimization<QMCTraits::RealType>
+
+///forward declaration of a cost function
+class QMCCostFunctionBase;
+
+class GradientTest;
+
+
+class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew, LinearMethod
 {
 public:
   ///Constructor.
-  QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
-                                      TrialWaveFunction& psi,
-                                      QMCHamiltonian& h,
+  QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                       QMCDriverInput&& qmcdriver_input,
+                                      const std::optional<EstimatorManagerInput>& global_emi,
                                       VMCDriverInput&& vmcdriver_input,
-                                      MCPopulation& population,
+                                      WalkerConfigurations& wc,
+                                      MCPopulation&& population,
                                       SampleStack& samples,
                                       Communicate* comm);
 
   ///Destructor
-  ~QMCFixedSampleLinearOptimizeBatched();
+  ~QMCFixedSampleLinearOptimizeBatched() override;
+
+  QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
+
+  void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
   ///Run the Optimization algorithm.
-  bool run();
+  bool run() override;
   ///preprocess xml node
-  bool put(xmlNodePtr cur);
+  void process(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
-  RealType Func(RealType dl);
+  RealType costFunc(RealType dl);
+
+  ///common operation to start optimization
+  void start();
+
+#ifdef HAVE_LMY_ENGINE
+  using ValueType = QMCTraits::ValueType;
+  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                    DescentEngine& descentEngineObj,
+                    std::string MinMethod);
+#endif
+
+
+  ///common operation to finish optimization, used by the derived classes
+  void finish();
+
+  void generateSamples();
+
 
 private:
+  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
+
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
@@ -87,10 +122,19 @@ private:
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
+  // Previous linear optimizers ("quartic" and "rescale")
+  bool previous_linear_methods_run();
+
+
 #ifdef HAVE_LMY_ENGINE
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
 #endif
+
+  // Perform test of gradients
+  bool test_run();
+
+  std::unique_ptr<GradientTest> testEngineObj;
 
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
@@ -125,17 +169,21 @@ private:
                           const int bi,
                           const bool gu);
 
-  int NumOfVMCWalkers;
+  // ------------------------------------
+  // Used by legacy linear method algos
+
+  std::vector<RealType> optdir, optparam;
+
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
+
+  RealType param_tol;
+  //-------------------------------------
+
+
+  ///Number of iterations maximum before generating new configurations.
   int nstabilizers;
-  RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string GEVtype, StabilizerMethod, GEVSplit;
-  RealType w_beta;
-  /// number of previous steps to orthogonalize to.
-  int eigCG;
-  /// total number of cg steps per iterations
-  int TotalCGSteps;
+  RealType stabilizerScale, bigChange, exp0;
   /// the previous best identity shift
   RealType bestShift_i;
   /// the previous best overlap shift
@@ -146,59 +194,110 @@ private:
   std::bitset<2> accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
-  /// number of shifts we will try
-  int num_shifts;
-  /// the maximum relative change in the cost function for the adaptive three-shift scheme
-  RealType max_relative_cost_change;
-  ///max amount a parameter may change relative to current wave function weight
-  RealType max_param_change;
-  /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
-  RealType cost_increase_tol;
-  /// the shift_i value that the adaptive shift method should aim for
-  RealType target_shift_i;
-  ///whether we are targeting an excited state
-  std::string targetExcitedStr;
-  ///whether we are targeting an excited state
-  bool targetExcited;
-  ///whether we are doing block algorithm
-  std::string block_lmStr;
-  ///whether we are doing block algorithm
-  bool block_lm;
-  ///number of blocks used in block algorithm
-  int nblocks;
-  ///number of old updates kept
-  int nolds;
-  ///number of directions kept
-  int nkept;
-  ///number of samples to do in correlated sampling part
-  int nsamp_comp;
-  ///the shift to use when targeting an excited state
-  RealType omega_shift;
-  ///whether to do the first part of block lm
-  bool block_first;
-  ///whether to do the second part of block lm
-  bool block_second;
-  ///whether to do the third part of block lm
-  bool block_third;
 
+  // ------------------------------------
+  // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers
 
-  /// Number of walkers in each crowd to use to process samples during optimization
-  int crowd_size_;
-  /// Number of crowds to use to process samples during optimization
-  int opt_num_crowds_;
-  //Variables for alternatives to linear method
-
-  //name of the current optimization method, updated by processOptXML before run
+  //String inputs are listed outside the struct
+  ///name of the current optimization method, updated by processOptXML before run
   std::string MinMethod;
 
-  //type of the previous optimization method, updated by processOptXML before run
-  OptimizerType previous_optimizer_type_;
+  //LMY related input
+  struct LMYOptions
+  {
+    /// number of shifts we will try
+    int num_shifts = 3;
+    /// the maximum relative change in the cost function for the adaptive three-shift scheme
+    RealType max_relative_cost_change = 10.0;
+    ///max amount a parameter may change relative to current wave function weight
+    RealType max_param_change = 0.3;
+    /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
+    RealType cost_increase_tol = 0.0;
+    /// the shift_i value that the adaptive shift method should aim for
+    RealType target_shift_i = -1.0;
+    ///whether we are targeting an excited state
+    bool targetExcited = false;
+    ///whether we are doing block algorithm
+    bool block_lm = false;
+    ///number of blocks used in block algorithm
+    int nblocks = 1;
+    ///number of old updates kept
+    int nolds = 1;
+    ///number of directions kept
+    int nkept = 1;
+    ///number of samples to do in correlated sampling part
+    int nsamp_comp = 0;
+    ///the shift to use when targeting an excited state
+    RealType omega_shift = 0.0;
+    ///whether to do the first part of block lm
+    bool block_first = true;
+    ///whether to do the second part of block lm
+    bool block_second = false;
+    ///whether to do the third part of block lm
+    bool block_third = false;
+    ///whether to filter parameters for the lm
+    bool filter_param = false;
+    ///whether to filter parameters for the lm
+    bool filter_info = false;
+    ///threshold for filtering parameters for the lm
+    double ratio_threshold = 0.0;
+    ///whether to store samples for the lm
+    bool store_samples = false;
+    ///type of the previous optimization method, updated by processOptXML before run
+    OptimizerType previous_optimizer_type = OptimizerType::NONE;
+    ///type of the current optimization method, updated by processOptXML before run
+    OptimizerType current_optimizer_type = OptimizerType::NONE;
+    ///whether to use hybrid method
+    bool doHybrid = false;
+  };
 
-  //type of the current optimization method, updated by processOptXML before run
-  OptimizerType current_optimizer_type_;
+  /// LMY engine related options
+  LMYOptions options_LMY_;
 
-  //whether to use hybrid method
-  bool doHybrid;
+  // ------------------------------------
+
+  // Test parameter gradients
+  bool doGradientTest;
+
+  // Output Hamiltonian and overlap matrices
+  bool do_output_matrices_csv_;
+
+  // Output Hamiltonian and overlap matrices in HDF format
+  bool do_output_matrices_hdf_;
+
+  // Flag to open the files on first pass and print header line
+  bool output_matrices_initialized_;
+
+  OutputMatrix output_hamiltonian_;
+  OutputMatrix output_overlap_;
+
+  // Freeze variational parameters.  Do not update them during each step.
+  bool freeze_parameters_;
+
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
+  NewTimer& involvmat_timer_;
+  NewTimer& line_min_timer_;
+  NewTimer& cost_function_timer_;
+  Timer t1;
+
+  ///xml node to be dumped
+  xmlNodePtr wfNode;
+
+  ParameterSet m_param;
+
+  ///target cost function to optimize
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
+
+  ///vmc engine
+  std::unique_ptr<VMCBatched> vmcEngine;
+
+  VMCDriverInput vmcdriver_input_;
+  SampleStack& samples_;
+
+  /// This is retained in order to construct and reconstruct the vmcEngine.
+  const std::optional<EstimatorManagerInput> global_emi_;
 };
 } // namespace qmcplusplus
 #endif

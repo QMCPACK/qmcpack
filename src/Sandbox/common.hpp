@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -21,30 +21,30 @@
 
 namespace qmcplusplus
 {
-  struct Square
-  {
-    template<typename T>
-      inline T operator()(const T &lhs, const T& rhs) const 
-      {
-        return lhs+rhs*rhs;
-      }
-  };
-
+struct Square
+{
   template<typename T>
-    struct Stat
-    {
-      T sum;
-      T sumsq;
+  inline T operator()(const T& lhs, const T& rhs) const
+  {
+    return lhs + rhs * rhs;
+  }
+};
 
-      Stat():sum(T()),sumsq(T()) {}
+template<typename T>
+struct Stat
+{
+  T sum;
+  T sumsq;
 
-      inline typename std::pair<T,T> apply(const T* d, int n)
-      {
-        sum=std::accumulate(d,d+n,T());
-        sumsq=std::accumulate(d,d+n,T(),Square());
-        T avg=sum/n;
-        return make_pair(avg,sumsq/n-avg*avg);
-      }
-    };
-}
+  Stat() : sum(T()), sumsq(T()) {}
+
+  inline typename std::pair<T, T> apply(const T* d, int n)
+  {
+    sum   = std::accumulate(d, d + n, T());
+    sumsq = std::accumulate(d, d + n, T(), Square());
+    T avg = sum / n;
+    return make_pair(avg, sumsq / n - avg * avg);
+  }
+};
+} // namespace qmcplusplus
 #endif

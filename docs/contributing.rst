@@ -9,23 +9,9 @@ This section briefly describes how to contribute to the manual and is primarily 
 
 -  Use the following table templates when describing XML input.
 
--  Instead of ``\texttt`` or ``\verb`` use
-
-   -  ``\ishell`` for shell text
-
-   -  ``\ixml`` for xml text
-
-   -  ``\icode`` for C++ text
-
-   **Except within tabularx or math environments**
-
--  Instead of ``\begin{verbatim}`` environments, use the appropriate ``\begin{lstlisting}[style=<see qmcpack_listings.sty>]``.
-
--  ``\begin{shade}`` can be used in place of ``\begin{lstlisting}[style=SHELL]``.
-
 -  Unicode rules
 
-   -  Do not use characters for which well-established latex idiom
+   -  Do not use characters for which well-established idioms
       exists, especially dashes, quotes, and apostrophes.
 
    -  Use math mode markup instead of unicode characters for equations.
@@ -37,35 +23,16 @@ This section briefly describes how to contribute to the manual and is primarily 
       (emacs and ‘esc-x toggle-enable-multibyte-characters’)—see any
       unicode you did not intend?
 
--  Place unformatted text targeted at developers working on the LaTeX in
-   comments. Include generously.
-
--  Encapsulate formatted text aimed at developers (like this entire
-   chapter), in ``\dev{}``. Text encapsulated in this way will be removed from the
-   user version of the manual by editing the definition of ``\dev{}`` in ``qmcpack_manual.tex``. Existing
-   but deprecated or partially functioning features fall in this
-   category.
-
 -  Newly added entries to a Bib file should be as complete as possible.
    Use a tool such as JabRef or Zotero that can automate creation of
    these entries from just a DOI.
 
 **Forbidden:**
 
--  Including images instead of using lstlisting sections for text.
+-  Including images instead of text tables.
 
--  Using packages the LaTeX community considers `deprecated`_.
-
--  Using packages, features, or fonts not included in texlive 2017
-   unless you ensure they degrade reasonably for 2017.
-
--  Adding packages unless they bring great value and are supported by
-   tex4ht (unless you are willing to add the support).
-
--  Saving Tex files and Bib files in encodings other than UTF8. Some may
+-  Saving files in encodings other than UTF8. Some may
    report being ASCII encoded since they contain no unicode characters.
-
-.. _deprecated: https://latex.org/forum/viewtopic.php?f=37&t=6637
 
 **Missing sections (these are opinions, not decided priorities):**
 

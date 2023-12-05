@@ -18,16 +18,30 @@
 
 namespace qmcplusplus
 {
-SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF)
-    : SlaterDet(targetPtcl, "SlaterDetWithBackflow"), BFTrans(BF)
+
+SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
+                                             std::vector<std::unique_ptr<Determinant_t>> dets,
+                                             std::unique_ptr<BackflowTransformation> BF)
+    : Dets(std::move(dets)), BFTrans(std::move(BF))
 {
-  Optimizable = false;
+  assert(BFTrans);
+  assert(Dets.size() == targetPtcl.groups());
 }
 
 ///destructor
-SlaterDetWithBackflow::~SlaterDetWithBackflow()
+SlaterDetWithBackflow::~SlaterDetWithBackflow() = default;
+
+bool SlaterDetWithBackflow::isOptimizable() const
 {
-  ///clean up SPOSet
+  return BFTrans->isOptimizable() ||
+      std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
+}
+
+void SlaterDetWithBackflow::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+{
+  opt_obj_refs.push_back(*BFTrans);
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
 void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -36,15 +50,15 @@ void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<V
     Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
-SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
-                                                                       ParticleSet::ParticleGradient_t& G,
-                                                                       ParticleSet::ParticleLaplacian_t& L)
+SlaterDetWithBackflow::LogValue SlaterDetWithBackflow::evaluateLog(const ParticleSet& P,
+                                                                   ParticleSet::ParticleGradient& G,
+                                                                   ParticleSet::ParticleLaplacian& L)
 {
   BFTrans->evaluate(P);
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-    LogValue += Dets[i]->evaluateLog(P, G, L);
-  return LogValue;
+    log_value_ += Dets[i]->evaluateLog(P, G, L);
+  return log_value_;
 }
 
 void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
@@ -54,38 +68,30 @@ void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
     Dets[i]->registerData(P, buf);
 }
 
-SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(ParticleSet& P,
-                                                                        WFBufferType& buf,
-                                                                        bool fromscratch)
+SlaterDetWithBackflow::LogValue SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
-  //BFTrans->updateBuffer(P,buf,fromscratch);
   BFTrans->updateBuffer(P, buf, fromscratch);
-  //BFTrans->evaluate(P);
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-    LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
-  return LogValue;
+    log_value_ += Dets[i]->updateBuffer(P, buf, fromscratch);
+  return log_value_;
 }
 
 void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->copyFromBuffer(P, buf);
-  //BFTrans->evaluate(P);
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->copyFromBuffer(P, buf);
 }
 
-WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
-  BackflowTransformation* tr     = BFTrans->makeClone(tqp);
-  SlaterDetWithBackflow* myclone = new SlaterDetWithBackflow(tqp, tr);
-  myclone->Optimizable           = Optimizable;
-  for (int i = 0; i < Dets.size(); ++i)
-  {
-    DiracDeterminantBase* dclne = Dets[i]->makeCopy(Dets[i]->getPhi()->makeClone());
-    myclone->add(dclne, i);
-  }
-  myclone->setBF(tr);
+  auto bf = BFTrans->makeClone(tqp);
+  std::vector<std::unique_ptr<Determinant_t>> dets;
+  for (const auto& det : Dets)
+    dets.push_back(det->makeCopyWithBF(det->getPhi()->makeClone(), *bf));
+  auto myclone = std::make_unique<SlaterDetWithBackflow>(tqp, std::move(dets), std::move(bf));
+  assert(myclone->isOptimizable() == isOptimizable());
   return myclone;
 }
 
@@ -94,7 +100,10 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   // testing derivatives of G and L
   app_log() << "testing derivatives of G and L \n";
   opt_variables_type wfVars, wfvar_prime;
-  checkInVariables(wfVars);
+  UniqueOptObjRefs opt_obj_refs;
+  extractOptimizableObjectRefs(opt_obj_refs);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(wfVars);
   checkOutVariables(wfVars);
   int Nvars   = wfVars.size();
   wfvar_prime = wfVars;
@@ -103,20 +112,20 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   std::vector<RealType> dhpsi;
   dlogpsi.resize(Nvars);
   dhpsi.resize(Nvars);
-  ParticleSet::ParticleGradient_t G0, G1, G2;
-  ParticleSet::ParticleLaplacian_t L0, L1, L2;
+  ParticleSet::ParticleGradient G0, G1, G2;
+  ParticleSet::ParticleLaplacian L0, L1, L2;
   G0.resize(P.getTotalNum());
   G1.resize(P.getTotalNum());
   G2.resize(P.getTotalNum());
   L0.resize(P.getTotalNum());
   L1.resize(P.getTotalNum());
   L2.resize(P.getTotalNum());
-  LogValueType psi1 = 1.0;
-  LogValueType psi2 = 1.0;
-  RealType dh       = 0.00001;
+  LogValue psi1 = 1.0;
+  LogValue psi2 = 1.0;
+  RealType dh   = 0.00001;
   for (int k = 0; k < Dets.size(); k++)
   {
-    DiracDeterminantWithBackflow* Dets_ = (DiracDeterminantWithBackflow*)Dets[k];
+    DiracDeterminantWithBackflow* Dets_ = dynamic_cast<DiracDeterminantWithBackflow*>(Dets[k].get());
     Dets_->testGGG(P);
     for (int i = 0; i < Nvars; i++)
     {
@@ -129,7 +138,8 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   {
     for (int j = 0; j < Nvars; j++)
       wfvar_prime[j] = wfVars[j];
-    resetParameters(wfvar_prime);
+    for (OptimizableObject& obj : opt_obj_refs)
+      obj.checkInVariablesExclusive(wfvar_prime);
     BFTrans->evaluateDerivatives(P);
     G0 = 0.0;
     G1 = 0.0;
@@ -139,24 +149,29 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
     L2 = 0.0;
     for (int k = 0; k < Dets.size(); k++)
     {
-      DiracDeterminantWithBackflow* Dets_ = (DiracDeterminantWithBackflow*)Dets[k];
+      DiracDeterminantWithBackflow* Dets_ = dynamic_cast<DiracDeterminantWithBackflow*>(Dets[k].get());
       Dets_->evaluateDerivatives(P, wfVars, dlogpsi, dhpsi, &G0, &L0, i);
     }
+
     for (int j = 0; j < Nvars; j++)
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] + dh;
-    resetParameters(wfvar_prime);
+    for (OptimizableObject& obj : opt_obj_refs)
+      obj.checkInVariablesExclusive(wfvar_prime);
     BFTrans->evaluate(P);
     for (int k = 0; k < Dets.size(); k++)
       psi1 += Dets[k]->evaluateLog(P, G1, L1);
+
     for (int j = 0; j < Nvars; j++)
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] - dh;
-    resetParameters(wfvar_prime);
+    for (OptimizableObject& obj : opt_obj_refs)
+      obj.checkInVariablesExclusive(wfvar_prime);
     BFTrans->evaluate(P);
     for (int k = 0; k < Dets.size(); k++)
       psi2 += Dets[k]->evaluateLog(P, G2, L2);
-    ParticleSet::SingleParticleValue_t tmp = 0.0;
+
+    ParticleSet::SingleParticleValue tmp = 0.0;
     for (int q = 0; q < P.getTotalNum(); q++)
       tmp += (L1[q] - L2[q]) / (2.0 * dh);
     app_log() << i << "\n"
@@ -169,15 +184,16 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
                 << std::endl;
     }
   }
-  resetParameters(wfVars);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(wfVars);
   APP_ABORT("Testing bF derivs \n");
 }
 
 
 void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                 const opt_variables_type& optvars,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi)
+                                                Vector<ValueType>& dlogpsi,
+                                                Vector<ValueType>& dhpsioverpsi)
 {
   //testDerivGL(P);
   if (BFTrans->isOptimizable())

@@ -41,7 +41,7 @@ struct container_traits<boost::multi::array<T, D, Alloc>>
     std::array<I, 2> shape;
     for (int i = 0; i < d; ++i)
       shape[i] = n[i];
-    ref.reextent(shape);
+    ref.reextent({static_cast<boost::multi::size_t>(shape[0]), static_cast<boost::multi::size_t>(shape[1])});
   }
 
   inline static size_t getSize(const CT& ref) { return ref.num_elements(); }
@@ -58,7 +58,7 @@ struct container_traits<boost::multi::array_ref<T, D>>
   template<typename I>
   inline static void resize(CT& ref, I* n, int d)
   {
-    std::runtime_error("Can not resize container_proxy<boost::multi::array_ref<T,D>>!\n");
+    throw std::runtime_error("Can not resize container_proxy<boost::multi::array_ref<T,D>>!\n");
   }
 
   inline static size_t getSize(const CT& ref) { return ref.num_elements(); }

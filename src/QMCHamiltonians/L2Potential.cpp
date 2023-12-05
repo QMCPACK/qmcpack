@@ -11,6 +11,7 @@
 
 
 #include "Particle/ParticleSet.h"
+#include "DistanceTable.h"
 #include "L2Potential.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -18,20 +19,15 @@ namespace qmcplusplus
 {
 L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi) : IonConfig(ions)
 {
-  set_energy_domain(potential);
-  two_body_quantum_domain(ions, els);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, els);
   NumIons      = ions.getTotalNum();
   myTableIndex = els.addTable(ions);
   size_t ns    = ions.getSpeciesSet().getTotalNum();
-  PPset.resize(ns, 0);
+  PPset.resize(ns);
   PP.resize(NumIons, nullptr);
   psi_ref = &psi;
 }
-
-
-///destructor
-L2Potential::~L2Potential() { delete_iter(PPset.begin(), PPset.end()); }
-
 
 void L2Potential::resetTargetParticleSet(ParticleSet& P)
 {
@@ -43,19 +39,19 @@ void L2Potential::resetTargetParticleSet(ParticleSet& P)
 }
 
 
-void L2Potential::add(int groupID, L2RadialPotential* ppot)
+void L2Potential::add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot)
 {
-  PPset[groupID] = ppot;
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
-      PP[iat] = ppot;
+      PP[iat] = ppot.get();
+  PPset[groupID] = std::move(ppot);
 }
 
 
 L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
 {
   // compute the Hessian
-  TrialWaveFunction::HessVector_t D2;
+  TrialWaveFunction::HessVector D2;
   // evaluateHessian gives the Hessian(log(Psi))
   psi_ref->evaluateHessian(P, D2);
   // add gradient terms to get (Hessian(Psi))/Psi instead
@@ -66,8 +62,8 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
         D2[n](i, j) += P.G[n][i] * P.G[n][j];
 
   // compute v_L2(r)*L^2 for all electron-ion pairs
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-  Value              = 0.0;
+  const auto& d_table(P.getDistTableAB(myTableIndex));
+  value_             = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
   {
@@ -92,9 +88,9 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
         esum += v * PP[iat]->evaluate(dist[iat]);
       }
     }
-    Value += esum;
+    value_ += esum;
   }
-  return Value;
+  return value_;
 }
 
 
@@ -104,24 +100,24 @@ void L2Potential::evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K)
   D = 0.0;
   D.diagonal(1.0);
 
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+  const auto& d_table(P.getDistTableAB(myTableIndex));
 
   for (int iat = 0; iat < NumIons; iat++)
   {
     L2RadialPotential* ppot = PP[iat];
     if (ppot == nullptr)
       continue;
-    RealType r  = d_table.getTempDists()[iat];
+    RealType r = d_table.getTempDists()[iat];
     if (r < ppot->rcut)
     {
-      PosType  rv = -1*d_table.getTempDispls()[iat];
+      PosType rv   = -1 * d_table.getTempDispls()[iat];
       RealType vL2 = ppot->evaluate(r);
-      K += 2*rv*vL2;
+      K += 2 * rv * vL2;
       for (int i = 0; i < DIM; ++i)
-        D(i,i) += 2*vL2*r*r;
+        D(i, i) += 2 * vL2 * r * r;
       for (int i = 0; i < DIM; ++i)
         for (int j = 0; j < DIM; ++j)
-          D(i,j) -= 2*vL2*rv[i]*rv[j];
+          D(i, j) -= 2 * vL2 * rv[i] * rv[j];
     }
   }
 }
@@ -132,37 +128,38 @@ void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
   D = 0.0;
   D.diagonal(1.0);
 
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+  const auto& d_table(P.getDistTableAB(myTableIndex));
 
   for (int iat = 0; iat < NumIons; iat++)
   {
     L2RadialPotential* ppot = PP[iat];
     if (ppot == nullptr)
       continue;
-    RealType r  = d_table.getTempDists()[iat];
+    RealType r = d_table.getTempDists()[iat];
     if (r < ppot->rcut)
     {
-      PosType  rv = d_table.getTempDispls()[iat];
+      PosType rv   = d_table.getTempDispls()[iat];
       RealType vL2 = ppot->evaluate(r);
       for (int i = 0; i < DIM; ++i)
-        D(i,i) += 2*vL2*r*r;
+        D(i, i) += 2 * vL2 * r * r;
       for (int i = 0; i < DIM; ++i)
         for (int j = 0; j < DIM; ++j)
-          D(i,j) -= 2*vL2*rv[i]*rv[j];
+          D(i, j) -= 2 * vL2 * rv[i] * rv[j];
     }
   }
 }
 
 
-OperatorBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  L2Potential* myclone = new L2Potential(IonConfig, qp, psi);
+  std::unique_ptr<L2Potential> myclone = std::make_unique<L2Potential>(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)
+  {
     if (PPset[ig])
     {
-      L2RadialPotential* ppot = PPset[ig]->makeClone();
-      myclone->add(ig, ppot);
+      myclone->add(ig, std::unique_ptr<L2RadialPotential>(PPset[ig]->makeClone()));
     }
+  }
   return myclone;
 }
 

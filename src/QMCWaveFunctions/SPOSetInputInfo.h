@@ -26,9 +26,9 @@ namespace qmcplusplus
    */
 struct SPOSetInputInfo
 {
-  typedef QMCTraits::RealType RealType;
-  typedef std::vector<int> indices_t;
-  typedef std::vector<RealType> energies_t;
+  using RealType   = QMCTraits::RealType;
+  using indices_t  = std::vector<int>;
+  using energies_t = std::vector<RealType>;
 
   int group;
   int size;
@@ -84,9 +84,9 @@ struct SPOSetInputInfo
 
   inline RealType max_energy() { return highest_energy; }
 
-  indices_t& get_indices(const std::vector<SPOSetInfo*>& states_vec);
+  indices_t& get_indices(const std::vector<std::unique_ptr<SPOSetInfo>>& states_vec);
 
-  inline indices_t& get_indices(xmlNodePtr cur, const std::vector<SPOSetInfo*>& states_vec)
+  inline indices_t& get_indices(xmlNodePtr cur, const std::vector<std::unique_ptr<SPOSetInfo>>& states_vec)
   {
     put(cur);
     return get_indices(states_vec);

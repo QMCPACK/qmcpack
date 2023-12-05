@@ -19,7 +19,7 @@
 #include <vector>
 #include <libxml/tree.h>
 #include "Message/Communicate.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include "QMCDrivers/Optimizers/OptimizerTypes.h"
 
 
@@ -27,8 +27,8 @@ namespace qmcplusplus
 {
 class HybridEngine
 {
-  typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
-  typedef qmcplusplus::QMCTraits::ValueType ValueType;
+  using FullPrecValueType = qmcplusplus::QMCTraits::FullPrecValueType;
+  using ValueType         = qmcplusplus::QMCTraits::ValueType;
 
 private:
   Communicate* myComm;
@@ -61,6 +61,9 @@ public:
 
   //Returns the appropriate XML for a optimization method to be handled inside QMCFixedSampleLinearOptimize
   xmlNodePtr getSelectedXML();
+
+  //Increments the counter for steps taken within a hybrid method optimization
+  void incrementStepCounter() {step_num_++;}
 
   //Determines whether to store a vector based on how many have been requested and what the current step is
   bool queryStore(int store_num, OptimizerType method_type) const;

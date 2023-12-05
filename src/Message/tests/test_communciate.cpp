@@ -19,7 +19,7 @@ TEST_CASE("test_communicate_split_one", "[message]")
 {
   Communicate* c = OHMMS::Controller;
 
-  Communicate* c2 = new Communicate(*c, 1);
+  auto c2 = std::make_unique<Communicate>(*c, 1);
 
   REQUIRE(c2->size() == c->size());
   REQUIRE(c2->rank() == c->rank());
@@ -27,15 +27,28 @@ TEST_CASE("test_communicate_split_one", "[message]")
   if (c->rank() == 0)
   {
     REQUIRE(c2->isGroupLeader() == true);
-    REQUIRE(c2->GroupLeaderComm != nullptr);
-    REQUIRE(c2->GroupLeaderComm->size() == 1);
-    REQUIRE(c2->GroupLeaderComm->rank() == 0);
+    auto GroupLeaderComm = c2->getGroupLeaderComm();
+    REQUIRE(GroupLeaderComm != nullptr);
+    REQUIRE(GroupLeaderComm->size() == 1);
+    REQUIRE(GroupLeaderComm->rank() == 0);
   }
   else
   {
     REQUIRE(c2->isGroupLeader() == false);
-    REQUIRE(c2->GroupLeaderComm == nullptr);
+    REQUIRE(c2->getGroupLeaderComm() == nullptr);
   }
+
+  std::string real_name = c->getName();
+
+  std::string name = "myname";
+  c->setName(name);
+  REQUIRE(c->getName() == name);
+
+  std::string other_name = "myothername";
+  c->setName(other_name.data(), other_name.size());
+  REQUIRE(c->getName() == other_name);
+
+  c->setName(real_name);
 }
 
 TEST_CASE("test_communicate_split_two", "[message]")
@@ -43,7 +56,7 @@ TEST_CASE("test_communicate_split_two", "[message]")
   Communicate* c = OHMMS::Controller;
   if (c->size() >= 2)
   {
-    Communicate* c2 = new Communicate(*c, 2);
+    auto c2 = std::make_unique<Communicate>(*c, 2);
 
     std::vector<int> new_size(2);
     new_size[0] = c->size() / 2;
@@ -67,21 +80,22 @@ TEST_CASE("test_communicate_split_two", "[message]")
     if (c->rank() == 0 || c->rank() == midpoint)
     {
       REQUIRE(c2->isGroupLeader() == true);
-      REQUIRE(c2->GroupLeaderComm != nullptr);
-      REQUIRE(c2->GroupLeaderComm->size() == 2);
+      auto GroupLeaderComm = c2->getGroupLeaderComm();
+      REQUIRE(GroupLeaderComm != nullptr);
+      REQUIRE(GroupLeaderComm->size() == 2);
       if (c->rank() == 0)
       {
-        REQUIRE(c2->GroupLeaderComm->rank() == 0);
+        REQUIRE(GroupLeaderComm->rank() == 0);
       }
       else
       {
-        REQUIRE(c2->GroupLeaderComm->rank() == 1);
+        REQUIRE(GroupLeaderComm->rank() == 1);
       }
     }
     else
     {
       REQUIRE(c2->isGroupLeader() == false);
-      REQUIRE(c2->GroupLeaderComm == nullptr);
+      REQUIRE(c2->getGroupLeaderComm() == nullptr);
     }
   }
 }
@@ -92,7 +106,7 @@ TEST_CASE("test_communicate_split_four", "[message]")
   // For simplicity, only test the case where the number of processes is divisible by 4.
   if (c->size() % 4 == 0)
   {
-    Communicate* c2 = new Communicate(*c, 4);
+    auto c2 = std::make_unique<Communicate>(*c, 4);
 
     REQUIRE(c2->size() == c->size() / 4);
     int group_size = c->size() / 4;
@@ -102,14 +116,15 @@ TEST_CASE("test_communicate_split_four", "[message]")
     if (new_rank == 0)
     {
       REQUIRE(c2->isGroupLeader() == true);
-      REQUIRE(c2->GroupLeaderComm != nullptr);
-      REQUIRE(c2->GroupLeaderComm->size() == 4);
-      REQUIRE(c2->GroupLeaderComm->rank() == c->rank() / group_size);
+      auto GroupLeaderComm = c2->getGroupLeaderComm();
+      REQUIRE(GroupLeaderComm != nullptr);
+      REQUIRE(GroupLeaderComm->size() == 4);
+      REQUIRE(GroupLeaderComm->rank() == c->rank() / group_size);
     }
     else
     {
       REQUIRE(c2->isGroupLeader() == false);
-      REQUIRE(c2->GroupLeaderComm == nullptr);
+      REQUIRE(c2->getGroupLeaderComm() == nullptr);
     }
   }
 }

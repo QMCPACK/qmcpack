@@ -55,7 +55,7 @@ struct WalkerReconfigurationMPI : public WalkerControlBase
   WalkerReconfigurationMPI(Communicate* c = 0);
 
   /** perform branch and swap walkers as required */
-  int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
+  int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger) override;
 
   /** return the surviving Walkers
    */

@@ -77,7 +77,7 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
       const T* restrict coefs2zs = coefs + 2 * zs;
       const T* restrict coefs3zs = coefs + 3 * zs;
 
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, lx, ly, lz, vals)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, lx, ly, lz, vals: QMC_SIMD_ALIGNMENT)
       for (int n = 0; n < num_splines; n++)
       {
         const T coefsv    = coefs[n];
@@ -106,7 +106,7 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
   const T dyInv2 = dyInv * dyInv;
   const T dzInv2 = dzInv * dzInv;
 
-#pragma omp simd aligned(gx, gy, gz, lx)
+#pragma omp simd aligned(gx, gy, gz, lx: QMC_SIMD_ALIGNMENT)
   for (int n = 0; n < num_splines; n++)
   {
     gx[n] *= dxInv;
@@ -176,7 +176,7 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
       const T pre01 = a[i] * db[j];
       const T pre02 = a[i] * d2b[j];
 
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz, vals)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz, vals: QMC_SIMD_ALIGNMENT)
       for (int n = 0; n < num_splines; n++)
       {
         T coefsv    = coefs[n];
@@ -211,7 +211,7 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
   const T dxz   = dxInv * dzInv;
   const T dyz   = dyInv * dzInv;
 
-#pragma omp simd aligned(gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz)
+#pragma omp simd aligned(gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz: QMC_SIMD_ALIGNMENT)
   for (int n = 0; n < num_splines; n++)
   {
     gx[n] *= dxInv;

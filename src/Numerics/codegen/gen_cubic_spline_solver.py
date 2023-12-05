@@ -110,7 +110,7 @@ print(sp9)
 
 # The index 'i' used in the cubic spline equations is not the same 'i' used
 # in the tridigonal solver.   Here we need to make them match.
-# The first foundary condition will the equation at index at 0.
+# The first foundry condition will the equation at index at 0.
 # Adjust the indexing on this equation so i=1 is the index of the first continuity interval match
 sp9 = sp9.subs(i,i-1)
 
@@ -205,7 +205,7 @@ subslist = {
     d[end] : sym_rhs_end,
 }
 
-# Replace knot spacing with differences bewteen knot locations
+# Replace knot spacing with differences between knot locations
 subsL = {
   L[i] : x[i+1] - x[i],
   L[i+1] : x[i+2] - x[i+1],

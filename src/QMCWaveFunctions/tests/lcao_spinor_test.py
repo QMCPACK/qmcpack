@@ -41,10 +41,6 @@ def write_h5_file():
     asciiList = [n.encode("ascii", "ignore") for n in strList]
     app.create_dataset("code",(1,), mylen, asciiList)
     
-    #Nb_KPTS
-    nk = hf.create_group("Nb_KPTS")
-    nk.create_dataset("Nbkpts", data = np.array([1]))
-    
     #basisset
     bs = hf.create_group("basisset")
     bs.create_dataset("NbElements", data=np.array([1]))
@@ -110,7 +106,7 @@ def write_h5_file():
     dr.create_dataset("exponent", data=np.array([2.5]))
     
     
-    kpts = hf.create_group("KPTS_0")
+    kpts = hf.create_group("Super_Twist")
     kpts.create_dataset("eigenset_0", data=np.array([[0.25],[0.75]]))
     kpts.create_dataset("eigenset_0_imag", data=np.array([[0.75],[0.25]]))
     kpts.create_dataset("eigenset_1", data=np.array([[-0.2],[0.8]]))
@@ -134,12 +130,12 @@ class cartGauss:
         norm = self.norm()
         return norm *pos[0]**self.i * pos[1]**self.j * pos[2]**self.k * np.exp(-self.expt * r * r)
 
-def get_reference_values():
-    pos = np.array([0.1,-0.3, 1.7])
-    s   = 0.6
-
+def get_reference_values(pos, s):
     cs = np.cos(s)
     ss = np.sin(s)
+
+    print("Position: {}".format(pos))
+    print("Spin: {}".format(s))
 
     #gaussian basis function values
     g = cartGauss(2.5,0,0,0,0) #s function
@@ -219,5 +215,16 @@ def get_reference_values():
     print("  Lap     : {}".format(splap))
     print("  SpinGrad: {}".format(spds))
 
-write_h5_file()
-get_reference_values()
+    print()
+    print()
+
+if __name__ == "__main__":
+    write_h5_file()
+    
+    pos = np.array([0.1,-0.3, 1.7])
+    s   = 0.6
+    get_reference_values(pos,s)
+    
+    pos = np.array([-0.4,1.5,-0.2])
+    s   = -1.3
+    get_reference_values(pos,s)

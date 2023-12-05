@@ -30,7 +30,7 @@ struct SHOState : public SPOInfo
     energy         = 0.0;
   }
 
-  ~SHOState() {}
+  ~SHOState() override {}
 
   inline void set(TinyVector<int, DIM> qn, RealType e)
   {
@@ -38,7 +38,7 @@ struct SHOState : public SPOInfo
     energy         = e;
   }
 
-  inline void sho_report(const std::string& pad = "")
+  inline void sho_report(const std::string& pad = "") const
   {
     app_log() << pad << "qn=" << quantum_number << "  e=" << energy << std::endl;
   }
@@ -47,8 +47,8 @@ struct SHOState : public SPOInfo
 
 struct SHOSet : public SPOSet
 {
-  typedef ValueMatrix_t::value_type value_type;
-  typedef GradMatrix_t::value_type grad_type;
+  using value_type = ValueMatrix::value_type;
+  using grad_type  = GradMatrix::value_type;
 
   RealType length;
   PosType center;
@@ -64,43 +64,44 @@ struct SHOSet : public SPOSet
   Array<RealType, 2> d2_values;
 
   //construction/destruction
-  SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states);
+  SHOSet(const std::string& my_name, RealType l, PosType c, const std::vector<SHOState*>& sho_states);
 
-  ~SHOSet();
+  ~SHOSet() override;
+
+  std::string getClassName() const override { return "SHOSet"; }
 
   void initialize();
 
-
   //SPOSet interface methods
-  SPOSet* makeClone() const;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override;
 
 
   //local functions
-  void evaluate_v(PosType r, ValueVector_t& psi);
-  void evaluate_vgl(PosType r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluate_v(PosType r, ValueVector& psi);
+  void evaluate_vgl(PosType r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
   void evaluate_hermite(const PosType& xpos);
-  void evaluate_d0(const PosType& xpos, ValueVector_t& psi);
-  void evaluate_d1(const PosType& xpos, ValueVector_t& psi, GradVector_t& dpsi);
-  void evaluate_d2(const PosType& xpos, ValueVector_t& psi, ValueVector_t& d2psi);
-  void report(const std::string& pad = "");
+  void evaluate_d0(const PosType& xpos, ValueVector& psi);
+  void evaluate_d1(const PosType& xpos, ValueVector& psi, GradVector& dpsi);
+  void evaluate_d2(const PosType& xpos, ValueVector& psi, ValueVector& d2psi);
+  void report(const std::string& pad = "") const override;
   void test_derivatives();
   void test_overlap();
-  void evaluate_check(PosType r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluate_check(PosType r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
   //empty methods
   /// number of orbitals is determined only by initial request
-  inline void setOrbitalSetSize(int norbs) {}
+  inline void setOrbitalSetSize(int norbs) override {}
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
@@ -110,36 +111,34 @@ struct SHOSet : public SPOSet
 
 
   //methods to be implemented in the future (possibly)
-  void resetParameters(const opt_variables_type& optVariables);
-  void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
-  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& dddlogdet);
+  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& dddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& ddlogdet);
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& ddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& ddlogdet,
-                            GGGMatrix_t& dddlogdet);
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& ddlogdet,
+                            GGGMatrix& dddlogdet) override;
   void evaluateGradSource(const ParticleSet& P,
                           int first,
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          GradMatrix_t& gradphi);
+                          GradMatrix& gradphi) override;
   void evaluateGradSource(const ParticleSet& P,
                           int first,
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          GradMatrix_t& dphi,
-                          HessMatrix_t& ddphi,
-                          GradMatrix_t& dlapl_phi);
+                          GradMatrix& dphi,
+                          HessMatrix& ddphi,
+                          GradMatrix& dlapl_phi) override;
 };
 
 } // namespace qmcplusplus

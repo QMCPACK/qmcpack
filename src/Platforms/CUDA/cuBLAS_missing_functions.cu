@@ -11,17 +11,29 @@
 
 
 #include "cuBLAS_missing_functions.hpp"
-#include <stdexcept>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuComplex.h>
-#include <thrust/complex.h>
 #include <thrust/system/cuda/detail/core/util.h>
-
 namespace qmcplusplus
 {
 namespace cuBLAS_MFs
 {
 using namespace thrust::cuda_cub::core;
+}
+}
 
+#else
+#include <hip/hip_complex.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#include "uninitialized_array.hpp"
+#endif
+#include <thrust/complex.h>
+
+namespace qmcplusplus
+{
+namespace cuBLAS_MFs
+{
 template<typename T, int ROWBS, int COLBS>
 __global__ void gemvT_batched_kernel(const int m, // number of columns in row major A
                                      const int n, // number of rows in row major A
@@ -72,8 +84,14 @@ __global__ void gemvT_batched_kernel(const int m, // number of columns in row ma
   __syncthreads();
   T* __restrict__ y_iw = y[blockIdx.x];
   if (tid < row_max)
-    y_iw[(row_begin + tid) * incy] =
-        alpha[blockIdx.x] * sum[tid * COLBS] + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+  {
+    if (beta[blockIdx.x] == T(0))
+      y_iw[(row_begin + tid) * incy] =
+          alpha[blockIdx.x] * sum[tid * COLBS]; // protecting NaN from y_iw
+    else
+      y_iw[(row_begin + tid) * incy] =
+          alpha[blockIdx.x] * sum[tid * COLBS] + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+  }
 }
 
 template<typename T, int ROWBS>
@@ -100,7 +118,10 @@ __global__ void gemvN_batched_kernel(const int m, // number of columns in row ma
     T sum(0);
     for (int col_id = 0; col_id < n; col_id++)
       sum += A_iw[col_id * lda + row_begin + tid] * x_iw[col_id * incx];
-    y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+    if (beta[blockIdx.x] == T(0))
+      y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum; // protecting NaN from y_iw
+    else
+      y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
   }
 }
 

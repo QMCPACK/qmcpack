@@ -75,16 +75,9 @@ inline THCOps loadTHCOps(hdf_archive& dump,
 
   // read from HDF
 
-  if (!dump.push("HamiltonianOperations", false))
-  {
-    app_error() << " Error in loadTHCOps: Group HamiltonianOperations not found. \n";
-    APP_ABORT("");
-  }
-  if (!dump.push("THCOps", false))
-  {
-    app_error() << " Error in loadTHCOps: Group THCOps not found. \n";
-    APP_ABORT("");
-  }
+  dump.push("HamiltonianOperations", false);
+  dump.push("THCOps", false);
+
   if (TGwfn.Global().root())
   {
     if (!dump.readEntry(dims, "dims"))
@@ -175,10 +168,10 @@ inline THCOps loadTHCOps(hdf_archive& dump,
 
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
   size_t nel_ = ((type == CLOSED) ? NAEA : (NAEA + NAEB));
-  shmSPVMatrix rotMuv({rotnmu, grotnmu}, shared_allocator<SPValueType>{TGwfn.Node()});
-  shmSPVMatrix rotPiu({size_t(NMO), grotnmu}, shared_allocator<SPValueType>{TGwfn.Node()});
-  shmSPVMatrix Piu({size_t(NMO), nmu}, shared_allocator<SPValueType>{TGwfn.Node()});
-  shmSPVMatrix Luv({nmu, gnmu}, shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix rotMuv({static_cast<shmSPVMatrix::size_type>(rotnmu), static_cast<shmSPVMatrix::size_type>(grotnmu)}, shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix rotPiu({NMO, static_cast<shmSPVMatrix::size_type>(grotnmu)}, shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix Piu({NMO, static_cast<shmSPVMatrix::size_type>(nmu)}, shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix Luv({static_cast<shmSPVMatrix::size_type>(nmu), static_cast<shmSPVMatrix::size_type>(gnmu)}, shared_allocator<SPValueType>{TGwfn.Node()});
 
   // read Half transformed first
   if (TGwfn.Node().root())
@@ -225,11 +218,11 @@ inline THCOps loadTHCOps(hdf_archive& dump,
   std::vector<shmSPCMatrix> rotcPua;
   rotcPua.reserve(ndet);
   for (int i = 0; i < ndet; i++)
-    rotcPua.emplace_back(shmSPCMatrix({grotnmu, nel_}, shared_allocator<SPComplexType>{TGwfn.Node()}));
+    rotcPua.emplace_back(shmSPCMatrix({static_cast<shmSPCMatrix::size_type>(grotnmu), static_cast<shmSPCMatrix::size_type>(nel_)}, shared_allocator<SPComplexType>{TGwfn.Node()}));
   std::vector<shmSPCMatrix> cPua;
   cPua.reserve(ndet);
   for (int i = 0; i < ndet; i++)
-    cPua.emplace_back(shmSPCMatrix({nmu, nel_}, shared_allocator<SPComplexType>{TGwfn.Node()}));
+    cPua.emplace_back(shmSPCMatrix({static_cast<shmSPCMatrix::size_type>(nmu), static_cast<shmSPCMatrix::size_type>(nel_)}, shared_allocator<SPComplexType>{TGwfn.Node()}));
   if (TGwfn.Node().root())
   {
     // simple
@@ -251,7 +244,7 @@ inline THCOps loadTHCOps(hdf_archive& dump,
     }
     else
     {
-      boost::multi::array<SPComplexType, 2> A({PsiT[0].size(1), PsiT[0].size(0)});
+      boost::multi::array<SPComplexType, 2> A({static_cast<boost::multi::size_t>(PsiT[0].size(1)), static_cast<boost::multi::size_t>(PsiT[0].size(0))});
       for (int i = 0; i < ndet; i++)
       {
         ma::Matrix2MA('T', PsiT[i], A);
@@ -302,8 +295,8 @@ inline void writeTHCOps(hdf_archive& dump,
                         shmCMatrix& vn0,
                         ValueType E0)
 {
-  size_t gnmu(Luv.size(1));
-  size_t grotnmu(rotMuv.size(1));
+  size_t gnmu(std::get<1>(Luv.sizes()));
+  size_t grotnmu(std::get<1>(rotMuv.sizes()));
   if (TGwfn.Global().root())
   {
     dump.push("HamiltonianOperations");

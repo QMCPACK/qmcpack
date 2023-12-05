@@ -24,7 +24,7 @@
 #include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shared_communicator.hpp"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
 #include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
@@ -34,7 +34,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
 // distribution:  size,  global,  offset
 //   - rotMuv:    {rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0}
 //   - rotPiu:    {size_t(NMO),grotnmu},{size_t(NMO),grotnmu},{0,0}
@@ -53,13 +52,13 @@ class THCOps
   // node_allocator for fixed arrays, e.g. Luv, Piu, ...
 
   template<class T>
-  using device_alloc_type     = DeviceBufferManager::template allocator_t<T>;
+  using device_alloc_type = DeviceBufferManager::template allocator_t<T>;
   template<class T>
-  using shm_alloc_type        = LocalTGBufferManager::template allocator_t<T>;
+  using shm_alloc_type = LocalTGBufferManager::template allocator_t<T>;
 
   // pointers
-  using pointer          = typename device_alloc_type<ComplexType>::pointer;
-  using sp_pointer       = typename device_alloc_type<SPComplexType>::pointer;
+  using pointer    = typename device_alloc_type<ComplexType>::pointer;
+  using sp_pointer = typename device_alloc_type<SPComplexType>::pointer;
 
   using const_pointer    = typename device_allocator<ComplexType>::const_pointer;
   using const_sp_pointer = typename device_allocator<SPComplexType>::const_pointer;
@@ -134,43 +133,43 @@ public:
         vn0(std::move(v0_)),
         E0(e0_)
   {
-    gnmu    = Luv.size(1);
-    grotnmu = rotMuv.size(1);
+    gnmu    = std::get<1>(Luv.sizes());
+    grotnmu = std::get<1>(rotMuv.sizes());
     if (haj.size() > 1)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
     assert(comm);
     // current partition over 'u' for L/Piu
-    assert(Luv.size(0) == Piu.size(1));
+    assert(Luv.size() == std::get<1>(Piu.sizes()));
     for (int i = 0; i < rotcPua.size(); i++)
     {
       // rot Ps are not yet distributed
-      assert(rotcPua[i].size(0) == rotPiu.size(1));
+      assert(rotcPua[i].size() == std::get<1>(rotPiu.sizes()));
       if (walker_type == CLOSED)
-        assert(rotcPua[i].size(1) == nup);
+        assert(std::get<1>(rotcPua[i].sizes()) == nup);
       else if (walker_type == COLLINEAR)
-        assert(rotcPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(rotcPua[i].sizes()) == nup + ndown);
       else if (walker_type == NONCOLLINEAR)
-        assert(rotcPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(rotcPua[i].sizes()) == nup + ndown);
     }
     for (int i = 0; i < cPua.size(); i++)
     {
-      assert(cPua[i].size(0) == Luv.size(0));
+      assert(cPua[i].size() == Luv.size());
       if (walker_type == CLOSED)
-        assert(cPua[i].size(1) == nup);
+        assert(std::get<1>(cPua[i].sizes()) == nup);
       else if (walker_type == COLLINEAR)
-        assert(cPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(cPua[i].sizes()) == nup + ndown);
       else if (walker_type == NONCOLLINEAR)
-        assert(cPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(cPua[i].sizes()) == nup + ndown);
     }
     if (walker_type == NONCOLLINEAR)
     {
-      assert(Piu.size(0) == 2 * NMO);
-      assert(rotPiu.size(0) == 2 * NMO);
+      assert(Piu.size() == 2 * NMO);
+      assert(rotPiu.size() == 2 * NMO);
     }
     else
     {
-      assert(Piu.size(0) == NMO);
-      assert(rotPiu.size(0) == NMO);
+      assert(Piu.size() == NMO);
+      assert(rotPiu.size() == NMO);
     }
   }
 
@@ -187,14 +186,13 @@ public:
   {
     using std::copy_n;
     using std::fill_n;
-    int NMO = hij.size(0);
+    int NMO = hij.size();
     // in non-collinear case with SO, keep SO matrix here and add it
     // for now, stay collinear
 
-    ShmArray<ComplexType, 1> vMF_(vMF, 
-                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+    ShmArray<ComplexType, 1> vMF_(vMF, shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
     ShmArray<ComplexType, 1> P1D(iextensions<1u>{NMO * NMO}, ComplexType(0),
-                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+                                 shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     vHS(vMF_, P1D);
     if (TG.TG_Cores().size() > 1 && TG.TG_local().root())
@@ -213,7 +211,7 @@ public:
       {
         H1[i][j] += hij[i][j] + vn0[i][j];
         H1[j][i] += hij[j][i] + vn0[j][i];
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if (std::abs(H1[i][j] - ma::conj(H1[j][i])) > 1e-5)
         {
 #else
@@ -259,9 +257,9 @@ public:
     if (k > 0)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
     // G[nel][nmo]
-    assert(E.size(0) == G.size(0));
-    assert(E.size(1) == 3);
-    int nwalk = G.size(0);
+    assert(std::get<0>(E.sizes()) == std::get<0>(G.sizes()));
+    assert(std::get<1>(E.sizes()) == 3);
+    int nwalk = G.size();
     int getKr = Kr != nullptr;
     int getKl = Kl != nullptr;
 
@@ -276,17 +274,17 @@ public:
     if (not(addEJ || addEXX))
       return;
 
-    int nmo_  = rotPiu.size(0);
-    int nu    = rotMuv.size(0);
+    int nmo_  = rotPiu.size();
+    int nu    = rotMuv.size();
     int nu0   = rotnmu0;
-    int nv    = rotMuv.size(1);
-    int nel_  = rotcPua[0].size(1);
+    int nv    = std::get<1>(rotMuv.sizes());
+    int nel_  = std::get<1>(rotcPua[0].sizes());
     int nspin = (walker_type == COLLINEAR) ? 2 : 1;
-    assert(G.size(1) == nel_ * nmo_);
+    assert(std::get<1>(G.sizes()) == nel_ * nmo_);
     if (addEJ and getKl)
-      assert(Kl->size(0) == nwalk && Kl->size(1) == nu);
+      assert(std::get<0>(Kl->sizes()) == nwalk && std::get<1>(Kl->sizes()) == nu);
     if (addEJ and getKr)
-      assert(Kr->size(0) == nwalk && Kr->size(1) == nu);
+      assert(std::get<0>(Kr->sizes()) == nwalk && std::get<1>(Kr->sizes()) == nu);
     using ma::T;
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
@@ -304,7 +302,7 @@ public:
     Bytes /= long((nu * nv + nv + nv * nup) * sizeof(SPComplexType));
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
     ShmArray<SPComplexType, 1> Gbuff(iextensions<1u>{mem_needs},
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                                     shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     const_sp_pointer Gptr(nullptr);
     // setup origin of Gsp and copy_n_cast if necessary
@@ -322,14 +320,14 @@ public:
     Array_cref<SPComplexType, 2> Gsp(Gptr, G.extensions());
 
     // Guv[nspin][nu][nv]
-    ShmArray<SPComplexType, 3> Guv({nwmax, nu, nv}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    ShmArray<SPComplexType, 3> Guv({nwmax, nu, nv},
+                                   shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     // Guu[u]: summed over spin
-    ShmArray<SPComplexType, 2> Guu({nwmax, nv}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    ShmArray<SPComplexType, 2> Guu({nwmax, nv},
+                                   shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
-    ShmArray<SPComplexType, 3> Tav({nwmax, nup, nv}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    ShmArray<SPComplexType, 3> Tav({nwmax, nup, nv},
+                                   shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     SPRealType scl = (walker_type == CLOSED ? 2.0 : 1.0);
     int iw(0);
@@ -390,7 +388,7 @@ public:
         else
         {
           Array<SPComplexType, 3> Twkb({nw, (kN - k0), nelec[ispin]},
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
           std::vector<decltype(&(Twkb[0]))> vTwkb;
           vTwkb.reserve(nw);
           for (int w = 0; w < nw; ++w)
@@ -414,16 +412,16 @@ public:
       comm->barrier();
       if (addEJ)
       {
-        Array<SPComplexType, 2> Twu({nw, (uN - u0)}, 
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+        Array<SPComplexType, 2> Twu({nw, (uN - u0)},
+                                    device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #if defined(QMC_COMPLEX)
         ma::product(Guu.sliced(0, nw), ma::T(rotMuv.sliced(u0, uN)), Twu);
 #else
         // need to keep rotMuv on the left hand side in real build
-        Array<SPComplexType, 2> Tuw({(uN - u0), nw}, 
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
-        ShmArray<SPComplexType, 2> Gvw({nv, nw}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+        Array<SPComplexType, 2> Tuw({(uN - u0), nw},
+                                    device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+        ShmArray<SPComplexType, 2> Gvw({nv, nw},
+                                       shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
         ma::transpose(Guu({0, nw}, {v0, vN}), Gvw.sliced(v0, vN));
         comm->barrier();
         ma::product(rotMuv.sliced(u0, uN), Gvw, Tuw);
@@ -669,8 +667,8 @@ public:
   {
     using XType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {1, v.size(0)});
-    boost::multi::array_ref<XType const, 2, decltype(X.origin())> X_(X.origin(), {X.size(0), 1});
+    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {1, v.size()});
+    boost::multi::array_ref<XType const, 2, decltype(X.origin())> X_(X.origin(), {X.size(), 1});
     vHS(X_, v_, a, c);
   }
 
@@ -683,18 +681,18 @@ public:
     using ma::T;
     using XType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    int nwalk   = X.size(1);
+    int nwalk   = std::get<1>(X.sizes());
 #if defined(QMC_COMPLEX)
-    int nchol = 2 * Luv.size(1);
+    int nchol = 2 * std::get<1>(Luv.sizes());
 #else
-    int nchol = Luv.size(1);
+    int nchol = std::get<1>(Luv.sizes());
 #endif
-    int nmo_ = Piu.size(0);
-    int nu   = Piu.size(1);
-    assert(Luv.size(0) == nu);
-    assert(X.size(0) == nchol);
-    assert(v.size(0) == nwalk);
-    assert(v.size(1) == nmo_ * nmo_);
+    int nmo_ = std::get<0>(Piu.sizes());
+    int nu   = std::get<1>(Piu.sizes());
+    assert(std::get<0>(Luv.sizes()) == nu);
+    assert(std::get<0>(X.sizes()) == nchol);
+    assert(std::get<0>(v.sizes()) == nwalk);
+    assert(std::get<1>(v.sizes()) == nmo_ * nmo_);
 
     size_t memory_needs = nu * nwalk;
     if (not std::is_same<XType, SPComplexType>::value)
@@ -705,12 +703,12 @@ public:
     // calculate how many walkers can be done concurrently
     long Bytes = default_buffer_size_in_MB * 1024L * 1024L;
     // memory_needs = X, v, Tuw
-    Bytes -= size_t(memory_needs * sizeof(SPComplexType)); // substract other needs
+    Bytes -= size_t(memory_needs * sizeof(SPComplexType)); // subtract other needs
     Bytes /= size_t(nmo_ * nu * sizeof(SPComplexType));
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
     memory_needs += nwmax * nmo_ * nu;
-    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>{memory_needs},
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>(memory_needs),
+                                        shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     size_t cnt(0);
     const_sp_pointer Xptr(nullptr);
@@ -753,8 +751,8 @@ public:
 #if defined(QMC_COMPLEX)
     // reinterpret as RealType matrices with 2x the columns
     Array_ref<SPRealType, 2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
-                                   {Luv.size(0), 2 * Luv.size(1)});
-    Array_cref<SPRealType, 2> X_R(pointer_cast<SPRealType const>(Xsp.origin()), {Xsp.size(0), 2 * Xsp.size(1)});
+                                   {std::get<0>(Luv.sizes()), 2 * std::get<1>(Luv.sizes())});
+    Array_cref<SPRealType, 2> X_R(pointer_cast<SPRealType const>(Xsp.origin()), {std::get<0>(Xsp.sizes()), 2 * std::get<1>(Xsp.sizes())});
     Array_ref<SPRealType, 2> Tuw_R(pointer_cast<SPRealType>(Tuw.origin()), {nu, 2 * nwalk});
     ma::product(Luv_R.sliced(u0, uN), X_R, Tuw_R.sliced(u0, uN));
 #else
@@ -826,8 +824,8 @@ public:
   {
     using GType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    boost::multi::array_ref<GType const, 2, decltype(G.origin())> G_(G.origin(), {1, G.size(0)});
+    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {std::get<0>(v.sizes()), 1});
+    boost::multi::array_ref<GType const, 2, decltype(G.origin())> G_(G.origin(), {1, std::get<0>(G.sizes())});
     vbias(G_, v_, a, c, k);
   }
 
@@ -841,17 +839,17 @@ public:
     using vType = typename std::decay<MatB>::type::element;
     if (k > 0)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
-    int nwalk = G.size(0);
-    int nmo_  = Piu.size(0);
-    int nu    = Piu.size(1);
-    int nel_  = cPua[0].size(1);
+    int nwalk = std::get<0>(G.sizes());
+    int nmo_  = std::get<0>(Piu.sizes());
+    int nu    = std::get<1>(Piu.sizes());
+    int nel_  = std::get<1>(cPua[0].sizes());
 #if defined(QMC_COMPLEX)
-    int nchol = 2 * Luv.size(1);
+    int nchol = 2 * std::get<1>(Luv.sizes());
 #else
-    int nchol = Luv.size(1);
+    int nchol = std::get<1>(Luv.sizes());
 #endif
-    assert(v.size(1) == nwalk);
-    assert(v.size(0) == nchol);
+    assert(std::get<1>(v.sizes()) == nwalk);
+    assert(std::get<0>(v.sizes()) == nchol);
     using ma::T;
     int c0, cN;
     std::tie(c0, cN) = FairDivideBoundary(comm->rank(), nchol, comm->size());
@@ -861,8 +859,8 @@ public:
       memory_needs += G.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       memory_needs += v.num_elements();
-    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>{memory_needs},
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>(memory_needs),
+                                        shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     size_t cnt(0);
     const_sp_pointer Gptr(nullptr);
     sp_pointer vptr(nullptr);
@@ -904,9 +902,9 @@ public:
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
       Array_ref<SPRealType, 2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
-                                     {Luv.size(0), 2 * Luv.size(1)});
+                                     {std::get<0>(Luv.sizes()), 2 * std::get<1>(Luv.sizes())});
       Array_ref<SPRealType, 2> Guu_R(pointer_cast<SPRealType>(Guu.origin()), {nu, 2 * nwalk});
-      Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {vsp.size(0), 2 * vsp.size(1)});
+      Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {std::get<0>(vsp.sizes()), 2 * std::get<1>(vsp.sizes())});
       ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(0), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
 #else
       ma::product(SPRealType(a), T(Luv(Luv.extension(0), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
@@ -919,9 +917,9 @@ public:
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
       Array_ref<SPRealType, 2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
-                                     {Luv.size(0), 2 * Luv.size(1)});
+                                     {std::get<0>(Luv.sizes()), 2 * std::get<1>(Luv.sizes())});
       Array_ref<SPRealType, 2> Guu_R(pointer_cast<SPRealType>(Guu.origin()), {nu, 2 * nwalk});
-      Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {vsp.size(0), 2 * vsp.size(1)});
+      Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {std::get<0>(vsp.sizes()), 2 * std::get<1>(vsp.sizes())});
       ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(0), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
 #else
       ma::product(SPRealType(a), T(Luv(Luv.extension(0), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
@@ -929,7 +927,7 @@ public:
     }
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n_cast(make_device_ptr(vsp[c0].origin()), vsp.size(1) * (cN - c0), make_device_ptr(v[c0].origin()));
+      copy_n_cast(make_device_ptr(vsp[c0].origin()), std::get<1>(vsp.sizes()) * (cN - c0), make_device_ptr(v[c0].origin()));
     }
     comm->barrier();
   }
@@ -941,13 +939,13 @@ public:
   }
 
   bool distribution_over_cholesky_vectors() const { return false; }
-  int number_of_ke_vectors() const { return rotMuv.size(0); }
+  int number_of_ke_vectors() const { return std::get<0>(rotMuv.sizes()); }
 #if defined(QMC_COMPLEX)
-  int local_number_of_cholesky_vectors() const { return 2 * Luv.size(1); }
-  int global_number_of_cholesky_vectors() const { return 2 * Luv.size(1); }
+  int local_number_of_cholesky_vectors() const { return 2 * std::get<1>(Luv.sizes()); }
+  int global_number_of_cholesky_vectors() const { return 2 * std::get<1>(Luv.sizes()); }
 #else
-  int local_number_of_cholesky_vectors() const { return Luv.size(1); }
-  int global_number_of_cholesky_vectors() const { return Luv.size(1); }
+  int local_number_of_cholesky_vectors() const { return std::get<1>(Luv.sizes()); }
+  int global_number_of_cholesky_vectors() const { return std::get<1>(Luv.sizes()); }
 #endif
   int global_origin_cholesky_vector() const { return 0; }
 
@@ -966,20 +964,20 @@ protected:
   template<class MatA, class MatB>
   void Guu_from_compact(MatA const& G, MatB&& Guu)
   {
-    int nmo_ = int(Piu.size(0));
-    int nu   = int(Piu.size(1));
-    int nel_ = cPua[0].size(1);
+    int nmo_ = int(std::get<0>(Piu.sizes()));
+    int nu   = int(std::get<1>(Piu.sizes()));
+    int nel_ = std::get<1>(cPua[0].sizes());
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
-    int nw           = G.size(0);
+    int nw           = std::get<0>(G.sizes());
 
-    assert(G.size(0) == Guu.size(1));
-    assert(G.size(1) == nel_ * nmo_);
-    assert(Guu.size(0) == nu);
+    assert(std::get<0>(G.sizes()) == std::get<1>(Guu.sizes()));
+    assert(std::get<1>(G.sizes()) == nel_ * nmo_);
+    assert(std::get<0>(Guu.sizes()) == nu);
 
     ComplexType a = (walker_type == CLOSED) ? ComplexType(2.0) : ComplexType(1.0);
     Array<SPComplexType, 2> T1({(uN - u0), nw * nel_},
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                               device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     Array_cref<SPComplexType, 2> Gw(make_device_ptr(G.origin()), {nw * nel_, nmo_});
     comm->barrier();
 
@@ -990,8 +988,8 @@ protected:
     {
       int k0, kN;
       std::tie(k0, kN) = FairDivideBoundary(comm->rank(), nmo_, comm->size());
-      ShmArray<SPComplexType, 2> TGw({nmo_, nw * nel_}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      ShmArray<SPComplexType, 2> TGw({nmo_, nw * nel_},
+                                     shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       ma::transpose(Gw(Gw.extension(0), {k0, kN}), TGw.sliced(k0, kN));
       comm->barrier();
       ma::product(ma::T(Piu({0, nmo_}, {u0, uN})), TGw, T1);
@@ -1009,15 +1007,15 @@ protected:
   void Guu_from_full(MatA const& G, MatB&& Guu)
   {
     using std::fill_n;
-    int nmo_ = int(Piu.size(0));
-    int nu   = int(Piu.size(1));
+    int nmo_ = int(std::get<0>(Piu.sizes()));
+    int nu   = int(std::get<1>(Piu.sizes()));
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
-    int nwalk        = G.size(0);
+    int nwalk        = G.size();
 
-    assert(G.size(0) == Guu.size(1));
-    assert(Guu.size(0) == nu);
-    assert(G.size(1) == nmo_ * nmo_);
+    assert(std::get<0>(G.sizes()) == std::get<1>(Guu.sizes()));
+    assert(std::get<0>(Guu.sizes()) == nu);
+    assert(std::get<1>(G.sizes()) == nmo_ * nmo_);
 
     // calculate how many walkers can be done concurrently
     long Bytes = default_buffer_size_in_MB * 1024L * 1024L;
@@ -1026,7 +1024,7 @@ protected:
 
     ComplexType a = (walker_type == CLOSED) ? ComplexType(2.0) : ComplexType(1.0);
     Array<SPComplexType, 2> T1({nwmax * nmo_, (uN - u0)},
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                               device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     comm->barrier();
     fill_n(Guu[u0].origin(), nwalk * (uN - u0), ComplexType(0.0));
 
@@ -1060,11 +1058,11 @@ protected:
     static_assert(std::decay<MatB>::type::dimensionality == 3, "Wrong dimensionality");
     static_assert(std::decay<MatC>::type::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<MatD>::type::dimensionality == 3, "Wrong dimensionality");
-    int nmo_ = int(rotPiu.size(0));
-    int nu   = int(rotMuv.size(0)); // potentially distributed over nodes
-    int nv   = int(rotMuv.size(1)); // not distributed over nodes
-    int nw   = int(G.size(0));
-    assert(rotPiu.size(1) == nv);
+    int nmo_ = int(std::get<0>(rotPiu.sizes()));
+    int nu   = int(std::get<0>(rotMuv.sizes())); // potentially distributed over nodes
+    int nv   = int(std::get<1>(rotMuv.sizes())); // not distributed over nodes
+    int nw   = int(G.size());
+    assert(std::get<1>(rotPiu.sizes()) == nv);
     int v0, vN;
     std::tie(v0, vN) = FairDivideBoundary(comm->rank(), nv, comm->size());
     int k0, kN;
@@ -1104,7 +1102,7 @@ protected:
     ma::BatchedProduct('N', 'N', Gwaj, Pjv, Twav);
 #else
     ShmArray<SPComplexType, 3> Gja({nw, nmo_, nelec[ispin]},
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                                   shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     Array_ref<SPComplexType, 3> Tva(make_device_ptr(Guv.origin()), {nw, nv, nelec[ispin]});
     std::vector<array_ptr> Gwja;
     std::vector<decltype(&(Tva[0]({0, 1}, {0, 1})))> Twva;

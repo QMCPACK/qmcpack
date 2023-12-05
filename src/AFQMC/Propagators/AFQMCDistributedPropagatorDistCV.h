@@ -56,7 +56,7 @@ public:
                                    Wavefunction& wfn_,
                                    stdCMatrix&& h1_,
                                    CVector&& vmf_,
-                                   RandomGenerator_t* r)
+                                   RandomBase<RealType>& r)
       : base(info, cur, tg_, wfn_, std::move(h1_), std::move(vmf_), r),
         bpX(iextensions<1u>{1}, shared_allocator<ComplexType>{TG.TG_local()}),
         req_Gsend(MPI_REQUEST_NULL),
@@ -74,7 +74,7 @@ public:
 
     std::string str("no");
     ParameterSet m_param;
-    m_param.add(str, "low_memory", "std::string");
+    m_param.add(str, "low_memory");
     m_param.put(cur);
 
     std::transform(str.begin(), str.end(), str.begin(), (int (*)(int))tolower);

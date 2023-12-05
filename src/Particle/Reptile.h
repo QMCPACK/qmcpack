@@ -37,12 +37,12 @@ class MCWalkerConfiguration;
 class Reptile : public QMCTraits
 {
 public:
-  using WP = WalkerProperties::Indexes;
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-  //typedef Walker_t::Buffer_t              Buffer_t;
-  //    typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef MCWalkerConfiguration::iterator WalkerIter_t;
-  typedef std::vector<Walker_t::ParticlePos_t> ReptileConfig_t;
+  using WP       = WalkerProperties::Indexes;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
+  //using Buffer_t = Walker_t::Buffer_t             ;
+  //    using Walker_t = MCWalkerConfiguration::Walker_t;
+  using WalkerIter_t    = MCWalkerConfiguration::iterator;
+  using ReptileConfig_t = std::vector<Walker_t::ParticlePos>;
 
   std::vector<IndexType> Action;
   std::vector<IndexType> TransProb;
@@ -221,25 +221,25 @@ public:
 
   //This takes a value of imaginary time "t" and returns a 3N particle position vector, corresponding to a time slice extrapolated
   // from the current reptile.  If t>length of reptile, then return the last bead.  if t<0; return the first bead.
-  inline Walker_t::ParticlePos_t linearInterp(RealType t)
+  inline Walker_t::ParticlePos linearInterp(RealType t)
   {
     IndexType nbead =
         IndexType(t / tau); //Calculate the lower bound on the timeslice.  t is between binnum*Tau and (binnum+1)Tau
     RealType beadfrac = t / tau - nbead; //the fractional coordinate between n and n+1 bead
     if (nbead <= 0)
     {
-      ParticleSet::ParticlePos_t result = getHead().R;
+      ParticleSet::ParticlePos result = getHead().R;
       return result;
     }
     else if (nbead >= nbeads - 1)
     {
-      ParticleSet::ParticlePos_t result = getTail().R;
+      ParticleSet::ParticlePos result = getTail().R;
       return result;
     }
 
     else
     {
-      Walker_t::ParticlePos_t dR(getBead(nbead + 1).R), interpR(getBead(nbead).R);
+      Walker_t::ParticlePos dR(getBead(nbead + 1).R), interpR(getBead(nbead).R);
       dR = dR - getBead(nbead).R;
 
       interpR = getBead(nbead).R + beadfrac * dR;
@@ -268,7 +268,7 @@ public:
       ;
   }
 
-  inline void setReptileSlicePositions(Walker_t::ParticlePos_t R)
+  inline void setReptileSlicePositions(Walker_t::ParticlePos R)
   {
     for (int i = 0; i < nbeads; i++)
       getBead(i).R = R;

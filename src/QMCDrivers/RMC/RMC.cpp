@@ -19,8 +19,8 @@
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "OhmmsApp/RandomNumberControl.h"
-#include "Message/OpenMP.h"
+#include "RandomNumberControl.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Particle/Reptile.h"
 #include "Utilities/FairDivide.h"
@@ -28,18 +28,19 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 
 namespace qmcplusplus
 {
 /// Constructor.
-RMC::RMC(MCWalkerConfiguration& w,
+RMC::RMC(const ProjectData& project_data,
+         MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
          Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "RMC"),
+    : QMCDriver(project_data, w, psi, h, comm, "RMC"),
       prestepsVMC(-1),
       rescaleDrift("no"),
       beta(-1),
@@ -49,11 +50,11 @@ RMC::RMC(MCWalkerConfiguration& w,
   RootName = "rmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(rescaleDrift, "drift", "string");
-  m_param.add(beta, "beta", "double");
-  m_param.add(beads, "beads", "int");
-  m_param.add(resizeReptile, "resize", "int");
-  m_param.add(prestepsVMC, "vmcpresteps", "int");
+  m_param.add(rescaleDrift, "drift");
+  m_param.add(beta, "beta");
+  m_param.add(beads, "beads");
+  m_param.add(resizeReptile, "resize");
+  m_param.add(prestepsVMC, "vmcpresteps");
 
   Action.resize(3);
   Action[0] = w.addProperty("ActionBackward");
@@ -77,7 +78,7 @@ bool RMC::run()
   const bool has_collectables = W.Collectables.size();
 
   LoopTimer<> rmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
   for (int block = 0; block < nBlocks; ++block)
   {
     rmc_loop.start();
@@ -86,7 +87,7 @@ bool RMC::run()
       int ip                 = omp_get_thread_num();
       IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
-      MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+      MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       Movers[ip]->startBlock(nSteps);
       int now_loc = CurrentStep;
 
@@ -113,25 +114,27 @@ bool RMC::run()
     } //end-of-parallel for
     CurrentStep += nSteps;
     Estimators->stopBlock(estimatorClones);
-    //why was this commented out? Are checkpoints stored some other way?
-    if (storeConfigs)
-      recordBlock(block);
-
+    recordBlock(block);
     rmc_loop.stop();
-    bool enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(rmc_loop);
-    // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
 
-    if (!enough_time_for_next_iteration)
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(rmc_loop);
+    myComm->bcast(stop_requested);
+
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("RMC", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("RMC", block);
+      run_time_manager.markStop();
       break;
     }
   } //block
   Estimators->stop(estimatorClones);
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
-    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+    RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
   //return nbeads and stuff to its original unset state;
   resetVars();
   return finalize(nBlocks);
@@ -186,7 +189,7 @@ void RMC::resetRun()
   {
     //Initialize on whatever walkers are in MCWalkerConfiguration.
     app_log() << "Using walkers from previous non-RMC run.\n";
-    std::vector<ParticlePos_t> wSamps(0);
+    std::vector<ParticlePos> wSamps(0);
     MCWalkerConfiguration::iterator wit(W.begin()), wend(W.end());
     for (IndexType sampid = 0; wit != wend && sampid < nReptiles; wit++)
       wSamps.push_back((**wit).R);
@@ -204,23 +207,27 @@ void RMC::resetRun()
 
   if (Movers.empty())
   {
-    Movers.resize(NumThreads, 0);
-    estimatorClones.resize(NumThreads, 0);
-    traceClones.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Movers.resize(NumThreads, nullptr);
+    estimatorClones.resize(NumThreads, nullptr);
+    traceClones.resize(NumThreads, nullptr);
+    Rng.resize(NumThreads);
     branchEngine->initReptile(W);
+
+    // hdf_archive::hdf_archive() is not thread-safe
+    for (int ip = 0; ip < NumThreads; ++ip)
+      estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
+
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
-      Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+      Rng[ip] = RandomNumberControl::Children[ip]->makeClone();
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      hClones[ip]->setRandomGenerator(Rng[ip]);
+      hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         os << "  PbyP moves with drift, using RMCUpdatePbyPWithDriftFast" << std::endl;
@@ -252,13 +259,9 @@ void RMC::resetRun()
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-    // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-    wClones[ip]->reptile = W.ReptileList[ip];
-    //app_log()<<"Thread # "<<ip<< std::endl;
-    // printf(" Thread# %d  WalkerList.size()=%d \n",ip,wClones[ip]->WalkerList.size());
+    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
 
-    // wClones[ip]->reptile->printState();
+    wClones[ip]->reptile    = W.ReptileList[ip].get();
     wClones[ip]->activeBead = 0;
     wClones[ip]->direction  = +1;
 
@@ -269,7 +272,7 @@ void RMC::resetRun()
     }
     else
     {
-      Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+      Movers[ip]->initWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     }
 
     //this will "unroll" the reptile according to forced VMC steps (no bounce).  See beginning of function for logic of setting prestepVMC.
@@ -279,7 +282,7 @@ void RMC::resetRun()
     }
 
     //set up initial action and transprob.
-    MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+    MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
   }
 
 
@@ -291,7 +294,7 @@ void RMC::resetRun()
   {
     for (int prestep = 0; prestep < nWarmupSteps; ++prestep)
     {
-      Movers[ip]->advanceWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], false);
+      Movers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], false);
       branchEngine->collect(CurrentStep, W);
     }
   }
@@ -308,8 +311,6 @@ bool RMC::put(xmlNodePtr q)
 //This will resize the MCWalkerConfiguration and initialize the ReptileList.  Does not care for previous runs.
 void RMC::resetReptiles(int nReptiles_in, int nbeads_in, RealType tau)
 {
-  for (MCWalkerConfiguration::ReptileList_t::iterator it = W.ReptileList.begin(); it != W.ReptileList.end(); it++)
-    delete *it;
   W.ReptileList.clear();
   // Maybe we should be more vigorous in cleaning the MCWC WalkerList?
   std::vector<int> repWalkerSlice;
@@ -320,7 +321,8 @@ void RMC::resetReptiles(int nReptiles_in, int nbeads_in, RealType tau)
 
   for (int i = 0; i < nReptiles_in; i++)
   {
-    W.ReptileList.push_back(new Reptile(W, W.begin() + repWalkerSlice[i], W.begin() + repWalkerSlice[i + 1]));
+    W.ReptileList.push_back(
+        std::make_unique<Reptile>(W, W.begin() + repWalkerSlice[i], W.begin() + repWalkerSlice[i + 1]));
     W.ReptileList[i]->setTau(tau);
   }
 }
@@ -344,11 +346,11 @@ void RMC::resetReptiles(std::vector<ReptileConfig_t>& reptile_samps, RealType ta
   }
 }
 //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
-void RMC::resetReptiles(std::vector<ParticlePos_t>& walker_samps, int nBeads_in, RealType tau)
+void RMC::resetReptiles(std::vector<ParticlePos>& walker_samps, int nBeads_in, RealType tau)
 {
   if (walker_samps.empty())
   {
-    APP_ABORT("RMC::resetReptiles(std::vector< ParticlePos_t > walker_samps):  No samples!\n");
+    APP_ABORT("RMC::resetReptiles(std::vector< ParticlePos > walker_samps):  No samples!\n");
   }
   else
   {

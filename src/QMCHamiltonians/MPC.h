@@ -15,6 +15,7 @@
 
 #ifndef QMCPLUSPLUS_MPC_H
 #define QMCPLUSPLUS_MPC_H
+
 #include "QMCHamiltonians/OperatorBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 
@@ -32,25 +33,27 @@ namespace qmcplusplus
 class MPC : public OperatorBase
 {
 protected:
-  UBspline_3d_d *VlongSpline, *DensitySpline;
+  std::shared_ptr<UBspline_3d_d> VlongSpline;
+  //std::shared_ptr<UBspline_3d_d> DensitySpline;
   double Vconst;
-  void compute_g_G(double& g_0_N, std::vector<double>& g_G_N, int N);
-  void init_gvecs();
-  void init_f_G();
-  void init_spline();
   double Ecut;
   std::vector<TinyVector<int, OHMMS_DIM>> Gints;
   std::vector<PosType> Gvecs;
   std::vector<ComplexType> Rho_G;
-  TinyVector<int, OHMMS_DIM> SplineDim;
+  std::array<size_t, OHMMS_DIM> SplineDim;
   int MaxDim;
-  Return_t evalSR(ParticleSet& P) const;
-  Return_t evalLR(ParticleSet& P) const;
   // AA table ID
   const int d_aa_ID;
 
+  void initBreakup(const ParticleSet& ptcl);
+  void compute_g_G(const ParticleSet& ptcl, double& g_0_N, std::vector<double>& g_G_N, int N);
+  void init_gvecs(const ParticleSet& ptcl);
+  void init_f_G(const ParticleSet& ptcl);
+  void init_spline(const ParticleSet& ptcl);
+  Return_t evalSR(ParticleSet& P) const;
+  Return_t evalLR(ParticleSet& P) const;
+
 public:
-  ParticleSet* PtclRef;
   // Store the average electron charge density in reciprocal space
   std::vector<ComplexType> RhoAvg_G;
   std::vector<RealType> f_G;
@@ -72,27 +75,23 @@ public:
   /// copy constructor
   // MPC(const MPC& c);
 
-  ~MPC();
+  ~MPC() override;
 
-  void resetTargetParticleSet(ParticleSet& P);
+  std::string getClassName() const override { return "MPC"; }
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
-
-  /** implement all-walker stuff */
-  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  Return_t evaluate(ParticleSet& P) override;
 
   /** Do nothing */
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
-    os << "MPC potential: " << PtclRef->getName();
+    //os << "MPC potential: " << PtclRef->getName();
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-
-  void initBreakup();
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 };
 
 } // namespace qmcplusplus

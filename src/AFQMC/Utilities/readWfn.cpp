@@ -219,16 +219,8 @@ WALKER_TYPES getWalkerTypeHDF5(std::string filename, std::string type)
     std::cerr << " Error opening wavefunction file in read_info_from_wfn. \n";
     APP_ABORT("");
   }
-  if (!dump.push("Wavefunction", false))
-  {
-    std::cerr << " Error in getWalkerTypeHDF5: Group Wavefunction found. \n";
-    APP_ABORT("");
-  }
-  if (!dump.push(type, false))
-  {
-    std::cerr << " Error in getWalkerTypeHDF5: Group " << type << " not found. \n";
-    APP_ABORT("");
-  }
+  dump.push("Wavefunction", false);
+  dump.push(type, false);
 
   std::vector<int> Idata(5);
   if (!dump.readEntry(Idata, "dims"))
@@ -287,9 +279,6 @@ void read_general_wavefunction(std::ifstream& in,
   bool Cstyle      = true;
   int wfn_type     = 0;
   int ndet_in_file = -1;
-  int NEL          = NAEA;
-  if (walker_type != CLOSED)
-    NEL += NAEB;
 
   /*
    * type:
@@ -351,18 +340,21 @@ void read_general_wavefunction(std::ifstream& in,
             APP_ABORT(" Error: Expecting Determinant: # tag in wavefunction file. \n");
           read_mat(in, OrbMat, Cstyle, fullMOMat, NMO, NAEA);
         }
-        if(walker_type==CLOSED) {
-          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat,1e-8,'H',comm));
-        } else if(walker_type==COLLINEAR) {
-          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat,1e-8,'H',comm));
-          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat(OrbMat.extension(0),{0,NAEB}),
-                                        1e-8,'H',comm));
-        } else if(walker_type==NONCOLLINEAR) {
+        if (walker_type == CLOSED)
+        {
+          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
+        }
+        else if (walker_type == COLLINEAR)
+        {
+          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
+          PsiT.emplace_back(
+              csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8,
+                                                                       'H', comm));
+        }
+        else if (walker_type == NONCOLLINEAR)
+        {
           APP_ABORT(" Error in readWfn: wfn_type==closed with walker_type=noncollinear.\n");
-/*
+          /*
           boost::multi::array<ComplexType,2> Mat({2*NMO,NAEA+NAEB});
           if(comm.rank()==0) {
             std::fill_n(Mat.origin(),2*NMO*(NAEA+NAEB),ComplexType(0.0));
@@ -377,7 +369,7 @@ void read_general_wavefunction(std::ifstream& in,
     }
     else if (wfn_type == 1)
     {
-      if(walker_type != COLLINEAR)
+      if (walker_type != COLLINEAR)
         APP_ABORT(" Error in readWfn: wfn_type==collinear with walker_type!=collinear.\n");
       boost::multi::array<ComplexType, 2> OrbMat({NMO, NAEA});
       for (int i = 0, q = 0; i < ndets; i++)
@@ -389,20 +381,20 @@ void read_general_wavefunction(std::ifstream& in,
             APP_ABORT(" Error: Expecting Determinant: # tag in wavefunction file. \n");
           read_mat(in, OrbMat, Cstyle, fullMOMat, NMO, NAEA);
         }
-        
+
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
         if (comm.rank() == 0)
           read_mat(in, OrbMat(OrbMat.extension(0), {0, NAEB}), Cstyle, fullMOMat, NMO, NAEB);
         PsiT.emplace_back(
-          csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8, 'H',
+            csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8, 'H',
                                                                      comm));
       }
     }
     else if (wfn_type == 2)
     {
-      if(walker_type != NONCOLLINEAR)
+      if (walker_type != NONCOLLINEAR)
         APP_ABORT(" Error in readWfn: wfn_type==collinear with walker_type!=collinear.\n");
-      if(NAEB != 0)  
+      if (NAEB != 0)
         APP_ABORT(" Error in readWfn: walker_type==collinear with NAEB!=0.\n");
       boost::multi::array<ComplexType, 2> OrbMat({2 * NMO, NAEA});
       for (int i = 0, q = 0; i < ndets; i++)
@@ -448,11 +440,8 @@ ph_excitations<int, ComplexType> read_ph_wavefunction(std::ifstream& in,
   bool Cstyle      = true;
   int wfn_type     = 0;
   int ndet_in_file = -1;
-  int NEL          = NAEA;
   bool mixed       = false;
   std::string type;
-  if (walker_type != CLOSED)
-    NEL += NAEB;
 
   /*
    * Expected order of inputs and tags:
@@ -708,10 +697,7 @@ void read_ph_wavefunction_hdf(hdf_archive& dump,
   using Alloc = shared_allocator<ComplexType>;
   assert(walker_type != UNDEFINED_WALKER_TYPE);
   int wfn_type = 0;
-  int NEL      = NAEA;
   bool mixed   = false;
-  if (walker_type != CLOSED)
-    NEL += NAEB;
 
   /*
    * Expected order of inputs and tags:
@@ -749,36 +735,22 @@ void read_ph_wavefunction_hdf(hdf_archive& dump,
     mixed = true;
 
   if (mixed)
-  { // read reference
-    int nmo_ = (walker_type == NONCOLLINEAR ? 2 * NMO : NMO);
-    if (not comm.root())
-      nmo_ = 0; // only root reads matrices
+  {
     PsiT.reserve((wfn_type != 1) ? 1 : 2);
 
-    if (!dump.push(std::string("PsiT_") + std::to_string(0), false))
-    {
-      app_error() << " Error in WavefunctionFactory: Group PsiT not found. \n";
-      APP_ABORT("");
-    }
+    dump.push(std::string("PsiT_") + std::to_string(0), false);
+
     PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix, Alloc>(dump, comm));
     dump.pop();
     if (wfn_type == 1)
     {
       if (wtype == CLOSED)
       {
-        if (!dump.push(std::string("PsiT_") + std::to_string(0), false))
-        {
-          app_error() << " Error in WavefunctionFactory: Group PsiT not found. \n";
-          APP_ABORT("");
-        }
+        dump.push(std::string("PsiT_") + std::to_string(0), false);
       }
       else if (wtype == COLLINEAR)
       {
-        if (!dump.push(std::string("PsiT_") + std::to_string(1), false))
-        {
-          app_error() << " Error in WavefunctionFactory: Group PsiT not found. \n";
-          APP_ABORT("");
-        }
+        dump.push(std::string("PsiT_") + std::to_string(1), false);
       }
       PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix, Alloc>(dump, comm));
       dump.pop();
@@ -1036,8 +1008,8 @@ int readWfn(std::string fileName, boost::multi::array<ComplexType, 3>& OrbMat, i
   }
   else if (wfn_type == 2)
   {
-    OrbMat.reextent({1,2*NMO,NAEA+NAEB});
-    read_mat(in,OrbMat[0],Cstyle,fullMOMat,2*NMO,NAEA+NAEB);
+    OrbMat.reextent({1, 2 * NMO, NAEA + NAEB});
+    read_mat(in, OrbMat[0], Cstyle, fullMOMat, 2 * NMO, NAEA + NAEB);
   } //type
 
   in.close();

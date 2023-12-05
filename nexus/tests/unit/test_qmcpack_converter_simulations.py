@@ -251,6 +251,7 @@ def test_convert4qmc_get_result():
 
     result_ref = obj(
         location = './runs/sample.wfj.xml',
+        orbfile  = './runs/sample.orbs.h5',
         )
 
     assert(object_eq(result,result_ref))
@@ -338,7 +339,7 @@ def test_convert4qmc_incorporate_result():
     sim.incorporate_result('orbitals',pscf_result,pscf)
 
     assert(sim.input_code=='pyscf')
-    assert(sim.input.pyscf=='../scf.h5')
+    assert(sim.input.orbitals=='../scf.h5')
     
     # incorporate orbitals from quantum package
     sim = sim_start.copy()
@@ -349,7 +350,8 @@ def test_convert4qmc_incorporate_result():
     sim.incorporate_result('orbitals',qp_result,qp)
 
     assert(sim.input_code=='qp')
-    assert(sim.input.qp=='../qp_savewf.out')
+    #assert(sim.input.qp=='../qp_savewf.out')
+    assert(sim.input.orbitals=='../qp_savewf.out')
 
     clear_all_sims()
 #end def test_convert4qmc_incorporate_result

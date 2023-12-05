@@ -17,17 +17,13 @@
 #define QMCPLUSPLUS_CONSERVEDENERGY_H
 
 #include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#ifdef QMC_CUDA
-#include "Particle/MCWalkerConfiguration.h"
-#endif
 
 namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
-  
+
 /** A fake Hamiltonian to check the sampling of the trial function.
  *
  * Integrating the expression
@@ -73,59 +69,38 @@ using WP = WalkerProperties::Indexes;
 struct ConservedEnergy : public OperatorBase
 {
   ConservedEnergy() {}
-  ~ConservedEnergy() {}
+  ~ConservedEnergy() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
-  Return_t evaluate(ParticleSet& P)
+  std::string getClassName() const override { return "ConservedEnergy"; }
+
+  Return_t evaluate(ParticleSet& P) override
   {
     RealType gradsq = Dot(P.G, P.G);
     RealType lap    = Sum(P.L);
 #ifdef QMC_COMPLEX
     RealType gradsq_cc = Dot_CC(P.G, P.G);
-    Value              = lap + gradsq + gradsq_cc;
+    value_             = lap + gradsq + gradsq_cc;
 #else
-    Value = lap + 2 * gradsq;
+    value_ = lap + 2 * gradsq;
 #endif
     return 0.0;
   }
 
   /** Do nothing */
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "ConservedEnergy";
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ConservedEnergy; }
-
-#ifdef QMC_CUDA
-  ////////////////////////////////
-  // Vectorized version for GPU //
-  ////////////////////////////////
-  // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
   {
-    // Value of LocalEnergy is not used in caller because this is auxiliary H.
-    std::vector<Walker_t*>& walkers = W.WalkerList;
-    for (int iw = 0; iw < walkers.size(); iw++)
-    {
-      Walker_t& w = *(walkers[iw]);
-      RealType flux;
-      RealType gradsq = Dot(w.G, w.G);
-      RealType lap    = Sum(w.L);
-#ifdef QMC_COMPLEX
-      RealType gradsq_cc = Dot_CC(w.G, w.G);
-      flux               = lap + gradsq + gradsq_cc;
-#else
-      flux = lap + 2 * gradsq;
-#endif
-      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = flux;
-    }
+    return std::make_unique<ConservedEnergy>();
   }
-#endif
 };
 } // namespace qmcplusplus
 #endif

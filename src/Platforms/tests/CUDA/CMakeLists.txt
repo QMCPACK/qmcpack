@@ -9,14 +9,11 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(SRC_DIR CUDA)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+add_executable(${UTEST_EXE} test_CUDAallocator.cpp)
+target_link_libraries(${UTEST_EXE} platform_runtime containers catch_main)
 
-SET(SRC_DIR CUDA)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-
-ADD_EXECUTABLE(${UTEST_EXE} test_CUDAallocator.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} platform_device containers catch_main)
-
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

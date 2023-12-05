@@ -1,5 +1,5 @@
 #if COMPILATION_INSTRUCTIONS
-mpicxx -O3 -std=c++14 `#-Wall` -Wfatal-errors -I$HOME/prj $0 -o $0x.x -lboost_serialization && time mpirun -np 4 $0x.x $@ && rm -f $0x.x; exit
+mpic++ -O3 -std=c++17 `#-Wall` -Wfatal-errors -I$HOME/prj $0 -o $0x.x -lboost_serialization && time mpirun -np 4 $0x.x $@ && rm -f $0x.x; exit
 #endif
 
 #include "alf/boost/mpi3/main.hpp"
@@ -7,6 +7,7 @@ mpicxx -O3 -std=c++14 `#-Wall` -Wfatal-errors -I$HOME/prj $0 -o $0x.x -lboost_se
 #include "alf/boost/mpi3/process.hpp"
 #include "alf/boost/mpi3/shm/vector.hpp"
 #include "alf/boost/mpi3/mutex.hpp"
+
 #include<random>
 #include<thread> //sleep_for
 #include<mutex> //lock_guard

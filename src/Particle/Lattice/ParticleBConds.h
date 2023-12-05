@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_PARTICLE_BCONDS_H
 
 #include <config.h>
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/vmath.hpp"
 #include "Lattice/CrystalLattice.h"
 
 namespace qmcplusplus
@@ -43,7 +43,7 @@ struct PowerOfN<N, 0>
  *
  * @tparam T real data type
  * @tparam D physical dimension
- * @tparm SC supercell type
+ * @tparam SC supercell type
  *
  * Default method for any dimension with OPEN boundary condition.
  * \htmlonly

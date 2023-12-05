@@ -18,17 +18,21 @@
 
 #include <vector>
 #include "Configuration.h"
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#include "QMCWaveFunctions/Fermion/ci_configuration.h"
-#include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
+#include "WaveFunctionComponentBuilder.h"
+#include <hdf/hdf_archive.h>
+
 namespace qmcplusplus
 {
+class TrialWaveFunction;
+class BackflowTransformation;
+class DiracDeterminantBase;
+class MultiSlaterDetTableMethod;
+struct CSFData;
+class SPOSet;
+class SPOSetBuilder;
+class SPOSetBuilderFactory;
+struct ci_configuration;
+
 /** derived class from WaveFunctionComponentBuilder
  *
  * Builder SlaterDeterminant with LCOrbitalSet
@@ -36,97 +40,116 @@ namespace qmcplusplus
 class SlaterDetBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  typedef SlaterDet SlaterDeterminant_t;
-  typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SlaterDetBuilder(Communicate* comm, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SlaterDetBuilder(Communicate* comm,
+                   SPOSetBuilderFactory& factory,
+                   ParticleSet& els,
+                   TrialWaveFunction& psi,
+                   const PSetMap& psets);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
    *
    */
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
+  /// reference to the sposet_builder_factory, should be const once the legacy input style is removed
+  SPOSetBuilderFactory& sposet_builder_factory_;
   ///reference to TrialWaveFunction, should go away as the CUDA code.
   TrialWaveFunction& targetPsi;
-  ///reference to a PtclPoolType
-  PtclPoolType& ptclPool;
-  std::unique_ptr<SPOSetBuilderFactory> mySPOSetBuilderFactory;
-  SlaterDeterminant_t* slaterdet_0;
-  MultiSlaterDeterminant_t* multislaterdet_0;
-  MultiSlaterDeterminantFast* multislaterdetfast_0;
-
-  bool UseBackflow;
-  BackflowTransformation* BFTrans;
+  ///reference to a PSetMap
+  const PSetMap& ptclPool;
 
   /** process a determinant element
    * @param cur xml node
-   * @param firstIndex index of the determinant
-   * @return firstIndex+number of orbitals
+   * @param spin_group the spin group of the created determinant
+   * @return legacy_input_sposet_builder an sposet builder to handle legacy input
+   * @return BFTrans backflow transformations
    */
-  bool putDeterminant(xmlNodePtr cur, int firstIndex);
+  std::unique_ptr<DiracDeterminantBase> putDeterminant(
+      xmlNodePtr cur,
+      int spin_group,
+      const std::unique_ptr<SPOSetBuilder>& legacy_input_sposet_builder,
+      const std::unique_ptr<BackflowTransformation>& BFTrans);
 
-  bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
+  std::unique_ptr<MultiSlaterDetTableMethod> createMSDFast(xmlNodePtr cur,
+                                                           ParticleSet& target_ptcl,
+                                                           std::vector<std::unique_ptr<SPOSet>>&& spo_clones,
+                                                           const bool spinor,
+                                                           const bool use_precompute) const;
 
-  bool createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur);
 
   bool readDetList(xmlNodePtr cur,
-                   std::vector<ci_configuration>& uniqueConfg_up,
-                   std::vector<ci_configuration>& uniqueConfg_dn,
-                   std::vector<size_t>& C2node_up,
-                   std::vector<size_t>& C2node_dn,
+                   std::vector<std::vector<ci_configuration>>& uniqueConfgs,
+                   std::vector<std::vector<size_t>>& C2nodes,
                    std::vector<std::string>& CItags,
                    std::vector<ValueType>& coeff,
                    bool& optimizeCI,
-                   int nels_up,
-                   int nels_dn,
-                   std::vector<ValueType>& CSFcoeff,
-                   std::vector<size_t>& DetsPerCSF,
-                   std::vector<RealType>& CSFexpansion,
-                   bool& usingCSF);
-
+                   std::vector<int>& nptcls,
+                   std::unique_ptr<CSFData>& csf_data_ptr) const;
 
   bool readDetListH5(xmlNodePtr cur,
-                     std::vector<ci_configuration>& uniqueConfg_up,
-                     std::vector<ci_configuration>& uniqueConfg_dn,
-                     std::vector<size_t>& C2node_up,
-                     std::vector<size_t>& C2node_dn,
+                     std::vector<std::vector<ci_configuration>>& uniqueConfgs,
+                     std::vector<std::vector<size_t>>& C2nodes,
                      std::vector<std::string>& CItags,
                      std::vector<ValueType>& coeff,
                      bool& optimizeCI,
-                     int nels_up,
-                     int nels_dn);
+                     std::vector<int>& nptcls) const;
 
-  // clang-format off
   template<typename VT,
-           std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
-                            (std::is_floating_point<VT>::value), int> = 0>
-  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
+           std::enable_if_t<(std::is_same<VT, ValueType>::value) && (std::is_floating_point<VT>::value), int> = 0>
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets, int ext_level) const
   {
-    hin.read(ci_coeff, "Coeff");
+    ///Determinant coeffs are stored in Coeff for the ground state and Coeff_N
+    ///for the Nth excited state.
+    ///The Ground State is always stored in Coeff
+    ///Backward compatibility is insured
+    std::string extVar;
+    if (ext_level == 0)
+      extVar = "Coeff";
+    else
+      extVar = "Coeff_" + std::to_string(ext_level);
+
+    hin.read(ci_coeff, extVar);
   }
+
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
-                            (std::is_same<VT, std::complex<typename VT::value_type>>::value), int> = 0>
-  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
+                                (std::is_same<VT, std::complex<typename VT::value_type>>::value),
+                            int> = 0>
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets, int ext_level) const
   {
+    std::string extVar;
     std::vector<double> CIcoeff_real;
     std::vector<double> CIcoeff_imag;
     CIcoeff_imag.resize(n_dets);
     CIcoeff_real.resize(n_dets);
+    fill(CIcoeff_imag.begin(), CIcoeff_imag.end(), 0.0);
+    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state.
+    ///The Ground State is always stored in Coeff.
+    ///Backward compatibility is insured
 
-    hin.read(CIcoeff_real, "Coeff");
-    hin.read(CIcoeff_imag, "Coeff_imag");
+    std::string ext_var;
+    if (ext_level == 0)
+      extVar = "Coeff";
+    else
+      extVar = "Coeff_" + std::to_string(ext_level);
+
+
+    hin.read(CIcoeff_real, extVar);
+
+    extVar = extVar + "_imag";
+    if (!hin.readEntry(CIcoeff_imag, extVar))
+      app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
 
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
   }
-  // clang-format on
 };
 
 } // namespace qmcplusplus

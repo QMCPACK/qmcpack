@@ -17,7 +17,7 @@
 #include "Lattice/ParticleBConds.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -25,38 +25,35 @@
 #include <fftw3.h>
 #endif
 
+#include <array>
+#include <string_view>
+
 namespace qmcplusplus
 {
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : VlongSpline(0), DensitySpline(0), Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
+    : Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)), FirstTime(true)
 {
-  initBreakup();
+  initBreakup(ptcl);
 }
 
-MPC::~MPC()
-{
-  if (VlongSpline)
-    destroy_Bspline(VlongSpline);
-  if (DensitySpline)
-    destroy_Bspline(DensitySpline);
-}
+MPC::~MPC() = default;
 
-void MPC::init_gvecs()
+void MPC::init_gvecs(const ParticleSet& ptcl)
 {
   TinyVector<int, OHMMS_DIM> maxIndex(0);
   PosType b[OHMMS_DIM];
   for (int j = 0; j < OHMMS_DIM; j++)
-    b[j] = static_cast<RealType>(2.0 * M_PI) * PtclRef->Lattice.b(j);
-  int numG1 = PtclRef->Density_G.size();
-  int numG2 = PtclRef->DensityReducedGvecs.size();
-  assert(PtclRef->Density_G.size() == PtclRef->DensityReducedGvecs.size());
+    b[j] = static_cast<RealType>(2.0 * M_PI) * ptcl.getLattice().b(j);
+  int numG1 = ptcl.Density_G.size();
+  int numG2 = ptcl.DensityReducedGvecs.size();
+  assert(ptcl.Density_G.size() == ptcl.DensityReducedGvecs.size());
   // Loop through all the G-vectors, and find the largest
   // indices in each direction with energy less than the cutoff
-  for (int iG = 0; iG < PtclRef->DensityReducedGvecs.size(); iG++)
+  for (int iG = 0; iG < ptcl.DensityReducedGvecs.size(); iG++)
   {
-    TinyVector<int, OHMMS_DIM> gint = PtclRef->DensityReducedGvecs[iG];
+    TinyVector<int, OHMMS_DIM> gint = ptcl.DensityReducedGvecs[iG];
     PosType G                       = (double)gint[0] * b[0];
     for (int j = 1; j < OHMMS_DIM; j++)
       G += (double)gint[j] * b[j];
@@ -66,20 +63,21 @@ void MPC::init_gvecs()
         maxIndex[j] = std::max(maxIndex[j], std::abs(gint[j]));
       Gvecs.push_back(G);
       Gints.push_back(gint);
-      Rho_G.push_back(PtclRef->Density_G[iG]);
+      Rho_G.push_back(ptcl.Density_G[iG]);
     }
   }
-  SplineDim = 4 * maxIndex;
-  MaxDim    = std::max(maxIndex[0], std::max(maxIndex[1], maxIndex[2]));
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+    SplineDim[idim] = 4 * maxIndex[idim];
+  MaxDim = std::max(maxIndex[0], std::max(maxIndex[1], maxIndex[2]));
   app_log() << "  Using " << Gvecs.size() << " G-vectors for MPC interaction.\n";
   app_log() << "   Using real-space box of size [" << SplineDim[0] << "," << SplineDim[1] << "," << SplineDim[2]
             << "] for MPC spline.\n";
 }
 
 
-void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, int N)
+void MPC::compute_g_G(const ParticleSet& ptcl, double& g_0, std::vector<double>& g_G, int N)
 {
-  double L     = PtclRef->Lattice.WignerSeitzRadius;
+  double L     = ptcl.getLattice().WignerSeitzRadius;
   double Linv  = 1.0 / L;
   double Linv3 = Linv * Linv * Linv;
   // create an FFTW plan
@@ -87,7 +85,7 @@ void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, int N)
   Array<std::complex<double>, 3> GBox(N, N, N);
   // app_log() << "Doing " << N << " x " << N << " x " << N << " FFT.\n";
   //create BC handler
-  DTD_BConds<RealType, 3, SUPERCELL_BULK> mybc(PtclRef->Lattice);
+  DTD_BConds<RealType, 3, SUPERCELL_BULK> mybc(ptcl.getLattice());
   // Fill the real-space array with f(r)
   double Ninv = 1.0 / (double)N;
   TinyVector<RealType, 3> u, r;
@@ -100,8 +98,8 @@ void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, int N)
       for (int iz = 0; iz < N; iz++)
       {
         u[2] = Ninv * iz;
-        r    = PtclRef->Lattice.toCart(u);
-        //DTD_BConds<double,3,SUPERCELL_BULK>::apply (PtclRef->Lattice, r);
+        r    = ptcl.getLattice().toCart(u);
+        //DTD_BConds<double,3,SUPERCELL_BULK>::apply (ptcl.getLattice(), r);
         //double rmag = std::sqrt(dot(r,r));
         double rmag = std::sqrt(mybc.apply_bc(r));
         if (rmag < L)
@@ -164,21 +162,21 @@ inline double extrap(int N, TinyVector<double, 2> g_12)
 }
 
 
-void MPC::init_f_G()
+void MPC::init_f_G(const ParticleSet& ptcl)
 {
   int numG = Gints.size();
   f_G.resize(numG);
   int N = std::max(64, 2 * MaxDim + 1);
   std::vector<double> g_G_N(numG), g_G_2N(numG), g_G_4N(numG);
   double g_0_N, g_0_2N, g_0_4N;
-  compute_g_G(g_0_N, g_G_N, 1 * N);
-  compute_g_G(g_0_2N, g_G_2N, 2 * N);
-  compute_g_G(g_0_4N, g_G_4N, 4 * N);
+  compute_g_G(ptcl, g_0_N, g_G_N, 1 * N);
+  compute_g_G(ptcl, g_0_2N, g_G_2N, 2 * N);
+  compute_g_G(ptcl, g_0_4N, g_G_4N, 4 * N);
   // fprintf (stderr, "g_G_1N[0]      = %18.14e\n", g_G_N[0]);
   // fprintf (stderr, "g_G_2N[0]      = %18.14e\n", g_G_2N[0]);
   // fprintf (stderr, "g_G_4N[0]      = %18.14e\n", g_G_4N[0]);
-  double volInv = 1.0 / PtclRef->Lattice.Volume;
-  double L      = PtclRef->Lattice.WignerSeitzRadius;
+  double volInv = 1.0 / ptcl.getLattice().Volume;
+  double L      = ptcl.getLattice().WignerSeitzRadius;
   TinyVector<double, 2> g0_12(g_0_2N, g_0_4N);
   TinyVector<double, 3> g0_124(g_0_N, g_0_2N, g_0_4N);
   f_0 = extrap(N, g0_124);
@@ -188,7 +186,6 @@ void MPC::init_f_G()
   f_0 += 0.4 * M_PI * L * L * volInv;
   // std::cerr << "f_0 = " << f_0/volInv << std::endl;
   double worst = 0.0, worstLin = 0.0, worstQuad = 0.0;
-  int iworst = 0;
   for (int iG = 0; iG < numG; iG++)
   {
     TinyVector<double, 2> g_12(g_G_2N[iG], g_G_4N[iG]);
@@ -199,7 +196,6 @@ void MPC::init_f_G()
     if (diff > worst)
     {
       worst     = diff;
-      iworst    = iG;
       worstLin  = linearExtrap;
       worstQuad = quadExtrap;
     }
@@ -210,26 +206,27 @@ void MPC::init_f_G()
     // std::cerr << "f_G = " << f_G[iG]/volInv << std::endl;
     // std::cerr << "f_G - 4*pi/G2= " << f_G[iG]/volInv - 4.0*M_PI/G2 << std::endl;
   }
-  char buff[1000];
-  snprintf(buff, 1000,
-           "    Worst MPC discrepancy:\n"
-           "      Linear Extrap   : %18.14e\n"
-           "      Quadratic Extrap: %18.14e\n",
-           worstLin, worstQuad);
-  app_log() << buff;
+  std::array<char, 1000> buff;
+  int length = std::snprintf(buff.data(), buff.size(),
+                             "    Worst MPC discrepancy:\n"
+                             "      Linear Extrap   : %18.14e\n"
+                             "      Quadratic Extrap: %18.14e\n",
+                             worstLin, worstQuad);
+  if (length < 0)
+    throw std::runtime_error("Error generating buffer string");
+  app_log() << std::string_view(buff.data(), length);
 }
 
 
-void MPC::init_spline()
+void MPC::init_spline(const ParticleSet& ptcl)
 {
-  Array<std::complex<double>, 3> rBox(SplineDim[0], SplineDim[1], SplineDim[2]),
-      GBox(SplineDim[0], SplineDim[1], SplineDim[2]);
-  Array<double, 3> splineData(SplineDim[0], SplineDim[1], SplineDim[2]);
+  Array<std::complex<double>, 3> rBox(SplineDim), GBox(SplineDim);
+  Array<double, 3> splineData(SplineDim);
   GBox   = std::complex<double>();
   Vconst = 0.0;
   // Now fill in elements of GBox
-  const RealType vol     = PtclRef->Lattice.Volume;
-  const RealType volInv  = 1.0 / PtclRef->Lattice.Volume;
+  const RealType vol     = ptcl.getLattice().Volume;
+  const RealType volInv  = 1.0 / ptcl.getLattice().Volume;
   const RealType halfvol = vol / 2.0;
   for (int iG = 0; iG < Gvecs.size(); iG++)
   {
@@ -281,39 +278,32 @@ void MPC::init_spline()
   bc0.lCode = bc0.rCode = PERIODIC;
   bc1.lCode = bc1.rCode = PERIODIC;
   bc2.lCode = bc2.rCode = PERIODIC;
-  VlongSpline           = create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data());
-  //     grid0.num = PtclRef->Density_r.size(0);
-  //     grid1.num = PtclRef->Density_r.size(1);
-  //     grid2.num = PtclRef->Density_r.size(2);
+  VlongSpline =
+      std::shared_ptr<UBspline_3d_d>(create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data()),
+                                     destroy_Bspline);
+  //     grid0.num = ptcl.Density_r.size(0);
+  //     grid1.num = ptcl.Density_r.size(1);
+  //     grid2.num = ptcl.Density_r.size(2);
   //     DensitySpline = create_UBspline_3d_d (grid0, grid1, grid2, bc0, bc1, bc2,
-  // 					  PtclRef->Density_r.data());
+  // 					  ptcl.Density_r.data());
 }
 
-void MPC::initBreakup()
+void MPC::initBreakup(const ParticleSet& ptcl)
 {
-  NParticles = PtclRef->getTotalNum();
+  NParticles = ptcl.getTotalNum();
   app_log() << "\n  === Initializing MPC interaction === " << std::endl;
-  if (PtclRef->Density_G.size() == 0)
-  {
-    app_error() << "************************\n"
-                << "** Error in MPC setup **\n"
-                << "************************\n"
-                << "    The electron density was not setup by the "
-                << "wave function builder.\n";
-    abort();
-  }
-  init_gvecs();
-  init_f_G();
-  init_spline();
+  init_gvecs(ptcl);
+  init_f_G(ptcl);
+  init_spline(ptcl);
   // FILE *fout = fopen ("MPC.dat", "w");
-  // double vol = PtclRef->Lattice.Volume;
+  // double vol = ptcl.getLattice().Volume;
   // PosType r0 (0.0, 0.0, 0.0);
   // PosType r1 (10.26499236, 10.26499236, 10.26499236);
   // int nPoints=1001;
   // for (int i=0; i<nPoints; i++) {
   //   double s = (double)i/(double)(nPoints-1);
   //   PosType r = (1.0-s)*r0 + s*r1;
-  //   PosType u = PtclRef->Lattice.toUnit(r);
+  //   PosType u = ptcl.getLattice().toUnit(r);
   //   double V, rho(0.0);
   //   eval_UBspline_3d_d (VlongSpline, u[0], u[1], u[2], &V);
   //   // eval_UBspline_3d_d (DensitySpline, u[0], u[1], u[2], &rho);
@@ -323,18 +313,16 @@ void MPC::initBreakup()
   app_log() << "  === MPC interaction initialized === \n\n";
 }
 
-OperatorBase* MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  // return new MPC(qp, Ecut);
-  MPC* newMPC = new MPC(*this);
-  newMPC->resetTargetParticleSet(qp);
+  auto newMPC = std::make_unique<MPC>(*this);
   return newMPC;
 }
 
 MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
-  const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
-  RealType SR                   = 0.0;
+  const auto& d_aa = P.getDistTableAA(d_aa_ID);
+  RealType SR      = 0.0;
   const RealType cone(1);
   for (size_t ipart = 0; ipart < NParticles; ipart++)
   {
@@ -354,11 +342,11 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
   for (int i = 0; i < NParticles; i++)
   {
     //PosType r = P.R[i];
-    //PosType u = P.Lattice.toUnit(r);
-    PosType u = P.Lattice.toUnit(P.R[i]);
+    //PosType u = P.getLattice().toUnit(r);
+    PosType u = P.getLattice().toUnit(P.R[i]);
     for (int j = 0; j < OHMMS_DIM; j++)
       u[j] -= std::floor(u[j]);
-    eval_UBspline_3d_d(VlongSpline, u[0], u[1], u[2], &val);
+    eval_UBspline_3d_d(VlongSpline.get(), u[0], u[1], u[2], &val);
     LR += val;
   }
   return LR;
@@ -366,28 +354,8 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
 
 MPC::Return_t MPC::evaluate(ParticleSet& P)
 {
-  //if (FirstTime || P.tag() == PtclRef->tag())
-  Value = evalSR(P) + evalLR(P) + Vconst;
-  return Value;
-}
-
-void MPC::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  //only used for debugging
-  //  const int nw=W.getActiveWalkers();
-  //  const int indx=NUMPROPERTIES+myIndex;
-  //#ifdef QMC_CUDA
-  //#pragma omp parallel for
-  //  for(int iw=0; iw<nw; ++iw)
-  //  {
-  //    ParticleSet& p(*myPtcl[omp_get_thread_num()]);
-  //    p.R=W[iw]->R;
-  //    p.update();
-  //    RealType e=evalSR(p)+evalLR(p)+Vconst;
-  //    W[iw]->getPropertyBase()[indx] = e;
-  //    LocalEnergy[iw]+=e;
-  //  }
-  //#endif
+  value_ = evalSR(P) + evalLR(P) + Vconst;
+  return value_;
 }
 
 bool MPC::put(xmlNodePtr cur)

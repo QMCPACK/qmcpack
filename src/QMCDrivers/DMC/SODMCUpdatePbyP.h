@@ -23,11 +23,11 @@ public:
   SODMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                    TrialWaveFunction& psi,
                                    QMCHamiltonian& h,
-                                   RandomGenerator_t& rg);
+                                   RandomBase<FullPrecRealType>& rg);
   ///destructor
-  ~SODMCUpdatePbyPWithRejectionFast();
+  ~SODMCUpdatePbyPWithRejectionFast() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
   TimerList_t myTimers;
@@ -43,7 +43,7 @@ enum SODMCTimers
   SODMC_tmoves
 };
 
-extern TimerNameList_t<SODMCTimers> SODMCTimerNames;
+extern const TimerNameList_t<SODMCTimers> SODMCTimerNames;
 
 
 } // namespace qmcplusplus

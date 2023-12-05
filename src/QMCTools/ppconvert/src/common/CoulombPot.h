@@ -23,13 +23,13 @@ class CoulombPot : public Potential
 public:
   double Z1Z2;
 
-  double V(double r);
-  double dVdr(double r);
-  double d2Vdr2(double r);
-  double X_k(double rcut, double k);
-  bool NeedsRel();
-  void Write(IOSectionClass& out);
-  void Read(IOSectionClass& in);
+  double V(double r) override;
+  double dVdr(double r) override;
+  double d2Vdr2(double r) override;
+  double X_k(double rcut, double k) override;
+  bool NeedsRel() override;
+  void Write(IOSectionClass& out) override;
+  void Read(IOSectionClass& in) override;
 };
 
 #endif

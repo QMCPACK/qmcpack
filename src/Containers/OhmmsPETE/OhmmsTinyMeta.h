@@ -57,7 +57,7 @@ struct OTDot
 // TinyVectorTensorOps.h  binary operators for TinyVector and Tensor combinations
 // TinyMatrixOps.h        assignment/unary and binary operators  for TinyMatrix
 ////////////////////////////////////////////////////////////////////////////////
-#include<cassert>
+#include <cassert>
 #define PAssert(condition) assert(condition)
 #include "OhmmsPETE/TinyVectorOps.h"
 #include "OhmmsPETE/TensorOps.h"
@@ -77,7 +77,7 @@ struct OTDot
   template<class T1, class T2, unsigned D>                                                            \
   struct BinaryReturn<TENT<T1, D>, TENT<T2, D>, TAG>                                                  \
   {                                                                                                   \
-    typedef TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D> Type_t;                               \
+    using Type_t = TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D>;                               \
   };                                                                                                  \
                                                                                                       \
   template<class T1, class T2, unsigned D>                                                            \
@@ -90,13 +90,13 @@ struct OTDot
   template<class T1, class T2, unsigned D>                                                            \
   struct BinaryReturn<TENT<T1, D>, T2, TAG>                                                           \
   {                                                                                                   \
-    typedef TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D> Type_t;                               \
+    using Type_t = TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D>;                               \
   };                                                                                                  \
                                                                                                       \
   template<class T1, class T2, unsigned D>                                                            \
   struct BinaryReturn<T1, TENT<T2, D>, TAG>                                                           \
   {                                                                                                   \
-    typedef TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D> Type_t;                               \
+    using Type_t = TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D>;                               \
   };                                                                                                  \
                                                                                                       \
   template<class T1, class T2, unsigned D>                                                            \
@@ -132,7 +132,7 @@ struct OTDot
   template<class T1, class T2, unsigned D1, unsigned D2>                                                         \
   struct BinaryReturn<TENT<T1, D1, D2>, TENT<T2, D1, D2>, TAG>                                                   \
   {                                                                                                              \
-    typedef TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D1, D2> Type_t;                                     \
+    using Type_t = TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D1, D2>;                                     \
   };                                                                                                             \
                                                                                                                  \
   template<class T1, class T2, unsigned D1, unsigned D2>                                                         \
@@ -145,13 +145,13 @@ struct OTDot
   template<class T1, class T2, unsigned D1, unsigned D2>                                                         \
   struct BinaryReturn<TENT<T1, D1, D2>, T2, TAG>                                                                 \
   {                                                                                                              \
-    typedef TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D1, D2> Type_t;                                     \
+    using Type_t = TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D1, D2>;                                     \
   };                                                                                                             \
                                                                                                                  \
   template<class T1, class T2, unsigned D1, unsigned D2>                                                         \
   struct BinaryReturn<T1, TENT<T2, D1, D2>, TAG>                                                                 \
   {                                                                                                              \
-    typedef TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D1, D2> Type_t;                                     \
+    using Type_t = TENT<typename BinaryReturn<T1, T2, TAG>::Type_t, D1, D2>;                                     \
   };                                                                                                             \
                                                                                                                  \
   template<class T1, class T2, unsigned D1, unsigned D2>                                                         \

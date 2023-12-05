@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,7 +15,6 @@
 #include "Message/Communicate.h"
 #include "QMCDrivers/Crowd.h"
 #include "type_traits/template_types.hpp"
-#include "Estimators/tests/FakeEstimator.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Particle/tests/MinimalParticlePool.h"
@@ -40,14 +39,14 @@ public:
   UPtrVector<TrialWaveFunction> twfs;
   UPtrVector<QMCHamiltonian> hams;
   std::vector<TinyVector<double, 3>> tpos;
+  DriverWalkerResourceCollection driverwalker_resource_collection_;
+  const MultiWalkerDispatchers dispatchers_;
 
 public:
-  CrowdWithWalkers(SetupPools& pools) : em(pools.comm)
+  CrowdWithWalkers(SetupPools& pools) : em(*pools.hamiltonian_pool->getPrimary(), pools.comm), dispatchers_(true)
   {
-    FakeEstimator* fake_est = new FakeEstimator;
-    em.add(fake_est, "fake");
-
-    crowd_ptr    = std::make_unique<Crowd>(em);
+    crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
+					   *pools.wavefunction_pool->getPrimary(), *pools.hamiltonian_pool->getPrimary(),  dispatchers_);
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -80,41 +79,16 @@ public:
 TEST_CASE("Crowd integration", "[drivers]")
 {
   Communicate* comm = OHMMS::Controller;
-
-  EstimatorManagerNew em(comm);
-
-  FakeEstimator* fake_est = new FakeEstimator;
-
-  em.add(fake_est, "fake");
-
-  ScalarEstimatorBase* est2 = em.getEstimator("fake");
-  FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
-  REQUIRE(fake_est2 != nullptr);
-  REQUIRE(fake_est2 == fake_est);
-  // The above was required behavior for crowd at one point.
-  // TODO: determine whether it still is, I don't think so.
-  Crowd crowd(em);
-}
-
-TEST_CASE("Crowd::loadWalkers", "[particle]")
-{
   using namespace testing;
   SetupPools pools;
+  
+  EstimatorManagerNew em(*pools.hamiltonian_pool->getPrimary(), comm);
 
-  CrowdWithWalkers crowd_with_walkers(pools);
-  Crowd& crowd = crowd_with_walkers.get_crowd();
+  const MultiWalkerDispatchers dispatchers(true);
+  DriverWalkerResourceCollection driverwalker_resource_collection_;
 
-  std::vector<std::pair<int, int>> particle_group_indexes{{0, 1}, {1, 2}};
-
-  RandomGenerator_t random_gen;
-
-  crowd.loadWalkers();
-
-  auto checkParticleSetPos = [&crowd_with_walkers](int iw) {
-    REQUIRE(crowd_with_walkers.psets[iw]->R[0] == crowd_with_walkers.tpos[iw]);
-  };
-  for (int i = 0; i < crowd.size(); ++i)
-    checkParticleSetPos(i);
+  Crowd crowd(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
+              *pools.wavefunction_pool->getPrimary(), *pools.hamiltonian_pool->getPrimary(), dispatchers);
 }
 
 TEST_CASE("Crowd redistribute walkers")

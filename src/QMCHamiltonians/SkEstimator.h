@@ -30,18 +30,19 @@ class SkEstimator : public OperatorBase
 public:
   SkEstimator(ParticleSet& elns);
 
-  void resetTargetParticleSet(ParticleSet& P);
+  std::string getClassName() const override { return "SkEstimator"; }
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   void addObservables(PropertySetType& plist);
-  void addObservables(PropertySetType& plist, BufferType& collectables);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
-  void setObservables(PropertySetType& plist);
-  void setParticlePropertyList(PropertySetType& plist, int offset);
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
+  void setObservables(PropertySetType& plist) override;
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
 protected:
   ParticleSet* sourcePtcl;
@@ -60,11 +61,7 @@ protected:
   /** 1.0/degenracy for a ksell */
   std::vector<RealType> OneOverDnk;
   /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
-#if defined(USE_REAL_STRUCT_FACTOR)
   Vector<RealType> RhokTot_r, RhokTot_i;
-#else
-  Vector<ComplexType> RhokTot;
-#endif
   Vector<RealType> values;
   /** resize the internal data
    *

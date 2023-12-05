@@ -26,6 +26,10 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+
     generic = import_nexus_module('generic')
     obj = generic.obj
     del generic
@@ -46,6 +50,7 @@ try:
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
+    from versions import nexus_version
     from generic import obj
     from developer import DevBase,unavailable
     from unit_converter import convert
@@ -223,15 +228,16 @@ class DatAnalyzer(QBase):
 
     def __init__(self,filepath,index,type='unknown',units='Ha'):
         self.info  = obj(
-            index    = index,
-            type     = type,
-            units    = units,
-            series   = None,
-            filepath = None,
-            filename = None,
-            prefix   = None,
-            nsamples = None,
-            weight   = 1.0
+            index       = index,
+            type        = type,
+            units       = units,
+            series      = None,
+            filepath    = None,
+            filename    = None,
+            prefix      = None,
+            nsamples    = None,
+            weight      = 1.0,
+            load_failed = False,
             )
         self.data  = obj()
         self.stats = obj()
@@ -290,6 +296,10 @@ class DatAnalyzer(QBase):
         lt = np.loadtxt(filepath)
         if len(lt.shape)==1:
             lt.shape = (1,len(lt))
+        #end if
+        if lt.size==0:
+            self.info.load_failed = True
+            return
         #end if
         data = lt[:,1:].transpose()
         self.info.nsamples = data.shape[1]
@@ -432,7 +442,11 @@ class DatAnalyzer(QBase):
                 #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
 
                 # efficiency based on total work and error bar
-                stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                if (e > 0.0):
+                    stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                else:
+                    stats.Efficiency = obj(mean=0.0,var=0.0,error=0.0,kappa=1.0)
+                #end if
                 data.Efficiency  = 0*example
             #end if
         #end if
@@ -826,7 +840,7 @@ QMCA examples:
 
     def read_command_line(self):
         usage = '''usage: %prog [options] [file(s)]'''
-        parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
+        parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
         self.parser = parser
         # available option letters: c, f, g, k, l, m, y, z
         parser.add_option('-v','--verbose',dest='verbose',
@@ -1123,6 +1137,12 @@ QMCA examples:
                         type     = filetype,
                         units    = opt.units
                         )
+                    if d.info.load_failed:
+                        if not self.options.nowarn:
+                            self.warn('Load failed for {}, results unavailable.'.format(file))
+                        #end if
+                        continue
+                    #end if
                     self.file_map[file] = d
                     prefix = d.info.prefix
                     series = d.info.series
@@ -1218,12 +1238,12 @@ QMCA examples:
                 adata = obj()
                 ns=0
                 for series in serieslist:
-                    np = 0
+                    npf = 0
                     for prefix in sorted(data.keys()):
                         pdata = data[prefix]
-                        w = weights[np]
+                        w = weights[npf]
                         d = pdata[series]
-                        if np==0:
+                        if npf==0:
                             avg = d.copy()
                             di = d.info
                             avg.info.set(
@@ -1235,7 +1255,7 @@ QMCA examples:
                             avg.zero()
                         #end if
                         avg.accumulate(d,w)
-                        np+=1
+                        npf+=1
                     #end for
                     avg.normalize()
                     file_list.append(avg.info.filepath)
@@ -1277,12 +1297,12 @@ QMCA examples:
                         #end if
                     #end if
                     for series in serieslist:
-                        np = 0
+                        npf = 0
                         for prefix in sorted(prefixes):
                             pdata = data[prefix]
-                            w = weights[np]
+                            w = weights[npf]
                             d = pdata[series]
-                            if np==0:
+                            if npf==0:
                                 avg = d.copy()
                                 di = d.info
                                 avg.info.set(
@@ -1294,7 +1314,7 @@ QMCA examples:
                                 avg.zero()
                             #end if
                             avg.accumulate(d,w)
-                            np+=1
+                            npf+=1
                         #end for
                         avg.normalize()
                         file_list.append(avg.info.filepath)
@@ -1433,11 +1453,11 @@ QMCA examples:
             for quantity in quantities:
                 for mode in range(len(modes)):
                     if modes[mode]:
-                        np = 0
+                        npf = 0
                         for prefix in prefix_list:
-                            first_prefix = np==0
-                            last_prefix  = np==len(self.data)-1
-                            np+=1
+                            first_prefix = npf==0
+                            last_prefix  = npf==len(self.data)-1
+                            npf+=1
                             if first_prefix or not opt.overlay:
                                 fig = plt.figure()
                                 ax = fig.add_subplot(111)

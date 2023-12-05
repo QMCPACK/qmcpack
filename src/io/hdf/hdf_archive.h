@@ -18,16 +18,24 @@
 #include "hdf_datatype.h"
 #include "hdf_dataspace.h"
 #include "hdf_dataproxy.h"
-#if defined(HAVE_LIBHDF5)
+#include "hdf_error_suppression.h"
+#include "hdf_path.h"
 #include "hdf_pete.h"
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
-//#include "hdf_double_hyperslab.h"
-#endif
-#include <stack>
+
 #include <bitset>
+#include <filesystem>
+#include <stack>
+
 #ifdef HAVE_MPI
-#include "mpi3/communicator.hpp"
+namespace boost
+{
+namespace mpi3
+{
+class communicator;
+}
+} // namespace boost
 #endif
 
 class Communicate;
@@ -58,16 +66,27 @@ private:
   hid_t access_id;
   ///transfer property
   hid_t xfer_plist;
-  ///error type
-  H5E_auto2_t err_func;
-  ///error handling
-  void* client_data;
+  /// Link creation property list identifier
+  hid_t lcpl_id;
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
+  ///Track group names corresponding to group_id
+  std::vector<std::string> group_names;
+
+  /** Name of file that hdf_archive thinks is open.
+   *  This may not correspond to the actual file because the open call failed,
+   *  or the file was closed. This information is useful for debugging.
+   */
+  std::string possible_filename_;
+
+  ///set the access property
+  void set_access_plist(Communicate* comm, bool request_pio);
+#ifdef HAVE_MPI
+  void set_access_plist(boost::mpi3::communicator& comm, bool request_pio);
+#endif
+  void set_access_plist();
 
 public:
-  ///Public pointer to communicator. Ugly. Relation between  MPI, hdf_archive, and other classed to be rethought.
-  Communicate* myComm;
   /** constructor
    * @param c communicator
    * @param request_pio turns on parallel I/O,
@@ -76,27 +95,22 @@ public:
    *        if false, hdf_archive is in independent IO mode
    */
   template<class Comm = Communicate*>
-  hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
+  hdf_archive(Comm c, bool request_pio = false)
+      : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), lcpl_id(H5P_DEFAULT)
   {
-    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
-    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
-    set_access_plist(request_pio, c);
+    if (!hdf_error_suppression::enabled)
+      throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
+    set_access_plist(c, request_pio);
   }
-  hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
+
+  hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), lcpl_id(H5P_DEFAULT)
   {
-    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
-    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
+    if (!hdf_error_suppression::enabled)
+      throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist();
   }
   ///destructor
   ~hdf_archive();
-
-  ///set the access property
-  void set_access_plist(bool request_pio, Communicate* comm);
-#ifdef HAVE_MPI
-  void set_access_plist(bool request_pio, boost::mpi3::communicator& comm);
-#endif
-  void set_access_plist();
 
   ///return true if parallel i/o
   inline bool is_parallel() const { return Mode[IS_PARALLEL]; }
@@ -104,19 +118,22 @@ public:
   ///return true if master in parallel i/o
   inline bool is_master() const { return Mode[IS_MASTER]; }
 
+  ///return file_id. should be only be used for connecting to old codes when porting
+  hid_t getFileID() const { return file_id; }
+
   /** create a file
    * @param fname name of hdf5 file
    * @param flags i/o mode
    * @return true, if creation is successful
    */
-  bool create(const std::string& fname, unsigned flags = H5F_ACC_TRUNC);
+  bool create(const std::filesystem::path& fname, unsigned flags = H5F_ACC_TRUNC);
 
   /** open a file
    * @param fname name of hdf5 file
    * @param flags i/o mode
    * @return file_id, if open is successful
    */
-  bool open(const std::string& fname, unsigned flags = H5F_ACC_RDWR);
+  bool open(const std::filesystem::path& fname, unsigned flags = H5F_ACC_RDWR);
 
   ///close all the open groups and file
   void close();
@@ -137,9 +154,38 @@ public:
    */
   bool is_group(const std::string& aname);
 
+  /** check if aname is a dataset
+   * @param aname dataset's name
+   * @return true, if aname exists and it is a dataset
+   */
+  bool is_dataset(const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    int dummy_data;
+    h5data_proxy<int> e(dummy_data);
+    return e.check_existence(p, aname);
+  }
+
+  /** check if aname is a dataset of type T
+   * @param aname group's name
+   * @return true, if aname is a dataset of type T
+   */
+  template<typename T>
+  bool is_dataset_of_type(const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    T dummy_data;
+    h5data_proxy<T> e(dummy_data);
+    return e.check_type(p, aname);
+  }
+
   /** return the top of the group stack
    */
-  inline hid_t top() const { return group_id.empty() ? is_closed : group_id.top(); }
+  inline hid_t top() const { return group_id.empty() ? file_id : group_id.top(); }
 
   /** check if any groups are open
    *  group stack will have entries if so
@@ -151,7 +197,9 @@ public:
    * @param gname name of the group
    * @param createit if true, group is create when missing
    */
-  hid_t push(const std::string& gname, bool createit = true);
+  void push(const std::string& gname, bool createit = true);
+  void push(const hdf_path& gname, bool createit = true);
+
 
   inline void pop()
   {
@@ -159,8 +207,15 @@ public:
       return;
     hid_t g = group_id.top();
     group_id.pop();
-    H5Gclose(g);
+    group_names.pop_back();
+    herr_t err = H5Gclose(g);
+    if (err < 0)
+      throw std::runtime_error("H5Gclose failed with error.");
   }
+
+  /** Return a string representation of the current group stack
+   */
+  std::string group_path_as_string() const;
 
   /** read the shape of multidimensional filespace from the group aname
    * this function can be used to query dataset for preparing containers.
@@ -187,10 +242,10 @@ public:
     if (Mode[NOIO])
       return true;
     if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-      std::runtime_error("Only write data in parallel or by master but not every rank!");
+      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
-    h5data_proxy<T> e(data);
-    return e.write(p, aname, xfer_plist);
+    h5data_proxy<typename std::remove_const<T>::type> e(data);
+    return e.write(data, p, aname, xfer_plist);
   }
 
   /** write the data to the group aname and check status
@@ -201,7 +256,7 @@ public:
   {
     if (!writeEntry(data, aname))
     {
-      std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
+      throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
     }
   }
 
@@ -215,10 +270,10 @@ public:
   void writeSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = static_cast<hsize_t>(shape[dim]);
-      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim]  = static_cast<hsize_t>(shape[dim]);
       offsets[dim] = 0;
     }
 
@@ -230,25 +285,25 @@ public:
    * use read() for inbuilt error checking
    * @return true if successful
    */
-  template<typename T>
+  template<typename T, typename = std::enable_if_t<!std::is_const<T>::value>>
   bool readEntry(T& data, const std::string& aname)
   {
     if (Mode[NOIO])
       return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<T> e(data);
-    return e.read(p, aname, xfer_plist);
+    return e.read(data, p, aname, xfer_plist);
   }
 
   /** read the data from the group aname and check status
    * runtime error is issued on I/O error
    */
-  template<typename T>
+  template<typename T, typename = std::enable_if_t<!std::is_const<T>::value>>
   void read(T& data, const std::string& aname)
   {
     if (!readEntry(data, aname))
     {
-      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
+      throw std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
     }
   }
 
@@ -258,14 +313,14 @@ public:
    * @param aname dataset name in the file
    * runtime error is issued on I/O error
    */
-  template<typename T, typename IT, std::size_t RANK>
+  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<!std::is_const<T>::value>>
   void readSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = static_cast<hsize_t>(shape[dim]);
-      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim]  = static_cast<hsize_t>(shape[dim]);
       offsets[dim] = 0;
     }
 
@@ -282,21 +337,21 @@ public:
    * for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
    * this would grab 6 elements corresponding to [2,1,:]
    */
-  template<typename T, typename IT, std::size_t RANK>
+  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<!std::is_const<T>::value>>
   void readSlabSelection(T& data, const std::array<IT, RANK>& readSpec, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = 0;
       if (readSpec[dim] < 0)
       {
-        counts[dim] = 0;
+        counts[dim]  = 0;
         offsets[dim] = 0;
       }
       else
       {
-        counts[dim] = 1;
+        counts[dim]  = 1;
         offsets[dim] = static_cast<hsize_t>(readSpec[dim]);
       }
     }
@@ -310,7 +365,7 @@ public:
     if (Mode[NOIO])
       return;
     hid_t p       = group_id.empty() ? file_id : group_id.top();
-    herr_t status = H5Gunlink(p, aname.c_str());
+    herr_t status = H5Ldelete(p, aname.c_str(), H5P_DEFAULT);
   }
 };
 

@@ -22,40 +22,28 @@
 
 namespace qmcplusplus
 {
-class SlaterDetWithBackflow : public SlaterDet
+class SlaterDetWithBackflow : public WaveFunctionComponent
 {
 public:
-  BackflowTransformation* BFTrans;
-
+  using Determinant_t = DiracDeterminantWithBackflow;
   /**  constructor
    * @param targetPtcl target Particleset
    * @param rn release node
    */
-  SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF);
+  SlaterDetWithBackflow(ParticleSet& targetPtcl,
+                        std::vector<std::unique_ptr<Determinant_t>> dets,
+                        std::unique_ptr<BackflowTransformation> BF);
 
   ///destructor
-  ~SlaterDetWithBackflow();
+  ~SlaterDetWithBackflow() override;
 
-  ///set BF pointers
-  void setBF(BackflowTransformation* bf)
-  {
-    BFTrans = bf;
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->setBF(BFTrans);
-  }
+  std::string getClassName() const override { return "SlaterDetWithBackflow"; }
+  bool isFermionic() const final { return true; }
+  bool isOptimizable() const override;
 
-  void checkInVariables(opt_variables_type& active)
-  {
-    //if(Optimizable) {
-    if (BFTrans->isOptimizable())
-    {
-      BFTrans->checkInVariables(active);
-      for (int i = 0; i < Dets.size(); i++)
-        Dets[i]->checkInVariables(active);
-    }
-  }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     //if(Optimizable) {
     if (BFTrans->isOptimizable())
@@ -66,35 +54,25 @@ public:
     }
   }
 
-  ///reset all the Dirac determinants, Optimizable is true
-  void resetParameters(const opt_variables_type& active)
-  {
-    //if(Optimizable) {
-    if (BFTrans->isOptimizable())
-    {
-      BFTrans->resetParameters(active);
-      for (int i = 0; i < Dets.size(); i++)
-        Dets[i]->resetParameters(active);
-    }
-  }
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
-
-  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  inline PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     BFTrans->evaluatePbyPWithGrad(P, iat);
     //BFTrans->evaluate(P);
-    PsiValueType psi = 1.0;
+    PsiValue psi = 1.0;
     for (int i = 0; i < Dets.size(); ++i)
       psi *= Dets[i]->ratioGrad(P, iat, grad_iat);
     return psi;
   }
 
-  GradType evalGrad(ParticleSet& P, int iat)
+  GradType evalGrad(ParticleSet& P, int iat) override
   {
     QMCTraits::GradType g;
     for (int i = 0; i < Dets.size(); ++i)
@@ -102,7 +80,7 @@ public:
     return g;
   }
 
-  GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat)
+  GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat) override
   {
     APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
     return ValueType();
@@ -111,21 +89,21 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& src,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
     APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
     return GradType();
   }
 
-  inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
+  inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override
   {
     BFTrans->acceptMove(P, iat);
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->acceptMove(P, iat);
   }
 
-  inline void restore(int iat)
+  inline void restore(int iat) override
   {
     BFTrans->restore(iat);
     for (int i = 0; i < Dets.size(); i++)
@@ -133,31 +111,34 @@ public:
   }
 
 
-  inline PsiValueType ratio(ParticleSet& P, int iat)
+  inline PsiValue ratio(ParticleSet& P, int iat) override
   {
     BFTrans->evaluatePbyP(P, iat);
     //BFTrans->evaluate(P);
-    PsiValueType ratio = 1.0;
+    PsiValue ratio = 1.0;
     for (int i = 0; i < Dets.size(); ++i)
       ratio *= Dets[i]->ratio(P, iat);
     return ratio;
   }
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
+  SPOSetPtr getPhi(int i = 0) const { return Dets[i]->getPhi(); }
 
-  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
   void testDerivGL(ParticleSet& P);
 
-  //private:
-  //SlaterDetWithBackflow() {}
+private:
+  ///container for the DiracDeterminants
+  const std::vector<std::unique_ptr<Determinant_t>> Dets;
+  /// backflow transformation
+  const std::unique_ptr<BackflowTransformation> BFTrans;
 };
 } // namespace qmcplusplus
 #endif

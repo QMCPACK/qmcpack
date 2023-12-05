@@ -54,7 +54,7 @@ struct PrimeConstants<uint64_t>
 template<typename UIntType>
 struct PrimeNumberSet : public PrimeConstants<UIntType>
 {
-  typedef UIntType result_type;
+  using result_type = UIntType;
   std::vector<UIntType> primes;
   using PrimeConstants<UIntType>::max_prime;
   using PrimeConstants<UIntType>::min_num_primes;

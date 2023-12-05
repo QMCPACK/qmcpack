@@ -44,9 +44,9 @@ class LRHandlerSRCoulomb : public LRHandlerBase
 {
 public:
   //Typedef for the lattice-type.
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
-  typedef BreakupBasis BreakupBasisType;
-  typedef LinearGrid<mRealType> GridType;
+  using ParticleLayout   = ParticleSet::ParticleLayout;
+  using BreakupBasisType = BreakupBasis;
+  using GridType         = LinearGrid<mRealType>;
 
   bool FirstTime;
   mRealType rs;
@@ -57,14 +57,15 @@ public:
 
 
   //Constructor
-  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.LRBox)
+  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in = -1.0)
+      : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLRBox())
 
   {
     LRHandlerBase::ClassName = "LRHandlerSRCoulomb";
     myFunc.reset(ref);
   }
 
-  ~LRHandlerSRCoulomb() {}
+  ~LRHandlerSRCoulomb() override {}
 
   /** "copy" constructor
    * @param aLR LRHandlerSRCoulomb
@@ -74,84 +75,84 @@ public:
    * References to ParticleSet or ParticleLayoutout_t are not copied.
    */
   LRHandlerSRCoulomb(const LRHandlerSRCoulomb& aLR, ParticleSet& ref)
-      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
+      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.getLRBox())
   {}
 
-  LRHandlerBase* makeClone(ParticleSet& ref)
+  LRHandlerBase* makeClone(ParticleSet& ref) const override
   {
     LRHandlerSRCoulomb* tmp = new LRHandlerSRCoulomb<Func, BreakupBasis>(*this, ref);
     //    tmp->makeSplines(1001);
     return tmp;
   }
 
-  void initBreakup(ParticleSet& ref)
+  void initBreakup(ParticleSet& ref) override
   {
-    InitBreakup(ref.LRBox, 1);
-    //    fillYk(ref.SK->KLists);
-    fillYkg(ref.SK->KLists);
+    InitBreakup(ref.getLRBox(), 1);
+    //    fillYk(ref.getSimulationCell().getKLists());
+    fillYkg(ref.getSimulationCell().getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
-    //filldFk_dk(ref.SK->KLists);
+    //filldFk_dk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 
-  void Breakup(ParticleSet& ref, mRealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
     rs = rs_ext;
     myFunc.reset(ref, rs);
-    InitBreakup(ref.LRBox, 1);
-    //    fillYk(ref.SK->KLists);
-    fillYkg(ref.SK->KLists);
+    InitBreakup(ref.getLRBox(), 1);
+    //    fillYk(ref.getSimulationCell().getKLists());
+    fillYkg(ref.getSimulationCell().getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
-    //filldFk_dk(ref.SK->KLists);
+    //filldFk_dk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 
-  void resetTargetParticleSet(ParticleSet& ref) { myFunc.reset(ref); }
+  void resetTargetParticleSet(ParticleSet& ref) override { myFunc.reset(ref); }
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv) const override
   {
     //Right now LRHandlerSRCoulomb is the force only handler.  This is why the gcoefs are used for evaluate.
     mRealType v = Basis.f(r, gcoefs);
     return v;
   }
 
-  inline mRealType evaluate_vlr_k(mRealType k) { return evalYk(k); }
+  inline mRealType evaluate_vlr_k(mRealType k) const override { return evalYk(k); }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv) const override
   {
     mRealType df = Basis.df_dr(r, gcoefs);
     return df;
   }
 
-  inline mRealType srDf_strain(mRealType r, mRealType rinv)
+  inline mRealType srDf_strain(mRealType r, mRealType rinv) const
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType df = Basis.df_dr(r, gstraincoefs);
     return df;
   }
 
-  inline mRealType lrDf(mRealType r)
+  inline mRealType lrDf(mRealType r) const override
   {
     mRealType lr = myFunc.df(r) - srDf(r, 1.0 / r);
     return lr;
   }
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r)
+  inline mRealType evaluateLR(mRealType r) const override
   {
     mRealType v = 0.0;
     v           = myFunc(r, 1.0 / r) - evaluate(r, 1.0 / r);
     return v;
   }
 
-  inline mRealType evaluateSR_k0()
+  inline mRealType evaluateSR_k0() const override
   {
     mRealType v0 = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -160,7 +161,7 @@ public:
   }
 
 
-  inline mRealType evaluateLR_r0()
+  inline mRealType evaluateLR_r0() const override
   {
     //this is because the constraint v(r)=sigma(r) as r-->0.
     // so v(r)-sigma(r)="0".  Divergence prevents me from coding this.
@@ -169,7 +170,8 @@ public:
   }
 
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag)
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k,
+                                                            pRealType kmag) const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -185,7 +187,8 @@ public:
   }
 
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag)
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r,
+                                                            pRealType rmag) const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -200,7 +203,7 @@ public:
     return deriv_tensor;
   }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain()
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() const override
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType v0   = 0.0;
@@ -217,14 +220,14 @@ public:
     return stress;
   }
 
-  inline mRealType evaluateLR_r0_dstrain(int i, int j)
+  inline mRealType evaluateLR_r0_dstrain(int i, int j) const
   {
     APP_ABORT("Stresses not supported yet\n");
     //the t derivative for the relevant basis elements are all zero because of constraints.
     return 0.0; //Basis.f(0,dcoefs(i,j));
   }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain()
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> stress;
@@ -232,7 +235,7 @@ public:
   }
 
 private:
-  inline mRealType evalYk(mRealType k)
+  inline mRealType evalYk(mRealType k) const
   {
     //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
     mRealType FatK = myFunc.Vk(k) - Basis.fk(k, coefs);
@@ -240,14 +243,14 @@ private:
     //    FatK -= coefs[n]*Basis.c(n,k);
     return FatK;
   }
-  inline mRealType evalYkg(mRealType k)
+  inline mRealType evalYkg(mRealType k) const
   {
     mRealType FatK = myFunc.Vk(k) - Basis.fk(k, gcoefs);
     //for(int n=0; n<Basis.NumBasisElem(); n++)
     //   FatK -= gcoefs[n]*Basis.c(n,k);
     return FatK;
   }
-  inline mRealType evalYkgstrain(mRealType k)
+  inline mRealType evalYkgstrain(mRealType k) const
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType FatK = myFunc.Vk(k) - Basis.fk(k, gstraincoefs);
@@ -256,7 +259,7 @@ private:
     return FatK;
   }
 
-  inline mRealType evaldYkgstrain(mRealType k)
+  inline mRealType evaldYkgstrain(mRealType k) const
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType dFk_dk = myFunc.dVk_dk(k) - Basis.dfk_dk(k, gstraincoefs);
@@ -271,7 +274,7 @@ private:
    * basis and coefs in a usable state.
    * This method can be re-called later if lattice changes shape.
    */
-  void InitBreakup(ParticleLayout_t& ref, int NumFunctions)
+  void InitBreakup(const ParticleLayout& ref, int NumFunctions)
   {
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);
@@ -414,7 +417,7 @@ private:
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}
   }
-  void fillYkg(KContainer& KList)
+  void fillYkg(const KContainer& KList)
   {
     Fkg.resize(KList.kpts_cart.size());
     //LRHandlerSRCoulomb is the force handler now.  Only want

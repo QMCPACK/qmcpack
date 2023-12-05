@@ -119,7 +119,7 @@ class GTO:
       sl1 = self.make_subs_list(i,j,k,xc,yc,zc,alpha)
       v = self.gto_sym.subs(sl1).evalf()
       g = [grad.subs(sl1).evalf() for grad in self.grad]
-      #Since we are taking derivatives of x^i*y^j*z^k, derivaties of the GTO basis functions
+      #Since we are taking derivatives of x^i*y^j*z^k, derivatives of the GTO basis functions
       #will reduce the exponents on the cartesian tensor terms.  Depending on how sympy
       #tries to evaluate the terms, it can end up trying to evaluate things like y^(j-1). If
       #j=0 and y=0; this will results in nan or inf, even though the properly evaluated term will have

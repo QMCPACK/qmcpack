@@ -21,30 +21,24 @@ namespace qmcplusplus
 {
 class ChiesaCorrection : public OperatorBase
 {
-private:
-  const TrialWaveFunction& psi_ref;
-  ParticleSet& ptcl_ref;
-
 public:
-  ChiesaCorrection(ParticleSet& ptcl, const TrialWaveFunction& psi) : psi_ref(psi), ptcl_ref(ptcl) {}
+  ChiesaCorrection(ParticleSet& ptcl, const TrialWaveFunction& psi);
 
-  void resetTargetParticleSet(ParticleSet& P);
+  std::string getClassName() const override;
 
-  Return_t evaluate(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-#ifdef QMC_CUDA
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
-#endif
+  Return_t evaluate(ParticleSet& P) override;
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
-  bool get(std::ostream& os) const
-  {
-    os << "Chiesa correction: " << ptcl_ref.getName();
-    return true;
-  }
+  bool get(std::ostream& os) const override;
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+
+private:
+  const TrialWaveFunction& psi_ref_;
+  ParticleSet& ptcl_ref_;
 };
 
 } // namespace qmcplusplus

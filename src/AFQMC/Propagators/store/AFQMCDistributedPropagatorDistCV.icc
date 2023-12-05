@@ -39,7 +39,7 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt)
 {
-  AFQMCTimers[setup_timer]->start();
+  AFQMCTimers[setup_timer].get().start();
   const ComplexType one(1.), zero(0.);
   auto walker_type      = wset.getWalkerType();
   int nsteps            = nsteps_;
@@ -191,21 +191,21 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   fill_n(vsend.origin() + vak0, (vakN - vak0), zero);
 
   TG.local_barrier();
-  AFQMCTimers[setup_timer]->stop();
+  AFQMCTimers[setup_timer].get().stop();
 
   MPI_Status st;
 
   // 1. Calculate Green function for all (local) walkers
-  AFQMCTimers[G_for_vbias_timer]->start();
+  AFQMCTimers[G_for_vbias_timer].get().start();
   wfn.MixedDensityMatrix_for_vbias(wset, Gwork);
   ma::copy(Gwork.sliced(Gak0, GakN), Gsend.sliced(Gak0, GakN));
   TG.local_barrier();
-  AFQMCTimers[G_for_vbias_timer]->stop();
+  AFQMCTimers[G_for_vbias_timer].get().stop();
 
   for (int k = 0; k < nnodes; ++k)
   {
     // 2. wait for communication of previous step
-    AFQMCTimers[vHS_comm_overhead_timer]->start();
+    AFQMCTimers[vHS_comm_overhead_timer].get().start();
     if (k > 0)
     {
       MPI_Wait(&req_Grecv, &st);
@@ -221,13 +221,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       MPI_Start(&req_Gsend);
       MPI_Start(&req_Grecv);
     }
-    AFQMCTimers[vHS_comm_overhead_timer]->stop();
+    AFQMCTimers[vHS_comm_overhead_timer].get().stop();
 
     // calculate vHS contribution from this node
     // 4a. Calculate vbias for initial configuration
-    AFQMCTimers[vbias_timer]->start();
+    AFQMCTimers[vbias_timer].get().start();
     wfn.vbias(Gwork, vbias, sqrtdt);
-    AFQMCTimers[vbias_timer]->stop();
+    AFQMCTimers[vbias_timer].get().stop();
 
     // 4b. Assemble X(nCV,nsteps,nwalk)
     int q = (node_number + k) % nnodes;
@@ -236,12 +236,12 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     assemble_X(nsteps, nwalk, sqrtdt, X, vbias, mf_, hw_);
 
     // 4c. Calculate vHS(M*M,nsteps,nwalk)
-    AFQMCTimers[vHS_timer]->start();
+    AFQMCTimers[vHS_timer].get().start();
     wfn.vHS(X, vHS, sqrtdt);
     TG.local_barrier();
-    AFQMCTimers[vHS_timer]->stop();
+    AFQMCTimers[vHS_timer].get().stop();
 
-    AFQMCTimers[vHS_comm_overhead_timer]->start();
+    AFQMCTimers[vHS_comm_overhead_timer].get().start();
     // 5. receive v
     if (k > 0)
     {
@@ -264,11 +264,11 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     MPI_Start(&req_vsend);
     MPI_Start(&req_vrecv);
     TG.local_barrier();
-    AFQMCTimers[vHS_comm_overhead_timer]->stop();
+    AFQMCTimers[vHS_comm_overhead_timer].get().stop();
   }
 
   // after the wait, vrecv has the final vHS for the local walkers
-  AFQMCTimers[vHS_comm_overhead_timer]->start();
+  AFQMCTimers[vHS_comm_overhead_timer].get().start();
   MPI_Wait(&req_vrecv, &st);
   MPI_Wait(&req_vsend, &st);
   copy_n(vrecv.origin() + vak0, vakN - vak0, vHS.origin() + vak0);
@@ -281,7 +281,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     TG.TG().all_reduce_in_place_n(to_address(hybrid_weight.origin()), hybrid_weight.num_elements(), std::plus<>());
   }
   TG.local_barrier();
-  AFQMCTimers[vHS_comm_overhead_timer]->stop();
+  AFQMCTimers[vHS_comm_overhead_timer].get().stop();
 
   // From here on is similar to Shared
   int nx = 1;
@@ -304,7 +304,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   for (int ni = 0; ni < nsteps_; ni++)
   {
     // 5. Propagate walkers
-    AFQMCTimers[propagate_timer]->start();
+    AFQMCTimers[propagate_timer].get().start();
     if (nbatched_propagation != 0)
     {
       if (wset.getNBackProp() > 0)
@@ -327,10 +327,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
         apply_propagators(wset, ni, tk0, tkN, ntasks_total_serial, vHS3D);
       }
     }
-    AFQMCTimers[propagate_timer]->stop();
+    AFQMCTimers[propagate_timer].get().stop();
 
     // 6. Calculate local energy/overlap
-    AFQMCTimers[pseudo_energy_timer]->start();
+    AFQMCTimers[pseudo_energy_timer].get().start();
     if (hybrid)
     {
       wfn.Overlap(wset, new_overlaps);
@@ -340,10 +340,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       wfn.Energy(wset, new_energies, new_overlaps);
     }
     TG.local_barrier();
-    AFQMCTimers[pseudo_energy_timer]->stop();
+    AFQMCTimers[pseudo_energy_timer].get().stop();
 
     // 7. update weights/energy/etc, apply constrains/bounds/etc
-    AFQMCTimers[extra_timer]->start();
+    AFQMCTimers[extra_timer].get().start();
     if (TG.TG_local().root())
     {
       if (free_projection)
@@ -362,7 +362,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       }
     }
     TG.local_barrier();
-    AFQMCTimers[extra_timer]->stop();
+    AFQMCTimers[extra_timer].get().stop();
   }
 }
 

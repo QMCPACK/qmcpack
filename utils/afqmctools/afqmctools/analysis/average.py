@@ -405,7 +405,7 @@ def average_gen_fock(filename, fock_type='plus', estimator='back_propagated',
         print('Unknown walker type {}'.format(wt))
 
     if walker == 'closed':
-        return 2*mean.reshape(1,nbasis,nbasis), err.reshape(1,nbasis, nbasis)
+        return mean.reshape(1,nbasis,nbasis), err.reshape(1,nbasis, nbasis)
     elif walker == 'collinear':
         return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis))
     elif walker == 'non_collinear':
@@ -519,16 +519,16 @@ def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
     # Ionisation potential
     if P.shape[0] == 2:
         P = P[0] + P[1]
-        Perr = 0.5*Perr[0] + Perr[1]
+        Perr = 0.5*(Perr[0] + Perr[1])
         Fp = Fp[0] + Fp[1]
         Fm = Fm[0] + Fm[1]
         Fperr = Fperr[0] + Fperr[1]
         Fmerr = Fmerr[0] + Fmerr[1]
     else:
-        P = P[0]
+        P = 2*P[0]
         Perr = Perr[0]
-        Fp = Fp[0]
-        Fm = Fm[0]
+        Fp = 2*Fp[0]
+        Fm = 2*Fm[0]
         Fperr = Fperr[0]
         Fmerr = Fmerr[0]
     P = 0.5*(P+P.conj().T)

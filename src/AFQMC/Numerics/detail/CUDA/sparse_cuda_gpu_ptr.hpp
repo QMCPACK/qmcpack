@@ -29,6 +29,9 @@
 #if CUSPARSE_VER_MAJOR < 11
 #include "AFQMC/Numerics/detail/CUDA/cusparse_wrapper_deprecated.hpp"
 #endif
+#if CUSPARSE_VERSION >= 11400
+#define CUSPARSE_CSRMV_ALG1 CUSPARSE_SPMV_CSR_ALG1
+#endif
 
 #include "multi/array.hpp"
 
@@ -56,64 +59,58 @@ void csrmv(const char transa,
   // somehow need to check if the matrix is compact!
   int pb, pe;
   arch::memcopy(std::addressof(pb), to_address(pntrb), sizeof(int), arch::memcopyD2H, "sparse_cuda_gpu_ptr::csrmv");
-  arch::memcopy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), arch::memcopyD2H, "sparse_cuda_gpu_ptr::csrmv");
+  arch::memcopy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), arch::memcopyD2H,
+                "sparse_cuda_gpu_ptr::csrmv");
   int nnz = pe - pb;
 #if CUSPARSE_VER_MAJOR < 11
-  cusparse_check(
-      cusparse::cusparse_csrmv(*A.handles.cusparse_handle, transa, M, K, nnz, alpha,
-                               qmc_cuda::afqmc_cusparse_matrix_descr, to_address(A), to_address(pntrb),
-                               to_address(indx), to_address(x), beta, to_address(y)),
-       "Error: cusparse_csrmv returned error code."           
-                 );
+  cusparse_check(cusparse::cusparse_csrmv(*A.handles.cusparse_handle, transa, M, K, nnz, alpha,
+                                          qmc_cuda::afqmc_cusparse_matrix_descr, to_address(A), to_address(pntrb),
+                                          to_address(indx), to_address(x), beta, to_address(y)),
+                 "Error: cusparse_csrmv returned error code.");
 #else
-    cusparseSpMatDescr_t matA;
-    cusparseDnVecDescr_t vecx, vecy;
-    size_t               bufferSize = 0;
+  cusparseSpMatDescr_t matA;
+  cusparseDnVecDescr_t vecx, vecy;
+  size_t bufferSize = 0;
 
-    cusparse_check( cusparseCreateCsr(&matA, M, K, nnz,
-                       (void*) to_address(pntrb), (void*) to_address(indx), (void*) to_address(A),
-                       CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-                       CUSPARSE_INDEX_BASE_ZERO, qmc_cuda::cusparse_data_type<T>()),
-                    "csrmv::cusparseCreateCsr");
-    cusparse_check( cusparseCreateDnVec(&vecx,(transa=='N'?K:M),
-                        (void*) to_address(x), qmc_cuda::cusparse_data_type<T>()),
-                    "csrmv::cusparseCreateDnMat");
-    cusparse_check( cusparseCreateDnVec(&vecy,(transa=='N'?M:K),
-                        (void*) to_address(y), qmc_cuda::cusparse_data_type<T>()),
-                    "csrmv::cusparseCreateDnMat");
-    cusparse_check( cusparseSpMV_bufferSize(
-                                 *A.handles.cusparse_handle,
-                                 qmc_cuda::cusparseOperation(transa),
-                                 &alpha, matA, vecx, &beta, vecy, qmc_cuda::cusparse_data_type<T>(),
-                                 CUSPARSE_CSRMV_ALG1, &bufferSize),
-                    "csrmv::cusparseSpMV_bufferSize");
+  cusparse_check(cusparseCreateCsr(&matA, M, K, nnz, (void*)to_address(pntrb), (void*)to_address(indx),
+                                   (void*)to_address(A), CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                   CUSPARSE_INDEX_BASE_ZERO, qmc_cuda::cusparse_data_type<T>()),
+                 "csrmv::cusparseCreateCsr");
+  cusparse_check(cusparseCreateDnVec(&vecx, (transa == 'N' ? K : M), (void*)to_address(x),
+                                     qmc_cuda::cusparse_data_type<T>()),
+                 "csrmv::cusparseCreateDnMat");
+  cusparse_check(cusparseCreateDnVec(&vecy, (transa == 'N' ? M : K), (void*)to_address(y),
+                                     qmc_cuda::cusparse_data_type<T>()),
+                 "csrmv::cusparseCreateDnMat");
+  cusparse_check(cusparseSpMV_bufferSize(*A.handles.cusparse_handle, qmc_cuda::cusparseOperation(transa), &alpha, matA,
+                                         vecx, &beta, vecy, qmc_cuda::cusparse_data_type<T>(), CUSPARSE_CSRMV_ALG1,
+                                         &bufferSize),
+                 "csrmv::cusparseSpMV_bufferSize");
 
-    if(bufferSize>0) {
-      using qmcplusplus::afqmc::DeviceBufferManager;
-      using pointer_t = typename DeviceBufferManager::template allocator_t<T>::pointer;
-      DeviceBufferManager buffer_manager;
-      auto alloc(buffer_manager.get_generator().template get_allocator<T>());
-      auto ptr = alloc.allocate(bufferSize);
-      cusparse_check( cusparseSpMV(
-                                 *A.handles.cusparse_handle,
-                                 qmc_cuda::cusparseOperation(transa),
-                                 &alpha, matA, vecx, &beta, vecy, qmc_cuda::cusparse_data_type<T>(),
-                                 CUSPARSE_CSRMV_ALG1, (void*) to_address(ptr)),
-                    "csrmv::cusparseSpMV");
-      alloc.deallocate(ptr,bufferSize);
-    } else {
-      void*                dBuffer    = NULL;
-      cusparse_check( cusparseSpMV(
-                                 *A.handles.cusparse_handle,
-                                 qmc_cuda::cusparseOperation(transa),
-                                 &alpha, matA, vecx, &beta, vecy, qmc_cuda::cusparse_data_type<T>(),
-                                 CUSPARSE_CSRMV_ALG1, dBuffer),
-                    "csrmv::cusparseSpMV");
-    }
+  if (bufferSize > 0)
+  {
+    using qmcplusplus::afqmc::DeviceBufferManager;
+    using pointer_t = typename DeviceBufferManager::template allocator_t<T>::pointer;
+    DeviceBufferManager buffer_manager;
+    auto alloc(buffer_manager.get_generator().template get_allocator<T>());
+    auto ptr = alloc.allocate(bufferSize);
+    cusparse_check(cusparseSpMV(*A.handles.cusparse_handle, qmc_cuda::cusparseOperation(transa), &alpha, matA, vecx,
+                                &beta, vecy, qmc_cuda::cusparse_data_type<T>(), CUSPARSE_CSRMV_ALG1,
+                                (void*)to_address(ptr)),
+                   "csrmv::cusparseSpMV");
+    alloc.deallocate(ptr, bufferSize);
+  }
+  else
+  {
+    void* dBuffer = NULL;
+    cusparse_check(cusparseSpMV(*A.handles.cusparse_handle, qmc_cuda::cusparseOperation(transa), &alpha, matA, vecx,
+                                &beta, vecy, qmc_cuda::cusparse_data_type<T>(), CUSPARSE_CSRMV_ALG1, dBuffer),
+                   "csrmv::cusparseSpMV");
+  }
 
-    cusparse_check( cusparseDestroySpMat(matA), "csrmv::destroyA" );
-    cusparse_check( cusparseDestroyDnVec(vecx), "csrmv::destroyX" );
-    cusparse_check( cusparseDestroyDnVec(vecy), "csrmv::destroyY" );
+  cusparse_check(cusparseDestroySpMat(matA), "csrmv::destroyA");
+  cusparse_check(cusparseDestroyDnVec(vecx), "csrmv::destroyX");
+  cusparse_check(cusparseDestroyDnVec(vecy), "csrmv::destroyY");
 #endif
 }
 
@@ -139,7 +136,8 @@ void csrmm(const char transa,
   // somehow need to check if the matrix is compact!
   int pb, pe;
   arch::memcopy(std::addressof(pb), to_address(pntrb), sizeof(int), arch::memcopyD2H, "lapack_sparse_gpu_ptr::csrmm");
-  arch::memcopy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), arch::memcopyD2H, "lapack_sparse_gpu_ptr::csrmm");
+  arch::memcopy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), arch::memcopyD2H,
+                "lapack_sparse_gpu_ptr::csrmm");
   int nnz = pe - pb;
 #if CUSPARSE_VER_MAJOR < 11
   if (transa == 'N')
@@ -235,57 +233,52 @@ void csrmm(const char transa,
       throw std::runtime_error("Error: cublas_geam returned error code. C_");
   }
 #else
-    cusparseSpMatDescr_t matA;
-    cusparseDnMatDescr_t matB, matC;
-    size_t               bufferSize = 0;
-    size_t M_ = ((transa=='N')?M:K);
-    size_t K_ = ((transa=='N')?K:M);
+  cusparseSpMatDescr_t matA;
+  cusparseDnMatDescr_t matB, matC;
+  size_t bufferSize = 0;
+  size_t M_         = ((transa == 'N') ? M : K);
+  size_t K_         = ((transa == 'N') ? K : M);
 
-    cusparse_check( cusparseCreateCsr(&matA, M, K, nnz,
-                       (void*) to_address(pntrb), (void*) to_address(indx), (void*) to_address(A),
-                       CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-                       CUSPARSE_INDEX_BASE_ZERO, qmc_cuda::cusparse_data_type<T>()),
-                    "csrmm::cusparseCreateCsr");
-    cusparse_check( cusparseCreateDnMat(&matB, K_, N, ldb, (void*) to_address(B),
-                                        qmc_cuda::cusparse_data_type<T>(), CUSPARSE_ORDER_ROW),
-                    "csrmm::cusparseCreateDnMat");
-    cusparse_check( cusparseCreateDnMat(&matC, M_, N, ldc, (void*) to_address(C),
-                                        qmc_cuda::cusparse_data_type<T>(), CUSPARSE_ORDER_ROW),
-                    "csrmm::cusparseCreateDnMat");
-    cusparse_check( cusparseSpMM_bufferSize(
-                                 *A.handles.cusparse_handle,
-                                 qmc_cuda::cusparseOperation(transa),
-                                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                 &alpha, matA, matB, &beta, matC, qmc_cuda::cusparse_data_type<T>(),
-                                 CUSPARSE_SPMM_CSR_ALG2, &bufferSize),
-                    "csrmm::cusparseSpMM_bufferSize");
+  cusparse_check(cusparseCreateCsr(&matA, M, K, nnz, (void*)to_address(pntrb), (void*)to_address(indx),
+                                   (void*)to_address(A), CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                   CUSPARSE_INDEX_BASE_ZERO, qmc_cuda::cusparse_data_type<T>()),
+                 "csrmm::cusparseCreateCsr");
+  cusparse_check(cusparseCreateDnMat(&matB, K_, N, ldb, (void*)to_address(B), qmc_cuda::cusparse_data_type<T>(),
+                                     CUSPARSE_ORDER_ROW),
+                 "csrmm::cusparseCreateDnMat");
+  cusparse_check(cusparseCreateDnMat(&matC, M_, N, ldc, (void*)to_address(C), qmc_cuda::cusparse_data_type<T>(),
+                                     CUSPARSE_ORDER_ROW),
+                 "csrmm::cusparseCreateDnMat");
+  cusparse_check(cusparseSpMM_bufferSize(*A.handles.cusparse_handle, qmc_cuda::cusparseOperation(transa),
+                                         CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, matB, &beta, matC,
+                                         qmc_cuda::cusparse_data_type<T>(), CUSPARSE_SPMM_CSR_ALG2, &bufferSize),
+                 "csrmm::cusparseSpMM_bufferSize");
 
-    if(bufferSize>0) {
-      using qmcplusplus::afqmc::DeviceBufferManager;
-      using pointer_t = typename DeviceBufferManager::template allocator_t<T>::pointer;
-      DeviceBufferManager buffer_manager;
-      auto alloc(buffer_manager.get_generator().template get_allocator<T>());
-      auto ptr = alloc.allocate(bufferSize);
-      cusparse_check( cusparseSpMM(*A.handles.cusparse_handle,
-                                 qmc_cuda::cusparseOperation(transa),
-                                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                 &alpha, matA, matB, &beta, matC, qmc_cuda::cusparse_data_type<T>(),
-                                 CUSPARSE_SPMM_CSR_ALG2, (void*) to_address(ptr)),
-                    "csrmm::cusparseSpMM");
-      alloc.deallocate(ptr,bufferSize);
-    } else {
-      void*                dBuffer    = NULL;
-      cusparse_check( cusparseSpMM(*A.handles.cusparse_handle,
-                                 qmc_cuda::cusparseOperation(transa),
-                                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                 &alpha, matA, matB, &beta, matC, qmc_cuda::cusparse_data_type<T>(),
-                                 CUSPARSE_SPMM_CSR_ALG2, dBuffer),
-                    "csrmm::cusparseSpMM");
-    }
+  if (bufferSize > 0)
+  {
+    using qmcplusplus::afqmc::DeviceBufferManager;
+    using pointer_t = typename DeviceBufferManager::template allocator_t<T>::pointer;
+    DeviceBufferManager buffer_manager;
+    auto alloc(buffer_manager.get_generator().template get_allocator<T>());
+    auto ptr = alloc.allocate(bufferSize);
+    cusparse_check(cusparseSpMM(*A.handles.cusparse_handle, qmc_cuda::cusparseOperation(transa),
+                                CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, matB, &beta, matC,
+                                qmc_cuda::cusparse_data_type<T>(), CUSPARSE_SPMM_CSR_ALG2, (void*)to_address(ptr)),
+                   "csrmm::cusparseSpMM");
+    alloc.deallocate(ptr, bufferSize);
+  }
+  else
+  {
+    void* dBuffer = NULL;
+    cusparse_check(cusparseSpMM(*A.handles.cusparse_handle, qmc_cuda::cusparseOperation(transa),
+                                CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, matB, &beta, matC,
+                                qmc_cuda::cusparse_data_type<T>(), CUSPARSE_SPMM_CSR_ALG2, dBuffer),
+                   "csrmm::cusparseSpMM");
+  }
 
-    cusparse_check( cusparseDestroySpMat(matA), "csrmm::destroyA" );
-    cusparse_check( cusparseDestroyDnMat(matB), "csrmm::destroyB" );
-    cusparse_check( cusparseDestroyDnMat(matC), "csrmm::destroyC" );
+  cusparse_check(cusparseDestroySpMat(matA), "csrmm::destroyA");
+  cusparse_check(cusparseDestroyDnMat(matB), "csrmm::destroyB");
+  cusparse_check(cusparseDestroyDnMat(matC), "csrmm::destroyC");
 #endif
 }
 

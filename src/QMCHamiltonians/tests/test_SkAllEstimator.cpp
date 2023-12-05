@@ -15,7 +15,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "LongRange/StructFact.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
 #include "Particle/ParticleSetPool.h"
 #include <stdio.h>
@@ -42,7 +42,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // Boiler plate setup
   std::cout << std::fixed;
   std::cout << std::setprecision(8);
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   Communicate* c;
   c = OHMMS::Controller;
@@ -55,57 +55,56 @@ TEST_CASE("SkAll", "[hamiltonian]")
     Minimal xml input blocks
   */
   // Lattice block
-  const char* lat_xml = "<simulationcell>                                         \
-                         <parameter name=\"bconds\">                            \
-                           p p p                                                \
-                         </parameter>                                           \
-                         <parameter name=\"LR_dim_cutoff\" >     6  </parameter>\
-                         <parameter name=\"rs\"            >   1.0  </parameter>\
-                         <parameter name=\"nparticles\"    >     8  </parameter>\
-                       </simulationcell>";
+  const char* lat_xml = R"(<simulationcell>
+                        <parameter name="lattice" units="bohr">
+                          2.0 0.0 0.0
+                          0.0 2.0 0.0
+                          0.0 0.0 2.0
+                        </parameter>
+                         <parameter name="bconds">
+                           p p p
+                         </parameter>
+                         <parameter name="LR_dim_cutoff" >     6  </parameter>
+                         <parameter name="rs"            >   1.0  </parameter>
+                         <parameter name="nparticles"    >     8  </parameter>
+                       </simulationcell>)";
 
   // Particleset block for the electrons
-  const char* elec_pset_xml = "<particleset name=\"e\" random=\"yes\">            \
-                               <group name=\"u\" size=\"4\">	                \
-                                 <parameter name=\"charge\" >   -1  </parameter>\
-                                 <parameter name=\"mass\"   >  1.0  </parameter>\
-                               </group>                                         \
-                               <group name=\"d\" size=\"4\">                    \
-                                 <parameter name=\"charge\" >   -1  </parameter>\
-                                 <parameter name=\"mass\"   >  1.0  </parameter>\
-                               </group>                                         \
-                             </particleset>";
+  const char* elec_pset_xml = R"(<particleset name="e" random="yes">
+                                 <group name="u" size="4">
+                                 <parameter name="charge" >   -1  </parameter>
+                                 <parameter name="mass"   >  1.0  </parameter>
+                               </group>
+                               <group name="d" size="4">
+                                 <parameter name="charge" >   -1  </parameter>
+                                 <parameter name="mass"   >  1.0  </parameter>
+                               </group>
+                             </particleset>)";
 
   // Particleset block for the ions
-  const char* ion_pset_xml = "<particleset name=\"i\" size=\"4\">                 \
-                              <group name=\"He\">                               \
-                                <parameter name=\"charge\"      > 2 </parameter>\
-                                <parameter name=\"valence\"     > 2 </parameter>\
-                                <parameter name=\"atomicnumber\"> 2 </parameter>\
-                              </group>                                          \
-                              <attrib name=\"position\" datatype=\"posArray\"   \
-                                                        condition=\"1\">        \
-                                0.00 0.00 0.00                                  \
-                                0.25 0.25 0.25                                  \
-                                0.50 0.50 0.50                                  \
-                                0.75 0.75 0.75                                  \
-                              </attrib>                                         \
-                              <attrib name=\"ionid\" datatype=\"stringArray\">  \
-                                He He He He                                     \
-                              </attrib>                                         \
-                            </particleset>";
+  const char* ion_pset_xml = R"(<particleset name="i" size="4">
+                                <group name="He">
+                                <parameter name="charge"      > 2 </parameter>
+                                <parameter name="valence"     > 2 </parameter>
+                                <parameter name="atomicnumber"> 2 </parameter>
+                              </group>
+                              <attrib name="position" datatype="posArray"
+                                                        condition="1">
+                                0.00 0.00 0.00
+                                0.25 0.25 0.25
+                                0.50 0.50 0.50
+                                0.75 0.75 0.75
+                              </attrib>
+                              <attrib name="ionid" datatype="stringArray">
+                                He He He He
+                              </attrib>
+                            </particleset>)";
 
   // SKAllEstimator block, seems that writeionion does nothing?
-  const char* skall_xml = "<estimator                                           \
-                             name=\"Skall\" type=\"skall\"                      \
-                             source=\"i\" target=\"e\" hdf5=\"yes\"             \
-                           />";
-
-  // Build a Lattice
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
-  lattice.BoxBConds = true; // periodic
-  lattice.R.diagonal(2.0);
-  lattice.reset();
+  const char* skall_xml = R"(<estimator
+                             name="Skall" type="skall"
+                             source="i" target="e" hdf5="yes"
+                            />)";
 
   // Read in xml, add to pset_builder below
   bool lat_okay = doc.parseFromString(lat_xml);
@@ -118,7 +117,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   ParticleSetPool pset_builder(c, "pset_builder");
 
   // First attach the Lattice defined above
-  pset_builder.putLattice(lat_xml_root);
+  pset_builder.readSimulationCellXML(lat_xml_root);
 
   // Now build the elec ParticleSet
   bool elec_pset_okay = doc.parseFromString(elec_pset_xml);
@@ -128,8 +127,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
 
   // Get the (now assembled) elec ParticleSet, sanity check, report
   ParticleSet* elec = pset_builder.getParticleSet("e");
-  elec->Lattice     = lattice; // copy in the new Lattice
-  REQUIRE(elec->SameMass);
+  REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 
   // Move the particles manually onto B1 lattice
@@ -175,8 +173,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // It seems that we need this only to construct skall, but it
   // is never used to evaluate the estimator in this test.
   ParticleSet* ion = pset_builder.getParticleSet("i");
-  ion->Lattice     = lattice; // copy in the new Lattice
-  REQUIRE(ion->SameMass);
+  REQUIRE(ion->isSameMass());
   REQUIRE(ion->getName() == "i");
   ion->get(std::cout); // print particleset info to stdout
 
@@ -198,10 +195,10 @@ TEST_CASE("SkAll", "[hamiltonian]")
   skall.addObservables(elec->PropertyList, elec->Collectables);
   skall.get(app_log()); // pretty print settings
 
-  // Hack to make a walker so that tWalker points to something
-  // Only used to set tWalker->Weight = 1 so that skall->evaluate()
+  // Hack to make a walker so that t_walker_ points to something
+  // Only used to set t_walker_->Weight = 1 so that skall->evaluate()
   // doesn't segfault.
-  // NB: setHistories(dummy) attaches dummy to tWalker
+  // NB: setHistories(dummy) attaches dummy to t_walker_
   ParticleSet::Walker_t dummy = ParticleSet::Walker_t(1);
   skall.setHistories(dummy);
   skall.evaluate(*elec);
@@ -210,9 +207,8 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // takes that pre-computed s(k) and pulls out rho(k)..
   // In order to compare to analytic result, need the list
   // of k-vectors in cartesian coordinates.
-  // Luckily, ParticleSet stores that in SK->KLists.kpts_cart
-  StructFact* SK = elec->SK;
-  int nkpts      = SK->KLists.numk;
+  // Luckily, ParticleSet stores that in SK->getKLists().kpts_cart
+  int nkpts = elec->getSimulationCell().getKLists().numk;
   std::cout << "\n";
   std::cout << "SkAll results:\n";
   std::cout << std::fixed;
@@ -233,7 +229,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   std::cout << std::setprecision(5);
   for (int k = 0; k < nkpts; k++)
   {
-    auto kvec      = SK->KLists.kpts_cart[k];
+    auto kvec      = elec->getSimulationCell().getKLists().kpts_cart[k];
     RealType kx    = kvec[0];
     RealType ky    = kvec[1];
     RealType kz    = kvec[2];

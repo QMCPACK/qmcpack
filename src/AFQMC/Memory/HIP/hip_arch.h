@@ -20,10 +20,10 @@
 #include "hip_init.h"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
-#include "hipblas.h"
-#include "hipsparse.h"
-#include "rocsolver.h"
-#include "rocrand/rocrand.h"
+#include <hipblas/hipblas.h>
+#include <hipsparse/hipsparse.h>
+#include <rocsolver/rocsolver.h>
+#include <rocrand/rocrand.h>
 
 
 namespace arch
@@ -62,7 +62,11 @@ hipMemcpyKind tohipMemcpyKind(MEMCOPYKIND v);
 
 void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed = 911ULL);
 
-void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind = memcopyDefault, const std::string& message = "");
+void memcopy(void* dst,
+             const void* src,
+             size_t count,
+             MEMCOPYKIND kind           = memcopyDefault,
+             const std::string& message = "");
 
 void memcopy2D(void* dst,
                size_t dpitch,
@@ -70,7 +74,7 @@ void memcopy2D(void* dst,
                size_t spitch,
                size_t width,
                size_t height,
-               MEMCOPYKIND kind    = memcopyDefault,
+               MEMCOPYKIND kind           = memcopyDefault,
                const std::string& message = "");
 
 void malloc(void** devPtr, size_t size, const std::string& message = "");

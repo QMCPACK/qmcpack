@@ -16,23 +16,26 @@
 
 #include "VMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 
 namespace qmcplusplus
 {
 /// Constructor
-VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w,
+                             TrialWaveFunction& psi,
+                             QMCHamiltonian& h,
+                             RandomBase<FullPrecRealType>& rg)
     : QMCUpdateBase(w, psi, h, rg),
-      buffer_timer_(*timer_manager.createTimer("VMCUpdatePbyP::Buffer", timer_level_medium)),
-      movepbyp_timer_(*timer_manager.createTimer("VMCUpdatePbyP::MovePbyP", timer_level_medium)),
-      hamiltonian_timer_(*timer_manager.createTimer("VMCUpdatePbyP::Hamiltonian", timer_level_medium)),
-      collectables_timer_(*timer_manager.createTimer("VMCUpdatePbyP::Collectables", timer_level_medium))
+      buffer_timer_(createGlobalTimer("VMCUpdatePbyP::Buffer", timer_level_medium)),
+      movepbyp_timer_(createGlobalTimer("VMCUpdatePbyP::MovePbyP", timer_level_medium)),
+      hamiltonian_timer_(createGlobalTimer("VMCUpdatePbyP::Hamiltonian", timer_level_medium)),
+      collectables_timer_(createGlobalTimer("VMCUpdatePbyP::Collectables", timer_level_medium))
 {}
 
 VMCUpdatePbyP::~VMCUpdatePbyP() {}
@@ -59,6 +62,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       RealType tauovermass = Tau * MassInvS[ig];
       RealType oneover2tau = 0.5 / (tauovermass);
       RealType sqrttau     = std::sqrt(tauovermass);
+      Psi.prepareGroup(W, ig);
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
         PosType dr;
@@ -74,6 +78,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         if (!W.makeMoveAndCheck(iat, dr))
         {
           ++nReject;
+          W.accept_rejectMove(iat, false);
           continue;
         }
 
@@ -83,7 +88,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           GradType grad_new;
           prob = std::norm(Psi.calcRatioGrad(W, iat, grad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
-          dr             = W.R[iat] - W.activePos - dr;
+          dr             = W.R[iat] - W.getActivePos() - dr;
           RealType logGb = -oneover2tau * dot(dr, dr);
           RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
           prob *= std::exp(logGb - logGf);
@@ -91,19 +96,20 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         else
           prob = std::norm(Psi.calcRatio(W, iat));
 
+        bool is_accepted = false;
         if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob)
         {
-          moved = true;
+          is_accepted = true;
+          moved       = true;
           ++nAccept;
           Psi.acceptMove(W, iat, true);
-          W.acceptMove(iat, true);
         }
         else
         {
           ++nReject;
-          W.rejectMove(iat);
           Psi.rejectMove(iat);
         }
+        W.accept_rejectMove(iat, is_accepted);
       }
     }
     Psi.completeUpdates();
@@ -112,6 +118,8 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   movepbyp_timer_.stop();
   buffer_timer_.start();
   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
+  if (debug_checks_ & DriverDebugChecks::CHECKGL_AFTER_MOVES)
+    checkLogAndGL(W, Psi, "checkGL_after_moves");
   W.saveWalker(thisWalker);
   buffer_timer_.stop();
   // end PbyP moves

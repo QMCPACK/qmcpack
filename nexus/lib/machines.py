@@ -178,11 +178,13 @@ job_defaults_assign = obj(
     core_spec          = None, # slurm specific, Cori
     switches           = None, # slurm specific, SuperMUC-NG
     alloc_flags        = None, # lsf specific, Summit
+    filesystems        = None, # pbs specific
     qos                = None,
     group_list         = None,
     default_cpus_per_task = False, # optionally bypass typical nexus processing for supermucng
     ntasks_per_core    = None,
     cpus_per_task      = None,
+    template           = None,
     )
 
     # these are not assigned directly
@@ -264,6 +266,11 @@ class Job(NexusCore):
         # assign fake job
         self.fake_job           = fake
 
+        # check template
+        if self.template is not None and not isinstance(self.template,str):
+            self.error('template must be a string\nReceived type: {}'.format(self.template.__class__.__name__))
+        #end if
+
         # initialize other internal variables
         self.app_options        = Options()
         self.run_options        = Options()
@@ -331,6 +338,7 @@ class Job(NexusCore):
         #end if
 
         self.normalize_time()
+
     #end def __init__
 
 
@@ -340,6 +348,9 @@ class Job(NexusCore):
 
 
     def process(self,machine=None):
+        if self.template is not None:
+            return
+        #end if
         if machine is None:
             machine = self.get_machine()
         #end if
@@ -349,6 +360,9 @@ class Job(NexusCore):
 
     # test needed
     def process_options(self,machine=None):
+        if self.template is not None:
+            return
+        #end if
         if machine is None:
             machine = self.get_machine()
         #end if
@@ -523,6 +537,9 @@ class Job(NexusCore):
 
 
     def run_command(self,launcher=None,redirect=False,serial=False):
+        if self.template is not None:
+            return ''
+        #end if
         machine = self.get_machine()
         if launcher is None:
             launcher = machine.app_launcher
@@ -555,6 +572,9 @@ class Job(NexusCore):
                     c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
             #end if
+        elif machine.special_bundling:
+            c+='\n'
+            c+=machine.specialized_bundle_commands(self,launcher,serial)
         elif self.relative:
             cdir = self.abs_subdir
             c+='\n'
@@ -704,6 +724,7 @@ class Machine(NexusCore):
     executable_subfile  = False
     redirect_output     = False
     query_with_username = False
+    special_bundling    = False
 
     prefixed_output    = False
     outfile_extension  = None
@@ -817,6 +838,9 @@ class Machine(NexusCore):
         self.not_implemented()
     #end def submit_job
 
+    def specialized_bundle_commands(self,job,launcher,serial):
+        self.not_implemented()
+    #end def specialized_bundle_commands
 
     def __init__(self,name,queue_size=0):
         self.name = name
@@ -853,7 +877,9 @@ class Machine(NexusCore):
 
     def add_job(self,job):
         if isinstance(job,Job):
-            self.process_job(job)
+            if job.template is None:
+                self.process_job(job)
+            #end if
             self.write_job(job)
             jid = job.internal_id
             self.jobs[jid] = job
@@ -1574,9 +1600,12 @@ class Supercomputer(Machine):
             #end for
         elif self.queue_querier=='squeue': # contributed by Ryan McAvoy
             if out is None:
-                extra = ''
-                if self.user is not None:
+                if isinstance(self.user,bool) and self.user==False:
+                    extra = ''
+                elif self.user is not None:
                     extra = ' -u {}'.format(self.user)
+                else:
+                    extra = ' --user=$USER'
                 #end if
                 out,err,rc = execute('squeue'+extra)
             #end if
@@ -1800,17 +1829,21 @@ class Supercomputer(Machine):
 
     def write_job(self,job,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
-        env = self.setup_environment(job)
-        command = job.run_command(self.app_launcher,serial=job.serial)
+        if job.template is None:
+            env = self.setup_environment(job)
+            command = job.run_command(self.app_launcher,serial=job.serial)
 
-        c = self.write_job_header(job)+'\n'
-        if len(job.presub)>0:
-            c+=job.presub+'\n'
-        #end if
-        c+=env
-        c+=command+'\n'
-        if len(job.postsub)>0:
-            c+=job.postsub+'\n'
+            c = self.write_job_header(job)+'\n'
+            if len(job.presub)>0:
+                c+=job.presub+'\n'
+            #end if
+            c+=env
+            c+=command+'\n'
+            if len(job.postsub)>0:
+                c+=job.postsub+'\n'
+            #end if
+        else:
+            c = job.template
         #end if
         if file:
             filepath = os.path.join(job.directory,job.subfile)
@@ -2088,11 +2121,6 @@ cd $SLURM_SUBMIT_DIR
 #end class NerscMachine
 
 
-class Edison(NerscMachine):
-    name = 'edison'
-#end class Edison
-
-
 class Cori(NerscMachine):
     name = 'cori'
 
@@ -2114,8 +2142,13 @@ class Cori(NerscMachine):
             self.procs_per_node = 2
             self.cores_per_node = 32
             self.ram_per_node   = 128
+        elif 'amd' in job.constraint:
+            self.nodes = 20
+            self.procs_per_node = 2
+            self.cores_per_node = 32
+            self.ram_per_node   = 2048
         else:
-            self.error('SLURM input "constraint" must contain either "knl" or "haswell"\nyou provided: {0}'.format(job.constraint))
+            self.error('SLURM input "constraint" must contain either "knl", "haswell", or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
         #end if
         if job.core_spec is not None:
             self.cores_per_node -= job.core_spec
@@ -2128,8 +2161,10 @@ class Cori(NerscMachine):
             hyperthreads   = 4
         elif 'haswell' in job.constraint:
             hyperthreads   = 2
+        elif 'amd' in job.constraint:
+            hyperthreads   = 2
         else:
-            self.error('SLURM input "constraint" must contain either "knl" or "haswell"\nyou provided: {0}'.format(job.constraint))
+            self.error('SLURM input "constraint" must contain either "knl", "haswell" or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
         #end if
         cpus_per_task = int(floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
         c='#!/bin/bash\n'
@@ -2163,6 +2198,137 @@ export OMP_PLACES=threads
         return c
     #end def write_job_header
 #end class Cori
+
+
+
+
+class Perlmutter(NerscMachine):
+    name = 'perlmutter'
+
+    def pre_process_job(self,job):
+        # Set default queue and node type
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        if job.constraint is None:
+            job.constraint = 'cpu'
+        #end if
+        # Account for dual nature of Perlmutter
+        if 'cpu' in job.constraint:
+            self.nodes          = 3072
+            self.procs_per_node = 2
+            self.cores_per_node = 128
+            self.ram_per_node   = 512
+        elif 'gpu' in job.constraint:
+            self.nodes          = 1536
+            self.procs_per_node = 1
+            self.cores_per_node = 64
+            self.ram_per_node   = 256
+            self.gpus_per_node  = 4
+        else:
+            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Perlmutter\nyou provided: {0}'.format(job.constraint))
+        #end if
+    #end def pre_process_job
+
+    def write_job_header(self,job):
+        self.pre_process_job(job) # sync machine view with job
+
+        # Check if the user gave reasonable processes_per_node
+        if 'cpu' in job.constraint:
+            if job.processes_per_node > self.cores_per_node:
+                self.error('processes_per_node can not be greater than logical CPUs per node (256)\nyou provided: {0}'.format(job.processes_per_node))
+            #end if
+        elif 'gpu' in job.constraint:
+            if job.processes_per_node > self.gpus_per_node:
+                self.error('processes_per_node can not be greater than GPUs per node (4)\nyou provided: {0}'.format(job.processes_per_node))
+            #end if
+            # Also check if the user forgot to include '_g' in the account name for GPU jobs
+            if ('_g' in job.account) == False:
+                job.account = job.account + '_g'
+            #end if
+        #end if
+
+        # Check if the user gave reasonable queue inputs
+        if job.queue == 'debug':
+            base_partition = 1
+            max_partition = 8
+            max_time = 0.5
+        elif job.queue == 'regular':
+            base_partition = 1
+            max_partition = self.nodes
+            max_time = 12
+        elif job.queue == 'preempt':
+            base_partition = 1
+            max_partition = 128
+            max_time = 24
+        elif job.queue == 'overrun':
+            base_partition = 1
+            max_partition = self.nodes
+            max_time = 12
+        else:
+            self.error('The requested queue is not implemented.')
+        #end if
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:
+            self.error('The maximum runtime on {0} queue should not be more than {1} hours\n  you requested: {2} hours'.format(job.queue,max_time,job.total_hours))
+        #end if
+        if job.nodes<base_partition:
+            self.error('The number of nodes on {0} queue should not be less than {1}\n  you requested: {2}'.format(job.queue,base_partition,job.nodes))
+        elif job.nodes>max_partition:
+            self.error('The number of nodes on {0} queue should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
+        #end if
+
+        # Use the user cpus_per_task if specified. If not specified, then use available cpus for each process
+        if job.cpus_per_task is not None:
+            cpus_per_task = job.cpus_per_task
+        else:
+            hyperthreads = 2 # Both CPU and GPU nodes use the same AMD EPYC 7763 (Milan) CPUs
+            cpus_per_task = int(floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
+        #end if
+
+        c='#!/bin/bash\n'
+        if job.account is not None:
+            c+= '#SBATCH -A '+job.account+'\n'
+        #end if
+        c+='#SBATCH -C '+str(job.constraint)+'\n'
+        c+='#SBATCH -q '+job.queue+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH -c '+str(cpus_per_task)+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
+
+        if 'gpu' in job.constraint:
+            gpus_per_task = int(floor(float(self.gpus_per_node)/job.processes_per_node))
+            c+='#SBATCH --gpus-per-task={0}\n'.format(gpus_per_task)
+        #end if
+
+        if job.user_env:
+            c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c+='#SBATCH --export=NONE\n'
+        #end if
+        c+='''
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+'''
+        if (job.threads>1) and ('cpu' in job.constraint):
+            c+='''
+export OMP_PROC_BIND=true
+export OMP_PLACES=threads
+'''
+        #end if
+        if 'gpu' in job.constraint:
+            c+='''
+export SLURM_CPU_BIND="cores"
+'''
+        #end if
+        return c
+    #end def write_job_header
+#end class Perlmutter
+
 
 
 
@@ -3037,6 +3203,9 @@ class Summit(Supercomputer):
     def write_job_header(self,job):
         c ='#!/bin/bash\n'
         c+='#BSUB -P {0}\n'.format(job.account)
+        if job.queue is not None:
+            c+='#BSUB -q {0}\n'.format(job.queue)
+        #end if
         c+='#BSUB -J {0}\n'.format(job.name)
         c+='#BSUB -o {0}\n'.format(job.outfile)
         c+='#BSUB -e {0}\n'.format(job.errfile)
@@ -3143,6 +3312,174 @@ class Rhea(Supercomputer):
 #end class Rhea
 
 
+## Added 19/03/2021 by A Zen
+class Andes(Supercomputer):
+
+    name = 'andes'
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def post_process_job(self,job):
+        if job.threads>1:
+            job.run_options.add(
+                c = '-c {}'.format(job.threads),
+                )
+            if 'cpu_bind' not in job.run_options:
+                if job.processes_per_node==self.cores_per_node:
+                    cpu_bind = '--cpu-bind=threads'
+                else:
+                    cpu_bind = '--cpu-bind=cores'
+                #end if
+                job.run_options.add(
+                    cpu_bind = cpu_bind
+                    )
+            #end if
+        #end if
+        job.run_options.add(
+            N='-N {}'.format(job.nodes),
+            n='-n {}'.format(job.processes),
+            )
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        #end if
+        base_partition = None
+        max_partition = 384
+        if job.nodes <= 16:
+            max_time = 48
+        elif job.nodes <= 64:
+            max_time = 36
+        else:
+            max_time = 3
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        if job.email is not None:
+            c+='#SBATCH --mail-user {}\n'.format(job.email)
+            c+='#SBATCH --mail-type ALL\n'
+            #c+='#SBATCH --mail-type FAIL\n'
+        #end if
+        c+='\n'
+        c+='cd $SLURM_SUBMIT_DIR\n'
+        c+='\n'
+        c+='echo JobID : $SLURM_JOBID \n'
+        c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES \n'
+        c+='echo List of nodes assigned to the job: $SLURM_NODELIST \n'
+        c+='\n'
+        return c
+    #end def write_job_header
+#end class Andes
+
+
+## Added 05/04/2022 by A Zen
+class Archer2(Supercomputer):
+    # https://docs.archer2.ac.uk/user-guide/hardware/
+
+    name = 'archer2'
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def post_process_job(self,job):
+        job.run_options.add(
+            distribution='--distribution=block:block',
+            hint='--hint=nomultithread',
+            N='-N {}'.format(job.nodes),
+            n='-n {}'.format(job.processes),
+            )
+        if job.threads>1:
+            job.run_options.add(
+                c = '-c {}'.format(job.threads),
+                )
+#           if 'cpu_bind' not in job.run_options:
+#               if job.processes_per_node==self.cores_per_node:
+#                   cpu_bind = '--cpu-bind=threads'
+#               else:
+#                   cpu_bind = '--cpu-bind=cores'
+#               #end if
+#               job.run_options.add(
+#                   cpu_bind = cpu_bind
+#                   )
+            #end if
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.qos is None:
+            job.qos='standard'
+        #end if
+        base_partition = None
+        if job.qos == 'long':
+            max_time = 48
+            max_partition = 64
+        elif 'short' in job.qos:
+            max_time = 20.0/60.0
+            max_partition = 32
+        else:
+            max_time = 24
+            max_partition = 1024
+        #end if
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:   
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+        if job.nodes > max_partition:   
+            self.warn('!!! ATTENTION !!!\n  the maximum nodes on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
+            job.nodes   = max_partition
+        #end if
+
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        c+='#SBATCH --partition=standard\n'
+        c+='#SBATCH --qos={0}\n'.format(job.qos)
+        if job.email is not None:
+            c+='#SBATCH --mail-user {}\n'.format(job.email)
+            c+='#SBATCH --mail-type ALL\n'
+            #c+='#SBATCH --mail-type FAIL\n'
+        #end if
+        c+='\n'
+        #c+='cd $SLURM_SUBMIT_DIR\n'
+        #c+='\n'
+        c+='echo JobID : $SLURM_JOBID\n'
+        c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES\n'
+        c+='echo List of nodes assigned to the job: $SLURM_NODELIST\n'
+        c+='\n'
+        return c
+    #end def write_job_header
+#end class Archer2
+
+
 class Tomcat3(Supercomputer):
     name             = 'tomcat3'
     requires_account = False
@@ -3173,6 +3510,99 @@ class Tomcat3(Supercomputer):
 
 
 
+class Polaris(Supercomputer):
+    name = 'polaris'
+    requires_account = True
+    batch_capable    = True
+    special_bundling = True
+
+    def post_process_job(self,job):
+        if len(job.run_options)==0: 
+            opt = obj(
+                ppn     = '--ppn {}'.format(job.processes_per_node),
+                depth   = '--depth={}'.format(job.threads),
+                cpubind = '--cpu-bind depth',
+                threads = '--env OMP_NUM_THREADS={}'.format(job.threads),
+                )
+            job.run_options.add(**opt)
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'prod'
+        #end if
+        if job.filesystems is None:
+            job.filesystems = 'home:eagle:grand'
+        #end if
+        c= '#!/bin/sh\n'
+        c+='#PBS -l select={}:system=polaris\n'.format(job.nodes)
+        c+='#PBS -l place=scatter\n'
+        c+='#PBS -l filesystems={}\n'.format(job.filesystems)
+        c+='#PBS -l walltime={}\n'.format(job.pbs_walltime())
+        c+='#PBS -A {}\n'.format(job.account)
+        c+='#PBS -q {}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -k doe\n'
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='\n'
+        c+='cd ${PBS_O_WORKDIR}\n'
+
+        return c
+    #end def write_job_header
+
+    def specialized_bundle_commands(self,job,launcher,serial):
+        c = ''
+        j0 = job.bundled_jobs[0]
+        c+='split --lines={} --numeric-suffixes=1 --suffix-length=3 $PBS_NODEFILE local_hostfile.\n'.format(j0.nodes)
+        c+='\n'
+        lhfiles = ['local_hostfile.'+str(n+1).zfill(3) for n in range(len(job.bundled_jobs))]
+        for j,lh in zip(job.bundled_jobs,lhfiles):
+            c+='cp {} {}\n'.format(lh,j.abs_subdir)
+        #end for
+        for j,lh in zip(job.bundled_jobs,lhfiles):
+            j.run_options.add(hostfile='--hostfile '+lh)
+            c+='\ncd '+j.abs_subdir+'\n'
+            c+=j.run_command(launcher,redirect=True,serial=serial)+'\n'
+        #end for
+        c+='\nwait\n'
+        return c
+    #end def specialized_bundle_commands
+#end class Polaris
+
+## Added 05/04/2023 by Tom Ichibha
+class Kagayaki(Supercomputer):
+    name = 'kagayaki'
+    requires_account = False
+    batch_capable    = True
+    special_bundling = False
+
+    def process_job_options(self,job):
+        # job.run_options.add(nodefile='-machinefile $PBS_NODEFILE', np='-np '+str(job.processes))
+        opt = obj(
+            nodefile='-machinefile $PBS_NODEFILE',
+            omp='-x OMP_NUM_THREADS',
+            np='-np {}'.format(job.processes),
+            )
+        job.run_options.add(**opt)
+
+    def write_job_header(self,job):
+        ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
+        c=''
+        c+='#!/bin/bash\n'
+        if (job.queue is not None):
+            c+='#PBS -q ' + job.queue + '\n'
+        c+='#PBS -N ' + job.name + '\n'
+        c+='#PBS -o ' + job.outfile +'\n'
+        c+='#PBS -e ' + job.errfile + '\n'
+        c+='#PBS -l select={0}:ncpus={1}:mpiprocs={1}\n'.format(job.nodes, ppn)  
+        c+='cd $PBS_O_WORKDIR\n'
+        c+='export OMP_NUM_THREADS=' + str(job.threads) + '\n'
+        return c
+    #end def write_job_header                                                                       
+#end class CadesMoab
+
 
 #Known machines
 #  workstations
@@ -3181,11 +3611,11 @@ for cores in range(1,128+1):
 #end for
 #  supercomputers and clusters
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
+Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    'qdel')
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
 OIC5(           28,   2,    16,  128, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
-Edison(        664,   2,    12,   64,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Cori(         9688,   1,    68,   96,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',     'qsub',   'qstat',    'qdel')
@@ -3212,8 +3642,12 @@ CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    
 CadesSlurm(    156,   2,    18,  128,  100, 'mpirun',   'sbatch',  'squeue', 'scancel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
 Rhea(          512,   2,     8,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
+Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    'qdel')
+Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions

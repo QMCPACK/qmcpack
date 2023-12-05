@@ -14,7 +14,7 @@
 
 
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "LocalECPotential.h"
 #include "Utilities/IteratorUtility.h"
@@ -23,25 +23,15 @@ namespace qmcplusplus
 {
 LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els) : IonConfig(ions), Peln(els), Pion(ions)
 {
-  set_energy_domain(potential);
-  two_body_quantum_domain(ions, els);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, els);
   NumIons      = ions.getTotalNum();
   myTableIndex = els.addTable(ions);
   //allocate null
-  PPset.resize(ions.getSpeciesSet().getTotalNum(), 0);
+  PPset.resize(ions.getSpeciesSet().getTotalNum());
   PP.resize(NumIons, nullptr);
   Zeff.resize(NumIons, 0.0);
   gZeff.resize(ions.getSpeciesSet().getTotalNum(), 0);
-}
-
-///destructor
-LocalECPotential::~LocalECPotential()
-{
-  delete_iter(PPset.begin(), PPset.end());
-  //map<int,RadialPotentialType*>::iterator pit(PPset.begin()), pit_end(PPset.end());
-  //while(pit != pit_end) {
-  //  delete (*pit).second; ++pit;
-  //}
 }
 
 void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
@@ -53,36 +43,36 @@ void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
-void LocalECPotential::add(int groupID, RadialPotentialType* ppot, RealType z)
+void LocalECPotential::add(int groupID, std::unique_ptr<RadialPotentialType>&& ppot, RealType z)
 {
-  PPset[groupID] = ppot;
-  gZeff[groupID] = z;
   for (int iat = 0; iat < PP.size(); iat++)
   {
     if (IonConfig.GroupID[iat] == groupID)
     {
-      PP[iat]   = ppot;
+      PP[iat]   = ppot.get();
       Zeff[iat] = z;
     }
   }
+  PPset[groupID] = std::move(ppot);
+  gZeff[groupID] = z;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
-void LocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
+void LocalECPotential::contributeParticleQuantities() { request_.contribute_array(name_); }
 
-void LocalECPotential::checkout_particle_quantities(TraceManager& tm)
+void LocalECPotential::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request.streaming_array(myName);
-  if (streaming_particles)
+  streaming_particles_ = request_.streaming_array(name_);
+  if (streaming_particles_)
   {
-    Ve_sample = tm.checkout_real<1>(myName, Peln);
-    Vi_sample = tm.checkout_real<1>(myName, Pion);
+    Ve_sample = tm.checkout_real<1>(name_, Peln);
+    Vi_sample = tm.checkout_real<1>(name_, Pion);
   }
 }
 
-void LocalECPotential::delete_particle_quantities()
+void LocalECPotential::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -94,13 +84,13 @@ void LocalECPotential::delete_particle_quantities()
 LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
-    Value = evaluate_sp(P);
+  if (streaming_particles_)
+    value_ = evaluate_sp(P);
   else
 #endif
   {
-    const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-    Value              = 0.0;
+    const auto& d_table(P.getDistTableAB(myTableIndex));
+    value_             = 0.0;
     const size_t Nelec = P.getTotalNum();
     for (size_t iel = 0; iel < Nelec; ++iel)
     {
@@ -109,20 +99,20 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
       for (size_t iat = 0; iat < NumIons; ++iat)
         if (PP[iat] != nullptr)
           esum += PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
-      Value -= esum;
+      value_ -= esum;
     }
   }
-  return Value;
+  return value_;
 }
 
 LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
                                                                    ParticleSet& ions,
                                                                    TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos_t& hf_terms,
-                                                                   ParticleSet::ParticlePos_t& pulay_terms)
+                                                                   ParticleSet::ParticlePos& hf_terms,
+                                                                   ParticleSet::ParticlePos& pulay_terms)
 {
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-  Value              = 0.0;
+  const auto& d_table(P.getDistTableAB(myTableIndex));
+  value_             = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
   {
@@ -145,16 +135,16 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
         esum += -Zeff[iat] * v * rinv;
       }
     }
-    Value += esum;
+    value_ += esum;
   }
-  return Value;
+  return value_;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
 LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
 {
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-  Value                       = 0.0;
+  const auto& d_table(P.getDistTableAB(myTableIndex));
+  value_                      = 0.0;
   Array<RealType, 1>& Ve_samp = *Ve_sample;
   Array<RealType, 1>& Vi_samp = *Vi_sample;
   Ve_samp                     = 0.0;
@@ -173,9 +163,9 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
         Ve_samp(iel) += pairpot;
         esum += pairpot;
       }
-    Value += esum;
+    value_ += esum;
   }
-  Value *= 2.0;
+  value_ *= 2.0;
 
 #if defined(TRACE_CHECK)
   RealType Vnow  = Value;
@@ -205,15 +195,15 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
     APP_ABORT("Trace check failed");
   }
 #endif
-  return Value;
+  return value_;
 }
 #endif
 
 
 LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
 {
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-  Value              = 0.0;
+  const auto& d_table(P.getDistTableAB(myTableIndex));
+  value_             = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
   {
@@ -222,20 +212,20 @@ LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
     for (size_t iat = 0; iat < NumIons; ++iat)
       if (PP[iat] != nullptr)
         esum += PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
-    Value -= esum;
+    value_ -= esum;
   }
-  return Value;
+  return value_;
 }
 
-OperatorBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  LocalECPotential* myclone = new LocalECPotential(IonConfig, qp);
+  std::unique_ptr<LocalECPotential> myclone = std::make_unique<LocalECPotential>(IonConfig, qp);
+
   for (int ig = 0; ig < PPset.size(); ++ig)
   {
     if (PPset[ig])
     {
-      RadialPotentialType* ppot = PPset[ig]->makeClone();
-      myclone->add(ig, ppot, gZeff[ig]);
+      myclone->add(ig, std::unique_ptr<RadialPotentialType>(PPset[ig]->makeClone()), gZeff[ig]);
     }
   }
   return myclone;

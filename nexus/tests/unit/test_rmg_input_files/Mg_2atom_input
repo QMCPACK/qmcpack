@@ -1,0 +1,59 @@
+# Mg 2-atom test cell with k-points
+# Expected energy
+test_energy="-125.31535043"
+
+a_length="      3.19405000"
+b_length="      3.19405000"
+c_length="      5.17198000"
+atoms=
+"
+ Mg     0.000000000000    0.000000000000    0.000000000000      1
+ Mg     0.333333333333    0.333333333333    0.500000000000      1
+"
+
+kpoint_mesh = "5 5 3"
+kpoint_distribution = "2"
+renormalize_forces="false"
+#fast_density = "false"
+preconditioner_threshold = "0.00010000000"
+#verbose="true"
+#subdiag_driver="lapack"
+
+# for swapping on low memory machines
+#nvme_weights = "true"
+#nvme_orbitals = "true"
+#nvme_weights_filepath = "/mnt/scratch/briggs/Weights/"
+#nvme_orbitals_filepath = "/mnt/scratch/briggs/Orbitals/"
+wavefunction_grid = "24 24 40"
+
+potential_grid_refinement = "2"
+energy_convergence_criterion = "1e-12"
+#rms_convergence_criterion = "1e-8"
+
+crds_units = "Angstrom"
+lattice_units = "Angstrom"
+
+
+atomic_coordinate_type = "Cell Relative"
+occupations_type = "MethfesselPaxton"
+#occupations_type = "Fermi Dirac"
+occupation_electron_temperature_eV = "1.0e-4"
+charge_density_mixing = "0.5"
+charge_mixing_type = "Broyden"
+potential_acceleration_constant_step = "1.0"
+
+unoccupied_states_per_kpoint = "4"
+
+start_mode="LCAO Start"
+#start_mode="Restart From File"
+max_scf_steps = "200"
+calculation_mode="Quench Electrons"
+#calculation_mode="Relax Structure"
+
+bravais_lattice_type = "Hexagonal Primitive"
+localize_projectors = "false"
+localize_localpp = "false"
+kohn_sham_solver="davidson"
+#kohn_sham_solver="multigrid"
+write_data_period = "500"
+#output_wave_function_file = "/dev/null"

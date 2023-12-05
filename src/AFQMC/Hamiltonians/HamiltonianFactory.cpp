@@ -71,11 +71,11 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   std::string alt      = "";
 
   ParameterSet m_param;
-  m_param.add(cutoff1bar, "cutoff_1bar", "double");
-  m_param.add(fileName, "filename", "std::string");
-  m_param.add(number_of_TGs, "nblocks", "int");
-  m_param.add(n_reading_cores, "num_io_cores", "int");
-  m_param.add(alt, "alternate", "std::string");
+  m_param.add(cutoff1bar, "cutoff_1bar");
+  m_param.add(fileName, "filename");
+  m_param.add(number_of_TGs, "nblocks");
+  m_param.add(n_reading_cores, "num_io_cores");
+  m_param.add(alt, "alternate");
   m_param.put(cur);
 
   // make or get TG
@@ -99,11 +99,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       app_error() << " Error opening integral file in SparseGeneralHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
   }
 
   HamiltonianTypes htype = UNKNOWN;
@@ -168,19 +164,14 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     //      APP_ABORT(" ");
   }
   nvecs = Idata[7];
-#ifdef QMC_COMPLEX
-  int nkpts = -1;
-  if (htype == KPFactorized || htype == KPTHC)
-    nkpts = Idata[2];
-#endif
 
-  // MAM: this is wrong in NONCOLLINEAR, but how do I know what 
+  // MAM: this is wrong in NONCOLLINEAR, but how do I know what
   // walker type it is right here???
-  // Might need to read dimensions ahead of time from hdf5 file and check consistensy
+  // Might need to read dimensions ahead of time from hdf5 file and check consistency
   // later
   // Also, OneBodyHamiltonian doesn't make much sense now that you have KP classes.
   // Consider refactoring this part of the code...
-  // It is not really used now, you can just read H1 in Sparse class too...  
+  // It is not really used now, you can just read H1 in Sparse class too...
 
   // 1 body hamiltonian: Why isn't this in shared memory!!!
   boost::multi::array<ValueType, 2> H1({NMO, NMO});
@@ -271,11 +262,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   if (htype == KPTHC)
   {
     APP_ABORT(" Error: KPTHC hamiltonian not yet working. \n");
-    if (coreid < nread && !dump.push("KPTHC", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not KPTHC found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("KPTHC", false);
+
     if (coreid < nread)
     {
       dump.pop();
@@ -289,11 +278,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   }
   else if (htype == KPFactorized)
   {
-    if (coreid < nread && !dump.push("KPFactorized", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not KPFactorized found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("KPFactorized", false);
+
     if (coreid < nread)
     {
       dump.pop();
@@ -309,11 +296,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 #else
   if (htype == RealDenseFactorized)
   {
-    if (coreid < nread && !dump.push("DenseFactorized", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not DenseFactorized found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("DenseFactorized", false);
+
     if (coreid < nread)
     {
       dump.pop();
@@ -337,11 +322,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 #endif
       if (htype == THC)
   {
-    if (coreid < nread && !dump.push("THC", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group not THC found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("THC", false);
+
     if (coreid < nread)
     {
       dump.pop();
@@ -355,11 +338,8 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   }
   else if (htype == Factorized)
   {
-    if (coreid < nread && !dump.push("Factorized", false))
-    {
-      app_error() << " Error in HamiltonianFactory::fromHDF5(): Group Factorized not found. \n";
-      APP_ABORT("");
-    }
+    if (coreid < nread)
+      dump.push("Factorized", false);
 
     if (TG.getNumberOfTGs() > 1)
       APP_ABORT(" Error: Distributed Factorized hamiltonian not yet implemented. \n\n");

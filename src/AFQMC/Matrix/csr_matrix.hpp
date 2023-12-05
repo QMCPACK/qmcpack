@@ -59,7 +59,7 @@ struct is_root
 {
   mpi3::shared_communicator& comm_;
   template<class Allocator>
-  is_root(Allocator& a) : comm_(a.comm_)
+  is_root(Allocator& a) : comm_(*a.commP_)
   {}
   bool root() { return comm_.root(); }
   int size() { return comm_.size(); }
@@ -166,6 +166,7 @@ public:
     return static_cast<size_type>(pointers_end_[i] - pointers_begin_[i]);
   }
   auto shape() const { return std::array<size_type, 2>{{size(), size2_}}; }
+  auto sizes() const {return shape();}
   template<typename integer_type = size_type>
   auto size(integer_type d) const
   {
@@ -773,7 +774,7 @@ public:
     *this = csr;
   }
   // right now, this routine is limited to transfers from host-host, or host-device.
-  // Will fail if transfering device-to-host, since I need to use to_address on source
+  // Will fail if transferring device-to-host, since I need to use to_address on source
   template<class ValType_,
            class IndxType_,
            class IntType_,
@@ -1150,6 +1151,7 @@ protected:
     auto num_non_zero_elements() const { return size_type(self_.pointers_end_[i_] - self_.pointers_begin_[i_]); }
     auto capacity() const { return self_.capacity(i_); }
     auto shape() const { return std::array<size_type, 1>{{self_.size2_}}; }
+	auto sizes() const {return shape();}
     template<typename integer_type = size_type>
     auto size(integer_type d) const
     {

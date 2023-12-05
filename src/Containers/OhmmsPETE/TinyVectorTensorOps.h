@@ -29,7 +29,7 @@ namespace qmcplusplus
 template<class T1, class T2, unsigned D>
 struct OTDot<Tensor<T1, D>, TinyVector<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, D> apply(const Tensor<T1, D>& lhs, const TinyVector<T2, D>& rhs)
   {
     TinyVector<Type_t, D> ret = TinyVector<Type_t, D>::DontInitialize();
@@ -48,7 +48,7 @@ struct OTDot<Tensor<T1, D>, TinyVector<T2, D>>
 template<class T1, class T2>
 struct OTDot<Tensor<T1, 1>, TinyVector<T2, 1>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 1> apply(const Tensor<T1, 1>& lhs, const TinyVector<T2, 1>& rhs)
   {
     return TinyVector<Type_t, 1>(lhs[0] * rhs[0]);
@@ -58,7 +58,7 @@ struct OTDot<Tensor<T1, 1>, TinyVector<T2, 1>>
 template<class T1, class T2>
 struct OTDot<Tensor<T1, 2>, TinyVector<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 2> apply(const Tensor<T1, 2>& lhs, const TinyVector<T2, 2>& rhs)
   {
     return TinyVector<Type_t, 2>(lhs[0] * rhs[0] + lhs[1] * rhs[1], lhs[2] * rhs[0] + lhs[3] * rhs[1]);
@@ -68,7 +68,7 @@ struct OTDot<Tensor<T1, 2>, TinyVector<T2, 2>>
 template<class T1, class T2>
 struct OTDot<Tensor<T1, 3>, TinyVector<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 3> apply(const Tensor<T1, 3>& lhs, const TinyVector<T2, 3>& rhs)
   {
     return TinyVector<Type_t, 3>(lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2],
@@ -80,7 +80,7 @@ struct OTDot<Tensor<T1, 3>, TinyVector<T2, 3>>
 template<class T1, class T2>
 struct OTDot<Tensor<T1, 4>, TinyVector<T2, 4>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 4> apply(const Tensor<T1, 4>& lhs, const TinyVector<T2, 4>& rhs)
   {
     return TinyVector<Type_t, 4>(lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2] + lhs[3] * rhs[3],
@@ -99,7 +99,7 @@ struct OTDot<Tensor<T1, 4>, TinyVector<T2, 4>>
 template<class T1, class T2, unsigned D>
 struct OTDot<TinyVector<T1, D>, Tensor<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, D> apply(const TinyVector<T2, D>& lhs, const Tensor<T1, D>& rhs)
   {
     TinyVector<Type_t, D> ret = TinyVector<Type_t, D>::DontInitialize();
@@ -118,7 +118,7 @@ struct OTDot<TinyVector<T1, D>, Tensor<T2, D>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 1>, Tensor<T2, 1>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 1> apply(const TinyVector<T1, 1>& lhs, const Tensor<T2, 1>& rhs)
   {
     return TinyVector<Type_t, 1>(lhs[0] * rhs[0]);
@@ -128,7 +128,7 @@ struct OTDot<TinyVector<T1, 1>, Tensor<T2, 1>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 2>, Tensor<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 2> apply(const TinyVector<T1, 2>& lhs, const Tensor<T2, 2>& rhs)
   {
     return TinyVector<Type_t, 2>(lhs[0] * rhs(0, 0) + lhs[1] * rhs(1, 0), lhs[0] * rhs(0, 1) + lhs[1] * rhs(1, 1));
@@ -138,7 +138,7 @@ struct OTDot<TinyVector<T1, 2>, Tensor<T2, 2>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 3>, Tensor<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 3> apply(const TinyVector<T1, 3>& lhs, const Tensor<T2, 3>& rhs)
   {
     return TinyVector<Type_t, 3>(lhs[0] * rhs[0] + lhs[1] * rhs[3] + lhs[2] * rhs[6],
@@ -150,7 +150,7 @@ struct OTDot<TinyVector<T1, 3>, Tensor<T2, 3>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 4>, Tensor<T2, 4>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 4> apply(const TinyVector<T1, 4>& lhs, const Tensor<T2, 4>& rhs)
   {
     return TinyVector<Type_t, 4>(lhs[0] * rhs[0] + lhs[1] * rhs[4] + lhs[2] * rhs[8] + lhs[3] * rhs[12],
@@ -169,7 +169,7 @@ struct OTDot<TinyVector<T1, 4>, Tensor<T2, 4>>
 template<class T1, class T2, unsigned D>
 struct OTDot<SymTensor<T1, D>, TinyVector<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, D> apply(const SymTensor<T1, D>& lhs, const TinyVector<T2, D>& rhs)
   {
     TinyVector<Type_t, D> ret = TinyVector<Type_t, D>::DontInitialize();
@@ -191,7 +191,7 @@ struct OTDot<SymTensor<T1, D>, TinyVector<T2, D>>
 template<class T1, class T2>
 struct OTDot<SymTensor<T1, 1>, TinyVector<T2, 1>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 1> apply(const SymTensor<T1, 1>& lhs, const TinyVector<T2, 1>& rhs)
   {
     return TinyVector<Type_t, 1>(lhs[0] * rhs[0]);
@@ -201,7 +201,7 @@ struct OTDot<SymTensor<T1, 1>, TinyVector<T2, 1>>
 template<class T1, class T2>
 struct OTDot<SymTensor<T1, 2>, TinyVector<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 2> apply(const SymTensor<T1, 2>& lhs, const TinyVector<T2, 2>& rhs)
   {
     return TinyVector<Type_t, 2>(lhs(0, 0) * rhs[0] + lhs(0, 1) * rhs[1], lhs(1, 0) * rhs[0] + lhs(1, 1) * rhs[1]);
@@ -211,7 +211,7 @@ struct OTDot<SymTensor<T1, 2>, TinyVector<T2, 2>>
 template<class T1, class T2>
 struct OTDot<SymTensor<T1, 3>, TinyVector<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 3> apply(const SymTensor<T1, 3>& lhs, const TinyVector<T2, 3>& rhs)
   {
     return TinyVector<Type_t, 3>(lhs(0, 0) * rhs[0] + lhs(0, 1) * rhs[1] + lhs(0, 2) * rhs[2],
@@ -229,7 +229,7 @@ struct OTDot<SymTensor<T1, 3>, TinyVector<T2, 3>>
 template<class T1, class T2, unsigned D>
 struct OTDot<TinyVector<T1, D>, SymTensor<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, D> apply(const TinyVector<T2, D>& lhs, const SymTensor<T1, D>& rhs)
   {
     TinyVector<Type_t, D> ret = TinyVector<Type_t, D>::DontInitialize();
@@ -251,7 +251,7 @@ struct OTDot<TinyVector<T1, D>, SymTensor<T2, D>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 1>, SymTensor<T2, 1>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 1> apply(const TinyVector<T1, 1>& lhs, const SymTensor<T2, 1>& rhs)
   {
     return TinyVector<Type_t, 1>(lhs[0] * rhs[0]);
@@ -261,7 +261,7 @@ struct OTDot<TinyVector<T1, 1>, SymTensor<T2, 1>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 2>, SymTensor<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 2> apply(const TinyVector<T1, 2>& lhs, const SymTensor<T2, 2>& rhs)
   {
     return TinyVector<Type_t, 2>(lhs[0] * rhs(0, 0) + lhs[1] * rhs(1, 0), lhs[0] * rhs(0, 1) + lhs[1] * rhs(1, 1));
@@ -271,7 +271,7 @@ struct OTDot<TinyVector<T1, 2>, SymTensor<T2, 2>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 3>, SymTensor<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 3> apply(const TinyVector<T1, 3>& lhs, const SymTensor<T2, 3>& rhs)
   {
     return TinyVector<Type_t, 3>(lhs[0] * rhs(0, 0) + lhs[1] * rhs(1, 0) + lhs[2] * rhs(2, 0),
@@ -289,7 +289,7 @@ struct OTDot<TinyVector<T1, 3>, SymTensor<T2, 3>>
 template<class T1, class T2, unsigned D>
 struct OTDot<SymTensor<T1, D>, Tensor<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Tensor<Type_t, D> apply(const SymTensor<T1, D>& lhs, const Tensor<T2, D>& rhs)
   {
     Tensor<Type_t, D> res = Tensor<Type_t, D>::DontInitialize();
@@ -311,7 +311,7 @@ struct OTDot<SymTensor<T1, D>, Tensor<T2, D>>
 template<class T1, class T2>
 struct OTDot<SymTensor<T1, 1>, Tensor<T2, 1>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Tensor<Type_t, 1> apply(const SymTensor<T1, 1>& lhs, const Tensor<T2, 1>& rhs)
   {
     return Tensor<Type_t, 1>(lhs[0] * rhs[0]);
@@ -321,7 +321,7 @@ struct OTDot<SymTensor<T1, 1>, Tensor<T2, 1>>
 template<class T1, class T2>
 struct OTDot<SymTensor<T1, 2>, Tensor<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Tensor<Type_t, 2> apply(const SymTensor<T1, 2>& lhs, const Tensor<T2, 2>& rhs)
   {
     return Tensor<Type_t, 2>(lhs(0, 0) * rhs(0, 0) + lhs(0, 1) * rhs(1, 0),
@@ -334,7 +334,7 @@ struct OTDot<SymTensor<T1, 2>, Tensor<T2, 2>>
 template<class T1, class T2>
 struct OTDot<SymTensor<T1, 3>, Tensor<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Tensor<Type_t, 3> apply(const SymTensor<T1, 3>& lhs, const Tensor<T2, 3>& rhs)
   {
     return Tensor<Type_t, 3>(lhs(0, 0) * rhs(0, 0) + lhs(0, 1) * rhs(1, 0) + lhs(0, 2) * rhs(2, 0),
@@ -358,7 +358,7 @@ struct OTDot<SymTensor<T1, 3>, Tensor<T2, 3>>
 template<class T1, class T2, unsigned D>
 struct OTDot<Tensor<T1, D>, SymTensor<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Tensor<Type_t, D> apply(const Tensor<T1, D>& lhs, const SymTensor<T2, D>& rhs)
   {
     Tensor<Type_t, D> res = Tensor<Type_t, D>::DontInitialize();
@@ -380,7 +380,7 @@ struct OTDot<Tensor<T1, D>, SymTensor<T2, D>>
 template<class T1, class T2>
 struct OTDot<Tensor<T1, 1>, SymTensor<T2, 1>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Tensor<Type_t, 1> apply(const Tensor<T1, 1>& lhs, const SymTensor<T2, 1>& rhs)
   {
     return Tensor<Type_t, 1>(lhs[0] * rhs[0]);
@@ -390,7 +390,7 @@ struct OTDot<Tensor<T1, 1>, SymTensor<T2, 1>>
 template<class T1, class T2>
 struct OTDot<Tensor<T1, 2>, SymTensor<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Tensor<Type_t, 2> apply(const Tensor<T1, 2>& lhs, const SymTensor<T2, 2>& rhs)
   {
     return Tensor<Type_t, 2>(lhs(0, 0) * rhs(0, 0) + lhs(0, 1) * rhs(1, 0),
@@ -403,7 +403,7 @@ struct OTDot<Tensor<T1, 2>, SymTensor<T2, 2>>
 template<class T1, class T2>
 struct OTDot<Tensor<T1, 3>, SymTensor<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Tensor<Type_t, 3> apply(const Tensor<T1, 3>& lhs, const SymTensor<T2, 3>& rhs)
   {
     return Tensor<Type_t, 3>(lhs(0, 0) * rhs(0, 0) + lhs(0, 1) * rhs(1, 0) + lhs(0, 2) * rhs(2, 0),
@@ -427,7 +427,7 @@ struct OTDot<Tensor<T1, 3>, SymTensor<T2, 3>>
 template<class T1, class T2, unsigned D>
 struct OTDot<TinyVector<T1, D>, AntiSymTensor<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, D> apply(const TinyVector<T2, D>& lhs, const AntiSymTensor<T1, D>& rhs)
   {
     TinyVector<Type_t, D> ret = TinyVector<Type_t, D>::DontInitialize();
@@ -447,7 +447,7 @@ struct OTDot<TinyVector<T1, D>, AntiSymTensor<T2, D>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 2>, AntiSymTensor<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 2> apply(const TinyVector<T1, 2>& lhs, const AntiSymTensor<T2, 2>& rhs)
   {
     return TinyVector<Type_t, 2>(lhs[0] * rhs(0, 0) + lhs[1] * rhs(1, 0), lhs[0] * rhs(0, 1) + lhs[1] * rhs(1, 1));
@@ -457,7 +457,7 @@ struct OTDot<TinyVector<T1, 2>, AntiSymTensor<T2, 2>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 3>, AntiSymTensor<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 3> apply(const TinyVector<T1, 3>& lhs, const AntiSymTensor<T2, 3>& rhs)
   {
     return TinyVector<Type_t, 3>(lhs[0] * rhs(0, 0) + lhs[1] * rhs(1, 0) + lhs[2] * rhs(2, 0),
@@ -475,7 +475,7 @@ struct OTDot<TinyVector<T1, 3>, AntiSymTensor<T2, 3>>
 template<class T1, class T2, unsigned D>
 struct OTDot<AntiSymTensor<T1, D>, TinyVector<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, D> apply(const AntiSymTensor<T1, D>& lhs, const TinyVector<T2, D>& rhs)
   {
     TinyVector<Type_t, D> ret = TinyVector<Type_t, D>::DontInitialize();
@@ -496,7 +496,7 @@ struct OTDot<AntiSymTensor<T1, D>, TinyVector<T2, D>>
 template<class T1, class T2>
 struct OTDot<AntiSymTensor<T1, 1>, TinyVector<T2, 1>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 1> apply(const AntiSymTensor<T1, 1>& lhs, const TinyVector<T2, 1>& rhs)
   {
     return TinyVector<Type_t, 1>(lhs[0] * rhs[0]);
@@ -506,7 +506,7 @@ struct OTDot<AntiSymTensor<T1, 1>, TinyVector<T2, 1>>
 template<class T1, class T2>
 struct OTDot<AntiSymTensor<T1, 2>, TinyVector<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 2> apply(const AntiSymTensor<T1, 2>& lhs, const TinyVector<T2, 2>& rhs)
   {
     return TinyVector<Type_t, 2>(lhs(0, 0) * rhs[0] + lhs(0, 1) * rhs[1], lhs(1, 0) * rhs[0] + lhs(1, 1) * rhs[1]);
@@ -516,7 +516,7 @@ struct OTDot<AntiSymTensor<T1, 2>, TinyVector<T2, 2>>
 template<class T1, class T2>
 struct OTDot<AntiSymTensor<T1, 3>, TinyVector<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static TinyVector<Type_t, 3> apply(const AntiSymTensor<T1, 3>& lhs, const TinyVector<T2, 3>& rhs)
   {
     return TinyVector<Type_t, 3>(lhs(0, 0) * rhs[0] + lhs(0, 1) * rhs[1] + lhs(0, 2) * rhs[2],
@@ -536,8 +536,8 @@ struct OTDot<AntiSymTensor<T1, 3>, TinyVector<T2, 3>>
 template<class T1, class T2, unsigned D1, unsigned D2, unsigned D3>
 struct OTDot< TinyMatrix<T1,D1,D2> , TinyMatrix<T2,D2,D3> >
 {
-  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
-  typedef TinyMatrix<Type_t, D1, D3> Return_t;
+  using Type_t = typename BinaryReturn<T1,T2,OpMultiply>::Type_t;
+  using Return_t = TinyMatrix<Type_t, D1, D3>;
   inline static Return_t
   apply(const TinyMatrix<T1,D1,D2>& lhs, const TinyMatrix<T2,D2,D3>& rhs) {
     Return_t res;
@@ -555,8 +555,8 @@ struct OTDot< TinyMatrix<T1,D1,D2> , TinyMatrix<T2,D2,D3> >
 template<class T1, class T2>
 struct OTDot< TinyMatrix<T1,3,3> , TinyMatrix<T2,3,3> >
 {
-  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
-  typedef TinyMatrix<Type_t, 3, 3> Return_t;
+  using Type_t = typename BinaryReturn<T1,T2,OpMultiply>::Type_t;
+  using Return_t = TinyMatrix<Type_t, 3, 3>;
   inline static Return_t
   apply(const TinyMatrix<T1,3,3>& lhs, const TinyMatrix<T2,3,3>& rhs) {
     return Return_t(lhs(0,0)*rhs(0,0)+lhs(0,1)*rhs(1,0)+lhs(0,2)*rhs(2,0),
@@ -573,8 +573,8 @@ struct OTDot< TinyMatrix<T1,3,3> , TinyMatrix<T2,3,3> >
 template<class T1, class T2>
 struct OTDot< TinyMatrix<T1,4,4> , TinyMatrix<T2,4,4> >
 {
-  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
-  typedef TinyMatrix<Type_t, 4, 4> Return_t;
+  using Type_t = typename BinaryReturn<T1,T2,OpMultiply>::Type_t;
+  using Return_t = TinyMatrix<Type_t, 4, 4>;
   inline static Return_t
   apply(const TinyMatrix<T1,4,4>& lhs, const TinyMatrix<T2,4,4>& rhs) {
     return Return_t(lhs(0,0)*rhs(0,0)+lhs(0,1)*rhs(1,0)+lhs(0,2)*rhs(2,0)+lhs(0,3)*rhs(3,0),
@@ -615,16 +615,16 @@ struct OuterProduct
 template<class T1, class T2, unsigned D>
 struct OuterProduct<TinyVector<T1, D>, TinyVector<T2, D>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
-  typedef Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, D> Return_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Return_t = Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, D>;
   inline static Return_t apply(const TinyVector<T1, D>& a, const TinyVector<T2, D>& b) { return Return_t(); }
 };
 
 template<class T1, class T2>
 struct OuterProduct<TinyVector<T1, 2>, TinyVector<T2, 2>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
-  typedef Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, 2> Return_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Return_t = Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, 2>;
   inline static Return_t apply(const TinyVector<T1, 2>& a, const TinyVector<T2, 2>& b)
   {
     return Return_t(a[0] * b[0], a[0] * b[1], a[1] * b[0], a[1] * b[1]);
@@ -634,8 +634,8 @@ struct OuterProduct<TinyVector<T1, 2>, TinyVector<T2, 2>>
 template<class T1, class T2>
 struct OuterProduct<TinyVector<T1, 3>, TinyVector<T2, 3>>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
-  typedef Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, 3> Return_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Return_t = Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, 3>;
   inline static Return_t apply(const TinyVector<T1, 3>& a, const TinyVector<T2, 3>& b)
   {
     return Return_t(a[0] * b[0], a[0] * b[1], a[0] * b[2], a[1] * b[0], a[1] * b[1], a[1] * b[2], a[2] * b[0],

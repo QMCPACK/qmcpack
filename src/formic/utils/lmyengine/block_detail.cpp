@@ -28,11 +28,11 @@
 #include "formic/utils/lmyengine/spam_solver.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Get the begining and end indices and the length for each block of variables
+/// \brief  Get the beginning and end indices and the length for each block of variables
 ///
 /// \param[in]    nvar         the number of variables that will be divided into blocks
 /// \param[in]    nblock       the number of blocks
-/// \param[out]   block_beg    on exit, the length nblock vector of indices marking the begining of each block
+/// \param[out]   block_beg    on exit, the length nblock vector of indices marking the beginning of each block
 /// \param[out]   block_end    on exit, the length nblock vector of block lengths
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////

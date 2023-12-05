@@ -23,17 +23,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <typeinfo>
 #include "XMLParsingString.h"
-
-template<typename _CharT>
-inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
-{
-  cname = (const char*)cur->name;
-  for (int i = 0; i < cname.size(); i++)
-    cname[i] = tolower(cname[i]);
-  //std::transform(cname.begin(), cname.end(), cname.begin(), std::tolower);
-}
+#include "string_utils.h"
 
 /**\file libxmldefs.h
  *\brief A collection of put/get functions to read from or write to a xmlNode defined in libxml2.
@@ -60,6 +51,38 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
     }
   };
  \endcode
+ */
+
+/** xmlChar* to char* cast
+ *  certainly not typesafe but at this interface between libxml and c++
+ *  well it beats c style casts and might be more correct than a reinterpret.
+ *
+ *  This is fine with UTF-8 bytes going into a std::string.
+ */
+inline char* castXMLCharToChar(xmlChar* c) { return static_cast<char*>(static_cast<void*>(c)); }
+
+/** unsafe const xmlChar* to const char* cast
+ */
+inline const char* castXMLCharToChar(const xmlChar* c) { return static_cast<const char*>(static_cast<const void*>(c)); }
+
+/** unsafe char* to xmlChar* cast
+ */
+inline xmlChar* castCharToXMLChar(char* c) { return static_cast<xmlChar*>(static_cast<void*>(c)); }
+
+/** unsafe const char* to const xmlChar* cast
+ */
+inline const xmlChar* castCharToXMLChar(const char* c)
+{
+  return static_cast<const xmlChar*>(static_cast<const void*>(c));
+}
+
+std::string getNodeName(xmlNodePtr cur);
+
+/** replaces a's value with the first "element" in the "string"
+ *  returned by XMLNodeString{cur}.
+ *  but if that string is empty then then doesn't touch a.
+ *  See documentation of the interaction between operator>>
+ *  streams and the FormattedInputFunction requirement in the c++ standard.
  */
 template<class T>
 bool putContent(T& a, xmlNodePtr cur)
@@ -119,21 +142,7 @@ inline bool putContent(std::vector<T>& a, const xmlNodePtr cur)
 {
   if (cur->children == NULL)
     return false;
-  std::istringstream stream(XMLNodeString{cur});
-  std::vector<T> b;
-  T t;
-  while (!stream.eof())
-  {
-    if (stream >> t)
-      b.push_back(t);
-    else if (!stream.eof() && stream.fail())
-    {
-      std::cerr << "Error parsing XML for type (type_info::name) " << typeid(T).name() << ", value " << t
-                << std::endl;
-      stream.clear();
-    }
-  }
-  a = b;
+  a = qmcplusplus::convertStrToVec<T>(XMLNodeString{cur});
   return true;
 }
 

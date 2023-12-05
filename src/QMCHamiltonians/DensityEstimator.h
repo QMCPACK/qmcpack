@@ -21,63 +21,62 @@
 #include "LongRange/LRCoulombSingleton.h"
 namespace qmcplusplus
 {
-typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-typedef LRCoulombSingleton::GridType GridType;
-typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+using GridType       = LRCoulombSingleton::GridType;
+using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
 class DensityEstimator : public OperatorBase
 {
 public:
   DensityEstimator(ParticleSet& elns);
-  int potentialIndex;
-  void resetTargetParticleSet(ParticleSet& P);
 
-  Return_t evaluate(ParticleSet& P);
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  std::string getClassName() const override;
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  void addObservables(PropertySetType& plist) {}
-  void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
-  void setObservables(PropertySetType& plist);
-  void setParticlePropertyList(PropertySetType& plist, int offset);
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  Return_t evaluate(ParticleSet& P) override;
 
-  inline int getGridIndex(int i, int j, int k) const { return myIndex + k + NumGrids[2] * (j + NumGrids[1] * i); }
-
-  inline int getGridIndexPotential(int i, int j, int k) const
-  {
-    return potentialIndex + k + NumGrids[2] * (j + NumGrids[1] * i);
-  }
+  void addObservables(PropertySetType& plist);
+  void addObservables(PropertySetType& plist, BufferType& olist) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
+  void setObservables(PropertySetType& plist) override;
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
 
 private:
   ///true if any direction of a supercell is periodic
-  bool Periodic;
-  ///normalization factor
-  RealType Norm;
+  bool periodic_;
   ///number of grids
-  TinyVector<int, OHMMS_DIM + 1> NumGrids;
+  TinyVector<int, OHMMS_DIM + 1> num_grids_;
   ///bin size
-  TinyVector<RealType, OHMMS_DIM> Delta;
+  TinyVector<RealType, OHMMS_DIM> delta_;
   ///inverse
-  TinyVector<RealType, OHMMS_DIM> DeltaInv;
+  TinyVector<RealType, OHMMS_DIM> delta_inv_;
   ///scaling factor for conversion
-  TinyVector<RealType, OHMMS_DIM> ScaleFactor;
+  TinyVector<RealType, OHMMS_DIM> scale_factor_;
   ///lower bound
-  TinyVector<RealType, OHMMS_DIM> density_min;
+  TinyVector<RealType, OHMMS_DIM> density_min_;
   ///upper bound
-  TinyVector<RealType, OHMMS_DIM> density_max;
+  TinyVector<RealType, OHMMS_DIM> density_max_;
   ///name of the density data
   std::string prefix;
-  ///density
-  //Array<RealType,OHMMS_DIM> density, Vavg;
+
   /** resize the internal data
    *
    * The argument list is not completed
    */
   void resize();
+
+  /**
+   * @brief Get the linearized grid Index object from 3D coordinates
+   * @param i  x-index
+   * @param j  y-index
+   * @param k  k-index
+   * @return int linearized index
+   */
+  int getGridIndex(int i, int j, int k) const noexcept;
 };
 
 } // namespace qmcplusplus

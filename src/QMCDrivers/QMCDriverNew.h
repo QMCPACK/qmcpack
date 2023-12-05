@@ -29,29 +29,31 @@
 #include <type_traits>
 
 #include "Configuration.h"
-#include "Utilities/PooledData.h"
+#include "Particle/HDFWalkerIO.h"
+#include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/WaveFunctionPool.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/EstimatorManagerNew.h"
+#include "Utilities/ScopedProfiler.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
-#include "QMCDrivers/SFNBranch.h"
-#include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
+#include "ProjectData.h"
+#include "MultiWalkerDispatchers.h"
+#include "DriverWalkerTypes.h"
+#include "TauParams.hpp"
+#include "Particle/MCCoords.hpp"
+#include <algorithm>
 
 class Communicate;
 
 namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
-class HDFWalkerOutput;
 class TraceManager;
-struct SFNBranch;
+class EstimatorManagerNew;
+class TrialWaveFunction;
+class QMCHamiltonian;
 
 namespace testing
 {
@@ -100,7 +102,6 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
 protected:
-  void endBlock();
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason
@@ -112,27 +113,69 @@ protected:
     std::vector<IndexType> walkers_per_crowd;
     RealType reserve_walkers;
   };
+  /** Do common section starting tasks for VMC and DMC
+   *
+   * set up population_, crowds_, rngs and step_contexts_
+   */
+  void initializeQMC(const AdjustedWalkerCounts& awc);
+
+  /// inject additional barrier and measure load imbalance.
+  void measureImbalance(const std::string& tag) const;
+  /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
+  void endBlock();
 
 public:
   /// Constructor.
-  QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation& population,
-               TrialWaveFunction& psi,
-               QMCHamiltonian& h,
+  QMCDriverNew(const ProjectData& project_data,
+               QMCDriverInput&& input,
+               const std::optional<EstimatorManagerInput>& global_emi,
+               WalkerConfigurations& wc,
+               MCPopulation&& population,
                const std::string timer_prefix,
                Communicate* comm,
                const std::string& QMC_driver_type,
                SetNonLocalMoveHandler = &QMCDriverNew::defaultSetNonLocalMoveHandler);
 
+  ///Move Constructor
   QMCDriverNew(QMCDriverNew&&) = default;
+  ///Copy Constructor (disabled).
+  QMCDriverNew(const QMCDriverNew&) = delete;
+  ///Copy operator (disabled).
+  QMCDriverNew& operator=(const QMCDriverNew&) = delete;
 
-  virtual ~QMCDriverNew();
+  ~QMCDriverNew() override;
+
+  bool putQMCInfo(xmlNodePtr cur);
+
+  /** Adjust populations local walkers to this number
+  * @param nwalkers number of walkers to add
+  *
+  */
+  void makeLocalWalkers(int nwalkers, RealType reserve);
+
+  DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
+
+  /** record the state of the block
+   * @param block current block
+   *
+   * virtual function with a default implementation
+   */
+  void recordBlock(int block) override;
+
+  /** finalize a qmc section
+   * @param block current block
+   * @param dumpwalkers if true, dump walkers
+   *
+   * Accumulate energy and weight is written to a hdf5 file.
+   * Finialize the estimators
+   */
+  bool finalize(int block, bool dumpwalkers = true);
 
   ///return current step
   inline IndexType current() const { return current_step_; }
 
   /** Set the status of the QMCDriver
-   * @param aname the root file name
+   * @param aname the root file name, ignored
    * @param h5name root name of the master hdf5 file containing previous qmcrun
    * @param append if true, the run is a continuation of the previous qmc
    *
@@ -141,64 +184,42 @@ public:
    * of previous QMC runs for the simulation and "suffix"
    * is the suffix for the output file.
    */
-  void setStatus(const std::string& aname, const std::string& h5name, bool append);
+  void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  /** add QMCHamiltonian/TrialWaveFunction pair for multiple
-   * @param h QMCHamiltonian
-   * @param psi TrialWaveFunction
-   *
-   * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
-   * for energy difference evaluations.
-   */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
   void createRngsStepContexts(int num_crowds);
 
-  void putWalkers(std::vector<xmlNodePtr>& wset);
+  void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  /** placate the legacy base class interface
-   */
-  void setBranchEngine(SimpleFixedNodeBranch* be)
+  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
   {
-    throw std::runtime_error("You can not use the legacy SimpleFixedNodeBranch class with QMCDriverNew");
+    RefVector<RandomBase<FullPrecRealType>> RngRefs;
+    for (int i = 0; i < Rng.size(); ++i)
+      RngRefs.push_back(*Rng[i]);
+    return RngRefs;
   }
 
-  ///set the BranchEngineType
-  void setNewBranchEngine(SFNBranch* be) { branch_engine_ = be; }
-
-  /** placate the legacy base class interface
-   */
-  SimpleFixedNodeBranch* getBranchEngine() { return nullptr; }
-
-  ///return BranchEngineType*
-  SFNBranch* getNewBranchEngine() { return branch_engine_; }
-
-  int addObservable(const std::string& aname);
-
-  RealType getObservable(int i);
-
-  ///set global offsets of the walkers
-  void setWalkerOffsets();
-
-  std::vector<RandomGenerator_t*> RngCompatibility;
-
-  inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
-
-  // ///return the random generators
-  //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }
-
   ///return the i-th random generator
-  inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
+  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
 
-  std::string getEngineName() { return QMCType; }
-  unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
+  /** intended for logging output and debugging
+   *  you should base behavior on type preferably at compile time or if
+   *  necessary at runtime using and protected by dynamic cast.
+   *  QMCType is primarily for use in the debugger.
+   */
+  std::string getEngineName() override { return QMCType; }
+  unsigned long getDriverMode() override { return qmc_driver_mode_.to_ulong(); }
 
-  IndexType get_living_walkers() const { return population_.get_walkers().size(); }
+  IndexType get_num_living_walkers() const { return population_.get_walkers().size(); }
+  IndexType get_num_dead_walkers() const { return population_.get_dead_walkers().size(); }
+
+  const QMCDriverInput& getQMCDriverInput() const { return qmcdriver_input_; }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
    */
-  bool put(xmlNodePtr cur) { return false; };
+  bool put(xmlNodePtr cur) override { return false; };
 
   /** QMCDriverNew driver second (3rd, 4th...) stage of constructing a valid driver
    *
@@ -208,27 +229,53 @@ public:
    *  \todo remove cur, the driver and all its child nodes should be completely processed before
    *        this stage of driver initialization is hit.
    */
-  virtual void process(xmlNodePtr cur) = 0;
+  void process(xmlNodePtr cur) override = 0;
 
-  /** Do common section starting tasks
-   *
-   *  \todo This should not take xmlNodePtr
-   *        It should either take BranchEngineInput and EstimatorInput
-   *        And these are the arguments to the branch_engine and estimator_manager
-   *        Constructors or these objects should be created elsewhere.
-   */
-  void startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc);
-
-  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
+  static void initialLogEvaluation(int crowd_id,
+                                   UPtrVector<Crowd>& crowds,
+                                   UPtrVector<ContextForSteps>& step_context);
 
 
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp) { qmc_driver_mode_[QMC_UPDATE_MODE] = pbyp; }
+  inline void setUpdateMode(bool pbyp) override { qmc_driver_mode_[QMC_UPDATE_MODE] = pbyp; }
 
-  void putTraces(xmlNodePtr txml) {}
-  void requestTraces(bool allow_traces) {}
+  void putTraces(xmlNodePtr txml) override {}
+  void requestTraces(bool allow_traces) override {}
+
+  // scales a MCCoords by sqrtTau. Chooses appropriate taus by CT
+  template<typename RT, CoordsType CT>
+  static void scaleBySqrtTau(const TauParams<RT, CT>& taus, MCCoords<CT>& coords)
+  {
+    for (auto& pos : coords.positions)
+      pos *= taus.sqrttau;
+    if constexpr (CT == CoordsType::POS_SPIN)
+      for (auto& spin : coords.spins)
+        spin *= taus.spin_sqrttau;
+  }
+
+  /** calculates Green Function from displacements stored in MCCoords
+     * [param, out] log_g
+     */
+  template<typename RT, CoordsType CT>
+  static void computeLogGreensFunction(const MCCoords<CT>& coords,
+                                       const TauParams<RT, CT>& taus,
+                                       std::vector<QMCTraits::RealType>& log_gb)
+  {
+    assert(coords.positions.size() == log_gb.size());
+    std::transform(coords.positions.begin(), coords.positions.end(), log_gb.begin(),
+                   [halfovertau = taus.oneover2tau](const QMCTraits::PosType& pos) {
+                     return -halfovertau * dot(pos, pos);
+                   });
+    if constexpr (CT == CoordsType::POS_SPIN)
+      std::transform(coords.spins.begin(), coords.spins.end(), log_gb.begin(), log_gb.begin(),
+                     [halfovertau = taus.spin_oneover2tau](const QMCTraits::FullPrecRealType& spin,
+                                                           const QMCTraits::RealType& loggb) {
+                       return loggb - halfovertau * spin * spin;
+                     });
+  }
+
   /** }@ */
 
 protected:
@@ -248,14 +295,19 @@ protected:
    *  makes unit testing much quicker.
    *
    */
-  static QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(int num_ranks,
-                                                                    int rank_id,
-                                                                    IndexType desired_count,
-                                                                    IndexType walkers_per_rank,
-                                                                    RealType reserve_walkers,
+  static QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(Communicate& comm,
+                                                                    const IndexType current_configs,
+                                                                    const IndexType requested_total_walkers,
+                                                                    const IndexType requested_walkers_per_rank,
+                                                                    const RealType reserve_walkers,
                                                                     int num_crowds);
 
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
+
+  /// check logpsi and grad and lap against values computed from scratch
+  static void checkLogAndGL(Crowd& crowd, const std::string_view location);
+
+  const std::string& get_root_name() const override { return project_data_.currentMainRoot(); }
 
   /** The timers for the driver.
    *
@@ -266,19 +318,33 @@ protected:
   {
     NewTimer& checkpoint_timer;
     NewTimer& run_steps_timer;
+    NewTimer& create_walkers_timer;
     NewTimer& init_walkers_timer;
     NewTimer& buffer_timer;
     NewTimer& movepbyp_timer;
     NewTimer& hamiltonian_timer;
     NewTimer& collectables_timer;
+    NewTimer& estimators_timer;
+    NewTimer& imbalance_timer;
+    NewTimer& endblock_timer;
+    NewTimer& startup_timer;
+    NewTimer& production_timer;
+    NewTimer& resource_timer;
     DriverTimers(const std::string& prefix)
-        : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
-          run_steps_timer(*timer_manager.createTimer(prefix + "RunSteps", timer_level_medium)),
-          init_walkers_timer(*timer_manager.createTimer(prefix + "InitWalkers", timer_level_medium)),
-          buffer_timer(*timer_manager.createTimer(prefix + "Buffer", timer_level_medium)),
-          movepbyp_timer(*timer_manager.createTimer(prefix + "MovePbyP", timer_level_medium)),
-          hamiltonian_timer(*timer_manager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
-          collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium))
+        : checkpoint_timer(createGlobalTimer(prefix + "CheckPoint", timer_level_medium)),
+          run_steps_timer(createGlobalTimer(prefix + "RunSteps", timer_level_medium)),
+          create_walkers_timer(createGlobalTimer(prefix + "CreateWalkers", timer_level_medium)),
+          init_walkers_timer(createGlobalTimer(prefix + "InitWalkers", timer_level_medium)),
+          buffer_timer(createGlobalTimer(prefix + "Buffer", timer_level_medium)),
+          movepbyp_timer(createGlobalTimer(prefix + "MovePbyP", timer_level_medium)),
+          hamiltonian_timer(createGlobalTimer(prefix + "Hamiltonian", timer_level_medium)),
+          collectables_timer(createGlobalTimer(prefix + "Collectables", timer_level_medium)),
+          estimators_timer(createGlobalTimer(prefix + "Estimators", timer_level_medium)),
+          imbalance_timer(createGlobalTimer(prefix + "Imbalance", timer_level_medium)),
+          endblock_timer(createGlobalTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
+          startup_timer(createGlobalTimer(prefix + "Startup", timer_level_medium)),
+          production_timer(createGlobalTimer(prefix + "Production", timer_level_medium)),
+          resource_timer(createGlobalTimer(prefix + "Resources", timer_level_medium))
     {}
   };
 
@@ -299,13 +365,10 @@ protected:
 
   /**}@*/
 
-  std::vector<std::unique_ptr<Crowd>> crowds_;
-
+  UPtrVector<Crowd> crowds_;
 
   std::string h5_file_root_;
 
-  ///branch engine
-  SFNBranch* branch_engine_;
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
@@ -327,10 +390,6 @@ protected:
   ///counter for number of moves /rejected
   IndexType nReject;
 
-
-  ///maximum cpu in secs
-  RealType MaxCPUSecs;
-
   ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;
   ///Time-step factor \f$ \sqrt{\tau}\f$
@@ -338,50 +397,41 @@ protected:
 
   ///type of qmc: assigned by subclasses
   const std::string QMCType;
-  ///root of all the output files
-  std::string root_name_;
 
+  /** the entire (on node) walker population
+   * it serves VMCBatch and DMCBatch right now but will be polymorphic
+   */
+  MCPopulation population_;
 
-  ///the entire (or on node) walker population
-  MCPopulation& population_;
+  /** the golden multi walker shared resource
+   * serves ParticleSet TrialWaveFunction right now but actually should be based on MCPopulation.
+   * per crowd resources are copied from this gold instance
+   * it should be activated when dispatchers don't serialize walkers
+   */
+  struct DriverWalkerResourceCollection golden_resource_;
 
-  ///trial function
-  TrialWaveFunction& Psi;
-
-  ///Hamiltonian
-  QMCHamiltonian& H;
+  /// multi walker dispatchers
+  const MultiWalkerDispatchers dispatchers_;
 
   /** Observables manager
    *  Has very problematic owner ship and life cycle.
    *  Can be transferred via branch manager one driver to the next indefinitely
    *  TODO:  Modify Branch manager and others to clear this up.
    */
-  EstimatorManagerNew* estimator_manager_;
+  std::unique_ptr<EstimatorManagerNew> estimator_manager_;
 
   ///record engine for walkers
-  HDFWalkerOutput* wOut;
+  std::unique_ptr<HDFWalkerOutput> wOut;
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
-  std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
-
-  ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
-
-  ///a list of QMCHamiltonians for multiple method
-  std::vector<QMCHamiltonian*> H1;
+  UPtrVector<ContextForSteps> step_contexts_;
 
   ///Random number generators
-  std::vector<std::unique_ptr<RandomGenerator_t>> Rng;
+  UPtrVector<RandomBase<FullPrecRealType>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
-
-  ///temporary storage for drift
-  ParticleSet::ParticlePos_t drift;
-
-  ///temporary storage for random displacement
-  ParticleSet::ParticlePos_t deltaR;
 
   // ///alternate method of setting QMC run parameters
   // IndexType nStepsBetweenSamples;
@@ -397,47 +447,21 @@ protected:
 
   /** }@ */
 
-
   DriverTimers timers_;
 
-public:
-  ///Copy Constructor (disabled).
-  QMCDriverNew(const QMCDriverNew&) = delete;
-  ///Copy operator (disabled).
-  QMCDriverNew& operator=(const QMCDriverNew&) = delete;
+  ///time the driver lifetime
+  ScopedTimer driver_scope_timer_;
+  ///profile the driver lifetime
+  ScopedProfiler driver_scope_profiler_;
 
-  bool putQMCInfo(xmlNodePtr cur);
+  /// project info for accessing global fileroot and series id
+  const ProjectData& project_data_;
 
-  /** Adjust populations local walkers to this number
-  * @param nwalkers number of walkers to add
-  *
-  */
-  void makeLocalWalkers(int nwalkers,
-                        RealType reserve,
-                        const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
+  // reference to the captured WalkerConfigurations
+  WalkerConfigurations& walker_configs_ref_;
 
-  DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
-
-  /** record the state of the block
-   * @param block current block
-   *
-   * virtual function with a default implementation
-   */
-  virtual void recordBlock(int block);
-
-  /** finalize a qmc section
-   * @param block current block
-   * @param dumpwalkers if true, dump walkers
-   *
-   * Accumulate energy and weight is written to a hdf5 file.
-   * Finialize the estimators
-   */
-  bool finalize(int block, bool dumpwalkers = true);
-
-  int rotation;
-  const std::string& get_root_name() const { return root_name_; }
-  std::string getRotationName(std::string RootName);
-  std::string getLastRotationName(std::string RootName);
+  /// update the global offsets of walker configurations after active walkers being touched.
+  static void setWalkerOffsets(WalkerConfigurations&, Communicate* comm);
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

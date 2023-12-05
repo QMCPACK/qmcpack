@@ -16,6 +16,7 @@
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -23,17 +24,13 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet* qp = new ParticleSet;
-  std::vector<int> agroup(1);
-  agroup[0] = 2;
+  const SimulationCell simulation_cell;
+  auto qp = std::make_unique<ParticleSet>(simulation_cell);
+  std::vector<int> agroup(2, 1);
   qp->setName("e");
   qp->create(agroup);
-  qp->R[0][0] = 1.0;
-  qp->R[0][1] = 2.0;
-  qp->R[0][2] = 3.0;
-  qp->R[1][0] = 0.0;
-  qp->R[1][1] = 1.1;
-  qp->R[1][2] = 2.2;
+  qp->R[0] = {1.0, 2.0, 3.0};
+  qp->R[1] = {0.0, 1.1, 2.2};
 
   SpeciesSet& tspecies       = qp->getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -44,33 +41,33 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 
   qp->update();
 
-  WaveFunctionFactory::PtclPoolType particle_set_map;
-  particle_set_map["e"] = qp;
+  WaveFunctionFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(qp));
 
+  WaveFunctionFactory wff(*particle_set_map["e"], particle_set_map, c);
 
-  WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
-
-  const char* wavefunction_xml = "<wavefunction> \
-         <jastrow type=\"Two-Body\" name=\"J2\" function=\"bspline\" print=\"yes\"> \
-            <correlation speciesA=\"u\" speciesB=\"d\" size=\"8\" cutoff=\"10.0\"> \
-               <coefficients id=\"ud\" type=\"Array\"> \
-0.5954603818 0.5062051797 0.3746940461 0.2521010502 0.1440163317 0.07796688253 \
-0.03804420551 0.01449320872 \
-               </coefficients> \
-            </correlation> \
-         </jastrow> \
-</wavefunction>";
+  const char* wavefunction_xml = R"(<wavefunction>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes" gpu="no">
+            <correlation speciesA="u" speciesB="d" size="8" cutoff="10.0">
+               <coefficients id="ud" type="Array">
+0.5954603818 0.5062051797 0.3746940461 0.2521010502 0.1440163317 0.07796688253
+0.03804420551 0.01449320872
+               </coefficients>
+            </correlation>
+         </jastrow>
+</wavefunction>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(wavefunction_xml);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  wff.put(root);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wff.buildTWF(root, runtime_options);
 
-  REQUIRE(wff.getTWF() != nullptr);
-  REQUIRE(wff.getTWF()->size() == 1);
+  REQUIRE(twf_ptr != nullptr);
+  REQUIRE(twf_ptr->size() == 1);
 
-  WaveFunctionComponent* j2_base = wff.getTWF()->getOrbitals()[0];
+  auto& j2_base = twf_ptr->getOrbitals()[0];
   REQUIRE(j2_base != nullptr);
 }
 } // namespace qmcplusplus

@@ -30,7 +30,7 @@ using WP = WalkerProperties::Indexes;
 CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
                                  std::vector<TrialWaveFunction*>& psi,
                                  std::vector<QMCHamiltonian*>& h,
-                                 RandomGenerator_t& rg)
+                                 RandomBase<FullPrecRealType>& rg)
     : CSUpdateBase(w, psi, h, rg)
 {}
 
@@ -50,7 +50,6 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 
   //Now we compute sumratio and more importantly, ratioij.
   computeSumRatio(logpsi, avgNorm, RatioIJ, sumratio);
-                   // myTimers[1]->start();
   for (int iter = 0; iter < nSubSteps; ++iter)
   {
     makeGaussRandomWithEngine(deltaR, RandomGen);
@@ -71,14 +70,15 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           for (int ipsi = 0; ipsi < nPsi; ipsi++)
             prob += ratio[ipsi] / sumratio[ipsi];
 
+          bool is_accepted = false;
           if (RandomGen() < prob)
           {
-            stucked = false;
+            is_accepted = true;
+            stucked     = false;
             ++nAccept;
             for (int ipsi = 0; ipsi < nPsi; ipsi++)
               Psi1[ipsi]->acceptMove(W, iat, true);
 
-            W.acceptMove(iat, true);
             //Now we update ratioIJ.
             updateRatioMatrix(ratio, RatioIJ);
             computeSumRatio(RatioIJ, sumratio);
@@ -86,10 +86,11 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           else
           {
             ++nReject;
-            W.rejectMove(iat);
             for (int ipsi = 0; ipsi < nPsi; ipsi++)
               Psi1[ipsi]->rejectMove(iat);
           }
+
+          W.accept_rejectMove(iat, is_accepted);
         }
         else //reject illegal moves
           ++nReject;
@@ -102,8 +103,6 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
       Psi1[ipsi]->completeUpdates();
   }
-  //  myTimers[1]->stop();
-  //  myTimers[2]->start();
 
   W.donePbyP();
 
@@ -131,10 +130,10 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   {
     //Now reload the G and L associated with ipsi into the walker and particle set.
     //This is required for correct calculation of kinetic energy.
-    thisWalker.G                                = *G1[ipsi];
-    thisWalker.L                                = *L1[ipsi];
-    W.L                                         = thisWalker.L;
-    W.G                                         = thisWalker.G;
+    thisWalker.G                                    = *G1[ipsi];
+    thisWalker.L                                    = *L1[ipsi];
+    W.L                                             = thisWalker.L;
+    W.G                                             = thisWalker.G;
     thisWalker.Properties(ipsi, WP::LOCALENERGY)    = H1[ipsi]->evaluate(W);
     thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
     thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
@@ -151,7 +150,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 CSVMCUpdatePbyPWithDriftFast::CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
                                                            std::vector<TrialWaveFunction*>& psi,
                                                            std::vector<QMCHamiltonian*>& h,
-                                                           RandomGenerator_t& rg)
+                                                           RandomBase<FullPrecRealType>& rg)
     : CSUpdateBase(w, psi, h, rg){APP_ABORT("CSVMCUpdatePbyPWithDriftFast currently not working.  Please eliminate \
              drift option, or choose all electron moves instead.")}
 

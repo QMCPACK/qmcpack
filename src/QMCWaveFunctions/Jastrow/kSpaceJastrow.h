@@ -25,7 +25,6 @@
 #define QMCPLUSPLUS_LR_KSPACEJASTROW_H
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "Optimize/VarList.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -66,7 +65,7 @@ public:
   }
 };
 
-class kSpaceJastrow : public WaveFunctionComponent
+class kSpaceJastrow : public WaveFunctionComponent, public OptimizableObject
 {
 public:
   typedef enum
@@ -77,7 +76,7 @@ public:
   } SymmetryType;
 
 private:
-  typedef std::complex<RealType> ComplexType;
+  using ComplexType = std::complex<RealType>;
   ////////////////
   // Basic data //
   ////////////////
@@ -141,7 +140,7 @@ private:
   double Prefactor;
 
 public:
-  kSpaceJastrow(ParticleSet& ions,
+  kSpaceJastrow(const ParticleSet& ions,
                 ParticleSet& elecs,
                 SymmetryType oneBodySymm,
                 RealType oneBodyCutoff,
@@ -152,32 +151,39 @@ public:
                 std::string twobodyid,
                 bool twoBodySpin);
 
+  kSpaceJastrow(const ParticleSet& ions);
 
   void setCoefficients(std::vector<RealType>& oneBodyCoefs, std::vector<RealType>& twoBodyCoefs);
 
+  std::string getClassName() const override { return "kSpaceJastrow"; }
   //implement virtual functions for optimizations
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os);
+  bool isOptimizable() const override { return true; }
+  void checkOutVariables(const opt_variables_type& active) override;
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
-  PsiValueType ratio(ParticleSet& P, int iat);
+  void checkInVariablesExclusive(opt_variables_type& active) final;
+  void resetParametersExclusive(const opt_variables_type& active) final;
 
-  GradType evalGrad(ParticleSet& P, int iat);
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
-  void restore(int iat);
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
+  PsiValue ratio(ParticleSet& P, int iat) override;
+
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+
+  void restore(int iat) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   // Allocate per-walker data in the PooledData buffer
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
   // Walker move has been accepted -- update the buffer
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   ///process input file
   bool put(xmlNodePtr cur);
@@ -189,22 +195,19 @@ public:
   // structure factors.  Used to sort the G-vectors according to
   // crystal symmetry
   bool operator()(PosType G1, PosType G2);
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
-
-  WaveFunctionComponentPtr makeThrScope(PtclGrpIndexes& pgi) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
   /** evaluate the ratio
   */
-  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
 private:
   void copyFrom(const kSpaceJastrow& old);
-  kSpaceJastrow(const ParticleSet& ions);
   std::vector<int> TwoBodyVarMap;
   std::vector<int> OneBodyVarMap;
 };

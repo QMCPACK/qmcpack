@@ -27,6 +27,7 @@
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -41,7 +42,7 @@ enum
   DUMMYOPT
 };
 
-SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal) : MyEstimator(0) //, PopHist(5), DMCEnergyHist(5)
+SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal) //, PopHist(5), DMCEnergyHist(5)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -79,7 +80,6 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
     : BranchMode(abranch.BranchMode),
       iParam(abranch.iParam),
       vParam(abranch.vParam),
-      MyEstimator(0),
       branching_cutoff_scheme(abranch.branching_cutoff_scheme),
       sParam(abranch.sParam)
 {
@@ -87,37 +87,39 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
   reset();
 }
 
+SimpleFixedNodeBranch::~SimpleFixedNodeBranch() = default;
+
 void SimpleFixedNodeBranch::registerParameters()
 {
-  m_param.add(iParam[B_WARMUPSTEPS], "warmupSteps", "int");
-  m_param.add(iParam[B_WARMUPSTEPS], "warmupsteps", "int");
-  m_param.add(iParam[B_ENERGYUPDATEINTERVAL], "energyUpdateInterval", "int");
-  m_param.add(iParam[B_BRANCHINTERVAL], "branchInterval", "int");
-  m_param.add(iParam[B_TARGETWALKERS], "targetWalkers", "int");
-  m_param.add(iParam[B_TARGETWALKERS], "targetwalkers", "int");
-  m_param.add(iParam[B_TARGETWALKERS], "target_walkers", "int");
+  m_param.add(iParam[B_WARMUPSTEPS], "warmupSteps");
+  m_param.add(iParam[B_WARMUPSTEPS], "warmupsteps");
+  m_param.add(iParam[B_ENERGYUPDATEINTERVAL], "energyUpdateInterval");
+  m_param.add(iParam[B_BRANCHINTERVAL], "branchInterval");
+  m_param.add(iParam[B_TARGETWALKERS], "targetWalkers");
+  m_param.add(iParam[B_TARGETWALKERS], "targetwalkers");
+  m_param.add(iParam[B_TARGETWALKERS], "target_walkers");
   //trial energy
-  m_param.add(vParam[SBVP::EREF], "refEnergy", "AU");
-  m_param.add(vParam[SBVP::EREF], "ref_energy", "AU");
-  m_param.add(vParam[SBVP::EREF], "en_ref", "AU");
-  m_param.add(vParam[SBVP::TAU], "tau", "AU");
-  m_param.add(vParam[SBVP::TAU], "timestep", "AU");
-  m_param.add(vParam[SBVP::TAU], "timeStep", "AU");
-  m_param.add(vParam[SBVP::TAU], "TimeStep", "AU");
+  m_param.add(vParam[SBVP::EREF], "refEnergy");
+  m_param.add(vParam[SBVP::EREF], "ref_energy");
+  m_param.add(vParam[SBVP::EREF], "en_ref");
+  m_param.add(vParam[SBVP::TAU], "tau");
+  m_param.add(vParam[SBVP::TAU], "timestep");
+  m_param.add(vParam[SBVP::TAU], "timeStep");
+  m_param.add(vParam[SBVP::TAU], "TimeStep");
   //filterscale:  sets the filtercutoff to sigma*filterscale
-  m_param.add(vParam[SBVP::FILTERSCALE], "filterscale", "double");
+  m_param.add(vParam[SBVP::FILTERSCALE], "filterscale");
   //feed back parameter for population control
-  m_param.add(vParam[SBVP::FEEDBACK], "feedback", "double");
+  m_param.add(vParam[SBVP::FEEDBACK], "feedback");
   //turn on/off effective tau onl for time-step error comparisons
-  m_param.add(sParam[USETAUOPT], "useBareTau", "option");
-  m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration", "opt");
-  m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme", "option");
+  m_param.add(sParam[USETAUOPT], "useBareTau");
+  m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration");
+  m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme");
+  m_param.add(debug_disable_branching_, "debug_disable_branching", {"no", "yes"});
 }
 
 void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
 {
-  RootName              = froot;
-  MyEstimator->RootName = froot;
+  RootName = froot;
   MyEstimator->reset();
 }
 
@@ -145,7 +147,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       acomm->allreduce(nw);
       for (int ip = 0; ip < ncontexts; ++ip)
         nwoff[ip + 1] = nwoff[ip] + nw[ip];
-      walkers.setGlobalNumWalkers(nwoff[ncontexts]);
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
@@ -207,6 +208,8 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   app_log() << "  Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS]
             << std::endl;
   app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
+  if (debug_disable_branching_ == "yes")
+    app_log() << "  Disable branching for debugging as the user input request." << std::endl;
 
   return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
 }
@@ -233,7 +236,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     //   acomm->allreduce(nw);
     //    for(int ip=0; ip<ncontexts; ++ip)
     //      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    //    W.setGlobalNumWalkers(nwoff[ncontexts]);
     //    W.setWalkerOffsets(nwoff);
     //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
     //  }
@@ -281,7 +283,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
 
   FullPrecRealType pop_now;
-  if (BranchMode[B_DMCSTAGE] || iter)
+  if (debug_disable_branching_ == "no" && (BranchMode[B_DMCSTAGE] || iter))
     pop_now = WalkerController->branch(iter, walkers, 0.1);
   else
     pop_now = WalkerController->doNotBranch(iter, walkers); //do not branch for the first step of a warmup
@@ -518,13 +520,6 @@ void SimpleFixedNodeBranch::reset()
   }
 }
 
-void SimpleFixedNodeBranch::setRN(bool rn)
-{
-  RN = rn;
-  WalkerController->set_write_release_nodes(rn);
-  WalkerController->start();
-}
-
 int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
   app_log() << "BRANCH resetRun" << std::endl;
@@ -541,8 +536,8 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 
   int target_min = -1;
   ParameterSet p;
-  p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
-  p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
+  p.add(target_min, "minimumtargetwalkers"); //p.add(target_min,"minimumTargetWalkers");
+  p.add(target_min, "minimumsamples");       //p.add(target_min,"minimumSamples");
   p.put(cur);
 
   if (iParam[B_TARGETWALKERS] < target_min)
@@ -559,14 +554,15 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
       reconfig = "runwhileincorrect"; // forces SR during warmup?
     std::string reconfig_prev(reconfig);
     ParameterSet p;
-    p.add(reconfig, "reconfiguration", "string");
+    p.add(reconfig, "reconfiguration");
     p.put(cur);
     if (reconfig != "no" && reconfig != "runwhileincorrect")
     {
       // remove this once bug is fixed
-      APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove "
-                "the reconfiguration option from the DMC input section. To run performance tests, please set "
-                "reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+      throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
+                               "population control by setting reconfiguration=\"no\" or removing the reconfiguration "
+                               "option from the DMC input section. If accessing the broken reconfiguration code path "
+                               "is still desired, set reconfiguration to \"runwhileincorrect\" instead of \"yes\".");
     }
     same_wc = (reconfig == reconfig_prev);
   }
@@ -624,9 +620,6 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   ToDoSteps = iParam[B_WARMUPSTEPS] = (iParam[B_WARMUPSTEPS]) ? iParam[B_WARMUPSTEPS] : 10;
   setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), 10);
   WalkerController->reset();
-#ifdef QMC_CUDA
-  reset(); // needed. Ye
-#endif
   if (BackupWalkerController)
     BackupWalkerController->reset();
 

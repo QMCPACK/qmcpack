@@ -32,17 +32,20 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   int nmax = 0;
   std::string reconfigopt("no");
   ParameterSet m_param;
-  m_param.add(nwtot, "targetWalkers", "int");
-  m_param.add(nwtot, "targetwalkers", "int");
-  m_param.add(nmax, "max_walkers", "int");
-  m_param.add(reconfigopt, "reconfiguration", "string");
+  m_param.add(nwtot, "targetWalkers");
+  m_param.add(nwtot, "targetwalkers");
+  m_param.add(nmax, "max_walkers");
+  m_param.add(reconfigopt, "reconfiguration");
   m_param.put(cur);
   //if(nmax<0) nmax=2*nideal;
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc = 0;
   int ncontexts         = comm->size();
-  if(reconfigopt != "no" && reconfigopt != "runwhileincorrect")
-    APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+  if (reconfigopt != "no" && reconfigopt != "runwhileincorrect")
+    throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
+                             "population control by setting reconfiguration=\"no\" or removing the reconfiguration "
+                             "option from the DMC input section. If accessing the broken reconfiguration code path "
+                             "is still desired, set reconfiguration to \"runwhileincorrect\" instead of \"yes\".");
   //bool fixw             = (reconfig || reconfigopt == "yes" || reconfigopt == "pure");
   bool fixw = (reconfig || reconfigopt == "runwhileincorrect");
   if (fixw)

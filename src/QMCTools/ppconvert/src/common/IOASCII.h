@@ -49,7 +49,7 @@ class IOTreeASCIIClass : public IOTreeClass
 {
   /// Reads a text file into a buffer eliminating c++ and c-style
   /// comments.
-  bool ReadWithoutComments(std::string fileName, blitz::Array<char, 1>& buffer);
+  bool ReadWithoutComments(std::string fileName, Array<char, 1>& buffer);
   /// Reads a section from a list of TokenClass objects.  iter should
   /// refer to the current place in the list that we should start
   /// reading at.  iter should point to a place just after the '{'.
@@ -62,23 +62,23 @@ class IOTreeASCIIClass : public IOTreeClass
                    bool wantEndBrace);
 
 public:
-  void WriteSection(ofstream& outFile, int indent);
-  IOFileType GetFileType();
+  void WriteSection(std::ofstream& outFile, int indent);
+  IOFileType GetFileType() override;
   /// Print an indented tree of section variable names.
-  void PrintTree(int level);
+  void PrintTree(int level) override;
   /// Same thing, just calls above with level 0;
-  void PrintTree();
+  void PrintTree() override;
 
-  IOTreeClass* NewSection(std::string name);
-  void IncludeSection(IOTreeClass*);
+  IOTreeClass* NewSection(std::string name) override;
+  void IncludeSection(IOTreeClass*) override;
   /// Takes the name of a file to read, the name of my section and a
   /// pointer to my parent.  Reads the file into a tree of
   /// IOTreeClass's.
-  bool OpenFile(std::string filename, std::string myName, IOTreeClass* parent);
-  bool NewFile(std::string fileName, std::string mySectionName, IOTreeClass* parent);
+  bool OpenFile(std::string filename, std::string myName, IOTreeClass* parent) override;
+  bool NewFile(std::string fileName, std::string mySectionName, IOTreeClass* parent) override;
   /// Do any file handling necessary and delete the whole tree of data.
-  void CloseFile();
-  void FlushFile();
+  void CloseFile() override;
+  void FlushFile() override;
 
   IOTreeASCIIClass() { IsModified = false; }
 };

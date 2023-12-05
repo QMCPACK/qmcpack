@@ -1,24 +1,42 @@
 .. _developguide:
+.. highlight:: c++
 
 Development Guide
 =================
 
-The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the addition of a Jastrow function or a new QMC method.
+The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
+addition of a Jastrow function or a new QMC method.
+
+.. admonition:: Definitions
+
+   * **Legacy**: code from previous work usually not in line current coding standards or design. It is mostly functional and correct within the context of legacy operations. Most has been modified piecemeal for years to extend functionality.
+   * **Refactoring**: Process of redesigning code in place through incremental changes toward current design and functionality goals.
+
 
 QMCPACK coding standards
 ------------------------
 
-This chapter presents what we collectively have agreed are best practices for the code. This includes formatting style, naming conventions, documentation conventions, and certain prescriptions for C++ language use. At the moment only the formatting can be enforced in an objective fashion.
+This chapter presents what we collectively have agreed are best practices for the code. This includes formatting style, naming
+conventions, documentation conventions, and certain prescriptions for C++ language use. At the moment only the formatting can be
+enforced in an objective fashion.
 
-New development should follow these guidelines, and contributors are expected to adhere to them as they represent an integral part of our effort to continue QMCPACK as a world-class, sustainable QMC code. Although some of the source code has a ways to go to live up to these ideas, new code, even in old files, should follow the new conventions not the local conventions of the file whenever possible. Work on the code with continuous improvement in mind rather than a commitment to stasis.
+New development should follow these guidelines, and contributors are expected to adhere to them as they represent an integral part
+of our effort to continue QMCPACK as a world-class, sustainable QMC code. Although some of the source code has a ways to go to
+live up to these ideas, new code, even in old files, should follow the new conventions not the local conventions of the file
+whenever possible. Work on the code with continuous improvement in mind rather than a commitment to stasis.
 
-The `current workflow conventions`_ for the project are described in the wiki on the GitHub repository. It will save you and all the maintainers considerable time if you read these and ask questions up front.
+The `current workflow conventions`_ for the project are described in the wiki on the GitHub repository. It will save you and all
+the maintainers considerable time if you read these and ask questions up front.
 
-A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting conventions if you use clang-format.  The mechanics of clang-format setup and use can be found at https://github.com/QMCPACK/qmcpack/wiki/Source-formatting.
+A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting
+conventions if you use clang-format.  The mechanics of clang-format setup and use can be found at
+https://github.com/QMCPACK/qmcpack/wiki/Source-formatting.
 
-The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before a pull request is prepared. We also encourage developers to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
+The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before a pull request is
+prepared. We also encourage developers to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
 
-As much as possible, try to break up refactoring, reformatting, feature, and bugs into separate, small PRs. Aim for something that would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
+As much as possible, try to break up refactoring, reformatting, feature, and bugs into separate, small PRs. Aim for something that
+would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
 
 .. _current workflow conventions: https://github.com/QMCPACK/qmcpack/wiki/Development-workflow
 
@@ -27,13 +45,13 @@ Files
 
 Each file should start with the header.
 
-::
+.. code:: c++
 
   //////////////////////////////////////////////////////////////////////////////////////
   // This file is distributed under the University of Illinois/NCSA Open Source License.
   // See LICENSE file in top directory for details.
   //
-  // Copyright (c) 2020 QMCPACK developers
+  // Copyright (c) 2021 QMCPACK developers
   //
   // File developed by: Name, email, affiliation
   //
@@ -45,37 +63,78 @@ If you make significant changes to an existing file, add yourself to the list of
 File organization
 ~~~~~~~~~~~~~~~~~
 
-Header files should be placed in the same directory as their implementations.
-Unit tests should be written for all new functionality. These tests should be placed in a ``tests`` subdirectory below the implementations.
+Header files should be placed in the same directory as their implementations. Unit tests should be written for all new
+functionality. These tests should be placed in a ``tests`` subdirectory below the implementations.
 
 File names
 ~~~~~~~~~~
 
-Each class should be defined in a separate file with the same name as the class name. Use separate ``.cpp`` implementation files whenever possible to aid in incremental compilation.
+Each class should be defined in a separate file with the same name as the class name. Use separate ``.cpp`` implementation files
+whenever possible to aid in incremental compilation.
 
-The filenames of tests are composed by the filename of the object tested and the prefix ``test_``.
-The filenames of *fake* and *mock* objects used in tests are composed by the prefixes ``fake_`` and ``mock_``, respectively, and the filename of the object that is imitated.
+The filenames of tests are composed by the filename of the object tested and the prefix ``test_``. The filenames of *fake* and
+*mock* objects used in tests are composed by the prefixes ``fake_`` and ``mock_``, respectively, and the filename of the object
+that is imitated.
 
 Header files
 ~~~~~~~~~~~~
 
-All header files should be self-contained (i.e., not dependent on following any other header when it is included). Nor should they include files that are not necessary for their use (i.e., headers needed only by the implementation). Implementation files should not include files only for the benefit of files they include.
+All header files should be self-contained (i.e., not dependent on following any other header when it is included). Nor should they
+include files that are not necessary for their use (i.e., headers needed only by the implementation). Implementation files should
+not include files only for the benefit of files they include.
 
-There are many header files that currently violate this.
-Each header must use ``#define`` guards to prevent multiple inclusion.
+There are many header files that currently violate this. Each header must use ``#define`` guards to prevent multiple inclusion.
 The symbol name of the ``#define`` guards should be ``NAMESPACE(s)_CLASSNAME_H``.
 
 Includes
 ~~~~~~~~
 
-Header files should be included with the full path based on the ``src`` directory.
-For example, the file ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
+Related header files should be included without any path. Header files from external projects and standard libraries should be
+includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the
+``"our_header.h"`` convention.
+
+We are now using a new header file inclusion style following the modern CMake transition in QMCPACK, while the legacy code may
+still use the legacy style. Newly written code and refactored code should be transitioned to the new style.
+
+New style for modern CMake
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In QMCPACK, include paths are handled by modern CMake target dependency. Every top level folder is at least one target. For
+example, ``src/Particle/CMakeLists.txt`` defines `qmcparticle` target. It propagates include path ``qmcpack/src/Particle`` to
+compiling command lines in CMake via
+
+.. code:: cmake
+
+  TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+For this reason, the file ``qmcpack/src/Particle/Lattice/ParticleBConds3DSoa.h`` should be included as
+
+::
+
+  #include "Lattice/ParticleBConds3DSoa.h"
+
+If the compiled file is not part of the same target as `qmcparticle`, the target it belongs to should have a dependency on
+`qmcparticle`. For example, test source files under ``qmcpack/src/Particle/tests`` are not part of `qmcparticle` and thus requires
+the following additional CMake setting
+
+.. code:: cmake
+
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
+
+Legacy style
+^^^^^^^^^^^^
+
+Header files should be included with the full path based on the ``src`` directory. For example, the file
+``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
 
 ::
 
   #include "QMCWaveFunctions/SPOSet.h"
 
-Even if the included file is located in the same directory as the including file, this rule should be obeyed. Header files from external projects and standard libraries should be includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the ``"our_header.h"`` convention.
+Even if the included file is located in the same directory as the including file, this rule should be obeyed.
+
+Ordering
+^^^^^^^^
 
 For readability, we suggest using the following standard order of includes:
 
@@ -94,7 +153,10 @@ In each section the included files should be sorted in alphabetical order.
 Naming
 ------
 
-The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An exception is made for template parameters, which must be in all CAPS.
+The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a
+single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An
+exception is made for template parameters, which must be in all CAPS. Legacy code contains a great variety of hard to read code
+style, read this section and do not imitate existing code that violates it.
 
 Namespace names
 ~~~~~~~~~~~~~~~
@@ -104,23 +166,34 @@ Namespace names should be one word, lowercase.
 Type and class names
 ~~~~~~~~~~~~~~~~~~~~
 
-Type and class names should start with a capital letter and have a capital letter for each new word.
-Underscores (``_``) are not allowed.
+Type and class names should start with a capital letter and have a capital letter for each new word. Underscores (``_``) are not
+allowed. It's redundant to end these names with ``Type`` or ``_t``.
+.. code:: c++
+
+   \\no
+   using ValueMatrix_t = Matrix<Value>;
+   using RealType = double;
 
 Variable names
 ~~~~~~~~~~~~~~
 
-Variable names should not begin with a capital letter, which is reserved for type and class names. Underscores (``_``) should be used to separate words.
+Variable names should not begin with a capital letter, which is reserved for type and class names. Underscores (``_``) should be
+used to separate words.
 
 Class data members
 ~~~~~~~~~~~~~~~~~~
 
-Class private/protected data members names should follow the convention of variable names with a trailing underscore (``_``).
+Class private/protected data members names should follow the convention of variable names with a trailing underscore (``_``). The use of public member functions is discourage, rethink the need for it in the first place. Instead ``get`` and ``set`` functions are the preferred access method.
 
 (Member) function names
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Function names should start with a lowercase character and have a capital letter for each new word.
+Function names should start with a lowercase character and have a capital letter for each new word. The exception are the special cases for prefixed multiwalker (``mw_``) and flex (``flex_``) batched API functions. Coding convention should follow after those prefixes.
+
+Template Parameters
+~~~~~~~~~~~~~~~~~~~
+
+Template parameters names should be in all caps with (``_``) separating words.  It's redundant to end these names with ``_TYPE``,
 
 Lambda expressions
 ~~~~~~~~~~~~~~~~~~
@@ -134,8 +207,7 @@ Named lambda expressions follow the naming convention for functions:
 Macro names
 ~~~~~~~~~~~
 
-Macro names should be all uppercase and can include underscores (``_``).
-The underscore is not allowed as first or last character.
+Macro names should be all uppercase and can include underscores (``_``). The underscore is not allowed as first or last character.
 
 Test case and test names
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,15 +269,15 @@ Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill 
 Class docs
 ^^^^^^^^^^
 
-Every class should have a short description (in the header of the file) of what it is and what is does.
-Comments for public class member functions follow the same rules as general function comments.
-Comments for private members are allowed but are not mandatory.
+Every class should have a short description (in the header of the file) of what it is and what is does. Comments for public class
+member functions follow the same rules as general function comments. Comments for private members are allowed but are not
+mandatory.
 
 Function docs
 ^^^^^^^^^^^^^
 
-For function parameters whose type is non-const reference or pointer to non-const memory,
-it should be specified if they are input (In:), output (Out:) or input-output parameters (InOut:).
+For function parameters whose type is non-const reference or pointer to non-const memory, it should be specified if they are input
+(In:), output (Out:) or input-output parameters (InOut:).
 
 Example:
 
@@ -238,7 +310,9 @@ Formatting and "style"
 
 Use the provided clang-format style in ``src/.clang-format`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
-You should use clang-format support and the ``.clangformat`` file with your editor, use a Git precommit hook to run clang-format or run clang-format manually on every file you modify.  However, if you see numerous formatting updates outside of the code you have modified, first commit the formatting changes in a separate PR.
+You should use clang-format support and the ``.clangformat`` file with your editor, use a Git precommit hook to run clang-format
+or run clang-format manually on every file you modify.  However, if you see numerous formatting updates outside of the code you
+have modified, first commit the formatting changes in a separate PR.
 
 Indentation
 ~~~~~~~~~~~
@@ -253,8 +327,8 @@ The length of each line of your code should be at most *120* characters.
 Horizontal spacing
 ~~~~~~~~~~~~~~~~~~
 
-No trailing white spaces should be added to any line.
-Use no space before a comma (``,``) and a semicolon (``;``), and add a space after them if they are not at the end of a line.
+No trailing white spaces should be added to any line. Use no space before a comma (``,``) and a semicolon (``;``), and add a space
+after them if they are not at the end of a line.
 
 Preprocessor directives
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -275,8 +349,8 @@ Do not put any space between an unary operator and its argument.
 Types
 ~~~~~
 
-The ``using`` syntax is preferred to ``typedef`` for type aliases.
-If the actual type is not excessively long or complex, simply use it; renaming simple types makes code less understandable.
+The ``using`` syntax is preferred to ``typedef`` for type aliases. If the actual type is not excessively long or complex, simply
+use it; renaming simple types makes code less understandable.
 
 Pointers and references
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -306,10 +380,8 @@ The angle brackets of templates should not have any external or internal padding
 Vertical spacing
 ~~~~~~~~~~~~~~~~
 
-Use empty lines when it helps to improve the readability of the code, but do not use too many.
-Do not use empty lines after a brace that opens a scope
-or before a brace that closes a scope.
-Each file should contain an empty line at the end of the file.
+Use empty lines when it helps to improve the readability of the code, but do not use too many. Do not use empty lines after a
+brace that opens a scope or before a brace that closes a scope. Each file should contain an empty line at the end of the file.
 Some editors add an empty line automatically, some do not.
 
 Variable declarations and definitions
@@ -352,9 +424,8 @@ Variable declarations and definitions
 Function declarations and definitions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The return type should be on the same line as the function name.
-Parameters should also be on the same line unless they do not fit on it, in which case one parameter
-per line aligned with the first parameter should be used.
+The return type should be on the same line as the function name. Parameters should also be on the same line unless they do not fit
+on it, in which case one parameter per line aligned with the first parameter should be used.
 
 Also include the parameter names in the declaration of a function, that is,
 
@@ -366,11 +437,11 @@ Also include the parameter names in the declaration of a function, that is,
   // avoid
   double function(double, double, double);
 
-  //dont do this
+  // dont do this
   double function(BigTemplatedSomething<double> a, BigTemplatedSomething<double> b,
                   BigTemplatedSomething<double> c);
 
-  //do this
+  // do this
   double function(BigTemplatedSomething<double> a,
                   BigTemplatedSomething<double> b,
                   BigTemplatedSomething<double> c);
@@ -527,23 +598,22 @@ Examples:
   Foo::Foo(int var)
       : some_var_(var) {}
 
+
 Namespace formatting
 ~~~~~~~~~~~~~~~~~~~~
 
-The content of namespaces is not indented.
-A comment should indicate when a namespace is closed. (clang-format will add these if absent).
-If nested namespaces are used, a comment with the full namespace is required after opening a set of namespaces or an inner namespace.
+The content of namespaces is not indented. A comment should indicate when a namespace is closed. (clang-format will add these if
+absent). If nested namespaces are used, a comment with the full namespace is required after opening a set of namespaces or an
+inner namespace.
 
 Examples:
 
-::
+.. code:: c++
 
   namespace ns
   {
   void foo();
   }  // ns
-
-::
 
   namespace ns1
   {
@@ -572,31 +642,40 @@ Examples:
 QMCPACK C++ guidance
 --------------------
 
-The guidance here, like any advice on how to program, should not be treated as a set of rules but rather the hard-won wisdom of many hours of suffering development. In the past, many rules were ignored, and the absolute worst results of that will affect whatever code you need to work with. Your PR should go much smoother if you do not ignore them.
+The guidance here, like any advice on how to program, should not be treated as a set of rules but rather the hard-won wisdom of
+many hours of suffering development. In the past, many rules were ignored, and the absolute worst results of that will affect
+whatever code you need to work with. Your PR should go much smoother if you do not ignore them.
 
 Encapsulation
 ~~~~~~~~~~~~~
 
-A class is not just a naming scheme for a set of variables and functions. It should provide a logical set of methods, could contain the state of a logical object, and might allow access to object data through a well-defined interface related variables, while preserving maximally ability to change internal implementation of the class.
+A class is not just a naming scheme for a set of variables and functions. It should provide a logical set of methods, could
+contain the state of a logical object, and might allow access to object data through a well-defined interface related variables,
+while preserving maximally ability to change internal implementation of the class.
 
-Do not use ``struct`` as a way to avoid controlling access to the class. Only in rare cases where a class is a fully public data structure ``struct`` is this appropriate. Ignore (or fix one) the many examples of this in QMCPACK.
+Do not...
+^^^^^^^^^
 
-Do not use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do that, and access it solely through its public interface. This will reduce dependencies.
+- use ``struct`` as a way to avoid controlling access to the class. Only when the instantiated objects are public data structure is ``struct`` appropriate.
+
+- use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do that, and access it solely through its public interface. This will reduce dependencies.
+
+- pass entire classes as function arguments when what the function actually requires is one or a few arguments available through the public API of a class, encapsulation is harmful when is just used to save keystrokes and hides the logical data dependence of functions.
+
+All these "idioms" are common in legacy QMCPACK code and should not be perpetuated.
 
 Casting
 ~~~~~~~
 
 In C++ source, avoid C style casts; they are difficult to search for and imprecise in function.
-An exception is made for controlling implicit conversion of simple numerical types.
-
 Explicit C++ style casts make it clear what the safety of the cast is and what sort of conversion is expected to be possible.
 
-::
+.. code::c++
 
   int c = 2;
   int d = 3;
   double a;
-  a = (double)c / d;  // Ok
+  a = static_cast<double>(c) / d;  // Ok
 
   const class1 c1;
   class2* c2;
@@ -609,8 +688,8 @@ Explicit C++ style casts make it clear what the safety of the cast is and what s
 Pre-increment and pre-decrement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the pre-increment (pre-decrement) operator when a variable is incremented (decremented) and the value of the expression is not used.
-In particular, use the pre-increment (pre-decrement) operator for loop counters where i is not used:
+Use the pre-increment (pre-decrement) operator when a variable is incremented (decremented) and the value of the expression is not
+used. In particular, use the pre-increment (pre-decrement) operator for loop counters where i is not used:
 
 ::
 
@@ -624,7 +703,8 @@ In particular, use the pre-increment (pre-decrement) operator for loop counters 
     doSomething(i);
   }
 
-The post-increment and post-decrement operators create an unnecessary copy that the compiler cannot optimize away in the case of iterators or other classes with overloaded increment and decrement operators.
+The post-increment and post-decrement operators create an unnecessary copy that the compiler cannot optimize away in the case of
+iterators or other classes with overloaded increment and decrement operators.
 
 Alternative operator representations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -664,23 +744,821 @@ Use of const
       int getCount() const { return count_;}
     }
 
+Smart pointers
+~~~~~~~~~~~~~~
+
+Use of smart pointers is being adopted to help make QMCPACK memory leak free. Prior to C++11, C++ uses C-style pointers. A C-style
+pointer can have several meanings and the ownership of a piece of help memory may not be clear. This leads to confusion and causes
+memory leaks if pointers are not managed properly. Since C++11, smart pointers were introduced to resolve this issue. In addition,
+it demands developers to think about the ownership and lifetime of declared pointer objects.
+
+std::unique_ptr
+^^^^^^^^^^^^^^^
+
+A unique pointer is the unique owner of a piece of allocated memory. Pointers in per-walker data structure with distinct contents
+should be unique pointers. For example, every walker has a trial wavefunction object which contains an SPO object pointer. Because
+the SPO object has a vector to store SPO evaluation results, it cannot be shared between two trial wavefunction objects. For this
+reason the SPO object pointer should be an unique pointer.
+
+In QMCPACK, most raw pointers can be directly replaced with ``std::unique_ptr``.
+Corresponding use of ``new`` operator can be replaced with ``std:make_unique``.
+
+std::shared_ptr
+^^^^^^^^^^^^^^^
+
+A shared pointer is the shared owner of a piece of allocated memory. Moving a pointer ownership from one place to another should
+not use shared pointers but C++ move semantics. Shared contents between walkers may be candidates for shared pointers. For example,
+although the Jastrow factor object must be unique per walker, the pointer to the parameter data structure can be a shared pointer.
+During Jastrow optimization, any update to the parameter data managed by the shared pointer will be effective immediately in all
+the Jastrow objects. In another example, spline coefficients are managed by a shared pointer which achieves a single copy in
+memory shared by an SPOSet and all of its clones.
+
+Log and error output
+~~~~~~~~~~~~~~~~~~~~
+
+``app_log``, ``app_warning``, ``app_err`` and ``app_debug`` print out messages only on rank 0 to avoid repetitive messages from
+every MPI rank. For this reason, they are only suitable for outputing messages identical to all MPI ranks. ``app_debug`` prints only
+when ``--verbosity=debug`` command line option is used. Messages that come from only one or a few MPI ranks should use ``std::cout``
+and ``std::cerr``.
+
+If the code needs to be stopped after an unrecoverable error that happens uniformly on all the MPI ranks, a bad input for example,
+avoid using ``app_err`` together with ``Communicate::abort(msg)`` or ``APP_ABORT(msg)`` because any MPI rank other than rank 0 may
+stop the whole run before rank 0 is able to print out the error message. To secure the printout before stopping, use
+``Communicate::barrier_and_abort(msg)`` if an MPI communicator is available or throw a custom exception ``UniformCommunicateError``
+and capture it where ``Communicate::barrier_and_abort()`` can be used. Note that ``UniformCommunicateError`` can only be used for
+uniform error, improper use may cause QMCPACK hanging.
+
+In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
+
+.. include:: input_code.txt
+
+.. _distance-tables:
+
+Particles and distance tables
+-----------------------------
+
+ParticleSets
+~~~~~~~~~~~~
+
+The ``ParticleSet`` class stores particle positions and attributes
+(charge, mass, etc).
+
+The ``R`` member stores positions. For calculations, the ``R`` variable
+needs to be transferred to the structure-of-arrays (SoA) storage in
+``RSoA``. This is done by the ``update`` method. In the future the
+interface may change to use functions to set and retrieve positions so
+the SoA transformation of the particle data can happen automatically.
+For now, it is crucial to call ``P.update()`` to populate ``RSoA`` anytime ``P.R`` is changed. Otherwise, the distance tables associated with ``R`` will be uninitialized or out-of-date.
+
+::
+
+  const SimulationCell sc;
+  ParticleSet elec(sc), ions(sc);
+  elec.setName("e");
+  ions.setName("ion0");
+
+  // initialize ions
+  ions.create({2});
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {0.5, 0.5, 0.5};
+  ions.update(); // transfer to RSoA
+
+  // initialize elec
+  elec.create({1,1});
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.25, 0.0};
+  const int itab = elec.addTable(ions);
+  elec.update(); // update RSoA and distance tables
+
+  // d_table is an electron-ion distance table
+  const auto& d_table = elec.getDistTableAB(itab);
+
+A particular distance table is retrieved with ``getDistTable``. Use
+``addTable`` to add a ``ParticleSet`` and return the index of the
+distance table. If the table already exists the index of the existing
+table will be returned.
+
+The mass and charge of each particle is stored in ``Mass`` and ``Z``.
+The flag, ``SameMass``, indicates if all the particles have the same
+mass (true for electrons).
+
+Groups
+^^^^^^
+
+Particles can belong to different groups. For electrons, the groups are
+up and down spins. For ions, the groups are the atomic elements. The
+group type for each particle can be accessed through the ``GroupID``
+member. The number of groups is returned from ``groups()``. The total
+number particles is accessed with ``getTotalNum()``. The number of
+particles in a group is ``groupsize(int igroup)``.
+The particle indices for each group are found with ``first(int igroup)``
+and ``last(int igroup)``.
+
+Distance tables
+~~~~~~~~~~~~~~~
+
+Distance tables store distances between particles. There are symmetric
+(AA) tables for distance between like particles (electron-electron or
+ion-ion) and asymmetric (AB) tables for distance between unlike
+particles (electron-ion)
+
+The ``Distances`` and ``Displacements`` members contain the data. The
+indexing order is target index first, then source. For electron-ion
+tables, the sources are the ions and the targets are the electrons.
+
+Looping over particles
+~~~~~~~~~~~~~~~~~~~~~~
+
+Some sample code on how to loop over all the particles in an electron-ion distance table:
+
+::
+
+
+  // d_table is an electron-ion distance table
+
+  for (int jat = 0; j < d_table.targets(); jat++) { // Loop over electrons
+    for (int iat = 0; i < d_table.sources(); iat++) { // Loop over ions
+       d_table.Distances[jat][iat];
+    }
+  }
+
+Interactions sometimes depend on the type of group of the particles. The
+code can loop over all particles and use ``GroupID[idx]`` to choose the
+interaction. Alternately, the code can loop over the number of groups
+and then loop from the first to last index for those groups. This method
+can attain higher performance by effectively hoisting tests for group ID
+out of the loop.
+
+An example of the first approach is
+
+::
+
+
+  // P is a ParticleSet
+
+  for (int iat = 0; iat < P.getTotalNum(); iat++) {
+    int group_idx = P.GroupID[iat];
+    // Code that depends on the group index
+  }
+
+An example of the second approach is
+
+::
+
+  // P is a ParticleSet
+  assert(P.IsGrouped == true); // ensure particles are grouped
+
+  for (int ig = 0; ig < P.groups(); ig++) { // loop over groups
+    for (int iat = P.first(ig); iat < P.last(ig); iat++) { // loop over elements in each group
+       // Code that depends on group
+    }
+  }
+
+Wavefunction
+------------
+
+A full ``TrialWaveFunction`` is formulated as a product
+of all the components. Each component derives from ``WaveFunctionComponent``.
+
+.. math::
+     \psi = \prod_c {\tilde \psi_c}
+
+QMCPACK doesn't directly use the product form but mostly uses the log of the wavefunction.
+It is a natural fit for QMC algorithms and offers a numerical advantage on computers.
+The log value grows linearly instead of exponentially, beyond the range of double precision,
+with respect to the electron counts in a Slater-Jastrow wave function.
+
+The code contains an example of a
+wavefunction component for a Helium atom using a simple form and is
+described in :ref:`helium-wavefunction-example`
+
+Mathematical preliminaries
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The wavefunction evaluation functions compute the log of the
+wavefunction, the gradient and the Laplacian of the log of the
+wavefunction. Expanded, the gradient and Laplacian are
+
+.. math::
+  :label: eq264
+
+   \begin{aligned}
+     {\bf G} & = \{ \nabla_i \ln(\psi) \} = \left\{ \sum_c \nabla_i \ln(\tilde \psi_c)\right\} , & {\bf \tilde G} & = \{ \nabla_i \ln(\tilde \psi) \} = \left\{ \frac{\nabla_i \tilde \psi}{\tilde \psi}\right\} \\
+     {\bf L} & = \{ \nabla^2_i \ln(\psi) \} = \left\{ \sum_c \nabla^2_i \ln(\tilde \psi_c) \right\}, & {\bf \tilde L}  & = \{ \nabla^2_i \ln(\tilde \psi) \} = \left\{\frac{{\nabla^2_i} \tilde \psi}{\tilde \psi} - {\tilde G_i} \cdot {\tilde G_i} \right\}
+   \end{aligned}
+
+where :math:`i` is the electron index.
+In this separable form, each wavefunction component computes its :math:`{\bf \tilde G}` ``WaveFunctionComponent::G`` and :math:`{\bf \tilde L}` ``WaveFunctionComponent::L``. The sum over components are stored in ``TrialWaveFunction::G`` and ``TrialWaveFunction::L``.
+The :math:`\frac{{\nabla ^2} \psi}{\psi}` needed by kinetic part of the local energy can be computed as
+
+.. math::
+     \frac{\nabla^2_i \psi}{\psi} = {\bf L_i} + {\bf G}_i \cdot {\bf G}_i
+
+see ``QMCHamiltonians/BareKineticEnergy.h``.
+
+Wavefunction evaluation
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The process for creating a new wavefunction component class is to derive
+from WaveFunctionComponent and implement a number pure virtual
+functions. To start most of them can be empty.
+
+The following four functions evaluate the wavefunction values and
+spatial derivatives:
+
+``evaluateLog`` Computes the log of the wavefunction and the gradient
+and Laplacian (of the log of the wavefunction) for all particles. The
+input is the\ ``ParticleSet``\ (``P``) (of the electrons). The log of
+the wavefunction should be stored in the ``LogValue`` member variable,
+and used as the return value from the function.  The gradient is stored
+in ``G`` and the Laplacian in ``L``.
+
+``ratio`` Computes the wavefunction ratio (not the log) for a single
+particle move (:math:`\psi_{new}/\psi_{old}`). The inputs are the
+``ParticleSet``\ (``P``) and the particle index (``iat``).
+
+``evalGrad`` Computes the gradient for a given particle. The inputs are
+the ``ParticleSet``\ (``P``) and the particle index (``iat``).
+
+``ratioGrad`` Computes the wavefunction ratio and the gradient at the
+new position for a single particle move. The inputs are the
+``ParticleSet``\ (``P``) and the particle index (``iat``). The output
+gradient is in ``grad_iat``;
+
+The ``updateBuffer`` function needs to be implemented, but to start it
+can simply call ``evaluateLog``.
+
+The ``put`` function should be implemented to read parameter specifics
+from the input XML file.
+
+Function use
+~~~~~~~~~~~~
+
+For debugging it can be helpful to know the under what conditions the
+various routines are called.
+
+The VMC and DMC loops initialize the walkers by calling ``evaluateLog``.
+For all-electron moves, each timestep advance calls ``evaluateLog``. If
+the ``use_drift`` parameter is no, then only the wavefunction value is
+used for sampling. The gradient and Laplacian are used for computing the
+local energy.
+
+For particle-by-particle moves, each timestep advance
+
+#. calls ``evalGrad``
+
+#. computes a trial move
+
+#. calls ``ratioGrad`` for the wavefunction ratio and the gradient at
+   the trial position. (If the ``use_drift`` parameter is no, the
+   ``ratio`` function is called instead.)
+
+The following example shows part of an input block for VMC with
+all-electron moves and drift.
+
+::
+
+   <qmc method="vmc" target="e" move="alle">
+     <parameter name="use_drift">yes</parameter>
+   </qmc>
+
+Particle distances
+~~~~~~~~~~~~~~~~~~
+
+The ``ParticleSet`` parameter in these functions refers to the
+electrons. The distance tables that store the inter-particle distances
+are stored as an array.
+
+To get the electron-ion distances, add the ion ``ParticleSet`` using
+``addTable`` and save the returned index. Use that index to get the
+ion-electron distance table.
+
+::
+
+   const int ei_id = elecs.addTable(ions); // in the constructor only
+   const auto& ei_table = elecs.getDistTable(ei_id); // when consuming a distance table
+
+Getting the electron-electron distances is very similar, just add the
+electron ``ParticleSet`` using ``addTable``.
+
+Only the lower triangle for the electron-electron table should be used.
+It is the only part of the distance table valid throughout the run.
+During particle-by-particle move, there are extra restrictions. When a
+move of electron iel is proposed, only the lower triangle parts
+[0,iel)[0,iel) [iel, Nelec)[iel, Nelec) and the row [iel][0:Nelec) are
+valid. In fact, the current implementation of distance based two and
+three body Jastrow factors in QMCPACK only needs the row [iel][0:Nelec).
+
+In ``ratioGrad``, the new distances are stored in the ``Temp_r`` and
+``Temp_dr`` members of the distance tables.
+
+Legacy Setup
+~~~~~~~~~~~~
+.. warning::
+   The following describes a deprecated method of handling user input.
+   It is not to be used for new code.
+
+A builder processes XML input, creates the wavefunction, and adds it to
+``targetPsi``. Builders derive from ``WaveFunctionComponentBuilder``.
+
+The new builder hooks into the XML processing in
+``WaveFunctionFactory.cpp`` in the ``build`` function.
+
+Caching values
+~~~~~~~~~~~~~~
+
+The ``acceptMove`` and ``restore`` methods are called on accepted and
+rejected moves for the component to update cached values.
+
+Threading
+~~~~~~~~~
+
+The ``makeClone`` function needs to be implemented to work correctly
+with OpenMP threading. There will be one copy of the component created
+for each thread. If there is no extra storage, calling the copy
+constructor will be sufficient. If there are cached values, the clone
+call may need to create space.
+
+Parameter optimization
+~~~~~~~~~~~~~~~~~~~~~~
+
+The ``checkInVariables``, ``checkOutVariables``, and ``resetParameters``
+functions manage the variational parameters. Optimizable variables also
+need to be registered when the XML is processed.
+
+
+Variational parameter derivatives are computed in the
+``evaluateDerivatives`` function. It computes the derivatives of both the log
+of the wavefunction and kinetic energy with respect to optimizable parameters
+and adds the results to the corresponding output arrays.
+
+The kinetic energy derivatives are computed as
+
+.. math::
+  \sum_i -\frac{1}{2 m_i}({\partial}_\alpha {\bf L}_i + 2 {\bf G}_i \cdot {\partial}_\alpha {\bf G}_i)
+
+with each ``WaveFunctionComponent`` contributing
+
+.. math::
+  -\frac{1}{2}{\partial}_\alpha \tilde L - G \cdot {\partial}_\alpha \tilde G
+
+Right now :math:`1/m` factor is applied in ``TrialWaveFunction``.
+This is a bug when the particle set doesn't hold equal mass particles.
+
+.. _helium-wavefunction-example:
+
+Helium Wavefunction Example
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The code contains an example of a wavefunction component for a Helium atom using STO orbitals and a Pade Jastrow.
+
+to
+The wavefunction is
+
+.. math::
+  :label: eq265
+
+  \psi = \frac{1}{\sqrt{\pi}} \exp(-Z r_1) \exp(-Z r_2) \exp(A / (1 + B r_{12}))
+
+where :math:`Z = 2` is the nuclear charge, :math:`A=1/2` is the
+electron-electron cusp, and :math:`B` is a variational parameter. The
+electron-ion distances are :math:`r_1` and :math:`r_2`, and
+:math:`r_{12}` is the electron-electron distance. The wavefunction is
+the same as the one expressed with built-in components in
+``examples/molecules/He/he_simple_opt.xml``.
+
+The code is in ``src/QMCWaveFunctions/ExampleHeComponent.cpp``. The
+builder is in ``src/QMCWaveFunctions/ExampleHeBuilder.cpp``. The input
+file is in ``examples/molecules/He/he_example_wf.xml``. A unit test
+compares results from the wavefunction evaluation functions for
+consistency in ``src/QMCWaveFunctions/tests/test_example_he.cpp``.
+
+The recommended approach for creating a new wavefunction component is to
+copy the example and the unit test. Implement the evaluation functions
+and ensure the unit test passes.
+
+Linear Algebra
+--------------
+
+Like in many methods which solve the Schrödinger equation, linear
+algebra plays a critical role in QMC algorithms and thus is crucial to
+the performance of QMCPACK. There are a few components in QMCPACK use
+BLAS/LAPACK with their own characteristics.
+
+Real space QMC
+~~~~~~~~~~~~~~
+
+Single particle orbitals
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Spline evaluation as commonly used in solid-state simulations does not use any dense linear algebra library calls.
+LCAO evaluation as commonly used in molecular calculations relies on BLAS2 GEMV to compute SPOs from a basis set.
+
+Slater determinants
+^^^^^^^^^^^^^^^^^^^
+
+Slater determinants are calculated on :math:`N \times N` Slater
+matrices. :math:`N` is the number of electrons for a given spin. In the
+actually implementation, operations on the inverse matrix of Slater
+matrix for each walker dominate the computation. To initialize it,
+DGETRF and DGETRI from LAPACK are called. The inverse matrix can be
+stored out of place. During random walking, inverse matrices are updated
+by either Sherman-Morrison rank-1 update or delayed update. Update
+algorithms heavily relies on BLAS. All the BLAS operations require
+S,C,D,Z cases.
+
+Sherman-Morrison rank-1 update uses BLAS2 GEMV and GER on
+:math:`N \times N` matrices.
+
+Delayed rank-K update uses
+
+-  BLAS1 SCOPY on :math:`N` array.
+
+-  BLAS2 GEMV, GER on :math:`k \times N` and :math:`k \times k`
+   matrices. :math:`k` ranges from 1 to :math:`K` when updates are
+   delayed and accumulated.
+
+-  BLAS3 GEMM at the final update.
+
+   -  ’T’, ’N’, K, N, N
+
+   -  ’N’, ’N’, N, K, K
+
+   -  ’N’, ’N’, N, N, K
+
+The optimal K depends on the hardware but it usually ranges from 32 to
+256.
+
+QMCPACK solves systems with a few to thousands of electrons. To make all
+the BLAS/LAPACK operation efficient on accelerators. Batching is needed
+and optimized for :math:`N < 2000`. Non-batched functions needs to be
+optimized for :math:`N > 500`. Note: 2000 and 500 are only rough
+estimates.
+
+Wavefunction optimizer
+^^^^^^^^^^^^^^^^^^^^^^
+
+to be added.
+
+Auxiliary field QMC
+~~~~~~~~~~~~~~~~~~~
+
+The AFQMC implementation in QMCPACK relies heavily on linear algebra operations from BLAS/LAPACK. The performance of the code is netirely dependent on the performance of these libraries. See below for a detailed list of the main routines used from BLAS/LAPACK. Since the AFQMC code can work with both single and double precision builds, all 4 versions of these routines (S,C,D,Z) are generally needed, for this reason we omit the data type label.
+
+-  BLAS1: SCAL, COPY, DOT, AXPY
+
+-  BLAS2: GEMV, GER
+
+-  BLAS3: GEMM
+
+-  LAPACK: GETRF, GETRI, GELQF, UNGLQ, ORGLQ, GESVD, HEEVR, HEGVX
+
+While the dimensions of the matrix operations will depend entirely on
+the details of the calculation, typical matrix dimensions range from the
+100s, for small system sizes, to over 20000 for the largest calculations
+attempted so far. For builds with GPU accelerators, we make use of
+batched and strided implementations of these routines. Batched
+implementations of GEMM, GETRF, GETRI, GELQF and UNGLQ are particularly
+important for the performance of the GPU build on small to medium size
+problems. Batched implementations of DOT, AXPY and GEMV would also be
+quite useful, but they are not yet generally available. On GPU builds,
+the code uses batched implementations of these routines when available
+by default.
+
+Slater-backflow wavefunction implementation details
+---------------------------------------------------
+
+For simplicity, consider :math:`N` identical fermions of the same spin
+(e.g., up electrons) at spatial locations
+:math:`\{\mathbf{r}_1,\mathbf{r}_2,\dots,\mathbf{r}_{N}\}`. Then the
+Slater determinant can be written as
+
+.. math::
+  :label: eq245
+
+
+   S=\det M\:,
+
+where each entry in the determinant is an SPO evaluated at a particle
+position
+
+.. math::
+  :label: eq246
+
+   \begin{aligned}
+   M_{ij} = \phi_i(\mathbf{r}_j)\:.\end{aligned}
+
+When backflow transformation is applied to the determinant, the particle
+coordinates :math:`\mathbf{r}_i` that go into the SPOs are replaced by
+quasi-particle coordinates :math:`\mathbf{x}_i`:
+
+.. math::
+  :label: eq247
+
+   \begin{aligned}
+   M_{ij} = \phi_i(\mathbf{x}_j)\:, \end{aligned}
+
+where
+
+.. math::
+  :label: eq248
+
+   \begin{aligned}
+   \mathbf{x}_i=\mathbf{r}_i+\sum\limits_{j=1,j\neq i}^N\eta(r_{ij})(\mathbf{r}_i-\mathbf{r}_j)\:. \end{aligned}
+
+:math:`r_{ij}=\vert\mathbf{r}_i-\mathbf{r}_j\vert`. The integers i,j
+label the particle/quasi-particle. There is a one-to-one correspondence
+between the particles and the quasi-particles, which is simplest when
+:math:`\eta=0`.
+
+Value
+~~~~~
+
+The evaluation of the Slater-backflow wavefunction is almost identical
+to that of a Slater wavefunction. The only difference is that the
+quasi-particle coordinates are used to evaluate the SPOs. The actual
+value of the determinant is stored during the inversion of the matrix
+:math:`M` (``cgetrf``\ :math:`\rightarrow`\ ``cgetri``). Suppose
+:math:`M=LU`, then :math:`S=\prod\limits_{i=1}^N L_{ii} U_{ii}`.
+
+::
+
+  // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
+  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
+  psiMinv = psiM;
+  LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals
+    ,WorkSpace.data(),Pivot.data(),PhaseValue);
+
+QMCPACK represents the complex value of the wavefunction in polar
+coordinates :math:`S=e^Ue^{i\theta}`. Specifically, ``LogValue``
+:math:`U` and ``PhaseValue`` :math:`\theta` are handled separately. In
+the following, we will consider derivatives of the log value only.
+
+Gradient
+~~~~~~~~
+
+To evaluate particle gradient of the log value of the Slater-backflow
+wavefunction, we can use the :math:`\log\det` identity in
+:eq:`eq249`. This identity maps the derivative of
+:math:`\log\det M` with respect to a real variable :math:`p` to a trace
+over :math:`M^{-1}dM`:
+
+.. math::
+  :label: eq249
+
+   \begin{aligned}
+   \frac{\partial}{\partial p}\log\det M = \text{tr}\left( M^{-1} \frac{\partial M}{\partial p} \right) .\end{aligned}
+
+Following Kwon, Ceperley, and
+Martin :cite:`Kwon1993backflow`, the particle gradient
+
+.. math::
+  :label: eq250
+
+   \begin{aligned}
+   G_i^\alpha \equiv \frac{\partial}{\partial r_i^\alpha} \log\det M = \sum\limits_{j=1}^N \sum\limits_{\beta=1}^3 F_{jj}^\beta A_{jj}^{\alpha\beta}\:, \end{aligned}
+
+where the quasi-particle gradient matrix
+
+.. math::
+  :label: eq251
+
+   \begin{aligned}
+   A_{ij}^{\alpha\beta} \equiv \frac{\partial x_j^\beta}{\partial r_i^\alpha}\:,\end{aligned}
+
+and the intermediate matrix
+
+.. math::
+  :label: eq252
+
+   \begin{aligned}
+   F_{ij}^\alpha\equiv\sum\limits_k M^{-1}_{ik} dM_{kj}^\alpha\:,\end{aligned}
+
+with the SPO derivatives (w.r. to quasi-particle coordinates)
+
+.. math::
+  :label: eq253
+
+   \begin{aligned}
+   dM_{ij}^\alpha \equiv \frac{\partial M_{ij}}{\partial x_j^\alpha}\:.\end{aligned}
+
+Notice that we have made the name change of :math:`\phi\rightarrow M`
+from the notations of ref. :cite:`Kwon1993backflow`. This
+name change is intended to help the reader associate M with the QMCPACK
+variable ``psiM``.
+
+::
+
+  // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
+  for(int i=0; i<num; i++) // k in above formula
+  {
+    for(int j=0; j<NumPtcls; j++)
+    {
+      for(int k=0; k<OHMMS_DIM; k++) // alpha in above formula
+      {
+        myG(i) += dot(BFTrans->Amat(i,FirstIndex+j),Fmat(j,j));
+      }
+    }
+  }
+
+:eq:`eq250` is still relatively simple to understand. The
+:math:`A` matrix maps changes in particle coordinates
+:math:`d\mathbf{r}` to changes in quasi-particle coordinates
+:math:`d\mathbf{x}`. Dotting A into F propagates :math:`d\mathbf{x}` to
+:math:`dM`. Thus :math:`F\cdot A` is the term inside the trace operator
+of :eq:`eq249`. Finally, performing the trace completes the
+evaluation of the derivative.
+
+Laplacian
+~~~~~~~~~
+
+The particle Laplacian is given in
+:cite:`Kwon1993backflow` as
+
+.. math::
+  :label: eq254
+
+   \begin{aligned}
+   L_i \equiv \sum\limits_{\beta} \frac{\partial^2}{\partial (r_i^\beta)^2} \log\det M = \sum\limits_{j\alpha} B_{ij}^\alpha F_{jj}^\alpha - \sum\limits_{jk}\sum\limits_{\alpha\beta\gamma} A_{ij}^{\alpha\beta}A_{ik}^{\alpha\gamma}\times\left(F_{kj}^\alpha F_{jk}^\gamma -\delta_{jk}\sum\limits_m M^{-1}_{jm} d2M_{mj}^{\beta\gamma}\right), \end{aligned}
+
+where the quasi-particle Laplacian matrix
+
+.. math::
+  :label: eq255
+
+   \begin{aligned}
+   B_{ij}^{\alpha} \equiv \sum\limits_\beta \frac{\partial^2 x_j^\alpha}{\partial (r_i^\beta)^2}\:,\end{aligned}
+
+with the second derivatives of the single-particles orbitals being
+
+.. math::
+  :label: eq256
+
+   \begin{aligned}
+   d2M_{ij}^{\alpha\beta} \equiv \frac{\partial^2 M_{ij}}{\partial x_j^\alpha\partial x_j^\beta}\:.\end{aligned}
+
+Schematically, :math:`L_i` has contributions from three terms of the
+form :math:`BF, AAFF, and tr(AA,Md2M)`, respectively.
+:math:`A, B, M ,d2M,` and :math:`F` can be calculated and stored before
+the calculations of :math:`L_i`. The first :math:`BF` term can be
+directly calculated in a loop over quasi-particle coordinates
+:math:`j\alpha`.
+
+::
+
+  // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
+  for(int j=0; j<NumPtcls; j++)
+    for(int a=0; a<OHMMS_DIM; k++)
+      myL(i) += BFTrans->Bmat_full(i,FirstIndex+j)[a]*Fmat(j,j)[a];
+
+Notice that :math:`B_{ij}^\alpha` is stored in ``Bmat_full``, NOT
+``Bmat``.
+
+The remaining two terms both involve :math:`AA`. Thus, it is best to
+define a temporary tensor :math:`AA`:
+
+.. math::
+  :label: eq257
+
+   \begin{aligned}
+   {}_iAA_{jk}^{\beta\gamma} \equiv \sum\limits_\alpha A_{ij}^{\alpha\beta} A_{ij}^{\alpha\gamma}\:,\end{aligned}
+
+which we will overwrite for each particle :math:`i`. Similarly, define
+:math:`FF`:
+
+.. math::
+  :label: eq258
+
+   \begin{aligned}
+   FF_{jk}^{\alpha\gamma} \equiv F_{kj}^\alpha F_{jk}^\gamma\:,\end{aligned}
+
+which is simply the outer product of :math:`F\otimes F`. Then the
+:math:`AAFF` term can be calculated by fully contracting :math:`AA` with
+:math:`FF`.
+
+::
+
+  // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
+  for(int j=0; j<NumPtcls; j++)
+    for(int k=0; k<NumPtcls; k++)
+      for(int i=0; i<num; i++)
+      {
+        Tensor<RealType,OHMMS_DIM> AA = dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k));
+        HessType FF = outerProduct(Fmat(k,j),Fmat(j,k));
+        myL(i) -= traceAtB(AA,FF);
+      }
+
+Finally, define the SPO derivative term:
+
+.. math::
+  :label: eq259
+
+   \begin{aligned}
+   Md2M_j^{\beta\gamma} \equiv \sum\limits_m M^{-1}_{jm} d2M_{mj}^\beta\:,\end{aligned}
+
+then the last term is given by the contraction of :math:`Md2M` (``q_j``)
+with the diagonal of :math:`AA`.
+
+::
+
+  for(int j=0; j<NumPtcls; j++)
+  {
+    HessType q_j;
+    q_j=0.0;
+    for(int k=0; k<NumPtcls; k++)
+      q_j += psiMinv(j,k)*grad_grad_psiM(j,k);
+    for(int i=0; i<num; i++)
+    {
+      Tensor<RealType,OHMMS_DIM> AA = dot(
+        transpose(BFTrans->Amat(i,FirstIndex+j)),
+        BFTrans->Amat(i,FirstIndex+j)
+      );
+      myL(i) += traceAtB(AA,q_j);
+    }
+  }
+
+Wavefunction parameter derivative
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To use the robust linear optimization method of
+:cite:`Toulouse2007linear`, the trial wavefunction
+needs to know its contributions to the overlap and hamiltonian matrices.
+In particular, we need derivatives of these matrices with respect to
+wavefunction parameters. As a consequence, the wavefunction :math:`\psi`
+needs to be able to evaluate
+:math:`\frac{\partial}{\partial p} \ln \psi` and
+:math:`\frac{\partial}{\partial p} \frac{\mathcal{H}\psi}{\psi}`, where
+:math:`p` is a parameter.
+
+When 2-body backflow is considered, a wavefunction parameter :math:`p`
+enters the :math:`\eta` function only (equation :eq:`eq248`).
+:math:`\mathbf{r}`, :math:`\phi`, and :math:`M` do not explicitly
+dependent on :math:`p`. Derivative of the log value is almost identical
+to particle gradient. Namely, :eq:`eq250` applies upon the
+substitution :math:`r_i^\alpha\rightarrow p`.
+
+.. math::
+  :label: eq260
+
+   \begin{aligned}
+   \frac{\partial}{\partial p} \ln\det M = \sum\limits_{j=1}^N \sum\limits_{\beta=1}^3 F_{jj}^\beta \left({}_pC_{j}^{\beta}\right)\:,\end{aligned}
+
+where the quasi-particle derivatives are stored in ``Cmat``
+
+.. math::
+  :label: eq261
+
+   \begin{aligned}
+   {}_pC_{i}^{\alpha} \equiv \frac{\partial}{\partial p} x_{i}^{\alpha}\:.\end{aligned}
+
+The change in local kinetic energy is a lot more difficult to calculate
+
+.. math::
+  :label: eq262
+
+   \begin{aligned}
+   \frac{\partial T_{\text{local}}}{\partial p} = \frac{\partial}{\partial p} \left\{ \left( \sum\limits_{i=1}^N \frac{1}{2m_i} \nabla^2_i \right) \ln \det M \right\} = \sum\limits_{i=1}^N \frac{1}{2m_i} \frac{\partial}{\partial p} L_i\:, \end{aligned}
+
+where :math:`L_i` is the particle Laplacian defined in
+:eq:`eq254` To evaluate :eq:`eq262`, we need to
+calculate parameter derivatives of all three terms defined in the
+Laplacian evaluation. Namely :math:`(B)(F)`, :math:`(AA)(FF)`, and
+:math:`\text{tr}(AA,Md2M)`, where we have put parentheses around previously
+identified data structures. After :math:`\frac{\partial}{\partial p}`
+hits, each of the three terms will split into two terms by the product
+rule. Each smaller term will contain a contraction of two data
+structures. Therefore, we will need to calculate the parameter
+derivatives of each data structure defined in the Laplacian evaluation:
+
+.. math::
+  :label: eq263
+
+   \begin{aligned}
+   {}_pX_{ij}^{\alpha\beta} \equiv \frac{\partial}{\partial p} A_{ij}^{\alpha\beta}\:, \\
+   {}_pY_{ij}^{\alpha} \equiv \frac{\partial}{\partial p} B_{ij}^{\alpha}\:, \\
+   {}_pdF_{ij}^{\alpha} \equiv \frac{\partial}{\partial p} F_{ij}^{\alpha}\:, \\
+   {}_{pi}{AA'}_{jk}^{\beta\gamma} \equiv \frac{\partial}{\partial p}  {}_iAA_{jk}^{\beta\gamma}\:, \\
+   {}_p {FF'}_{jk}^{\alpha\gamma} \equiv \frac{\partial}{\partial p} FF_{jk}^{\alpha\gamma}\:, \\
+   {}_p {Md2M'}_{j}^{\beta\gamma} \equiv \frac{\partial}{\partial p} Md2M_j^{\beta\gamma}\:.\end{aligned}
+
+X and Y are stored as ``Xmat`` and ``Ymat_full`` (NOT ``Ymat``) in the
+code. dF is ``dFa``. :math:`AA'` is not fully stored; intermediate
+values are stored in ``Aij_sum`` and ``a_j_sum``. :math:`FF'` is
+calculated on the fly as :math:`dF\otimes F+F\otimes dF`. :math:`Md2M'`
+is not stored; intermediate values are stored in ``q_j_prime``.
+
 Scalar estimator implementation
 -------------------------------
 
 Introduction: Life of a specialized OperatorBase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Almost all observables in QMCPACK are implemented as specialized derived
-classes of the OperatorBase base class. Each observable is instantiated
-in HamiltonianFactory and added to QMCHamiltonian for tracking.
-QMCHamiltonian tracks two types of observables: main and auxiliary. Main
-observables contribute to the local energy. These observables are
-elements of the simulated Hamiltonian such as kinetic or potential
-energy. Auxiliary observables are expectation values of matrix elements
-that do not contribute to the local energy. These Hamiltonians do not
-affect the dynamics of the simulation. In the code, the main observables
-are labeled by “physical” flag; the auxiliary observables have
-“physical” set to false.
+Almost all observables in QMCPACK are implemented as specialized derived classes of the OperatorBase base class. Each observable
+is instantiated in HamiltonianFactory and added to QMCHamiltonian for tracking. QMCHamiltonian tracks two types of observables:
+main and auxiliary. Main observables contribute to the local energy. These observables are elements of the simulated Hamiltonian
+such as kinetic or potential energy. Auxiliary observables are expectation values of matrix elements that do not contribute to the
+local energy. These Hamiltonians do not affect the dynamics of the simulation. In the code, the main observables are labeled by
+“physical” flag; the auxiliary observables have“physical” set to false.
 
 Initialization
 ^^^^^^^^^^^^^^
@@ -1176,14 +2054,14 @@ Next, make some room in the ``stat.h5`` file by overriding the registerCollectab
 ::
 
   // In SpeciesKineticEnergy.cpp
-  void SpeciesKineticEnergy::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+  void SpeciesKineticEnergy::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
   {
     if (hdf5_out)
     {
       std::vector<int> ndim(1,num_species);
-      observable_helper* h5o=new observable_helper(myName);
-      h5o->set_dimensions(ndim,h5_index);
-      h5o->open(gid);
+      observable_helper h5o(myName);
+      h5o.set_dimensions(ndim,h5_index);
+      h5o.open(gid);
       h5desc.push_back(h5o);
     }
   }
@@ -1601,7 +2479,7 @@ zeroed at the beginning of each step and accumulated upon call to
   unload, and collect. In the evaluate stage,
   ``QMCHamiltonian::Observables`` is populated by a list of
   ``OperatorBase``. In the load stage, ``QMCHamiltonian::Observables``
-  is transfered to ``Properties`` by ``QMCDriver``. In the unload stage,
+  is transferred to ``Properties`` by ``QMCDriver``. In the unload stage,
   ``Properties`` is copied to ``LocalEnergyEstimator::scalars``. In the
   collect stage, ``LocalEnergyEstimator::scalars`` is block-averaged to
   ``EstimatorManagerBase``
@@ -1624,719 +2502,5 @@ Appendix: dmc.dat
   ``WalkerControlBase::branch``, which is called by
   ``SimpleFixedNodeBranch``
 | ``::branch``, for example.
-
-Slater-backflow wavefunction implementation details
----------------------------------------------------
-
-For simplicity, consider :math:`N` identical fermions of the same spin
-(e.g., up electrons) at spatial locations
-:math:`\{\mathbf{r}_1,\mathbf{r}_2,\dots,\mathbf{r}_{N}\}`. Then the
-Slater determinant can be written as
-
-.. math::
-  :label: eq245
-
-
-   S=\det M\:,
-
-where each entry in the determinant is an SPO evaluated at a particle
-position
-
-.. math::
-  :label: eq246
-
-   \begin{aligned}
-   M_{ij} = \phi_i(\mathbf{r}_j)\:.\end{aligned}
-
-When backflow transformation is applied to the determinant, the particle
-coordinates :math:`\mathbf{r}_i` that go into the SPOs are replaced by
-quasi-particle coordinates :math:`\mathbf{x}_i`:
-
-.. math::
-  :label: eq247
-
-   \begin{aligned}
-   M_{ij} = \phi_i(\mathbf{x}_j)\:, \end{aligned}
-
-where
-
-.. math::
-  :label: eq248
-
-   \begin{aligned}
-   \mathbf{x}_i=\mathbf{r}_i+\sum\limits_{j=1,j\neq i}^N\eta(r_{ij})(\mathbf{r}_i-\mathbf{r}_j)\:. \end{aligned}
-
-:math:`r_{ij}=\vert\mathbf{r}_i-\mathbf{r}_j\vert`. The integers i,j
-label the particle/quasi-particle. There is a one-to-one correspondence
-between the particles and the quasi-particles, which is simplest when
-:math:`\eta=0`.
-
-Value
-~~~~~
-
-The evaluation of the Slater-backflow wavefunction is almost identical
-to that of a Slater wavefunction. The only difference is that the
-quasi-particle coordinates are used to evaluate the SPOs. The actual
-value of the determinant is stored during the inversion of the matrix
-:math:`M` (``cgetrf``\ :math:`\rightarrow`\ ``cgetri``). Suppose
-:math:`M=LU`, then :math:`S=\prod\limits_{i=1}^N L_{ii} U_{ii}`.
-
-::
-
-  // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
-  psiMinv = psiM;
-  LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals
-    ,WorkSpace.data(),Pivot.data(),PhaseValue);
-
-QMCPACK represents the complex value of the wavefunction in polar
-coordinates :math:`S=e^Ue^{i\theta}`. Specifically, ``LogValue``
-:math:`U` and ``PhaseValue`` :math:`\theta` are handled separately. In
-the following, we will consider derivatives of the log value only.
-
-Gradient
-~~~~~~~~
-
-To evaluate particle gradient of the log value of the Slater-backflow
-wavefunction, we can use the :math:`\log\det` identity in
-:eq:`eq249`. This identity maps the derivative of
-:math:`\log\det M` with respect to a real variable :math:`p` to a trace
-over :math:`M^{-1}dM`:
-
-.. math::
-  :label: eq249
-
-   \begin{aligned}
-   \frac{\partial}{\partial p}\log\det M = \text{tr}\left( M^{-1} \frac{\partial M}{\partial p} \right) .\end{aligned}
-
-Following Kwon, Ceperley, and
-Martin :cite:`Kwon1993backflow`, the particle gradient
-
-.. math::
-  :label: eq250
-
-   \begin{aligned}
-   G_i^\alpha \equiv \frac{\partial}{\partial r_i^\alpha} \log\det M = \sum\limits_{j=1}^N \sum\limits_{\beta=1}^3 F_{jj}^\beta A_{jj}^{\alpha\beta}\:, \end{aligned}
-
-where the quasi-particle gradient matrix
-
-.. math::
-  :label: eq251
-
-   \begin{aligned}
-   A_{ij}^{\alpha\beta} \equiv \frac{\partial x_j^\beta}{\partial r_i^\alpha}\:,\end{aligned}
-
-and the intermediate matrix
-
-.. math::
-  :label: eq252
-
-   \begin{aligned}
-   F_{ij}^\alpha\equiv\sum\limits_k M^{-1}_{ik} dM_{kj}^\alpha\:,\end{aligned}
-
-with the SPO derivatives (w.r. to quasi-particle coordinates)
-
-.. math::
-  :label: eq253
-
-   \begin{aligned}
-   dM_{ij}^\alpha \equiv \frac{\partial M_{ij}}{\partial x_j^\alpha}\:.\end{aligned}
-
-Notice that we have made the name change of :math:`\phi\rightarrow M`
-from the notations of ref. :cite:`Kwon1993backflow`. This
-name change is intended to help the reader associate M with the QMCPACK
-variable ``psiM``.
-
-::
-
-  // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
-  for(int i=0; i<num; i++) // k in above formula
-  {
-    for(int j=0; j<NumPtcls; j++)
-    {
-      for(int k=0; k<OHMMS_DIM; k++) // alpha in above formula
-      {
-        myG(i) += dot(BFTrans->Amat(i,FirstIndex+j),Fmat(j,j));
-      }
-    }
-  }
-
-:eq:`eq250` is still relatively simple to understand. The
-:math:`A` matrix maps changes in particle coordinates
-:math:`d\mathbf{r}` to changes in quasi-particle coordinates
-:math:`d\mathbf{x}`. Dotting A into F propagates :math:`d\mathbf{x}` to
-:math:`dM`. Thus :math:`F\cdot A` is the term inside the trace operator
-of :eq:`eq249`. Finally, performing the trace completes the
-evaluation of the derivative.
-
-Laplacian
-~~~~~~~~~
-
-The particle Laplacian is given in
-:cite:`Kwon1993backflow` as
-
-.. math::
-  :label: eq254
-
-   \begin{aligned}
-   L_i \equiv \sum\limits_{\beta} \frac{\partial^2}{\partial (r_i^\beta)^2} \log\det M = \sum\limits_{j\alpha} B_{ij}^\alpha F_{jj}^\alpha - \sum\limits_{jk}\sum\limits_{\alpha\beta\gamma} A_{ij}^{\alpha\beta}A_{ik}^{\alpha\gamma}\times\left(F_{kj}^\alpha F_{jk}^\gamma -\delta_{jk}\sum\limits_m M^{-1}_{jm} d2M_{mj}^{\beta\gamma}\right), \end{aligned}
-
-where the quasi-particle Laplacian matrix
-
-.. math::
-  :label: eq255
-
-   \begin{aligned}
-   B_{ij}^{\alpha} \equiv \sum\limits_\beta \frac{\partial^2 x_j^\alpha}{\partial (r_i^\beta)^2}\:,\end{aligned}
-
-with the second derivatives of the single-particles orbitals being
-
-.. math::
-  :label: eq256
-
-   \begin{aligned}
-   d2M_{ij}^{\alpha\beta} \equiv \frac{\partial^2 M_{ij}}{\partial x_j^\alpha\partial x_j^\beta}\:.\end{aligned}
-
-Schematically, :math:`L_i` has contributions from three terms of the
-form :math:`BF, AAFF, and tr(AA,Md2M)`, respectively.
-:math:`A, B, M ,d2M,` and :math:`F` can be calculated and stored before
-the calculations of :math:`L_i`. The first :math:`BF` term can be
-directly calculated in a loop over quasi-particle coordinates
-:math:`j\alpha`.
-
-::
-
-  // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
-  for(int j=0; j<NumPtcls; j++)
-    for(int a=0; a<OHMMS_DIM; k++)
-      myL(i) += BFTrans->Bmat_full(i,FirstIndex+j)[a]*Fmat(j,j)[a];
-
-Notice that :math:`B_{ij}^\alpha` is stored in ``Bmat_full``, NOT
-``Bmat``.
-
-The remaining two terms both involve :math:`AA`. Thus, it is best to
-define a temporary tensor :math:`AA`:
-
-.. math::
-  :label: eq257
-
-   \begin{aligned}
-   {}_iAA_{jk}^{\beta\gamma} \equiv \sum\limits_\alpha A_{ij}^{\alpha\beta} A_{ij}^{\alpha\gamma}\:,\end{aligned}
-
-which we will overwrite for each particle :math:`i`. Similarly, define
-:math:`FF`:
-
-.. math::
-  :label: eq258
-
-   \begin{aligned}
-   FF_{jk}^{\alpha\gamma} \equiv F_{kj}^\alpha F_{jk}^\gamma\:,\end{aligned}
-
-which is simply the outer product of :math:`F\otimes F`. Then the
-:math:`AAFF` term can be calculated by fully contracting :math:`AA` with
-:math:`FF`.
-
-::
-
-  // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
-  for(int j=0; j<NumPtcls; j++)
-    for(int k=0; k<NumPtcls; k++)
-      for(int i=0; i<num; i++)
-      {
-        Tensor<RealType,OHMMS_DIM> AA = dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k));
-        HessType FF = outerProduct(Fmat(k,j),Fmat(j,k));
-        myL(i) -= traceAtB(AA,FF);
-      }
-
-Finally, define the SPO derivative term:
-
-.. math::
-  :label: eq259
-
-   \begin{aligned}
-   Md2M_j^{\beta\gamma} \equiv \sum\limits_m M^{-1}_{jm} d2M_{mj}^\beta\:,\end{aligned}
-
-then the last term is given by the contraction of :math:`Md2M` (``q_j``)
-with the diagonal of :math:`AA`.
-
-::
-
-  for(int j=0; j<NumPtcls; j++)
-  {
-    HessType q_j;
-    q_j=0.0;
-    for(int k=0; k<NumPtcls; k++)
-      q_j += psiMinv(j,k)*grad_grad_psiM(j,k);
-    for(int i=0; i<num; i++)
-    {
-      Tensor<RealType,OHMMS_DIM> AA = dot(
-        transpose(BFTrans->Amat(i,FirstIndex+j)),
-        BFTrans->Amat(i,FirstIndex+j)
-      );
-      myL(i) += traceAtB(AA,q_j);
-    }
-  }
-
-Wavefunction parameter derivative
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To use the robust linear optimization method of
-:cite:`Toulouse2007linear`, the trial wavefunction
-needs to know its contributions to the overlap and hamiltonian matrices.
-In particular, we need derivatives of these matrices with respect to
-wavefunction parameters. As a consequence, the wavefunction :math:`\psi`
-needs to be able to evaluate
-:math:`\frac{\partial}{\partial p} \ln \psi` and
-:math:`\frac{\partial}{\partial p} \frac{\mathcal{H}\psi}{\psi}`, where
-:math:`p` is a parameter.
-
-When 2-body backflow is considered, a wavefunction parameter :math:`p`
-enters the :math:`\eta` function only (equation :eq:`eq248`).
-:math:`\mathbf{r}`, :math:`\phi`, and :math:`M` do not explicitly
-dependent on :math:`p`. Derivative of the log value is almost identical
-to particle gradient. Namely, :eq:`eq250` applies upon the
-substitution :math:`r_i^\alpha\rightarrow p`.
-
-.. math::
-  :label: eq260
-
-   \begin{aligned}
-   \frac{\partial}{\partial p} \ln\det M = \sum\limits_{j=1}^N \sum\limits_{\beta=1}^3 F_{jj}^\beta \left({}_pC_{j}^{\beta}\right)\:,\end{aligned}
-
-where the quasi-particle derivatives are stored in ``Cmat``
-
-.. math::
-  :label: eq261
-
-   \begin{aligned}
-   {}_pC_{i}^{\alpha} \equiv \frac{\partial}{\partial p} x_{i}^{\alpha}\:.\end{aligned}
-
-The change in local kinetic energy is a lot more difficult to calculate
-
-.. math::
-  :label: eq262
-
-   \begin{aligned}
-   \frac{\partial T_{\text{local}}}{\partial p} = \frac{\partial}{\partial p} \left\{ \left( \sum\limits_{i=1}^N \frac{1}{2m_i} \nabla^2_i \right) \ln \det M \right\} = \sum\limits_{i=1}^N \frac{1}{2m_i} \frac{\partial}{\partial p} L_i\:, \end{aligned}
-
-where :math:`L_i` is the particle Laplacian defined in
-:eq:`eq254` To evaluate :eq:`eq262`, we need to
-calculate parameter derivatives of all three terms defined in the
-Laplacian evaluation. Namely :math:`(B)(F)`, :math:`(AA)(FF)`, and
-:math:`\text{tr}(AA,Md2M)`, where we have put parentheses around previously
-identified data structures. After :math:`\frac{\partial}{\partial p}`
-hits, each of the three terms will split into two terms by the product
-rule. Each smaller term will contain a contraction of two data
-structures. Therefore, we will need to calculate the parameter
-derivatives of each data structure defined in the Laplacian evaluation:
-
-.. math::
-  :label: eq263
-
-   \begin{aligned}
-   {}_pX_{ij}^{\alpha\beta} \equiv \frac{\partial}{\partial p} A_{ij}^{\alpha\beta}\:, \\
-   {}_pY_{ij}^{\alpha} \equiv \frac{\partial}{\partial p} B_{ij}^{\alpha}\:, \\
-   {}_pdF_{ij}^{\alpha} \equiv \frac{\partial}{\partial p} F_{ij}^{\alpha}\:, \\
-   {}_{pi}{AA'}_{jk}^{\beta\gamma} \equiv \frac{\partial}{\partial p}  {}_iAA_{jk}^{\beta\gamma}\:, \\
-   {}_p {FF'}_{jk}^{\alpha\gamma} \equiv \frac{\partial}{\partial p} FF_{jk}^{\alpha\gamma}\:, \\
-   {}_p {Md2M'}_{j}^{\beta\gamma} \equiv \frac{\partial}{\partial p} Md2M_j^{\beta\gamma}\:.\end{aligned}
-
-X and Y are stored as ``Xmat`` and ``Ymat_full`` (NOT ``Ymat``) in the
-code. dF is ``dFa``. :math:`AA'` is not fully stored; intermediate
-values are stored in ``Aij_sum`` and ``a_j_sum``. :math:`FF'` is
-calculated on the fly as :math:`dF\otimes F+F\otimes dF`. :math:`Md2M'`
-is not stored; intermediate values are stored in ``q_j_prime``.
-
-.. _distance-tables:
-
-Particles and distance tables
------------------------------
-
-ParticleSets
-~~~~~~~~~~~~
-
-The ``ParticleSet`` class stores particle positions and attributes
-(charge, mass, etc).
-
-The ``R`` member stores positions. For calculations, the ``R`` variable
-needs to be transferred to the structure-of-arrays (SoA) storage in
-``RSoA``. This is done by the ``update`` method. In the future the
-interface may change to use functions to set and retrieve positions so
-the SoA transformation of the particle data can happen automatically.
-
-A particular distance table is retrieved with ``getDistTable``. Use
-``addTable`` to add a ``ParticleSet`` and return the index of the
-distance table. If the table already exists the index of the existing
-table will be returned.
-
-The mass and charge of each particle is stored in ``Mass`` and ``Z``.
-The flag, ``SameMass``, indicates if all the particles have the same
-mass (true for electrons).
-
-Groups
-^^^^^^
-
-Particles can belong to different groups. For electrons, the groups are
-up and down spins. For ions, the groups are the atomic element. The
-group type for each particle can be accessed through the ``GroupID``
-member. The number of groups is returned from ``groups()``. The total
-number particles is accessed with ``getTotalNum()``. The number of
-particles in a group is ``groupsize(int igroup)``.
-
-The particle indices for each group are found with ``first(int igroup)``
-and ``last(int igroup)``. These functions only work correctly if the
-particles are packed according to group. The flag, ``IsGrouped``,
-indicates if the particles are grouped or not. The particles will not be
-grouped if the elements are not grouped together in the input file. This
-ordering is usually the responsibility of the converters.
-
-Code can be written to only handle the grouped case, but put an assert
-or failure check if the particles are not grouped. Otherwise the code
-will give wrong answers and it can be time-consuming to debug.
-
-Distance tables
-~~~~~~~~~~~~~~~
-
-Distance tables store distances between particles. There are symmetric
-(AA) tables for distance between like particles (electron-electron or
-ion-ion) and asymmetric (BA) tables for distance between unlike
-particles (electron-ion)
-
-The ``Distances`` and ``Displacements`` members contain the data. The
-indexing order is target index first, then source. For electron-ion
-tables, the sources are the ions and the targets are the electrons.
-
-Looping over particles
-~~~~~~~~~~~~~~~~~~~~~~
-
-Some sample code on how to loop over all the particles in an electron-ion distance table:
-
-::
-
-
-  // d_table is an electron-ion distance table
-
-  for (int jat = 0; j < d_table.targets(); jat++) { // Loop over electrons
-    for (int iat = 0; i < d_table.sources(); iat++) { // Loop over ions
-       d_table.Distances[jat][iat];
-    }
-  }
-
-Interactions sometimes depend on the type of group of the particles. The
-code can loop over all particles and use ``GroupID[idx]`` to choose the
-interaction. Alternately, the code can loop over the number of groups
-and then loop from the first to last index for those groups. This method
-can attain higher performance by effectively hoisting tests for group ID
-out of the loop.
-
-An example of the first approach is
-
-::
-
-
-  // P is a ParticleSet
-
-  for (int iat = 0; iat < P.getTotalNum(); iat++) {
-    int group_idx = P.GroupID[iat];
-    // Code that depends on the group index
-  }
-
-An example of the second approach is
-
-::
-
-  // P is a ParticleSet
-  assert(P.IsGrouped == true); // ensure particles are grouped
-
-  for (int ig = 0; ig < P.groups(); ig++) { // loop over groups
-    for (int iat = P.first(ig); iat < P.last(ig); iat++) { // loop over elements in each group
-       // Code that depends on group
-    }
-  }
-
-Adding a wavefunction
----------------------
-
-The total wavefunction is stored in ``TrialWaveFunction`` as a product
-of all the components. Each component derives from
-``WaveFunctionComponent``. The code contains an example of a
-wavefunction component for a Helium atom using a simple form and is
-described in :ref:`helium-wavefunction-example`
-
-Mathematical preliminaries
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The wavefunction evaluation functions compute the log of the
-wavefunction, the gradient and the Laplacian of the log of the
-wavefunction. Expanded, the gradient and Laplacian are
-
-.. math::
-  :label: eq264
-
-   \begin{aligned}
-   G &=& \nabla \log(\psi) = \frac{\nabla \psi}{\psi} \\
-   L &=& {\nabla ^2} \log(\psi) = \frac{{\nabla ^2}\psi}{\psi} - \frac{\nabla \psi}{\psi} \cdot \frac{\nabla \psi}{\psi} \\
-                   &=& \frac{{\nabla ^2} \psi}{\psi} - G \cdot G\end{aligned}
-
-However, the local energy formula needs :math:`\frac{{\nabla ^2} \psi}{\psi}`.
-The conversion from the Laplacian of the log of the wavefunction to the
-local energy value is performed in
-``QMCHamiltonians/BareKineticEnergy.h`` (i.e. :math:`L + G \cdot G`.)
-
-Wavefunction evaluation
-~~~~~~~~~~~~~~~~~~~~~~~
-
-The process for creating a new wavefunction component class is to derive
-from WaveFunctionComponent and implement a number pure virtual
-functions. To start most of them can be empty.
-
-The following four functions evaluate the wavefunction values and
-spatial derivatives:
-
-``evaluateLog`` Computes the log of the wavefunction and the gradient
-and Laplacian (of the log of the wavefunction) for all particles. The
-input is the\ ``ParticleSet``\ (``P``) (of the electrons). The log of
-the wavefunction should be stored in the ``LogValue`` member variable,
-and used as the return value from the function.  The gradient is stored
-in ``G`` and the Laplacian in ``L``.
-
-``ratio`` Computes the wavefunction ratio (not the log) for a single
-particle move (:math:`\psi_{new}/\psi_{old}`). The inputs are the
-``ParticleSet``\ (``P``) and the particle index (``iat``).
-
-``evalGrad`` Computes the gradient for a given particle. The inputs are
-the ``ParticleSet``\ (``P``) and the particle index (``iat``).
-
-``ratioGrad`` Computes the wavefunction ratio and the gradient at the
-new position for a single particle move. The inputs are the
-``ParticleSet``\ (``P``) and the particle index (``iat``). The output
-gradient is in ``grad_iat``;
-
-The ``updateBuffer`` function needs to be implemented, but to start it
-can simply call ``evaluateLog``.
-
-The ``put`` function should be implemented to read parameter specifics
-from the input XML file.
-
-Function use
-~~~~~~~~~~~~
-
-For debugging it can be helpful to know the under what conditions the
-various routines are called.
-
-The VMC and DMC loops initialize the walkers by calling ``evaluateLog``.
-For all-electron moves, each timestep advance calls ``evaluateLog``. If
-the ``use_drift`` parameter is no, then only the wavefunction value is
-used for sampling. The gradient and Laplacian are used for computing the
-local energy.
-
-For particle-by-particle moves, each timestep advance
-
-#. calls ``evalGrad``
-
-#. computes a trial move
-
-#. calls ``ratioGrad`` for the wavefunction ratio and the gradient at
-   the trial position. (If the ``use_drift`` parameter is no, the
-   ``ratio`` function is called instead.)
-
-The following example shows part of an input block for VMC with
-all-electron moves and drift.
-
-::
-
-   <qmc method="vmc" target="e" move="alle">
-     <parameter name="use_drift">yes</parameter>
-   </qmc>
-
-Particle distances
-~~~~~~~~~~~~~~~~~~
-
-The ``ParticleSet`` parameter in these functions refers to the
-electrons. The distance tables that store the inter-particle distances
-are stored as an array.
-
-To get the electron-ion distances, add the ion ``ParticleSet`` using
-``addTable`` and save the returned index. Use that index to get the
-ion-electron distance table.
-
-::
-
-   const int ei_id = elecs.addTable(ions); // in the constructor only
-   const auto& ei_table = elecs.getDistTable(ei_id); // when consuming a distance table
-
-Getting the electron-electron distances is very similar, just add the
-electron ``ParticleSet`` using ``addTable``.
-
-Only the lower triangle for the electron-electron table should be used.
-It is the only part of the distance table valid throughout the run.
-During particle-by-particle move, there are extra restrictions. When a
-move of electron iel is proposed, only the lower triangle parts
-[0,iel)[0,iel) [iel, Nelec)[iel, Nelec) and the row [iel][0:Nelec) are
-valid. In fact, the current implementation of distance based two and
-three body Jastrow factors in QMCPACK only needs the row [iel][0:Nelec).
-
-In ``ratioGrad``, the new distances are stored in the ``Temp_r`` and
-``Temp_dr`` members of the distance tables.
-
-Setup
-~~~~~
-
-A builder processes XML input, creates the wavefunction, and adds it to
-``targetPsi``. Builders derive from ``WaveFunctionComponentBuilder``.
-
-The new builder hooks into the XML processing in
-``WaveFunctionFactory.cpp`` in the ``build`` function.
-
-Caching values
-~~~~~~~~~~~~~~
-
-The ``acceptMove`` and ``restore`` methods are called on accepted and
-rejected moves for the component to update cached values.
-
-Threading
-~~~~~~~~~
-
-The ``makeClone`` function needs to be implemented to work correctly
-with OpenMP threading. There will be one copy of the component created
-for each thread. If there is no extra storage, calling the copy
-constructor will be sufficient. If there are cached values, the clone
-call may need to create space.
-
-Parameter optimization
-~~~~~~~~~~~~~~~~~~~~~~
-
-The ``checkInVariables``, ``checkOutVariables``, and ``resetParameters``
-functions manage the variational parameters. Optimizable variables also
-need to be registered when the XML is processed.
-
-Variational parameter derivatives are computed in the
-``evaluateDerivatives`` function. The first output value is an array
-with parameter derivatives of log of the wavefunction. The second output
-values is an array with parameter derivatives of the Laplacian divided
-by the wavefunction (and not the Laplacian of the log of the
-wavefunction) The kinetic energy term contains a :math:`-1/2m` factor.
-The :math:`1/m` factor is applied in ``TrialWaveFunction.cpp``, but the
-:math:`-1/2` is not and must be accounted for in this function.
-
-.. _helium-wavefunction-example:
-
-Helium Wavefunction Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The code contains an example of a wavefunction component for a Helium atom using STO orbitals and a Pade Jastrow.
-
-to
-The wavefunction is
-
-.. math::
-  :label: eq265
-
-  \psi = \frac{1}{\sqrt{\pi}} \exp(-Z r_1) \exp(-Z r_2) \exp(A / (1 + B r_{12}))
-
-where :math:`Z = 2` is the nuclear charge, :math:`A=1/2` is the
-electron-electron cusp, and :math:`B` is a variational parameter. The
-electron-ion distances are :math:`r_1` and :math:`r_2`, and
-:math:`r_{12}` is the electron-electron distance. The wavefunction is
-the same as the one expressed with built-in components in
-``examples/molecules/He/he_simple_opt.xml``.
-
-The code is in ``src/QMCWaveFunctions/ExampleHeComponent.cpp``. The
-builder is in ``src/QMCWaveFunctions/ExampleHeBuilder.cpp``. The input
-file is in ``examples/molecules/He/he_example_wf.xml``. A unit test
-compares results from the wavefunction evaluation functions for
-consistency in ``src/QMCWaveFunctions/tests/test_example_he.cpp``.
-
-The recommended approach for creating a new wavefunction component is to
-copy the example and the unit test. Implement the evaluation functions
-and ensure the unit test passes.
-
-Linear Algebra
---------------
-
-Like in many methods which solve the Schrödinger equation, linear
-algebra plays a critical role in QMC algorithms and thus is crucial to
-the performance of QMCPACK. There are a few components in QMCPACK use
-BLAS/LAPACK with their own characteristics.
-
-Real space QMC
-~~~~~~~~~~~~~~
-
-Single particle orbitals
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Spline evaluation as commonly used in solid-state simulations does not use any dense linear algebra library calls.
-LCAO evaluation as commonly used in molecular calculations relies on BLAS2 GEMV to compute SPOs from a basis set.
-
-Slater determinants
-^^^^^^^^^^^^^^^^^^^
-
-Slater determinants are calculated on :math:`N \times N` Slater
-matrices. :math:`N` is the number of electrons for a given spin. In the
-actually implementation, operations on the inverse matrix of Slater
-matrix for each walker dominate the computation. To initialize it,
-DGETRF and DGETRI from LAPACK are called. The inverse matrix can be
-stored out of place. During random walking, inverse matrices are updated
-by either Sherman-Morrison rank-1 update or delayed update. Update
-algorithms heavily relies on BLAS. All the BLAS operations require
-S,C,D,Z cases.
-
-Sherman-Morrison rank-1 update uses BLAS2 GEMV and GER on
-:math:`N \times N` matrices.
-
-Delayed rank-K update uses
-
--  BLAS1 SCOPY on :math:`N` array.
-
--  BLAS2 GEMV, GER on :math:`k \times N` and :math:`k \times k`
-   matrices. :math:`k` ranges from 1 to :math:`K` when updates are
-   delayed and accumulated.
-
--  BLAS3 GEMM at the final update.
-
-   -  ’T’, ’N’, K, N, N
-
-   -  ’N’, ’N’, N, K, K
-
-   -  ’N’, ’N’, N, N, K
-
-The optimal K depends on the hardware but it usually ranges from 32 to
-256.
-
-QMCPACK solves systems with a few to thousands of electrons. To make all
-the BLAS/LAPACK operation efficient on accelerators. Batching is needed
-and optimized for :math:`N < 2000`. Non-batched functions needs to be
-optimized for :math:`N > 500`. Note: 2000 and 500 are only rough
-estimates.
-
-Wavefunction optimizer
-^^^^^^^^^^^^^^^^^^^^^^
-
-to be added.
-
-Auxiliary field QMC
-~~~~~~~~~~~~~~~~~~~
-
-The AFQMC implementation in QMCPACK relies heavily on linear algebra operations from BLAS/LAPACK. The performance of the code is netirely dependent on the performance of these libraries. See below for a detailed list of the main routines used from BLAS/LAPACK. Since the AFQMC code can work with both single and double precision builds, all 4 versions of these routines (S,C,D,Z) are generally needed, for this reason we omit the data type label.
-
--  BLAS1: SCAL, COPY, DOT, AXPY
-
--  BLAS2: GEMV, GER
-
--  BLAS3: GEMM
-
--  LAPACK: GETRF, GETRI, GELQF, UNGLQ, ORGLQ, GESVD, HEEVR, HEGVX
-
-While the dimensions of the matrix operations will depend entirely on
-the details of the calculation, typical matrix dimensions range from the
-100s, for small system sizes, to over 20000 for the largest calculations
-attempted so far. For builds with GPU accelerators, we make use of
-batched and strided implementations of these routines. Batched
-implementations of GEMM, GETRF, GETRI, GELQF and UNGLQ are particularly
-important for the performance of the GPU build on small to medium size
-problems. Batched implementations of DOT, AXPY and GEMV would also be
-quite useful, but they are not yet generally available. On GPU builds,
-the code uses batched implementations of these routines when available
-by default.
 
 .. bibliography:: /bibs/developing.bib

@@ -42,33 +42,6 @@ double StringToDouble(const std::string& s);
 std::string UpperCase(const std::string& s);
 std::string LowerCase(const std::string& s);
 
-#ifdef __PGI // PG compiler bug
-inline bool getline(std::istream& is, std::string& s)
-{
-  s = "";
-  char c;
-  while (is.get(c))
-  {
-    if (c == '\n')
-      return true;
-    s += c;
-  }
-  return false;
-}
-inline bool getline(ifstream& is, std::string& s)
-{
-  s = "";
-  char c;
-  while (is.get(c))
-  {
-    if (c == '\n')
-      return true;
-    s += c;
-  }
-  return false;
-}
-#endif
-
 ////////// redefine std::cout to write to a file //////////////
 // #ifndef NO_COUT
 // #define std::cout COUT
@@ -102,14 +75,6 @@ inline double sign(double x) { return (x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0)
 inline int sign(int x) { return (x > 0) ? 1 : ((x < 0) ? -1 : 0); }
 
 inline double nint(const double x) { return int(x + 0.5 * sign(x)); }
-
-inline double min(double x, double y) { return (x <= y) ? x : y; }
-
-inline int min(int x, int y) { return (x <= y) ? x : y; }
-
-inline double max(double x, double y) { return (x >= y) ? x : y; }
-
-inline int max(int x, int y) { return (x >= y) ? x : y; }
 
 inline double sqr(double x) { return (x * x); }
 
@@ -236,7 +201,7 @@ inline void WriteError(std::ostringstream& ss)
   Terminate();
 }
 
-inline void error(char* m)
+inline void error(char const* m)
 {
   std::ostringstream ss;
   ss << m;
@@ -244,7 +209,7 @@ inline void error(char* m)
 }
 
 template<class T>
-inline void error(char* m, const T& n)
+inline void error(char const* m, const T& n)
 {
   std::ostringstream ss;
   ss << m << " " << n;
@@ -252,7 +217,7 @@ inline void error(char* m, const T& n)
 }
 
 template<class T, class U>
-inline void error(char* m, const T& t, const U& u)
+inline void error(char const* m, const T& t, const U& u)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u;
@@ -260,7 +225,7 @@ inline void error(char* m, const T& t, const U& u)
 }
 
 template<class T, class U, class V>
-inline void error(char* m, const T& t, const U& u, const V& v)
+inline void error(char const* m, const T& t, const U& u, const V& v)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v;
@@ -268,7 +233,7 @@ inline void error(char* m, const T& t, const U& u, const V& v)
 }
 
 template<class T, class U, class V, class W>
-inline void error(char* m, const T& t, const U& u, const V& v, const W& w)
+inline void error(char const* m, const T& t, const U& u, const V& v, const W& w)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w;
@@ -276,7 +241,7 @@ inline void error(char* m, const T& t, const U& u, const V& v, const W& w)
 }
 
 template<class T, class U, class V, class W, class X>
-inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x)
+inline void error(char const* m, const T& t, const U& u, const V& v, const W& w, const X& x)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x;
@@ -284,7 +249,7 @@ inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const
 }
 
 template<class T, class U, class V, class W, class X, class Y>
-inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y)
+inline void error(char const* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x << " " << y;
@@ -292,7 +257,7 @@ inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const
 }
 
 template<class T, class U, class V, class W, class X, class Y, class Z>
-inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z)
+inline void error(char const* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x << " " << y << " " << z;

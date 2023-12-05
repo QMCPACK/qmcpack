@@ -21,7 +21,7 @@
 #ifndef QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 #define QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 
-#include "QMCHamiltonians/OperatorBase.h"
+#include "NonLocalData.h"
 
 namespace qmcplusplus
 {
@@ -36,22 +36,10 @@ enum
 
 struct NonLocalTOperator
 {
-  typedef NonLocalData::RealType RealType;
-  typedef NonLocalData::PosType PosType;
+  using RealType = NonLocalData::RealType;
+  using PosType  = NonLocalData::PosType;
 
-  RealType Tau;
-  RealType Alpha;
-  RealType Gamma;
-  RealType plusFactor;
-  RealType minusFactor;
-
-  std::vector<NonLocalData> Txy;
-  std::vector<std::vector<NonLocalData>> Txy_by_elec;
-  size_t Nelec;
-
-  NonLocalTOperator(size_t N);
-
-  inline int size() const { return Txy.size(); }
+  NonLocalTOperator();
 
   /** replacement for put because wouldn't it be cool to know what the classes configuration actually
    *  is.
@@ -63,34 +51,35 @@ struct NonLocalTOperator
   /** initialize the parameters */
   int put(xmlNodePtr cur);
 
-  /** reset Txy for a new set of non-local moves
-   *
-   * Txy[0] is always 1 corresponding to the diagonal(no) move
-   */
-  void reset();
-
   /** select the move for a given probability
    * @param prob value [0,1)
    * @param txy a given Txy collection
    * @return pointer to NonLocalData
    */
-  const NonLocalData* selectMove(RealType prob, std::vector<NonLocalData>& txy) const;
+  const NonLocalData* selectMove(RealType prob, const std::vector<NonLocalData>& txy);
 
-  /** select the move for a given probability using internal Txy
-   * @param prob value [0,1)
-   * @return pointer to NonLocalData
-   */
-  inline const NonLocalData* selectMove(RealType prob) { return selectMove(prob, Txy); }
-
-  /** select the move for a given probability using internal Txy_by_elec
+  /** select the move for a given probability using internal txy_by_elec_
    * @param prob value [0,1)
    * @param iel reference electron
    * @return pointer to NonLocalData
    */
-  inline const NonLocalData* selectMove(RealType prob, int iel) { return selectMove(prob, Txy_by_elec[iel]); }
+  inline const NonLocalData* selectMove(RealType prob, int iel) { return selectMove(prob, txy_by_elec_[iel]); }
 
   /** sort all the Txy elements by electron */
-  void group_by_elec();
+  void groupByElectron(size_t num_elec, const std::vector<NonLocalData>& txy);
+
+private:
+  RealType tau_;
+  RealType alpha_;
+  RealType gamma_;
+  /// factor applied on >0 weight
+  RealType plusFactor;
+  /// factor applied on <=0 weight
+  RealType minusFactor;
+  // for selecting a move
+  std::vector<RealType> txy_scan_;
+  // txy grouped by electron id
+  std::vector<std::vector<NonLocalData>> txy_by_elec_;
 };
 
 } // namespace qmcplusplus

@@ -37,7 +37,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
  * Single determinant wfns are also allowed. 
@@ -63,7 +62,7 @@ class NOMSD : public AFQMCInfo
   using const_pointer_shared = typename Allocator_shared::const_pointer;
 
   using buffer_alloc_type     = DeviceBufferManager::template allocator_t<ComplexType>;
-  using shm_buffer_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>; 
+  using shm_buffer_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
 
   using CVector      = boost::multi::array<ComplexType, 1, Allocator>;
   using CMatrix      = boost::multi::array<ComplexType, 2, Allocator>;
@@ -145,20 +144,20 @@ public:
       nbatch_qr = 0;
 
     ParameterSet m_param;
-    m_param.add(number_of_references, "number_of_references", "int");
-    m_param.add(number_of_references, "nrefs", "int");
-    m_param.add(excited_file, "excited", "std::string");
+    m_param.add(number_of_references, "number_of_references");
+    m_param.add(number_of_references, "nrefs");
+    m_param.add(excited_file, "excited");
     // generalize this to multi-particle excitations, how do I read a list of integers???
-    m_param.add(i_, "i", "int");
-    m_param.add(a_, "a", "int");
-    m_param.add(rediag, "rediag", "std::string");
-    m_param.add(svd_Gf, "svd_with_Gfull", "std::string");
-    m_param.add(svd_Gm, "svd_with_Gmix", "std::string");
-    m_param.add(svd_O, "svd_with_Ovlp", "std::string");
+    m_param.add(i_, "i");
+    m_param.add(a_, "a");
+    m_param.add(rediag, "rediag");
+    m_param.add(svd_Gf, "svd_with_Gfull");
+    m_param.add(svd_Gm, "svd_with_Gmix");
+    m_param.add(svd_O, "svd_with_Ovlp");
     if (TG.TG_local().size() == 1)
-      m_param.add(nbatch, "nbatch", "int");
+      m_param.add(nbatch, "nbatch");
     if (TG.TG_local().size() == 1)
-      m_param.add(nbatch_qr, "nbatch_qr", "int");
+      m_param.add(nbatch_qr, "nbatch_qr");
     m_param.put(cur);
 
     if (omp_get_num_threads() > 1 && (nbatch == 0))
@@ -233,11 +232,6 @@ public:
   template<class Vec>
   void vMF(Vec&& v);
 
-  stdCMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG_, stdCVector const& vMF)
-  {
-    return HamOp.getOneBodyPropagatorMatrix(TG_, vMF);
-  }
-
   SlaterDetOperations* getSlaterDetOperations() { return std::addressof(SDetOp); }
   HamiltonianOperations* getHamiltonianOperations() { return std::addressof(HamOp); }
 
@@ -251,15 +245,15 @@ public:
   {
     if (transposed_G_for_vbias_)
     {
-      assert(G.size(0) == v.size(1));
-      assert(G.size(1) == size_of_G_for_vbias());
+      assert(std::get<0>(G.sizes()) == std::get<1>(v.sizes()));
+      assert(std::get<1>(G.sizes()) == size_of_G_for_vbias());
     }
     else
     {
-      assert(G.size(0) == size_of_G_for_vbias());
-      assert(G.size(1) == v.size(1));
+      assert(std::get<0>(G.sizes()) == size_of_G_for_vbias());
+      assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
     }
-    assert(v.size(0) == HamOp.local_number_of_cholesky_vectors());
+    assert(std::get<0>(v.sizes()) == HamOp.local_number_of_cholesky_vectors());
     if (ci.size() == 1)
     {
       // HamOp expects a compact Gc with alpha/beta components
@@ -273,6 +267,8 @@ public:
         HamOp.vbias(G, std::forward<MatA>(v), a);
       else
       {
+        if(transposed_G_for_vbias_)
+          APP_ABORT(" Error in NOMSD::vbias: transposed_G_for_vbias_ should be false. \n");
         // HamOp expects either alpha or beta, so must be called twice
         HamOp.vbias(G.sliced(0, NMO * NMO), std::forward<MatA>(v), a, 0.0);
         HamOp.vbias(G.sliced(NMO * NMO, 2 * NMO * NMO), std::forward<MatA>(v), a, 1.0);
@@ -289,11 +285,11 @@ public:
   template<class MatX, class MatA>
   void vHS(MatX&& X, MatA&& v, double a = 1.0)
   {
-    assert(X.size(0) == HamOp.local_number_of_cholesky_vectors());
+    assert(std::get<0>(X.sizes()) == HamOp.local_number_of_cholesky_vectors());
     if (transposed_vHS_)
-      assert(X.size(1) == v.size(0));
+      assert(std::get<1>(X.sizes()) == std::get<0>(v.sizes()));
     else
-      assert(X.size(1) == v.size(1));
+      assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
     HamOp.vHS(std::forward<MatX>(X), std::forward<MatA>(v), a);
     TG.local_barrier();
   }
@@ -306,10 +302,8 @@ public:
   void Energy(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticMatrix eloc({nw, 3}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix eloc({nw, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Energy(wset, eloc, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -347,8 +341,7 @@ public:
   void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact = true, bool transpose = false)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact, transpose);
   }
 
@@ -437,8 +430,7 @@ public:
   void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact_G_for_vbias, transposed_G_for_vbias_);
   }
 
@@ -461,8 +453,7 @@ public:
   void Overlap(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Overlap(wset, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -516,8 +507,8 @@ public:
   {
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     int ndet = number_of_references_for_back_propagation();
-    assert(A.size(0) == ndet);
-    if (RefOrbMats.size(0) == 0)
+    assert(A.size() == ndet);
+    if (RefOrbMats.size() == 0)
     {
       TG.Node().barrier(); // for safety
       int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
@@ -547,13 +538,13 @@ public:
       }                    // TG.Node().root()
       TG.Node().barrier(); // for safety
     }
-    assert(RefOrbMats.size(0) == ndet);
-    assert(RefOrbMats.size(1) == A.size(1));
+    assert(std::get<0>(RefOrbMats.sizes()) == ndet);
+    assert(std::get<1>(RefOrbMats.sizes()) == std::get<1>(A.sizes()));
     auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));
     auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));
     using std::copy_n;
     int n0, n1;
-    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(A.size(1)), TG.getNCoresPerTG());
+    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(std::get<1>(A.sizes())), TG.getNCoresPerTG());
     for (int i = 0; i < ndet; i++)
       copy_n(RefOrbMats_[i].origin() + n0, n1 - n0, A_[i].origin() + n0);
     TG.TG_local().barrier();

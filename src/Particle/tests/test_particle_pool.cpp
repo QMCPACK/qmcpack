@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string>
 #include <sstream>
+#include <type_traits>
 
 
 namespace qmcplusplus
@@ -33,16 +34,16 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   ParticleSetPool pp(c);
 
   // See ParticleIO/tests/test_xml_io.cpp for particle parsing
-  const char* particles = " \
-<particleset name=\"ion0\" size=\"1\"> \
-  <group name=\"He\"> \
-    <parameter name=\"charge\">2</parameter> \
-  </group> \
-  <attrib name=\"position\" datatype=\"posArray\"> \
-    0.1 0.2 0.3 \
-  </attrib> \
-</particleset> \
-";
+  const char* particles = R"(
+<particleset name="ion0" size="1">
+  <group name="He">
+    <parameter name="charge">2</parameter>
+  </group>
+  <attrib name="position" datatype="posArray">
+    0.1 0.2 0.3
+  </attrib>
+</particleset>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -57,12 +58,14 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   ParticleSet* not_here = pp.getParticleSet("does_not_exist");
   REQUIRE(not_here == NULL);
 
-  ParticleSet* ws = pp.getWalkerSet("ion0");
+  MCWalkerConfiguration* ws = pp.getWalkerSet("ion0");
   REQUIRE(ws != NULL);
 
-  ParticleSet* ps2 = new ParticleSet();
+  REQUIRE_THROWS_AS(pp.getWalkerSet("does_not_exist"), std::runtime_error);
+
+  auto ps2 = std::make_unique<ParticleSet>(pp.getSimulationCell());
   ps2->setName("particle_set_2");
-  pp.addParticleSet(ps2);
+  pp.addParticleSet(std::move(ps2));
 
   // should do nothing, since no random particlesets were specified
   pp.randomize();
@@ -81,23 +84,23 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
   ParticleSetPool pp(c);
 
   // See ParticleIO/tests/test_xml_io.cpp for particle parsing
-  const char* particles = " \
-<tmp> \
-<particleset name=\"ion0\" size=\"1\"> \
-  <group name=\"He\"> \
-    <parameter name=\"charge\">2</parameter> \
-  </group> \
-  <attrib name=\"position\" datatype=\"posArray\"> \
-    0.1 0.2 0.3 \
-  </attrib> \
-</particleset> \
-<particleset name=\"elec\" random=\"yes\" randomsrc=\"ion0\"> \
-   <group name=\"u\" size=\"4\"> \
-      <parameter name=\"charge\">-1</parameter> \
-   </group> \
-</particleset> \
-</tmp> \
-";
+  const char* particles = R"(
+<tmp>
+<particleset name="ion0" size="1">
+  <group name="He">
+    <parameter name="charge">2</parameter>
+  </group>
+  <attrib name="position" datatype="posArray">
+    0.1 0.2 0.3
+  </attrib>
+</particleset>
+<particleset name="elec" random="yes" randomsrc="ion0" spinor="yes">
+   <group name="u" size="4">
+      <parameter name="charge">-1</parameter>
+   </group>
+</particleset>
+</tmp>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -110,48 +113,20 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
 
   ParticleSet* ions = pp.getParticleSet("ion0");
   REQUIRE(ions != NULL);
+  REQUIRE(!ions->isSpinor());
 
   ParticleSet* elec = pp.getParticleSet("elec");
   REQUIRE(ions != NULL);
+  REQUIRE(elec->isSpinor());
   REQUIRE(elec->R.size() == 4);
   REQUIRE(elec->spins.size() == 4);
+
 
   // should do something
   pp.randomize();
 
   REQUIRE(elec->R[0][0] != 0.0);
-#if !defined(QMC_CUDA)
   REQUIRE(elec->spins[0] != 0.0);
-#endif
-}
-
-TEST_CASE("ParticleSetPool putTileMatrix", "[qmcapp]")
-{
-  Communicate* c;
-  c = OHMMS::Controller;
-
-  ParticleSetPool pp(c);
-
-  const char* tile_matrix = "<tmp tilematrix='1 0 0 1 1 0 2 1 1'/>";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(tile_matrix);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-  pp.putTileMatrix(root);
-
-  REQUIRE(pp.getTileMatrix()[0] == 1);
-  REQUIRE(pp.getTileMatrix()[1] == 0);
-  REQUIRE(pp.getTileMatrix()[2] == 0);
-
-  REQUIRE(pp.getTileMatrix()[3] == 1);
-  REQUIRE(pp.getTileMatrix()[4] == 1);
-  REQUIRE(pp.getTileMatrix()[5] == 0);
-
-  REQUIRE(pp.getTileMatrix()[6] == 2);
-  REQUIRE(pp.getTileMatrix()[7] == 1);
-  REQUIRE(pp.getTileMatrix()[8] == 1);
 }
 
 TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
@@ -161,13 +136,13 @@ TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
 
   ParticleSetPool pp(c);
 
-  const char* lattice = "<parameter name='lattice'> </parameter>";
+  const char* lattice = R"(<parameter name="lattice"> </parameter>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(lattice);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  pp.putLattice(root);
+  pp.readSimulationCellXML(root);
 }
 } // namespace qmcplusplus

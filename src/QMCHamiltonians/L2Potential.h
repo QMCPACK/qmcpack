@@ -24,10 +24,10 @@ namespace qmcplusplus
 {
 struct L2RadialPotential : public QMCTraits
 {
-  typedef OneDimGridBase<RealType> GridType;
-  typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  using GridType            = OneDimGridBase<RealType>;
+  using RadialPotentialType = OneDimCubicSpline<RealType>;
 
-  RadialPotentialType* vL2;
+  std::unique_ptr<RadialPotentialType> vL2;
   RealType rcut;
 
   RealType evaluate(RealType r) { return vL2->splint(r); }
@@ -42,8 +42,8 @@ struct L2RadialPotential : public QMCTraits
 
   L2RadialPotential* makeClone()
   {
-    auto c  = new L2RadialPotential();
-    c->vL2  = vL2->makeClone();
+    auto c = new L2RadialPotential();
+    c->vL2.reset(vL2->makeClone());
     c->rcut = rcut;
     return c;
   }
@@ -63,7 +63,7 @@ struct L2Potential : public OperatorBase
   ///distance table index
   int myTableIndex;
   ///unique set of L2 PP to cleanup
-  std::vector<L2RadialPotential*> PPset;
+  std::vector<std::unique_ptr<L2RadialPotential>> PPset;
   ///PP[iat] is the L2 potential for the iat-th particle
   std::vector<L2RadialPotential*> PP;
   ///Associated trial wavefunction
@@ -71,30 +71,31 @@ struct L2Potential : public OperatorBase
 
   L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
-  ~L2Potential();
+  bool dependsOnWaveFunction() const override { return true; }
+  std::string getClassName() const override { return "L2Potential"; }
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   void evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K);
   void evaluateD(ParticleSet& P, int iel, TensorType& D);
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "L2Potential: " << IonConfig.getName();
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species
    * @param ppot L2 pseudopotential
    */
-  void add(int groupID, L2RadialPotential* ppot);
+  void add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot);
 };
 } // namespace qmcplusplus
 #endif

@@ -25,6 +25,10 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+
     generic = import_nexus_module('generic')
     obj = generic.obj
     del generic
@@ -37,6 +41,10 @@ try:
     del developer
 
     memory = import_nexus_module('memory')
+
+    unit_converter = import_nexus_module('unit_converter')
+    convert = unit_converter.convert
+    del unit_converter
 
     hdfreader = import_nexus_module('hdfreader')
     HDFreader = hdfreader.HDFreader
@@ -60,8 +68,10 @@ try:
     qmcpack_input = import_nexus_module('qmcpack_input')
     QmcpackInput    = qmcpack_input.QmcpackInput
     spindensity_xml = qmcpack_input.spindensity
+    density_xml = qmcpack_input.density  # temporary
     del qmcpack_input
 except:
+    from versions import nexus_version
     from generic import obj
     from developer import DevBase,error,ci,unavailable
     import memory
@@ -71,6 +81,8 @@ except:
     from numerics import simplestats,simstats
     from qmcpack_input import QmcpackInput
     from qmcpack_input import spindensity as spindensity_xml
+    from qmcpack_input import density as density_xml
+    from unit_converter import convert
 #end try
 
 
@@ -172,12 +184,20 @@ def qmcpack_filepath(basepath,tokens,g=None):
 #end def qmcpack_filepath
 
 
-def get_grid(s,dr):
+def get_grid(s,dr=None,delta=None,x_min=None,x_max=None,y_min=None,y_max=None,z_min=None,z_max=None):
     s = s.copy()
     s.change_units('B')
     grid = []
+    if delta is None:
+        cell = s.axes.copy()
+    else:
+        dr = delta
+        cell = np.array([[1,0,0],
+                         [0,1,0],
+                         [0,0,1]])
+    #end if
     n = 0
-    for a in s.axes:
+    for a in cell:
         grid.append(int(np.ceil(np.sqrt(np.dot(a,a))/dr[n])))
         n+=1
     #end for
@@ -268,6 +288,8 @@ class SingleDensity(QDBase):
                  grid      = None,
                  structure = None,
                  extension = None,
+                 density_cell   = None, # This is the cell region where the density was sampled. It can be different from the whole cell structure.
+                 density_corner = None, # This is the reference corner for density_cell.
                  ):
         # initialize class variables
         self.mean      = None
@@ -275,6 +297,8 @@ class SingleDensity(QDBase):
         self.grid      = None
         self.structure = None
         self.extension = ''
+        self.density_cell   = None
+        self.density_corner = None
         # read in data if provided
         if filepath is not None:
             self.read(filepath,format)
@@ -285,6 +309,8 @@ class SingleDensity(QDBase):
         self.check_type('grid'     ,grid     ,'tuple/list/ndarray',(tuple,list,np.ndarray))
         self.check_type('structure',structure,'Structure'         ,Structure)
         self.check_type('extension',extension,'string'            ,str)
+        self.check_type('density_cell'  ,grid     ,'tuple/list/ndarray',(tuple,list,np.ndarray))
+        self.check_type('density_corner',grid     ,'tuple/list/ndarray',(tuple,list,np.ndarray))
         # process other inputs
         if mean is not None:
             self.mean = np.array(mean,dtype=float)
@@ -303,6 +329,25 @@ class SingleDensity(QDBase):
         #end if
         if extension is not None:
             self.extension = extension
+        #end if
+        if density_corner is not None:
+            if len(density_corner)!=3:
+                self._error('inputted density_corner must have length 3, received {0}'.format(density_corner))
+            #end if
+            self.density_corner = np.array(density_corner,dtype=float)
+        else:
+            self.density_corner = np.zeros(3) # If density_corner is not given, use [0, 0, 0] as corner
+        #end if
+        if density_cell is not None:
+            if len(np.array(density_cell).ravel())!=9:
+                self._error('inputted density_cell must have length 9, received {0}'.format(density_cell))
+            #end if
+            self.density_cell = np.array(density_cell,dtype=float)
+        else:
+            # If density_cell is not given, use the structure cell
+            s = self.structure.copy()
+            s.change_units('A')
+            self.density_cell = s.axes
         #end if
         if data is not None:
             self.analyze(data)
@@ -370,6 +415,8 @@ class SingleDensity(QDBase):
         density_err = self.error
         g           = self.grid
         s           = self.structure
+        density_cell   = self.density_cell
+        density_corner = self.density_corner
         # data needs to be laid out in i,j,k order for xsf
         if g is None:
             self._error('grid must be specified (via --grid or --input) for output format xsf')
@@ -396,17 +443,17 @@ class SingleDensity(QDBase):
 
         # mean
         #f.add_density(cell,density,centered=c,add_ghost=g,transpose=t)
-        f.add_density(cell,density,centered=c,add_ghost=g)
+        f.add_density(density_cell,density,corner=density_corner,centered=c,add_ghost=g)
         f.write(prefix+'.xsf')
 
         # mean + errorbar
         #f.add_density(cell,density+density_err,centered=c,add_ghost=g,transpose=t)
-        f.add_density(cell,density+density_err,centered=c,add_ghost=g)
+        f.add_density(density_cell,density+density_err,corner=density_corner,centered=c,add_ghost=g)
         f.write(prefix+'+err.xsf')
 
         # mean - errorbar
         #f.add_density(cell,density-density_err,centered=c,add_ghost=g,transpose=t)
-        f.add_density(cell,density-density_err,centered=c,add_ghost=g)
+        f.add_density(density_cell,density-density_err,corner=density_corner,centered=c,add_ghost=g)
         f.write(prefix+'-err.xsf')
     #end def write_xsf
 
@@ -472,6 +519,8 @@ class StatFile(QDBase):
         else:
             self.file_prefix = filepath.replace('.stat.h5','')
         #end if
+        self.density_data    = None
+        self.density_results = None
         self.spin_density_data    = None
         self.spin_density_results = None
 
@@ -479,6 +528,14 @@ class StatFile(QDBase):
             self.read(filepath)
         #end if
     #end def __init__
+
+    def has_density_data(self):
+        return self.density_data is not None
+    #end def has_data
+
+    def has_density_results(self):
+        return self.density_results is not None
+    #end def has_results
 
     def has_data(self):
         return self.spin_density_data is not None
@@ -501,33 +558,53 @@ class StatFile(QDBase):
         h5 = hdf.obj
         h5._remove_hidden()
         self.spin_density_data = obj()
+        self.density_data = obj()
         for name in h5.keys():
             lname = name.lower()
             if 'spin' in lname and 'density' in lname:
                 self.spin_density_data[name] = h5[name]
+            elif 'density' in lname:
+                self.density_data[name] = h5[name]
             #end if
         #end for
-        if len(self.spin_density_data)==0:
+        self.use_dens = False
+        if len(self.spin_density_data)==0 and len(self.density_data)==0:
             self.error('spin density is not present in stat.h5 file\nfile path: {0}'.format(filepath))
+        elif len(self.density_data)>0:
+            self.use_dens=True
         #end if
         opt = self.options
-        if len(self.spin_density_data)==1 and opt.grids is None and opt.grid is not None:
-            opt.grids = obj()
-            opt.grids[list(self.spin_density_data.keys())[0]] = opt.grid
+        if not self.use_dens:
+            if len(self.spin_density_data)==1 and opt.grids is None and opt.grid is not None:
+                opt.grids = obj()
+                opt.grids[list(self.spin_density_data.keys())[0]] = opt.grid
+            #end if
+        else:
+            if len(self.density_data)==1 and opt.grids is None and opt.grid is not None:
+                opt.grids = obj()
+                opt.grids[list(self.density_data.keys())[0]] = opt.grid
+            #end if
         #end if
     #end def read
 
 
     def write(self,filepath):
         h5 = h5py.File(filepath,'w')
-        for name,spin_density in self.spin_density_data.items():
-            h5_spin_density = h5.create_group(name)
-            for s,spin in spin_density.items():
-                h5_spin = h5_spin_density.create_group(s)
-                h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
-                #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
+        if not self.use_dens:
+            for name,spin_density in self.spin_density_data.items():
+                h5_spin_density = h5.create_group(name)
+                for s,spin in spin_density.items():
+                    h5_spin = h5_spin_density.create_group(s)
+                    h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
+                    #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
+                #end for
             #end for
-        #end for
+        else:
+            for name,density in self.density_data.items():
+                h5_density = h5.create_group(name)
+                h5_v  = h5_density.create_dataset('value'        ,data=density.value        )
+            #end for
+        #end if
         h5.close()
     #end def write
 
@@ -537,33 +614,53 @@ class StatFile(QDBase):
             self.total_weight = 0.0
         #end if
         self.total_weight += weight
-        if self.spin_density_data is None:
-            self.spin_density_data = stat.spin_density_data.copy()
-            for spin_density in self.spin_density_data:
-                for spin in spin_density:
-                    spin.value         *= weight
-                    #spin.value_squared *= weight
+        if not stat.use_dens:
+            if self.spin_density_data is None:
+                self.spin_density_data = stat.spin_density_data.copy()
+                for spin_density in self.spin_density_data:
+                    for spin in spin_density:
+                        spin.value         *= weight
+                        #spin.value_squared *= weight
+                    #end for
                 #end for
-            #end for
+            else:
+                for name,spin_density in self.spin_density_data.items():
+                    sd = stat.spin_density_data[name]
+                    for s,spin in spin_density.items():
+                        spin.value         += weight*sd[s].value
+                        #spin.value_squared += weight*sd[s].value_squared
+                    #end for
+                #end for
+            #end if
         else:
-            for name,spin_density in self.spin_density_data.items():
-                sd = stat.spin_density_data[name]
-                for s,spin in spin_density.items():
-                    spin.value         += weight*sd[s].value
-                    #spin.value_squared += weight*sd[s].value_squared
+            if self.density_data is None:
+                self.density_data = stat.density_data.copy()
+                for density in self.density_data:
+                    density.value *= weight
                 #end for
-            #end for
+            else:
+                for name,density in self.density_data.items():
+                    sd = stat.density_data[name]
+                    density.value += weight*sd.value
+                #end for
+            #end if
         #end if
     #end def accumulate
 
                 
     def normalize(self):
-        for spin_density in self.spin_density_data:
-            for spin in spin_density:
-                spin.value         /= self.total_weight
-                #spin.value_squared /= self.total_weight
+        if not self.use_dens:
+            for spin_density in self.spin_density_data:
+                for spin in spin_density:
+                    spin.value         /= self.total_weight
+                    #spin.value_squared /= self.total_weight
+                #end for
             #end for
-        #end for
+        else:
+            for density in self.density_data:
+                density.value /= self.total_weight
+            #end if
+        #end if
         del self.total_weight
     #end def normalize
 
@@ -572,70 +669,138 @@ class StatFile(QDBase):
         if not self.has_data():
             self.error('cannot analyze results, data is not present')
         #end if
-        self.spin_density_results = obj()
-        opt = self.options
-        for name,spin_density in self.spin_density_data.items():
-            g = None
-            if opt.grids is not None and name in opt.grids:
-                g = opt.grids[name]
-                for data in spin_density:
-                    ncells = g[0]*g[1]*g[2]
-                    data_cells = data.value.shape[-1]
-                    if ncells!=data_cells:
-                        self.error('grid does not match number of data cells\ngrid provided: {0}\nnumber of cells in grid: {1}\nnumber of cells in data: {2}'.format(grid,ncells,data_cells))
-                    #end if
-                    data.value.shape = len(data.value),g[0],g[1],g[2]
+        if not self.use_dens:
+            self.spin_density_results = obj()
+            opt = self.options
+            for name,spin_density in self.spin_density_data.items():
+                g = None
+                if opt.grids is not None and name in opt.grids:
+                    g = opt.grids[name]
+                    for data in spin_density:
+                        ncells = g[0]*g[1]*g[2]
+                        data_cells = data.value.shape[-1]
+                        if ncells!=data_cells:
+                            self.error('grid does not match number of data cells\ngrid provided: {0}\nnumber of cells in grid: {1}\nnumber of cells in data: {2}'.format(grid,ncells,data_cells))
+                        #end if
+                        data.value.shape = len(data.value),g[0],g[1],g[2]
+                    #end for
                 #end for
+                # reblock the data
+                if hasattr(spin_density, 'u'):
+                    u_data = reblock(spin_density.u.value,equilibration,reblock_factor,self.filepath)
+                #end if
+                if hasattr(spin_density, 'd'):
+                    d_data = reblock(spin_density.d.value,equilibration,reblock_factor,self.filepath)
+                #end if
+                # save the reblocked data
+                if hasattr(spin_density, 'u'):
+                    spin_density.u.clear()
+                    spin_density.u.value = u_data
+                #end if
+                if hasattr(spin_density, 'd'):
+                    spin_density.d.clear()
+                    spin_density.d.value = d_data
+                #end if
+                # make the single density means/errors
+                sres = obj()
+                if hasattr(spin_density, 'u'):
+                    sres.u = SingleDensity(
+                        structure = opt.structure,
+                        grid      = g,
+                        data      = u_data,
+                        extension = '_u',
+                        density_cell   = opt.density_cell,
+                        density_corner = opt.density_corner,
+                        )
+                #end if
+                if hasattr(spin_density, 'd'):
+                    sres.d = SingleDensity(
+                        structure = opt.structure,
+                        grid      = g,
+                        data      = d_data,
+                        extension = '_d',
+                        density_cell   = opt.density_cell,
+                        density_corner = opt.density_corner,
+                        )
+                #end if
+                if (hasattr(spin_density, 'u')) and (hasattr(spin_density, 'd')):
+                    sres.tot = SingleDensity(
+                        structure = opt.structure,
+                        grid      = g,
+                        data      = u_data+d_data,
+                        extension = '_u+d',
+                        density_cell   = opt.density_cell,
+                        density_corner = opt.density_corner,
+                        )
+                    sres.pol = SingleDensity(
+                        structure = opt.structure,
+                        grid      = g,
+                        data      = u_data-d_data,
+                        extension = '_u-d',
+                        density_cell   = opt.density_cell,
+                        density_corner = opt.density_corner,
+                        )
+                #end if
+                self.spin_density_results[name] = sres
             #end for
-            # reblock the data
-            u_data = reblock(spin_density.u.value,equilibration,reblock_factor,self.filepath)
-            d_data = reblock(spin_density.d.value,equilibration,reblock_factor,self.filepath)
-            # save the reblocked data
-            spin_density.u.clear()
-            spin_density.u.value = u_data
-            spin_density.d.clear()
-            spin_density.d.value = d_data
-            # make the single density means/errors
-            sres = obj()
-            sres.u = SingleDensity(
-                structure = opt.structure,
-                grid      = g,
-                data      = u_data,
-                extension = '_u',
-                )
-            sres.d = SingleDensity(
-                structure = opt.structure,
-                grid      = g,
-                data      = d_data,
-                extension = '_d',
-                )
-            sres.tot = SingleDensity(
-                structure = opt.structure,
-                grid      = g,
-                data      = u_data+d_data,
-                extension = '_u+d',
-                )
-            sres.pol = SingleDensity(
-                structure = opt.structure,
-                grid      = g,
-                data      = u_data-d_data,
-                extension = '_u-d',
-                )
-            self.spin_density_results[name] = sres
-        #end for
+        else:
+            self.density_results = obj()
+            opt = self.options
+            for name,density in self.density_data.items():
+                g = None
+                if opt.grids is not None and name in opt.grids:
+                    g = opt.grids[name]
+                    for data in density:
+                        ncells = g[0]*g[1]*g[2]
+                        data_cells = data.shape[-1]*data.shape[-2]*data.shape[-3]
+                        if ncells!=data_cells:
+                            self.error('grid does not match number of data cells\ngrid provided: {0}\nnumber of cells in grid: {1}\nnumber of cells in data: {2}'.format(grid,ncells,data_cells))
+                        #end if
+                        data.shape = len(data),g[0],g[1],g[2]
+                    #end for
+                #end for
+                # reblock the data
+                q_data = reblock(density.value,equilibration,reblock_factor,self.filepath)
+                # save the reblocked data
+                density.clear()
+                density.value = q_data
+                # make the single density means/errors
+                sres = obj()
+                sres.q = SingleDensity(
+                    structure = opt.structure,
+                    grid      = g,
+                    data      = q_data,
+                    extension = '_q',
+                    density_cell   = opt.density_cell,
+                    density_corner = opt.density_corner,
+                    )
+                self.density_results[name] = sres
+            #end for
+        #end if
     #end def analyze
         
 
 
     def write_output_files(self,formats):
-        for name,spin_density in self.spin_density_results.items():
-            prefix = '{0}.{1}'.format(self.file_prefix,name)
-            for format in formats:
-                for single_density in spin_density:
-                    single_density.write(prefix,format)
+        if not self.use_dens:
+            for name,spin_density in self.spin_density_results.items():
+                prefix = '{0}.{1}'.format(self.file_prefix,name)
+                for format in formats:
+                    for single_density in spin_density:
+                        single_density.write(prefix,format)
+                    #end for
                 #end for
             #end for
-        #end for
+        else:
+            for name,density in self.density_results.items():
+                prefix = '{0}.{1}'.format(self.file_prefix,name)
+                for format in formats:
+                    for single_density in density:
+                        single_density.write(prefix,format)
+                    #end for
+                #end for
+            #end for
+        #end if
     #end def write_output_files
 
 
@@ -702,7 +867,7 @@ class QMCDensityProcessor(QDBase):
 
     def read_command_line(self):
         usage = '''usage: %prog [options] [file(s)]'''
-        parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
+        parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
         parser.add_option('-h','--help',dest='help',
                           action='store_true',default=False,
                           help='Print help information and exit (default=%default).'
@@ -750,6 +915,14 @@ class QMCDensityProcessor(QDBase):
         parser.add_option('-c','--cell',dest='cell',
                           default='None',
                           help='Simulation cell axes (default=%default).'
+                          )
+        parser.add_option('--density_cell',dest='density_cell',
+                          default='None',
+                          help='Density cell axes (default=%default).'
+                          )
+        parser.add_option('--density_corner',dest='density_corner',
+                          default='None',
+                          help='Density cell corner (default=%default).'
                           )
         parser.add_option('--lineplot',dest='lineplot',
                           default='None',
@@ -891,6 +1064,8 @@ class QMCDensityProcessor(QDBase):
         #   --input option
         structure = None
         cell      = None
+        density_cell = None
+        density_corner = None
         if opt.input is not None:
             if not os.path.exists(opt.input):
                 self.error('qmcpack input file does not exist: {0}'.format(opt.input))
@@ -901,29 +1076,101 @@ class QMCDensityProcessor(QDBase):
             structure = s
             cell = s.axes.copy()
             qi.pluralize()
-            est = qi.get('estimators')
-            if est is not None and len(est)==1 and 'LocalEnergy' in est:
-                ham = qi.get('hamiltonian')
+            # collect every bunch of estimators strewn throughout the input file
+            est_sources = []
+            ham = qi.get('hamiltonian')
+            if ham is not None:
                 if 'estimators' in ham:
-                    est = ham.estimators
-                elif len(ham)==1:
-                    est = ham.first().get('estimators')
+                    est_sources.append(ham.estimators)
+                elif len(ham)>0:
+                    ham = ham.first() # hamiltonian collection
+                    if 'estimators' in ham:
+                        est_sources.append(ham.estimators)
+                    #end if
                 #end if
             #end if
-            if est is not None:
-                opt.grids = obj()
+            if 'estimators' in qi.simulation:
+                ests = qi.simulation.estimators.estimators
+                est_sources.append(ests)
+            #end if
+            qsys = qi.get('qmcsystem')
+            if qsys is not None and 'estimators' in qsys:
+                ests = qsys.estimators.estimators
+                est_sources.append(ests)            
+            #end if
+            calcs = qi.get('calculations')
+            if calcs is not None:
+                for series in sorted(calcs.keys()):
+                    qmc = calcs[series]
+                    if 'estimators' in qmc:
+                        est_sources.append(qmc.estimators)
+                    #end if
+                #end for
+            #end if
+            # collect input information from the first spin density instance with a particular name
+            #   assume all other instances that share this name have identical inputs
+            grids = obj()
+            for est in est_sources:
                 for name,xml in est.items():
-                    if isinstance(xml,spindensity_xml):
+                    # the if statement below is a nasty hack to temporarily support 
+                    # the name mismatch between the input file and stat.h5 currently 
+                    # enforced by the (new) batched spin denisity class in qmcpack
+                    if isinstance(xml,density_xml):
+                        name = 'Density' # override all user input, just like qmcpack
+                    #end if
+                    if name not in grids and isinstance(xml,spindensity_xml):
                         sd = xml
                         if 'grid' in sd:
-                            opt.grids[name] = sd.grid
+                            grids[name] = sd.grid
                         elif 'dr' in sd:
-                            opt.grids[name] = get_grid(s,sd.dr)
+                            grids[name] = get_grid(s,sd.dr)
+                        else:
+                            self.error('could not identify grid data for spin density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
+                        #end if
+                        if 'cell' in sd:
+                            density_cell = sd.cell.copy()
+                            density_cell = convert(density_cell, 'B', 'A')
+                        #end if
+                        if 'corner' in sd:
+                            density_corner = sd.corner.copy()
+                            density_corner = convert(density_corner, 'B', 'A')
+                        #end if
+                    elif name not in grids and isinstance(xml,density_xml):
+                        sd = xml
+                        if 'grid' in sd:
+                            grids[name] = sd.grid
+                        elif 'delta' in sd:
+                            if len(cell)==0:
+                                if 'x_min' not in sd or 'x_max' not in sd or 'y_min' not in sd or 'y_max' not in sd or 'z_min' not in sd or 'z_max' not in sd:
+                                    self.error('could not identify cell data for density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
+                                else:
+                                    grids[name] = get_grid(s,
+                                                           delta=sd.delta,
+                                                           x_min=sd.x_min,
+                                                           x_max=sd.x_max,
+                                                           y_min=sd.y_min,
+                                                           y_max=sd.y_max,
+                                                           z_min=sd.z_min,
+                                                           z_max=sd.z_max,
+                                            )
+                                #end if
+                                cell = np.array([[sd.x_max,0.,0.],
+                                                 [0.,sd.y_max,0.],
+                                                 [0.,0.,sd.z_max]])
+                                s.axes = cell
+                            else:
+                                grids[name] = get_grid(s,delta=sd.delta)
+                            #end if
                         else:
                             self.error('could not identify grid data for spin density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
                         #end if
                     #end if
                 #end for
+            #end for
+            if len(grids)>0:
+                opt.grids = grids
+            else:
+                self.error('Could not find any spin density estimators in the input file provided.\nInput file provided: {}'.format(opt.input))
             #end if
         #end if
 
@@ -952,6 +1199,39 @@ class QMCDensityProcessor(QDBase):
             opt.cell = cell
         else:
             opt.cell = cell
+        #end if
+
+        #   --density_cell option
+        if opt.density_cell is not None:
+            density_cell = input_list(opt.density_cell)
+            try:
+                density_cell = np.array(density_cell,dtype=float)
+            except:
+                self.error('--density_cell input misformatted\nexpected a list of real values\nreceived: {0}'.format(density_cell))
+            #end try
+            if len(np.array(density_cell).ravel())!=9:
+                self.error('--density_cell input misformatted\nexpected 9 elements for 3x3 matrix\nreceived {0} elements with values: {1}'.format(len(density_cell),density_cell))
+            #end if
+            density_cell.shape = 3,3
+            opt.density_cell = density_cell
+        else:
+            opt.density_cell = density_cell
+        #end if
+
+        #   --density_corner option
+        if opt.density_corner is not None:
+            density_corner = input_list(opt.density_corner)
+            try:
+                density_corner = np.array(density_corner,dtype=int)
+            except:
+                self.error('--density_corner input misformatted\nexpected a list of integers\nreceived: {0}'.format(density_corner))
+            #end try
+            if len(density_corner)!=3:
+                self.error('--density_corner input misformatted\nexpected 3 elements\nreceived {0} elements with values: {1}'.format(len(density_corner),density_corner))
+            #end if
+            opt.density_corner = density_corner
+        else:
+            opt.density_corner = density_corner
         #end if
 
         #   --grid option
@@ -1098,15 +1378,20 @@ class QMCDensityProcessor(QDBase):
                         avg_filepath = qmcpack_filepath(basepath,sref_tokens,g='avg')
                         stat_avg = StatFile()
                         n=0
+                        use_dens=False
                         for group in sorted(sfiles.keys()):
                             self.vlog('      accumulating file with weight {0} {1}'.format(weights[n],sfiles[group]))
                             w = weights[n]
                             stat_tmp = StatFile(sfiles[group])
+                            if stat_tmp.use_dens:
+                                use_dens = True
+                            #end if
                             stat_avg.accumulate(stat_tmp,w)
                             del stat_tmp
                             gc.collect()
                             n+=1
                         #end for
+                        stat_avg.use_dens = use_dens
                         stat_avg.normalize()
                         self.vlog('    writing averaged file: {0}'.format(avg_filepath))
                         stat_avg.write(avg_filepath)

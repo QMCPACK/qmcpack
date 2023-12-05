@@ -76,7 +76,7 @@ void LPQHIBasis::set_rc(mRealType rc)
 //}
 
 
-LPQHIBasis::mRealType LPQHIBasis::hintr2(int n)
+LPQHIBasis::mRealType LPQHIBasis::hintr2(int n) const
 {
   int j                 = n / 3;
   int alpha             = n - 3 * j;
@@ -136,7 +136,7 @@ LPQHIBasis::mRealType LPQHIBasis::hintr2(int n)
 }
 
 
-LPQHIBasis::mRealType LPQHIBasis::c(int m, mRealType k)
+LPQHIBasis::mRealType LPQHIBasis::c(int m, mRealType k) const
 {
   int i         = m / 3;
   int alpha     = m - 3 * i;
@@ -168,7 +168,7 @@ LPQHIBasis::mRealType LPQHIBasis::c(int m, mRealType k)
 }
 
 
-inline std::complex<LPQHIBasis::mRealType> LPQHIBasis::Eplus(int i, mRealType k, int n)
+inline std::complex<LPQHIBasis::mRealType> LPQHIBasis::Eplus(int i, mRealType k, int n) const
 {
   std::complex<mRealType> eye(0.0, 1.0);
   if (n == 0)
@@ -188,7 +188,7 @@ inline std::complex<LPQHIBasis::mRealType> LPQHIBasis::Eplus(int i, mRealType k,
 }
 
 
-inline std::complex<LPQHIBasis::mRealType> LPQHIBasis::Eminus(int i, mRealType k, int n)
+inline std::complex<LPQHIBasis::mRealType> LPQHIBasis::Eminus(int i, mRealType k, int n) const
 {
   std::complex<mRealType> eye(0.0, 1.0);
   if (n == 0)
@@ -208,7 +208,7 @@ inline std::complex<LPQHIBasis::mRealType> LPQHIBasis::Eminus(int i, mRealType k
 }
 
 
-inline LPQHIBasis::mRealType LPQHIBasis::Dplus(int i, mRealType k, int n)
+inline LPQHIBasis::mRealType LPQHIBasis::Dplus(int i, mRealType k, int n) const
 {
   std::complex<mRealType> Z1 = Eplus(i, k, n + 1);
   std::complex<mRealType> Z2 = Eplus(i, k, n);
@@ -216,7 +216,7 @@ inline LPQHIBasis::mRealType LPQHIBasis::Dplus(int i, mRealType k, int n)
 }
 
 
-inline LPQHIBasis::mRealType LPQHIBasis::Dminus(int i, mRealType k, int n)
+inline LPQHIBasis::mRealType LPQHIBasis::Dminus(int i, mRealType k, int n) const
 {
   std::complex<mRealType> Z1 = Eminus(i, k, n + 1);
   std::complex<mRealType> Z2 = Eminus(i, k, n);

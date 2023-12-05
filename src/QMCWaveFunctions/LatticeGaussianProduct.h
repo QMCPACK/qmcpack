@@ -18,13 +18,13 @@
 #ifndef QMCPLUSPLUS_LATTICE_GAUSSIAN_PRODUCT
 #define QMCPLUSPLUS_LATTICE_GAUSSIAN_PRODUCT
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
 /** A composite Orbital
  */
-struct LatticeGaussianProduct : public WaveFunctionComponent
+class LatticeGaussianProduct : public WaveFunctionComponent
 {
 private:
   ParticleAttrib<RealType> U, d2U;
@@ -44,46 +44,39 @@ public:
 
   LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls);
 
-  ~LatticeGaussianProduct();
+  ~LatticeGaussianProduct() override;
 
-  /** check out optimizable variables
-   */
-  void checkOutVariables(const opt_variables_type& o);
+  std::string getClassName() const override { return "LatticeGaussianProduct"; }
 
-  /** check in an optimizable parameter
-   * @param o a super set of optimizable variables
-   */
-  void checkInVariables(opt_variables_type& o);
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os);
+  PsiValue ratio(ParticleSet& P, int iat) override;
 
-  /** reset the parameters during optimizations
-   */
-  void resetParameters(const opt_variables_type& active);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  void restore(int iat) override;
 
-  PsiValueType ratio(ParticleSet& P, int iat);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch) override;
 
-  void restore(int iat);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  GradType evalGrad(ParticleSet& P, int iat) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  GradType evalGrad(ParticleSet& P, int iat);
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
+  {}
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-
-
-  WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
-
-  void evaluateLogAndStore(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
+  void evaluateLogAndStore(const ParticleSet& P, ParticleSet::ParticleGradient& dG, ParticleSet::ParticleLaplacian& dL);
 };
 } // namespace qmcplusplus
 #endif

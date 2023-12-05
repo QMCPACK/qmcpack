@@ -36,8 +36,8 @@ __global__ void kernel_KaKjw_to_KKwaj(int nwalk,
                                       T const* A,
                                       T2* B)
 {
-  int Ka = blockIdx.x;
-  int Kj = blockIdx.y;
+  int Ka  = blockIdx.x;
+  int Kj  = blockIdx.y;
   int pol = blockIdx.z;
   if (Ka >= nkpts || Kj >= nkpts || pol >= npol)
     return;
@@ -74,8 +74,8 @@ __global__ void kernel_KaKjw_to_KKwaj(int nwalk,
                                       thrust::complex<T> const* A,
                                       thrust::complex<T2>* B)
 {
-  int Ka = blockIdx.x;
-  int Kj = blockIdx.y;
+  int Ka  = blockIdx.x;
+  int Kj  = blockIdx.y;
   int pol = blockIdx.z;
   if (Ka >= nkpts || Kj >= nkpts || pol >= npol)
     return;
@@ -100,8 +100,8 @@ __global__ void kernel_KaKjw_to_KKwaj(int nwalk,
 
 
 void KaKjw_to_KKwaj(int nwalk,
-                    int nkpts, 
-                    int npol, 
+                    int nkpts,
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -124,7 +124,7 @@ void KaKjw_to_KKwaj(int nwalk,
 
 void KaKjw_to_KKwaj(int nwalk,
                     int nkpts,
-                    int npol, 
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -147,7 +147,7 @@ void KaKjw_to_KKwaj(int nwalk,
 
 void KaKjw_to_KKwaj(int nwalk,
                     int nkpts,
-                    int npol, 
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -170,7 +170,7 @@ void KaKjw_to_KKwaj(int nwalk,
 
 void KaKjw_to_KKwaj(int nwalk,
                     int nkpts,
-                    int npol, 
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -194,7 +194,7 @@ void KaKjw_to_KKwaj(int nwalk,
 
 void KaKjw_to_KKwaj(int nwalk,
                     int nkpts,
-                    int npol, 
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -218,7 +218,7 @@ void KaKjw_to_KKwaj(int nwalk,
 
 void KaKjw_to_KKwaj(int nwalk,
                     int nkpts,
-                    int npol, 
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,

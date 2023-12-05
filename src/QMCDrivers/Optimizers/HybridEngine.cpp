@@ -42,14 +42,13 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
     {
       std::string children_MinMethod;
       ParameterSet m_param;
-      m_param.add(children_MinMethod, "MinMethod", "string");
+      m_param.add(children_MinMethod, "MinMethod");
       m_param.put(cur);
 
       if (children_MinMethod.empty())
         throw std::runtime_error("MinMethod must be given!\n");
-      XMLAttrString updates_string(cur, "num_updates");
-      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string
-                << std::endl;
+      std::string updates_string(getXMLAttributeValue(cur, "num_updates"));
+      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string << '\n';
       auto iter = OptimizerNames.find(children_MinMethod);
       if (iter == OptimizerNames.end())
         throw std::runtime_error("Unknown MinMethod!\n");
@@ -69,8 +68,6 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 //Retrieves the appropriate XML input for the current optimization method
 xmlNodePtr HybridEngine::getSelectedXML()
 {
-  step_num_++;
-
   return saved_xml_opt_methods_[identifyMethodIndex()];
 }
 

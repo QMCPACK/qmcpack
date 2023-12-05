@@ -36,12 +36,4 @@ void LinFitSVD(Array<double, 1>& y,
                Array<double, 1>& error, // outputs
                double tolerance);
 
-double LinFitSVD(Array<double, 1>& y,
-                 Array<double, 1>& sigma, // inputs
-                 Array<double, 2>& F,
-                 Array<bool, 1>& adjust, // inputs
-                 Array<double, 1>& a,
-                 Array<double, 1>& error, // outputs
-                 double tolerance);
-
 #endif

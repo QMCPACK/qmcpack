@@ -14,14 +14,18 @@
 
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANTIMESRN_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANTIMESRN_H
-#include "Numerics/OptimizableFunctorBase.h"
+
+// this reference to OptimizableFunctorBase.h in QMCWaveFunctions is ugly
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 
+namespace qmcplusplus
+{
 template<class T>
 struct GaussianTimesRN : public OptimizableFunctorBase
 {
-  typedef T value_type;
+  using value_type = T;
   real_type Y, dY, d2Y;
 
   struct BasicGaussian
@@ -62,31 +66,31 @@ struct GaussianTimesRN : public OptimizableFunctorBase
     inline real_type f(real_type r, real_type rr)
     {
       if (Power == 0)
-        return Coeff * exp(MinusSigma * rr);
+        return Coeff * std::exp(MinusSigma * rr);
       else if (Power == 1)
-        return r * Coeff * exp(MinusSigma * rr);
+        return r * Coeff * std::exp(MinusSigma * rr);
       else
-        return std::pow(r, Power) * Coeff * exp(MinusSigma * rr);
+        return std::pow(r, Power) * Coeff * std::exp(MinusSigma * rr);
     }
 
     inline real_type df(real_type r, real_type rr)
     {
       if (Power == 0)
-        return CoeffP * r * exp(MinusSigma * rr);
+        return CoeffP * r * std::exp(MinusSigma * rr);
       else if (Power == 1)
-        return (Coeff + CoeffP * r) * exp(MinusSigma * rr);
+        return (Coeff + CoeffP * r) * std::exp(MinusSigma * rr);
       else
       {
-        return std::pow(r, Power - 1) * (PowerC + CoeffP * rr) * exp(MinusSigma * rr);
+        return std::pow(r, Power - 1) * (PowerC + CoeffP * rr) * std::exp(MinusSigma * rr);
       }
     }
 
     inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u)
     {
-      T v = exp(MinusSigma * rr);
+      T v = std::exp(MinusSigma * rr);
       if (Power == 0)
       {
-        du  += CoeffP * r * v;
+        du += CoeffP * r * v;
         d2u += (CoeffP + CoeffPP * rr) * v;
         return Coeff * v;
       }
@@ -112,15 +116,15 @@ struct GaussianTimesRN : public OptimizableFunctorBase
       : basePower(0), nodeName(node_name), expName(exp_name), coeffName(c_name), powerName(p_name)
   {}
 
-  ~GaussianTimesRN() {}
+  ~GaussianTimesRN() override {}
 
-  OptimizableFunctorBase* makeClone() const { return new GaussianTimesRN<T>(*this); }
+  OptimizableFunctorBase* makeClone() const override { return new GaussianTimesRN<T>(*this); }
 
-  void reset();
+  void reset() override;
 
-  void checkInVariables(opt_variables_type& active) {}
-  void checkOutVariables(const opt_variables_type& active) {}
-  void resetParameters(const opt_variables_type& active)
+  void checkInVariablesExclusive(opt_variables_type& active) override {}
+  void checkOutVariables(const opt_variables_type& active) override {}
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     ///DO NOTHING FOR NOW
   }
@@ -129,7 +133,7 @@ struct GaussianTimesRN : public OptimizableFunctorBase
    */
   inline int size() const { return gset.size(); }
 
-  inline real_type f(real_type r)
+  inline real_type f(real_type r) override
   {
     real_type res = 0;
     real_type r2  = r * r;
@@ -143,7 +147,7 @@ struct GaussianTimesRN : public OptimizableFunctorBase
     return res;
   }
 
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) override
   {
     real_type res = 0;
     real_type r2  = r * r;
@@ -184,9 +188,7 @@ struct GaussianTimesRN : public OptimizableFunctorBase
     }
   }
 
-  bool put(xmlNodePtr cur);
-
-  void addOptimizables(VarRegistry<real_type>& vlist) {}
+  bool put(xmlNodePtr cur) override;
 
   /** process cur xmlnode
    * @param cur root node
@@ -235,8 +237,9 @@ void GaussianTimesRN<T>::reset()
 template<class T>
 bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff)
 {
-  const XMLAttrString t(cur, "basePower");
-  if (!t.empty()) basePower = std::stoi(t);
+  const std::string t(getXMLAttributeValue(cur, "basePower"));
+  if (!t.empty())
+    basePower = std::stoi(t);
   basePower += baseOff;
   cur = cur->children;
   while (cur != NULL)
@@ -252,4 +255,5 @@ bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff)
   return true;
 }
 
+} // namespace qmcplusplus
 #endif

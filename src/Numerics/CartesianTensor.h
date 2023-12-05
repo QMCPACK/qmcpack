@@ -45,11 +45,11 @@ template<class T,
 class CartesianTensor
 {
 public:
-  typedef T value_type;
-  typedef Point_t pos_type;
-  typedef Tensor_t hess_type;
-  typedef GGG_t ggg_type;
-  typedef CartesianTensor<T, Point_t, Tensor_t> This_t;
+  using value_type = T;
+  using pos_type   = Point_t;
+  using hess_type  = Tensor_t;
+  using ggg_type   = GGG_t;
+  using This_t     = CartesianTensor<T, Point_t, Tensor_t>;
 
   /** constructor
    * @param l_max maximum angular momentum

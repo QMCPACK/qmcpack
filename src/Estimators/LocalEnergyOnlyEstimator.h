@@ -29,7 +29,12 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
     scalars_saved.resize(2);
   }
 
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt)
+  std::string getName() const override { return "LocalEnergyOnlyEstimator"; }
+  
+  inline void accumulate(const MCWalkerConfiguration& W,
+                         WalkerIterator first,
+                         WalkerIterator last,
+                         RealType wgt) override
   {
     for (; first != last; ++first)
     {
@@ -38,20 +43,21 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
     }
   }
 
-  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
-    for (MCPWalker& walker: walkers)
+    for (MCPWalker& walker : walkers)
     {
-      scalars[0](walker.Properties(WP::LOCALENERGY), wgt);
-      scalars[1](walker.Properties(WP::LOCALPOTENTIAL), wgt);
+      scalars[0](walker.Properties(WP::LOCALENERGY), 1.0);
+      scalars[1](walker.Properties(WP::LOCALPOTENTIAL), 1.0);
     }
   }
 
-  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override {}
+
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    * @param record storage of scalar records (name,value)
    */
-  inline void add2Record(RecordListType& record)
+  inline void add2Record(RecordListType& record) override
   {
     FirstIndex = record.add("LocalEnergy");
     int s1     = record.add("LocalPotential");
@@ -60,7 +66,11 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
     //LastIndex = FirstIndex+3;
     clear();
   }
-  ScalarEstimatorBase* clone() { return new LocalEnergyOnlyEstimator(); }
+
+  LocalEnergyOnlyEstimator* clone() override { return new LocalEnergyOnlyEstimator(); }
+
+  const std::string type_str = "LocalEnergyOnlyEstimatorNotSupportedInBatchedVersion";
+  const std::string& getSubTypeStr() const override { return type_str; }
 };
 } // namespace qmcplusplus
 #endif

@@ -61,7 +61,7 @@ def plot_convergence(filename):
         plt.errorbar(tau_bps, energies, yerr=errs, fmt='o')
         plt.xlabel(r'$\tau_{BP}$')
         plt.ylabel(r'$E_{1B}$ (Ha)')
-        plt.savefig('h1e_conv.pdf', fmt='pdf', bbox_inches='tight')
+        plt.savefig('h1e_conv.pdf', bbox_inches='tight')
 
 if __name__ == '__main__':
     plot_convergence('qmc.s000.stat.h5')

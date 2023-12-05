@@ -71,15 +71,15 @@ inline void write_distributed_MA(MultiArray& A,
       std::vector<size_t> ndim(4 * nnodes_per_TG);
       ndim[0] = offset[0];
       ndim[1] = offset[1];
-      ndim[2] = A.size(0);
-      ndim[3] = A.size(1);
+      ndim[2] = std::get<0>(A.sizes());
+      ndim[3] = std::get<1>(A.sizes());
       TG.TG_Cores().all_reduce_in_place_n(ndim.begin(), ndim.size(), std::plus<>());
 
       // write local piece
       {
         using Mat_ref = boost::multi::array_ref<value_type, 2>;
         Mat_ref A_(to_address(A.origin()), A.extensions());
-        hyperslab_proxy<Mat_ref, 2> slab(A_, gdim, std::array<size_t, 2>{size_t(A.size(0)), size_t(A.size(1))}, offset);
+        hyperslab_proxy<Mat_ref, 2> slab(A_, gdim, std::array<size_t, 2>{size_t(std::get<0>(A.sizes())), size_t(std::get<1>(A.sizes()))}, offset);
         dump.write(slab, name);
       }
 
@@ -87,7 +87,7 @@ inline void write_distributed_MA(MultiArray& A,
       for (size_t i = 1; i < nnodes_per_TG; i++, it += 4)
       {
         using Mat = boost::multi::array<value_type, 2>;
-        Mat T({*(it + 2), *(it + 3)});
+        Mat T({static_cast<typename Mat::size_type>(*(it + 2)), static_cast<typename Mat::size_type>(*(it + 3))});
         TG.TG_Cores().receive_n(T.origin(), T.num_elements(), i, i);
         hyperslab_proxy<Mat, 2> slab(T, gdim, std::array<size_t, 2>{*(it + 2), *(it + 3)},
                                      std::array<size_t, 2>{*(it), *(it + 1)});
@@ -101,8 +101,8 @@ inline void write_distributed_MA(MultiArray& A,
       // all tasks on the TG have a section of the matrix
       ndim[4 * TG.TG_Cores().rank()]     = offset[0];
       ndim[4 * TG.TG_Cores().rank() + 1] = offset[1];
-      ndim[4 * TG.TG_Cores().rank() + 2] = A.size(0);
-      ndim[4 * TG.TG_Cores().rank() + 3] = A.size(1);
+      ndim[4 * TG.TG_Cores().rank() + 2] = std::get<0>(A.sizes());
+      ndim[4 * TG.TG_Cores().rank() + 3] = std::get<1>(A.sizes());
       TG.TG_Cores().all_reduce_in_place_n(ndim.begin(), ndim.size(), std::plus<>());
       TG.TG_Cores().send_n(to_address(A.origin()), A.num_elements(), 0, TG.TG_Cores().rank());
     }

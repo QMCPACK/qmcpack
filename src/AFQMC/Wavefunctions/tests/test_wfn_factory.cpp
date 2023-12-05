@@ -16,7 +16,7 @@
 #include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
@@ -65,12 +65,7 @@ void wfn_fac(boost::mpi3::communicator& world)
 {
   using pointer = device_ptr<ComplexType>;
 
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("wfn_fac", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -91,13 +86,13 @@ void wfn_fac(boost::mpi3::communicator& world)
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-<parameter name=\"filetype\">hdf5</parameter> \
-<parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-</Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
@@ -110,22 +105,22 @@ void wfn_fac(boost::mpi3::communicator& world)
     //auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,1);
     auto TG   = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
-    const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">closed</parameter>  \
-</WalkerSet> \
-";
-    const char* wlk_xml_block_coll   = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">collinear</parameter>  \
-</WalkerSet> \
-";
-    const char* wlk_xml_block_noncol = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">noncollinear</parameter>  \
-</WalkerSet> \
-";
+    const char* wlk_xml_block_closed = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">closed</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_coll   = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_noncol = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">noncollinear</parameter>
+      </WalkerSet>
+    )";
 
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
@@ -134,15 +129,17 @@ void wfn_fac(boost::mpi3::communicator& world)
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
-    std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">" +
-        UTEST_WFN + "</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-      <parameter name=\"restart_file\">" +
-        restart_file + "</parameter> \
-  </Wavefunction> \
-";
+    app_log() << " wfn_fac destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
+    std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">)" +
+        UTEST_WFN + R"(</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+      <parameter name="restart_file">)" +
+        restart_file + R"(</parameter>
+    </Wavefunction>
+    )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -155,11 +152,11 @@ void wfn_fac(boost::mpi3::communicator& world)
     //for(int nw=1; nw<2; nw*=2)
     {
       //nwalk=nw;
-      WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+      WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
       auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-      REQUIRE(initial_guess.size(0) == 2);
-      REQUIRE(initial_guess.size(1) == NPOL*NMO);
-      REQUIRE(initial_guess.size(2) == NAEA);
+      REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+      REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
+      REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
         wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
@@ -168,8 +165,8 @@ void wfn_fac(boost::mpi3::communicator& world)
 
       wfn.Overlap(wset);
       //for(auto it = wset.begin(); it!=wset.end(); ++it) {
-      //REQUIRE(real(*it->overlap()) == Approx(1.0));
-      //REQUIRE(imag(*it->overlap()) == Approx(0.0));
+      //CHECK(real(*it->overlap()) == Approx(1.0));
+      //CHECK(imag(*it->overlap()) == Approx(0.0));
       //}
 
       using CMatrix = ComplexMatrix<Allocator>;
@@ -184,9 +181,9 @@ void wfn_fac(boost::mpi3::communicator& world)
       {
         for (auto it = wset.begin(); it != wset.end(); ++it)
         {
-          REQUIRE(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-          REQUIRE(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-          REQUIRE(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+          CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
+          CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
+          CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
         }
       }
       else
@@ -216,17 +213,17 @@ void wfn_fac(boost::mpi3::communicator& world)
         for (int n = 0; n < nwalk; n++)
         {
           Xsum = 0;
-          for (int i = 0; i < X.size(0); i++)
+          for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
-          REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-          REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+          CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+          CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
         }
       }
       else
       {
         Xsum              = 0;
         ComplexType Xsum2 = 0;
-        for (int i = 0; i < X.size(0); i++)
+        for (int i = 0; i < X.size(); i++)
         {
           Xsum += X[i][0];
           Xsum2 += ComplexType(0.5) * X[i][0] * X[i][0];
@@ -250,16 +247,16 @@ void wfn_fac(boost::mpi3::communicator& world)
           Vsum = 0;
           if (wfn.transposed_vHS())
           {
-            for (int i = 0; i < vHS.size(1); i++)
+            for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
               Vsum += vHS[n][i];
           }
           else
           {
-            for (int i = 0; i < vHS.size(0); i++)
+            for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
-          REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-          REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+          CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+          CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
         }
       }
       else
@@ -267,12 +264,12 @@ void wfn_fac(boost::mpi3::communicator& world)
         Vsum = 0;
         if (wfn.transposed_vHS())
         {
-          for (int i = 0; i < vHS.size(1); i++)
+          for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
             Vsum += vHS[0][i];
         }
         else
         {
-          for (int i = 0; i < vHS.size(0); i++)
+          for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
             Vsum += vHS[i][0];
         }
         app_log() << " Vsum: " << setprecision(12) << Vsum << " Time: " << t1 << std::endl;
@@ -280,12 +277,12 @@ void wfn_fac(boost::mpi3::communicator& world)
       return;
 
       // Restarting Wavefunction from file
-      const char* wfn_xml_block_restart = "<Wavefunction name=\"wfn1\" info=\"info0\"> \
-      <parameter name=\"filetype\">hdf5</parameter> \
-      <parameter name=\"filename\">./dummy.h5</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+      const char* wfn_xml_block_restart = R"(<Wavefunction name="wfn1" info="info0">
+        <parameter name="filetype">hdf5</parameter>
+        <parameter name="filename">./dummy.h5</parameter>
+        <parameter name="cutoff">1e-6</parameter>
+      </Wavefunction>
+      )";
       Libxml2Document doc4;
       okay = doc4.parseFromString(wfn_xml_block_restart);
       REQUIRE(okay);
@@ -293,11 +290,11 @@ void wfn_fac(boost::mpi3::communicator& world)
       WfnFac.push(wfn_name, doc4.getRoot());
       Wavefunction& wfn2 = WfnFac.getWavefunction(TG, TG, wfn_name, type, nullptr, 1e-6, nwalk);
 
-      WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+      WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], rng);
       //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-      REQUIRE(initial_guess.size(0) == 2);
-      REQUIRE(initial_guess.size(1) == NPOL*NMO);
-      REQUIRE(initial_guess.size(2) == NAEA);
+      REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+      REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
+      REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
         wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
@@ -307,8 +304,8 @@ void wfn_fac(boost::mpi3::communicator& world)
       wfn2.Overlap(wset2);
       for (auto it = wset2.begin(); it != wset2.end(); ++it)
       {
-        REQUIRE(real(*it->overlap()) == Approx(1.0));
-        REQUIRE(imag(*it->overlap()) == Approx(0.0));
+        CHECK(real(*it->overlap()) == Approx(1.0));
+        CHECK(imag(*it->overlap()) == Approx(0.0));
       }
 
       wfn2.Energy(wset2);
@@ -316,9 +313,9 @@ void wfn_fac(boost::mpi3::communicator& world)
       {
         for (auto it = wset2.begin(); it != wset2.end(); ++it)
         {
-          REQUIRE(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-          REQUIRE(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-          REQUIRE(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+          CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
+          CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
+          CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
         }
       }
       else
@@ -338,17 +335,17 @@ void wfn_fac(boost::mpi3::communicator& world)
         for (int n = 0; n < nwalk; n++)
         {
           Xsum = 0;
-          for (int i = 0; i < X.size(0); i++)
+          for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
-          REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-          REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+          CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+          CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
         }
       }
       else
       {
         Xsum = 0;
         ComplexType Xsum2(0.0);
-        for (int i = 0; i < X.size(0); i++)
+        for (int i = 0; i < X.size(); i++)
         {
           Xsum += X[i][0];
           Xsum2 += ComplexType(0.5) * X[i][0] * X[i][0];
@@ -367,16 +364,16 @@ void wfn_fac(boost::mpi3::communicator& world)
           Vsum = 0;
           if (wfn.transposed_vHS())
           {
-            for (int i = 0; i < vHS.size(1); i++)
+            for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
               Vsum += vHS[n][i];
           }
           else
           {
-            for (int i = 0; i < vHS.size(0); i++)
+            for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
-          REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-          REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+          CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+          CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
         }
       }
       else
@@ -384,12 +381,12 @@ void wfn_fac(boost::mpi3::communicator& world)
         Vsum = 0;
         if (wfn.transposed_vHS())
         {
-          for (int i = 0; i < vHS.size(1); i++)
+          for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
             Vsum += vHS[0][i];
         }
         else
         {
-          for (int i = 0; i < vHS.size(0); i++)
+          for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
             Vsum += vHS[i][0];
         }
         app_log() << " Vsum: " << setprecision(12) << Vsum << std::endl;
@@ -406,12 +403,7 @@ void wfn_fac(boost::mpi3::communicator& world)
 template<class Allocator>
 void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 {
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("wfn_fac_distributed", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -432,13 +424,13 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-<parameter name=\"filetype\">hdf5</parameter> \
-<parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-</Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
@@ -451,22 +443,22 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     auto TG    = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     auto TGwfn = TaskGroup_(gTG, std::string("WfnTG"), ngroups, gTG.getTotalCores());
     int nwalk  = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
-    const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">closed</parameter>  \
-</WalkerSet> \
-";
-    const char* wlk_xml_block_coll   = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">collinear</parameter>  \
-</WalkerSet> \
-";
-    const char* wlk_xml_block_noncol = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">noncollinear</parameter>  \
-</WalkerSet> \
-";
+    const char* wlk_xml_block_closed = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">closed</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_coll   = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_noncol = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">noncollinear</parameter>
+    </WalkerSet>
+    )";
 
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
@@ -476,15 +468,17 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(okay);
 
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
-    std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">" +
-        UTEST_WFN + "</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-      <parameter name=\"restart_file\">" +
-        restart_file + "</parameter> \
-  </Wavefunction> \
-";
+    app_log() << " wfn_fac_distributed destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
+    std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">)" +
+        UTEST_WFN + R"(</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+      <parameter name="restart_file">)" +
+        restart_file + R"(</parameter>
+    </Wavefunction>
+    )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -494,11 +488,11 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WfnFac.push(wfn_name, doc2.getRoot());
     Wavefunction& wfn = WfnFac.getWavefunction(TGwfn, TGwfn, wfn_name, type, &ham, 1e-6, nwalk);
 
-    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
-    REQUIRE(initial_guess.size(2) == NAEA);
+    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
+    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
       wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
@@ -507,8 +501,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 
     wfn.Overlap(wset);
     //for(auto it = wset.begin(); it!=wset.end(); ++it) {
-    //REQUIRE(real(*it->overlap()) == Approx(1.0));
-    //REQUIRE(imag(*it->overlap()) == Approx(0.0));
+    //CHECK(real(*it->overlap()) == Approx(1.0));
+    //CHECK(imag(*it->overlap()) == Approx(0.0));
     //}
 
     using CMatrix = ComplexMatrix<Allocator>;
@@ -523,9 +517,9 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       for (auto it = wset.begin(); it != wset.end(); ++it)
       {
-        REQUIRE(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-        REQUIRE(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-        REQUIRE(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+        CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
+        CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
+        CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
       }
     }
     else
@@ -556,18 +550,18 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
       {
         Xsum = 0;
         if (TGwfn.TG_local().root())
-          for (int i = 0; i < X.size(0); i++)
+          for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
         Xsum = (TGwfn.TG() += Xsum);
-        REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-        REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+        CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+        CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
       }
     }
     else
     {
       Xsum = 0;
       if (TGwfn.TG_local().root())
-        for (int i = 0; i < X.size(0); i++)
+        for (int i = 0; i < X.size(); i++)
           Xsum += X[i][0];
       Xsum = (TGwfn.TG() += Xsum);
       app_log() << " Xsum: " << setprecision(12) << Xsum << " Time: " << t1 << std::endl;
@@ -604,18 +598,18 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
         {
           if (wfn.transposed_vHS())
           {
-            for (int i = 0; i < vHS.size(1); i++)
+            for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
               Vsum += vHS[n][i];
           }
           else
           {
-            for (int i = 0; i < vHS.size(0); i++)
+            for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
         }
         Vsum = (TGwfn.TG() += Vsum);
-        REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-        REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+        CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+        CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
       }
     }
     else
@@ -625,12 +619,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
       {
         if (wfn.transposed_vHS())
         {
-          for (int i = 0; i < vHS.size(1); i++)
+          for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
             Vsum += vHS[0][i];
         }
         else
         {
-          for (int i = 0; i < vHS.size(0); i++)
+          for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
             Vsum += vHS[i][0];
         }
       }
@@ -640,12 +634,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     return;
 
     // Restarting Wavefunction from file
-    const char* wfn_xml_block_restart = "<Wavefunction name=\"wfn1\" info=\"info0\"> \
-      <parameter name=\"filetype\">hdf5</parameter> \
-      <parameter name=\"filename\">./dummy.h5</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+    const char* wfn_xml_block_restart = R"(<Wavefunction name="wfn1" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">./dummy.h5</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </Wavefunction>
+    )";
     Libxml2Document doc4;
     okay = doc4.parseFromString(wfn_xml_block_restart);
     REQUIRE(okay);
@@ -653,11 +647,11 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WfnFac.push(wfn_name, doc4.getRoot());
     Wavefunction& wfn2 = WfnFac.getWavefunction(TGwfn, TGwfn, wfn_name, type, nullptr, 1e-8, nwalk);
 
-    WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], rng);
     //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
-    REQUIRE(initial_guess.size(2) == NAEA);
+    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
+    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
       wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
@@ -666,8 +660,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 
     wfn2.Overlap(wset2);
     //for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-    //REQUIRE(real(*it->overlap()) == Approx(1.0));
-    //REQUIRE(imag(*it->overlap()) == Approx(0.0));
+    //CHECK(real(*it->overlap()) == Approx(1.0));
+    //CHECK(imag(*it->overlap()) == Approx(0.0));
     //}
 
     wfn2.Energy(wset2);
@@ -675,9 +669,9 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       for (auto it = wset2.begin(); it != wset2.end(); ++it)
       {
-        REQUIRE(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-        REQUIRE(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-        REQUIRE(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+        CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
+        CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
+        CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
       }
     }
     else
@@ -701,18 +695,18 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
       {
         Xsum = 0;
         if (TGwfn.TG_local().root())
-          for (int i = 0; i < X2.size(0); i++)
+          for (int i = 0; i < X2.size(); i++)
             Xsum += X2[i][n];
         Xsum = (TGwfn.TG() += Xsum);
-        REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-        REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+        CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+        CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
       }
     }
     else
     {
       Xsum = 0;
       if (TGwfn.TG_local().root())
-        for (int i = 0; i < X2.size(0); i++)
+        for (int i = 0; i < X2.size(); i++)
           Xsum += X2[i][0];
       Xsum = (TGwfn.TG() += Xsum);
       app_log() << " Xsum: " << setprecision(12) << Xsum << std::endl;
@@ -744,18 +738,18 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
         {
           if (wfn.transposed_vHS())
           {
-            for (int i = 0; i < vHS.size(1); i++)
+            for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
               Vsum += vHS[n][i];
           }
           else
           {
-            for (int i = 0; i < vHS.size(0); i++)
+            for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
         }
         Vsum = (TGwfn.TG() += Vsum);
-        REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-        REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+        CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+        CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
       }
     }
     else
@@ -765,12 +759,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
       {
         if (wfn.transposed_vHS())
         {
-          for (int i = 0; i < vHS.size(1); i++)
+          for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
             Vsum += vHS[0][i];
         }
         else
         {
-          for (int i = 0; i < vHS.size(0); i++)
+          for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
             Vsum += vHS[i][0];
         }
       }
@@ -807,14 +801,14 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     std::map<std::string,AFQMCInfo> InfoMap;
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
-    const char *ham_xml_block =
-"<Hamiltonian name=\"ham0\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./afqmc_phmsd.h5</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-    <parameter name=\"useHalfRotatedMuv\">no</parameter> \
-  </Hamiltonian> \
-";
+    const char *ham_xml_block = 
+    R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">./afqmc_phmsd.h5</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+      <parameter name="useHalfRotatedMuv">no</parameter>
+    </Hamiltonian>
+    )";
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
     REQUIRE(okay);
@@ -827,24 +821,24 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     //auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,1);
     //int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
-const char *wlk_xml_block =
-"<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">collinear</parameter>  \
-</WalkerSet> \
-";
+    const char *wlk_xml_block =
+    R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
     Libxml2Document doc3;
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
 
     const char *wfn_xml_block =
-"<Wavefunction name=\"wfn0\" type=\"phmsd\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">./wfn_phmsd.dat</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+    R"(<Wavefunction name="wfn0" type="phmsd" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">./wfn_phmsd.dat</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </Wavefunction>
+    )";
 
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -855,12 +849,12 @@ const char *wlk_xml_block =
     Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,COLLINEAR,&ham,1e-6,nwalk);
 
     const char *wfn_xml_block2 =
-"<Wavefunction name=\"wfn1\" type=\"nomsd\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">./wfn_phmsd.dat</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+    R"(<Wavefunction name="wfn1" type="nomsd" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">./wfn_phmsd.dat</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </Wavefunction>
+    )";
 
 #define __compare__
 #ifdef __compare__
@@ -873,7 +867,7 @@ const char *wlk_xml_block =
 
 #endif
 
-    WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
+    WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0)==2);
     REQUIRE(initial_guess.size(1)==NMO);
@@ -905,8 +899,8 @@ const char *wlk_xml_block =
     t1=Time.elapsed();
     app_log()<<" PHMSD Overlap: " <<setprecision(12) <<*wset[0].overlap() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
-      REQUIRE( real(*wset[0].overlap()) == Approx(real(*wset[i].overlap())));
-      REQUIRE( imag(*wset[0].overlap()) == Approx(imag(*wset[i].overlap())));
+      CHECK( real(*wset[0].overlap()) == Approx(real(*wset[i].overlap())));
+      CHECK( imag(*wset[0].overlap()) == Approx(imag(*wset[i].overlap())));
     }
 
     using shmCMatrix = boost::multi::array<ComplexType,2alloc_,
@@ -917,12 +911,12 @@ const char *wlk_xml_block =
     app_log()<<" PHMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
              <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
-      REQUIRE( real(*wset[0].E1()) == Approx(real(*wset[i].E1())));
-      REQUIRE( imag(*wset[0].E1()) == Approx(imag(*wset[i].E1())));
-      REQUIRE( real(*wset[0].EJ()) == Approx(real(*wset[i].EJ())));
-      REQUIRE( imag(*wset[0].EJ()) == Approx(imag(*wset[i].EJ())));
-      REQUIRE( real(*wset[0].EXX()) == Approx(real(*wset[i].EXX())));
-      REQUIRE( imag(*wset[0].EXX()) == Approx(imag(*wset[i].EXX())));
+      CHECK( real(*wset[0].E1()) == Approx(real(*wset[i].E1())));
+      CHECK( imag(*wset[0].E1()) == Approx(imag(*wset[i].E1())));
+      CHECK( real(*wset[0].EJ()) == Approx(real(*wset[i].EJ())));
+      CHECK( imag(*wset[0].EJ()) == Approx(imag(*wset[i].EJ())));
+      CHECK( real(*wset[0].EXX()) == Approx(real(*wset[i].EXX())));
+      CHECK( imag(*wset[0].EXX()) == Approx(imag(*wset[i].EXX())));
     }
 #ifdef __compare__
     Time.restart();
@@ -960,8 +954,8 @@ const char *wlk_xml_block =
         Xsum=0;
         for(int i=0; i<X.size(0); i++)
           Xsum += X[i][n];
-        REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-        REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
+        CHECK( real(Xsum) == Approx(real(file_data.Xsum)) );
+        CHECK( imag(Xsum) == Approx(imag(file_data.Xsum)) );
       }
     } else
 #endif
@@ -978,8 +972,8 @@ const char *wlk_xml_block =
         ComplexType Xsum_=0;
         for(int i=0; i<X.size(0); i++)
           Xsum_ += X[i][n];
-        REQUIRE( real(Xsum) == Approx(real(Xsum_)) );
-        REQUIRE( imag(Xsum) == Approx(imag(Xsum_)) );
+        CHECK( real(Xsum) == Approx(real(Xsum_)) );
+        CHECK( imag(Xsum) == Approx(imag(Xsum_)) );
       }
     }
 
@@ -1000,8 +994,8 @@ const char *wlk_xml_block =
           for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
         }
-        REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-        REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+        CHECK( real(Vsum) == Approx(real(file_data.Vsum)) );
+        CHECK( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else
 #endif
@@ -1024,8 +1018,8 @@ const char *wlk_xml_block =
           for(int i=0; i<vHS.size(0); i++)
             Vsum_ += vHS[i][n];
         }
-        REQUIRE( real(Vsum) == Approx(real(Vsum_)) );
-        REQUIRE( imag(Vsum) == Approx(imag(Vsum_)) );
+        CHECK( real(Vsum) == Approx(real(Vsum_)) );
+        CHECK( imag(Vsum) == Approx(imag(Vsum_)) );
       }
     }
 
@@ -1075,8 +1069,8 @@ const char *wlk_xml_block =
         else
           for(int i=0; i<vHS_.size(0); i++)
             Vsum += vHS_[i][0];
-        REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-        REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+        CHECK( real(Vsum) == Approx(real(file_data.Vsum)) );
+        CHECK( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else 
 */

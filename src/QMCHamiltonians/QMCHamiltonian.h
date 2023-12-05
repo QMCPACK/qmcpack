@@ -2,13 +2,14 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,11 +20,17 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
-#include "QMCHamiltonians/NonLocalECPotential.h"
+
+#include <string_view>
+
+#include <ResourceHandle.h>
+
 #include "QMCHamiltonians/L2Potential.h"
 #include "Configuration.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include "Utilities/Resource.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
@@ -44,16 +51,17 @@ class QMCHamiltonian
   friend class HamiltonianFactory;
 
 public:
-  typedef OperatorBase::Return_t Return_t;
-  typedef OperatorBase::PosType PosType;
-  typedef OperatorBase::TensorType TensorType;
-  typedef OperatorBase::RealType RealType;
-  typedef OperatorBase::ValueType ValueType;
+  using Return_t         = OperatorBase::Return_t;
+  using PosType          = OperatorBase::PosType;
+  using TensorType       = OperatorBase::TensorType;
+  using RealType         = OperatorBase::RealType;
+  using ValueType        = OperatorBase::ValueType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  typedef OperatorBase::PropertySetType PropertySetType;
-  typedef OperatorBase::BufferType BufferType;
-  typedef OperatorBase::Walker_t Walker_t;
-  using WP = WalkerProperties::Indexes;
+  using PropertySetType  = OperatorBase::PropertySetType;
+  using BufferType       = OperatorBase::BufferType;
+  using Walker_t         = OperatorBase::Walker_t;
+  using WP               = WalkerProperties::Indexes;
+  using ValueMatrix      = SPOSet::ValueMatrix;
   enum
   {
     DIM = OHMMS_DIM
@@ -66,7 +74,7 @@ public:
   ~QMCHamiltonian();
 
   ///add an operator
-  void addOperator(OperatorBase* h, const std::string& aname, bool physical = true);
+  void addOperator(std::unique_ptr<OperatorBase>&& h, const std::string& aname, bool physical = true);
 
   ///record the name-type pair of an operator
   void addOperatorType(const std::string& name, const std::string& type);
@@ -90,14 +98,15 @@ public:
    * @param i index of the OperatorBase
    * @return H[i]
    */
-  OperatorBase* getHamiltonian(int i) { return H[i]; }
+  OperatorBase* getHamiltonian(int i) { return H[i].get(); }
+
+  /** return components, auxH not included, depending on TWF.
+   */
+  RefVector<OperatorBase> getTWFDependentComponents();
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///initialize trace data
   void initialize_traces(TraceManager& tm, ParticleSet& P);
-
-  // ///collect scalar trace data
-  //void collect_scalar_traces();
 
   ///collect walker trace data
   void collect_walker_traces(Walker_t& walker, int step);
@@ -122,17 +131,37 @@ public:
   int addObservables(ParticleSet& P);
 
   /** register obsevables so that their averages can be dumped to hdf5
-   * @param h5desc has observable_helper* for each h5 group
+   * @param h5desc has observable_helper for each h5 group
    * @param gid h5 group id to which the observable groups are added.
    */
-  void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
   /** register collectables so that their averages can be dumped to hdf5
-   * @param h5desc has observable_helper* for each h5 group
+   * @param h5desc has observable_helper for each h5 group
    * @param gid h5 group id to which the observable groups are added.
    *
    * Add observable_helper information for the data stored in ParticleSet::mcObservables.
    */
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
+
+  /** Listener Registration
+   *  This must be called on a QMCHamiltonian that has acquired multiwalker resources
+   */
+  static void mw_registerKineticListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalEnergyListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalIonPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+
+  /** Some Hamiltonian components need to be informed that they are in a per particle reporting
+   *  situation so additional state can be added either to them or the objects they are strongly coupled with.
+   *
+   *  This includes evalation of hamiltonian components constants on a per particle basis and informing a components
+   *  attached particle set that it needs to store per particle values for StructFact. This is a reason that the
+   *  coupling between Hamiltonian components and particle sets can strong and must be correct.
+   *
+   *  This is not desirable and hopefully this state transformation message can be removed.
+   */
+  void informOperatorsOfListener();
+
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables
@@ -178,49 +207,25 @@ public:
     copy(first + myIndex, first + myIndex + Observables.size(), Observables.begin());
   }
 
-  void update_source(ParticleSet& s);
+  void updateSource(ParticleSet& s);
 
   ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
   inline FullPrecRealType getLocalEnergy() { return LocalEnergy; }
   ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
   inline FullPrecRealType getLocalPotential() { return LocalEnergy - KineticEnergy; }
+  inline FullPrecRealType getKineticEnergy() { return KineticEnergy; }
   void auxHevaluate(ParticleSet& P);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
   void rejectedMove(ParticleSet& P, Walker_t& ThisWalker);
-  ///** set Tau for each Hamiltonian
-  // */
-  //inline void setTau(RealType tau)
-  //{
-  //  for(int i=0; i< H.size();i++)H[i]->setTau(tau);
-  //}
 
   /** set PRIMARY bit of all the components
    */
   inline void setPrimary(bool primary)
   {
     for (int i = 0; i < H.size(); i++)
-      H[i]->UpdateMode.set(OperatorBase::PRIMARY, primary);
+      H[i]->getUpdateMode().set(OperatorBase::PRIMARY, primary);
   }
-
-  /////Set Tau inside each of the Hamiltonian elements
-  //void setTau(Return_t tau)
-  //{
-  //  for(int i=0; i<H.size(); i++) H[i]->setTau(tau);
-  //  for(int i=0; i<auxH.size(); i++) auxH[i]->setTau(tau);
-  //}
-
-  ///** return if WaveFunction Ratio needs to be evaluated
-  // *
-  // * This is added to handle orbital-dependent OperatorBase during
-  // * orbital optimizations.
-  // */
-  //inline bool needRatio() {
-  //  bool dependOnOrbital=false;
-  //  for(int i=0; i< H.size();i++)
-  //    if(H[i]->UpdateMode[OperatorBase::RATIOUPDATE]) dependOnOrbital=true;
-  //  return dependOnOrbital;
-  //}
 
   /** evaluate Local Energy
    * @param P ParticleSet
@@ -230,15 +235,23 @@ public:
    */
   FullPrecRealType evaluate(ParticleSet& P);
 
+  /** evaluate Local Energy deterministically.  Defaults to evaluate(P) for operators 
+   * without a stochastic component. For the nonlocal PP, the quadrature grid is not rerandomized.  
+   * @param P ParticleSet
+   * @return Local energy. 
+   */
+  FullPrecRealType evaluateDeterministic(ParticleSet& P);
   /** batched version of evaluate for LocalEnergy 
    *
-   *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
+   *  Encapsulation is ignored for ham_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
    *  ParticleSet is also updated.
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
-                                                                     const RefVector<ParticleSet>& P_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluate(
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -248,8 +261,10 @@ public:
 
   /** batched version of evaluate Local energy with Toperators updated.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(RefVector<QMCHamiltonian>& H_list,
-                                                                                  RefVector<ParticleSet>& P_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateWithToperator(
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<ParticleSet>& p_list);
 
 
   /** evaluate energy and derivatives wrt to the variables
@@ -261,9 +276,41 @@ public:
    */
   FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
-                                               std::vector<ValueType>& dlogpsi,
-                                               std::vector<ValueType>& dhpsioverpsi,
-                                               bool compute_deriv);
+                                               Vector<ValueType>& dlogpsi,
+                                               Vector<ValueType>& dhpsioverpsi);
+
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivatives(
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<ParticleSet>& p_list,
+      const opt_variables_type& optvars,
+      RecordArray<ValueType>& dlogpsi,
+      RecordArray<ValueType>& dhpsioverpsi);
+
+  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
+  * @param P target particle set (electrons)
+  * @param ions source particle set (ions)
+  * @param psi Trial wave function
+  * @param hf_terms  Re [(dH)Psi]/Psi
+  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
+  * @param wf_grad  Re (dPsi/Psi)
+  * @return Local Energy.
+  */
+  FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
+                                                      ParticleSet& ions,
+                                                      TrialWaveFunction& psi_in,
+                                                      TWFFastDerivWrapper& psi_wrapper,
+                                                      ParticleSet::ParticlePos& dedr,
+                                                      ParticleSet::ParticlePos& wf_grad);
+
+  /** Evaluate the electron gradient of the local energy.
+  * @param psi Trial Wave Function
+  * @param P electron particle set
+  * @param EGrad an Nelec x 3 real array which corresponds to d/d[r_i]_j E_L
+  * @param A finite difference step size if applicable.  Default is to use finite diff with delta=1e-5.
+  * @return EGrad.  Function itself returns nothing.
+  */
+  void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
@@ -277,9 +324,25 @@ public:
   FullPrecRealType evaluateIonDerivs(ParticleSet& P,
                                      ParticleSet& ions,
                                      TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos_t& hf_terms,
-                                     ParticleSet::ParticlePos_t& pulay_terms,
-                                     ParticleSet::ParticlePos_t& wf_grad);
+                                     ParticleSet::ParticlePos& hf_terms,
+                                     ParticleSet::ParticlePos& pulay_terms,
+                                     ParticleSet::ParticlePos& wf_grad);
+
+  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
+  * @param P target particle set (electrons)
+  * @param ions source particle set (ions)
+  * @param psi Trial wave function
+  * @param hf_terms  Re [(dH)Psi]/Psi
+  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
+  * @param wf_grad  Re (dPsi/Psi)
+  * @return Local Energy.
+  */
+  FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
+                                                  ParticleSet& ions,
+                                                  TrialWaveFunction& psi,
+                                                  ParticleSet::ParticlePos& hf_terms,
+                                                  ParticleSet::ParticlePos& pulay_terms,
+                                                  ParticleSet::ParticlePos& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */
@@ -298,10 +361,7 @@ public:
 
   /** determine if L2 potential is present
    */
-  bool has_L2()
-  {
-    return l2_ptr!=nullptr;
-  }
+  bool has_L2() { return l2_ptr != nullptr; }
 
   /** compute D matrix and K vector for L2 potential propagator
     * @param r single particle coordinate
@@ -310,8 +370,8 @@ public:
     */
   void computeL2DK(ParticleSet& P, int iel, TensorType& D, PosType& K)
   {
-    if(l2_ptr != nullptr)
-      l2_ptr->evaluateDK(P,iel,D,K);
+    if (l2_ptr != nullptr)
+      l2_ptr->evaluateDK(P, iel, D, K);
   }
 
   /** compute D matrix for L2 potential propagator
@@ -320,11 +380,13 @@ public:
     */
   void computeL2D(ParticleSet& P, int iel, TensorType& D)
   {
-    if(l2_ptr != nullptr)
-      l2_ptr->evaluateD(P,iel,D);    
+    if (l2_ptr != nullptr)
+      l2_ptr->evaluateD(P, iel, D);
   }
 
-  static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);
+  static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                               const RefVectorWithLeader<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
@@ -344,33 +406,32 @@ public:
 
   bool get(std::ostream& os) const;
 
-  RealType get_LocalEnergy() const { return LocalEnergy; }
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng);
 
-  void setRandomGenerator(RandomGenerator_t* rng);
+  /// accumulate local energy and update Observables and PropertyList
+  static void updateComponent(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  /// extract kinetic and potential energies.
+  static void updateKinetic(QMCHamiltonian& ham, ParticleSet& pset);
 
-  static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
-  static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  /// initialize a shared resource and hand it to a collection
+  void createResource(ResourceCollection& collection) const;
+  /** acquire external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
+  /** release external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
   /** return a clone */
-  QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-
-#ifdef QMC_CUDA
-  ////////////////////////////////////////////
-  // Vectorized evaluation routines for GPU //
-  ////////////////////////////////////////////
-  void evaluate(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
-  void evaluate(MCWalkerConfiguration& W,
-                std::vector<RealType>& energyVector,
-                std::vector<std::vector<NonLocalData>>& Txy);
+  std::unique_ptr<QMCHamiltonian> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const;
 
 private:
-  /////////////////////
-  // Vectorized data //
-  /////////////////////
-  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, KineticEnergyVector, AuxEnergyVector;
-#endif
+  static constexpr std::array<std::string_view, 8> available_quantities_{"weight", "LocalEnergy", "LocalPotential",
+                                                                         "Vq",     "Vc",          "Vqq",
+                                                                         "Vqc",    "Vcc"};
 
-private:
   ///starting index
   int myIndex;
   ///starting index
@@ -384,17 +445,21 @@ private:
   ///getName is in the way
   const std::string myName;
   ///vector of Hamiltonians
-  std::vector<OperatorBase*> H;
+  std::vector<std::unique_ptr<OperatorBase>> H;
   ///pointer to NonLocalECP
   NonLocalECPotential* nlpp_ptr;
   ///pointer to L2Potential
   L2Potential* l2_ptr;
   ///vector of Hamiltonians
-  std::vector<OperatorBase*> auxH;
+  std::vector<std::unique_ptr<OperatorBase>> auxH;
   /// Total timer for H evaluation
-  NewTimer* ham_timer_;
+  NewTimer& ham_timer_;
+  /// Total timer for H evaluation
+  NewTimer& eval_vals_derivs_timer_;
+  /// Total timer for H ion deriv evaluation;
+  NewTimer& eval_ion_derivs_fast_timer_;
   /// timers for H components
-  std::vector<NewTimer*> my_timers_;
+  std::vector<std::reference_wrapper<NewTimer>> my_timers_;
   ///types of component operators
   std::map<std::string, std::string> operator_types;
   ///data
@@ -405,8 +470,9 @@ private:
    */
   void resetObservables(int start, int ncollects);
 
+  void reportToListeners();
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
-  static RefVector<OperatorBase> extract_HC_list(const RefVector<QMCHamiltonian>& H_list, int id);
+  static RefVectorWithLeader<OperatorBase> extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list, int id);
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables
@@ -421,6 +487,10 @@ private:
   Array<TraceReal, 1>* weight_sample;
   Array<TraceReal, 2>* position_sample;
 #endif
+
+  /// multiwalker shared resource
+  struct QMCHamiltonianMultiWalkerResource;
+  ResourceHandle<QMCHamiltonianMultiWalkerResource> mw_res_handle_;
 };
 } // namespace qmcplusplus
 #endif

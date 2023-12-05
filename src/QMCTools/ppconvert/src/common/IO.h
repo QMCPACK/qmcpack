@@ -38,7 +38,8 @@ bool IOTreeClass::WriteVar(std::string name, T val)
 {
   if (GetFileType() == ASCII_TYPE)
   {
-    VarList.push_back(new IOVarASCII<T, 0>(name, val));
+		throw std::logic_error{"this case is unimplement for rank 0"};
+//    VarList.push_back(new IOVarASCII<T, 0>(name, val));
   }
   else
   {
@@ -55,11 +56,12 @@ bool IOTreeClass::WriteVar(std::string name, const TinyVector<T, LEN>& val)
   for (int i = 0; i < LEN; i++)
     aVal(i) = val[i];
   WriteVar(name, aVal);
+  return true;
 }
 
 
 template<typename T, int RANK>
-bool IOTreeClass::WriteVar(std::string name, const blitz::Array<T, RANK>& val)
+bool IOTreeClass::WriteVar(std::string name, const Array<T, RANK>& val)
 {
   if (GetFileType() == ASCII_TYPE)
   {
@@ -74,14 +76,14 @@ bool IOTreeClass::WriteVar(std::string name, const blitz::Array<T, RANK>& val)
 }
 
 template<typename T, int RANK, int LEN>
-bool IOTreeClass::WriteVar(std::string name, const blitz::Array<TinyVector<T, LEN>, RANK>& val)
+bool IOTreeClass::WriteVar(std::string name, const Array<TinyVector<T, LEN>, RANK>& val)
 {
   TinyVector<int, RANK + 1> shape;
   for (int dim = 0; dim < RANK; dim++)
     shape[dim] = val.extent(dim);
   shape[RANK] = LEN;
 
-  Array<T, RANK + 1> aval((T*)&(val(0)[0]), shape, blitz::neverDeleteData);
+  Array<T, RANK + 1> aval((T*)&(val(0)[0]), shape, neverDeleteData);
   return WriteVar(name, aval);
 }
 
@@ -185,7 +187,7 @@ public:
   }
 
   template<typename T, int RANK>
-  bool WriteVar(std::string name, const blitz::Array<T, RANK>& val)
+  bool WriteVar(std::string name, const Array<T, RANK>& val)
   {
     return CurrentSection->WriteVar(name, val);
   }
@@ -197,7 +199,7 @@ public:
   }
 
   template<typename T, int RANK>
-  bool AppendVar(std::string name, const blitz::Array<T, RANK>& val)
+  bool AppendVar(std::string name, const Array<T, RANK>& val)
   {
     return CurrentSection->AppendVar(name, val);
   }

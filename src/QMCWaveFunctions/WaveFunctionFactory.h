@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
+#include "Utilities/RuntimeOptions.h"
 namespace qmcplusplus
 {
 /** Factory class to build a many-body wavefunction
@@ -30,49 +31,39 @@ namespace qmcplusplus
 class WaveFunctionFactory : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  using PSetMap = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   /** constructor
    * @param psiName name for both the factory and psi
-   * @param qp quantum particleset
+   * @param qp quantum particleset (aka target)
    * @param pset pool of particlesets
    * @param c  communicator
    * @param c  using tasking inside TWF
    */
-  WaveFunctionFactory(const std::string& psiName, ParticleSet& qp, PtclPoolType& pset, Communicate* c, bool tasking = false);
+  WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c);
+
+  ///destructor
+  ~WaveFunctionFactory();
 
   ///read from xmlNode
-  bool put(xmlNodePtr cur);
-  ///get xmlNode
-  xmlNodePtr getNode() const { return myNode; }
-  ///get targetPsi
-  TrialWaveFunction* getTWF() const { return targetPsi.get(); }
+  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur, const RuntimeOptions& runtime_options);
+
+  /// create an empty TrialWaveFunction for testing use.
+  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting(const RuntimeOptions& runtime_options,
+                                                                    const std::string_view name)
+  {
+    return std::make_unique<TrialWaveFunction>(runtime_options, name);
+  }
 
 private:
-  /** process xmlNode to populate targetPsi
-   */
-  bool build(xmlNodePtr cur, bool buildtree = true);
-
   /** add Fermion wavefunction term */
-  bool addFermionTerm(xmlNodePtr cur);
-
-  /** add an OrbitalBuilder and the matching xml node
-   * @param b WaveFunctionComponentBuilder*
-   * @oaram cur xmlNode for b
-   * @return true if successful
-   */
-  bool addNode(WaveFunctionComponentBuilder* b, xmlNodePtr cur);
+  bool addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFactory& spo_factory, xmlNodePtr cur);
 
   ///many-body wavefunction object
-  std::unique_ptr<TrialWaveFunction> targetPsi;
   ///target ParticleSet
   ParticleSet& targetPtcl;
-  ///reference to the PtclPoolType
-  PtclPoolType& ptclPool;
-  ///input node for a many-body wavefunction
-  xmlNodePtr myNode;
-  ///builder tree
-  UPtrVector<WaveFunctionComponentBuilder> psiBuilder;
+  ///reference to the PSetMap
+  const PSetMap& ptclPool;
 };
 
 } // namespace qmcplusplus

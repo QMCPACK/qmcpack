@@ -12,6 +12,7 @@
 
 #include "ExampleHeComponent.h"
 #include "OhmmsData/AttributeSet.h"
+#include "DistanceTable.h"
 
 /**@file ExampleHeComponent.cpp
  */
@@ -61,18 +62,18 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
   return true;
 }
 
-ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
-                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                 ParticleSet::ParticleLaplacian_t& L)
+ExampleHeComponent::LogValue ExampleHeComponent::evaluateLog(const ParticleSet& P,
+                                                             ParticleSet::ParticleGradient& G,
+                                                             ParticleSet::ParticleLaplacian& L)
 {
-  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_table  = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists  = ee_table.getDistances();
   const auto& ee_displs = ee_table.getDisplacements();
   // Only the lower triangle is up-to-date after particle-by-particle moves
   double r12  = ee_dists[1][0];
   auto rhat12 = ee_displs[1][0] / r12;
 
-  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_table  = P.getDistTableAB(my_table_ei_idx_);
   const auto& ei_dists  = ei_table.getDistances();
   const auto& ei_displs = ei_table.getDisplacements();
 
@@ -106,13 +107,13 @@ ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
 
   double u = A * r12 / (B * r12 + 1) - A / B;
 
-  LogValue = -Z * (r1 + r2) + std::log(norm * norm) - u;
-  return LogValue;
+  log_value_ = -Z * (r1 + r2) + std::log(norm * norm) - u;
+  return log_value_;
 }
 
-ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
+ExampleHeComponent::PsiValue ExampleHeComponent::ratio(ParticleSet& P, int iat)
 {
-  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_table  = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists  = ee_table.getDistances();
   const auto& ee_temp_r = ee_table.getTempDists();
 
@@ -120,7 +121,7 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int i
   double r12_old = ee_dists[1][0];
   double r12_new = ee_temp_r[iat == 0 ? 1 : 0];
 
-  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_table  = P.getDistTableAB(my_table_ei_idx_);
   const auto& ei_dists  = ei_table.getDistances();
   const auto& ei_temp_r = ei_table.getTempDists();
 
@@ -133,19 +134,19 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int i
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
-  return std::exp(static_cast<PsiValueType>(log_v_new - log_v_old));
+  return std::exp(static_cast<PsiValue>(log_v_new - log_v_old));
 }
 
 ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int iat)
 {
-  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_table  = P.getDistTableAB(my_table_ei_idx_);
   const auto& ei_dists  = ei_table.getDistances();
   const auto& ei_displs = ei_table.getDisplacements();
 
   double r  = ei_dists[iat][0];
   auto rhat = ei_displs[iat][0] / r;
 
-  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_table  = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists  = ee_table.getDistances();
   const auto& ee_displs = ee_table.getDisplacements();
 
@@ -158,9 +159,9 @@ ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int ia
   return Z * rhat + rhat12 * du;
 }
 
-ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+ExampleHeComponent::PsiValue ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  const auto& ee_table   = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_table   = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists   = ee_table.getDistances();
   const auto& ee_displs  = ee_table.getDisplacements();
   const auto& ee_temp_r  = ee_table.getTempDists();
@@ -173,7 +174,7 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, i
 
   auto rhat12 = ee_temp_dr[jat] / r12_new;
 
-  const auto& ei_table   = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_table   = P.getDistTableAB(my_table_ei_idx_);
   const auto& ei_dists   = ei_table.getDistances();
   const auto& ei_displs  = ei_table.getDisplacements();
   const auto& ei_temp_r  = ei_table.getTempDists();
@@ -194,18 +195,21 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, i
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
-  return std::exp(static_cast<PsiValueType>(log_v_new - log_v_old));
+  return std::exp(static_cast<PsiValue>(log_v_new - log_v_old));
 }
 
 
-ExampleHeComponent::LogValueType ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+ExampleHeComponent::LogValue ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   return evaluateLog(P, P.G, P.L);
 }
 
-WaveFunctionComponentPtr ExampleHeComponent::makeClone(ParticleSet& tpq) const { return new ExampleHeComponent(*this); }
+std::unique_ptr<WaveFunctionComponent> ExampleHeComponent::makeClone(ParticleSet& tpq) const
+{
+  return std::make_unique<ExampleHeComponent>(*this);
+}
 
-void ExampleHeComponent::resetParameters(const OptVariablesType& active)
+void ExampleHeComponent::resetParametersExclusive(const OptVariablesType& active)
 {
   if (my_vars_.size())
   {
@@ -223,14 +227,14 @@ void ExampleHeComponent::resetParameters(const OptVariablesType& active)
 
 void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
                                              const OptVariablesType& optvars,
-                                             std::vector<ValueType>& dlogpsi,
-                                             std::vector<ValueType>& dhpsioverpsi)
+                                             Vector<ValueType>& dlogpsi,
+                                             Vector<ValueType>& dhpsioverpsi)
 {
-  typedef TinyVector<RealType, 3> RealGradType;
+  using RealGradType = TinyVector<RealType, 3>;
 
   double tmpB = std::real(optvars[0]);
 
-  const auto& ee_table   = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_table   = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists   = ee_table.getDistances();
   const auto& ee_displs  = ee_table.getDisplacements();
   const auto& ee_temp_r  = ee_table.getTempDists();
@@ -239,7 +243,7 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
   double r12  = ee_dists[1][0];
   auto rhat12 = ee_displs[1][0] / r12;
 
-  const auto& ei_table   = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_table   = P.getDistTableAB(my_table_ei_idx_);
   const auto& ei_dists   = ei_table.getDistances();
   const auto& ei_displs  = ei_table.getDisplacements();
   const auto& ei_temp_r  = ei_table.getTempDists();

@@ -927,6 +927,11 @@ class Simulation(NexusCore):
     #end def load_analyzer_image
 
 
+    def save_analyzer_image(self,analyzer):
+        analyzer.save(os.path.join(self.imresdir,self.analyzer_image))
+    #end def save_analyzer_image
+
+
     def attempt_files(self):
         return (self.infile,self.outfile,self.errfile)
     #end def attempt_files
@@ -1384,7 +1389,7 @@ class Simulation(NexusCore):
             command = ('\n'+command).replace('\n','\n  '+pad)
             run_command = command
         #end if
-        if self.job is None:
+        if self.job is None or self.job.env is None:
             env = os.environ.copy()
         else:
             env = job.env

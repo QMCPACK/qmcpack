@@ -28,6 +28,10 @@
 #include <ittnotify.h>
 #endif
 
+#ifdef USE_NVTX_API
+#include <nvToolsExt.h>
+#endif
+
 #define USE_STACK_TIMERS
 
 namespace qmcplusplus
@@ -49,7 +53,7 @@ extern bool timer_max_level_exceeded;
 
 // Unsigned char gives 254 timers (0 is reserved).
 // Use a longer type (eg. unsigned short) to increase the limit.
-typedef unsigned char timer_id_t;
+using timer_id_t = unsigned char;
 
 // Key for tracking time per stack.  Parametered by size.
 template<int N>
@@ -122,17 +126,17 @@ public:
 };
 
 // N = 2 gives 16 nesting levels
-typedef StackKeyParam<2> StackKey;
+using StackKey = StackKeyParam<2>;
 
 /** Timer accumulates time and call counts
- * @tparam CLOCK can be CPUClock or FakeCPUClock
+ * @tparam CLOCK can be a std::chrono clock or FakeChronoClock
  */
 template<class CLOCK>
 class TimerType
 {
 protected:
   /// start time of the current measurement
-  double start_time;
+  typename CLOCK::time_point start_time;
   /// total time accumulated of all the calls
   double total_time;
   /// total call counts
@@ -227,30 +231,27 @@ public:
   friend void set_num_calls(TimerType<CLOCK1>* timer, long num_calls_input);
 };
 
-using NewTimer  = TimerType<CPUClock>;
-using FakeTimer = TimerType<FakeCPUClock>;
-extern template class TimerType<CPUClock>;
-extern template class TimerType<FakeCPUClock>;
+using NewTimer  = TimerType<ChronoClock>;
+using FakeTimer = TimerType<FakeChronoClock>;
+extern template class TimerType<ChronoClock>;
+extern template class TimerType<FakeChronoClock>;
 
 // Wrapper for timer that starts on construction and stops on destruction
 template<class TIMER = NewTimer>
 class ScopeGuard
 {
 public:
-  ScopeGuard(TIMER* t) : timer(t)
-  {
-    if (timer)
-      timer->start();
-  }
+  ScopeGuard(TIMER& t) : timer(t) { timer.start(); }
 
-  ~ScopeGuard()
-  {
-    if (timer)
-      timer->stop();
-  }
+  ScopeGuard(const ScopeGuard&)                = delete;
+  ScopeGuard& operator=(const ScopeGuard&)     = delete;
+  ScopeGuard(ScopeGuard&&) noexcept            = default;
+  ScopeGuard& operator=(ScopeGuard&&) noexcept = default;
+
+  ~ScopeGuard() { timer.stop(); }
 
 private:
-  TIMER* timer;
+  TIMER& timer;
 };
 
 using ScopedTimer     = ScopeGuard<NewTimer>;

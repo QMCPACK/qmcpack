@@ -169,7 +169,7 @@ Hartree--Fock energy you computed earlier from pyscf to within roughly the error
 you specified when generating the Cholesky decomposition. This check is not very
 meaningful if using, say, DFT orbitals.  However if this energy is crazy it's a good sign
 something went wrong with either the wavefunction or integral generation.  Next you should
-inspect the `qmc.scalar.s000.dat` file which contains the mixed estimates for various
+inspect the `qmc.s000.scalar.dat` file which contains the mixed estimates for various
 quantities. This can be plotted using gnuplot.  `EnergyEstim__nume_real` contains the
 block averaged values for the local energy, which should be the 7th column.
 

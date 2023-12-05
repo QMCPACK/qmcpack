@@ -22,9 +22,9 @@ namespace qmcplusplus
 class SpinDensity : public OperatorBase
 {
 public:
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef std::vector<RealType> dens_t;
-  typedef std::vector<PosType> pts_t;
+  using Lattice_t = ParticleSet::ParticleLayout;
+  using dens_t    = std::vector<RealType>;
+  using pts_t     = std::vector<PosType>;
 
   ParticleSet* Ptmp;
 
@@ -40,21 +40,22 @@ public:
 
   //constructor/destructor
   SpinDensity(ParticleSet& P);
-  ~SpinDensity() {}
+  ~SpinDensity() override {}
 
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
-  bool put(xmlNodePtr cur);
-  Return_t evaluate(ParticleSet& P);
+  std::string getClassName() const override { return "SpinDensity"; }
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  bool put(xmlNodePtr cur) override;
+  Return_t evaluate(ParticleSet& P) override;
 
   //required for Collectables interface
-  void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void addObservables(PropertySetType& plist, BufferType& olist) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) {}
-  void setObservables(PropertySetType& plist) {}
-  void setParticlePropertyList(PropertySetType& plist, int offset) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
+  void setObservables(PropertySetType& plist) override {}
+  void setParticlePropertyList(PropertySetType& plist, int offset) override {}
 #if !defined(REMOVE_TRACEMANAGER)
   void checkout_scalar_arrays(TraceManager& tm) {}
   void collect_scalar_samples() {}
@@ -62,14 +63,13 @@ public:
 #endif
 
   //obsolete?
-  bool get(std::ostream& os) const { return false; }
+  bool get(std::ostream& os) const override { return false; }
 
   //local functions
   void reset();
   void report(const std::string& pad);
   void test(int moves, ParticleSet& P);
   Return_t test_evaluate(ParticleSet& P, int& pmin, int& pmax);
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 };
 
 } // namespace qmcplusplus

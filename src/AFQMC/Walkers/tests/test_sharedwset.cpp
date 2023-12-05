@@ -26,7 +26,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Utilities/RandomGenerator.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
@@ -53,14 +53,14 @@ namespace qmcplusplus
 {
 using namespace afqmc;
 
-void myREQUIRE(const double& a, const double& b) { REQUIRE(a == Approx(b)); }
+void myCHECK(const double& a, const double& b) { CHECK(a == Approx(b)); }
 
-void myREQUIRE(const std::complex<double>& a, const double& b) { REQUIRE(a.real() == Approx(b)); }
+void myCHECK(const std::complex<double>& a, const double& b) { CHECK(a.real() == Approx(b)); }
 
-void myREQUIRE(const std::complex<double>& a, const std::complex<double>& b)
+void myCHECK(const std::complex<double>& a, const std::complex<double>& b)
 {
-  REQUIRE(a.real() == Approx(b.real()));
-  REQUIRE(a.imag() == Approx(b.imag()));
+  CHECK(a.real() == Approx(b.real()));
+  CHECK(a.imag() == Approx(b.imag()));
 }
 
 template<class M1, class M2>
@@ -72,7 +72,7 @@ void check(M1&& A, M2& B)
   REQUIRE(A.size(1) == B.size(1));
   for (int i = 0; i < A.size(0); i++)
     for (int j = 0; j < A.size(1); j++)
-      myREQUIRE(element1(A[i][j]), element2(B[i][j]));
+      myCHECK(element1(A[i][j]), element2(B[i][j]));
 }
 
 using namespace afqmc;
@@ -92,7 +92,11 @@ void test_basic_walker_features(bool serial, std::string wtype)
   //assert(world.size()%2 == 0);
 
   int NMO = 8, NAEA = 2, NAEB = 2, nwalkers = 10;
-  if(wtype=="noncollinear") { NAEA = 4; NAEB = 0; } 
+  if (wtype == "noncollinear")
+  {
+    NAEA = 4;
+    NAEB = 0;
+  }
 
   //auto node = world.split_shared();
 
@@ -103,18 +107,21 @@ void test_basic_walker_features(bool serial, std::string wtype)
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  int M( (wtype=="noncollinear")?2*NMO:NMO );
-  boost::multi::array<Type,2> initA({M,NAEA});
-  boost::multi::array<Type,2> initB({M,NAEB});
-  for(int i=0; i<NAEA; i++) initA[i][i] = Type(0.22);
-  for(int i=0; i<NAEB; i++) initB[i][i] = Type(0.22);
-  RandomGenerator_t rng;
+  int M((wtype == "noncollinear") ? 2 * NMO : NMO);
+  boost::multi::array<Type, 2> initA({M, NAEA});
+  boost::multi::array<Type, 2> initB({M, NAEB});
+  for (int i = 0; i < NAEA; i++)
+    initA[i][i] = Type(0.22);
+  for (int i = 0; i < NAEB; i++)
+    initB[i][i] = Type(0.22);
+  RandomGenerator rng;
 
   std::string xml_block;
   xml_block = "<WalkerSet name=\"wset0\">  \
   <parameter name=\"min_weight\">0.05</parameter>  \
   <parameter name=\"max_weight\">4</parameter>  \
-  <parameter name=\"walker_type\">"+wtype+"</parameter>  \
+  <parameter name=\"walker_type\">" +
+      wtype + "</parameter>  \
   <parameter name=\"load_balance\">async</parameter>  \
   <parameter name=\"pop_control\">pair</parameter>  \
 </WalkerSet> \
@@ -123,7 +130,7 @@ void test_basic_walker_features(bool serial, std::string wtype)
   bool okay = doc.parseFromString(xml_block.c_str());
   REQUIRE(okay);
 
-  WalkerSet wset(TG, doc.getRoot(), info, &rng);
+  WalkerSet wset(TG, doc.getRoot(), info, rng);
   wset.resize(nwalkers, initA, initB);
 
   REQUIRE(wset.size() == nwalkers);
@@ -196,17 +203,17 @@ void test_basic_walker_features(bool serial, std::string wtype)
 
   std::vector<ComplexType> Wdata;
   wset.popControl(Wdata);
-  REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
+  CHECK(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
   REQUIRE(wset.get_TG_target_population() == nwalkers);
   REQUIRE(wset.get_global_target_population() == nwalkers * TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == nwalkers * TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population());
-  REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
+  CHECK(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
   double nx = (wset.getWalkerType() == NONCOLLINEAR ? 1.0 : 2.0);
   for (int i = 0; i < wset.size(); i++)
   {
     auto w = wset[i];
-    myREQUIRE(std::exp(nx * wset.getLogOverlapFactor()) * ComplexType(*w.overlap()), ComplexType(*w.E1()));
+    myCHECK(std::exp(nx * wset.getLogOverlapFactor()) * ComplexType(*w.overlap()), ComplexType(*w.E1()));
     REQUIRE(*w.EXX() == *w.E1());
     REQUIRE(*w.EJ() == *w.E1());
   }
@@ -249,8 +256,9 @@ void test_hyperslab()
   }
   dump.push("WalkerSet");
 
-  hyperslab_proxy<Matrix, 2> hslab(Data, std::array<int, 2>{nwtot, nprop}, std::array<int, 2>{nwalk, nprop},
-                                   std::array<int, 2>{rank * nwalk, 0});
+  hyperslab_proxy<Matrix, 2> hslab(Data, std::array<size_t, 2>{static_cast<size_t>(nwtot), static_cast<size_t>(nprop)},
+                                   std::array<size_t, 2>{static_cast<size_t>(nwalk), static_cast<size_t>(nprop)},
+                                   std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0});
   dump.write(hslab, "Walkers");
   dump.close();
   world.barrier();
@@ -266,8 +274,10 @@ void test_hyperslab()
 
     Matrix DataIn({nwalk, nprop});
 
-    hyperslab_proxy<Matrix, 2> hslab(DataIn, std::array<int, 2>{nwtot, nprop}, std::array<int, 2>{nwalk, nprop},
-                                     std::array<int, 2>{rank * nwalk, 0});
+    hyperslab_proxy<Matrix, 2> hslab(DataIn,
+                                     std::array<size_t, 2>{static_cast<size_t>(nwtot), static_cast<size_t>(nprop)},
+                                     std::array<size_t, 2>{static_cast<size_t>(nwalk), static_cast<size_t>(nprop)},
+                                     std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0});
     read.read(hslab, "Walkers");
     read.close();
 
@@ -312,8 +322,12 @@ void test_double_hyperslab()
   dump.push("WalkerSet");
 
   //double_hyperslab_proxy<Matrix,2> hslab(Data,
-  hyperslab_proxy<Matrix, 2> hslab(Data, std::array<int, 2>{nwtot, nprop_to_safe},
-                                   std::array<int, 2>{nwalk, nprop_to_safe}, std::array<int, 2>{rank * nwalk, 0}); //,
+  hyperslab_proxy<Matrix, 2> hslab(Data,
+                                   std::array<size_t, 2>{static_cast<size_t>(nwtot),
+                                                         static_cast<size_t>(nprop_to_safe)},
+                                   std::array<size_t, 2>{static_cast<size_t>(nwalk),
+                                                         static_cast<size_t>(nprop_to_safe)},
+                                   std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0}); //,
 
   //                                  std::array<int,2>{nwalk,nprop},
   //                                  std::array<int,2>{nwalk,nprop_to_safe},
@@ -335,8 +349,12 @@ void test_double_hyperslab()
     Matrix DataIn({nwalk, nprop_to_safe});
 
     //double_hyperslab_proxy<Matrix,2> hslab(DataIn,
-    hyperslab_proxy<Matrix, 2> hslab(DataIn, std::array<int, 2>{nwtot, nprop_to_safe},
-                                     std::array<int, 2>{nwalk, nprop_to_safe}, std::array<int, 2>{rank * nwalk, 0}); //,
+    hyperslab_proxy<Matrix, 2> hslab(DataIn,
+                                     std::array<size_t, 2>{static_cast<size_t>(nwtot),
+                                                           static_cast<size_t>(nprop_to_safe)},
+                                     std::array<size_t, 2>{static_cast<size_t>(nwalk),
+                                                           static_cast<size_t>(nprop_to_safe)},
+                                     std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0}); //,
     //                                  std::array<int,2>{nwalk,nprop},
     //                                  std::array<int,2>{nwalk,nprop_to_safe},
     //                                  std::array<int,2>{0,0});
@@ -377,7 +395,11 @@ void test_walker_io(std::string wtype)
   //assert(world.size()%2 == 0);
 
   int NMO = 8, NAEA = 2, NAEB = 2, nwalkers = 10;
-  if(wtype=="noncollinear") { NAEA = 4; NAEB = 0; }
+  if (wtype == "noncollinear")
+  {
+    NAEA = 4;
+    NAEB = 0;
+  }
 
   //auto node = world.split_shared();
 
@@ -388,28 +410,30 @@ void test_walker_io(std::string wtype)
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  int M( (wtype=="noncollinear")?2*NMO:NMO );
-  boost::multi::array<Type,2> initA({M,NAEA});
-  boost::multi::array<Type,2> initB({M,NAEB});
-  for(int i=0; i<NAEA; i++) initA[i][i] = Type(0.22);
-  for(int i=0; i<NAEB; i++) initB[i][i] = Type(0.22);
-  RandomGenerator_t rng;
+  int M((wtype == "noncollinear") ? 2 * NMO : NMO);
+  boost::multi::array<Type, 2> initA({M, NAEA});
+  boost::multi::array<Type, 2> initB({M, NAEB});
+  for (int i = 0; i < NAEA; i++)
+    initA[i][i] = Type(0.22);
+  for (int i = 0; i < NAEB; i++)
+    initB[i][i] = Type(0.22);
+  RandomGenerator rng;
 
   std::string xml_block;
   xml_block = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">"+wtype+"</parameter>  \
+  <parameter name=\"walker_type\">" +
+      wtype + "</parameter>  \
 </WalkerSet> \
 ";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml_block.c_str());
   REQUIRE(okay);
 
-  WalkerSet wset(TG, doc.getRoot(), info, &rng);
+  WalkerSet wset(TG, doc.getRoot(), info, rng);
   wset.resize(nwalkers, initA, initB);
 
   REQUIRE(wset.size() == nwalkers);
-  int cnt           = 0;
-  double tot_weight = 0.0;
+  int cnt = 0;
   for (WalkerSet::iterator it = wset.begin(); it != wset.end(); ++it)
   {
     auto sm = it->SlaterMatrix(Alpha);
@@ -419,7 +443,6 @@ void test_walker_io(std::string wtype)
     *it->E1()      = cnt * 1.0 + 0.5;
     *it->EXX()     = cnt * 1.0 + 0.5;
     *it->EJ()      = cnt * 1.0 + 0.5;
-    tot_weight += cnt * 1.0 + 0.5;
     cnt++;
   }
   REQUIRE(cnt == nwalkers);
@@ -463,7 +486,7 @@ void test_walker_io(std::string wtype)
       }
     }
 
-    WalkerSet wset2(TG, doc.getRoot(), info, &rng);
+    WalkerSet wset2(TG, doc.getRoot(), info, rng);
     restartFromHDF5(wset2, nwalkers, "dummy_walkers.h5", read, true);
     for (int i = 0; i < nwalkers; i++)
     {
@@ -482,12 +505,12 @@ void test_walker_io(std::string wtype)
 
 TEST_CASE("swset_test_serial", "[shared_wset]")
 {
-  test_basic_walker_features(true,"closed");
-  test_basic_walker_features(false,"closed");
-  test_basic_walker_features(true,"collinear");
-  test_basic_walker_features(false,"collinear");
-  test_basic_walker_features(true,"noncollinear");
-  test_basic_walker_features(false,"noncollinear");
+  test_basic_walker_features(true, "closed");
+  test_basic_walker_features(false, "closed");
+  test_basic_walker_features(true, "collinear");
+  test_basic_walker_features(false, "collinear");
+  test_basic_walker_features(true, "noncollinear");
+  test_basic_walker_features(false, "noncollinear");
 }
 /*
 TEST_CASE("hyperslab_tests", "[shared_wset]")
@@ -496,10 +519,11 @@ TEST_CASE("hyperslab_tests", "[shared_wset]")
   test_double_hyperslab();
 }
 */
-TEST_CASE("walker_io", "[shared_wset]") { 
-  test_walker_io("closed"); 
-  test_walker_io("collinear"); 
-  test_walker_io("noncollinear"); 
+TEST_CASE("walker_io", "[shared_wset]")
+{
+  test_walker_io("closed");
+  test_walker_io("collinear");
+  test_walker_io("noncollinear");
 }
 
 } // namespace qmcplusplus

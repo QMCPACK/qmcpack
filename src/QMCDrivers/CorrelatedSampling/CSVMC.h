@@ -35,14 +35,15 @@ class CSVMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  CSVMC(MCWalkerConfiguration& w,
+  CSVMC(const ProjectData& project_data,
+        MCWalkerConfiguration& w,
         TrialWaveFunction& psi,
         QMCHamiltonian& h,
         Communicate* comm);
 
-  bool run();
-  bool put(xmlNodePtr cur);
-  virtual QMCRunType getRunType() { return QMCRunType::CSVMC; }
+  bool run() override;
+  bool put(xmlNodePtr cur) override;
+  QMCRunType getRunType() override { return QMCRunType::CSVMC; }
 
 private:
   std::string UseDrift;

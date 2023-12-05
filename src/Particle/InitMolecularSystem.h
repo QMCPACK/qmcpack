@@ -32,10 +32,10 @@ class InitMolecularSystem : public OhmmsElementBase
 public:
   InitMolecularSystem(ParticleSetPool& pset, const char* aname = "mosystem");
 
-  bool get(std::ostream& os) const;
-  bool put(std::istream& is);
-  bool put(xmlNodePtr cur);
-  void reset();
+  bool get(std::ostream& os) const override;
+  bool put(std::istream& is) override;
+  bool put(xmlNodePtr cur) override;
+  void reset() override;
 
   /** initialize els for an atom
    */

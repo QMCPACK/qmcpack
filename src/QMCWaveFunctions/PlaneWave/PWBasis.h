@@ -20,10 +20,9 @@
 
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
-#include "Numerics/HDFSTLAttrib.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Message/Communicate.h"
 #include "CPU/e2iphi.h"
+#include "hdf/hdf_archive.h"
 
 /** If defined, use recursive method to build the basis set for each position
  *
@@ -41,8 +40,8 @@ namespace qmcplusplus
 class PWBasis : public QMCTraits
 {
 public:
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
-  typedef TinyVector<IndexType, 3> GIndex_t;
+  using ParticleLayout = ParticleSet::ParticleLayout;
+  using GIndex_t       = TinyVector<IndexType, 3>;
 
 private:
   ///max of maxg[i]
@@ -112,7 +111,7 @@ public:
   int NumPlaneWaves;
 
   ///local copy of Lattice
-  ParticleLayout_t Lattice;
+  ParticleLayout Lattice;
 
   ///default constructor
   PWBasis() : maxmaxg(0), NumPlaneWaves(0) {}
@@ -121,9 +120,6 @@ public:
   PWBasis(const PosType& twistangle) : maxmaxg(0), twist(twistangle), NumPlaneWaves(0) {}
 
   ~PWBasis() {}
-
-  ///basis size
-  inline IndexType getBasisSetSize() const { return NumPlaneWaves; }
 
   ///set the twist angle
   void setTwistAngle(const PosType& tang);
@@ -138,9 +134,9 @@ public:
    * @param resizeContainer if true, resize internal storage.
    * @return the number of plane waves
    */
-  int readbasis(hid_t h5basisgroup,
+  int readbasis(hdf_archive& h5basisgroup,
                 RealType ecutoff,
-                ParticleLayout_t& lat,
+                const ParticleLayout& lat,
                 const std::string& pwname     = "planewaves",
                 const std::string& pwmultname = "multipliers",
                 bool resizeContainer          = true);

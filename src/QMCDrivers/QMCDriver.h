@@ -23,8 +23,10 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
+#include "Utilities/ScopedProfiler.h"
+#include "Utilities/ProjectData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -33,7 +35,6 @@
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-#include "QMCDrivers/BranchIO.h"
 class Communicate;
 
 namespace qmcplusplus
@@ -78,8 +79,10 @@ public:
     QMC_WARMUP
   };
 
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef Walker_t::Buffer_t Buffer_t;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
+  using Buffer_t = Walker_t::Buffer_t;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -94,13 +97,15 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w,
+  QMCDriver(const ProjectData& project_data,
+            MCWalkerConfiguration& w,
             TrialWaveFunction& psi,
             QMCHamiltonian& h,
             Communicate* comm,
-            const std::string& QMC_driver_type);
+            const std::string& QMC_driver_type,
+            bool enable_profiling = false);
 
-  virtual ~QMCDriver();
+  ~QMCDriver() override;
 
   ///return current step
   inline int current() const { return CurrentStep; }
@@ -108,7 +113,7 @@ public:
   /** set the update mode
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
+  inline void setUpdateMode(bool pbyp) override { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
 
   /** Set the status of the QMCDriver
    * @param aname the root file name
@@ -120,7 +125,7 @@ public:
    * of previous QMC runs for the simulation and "suffix"
    * is the suffix for the output file.
    */
-  void setStatus(const std::string& aname, const std::string& h5name, bool append);
+  void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
   /** add QMCHamiltonian/TrialWaveFunction pair for multiple
    * @param h QMCHamiltonian
@@ -129,22 +134,22 @@ public:
    * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
    * for energy difference evaluations.
    */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override;
 
   /** initialize with xmlNode
    */
-  void process(xmlNodePtr cur);
+  void process(xmlNodePtr cur) override;
 
   /** return a xmlnode with update **/
   xmlNodePtr getQMCNode();
 
-  void putWalkers(std::vector<xmlNodePtr>& wset);
+  void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  inline void putTraces(xmlNodePtr txml) { traces_xml = txml; }
+  inline void putTraces(xmlNodePtr txml) override { traces_xml = txml; }
 
-  inline void requestTraces(bool traces) { allow_traces = traces; }
+  inline void requestTraces(bool traces) override { allow_traces = traces; }
 
-  std::string getEngineName() { return QMCType; }
+  std::string getEngineName() override { return QMCType; }
 
   template<class PDT>
   void setValue(const std::string& aname, PDT x)
@@ -153,10 +158,10 @@ public:
   }
 
   ///set the BranchEngineType
-  void setBranchEngine(BranchEngineType* be) { branchEngine = be; }
+  void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) override { branchEngine = std::move(be); }
 
   ///return BranchEngineType*
-  BranchEngineType* getBranchEngine() { return branchEngine; }
+  std::unique_ptr<BranchEngineType> getBranchEngine() override { return std::move(branchEngine); }
 
   int addObservable(const std::string& aname)
   {
@@ -177,19 +182,27 @@ public:
   EstimatorManagerBase* Estimators;
 
   ///Traces manager
-  TraceManager* Traces;
+  std::unique_ptr<TraceManager> Traces;
 
   ///return the random generators
-  inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
+  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
+  {
+    RefVector<RandomBase<FullPrecRealType>> RngRefs;
+    for (int i = 0; i < Rng.size(); ++i)
+      RngRefs.push_back(*Rng[i]);
+    return RngRefs;
+  }
 
   ///return the i-th random generator
-  inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
+  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
 
-  unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
+  unsigned long getDriverMode() override { return qmc_driver_mode.to_ulong(); }
 
 protected:
+  /// @brief top-level project data information
+  const ProjectData& project_data_;
   ///branch engine
-  BranchEngineType* branchEngine;
+  std::unique_ptr<BranchEngineType> branchEngine;
   ///drift modifer
   DriftModifierBase* DriftModifier;
   ///randomize it
@@ -207,8 +220,6 @@ protected:
    * using MyCounter++ as in RQMC.
    */
   int MyCounter;
-  ///the number of blocks to be rolled back
-  int RollBackBlocks;
   ///the number to delay updates by
   int kDelay;
   /** period of dumping walker configurations and everything else for restart
@@ -220,7 +231,6 @@ protected:
   *
   * The unit is in steps.
   */
-  int storeConfigs;
 
   ///Period to recalculate the walker properties from scratch.
   int Period4CheckProperties;
@@ -276,7 +286,7 @@ protected:
   RealType Tau;
 
   ///maximum cpu in secs
-  RealType MaxCPUSecs;
+  int MaxCPUSecs;
 
   ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;
@@ -306,7 +316,7 @@ protected:
   QMCHamiltonian& H;
 
   ///record engine for walkers
-  HDFWalkerOutput* wOut;
+  std::unique_ptr<HDFWalkerOutput> wOut;
 
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
@@ -315,25 +325,19 @@ protected:
   std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> Rng;
+  UPtrVector<RandomBase<FullPrecRealType>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
   ///temporary storage for drift
-  ParticleSet::ParticlePos_t drift;
+  ParticleSet::ParticlePos drift;
 
   ///temporary storage for random displacement
-  ParticleSet::ParticlePos_t deltaR;
+  ParticleSet::ParticlePos deltaR;
 
-  ///turn on spin moves
-  std::string SpinMoves;
+  ///spin mass for spinor calcs
   RealType SpinMass;
-
-  ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver&) = delete;
-  ///Copy operator (disabled).
-  QMCDriver& operator=(const QMCDriver&) = delete;
 
   bool putQMCInfo(xmlNodePtr cur);
 
@@ -344,7 +348,7 @@ protected:
    *
    * virtual function with a default implementation
    */
-  virtual void recordBlock(int block);
+  void recordBlock(int block) override;
 
   /** finalize a qmc section
    * @param block current block
@@ -358,8 +362,14 @@ protected:
   int rotation;
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
-  const std::string& get_root_name() const { return RootName; }
-  NewTimer* checkpointTimer;
+  const std::string& get_root_name() const override { return RootName; }
+
+private:
+  NewTimer& checkpoint_timer_;
+  ///time the driver lifetime
+  ScopedTimer driver_scope_timer_;
+  ///profile the driver lifetime
+  ScopedProfiler driver_scope_profiler_;
 };
 /**@}*/
 } // namespace qmcplusplus

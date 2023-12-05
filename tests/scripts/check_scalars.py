@@ -168,6 +168,7 @@ def read_command_line():
             ii   = 'IonIon',
             lpp  = 'LocalECP',
             nlpp = 'NonLocalECP',
+            sopp = 'SOECP',
             mpc  = 'MPC',
             kec  = 'KEcorr',
             bw   = 'BlockWeight',

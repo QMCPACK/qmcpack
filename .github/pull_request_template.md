@@ -14,7 +14,8 @@ _Delete the items that do not apply_
 - Code style update (formatting, renaming)
 - Refactoring (no functional changes, no api changes)
 - Build related changes
-- Documentation content changes
+- Testing changes (e.g. new unit/integration/performance tests)
+- Documentation changes
 - Other (please describe):
 
 ### Does this introduce a breaking change?

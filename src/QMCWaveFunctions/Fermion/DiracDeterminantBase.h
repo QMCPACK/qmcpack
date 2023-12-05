@@ -19,81 +19,97 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
 {
+/// determinant matrix inverter select
+enum class DetMatInvertor
+{
+  HOST,
+  ACCEL,
+};
+
 class DiracDeterminantBase : public WaveFunctionComponent
 {
 public:
   /** constructor
-   *@param spos the single-particle orbital set
+   *@param spos the single-particle orbital set.
    *@param first index of the first particle
+   *@param last index of last particle
    */
-  DiracDeterminantBase(const std::string& class_name, SPOSetPtr const spos, int first = 0)
-      : WaveFunctionComponent(class_name),
-        UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
-        RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
-        InverseTimer(*timer_manager.createTimer(class_name + "::inverse", timer_level_fine)),
-        BufferTimer(*timer_manager.createTimer(class_name + "::buffer", timer_level_fine)),
-        SPOVTimer(*timer_manager.createTimer(class_name + "::spoval", timer_level_fine)),
-        SPOVGLTimer(*timer_manager.createTimer(class_name + "::spovgl", timer_level_fine)),
-        Phi(spos),
+  DiracDeterminantBase(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
+      : UpdateTimer(createGlobalTimer(class_name + "::update", timer_level_fine)),
+        RatioTimer(createGlobalTimer(class_name + "::ratio", timer_level_fine)),
+        InverseTimer(createGlobalTimer(class_name + "::inverse", timer_level_fine)),
+        BufferTimer(createGlobalTimer(class_name + "::buffer", timer_level_fine)),
+        SPOVTimer(createGlobalTimer(class_name + "::spoval", timer_level_fine)),
+        SPOVGLTimer(createGlobalTimer(class_name + "::spovgl", timer_level_fine)),
+        Phi(std::move(spos)),
         FirstIndex(first),
-        LastIndex(first + spos->size()),
-        NumOrbitals(spos->size()),
-        NumPtcls(spos->size())
-  {
-    Optimizable  = Phi->isOptimizable();
-    is_fermionic = true;
-    registerTimers();
-  }
+        LastIndex(last),
+        NumOrbitals(last - first),
+        NumPtcls(last - first)
+  {}
 
   ///default destructor
-  virtual ~DiracDeterminantBase() {}
+  ~DiracDeterminantBase() override {}
 
   // copy constructor and assign operator disabled
-  DiracDeterminantBase(const DiracDeterminantBase& s) = delete;
+  DiracDeterminantBase(const DiracDeterminantBase& s)            = delete;
   DiracDeterminantBase& operator=(const DiracDeterminantBase& s) = delete;
 
   // get the SPO pointer
-  inline SPOSetPtr getPhi() const { return Phi; }
+  inline SPOSetPtr getPhi() const { return Phi.get(); }
 
   // get FirstIndex, Last Index
   inline int getFirstIndex() const { return FirstIndex; }
   inline int getLastIndex() const { return LastIndex; }
 
 #ifndef NDEBUG
-  virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
+  virtual ValueMatrix& getPsiMinv() { return dummy_vmt; }
 #endif
 
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   */
-  virtual void set(int first, int nel, int delay = 1){};
+  bool isFermionic() const final { return true; }
+  inline bool isOptimizable() const final { return Phi->isOptimizable(); }
 
-  ///set BF pointers
-  virtual void setBF(BackflowTransformation* BFTrans) {}
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
+  {
+    Phi->extractOptimizableObjectRefs(opt_obj_refs);
+  }
 
-  ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
+  inline void checkOutVariables(const opt_variables_type& active) final
+  {
+    if (Phi->isOptimizable())
+      Phi->checkOutVariables(active);
+  }
 
-  virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
+  virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
+  {
+    throw std::runtime_error("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");
+  }
 
-  virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
-
-  inline void reportStatus(std::ostream& os) override final {}
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     Vector<ValueType>& dlogpsi) override
+  {
+    // assume no orbital optimization. If implemented, override this function
+  }
 
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
+  using WaveFunctionComponent::evaluateGL;
   using WaveFunctionComponent::evaluateLog;
+  using WaveFunctionComponent::mw_evaluateGL;
   using WaveFunctionComponent::mw_evaluateLog;
   using WaveFunctionComponent::recompute;
 
   using WaveFunctionComponent::copyFromBuffer;
   using WaveFunctionComponent::registerData;
   using WaveFunctionComponent::updateBuffer;
+
+  using WaveFunctionComponent::acquireResource;
+  using WaveFunctionComponent::createResource;
+  using WaveFunctionComponent::releaseResource;
 
   using WaveFunctionComponent::acceptMove;
   using WaveFunctionComponent::completeUpdates;
@@ -103,10 +119,8 @@ public:
   using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::mw_evalGrad;
   using WaveFunctionComponent::mw_ratioGrad;
-  using WaveFunctionComponent::mw_ratioGradAsync;
   using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::ratioGrad;
-  using WaveFunctionComponent::ratioGradAsync;
   using WaveFunctionComponent::restore;
 
   using WaveFunctionComponent::evalGradSource;
@@ -126,21 +140,21 @@ public:
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
   }
 
-  // Stop makeClone
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override final
+  // final keyword is intended to disable makeClone being further inherited.
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
   {
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
-    return 0;
+    return std::unique_ptr<DiracDeterminantBase>();
   }
 
-  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
-    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
+    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpin():  Implementation required\n");
     return 0.0;
   }
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
-    APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
+    APP_ABORT("  DiracDeterminantBase::evalGradWithSpin():  Implementation required\n");
     return GradType();
   }
   /** cloning function
@@ -150,47 +164,44 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const = 0;
-
-#ifdef QMC_CUDA
-  // expose GPU interfaces
-  //using WaveFunctionComponent::recompute;
-  using WaveFunctionComponent::addLog;
-  using WaveFunctionComponent::reserve;
-  //using WaveFunctionComponent::ratio;
-  using WaveFunctionComponent::addGradient;
-  using WaveFunctionComponent::addRatio;
-  using WaveFunctionComponent::calcGradient;
-  using WaveFunctionComponent::calcRatio;
-  using WaveFunctionComponent::det_lookahead;
-  using WaveFunctionComponent::gradLapl;
-  using WaveFunctionComponent::NLratios;
-  using WaveFunctionComponent::update;
-#endif
+  virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const = 0;
 
 protected:
   /// Timers
   NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &BufferTimer, &SPOVTimer, &SPOVGLTimer;
   /// a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr const Phi;
+  const std::unique_ptr<SPOSet> Phi;
   ///index of the first particle with respect to the particle set
-  int FirstIndex;
+  const int FirstIndex;
   ///index of the last particle with respect to the particle set
-  int LastIndex;
+  const int LastIndex;
   ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
+  const int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
+  const int NumPtcls;
 
 #ifndef NDEBUG
-  ValueMatrix_t dummy_vmt;
+  // This is for debugging and testing in debug mode
+  // psiMinv is not a base class data member or public in most implementations
+  // it is frequently Dual and its consistency not guaranteed.
+  ValueMatrix dummy_vmt;
 #endif
 
-  /// register all the timers
-  void registerTimers()
+  static bool checkG(const GradType& g)
   {
-    UpdateTimer.reset();
-    RatioTimer.reset();
+#if !defined(NDEBUG)
+    auto g_mag = std::abs(dot(g, g));
+    if (qmcplusplus::isnan(g_mag))
+      throw std::runtime_error("gradient of NaN");
+    if (std::isinf(g_mag))
+      throw std::runtime_error("gradient of inf");
+    if (g_mag < std::abs(std::numeric_limits<RealType>::epsilon()))
+    {
+      std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
+      throw std::runtime_error("gradient of zero");
+    }
+#endif
+    return true;
   }
 };
 

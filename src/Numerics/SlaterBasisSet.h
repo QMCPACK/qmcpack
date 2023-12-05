@@ -24,8 +24,8 @@ template<class T>
 struct SlaterCombo
 {
   static_assert(std::is_floating_point<T>::value, "T must be a float point type");
-  typedef T real_type;
-  typedef GenericSTO<T> Component_t;
+  using real_type   = T;
+  using Component_t = GenericSTO<T>;
 
   int L;
   bool Normalized;
@@ -92,8 +92,8 @@ struct SlaterCombo
     typename std::vector<Component_t>::iterator it(sset.begin()), it_end(sset.end());
     while (it != it_end)
     {
-      Y   += (*it).evaluate(r, rinv, du, d2u);
-      dY  += du;
+      Y += (*it).evaluate(r, rinv, du, d2u);
+      dY += du;
       d2Y += d2u;
       ++it;
     }
@@ -109,8 +109,8 @@ struct SlaterCombo
     typename std::vector<Component_t>::iterator it(sset.begin()), it_end(sset.end());
     while (it != it_end)
     {
-      Y   += (*it).evaluate(r, rinv, du, d2u, d3u);
-      dY  += du;
+      Y += (*it).evaluate(r, rinv, du, d2u, d3u);
+      dY += du;
       d2Y += d2u;
       d3Y += d3u;
       ++it;
@@ -118,7 +118,7 @@ struct SlaterCombo
   }
 
   bool putBasisGroup(xmlNodePtr cur);
-  bool putBasisGroupH5(hdf_archive& hin)
+  bool putBasisGroupH5(hdf_archive& hin, Communicate& myComm)
   {
     APP_ABORT(" Error: Slater Orbitals with HDF5 not implemented. Please contact developers. Aborting.\n");
     return true;

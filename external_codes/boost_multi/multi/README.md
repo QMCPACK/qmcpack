@@ -5,136 +5,211 @@
 
 (not an official Boost library)
 
-_© Alfredo A. Correa, 2018-2020_
+_© Alfredo A. Correa, 2018-2022_
 
-`Multi` provides multidimensional array access to contiguous or regularly contiguous memory (or ranges).
-It shares the goals of [Boost.MultiArray](https://www.boost.org/doc/libs/1_69_0/libs/multi_array/doc/index.html), 
-although the code is completely independent and the syntax has slight differences or has been extended.
-`Multi` and `Boost.MultiArray` types can be used interchangeably for the most part, they differ in the semantics of reference and value types. 
+`Multi` provides multidimensional array access to contiguous or regularly contiguous memory in modern C++.
 
-Multi aims to simplify the semantics of Boost.MultiArray and make it more compatible with the Standard (STL) Algorithms and special memory.
-It requires C++14. 
-The code was developed on `clang` (9.0) and `gcc` (9.2) compilers, and [tested regularly ](https://gitlab.com/correaa/boost-multi/pipelines) with NVCC (10.1) awith Intel (19.1) and  compilers.
-
-Before testing speed, please make sure that you are compiling in release mode (`-DNDEBUG`) and with optimizations (`-O3`), 
-if your test involves mathematical operations add arithmetic optimizations (`-Ofast`) to compare with Fortran code.
+This library aims to offer manipulation of array data in arbritrary dimension with well behaved value semantics, offering total compatibility with the Standard (STL) Algorithms, special memory (e.g. GPU), and following modern C++ design principles.
+It requires at least C++17. (It is C++20 ready.)
 
 Some features:
 
-* Arbitrary pointer types (minimal requirements)
-* Simplified implementation (~1200 lines)
-* Fast access of subarrays (view) types
 * Value semantics of multi-dimensional array container
-* Better semantics of subarray (view) types
-* Interoperability with other libraries, STL, ranges, 
+* Well defined referential semantics of subarray (view) types
+* Interoperability with other libraries, STL, ranges, thrust, Boost, and C-libraries.
+* Fast access of elements and subarrays (views) types
+* Arbitrary pointer types (fancy pointers, memory spaces)
+* Simplified implementation (~4000 lines)
 
-(Do not confuse this library with Boost.MultiArray or Boost.MultiIndex.)
+(Do not confuse this library with Boost.MultiArray or Boost.MultiIndex. 
+It shares the goals of [Boost.MultiArray](https://www.boost.org/doc/libs/1_69_0/libs/multi_array/doc/index.html),
+although the code is completely independent and with important semantic differences.)
+
+## Contents
+[[_TOC_]]
+
+## Using the library, installation and tests
+
+`Multi` doesn't require instalation, single file `#include<multi/array.hpp>` is enough to use the full core library.
+`Multi`'s _only_ dependecy is the standard C++ library.
+
+It is important to compile programs that use the library with some level of optimization, specially if element-access is intensively used.
+For example, when testing speed, please make sure that you are compiling in release mode (`-DNDEBUG`) and with optimizations (`-O3`).
+
+Testing the library requires CMake, a build system (e.g. make), and the Boost.Test library. 
+
+```bash
+sudo apt install cmake libboost-test-dev make
+```
+
+A CMake build system is provided to automatically run basic tests. (Test do depend on the Boost.Test library.)
+
+```bash
+git clone https://gitlab.com/correaa/boost-multi.git
+cd multi
+mkdir -p build && cd build
+cmake ..
+cmake --build .
+ctest
+```
+
+### Dependecies and compiler requirements
+
+The core of the library doesn't have dependencies (other than the standard library).
+
+Compiling and running the tests depends on Boost.Test
+(which can be installed with `sudo apt install libboost-test-dev` in Debian-like systems.)
+
+"Adaptor" sublibraries (included in `multi/adaptors/`) have specific dependencies, Boost.Serialization, fftw, blas, lapack, thurst, CUDA
+(which can be installed with `sudo apt install libboost-serialization-dev libfftw3-dev libblas64-dev liblapack64-dev libthrust-dev libcudart11.0` or indiviudually.)
+
+The code is developed for several compilers with standard C++17 support, for reference:
+LLVM's `clang` (5.0+) (`libc++` and `libstdc++`), 
+GNU's `g++` (7.1+), 
+Nvidia's `nvcc` (11.3+) and `nvc++` (20.7-21.3+), 
+Intel's `icpc` (2021.2.0+) and `icpx` (2022.0.0+), 
+Baxter's [`circle`](https://www.circle-lang.org/) (build 168+), and Microsoft's [MSVC](https://visualstudio.microsoft.com/vs/features/cplusplus/) (+19.14 in [conformant mode](https://godbolt.org/z/vrfh1fxWK)).
 
 ## Types
 
-* `multi::array<T, D, A>`: Array of dimension `D`, it has value semantics if `T` has value semantics. Memory is requested by allocator of type `A`, should support stateful allocators.
-* `multi::array_ref<T, D, P = T*>`: Array interpretation of a random access range, usually a memory block. It has reference semantics. Thanks to (non-virtual) inheritance an `array<T, D, A>` is-a `array_ref<T, D, A::pointer>`.
-* other derived "unspecified types" fulfil (a still loosely defined) `MultiArrayView` concept, for example by taking partial indices or rotations (transpositions). These reference types cannot be stored except through life-time extensions `auto&&`. Due to language limitations `auto` will not deduce a corresponding value-sematics type; for this reason it is necessary to use a "decay" idiom to obtain value object.
-* `MultiArrayView<T,D,P>::(const_)iterator`: Iterator to subarrays of dimension `D - 1`. For `D == 1` this is an iterator to an element. This types are generated by `begin` and `end` functions.
-* `MultiArrayView<T, D, P>::(const_)reference`: Reference to subarrays of dimension `D - 1`. For `D > 1` this are not true C++-references but types emulate them (with reference semantics), therefore `auto` is not well behaved. For `D==1` this is a true C++ reference to an elements. These types are generated by dereferencing iterators, e.g. `*begin(MA)`.
+* `multi::array<T, D, A>`: 
+Array of integer dimension `D`, it has value semantics if element type `T` has value semantics. 
+Memory is requested by allocator of type `A`, supports stateful and polymorphic allocators.
+* `multi::array_ref<T, D, P = T*>`: 
+Array interpretation of a random access range, usually a contiguous memory block. 
+It has reference semantics. 
+Thanks to (non-virtual) inheritance an `array<T, D, A>` is-a `array_ref<T, D, A::pointer>`.
+* Other derived "unspecified types" fulfill a `MultiArrayView` concept, for example by taking partial indices or rotations (transpositions).
+These reference types cannot be stored except through life-time extensions `auto&&` or `auto const&`,
+and they can decay to value types.
+* `MultiArrayView<T,D,P>::(const_)iterator`:
+Iterator to subarrays of dimension `D - 1`. For `D == 1` this is an iterator to an element. This types are generated by `begin` and `end` functions.
+* `MultiArrayView<T, D, P>::(const_)reference`: 
+Reference to subarrays of dimension `D - 1`. For `D > 1` this are not true C++-references but types emulate them (with reference semantics).
+For `D == 1` this is a true language reference to an element type (`T&`). These types are generated by dereferencing iterators, e.g. `*begin(MA)`.
 
 ## Basic Usage
 
-Declare an array specifying the element type and the dimension.
-Elements can be input with nested braced notation.
-```c++
-std::array<double, 2> A = {
-	{1, 2, 3}
-	{4, 5, 6}
+The following code declares an array by specifying the element type and the dimension;
+indiviudual elements can be initialized from a nested rectangular list.
+```cpp
+multi::array<double, 2> A = {
+	{1., 2., 3.}
+	{4., 5., 6.}
 };
-```
 
-The size is automatically deduced; the first dimension are the "rows" above.
+assert( A.size() == 2 );
+assert( A.num_elements() == 6 );
 
-```c++
-assert( A.size()==2 );
+assert( std::get<0>(A.sizes()) == 2 );
 assert( std::get<1>(A.sizes()) == 3 );
 ```
 
-Arrays can be copied, or moved, and compared. Copies are independent.
-```c++
+The value of an array can be copied, (moved,) and compared;
+copies are equal but independent (value semantics).
+
+```cpp
 std::array<double, 2> B = A;
-assert( B[0][1] == A[0][1] );
-assert( &B[0][1] == &A[0][1] );
 assert( extensions(B) == extensions(A) );
-assert( B == A );
+assert(  B       ==  A                 );
+assert(  B[0][1] ==  A[0][1]           );
+assert( &B[0][1] != &A[0][1]           );
 ```
 
-Arrays can be passed by value or by reference, most of the time they should be passed through generic parameters,
+Individual elements can be accessed by the multidimensional indices, either with square bracket (one index at a time) or with parenthesis.
 
-```c++
-template<class ArrayDouble2D> // instead of the over specific argument std::array<double, 2>
-double const& element_1_1(ArrayDouble2D const& m){return m[1][1];}
+```
+assert(  A(1, 2)  ==  A[1][2] );
+```
+
+Arrays can be initialized from its sizes alone, in which case the element values are default constructed:
+
+```cpp
+multi::array<double, 3> C({3, 4, 5});
+assert( num_elements(C) == 3*4*5 );  // 60 elements
+```
+
+Arrays can be passed by value or by reference.
+Most of the time, arguments should be passed through generic parameters to allow functions to work with parts (subblocks, slices, etc.) of an array.
+Usually, the most useful functions are those that work on the concept of array rather than on a concrete type.
+
+```cpp
+template<class ArrayDouble2D>  // instead of the over specific argument std::array<double, 2>
+auto element_1_1(ArrayDouble2D const& m) -> double const& {return m[1][1];}
 ...
 assert( element_1_1(A) == A[1][1] );
 ```
 
-In this way the functions can be called on blocks of larger matrices.
+The function obviously expect any kind of array or subarray of dimension 2 and element type `double`. 
 
-```c++
-std::array<double, 3> C3D;
+The generic function template arguments that are not intended to be modified are passed by `const&`; otherwise pass by forward-reference `&&`.
+In this way the functions can be called on subblocks of larger matrices.
+
+```cpp
 assert( &element_1_1(C3D[0]) == &C3D[0][1][1] );
 ```
 
 ## Advanced Usage
 
-We create a static C-array of `double`s, and refer to it via a bidimensional array `multi::array_ref<double, 2>`.
+We can create a static C-array of `double`s, and refer to it via a bidimensional array `multi::array_ref<double, 2>`.
 
-```c++
-	#include "../array_ref.hpp"
-	#include "../array.hpp"
-	
-	#include<algorithm> // for sort
-	#include<iostream> // for print
-	
-	namespace multi = boost::multi;
-	using std::cout; using std::cerr;
-	
-	int main(){
-		double d2D[4][5] = {
-			{150, 16, 17, 18, 19},
-			{ 30,  1,  2,  3,  4}, 
-			{100, 11, 12, 13, 14}, 
-			{ 50,  6,  7,  8,  9} 
-		};
-		multi::array_ref<double, 2> d2D_ref{&d2D[0][0], {4, 5}};
-															...
+```cpp
+#include "../array.hpp"
+
+#include<algorithm>  // for sort
+#include<iostream>  // for print
+
+namespace multi = boost::multi;
+using std::cout;
+
+int main() {
+	double d_data[20] = {
+		150., 16., 17., 18., 19.,
+		 30.,  1.,  2.,  3.,  4.,
+		100., 11., 12., 13., 14.,
+		 50.,  6.,  7.,  8.,  9.
+	};  // block of 20 elements ...
+	multi::array_ref<double, 2> d2D_ref{&d_data[0], {4, 5}};  // interpreted as a 4 by 5 array
+	...
 ```
 
 Note that the syntax of creating a reference array involves passing the pointer to a memory block (20 elements here) and the logical dimensions of that memory block (4 by 5 here).
 
 Next we print the elements in a way that corresponds to the logical arrangement:
 
-```c++
-		for(auto i : d2D_ref.extension(0)){
-			for(auto j : d2D_ref.extension(1))
-				cout << d2D_ref[i][j] <<' ';
-			cout <<'\n';
+```cpp
+	...
+	auto [ix, jx] = d2D_ref.extensions();
+	for(auto i : is) {
+		for(auto j : js) {
+			cout<< d2D_ref[i][j] <<' ';
 		}
+		cout <<'\n';
+	}
+	...
 ```
 
 This will output:
 
+> ```cpp
 > 150 16 17 18 19  
 > 30 1 2 3 4  
 > 100 11 12 13 14  
 > 50 6 7 8 9
+> ```
 
-It is sometimes said (by Sean Parent) that the whole of STL algorithms can be seen as intermediate pieces to implement`std::stable_sort`. 
+It is sometimes said (by Sean Parent) that the whole of STL algorithms can be seen as intermediate pieces to implement `std::stable_sort`. 
 Pressumably if one can sort over a range, one can perform any other standard algorithm.
 
-```c++
+```cpp
+		...
 		std::stable_sort( begin(d2D_ref), end(d2D_ref) );
+		...
 ```
 
 If we print this we will get
 
-> ```c++
+> ```cpp
 > 30 1 2 3 4  
 > 50 6 7 8 9  
 > 100 11 12 13 14  
@@ -143,143 +218,281 @@ If we print this we will get
 
 
 The array has been changed to be in row-based lexicographical order.
-Since the sorted array is a reference to the original data, the original array has changed. 
+Since the sorted array is a reference to the original data, the original C-array has changed.
 
-```c++
-		assert( d2D[1][1] == 6 );
+(Note that `std::*sort` cannot be applied directly to a multidimensional C-array or to Boost.MultiArray types.
+The arrays implemented by this library are, to the best of my knowledge, the only ones that support STL algorithms directly.)
+
+If we want to order the matrix in a per-column basis we need to "view" the matrix as range of columns.
+This is done in the bidimensional case, by accessing the matrix as a range of columns:
+
+```cpp
+		...
+		std::stable_sort( rotated(d2D_ref).begin(), rotated(d2D_ref).end() );
+	}
 ```
 
-(Note that `std::*sort` cannot be applied directly to a multidimensional C-array or to Boost.MultiArray types.)
+Which will transform the (original) matrix into:
 
-If we want to order the matrix in a per-column basis we need to "view" the matrix as range of columns. This is done in the bidimensional case, by accessing the matrix as a range of columns:
-
-```c++
-	    std::stable_sort( d2D_ref.begin(1), d2D_ref.end(1) );
-```
-
-Which will transform the matrix into. 
-
+> ```cpp
 > 1 2 3 4 30  
 > 6 7 8 9 50  
 > 11 12 13 14 100  
 > 16 17 18 19 150 
+> ```
 
-In other words, a matrix of dimension `D` can be viewed simultaneously as `D` different ranges of different "transpositions" by passing an interger value to `begin` and `end` indicating the preferred dimension.
-`begin(0)` is equivalent to `begin()`.
+In other words, a matrix of dimension `D` can be viewed simultaneously as `D` different ranges of different "transpositions" (rotation/permutation of indices.)
 
 ## Initialization
 
 `array_ref` is initialized from a preexisting contiguous range, the index extensions should compatible with the total number of elements.
 
-```c++
+```cpp
 double* dp = new double[12];
-multi::array_ref<double, 2> A({3,4}, dp);
-multi::array_ref<double, 2> B({2,6}, dp);
+multi::array_ref<double, 2> A({3, 4}, dp);
+multi::array_ref<double, 2> B({2, 6}, dp);
 ...
 delete[] dp;
 ```
-`array` is initialized by specifying the index extensions (and optionally a default value) or alternatively from a rectangular list. 
+Array references do not own memory and can not be resized or "reseated" to refer to a different location.
+Since `array_ref` is an array reference, it can "dangle" if the the original memory is deallocated.
 
-```c++
-/*In C++17 the element-type and the dimensionality can be omitted*/
-multi::array/*<double, 1>*/ A1 = {1.,2.,3.}; 
-                     assert(A1.dimensionality==1 and A1.num_elements()==3);
-multi::array/*<double, 2>*/ A2 {
-	 {1.,2.,3.},
-	 {4.,5.,6.}
-};                   assert(A2.dimensionality==2 and A2.num_elements()==2*3);
-multi::array/*<double, 3>*/ const A3 = {
+Array objects own the elements it contains and can be resized;
+`array` is initialized by specifying the index extensions (and optionally a default value).
+
+```cpp
+multi::array<double, 1> A1({3}      , 11.);  // {11., 11., 11.}
+
+multi::array<double, 2> A2({2, 3}   , 22.);  // { {22., 22., 22.}, {22., 22., 22.} }
+
+multi::array<double, 3> A3({3, 2, 2}, 33.);  // { { { 33., ...}, { ... }, ... } }
+```
+... or alternatively from a rectangular list.
+
+```cpp
+multi::array<double, 1> A1 = {1., 2., 3.};
+assert( num_elements(A1)==3 );
+
+multi::array<double, 2> A2 {
+	 { 1., 2., 3.},
+	 { 4., 5., 6.}
+};
+
+assert( num_elements(A2) == 2*3);
+
+multi::array<double, 3> const A3 = {
     {{ 1.2,  0.}, { 2.4, 1.}},
     {{11.2,  3.}, {34.4, 4.}},
     {{15.2, 99.}, {32.4, 2.}}
-};                   assert(A3.dimensionality==3 and A3.num_elements()==3*2*2);
+};
+
+assert( num_elements(A3) == 3*2*2 );
+```
+
+In all cases constness (`const` declaration) is honored in the expected way.
+
+## Copy and assigment
+
+The library offer value semantics for the `multi::array<T, D>` family of classes.
+Constructing or assignment from an existing array generates a copy of the original object, that is, and object that is independent but equal in value.
+
+```cpp
+auto B2 = A2;  // same as multi::array<double, 3> B3 = A3;
+assert( B2        == A2        );  // copies have the same value (and also the same shape)
+assert( B2.base() != A2.base() );  // but they are independent
+```
+
+Any (mutable) array can be assigned at any moment, independent of the previous state or shape of the variable.
+The dimensionalities must match.
+```cpp
+B2 = A2;  // same as multi::array<double, 3> B3 = A3;
+```
+
+(The operation can fail there is no enough memory to hold a copy.)
+
+Sometimes it is necessary to generate copies from views, the dimensionality must match.
+```cpp
+multi::array<double, 3> C2 = A2( {0, 2}, {0, 2} );
+```
+or equivalently:
+```cpp
+auto C2 = + A2( {0, 2}, {0, 2} );
+```
+Note the use of `+` as indicator that a copy must be created (it has no arithmetic implications), otherwise `C3` will still be a non-indepdent view of the original array.
+
+Subviews can also assigned but only if the shape of the left-hand side (LHS) and right-hand side (RHS) match.
+Otherwise the behavior is undefined (in debug mode the program will fail an `assert`).
+
+```cpp
+C2( {0, 2}, {0, 2} ) = A2( {0, 2}, {0, 2} );  // both are 2x2 views of arrays, *elements* are copies
+```
+
+Introducing the same or overlapping elements in the RHS and LHS produces undefined behavior in general (and the library doesn't check);
+for example this instruction does not transpose the array, but produces an undefined result.
+
+```cpp
+A2 = A2.transposed();
+```
+
+... while this does produce a transposition (at the cost of making a copy of the tranposed array first and assigning it back to the original array).
+
+```cpp
+A2 = + A2.transposed();
+```
+
+Finally, arrays can be efficiently moved by transferring ownership of the internal data.
+
+```cpp
+auto B2 = std::move(A2);  // A2 is empty after this
+```
+
+Subarrays do not own the data therefore they cannot be moved in the same sense.
+However, indivial elements of a view can be moved, this is particularly useful if the elements are expensive to copy.
+A moved subview is simply another kind view of the elements.
+
+```cpp
+multi::array<std::vector<double>, 2> A({10, 10});
+multi::array<std::vector<double>, 2> B({10, 10});
+...
+B[1] = A[2].moved();  // 10 *elements* of the third row of A is moved into the second row of B.
+```
+
+## Changing extents (sizes)
+
+Arrays can change their size preserving elements with `reextents`.
+
+```cpp
+multi::array<double, 2> A {
+	 {1., 2., 3.},
+	 {4., 5., 6.}
+};
+
+A.reextents({4, 4});
+
+assert( A[0][0] = 1. );
+```
+
+Subarrays, or views cannot change their size. `A[1].reextents({4})`.
+The main utility of `reextents` is element preservation.
+If element preservation is not desired, simple (move) assignment from a new array expresses the intention better as it is more efficient.
+
+```cpp
+A = multi::array<double, 2>({4, 4});
 ```
 
 ## Iteration
 
 Accessing arrays by iterators (`begin`/`end`) enables the use of many iterator based algorithms (see the sort example above).
-`begin/end(A)` (or equivalently `A.begin/end()`) gives iterators that linear and random access in the leading dimension. 
+`begin(A)/end(A)` (or equivalently `A.begin()/A.end()`) gives iterators that are linear and random access in the leading dimension.
 
-`A.begin/end(n)` gives access in non-leading nested dimension number `n`. 
+`cbegin/cend` give constant (read-only access).
 
-`cbegin/cend(A)` (or equivalently `A.cbegin/cend()`) gives read-only iterators.
+Other non-leading dimensions can be obtained by "rotating" indices first.
 
-For example in three dimensional array,
+`A.rotated().begin()/.end()` gives access to a range of subarrays in second dimension number (first dimension is put at the end).
 
-	(cbegin(A)+1)->operator[](1).begin()[0] = 342.4; //error, read-only
-	(begin(A)+1)->operator[](1).begin()[0] = 342.4; // assigns to A[1][1][0]
-	assert( (begin(A)+1)->operator[](1).begin()[0] == 342.4 );
+For example in a three dimensional array,
+
+```cpp
+	(cbegin(A)+1)->operator[](1).begin()[0] = 342.4;  // error, read-only
+	( begin(A)+1)->operator[](1).begin()[0] = 342.4;  // assigns to A[1][1][0]
+	assert( ( begin(A)+1)->operator[](1).begin()[0] == 342.4 );
+```
 
 As an example, this function allows printing arrays of arbitrary dimension into a linear comma-separated form.
 
-```c++
+```cpp
 void print(double const& d){cout<<d;};
-template<class MultiArray> 
-void print(MultiArray const& ma){
+template<class MultiArray>
+void print(MultiArray const& ma) {  // note the recursion in the template function `print`
 	cout<<"{";
-	if(not ma.empty()){
+	if(not ma.empty()) {
 		print(*cbegin(ma));
-		std::for_each(cbegin(ma)+1, cend(ma), [](auto&& e){cout<<","; print(e);});
+		std::for_each(cbegin(ma)+1, cend(ma), [](auto&& e) {cout<<","; print(e);});
 	}
 	cout<<"}";
 }
 ...
 print(A);
 ```
+> ```
 > {{{1.2,1.1},{2.4,1}},{{11.2,3},{34.4,4}},{{15.2,99},{32.4,2}}}
+> ```
 
 
-Except for those corresponding to the one-dimensional case, derreferencing iterators generally produce proxy-reference objects. 
-Therefore this is not allowed:
+Except for those corresponding to the one-dimensional case, derreferencing iterators generally produce "proxy"-references (i.e. objects that behave in a large degree like language references).
+These references can be given a name; using `auto` can be misleading since the resulting variable does not have value semantics.
 
-    auto row = *begin(A); // compile error 
+```cpp
+auto row = *begin(A);  // accepted by the language but misleading, row is not an independent value
+```
 
-This because `row` doesn't have the expected value semantics, and didn't produce any data copy.
-However this express the intention better
+In my experience, however, the following usage patter a more consistent idiom for generating references (still without copying elements):
 
-    decltype(A)::value_type row = *begin(A); // there is a real copy.
+```cpp
+auto&&       row0 = * begin(A);  // same as decltype(A)::      reference  row0 = * begin(A);
+auto const& crow0 = *cbegin(A);  // same as decltype(A)::const_reference crow0 = *cbegin(A);
 
-In my experience, however, this produces a more consistent idiom to hold references without copying elements.
+auto&&       row0 =               A [1];  // same as decltype(A)::      reference  row0 =               A [1];
+auto const& crow1 = std::as_const(A)[1];  // same as decltype(A)::const_reference crow0 = std::as_const(A)[1];
+```
 
-    auto const& crow = *cbegin(A); // same as decltype(A)::const_reference crow = *cbegin(A);
-    auto&&       row = * begin(A); // same as decltype(A)::      reference  row = * begin(A);
+If a new value is desired, these (equivalent) options express the intention more explicitly:
+
+```cpp
+decltype(A)::value_type row =   *begin(A);  // there is a real copy of the row
+                   auto row = + *begin(A);  // there is another copy, note the use of '+' (unary plus)
+```
 
 ## Indexing
 
 Arrays provide random access to elements or subviews.
-Many algorithms on arrays are oriented to linear algebra, which are ubiquitously implemented in terms of multidimensional index access.
+Many algorithms on arrays are oriented to linear algebra,
+which are ubiquitously implemented in terms of multidimensional index access.
+
+Iterator access and index access are two alternatives for accessing elements.
+For example `*(begin(A) + n)` and `A[n]` are semantically equivalent
+and the range defined by the pair `begin(A), end(A)` is `A(extension(A))` (even for multidimensional `A`).
+The syntax can be combined in arbitrary ways, for example `*begin(A[n])` is equivalent to `A[n][0]` (if the dimensionality of `A` is equal or greater than two).
 
 ### Element access and partial access
 
-Index access mimics that of C-fixed sizes arrays, for example a 3-dimensional array will access to an element by `m[1][2][3]`, 
-which can be used for write and read operations.
+Index access mimics that of C-fixed sizes arrays. 
+For example, a 2-dimensional array will access to an element by specifying two indices `A[1][2]`,
+which can be used for direct write and read operations; 
+while _partial_ index arguments `A[1][2]` generate a view 1-dimensional object (reference).
 
-Partial index arguments `m[1][2]` generate a view 1-dimensional object.
-Transpositions are also multi-dimensional arrays views in which the index are *logically* rearranged, for example `m.rotated(1)[2][3][1] == rotated(m)[2][3][1] == m[1][2][3]`.
-(rotate refers to the fact that the logical indices are rotated.)
+```cpp
+A        // is a 2D value array
+A[0]     // is a 1D "reference"/"view" array
+A[0][0]  // is a an element reference, zero-D
+```
 
-As an illustration of an algorithm based on index access (as opposed to iterators), 
+Transpositions are also multi-dimensional arrays views in which the index are *logically* rearranged, for example `rotated(m)[2][3][1] == m[1][2][3]`.
+(`rotate` refers to the fact that the logical indices are _rotated_ to the left.)
+
+As an illustration of an algorithm based on index access (as opposed to iterators),
 this example code implements Gauss Jordan Elimination without pivoting:
 
-```c++
+```cpp
 template<class Matrix, class Vector>
-auto gj_solve(Matrix&& A, Vector&& y)->decltype(y[0]/=A[0][0], y){
-	std::ptrdiff_t Asize = size(A); 
-	for(std::ptrdiff_t r = 0; r != Asize; ++r){
+auto gj_solve(Matrix&& A, Vector&& y) -> decltype(y[0]/=A[0][0], y) {
+	std::ptrdiff_t Asize = size(A);
+	for(std::ptrdiff_t r = 0; r != Asize; ++r) {
 		auto&& Ar = A[r];
 		auto&& Arr = Ar[r];
-		for(std::ptrdiff_t c = r + 1; c != Asize; ++c) Ar[c] /= Arr;
+		for(std::ptrdiff_t c = r + 1; c != Asize; ++c) {Ar[c] /= Arr;}
 		auto const yr = (y[r] /= Arr);
-		for(std::ptrdiff_t r2 = r + 1; r2 != Asize; ++r2){
+		for(std::ptrdiff_t r2 = r + 1; r2 != Asize; ++r2) {
 			auto&& Ar2 = A[r2];
-			auto const& Ar2r = Ar2[r]; // auto&& Ar = A[r];
-			for(std::ptrdiff_t c = r + 1; c != Asize; ++c) Ar2[c] -= Ar2r*Ar[c];
+			auto const& Ar2r = Ar2[r];  // auto&& Ar = A[r];
+			for(std::ptrdiff_t c = r + 1; c != Asize; ++c) {Ar2[c] -= Ar2r*Ar[c];}
 			y[r2] -= Ar2r*yr;
 		}
 	}
-	for(std::ptrdiff_t r = Asize - 1; r > 0; --r){
+	for(std::ptrdiff_t r = Asize - 1; r > 0; --r) {
 		auto const& yr = y[r];
-		for(std::ptrdiff_t r2 = r-1; r2 >=0; --r2) y[r2] -= yr*A[r2][r];
+		for(std::ptrdiff_t r2 = r-1; r2 >=0; --r2) {y[r2] -= yr*A[r2][r];}
 	}
 	return y;
 }
@@ -287,17 +500,17 @@ auto gj_solve(Matrix&& A, Vector&& y)->decltype(y[0]/=A[0][0], y){
 
 This function can be applied to a `multi::array` container:
 
-```c++
+```cpp
 multi::array<double, 2> A = {{-3., 2., -4.},{0., 1., 2.},{2., 4., 5.}};
 multi::array<double, 1> y = {12.,5.,2.}; //(M); assert(y.size() == M); iota(y.begin(), y.end(), 3.1);
 gj_solve(A, y);
 ```
 
-and also to a combination of `MultiArrayView`-type objects:
+and also to a combination of `MultiArrayView`-type objects (including standard vectors):
 
-```c++
-multi::array<double, 2> A({6000, 7000}); std::iota(A.data(), A.data() + A.num_elements(), 0.1);
-std::vector<double> y(3000); std::iota(y.begin(), y.end(), 0.2);
+```cpp
+multi::array<double, 2> A({6000, 7000}); std::iota(A.data_elements(), A.data_elements() + A.num_elements(), 0.1);
+std::vector<double> y(3000); std::iota(y.begin(), y.end(), 0.2);  // could be also a multi::array<double, 1> y({3000});
 gj_solve(A({1000, 4000}, {0, 3000}), y);
 ```
 
@@ -305,19 +518,21 @@ gj_solve(A({1000, 4000}, {0, 3000}), y);
 
 Given an array, a slice in the first dimension can be taken with the `sliced` function. `sliced` takes two arguments, the first index of the slice and the last index (not included) of the slice. For example,
 
-```c++
-multi::array<double, 2> d2D({4, 5});
-assert( d2D.size(0) == 4 and d2D.size(1) == 5 );
+```cpp
+multi::array<double, 2> A({4, 5});  // A is a value
+assert( std::get<0>(A) == 2 );
+assert( std::get<1>(A) == 5 );
 
-auto&& d2D_sliced = d2D.sliced(1, 3); // {{d2D[1], d2D[2]}}
-assert( d2D_sliced.size(0) == 2 and d2D_sliced.size(1) == 5 );
+auto&& A_sliced = A.sliced(1, 3); // {{d2D[1], d2D[2]}}
+assert( std::get<0>(A_sliced) == 2 );
+assert( std::get<1>(A_sliced) == 5 );
 ```
 
 The number of rows in the sliced matrix is 2 because we took only two rows, row 1 and row 2 (row 3 is excluded).
 
 In the same way a strided view of the original array can be taken with the `strided` function.
 
-```c++
+```cpp
 auto&& d2D_strided = d2D.strided(2); // {{ d2D[0], d2D[1] }};
 assert( d2D_strided.size(0) == 2 and d2D_strided.size(1) == 5 );
 ```
@@ -326,101 +541,136 @@ In this case the number of rows is 2 because, out of the 4 original rows we took
 
 Operations can be combined in a single line:
 
-```c++
+```cpp
 auto&& d2D_slicedstrided = d2D.sliced(1, 3).strided(2); // {{ d2D[1] }};
 assert( d2D_slicedstrided.size(0) == 1 and d2D_slicedstrided.size(1) == 5 );
 ```
 
 For convenience, `A.sliced(a, b, c)` is the same as `A.sliced(a, b).strided(c)`.
 
-By combining `rotated`, `sliced` and `strided` one can take sub arrays at any dimension. 
+By combining `rotated`, `sliced` and `strided` one can take sub arrays at any dimension.
 For example in a two dimensional array one can take a subset of columns by defining.
 
-```c++
-auto&& subA = A.rotated(1).strided(1, 3).sliced(2).rotated(-1);
+```cpp
+auto&& subA = A.rotated().strided(1, 3).sliced(2).unrotated();
 ```
 
-Other notations are available, but when in doubt the `rotated/strided/sliced/rotated` and combinations of them idioms provides the most control over the subview operations.
+Other notations are available, but when in doubt, the `rotated/strided/sliced/rotated` and combinations of them provides the most control over the subview operations.
 (At the moment the `strided` argument has to divide the total size of the slice (or matrix), otherwise the behavior is undefined.)
 
-Blocks (slices) in multidimensions can be obtained but pure index notation using `.operator()`:
+Blocks (slices) in multidimensions can be obtained but pure index notation using parentheses `()` (`.operator()`):
 
-```c++
-multi::array<double, 2> A({6, 7}); // 6x7 array
-A({1, 4}, {2, 4}) // 3x2 array, containing indices 1 to 4 in the first dimension and 2 to 4 in the second dimension.
+```cpp
+auto        A = multi::array<double, 2>({6, 7});  // 2D value array
+
+auto&&      A_block1 = A({1, 4}, {2, 4});  // 2D subarray reference (modifiable)
+auto const& A_block2 = A({1, 4}, {2, 4});  // 2D subarray reference (non-modifiable)
+
+auto        A_block3 = A({1, 4}, {2, 4});  // disabled
 ```
 
-## Concept Requirements
+Note that the last case gives a compilation error, the library prevents the use of this references as if they are were values.
+Some times copies are necessary, specifically from a subarray block, this can be done by constructing a new array. 
+The value array can be deduces by using `auto` and the `decay` member, which in turn is equivalent to the unary `+` operator.
 
-The design tries to impose the minimum possible requirements over the used referred types.
+```cpp
+multi::array<double, 2> block_value_1 =   A({1, 4}, {2, 4})        ;
+auto                    block_value_2 =   A({1, 4}, {2, 4}).decay();
+auto                    block_value_3 = + A({1, 4}, {2, 4})        ;
+```
+
+## Const-correctness
+
+The library goes to great lenghts to ensure const-correctness.
+Const-correctness refers to the property of an object, or parts of it, of not accepting mutation.
+It is not only important to avoid bugs and typos but also to ensure compatibility with thread safety.
+
+An array can be declared to be constant using the keyword `const`.
+A reference array (`array_ref`) is never resizable (or reassignable) but their elements are mutable unless the reference is declared with `const`.
+
+The design ensures that constness of references and values is propagated to subsets (views) and to elements.
+Any subarray (views) will propagate the constness of the original array.
+
+```cpp
+template<class Array1D>
+void print(Array1D const& coll) {
+//  *coll.begin() = 99;  // doesn't compile "assignment of read-only location"
+
+	for(auto const& e : coll) {std::cout<< e <<", ";}
+	std::cout << std::endl;
+}
+
+int main() {
+	multi::array<int, 1> const coll1 = {0, 8, 15, 47, 11, 42};
+
+	print( coll1 );  // prints "0, 8, 15, 47, 11, 42"
+	print( coll1({0, 3}) );  // prints "0, 8, 15"
+}
+```
+
+As a general rule, in functions take generic array arguments that are _not_ going to be mutated as `Array const&` (in the context of `template<class Array>`).
+If mutation is expected take them as `Array&&` (note the double ampersand, i.e. universal/forwarding reference).
+Views can be *named* into "constant language references" by using `auto const&`.
+If mutation is desired use `auto&&`.
+Normal references `Array&` or `auto&` in general doesn't have the expected behavior for views,
+
+```cpp
+template<class Array1D>
+void fill_99(Array1D&& coll) {
+	for(auto& e : coll) {e = 99;}
+}
+
+int main() {
+	multi::array<int, 1> coll1 = {0, 8, 15, 47, 11, 42};
+
+	fill_99( coll1 );
+	fill_99( coll1({0, 3}) );
+
+	auto&& coll1_take3 = coll1({0, 3});
+	fill_99( coll1_take3 );
+
+	auto const& coll2 = coll1;
+//  fill_99( coll2 );  // doesn't compile because coll2 is const
+//  fill_99( coll2({0, 3}) );  // similar to coll2 | take(3) doesn't compile
+
+	auto const& coll1_take3_const = coll1({0, 3});
+//  fill_99( coll1_take3_const );  // doesn't compile because coll1_take3_const is const
+}
+```
+
+## Type Requirements
+
+The design tries to impose the minimum possible requirements over the types that parameterize the arrays.
+Array operations assume that the contained type (element type) are regular (i.e. different element represent disjoint entities that behave like values).
 Pointer-like random access types can be used as substitutes of built-in pointers.
-
-```c++
-namespace minimal{
-    template<class T> class ptr{ // minimalistic pointer
-    	T* impl_;
-    	T& operator*() const{return *impl_;}
-    	auto operator+(std::ptrdiff_t n) const{return ptr{impl_ + n};}
-    //	operator[], operator+=, etc are optional but not necessary
-    };
-}
-
-int main(){
-	double* buffer = new double[100];
-	multi::array_ref<double, 2, minimal::ptr<double> > CC(minimal::ptr<double>{buffer}, {10, 10});
-	CC[2]; // requires operator+ 
-	CC[1][1]; // requires operator*
-	CC[1][1] = 9;
-	assert(CC[1][1] == 9);
-	delete[] buffer;
-}
-```
+(Therefore pointers to special memory and fancy-pointers are supported.)
 
 ### Linear Sequences: Pointers
 
-An `array_ref` can reference to an arbitrary random access iterator sequence.
-This way, any linear (random access) sequence (e.g. `raw memory`, `std::vector`, `std::queue`) can be efficiently arranged as a multidimensional array. 
+An `array_ref` can reference to an arbitrary random access sequence (e.g. memory block defined by pointer and size).
+This way, any linear (random access) sequence (e.g. `raw memory`, `std::vector`, `std::queue`) can be efficiently arranged as a multidimensional array.
 
-```c++
+```cpp
 std::vector<double> buffer(100);
-multi::array_ref<double, 2, std::vector<double>::iterator> A({10, 10}, buffer.begin());
+multi::array_ref<double, 2> A({10, 10}, buffer.data());
 A[1][1] = 9;
-assert(A[1][1] == 9);
-assert(buffer[11]==9);
+
+assert(buffer[11]==9);  // the target memory is affected
 ```
-Since `array_ref` does not manage the memory associated with it, the reference can be simply dangle if the `buffer` memory is reallocated (e.g. by `resize`).
+Since `array_ref` does not manage the memory associated with it, the reference can be simply dangle if the `buffer` memory is reallocated (e.g. by `resize` in this case).
 
 ### Special Memory: Allocators and Fancy Pointers
 
-`array`'s manages its memory through allocators. 
-It can handle special memory, as long as the underlying types behave coherently, these include fancy pointers and fancy references.
+`array`'s manages its memory behind the scenes through allocators, which can be specified at construction.
+It can handle special memory, as long as the underlying types behave coherently, these include [fancy pointers](https://en.cppreference.com/w/cpp/named_req/Allocator#Fancy_pointers) (and fancy references).
 Associated fancy pointers and fancy reference (if any) are deduced from the allocator types.
+Another use of fancy pointer is to create by-element "projections".
 
-The behavior regarding memory managament of the [fancy pointers](https://en.cppreference.com/w/cpp/named_req/Allocator#Fancy_pointers) can be customized (if necessary) by specializations of some or all of these functions:
-
-```c++
-destroy(a, first, last)
-destroy_n(a, first, n) -> last
-uninitialized_copy_n(a, first, n, dest) -> last;
-uninitialized_fill_n(a, first, n, value) -> last
-uninitialized_default_construct_n(a, first, n) -> last
-uninitialized_value_construct_n(a, first, n) -> last
-```
-
-where `a` is the special allocator, `n` is a size (usually the number of elements), `first`, `last` and `dest` are fancy pointers.
-
-Copying underlying memory can be customized by specializing 
-
-```c++
-copy_n(first, n, dest)
-fill_n(first, n, value)
-```
-
-Specific cases of fancy memory are file-mapped memory or interprocess shared memory.
+Specific uses of fancy memory are file-mapped memory or interprocess shared memory.
 This example illustrates memory persistency by combining with Boost.Interprocess library. 
 The arrays support their allocators and fancy pointers (`boost::interprocess::offset_ptr`).
 
-```c++
+```cpp
 #include <boost/interprocess/managed_mapped_file.hpp>
 using namespace boost::interprocess;
 using manager = managed_mapped_file;
@@ -435,7 +685,7 @@ int main(){
 	auto&& arr2d = *m.construct<marray<double, 2>>("arr2d")(std::tuple{1000, 1000}, 0.0, get_allocator(m));
 	arr2d[4][5] = 45.001;
 }
-// imagine execution restarts here
+// imagine execution restarts here, the file "mapped_file.bin" persists
 {
 	manager m{open_only, "mapped_file.bin"};
 	auto&& arr2d = *m.find<marray<double, 2>>("arr2d").first;
@@ -446,17 +696,246 @@ int main(){
 }
 ```
 
-# Interoperability
+(See also, examples of interactions with the CUDA Thrust library to see more uses of special pointer types to handle special memory.)
 
-Along with STL itself, the library tries to interact with other existing C++ libraries.
+Another kind of fancy-pointer is one that transforms the underlying values.
+These are useful to create "projections" or "views" of data elements.
+In the following example a "transforming pointer" is used to create a conjugated view of the elements.
+In combination with transposed view, it can create a hermitic (transposed-conjugate) view of the matrix (without copying elements).
+We can adapt the library type `boost::transform_iterator` to save coding, but other libraries can be used also.
+The hermitized view is read-only, but with additional work a read-write view can be created (see `multi::blas::hermitized` in multi-adaptors).
 
-## Range v3
+```cpp
+constexpr auto conj = [](auto const& c) -> auto const {return std::conj(c);};
 
-```c++
+template<class T> struct conjr : boost::transform_iterator<decltype(conj), T*> {
+	template<class... As> conjr(As const&... as) : boost::transform_iterator<decltype(conj), T*>{as...} {}
+};
+
+template<class Array2D, class Complex = typename Array2D::element_type>
+auto hermitized(Array2D const& arr) {
+	return arr
+		.transposed() // lazily tranposes the array
+		.template static_array_cast<Complex, conjr<Complex>>(conj)  // lazy conjugate elements
+	;
+}
+
+int main() {
+    using namespace std::complex_literals;
+	multi::array A = {
+		{ 1. + 2.i,  3. +  4.i},
+		{ 8. + 9.i, 10. + 11.i}
+	};
+
+	auto const& Ah = hermitized(A);
+
+	assert( Ah[1][0] == std::conj(A[0][1]) );
+}
+```
+
+# Interoperability with other software
+
+## STL (Standard Template Library)
+
+The fundamental goal of the library is that the arrays and iterators can be used with STL algorithms out-of-the-box with a reasonable efficiency.
+The most dramatic example of this is that `std::sort` works with array as it is shown in a previous example.
+
+Along with STL itself, the library tries to interact with other existing quality C++ libraries listed below.
+
+### Ranges (C++20)
+
+Although no exhaustive test has been performed, the library is expected to work with STL ranges. 
+The library works well with Ranges-v3 which is approximately a superset of STL ranges (see example below).
+
+### Polymorphic Memory Resources
+
+The library is compatible with C++17's polymorphic memory resources (PMR) which allows using preallocated buffers as described in this example. 
+This enables the use of stack memory, with many performance advantaneges.
+For example, this code uses a buffer to allocate memory for two arrays, we will see how this buffer ends up containing the data of the arrays `"aaaabbbbbbXX"`.
+
+```cpp
+#include <memory_resource>  // for polymorphic memory resource, monotonic buffer
+
+int main() {
+	char buffer[13] = "XXXXXXXXXXXX";  // a small buffer on the stack
+	std::pmr::monotonic_buffer_resource pool{std::data(buffer), std::size(buffer)};
+
+	multi::array<char, 2, std::pmr::polymorphic_allocator<char>> A({2, 2}, 'a', &pool);
+	multi::array<char, 2, std::pmr::polymorphic_allocator<char>> B({3, 2}, 'b', &pool);
+
+	assert( buffer == std::string{"aaaabbbbbbXX"} );
+}
+```
+
+The library supports classic allocators (`std::allocator` by default) and also allocators from other libraries (see Thurst section).
+
+### Comparison with `mdspan` (projected for C++23)
+
+C++23 will provide `mdspan`, a non-owning multidimensional array.
+This is a good point to compare the two libraries.
+Although the goals are similar, the two libraries differ in their generality and approach; in a few words:
+
+The Multi library concentrates in _well defined value- and reference-semantics of arbitrary memory types with regularly arranged elements_ (distributions described by strides and offsets) and _extreme compatibility with STL algorithms_ (via iterators) and other fundamental libraries.
+
+`mdspan` concetrates in _arbitrary layouts_ for non-owining memory of a single type (described by raw pointers).
+Due to the priority of arbitrary layouts, the `mdspan` research team didn't find efficient ways to introduce iterators into the library and the compatibility with respect to the rest of the STL is therefore lacking.
+The ultimate reason is that arbitrary layouts do not compose well across subdimensions.
+This imposes certain limitations in the library such as ad-hoc slicing and subarray.
+
+Here it is a table with comparison, also the libraries can be compare [here](https://godbolt.org/z/5Pbrs5fEd)
+
+|                         | Multi                                                           | mdspan                                      |
+|---                      | ---                                                             | ---                                         | 
+| External Deps            | no (Standard Library C++17)      | no (Standard Library)     |
+| Non-owning view of data | **yes**, via `multi::array_ref<T, D>(Tptr, {x1, x2, ..., xD})`      | **yes**, via `mdspan m{T*, extents{x1, x2, ..., xD}};`     |
+| Arbritary number of dim | **yes**, via positive dimension (compile-time) parameter `D`        | **yes**, same                                   |
+| Compile-time dim size   | no                                                              | **yes**, via template paramaters `mdspan{T*, extent<16, dynamic_extents>{32} }` |   |
+| Array values (owning data) | **yes**, via `multi::array<T, D>({x1, x2, ..., xD})`             | no, (planned `mdarray`)                     |
+| Value semantic (Regular) | **yes**, via cctor, mctor, assign, massign, auto decay of views | no, and not planned                          |
+| const-propagation Reference semantic | **yes**, via `const` or `const&` | no, const mdspan elements are assignable!                          |
+| References w/no-rebinding   | **yes**, assignment is deep | no, assignment of mdspan rebinds!                         |
+| Element access              | **yes**, via `A(i, j, ...)`                                     | **yes**, via `A(i, j, ...)`                          |
+| Partial element access      | **yes**, via `A[i]` or `A(i, multi::all)`           | **yes**, via `submdspan(A, i, full_extent)`                               |
+| Subarray views              | **yes**, via `A({0, 2}, {1, 2})` or `A(1, {1, 2})`              | **yes**, via `submdspan(A, std::tuple{0, 2}, std::tuple{0, 2})` |
+| Subarray with lower dim     | **yes**, via `A(1, {1, 2})`                                     | **yes**, via `submdspan(A, 1, std::tuple{0, 2})` |
+| Subarray w/well def layout  | **yes** (strided layout)                                     | no                  |
+| Custom Alloctors            | **yes**, via `multi::array<T, D, Alloc>`                        | no (no allocation or ownership)             |
+| PMR Alloctors               | **yes**, via `multi::pmr::array<T, D>`                          | no (no allocation or ownership)             |
+| Fancy pointers / references | **yes**, via `multi::array<T, D, FancyAlloc>` or views          | no                                          |
+| Strided Layout              | **yes**                                                         | **yes**                                         |
+| Fortran-ordering            | **yes**, for views, e.g. resulted from transposed views         | **yes** (only views are supported)              |
+| Zig-zag / Hilbert ordering  | no                                                          | **yes**, via arbitrary layouts (but no inverse or flattening) |
+| Arbitrary layout            | no                                                          | **yes**, possibly inneficient, no efficient slicing |
+| Flattening of elements      | **yes**, via `A.elements()` range (efficient representation)    | **yes**, but via indices roundtrip (inefficient)              |
+| Iterators                | **yes**, standard compliant, random-access-iterator            | no, or very limited              |
+| Multidimensional iterators (cursors) | **yes** (experimental)            | no              |
+| STL algorithms or Ranges | **yes**                      | no, limited via `std::cartesian_product`                         |
+| Compatibility with Boost | **yes**, serialization, interprocess  (see below)      | no                            |
+| Compatibility with Thrust | **yes**, via flatten views (ad-hoc loop fusion), fancy-pointers/-references      | no                         |
+| Used in production       | [QMCPACK](https://qmcpack.org/), [INQ](https://gitlab.com/npneq/inq) | ? , experience from Kokkos incarnation |
+
+## Serialization
+
+The capability of serializing arrays is important to save/load data to/from disk and also to communicate values via streams or networks (including MPI).
+The C++ language does not give any facilities for serialization and unfortunately the standard library doesn't either.
+
+However there are a few libraries that offer a certain common protocol for serialization,
+such as [Boost.Serialization](https://www.boost.org/doc/libs/1_76_0/libs/serialization/doc/index.html) and [Cereal](https://uscilab.github.io/cereal/).
+The Multi library is compatible with both of them, and yet it doesn't depend on any of them.
+The user can choose one or the other, or none if serialization is not needed.
+The generic protocol is such that variables are (de)serialized using the (`>>`)`<<` operator with the archive; operator `&` can be used to have single code for both.
+Serialization can be binary (efficient) or text-based (human readable).
+
+Here it is a small implementation of save and load functions for array to JSON format with Cereal.
+The example can be easily adapted to other formats or libries (XML with Boost.Serialization are commented on the right).
+
+```cpp
+#include <multi/array.hpp>  // our library
+#include<fstream>  // saving to files in example
+#include <cereal/archives/json.hpp>                // #include <boost/archive/xml_iarchive.hpp>
+                                                   // #include <boost/archive/xml_oarchive.hpp>
+// for serialization of array elements (in this case strings)
+#include <cereal/types/string.hpp>                 // #include <boost/serialization/string.hpp>
+using input_archive  = cereal::JSONInputArchive ;  // boost::archive::xml_iarchive;
+using output_archive = cereal::JSONOutputArchive;  // boost::archive::xml_oarchive;
+using cereal::make_nvp;                            // boost::serialization::make_nvp;
+
+namespace multi = boost::multi;
+
+template<class Element, multi::dimensionality_type D, class IStream> 
+auto array_load(IStream&& is) {
+	multi::array<Element, D> value;
+	input_archive{is} >> make_nvp("value", value);
+	return value;
+}
+
+template<class Element, multi::dimensionality_type D, class OStream>
+void array_save(OStream&& os, multi::array<Element, D> const& value) {
+	output_archive{os} << make_nvp("value", value);
+}
+
+int main() {
+	multi::array<std::string, 2> const A = {{"w", "x"}, {"y", "z"}};
+	array_save(std::ofstream{"file.string2D.json"}, A);  // use std::cout to print serialization to the screen
+
+	auto const B = array_load<std::string, 2>(std::ifstream{"file.string2D.json"});
+	assert(A == B);
+}
+```
+
+These templated functions work for any dimension and element type (as long as the element type is serializable in itself; all basic types are serializable by default).
+However note that it is responsibility of the user to make sure that data is serialized and deserialized into the same type and also assuming the same format.
+This is because the underlying serialization library only do minimal consistency checks for efficiency reasons and doesn't try to second guess file formats or contained types.
+Serialization is a relatively low level feature for which efficiency and economy of bytes is priority.
+Cryptic errors and crashes can occur if serialization libraries, file formats or C++ types are mixed between writes and reads.
+On top of serialization checks can be added by the user before and after loading a file.
+
+References to subarrays can also be serialized, however, in such case size information is not saved.
+The reason is that references to subarrays cannot be resized in their number of elements if there is size mismatch during deserialization.
+
+The output JSON file of the previous example looks like this.
+(The XML would have a similar structure.)
+
+```json
+{
+    "value": {
+        "cereal_class_version": 0,
+        "extensions": {
+            "cereal_class_version": 0,
+            "extension": {
+                "cereal_class_version": 0,
+                "first": 0,
+                "last": 2
+            },
+            "extension": {
+                "first": 0,
+                "last": 2
+            }
+        },
+        "elements": {
+            "cereal_class_version": 0,
+            "item": "w",
+            "item": "x",
+            "item": "y",
+            "item": "z"
+        }
+    }
+}
+```
+
+Large datasets tend to be serialized slowly for archives with heavy formatting.
+Here it is a comparison of speeds when (de)serializing a 134 MB 4-dimensional array of with random `double`s.
+
+| Archive format (Library)     | file size     | speed (read - write)           | time (read - write)   |
+| ---------------------------- | ------------- | ------------------------------ |-----------------------|
+| JSON (Cereal)                | 684 MB        |    3.9 MB/sec -    8.4 MB/sec  |  32.1 sec - 15.1  sec |
+| XML (Cereal)                 | 612 MB        |    2.  MB/sec -    4.  MB/sec  |  56   sec  - 28   sec |
+| XML (Boost)                  | 662 MB        |   11.  MB/sec -   13.  MB/sec  |  11   sec  -  9   sec |
+| YAML ([custom archive)](https://gitlab.com/correaa/boost-archive-yml)             | 702 MB        |   10.  MB/sec -    4.4 MB/sec  |  12   sec  - 28   sec |
+| Portable Binary (Cereal)     | 134 MB        |  130.  MB/sec -  121.  MB/sec  |  9.7  sec  - 10.6 sec |
+| Text (Boost)                 | 411 MB        |   15.  MB/sec -   16.  MB/sec  |  8.2  sec  - 7.6  sec |
+| Binary (Cereal)              | 134 MB        |  134.4 MB/sec -  126.  MB/sec  |  0.9  sec  -  0.9 sec |
+| Binary (Boost)               | 134 MB        | 5200.  MB/sec - 1600.  MB/sec  |  0.02 sec -   0.1 sec |
+| gzip-XML (Cereal)            | 191 MB        |    2.  MB/sec -    4.  MB/sec  | 61    sec  - 32   sec |
+| gzip-XML (Boost)             | 207 MB        |    8.  MB/sec -    8.  MB/sec  | 16.1  sec  - 15.9 sec |
+
+## Range-v3
+
+The library works out of the box with Eric Niebler's Range-v3 library.
+The library helps removing explicit iterators (e.g. `begin`, `end`) from the code when possible.
+
+Every Multi array object can be regarded as range.
+Every subarray references (and array values) are interpreted as range views.
+
+For example for a 2D array `d2D`, `d2D` itself is interpreted as a range of rows.
+Each row, in turn, is interpreted as a range of elements.
+In this way, `d2D.transposed()` is interpreted as a range of columns (of the original array), and each column a range of elements (arranged vertically in the original array).
+
+```cpp
 #include <range/v3/all.hpp>
 int main(){
 
-	multi::array const d2D = {
+	multi::array<int, 2> const d2D = {
 		{ 0,  1,  2,  3}, 
 		{ 5,  6,  7,  8}, 
 		{10, 11, 12, 13}, 
@@ -470,11 +949,35 @@ int main(){
 }
 ```
 
+In this other [example](https://godbolt.org/z/MTodPEnsr), a 2D Multi array (or subarray) is modified such that each element of a column is subtracted the mean value of such column.
+
+```cpp
+#include<multi/array.hpp>
+#include<range/v3/all.hpp>
+
+template<class MultiArray2D>
+void subtract_mean_columnwise(MultiArray2D&& arr) {
+    auto&& tarr = arr.transposed();
+    auto const column_mean = 
+        tarr
+        | ranges::views::transform([](auto const& row) {return ranges::accumulate(row, 0.0)/row.size();})
+        | ranges::to<multi::array<double, 1>>
+    ;
+
+    ranges::transform(
+        arr.elements(),
+        column_mean | ranges::views::cycle,
+        arr.elements().begin(),
+        [](auto const elem, auto const mean) {return elem - mean;}
+    );
+}
+```
+
 ## Boost.Interprocess
 
 Using Interprocess allows for shared memory and for persistent mapped memory.
 
-```c++
+```cpp
 #include <boost/interprocess/managed_mapped_file.hpp>
 #include "multi/array.hpp"
 #include<cassert>
@@ -505,58 +1008,85 @@ int main(){
 
 (Similarly works with [LLNL's Meta Allocator](https://github.com/llnl/metall))
 
-## Cuda thrust
+## CUDA Thrust
 
-```c++
-#include "multi/adaptors/thrust/allocator_traits.hpp"
-#include "multi/adaptors/thrust/algorithms.hpp"
-#include "multi/array.hpp"
+The library works out-of-the-box in combination with the CUDA Thrust library.
+
+```cpp
+#include <multi/array.hpp>
+#include <thrust/memory.h>
 
 namespace multi = boost::multi;
-int main(){
-	multi::array<double, 2, thrust::device_allocator<double>> A2({10,10});
-	multi::array<double, 2, thrust::device_allocator<double>> B2({10,10});
-	A2[5][0] = 50.;
+int main() {
+	multi::array<double, 2, thrust::device_allocator<double>> A({10,10});
+	multi::array<double, 2, thrust::device_allocator<double>> B({10,10});
+	A[5][0] = 50.;
 	thrust::copy(begin(rotated(A2)[0]), end(rotated(A2)[0]), begin(rotated(B2)[0]));
 	assert( B2[5][0] == 50. );
 }
 ```
+
+which uses the default Thrust backend (CUDA, OpenMP or TBB).
+Universal memory (accessible from normal CPU code) can be used with `thrust::universal_allocator` instead.
+
+More specific allocators can be used to force certain Thrust backends, for example CUDA managed memory:
+
+```cpp
+#include <thrust/system/cuda/memory.h>
+...
+	multi::array<double, 2, thrust::cuda::universal_allocator<double>> A({10,10});
+```
+
+Multi doesn't have a dependency on Thrust (or viseversa); 
+they just work well together, both in terms of semantics and efficiency.
+Certain "patches" (to correct Thrust behavior) can be applied to Thrust to gain extra efficiency and achieve near native speed by adding the `#include<multi/adaptors/thrust.hpp>`.
+
+Multi can be used on existing memory in a non-invasive way via (non-owning) reference arrays:
+
+```cpp
+	// assumes raw_pointer was allocated with cudaMalloc
+	using cuda_ptr = thrust::cuda::pointer<double>;
+	multi::array_ref<double, 2, gpu_ptr> Aref({n, n}, gpu_ptr{raw_pointer});
+```
+
+## TotalView
+
+TotalView visual debugger (commercial) can display arrays in human-readable form (for simple types, like `double` or `std::complex`).
+To use it, simply `#include "multi/adaptors/totalview.hpp"` and link to the TotalView libraries, compile and run the code with the TotalView debugger.
 
 # Technical points
 
 ### What's up with the multiple bracket notation? 
 
 The chained bracket notation (`A[i][j][k]`) allows to refer to elements and subarrays lower dimensional subarrays in a consistent and _generic_ manner and it is the recommended way to access the array objects.
-It is a frequently raised question whether the chained bracket notation is good for performance, since it appears that each utilization of the bracket leads to the creation of a temporary which in turn generates a partial copy of the layout.
+It is a frequently raised question whether the chained bracket notation is good for performance, since it appears that each utilization of the bracket leads to the creation of a temporary object which in turn generates a partial copy of the layout.
 Moreover, this goes against [historical recommendations](https://isocpp.org/wiki/faq/operator-overloading#matrix-subscript-op).
 
-It turns out that [modern compilers with a fair level of optimization (`-O2`)](https://godbolt.org/z/3fYd5c) can elide these temporary objects, so that `A[i][j][k]` generates identical assembly code as `A.base() + i*stride1 + j*stride2 + k*stride3` (+offsets not shown).
-
+It turns out that modern compilers with a fair level of optimization (`-O2`) can elide these temporary objects, so that `A[i][j][k]` generates identical assembly code as `A.base() + i*stride1 + j*stride2 + k*stride3` (+offsets not shown).
 In a subsequent optimization, constant indices can have their "partial stride" computation removed from loops. 
-As a result, these two loops lead to the [same machine code](https://godbolt.org/z/p_ELwQ):
+As a result, these two loops lead to the [same machine code](https://godbolt.org/z/ncqrjnMvo):
 
-```c++
-    for(int j = 0; j != nj; ++j)
-        ++A[i][j][k];
+```cpp
+	// given the values of i and k and accumulating variable acc ...
+    for(long j = 0; j != M; ++j) {acc += A[i][j][k];}
 ```
-```c++
-    double* Ai_k = A.base() + i*A_stride1 + k*A_stride3;
-    for(int j = 0; j != nj; ++jj)
-        ++(*(Ai_k + j*A_stride2));
+```cpp
+    auto* base = A.base() + i*std::get<0>(A.strides()) + k*std::get<2>(A.strides());
+    for(long j = 0; j != M; ++j) {acc += *(base + j*std::get<1>(A.strides()));}
 ```
 
-Incidentally, the library also supports parenthesis notation with multiple indices `A(i, j, k)` for element or partial access, but it does so for accidental reasons as part of a more general syntax to generate sub-blocks.
-In any case `A(i, j, k)` is expanded to `A[i][j][k]` internally in the library when `i, j, k` are integer indices. 
+Incidentally, the library also supports parenthesis notation with multiple indices `A(i, j, k)` for element or partial access, but it does so as part of a more general syntax to generate sub-blocks.
+In any case `A(i, j, k)` is expanded to `A[i][j][k]` internally in the library when `i, j, k` are normal integer indices.
 Additionally, array coordinates can be directly stored in tuple-like data structures, allowing this functional syntax:
 
-```c++
-std::array p = {2,3,4};
-std::apply(A, p) = 234; // A[2][3][4] = 234;
+```cpp
+std::array p = {2, 3, 4};
+std::apply(A, p) = 234;  // same as A(2, 3, 4) = 234; and same as A[2][3][4] = 234;
 ```
 
 ### Customizing recursive operations: SCARY iterators
 
-A custom level of customization can be achieved by intercepting internal recursive algorithms.
+A level of customization can be achieved by intercepting internal recursive algorithms.
 Multi iterators are [SCARY](http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2009/n2980.pdf). 
 SCARY means that they are independent of any container and can be accessed generically through their dimension and underlying pointer types:
 
@@ -567,7 +1097,7 @@ The base pointer, the strides and the size of the arrow can be accessed by `base
 
 The template arguments of the iterator can be used to customize operations that are recursive (and possibly inefficient in certain context) in the library:
 
-```c++
+```cpp
 namespace boost{namespace multi{
 template<class It, class T>  // custom copy 1D (aka strided copy)
 void copy(It first, It last, multi::array_iterator<T, 1, fancy::ptr<T> > dest){
@@ -585,4 +1115,3 @@ void copy(It first, It last, multi::array_iterator<T, 2, fancy::ptr<T> > dest){
 
 For example, if your custom pointers refers a memory type in which 2D memory copying (strided copy) is faster than sequencial copying, that kind of instruction can be ejecuted when the library internally calls `copy`.
 This customization must be performed (unfortunately) in the `boost::multi` namespace (this is where the Multi iterators are defined) and the customization happens through matching the dimension and the pointer type.
-

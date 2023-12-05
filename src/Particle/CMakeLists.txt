@@ -9,75 +9,64 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 ####################################
 # create libqmcparticle
 ####################################
-SET(PARTICLE
-  InitMolecularSystem.cpp
-  ParticleSetPool.cpp
-  ParticleSet.cpp
-  VirtualParticleSet.cpp
-  ParticleSet.BC.cpp
-  DynamicCoordinatesBuilder.cpp
-  MCWalkerConfiguration.cpp
-  SampleStack.cpp
-  createDistanceTableAA.cpp
-  createDistanceTableAB.cpp
-  HDFWalkerInputManager.cpp
-  LongRange/KContainer.cpp
-  LongRange/StructFact.cpp
-  LongRange/LPQHIBasis.cpp
-  LongRange/LPQHISRCoulombBasis.cpp
-  LongRange/EwaldHandler.cpp
-  LongRange/EwaldHandler3D.cpp
-  LongRange/LRCoulombSingleton.cpp
-  )
+set(PARTICLE
+    InitMolecularSystem.cpp
+    SimulationCell.cpp
+    ParticleSetPool.cpp
+    ParticleSet.cpp
+    PSdispatcher.cpp
+    VirtualParticleSet.cpp
+    ParticleSet.BC.cpp
+    DynamicCoordinatesBuilder.cpp
+    MCCoords.cpp
+    MCWalkerConfiguration.cpp
+    WalkerConfigurations.cpp
+    SpeciesSet.cpp
+    SampleStack.cpp
+    createDistanceTableAA.cpp
+    createDistanceTableAB.cpp
+    HDFWalkerInputManager.cpp
+    LongRange/KContainer.cpp
+    LongRange/StructFact.cpp
+    LongRange/LPQHIBasis.cpp
+    LongRange/LPQHISRCoulombBasis.cpp
+    LongRange/EwaldHandlerQuasi2D.cpp
+    LongRange/EwaldHandler3D.cpp
+    LongRange/EwaldHandler2D.cpp
+    LongRange/LRCoulombSingleton.cpp)
 
-IF(ENABLE_OFFLOAD)
-  SET(PARTICLE ${PARTICLE}
-    createDistanceTableABOMPTarget.cpp
-    )
-ENDIF(ENABLE_OFFLOAD)
+set(PARTICLEIO ParticleTags.cpp ParticleIO/LatticeIO.cpp ParticleIO/XMLParticleIO.cpp HDFWalkerOutput.cpp
+               HDFWalkerInput_0_4.cpp)
 
-IF(OHMMS_DIM MATCHES 2)
-  SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
-ENDIF(OHMMS_DIM MATCHES 2)
+if(USE_OBJECT_TARGET)
+  add_library(qmcparticle OBJECT ${PARTICLE} ${PARTICLEIO})
+else(USE_OBJECT_TARGET)
+  add_library(qmcparticle ${PARTICLE} ${PARTICLEIO})
+endif(USE_OBJECT_TARGET)
 
-SET(PARTICLEIO
-  ParticleTags.cpp
-  ParticleIO/ParticleLayoutIO.cpp
-  ParticleIO/XMLParticleIO.cpp
-  ParticleIO/ParticleIOUtility.cpp
-  HDFWalkerOutput.cpp
-  HDFWalkerInput_0_0.cpp
-  HDFWalkerInput_0_4.cpp
-  )
+target_include_directories(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(qmcparticle PRIVATE platform_cpu_LA)
+target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
+set(PARTICLE_OMPTARGET_SRCS
+    createDistanceTableAAOMPTarget.cpp
+    createDistanceTableABOMPTarget.cpp)
 
-IF(OHMMS_DIM MATCHES 3)
-  SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-ENDIF(OHMMS_DIM MATCHES 3)
+add_library(qmcparticle_omptarget OBJECT ${PARTICLE_OMPTARGET_SRCS})
 
-IF(USE_OBJECT_TARGET)
-  ADD_LIBRARY(qmcparticle OBJECT ${PARTICLE} ${PARTICLEIO})
-ELSE(USE_OBJECT_TARGET)
-  ADD_LIBRARY(qmcparticle ${PARTICLE} ${PARTICLEIO})
-ENDIF(USE_OBJECT_TARGET)
+target_include_directories(qmcparticle_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(qmcparticle_omptarget PUBLIC qmcutil containers)
 
-TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(qmcparticle PRIVATE Math::BLAS_LAPACK Math::scalar_vector_functions)
-TARGET_LINK_LIBRARIES(qmcparticle PUBLIC qmcutil platform_device)
+target_compile_options(qmcparticle_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
-IF(QMC_CUDA)
-  CUDA_ADD_LIBRARY(qmcparticle_cuda accept_kernel.cu)
-  TARGET_LINK_LIBRARIES(qmcparticle_cuda PRIVATE platform_device)
-  TARGET_LINK_LIBRARIES(qmcparticle PRIVATE qmcparticle_cuda)
-ENDIF(QMC_CUDA)
+target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
 
-IF(BUILD_UNIT_TESTS)
-  SUBDIRS(tests)
-  SUBDIRS(Lattice/tests)
-  SUBDIRS(LongRange/tests)
-  SUBDIRS(ParticleIO/tests)
-  SUBDIRS(ParticleBase/tests)
-ENDIF()
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+  add_subdirectory(Lattice/tests)
+  add_subdirectory(LongRange/tests)
+  add_subdirectory(ParticleIO/tests)
+  add_subdirectory(ParticleBase/tests)
+endif()

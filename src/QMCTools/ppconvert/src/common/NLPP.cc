@@ -23,7 +23,7 @@ NLPPClass::IsNonlocal()
 }
 
 void 
-ChannelPotential::Read(IOSectionClass &in, Grid *grid)
+ChannelPotential::Read(IOSectionClass &in, std::shared_ptr<Grid>& grid)
 {
   assert (in.ReadVar("l", l));
   assert (in.ReadVar("n_principal", n_principal));
@@ -70,7 +70,7 @@ NLPPClass::Read(IOSectionClass &in)
     int l;
     assert (in.ReadVar("l", l));
     if (l > numChannels) {
-      cerr << "Skipped channels in NLPPClass read.\n";
+      std::cerr << "Skipped channels in NLPPClass read.\n";
       abort();
     }
     Vl[l].Read(in, PotentialGrid);
@@ -191,8 +191,10 @@ ChannelPotential::A(double q, double qp)
 	 (3.0*qp*(q*q - qp*qp)*R0*cos(qp*R0) + 
 	  (3.0*qp*qp + q*q*(-3.0 + qp*qp * R0*R0))*sin(qp*R0)));
   }
-  else
-    return sqrt(-1.0);
+  else{
+    assert(0);
+    return std::numeric_limits<double>::quiet_NaN(); // sqrt(-1.0);
+  }
 }
 
 // double
@@ -222,15 +224,15 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
   ProjectorNorm = 1.0/sqrt(norm);
   Job = EKB;
   E_KB = norm/integrator.Integrate(0.0, grid.End, 1.0e-12);
-  cerr << "l = " << l << "  Norm is " << norm 
-       << "  E_KB is " << E_KB << "  R0 = " << R0 << endl;
+  std::cerr << "l = " << l << "  Norm is " << norm 
+       << "  E_KB is " << E_KB << "  R0 = " << R0 << std::endl;
   
   // Compute zeta(r)
   Array<double,1> zeta(grid.NumPoints);
   zeta(0) = ProjectorNorm * DeltaV(0)*u(1.0e-8)*1.0e8;
   for (int i=1; i<grid.NumPoints; i++) 
     zeta(i) = ProjectorNorm * DeltaV(i)*u(i)/grid(i);
-  zeta_r.Init (&grid, zeta);
+  zeta_r.Init (u.grid, zeta);
 
   // Compute zeta(q)
   Job = ZETA_Q;
@@ -240,7 +242,8 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
     qCurrent = qGrid(i);
     zeta(i) = integrator.Integrate(0.0, grid.End, 1.0e-12);
   }
-  zeta_q.Init (&qGrid, zeta);
+  std::shared_ptr<Grid> qGridSharedPtr(&qGrid);
+  zeta_q.Init (qGridSharedPtr, zeta);
 
 
   double gamma = G_FFT - G_max;
@@ -248,7 +251,7 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
   Array<double,1> chi_q_data(qGrid.NumPoints);
   for (int i=0; i<qGrid.NumPoints; i++) 
     chi_q_data(i) = (qGrid(i) >= gamma) ? 0.0 : zeta_q(i);
-  chi_q.Init  (&qGrid, chi_q_data);  
+  chi_q.Init  (qGridSharedPtr, chi_q_data);
 
   // Now for the magic:  We adjust chi_q between G_max and gamma so
   // that the real-space oscillations outside R0 are damped out
@@ -292,11 +295,12 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
 //     fclose (fout);
 //   }
   // Now solve Mx = b
-  Array<int,1> perm;
-  double sign;
-  LUdecomp (M, perm, sign);
-  LUsolve (M, perm, b);
-  x = b;
+  Array<int, 1> perm({nb}, int{0});
+
+  auto const& LU = lup::decompose(M, perm);
+  assert(size(LU) == size(M)); // check it is invertible
+  x = lup::solve(LU, perm, b);
+
   for (int i=0; i<nb; i++) 
     chi_q(G_maxIndex+i) = x(i);
   chi_q(G_maxIndex+nb) = 0.0;
@@ -313,15 +317,15 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
     rCurrent = grid(i);
     chi_r_data(i) = integrator.Integrate(0.0, gamma, 1.0e-10);
   }
-  chi_r.Init (&grid, chi_r_data);
+  chi_r.Init (u.grid, chi_r_data);
 
   // Finally, check to see if chi_r is small outside R0
   Job = CHECK_CHI_R;
   double norm2 = integrator.Integrate(0.0, grid.End, 1.0e-8);
   double error = integrator.Integrate( R0, grid.End, 1.0e-8);
   if (error > 1.0e-16)
-    cerr << "Fractional error in real-space projection = "
-	 << (error / norm2) << endl;
+    std::cerr << "Fractional error in real-space projection = "
+	 << (error / norm2) << std::endl;
 }
 
 

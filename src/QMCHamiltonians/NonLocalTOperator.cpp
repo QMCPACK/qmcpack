@@ -21,7 +21,7 @@
 
 namespace qmcplusplus
 {
-NonLocalTOperator::NonLocalTOperator(size_t N) : Tau(0.01), Alpha(0.0), Gamma(0.0), Nelec(N) {}
+NonLocalTOperator::NonLocalTOperator() : tau_(0.01), alpha_(0.0), gamma_(0.0) {}
 
 /** process options related to TMoves
  * @return Tmove version
@@ -31,17 +31,17 @@ int NonLocalTOperator::put(xmlNodePtr cur)
 {
   std::string use_tmove = "no";
   ParameterSet m_param;
-  m_param.add(Tau, "timeStep", "double");
-  m_param.add(Tau, "timestep", "double");
-  m_param.add(Tau, "Tau", "double");
-  m_param.add(Tau, "tau", "double");
-  m_param.add(Alpha, "alpha", "double");
-  m_param.add(Gamma, "gamma", "double");
-  m_param.add(use_tmove, "nonlocalmove", "double");
-  m_param.add(use_tmove, "nonlocalmoves", "double");
+  m_param.add(tau_, "timeStep");
+  m_param.add(tau_, "timestep");
+  m_param.add(tau_, "Tau");
+  m_param.add(tau_, "tau");
+  m_param.add(alpha_, "alpha");
+  m_param.add(gamma_, "gamma");
+  m_param.add(use_tmove, "nonlocalmove");
+  m_param.add(use_tmove, "nonlocalmoves");
   bool success = m_param.put(cur);
-  plusFactor   = Tau * Gamma;
-  minusFactor  = -Tau * (1.0 - Alpha * (1.0 + Gamma));
+  plusFactor   = tau_ * gamma_;
+  minusFactor  = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
   int v_tmove  = TMOVE_OFF;
   std::ostringstream o;
   if (use_tmove == "no")
@@ -65,11 +65,11 @@ int NonLocalTOperator::put(xmlNodePtr cur)
     o << "  Using Non-local T-moves v3, an approximation to v1";
   }
   else
-  {
-    APP_ABORT("NonLocalTOperator::put unknown nonlocalmove option " + use_tmove);
-  }
+    throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + use_tmove);
+
 #pragma omp master
   app_log() << o.str() << std::endl;
+
   return v_tmove;
 }
 
@@ -78,79 +78,59 @@ int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_
                                                          const double alpha,
                                                          const double gamma)
 {
-  Tau         = tau;
-  Alpha       = alpha;
-  Gamma       = gamma;
-  plusFactor  = Tau * Gamma;
-  minusFactor = -Tau * (1.0 - Alpha * (1.0 + Gamma));
+  tau_        = tau;
+  alpha_      = alpha;
+  gamma_      = gamma;
+  plusFactor  = tau_ * gamma_;
+  minusFactor = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
   int v_tmove = TMOVE_OFF;
-  std::ostringstream o;
 
   if (non_local_move_option == "no")
-  {
     v_tmove = TMOVE_OFF;
-    o << "  Using Locality Approximation";
-  }
   else if (non_local_move_option == "yes" || non_local_move_option == "v0")
-  {
     v_tmove = TMOVE_V0;
-    o << "  Using Non-local T-moves v0, M. Casula, PRB 74, 161102(R) (2006)";
-  }
   else if (non_local_move_option == "v1")
-  {
     v_tmove = TMOVE_V1;
-    o << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
-  }
   else if (non_local_move_option == "v3")
-  {
     v_tmove = TMOVE_V3;
-    o << "  Using Non-local T-moves v3, an approximation to v1";
-  }
   else
-  {
-    APP_ABORT("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
-  }
-  app_log() << o.str() << std::endl;
+    throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
   return v_tmove;
 }
-void NonLocalTOperator::reset() { Txy.clear(); }
 
-const NonLocalData* NonLocalTOperator::selectMove(RealType prob, std::vector<NonLocalData>& txy) const
+const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vector<NonLocalData>& txy)
 {
+  // txy_scan_[0] = 1.0, txy_scan_[i>0] = txy_scan_[i-1] + txy[i-1].Weight (modified)
+  txy_scan_.resize(txy.size());
   RealType wgt_t = 1.0;
   for (int i = 0; i < txy.size(); i++)
   {
+    txy_scan_[i] = wgt_t;
     if (txy[i].Weight > 0)
-    {
-      wgt_t += txy[i].Weight *= plusFactor;
-    }
+      wgt_t += txy[i].Weight * plusFactor;
     else
-    {
-      wgt_t += txy[i].Weight *= minusFactor;
-    }
+      wgt_t += txy[i].Weight * minusFactor;
   }
-  prob *= wgt_t;
-  RealType wsum = 1.0;
-  int ibar      = 0;
-  while (wsum < prob)
-  {
-    wsum += txy[ibar].Weight;
+
+  const RealType target = prob * wgt_t;
+  // find ibar which satisify txy_scan_[ibar-1] <= target < txy_scan_[ibar]
+  int ibar = 0;
+  while (ibar < txy_scan_.size() && txy_scan_[ibar] <= target)
     ibar++;
-  }
+
   return ibar > 0 ? &(txy[ibar - 1]) : nullptr;
 }
 
-void NonLocalTOperator::group_by_elec()
+void NonLocalTOperator::groupByElectron(size_t num_elec, const std::vector<NonLocalData>& txy)
 {
-  Txy_by_elec.resize(Nelec);
-  for (int i = 0; i < Nelec; i++)
-  {
-    Txy_by_elec[i].clear();
-  }
+  txy_by_elec_.resize(num_elec);
+  for (int i = 0; i < num_elec; i++)
+    txy_by_elec_[i].clear();
 
-  for (int i = 0; i < Txy.size(); i++)
+  for (int i = 0; i < txy.size(); i++)
   {
-    Txy_by_elec[Txy[i].PID].push_back(Txy[i]);
+    assert(txy[i].PID >= 0 && txy[i].PID < num_elec);
+    txy_by_elec_[txy[i].PID].push_back(txy[i]);
   }
 }
 

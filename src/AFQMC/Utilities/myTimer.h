@@ -20,8 +20,8 @@ class myTimer
   // TimeData<0>: number of intervals accumulated
   // TimeData<1>: time of last call to start
   // TimeData<2>: cumulative sum of intervals
-  typedef std::tuple<int, double, double> TimeData;
-  typedef std::tuple<int, double, double>* TimeDataPtr;
+  using TimeData    = std::tuple<int, double, double>;
+  using TimeDataPtr = std::tuple<int, double, double>*;
 
 private:
   std::vector<TimeData> timer;

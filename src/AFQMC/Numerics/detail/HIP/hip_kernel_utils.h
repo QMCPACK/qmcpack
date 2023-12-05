@@ -16,12 +16,12 @@
 #include <hip/hip_runtime.h>
 
 #include "hip_kernel_utils.h"
-#include "rocrand/rocrand.h"
+#include <rocrand/rocrand.h>
 
 namespace qmc_hip
 {
-void hip_kernel_check(hipError_t sucess, std::string message = "");
-void rocrand_check(rocrand_status sucess, std::string message = "");
+void hip_kernel_check(hipError_t success, std::string message = "");
+void rocrand_check(rocrand_status success, std::string message = "");
 } // namespace qmc_hip
 
 #endif

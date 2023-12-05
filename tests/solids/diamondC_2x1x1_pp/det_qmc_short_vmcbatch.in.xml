@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
    <project id="det_qmc_short" series="0">
-      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <parameter name="driver_version">batched</parameter>
    </project>
    <random seed="174"/>
    <qmcsystem>
@@ -41,16 +42,15 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
-            <slaterdeterminant>
-               <determinant id="updet" size="8">
-                  <occupation mode="ground" spindataset="0"/>
-               </determinant>
-               <determinant id="downdet" size="8">
-                  <occupation mode="ground" spindataset="0"/>
-               </determinant>
-            </slaterdeterminant>
-         </determinantset>
+         <sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+            <sposet type="bspline" name="spo_ud" size="8" spindataset="0"/>
+         </sposet_collection>
+         <determinantset>
+           <slaterdeterminant>
+               <determinant sposet="spo_ud"/>
+               <determinant sposet="spo_ud"/>
+           </slaterdeterminant>
+         </determinantset>       	      
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="C" size="8" cusp="0.0">
                <coefficients id="eC" type="Array">                  
@@ -83,9 +83,10 @@
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>
-   <qmc method="vmc_batch" move="pbyp">
+   <qmc method="vmc" move="pbyp">
       <parameter name="total_walkers"       >    1              </parameter>
       <parameter name="blocks"              >    3              </parameter>
+      <parameter name="blocks_between_recompute" > 2            </parameter>
       <parameter name="steps"               >    3              </parameter>
       <parameter name="subSteps"            >    2              </parameter>
       <parameter name="timestep"            >    0.3            </parameter>

@@ -18,6 +18,8 @@
 
 #include "RadialWF.h"
 
+#include <memory> // std::shared_ptr
+
 typedef enum
 {
   DFTType,
@@ -28,7 +30,7 @@ typedef enum
 class Atom
 {
 protected:
-  Grid* grid;
+  std::shared_ptr<Grid> grid;
 
 public:
   Array<RadialWF, 1> RadialWFs;
@@ -38,8 +40,8 @@ public:
   virtual void Solve()                                                                        = 0;
   virtual void Write(IOSectionClass& out)                                                     = 0;
   virtual void Read(IOSectionClass& in)                                                       = 0;
-  virtual void SetGrid(Grid* newGrid)                                                         = 0;
-  inline Grid* GetGrid() { return grid; }
+  virtual void SetGrid(std::shared_ptr<Grid>& newGrid)                                        = 0;
+  inline Grid* GetGrid() { return grid.get(); }
   inline double NumElecs();
   virtual void SetBarePot(Potential* pot) = 0;
 };

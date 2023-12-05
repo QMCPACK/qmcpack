@@ -26,7 +26,7 @@ namespace qmcplusplus
 class Input
 {
 public:
-  typedef double real_type;
+  using real_type = double;
 
   double f(double r) { return r * r; }
 
@@ -35,22 +35,21 @@ public:
 
 TEST_CASE("transform2gridfunctor", "[numerics]")
 {
-  typedef OneDimGridBase<double> GridType;
-  typedef OneDimQuinticSpline<double> OutputType;
+  using GridType   = OneDimGridBase<double>;
+  using OutputType = OneDimQuinticSpline<double>;
 
-  GridType* agrid = new LogGrid<double>;
+  auto agrid = std::make_unique<LogGrid<double>>();
   agrid->set(0.1, 10, 10);
-  OutputType output(agrid);
+  OutputType output(std::move(agrid));
   Input input;
   Transform2GridFunctor<Input, OutputType> transform(input, output);
   double rmin = 0.1;
   double rmax = 10;
   int npts    = 10;
   transform.generate(rmin, rmax, npts);
-  REQUIRE(output.splint(0.1) == Approx(0.01));
-  REQUIRE(output.splint(0.15) == Approx(0.0225));
-  REQUIRE(output.splint(7.0) == Approx(49.0));
-  REQUIRE(output.splint(10) == Approx(100.0));
-  delete agrid;
+  CHECK(output.splint(0.1) == Approx(0.01));
+  CHECK(output.splint(0.15) == Approx(0.0225));
+  CHECK(output.splint(7.0) == Approx(49.0));
+  CHECK(output.splint(10) == Approx(100.0));
 }
 } // namespace qmcplusplus

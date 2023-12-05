@@ -25,6 +25,7 @@ namespace qmcplusplus
 class ParticleSetPool;
 class HamiltonianPool;
 class MCPopulation;
+class ProjectData;
 
 class VMCFactoryNew
 {
@@ -32,18 +33,21 @@ private:
   const int vmc_mode_;
   // const ?
   xmlNodePtr input_node_;
-  const int qmc_counter_;
 
 public:
-  VMCFactoryNew(xmlNodePtr cur, const int vmode, const int qmc_counter)
-      : vmc_mode_(vmode), input_node_(cur), qmc_counter_(qmc_counter)
-  {}
+  VMCFactoryNew(xmlNodePtr cur, const int vmode) : vmc_mode_(vmode), input_node_(cur) {}
 
-  QMCDriverInterface* create(MCPopulation& pop,
-                             TrialWaveFunction& psi,
-                             QMCHamiltonian& h,
-                             SampleStack& samples,
-                             Communicate* comm);
+  /** create a VMCBatched driver.
+   *  \param[in]   project_data   containing so basic options including DriverVersion and max_cpu_seconds
+   *  \param[in]   global_emi     optional global estimator manager input passed by value to insure copy,
+   *                              a global input should not be consumed by driver.
+   */
+  std::unique_ptr<QMCDriverInterface> create(const ProjectData& project_data,
+                                             const std::optional<EstimatorManagerInput>& global_emi,
+                                             WalkerConfigurations& wc,
+                                             MCPopulation&& pop,
+                                             SampleStack& samples,
+                                             Communicate* comm);
 };
 } // namespace qmcplusplus
 

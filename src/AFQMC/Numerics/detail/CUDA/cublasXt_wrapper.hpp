@@ -41,10 +41,10 @@ inline cublasStatus_t cublasXt_gemm(cublasXtHandle_t handle,
                                     float* C,
                                     int ldc)
 {
-  cublasStatus_t sucess = cublasXtSgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A,
+  cublasStatus_t success = cublasXtSgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A,
                                         lda, B, ldb, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublasXt_gemm(cublasXtHandle_t handle,
@@ -62,13 +62,13 @@ inline cublasStatus_t cublasXt_gemm(cublasXtHandle_t handle,
                                     double* C,
                                     int ldc)
 {
-  cublasStatus_t sucess = cublasXtDgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A,
+  cublasStatus_t success = cublasXtDgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A,
                                         lda, B, ldb, &beta, C, ldc);
   /*
-std::cout<<" Dgemm error message " <<sucess <<std::endl;
+std::cout<<" Dgemm error message " <<success <<std::endl;
 using std::cout;
 using std::endl;
-switch(sucess)
+switch(success)
 {
   case CUBLAS_STATUS_NOT_INITIALIZED:
     std::cout<<"CUBLAS_STATUS_NOT_INITIALIZED";
@@ -86,7 +86,7 @@ switch(sucess)
 std::cout<<std::endl;
 */
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublasXt_gemm(cublasXtHandle_t handle,
@@ -104,13 +104,13 @@ inline cublasStatus_t cublasXt_gemm(cublasXtHandle_t handle,
                                     std::complex<float>* C,
                                     int ldc)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasXtCgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
                     reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(A), lda,
                     reinterpret_cast<cuComplex const*>(B), ldb, reinterpret_cast<cuComplex const*>(&beta),
                     reinterpret_cast<cuComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublasXt_gemm(cublasXtHandle_t handle,
@@ -128,13 +128,13 @@ inline cublasStatus_t cublasXt_gemm(cublasXtHandle_t handle,
                                     std::complex<double>* C,
                                     int ldc)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasXtZgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
                     reinterpret_cast<cuDoubleComplex const*>(&alpha), reinterpret_cast<cuDoubleComplex const*>(A), lda,
                     reinterpret_cast<cuDoubleComplex const*>(B), ldb, reinterpret_cast<cuDoubleComplex const*>(&beta),
                     reinterpret_cast<cuDoubleComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 } // namespace cublas

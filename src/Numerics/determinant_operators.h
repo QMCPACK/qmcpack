@@ -35,7 +35,7 @@ struct const_traits
 template<>
 struct const_traits<double>
 {
-  typedef double value_type;
+  using value_type = double;
   inline static double zero() { return 0.0; }
   inline static double one() { return 1.0; }
   inline static double minus_one() { return -1.0; }
@@ -44,7 +44,7 @@ struct const_traits<double>
 template<>
 struct const_traits<std::complex<double>>
 {
-  typedef std::complex<double> value_type;
+  using value_type = std::complex<double>;
   inline static std::complex<double> zero() { return value_type(); }
   inline static std::complex<double> one() { return value_type(1.0, 0.0); }
   inline static std::complex<double> minus_one() { return value_type(-1.0, 0.0); }
@@ -53,7 +53,7 @@ struct const_traits<std::complex<double>>
 template<>
 struct const_traits<float>
 {
-  typedef float value_type;
+  using value_type = float;
   inline static float zero() { return 0.0f; }
   inline static float one() { return 1.0f; }
   inline static float minus_one() { return -1.0f; }
@@ -62,7 +62,7 @@ struct const_traits<float>
 template<>
 struct const_traits<std::complex<float>>
 {
-  typedef std::complex<float> value_type;
+  using value_type = std::complex<float>;
   inline static std::complex<float> zero() { return value_type(); }
   inline static std::complex<float> one() { return value_type(1.0f, 0.0f); }
   inline static std::complex<float> minus_one() { return value_type(-1.0f, 0.0f); }
@@ -169,7 +169,7 @@ inline typename MAT::value_type getRatioByColSubstitution(const MAT& refinv,
                                                           int r_replaced,
                                                           IV& ind)
 {
-  typedef typename MAT::value_type value_type;
+  using value_type = typename MAT::value_type;
   //save the value of refinv(r,c)
   value_type old_v              = refinv(r_replaced, colchanged);
   value_type pinned             = tcm[r_replaced] * old_v;

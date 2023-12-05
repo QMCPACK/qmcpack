@@ -18,95 +18,57 @@
 #ifndef QMCPLUSPLUS_FORWARDWALKING_H
 #define QMCPLUSPLUS_FORWARDWALKING_H
 #include "QMCHamiltonians/OperatorBase.h"
+
 namespace qmcplusplus
 {
 class QMCHamiltonian;
 
-struct ForwardWalking : public OperatorBase
+class ForwardWalking : public OperatorBase
 {
-  std::vector<int> Hindices;
-  std::vector<int> Pindices;
-  std::vector<std::vector<int>> walkerLengths;
-  std::vector<RealType> Values;
-  std::vector<std::string> Names;
-  int blockT, nObservables, nValues, FirstHamiltonian;
-  double count;
-
+public:
   /** constructor
    */
-  ForwardWalking() { UpdateMode.set(OPTIMIZABLE, 1); }
+  ForwardWalking();
 
   ///destructor
-  ~ForwardWalking() {}
+  ~ForwardWalking() override;
 
-  void resetTargetParticleSet(ParticleSet& P) {}
+  std::string getClassName() const override { return "ForwardWalking"; }
 
-  inline Return_t rejectedMove(ParticleSet& P)
-  {
-    for (int i = 0; i < nObservables; i++)
-    {
-      int lastindex = tWalker->PHindex[Pindices[i]] - 1;
-      if (lastindex < 0)
-        lastindex += walkerLengths[i][2];
-      tWalker->addPropertyHistoryPoint(Pindices[i], tWalker->PropertyHistory[Pindices[i]][lastindex]);
-    }
-    calculate(P);
-    return 0.0;
-  }
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
-  inline Return_t calculate(ParticleSet& P)
-  {
-    std::vector<RealType>::iterator Vit = Values.begin();
-    for (int i = 0; i < nObservables; i++)
-    {
-      int j       = 0;
-      int FWindex = tWalker->PHindex[Pindices[i]] - 1;
-      while (j < walkerLengths[i][1])
-      {
-        FWindex -= walkerLengths[i][0];
-        if (FWindex < 0)
-          FWindex += walkerLengths[i][2];
-        (*Vit) = tWalker->PropertyHistory[Pindices[i]][FWindex];
-        j++;
-        Vit++;
-      }
-    }
-    copy(Values.begin(), Values.end(), tWalker->getPropertyBase() + FirstHamiltonian + myIndex);
-    return 0.0;
-  }
+  Return_t rejectedMove(ParticleSet& P) override;
 
+  Return_t calculate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P)
-  {
-    for (int i = 0; i < nObservables; i++)
-      tWalker->addPropertyHistoryPoint(Pindices[i], P.PropertyList[Hindices[i]]);
-    calculate(P);
-    return 0.0;
-  }
+  Return_t evaluate(ParticleSet& P) override;
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override;
 
   ///rename it to avoid conflicts with put
   bool putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& P);
 
-  bool get(std::ostream& os) const
-  {
-    os << "ForwardWalking";
-    return true;
-  }
+  bool get(std::ostream& os) const override;
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void addObservables(PropertySetType& plist);
 
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
-  void setObservables(PropertySetType& plist) { copy(Values.begin(), Values.end(), plist.begin() + myIndex); }
+  void setObservables(PropertySetType& plist) override;
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
-  {
-    copy(Values.begin(), Values.end(), plist.begin() + myIndex + offset);
-  }
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+
+private:
+  std::vector<int> h_ids_;
+  std::vector<int> p_ids_;
+  std::vector<std::vector<int>> walker_lengths_;
+  std::vector<RealType> values_;
+  std::vector<std::string> names_;
+  int nobservables_;
+  int nvalues_;
+  int first_hamiltonian_;
 };
 } // namespace qmcplusplus
 #endif

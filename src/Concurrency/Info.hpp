@@ -17,7 +17,8 @@
  *  @brief Abstraction of information on executor environments
  */
 
-#include <omp.h>
+#include "OpenMP.h"
+
 #ifdef QMC_EXP_THREADING
 #include <thread>
 #endif
@@ -53,7 +54,6 @@ inline unsigned int getWorkerId<Executor::OPENMP>()
 {
   return omp_get_thread_num();
 }
-
 
 #ifdef QMC_EXP_THREADING
 template<>

@@ -50,7 +50,7 @@ inline int swapWalkersSimple(WlkBucket& wset,
   NumContexts = comm.size();
   MyContext   = comm.rank();
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
-  if (wlk_size != Wexcess.size(1))
+  if (wlk_size != std::get<1>(Wexcess.sizes()))
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
   if (1 != Wexcess.stride(1))
     throw std::runtime_error("Array shape error in swapWalkersSimple().");
@@ -78,7 +78,7 @@ inline int swapWalkersSimple(WlkBucket& wset,
   int nsend = 0;
   if (deltaN <= 0 && wset.size() != CurrNumPerNode[MyContext])
     throw std::runtime_error("error in swapWalkersSimple().");
-  if (deltaN > 0 && (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.size(0)) != deltaN))
+  if (deltaN > 0 && (wset.size() != NewNumPerNode[MyContext] || int(std::get<0>(Wexcess.sizes())) != deltaN))
     throw std::runtime_error("error in swapWalkersSimple().");
   std::vector<ComplexType> buff;
   if (deltaN < 0)
@@ -117,9 +117,9 @@ inline int swapWalkersAsync(WlkBucket& wset,
   NumContexts = comm.size();
   MyContext   = comm.rank();
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
-  if (wlk_size != Wexcess.size(1))
+  if (wlk_size != std::get<1>(Wexcess.sizes()))
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
-  if (1 != Wexcess.stride(1) || (Wexcess.size(0) > 0 && Wexcess.size(1) != Wexcess.stride(0)))
+  if (1 != Wexcess.stride(1) || (std::get<0>(Wexcess.sizes()) > 0 && std::get<1>(Wexcess.sizes()) != Wexcess.stride(0)))
     throw std::runtime_error("Array shape error in swapWalkersAsync().");
   if (CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
@@ -146,7 +146,7 @@ inline int swapWalkersAsync(WlkBucket& wset,
   int countSend = 1;
   if (deltaN <= 0 && wset.size() != CurrNumPerNode[MyContext])
     throw std::runtime_error("error(1) in swapWalkersAsync().");
-  if (deltaN > 0 && (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.size(0)) != deltaN))
+  if (deltaN > 0 && (wset.size() != NewNumPerNode[MyContext] || int(std::get<0>(Wexcess.sizes())) != deltaN))
     throw std::runtime_error("error(2) in swapWalkersAsync().");
   std::vector<ComplexType*> buffers;
   std::vector<boost::mpi3::request> requests;
@@ -161,7 +161,7 @@ inline int swapWalkersAsync(WlkBucket& wset,
       }
       else
       {
-        requests.emplace_back(comm.isend(Wexcess[nsend].origin(), Wexcess[nsend].origin() + countSend * Wexcess.size(1),
+        requests.emplace_back(comm.isend(Wexcess[nsend].origin(), Wexcess[nsend].origin() + countSend * std::get<1>(Wexcess.sizes()),
                                          minus[ic], plus[ic] + 1999));
         nsend += countSend;
         countSend = 1;
@@ -207,8 +207,10 @@ inline int swapWalkersAsync(WlkBucket& wset,
  * Implements Cafarrel's minimum branching algorithm.
  *   - buff: array of walker info (weight,num).
  */
-template<class Random>
-inline void min_branch(std::vector<std::pair<double, int>>& buff, Random& rng, double max_c, double min_c)
+inline void min_branch(std::vector<std::pair<double, int>>& buff,
+                       RandomBase<QMCTraits::FullPrecRealType>& rng,
+                       double max_c,
+                       double min_c)
 {
   APP_ABORT(" Error: min_branch not implemented yet. \n\n\n");
 }
@@ -217,8 +219,7 @@ inline void min_branch(std::vector<std::pair<double, int>>& buff, Random& rng, d
  * Implements Cafarrel's minimum branching algorithm.
  *   - buff: array of walker info (weight,num).
  */
-template<class Random>
-inline void serial_comb(std::vector<std::pair<double, int>>& buff, Random& rng)
+inline void serial_comb(std::vector<std::pair<double, int>>& buff, RandomBase<QMCTraits::FullPrecRealType>& rng)
 {
   APP_ABORT(" Error: serial_comb not implemented yet. \n\n\n");
 }
@@ -229,11 +230,13 @@ inline void serial_comb(std::vector<std::pair<double, int>>& buff, Random& rng)
  * and number of times the walker should appear in the new list.
  *   - buff: array of walker info (weight,num).
  */
-template<class Random>
-inline void pair_branch(std::vector<std::pair<double, int>>& buff, Random& rng, double max_c, double min_c)
+inline void pair_branch(std::vector<std::pair<double, int>>& buff,
+                        RandomBase<QMCTraits::FullPrecRealType>& rng,
+                        double max_c,
+                        double min_c)
 {
-  typedef std::tuple<double, int, int> tp;
-  typedef std::vector<tp>::iterator tp_it;
+  using tp    = std::tuple<double, int, int>;
+  using tp_it = std::vector<tp>::iterator;
   // slow for now, not efficient!!!
   int nw = buff.size();
   std::vector<tp> wlks(nw);
@@ -299,7 +302,6 @@ inline void pair_branch(std::vector<std::pair<double, int>>& buff, Random& rng, 
  */
 template<class WalkerSet,
          class Mat,
-         class Random,
          typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type,
          typename = typename std::enable_if<(WalkerSet::fixed_population)>::type>
 inline void SerialBranching(WalkerSet& wset,
@@ -308,7 +310,7 @@ inline void SerialBranching(WalkerSet& wset,
                             double max_,
                             std::vector<int>& wlk_counts,
                             Mat& Wexcess,
-                            Random& rng,
+                            RandomBase<QMCTraits::FullPrecRealType>& rng,
                             communicator& comm)
 {
   std::vector<std::pair<double, int>> buffer(wset.get_global_target_population());
@@ -363,14 +365,13 @@ inline void SerialBranching(WalkerSet& wset,
  */
 template<class WalkerSet,
          class Mat,
-         class Random,
          typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type,
          typename = typename std::enable_if<(WalkerSet::fixed_population)>::type>
 inline void CombBranching(WalkerSet& wset,
                           BRANCHING_ALGORITHM type,
                           std::vector<int>& wlk_counts,
                           Mat& Wexcess,
-                          Random& rng,
+                          RandomBase<QMCTraits::FullPrecRealType>& rng,
                           communicator& comm)
 {
   APP_ABORT("Error: comb not implemented yet. \n");

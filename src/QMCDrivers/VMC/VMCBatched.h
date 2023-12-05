@@ -37,7 +37,7 @@ public:
   using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
-  using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
+  using ParticlePositions = PtclOnLatticeTraits::ParticlePos;
 
   /** To avoid 10's of arguments to runVMCStep
    *
@@ -51,47 +51,52 @@ public:
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     IndexType recalculate_properties_period;
-    IndexType step;
-    int block;
-    bool recomputing_blocks;
+    IndexType step            = -1;
+    bool is_recomputing_block = false;
 
-    StateForThread(QMCDriverInput& qmci, VMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
+    StateForThread(const QMCDriverInput& qmci,
+                   const VMCDriverInput& vmci,
+                   DriftModifierBase& drift_mod,
+                   MCPopulation& pop)
         : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
     {}
   };
 
 public:
   /// Constructor.
-  VMCBatched(QMCDriverInput&& qmcdriver_input,
+  VMCBatched(const ProjectData& project_data,
+             QMCDriverInput&& qmcdriver_input,
+             const std::optional<EstimatorManagerInput>& global_emi,
              VMCDriverInput&& input,
-             MCPopulation& pop,
-             TrialWaveFunction& psi,
-             QMCHamiltonian& h,
+             WalkerConfigurations& wc,
+             MCPopulation&& pop,
              SampleStack& samples_,
              Communicate* comm);
 
-  void process(xmlNodePtr node);
+  void process(xmlNodePtr node) override;
 
-  bool run();
+  bool run() override;
 
   /** Refactor of VMCUpdatePbyP in crowd context
    *
    *  MCWalkerConfiguration layer removed.
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
+  template<CoordsType CT>
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
                              ContextForSteps& move_context,
-                             bool recompute);
+                             bool recompute,
+                             bool accumulate_this_step);
 
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
   static void runVMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
-                         std::vector<std::unique_ptr<Crowd>>& crowds);
+                         UPtrVector<ContextForSteps>& context_for_steps,
+                         UPtrVector<Crowd>& crowds);
 
   /** transitional interface on the way to better walker count adjustment handling.
    *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.
@@ -110,10 +115,8 @@ private:
   int prevSteps;
   int prevStepsBetweenSamples;
   VMCDriverInput vmcdriver_input_;
-  QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
-  ///Ways to set rn constant
-  RealType logoffset, logepsilon;
-  ///copy constructor
+  QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
+  /// Copy constructor
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
@@ -123,9 +126,9 @@ private:
   SampleStack& samples_;
   /// Sample collection flag
   bool collect_samples_;
-  /** function to calculate samples per node
+  /** function to calculate samples per MPI rank
    */
-  static int compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
+  static int compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
 
   friend class qmcplusplus::testing::VMCBatchedTest;
 };

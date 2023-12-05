@@ -21,7 +21,7 @@
  * @brief Implments QMCMain operators.
  */
 #include "QMCMain.h"
-#include "accelerators.hpp"
+#include "DeviceManager.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -30,16 +30,22 @@
 #include "Platforms/Host/OutputManager.h"
 #include "Utilities/Timer.h"
 #include "Utilities/TimerManager.h"
+#include "Utilities/RunTimeManager.h"
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
-#include "Message/OpenMP.h"
+#include "Message/UniformCommunicateError.h"
+#include "Concurrency/OpenMP.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/qmc_common.h"
+#include "MemoryUsage.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
@@ -53,28 +59,36 @@
 namespace qmcplusplus
 {
 QMCMain::QMCMain(Communicate* c)
-    : QMCMainState(c),
+    : MPIObjectBase(c),
       QMCAppBase(),
-      FirstQMC(true)
+      particle_set_pool_(std::make_unique<ParticleSetPool>(myComm)),
+      psi_pool_(std::make_unique<WaveFunctionPool>(my_project_.getRuntimeOptions(), *particle_set_pool_, myComm)),
+      ham_pool_(std::make_unique<HamiltonianPool>(*particle_set_pool_, *psi_pool_, myComm)),
+      qmc_system_(nullptr),
+      first_qmc_(true)
 #if !defined(REMOVE_TRACEMANAGER)
       ,
-      traces_xml(NULL)
+      traces_xml_(NULL)
 #endif
 {
-  Communicate NodeComm;
-  NodeComm.initializeAsNodeComm(*OHMMS::Controller);
+  Communicate node_comm{OHMMS::Controller->NodeComm()};
   // assign accelerators within a node
-  const int num_accelerators = assignAccelerators(NodeComm);
+  DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
-  app_summary() << "\n=====================================================\n"
-                << "                    QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
-                << QMCPACK_VERSION_PATCH << "\n\n"
-                << "       (c) Copyright 2003-  QMCPACK developers\n\n"
-                << "                    Please cite:\n"
-                << " J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
-                << "      https://doi.org/10.1088/1361-648X/aab9c3\n";
+  app_summary() << "================================================================\n"
+                << "                        QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
+                << QMCPACK_VERSION_PATCH << "\n"
+                << "\n"
+                << "          (c) Copyright 2003-2023 QMCPACK developers\n"
+                << "\n"
+                << "                         Please cite:\n"
+                << "      J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
+                << "           https://doi.org/10.1088/1361-648X/aab9c3\n"
+                << "                             and\n"
+                << "       P. Kent et al. J. Chem. Phys. 152 174105 (2020)\n"
+                << "              https://doi.org/10.1063/5.0004860\n";
   qmc_common.print_git_info_if_present(app_summary());
-  app_summary() << "=====================================================\n";
+  app_summary() << "================================================================\n";
   qmc_common.print_options(app_log());
   // clang-format off
   app_summary()
@@ -85,9 +99,9 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Number of MPI groups      = " << myComm->getNumGroups()
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
-      << "\n  MPI ranks per node        = " << NodeComm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(QMC_CUDA) || defined(ENABLE_ROCM)
-      << "\n  Accelerators per node     = " << num_accelerators
+      << "\n  MPI ranks per node        = " << node_comm.size()
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP) || defined(ENABLE_SYCL)
+      << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
   // clang-format on
@@ -112,44 +126,55 @@ QMCMain::QMCMain(Communicate* c)
   }
   app_summary() << "\n  Precision used in this calculation, see definitions in the manual:"
                 << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
-                << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
-#ifdef QMC_CUDA
-                << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
-                << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
-#endif
-                << std::endl;
+                << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL) << std::endl;
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_ROCM)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(ENABLE_HIP) && !defined(ENABLE_SYCL)
   app_summary() << "  CPU only build" << std::endl;
-#else
+#else // GPU case
 #if defined(ENABLE_OFFLOAD)
   app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_CUDA) || defined(QMC_CUDA)
+#if defined(ENABLE_HIP)
+  app_summary() << "  HIP acceleration with direct HIP source code build option is enabled" << std::endl;
+#endif
+
+#if defined(QMC_CUDA2HIP) && defined(ENABLE_CUDA)
+  app_summary() << "  HIP acceleration with CUDA source code build option is enabled" << std::endl;
+#elif defined(ENABLE_CUDA)
   app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
+#elif defined(ENABLE_SYCL)
+  app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_ROCM)
-  app_summary() << "  ROCM acceleration build option is enabled" << std::endl;
-#endif
-#endif
+#endif // GPU case end
+
+  if (my_project_.isComplex())
+    app_summary() << "  Complex build. QMC_COMPLEX=ON" << std::endl;
+  else
+    app_summary() << "  Real build. QMC_COMPLEX=OFF" << std::endl;
+
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer build option is enabled. Current timer level is "
-                << timer_manager.get_timer_threshold_string() << std::endl;
+                << getGlobalTimerManager().get_timer_threshold_string() << std::endl;
 #endif
   app_summary() << std::endl;
-  app_summary().flush();
+
+  print_mem("when QMCPACK starts", app_summary());
+  app_summary() << std::endl;
 }
 
-///destructor
-QMCMain::~QMCMain() {}
-
+QMCMain::~QMCMain()
+{
+  // free last_driver before clearing P,Psi,H clones
+  last_driver_.reset();
+  CloneManager::clearClones();
+}
 
 bool QMCMain::execute()
 {
   Timer t0;
-  if (XmlDocStack.empty())
+  if (xml_doc_stack_.empty())
   {
     ERRORMSG("No valid input file exists! Aborting QMCMain::execute")
     return false;
@@ -157,7 +182,7 @@ bool QMCMain::execute()
 
   std::string simulationType = "realspaceQMC";
   { // mmorales: is this necessary??? Don't want to leave xmlNodes lying around unused
-    xmlNodePtr cur = XmlDocStack.top()->getRoot();
+    xmlNodePtr cur = xml_doc_stack_.top()->getRoot();
     OhmmsAttributeSet simType;
     simType.add(simulationType, "type");
     simType.add(simulationType, "name");
@@ -168,17 +193,16 @@ bool QMCMain::execute()
 #ifdef BUILD_AFQMC
   if (simulationType == "afqmc")
   {
-    NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
-    ScopedTimer t2_scope(t2);
+    ScopedTimer t2_scope(createGlobalTimer("Total", timer_level_coarse));
     app_log() << std::endl
               << "/*************************************************\n"
               << " ********  This is an AFQMC calculation   ********\n"
               << " *************************************************" << std::endl;
-    xmlNodePtr cur = XmlDocStack.top()->getRoot();
+    xmlNodePtr cur = xml_doc_stack_.top()->getRoot();
 
-    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
+    xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
     //initialize the random number generator
-    xmlNodePtr rptr = myRandomControl.initialize(m_context);
+    xmlNodePtr rptr = my_random_control_.initialize(m_context);
 
     auto world = boost::mpi3::environment::get_world_instance();
     afqmc::AFQMCFactory afqmc_fac(world);
@@ -187,7 +211,7 @@ bool QMCMain::execute()
       app_log() << " Error in AFQMCFactory::parse() ." << std::endl;
       return false;
     }
-    cur = XmlDocStack.top()->getRoot();
+    cur = xml_doc_stack_.top()->getRoot();
     return afqmc_fac.execute(cur);
   }
 #else
@@ -198,22 +222,19 @@ bool QMCMain::execute()
   }
 #endif
 
+  NewTimer& t2 = createGlobalTimer("Total", timer_level_coarse);
+  t2.start();
 
-  NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
-  t2->start();
-
-  NewTimer* t3 = timer_manager.createTimer("Startup", timer_level_coarse);
-  t3->start();
+  NewTimer& t3 = createGlobalTimer("Startup", timer_level_coarse);
+  t3.start();
 
   //validate the input file
   bool success = validateXML();
   if (!success)
-  {
-    ERRORMSG("Input document does not contain valid objects")
-    return false;
-  }
+    myComm->barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
+
   //initialize all the instances of distance tables and evaluate them
-  ptclPool->reset();
+  particle_set_pool_->reset();
   infoSummary.flush();
   infoLog.flush();
   app_log() << "  Initialization Execution time = " << std::setprecision(4) << t0.elapsed() << " secs" << std::endl;
@@ -221,21 +242,22 @@ bool QMCMain::execute()
   app_log() << "=========================================================\n";
   app_log() << " Summary of QMC systems \n";
   app_log() << "=========================================================\n";
-  ptclPool->get(app_log());
-  hamPool->get(app_log());
+  particle_set_pool_->get(app_log());
+  ham_pool_->get(app_log());
   OHMMS::Controller->barrier();
   if (qmc_common.dryrun)
   {
     app_log() << "  dryrun == 1 Ignore qmc/loop elements " << std::endl;
-    APP_ABORT("QMCMain::execute");
+    myComm->barrier_and_abort("QMCMain::execute");
   }
-  t3->stop();
+  t3.stop();
   Timer t1;
-  curMethod              = std::string("invalid");
   qmc_common.qmc_counter = 0;
-  for (int qa = 0; qa < m_qmcaction.size(); qa++)
+  for (int qa = 0; qa < qmc_action_.size(); qa++)
   {
-    xmlNodePtr cur = m_qmcaction[qa].first;
+    if (run_time_manager.isStopNeeded())
+      break;
+    xmlNodePtr cur = qmc_action_[qa].first;
     std::string cname((const char*)cur->name);
     if (cname == "qmc" || cname == "optimize")
     {
@@ -259,28 +281,33 @@ bool QMCMain::execute()
       break;
     }
   }
-  m_qmcaction.clear();
-  t2->stop();
+  // free if m_qmcation owns the memory of xmlNodePtr before clearing
+  for (auto& qmcactionPair : qmc_action_)
+    if (!qmcactionPair.second)
+      xmlFreeNode(qmcactionPair.first);
+
+  qmc_action_.clear();
+  t2.stop();
   app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
   if (is_manager())
   {
     //generate multiple files
     xmlNodePtr mcptr = NULL;
-    if (m_walkerset.size())
-      mcptr = m_walkerset[0];
+    if (walker_set_.size())
+      mcptr = walker_set_[0];
     //remove input mcwalkerset but one
-    for (int i = 1; i < m_walkerset.size(); i++)
+    for (int i = 1; i < walker_set_.size(); i++)
     {
-      xmlUnlinkNode(m_walkerset[i]);
-      xmlFreeNode(m_walkerset[i]);
+      xmlUnlinkNode(walker_set_[i]);
+      xmlFreeNode(walker_set_[i]);
     }
-    m_walkerset.clear(); //empty the container
+    walker_set_.clear(); //empty the container
     std::ostringstream np_str, v_str;
     np_str << myComm->size();
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
-    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot());
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)my_project_.currentMainRoot().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
@@ -291,11 +318,12 @@ bool QMCMain::execute()
     //#endif
     if (mcptr == NULL)
     {
-      xmlAddNextSibling(lastInputNode, newmcptr);
+      xmlAddNextSibling(last_input_node_, newmcptr);
     }
     else
     {
       xmlReplaceNode(mcptr, newmcptr);
+      xmlFreeNode(mcptr);
     }
     saveXml();
   }
@@ -313,6 +341,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   app_log() << "Loop execution max-interations = " << niter << std::endl;
   for (int iter = 0; iter < niter; iter++)
   {
+    if (run_time_manager.isStopNeeded())
+      break;
     xmlNodePtr tcur = cur->children;
     while (tcur != NULL)
     {
@@ -320,7 +350,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         //prevent completed is set
-        bool success = executeQMCSection(tcur, iter > 0);
+        bool success = executeQMCSection(tcur, true);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
@@ -331,23 +361,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
-}
-
-bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
-{
-  std::string target("e");
-  std::string random_test("no");
-  OhmmsAttributeSet a;
-  a.add(target, "target");
-  a.add(random_test, "testrng");
-  a.put(cur);
-  if (random_test == "yes")
-    RandomNumberControl::test();
-  if (qmcSystem == 0)
-    qmcSystem = ptclPool->getWalkerSet(target);
-  bool success = runQMC(cur, reuse);
-  FirstQMC     = false;
-  return success;
+  // Destroy the last driver at the end of a loop with no further reuse of a driver needed.
+  last_driver_.reset(nullptr);
 }
 
 /** validate the main document and (read the walker sets !)
@@ -366,20 +381,27 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
  */
 bool QMCMain::validateXML()
 {
-  xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
+  xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
   OhmmsXPathObject result("//project", m_context);
-  myProject.setCommunicator(myComm);
+  my_project_.setCommunicator(myComm);
   if (result.empty())
   {
     app_warning() << "Project is not defined" << std::endl;
-    myProject.reset();
+    my_project_.reset();
   }
   else
   {
-    myProject.put(result[0]);
+    try
+    {
+      my_project_.put(result[0]);
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
   }
   app_summary() << std::endl;
-  myProject.get(app_summary());
+  my_project_.get(app_summary());
   app_summary() << std::endl;
   OhmmsXPathObject ham("//hamiltonian", m_context);
   if (ham.empty())
@@ -411,93 +433,81 @@ bool QMCMain::validateXML()
   }
 
   //initialize the random number generator
-  xmlNodePtr rptr = myRandomControl.initialize(m_context);
+  xmlNodePtr rptr = my_random_control_.initialize(m_context);
   //preserve the input order
-  xmlNodePtr cur = XmlDocStack.top()->getRoot()->children;
-  lastInputNode  = NULL;
+  xmlNodePtr cur   = xml_doc_stack_.top()->getRoot()->children;
+  last_input_node_ = NULL;
   while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
     bool inputnode = true;
-    if (cname == "parallel")
+    if (cname == "particleset")
     {
-      putCommunicator(cur);
-    }
-    else if (cname == "particleset")
-    {
-      ptclPool->put(cur);
+      particle_set_pool_->put(cur);
     }
     else if (cname == "wavefunction")
     {
-      psiPool->put(cur);
+      psi_pool_->put(cur);
     }
     else if (cname == "hamiltonian")
     {
-      hamPool->put(cur);
+      ham_pool_->put(cur);
     }
     else if (cname == "include")
     {
       //file is provided
-      const XMLAttrString include_name(cur, "href");
+      const std::string include_name(getXMLAttributeValue(cur, "href"));
       if (!include_name.empty())
       {
         bool success = pushDocument(include_name);
         if (success)
         {
-          inputnode = processPWH(XmlDocStack.top()->getRoot());
+          inputnode = processPWH(xml_doc_stack_.top()->getRoot());
           popDocument();
         }
         else
-          myComm->abort();
+          myComm->barrier_and_abort("Invalid XML document");
       }
       else
-      {
-        app_error() << "tag \"include\" must include an \"href\" attribute." << std::endl;
-        myComm->abort();
-      }
+        myComm->barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
     }
     else if (cname == "qmcsystem")
     {
-      processPWH(cur);
+      inputnode = processPWH(cur);
     }
     else if (cname == "init")
     {
-      InitMolecularSystem moinit(*ptclPool);
+      InitMolecularSystem moinit(*particle_set_pool_);
       moinit.put(cur);
     }
 #if !defined(REMOVE_TRACEMANAGER)
     else if (cname == "traces")
     {
-      traces_xml = cur;
+      traces_xml_ = cur;
     }
 #endif
     else
     {
       //everything else goes to m_qmcaction
-      m_qmcaction.push_back(std::pair<xmlNodePtr, bool>(cur, true));
+      qmc_action_.push_back(std::pair<xmlNodePtr, bool>(cur, true));
       inputnode = false;
     }
     if (inputnode)
-      lastInputNode = cur;
+      last_input_node_ = cur;
     cur = cur->next;
   }
-  if (ptclPool->empty())
-  {
-    ERRORMSG("Illegal input. Missing particleset ")
-    return false;
-  }
-  if (psiPool->empty())
-  {
-    ERRORMSG("Illegal input. Missing wavefunction. ")
-    return false;
-  }
-  if (hamPool->empty())
-  {
-    ERRORMSG("Illegal input. Missing hamiltonian. ")
-    return false;
-  }
+
+  if (particle_set_pool_->empty())
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
+
+  if (psi_pool_->empty())
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
+
+  if (ham_pool_->empty())
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
+
   //randomize any particleset with random="yes" && random_source="ion0"
-  ptclPool->randomize();
+  particle_set_pool_->randomize();
 
   setMCWalkers(m_context);
 
@@ -526,28 +536,42 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     if (cname == "simulationcell")
     {
       inputnode = true;
-      ptclPool->putLattice(cur);
+      particle_set_pool_->readSimulationCellXML(cur);
     }
     else if (cname == "particleset")
     {
       inputnode = true;
-      ptclPool->putTileMatrix(cur_root);
-      ptclPool->put(cur);
+      particle_set_pool_->put(cur);
     }
     else if (cname == "wavefunction")
     {
       inputnode = true;
-      psiPool->put(cur);
+      psi_pool_->put(cur);
     }
     else if (cname == "hamiltonian")
     {
       inputnode = true;
-      hamPool->put(cur);
+      ham_pool_->put(cur);
+    }
+    else if (cname == "estimators")
+    {
+      inputnode = true;
+      try
+      {
+        if (estimator_manager_input_)
+          throw UniformCommunicateError(
+              "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
+        estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
+      }
+      catch (const UniformCommunicateError& ue)
+      {
+        myComm->barrier_and_abort(ue.what());
+      }
     }
     else
     //add to m_qmcaction
     {
-      m_qmcaction.push_back(std::pair<xmlNodePtr, bool>(xmlCopyNode(cur, 1), false));
+      qmc_action_.push_back(std::pair<xmlNodePtr, bool>(xmlCopyNode(cur, 1), false));
     }
     cur = cur->next;
   }
@@ -558,57 +582,66 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 
 /** prepare for a QMC run
  * @param cur qmc element
+ * @param reuse if true, the current call is from a loop
  * @return true, if a valid QMCDriver is set.
  */
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
-  bool append_run              = false;
+  bool append_run = false;
 
-  if (!population_)
-  {
-    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(),
-                                       hamPool->getPrimary(), myComm->rank()));
-  }
-  if (reuse)
-    qmc_driver = std::move(last_driver);
+  if (reuse && last_driver_)
+    qmc_driver = std::move(last_driver_);
   else
   {
-    QMCDriverFactory driver_factory;
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
-    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
-                                             *ptclPool, *psiPool, *hamPool, *population_, myComm);
-    append_run = das.append_run;
+    QMCDriverFactory driver_factory(my_project_);
+    try
+    {
+      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
+                                                  *psi_pool_, *ham_pool_, myComm);
+      append_run = das.append_run;
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
   }
 
   if (qmc_driver)
   {
+    if (last_branch_engine_legacy_driver_)
+    {
+      last_branch_engine_legacy_driver_->resetRun(cur);
+      qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver_));
+    }
+
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
-    if (!FirstQMC && !append_run)
-      myProject.advance();
+    if (!first_qmc_ && !append_run)
+      my_project_.advance();
 
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
+    qmc_driver->setStatus(my_project_.currentMainRoot(), "", append_run);
     // PD:
-    // Q: How does m_walkerset_in end up being non empty?
+    // Q: How does walker_set_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
     // So put walkers is an exceptional call. This code does not tell a useful
     // story of a QMCDriver's life.
-    qmc_driver->putWalkers(m_walkerset_in);
+    qmc_driver->putWalkers(walker_set_in_);
 #if !defined(REMOVE_TRACEMANAGER)
-    qmc_driver->putTraces(traces_xml);
+    qmc_driver->putTraces(traces_xml_);
 #endif
     qmc_driver->process(cur);
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
-    t1->start();
     qmc_driver->run();
-    t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    last_driver = std::move(qmc_driver);
+    // transfer the states of a driver before its destruction
+    last_branch_engine_legacy_driver_ = qmc_driver->getBranchEngine();
+    // save the driver in a driver loop
+    if (reuse)
+      last_driver_ = std::move(qmc_driver);
     return true;
   }
   else
@@ -629,8 +662,8 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
   for (int iconf = 0; iconf < result.size(); iconf++)
   {
     xmlNodePtr mc_ptr = result[iconf];
-    m_walkerset.push_back(mc_ptr);
-    m_walkerset_in.push_back(mc_ptr);
+    walker_set_.push_back(mc_ptr);
+    walker_set_in_.push_back(mc_ptr);
   }
   //use the last mcwalkerset to initialize random numbers if possible
   if (result.size())
@@ -645,6 +678,93 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
       RandomNumberControl::read(fname, myComm);
   }
   return true;
+}
+
+bool QMCMain::executeDebugSection(xmlNodePtr cur)
+{
+  app_log() << "QMCMain::executeDebugSection " << std::endl;
+  app_log() << "  Use this to debug new features with <debug/> in the input file " << std::endl;
+
+  return true;
+}
+
+bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
+{
+  std::string target("e");
+  std::string random_test("no");
+  OhmmsAttributeSet a;
+  a.add(target, "target");
+  a.add(random_test, "testrng");
+  a.put(cur);
+  if (random_test == "yes")
+    RandomNumberControl::test();
+  if (qmc_system_ == nullptr)
+    qmc_system_ = particle_set_pool_->getWalkerSet(target);
+  bool success = runQMC(cur, reuse);
+  first_qmc_   = false;
+  return success;
+}
+
+bool QMCMain::executeCMCSection(xmlNodePtr cur)
+{
+  bool success = true;
+  std::string target("ion0");
+  OhmmsAttributeSet a;
+  a.add(target, "target");
+  a.put(cur);
+
+  MCWalkerConfiguration* ions   = particle_set_pool_->getWalkerSet(target);
+  TrialWaveFunction* primaryPsi = psi_pool_->getPrimary();
+  QMCHamiltonian* primaryH      = ham_pool_->getPrimary();
+
+  app_log() << "QMCMain::executeCMCSection moving " << target << " by dummy move." << std::endl;
+
+  int nat = ions->getTotalNum();
+  ParticleSet::ParticlePos deltaR(nat);
+
+  makeGaussRandomWithEngine(deltaR, Random); //generate random displacement
+  qmc_system_->update();
+
+  double logpsi1 = primaryPsi->evaluateLog(*qmc_system_);
+  std::cout << "logpsi1 " << logpsi1 << std::endl;
+
+  double eloc1 = primaryH->evaluate(*qmc_system_);
+  std::cout << "Local Energy " << eloc1 << std::endl;
+
+  for (int i = 0; i < primaryH->sizeOfObservables(); i++)
+    app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
+
+  for (int iat = 0; iat < nat; ++iat)
+  {
+    ions->R[iat] += deltaR[iat];
+
+    ions->update(); //update position and distance table of itself
+    primaryH->updateSource(*ions);
+
+    qmc_system_->update();
+    double logpsi2 = primaryPsi->evaluateLog(*qmc_system_);
+    double eloc2   = primaryH->evaluate(*qmc_system_);
+
+    std::cout << "\nION " << iat << " " << ions->R[iat] << std::endl;
+    std::cout << "logpsi " << logpsi2 << std::endl;
+    std::cout << "Local Energy " << eloc2 << std::endl;
+    for (int i = 0; i < primaryH->sizeOfObservables(); i++)
+      app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
+
+    ions->R[iat] -= deltaR[iat];
+    ions->update(); //update position and distance table of itself
+    primaryH->updateSource(*ions);
+
+    qmc_system_->update();
+    double logpsi3 = primaryPsi->evaluateLog(*qmc_system_);
+    double eloc3   = primaryH->evaluate(*qmc_system_);
+
+    if (std::abs(eloc1 - eloc3) > 1e-12)
+    {
+      std::cout << "ERROR Energies are different " << std::endl;
+    }
+  }
+  return success;
 }
 
 

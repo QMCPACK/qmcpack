@@ -56,7 +56,7 @@ struct sign2<float>
 template<class T>
 struct NRCOptimization
 {
-  typedef T Return_t;
+  using Return_t = T;
 
   /** number of line iteration for Brent method */
   int ITMAX;
@@ -69,6 +69,7 @@ struct NRCOptimization
   Return_t quadstep;
   Return_t quadoffset;
   Return_t largeQuarticStep;
+  Return_t stepsize;
   bool validFuncVal;
   //if tol is absolute, not a percent
   bool AbsFuncTol;
@@ -89,6 +90,7 @@ struct NRCOptimization
     quadstep         = 0.01;
     quadoffset       = 0.0;
     largeQuarticStep = 2.0;
+    stepsize         = 0.25;
     validFuncVal     = true;
     AbsFuncTol       = false;
   }
@@ -188,10 +190,10 @@ struct NRCOptimization
       qmcplusplus::invert_matrix(S, false);
       qmcplusplus::MatrixOperators::product(S, &(y[0]), &(coefs[0]));
       Lambda = QuarticMinimum(coefs);
-      if (std::abs(Lambda) > largeQuarticStep || std::isnan(Lambda))
+      if (std::abs(Lambda) > largeQuarticStep || qmcplusplus::isnan(Lambda))
         return lineoptimization2();
       cost = Func(Lambda);
-      if (std::isnan(cost) || cost > start_cost)
+      if (qmcplusplus::isnan(cost) || cost > start_cost)
         return lineoptimization2();
     }
     else
@@ -302,11 +304,11 @@ struct NRCOptimization
     {
       qmcplusplus::LinearFit(y, S, coefs);
       Lambda = QuarticMinimum(coefs);
-      if (std::abs(Lambda) > largeQuarticStep || std::isnan(Lambda) || (Lambda == 0.0))
+      if (std::abs(Lambda) > largeQuarticStep || qmcplusplus::isnan(Lambda) || (Lambda == 0.0))
         return lineoptimization2(largeQuarticStep);
       zeroCost = Func(Lambda);
       //       std::cout <<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<< std::endl;
-      if (std::isnan(zeroCost) || zeroCost > start_cost)
+      if (qmcplusplus::isnan(zeroCost) || zeroCost > start_cost)
         return lineoptimization2(largeQuarticStep);
     }
     else

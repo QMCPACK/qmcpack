@@ -1,0 +1,51 @@
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <!-- From Bunge, Barrientos, and Bunge, Atomic Data and Nuclear Data Tables 53, 113-162(1993) -->
+    <sposet_collection type="MolecularOrbital">
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet elementType="Be" normalized="no" type="STO">
+          <basisGroup l="0" m="0" rid="C0" type="Slater">
+             <radfunc n="1" exponent= "5.7531" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C1" type="Slater">
+             <radfunc n="1" exponent= "3.7156" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C2" type="Slater">
+             <radfunc n="3" exponent= "9.9670" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C3" type="Slater">
+             <radfunc n="3" exponent= "3.7128" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C4" type="Slater">
+             <radfunc n="2" exponent= "4.4661" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C5" type="Slater">
+             <radfunc n="2" exponent= "1.2919" />
+          </basisGroup>
+          <basisGroup l="0" m="0" rid="C6" type="Slater">
+             <radfunc n="2" exponent= "0.8555" />
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <rotated_sposet name="rot-spo-up" method="global">
+      <sposet basisset="LCAOBSet" name="spo-up">
+          <coefficient id="updetC" size="7" type="Array">
+-0.3203716272  -0.3404403028  -0.09736649354 -0.4377945266   0.02422331125 -0.7356371679   0.1963907521 
+ 0.6670416431   0.05589542384 -0.008824049451 0.008662699137 0.6847608591  -0.2754997442   0.08355057464 
+-0.07564611156 -0.02925862449  0.9855001816  -0.1207470799   0.08664604529 -0.01033460848 -0.004097813485 
+ 0.1073578588   0.7549795709  -0.0300084091  -0.6086077017  -0.1715415418  -0.06645371134 -0.1154716512 
+ 0.6371603738  -0.4486557886   0.04882715285 -0.2885587972  -0.5478377162   0.06267642488 -0.05504428678 
+-0.1551054775  -0.2897122992  -0.1210613174  -0.5804289448   0.4111220408   0.6019922521   0.09507611705 
+ 0.07168243573  0.1577993958   0.03592848464  0.05580124477 -0.1563146302   0.1099633686   0.963862095 
+          </coefficient>
+      </sposet>
+    </rotated_sposet>
+    </sposet_collection>
+    <determinantset key="STO" source="ion0" transform="no" type="MO">
+      <slaterdeterminant batch="no">
+        <determinant id="rot-spo-up"/>
+        <determinant id="rot-spo-up"/>
+      </slaterdeterminant>
+    </determinantset>
+ </wavefunction>
+</qmcsystem>

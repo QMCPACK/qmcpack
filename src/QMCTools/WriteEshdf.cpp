@@ -573,7 +573,6 @@ void EshdfFile::processKPts(const XmlNode& band_structure_xml,
                             vector<double>& weights,
                             vector<int>& ngvecs)
 {
-  int nks = 0;
   for (int i = 0; i < band_structure_xml.getNumChildren(); i++)
   {
     const XmlNode& child_xml = band_structure_xml.getChild(i);
@@ -586,7 +585,6 @@ void EshdfFile::processKPts(const XmlNode& band_structure_xml,
       double weight;
       int ngvec;
 
-      nks++;
       const XmlNode& k_point_xml = child_xml.getChild("k_point");
       k_point_xml.getAttribute("weight", weight);
       k_point_xml.getValue(kpt_vec);
@@ -1110,10 +1108,10 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
   outfile_.push("electrons");
   if (kpts.size() > 1)
   {
-    std::cerr << "Warning: Due to limitations of the current tool, extreme care" << std::endl;
-    std::cerr << "is required if tiling to a supercell from qbox calculations with" << std::endl;
-    std::cerr << "multiple k-points.  Specifically spo eigenvalues are not properly" << std::endl;
-    std::cerr << "included, so improper choice of orbitals may result." << std::endl;
+    std::cout << "Warning: Due to limitations of the current tool, extreme care" << std::endl;
+    std::cout << "is required if tiling to a supercell from qbox calculations with" << std::endl;
+    std::cout << "multiple k-points.  Specifically spo eigenvalues are not properly" << std::endl;
+    std::cout << "included, so improper choice of orbitals may result." << std::endl;
   }
   const int int_kpts_sz = static_cast<int>(kpts.size());
   outfile_.write(int_kpts_sz, "number_of_kpoints");

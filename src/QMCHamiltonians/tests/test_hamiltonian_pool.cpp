@@ -19,7 +19,7 @@
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
-
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-extern ParticleSet* createElectronParticleSet();
+extern std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCell& simulation_cell);
 
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
@@ -36,9 +36,9 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   c = OHMMS::Controller;
 
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
-  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
-</hamiltonian>";
+  const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+</hamiltonian>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(hamiltonian_xml);
@@ -47,16 +47,12 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   xmlNodePtr root = doc.getRoot();
 
   ParticleSetPool pp(c);
-  ParticleSet* qp = createElectronParticleSet();
-  pp.addParticleSet(qp);
+  auto qp = createElectronParticleSet(pp.getSimulationCell());
+  pp.addParticleSet(std::move(qp));
 
-  WaveFunctionPool wfp(pp, c);
-
-  WaveFunctionFactory::PtclPoolType ptcl_pool;
-  ptcl_pool["e"]                  = qp;
-  WaveFunctionFactory* wf_factory = new WaveFunctionFactory("psi0", *qp, ptcl_pool, c);
-  wfp.getPool()["psi0"] = wf_factory;
-  wfp.setPrimary(wf_factory->getTWF());
+  RuntimeOptions runtime_options;
+  WaveFunctionPool wfp(runtime_options, pp, c);
+  wfp.addFactory(WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"), true);
 
   HamiltonianPool hpool(pp, wfp, c);
 

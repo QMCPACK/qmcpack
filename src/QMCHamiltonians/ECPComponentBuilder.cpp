@@ -21,43 +21,48 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/SimpleParser.h"
 #include "Message/CommOperators.h"
+#include "Platforms/Host/OutputManager.h"
 #include <cmath>
 #include "Utilities/qmc_common.h"
 
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule, int llocal)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
-      Nrule(4),
+      Llocal(llocal),
+      Nrule(nrule),
       Srule(8),
       AtomicNumber(0),
       Zeff(0),
       RcutMax(-1),
-      Species(aname),
-      grid_global(0),
-      pp_loc(0),
-      pp_nonloc(0),
-      pp_so(0),
-      pp_L2(0)
+      Species(aname)
 {
   angMon["s"] = 0;
   angMon["p"] = 1;
   angMon["d"] = 2;
   angMon["f"] = 3;
   angMon["g"] = 4;
+  angMon["h"] = 5;
+  angMon["i"] = 6;
+  angMon["j"] = 7;
+  angMon["k"] = 8;
   angMon["0"] = 0;
   angMon["1"] = 1;
   angMon["2"] = 2;
   angMon["3"] = 3;
   angMon["4"] = 4;
+  angMon["5"] = 5;
+  angMon["6"] = 6;
+  angMon["7"] = 7;
+  angMon["8"] = 8;
 }
 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
 {
-  const XMLAttrString cutoff_str(cur, "cutoff");
+  const std::string cutoff_str(getXMLAttributeValue(cur, "cutoff"));
   if (!cutoff_str.empty())
     RcutMax = std::stod(cutoff_str);
 
@@ -133,29 +138,25 @@ bool ECPComponentBuilder::read_pp_file(const std::string& fname)
   ReadFileBuffer buf(myComm);
   bool okay = buf.open_file(fname);
   if (!okay)
-  {
-    APP_ABORT("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
-  }
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
 
   okay = buf.read_contents();
   if (!okay)
-  {
-    APP_ABORT("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
-  }
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(), buf.length, NULL, NULL, 0);
 
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
   }
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("Empty document");
+    myComm->barrier_and_abort("Empty document");
   }
   bool success = put(cur);
   xmlFreeDoc(m_doc);
@@ -173,8 +174,8 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "header")
     {
-      Zeff         = std::stoi(XMLAttrString{cur, "zval"});
-      AtomicNumber = std::stoi(XMLAttrString{cur, "atomic-number"});
+      Zeff         = std::stoi(getXMLAttributeValue(cur, "zval"));
+      AtomicNumber = std::stoi(getXMLAttributeValue(cur, "atomic-number"));
     }
     else if (cname == "grid")
     {
@@ -197,10 +198,10 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   }
   if (semiPtr.size())
   {
-    if (pp_nonloc == 0)
-      pp_nonloc = new NonLocalECPComponent;
+    if (!pp_nonloc)
+      pp_nonloc = std::make_unique<NonLocalECPComponent>();
     if (pp_so == 0)
-      pp_so = new SOECPComponent;
+      pp_so = std::make_unique<SOECPComponent>();
     if (pp_loc)
     {
       for (int i = 0; i < semiPtr.size(); i++)
@@ -223,10 +224,11 @@ void ECPComponentBuilder::printECPTable()
 {
   if (!qmc_common.io_node || qmc_common.mpi_groups > 1)
     return;
-
-  char fname[12];
-  sprintf(fname, "%s.pp.dat", Species.c_str());
-  std::ofstream fout(fname);
+  if (!outputManager.isActive(Verbosity::DEBUG))
+    return;
+  std::array<char, 12> fname;
+  std::snprintf(fname.data(), fname.size(), "%s.pp.dat", Species.c_str());
+  std::ofstream fout(fname.data());
   fout.setf(std::ios::scientific, std::ios::floatfield);
   fout.precision(12);
   int nl      = pp_nonloc ? pp_nonloc->nlpp_m.size() : 0;
@@ -261,6 +263,7 @@ void ECPComponentBuilder::printECPTable()
 
 void ECPComponentBuilder::SetQuadratureRule(int rule)
 {
+  app_log() << "  Quadrature Nrule: " << rule << std::endl;
   Quadrature3D<RealType> myRule(rule);
   pp_nonloc->sgridxyz_m    = myRule.xyz_m;
   pp_nonloc->sgridweight_m = myRule.weight_m;
@@ -268,8 +271,8 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   pp_nonloc->resize_warrays(myRule.nk, NumNonLocal, Lmax);
   if (pp_so)
   { //added here bc must have nonlocal terms to have SO contributions
-    pp_so->sgridxyz_m    = myRule.xyz_m;
-    pp_so->sgridweight_m = myRule.weight_m;
+    pp_so->sgridxyz_m_    = myRule.xyz_m;
+    pp_so->sgridweight_m_ = myRule.weight_m;
     pp_so->resize_warrays(myRule.nk, NumSO, Srule);
   }
 }

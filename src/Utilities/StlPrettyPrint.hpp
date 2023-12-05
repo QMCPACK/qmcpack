@@ -18,20 +18,32 @@
 namespace qmcplusplus
 {
 
+/** collapsed vector printout
+ * [3, 3, 2, 2] is printed as [3(x2), 2(x2)]
+ */
 template<typename T>
 std::ostream& operator<<(std::ostream& out, const std::vector<T>& rhs)
 {
   out << "[";
-  if (!rhs.empty())
+  auto cursor = rhs.begin();
+  while (cursor != rhs.end())
   {
-    auto last = rhs.end();
-    last--;
-    copy(rhs.begin(), last, std::ostream_iterator<T>(out, ", "));
-    out << *last;
+    // each iteration handles one unique value
+    const T ref_value = *cursor;
+    size_t count      = 1;
+    while (++cursor != rhs.end() && *cursor == ref_value)
+      count++;
+    out << ref_value;
+    // identical elements are collapsed
+    if (count > 1)
+      out << "(x" << count << ")";
+    // if not the last element, add a separator
+    if (cursor != rhs.end())
+      out << ", ";
   }
   out << "]";
   return out;
 }
 
-}
+} // namespace qmcplusplus
 #endif

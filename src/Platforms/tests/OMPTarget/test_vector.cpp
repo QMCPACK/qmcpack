@@ -2,13 +2,12 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
 
 #include "catch.hpp"
 
@@ -19,9 +18,9 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("OMPvector", "[OMP]")
+TEST_CASE("std_vector_OMPallocator", "[OMP]")
 {
-  typedef std::vector<double, OMPallocator<double>> vec_t;
+  using vec_t = std::vector<double, OMPallocator<double>>;
   vec_t A(3);
 
   // iterator
@@ -38,8 +37,8 @@ TEST_CASE("OMPvector", "[OMP]")
     A_ptr[i] += i;
   }
 
-  REQUIRE(A[0] == Approx(3.1));
-  REQUIRE(A[1] == Approx(4.1));
+  CHECK(A[0] == Approx(3.1));
+  CHECK(A[1] == Approx(4.1));
 
   A.resize(256);
   A_ptr = A.data();

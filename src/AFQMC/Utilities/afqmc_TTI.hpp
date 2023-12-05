@@ -18,7 +18,7 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-// checks if clas has a member function called reserve that accepts a vector of size_t
+// checks if class has a member function called reserve that accepts a vector of size_t
 template<class T, typename = decltype(std::declval<T>().reserve(std::vector<std::size_t>{}))>
 std::true_type has_reserve_with_vector_aux(T);
 std::false_type has_reserve_with_vector_aux(...);

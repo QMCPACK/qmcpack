@@ -24,10 +24,10 @@ namespace qmcplusplus
 template<typename T, size_t ALIGN>
 struct Mallocator
 {
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
 
   static constexpr size_t alignment = ALIGN;
 
@@ -39,7 +39,7 @@ struct Mallocator
   template<class U>
   struct rebind
   {
-    typedef Mallocator<U, ALIGN> other;
+    using other = Mallocator<U, ALIGN>;
   };
 
   T* allocate(std::size_t n)

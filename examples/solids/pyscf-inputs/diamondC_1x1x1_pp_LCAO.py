@@ -54,7 +54,7 @@ mf.exxdiv = 'ewald'
 mf.with_df = mydf
 
 e_scf=mf.kernel()
-
+assert mf.converged
 
 ener = open('e_scf','w')
 ener.write('%s\n' % (e_scf))

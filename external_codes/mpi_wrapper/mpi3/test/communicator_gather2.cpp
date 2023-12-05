@@ -22,7 +22,6 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 		assert(( v[10] == dd{1.,2.} ));
 		assert(( v[20] == dd{2.,3.} ));
 	}else{
-
 		assert( last == begin(v) );
 	}
 	return 0;

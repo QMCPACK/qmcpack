@@ -16,9 +16,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
-#include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "PlaneWave/PWOrbitalSetBuilder.h"
 
 
 #include <stdio.h>
@@ -30,48 +28,34 @@ namespace qmcplusplus
 {
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  // BCC H
+  PtclOnLatticeTraits::ParticleLayout lattice;
+  lattice.R = {3.77945227, 0.0, 0.0, 0.0, 3.77945227, 0.0, 0.0, 0.0, 3.77945227};
+  lattice.reset();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& ions(*ions_uptr);
+  ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion");
-  ions.create(2);
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.88972614;
-  ions.R[1][1] = 1.88972614;
-  ions.R[1][2] = 1.88972614;
-
-
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions.create({2});
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {1.88972614, 1.88972614, 1.88972614};
   std::vector<int> agroup(2);
   agroup[0] = 1;
   agroup[1] = 1;
   elec.create(agroup);
 
   elec.setName("elec");
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-
-
-  // BCC H
-  elec.Lattice.R(0, 0) = 3.77945227;
-  elec.Lattice.R(0, 1) = 0.0;
-  elec.Lattice.R(0, 2) = 0.0;
-  elec.Lattice.R(1, 0) = 0.0;
-  elec.Lattice.R(1, 1) = 3.77945227;
-  elec.Lattice.R(1, 2) = 0.0;
-  elec.Lattice.R(2, 0) = 0.0;
-  elec.Lattice.R(2, 1) = 0.0;
-  elec.Lattice.R(2, 2) = 3.77945227;
-  elec.Lattice.reset();
-
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec.R[0]                    = {0.0, 0.0, 0.0};
+  elec.R[1]                    = {0.0, 1.0, 0.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -83,52 +67,33 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.resetGroups();
   elec.update();
 
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec);
-  ptcl.addParticleSet(&ions);
-
-  //diamondC_1x1x1
-  const char* particles = "<tmp> \
-<determinantset type=\"PW\" href=\"bccH.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
-   <slaterdeterminant> \
-     <determinant id=\"updet\" size=\"1\"> \
-      <occupation mode=\"ground\" spindataset=\"0\"/> \
-     </determinant> \
-     <determinant id=\"downdet\" size=\"1\"> \
-        <occupation mode=\"ground\" spindataset=\"0\"/> \
-     </determinant> \
-  </slaterdeterminant> \
-</determinantset> \
-</tmp> \
-";
+  //BCC H
+  const char* particles = R"(
+<sposet_collection type="PW" href="bccH.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion">
+  <sposet name="updet" size="1" spindataset="0">
+    <occupation mode="ground"/>
+  </sposet>
+</sposet_collection>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
+  xmlNodePtr pw1  = xmlFirstElementChild(root);
 
-  xmlNodePtr pw1 = xmlFirstElementChild(root);
 
+  PWOrbitalSetBuilder pw_builder(elec, c, root);
+  auto spo = pw_builder.createSPOSet(pw1);
+  REQUIRE(spo);
 
-  PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
-  WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
-  SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
-  REQUIRE(sd != NULL);
-  REQUIRE(sd->Dets.size() == 2);
-  SPOSetPtr spo = sd->getPhi(0);
-  REQUIRE(spo != NULL);
-  //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
-  //REQUIRE(spo != NULL);
-
-  int orbSize = spo->getOrbitalSetSize();
+  const int orbSize = spo->getOrbitalSetSize();
   elec.update();
-  SPOSet::ValueVector_t orbs(orbSize);
+  SPOSet::ValueVector orbs(orbSize);
   spo->evaluateValue(elec, 0, orbs);
 
-  REQUIRE(std::real(orbs[0]) == Approx(-1.2473558998));
+  CHECK(std::real(orbs[0]) == Approx(-1.2473558998));
 
 #if 0
   // Dump values of the orbitals
@@ -144,11 +109,9 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
         double x = step*ix;
         double y = step*iy;
         double z = step*iz;
-        elec.R[0][0] = x;
-        elec.R[0][1] = y;
-        elec.R[0][2] = z;
+        elec.R[0] = {x, y, z};
         elec.update();
-        SPOSet::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector orbs(orbSize);
         spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
@@ -169,54 +132,36 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
 TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  // LiH
+  PtclOnLatticeTraits::ParticleLayout lattice;
+  lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};
+  lattice.reset();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& ions(*ions_uptr);
+  ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion");
-  ions.create(2);
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 3.55;
-  ions.R[1][1] = 3.55;
-  ions.R[1][2] = 3.55;
-
-
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions.create({2});
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {3.55, 3.55, 3.55};
   std::vector<int> agroup(2);
   agroup[0] = 2;
   agroup[1] = 2;
   elec.create(agroup);
 
   elec.setName("elec");
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-  elec.R[2][0] = 0.0;
-  elec.R[2][1] = 0.0;
-  elec.R[2][2] = 1.0;
-  elec.R[3][0] = 0.0;
-  elec.R[3][1] = 1.0;
-  elec.R[3][2] = 1.0;
-
-
-  // LiH
-  elec.Lattice.R(0, 0) = -3.55;
-  elec.Lattice.R(0, 1) = 0.0;
-  elec.Lattice.R(0, 2) = 3.55;
-  elec.Lattice.R(1, 0) = 0.0;
-  elec.Lattice.R(1, 1) = 3.55;
-  elec.Lattice.R(1, 2) = 3.55;
-  elec.Lattice.R(2, 0) = -3.55;
-  elec.Lattice.R(2, 1) = 3.55;
-  elec.Lattice.R(2, 2) = 0.0;
-  elec.Lattice.reset();
-
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec.R[0]                    = {0.0, 0.0, 0.0};
+  elec.R[1]                    = {0.0, 1.0, 0.0};
+  elec.R[2]                    = {0.0, 0.0, 1.0};
+  elec.R[3]                    = {0.0, 1.0, 1.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -228,52 +173,33 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.resetGroups();
   elec.update();
 
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec);
-  ptcl.addParticleSet(&ions);
-
   //diamondC_1x1x1
-  const char* particles = "<tmp> \
-<determinantset type=\"PW\" href=\"LiH-arb.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
-   <slaterdeterminant> \
-     <determinant id=\"updet\" size=\"2\"> \
-      <occupation mode=\"ground\" spindataset=\"0\"/> \
-     </determinant> \
-     <determinant id=\"downdet\" size=\"2\"> \
-        <occupation mode=\"ground\" spindataset=\"0\"/> \
-     </determinant> \
-  </slaterdeterminant> \
-</determinantset> \
-</tmp> \
-";
+  const char* particles = R"(
+<sposet_collection type="PW" href="LiH-arb.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion">
+  <sposet name="updet" size="2" spindataset="0">
+    <occupation mode="ground"/>
+  </sposet>
+</sposet_collection>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
+  xmlNodePtr pw1  = xmlFirstElementChild(root);
 
-  xmlNodePtr pw1 = xmlFirstElementChild(root);
 
+  PWOrbitalSetBuilder pw_builder(elec, c, root);
+  auto spo = pw_builder.createSPOSet(pw1);
+  REQUIRE(spo);
 
-  PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
-  WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
-  SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
-  REQUIRE(sd != NULL);
-  REQUIRE(sd->Dets.size() == 2);
-  SPOSetPtr spo = sd->getPhi(0);
-  REQUIRE(spo != NULL);
-  //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
-  //REQUIRE(spo != NULL);
-
-  int orbSize = spo->getOrbitalSetSize();
+  const int orbSize = spo->getOrbitalSetSize();
   elec.update();
-  SPOSet::ValueVector_t orbs(orbSize);
+  SPOSet::ValueVector orbs(orbSize);
   spo->evaluateValue(elec, 0, orbs);
 
-  REQUIRE(std::real(orbs[0]) == Approx(-14.3744302974));
+  CHECK(std::real(orbs[0]) == Approx(-14.3744302974));
 
 #if 0
   // Dump values of the orbitals
@@ -289,11 +215,9 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
         double x = step*ix;
         double y = step*iy;
         double z = step*iz;
-        elec.R[0][0] = x;
-        elec.R[0][1] = y;
-        elec.R[0][2] = z;
+        elec.R[0] = {x, y, z};
         elec.update();
-        SPOSet::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector orbs(orbSize);
         spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {

@@ -23,17 +23,6 @@ namespace qmcplusplus
 class DensityMatrices1B : public OperatorBase
 {
 protected:
-  enum DMTimers
-  {
-    DM_eval,
-    DM_gen_samples,
-    DM_gen_sample_basis,
-    DM_gen_sample_ratios,
-    DM_gen_particle_basis,
-    DM_matrix_products,
-    DM_accumulate,
-  };
-
   TimerList_t timers;
 
 public:
@@ -42,15 +31,15 @@ public:
     DIM = OHMMS_DIM
   };
 
-  typedef ValueType Value_t;
-  typedef GradType Grad_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef Vector<Value_t> Vector_t;
-  typedef Matrix<Value_t> Matrix_t;
-  typedef std::vector<PosType> pts_t;
-  typedef std::vector<RealType> dens_t;
+  using Value_t     = ValueType;
+  using Grad_t      = GradType;
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector  = SPOSet::GradVector;
+  using Lattice_t   = ParticleSet::ParticleLayout;
+  using Vector_t    = Vector<Value_t>;
+  using Matrix_t    = Matrix<Value_t>;
+  using pts_t       = std::vector<PosType>;
+  using dens_t      = std::vector<RealType>;
 
   enum integrators
   {
@@ -77,11 +66,11 @@ public:
   //data members
   bool energy_mat;
   CompositeSPOSet basis_functions;
-  ValueVector_t basis_values;
-  ValueVector_t basis_norms;
-  GradVector_t basis_gradients;
-  ValueVector_t basis_laplacians;
-  ValueVector_t integrated_values;
+  ValueVector basis_values;
+  ValueVector basis_norms;
+  GradVector basis_gradients;
+  ValueVector basis_laplacians;
+  ValueVector integrated_values;
   bool warmed_up;
   std::vector<PosType> rsamples;
   Vector<RealType> sample_weights;
@@ -90,7 +79,7 @@ public:
   PosType drift;
   int nindex;
   int eindex;
-  Lattice_t& Lattice;
+  const Lattice_t& lattice_;
   TrialWaveFunction& Psi;
   ParticleSet& Pq;
   const ParticleSet* Pc;
@@ -151,38 +140,40 @@ public:
   PosType dpcur;
   RealType rhocur;
 
-  RandomGenerator_t* uniform_random;
+  RandomBase<FullPrecRealType>* uniform_random;
 
 
   //constructor/destructor
   DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl);
   DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
-  ~DensityMatrices1B();
+  ~DensityMatrices1B() override;
 
+  bool dependsOnWaveFunction() const override { return true; }
+  std::string getClassName() const override { return "DensityMatrices1B"; }
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
-  bool put(xmlNodePtr cur);
-  Return_t evaluate(ParticleSet& P);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  bool put(xmlNodePtr cur) override;
+  Return_t evaluate(ParticleSet& P) override;
 
   //optional standard interface
-  void get_required_traces(TraceManager& tm);
-  void setRandomGenerator(RandomGenerator_t* rng);
+  void getRequiredTraces(TraceManager& tm) override;
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override;
 
   //required for Collectables interface
-  void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void addObservables(PropertySetType& plist, BufferType& olist) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) {}
-  void setObservables(PropertySetType& plist) {}
-  void setParticlePropertyList(PropertySetType& plist, int offset) {}
-  void contribute_scalar_quantities() {}
-  void checkout_scalar_quantities(TraceManager& tm) {}
-  void collect_scalar_quantities() {}
-  void delete_scalar_quantities() {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
+  void setObservables(PropertySetType& plist) override {}
+  void setParticlePropertyList(PropertySetType& plist, int offset) override {}
+  void contributeScalarQuantities() override {}
+  void checkoutScalarQuantities(TraceManager& tm) override {}
+  void collectScalarQuantities() override {}
+  void deleteScalarQuantities() override {}
 
   //obsolete?
-  bool get(std::ostream& os) const { return false; }
+  bool get(std::ostream& os) const override { return false; }
 
   //local functions
   //  initialization/finalization
@@ -197,9 +188,9 @@ public:
   //  sample generation
   void warmup_sampling();
   void generate_samples(RealType weight, int steps = 0);
-  void generate_uniform_grid(RandomGenerator_t& rng);
-  void generate_uniform_samples(RandomGenerator_t& rng);
-  void generate_density_samples(bool save, int steps, RandomGenerator_t& rng);
+  void generate_uniform_grid(RandomBase<FullPrecRealType>& rng);
+  void generate_uniform_samples(RandomBase<FullPrecRealType>& rng);
+  void generate_density_samples(bool save, int steps, RandomBase<FullPrecRealType>& rng);
   void diffusion(RealType sqt, PosType& diff);
   void density_only(const PosType& r, RealType& dens);
   void density_drift(const PosType& r, RealType& dens, PosType& drift);
@@ -227,6 +218,8 @@ public:
   bool same(Matrix_t& m1, Matrix_t& m2, RealType tol = 1e-6);
   void compare(const std::string& name, Vector_t& v1, Vector_t& v2, bool write = false, bool diff_only = true);
   void compare(const std::string& name, Matrix_t& m1, Matrix_t& m2, bool write = false, bool diff_only = true);
+
+private:
 };
 
 } // namespace qmcplusplus

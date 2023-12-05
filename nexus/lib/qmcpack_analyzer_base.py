@@ -350,8 +350,8 @@ class QAanalyzer(QAobject):
     method_info  = None
 
     opt_methods = set(['opt','linear','cslinear'])
-    vmc_methods = set(['vmc'])
-    dmc_methods = set(['dmc'])
+    vmc_methods = set(['vmc','vmc_batch'])
+    dmc_methods = set(['dmc','dmc_batch'])
 
 
     def __init__(self,nindent=0):

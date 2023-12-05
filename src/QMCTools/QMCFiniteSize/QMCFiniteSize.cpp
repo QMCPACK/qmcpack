@@ -5,9 +5,6 @@
 #include <cmath>
 #include "Configuration.h"
 #include "einspline/bspline_eval_d.h"
-#include "einspline/nubspline_eval_d.h"
-#include "einspline/nugrid.h"
-#include "einspline/nubspline_create.h"
 #include "QMCTools/QMCFiniteSize/FSUtilities.h"
 #include "Utilities/RandomGenerator.h"
 
@@ -18,7 +15,7 @@ QMCFiniteSize::QMCFiniteSize()
 {
   IndexType mtheta = 80;
   IndexType mphi   = 80;
-  app_log() << "Building spherical grid. n_theta x n_phi = " << mtheta << " x " << mphi << endl;
+  app_log() << "Building spherical grid. n_theta x n_phi = " << mtheta << " x " << mphi << std::endl;
   build_spherical_grid(mtheta, mphi);
   h = 0.1;
 }
@@ -61,13 +58,12 @@ void QMCFiniteSize::build_spherical_grid(IndexType mtheta, IndexType mphi)
 
 bool QMCFiniteSize::validateXML()
 {
-  xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
-  xmlNodePtr cur               = XmlDocStack.top()->getRoot()->children;
+  xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
+  xmlNodePtr cur               = xml_doc_stack_.top()->getRoot()->children;
 
   while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    bool inputnode = true;
     if (cname == "particleset")
     {
       ptclPool.put(cur);
@@ -83,7 +79,7 @@ bool QMCFiniteSize::validateXML()
       if (a)
       {
         pushDocument((const char*)a);
-        inputnode = processPWH(XmlDocStack.top()->getRoot());
+        processPWH(xml_doc_stack_.top()->getRoot());
         popDocument();
       }
     }
@@ -91,8 +87,7 @@ bool QMCFiniteSize::validateXML()
     {
       processPWH(cur);
     }
-    else
-    {}
+    else {}
     cur = cur->next;
   }
 
@@ -116,18 +111,8 @@ void QMCFiniteSize::wfnPut(xmlNodePtr cur)
   pAttrib.put(cur);
   ParticleSet* qp = ptclPool.getParticleSet(target);
 
-  { //check ESHDF should be used to initialize both target and associated ionic system
-    xmlNodePtr tcur = cur->children;
-    while (tcur != NULL)
-    { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
-      std::string cname((const char*)tcur->name);
-      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder")
-      {
-        qp = ptclPool.createESParticleSet(tcur, target, qp);
-      }
-      tcur = tcur->next;
-    }
-  }
+  if (qp == nullptr)
+    throw std::runtime_error("target particle set named '" + target + "' not found");
 }
 
 bool QMCFiniteSize::processPWH(xmlNodePtr cur)
@@ -143,20 +128,12 @@ bool QMCFiniteSize::processPWH(xmlNodePtr cur)
   {
     std::string cname((const char*)cur->name);
     if (cname == "simulationcell")
-    {
-      ptclPool.putLattice(cur);
-    }
+      ptclPool.readSimulationCellXML(cur);
     else if (cname == "particleset")
-    {
-      ptclPool.putTileMatrix(cur_root);
       ptclPool.put(cur);
-    }
     else if (cname == "wavefunction")
-    {
       wfnPut(cur);
-    }
-    else
-    {}
+
     cur = cur->next;
   }
   return inputnode;
@@ -170,13 +147,13 @@ void QMCFiniteSize::initBreakup()
   P      = ptclPool.getParticleSet("e");
   AA     = LRCoulombSingleton::getHandler(*P);
   myRcut = AA->get_rc();
-  if (rVs == 0)
+  if (rVs == nullptr)
   {
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
   }
 }
 
-UBspline_3d_d* QMCFiniteSize::getSkSpline(vector<RealType> sk, RealType limit)
+UBspline_3d_d* QMCFiniteSize::getSkSpline(std::vector<RealType> sk, RealType limit)
 {
   //get the einspline grids.
   Ugrid esgridx = gridx.einspline_grid();
@@ -203,7 +180,7 @@ UBspline_3d_d* QMCFiniteSize::getSkSpline(vector<RealType> sk, RealType limit)
         v[0]         = i;
         v[1]         = j;
         v[2]         = k;
-        RealType ksq = P->Lattice.ksq(v);
+        RealType ksq = P->getLattice().ksq(v);
 
         if (ksq > kcutsq)
           sk[skindex] = limit;
@@ -227,13 +204,13 @@ UBspline_3d_d* QMCFiniteSize::getSkSpline(vector<RealType> sk, RealType limit)
   bcz.rVal  = 1.0;
 
   //hack for QMC_MIXED_PRECISION to interface to UBspline_3d_d
-  vector<FullPrecRealType> sk_fp(sk.begin(), sk.end());
+  std::vector<FullPrecRealType> sk_fp(sk.begin(), sk.end());
   UBspline_3d_d* spline = create_UBspline_3d_d(esgridx, esgridy, esgridz, bcx, bcy, bcz, sk_fp.data());
 
   return spline;
 }
 
-void QMCFiniteSize::getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatelem)
+void QMCFiniteSize::getSkInfo(UBspline_3d_d* spline, std::vector<RealType>& symmatelem)
 {
   symmatelem.resize(6);
   FullPrecRealType sx(0), sy(0), sz(0), sxy(0), sxz(0), syz(0);
@@ -245,37 +222,37 @@ void QMCFiniteSize::getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatele
   disp[0]  = h;
   disp[1]  = 0;
   disp[2]  = 0;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sx);
 
   disp[0]  = 0;
   disp[1]  = h;
   disp[2]  = 0;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sy);
 
   disp[0]  = 0;
   disp[1]  = 0;
   disp[2]  = h;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sz);
 
   disp[0]  = h;
   disp[1]  = h;
   disp[2]  = 0;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sxy);
 
   disp[0]  = h;
   disp[1]  = 0;
   disp[2]  = h;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sxz);
 
   disp[0]  = 0;
   disp[1]  = h;
   disp[2]  = h;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &syz);
 
   symmatelem[0] = RealType(sx) / h2;
@@ -294,7 +271,7 @@ QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, Rea
   IndexType ngrid = sphericalgrid.size();
   for (IndexType i = 0; i < ngrid; i++)
   {
-    kvec     = P->Lattice.k_unit(k * sphericalgrid[i]); // to reduced coordinates
+    kvec     = P->getLattice().k_unit(k * sphericalgrid[i]); // to reduced coordinates
     bool inx = true;
     bool iny = true;
     bool inz = true;
@@ -316,14 +293,17 @@ QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, Rea
   return sum / RealType(ngrid);
 }
 
-NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
-                                              vector<RealType>& vals,
-                                              RealType lVal,
-                                              RealType rVal)
+UBspline_1d_d* QMCFiniteSize::spline_clamped(std::vector<RealType>& grid,
+                                             std::vector<RealType>& vals,
+                                             RealType lVal,
+                                             RealType rVal)
 {
   //hack to interface to NUgrid stuff in double prec for MIXED build
-  vector<FullPrecRealType> grid_fp(grid.begin(), grid.end());
-  NUgrid* grid1d = create_general_grid(grid_fp.data(), grid_fp.size());
+  std::vector<FullPrecRealType> grid_fp(grid.begin(), grid.end());
+
+  Grid_t lingrid;
+  lingrid.set(grid_fp[0], grid_fp.back(), grid_fp.size());
+  Ugrid esgrid = lingrid.einspline_grid();
 
   BCtype_d xBC;
   xBC.lVal  = lVal;
@@ -331,38 +311,39 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
   xBC.lCode = DERIV1;
   xBC.rCode = DERIV1;
   //hack to interface to NUgrid stuff in double prec for MIXED build
-  vector<FullPrecRealType> vals_fp(vals.begin(), vals.end());
-  return create_NUBspline_1d_d(grid1d, xBC, vals_fp.data());
+  std::vector<FullPrecRealType> vals_fp(vals.begin(), vals.end());
+  return create_UBspline_1d_d(esgrid, xBC, vals_fp.data());
 }
 
 //Integrate the spline using Simpson's 5/8 rule.  For Bsplines, this should be exact
 //provided your delta is smaller than the smallest bspline mesh spacing.
 // JPT 13/03/2018 - Fixed an intermittant segfault that occurred b/c
 //                  eval_NUB_spline_1d_d sometimes went out of bounds.
-QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N)
+// #3677 changed NUBspline to UBspline.
+QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(UBspline_1d_d* spline, RealType a, RealType b, IndexType N)
 {
   if (N % 2 != 0) // if N odd, warn that destruction is imminent
   {
-    cerr << "Warning in integrate_spline: N must be even!\n";
+    std::cerr << "Warning in integrate_spline: N must be even!\n";
     N = N - 1; // No risk of overflow
   }
 
   RealType eps         = (b - a) / RealType(N);
   RealType sum         = 0.0;
-  FullPrecRealType tmp = 0.0; //hack to interface to NUBspline_1d_d
+  FullPrecRealType tmp = 0.0; //hack to interface to UBspline_1d_d
   RealType xi          = 0.0;
   for (int i = 1; i < N / 2; i++)
   {
     xi = a + (2 * i - 2) * eps;
-    eval_NUBspline_1d_d(spline, xi, &tmp);
+    eval_UBspline_1d_d(spline, xi, &tmp);
     sum += RealType(tmp);
 
     xi = a + (2 * i - 1) * eps;
-    eval_NUBspline_1d_d(spline, xi, &tmp);
+    eval_UBspline_1d_d(spline, xi, &tmp);
     sum += 4 * tmp;
 
     xi = a + (2 * i) * eps;
-    eval_NUBspline_1d_d(spline, xi, &tmp);
+    eval_UBspline_1d_d(spline, xi, &tmp);
     sum += tmp;
   }
 
@@ -374,24 +355,24 @@ void QMCFiniteSize::initialize()
   //Initialize the long range breakup. Chosen in input xml
   initBreakup();
   Ne    = P->getTotalNum();
-  Vol   = P->Lattice.Volume;
+  Vol   = P->getLattice().Volume;
   rs    = std::pow(3.0 / (4 * M_PI) * Vol / RealType(Ne), 1.0 / 3.0);
   rho   = RealType(Ne) / Vol;
-  Klist = P->SK->KLists;
+  Klist = P->getSimulationCell().getKLists();
   kpts  = Klist.kpts; //These are in reduced coordinates.
                       //Easier to spline, but will have to convert
                       //for real space integration.
 
   if (!skparser->has_grid())
     skparser->set_grid(kpts);
-  cout << "Grid computed.\n";
+  std::cout << "Grid computed.\n";
 
   skparser->get_grid(gridx, gridy, gridz);
 }
 
-void QMCFiniteSize::printSkRawSphAvg(const vector<RealType>& sk)
+void QMCFiniteSize::printSkRawSphAvg(const std::vector<RealType>& sk)
 {
-  vector<RealType> vsk_1d(Klist.kshell.size());
+  std::vector<RealType> vsk_1d(Klist.kshell.size());
 
   // Average within each shell
   for (int ks = 0; ks < Klist.kshell.size() - 1; ks++)
@@ -413,14 +394,14 @@ void QMCFiniteSize::printSkRawSphAvg(const vector<RealType>& sk)
     }
   }
 
-  app_log() << fixed;
+  app_log() << std::fixed;
   app_log() << "\nSpherically averaged raw S(k):\n";
-  app_log() << setw(12) << "k" << setw(12) << "S(k)" << setw(12) << "vk"
+  app_log() << std::setw(12) << "k" << std::setw(12) << "S(k)" << std::setw(12) << "vk"
             << "\n";
   for (int ks = 0; ks < Klist.kshell.size() - 1; ks++)
   {
-    app_log() << setw(12) << setprecision(8) << std::sqrt(Klist.ksq[Klist.kshell[ks]]) << setw(12) << setprecision(8)
-              << vsk_1d[ks] << setw(12) << setprecision(8) << AA->Fk_symm[ks] << "\n";
+    app_log() << std::setw(12) << std::setprecision(8) << std::sqrt(Klist.ksq[Klist.kshell[ks]]) << std::setw(12)
+              << std::setprecision(8) << vsk_1d[ks] << std::setw(12) << std::setprecision(8) << AA->Fk_symm[ks] << '\n';
   }
 
   if (vsk_1d[Klist.kshell.size() - 2] < 0.99)
@@ -435,7 +416,7 @@ void QMCFiniteSize::printSkRawSphAvg(const vector<RealType>& sk)
 
 void QMCFiniteSize::printSkSplineSphAvg(UBspline_3d_d* spline)
 {
-  vector<RealType> Amat;
+  std::vector<RealType> Amat;
   getSkInfo(spline, Amat);
 
   app_log() << "\n=========================================================\n";
@@ -443,70 +424,71 @@ void QMCFiniteSize::printSkSplineSphAvg(UBspline_3d_d* spline)
   app_log() << "=========================================================\n";
   app_log() << "S(k) anisotropy near k=0\n";
   app_log() << "------------------------\n";
-  app_log() << "  a_xx = " << Amat[0] << endl;
-  app_log() << "  a_yy = " << Amat[1] << endl;
-  app_log() << "  a_zz = " << Amat[2] << endl;
-  app_log() << "  a_xy = " << Amat[3] << endl;
-  app_log() << "  a_xz = " << Amat[4] << endl;
-  app_log() << "  a_yz = " << Amat[5] << endl;
+  app_log() << "  a_xx = " << Amat[0] << std::endl;
+  app_log() << "  a_yy = " << Amat[1] << std::endl;
+  app_log() << "  a_zz = " << Amat[2] << std::endl;
+  app_log() << "  a_xy = " << Amat[3] << std::endl;
+  app_log() << "  a_xz = " << Amat[4] << std::endl;
+  app_log() << "  a_yz = " << Amat[5] << std::endl;
   app_log() << "------------------------\n";
 
   RealType b = (Amat[0] + Amat[1] + Amat[2]) / 3.0;
 
   app_log() << "Spherically averaged S(k) near k=0\n";
-  app_log() << "S(k)=b*k^2   b = " << b << endl;
+  app_log() << "S(k)=b*k^2   b = " << b << std::endl;
   app_log() << "------------------------\n";
-  app_log() << endl;
+  app_log() << std::endl;
 
   RealType kmax = AA->get_kc();
   RealType nk   = 100;
   RealType kdel = kmax / (nk - 1.0);
 
   app_log() << "\nSpherically averaged splined S(k):\n";
-  app_log() << setw(12) << "k" << setw(12) << "S(k)"
+  app_log() << std::setw(12) << "k" << std::setw(12) << "S(k)"
             << "\n";
   for (int k = 0; k < nk; k++)
   {
     RealType kval = kdel * k;
-    app_log() << setw(12) << setprecision(8) << kval << setw(12) << setprecision(8) << sphericalAvgSk(spline, kval)
-              << "\n";
+    app_log() << std::setw(12) << std::setprecision(8) << kval << std::setw(12) << std::setprecision(8)
+              << sphericalAvgSk(spline, kval) << "\n";
   }
 }
 
-QMCFiniteSize::RealType QMCFiniteSize::calcPotentialDiscrete(vector<RealType> sk)
+QMCFiniteSize::RealType QMCFiniteSize::calcPotentialDiscrete(std::vector<RealType> sk)
 {
   //This is the \frac{1}{Omega} \sum_{\mathbf{k}} \frac{v_k}{2} S(\mathbf{k}) term.
   return 0.5 * AA->evaluate_w_sk(Klist.kshell, sk.data());
 }
 
-QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
+QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(std::vector<RealType> sk)
 {
-  UBspline_3d_d* spline = getSkSpline(sk);
+  auto spline = std::unique_ptr<UBspline_3d_d, void (*)(void*)>{getSkSpline(sk), destroy_Bspline};
 
   RealType kmax   = AA->get_kc();
   IndexType ngrid = 2 * Klist.kshell.size() - 1; //make a lager kmesh
 
-  vector<RealType> nonunigrid1d, k2vksk;
+  std::vector<RealType> unigrid1d, k2vksk;
   RealType dk = kmax / ngrid;
 
-  nonunigrid1d.push_back(0.0);
+  unigrid1d.push_back(0.0);
   k2vksk.push_back(0.0);
   for (int i = 1; i < ngrid; i++)
   {
     RealType kval = i * dk;
-    nonunigrid1d.push_back(kval);
-    RealType skavg = sphericalAvgSk(spline, kval);
+    unigrid1d.push_back(kval);
+    RealType skavg = sphericalAvgSk(spline.get(), kval);
     RealType k2vk  = kval * kval * AA->evaluate_vlr_k(kval); //evaluation for arbitrary kshell for any LRHandler
     k2vksk.push_back(0.5 * k2vk * skavg);
   }
 
   k2vksk.push_back(0.0);
-  nonunigrid1d.push_back(kmax);
+  unigrid1d.push_back(kmax);
 
-  NUBspline_1d_d* integrand = spline_clamped(nonunigrid1d, k2vksk, 0.0, 0.0);
+  auto integrand =
+      std::unique_ptr<UBspline_1d_d, void (*)(void*)>{spline_clamped(unigrid1d, k2vksk, 0.0, 0.0), destroy_Bspline};
 
   //Integrate the spline and compute the thermodynamic limit.
-  RealType integratedval = integrate_spline(integrand, 0.0, kmax, 200);
+  RealType integratedval = integrate_spline(integrand.get(), 0.0, kmax, 200);
   RealType intnorm       = Vol / 2.0 / M_PI / M_PI; //The volume factor here is because 1/Vol is
                                                     //included in QMCPACK's v_k.  See CoulombFunctor.
 
@@ -516,28 +498,28 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
 void QMCFiniteSize::calcPotentialCorrection()
 {
   //resample vsums and vints
-  vector<RealType> vsums, vints;
+  std::vector<RealType> vsums, vints;
   vsums.resize(NumSamples);
   vints.resize(NumSamples);
 
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 #pragma omp parallel for
   for (int i = 0; i < NumSamples; i++)
   {
-    vector<RealType> newSK_raw(SK_raw.size());
+    std::vector<RealType> newSK_raw(SK_raw.size());
     for (int j = 0; j < SK_raw.size(); j++)
     {
       FullPrecRealType chi;
-      rng.generate_normal(&chi, 1);
+      chi          = rng();
       newSK_raw[j] = SK_raw[j] + SKerr_raw[j] * chi;
     }
     vsums[i] = calcPotentialDiscrete(newSK_raw);
 
-    vector<RealType> newSK(SK.size());
+    std::vector<RealType> newSK(SK.size());
     for (int j = 0; j < SK.size(); j++)
     {
       FullPrecRealType chi;
-      rng.generate_normal(&chi, 1);
+      chi      = rng();
       newSK[j] = SK[j] + SKerr[j] * chi;
     }
     vints[i] = calcPotentialInt(newSK);
@@ -555,21 +537,21 @@ void QMCFiniteSize::calcPotentialCorrection()
 
 void QMCFiniteSize::calcLeadingOrderCorrections()
 {
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
-  vector<RealType> bs(NumSamples);
+  std::vector<RealType> bs(NumSamples);
 #pragma omp parallel for
   for (int i = 0; i < NumSamples; i++)
   {
-    vector<RealType> newSK(SK.size());
+    std::vector<RealType> newSK(SK.size());
     for (int j = 0; j < SK.size(); j++)
     {
       FullPrecRealType chi;
-      rng.generate_normal(&chi, 1);
+      chi      = rng();
       newSK[j] = SK[j] + SKerr[j] * chi;
     }
     UBspline_3d_d* spline = getSkSpline(newSK);
-    vector<RealType> Amat;
+    std::vector<RealType> Amat;
     getSkInfo(spline, Amat);
     bs[i] = (Amat[0] + Amat[1] + Amat[2]) / 3.0;
   }
@@ -590,22 +572,27 @@ void QMCFiniteSize::summary()
   app_log() << " Finite Size Corrections:\n";
   app_log() << "=========================================================\n";
   app_log() << " System summary:\n";
-  app_log() << fixed;
-  app_log() << "  Nelec = " << setw(12) << Ne << "\n";
-  app_log() << "  Vol   = " << setw(12) << setprecision(8) << Vol << " [a0^3]\n";
-  app_log() << "  Ne/V  = " << setw(12) << setprecision(8) << rho << " [1/a0^3]\n";
-  app_log() << "  rs/a0 = " << setw(12) << setprecision(8) << rs << "\n";
+  app_log() << std::fixed;
+  app_log() << "  Nelec = " << std::setw(12) << Ne << "\n";
+  app_log() << "  Vol   = " << std::setw(12) << std::setprecision(8) << Vol << " [a0^3]\n";
+  app_log() << "  Ne/V  = " << std::setw(12) << std::setprecision(8) << rho << " [1/a0^3]\n";
+  app_log() << "  rs/a0 = " << std::setw(12) << std::setprecision(8) << rs << "\n";
   app_log() << "\n";
   app_log() << " Leading Order Corrections:\n";
-  app_log() << "  V_LO / electron = " << setw(12) << setprecision(8) << vlo << " +/- " << vloerr << " [Ha/electron]\n";
-  app_log() << "  V_LO            = " << setw(12) << setprecision(8) << vlo * Ne << " +/- " << vloerr * Ne << " [Ha]\n";
-  app_log() << "  T_LO / electron = " << setw(12) << setprecision(8) << tlo << " +/- " << tloerr << " [Ha/electron]\n";
-  app_log() << "  T_LO            = " << setw(12) << setprecision(8) << tlo * Ne << " +/- " << tloerr * Ne << " [Ha]\n";
+  app_log() << "  V_LO / electron = " << std::setw(12) << std::setprecision(8) << vlo << " +/- " << vloerr
+            << " [Ha/electron]\n";
+  app_log() << "  V_LO            = " << std::setw(12) << std::setprecision(8) << vlo * Ne << " +/- " << vloerr * Ne
+            << " [Ha]\n";
+  app_log() << "  T_LO / electron = " << std::setw(12) << std::setprecision(8) << tlo << " +/- " << tloerr
+            << " [Ha/electron]\n";
+  app_log() << "  T_LO            = " << std::setw(12) << std::setprecision(8) << tlo * Ne << " +/- " << tloerr * Ne
+            << " [Ha]\n";
   app_log() << "  NB: This is a crude estimate of the kinetic energy correction!\n";
   app_log() << "\n";
   app_log() << " Beyond Leading Order (Integrated corrections):\n";
-  app_log() << "  V_Int / electron = " << setw(12) << setprecision(8) << Vfs << " +/- " << Vfserr << " [Ha/electron]\n";
-  app_log() << "  V_Int            = " << setw(12) << setprecision(8) << Vfs * Ne << " +/- " << Vfserr * Ne
+  app_log() << "  V_Int / electron = " << std::setw(12) << std::setprecision(8) << Vfs << " +/- " << Vfserr
+            << " [Ha/electron]\n";
+  app_log() << "  V_Int            = " << std::setw(12) << std::setprecision(8) << Vfs * Ne << " +/- " << Vfserr * Ne
             << " [Ha]\n";
 }
 

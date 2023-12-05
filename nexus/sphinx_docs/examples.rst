@@ -1498,7 +1498,7 @@ The files for this example are found in:
 
 .. code:: rest
 
-  /your_download_path/nexus/examples/qmcpack/excited
+  /your_download_path/nexus/examples/qmcpack/rsqmc_misc/excited
 
 Please study `Lab 5`_ in QMCPACK manual for an in-depth discussion of the
 excited states calculations. The primitive cell for a structure is not
@@ -1516,9 +1516,13 @@ optical excitations. Compared to the ground state bulk calculations, a
 tiling matrix that is commensurate with the wavevectors involved in the
 excitation must be chosen. This process has been automatized in Nexus
 using the "get_band_tiling" function. There are two VMC scripts in this
-lab: ``vmc.py`` script uses a non-optimal tiling matrix from Lab 5 in
-QMCPACK, whereas ``vmc-opt-tiling.py`` uses the "get_band_tiling"
-function. In this example, we will use ``vmc-opt-tiling.py``.
+lab that generate the tiling matrix in different ways: ``vmc.py`` script 
+uses a non-optimal tiling matrix from Lab 5 in QMCPACK, whereas 
+``vmc-opt-tiling.py`` uses the "get_band_tiling" function. In this 
+example, we will use ``vmc-opt-tiling.py``. Note, there is also an 
+additional VMC script included ``vmc_excitation_alternatives.py`` which
+does not use a tiling matrix but includes a variety of ways that
+excitations can be specified with Nexus.
 
 In `Lab 5 <https://qmcpack.readthedocs.io/en/develop/lab_excited.html>`_ of the QMCPACK manual we found that VBM is located at
 :math:`\Gamma` and the CBM is located at :math:`\Delta` ([0.377, 0.,
@@ -1542,7 +1546,12 @@ k-point grid density in one dimension.
   "excitation = [’up’, ’-11 +12’]". Band/twist index and energy indexes
   of the orbitals can be found in "einspline" files or they can be
   determined after parsing the "nscf.out" file using PwscfAnalyzer.
-  Examples on how to do are provided in Lab 5 of the QMCPACK manual.
+  In addition to these options, "excitation = ['up','lowest']" can also 
+  be specified which will execute a homo-lumo excitation based on the
+  energetic ordering of the orbitals. Nexus also allows singlet and
+  triplet excitation types. Please refer to ``vmc_excitation_alternatives.py``
+  for examples using the various excitation types.
+  Examples are also provided in Lab 5 of the QMCPACK manual.
 
 ::
 
@@ -1695,3 +1704,4 @@ k-point grid density in one dimension.
       )
 
   run_project(scf,nscf,conv,qmc)
+

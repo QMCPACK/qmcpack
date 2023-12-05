@@ -39,7 +39,7 @@ public:
   int readtype;
   int NFZC, NEXT, NTOT, NAC;
 
-  void parse(const std::string& fname);
+  void parse(const std::string& fname) override;
 
   void getGeometry(std::istream& is);
 

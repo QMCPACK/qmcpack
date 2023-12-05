@@ -35,6 +35,7 @@ const char config_group[] = "config_collection";
 const char random[]         = "random_state";
 const char walkers[]        = "walkers";
 const char num_walkers[]    = "number_of_walkers";
+const char walker_weights[] = "walker_weights";
 const char energy_history[] = "energy_history";
 const char norm_history[]   = "norm_history";
 const char qmc_status[]     = "qmc_status";
@@ -47,7 +48,7 @@ const char append_walkers[] = "config_";
 const char coord[] = "coord";
 } // namespace hdf
 
-struct HDFVersion //: public HDFAttribIOBase
+struct HDFVersion
 {
   //enumeration to get version value
   enum
@@ -55,7 +56,7 @@ struct HDFVersion //: public HDFAttribIOBase
     MAJOR = 0,
     MINOR
   };
-  typedef TinyVector<int, 2> data_type;
+  using data_type = TinyVector<int, 2>;
   data_type version;
 
   inline HDFVersion() : version(QMCPACK_VERSION_MAJOR, QMCPACK_VERSION_MINOR) {}
@@ -84,16 +85,16 @@ struct HDFVersion //: public HDFAttribIOBase
 
   inline bool operator<(const HDFVersion& other) const { return serialized() < other.serialized(); }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     h5data_proxy<data_type> vin(version);
-    return vin.read(grp, aname, xfer_plist);
+    return vin.read(version, grp, aname, xfer_plist);
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     h5data_proxy<data_type> vout(version);
-    return vout.write(grp, aname, xfer_plist);
+    return vout.write(version, grp, aname, xfer_plist);
   }
 };
 
@@ -113,17 +114,18 @@ inline std::istream& operator>>(std::istream& is, HDFVersion& v)
 template<>
 struct h5data_proxy<HDFVersion>
 {
-  HDFVersion& ref;
-  h5data_proxy(HDFVersion& a) : ref(a) {}
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  h5data_proxy(const HDFVersion& a) {}
+
+  inline bool read(HDFVersion& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     h5data_proxy<HDFVersion::data_type> vin(ref.version);
-    return vin.read(grp, aname, xfer_plist);
+    return vin.read(ref.version, grp, aname, xfer_plist);
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const HDFVersion& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     h5data_proxy<HDFVersion::data_type> vout(ref.version);
-    return vout.write(grp, aname, xfer_plist);
+    return vout.write(ref.version, grp, aname, xfer_plist);
   }
 };
 

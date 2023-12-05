@@ -20,18 +20,16 @@ namespace qmcplusplus
 //forward declaration
 class ParticleSet;
 
-struct eeI_JastrowBuilder : public WaveFunctionComponentBuilder
+class eeI_JastrowBuilder : public WaveFunctionComponentBuilder
 {
+public:
   ParticleSet* sourcePtcl;
   // Two-body constructor
-  eeI_JastrowBuilder(Communicate *comm, ParticleSet& target, ParticleSet& source)
-      : WaveFunctionComponentBuilder(comm, target), sourcePtcl(&source)
-  {
-    ClassName = "eeI_JastrowBuilder";
-  }
+  eeI_JastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source);
 
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
+private:
   template<typename J3type>
   bool putkids(xmlNodePtr kids, J3type& J3);
 };

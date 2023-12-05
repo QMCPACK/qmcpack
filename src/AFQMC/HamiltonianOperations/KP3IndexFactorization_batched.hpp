@@ -52,8 +52,8 @@ class KP3IndexFactorization_batched
   using SpAllocator_shared = node_allocator<SPComplexType>;
   using IAllocator_shared  = node_allocator<int>;
 
-  using device_alloc_type     = DeviceBufferManager::template allocator_t<SPComplexType>;
-  using device_alloc_Itype     = DeviceBufferManager::template allocator_t<int>;
+  using device_alloc_type  = DeviceBufferManager::template allocator_t<SPComplexType>;
+  using device_alloc_Itype = DeviceBufferManager::template allocator_t<int>;
 
   // type defs
   using pointer                 = typename Allocator::pointer;
@@ -81,8 +81,8 @@ class KP3IndexFactorization_batched
   using CMatrix_cref  = boost::multi::array_ref<ComplexType const, 2, const_pointer>;
   using CVector_ref   = ComplexVector_ref<pointer>;
   using CMatrix_ref   = ComplexMatrix_ref<pointer>;
-  using C3Tensor_ref = Complex3Tensor_ref<pointer>; 
-  using C4Tensor_ref = ComplexArray_ref<4, pointer>;
+  using C3Tensor_ref  = Complex3Tensor_ref<pointer>;
+  using C4Tensor_ref  = ComplexArray_ref<4, pointer>;
   using C3Tensor_cref = boost::multi::array_ref<ComplexType const, 3, const_pointer>;
 
   using SpMatrix_cref = boost::multi::array_ref<SPComplexType const, 2, sp_pointer>;
@@ -181,7 +181,7 @@ public:
         dev_Q2vbias(typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
         dev_Qmap(Qmap),
         dev_nelpk(nelpk),
-        dev_a0pk(typename IMatrix::extensions_type{nelpk.size(0), nelpk.size(1)}, IAllocator{allocator_}),
+        dev_a0pk(typename IMatrix::extensions_type{std::get<0>(nelpk.sizes()), std::get<1>(nelpk.sizes())}, IAllocator{allocator_}),
         dev_QKToK2(QKToK2),
         EQ(nopk.size() + 2)
   {
@@ -241,7 +241,7 @@ public:
       i0[i] = i0[i - 1] + nopk[i - 1];
     copy_n(i0.data(), nkpts, dev_i0pk.origin());
     // dev_nelpk
-    for (int n = 0; n < nelpk.size(0); n++)
+    for (int n = 0; n < nelpk.size(); n++)
     {
       i0[0] = 0;
       for (int i = 1; i < nkpts; i++)
@@ -339,7 +339,7 @@ public:
   {
     int nkpts = nopk.size();
     int NMO   = std::accumulate(nopk.begin(), nopk.end(), 0);
-    int npol = (walker_type == NONCOLLINEAR) ? 2 : 1;
+    int npol  = (walker_type == NONCOLLINEAR) ? 2 : 1;
 
     CVector vMF_(vMF);
     CVector P0D(iextensions<1u>{NMO * NMO});
@@ -351,30 +351,31 @@ public:
     boost::multi::array<ComplexType, 2> P0({NMO, NMO});
     copy_n(P0D.origin(), NMO * NMO, P0.origin());
 
-    boost::multi::array<ComplexType, 2> P1({npol*NMO, npol*NMO});
+    boost::multi::array<ComplexType, 2> P1({npol * NMO, npol * NMO});
     std::fill_n(P1.origin(), P1.num_elements(), ComplexType(0.0));
 
     // add spin-dependent H1
     for (int K = 0, nk0 = 0; K < nkpts; ++K)
-    { 
+    {
       for (int i = 0, I = nk0; i < nopk[K]; i++, I++)
-      { 
-        for(int p=0; p<npol; ++p) 
-          P1[p*NMO+I][p*NMO+I] += H1[K][p*nopk[K]+i][p*nopk[K]+i];
+      {
+        for (int p = 0; p < npol; ++p)
+          P1[p * NMO + I][p * NMO + I] += H1[K][p * nopk[K] + i][p * nopk[K] + i];
         for (int j = i + 1, J = I + 1; j < nopk[K]; j++, J++)
-        { 
-          for(int p=0; p<npol; ++p)
-          {   
-              P1[p*NMO+I][p*NMO+J] += H1[K][p*nopk[K]+i][p*nopk[K]+j];
-              P1[p*NMO+J][p*NMO+I] += H1[K][p*nopk[K]+j][p*nopk[K]+i];
+        {
+          for (int p = 0; p < npol; ++p)
+          {
+            P1[p * NMO + I][p * NMO + J] += H1[K][p * nopk[K] + i][p * nopk[K] + j];
+            P1[p * NMO + J][p * NMO + I] += H1[K][p * nopk[K] + j][p * nopk[K] + i];
           }
         }
-        if(walker_type == NONCOLLINEAR) {
+        if (walker_type == NONCOLLINEAR)
+        {
           // offdiagonal piece
           for (int j = 0, J = nk0; j < nopk[K]; j++, J++)
-          { 
-            P1[I][NMO+J] += H1[K][i][nopk[K]+j];
-            P1[NMO+J][I] += H1[K][nopk[K]+j][i];
+          {
+            P1[I][NMO + J] += H1[K][i][nopk[K] + j];
+            P1[NMO + J][I] += H1[K][nopk[K] + j][i];
           }
         }
       }
@@ -382,24 +383,24 @@ public:
     }
 
     // add P0 (diagonal in spin)
-    for(int p=0; p<npol; ++p)
-      for(int I=0; I<NMO; I++)
-        for(int J=0; J<NMO; J++)
-          P1[p*NMO+I][p*NMO+J] += P0[I][J];
+    for (int p = 0; p < npol; ++p)
+      for (int I = 0; I < NMO; I++)
+        for (int J = 0; J < NMO; J++)
+          P1[p * NMO + I][p * NMO + J] += P0[I][J];
 
     // add vn0 (diagonal in spin)
     for (int K = 0, nk0 = 0; K < nkpts; ++K)
     {
       for (int i = 0, I = nk0; i < nopk[K]; i++, I++)
       {
-        for(int p=0; p<npol; ++p)
-          P1[p*NMO+I][p*NMO+I] += vn0[K][i][i];
+        for (int p = 0; p < npol; ++p)
+          P1[p * NMO + I][p * NMO + I] += vn0[K][i][i];
         for (int j = i + 1, J = I + 1; j < nopk[K]; j++, J++)
         {
-          for(int p=0; p<npol; ++p)
+          for (int p = 0; p < npol; ++p)
           {
-            P1[p*NMO+I][p*NMO+J] += vn0[K][i][j];
-            P1[p*NMO+J][p*NMO+I] += vn0[K][j][i];
+            P1[p * NMO + I][p * NMO + J] += vn0[K][i][j];
+            P1[p * NMO + J][p * NMO + I] += vn0[K][j][i];
           }
         }
       }
@@ -408,12 +409,12 @@ public:
 
     using ma::conj;
     // symmetrize
-    for(int I=0; I<npol*NMO; I++)
+    for (int I = 0; I < npol * NMO; I++)
     {
-      for(int J=I+1; J<npol*NMO; J++)
+      for (int J = I + 1; J < npol * NMO; J++)
       {
         // This is really cutoff dependent!!!
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if (std::abs(P1[I][J] - ma::conj(P1[J][I])) * 2.0 > 1e-5)
         {
 #else
@@ -421,9 +422,9 @@ public:
         {
 #endif
           app_error() << " WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
-          app_error() << I << " " << J << " " << P1[I][J] << " " << P1[J][I] <<std::endl;
-                      //<< H1[K][i][j] << " "
-                      //<< H1[K][j][i] << " " << vn0[K][i][j] << " " << vn0[K][j][i] << std::endl;
+          app_error() << I << " " << J << " " << P1[I][J] << " " << P1[J][I] << std::endl;
+          //<< H1[K][i][j] << " "
+          //<< H1[K][j][i] << " " << vn0[K][i][j] << " " << vn0[K][j][i] << std::endl;
         }
         P1[I][J] = 0.5 * (P1[I][J] + ma::conj(P1[J][I]));
         P1[J][I] = ma::conj(P1[I][J]);
@@ -480,10 +481,10 @@ public:
     using std::copy_n;
     using std::fill_n;
     int nkpts = nopk.size();
-    assert(E.size(1) >= 3);
+    assert(std::get<1>(E.sizes()) >= 3);
     assert(nd >= 0 && nd < nelpk.size());
 
-    int nwalk     = Gc.size(1);
+    int nwalk     = std::get<1>(Gc.sizes());
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -496,7 +497,7 @@ public:
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
                 "dimensions \n");
 
@@ -522,13 +523,13 @@ public:
       Knc = local_nCV;
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride(0) == std::get<1>(KEright->sizes()));
       }
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride(0) == std::get<1>(KEleft->sizes()));
       }
     }
     else if (getKr or getKl)
@@ -544,12 +545,12 @@ public:
       fill_n(E[n].origin(), 3, ComplexType(0.));
 
     assert(Gc.num_elements() == nwalk * (nocca_tot + noccb_tot) * npol * nmo_tot);
-    C3Tensor_cref G3Da(make_device_ptr(Gc.origin()), {nocca_tot*npol, nmo_tot, nwalk});
+    C3Tensor_cref G3Da(make_device_ptr(Gc.origin()), {nocca_tot * npol, nmo_tot, nwalk});
     C3Tensor_cref G3Db(make_device_ptr(Gc.origin()) + G3Da.num_elements() * (nspin - 1), {noccb_tot, nmo_tot, nwalk});
 
     // later on, rewrite routine to loop over spins, to avoid storage of both spin
     // components simultaneously
-    Static4Tensor GKK({nspin, nkpts, nkpts, nwalk  * npol * nmo_max * nocc_max},
+    Static4Tensor GKK({nspin, nkpts, nkpts, nwalk * npol * nmo_max * nocc_max},
                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     GKaKjw_to_GKKwaj(G3Da, GKK[0], nelpk[nd].sliced(0, nkpts), dev_nelpk[nd], dev_a0pk[nd]);
     if (walker_type == COLLINEAR)
@@ -568,11 +569,11 @@ public:
       {
 #if defined(MIXED_PRECISION)
         int ni(nopk[K]);
-        CMatrix_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()), {nocc_max, npol*nmo_max});
-        for (int a = 0; a < nelpk[nd][K]; ++a) 
+        CMatrix_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()), {nocc_max, npol * nmo_max});
+        for (int a = 0; a < nelpk[nd][K]; ++a)
           for (int pol = 0; pol < npol; ++pol)
-            ma::product(ComplexType(1.), ma::T(G3Da[(na + a)*npol+pol].sliced(nk, nk + ni)), 
-                        haj_K[a].sliced(pol*ni, pol*ni+ni), ComplexType(1.), E({0, nwalk}, 0));
+            ma::product(ComplexType(1.), ma::T(G3Da[(na + a) * npol + pol].sliced(nk, nk + ni)),
+                        haj_K[a].sliced(pol * ni, pol * ni + ni), ComplexType(1.), E({0, nwalk}, 0));
         na += nelpk[nd][K];
         if (walker_type == COLLINEAR)
         {
@@ -583,7 +584,7 @@ public:
                         ComplexType(1.), E({0, nwalk}, 0));
           nb += nelpk[nd][nkpts + K];
         }
-        nk += ni; 
+        nk += ni;
 #else
         nk = nopk[K];
         {
@@ -621,7 +622,8 @@ public:
       std::vector<int> kdiag;
       kdiag.reserve(batch_size);
 
-      StaticIVector IMats(iextensions<1u>{batch_size}, device_buffer_manager.get_generator().template get_allocator<int>());
+      StaticIVector IMats(iextensions<1u>{batch_size},
+                          device_buffer_manager.get_generator().template get_allocator<int>());
       fill_n(IMats.origin(), IMats.num_elements(), 0);
       StaticVector dev_scl_factors(iextensions<1u>{batch_size},
                                    device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
@@ -710,9 +712,9 @@ public:
 
               if (batch_cnt >= batch_size)
               {
-                gemmBatched('T', 'N', nocc_max * nchol_max, nwalk * nocc_max, npol*nmo_max, SPComplexType(1.0),
-                            Aarray.data(), npol*nmo_max, Barray.data(), npol*nmo_max, SPComplexType(0.0), Carray.data(),
-                            nocc_max * nchol_max, Aarray.size());
+                gemmBatched('T', 'N', nocc_max * nchol_max, nwalk * nocc_max, npol * nmo_max, SPComplexType(1.0),
+                            Aarray.data(), npol * nmo_max, Barray.data(), npol * nmo_max, SPComplexType(0.0),
+                            Carray.data(), nocc_max * nchol_max, Aarray.size());
 
                 copy_n(scl_factors.data(), scl_factors.size(), dev_scl_factors.origin());
                 using ma::batched_dot_wabn_wban;
@@ -741,9 +743,9 @@ public:
 
           if (batch_cnt > 0)
           {
-            gemmBatched('T', 'N', nocc_max * nchol_max, nwalk * nocc_max, npol*nmo_max, SPComplexType(1.0), Aarray.data(),
-                        npol*nmo_max, Barray.data(), npol*nmo_max, SPComplexType(0.0), Carray.data(), nocc_max * nchol_max,
-                        Aarray.size());
+            gemmBatched('T', 'N', nocc_max * nchol_max, nwalk * nocc_max, npol * nmo_max, SPComplexType(1.0),
+                        Aarray.data(), npol * nmo_max, Barray.data(), npol * nmo_max, SPComplexType(0.0), Carray.data(),
+                        nocc_max * nchol_max, Aarray.size());
 
             copy_n(scl_factors.data(), scl_factors.size(), dev_scl_factors.origin());
             using ma::batched_dot_wabn_wban;
@@ -819,7 +821,7 @@ public:
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);  
       if(addEJ) { 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         mem_needs += 2*nwalk*local_nCV;
 #else
         if(not getKr) mem_needs += nwalk*local_nCV;
@@ -835,7 +837,7 @@ public:
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
@@ -851,7 +853,7 @@ public:
           Krptr = BTMats.origin();
           cnt += nwalk*local_nCV;
         }
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
@@ -1181,8 +1183,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<AType, 2, decltype(X.origin())> X_(X.origin(), {X.size(0), 1});
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {1, v.size(0)});
+    boost::multi::array_ref<AType, 2, decltype(X.origin())> X_(X.origin(), {X.size(), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {1, v.size()});
     return vHS(X_, v_, a, c);
   }
 
@@ -1197,8 +1199,8 @@ public:
   void vHS(MatA& X, MatB&& v, double a = 1., double c = 0.)
   {
     int nkpts = nopk.size();
-    int nwalk = X.size(1);
-    assert(v.size(0) == nwalk);
+    int nwalk = std::get<1>(X.sizes());
+    assert(v.size() == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
     int nmo_max   = *std::max_element(nopk.begin(), nopk.end());
@@ -1214,12 +1216,13 @@ public:
     Static3Tensor vKK({nkpts + number_of_symmetric_Q, nkpts, nwalk * nmo_max * nmo_max},
                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     fill_n(vKK.origin(), vKK.num_elements(), SPComplexType(0.0));
-    Static4Tensor XQnw({nkpts, 2, nchol_max, nwalk}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    Static4Tensor XQnw({nkpts, 2, nchol_max, nwalk},
+                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     fill_n(XQnw.origin(), XQnw.num_elements(), SPComplexType(0.0));
 
     // "rotate" X
     //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     StaticMatrix Xdev(X.extensions(), device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     copy_n_cast(make_device_ptr(X.origin()), X.num_elements(), Xdev.origin());
 #else
@@ -1333,8 +1336,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(), 1});
+    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -1368,22 +1371,20 @@ public:
 
     int nkpts = nopk.size();
     assert(nd >= 0 && nd < nelpk.size());
-    int nwalk = G.size(1);
-    assert(v.size(0) == 2 * local_nCV);
-    assert(v.size(1) == nwalk);
+    int nwalk = std::get<1>(G.sizes());
+    assert(std::get<0>(v.sizes()) == 2 * local_nCV);
+    assert(std::get<1>(v.sizes()) == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
     int nmo_max   = *std::max_element(nopk.begin(), nopk.end());
     int nocca_tot = std::accumulate(nelpk[nd].begin(), nelpk[nd].begin() + nkpts, 0);
     int nocca_max = *std::max_element(nelpk[nd].begin(), nelpk[nd].begin() + nkpts);
-    int noccb_max = nocca_max;
     int nchol_max = *std::max_element(ncholpQ.begin(), ncholpQ.end());
     int noccb_tot = 0;
     if (walker_type == COLLINEAR)
     {
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
-      noccb_max = *std::max_element(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts);
     }
     RealType scl = (walker_type == CLOSED ? 2.0 : 1.0);
     SPComplexType one(1.0, 0.0);
@@ -1395,7 +1396,8 @@ public:
     // MAM: use reshape when available, then no need to deal with types
     using GType = typename std::decay<MatA>::type::element;
     boost::multi::array_ref<GType const, 3, decltype(make_device_ptr(G.origin()))> G3Da(make_device_ptr(G.origin()),
-                                                                                        {nocca_tot*npol, nmo_tot, nwalk});
+                                                                                        {nocca_tot * npol, nmo_tot,
+                                                                                         nwalk});
     boost::multi::array_ref<GType const, 3, decltype(make_device_ptr(G.origin()))> G3Db(make_device_ptr(G.origin()) +
                                                                                             G3Da.num_elements() *
                                                                                                 (nspin - 1),
@@ -1522,17 +1524,17 @@ private:
   //Cholesky Tensor Lik[Q][nk][i][k][n]
   std::vector<shmSpMatrix> LQKikn;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<LQKankMatrix> LQKank;
   const bool needs_copy;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKakn;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKbnl;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKbln;
 
   // number of Q vectors that satisfy Q==-Q
@@ -1581,33 +1583,33 @@ private:
   template<class MatA, class MatB, class IVec, class IVec2>
   void GKaKjw_to_GKKwaj(MatA const& GKaKj, MatB&& GKKaj, IVec&& nocc, IVec2&& dev_no, IVec2&& dev_a0)
   {
-    int npol = (walker_type == NONCOLLINEAR) ? 2 : 1;
+    int npol    = (walker_type == NONCOLLINEAR) ? 2 : 1;
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
     //      int nocc_max = *std::max_element(nocc.begin(),nocc.end());
-    int nmo_tot = GKaKj.size(1);
-    int nwalk   = GKaKj.size(2);
+    int nmo_tot = std::get<1>(GKaKj.sizes());
+    int nwalk   = std::get<2>(GKaKj.sizes());
     int nkpts   = nopk.size();
     assert(GKKaj.num_elements() >= nkpts * nkpts * nwalk * nocc_max * npol * nmo_max);
 
     using ma::KaKjw_to_KKwaj;
-    KaKjw_to_KKwaj(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, dev_nopk.origin(), dev_i0pk.origin(), dev_no.origin(),
-                   dev_a0.origin(), GKaKj.origin(), GKKaj.origin());
+    KaKjw_to_KKwaj(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, dev_nopk.origin(), dev_i0pk.origin(),
+                   dev_no.origin(), dev_a0.origin(), GKaKj.origin(), GKKaj.origin());
   }
 
   template<class MatA, class MatB, class IVec, class IVec2>
   void GKaKjw_to_GQKajw(MatA const& GKaKj, MatB&& GQKaj, IVec&& nocc, IVec2&& dev_no, IVec2&& dev_a0)
   {
-    int npol = (walker_type == NONCOLLINEAR) ? 2 : 1;
+    int npol    = (walker_type == NONCOLLINEAR) ? 2 : 1;
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
     //      int nocc_max = *std::max_element(nocc.begin(),nocc.end());
-    int nmo_tot = GKaKj.size(1);
-    int nwalk   = GKaKj.size(2);
+    int nmo_tot = std::get<1>(GKaKj.sizes());
+    int nwalk   = std::get<2>(GKaKj.sizes());
     int nkpts   = nopk.size();
     assert(GQKaj.num_elements() >= nkpts * nkpts * nwalk * nocc_max * npol * nmo_max);
 
     using ma::KaKjw_to_QKajw;
-    KaKjw_to_QKajw(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, dev_nopk.origin(), dev_i0pk.origin(), dev_no.origin(),
-                   dev_a0.origin(), dev_QKToK2.origin(), GKaKj.origin(), GQKaj.origin());
+    KaKjw_to_QKajw(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, dev_nopk.origin(), dev_i0pk.origin(),
+                   dev_no.origin(), dev_a0.origin(), dev_QKToK2.origin(), GKaKj.origin(), GQKaj.origin());
   }
 
 
@@ -1619,8 +1621,8 @@ private:
   void vKKwij_to_vwKiKj(MatA const& vKK, MatB&& vKiKj)
   {
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
-    int nwalk   = vKiKj.size(0);
-    int nmo_tot = vKiKj.size(1);
+    int nwalk   = std::get<0>(vKiKj.sizes());
+    int nmo_tot = std::get<1>(vKiKj.sizes());
     int nkpts   = nopk.size();
 
     using ma::vKKwij_to_vwKiKj;
@@ -1632,7 +1634,7 @@ private:
   void vbias_from_v1(ComplexType a, MatA const& v1, MatB&& vbias)
   {
     using BType   = typename std::decay<MatB>::type::element;
-    int nwalk     = vbias.size(1);
+    int nwalk     = std::get<1>(vbias.sizes());
     int nkpts     = nopk.size();
     int nchol_max = *std::max_element(ncholpQ.begin(), ncholpQ.end());
 

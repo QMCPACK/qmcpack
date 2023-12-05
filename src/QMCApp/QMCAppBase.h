@@ -17,8 +17,8 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsApp/ProjectData.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "ProjectData.h"
+#include "RandomNumberControl.h"
 #include <stack>
 /**@defgroup qmcapp QMC Application Group
  * @brief Application-level classes to manage QMC simulations.
@@ -38,7 +38,7 @@ public:
   QMCAppBase();
 
   ///destructor
-  ~QMCAppBase();
+  virtual ~QMCAppBase();
 
   /** parse an input file
    * @param infile file to be parsed.
@@ -57,17 +57,17 @@ public:
   /** execute the main function */
   virtual bool execute() = 0;
 
-  std::string& getTitle();
+  const std::string& getTitle() const;
 
 protected:
   ///stack of xml document
-  std::stack<Libxml2Document*> XmlDocStack;
+  std::stack<Libxml2Document*> xml_doc_stack_;
 
   ///project description
-  ProjectData myProject;
+  ProjectData my_project_;
 
   ///random number controller
-  RandomNumberControl myRandomControl;
+  RandomNumberControl my_random_control_;
 
   ///open a new document
   bool pushDocument(const std::string& infile);

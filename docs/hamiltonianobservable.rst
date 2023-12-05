@@ -112,8 +112,6 @@ Many pair potentials are supported.  Though only the most commonly used pair pot
   +------------------+---------+-----------------------------------------------+
   |                  | mpc     | Model periodic Coulomb interaction/correction |
   +------------------+---------+-----------------------------------------------+
-  |                  | cpp     | Core polarization potential                   |
-  +------------------+---------+-----------------------------------------------+
   |                  | skpot   | *Unknown*                                     |
   +------------------+---------+-----------------------------------------------+
 
@@ -148,15 +146,10 @@ Additional information:
    of the classical/quantum ``particleset``.
 
 -  Only ``Coulomb, pseudo``, and ``mpc`` are described in detail in the
-   following subsections. The older or less-used types (``cpp, skpot``)
+   following subsections. The older or less-used types (``skpot``)
    are not covered.
 
--  Available only if ``QMC_CUDA`` is not defined: ``skpot``.
-
 -  Available only if ``OHMMS_DIM==3``: ``mpc, vhxc, pseudo``.
-
--  Available only if ``OHMMS_DIM==3`` and ``QMC_CUDA`` is not defined:
-   ``cpp``.
 
 Coulomb potentials
 ~~~~~~~~~~~~~~~~~~
@@ -204,6 +197,8 @@ attributes:
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
   | ``physical``:math:`^o`  | boolean      | yes/no               | yes                    | Hamiltonian(yes)/Observable(no) |
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
+  | ``gpu``                 | boolean      | yes/no               | depend                 | Offload computation to GPU      |
+  +-------------------------+--------------+----------------------+------------------------+---------------------------------+
   | ``forces``              | boolean      | yes/no               | no                     | *Deprecated*                    |
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
 
@@ -232,6 +227,8 @@ Additional information:
    outputted ``LocalEnergy``. Regardless of the value of ``physical``
    output data will appear in ``scalar.dat`` in a column headed by
    ``name``.
+
+-  **gpu**: When not specified, use the ``gpu`` attribute of ``particleset``.
 
 .. code-block::
   :caption: QMCPXML element for Coulomb interaction between electrons.
@@ -327,11 +324,11 @@ attributes:
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``format``:math:`^r`        | text         | xml/table             | table                  | Select file format                               |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
-  | ``algorithm``:math:`^o`     | text         | batched/default       | default                | Choose NLPP algorithm                            |
+  | ``algorithm``:math:`^o`     | text         | batched/non-batched   | batched                | Choose NLPP algorithm                            |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``DLA``:math:`^o`           | text         | yes/no                | no                     | Use determinant localization approximation       |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
-  | ``physicalSO``:math:`^o`    | boolean      | yes/no                | no                     | Include the SO contribution in the local energy  |
+  | ``physicalSO``:math:`^o`    | boolean      | yes/no                | yes                    | Include the SO contribution in the local energy  |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
 
 Additional information:
@@ -359,14 +356,15 @@ Additional information:
    These elements specify individual file names and formats (both the
    FSAtom XML and CASINO tabular data formats are supported).
 
--  **algorithm** The default algorithm evaluates the ratios of
+-  **algorithm** The ``non-batched`` algorithm evaluates the ratios of
    wavefunction components together for each quadrature point and then
-   one point after another. The batched algorithm evaluates the ratios
+   one point after another. The ``batched`` algorithm evaluates the ratios
    of quadrature points together for each wavefunction component and
    then one component after another. Internally, it uses
    ``VirtualParticleSet`` for quadrature points. Hybrid orbital
    representation has an extra optimization enabled when using the
-   batched algorithm.
+   batched algorithm. When OpenMP offload build is enabled, the default
+   value is ``batched``. Otherwise, ``non-batched`` is the default.
 
 -  **DLA** Determinant localization approximation
    (DLA) :cite:`Zen2019DLA` uses only the fermionic part of
@@ -383,7 +381,7 @@ Additional information:
     <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="psf"/>
 
 .. code-block::
-  :caption: QMCPXML element for pseudopotential electron-ion interaction (xml files).
+  :caption: QMCPXML element for pseudopotential electron-ion interaction (xml files). If SOC terms present in xml, they are added to local energy
   :name: Listing 20
 
     <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
@@ -392,10 +390,10 @@ Additional information:
     </pairpot>
 
 .. code-block::
-  :caption: QMCPXML element for pseudopotential including the spin-orbit interaction.
+  :caption: QMCPXML element for pseudopotential to accumulate the spin-orbit energy, but do not include in local energy
   :name: Listing 21
   
-    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="yes">
+    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="no">
       <pseudo elementType="Pb" href="Pb.xml"/>
     </pairpot>
 
@@ -429,10 +427,12 @@ attributes:
   +-----------------------------------+--------------+-----------------+-------------+---------------------------+
   | ``nrule``:math:`^o`               | integer      |                 |             | Integration grid order    |
   +-----------------------------------+--------------+-----------------+-------------+---------------------------+
+  | ``l-local``:math:`^o`             | integer      |                 |             | Override local channel    |
+  +-----------------------------------+--------------+-----------------+-------------+---------------------------+
 
 .. code-block::
   :caption: QMCPXML element for pseudopotential of single ionic species.
-  :name: Listing 21
+  :name: Listing 21b
 
     <pseudo elementType="Li" href="Li.xml"/>
 
@@ -545,7 +545,7 @@ section (e.g., during VMC only).
   +------------------+------------------+-----------------------------------------------------------+
   |                  | chiesa           | Chiesa-Ceperley-Martin-Holzmann kinetic energy correction |
   +------------------+------------------+-----------------------------------------------------------+
-  |                  | Force            | Family of "force" estimators (see :ref:`force-est`)       |
+  |                  | Force            | Family of "force" estimators (see :ref:`ccz-force-est`)   |
   +------------------+------------------+-----------------------------------------------------------+
   |                  | ForwardWalking   | Forward walking values for existing estimators            |
   +------------------+------------------+-----------------------------------------------------------+
@@ -805,13 +805,129 @@ Additional information:
     </parameter>
   </estimator>
 
+Magnetization density estimator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**NOTE: This is only compatible with Spin-Orbit QMC with the batched QMC drivers.  See "Spin-Orbit Calculations in QMC" for more information.**
+
+The magnetization density computes the vectorial spin per unit volume 
+on a grid in real space.  This is used with spinor-type wave functions 
+where the spin expectation value is not exclusively aligned along the 
+z-direction.  
+
+The formula that is implemented is the following:
+
+.. math::
+  :label: eq34
+
+  \mathbf{m}_c = \int d\mathbf{X} \left|{\Psi(\mathbf{X})}\right|^2 \int_{\Omega_c}d\mathbf{r} \sum_i\delta(\mathbf{r}-\hat{\mathbf{r}}_i)\int_0^{2\pi} \frac{ds'_i}{2\pi} \frac{\Psi(\ldots \mathbf{r}_i s'_i \ldots )}{\Psi(\ldots \mathbf{r}_i s_i \ldots)}\langle s_i | \hat{\sigma} | s'_i \rangle\:.
+
+Here, :math:`\hat{\sigma}` is the vector of Pauli matrices.
+
+``estimator type=magnetizationdensity`` element:
+
+  +------------------+----------------------+
+  | parent elements: | ``hamiltonian, qmc`` |
+  +------------------+----------------------+
+  | child elements:  | *None*               |
+  +------------------+----------------------+
+
+attributes:
+
+  +-----------------------+--------------+--------------------------+-------------+-------------------------------+
+  | **Name**              | **Datatype** | **Values**               | **Default** | **Description**               |
+  +=======================+==============+==========================+=============+===============================+
+  | ``type``:math:`^r`    | text         | **magnetizationdensity** |             | Must be magnetizationdensity  |
+  +-----------------------+--------------+--------------------------+-------------+-------------------------------+
+  | ``name``:math:`^r`    | text         | *anything*               | any         | Unique name for estimator     |
+  +-----------------------+--------------+--------------------------+-------------+-------------------------------+
+  | ``report``:math:`^o`  | boolean      | yes/no                   | no          | Write setup details to stdout |
+  +-----------------------+--------------+--------------------------+-------------+-------------------------------+
+
+parameters:
+
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | **Name**                   | **Datatype**     | **Values**           | **Default** | **Description**                    |
+  +============================+==================+======================+=============+====================================+
+  | ``grid``:math:`^o`         | integer array(3) | :math:`v_i>`         |             | Grid cell count                    |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``dr``:math:`^o`           | real array(3)    | :math:`v_i>`         |             | Grid cell spacing (Bohr)           |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``corner``:math:`^o`       | real array(3)    | *anything*           |             | Volume corner location             |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``center``:math:`^o`       | real array (3)   | *anything*           |             | Volume center/origin location      |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``integrator``:math:`^o`   | string           | simpsons/montecarlo  | simpsons    | Method to evaluate spin integral   |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``samples``:math:`^o`      | integer          | *anything*           |   9         | Number of points for spin integral |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+
+Additional information:
+
+-  ``name``: The name provided will be used as a label in the
+   ``stat.h5`` file for the blocked output data. Postprocessing tools
+   expect ``name="MagnetizationDensity."``
+
+-  ``grid``: The grid sets the dimension of the histogram grid. Input
+   like ``<parameter name="grid"> 40 40 40 </parameter>`` requests a
+   :math:`40 \times 40\times 40` grid. The shape of individual grid
+   cells is commensurate with the supercell shape.
+
+-  ``dr``: The ``dr`` sets the real-space dimensions of grid cell edges
+   (Bohr units). Input like
+   ``<parameter name="dr"> 0.5 0.5 0.5 </parameter>`` in a supercell
+   with axes of length 10 Bohr each (but of arbitrary shape) will
+   produce a :math:`20\times 20\times 20` grid. The inputted ``dr``
+   values are rounded to produce an integer number of grid cells along
+   each supercell axis. Either ``grid`` or ``dr`` must be provided, but
+   not both.
+
+-  ``corner``: The grid volume is defined as
+   :math:`corner+\sum_{d=1}^3u_dcell_d` with :math:`0<u_d<1` (“cell”
+   refers to either the supercell or user-provided cell).
+
+-  ``center``: The grid volume is defined as
+   :math:`center+\sum_{d=1}^3u_dcell_d` with :math:`-1/2<u_d<1/2`
+   (“cell” refers to either the supercell or user-provided cell).
+   ``corner/center`` can be used to shift the grid even if ``cell`` is
+   not specified. Simultaneous use of ``corner`` and ``center`` will
+   cause QMCPACK to abort.
+
+-  ``integrator``: How the spin-integral is performed.  By default, 
+   this is done determinstically with Simpson's rule.  However, 
+   one can also Monte-Carlo sample this integral.  Simpson's is preferred,
+   but Monte-Carlo sampling might be more efficient for large systems.  
+
+-  ``samples``: How many points are used to perform the spin integral.  
+   For Simpson's integration, this is just the number of quadrature points.
+   For Monte-Carlo, this is literally the number of MC samples.  
+ 
+-  All information is dumped to hdf5.  Each grid point has 3 real 
+   numbers associated with it, one for 
+   :math:`\langle \hat{\sigma_x} \rangle`,
+   :math:`\langle \hat{\sigma_y} \rangle`, and 
+   :math:`\langle \hat{\sigma_z} \rangle` respectively. 
+   Post-processing tools are provided in Nexus.   
+
+
+.. code-block::
+  :caption: Magnetization density estimator (uniform grid).
+  :name: Listing 27
+
+  <estimator type="MagnetizationDensity" name="magdensity">
+    <parameter name="integrator"   >  simpsons       </parameter>
+    <parameter name="samples"      >  9             </parameter>
+    <parameter name="center"       >  0.0 0.0 0.0    </parameter>
+    <parameter name="grid"         >  10 10 10          </parameter>
+  </estimator>
+
+
 Pair correlation function, :math:`g(r)`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The functional form of the species-resolved radial pair correlation function operator is
 
 .. math::
-  :label: eq34
+  :label: eq35
 
   g_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i_s=1}^{N_s}\sum_{j_{s'}=1}^{N_{s'}}\delta(r-|r_{i_s}-r_{j_{s'}}|)\:,
 
@@ -824,7 +940,7 @@ histogram with a set of :math:`N_b` uniform bins of width
 :math:`\delta r`. This can be expressed analytically as
 
 .. math::
-  :label: eq35
+  :label: eq36
 
   \tilde{g}_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i=1}^{N_s}\sum_{j=1}^{N_{s'}}\frac{1}{\delta r}\int_{r-\delta r/2}^{r+\delta r/2}dr'\delta(r'-|r_{si}-r_{s'j}|)\:,
 
@@ -895,13 +1011,13 @@ Additional information:
 
 .. code-block::
   :caption: Pair correlation function estimator element.
-  :name: Listing 27
+  :name: Listing 28
 
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" />
 
 .. code-block::
   :caption: Pair correlation function estimator element with additional electron-ion correlations.
-  :name: Listing 28
+  :name: Listing 29
 
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
 
@@ -921,7 +1037,7 @@ parameter, and :math:`r_c` is the Wigner-Seitz radius. It is defined as
 follows:
 
 .. math::
-  :label: eq36
+  :label: eq37
 
   S(\mathbf{k}) = \frac{1}{N^e}\langle \rho^e_{-\mathbf{k}} \rho^e_{\mathbf{k}} \rangle\:.
 
@@ -967,7 +1083,7 @@ Additional information:
 
 .. code-block::
   :caption: Static structure factor estimator element.
-  :name: Listing 29
+  :name: Listing 30
 
     <estimator type="sk" name="sk" hdf5="yes"/>
 
@@ -1027,7 +1143,7 @@ Additional information:
 
 .. code-block::
   :caption: SkAll estimator element.
-  :name: Listing 30
+  :name: Listing 31
 
     <estimator type="skall" name="SkAll" source="ion0" target="e" hdf5="yes"/>
 
@@ -1062,7 +1178,7 @@ attributes:
 
 .. code-block::
   :caption: Species kinetic energy estimator element.
-  :name: Listing 31
+  :name: Listing 32
 
     <estimator type="specieskinetic" name="skinetic" hdf5="no"/>
 
@@ -1111,11 +1227,11 @@ Additional information:
 -  ``source``: The “target” particleset to measure distances to.
 
 -  ``sgroup``: The “target” particle group to measure distances to. For
-   example, in :ref:`Listing 32 <Listing 32>` the distance from the up
+   example, in :ref:`Listing 33 <Listing 33>` the distance from the up
    electron (“u”) to the origin of the coordinate system is recorded.
 
 -  ``per_xyz``: Used to record direction-resolved distance. In
-   :ref:`Listing 32 <Listing 32>`, the x,y,z coordinates of the up electron
+   :ref:`Listing 33 <Listing 33>`, the x,y,z coordinates of the up electron
    will be recorded separately if ``per_xyz=yes``.
 
 -  ``hdf5``: Used to record particle-resolved distances in the h5 file
@@ -1123,7 +1239,7 @@ Additional information:
 
 .. code-block::
   :caption: Lattice deviation estimator element.
-  :name: Listing 32
+  :name: Listing 33
 
   <particleset name="e" random="yes">
     <group name="u" size="1" mass="1.0">
@@ -1153,7 +1269,7 @@ Energy density estimator
 An energy density operator, :math:`\hat{\mathcal{E}}_r`, satisfies
 
 .. math::
-  :label: eq37
+  :label: eq38
 
   \int dr \hat{\mathcal{E}}_r = \hat{H},
 
@@ -1162,14 +1278,14 @@ Hamiltonian. In QMCPACK, the energy density is split into kinetic and potential
 components
 
 .. math::
-  :label: eq38
+  :label: eq39
 
   \hat{\mathcal{E}}_r = \hat{\mathcal{T}}_r + \hat{\mathcal{V}}_r\:,
 
 with each component given by
 
 .. math::
-  :label: eq39
+  :label: eq40
 
   \begin{aligned}
       \hat{\mathcal{T}}_r &=  \frac{1}{2}\sum_i\delta(r-r_i)\hat{p}_i^2 \\
@@ -1228,7 +1344,7 @@ Additional information:
 
 .. code-block::
   :caption: Energy density estimator accumulated on a :math:`20 \times  10 \times 10` grid over the simulation cell.
-  :name: Listing 33
+  :name: Listing 34
 
   <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
      <spacegrid coord="cartesian">
@@ -1241,7 +1357,7 @@ Additional information:
 
 .. code-block::
   :caption: Energy density estimator accumulated within spheres of radius 6.9 Bohr centered on the first and second atoms in the ion0 particleset.
-  :name: Listing 34
+  :name: Listing 35
 
   <estimator type="EnergyDensity" name="EDatom" dynamic="e" static="ion0">
     <reference_points coord="cartesian">
@@ -1265,7 +1381,7 @@ Additional information:
 
 .. code-block::
   :caption: Energy density estimator accumulated within Voronoi polyhedra centered on the ions.
-  :name: Listing 35
+  :name: Listing 36
 
   <estimator type="EnergyDensity" name="EDvoronoi" dynamic="e" static="ion0">
     <spacegrid coord="voronoi"/>
@@ -1462,7 +1578,7 @@ density matrix (1RDM) is obtained by tracing out all particle
 coordinates but one:
 
 .. math::
-  :label: eq40
+  :label: eq41
 
   \hat{n}_1 = \sum_nTr_{R_n}\left|{\Psi_{T}}\rangle{}\langle{\Psi_{FN}}\right|
 
@@ -1476,7 +1592,7 @@ this way.
 In real space, the matrix elements of the 1RDM are
 
 .. math::
-  :label: eq41
+  :label: eq42
 
   \begin{aligned}
      n_1(r,r') &= \langle{r}\left|{\hat{n}_1}\right|{r'}\rangle = \sum_n\int dR_n \Psi_T(r,R_n)\Psi_{FN}^*(r',R_n)\:. \end{aligned}
@@ -1486,15 +1602,15 @@ expanding in the SPOs obtained from a Hartree-Fock or DFT calculation,
 :math:`\{\phi_i\}`:
 
 .. math::
-  :label: eq42
+  :label: eq43
 
   n_1(i,j) &= \langle{\phi_i}\left|{\hat{n}_1}\right|{\phi_j}\rangle \nonumber \\
            &= \int dR \Psi_{FN}^*(R)\Psi_{T}(R) \sum_n\int dr'_n \frac{\Psi_T(r_n',R_n)}{\Psi_T(r_n,R_n)}\phi_i(r_n')^* \phi_j(r_n)\:.
 
-The integration over :math:`r'` in :eq:`eq42` is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of :cite:`Krogel2014` or the related (and more well known) generalized Fock matrix.  For this reason, an approximation is introduced as follows:
+The integration over :math:`r'` in :eq:`eq43` is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of :cite:`Krogel2014` or the related (and more well known) generalized Fock matrix.  For this reason, an approximation is introduced as follows:
 
 .. math::
-  :label: eq43
+  :label: eq44
 
   \begin{aligned}
       n_1(i,j) \approx \int dR \Psi_{FN}(R)^*\Psi_T(R)  \sum_n \int dr_n' \frac{\Psi_T(r_n',R_n)^*}{\Psi_T(r_n,R_n)^*}\phi_i(r_n)^* \phi_j(r_n')\:. \end{aligned}
@@ -1641,7 +1757,7 @@ Additional information:
 
 .. code-block::
   :caption: One body density matrix with uniform grid integration.
-  :name: Listing 36
+  :name: Listing 37
 
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
@@ -1654,7 +1770,7 @@ Additional information:
 
 .. code-block::
   :caption: One body density matrix with uniform sampling.
-  :name: Listing 37
+  :name: Listing 38
 
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
@@ -1667,7 +1783,7 @@ Additional information:
 
 .. code-block::
   :caption: One body density matrix with density sampling.
-  :name: Listing 38
+  :name: Listing 39
 
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
@@ -1680,9 +1796,9 @@ Additional information:
 
 .. code-block::
   :caption: Example ``sposet`` initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (``basis="spo_u spo_uv"``).
-  :name: Listing 39
+  :name: Listing 40
 
-  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
     <sposet type="bspline" name="spo_uv" group="0" index_min="4" index_max="10"/>
@@ -1690,9 +1806,9 @@ Additional information:
 
 .. code-block::
   :caption: Example ``sposet`` initialization for density matrix use. Density matrix orbital basis created separately (``basis="dm_basis"``).
-  :name: Listing 40
+  :name: Listing 41
 
-  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
     <sposet type="bspline" name="dm_basis" size="50" spindataset="0"/>
@@ -1775,28 +1891,29 @@ time step.
 
 .. code-block::
   :caption: Forward-walking estimator element.
-  :name: Listing 41
+  :name: Listing 42
 
   <estimator name="fw" type="ForwardWalking">
       <Observable name="LocalPotential" max="300" frequency="1"/>
        <!--- Additional Observable blocks go here -->
    </estimator>
 
-.. _force-est:
+.. _ccz-force-est:
 
-"Force" estimators
-------------------
-
-QMCPACK supports force estimation by use of the Chiesa-Ceperly-Zhang
-(CCZ) estimator. Currently, open and periodic boundary conditions are
-supported but for all-electron calculations only.
-
+Chiesa-Ceperley-Zhang Force Estimators
+--------------------------------------
+All force estimators implemented in QMCPACK are invoked with ``type="Force"``.
+The ``mode`` determines the specific estimator to be used.  Currently,
+QMCPACK supports Chiesa-Ceperley-Zhang (CCZ) all-electron and
+Assaraf-Caffarel Zero-Variance Zero-Bias (AC) force estimators.  We'll discuss
+the CCZ estimator in this section, and the AC estimator in the following section.
+ 
 Without loss of generality, the CCZ estimator for the z-component of the
 force on an ion centered at the origin is given by the following
 expression:
 
 .. math::
-  :label: eq44
+  :label: eq45
 
   F_z = -Z \sum_{i=1}^{N_e}\frac{z_i}{r_i^3}[\theta(r_i-\mathcal{R}) + \theta(\mathcal{R}-r_i)\sum_{\ell=1}^{M}c_\ell r_i^\ell]\:.
 
@@ -1808,14 +1925,19 @@ minimize the weighted mean square error between the bare force estimate
 and the s-wave filtered estimator. Specifically,
 
 .. math::
-  :label: eq45
+  :label: eq46
 
   \chi^2 = \int_0^\mathcal{R}dr\,r^m\,[f_z(r) - \tilde{f}_z(r)]^2\:.
 
 Here, :math:`m` is the weighting exponent, :math:`f_z(r)` is the
 unfiltered radial force density for the z force component, and
 :math:`\tilde{f}_z(r)` is the smoothed polynomial function for the same
-force density. The reader is invited to refer to the original paper for
+force density. 
+
+Currently, open and periodic boundary conditions are
+supported but for all-electron calculations only.
+
+The reader is invited to refer to the original paper for
 a more thorough explanation of the methodology, but with the notation in
 hand, QMCPACK takes the following parameters.
 
@@ -1894,6 +2016,146 @@ The following is an example use case.
       <parameter name="nbasis">4</parameter>
       <parameter name="weightexp">2</parameter>
     </estimator>
+  </hamiltonian>
+
+.. _ac-force-est:
+
+Assaraf-Caffarel Force Estimators
+---------------------------------
+***WARNING:  The following estimator formally has infinite variance.  You MUST do something 
+to mitigate this in postprocessing or during the run before publishing.***
+
+ 
+QMCPACK has an implementation of force estimation using the Assaraf-Caffarel
+Zero-Variance Zero-Bias method :cite:`Tiihonen2021`.  This has the desirable 
+property that as the trial wave function and trial wave function derivative 
+become exact, the estimator itself becomes an exact estimate of the force 
+and the variance of the estimator goes to  ero--much like the local energy.  
+In practice, the estimator is usually significantly more accurate and has much 
+lower variance than the bare Hellman-Feynman estimator.  
+
+Currently, this is the only recommended way
+to estimate forces for systems with non-local pseudopotentials.  
+
+
+The zero-variance, zero-bias force estimator is given by the following 
+expression:
+
+.. math::
+  :label: eq 47
+
+  \mathbf{F}^{ZVZB}_I = \mathbf{F}^{ZV}_I+\mathbf{F}^{ZB}_I = -\nabla_I E_L(\mathbf{R}) - 2 \left( E_L(\mathbf{R})-\langle E_L \rangle \right) \nabla_I \ln \Psi_T \:.
+
+The first term is the zero-variance force estimator, given by the following.
+
+.. math::
+  :label: eq 48
+
+  \mathbf{F}^{ZV}_I = -\nabla_I E_L(\mathbf{R}) = \frac{-\left(\nabla_I \hat{H}\right) \Psi_T}{\Psi_T} - \frac{\left(\hat{H} - E_L\right)\nabla_I \Psi_T}{\Psi_T}\:.
+
+The first term is the bare "Hellman-Feynman" term (denoted "hf" in output), and the second is 
+a fluctuation cancelling zero-variance term (called "pulay" in output).  This splitting allows the 
+user to investigate the individual contributions to the force estimator, but we recommend always
+adding "hf" and "pulay" terms unless there is a compelling reason to do otherwise.   
+
+ 
+The second term is the "zero-bias" term:
+
+.. math::
+  :label: eq 49
+
+  \mathbf{F}^{ZB}_I = - 2 \left( E_L(\mathbf{R})-\langle E_L \rangle \right) \nabla_I \ln \Psi_T \:.
+
+Because knowledge of :math:`\langle E_L \rangle` is needed to compute the zero-bias term, QMCPACK returns 
+:math:`E_L(\mathbf{R}) \ln \Psi_T` (called "Ewfngrad" in output), and :math:`\ln \Psi_T` 
+(called "wfngrad" in output), which in conjunction with the local energy, allows one to construct the 
+zero-bias term in post-processing.   
+
+There is an initial implementation of space-warp variance reduction that is accessible to the 
+end-user, subject to the caveat that evaluation of these terms is currently slow (derivatives of local
+energy are computed with finite differences, rather than analytically).  If the space-warp option
+is enabled, the following term is added to the zero-variance force estimator:
+
+.. math::
+  :label: eq 50
+
+  \mathbf{F}^{ZV-SW}_I = - \sum_{i=1}^{N_e} \omega_I(\mathbf{r}_i) \nabla_i E_L \:.
+
+The variance reduction with this term is observed to be rather large.  A faster, more efficient 
+implementation of this term will be available in a future QMCPACK release.  
+
+The following term is added to the wave function gradient:
+
+.. math::
+  :label: eq 51
+
+  [\nabla_I \ln \Psi_T ]_{SW} = \sum_{i=1}^{N_e} \omega_I(\mathbf{r}_i) \nabla_i \ln \Psi_T + \frac{1}{2} \nabla_i\omega_I(\mathbf{r}_i) \:.
+
+Currently, there is only one choice for damping function :math:`\omega_I(\mathbf{r})`.  This is given by:
+
+.. math::
+  :label: eq 52
+  
+  \omega_I(\mathbf{r}) = \frac{F(|\mathbf{r}-\mathbf{R}_I|)}{\sum_I F(|\mathbf{r}-\mathbf{R}_I|)} \:.
+
+We use :math:`F(r)=r^{-4}` for the real space damping.  
+
+Finally, the estimator provides two methods to evaluate the necessary derivatives of the wave function and Hamiltonian. 
+The first is a straightforward analytic differentiation of all required terms.  While mathematically transparent,
+this algorithm has poor scaling with system size.  The second utilizes the fast-derivative algorithm of Assaraf, Moroni, 
+and Filippi :cite:`Filippi2016`, which has a smaller computational prefactor and at least an O(N) speed-up over the legacy implementation.
+Both of these methods are accessible with appropraite flags.  
+
+``estimator type=Force`` element:
+
+  +------------------+----------------------+
+  | parent elements: | ``hamiltonian, qmc`` |
+  +------------------+----------------------+
+  | child elements:  |  none                |
+  +------------------+----------------------+
+
+  attributes:
+
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | **Name**                       | **Datatype** | **Values**      | **Default** | **Description**                                              |
+    +================================+==============+=================+=============+==============================================================+
+    | ``mode``:math:`^o`             | text         | acforce         |             | Required to use ACForce estimator                            |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``type``:math:`^r`             | text         | Force           |             | Must be "Force"                                              |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``name``:math:`^o`             | text         | *Anything*      | ForceBase   | Unique name for this estimator                               |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``epsilon``:math:`^o`          | real         | :math:`>=0`     | 0           | Epsilon parameter for Pathak-Wagner regularizer.             |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``spacewarp``:math:`^o`        | text         | yes/no          | no          | Add space-warp variance reduction terms                      |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``fast_derivatives``:math:`^o` | text         | yes/no          | no          | Use Filippi fast derivative algorithm                        |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+
+
+Additional information:
+
+-  **Naming Convention**: The unique identifier ``name`` is appended
+   with a term label ( ``hf``, ``pulay``, ``Ewfngrad``, or ``wfgrad``) 
+   ``name_term_X_Y`` in the ``scalar.dat`` file, where ``X`` is the ion 
+   ID number and ``Y`` is the component ID (an integer with x=0, y=1,
+   z=2). All force components for all ions are computed and dumped to
+   the ``scalar.dat`` file.
+
+-  **Note**: The fast force algorithm returns the total derivative of the
+   local energy, and does not make the split between "Hellman-Feynman" and 
+   zero-variance terms like the legacy force implementation does.  As such, 
+   expect ``name_pulay_X_Y`` to be zero if ``fast_derivatives="yes"``.  
+   However, this will be identical to the sum of Hellman-Feynman and 
+   zero-variance terms in the legacy implementation.  
+
+
+The following is an example use case.
+
+::
+
+  <hamiltonian>
+    <estimator name="F" type="Force" mode="acforce" fast_derivatives="yes" spacewarp="no"/>
   </hamiltonian>
 
 .. _stress-est:

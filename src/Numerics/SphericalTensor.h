@@ -40,11 +40,11 @@ template<class T,
 class SphericalTensor
 {
 public:
-  typedef T value_type;
-  typedef Point_t pos_type;
-  typedef Tensor_t hess_type;
-  typedef GGG_t ggg_type;
-  typedef SphericalTensor<T, Point_t> This_t;
+  using value_type = T;
+  using pos_type   = Point_t;
+  using hess_type  = Tensor_t;
+  using ggg_type   = GGG_t;
+  using This_t     = SphericalTensor<T, Point_t>;
 
   /** constructor
    * @param l_max maximum angular momentum
@@ -645,8 +645,8 @@ void SphericalTensor<T, Point_t, Tensor_t, GGG_t>::evaluateThirdDerivOnly(const 
 template<class SCT, unsigned L>
 struct SCTFunctor
 {
-  typedef typename SCT::value_type value_type;
-  typedef typename SCT::pos_type pos_type;
+  using value_type = typename SCT::value_type;
+  using pos_type   = typename SCT::pos_type;
   static inline void apply(std::vector<value_type>& Ylm, std::vector<pos_type>& gYlm, const pos_type& p)
   {
     SCTFunctor<SCT, L - 1>::apply(Ylm, gYlm, p);
@@ -656,8 +656,8 @@ struct SCTFunctor
 template<class SCT>
 struct SCTFunctor<SCT, 1>
 {
-  typedef typename SCT::value_type value_type;
-  typedef typename SCT::pos_type pos_type;
+  using value_type = typename SCT::value_type;
+  using pos_type   = typename SCT::pos_type;
   static inline void apply(std::vector<value_type>& Ylm, std::vector<pos_type>& gYlm, const pos_type& p)
   {
     const value_type L1 = sqrt(3.0);
@@ -673,8 +673,8 @@ struct SCTFunctor<SCT, 1>
 template<class SCT>
 struct SCTFunctor<SCT, 2>
 {
-  typedef typename SCT::value_type value_type;
-  typedef typename SCT::pos_type pos_type;
+  using value_type = typename SCT::value_type;
+  using pos_type   = typename SCT::pos_type;
   static inline void apply(std::vector<value_type>& Ylm, std::vector<pos_type>& gYlm, const pos_type& p)
   {
     SCTFunctor<SCT, 1>::apply(Ylm, gYlm, p);
@@ -700,8 +700,8 @@ struct SCTFunctor<SCT, 2>
 template<class SCT>
 struct SCTFunctor<SCT, 3>
 {
-  typedef typename SCT::value_type value_type;
-  typedef typename SCT::pos_type pos_type;
+  using value_type = typename SCT::value_type;
+  using pos_type   = typename SCT::pos_type;
   static inline void apply(std::vector<value_type>& Ylm, std::vector<pos_type>& gYlm, const pos_type& p)
   {
     SCTFunctor<SCT, 2>::apply(Ylm, gYlm, p);

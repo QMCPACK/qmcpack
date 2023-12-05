@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<simulation>
+<project id="det_heg_short_SJB" series="0">
+<application name="qmcapp" class="serial">
+Sample qmc run for Slater-Jastrow-Backflow HEG.
+</application>
+</project>
+<random seed="93"/>
+<include href="heg.ptcl.xml"/>
+<include href="heg.sjb.wfs.xml"/>
+<include href="heg.H.xml"/>
+
+   <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="blocks"              >    3               </parameter>
+      <parameter name="steps"               >    3               </parameter>
+      <parameter name="subSteps"            >    2               </parameter>
+      <parameter name="timestep"            >    0.3             </parameter>
+      <parameter name="warmupSteps"         >    3               </parameter>
+   </qmc>
+</simulation>

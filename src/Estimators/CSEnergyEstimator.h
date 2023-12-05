@@ -2,12 +2,13 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter Doak, doakpw@ornl.gov,  Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -17,6 +18,7 @@
 #define QMCPLUSPLUS_CORRELATEDLOCALENERGYESTIMATOR_H
 
 #include "Estimators/ScalarEstimatorBase.h"
+#include "ScalarEstimatorInputs.h"
 
 namespace qmcplusplus
 {
@@ -46,11 +48,16 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
   Matrix<RealType> tmp_data;
   ///name of hamiltonian components
   std::vector<std::string> h_components;
+  const CSLocalEnergyInput input_;
   /** constructor
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
    */
-  CSEnergyEstimator(QMCHamiltonian& h, int hcopy = 1);
+  CSEnergyEstimator(const QMCHamiltonian& h, int hcopy = 1);
+
+  CSEnergyEstimator(CSLocalEnergyInput&& input, const QMCHamiltonian& h);
+
+  std::string getName() const override { return "CSEnergyEstimator"; }
 
   inline RealType getUmbrellaWeight(int ipsi)
   {
@@ -58,10 +65,12 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
     //return d_data[ipsi*LE_INDEX+WEIGHT_INDEX];
   }
 
-
   void accumulate(const Walker_t& awalker, RealType wgt);
 
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt)
+  inline void accumulate(const MCWalkerConfiguration& W,
+                         WalkerIterator first,
+                         WalkerIterator last,
+                         RealType wgt) override
   {
     //accumulate  the number of times accumulation has occurred.
     //d_wgt+=last-first;
@@ -69,20 +78,22 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
       accumulate(**first, wgt);
   }
 
-  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
-    for (MCPWalker& walker: walkers)
-      accumulate(walker, wgt);
+    for (MCPWalker& walker : walkers)
+      accumulate(walker, 1.0);
   }
 
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    *@param record storage of scalar records (name,value)
    */
-  void add2Record(RecordNamedProperty<RealType>& record);
-  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
-  ScalarEstimatorBase* clone();
-
+  void add2Record(RecordNamedProperty<RealType>& record) override;
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& gid) override;
+  CSEnergyEstimator* clone() override;
+  const std::string& getSubTypeStr() const override { return input_.get_type(); }
   void evaluateDiff();
+  // CSEnergyEstimator is the main estimator for
+  bool isMainEstimator() const override { return true; }
 };
 
 } // namespace qmcplusplus

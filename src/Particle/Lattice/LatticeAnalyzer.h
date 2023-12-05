@@ -48,8 +48,8 @@ struct LatticeAnalyzer
 template<typename T>
 struct LatticeAnalyzer<T, 3>
 {
-  typedef TinyVector<T, 3> SingleParticlePos_t;
-  typedef Tensor<T, 3> Tensor_t;
+  using SingleParticlePos = TinyVector<T, 3>;
+  using Tensor_t          = Tensor<T, 3>;
   ///SuperCell type
   int mySC;
 
@@ -62,16 +62,16 @@ struct LatticeAnalyzer<T, 3>
     return (offdiag < std::numeric_limits<T>::epsilon());
   }
 
-  inline SingleParticlePos_t calcSolidAngles(const TinyVector<SingleParticlePos_t, 3>& Rv,
-                                             const SingleParticlePos_t& OneOverLength)
+  inline SingleParticlePos calcSolidAngles(const TinyVector<SingleParticlePos, 3>& Rv,
+                                           const SingleParticlePos& OneOverLength)
   {
     const T rad_to_deg = 180.0 / M_PI;
-    return SingleParticlePos_t(rad_to_deg * std::acos(dot(Rv[0], Rv[1]) * OneOverLength[0] * OneOverLength[1]),
-                               rad_to_deg * std::acos(dot(Rv[1], Rv[2]) * OneOverLength[1] * OneOverLength[2]),
-                               rad_to_deg * std::acos(dot(Rv[2], Rv[0]) * OneOverLength[2] * OneOverLength[0]));
+    return SingleParticlePos(rad_to_deg * std::acos(dot(Rv[0], Rv[1]) * OneOverLength[0] * OneOverLength[1]),
+                             rad_to_deg * std::acos(dot(Rv[1], Rv[2]) * OneOverLength[1] * OneOverLength[2]),
+                             rad_to_deg * std::acos(dot(Rv[2], Rv[0]) * OneOverLength[2] * OneOverLength[0]));
   }
 
-  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t, 3>& a)
+  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos, 3>& a)
   {
     T rMin = 0.5 * std::numeric_limits<T>::max();
     if (mySC == SUPERCELL_BULK || mySC == SUPERCELL_BULK + SOA_OFFSET) //bulk type
@@ -81,8 +81,8 @@ struct LatticeAnalyzer<T, 3>
           for (int k = -1; k <= 1; k++)
             if (i || j || k)
             {
-              SingleParticlePos_t L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1] + static_cast<T>(k) * a[2]);
-              rMin                  = std::min(rMin, dot(L, L));
+              SingleParticlePos L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1] + static_cast<T>(k) * a[2]);
+              rMin                = std::min(rMin, dot(L, L));
             }
     }
     else if (mySC == SUPERCELL_SLAB || mySC == SUPERCELL_SLAB + SOA_OFFSET) //slab type
@@ -91,8 +91,8 @@ struct LatticeAnalyzer<T, 3>
         for (int j = -1; j <= 1; j++)
           if (i || j)
           {
-            SingleParticlePos_t L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1]);
-            rMin                  = std::min(rMin, dot(L, L));
+            SingleParticlePos L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1]);
+            rMin                = std::min(rMin, dot(L, L));
           }
     }
     else if (mySC == SUPERCELL_WIRE || mySC == SUPERCELL_WIRE + SOA_OFFSET) //wire
@@ -102,19 +102,19 @@ struct LatticeAnalyzer<T, 3>
     return 0.5 * std::sqrt(rMin);
   }
 
-  inline T calcSimulationCellRadius(TinyVector<SingleParticlePos_t, 3>& a)
+  inline T calcSimulationCellRadius(TinyVector<SingleParticlePos, 3>& a)
   {
     T scr = 0.5 * std::numeric_limits<T>::max();
     //if(mySC == SUPERCELL_BULK)
     //{
     for (int i = 0; i < 3; ++i)
     {
-      SingleParticlePos_t A   = a[i];
-      SingleParticlePos_t B   = a[(i + 1) % 3];
-      SingleParticlePos_t C   = a[(i + 2) % 3];
-      SingleParticlePos_t BxC = cross(B, C);
-      T dist                  = 0.5 * std::abs(dot(A, BxC)) / std::sqrt(dot(BxC, BxC));
-      scr                     = std::min(scr, dist);
+      SingleParticlePos A   = a[i];
+      SingleParticlePos B   = a[(i + 1) % 3];
+      SingleParticlePos C   = a[(i + 2) % 3];
+      SingleParticlePos BxC = cross(B, C);
+      T dist                = 0.5 * std::abs(dot(A, BxC)) / std::sqrt(dot(BxC, BxC));
+      scr                   = std::min(scr, dist);
     }
     //}
     //else if(mySC == SUPERCELL_SLAB)
@@ -143,8 +143,8 @@ struct LatticeAnalyzer<T, 3>
 template<typename T>
 struct LatticeAnalyzer<T, 2>
 {
-  typedef TinyVector<T, 2> SingleParticlePos_t;
-  typedef Tensor<T, 2> Tensor_t;
+  using SingleParticlePos = TinyVector<T, 2>;
+  using Tensor_t          = Tensor<T, 2>;
 
   /** return supercell enum
    * @param[in] box[2] if box[i]==1, PBC
@@ -161,24 +161,24 @@ struct LatticeAnalyzer<T, 2>
     return (offdiag < std::numeric_limits<T>::epsilon());
   }
 
-  inline SingleParticlePos_t calcSolidAngles(const TinyVector<SingleParticlePos_t, 2>& Rv,
-                                             const SingleParticlePos_t& OneOverLength)
+  inline SingleParticlePos calcSolidAngles(const TinyVector<SingleParticlePos, 2>& Rv,
+                                           const SingleParticlePos& OneOverLength)
   {
     const T rad_to_deg = 180.0 / M_PI;
-    return SingleParticlePos_t(rad_to_deg * std::acos(dot(Rv[0], Rv[1]) * OneOverLength[0] * OneOverLength[1]), 0.0);
+    return SingleParticlePos(rad_to_deg * std::acos(dot(Rv[0], Rv[1]) * OneOverLength[0] * OneOverLength[1]), 0.0);
   }
 
-  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t, 2>& a)
+  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos, 2>& a)
   {
     T rMin;
-    T dotP                 = dot(a[0], a[1]);
-    SingleParticlePos_t L0 = a[0] - dotP * a[1];
-    SingleParticlePos_t L1 = a[1] - dotP * a[0];
-    rMin                   = 0.5 * std::min(std::sqrt(dot(L0, L0)), std::sqrt(dot(L1, L1)));
+    T dotP               = dot(a[0], a[1]);
+    SingleParticlePos L0 = a[0] - dotP * a[1];
+    SingleParticlePos L1 = a[1] - dotP * a[0];
+    rMin                 = 0.5 * std::min(std::sqrt(dot(L0, L0)), std::sqrt(dot(L1, L1)));
     return rMin;
   }
 
-  inline T calcSimulationCellRadius(TinyVector<SingleParticlePos_t, 2>& a)
+  inline T calcSimulationCellRadius(TinyVector<SingleParticlePos, 2>& a)
   {
     T a0mag  = std::sqrt(dot(a[0], a[0]));
     T a1mag  = std::sqrt(dot(a[1], a[1]));
@@ -196,12 +196,12 @@ struct LatticeAnalyzer<T, 2>
 template<typename T>
 struct LatticeAnalyzer<T, 1>
 {
-  typedef TinyVector<T, 1> SingleParticlePos_t;
+  using SingleParticlePos = TinyVector<T, 1>;
   inline bool isDiagonalOnly(const Tensor<T, 1>& R) const { return true; }
 
   inline int operator()(const TinyVector<int, 1>& box) { return (box[0]) ? SUPERCELL_BULK : SUPERCELL_OPEN; }
 
-  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t, 1>& a) { return a[0] * 0.5; }
+  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos, 1>& a) { return a[0] * 0.5; }
 };
 
 template<typename T>
@@ -259,6 +259,9 @@ inline void find_reduced_basis(TinyVector<TinyVector<T, 3>, 3>& rb)
     if (!changed && !found_shorter_base(rb))
       return;
   }
+
+  throw std::runtime_error("Reduced basis not found in allowed number of iterations. "
+                           "Check unit cell or contact a developer.");
 }
 
 } // namespace qmcplusplus

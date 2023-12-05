@@ -1,38 +1,33 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -Wall -Wextra $0 -o $0x.x && time mpirun -n 8 $0x.x $@ && rm -f $0x.x; exit
-#endif
+// Copyright 2018-2022 Alfredo A. Correa
 
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
+#if not defined(EXAMPI)
 #include "../../mpi3/ostream.hpp"
+#endif
 
 namespace mpi3 = boost::mpi3;
-using std::cout;
 
-int mpi3::main(int, char*[], mpi3::communicator world){
+auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
 
+	mpi3::communicator third = world/3; // or other division
+	mpi3::communicator leaders = world.keep(third.root()); // same as world.split(third.root()?0:mpi3::undefined);
+
+#if not defined(EXAMPI)
 	mpi3::ostream wout(world);
-	
-	mpi3::communicator third = world/3;
-
 	wout << "I am 'world' rank "<<world.rank(); 
-	if(third) wout << " and 'third' rank "<<third.rank();
-	else wout << " and not in 'third'";
-	wout << std::endl;
-/*
-	assert( world.size() >= 2 );
-
-	auto comm = (world < 2);
-	cout <<"First, I am rank "<< world.rank() <<"\n";
-	if(comm){
-		assert(comm.size() == 2);
-		cout <<"Second, I am rank "<< world.rank() <<" in world and "<< comm.rank() <<" in comm\n";
+	if(third){
+		wout<<" and 'third':"<< third.name() <<"'s rank "<<third.rank() <<" with color attribute "<< mpi3::any_cast<int>(third.attribute("color"));
 	}else{
-		assert(comm.size() == 0);
-		assert(comm.empty());
-		cout <<"Second, I am rank "<< world.rank() <<" but I am not in comm\n";
+		wout<<" and not in 'third'";
 	}
-*/
-	return 0;
-}
+	if(leaders){
+		wout<<" and 'leader:'"<< leaders.name() <<"'s rank "<< leaders.rank() <<" with color attribute "<< mpi3::any_cast<int>(third.attribute("color"));
+	}else{
+		wout <<" and not in 'leader'";
+	}
+	wout << std::endl;
+#endif
 
+	return 0;
+} catch(...) {return 1;}

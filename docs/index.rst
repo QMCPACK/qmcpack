@@ -18,6 +18,7 @@ User's Guide and Developer's Manual
 
    introduction
    features
+   performance_portable
    installation
    running
    units
@@ -43,6 +44,9 @@ User's Guide and Developer's Manual
    external_tools
    contributing
    unit_testing
+   integration_tests
+   github_actions
+   running_docker
    design_features
    developing
    appendices

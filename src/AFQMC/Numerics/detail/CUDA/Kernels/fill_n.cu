@@ -22,185 +22,88 @@
 
 namespace kernels
 {
-template<typename Size, typename Size1, typename T>
-__global__ void kernel_fill_n(Size N, T* x, Size1 incx, T const a)
-{ 
-  Size N0(8*blockDim.x*blockIdx.x);
-  T* x_(x+Size(incx)*N0);
-  Size N_( min( Size(8*blockDim.x), N-N0 ) );
-  for (Size ip = Size(threadIdx.x); ip < N_; ip += Size(blockDim.x))
-  { 
-    x_[ip * Size(incx)] = a;
+
+template<typename T>
+__global__ void kernel_fill_n(long N, T* x, long incx, T const a)
+{
+  long N0(8 * blockDim.x * blockIdx.x);
+  T* x_(x + incx * N0);
+  long N_(min(long(8 * blockDim.x), N - N0));
+  for (long ip = threadIdx.x; ip < N_; ip += blockDim.x)
+  {
+    x_[ip * incx] = a;
   }
 }
 
-template<typename T, typename Size>
-__global__ void kernel_fill2D_n(Size N, Size M, T* y, Size lda, T const a)
+template<typename T>
+__global__ void kernel_fill2D_n(long N, long M, T* y, long lda, T const a)
 {
-  for (Size ip = Size(threadIdx.x); ip < N; ip += Size(blockDim.x))
-    for (Size jp = Size(threadIdx.y); jp < M; jp += Size(blockDim.y))
+  for (long ip = threadIdx.x; ip < N; ip += blockDim.x)
+    for (long jp = threadIdx.y; jp < M; jp += blockDim.y)
     {
       y[ip * lda + jp] = a;
     }
 }
 
-void fill_n(char* first, int N, int incx, char const value)
+template<typename T>
+void fill_n(T* first, long N, long incx, T const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(int* first, int N, int incx, int const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(float* first, int N, int incx, float const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(double* first, int N, int incx, double const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(std::complex<float>* first, int N, int incx, std::complex<float> const value)
-{
-  int N_(DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE); 
-  kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(std::complex<double>* first, int N, int incx, std::complex<double> const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
+  long N_(8 * DEFAULT_BLOCK_SIZE);
+  long nblk((N + N_ - 1) / N_);
+  long nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void fill_n(char* first, int N, char const value)
+template<typename T>
+void fill_n(T* first, long N, T const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(long int* first, long unsigned int N, const long int value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(long unsigned int* first, long unsigned int N, const long unsigned int value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(int* first, int N, int const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(float* first, int N, float const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(double* first, int N, double const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(std::complex<float>* first, int N, std::complex<float> const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill_n(std::complex<double>* first, int N, std::complex<double> const value)
-{
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE);
-  kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
+  long N_(8 * DEFAULT_BLOCK_SIZE);
+  long nblk((N + N_ - 1) / N_);
+  long nthr(DEFAULT_BLOCK_SIZE);
+  kernel_fill_n<<<nblk, nthr>>>(N, first, 1l, value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void fill2D_n(int N, int M, int* A, int lda, int const value)
+template<typename T>
+void fill2D_n(long N, long M, T* A, long lda, T const value)
 {
   kernel_fill2D_n<<<32, 32>>>(N, M, A, lda, value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-void fill2D_n(int N, int M, float* A, int lda, float const value)
-{
-  kernel_fill2D_n<<<32, 32>>>(N, M, A, lda, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill2D_n(int N, int M, double* A, int lda, double const value)
-{
-  kernel_fill2D_n<<<32, 32>>>(N, M, A, lda, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill2D_n(int N, int M, std::complex<double>* A, int lda, std::complex<double> const value)
-{
-  kernel_fill2D_n<<<32, 32>>>(N, M, A, lda, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
-void fill2D_n(int N, int M, std::complex<float>* A, int lda, std::complex<float> const value)
-{
-  kernel_fill2D_n<<<32, 32>>>(N, M, A, lda, value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
+
+// template specializations
+template void fill_n(char* first, long N, long stride, char const value);
+template void fill_n(int* first, long N, long stride, int const value);
+template void fill_n(unsigned int* first, long N, long stride, unsigned int const value);
+template void fill_n(long* first, long N, long stride, long const value);
+template void fill_n(unsigned long* first, long N, long stride, unsigned long const value);
+template void fill_n(float* first, long N, long stride, float const value);
+template void fill_n(double* first, long N, long stride, double const value);
+template void fill_n(std::complex<float>* first, long N, long stride, std::complex<float> const value);
+template void fill_n(std::complex<double>* first, long N, long stride, std::complex<double> const value);
+
+template void fill_n(char* first, long N, char const value);
+template void fill_n(int* first, long N, int const value);
+template void fill_n(unsigned int* first, long N, unsigned int const value);
+template void fill_n(long* first, long N, long const value);
+template void fill_n(unsigned long* first, long N, unsigned long const value);
+template void fill_n(float* first, long N, float const value);
+template void fill_n(double* first, long N, double const value);
+template void fill_n(std::complex<float>* first, long N, std::complex<float> const value);
+template void fill_n(std::complex<double>* first, long N, std::complex<double> const value);
+
+template void fill2D_n(long N, long M, int* A, long lda, int const value);
+template void fill2D_n(long N, long M, long* A, long lda, long const value);
+template void fill2D_n(long N, long M, unsigned int* A, long lda, unsigned int const value);
+template void fill2D_n(long N, long M, unsigned long* A, long lda, unsigned long const value);
+template void fill2D_n(long N, long M, float* A, long lda, float const value);
+template void fill2D_n(long N, long M, double* A, long lda, double const value);
+template void fill2D_n(long N, long M, std::complex<double>* A, long lda, std::complex<double> const value);
+template void fill2D_n(long N, long M, std::complex<float>* A, long lda, std::complex<float> const value);
 
 } // namespace kernels
+

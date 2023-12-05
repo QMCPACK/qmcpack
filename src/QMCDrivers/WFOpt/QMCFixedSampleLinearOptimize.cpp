@@ -19,18 +19,16 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include "RandomNumberControl.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
-#include "QMCHamiltonians/HamiltonianPool.h"
+#include "QMCDrivers/WFOpt/GradientTest.h"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include <cassert>
-#if defined(QMC_CUDA)
-#include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
-#endif
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/random.h"
@@ -47,15 +45,15 @@ namespace qmcplusplus
 using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
+QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& project_data,
+                                                           MCWalkerConfiguration& w,
                                                            TrialWaveFunction& psi,
                                                            QMCHamiltonian& h,
                                                            Communicate* comm)
-    : QMCLinearOptimize(w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
+    : QMCDriver(project_data, w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
-      Max_iterations(1),
       nstabilizers(3),
       stabilizerScale(2.0),
       bigChange(50),
@@ -89,88 +87,99 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       block_third(false),
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
-      current_optimizer_type_(OptimizerType::NONE)
-
+      current_optimizer_type_(OptimizerType::NONE),
+      do_output_matrices_(false),
+      output_matrices_initialized_(false),
+      freeze_parameters_(false),
+      Max_iterations(1),
+      wfNode(NULL),
+      param_tol(1e-4),
+      generate_samples_timer_(createGlobalTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
+      initialize_timer_(createGlobalTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
+      eigenvalue_timer_(createGlobalTimer("QMCLinearOptimize::EigenvalueSolve", timer_level_medium)),
+      involvmat_timer_(createGlobalTimer("QMCLinearOptimize::invertOverlapMat", timer_level_medium)),
+      line_min_timer_(createGlobalTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(createGlobalTimer("QMCLinearOptimize::CostFunction", timer_level_medium))
 {
   IsQMCDriver = false;
   //set the optimization flag
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  m_param.add(Max_iterations, "max_its", "int");
-  m_param.add(nstabilizers, "nstabilizers", "int");
-  m_param.add(stabilizerScale, "stabilizerscale", "double");
-  m_param.add(bigChange, "bigchange", "double");
-  m_param.add(MinMethod, "MinMethod", "string");
-  m_param.add(exp0, "exp0", "double");
-  m_param.add(targetExcitedStr, "targetExcited", "string");
-  m_param.add(block_lmStr, "block_lm", "string");
-  m_param.add(nblocks, "nblocks", "int");
-  m_param.add(nolds, "nolds", "int");
-  m_param.add(nkept, "nkept", "int");
-  m_param.add(nsamp_comp, "nsamp_comp", "int");
-  m_param.add(omega_shift, "omega", "double");
-  m_param.add(max_relative_cost_change, "max_relative_cost_change", "double");
-  m_param.add(max_param_change, "max_param_change", "double");
-  m_param.add(shift_i_input, "shift_i", "double");
-  m_param.add(shift_s_input, "shift_s", "double");
-  m_param.add(num_shifts, "num_shifts", "int");
-  m_param.add(cost_increase_tol, "cost_increase_tol", "double");
-  m_param.add(target_shift_i, "target_shift_i", "double");
-
+  m_param.add(Max_iterations, "max_its");
+  m_param.add(nstabilizers, "nstabilizers");
+  m_param.add(stabilizerScale, "stabilizerscale");
+  m_param.add(bigChange, "bigchange");
+  m_param.add(MinMethod, "MinMethod");
+  m_param.add(exp0, "exp0");
+  m_param.add(targetExcitedStr, "targetExcited");
+  m_param.add(block_lmStr, "block_lm");
+  m_param.add(nblocks, "nblocks");
+  m_param.add(nolds, "nolds");
+  m_param.add(nkept, "nkept");
+  m_param.add(nsamp_comp, "nsamp_comp");
+  m_param.add(omega_shift, "omega");
+  m_param.add(max_relative_cost_change, "max_relative_cost_change");
+  m_param.add(max_param_change, "max_param_change");
+  m_param.add(shift_i_input, "shift_i");
+  m_param.add(shift_s_input, "shift_s");
+  m_param.add(num_shifts, "num_shifts");
+  m_param.add(cost_increase_tol, "cost_increase_tol");
+  m_param.add(target_shift_i, "target_shift_i");
+  m_param.add(param_tol, "alloweddifference");
 
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
-                                          false, // exact sampling
-                                          true,  // ground state?
-                                          false, // variance correct,
-                                          true,
-                                          true,  // print matrices,
-                                          true,  // build matrices
-                                          false, // spam
-                                          false, // use var deps?
-                                          true,  // chase lowest
-                                          false, // chase closest
-                                          false, // eom
-                                          false,
-                                          false,  // eom related
-                                          false,  // eom related
-                                          false,  // use block?
-                                          120000, // number of samples
-                                          0,      // number of parameters
-                                          60,     // max krylov iter
-                                          0,      // max spam inner iter
-                                          1,      // spam appro degree
-                                          0,      // eom related
-                                          0,      // eom related
-                                          0,      // eom related
-                                          0.0,    // omega
-                                          0.0,    // var weight
-                                          1.0e-6, // convergence threshold
-                                          0.99,   // minimum S singular val
-                                          0.0, 0.0,
-                                          10.0, // max change allowed
-                                          1.00, // identity shift
-                                          1.00, // overlap shift
-                                          0.3,  // max parameter change
-                                          shift_scales, app_log());
+                                                     false, // exact sampling
+                                                     true,  // ground state?
+                                                     false, // variance correct,
+                                                     true,
+                                                     true,  // print matrices,
+                                                     true,  // build matrices
+                                                     false, // spam
+                                                     false, // use var deps?
+                                                     true,  // chase lowest
+                                                     false, // chase closest
+                                                     false, // eom
+                                                     false,
+                                                     false,  // eom related
+                                                     false,  // eom related
+                                                     false,  // use block?
+                                                     120000, // number of samples
+                                                     0,      // number of parameters
+                                                     60,     // max krylov iter
+                                                     0,      // max spam inner iter
+                                                     1,      // spam appro degree
+                                                     0,      // eom related
+                                                     0,      // eom related
+                                                     0,      // eom related
+                                                     0.0,    // omega
+                                                     0.0,    // var weight
+                                                     1.0e-6, // convergence threshold
+                                                     0.99,   // minimum S singular val
+                                                     0.0, 0.0,
+                                                     10.0, // max change allowed
+                                                     1.00, // identity shift
+                                                     1.00, // overlap shift
+                                                     0.3,  // max parameter change
+                                                     shift_scales, app_log());
 #endif
 
 
   //   stale parameters
-  //   m_param.add(eigCG,"eigcg","int");
-  //   m_param.add(TotalCGSteps,"cgsteps","int");
-  //   m_param.add(w_beta,"beta","double");
+  //   m_param.add(eigCG,"eigcg");
+  //   m_param.add(TotalCGSteps,"cgsteps");
+  //   m_param.add(w_beta,"beta");
   //   quadstep=-1.0;
-  //   m_param.add(quadstep,"quadstep","double");
-  //   m_param.add(stepsize,"stepsize","double");
-  //   m_param.add(exp1,"exp1","double");
-  //   m_param.add(GEVtype,"GEVMethod","string");
-  //   m_param.add(GEVSplit,"GEVSplit","string");
-  //   m_param.add(StabilizerMethod,"StabilizerMethod","string");
-  //   m_param.add(LambdaMax,"LambdaMax","double");
+  //   m_param.add(quadstep,"quadstep");
+  //   m_param.add(stepsize,"stepsize");
+  //   m_param.add(exp1,"exp1");
+  //   m_param.add(GEVtype,"GEVMethod");
+  //   m_param.add(GEVSplit,"GEVSplit");
+  //   m_param.add(StabilizerMethod,"StabilizerMethod");
+  //   m_param.add(LambdaMax,"LambdaMax");
   //Set parameters for line minimization:
 }
 
@@ -184,17 +193,44 @@ QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize()
 
 QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
 {
-  for (int i = 0; i < optparm.size(); i++)
-    optTarget->Params(i) = optparm[i] + dl * optdir[i];
-  QMCLinearOptimize::RealType c = optTarget->Cost(false);
+  for (int i = 0; i < optparam.size(); i++)
+    optTarget->Params(i) = optparam[i] + dl * optdir[i];
+  RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
   validFuncVal = optTarget->IsValid;
   return c;
 }
 
+bool QMCFixedSampleLinearOptimize::test_run()
+{
+  // generate samples and compute weights, local energies, and derivative vectors
+  start();
+
+  testEngineObj->run(*optTarget, get_root_name());
+
+  finish();
+
+  return true;
+}
+
 bool QMCFixedSampleLinearOptimize::run()
 {
+  if (do_output_matrices_ && !output_matrices_initialized_)
+  {
+    size_t numParams = optTarget->getNumParams();
+    size_t N         = numParams + 1;
+    output_overlap_.init_file(get_root_name(), "ovl", N);
+    output_hamiltonian_.init_file(get_root_name(), "ham", N);
+    output_matrices_initialized_ = true;
+  }
+
+  if (doGradientTest)
+  {
+    app_log() << "Doing gradient test run" << std::endl;
+    return test_run();
+  }
+
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -202,23 +238,23 @@ bool QMCFixedSampleLinearOptimize::run()
     app_log() << "Doing hybrid run" << std::endl;
     return hybrid_run();
 #else
-myComm->barrier_and_abort(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
+    myComm->barrier_and_abort(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
 #endif
   }
 
-if (current_optimizer_type_ == OptimizerType::DESCENT)
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
 #if !defined(QMC_COMPLEX)
     return descent_run();
 #else
-myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
+    myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
 #endif
 
 
-// if requested, perform the update via the adaptive three-shift or single-shift method
+  // if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
 
-  
+
 #endif
 
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
@@ -228,8 +264,8 @@ myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX
   bool Valid(true);
   int Total_iterations(0);
   //size of matrix
-  numParams = optTarget->getNumParams();
-  N         = numParams + 1;
+  size_t numParams = optTarget->getNumParams();
+  size_t N         = numParams + 1;
   //   where we are and where we are pointing
   std::vector<RealType> currentParameterDirections(N, 0);
   std::vector<RealType> currentParameters(numParams, 0);
@@ -238,7 +274,7 @@ myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX
     bestParameters[i] = currentParameters[i] = std::real(optTarget->Params(i));
   //   proposed direction and new parameters
   optdir.resize(numParams, 0);
-  optparm.resize(numParams, 0);
+  optparam.resize(numParams, 0);
 
   while (Total_iterations < Max_iterations)
   {
@@ -270,7 +306,10 @@ myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX
     if (apply_inverse)
     {
       Matrix<RealType> RightT(Left);
-      invert_matrix(RightT, false);
+      {
+        ScopedTimer local(involvmat_timer_);
+        invert_matrix(RightT, false);
+      }
       Left = 0;
       product(RightT, Right, Left);
       //       Now the left matrix is the Hamiltonian with the inverse of the overlap applied ot it.
@@ -306,11 +345,12 @@ myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX
       for (int i = 1; i < N; i++)
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
-      RealType lowestEV(0);
-      eigenvalue_timer_.start();
-      lowestEV = getLowestEigenvector(Right, currentParameterDirections);
-      Lambda   = getNonLinearRescale(currentParameterDirections, S);
-      eigenvalue_timer_.stop();
+
+      {
+        ScopedTimer local(eigenvalue_timer_);
+        getLowestEigenvector(Right, currentParameterDirections);
+        Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
+      }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
       for (int i = 0; i < numParams; i++)
@@ -339,7 +379,7 @@ myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX
       else
       {
         for (int i = 0; i < numParams; i++)
-          optparm[i] = currentParameters[i];
+          optparam[i] = currentParameters[i];
         for (int i = 0; i < numParams; i++)
           optdir[i] = currentParameterDirections[i + 1];
         TOL              = param_tol / bigVec;
@@ -371,7 +411,7 @@ myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX
         else
         {
           for (int i = 0; i < numParams; i++)
-            optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+            optTarget->Params(i) = optparam[i] + Lambda * optdir[i];
           app_log() << "  Good Step. Largest LM parameter change:" << biggestParameterChange << std::endl;
         }
       }
@@ -452,16 +492,58 @@ myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX
 */
 bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 {
-  std::string useGPU("yes");
   std::string vmcMove("pbyp");
   std::string ReportToH5("no");
+  std::string OutputMatrices("no");
+  std::string FreezeParameters("no");
   OhmmsAttributeSet oAttrib;
-  oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
+  m_param.add(OutputMatrices, "output_matrices_csv");
+  m_param.add(FreezeParameters, "freeze_parameters");
+
   oAttrib.put(q);
   m_param.put(q);
+
+  do_output_matrices_ = (OutputMatrices != "no");
+  freeze_parameters_  = (FreezeParameters != "no");
+
+  // Use freeze_parameters with output_matrices to generate multiple lines in the output with
+  // the same parameters so statistics can be computed in post-processing.
+
+  if (freeze_parameters_)
+  {
+    app_log() << std::endl;
+    app_warning() << "  The option 'freeze_parameters' is enabled.  Variational parameters will not be updated.  This "
+                     "run will not perform variational parameter optimization!"
+                  << std::endl;
+    app_log() << std::endl;
+  }
+
+  doGradientTest = false;
+  processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "optimize")
+    {
+      const std::string att(getXMLAttributeValue(element, "method"));
+      if (!att.empty() && att == "gradient_test")
+      {
+        GradientTestInput test_grad_input;
+        test_grad_input.readXML(element);
+        if (!testEngineObj)
+          testEngineObj = std::make_unique<GradientTest>(std::move(test_grad_input));
+        doGradientTest = true;
+        MinMethod      = "gradient_test";
+      }
+      else
+      {
+        std::stringstream error_msg;
+        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att << "\n";
+        throw UniformCommunicateError(error_msg.str());
+      }
+    }
+  });
+
 
   doHybrid = false;
 
@@ -471,20 +553,22 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    hybridEngineObj->incrementStepCounter();
+
+    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes");
   }
   else
-    return processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    return processOptXML(q, vmcMove, ReportToH5 == "yes");
 }
 
-bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5, bool useGPU)
+bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
 {
   m_param.put(opt_xml);
-  tolower(targetExcitedStr);
-  targetExcited = (targetExcitedStr == "yes");
+  targetExcitedStr = lowerCase(targetExcitedStr);
+  targetExcited    = (targetExcitedStr == "yes");
 
-  tolower(block_lmStr);
-  block_lm = (block_lmStr == "yes");
+  block_lmStr = lowerCase(block_lmStr);
+  block_lm    = (block_lmStr == "yes");
 
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
@@ -494,23 +578,24 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)
   {
-    if(!descentEngineObj)
+    if (!descentEngineObj)
     {
-        descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
+      descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
     }
 
     else
     {
-        descentEngineObj->processXML(opt_xml);
+      descentEngineObj->processXML(opt_xml);
     }
   }
 
 
   // sanity check
-  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE && current_optimizer_type_ != OptimizerType::DESCENT)
-     myComm->barrier_and_abort("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
+  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE &&
+      current_optimizer_type_ != OptimizerType::DESCENT)
+    myComm->barrier_and_abort(R"(targetExcited = "yes" requires that MinMethod = "adaptive or descent)");
 
-#ifdef ENABLE_OPENMP
+#ifdef _OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
   {
     // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
@@ -561,18 +646,10 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
     addWalkers(omp_get_max_threads());
   NumOfVMCWalkers = W.getActiveWalkers();
 
-
-  // create VMC engine
-  // if (vmcEngine == 0)
-  // {
-#if defined(QMC_CUDA)
-  if (useGPU)
-    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm);
-  else
-#endif
-    vmcEngine = std::make_unique<VMC>(W, Psi, H, myComm);
+  // Destroy old object to stop timer to correctly order timer with object lifetime scope
+  vmcEngine.reset(nullptr);
+  vmcEngine = std::make_unique<VMC>(project_data_, W, Psi, H, RandomNumberControl::Children, myComm, false);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-  // }
 
 
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
@@ -580,12 +657,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
 
   bool success = true;
   //allways reset optTarget
-#if defined(QMC_CUDA)
-  if (useGPU)
-    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
-  else
-#endif
-    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;
@@ -788,10 +860,10 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
   const int nshifts = shifts_i.size();
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  size_t numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  size_t N = numParams + 1;
 
   // prepare vectors to hold the parameter updates
   parameterDirections.resize(nshifts);
@@ -813,25 +885,12 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
   // build the overlap and hamiltonian matrices
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
 
-  //// print the hamiltonian matrix
-  //app_log() << std::endl;
-  //app_log() << "printing H matrix:" << std::endl;
-  //for (int i = 0; i < hamMat.rows(); i++) {
-  //  for (int j = 0; j < hamMat.cols(); j++)
-  //    app_log() << " " << std::scientific << std::right << std::setw(14) << std::setprecision(5) << hamMat(i,j);
-  //  app_log() << std::endl;
-  //}
-  //app_log() << std::endl;
-
-  //// print the overlap matrix
-  //app_log() << std::endl;
-  //app_log() << "printing S matrix:" << std::endl;
-  //for (int i = 0; i < ovlMat.rows(); i++) {
-  //  for (int j = 0; j < ovlMat.cols(); j++)
-  //    app_log() << " " << std::scientific << std::right << std::setw(14) << std::setprecision(5) << ovlMat(i,j);
-  //  app_log() << std::endl;
-  //}
-  //app_log() << std::endl;
+  // Output Hamiltonian and Overlap matrices
+  if (do_output_matrices_)
+  {
+    output_overlap_.output(ovlMat);
+    output_hamiltonian_.output(hamMat);
+  }
 
   // compute the inverse of the overlap matrix
   invMat.copy(ovlMat);
@@ -861,10 +920,10 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
+    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
@@ -897,7 +956,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   const int central_index = num_shifts / 2;
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  size_t numParams = optTarget->getNumParams();
 
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
@@ -950,7 +1009,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  size_t N = numParams + 1;
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
@@ -995,7 +1054,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
             << std::endl;
 
   // for each set of shifts, solve the linear method equations for the parameter update direction
-  std::vector<std::vector<ValueType>> parameterDirections;
+  std::vector<std::vector<RealType>> parameterDirections;
 #ifdef HAVE_LMY_ENGINE
   // call the engine to perform update
   EngineObj->wfn_update_compute();
@@ -1011,7 +1070,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     if (true)
     {
       for (int j = 0; j < N; j++)
-        parameterDirections.at(i).at(j) = EngineObj->wfn_update().at(i * N + j);
+        parameterDirections.at(i).at(j) = std::real(EngineObj->wfn_update().at(i * N + j));
     }
     else
       parameterDirections.at(i).at(0) = 1.0;
@@ -1021,7 +1080,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   optTarget->setneedGrads(false);
 
   // prepare vectors to hold the initial and current parameters
-  std::vector<ValueType> currParams(numParams, 0.0);
+  std::vector<RealType> currParams(numParams, 0.0);
 
   // initialize the initial and current parameter vectors
   for (int i = 0; i < numParams; i++)
@@ -1109,7 +1168,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   }
 
   // find the best shift and the corresponding update direction
-  const std::vector<ValueType>* bestDirection = 0;
+  const std::vector<RealType>* bestDirection = 0;
   int best_shift                             = -1;
   for (int k = 0; k < costValues.size() && std::abs((initCost - initCost) / initCost) < max_relative_cost_change; k++)
     if (is_best_cost(k, costValues, shifts_i, initCost) && good_update.at(k))
@@ -1163,7 +1222,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     formic::ColVec<RealType> update_dirs(numParams, 0.0);
     for (int i = 0; i < numParams; i++)
       // take the real part since blocked LM currently does not support complex parameter optimization
-      update_dirs.at(i) = std::real( bestDirection->at(i + 1) + parameterDirections.at(central_index).at(i + 1) ); 
+      update_dirs.at(i) = std::real(bestDirection->at(i + 1) + parameterDirections.at(central_index).at(i + 1));
     previous_update.insert(previous_update.begin(), update_dirs);
 
     // eliminate the oldest saved update if necessary
@@ -1196,10 +1255,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   start();
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  size_t numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  size_t N = numParams + 1;
 
   // prepare vectors to hold the initial and current parameters
   std::vector<RealType> currentParameters(numParams, 0.0);
@@ -1213,13 +1272,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   parameterDirections.assign(N, 0.0);
 
   // compute the initial cost
-#ifdef QMC_CUDA
-  // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
-  // more investiation is needed.
-  const RealType initCost = optTarget->Cost(true);
-#else
   const RealType initCost = optTarget->computedCost();
-#endif
 
   // say what we are doing
   app_log() << std::endl
@@ -1241,6 +1294,12 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
 
+  if (do_output_matrices_)
+  {
+    output_overlap_.output(ovlMat);
+    output_hamiltonian_.output(hamMat);
+  }
+
   // apply the identity shift
   for (int i = 1; i < N; i++)
   {
@@ -1250,7 +1309,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   }
 
   // compute the inverse of the overlap matrix
-  invert_matrix(invMat, false);
+  {
+    ScopedTimer local(involvmat_timer_);
+    invert_matrix(invMat, false);
+  }
 
   // apply the overlap shift
   for (int i = 1; i < N; i++)
@@ -1266,10 +1328,13 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
       std::swap(prdMat(i, j), prdMat(j, i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+  {
+    ScopedTimer local(eigenvalue_timer_);
+    getLowestEigenvector(prdMat, parameterDirections);
+  }
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat);
+  Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)
@@ -1279,8 +1344,11 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   optTarget->setneedGrads(false);
 
   // prepare to use the middle shift's update as the guiding function for a new sample
-  for (int i = 0; i < numParams; i++)
-    optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
+  if (!freeze_parameters_)
+  {
+    for (int i = 0; i < numParams; i++)
+      optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
+  }
 
   RealType largestChange(0);
   int max_element = 0;
@@ -1306,7 +1374,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || std::isnan(newCost))
+  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)
@@ -1347,16 +1415,15 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run()
 {
+  const bool saved_grads_flag = optTarget->getneedGrads();
 
-    const bool saved_grads_flag = optTarget->getneedGrads();
-
-    //Make sure needGrads is true before engine_checkConfigurations is called
-    optTarget->setneedGrads(true);
+  //Make sure needGrads is true before engine_checkConfigurations is called
+  optTarget->setneedGrads(true);
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 
-  
+
   int descent_num = descentEngineObj->getDescentNum();
 
   if (descent_num == 0)
@@ -1373,7 +1440,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 
   for (int i = 0; i < results.size(); i++)
   {
-    optTarget->Params(i) = results[i];
+    optTarget->Params(i) = std::real(results[i]);
   }
 
   //If descent is being run as part of a hybrid optimization, need to check if a vector of
@@ -1409,7 +1476,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     //of vectors to the BLM engine.
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
-        descentEngineObj->resetStorageCount();
+      descentEngineObj->resetStorageCount();
       std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
 #if !defined(QMC_COMPLEX)
       //FIXME once complex is fixed in BLM engine
@@ -1417,13 +1484,13 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 #endif
     }
     adaptive_three_shift_run();
- 
+
     app_log() << "Update descent engine parameter values after Blocked LM step" << std::endl;
-    for(int i = 0; i < numParams; i++) 
-    {    
-        ValueType val = optTarget->Params(i);
-        descentEngineObj->setParamVal(i,val);
-    } 
+    for (int i = 0; i < optTarget->getNumParams(); i++)
+    {
+      RealType val = optTarget->Params(i);
+      descentEngineObj->setParamVal(i, val);
+    }
   }
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)
@@ -1433,5 +1500,139 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
   return (optTarget->getReportCounter() > 0);
 }
 #endif
+
+void QMCFixedSampleLinearOptimize::start()
+{
+  {
+    //generate samples
+    ScopedTimer local(generate_samples_timer_);
+    generateSamples();
+    //store active number of walkers
+    NumOfVMCWalkers = W.getActiveWalkers();
+  }
+
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  //reset the rootname
+  optTarget->setRootName(RootName);
+  optTarget->setWaveFunctionNode(wfNode);
+  app_log() << "   Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+  {
+    //get configuration from the previous run
+    ScopedTimer local(initialize_timer_);
+    Timer t2;
+    optTarget->getConfigurations(h5FileRoot);
+    optTarget->setRng(vmcEngine->getRngRefs());
+
+    // Compute wfn parameter derivatives
+    NullEngineHandle handle;
+    optTarget->checkConfigurations(handle);
+
+    // check recomputed variance against VMC
+    auto sigma2_vmc   = vmcEngine->getBranchEngine()->vParam[SimpleFixedNodeBranch::SBVP::SIGMA2];
+    auto sigma2_check = optTarget->getVariance();
+    if (optTarget->getNumSamples() > 1 && (sigma2_check > 2.0 * sigma2_vmc || sigma2_check < 0.5 * sigma2_vmc))
+      throw std::runtime_error(
+          "Safeguard failure: checkConfigurations variance out of [0.5, 2.0] * reference! Please report this bug.\n");
+    app_log() << "  Execution time = " << std::setprecision(4) << t2.elapsed() << std::endl;
+  }
+  app_log() << "  </log>" << std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << R"(<opt stage="main" walkers=")" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  t1.restart();
+}
+
+#ifdef HAVE_LMY_ENGINE
+void QMCFixedSampleLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                                                DescentEngine& descentEngineObj,
+                                                std::string MinMethod)
+{
+  app_log() << "entering engine_start function" << std::endl;
+
+  {
+    //generate samples
+    ScopedTimer local(generate_samples_timer_);
+    generateSamples();
+    //store active number of walkers
+    NumOfVMCWalkers = W.getActiveWalkers();
+  }
+
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+
+  // reset the root name
+  optTarget->setRootName(RootName);
+  optTarget->setWaveFunctionNode(wfNode);
+  app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+  {
+    // get configuration from the previous run
+    ScopedTimer local(initialize_timer_);
+    Timer t2;
+    optTarget->getConfigurations(h5FileRoot);
+    optTarget->setRng(vmcEngine->getRngRefs());
+    optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
+                                          MinMethod); // computes derivative ratios and pass into engine
+    app_log() << "  Execution time = " << std::setprecision(4) << t2.elapsed() << std::endl;
+  }
+  app_log() << "  </log>" << std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << R"(<opt stage="main" walkers=")" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  t1.restart();
+}
+#endif
+
+void QMCFixedSampleLinearOptimize::finish()
+{
+  MyCounter++;
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "  </log>" << std::endl;
+
+  if (optTarget->reportH5)
+    optTarget->reportParametersH5();
+  optTarget->reportParameters();
+
+
+  int nw_removed = W.getActiveWalkers() - NumOfVMCWalkers;
+  app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers."
+            << std::endl;
+  if (nw_removed > 0)
+    W.destroyWalkers(nw_removed);
+  else
+    W.createWalkers(-nw_removed);
+  app_log() << "</opt>" << std::endl;
+  app_log() << "</optimization-report>" << std::endl;
+}
+
+void QMCFixedSampleLinearOptimize::generateSamples()
+{
+  app_log() << "<optimization-report>" << std::endl;
+  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
+  //  vmcEngine->run();
+  //  vmcEngine->setValue("blocks",nBlocks);
+  //  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  //  app_log() << "</vmc>" << std::endl;
+  //}
+  //     if (W.getActiveWalkers()>NumOfVMCWalkers)
+  //     {
+  //         W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
+  //         app_log() << "  QMCFixedSampleLinearOptimize::generateSamples removed walkers." << std::endl;
+  //         app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << std::endl;
+  //     }
+  vmcEngine->qmc_driver_mode.set(QMC_OPTIMIZE, 1);
+  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
+  //vmcEngine->setValue("recordWalkers",1);//set record
+  vmcEngine->setValue("current", 0); //reset CurrentStep
+  app_log() << R"(<vmc stage="main" blocks=")" << nBlocks << "\">" << std::endl;
+  t1.restart();
+  //     W.reset();
+  branchEngine->flush(0);
+  branchEngine->reset();
+  vmcEngine->run();
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "</vmc>" << std::endl;
+  h5FileRoot = RootName;
+}
 
 } // namespace qmcplusplus

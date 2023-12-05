@@ -138,7 +138,6 @@ def create_label_sets():
         'short-bccH_1x1x1_ae-dmc-all_sdj',
         'short-bccH_1x1x1_ae-vmc-all-nodrift_sdj',
         'short-C2_pp-msdj_vmc',
-        'short-C2_pp-msdj-traditional_vmc',
         'short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
         'short-diamondC_2x1x1_pp-dmc-reconf_sdj',
         'short-H4-opt-adaptive',
@@ -477,15 +476,13 @@ def check_positive_label_sets(positive_label_sets):
 
 # extract test name and build flags from args
 try:
-    full_test,qmc_cuda,enable_soa,qmc_complex,qmc_mixed = sys.argv[1:]
-    qmc_cuda    = qmc_cuda=='1'
-    enable_soa  = enable_soa=='1'
+    full_test,qmc_complex,qmc_mixed = sys.argv[1:]
     qmc_complex = qmc_complex=='1'
     qmc_mixed   = qmc_mixed=='1'
-    cpu   = not qmc_cuda
-    gpu   = qmc_cuda
-    aos   = not enable_soa
-    soa   = enable_soa
+    cpu   = True
+    gpu   = False # was used for QMC_CUDA which has been removed from the codebase.
+    aos   = False
+    soa   = True
     real  = not qmc_complex
     comp  = qmc_complex
     full  = not qmc_mixed
@@ -580,11 +577,7 @@ except:
 
 # make a ctest list of the labels
 try:
-    ctest_labels = ''
-    for label in labels:
-        ctest_labels += label+';'
-    #end for
-    ctest_labels = ctest_labels.rstrip(';')
+    ctest_labels = ';'.join(labels)
 except:
     error()
 #end try

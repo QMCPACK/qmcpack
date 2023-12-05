@@ -27,16 +27,16 @@ using qmc_cuda::cublasOperation;
 // Level-1
 inline cublasStatus_t cublas_copy(cublasHandle_t handle, int n, float* x, int incx, float* y, int incy)
 {
-  cublasStatus_t sucess = cublasScopy(handle, n, x, incx, y, incy);
+  cublasStatus_t success = cublasScopy(handle, n, x, incx, y, incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_copy(cublasHandle_t handle, int n, double* x, int incx, double* y, int incy)
 {
-  cublasStatus_t sucess = cublasDcopy(handle, n, x, incx, y, incy);
+  cublasStatus_t success = cublasDcopy(handle, n, x, incx, y, incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_copy(cublasHandle_t handle,
@@ -46,10 +46,10 @@ inline cublasStatus_t cublas_copy(cublasHandle_t handle,
                                   std::complex<float>* y,
                                   int incy)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasCcopy(handle, n, reinterpret_cast<cuComplex*>(x), incx, reinterpret_cast<cuComplex*>(y), incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_copy(cublasHandle_t handle,
@@ -59,24 +59,24 @@ inline cublasStatus_t cublas_copy(cublasHandle_t handle,
                                   std::complex<double>* y,
                                   int incy)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasZcopy(handle, n, reinterpret_cast<cuDoubleComplex*>(x), incx, reinterpret_cast<cuDoubleComplex*>(y), incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_scal(cublasHandle_t handle, int n, const float alpha, float* x, int incx)
 {
-  cublasStatus_t sucess = cublasSscal(handle, n, &alpha, x, incx);
+  cublasStatus_t success = cublasSscal(handle, n, &alpha, x, incx);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_scal(cublasHandle_t handle, int n, const double alpha, double* x, int incx)
 {
-  cublasStatus_t sucess = cublasDscal(handle, n, &alpha, x, incx);
+  cublasStatus_t success = cublasDscal(handle, n, &alpha, x, incx);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_scal(cublasHandle_t handle,
@@ -85,10 +85,10 @@ inline cublasStatus_t cublas_scal(cublasHandle_t handle,
                                   std::complex<float>* x,
                                   int incx)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasCscal(handle, n, reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex*>(x), incx);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_scal(cublasHandle_t handle,
@@ -97,18 +97,18 @@ inline cublasStatus_t cublas_scal(cublasHandle_t handle,
                                   std::complex<double>* x,
                                   int incx)
 {
-  cublasStatus_t sucess = cublasZscal(handle, n, reinterpret_cast<cuDoubleComplex const*>(&alpha),
+  cublasStatus_t success = cublasZscal(handle, n, reinterpret_cast<cuDoubleComplex const*>(&alpha),
                                       reinterpret_cast<cuDoubleComplex*>(x), incx);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline float cublas_dot(cublasHandle_t handle, int n, const float* x, int incx, const float* y, int incy)
 {
   float result;
-  cublasStatus_t sucess = cublasSdot(handle, n, x, incx, y, incy, &result);
+  cublasStatus_t success = cublasSdot(handle, n, x, incx, y, incy, &result);
   cudaDeviceSynchronize();
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: cublas_dot returned error code.");
   return result;
 }
@@ -116,9 +116,9 @@ inline float cublas_dot(cublasHandle_t handle, int n, const float* x, int incx, 
 inline double cublas_dot(cublasHandle_t handle, int n, const double* x, int incx, const double* y, int incy)
 {
   double result;
-  cublasStatus_t sucess = cublasDdot(handle, n, x, incx, y, incy, &result);
+  cublasStatus_t success = cublasDdot(handle, n, x, incx, y, incy, &result);
   cudaDeviceSynchronize();
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: cublas_dot returned error code.");
   return result;
 }
@@ -131,11 +131,11 @@ inline std::complex<float> cublas_dot(cublasHandle_t handle,
                                       int incy)
 {
   std::complex<float> result;
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasCdotu(handle, n, reinterpret_cast<cuComplex const*>(x), incx, reinterpret_cast<cuComplex const*>(y), incy,
                   reinterpret_cast<cuComplex*>(&result));
   cudaDeviceSynchronize();
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: cublas_dot returned error code.");
   return result;
 }
@@ -148,11 +148,11 @@ inline std::complex<double> cublas_dot(cublasHandle_t handle,
                                        int incy)
 {
   std::complex<double> result;
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasZdotu(handle, n, reinterpret_cast<cuDoubleComplex const*>(x), incx,
                   reinterpret_cast<cuDoubleComplex const*>(y), incy, reinterpret_cast<cuDoubleComplex*>(&result));
   cudaDeviceSynchronize();
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: cublas_dot returned error code.");
   return result;
 }
@@ -168,13 +168,13 @@ inline std::complex<double> cublas_dot(cublasHandle_t handle,
   const double* y_  = reinterpret_cast<const double*>(y);
   const double* y1_ = y_ + 1;
   double resR, resI;
-  cublasStatus_t sucess = cublasDdot(handle, n, x, incx, y_, incy_, &resR);
+  cublasStatus_t success = cublasDdot(handle, n, x, incx, y_, incy_, &resR);
   cudaDeviceSynchronize();
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: cublas_dot returned error code.");
-  sucess = cublasDdot(handle, n, x, incx, y1_, incy_, &resI);
+  success = cublasDdot(handle, n, x, incx, y1_, incy_, &resI);
   cudaDeviceSynchronize();
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: cublas_dot returned error code.");
   return std::complex<double>{resR, resI};
 }
@@ -190,13 +190,13 @@ inline std::complex<double> cublas_dot(cublasHandle_t handle,
   const double* x_  = reinterpret_cast<const double*>(x);
   const double* x1_ = x_ + 1;
   double resR, resI;
-  cublasStatus_t sucess = cublasDdot(handle, n, x_, incx_, y, incy, &resR);
+  cublasStatus_t success = cublasDdot(handle, n, x_, incx_, y, incy, &resR);
   cudaDeviceSynchronize();
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: cublas_dot returned error code.");
-  sucess = cublasDdot(handle, n, x1_, incx_, y, incy, &resI);
+  success = cublasDdot(handle, n, x1_, incx_, y, incy, &resI);
   cudaDeviceSynchronize();
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: cublas_dot returned error code.");
   return std::complex<double>{resR, resI};
 }
@@ -209,9 +209,9 @@ inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
                                   float* y,
                                   int incy)
 {
-  cublasStatus_t sucess = cublasSaxpy(handle, n, &alpha, x, incx, y, incy);
+  cublasStatus_t success = cublasSaxpy(handle, n, &alpha, x, incx, y, incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
@@ -222,9 +222,9 @@ inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
                                   double* y,
                                   int incy)
 {
-  cublasStatus_t sucess = cublasDaxpy(handle, n, &alpha, x, incx, y, incy);
+  cublasStatus_t success = cublasDaxpy(handle, n, &alpha, x, incx, y, incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
@@ -235,11 +235,11 @@ inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
                                   std::complex<float>* y,
                                   int incy)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasCaxpy(handle, n, reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(x), incx,
                   reinterpret_cast<cuComplex*>(y), incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
@@ -250,11 +250,11 @@ inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
                                   std::complex<double>* y,
                                   int incy)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasZaxpy(handle, n, reinterpret_cast<cuDoubleComplex const*>(&alpha),
                   reinterpret_cast<cuDoubleComplex const*>(x), incx, reinterpret_cast<cuDoubleComplex*>(y), incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 // Level-2
@@ -271,9 +271,9 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   float* y,
                                   int incy)
 {
-  cublasStatus_t sucess = cublasSgemv(handle, cublasOperation(Atrans), M, N, &alpha, A, lda, x, incx, &beta, y, incy);
+  cublasStatus_t success = cublasSgemv(handle, cublasOperation(Atrans), M, N, &alpha, A, lda, x, incx, &beta, y, incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
@@ -289,9 +289,9 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   double* y,
                                   int incy)
 {
-  cublasStatus_t sucess = cublasDgemv(handle, cublasOperation(Atrans), M, N, &alpha, A, lda, x, incx, &beta, y, incy);
+  cublasStatus_t success = cublasDgemv(handle, cublasOperation(Atrans), M, N, &alpha, A, lda, x, incx, &beta, y, incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
@@ -307,12 +307,12 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   std::complex<float>* y,
                                   int incy)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasCgemv(handle, cublasOperation(Atrans), M, N, reinterpret_cast<cuComplex const*>(&alpha),
                   reinterpret_cast<cuComplex const*>(A), lda, reinterpret_cast<cuComplex const*>(x), incx,
                   reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(y), incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
@@ -328,12 +328,12 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   std::complex<double>* y,
                                   int incy)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasZgemv(handle, cublasOperation(Atrans), M, N, reinterpret_cast<cuDoubleComplex const*>(&alpha),
                   reinterpret_cast<cuDoubleComplex const*>(A), lda, reinterpret_cast<cuDoubleComplex const*>(x), incx,
                   reinterpret_cast<cuDoubleComplex const*>(&beta), reinterpret_cast<cuDoubleComplex*>(y), incy);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
@@ -349,21 +349,21 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   std::complex<float>* y,
                                   int incy)
 {
-  cublasStatus_t sucess = CUBLAS_STATUS_SUCCESS;
+  cublasStatus_t success = CUBLAS_STATUS_SUCCESS;
   char Nt('N');
   char Tt('T');
   if (Atrans == 'n' || Atrans == 'N')
-    sucess =
+    success =
         cublasSgemm(handle, cublasOperation(Nt), cublasOperation(Tt), 2, M, N, &alpha,
                     reinterpret_cast<float const*>(x), 2 * incx, A, lda, &beta, reinterpret_cast<float*>(y), 2 * incy);
   else if (Atrans == 't' || Atrans == 'T')
-    sucess =
+    success =
         cublasSgemm(handle, cublasOperation(Nt), cublasOperation(Nt), 2, N, M, &alpha,
                     reinterpret_cast<float const*>(x), 2 * incx, A, lda, &beta, reinterpret_cast<float*>(y), 2 * incy);
   else
     assert(0);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
@@ -379,21 +379,21 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   std::complex<double>* y,
                                   int incy)
 {
-  cublasStatus_t sucess = CUBLAS_STATUS_SUCCESS;
+  cublasStatus_t success = CUBLAS_STATUS_SUCCESS;
   char Nt('N');
   char Tt('T');
   if (Atrans == 'n' || Atrans == 'N')
-    sucess = cublasDgemm(handle, cublasOperation(Nt), cublasOperation(Tt), 2, M, N, &alpha,
+    success = cublasDgemm(handle, cublasOperation(Nt), cublasOperation(Tt), 2, M, N, &alpha,
                          reinterpret_cast<double const*>(x), 2 * incx, A, lda, &beta, reinterpret_cast<double*>(y),
                          2 * incy);
   else if (Atrans == 't' || Atrans == 'T')
-    sucess = cublasDgemm(handle, cublasOperation(Nt), cublasOperation(Nt), 2, N, M, &alpha,
+    success = cublasDgemm(handle, cublasOperation(Nt), cublasOperation(Nt), 2, N, M, &alpha,
                          reinterpret_cast<double const*>(x), 2 * incx, A, lda, &beta, reinterpret_cast<double*>(y),
                          2 * incy);
   else
     assert(0);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 
@@ -413,10 +413,10 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   float* C,
                                   int ldc)
 {
-  cublasStatus_t sucess = cublasSgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A, lda,
+  cublasStatus_t success = cublasSgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A, lda,
                                       B, ldb, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
@@ -434,10 +434,10 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   double* C,
                                   int ldc)
 {
-  cublasStatus_t sucess = cublasDgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A, lda,
+  cublasStatus_t success = cublasDgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A, lda,
                                       B, ldb, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
@@ -455,12 +455,12 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   std::complex<float>* C,
                                   int ldc)
 {
-  cublasStatus_t sucess = cublasCgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
+  cublasStatus_t success = cublasCgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
                                       reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(A),
                                       lda, reinterpret_cast<cuComplex const*>(B), ldb,
                                       reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
@@ -478,13 +478,13 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   std::complex<double>* C,
                                   int ldc)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasZgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
                   reinterpret_cast<cuDoubleComplex const*>(&alpha), reinterpret_cast<cuDoubleComplex const*>(A), lda,
                   reinterpret_cast<cuDoubleComplex const*>(B), ldb, reinterpret_cast<cuDoubleComplex const*>(&beta),
                   reinterpret_cast<cuDoubleComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
@@ -503,11 +503,11 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   int ldc)
 {
   assert(Atrans == 'n' || Atrans == 'N');
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasSgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), 2 * M, N, K, &alpha,
                   reinterpret_cast<float const*>(A), 2 * lda, B, ldb, &beta, reinterpret_cast<float*>(C), 2 * ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
@@ -526,11 +526,11 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   int ldc)
 {
   assert(Atrans == 'n' || Atrans == 'N');
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasDgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), 2 * M, N, K, &alpha,
                   reinterpret_cast<double const*>(A), 2 * lda, B, ldb, &beta, reinterpret_cast<double*>(C), 2 * ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
@@ -548,10 +548,10 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   cuDoubleComplex* C,
                                   int ldc)
 {
-  cublasStatus_t sucess = cublasZgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A, lda,
+  cublasStatus_t success = cublasZgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A, lda,
                                       B, ldb, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 // Extensions
@@ -563,9 +563,9 @@ inline cublasStatus_t cublas_getrfBatched(cublasHandle_t handle,
                                           int* infoArray,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasSgetrfBatched(handle, n, Aarray, lda, PivotArray, infoArray, batchSize);
+  cublasStatus_t success = cublasSgetrfBatched(handle, n, Aarray, lda, PivotArray, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_getrfBatched(cublasHandle_t handle,
@@ -577,9 +577,9 @@ inline cublasStatus_t cublas_getrfBatched(cublasHandle_t handle,
                                           int* infoArray,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasDgetrfBatched(handle, n, Aarray, lda, PivotArray, infoArray, batchSize);
+  cublasStatus_t success = cublasDgetrfBatched(handle, n, Aarray, lda, PivotArray, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_getrfBatched(cublasHandle_t handle,
@@ -590,10 +590,10 @@ inline cublasStatus_t cublas_getrfBatched(cublasHandle_t handle,
                                           int* infoArray,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasZgetrfBatched(handle, n, reinterpret_cast<cuDoubleComplex* const*>(Aarray), lda,
+  cublasStatus_t success = cublasZgetrfBatched(handle, n, reinterpret_cast<cuDoubleComplex* const*>(Aarray), lda,
                                               PivotArray, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_getrfBatched(cublasHandle_t handle,
@@ -604,10 +604,10 @@ inline cublasStatus_t cublas_getrfBatched(cublasHandle_t handle,
                                           int* infoArray,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasCgetrfBatched(handle, n, reinterpret_cast<cuComplex* const*>(Aarray), lda, PivotArray,
+  cublasStatus_t success = cublasCgetrfBatched(handle, n, reinterpret_cast<cuComplex* const*>(Aarray), lda, PivotArray,
                                               infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_getriBatched(cublasHandle_t handle,
@@ -620,9 +620,9 @@ inline cublasStatus_t cublas_getriBatched(cublasHandle_t handle,
                                           int* infoArray,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasSgetriBatched(handle, n, Aarray, lda, PivotArray, Carray, ldc, infoArray, batchSize);
+  cublasStatus_t success = cublasSgetriBatched(handle, n, Aarray, lda, PivotArray, Carray, ldc, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_getriBatched(cublasHandle_t handle,
@@ -635,9 +635,9 @@ inline cublasStatus_t cublas_getriBatched(cublasHandle_t handle,
                                           int* infoArray,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasDgetriBatched(handle, n, Aarray, lda, PivotArray, Carray, ldc, infoArray, batchSize);
+  cublasStatus_t success = cublasDgetriBatched(handle, n, Aarray, lda, PivotArray, Carray, ldc, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_getriBatched(cublasHandle_t handle,
@@ -650,11 +650,11 @@ inline cublasStatus_t cublas_getriBatched(cublasHandle_t handle,
                                           int* infoArray,
                                           int batchSize)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasZgetriBatched(handle, n, reinterpret_cast<const cuDoubleComplex* const*>(Aarray), lda, PivotArray,
                           reinterpret_cast<cuDoubleComplex* const*>(Carray), ldc, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_getriBatched(cublasHandle_t handle,
@@ -667,11 +667,11 @@ inline cublasStatus_t cublas_getriBatched(cublasHandle_t handle,
                                           int* infoArray,
                                           int batchSize)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasCgetriBatched(handle, n, reinterpret_cast<const cuComplex* const*>(Aarray), lda, PivotArray,
                           reinterpret_cast<cuComplex* const*>(Carray), ldc, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
@@ -683,9 +683,9 @@ inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
                                            int* infoArray,
                                            int batchSize)
 {
-  cublasStatus_t sucess = cublasSmatinvBatched(handle, n, Aarray, lda, Carray, ldc, infoArray, batchSize);
+  cublasStatus_t success = cublasSmatinvBatched(handle, n, Aarray, lda, Carray, ldc, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
@@ -697,9 +697,9 @@ inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
                                            int* infoArray,
                                            int batchSize)
 {
-  cublasStatus_t sucess = cublasDmatinvBatched(handle, n, Aarray, lda, Carray, ldc, infoArray, batchSize);
+  cublasStatus_t success = cublasDmatinvBatched(handle, n, Aarray, lda, Carray, ldc, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
@@ -711,10 +711,10 @@ inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
                                            int* infoArray,
                                            int batchSize)
 {
-  cublasStatus_t sucess = cublasCmatinvBatched(handle, n, reinterpret_cast<const cuComplex* const*>(Aarray), lda,
+  cublasStatus_t success = cublasCmatinvBatched(handle, n, reinterpret_cast<const cuComplex* const*>(Aarray), lda,
                                                reinterpret_cast<cuComplex**>(Carray), ldc, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
@@ -726,10 +726,10 @@ inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
                                            int* infoArray,
                                            int batchSize)
 {
-  cublasStatus_t sucess = cublasZmatinvBatched(handle, n, reinterpret_cast<const cuDoubleComplex* const*>(Aarray), lda,
+  cublasStatus_t success = cublasZmatinvBatched(handle, n, reinterpret_cast<const cuDoubleComplex* const*>(Aarray), lda,
                                                reinterpret_cast<cuDoubleComplex**>(Carray), ldc, infoArray, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_geam(cublasHandle_t handle,
@@ -746,10 +746,10 @@ inline cublasStatus_t cublas_geam(cublasHandle_t handle,
                                   float* C,
                                   int ldc)
 {
-  cublasStatus_t sucess = cublasSgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, &alpha, A, lda,
+  cublasStatus_t success = cublasSgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, &alpha, A, lda,
                                       &beta, B, ldb, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_geam(cublasHandle_t handle,
@@ -766,10 +766,10 @@ inline cublasStatus_t cublas_geam(cublasHandle_t handle,
                                   double* C,
                                   int ldc)
 {
-  cublasStatus_t sucess = cublasDgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, &alpha, A, lda,
+  cublasStatus_t success = cublasDgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, &alpha, A, lda,
                                       &beta, B, ldb, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_geam(cublasHandle_t handle,
@@ -786,12 +786,12 @@ inline cublasStatus_t cublas_geam(cublasHandle_t handle,
                                   std::complex<float>* C,
                                   int ldc)
 {
-  cublasStatus_t sucess = cublasCgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N,
+  cublasStatus_t success = cublasCgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N,
                                       reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(A),
                                       lda, reinterpret_cast<cuComplex const*>(&beta),
                                       reinterpret_cast<cuComplex const*>(B), ldb, reinterpret_cast<cuComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_geam(cublasHandle_t handle,
@@ -808,13 +808,13 @@ inline cublasStatus_t cublas_geam(cublasHandle_t handle,
                                   std::complex<double>* C,
                                   int ldc)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasZgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N,
                   reinterpret_cast<cuDoubleComplex const*>(&alpha), reinterpret_cast<cuDoubleComplex const*>(A), lda,
                   reinterpret_cast<cuDoubleComplex const*>(&beta), reinterpret_cast<cuDoubleComplex const*>(B), ldb,
                   reinterpret_cast<cuDoubleComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
@@ -836,11 +836,11 @@ inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
                                                 int strideC,
                                                 int batchSize)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasSgemmStridedBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A, lda,
                                 strideA, B, ldb, strideB, &beta, C, ldc, strideC, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
@@ -862,11 +862,11 @@ inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
                                                 int strideC,
                                                 int batchSize)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasDgemmStridedBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha, A, lda,
                                 strideA, B, ldb, strideB, &beta, C, ldc, strideC, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
@@ -888,14 +888,14 @@ inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
                                                 int strideC,
                                                 int batchSize)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasCgemmStridedBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
                                 reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(A), lda,
                                 strideA, reinterpret_cast<cuComplex const*>(B), ldb, strideB,
                                 reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(C), ldc,
                                 strideC, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
@@ -917,14 +917,14 @@ inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
                                                 int strideC,
                                                 int batchSize)
 {
-  cublasStatus_t sucess = cublasZgemmStridedBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
+  cublasStatus_t success = cublasZgemmStridedBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
                                                     reinterpret_cast<cuDoubleComplex const*>(&alpha),
                                                     reinterpret_cast<cuDoubleComplex const*>(A), lda, strideA,
                                                     reinterpret_cast<cuDoubleComplex const*>(B), ldb, strideB,
                                                     reinterpret_cast<cuDoubleComplex const*>(&beta),
                                                     reinterpret_cast<cuDoubleComplex*>(C), ldc, strideC, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
@@ -943,10 +943,10 @@ inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
                                          int ldc,
                                          int batchSize)
 {
-  cublasStatus_t sucess = cublasSgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha,
+  cublasStatus_t success = cublasSgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha,
                                              A, lda, B, ldb, &beta, C, ldc, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
@@ -965,10 +965,10 @@ inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
                                          int ldc,
                                          int batchSize)
 {
-  cublasStatus_t sucess = cublasDgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha,
+  cublasStatus_t success = cublasDgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K, &alpha,
                                              A, lda, B, ldb, &beta, C, ldc, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
@@ -987,13 +987,13 @@ inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
                                          int ldc,
                                          int batchSize)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasCgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
                          reinterpret_cast<cuComplex*>(&alpha), reinterpret_cast<cuComplex**>(A), lda,
                          reinterpret_cast<cuComplex**>(B), ldb, reinterpret_cast<cuComplex*>(&beta),
                          reinterpret_cast<cuComplex**>(C), ldc, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
@@ -1012,13 +1012,13 @@ inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
                                          int ldc,
                                          int batchSize)
 {
-  cublasStatus_t sucess =
+  cublasStatus_t success =
       cublasZgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
                          reinterpret_cast<cuDoubleComplex*>(&alpha), reinterpret_cast<cuDoubleComplex**>(A), lda,
                          reinterpret_cast<cuDoubleComplex**>(B), ldb, reinterpret_cast<cuDoubleComplex*>(&beta),
                          reinterpret_cast<cuDoubleComplex**>(C), ldc, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
@@ -1037,11 +1037,11 @@ inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
                                          int ldc,
                                          int batchSize)
 {
-  cublasStatus_t sucess = cublasSgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), 2 * M, N, K,
+  cublasStatus_t success = cublasSgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), 2 * M, N, K,
                                              &alpha, reinterpret_cast<float**>(A), 2 * lda, B, ldb, &beta,
                                              reinterpret_cast<float**>(C), 2 * ldc, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
@@ -1060,11 +1060,11 @@ inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
                                          int ldc,
                                          int batchSize)
 {
-  cublasStatus_t sucess = cublasDgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), 2 * M, N, K,
+  cublasStatus_t success = cublasDgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), 2 * M, N, K,
                                              &alpha, reinterpret_cast<double**>(A), 2 * lda, B, ldb, &beta,
                                              reinterpret_cast<double**>(C), 2 * ldc, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_geqrfBatched(cublasHandle_t handle,
@@ -1076,9 +1076,9 @@ inline cublasStatus_t cublas_geqrfBatched(cublasHandle_t handle,
                                           int* info,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasDgeqrfBatched(handle, m, n, Aarray, lda, TauArray, info, batchSize);
+  cublasStatus_t success = cublasDgeqrfBatched(handle, m, n, Aarray, lda, TauArray, info, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_geqrfBatched(cublasHandle_t handle,
@@ -1090,9 +1090,9 @@ inline cublasStatus_t cublas_geqrfBatched(cublasHandle_t handle,
                                           int* info,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasSgeqrfBatched(handle, m, n, Aarray, lda, TauArray, info, batchSize);
+  cublasStatus_t success = cublasSgeqrfBatched(handle, m, n, Aarray, lda, TauArray, info, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 
@@ -1105,10 +1105,10 @@ inline cublasStatus_t cublas_geqrfBatched(cublasHandle_t handle,
                                           int* info,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasZgeqrfBatched(handle, m, n, reinterpret_cast<cuDoubleComplex**>(Aarray), lda,
+  cublasStatus_t success = cublasZgeqrfBatched(handle, m, n, reinterpret_cast<cuDoubleComplex**>(Aarray), lda,
                                               reinterpret_cast<cuDoubleComplex**>(TauArray), info, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cublasStatus_t cublas_geqrfBatched(cublasHandle_t handle,
@@ -1120,10 +1120,10 @@ inline cublasStatus_t cublas_geqrfBatched(cublasHandle_t handle,
                                           int* info,
                                           int batchSize)
 {
-  cublasStatus_t sucess = cublasCgeqrfBatched(handle, m, n, reinterpret_cast<cuComplex**>(Aarray), lda,
+  cublasStatus_t success = cublasCgeqrfBatched(handle, m, n, reinterpret_cast<cuComplex**>(Aarray), lda,
                                               reinterpret_cast<cuComplex**>(TauArray), info, batchSize);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 } // namespace cublas

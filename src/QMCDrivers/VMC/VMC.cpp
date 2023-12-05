@@ -20,8 +20,8 @@
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
-#include "OhmmsApp/RandomNumberControl.h"
-#include "Message/OpenMP.h"
+#include "QMCDrivers/VMC/SOVMCUpdateAll.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
 #include "Utilities/qmc_common.h"
@@ -30,24 +30,27 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 namespace qmcplusplus
 {
 /// Constructor.
-VMC::VMC(MCWalkerConfiguration& w,
+VMC::VMC(const ProjectData& project_data,
+         MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "VMC"), UseDrift("yes")
+         UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
+         Communicate* comm,
+         bool enable_profiling)
+    : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes"), rngs_(rngs)
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(UseDrift, "use_drift", "string");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(UseDrift, "use_drift");
 
   prevSteps               = nSteps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
@@ -65,8 +68,7 @@ bool VMC::run()
 #endif
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
-  bool enough_time_for_next_iteration = true;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
 
   const bool has_collectables = W.Collectables.size();
   for (int block = 0; block < nBlocks; ++block)
@@ -78,10 +80,10 @@ bool VMC::run()
       //IndexType updatePeriod=(qmc_driver_mode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
       IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
-      MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+      MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       Movers[ip]->startBlock(nSteps);
       int now_loc    = CurrentStep;
-      RealType cnorm = 1.0 / static_cast<RealType>(wPerNode[ip + 1] - wPerNode[ip]);
+      RealType cnorm = 1.0 / static_cast<RealType>(wPerRank[ip + 1] - wPerRank[ip]);
       for (int step = 0; step < nSteps; ++step)
       {
         Movers[ip]->set_step(now_loc);
@@ -107,14 +109,19 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    if (storeConfigs)
-      recordBlock(block);
+    recordBlock(block);
     vmc_loop.stop();
-    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
-    myComm->bcast(enough_time_for_next_iteration);
-    if (!enough_time_for_next_iteration)
+
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(vmc_loop);
+    myComm->bcast(stop_requested);
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("VMC", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("VMC", block);
+      run_time_manager.markStop();
       break;
     }
   } //block
@@ -125,15 +132,13 @@ bool VMC::run()
   Traces->stopRun();
 #endif
   //copy back the random states
-#ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ++ip)
-    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
-#endif
+    rngs_[ip] = Rng[ip]->makeClone();
   ///write samples to a file
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
   {
-    wrotesamples = W.dumpEnsemble(wClones, wOut, myComm->size(), nBlocks);
+    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
@@ -147,45 +152,46 @@ void VMC::resetRun()
   if (nTargetPopulation > 0)
     branchEngine->iParam[SimpleFixedNodeBranch::B_TARGETWALKERS] = static_cast<int>(std::ceil(nTargetPopulation));
   makeClones(W, Psi, H);
-  FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
+  FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
   app_log() << "  Initial partition of walkers ";
-  copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(app_log(), " "));
+  copy(wPerRank.begin(), wPerRank.end(), std::ostream_iterator<int>(app_log(), " "));
   app_log() << std::endl;
 
   bool movers_created = false;
+  bool spinors        = false;
   if (Movers.empty())
   {
     movers_created = true;
-    Movers.resize(NumThreads, 0);
-    estimatorClones.resize(NumThreads, 0);
-    traceClones.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Movers.resize(NumThreads, nullptr);
+    estimatorClones.resize(NumThreads, nullptr);
+    traceClones.resize(NumThreads, nullptr);
+    Rng.resize(NumThreads);
+
+    // hdf_archive::hdf_archive() is not thread-safe
+    for (int ip = 0; ip < NumThreads; ++ip)
+      estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
+
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-#ifdef USE_FAKE_RNG
-      Rng[ip] = new FakeRandom();
-#else
-      Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
-#endif
-      hClones[ip]->setRandomGenerator(Rng[ip]);
-
-      if (SpinMoves == "yes")
+      Rng[ip] = rngs_[ip]->makeClone();
+      hClones[ip]->setRandomGenerator(Rng[ip].get());
+      if (W.isSpinor())
       {
+        spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
           Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         }
         else
         {
-          APP_ABORT("Spin moves only implemented with PbyP moves\n");
+          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         }
       }
       else
@@ -236,7 +242,7 @@ void VMC::resetRun()
       Movers[i]->UseDrift = false;
   }
 
-  if (SpinMoves == "yes")
+  if (spinors)
   {
     app_log() << "  Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;
     for (int i = 0; i < Movers.size(); i++)
@@ -245,7 +251,7 @@ void VMC::resetRun()
 
   app_log() << "  Total Sample Size   =" << nTargetSamples << std::endl;
   app_log() << "  Walker distribution on root = ";
-  copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(app_log(), " "));
+  copy(wPerRank.begin(), wPerRank.end(), std::ostream_iterator<int>(app_log(), " "));
   app_log() << std::endl;
   //app_log() << "  Sample Size per node=" << samples_this_node << std::endl;
   //for (int ip=0; ip<NumThreads; ++ip)
@@ -256,15 +262,15 @@ void VMC::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
-      Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+      Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     else
-      Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+      Movers[ip]->initWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     //       if (UseDrift != "rn")
     //       {
     for (int prestep = 0; prestep < nWarmupSteps; ++prestep)
-      Movers[ip]->advanceWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], false);
+      Movers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], false);
     //       }
   }
 
@@ -275,47 +281,7 @@ void VMC::resetRun()
     qmc_common.memory_allocated += W.getActiveWalkers() * W[0]->DataSet.byteSize();
     qmc_common.print_memory_change("VMC::resetRun", before);
   }
-  //     //JNKIM: THIS IS BAD AND WRONG
-  //     if (UseDrift == "rn")
-  //     {
-  //       RealType avg_w(0);
-  //       RealType n_w(0);
-  // #pragma omp parallel
-  //       {
-  //         int ip=omp_get_thread_num();
-  //         for (int step=0; step<nWarmupSteps; ++step)
-  //         {
-  //           avg_w=0;
-  //           n_w=0;
-  //           for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-  //           {
-  //             Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-  //             #pragma omp single
-  //             {
-  //               MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-  //               while (wit!=wit_end)
-  //               {
-  //                 avg_w += (*wit)->Weight;
-  //                 n_w +=1;
-  //                 wit++;
-  //               }
-  //             }
-  //             #pragma omp barrier
-  //            }
-  //            #pragma omp single
-  //            {
-  //              avg_w *= 1.0/n_w;
-  //              RealType w_m = avg_w/(1.0-avg_w);
-  //              w_m = std::log(0.5+0.5*w_m);
-  //              if (std::abs(w_m)>0.01)
-  //                logepsilon += w_m;
-  //            }
-  //           }
-  //
-  //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-  //           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
-  //       }
-  //     }
+
   for (int ip = 0; ip < NumThreads; ++ip)
     wClones[ip]->clearEnsemble();
   if (nSamplesPerThread)
@@ -329,8 +295,8 @@ bool VMC::put(xmlNodePtr q)
   //grep minimumTargetWalker
   int target_min = -1;
   ParameterSet p;
-  p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
-  p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
+  p.add(target_min, "minimumtargetwalkers"); //p.add(target_min,"minimumTargetWalkers");
+  p.add(target_min, "minimumsamples");       //p.add(target_min,"minimumSamples");
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"
@@ -388,7 +354,6 @@ bool VMC::put(xmlNodePtr q)
   app_log() << "  target samples = " << nTargetPopulation << std::endl;
   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
-  app_log() << "  SpinMoves      = " << SpinMoves << std::endl;
 
   m_param.get(app_log());
 

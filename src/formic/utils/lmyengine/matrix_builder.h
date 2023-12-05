@@ -219,6 +219,27 @@ namespace cqmc {
 
       }
 
+    void resetParamNumber(int new_num)
+     {
+     _num_params = new_num;
+     int NumThreads = omp_get_max_threads();
+     int my_rank = formic::mpi::rank();
+
+     if(my_rank == 0)
+     {    
+        std::cout << "Changing size of _hmat_temp and _smat_temp inside matrix_builder" << std::endl;
+     }
+
+       // size the matrix correctly
+       int ndim = _num_params + 1; 
+       for (int ip = 0; ip < NumThreads; ip++) {
+         _hmat_temp[ip].reset(ndim, ndim, 0.0);
+         _smat_temp[ip].reset(ndim, ndim, 0.0);
+         _ssmat_temp[ip].reset(ndim, ndim, 0.0);
+       }
+
+     }
+
       /////////////////////////////////////////////////////////////////////////////////////////////
       // \brief build harmonic davidson matrix
       //
@@ -711,7 +732,7 @@ namespace cqmc {
       /////////////////////////////////////////////////////////////////////////////////////////////
       // \brief  Converts matirx by combining derivatives for dependent variables into derivative
       //         for independent variables
-      // \param[in]    deps    object decribing the variable dependencies
+      // \param[in]    deps    object describing the variable dependencies
       // \param[out]   mat     the matrix to be converted
       //
       /////////////////////////////////////////////////////////////////////////////////////////////
@@ -869,7 +890,7 @@ namespace cqmc {
       formic::Matrix<S> & lovl() { return _lsmat; }
 
       ///////////////////////////////////////////////////////////////////////////////////
-      // \brief do D^(-1/2) transfrom on hamiltonian and overlap matrix 
+      // \brief do D^(-1/2) transform on hamiltonian and overlap matrix 
       //
       //
       //

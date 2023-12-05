@@ -17,14 +17,12 @@
 
 namespace qmcplusplus
 {
-typedef LatticeGaussianProduct::ValueType ValueType;
-typedef LatticeGaussianProduct::GradType GradType;
-typedef LatticeGaussianProduct::PsiValueType PsiValueType;
+using ValueType = LatticeGaussianProduct::ValueType;
+using GradType  = LatticeGaussianProduct::GradType;
+using PsiValue  = LatticeGaussianProduct::PsiValue;
 
-LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
-    : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)
+LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
 {
-  Optimizable    = false;
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
   myTableID      = ptcls.addTable(CenterRef);
@@ -35,13 +33,7 @@ LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet
   LastAddressOfdU  = FirstAddressOfdU + dU.size() * OHMMS_DIM;
 }
 
-LatticeGaussianProduct::~LatticeGaussianProduct() {}
-
-//evaluate the distance table with P
-void LatticeGaussianProduct::checkInVariables(opt_variables_type& active) {}
-void LatticeGaussianProduct::checkOutVariables(const opt_variables_type& active) {}
-void LatticeGaussianProduct::resetParameters(const opt_variables_type& active) {}
-void LatticeGaussianProduct::reportStatus(std::ostream& os) {}
+LatticeGaussianProduct::~LatticeGaussianProduct() = default;
 
 /**
      *@param P input configuration containing N particles
@@ -57,13 +49,13 @@ void LatticeGaussianProduct::reportStatus(std::ostream& os) {}
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(ParticleSet& P,
-                                                                         ParticleSet::ParticleGradient_t& G,
-                                                                         ParticleSet::ParticleLaplacian_t& L)
+LatticeGaussianProduct::LogValue LatticeGaussianProduct::evaluateLog(const ParticleSet& P,
+                                                                     ParticleSet::ParticleGradient& G,
+                                                                     ParticleSet::ParticleLaplacian& L)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = 0;
-  LogValue            = 0.0;
+  log_value_          = 0.0;
   RealType dist       = 0.0;
   PosType disp        = 0.0;
   for (int iat = 0; iat < NumTargetPtcls; iat++)
@@ -76,35 +68,35 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(Particl
     {
       dist = d_table.getDistRow(iat)[icent];
       disp = -1.0 * d_table.getDisplRow(iat)[icent];
-      LogValue -= a * dist * dist;
+      log_value_ -= a * dist * dist;
       U[iat] += a * dist * dist;
       G[iat] -= 2.0 * a * disp;
       L[iat] -= 6.0 * a;
       icent++;
     }
   }
-  return LogValue;
+  return log_value_;
 }
 
 /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
  * @param P active particle set
  * @param iat particle that has been moved.
  */
-PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
+PsiValue LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
   RealType newdist = d_table.getTempDists()[icent];
   curVal           = ParticleAlpha[iat] * (newdist * newdist);
-  return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
+  return std::exp(static_cast<PsiValue>(U[iat] - curVal));
 }
 
 
 GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return GradType();
@@ -115,9 +107,9 @@ GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 }
 
 
-PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+PsiValue LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
@@ -127,7 +119,7 @@ PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType
   curVal           = a * newdist * newdist;
   curGrad          = -2.0 * a * newdisp;
   grad_iat += curGrad;
-  return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
+  return std::exp(static_cast<PsiValue>(U[iat] - curVal));
 }
 
 void LatticeGaussianProduct::restore(int iat) {}
@@ -139,15 +131,15 @@ void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat, bool safe_to_de
   d2U[iat] = curLap;
 }
 
-void LatticeGaussianProduct::evaluateLogAndStore(ParticleSet& P,
-                                                 ParticleSet::ParticleGradient_t& dG,
-                                                 ParticleSet::ParticleLaplacian_t& dL)
+void LatticeGaussianProduct::evaluateLogAndStore(const ParticleSet& P,
+                                                 ParticleSet::ParticleGradient& dG,
+                                                 ParticleSet::ParticleLaplacian& dL)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   RealType dist       = 0.0;
   PosType disp        = 0.0;
   int icent           = 0;
-  LogValue            = 0.0;
+  log_value_          = 0.0;
   U                   = 0.0;
   dU                  = 0.0;
   d2U                 = 0.0;
@@ -158,7 +150,7 @@ void LatticeGaussianProduct::evaluateLogAndStore(ParticleSet& P,
     {
       dist = d_table.getDistRow(iat)[icent];
       disp = -1.0 * d_table.getDisplRow(iat)[icent];
-      LogValue -= a * dist * dist;
+      log_value_ -= a * dist * dist;
       U[iat] += a * dist * dist;
       dU[iat] -= 2.0 * a * disp;
       d2U[iat] -= 6.0 * a;
@@ -179,15 +171,15 @@ void LatticeGaussianProduct::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(FirstAddressOfdU, LastAddressOfdU);
 }
 
-LatticeGaussianProduct::LogValueType LatticeGaussianProduct::updateBuffer(ParticleSet& P,
-                                                                          WFBufferType& buf,
-                                                                          bool fromscratch = false)
+LatticeGaussianProduct::LogValue LatticeGaussianProduct::updateBuffer(ParticleSet& P,
+                                                                      WFBufferType& buf,
+                                                                      bool fromscratch = false)
 {
   evaluateLogAndStore(P, P.G, P.L);
   buf.put(U.first_address(), U.last_address());
   buf.put(d2U.first_address(), d2U.last_address());
   buf.put(FirstAddressOfdU, LastAddressOfdU);
-  return LogValue;
+  return log_value_;
 }
 
 /** copy the current data from a buffer
@@ -203,11 +195,11 @@ void LatticeGaussianProduct::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(FirstAddressOfdU, LastAddressOfdU);
 }
 
-WaveFunctionComponentPtr LatticeGaussianProduct::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> LatticeGaussianProduct::makeClone(ParticleSet& tqp) const
 {
-  LatticeGaussianProduct* j1copy = new LatticeGaussianProduct(CenterRef, tqp);
-  j1copy->ParticleAlpha          = ParticleAlpha;
-  j1copy->ParticleCenter         = ParticleCenter;
+  auto j1copy            = std::make_unique<LatticeGaussianProduct>(CenterRef, tqp);
+  j1copy->ParticleAlpha  = ParticleAlpha;
+  j1copy->ParticleCenter = ParticleCenter;
   return j1copy;
 }
 

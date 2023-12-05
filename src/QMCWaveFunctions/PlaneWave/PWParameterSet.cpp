@@ -42,19 +42,19 @@ PWParameterSet::PWParameterSet(Communicate* comm)
       eigvecTag("eigenvector")
 {
   m_param.setName("h5tag");
-  m_param.add(twistIndex, "twistIndex", "int");
-  m_param.add(Rcut, "rcut", "double");
-  m_param.add(BufferRadius, "bufferLayer", "double");
-  m_param.add(BoxDup, "expand", "int3");
-  m_param.add(paramTag, "parameters", "string");
-  m_param.add(basisTag, "basis", "string");
-  m_param.add(pwTag, "planewaves", "string");
-  m_param.add(pwMultTag, "multiplers", "string");
-  m_param.add(eigTag, "eigenstates", "string");
-  m_param.add(twistTag, "twist", "string");
-  m_param.add(bandTag, "band", "string");
-  m_param.add(spinTag, "spin", "string");
-  m_param.add(eigvecTag, "eigenvector", "string");
+  m_param.add(twistIndex, "twistIndex");
+  m_param.add(Rcut, "rcut");
+  m_param.add(BufferRadius, "bufferLayer");
+  m_param.add(BoxDup, "expand");
+  m_param.add(paramTag, "parameters");
+  m_param.add(basisTag, "basis");
+  m_param.add(pwTag, "planewaves");
+  m_param.add(pwMultTag, "multiplers");
+  m_param.add(eigTag, "eigenstates");
+  m_param.add(twistTag, "twist");
+  m_param.add(bandTag, "band");
+  m_param.add(spinTag, "spin");
+  m_param.add(eigvecTag, "eigenvector");
 }
 
 double PWParameterSet::getEcut(double ecut)
@@ -76,7 +76,7 @@ bool PWParameterSet::getEigVectorType(hid_t h)
       oss << "/" << spinTag << 0;
     oss << "/eigenvector";
     hsize_t dimTot[4];
-    hid_t dataset   = H5Dopen(h, oss.str().c_str());
+    hid_t dataset   = H5Dopen(h, oss.str().c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
     rank            = H5Sget_simple_extent_ndims(dataspace);
     int status_n    = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
@@ -85,7 +85,7 @@ bool PWParameterSet::getEigVectorType(hid_t h)
   return rank == 4;
 }
 
-bool PWParameterSet::hasComplexData(hid_t h_file)
+bool PWParameterSet::hasComplexData(hdf_archive& h_file)
 {
   int iscomplex = 0;
   // Should be the tag "/electrons/psi_r_is_complex", but the test HDF files
@@ -95,8 +95,7 @@ bool PWParameterSet::hasComplexData(hid_t h_file)
   {
     std::ostringstream oss;
     oss << paramTag << "/complex_coefficients";
-    HDFAttribIO<int> creader(iscomplex);
-    creader.read(h_file,oss.str().c_str());
+    h_file.read(iscomplex, oss.str());
   }
 #endif
   myComm->bcast(iscomplex);
@@ -181,32 +180,30 @@ std::string PWParameterSet::getSpinName(int ispin)
   return oss.str();
 }
 
-void PWParameterSet::checkVersion(hid_t h)
+void PWParameterSet::checkVersion(hdf_archive& h)
 {
   if (is_manager())
   {
-    hid_t dataset         = H5Dopen(h, "version");
+    hid_t dataset         = H5Dopen(h.getFileID(), "version", H5P_DEFAULT);
     hid_t datatype        = H5Dget_type(dataset);
     H5T_class_t classtype = H5Tget_class(datatype);
     H5Tclose(datatype);
     H5Dclose(dataset);
     if (classtype == H5T_INTEGER)
     {
-      HDFAttribIO<TinyVector<int, 2>> hdfver(version);
-      hdfver.read(h, "version");
+      h.read(version, "version");
     }
     else if (classtype == H5T_FLOAT)
     {
       TinyVector<double, 2> vt;
-      HDFAttribIO<TinyVector<double, 2>> hdfver(vt);
-      hdfver.read(h, "version");
-      version[0] = int(vt[0]);
-      version[1] = int(vt[1]);
+      h.read(vt, "version");
+      version[0] = static_cast<int>(vt[0]);
+      version[1] = static_cast<int>(vt[1]);
     }
-    //else
-    //{
-    //  APP_ABORT("PWParameterSet::checkVersion  The type of version is not integer or double.");
-    //}
+    else
+    {
+      APP_ABORT("PWParameterSet::checkVersion  The type of version is not integer or double.");
+    }
   }
   myComm->bcast(version);
   app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << std::endl;
@@ -229,21 +226,5 @@ void PWParameterSet::checkVersion(hid_t h)
       pwTag     = "0";
     }
   }
-}
-
-void PWParameterSet::writeParameters(hid_t gid)
-{
-#if defined(QMC_COMPLEX)
-  int iscomplex = 1;
-#else
-  int iscomplex = 0;
-#endif
-  hid_t h1 = H5Gcreate(gid, "parameters", 0);
-  HDFAttribIO<int> i1(iscomplex);
-  i1.write(h1, "complex_coefficients");
-  TinyVector<int, 2> v1(0, 10);
-  HDFAttribIO<TinyVector<int, 2>> i2(v1);
-  i2.write(gid, "version");
-  H5Gclose(h1);
 }
 } // namespace qmcplusplus

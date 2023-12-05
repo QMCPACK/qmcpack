@@ -8,8 +8,18 @@ from copy import deepcopy
 
 # Non-standard Python imports
 import numpy as np
-import matplotlib.pyplot as plt
-import h5py
+
+from developer import unavailable # Nexus unavailable module guard
+try:
+    import matplotlib.pyplot as plt
+except:
+    plt = unavailable('matplotlib','pyplot')
+#end try
+try:
+    import h5py
+except:
+    h5py = unavailable('h5py')
+#end try
 
 # Nexus imports
 import memory
@@ -88,7 +98,7 @@ class VLog(DevBase):
         self.verbosity = self.verbosity_levels.high
     #end def set_high
 
-    def set_verbosity(level):
+    def set_verbosity(self,level):
         if level not in self.verbosity_levels:
             vlinv = self.verbosity_levels.inverse()
             error('Cannot set verbosity level to "{}".\nValid options are: {}'.format(level,[vlinv[i] for i in sorted(vlinv.keys())]))
@@ -1181,13 +1191,10 @@ class Density(ObservableWithComponents):
 
     def change_distance_units(self,units):
         units_old = self.get_attribute('distance_units')
-        rscale    = 1.0/convert(1.0,units_old,units)
-        dscale    = 1./rscale**3
+        rscale    = convert(1.0,units_old,units)
         grid      = self.get_attribute('grid')
         grid.points *= rscale
-        for c in self.components():
-            c.values *= dscale
-        #end for
+        self.set_attribute('distance_units',units) # Update the object info to reflect the conversion
     #end def change_distance_units
 
 
@@ -1195,12 +1202,13 @@ class Density(ObservableWithComponents):
         units_old = self.get_attribute('density_units')
         dscale    = 1.0/convert(1.0,units_old,units)
         for c in self.components():
-            c.values *= dscale
+            c.values *= dscale**3
         #end for
+        self.set_attribute('density_units',units) # Update the object info to reflect the conversion
     #end def change_density_units
 
 
-    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False):
+    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False,species=None):
         
         vlog('Computing radial density',time=True)
         vlog('Current memory:',n=1,mem=True)
@@ -1214,12 +1222,24 @@ class Density(ObservableWithComponents):
         #end if
         vlog('Finding equivalent atomic sites',n=1,time=True)
         equiv_atoms = s.equivalent_atoms()
-        species = None
         species_rmax = obj()
         if isinstance(rmax,float):
-            species = list(equiv_atoms.keys())
+            if species is None:
+                species = list(equiv_atoms.keys())
+            #end if
             for s in species:
                 species_rmax[s] = rmax
+            #end for
+        elif isinstance(rmax,list):
+            if species is None:
+                species = list(equiv_atoms.keys())
+            #end if
+            for si,s in enumerate(species):
+                if len(rmax)>1:
+                    species_rmax[s] = rmax[si]
+                else:
+                    species_rmax[s] = rmax[0]
+                #end if
             #end for
         else:
             species = list(rmax.keys())
@@ -1317,6 +1337,7 @@ class Density(ObservableWithComponents):
         species = list(rdf.keys())
 
         dist_units = self.get_attribute('distance_units',None)
+        density_units = self.get_attribute('density_units',None)
 
         for cname in self.component_names:
             if cname in rdfs:
@@ -1331,10 +1352,14 @@ class Density(ObservableWithComponents):
                     #end if
                     plt.xlabel(xlabel)
                     if not cumulative:
-                        plt.ylabel('Radial density')
+                        ylabel = 'Radial density'
                     else:
-                        plt.ylabel('Cumulative radial density')
+                        ylabel = 'Cumulative radial density'
                     #end if
+                    if density_units is not None:
+                        ylabel += ' (e/{}^3)'.format(density_units)
+                    #end if
+                    plt.ylabel(ylabel)
                     plt.title('{} {} density'.format(s,cname))
                 #end for
             #end if

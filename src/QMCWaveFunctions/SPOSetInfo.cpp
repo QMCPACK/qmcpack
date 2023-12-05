@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-typedef QMCTraits::RealType RealType;
+using RealType = QMCTraits::RealType;
 using namespace spoinfo;
 
 constexpr RealType no_energy_tol = std::numeric_limits<RealType>::max();
@@ -112,7 +112,10 @@ bool SPOSetInfo::unordered() const { return order == spoinfo::unordered; }
 
 bool SPOSetInfo::index_ordered() const { return order == spoinfo::index_ordered || order == energy_and_index_ordered; }
 
-bool SPOSetInfo::energy_ordered() const { return order == spoinfo::energy_ordered || order == energy_and_index_ordered; }
+bool SPOSetInfo::energy_ordered() const
+{
+  return order == spoinfo::energy_ordered || order == energy_and_index_ordered;
+}
 
 
 // printing

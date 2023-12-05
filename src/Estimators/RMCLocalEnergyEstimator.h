@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
@@ -18,7 +18,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/Reptile.h"
 #include "QMCDrivers/WalkerProperties.h"
-
+#include "ScalarEstimatorInputs.h"
 namespace qmcplusplus
 {
 /** Class to accumulate the local energy and components
@@ -32,14 +32,21 @@ class RMCLocalEnergyEstimator : public ScalarEstimatorBase
   int SizeOfHamiltonians;
   const QMCHamiltonian& refH;
   int NObs;
-  int RMCSpecificTerms;
+  int RMCSpecificTerms = 8;
 
+  // This is just to allow compilation batched version does not support RMC at this time.
+  const RMCLocalEnergyInput input_;
 public:
   /** constructor
    * @param h QMCHamiltonian to define the components
    */
-  RMCLocalEnergyEstimator(QMCHamiltonian& h, int nobs = 2);
-
+  RMCLocalEnergyEstimator(QMCHamiltonian& ham, int nobs = 2);
+  /** Construct from LocalEnergyInput and const reference to hamiltonian.
+   *  \param[in] RMCLocalEnergyEstimatorInput contains input parameters for RMCLocalEnergyEstimator
+   *  \param[in] is taken as a local reference and used to size scalars data and to get obs output names
+   */
+  RMCLocalEnergyEstimator(RMCLocalEnergyInput&& input, const QMCHamiltonian& ham);
+  
   /** accumulation per walker
    * @param awalker current walker
    * @param wgt weight
@@ -48,12 +55,14 @@ public:
    */
   inline void accumulate(const Walker_t& awalker, RealType wgt) {}
 
-  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
     throw std::runtime_error("RMC not supported by Unified Driver interfaces");
   }
-  /*@{*/
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt)
+  inline void accumulate(const MCWalkerConfiguration& W,
+                         WalkerIterator first,
+                         WalkerIterator last,
+                         RealType wgt) override
   {
     //WalkerIterator tail=first+W.activeBead+W.direction;
     //WalkerIterator head=first+W.activeBead;
@@ -72,7 +81,8 @@ public:
     RealType wwght = 0.5;
     //app_log()<<"~~~~~For head:  Energy:"<<ePtr[LOCALENERGY]<< std::endl;
     scalars[0](0.5 * (ePtr[WP::LOCALENERGY] + lPtr[WP::LOCALENERGY]), wwght);
-    scalars[1](0.5 * (ePtr[WP::LOCALENERGY] * ePtr[WP::LOCALENERGY] + lPtr[WP::LOCALENERGY] * lPtr[WP::LOCALENERGY]), wwght);
+    scalars[1](0.5 * (ePtr[WP::LOCALENERGY] * ePtr[WP::LOCALENERGY] + lPtr[WP::LOCALENERGY] * lPtr[WP::LOCALENERGY]),
+               wwght);
     scalars[2](cPtr[WP::LOCALENERGY], wwght);
     scalars[3](cPtr[WP::LOCALENERGY] * cPtr[WP::LOCALENERGY], wwght);
     scalars[4](ePtr[WP::LOCALENERGY] * lPtr[WP::LOCALENERGY], wwght);
@@ -137,10 +147,17 @@ public:
     //       for(; first != last; ++first) std::accumulate(**first,wgt);*/
   }
 
-  void add2Record(RecordListType& record);
-  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
-  ScalarEstimatorBase* clone();
-  /*@}*/
+  std::string getName() const override { return "RMCLocalEnergyEstimator"; }
+  
+  void add2Record(RecordListType& record) override;
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override {}
+  RMCLocalEnergyEstimator* clone() override;
+  const std::string& getSubTypeStr() const override { return input_.get_type(); }
+  /// RMCLocalEnergyEstimator is the main estimator type for RMC driver
+  bool isMainEstimator() const override { return true; }
+
+private:
+  void resizeBasedOnHamiltonian(const QMCHamiltonian& ham);
 };
 } // namespace qmcplusplus
 #endif

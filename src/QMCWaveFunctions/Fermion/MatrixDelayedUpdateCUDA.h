@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -12,124 +13,156 @@
 #ifndef QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
 #define QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
 
-#include "CPU/SIMD/aligned_allocator.hpp"
-#include "Platforms/PinnedAllocator.h"
-#include "OMPTarget/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "DualAllocatorAliases.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
-#include <cuda_runtime_api.h>
+#include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
+#include "CUDA/CUDALinearAlgebraHandles.h"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "DualAllocatorAliases.hpp"
+#include "DiracMatrixComputeCUDA.hpp"
+#include "ResourceCollection.h"
+#include "WaveFunctionTypes.hpp"
 
 namespace qmcplusplus
 {
+
 /** implements dirac matrix delayed update using OpenMP offload and CUDA.
- * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
+ * It is used as DET_ENGINE in DiracDeterminantBatched.
+ * This is a 1 per walker class
+ *
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
-template<typename T, typename T_FP>
+template<typename VALUE, typename VALUE_FP>
 class MatrixDelayedUpdateCUDA
 {
-  using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
+public:
+  using WFT           = WaveFunctionTypes<VALUE, VALUE_FP>;
+  using Value         = typename WFT::Value;
+  using Complex       = typename WFT::Complex;
+  using FullPrecValue = typename WFT::FullPrecValue;
+  using LogValue      = typename WFT::LogValue;
+  using This_t        = MatrixDelayedUpdateCUDA<VALUE, VALUE_FP>;
+  using DetInverter   = DiracMatrixComputeCUDA<FullPrecValue>;
 
   template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
+  using PinnedDualAllocator = PinnedDualAllocator<DT>;
+  // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
   template<typename DT>
-  using OffloadPinnedAllocator     = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-  using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
+  using UnpinnedDualVector = Vector<DT, UnpinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
-  /// matrix inversion engine
-  DiracMatrix<T_FP> detEng;
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  OffloadPinnedValueMatrix_t psiMinv;
-  /// device pointer of psiMinv data
-  T* psiMinv_dev_ptr;
+  struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
+  {
+    // constant array value VALUE(1)
+    UnpinnedDualVector<Value> cone_vec;
+    // constant array value VALUE(-1)
+    UnpinnedDualVector<Value> cminusone_vec;
+    // constant array value VALUE(0)
+    UnpinnedDualVector<Value> czero_vec;
+    // multi walker of grads for transfer needs.
+    DualMatrix<Value> grads_value_v;
+    // mw_updateRow pointer buffer
+    Vector<char, PinnedDualAllocator<char>> updateRow_buffer_H2D;
+    // mw_prepareInvRow pointer buffer
+    Vector<char, PinnedDualAllocator<char>> prepare_inv_row_buffer_H2D;
+    // mw_accept_rejectRow pointer buffer
+    Vector<char, PinnedDualAllocator<char>> accept_rejectRow_buffer_H2D;
+    // mw_updateInv pointer buffer
+    Vector<char, PinnedDualAllocator<char>> updateInv_buffer_H2D;
+    // mw_evalGrad pointer buffer
+    Vector<char, PinnedDualAllocator<char>> evalGrad_buffer_H2D;
+    /// scratch space for rank-1 update
+    UnpinnedDualVector<Value> mw_temp;
+    // scratch space for keeping one row of Ainv
+    UnpinnedDualVector<Value> mw_rcopy;
+
+    MatrixDelayedUpdateCUDAMultiWalkerMem() : Resource("MatrixDelayedUpdateCUDAMultiWalkerMem") {}
+
+    MatrixDelayedUpdateCUDAMultiWalkerMem(const MatrixDelayedUpdateCUDAMultiWalkerMem&)
+        : MatrixDelayedUpdateCUDAMultiWalkerMem()
+    {}
+
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem>(*this);
+    }
+  };
+
+  const DualMatrix<Value>& get_psiMinv() const { return psiMinv_; }
+  DualMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
+
+private:
+  /// legacy single walker matrix inversion engine
+  DiracMatrix<FullPrecValue> detEng;
+  /* inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
+   * Only NumOrbitals x NumOrbitals subblock has meaningful data
+   * The number of rows is equal to NumOrbitals
+   * The number of columns in each row is padded to a multiple of QMC_SIMD_ALIGNMENT
+   */
+  DualMatrix<Value> psiMinv_;
   /// scratch space for rank-1 update
-  OffloadValueVector_t temp;
-  /// device pointer of temp
-  T* temp_dev_ptr;
-  // row of up-to-date Ainv
-  OffloadValueVector_t invRow;
+  UnpinnedDualVector<Value> temp;
+  /// row of up-to-date Ainv
+  UnpinnedDualVector<Value> invRow;
   /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
    *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
    *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
    *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
    */
   int invRow_id;
-  /// device pointer of invRow
-  T* invRow_dev_ptr;
   // scratch space for keeping one row of Ainv
-  OffloadValueVector_t rcopy;
-  /// device pointer of rcopy
-  T* rcopy_dev_ptr;
-  // constant array value T(1)
-  OffloadValueVector_t cone_vec;
-  // device pointer of cone_vec
-  T* cone_dev_ptr;
-  // constant array value T(-1)
-  OffloadValueVector_t cminusone_vec;
-  // device pointer of cminusone_vec
-  T* cminusone_dev_ptr;
-  // constant array value T(0)
-  OffloadValueVector_t czero_vec;
-  // device pointer of czero_vec
-  T* czero_dev_ptr;
-  // multi walker of grads for transfer needs.
-  OffloadPinnedValueMatrix_t grads_value_v;
-  // device pointer of grads_value_v
-  T* grads_value_dev_ptr;
-  // mw_updateRow pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> updateRow_buffer_H2D;
-  // device pointer of updateRow_buffer_H2D
-  char* updateRow_buffer_H2D_dev_ptr;
-  // mw_prepareInvRow pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> prepare_inv_row_buffer_H2D;
-  // device pointer of prepare_inv_row_buffer_H2D
-  char* prepare_inv_row_buffer_H2D_dev_ptr;
-  // mw_accept_rejectRow pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> accept_rejectRow_buffer_H2D;
-  // device pointer of accept_rejectRow_buffer_H2D
-  char* accept_rejectRow_buffer_H2D_dev_ptr;
-  // mw_updateInv pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> updateInv_buffer_H2D;
-  // device pointer of updateInv_buffer_H2D
-  char* updateInv_buffer_H2D_dev_ptr;
+  UnpinnedDualVector<Value> rcopy;
 
-  // mw_evalGrad pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> evalGrad_buffer_H2D;
-  // device pointer of evalGrad_buffer_H2D
-  char* evalGrad_buffer_H2D_dev_ptr;
-
-  using DeviceValueMatrix_t = Matrix<T, CUDAAllocator<T>>;
-  using DeviceValueVector_t = Vector<T, CUDAAllocator<T>>;
+  template<typename DT>
+  using DeviceMatrix = Matrix<DT, CUDAAllocator<DT>>;
+  template<typename DT>
+  using DeviceVector = Vector<DT, CUDAAllocator<DT>>;
   /// orbital values of delayed electrons
-  DeviceValueMatrix_t U_gpu;
+  DeviceMatrix<Value> U_gpu;
   /// rows of Ainv corresponding to delayed electrons
-  DeviceValueMatrix_t V_gpu;
+  DeviceMatrix<Value> V_gpu;
   /// Matrix inverse of B, at maximum KxK
-  DeviceValueMatrix_t Binv_gpu;
+  DeviceMatrix<Value> Binv_gpu;
   /// scratch space, used during inverse update
-  DeviceValueMatrix_t tempMat_gpu;
+  DeviceMatrix<Value> tempMat_gpu;
   /// new column of B
-  DeviceValueVector_t p_gpu;
+  DeviceVector<Value> p_gpu;
   /// list of delayed electrons
   Vector<int, CUDAAllocator<int>> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
-  // CUDA specific variables
-  cudaStream_t hstream;
-  cublasHandle_t h_cublas;
+  /** @ingroup Resources
+   *  @{ */
+  // CUDA stream, cublas handle object
+  ResourceHandle<CUDALinearAlgebraHandles> cuda_handles_;
+  /// crowd scope memory resource
+  ResourceHandle<MatrixDelayedUpdateCUDAMultiWalkerMem> mw_mem_handle_;
+  /**}@ */
 
-  inline void waitStream() { cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!"); }
-  // ensure no previous delay left
+  inline void waitStream()
+  {
+    cudaErrorCheck(cudaStreamSynchronize(cuda_handles_.getResource().hstream), "cudaStreamSynchronize failed!");
+  }
+
+  /** ensure no previous delay left.
+   *  This looks like it should be an assert
+   */
   inline void guard_no_delay() const
   {
     if (delay_count != 0)
@@ -137,91 +170,30 @@ class MatrixDelayedUpdateCUDA
   }
 
   // check if the number of maximal delay is 1 (SM-1)
+  // \todo rename this something containing delay.
   inline bool isSM1() const { return Binv_gpu.rows() == 1; }
 
+  /** a bad smell */
   void resize_fill_constant_arrays(size_t nw)
   {
-    if (cone_vec.size() < nw)
+    auto& mw_mem = mw_mem_handle_.getResource();
+    if (mw_mem.cone_vec.size() < nw)
     {
       // cone
-      cone_vec.resize(nw);
-      std::fill_n(cone_vec.data(), nw, T(1));
-      T* cone_ptr = cone_vec.data();
+      mw_mem.cone_vec.resize(nw);
+      std::fill_n(mw_mem.cone_vec.data(), nw, Value(1));
+      Value* cone_ptr = mw_mem.cone_vec.data();
       PRAGMA_OFFLOAD("omp target update to(cone_ptr[:nw])")
-      cone_dev_ptr = getOffloadDevicePtr(cone_ptr);
       // cminusone
-      cminusone_vec.resize(nw);
-      std::fill_n(cminusone_vec.data(), nw, T(-1));
-      T* cminusone_ptr = cminusone_vec.data();
+      mw_mem.cminusone_vec.resize(nw);
+      std::fill_n(mw_mem_handle_.getResource().cminusone_vec.data(), nw, Value(-1));
+      Value* cminusone_ptr = mw_mem.cminusone_vec.data();
       PRAGMA_OFFLOAD("omp target update to(cminusone_ptr[:nw])")
-      cminusone_dev_ptr = getOffloadDevicePtr(cminusone_ptr);
       // czero
-      czero_vec.resize(nw);
-      std::fill_n(czero_vec.data(), nw, T(0));
-      T* czero_ptr = czero_vec.data();
+      mw_mem.czero_vec.resize(nw);
+      std::fill_n(mw_mem.czero_vec.data(), nw, Value(0));
+      Value* czero_ptr = mw_mem.czero_vec.data();
       PRAGMA_OFFLOAD("omp target update to(czero_ptr[:nw])")
-      czero_dev_ptr = getOffloadDevicePtr(czero_ptr);
-    }
-  }
-
-  void resize_prepareInvRow_scratch_arrays(size_t nw)
-  {
-    if (prepare_inv_row_buffer_H2D.size() < sizeof(T*) * 7 * nw)
-    {
-      prepare_inv_row_buffer_H2D.resize(sizeof(T*) * 7 * nw);
-      prepare_inv_row_buffer_H2D_dev_ptr = getOffloadDevicePtr(prepare_inv_row_buffer_H2D.data());
-    }
-  }
-
-  void resize_evalGrad_scratch_arrays(size_t nw)
-  {
-    if (evalGrad_buffer_H2D.size() < sizeof(T*) * 2 * nw)
-    {
-      evalGrad_buffer_H2D.resize(sizeof(T*) * 2 * nw);
-      evalGrad_buffer_H2D_dev_ptr = getOffloadDevicePtr(evalGrad_buffer_H2D.data());
-    }
-  }
-
-  void resize_updateRow_scratch_arrays(int norb, size_t nw)
-  {
-    size_t total_size = norb * nw;
-    if (temp.size() < total_size)
-    {
-      temp.resize(total_size);
-      temp_dev_ptr = getOffloadDevicePtr(temp.data());
-      rcopy.resize(total_size);
-      rcopy_dev_ptr = getOffloadDevicePtr(rcopy.data());
-      updateRow_buffer_H2D.resize((sizeof(T*) * 8 + sizeof(T)) * nw);
-      updateRow_buffer_H2D_dev_ptr = getOffloadDevicePtr(updateRow_buffer_H2D.data());
-    }
-  }
-
-  void resize_accept_rejectRow_scratch_arrays(size_t nw)
-  {
-    const size_t total_size = (sizeof(T*) * 14 + sizeof(T)) * nw;
-    if (accept_rejectRow_buffer_H2D.size() < total_size)
-    {
-      accept_rejectRow_buffer_H2D.resize(total_size);
-      accept_rejectRow_buffer_H2D_dev_ptr = getOffloadDevicePtr(accept_rejectRow_buffer_H2D.data());
-    }
-  }
-
-  void resize_updateInv_scratch_arrays(size_t nw)
-  {
-    const size_t total_size = sizeof(T*) * 6 * nw;
-    if (updateInv_buffer_H2D.size() < total_size)
-    {
-      updateInv_buffer_H2D.resize(total_size);
-      updateInv_buffer_H2D_dev_ptr = getOffloadDevicePtr(updateInv_buffer_H2D.data());
-    }
-  }
-
-  void resizeGradsArray(size_t nw, size_t ndim)
-  {
-    if (grads_value_v.rows() != nw || grads_value_v.cols() != ndim)
-    {
-      grads_value_v.resize(nw, ndim);
-      grads_value_dev_ptr = getOffloadDevicePtr(grads_value_v.data());
     }
   }
 
@@ -229,20 +201,33 @@ class MatrixDelayedUpdateCUDA
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron
    */
-  void mw_prepareInvRow(const RefVector<This_t>& engines, const int rowchanged)
+  static void mw_prepareInvRow(const RefVectorWithLeader<This_t>& engines, const int rowchanged)
   {
-    const int norb = psiMinv.rows();
-    const int nw   = engines.size();
-    resize_prepareInvRow_scratch_arrays(nw);
-    resize_fill_constant_arrays(nw);
+    auto& engine_leader              = engines.getLeader();
+    auto& cuda_handles               = engine_leader.cuda_handles_.getResource();
+    auto& hstream                    = cuda_handles.hstream;
+    auto& h_cublas                   = cuda_handles.h_cublas;
+    auto& mw_mem                     = engine_leader.mw_mem_handle_.getResource();
+    auto& cminusone_vec              = mw_mem.cminusone_vec;
+    auto& cone_vec                   = mw_mem.cone_vec;
+    auto& czero_vec                  = mw_mem.czero_vec;
+    auto& prepare_inv_row_buffer_H2D = mw_mem.prepare_inv_row_buffer_H2D;
+    const int norb                   = engine_leader.get_psiMinv().rows();
+    const int nw                     = engines.size();
+    int& delay_count                 = engine_leader.delay_count;
 
-    const int lda_Binv = Binv_gpu.cols();
-    Matrix<T*> ptr_buffer(reinterpret_cast<T**>(prepare_inv_row_buffer_H2D.data()), 7, nw);
+    constexpr size_t num_ptrs_packed = 7; // it must match packing and unpacking
+    prepare_inv_row_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
+    engine_leader.resize_fill_constant_arrays(nw);
+
+    const int lda_Binv = engine_leader.Binv_gpu.cols();
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
       This_t& engine    = engines[iw];
-      ptr_buffer[0][iw] = engine.psiMinv_dev_ptr + rowchanged * psiMinv.cols();
-      ptr_buffer[1][iw] = engine.invRow_dev_ptr;
+      auto& psiMinv     = engine.get_ref_psiMinv();
+      ptr_buffer[0][iw] = psiMinv.device_data() + rowchanged * psiMinv.cols();
+      ptr_buffer[1][iw] = engine.invRow.device_data();
       ptr_buffer[2][iw] = engine.U_gpu.data();
       ptr_buffer[3][iw] = engine.p_gpu.data();
       ptr_buffer[4][iw] = engine.Binv_gpu.data();
@@ -250,17 +235,18 @@ class MatrixDelayedUpdateCUDA
       ptr_buffer[6][iw] = engine.V_gpu.data();
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(prepare_inv_row_buffer_H2D_dev_ptr, prepare_inv_row_buffer_H2D.data(),
+    cudaErrorCheck(cudaMemcpyAsync(prepare_inv_row_buffer_H2D.device_data(), prepare_inv_row_buffer_H2D.data(),
                                    prepare_inv_row_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync prepare_inv_row_buffer_H2D failed!");
 
-    T** oldRow_mw_ptr  = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr);
-    T** invRow_mw_ptr  = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw);
-    T** U_mw_ptr       = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 2);
-    T** p_mw_ptr       = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 3);
-    T** Binv_mw_ptr    = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 4);
-    T** BinvRow_mw_ptr = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 5);
-    T** V_mw_ptr       = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 6);
+    Value** oldRow_mw_ptr = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data());
+    Value** invRow_mw_ptr = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw);
+    Value** U_mw_ptr    = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 2);
+    Value** p_mw_ptr    = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 3);
+    Value** Binv_mw_ptr = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 4);
+    Value** BinvRow_mw_ptr =
+        reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 5);
+    Value** V_mw_ptr = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 6);
 
     // save Ainv[rowchanged] to invRow
     //std::copy_n(Ainv[rowchanged], norb, invRow.data());
@@ -270,83 +256,120 @@ class MatrixDelayedUpdateCUDA
     //BLAS::gemv('T', norb, delay_count, cone, U_gpu.data(), norb, invRow.data(), 1, czero, p_gpu.data(), 1);
     //BLAS::gemv('N', delay_count, delay_count, -cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
     //BLAS::gemv('N', norb, delay_count, cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cone_dev_ptr, U_mw_ptr, norb,
-                                            invRow_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, nw),
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cone_vec.device_data(), U_mw_ptr, norb,
+                                            invRow_mw_ptr, 1, czero_vec.device_data(), p_mw_ptr, 1, nw),
                    "cuBLAS_MFs::gemv_batched failed!");
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'N', delay_count, delay_count, cminusone_dev_ptr, Binv_mw_ptr,
-                                            lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvRow_mw_ptr, 1, nw),
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'N', delay_count, delay_count, cminusone_vec.device_data(),
+                                            Binv_mw_ptr, lda_Binv, p_mw_ptr, 1, czero_vec.device_data(), BinvRow_mw_ptr,
+                                            1, nw),
                    "cuBLAS_MFs::gemv_batched failed!");
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'N', norb, delay_count, cone_dev_ptr, V_mw_ptr, norb,
-                                            BinvRow_mw_ptr, 1, cone_dev_ptr, invRow_mw_ptr, 1, nw),
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'N', norb, delay_count, cone_vec.device_data(), V_mw_ptr, norb,
+                                            BinvRow_mw_ptr, 1, cone_vec.device_data(), invRow_mw_ptr, 1, nw),
                    "cuBLAS_MFs::gemv_batched failed!");
     // mark row prepared
-    invRow_id = rowchanged;
+    engine_leader.invRow_id = rowchanged;
   }
 
-  void mw_updateRow(const RefVector<This_t>& engines,
-                    const int rowchanged,
-                    const std::vector<T*>& psiM_g_list,
-                    const std::vector<T*>& psiM_l_list,
-                    const std::vector<bool>& isAccepted,
-                    const T* phi_vgl_v_dev_ptr,
-                    const size_t phi_vgl_stride,
-                    const std::vector<T>& ratios)
+  /** Do complete row updates
+   *  many of these const arguments provide pointers or references
+   *  somewhere in here is an update that doesn't get where it belongs resulting in a 0
+   *  gradient later.
+   *  Sad example of OpenMP target code that is far from clear and a poor substitute for a
+   *  clear CPU reference implementation.
+   *
+   *  \param[in] engines
+   *  \param[in] rowchanged
+   *  \param[in] psiM_g_list        device ptrs
+   *  \param[in] psiM_l_list        device ptrs
+   *  \param[in] isAccepted         bool but wait some lists are also filtered
+   *  \param[in] phi_vgl_v          multiple walker orbital VGL
+   *  \param[inout] ratios
+   */
+  static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
+                           const int rowchanged,
+                           const std::vector<Value*>& psiM_g_list,
+                           const std::vector<Value*>& psiM_l_list,
+                           const std::vector<bool>& isAccepted,
+                           const OffloadMWVGLArray<Value>& phi_vgl_v,
+                           const std::vector<Value>& ratios)
   {
-    guard_no_delay();
+    auto& engine_leader = engines.getLeader();
+    engine_leader.guard_no_delay();
 
     const size_t n_accepted = psiM_g_list.size();
+#ifndef NDEBUG
+    size_t n_true = std::count_if(isAccepted.begin(), isAccepted.end(), [](bool accepted) { return accepted; });
+    assert(n_accepted == n_true);
+#endif
     if (n_accepted == 0)
       return;
 
-    const int norb = psiMinv.rows();
-    const int lda  = psiMinv.cols();
-    resize_updateRow_scratch_arrays(norb, n_accepted);
+    auto& hstream               = engine_leader.cuda_handles_.getResource().hstream;
+    auto& mw_mem                = engine_leader.mw_mem_handle_.getResource();
+    auto& updateRow_buffer_H2D  = mw_mem.updateRow_buffer_H2D;
+    auto& mw_temp               = mw_mem.mw_temp;
+    auto& mw_rcopy              = mw_mem.mw_rcopy;
+    auto& cone_vec              = mw_mem.cone_vec;
+    auto& czero_vec             = mw_mem.czero_vec;
+    const int norb              = engine_leader.get_ref_psiMinv().rows();
+    const int lda               = engine_leader.get_ref_psiMinv().cols();
+    const int nw                = engines.size();
+    const size_t phi_vgl_stride = nw * norb;
+    mw_temp.resize(norb * n_accepted);
+    mw_rcopy.resize(norb * n_accepted);
+
+    constexpr size_t num_ptrs_packed = 6; // it must match packing and unpacking
+    updateRow_buffer_H2D.resize((sizeof(Value*) * num_ptrs_packed + sizeof(Value)) * n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
-    Matrix<T*> ptr_buffer(reinterpret_cast<T**>(updateRow_buffer_H2D.data()), 8, n_accepted);
-    T* c_ratio_inv = reinterpret_cast<T*>(updateRow_buffer_H2D.data() + sizeof(T*) * 8 * n_accepted);
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateRow_buffer_H2D.data()), num_ptrs_packed, n_accepted);
+    Value* c_ratio_inv =
+        reinterpret_cast<Value*>(updateRow_buffer_H2D.data() + sizeof(Value*) * num_ptrs_packed * n_accepted);
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count] = engines[iw].get().psiMinv_dev_ptr;
-        ptr_buffer[1][count] = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
-        ptr_buffer[2][count] = temp_dev_ptr + norb * count;
-        ptr_buffer[3][count] = rcopy_dev_ptr + norb * count;
+        ptr_buffer[0][count] = engines[iw].get_ref_psiMinv().device_data();
+        ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
+        ptr_buffer[2][count] = mw_temp.device_data() + norb * count;
+        ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
         ptr_buffer[4][count] = psiM_g_list[count];
         ptr_buffer[5][count] = psiM_l_list[count];
-        ptr_buffer[6][count] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_stride + norb * 3 * iw);
-        ptr_buffer[7][count] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_stride * 4 + norb * iw);
 
-        c_ratio_inv[count] = T(-1) / ratios[iw];
+        c_ratio_inv[count] = Value(-1) / ratios[iw];
         count++;
       }
 
     // update the inverse matrix
-    resize_fill_constant_arrays(n_accepted);
+    engine_leader.resize_fill_constant_arrays(n_accepted);
 
-    cudaErrorCheck(cudaMemcpyAsync(updateRow_buffer_H2D_dev_ptr, updateRow_buffer_H2D.data(),
+    cudaErrorCheck(cudaMemcpyAsync(updateRow_buffer_H2D.device_data(), updateRow_buffer_H2D.data(),
                                    updateRow_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync updateRow_buffer_H2D failed!");
 
     {
-      T** Ainv_mw_ptr   = reinterpret_cast<T**>(updateRow_buffer_H2D_dev_ptr);
-      T** phiV_mw_ptr   = reinterpret_cast<T**>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted);
-      T** temp_mw_ptr   = reinterpret_cast<T**>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 2);
-      T** rcopy_mw_ptr  = reinterpret_cast<T**>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 3);
-      T** dpsiM_mw_out  = reinterpret_cast<T**>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 4);
-      T** d2psiM_mw_out = reinterpret_cast<T**>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 5);
-      T** dpsiM_mw_in   = reinterpret_cast<T**>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 6);
-      T** d2psiM_mw_in  = reinterpret_cast<T**>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 7);
-      T* ratio_inv_mw   = reinterpret_cast<T*>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
+      Value** Ainv_mw_ptr = reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data());
+      Value** phiVGL_mw_ptr =
+          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted);
+      Value** temp_mw_ptr =
+          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 2);
+      Value** rcopy_mw_ptr =
+          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 3);
+      Value** dpsiM_mw_out =
+          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 4);
+      Value** d2psiM_mw_out =
+          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 5);
+      Value* ratio_inv_mw =
+          reinterpret_cast<Value*>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 6);
+
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
-                                              czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
+      cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, norb, cone_vec.device_data(), Ainv_mw_ptr, lda,
+                                              phiVGL_mw_ptr, 1, czero_vec.device_data(), temp_mw_ptr, 1, n_accepted),
                      "cuBLAS_MFs::gemv_batched failed!");
 
       cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
-                                                   rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
-                                                   n_accepted),
+                                                   rcopy_mw_ptr, phiVGL_mw_ptr, phi_vgl_stride, dpsiM_mw_out,
+                                                   d2psiM_mw_out, n_accepted),
                      "CUDA::copyAinvRow_saveGL_cuda failed!");
 
 
@@ -358,18 +381,9 @@ class MatrixDelayedUpdateCUDA
 
 public:
   /// default constructor
-  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0)
-  {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
-  }
+  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0) {}
 
-  ~MatrixDelayedUpdateCUDA()
-  {
-    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
-  }
+  MatrixDelayedUpdateCUDA(const MatrixDelayedUpdateCUDA&) = delete;
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -384,217 +398,304 @@ public:
     Binv_gpu.resize(delay, delay);
     delay_list_gpu.resize(delay);
     invRow.resize(norb);
-    invRow_dev_ptr = getOffloadDevicePtr(invRow.data());
-    psiMinv.resize(norb, getAlignedSize<T>(norb));
-    psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
+    psiMinv_.resize(norb, getAlignedSize<Value>(norb));
   }
 
-  inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
-
-  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_dev_ptr + row_id * psiMinv.cols(); }
-
-  /** compute the inverse of the transpose of matrix A
-   * @param logdetT orbital value matrix
-   * @param Ainv inverse matrix
-   */
-  template<typename TREAL, typename OMPALLOC>
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T, OMPALLOC>& Ainv, std::complex<TREAL>& LogValue)
+  void createResource(ResourceCollection& collection) const
   {
-    guard_no_delay();
-    Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
-    T* Ainv_ptr = Ainv.data();
-    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+    //the semantics of the ResourceCollection are such that we don't want to add a Resource that we need
+    //later in the chain of resource creation.
+    collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
+    collection.addResource(std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem>());
   }
+
+  void acquireResource(ResourceCollection& collection)
+  {
+    cuda_handles_  = collection.lendResource<CUDALinearAlgebraHandles>();
+    mw_mem_handle_ = collection.lendResource<MatrixDelayedUpdateCUDAMultiWalkerMem>();
+  }
+
+  void releaseResource(ResourceCollection& collection)
+  {
+    collection.takebackResource(cuda_handles_);
+    collection.takebackResource(mw_mem_handle_);
+  }
+
+  /** The problem with this as well as the idea of putting psiMinv
+   *  in the DiracDeterminantBatched is details of psiMinv memory space
+   *  consistency that should be in the engine implemenation layer or lower
+   *  end up in DDB. So these details either need to be identical or
+   *  DDB must be specialized per implementation. I'd like to avoid the lockdown
+   *  and the specialization.
+   *
+   *  perhaps this should be getRefHostPsiMinv() and it should guarantee consistency.
+   */
+  inline void checkResourcesForTest()
+  {
+    if (!cuda_handles_)
+    {
+      throw std::logic_error(
+          "Null cuda_handles_, Even for testing proper resource creation and acquisition must be made.");
+    }
+  }
+
+  Value* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
 
   // prepare invRow and compute the old gradients.
   template<typename GT>
-  void mw_evalGrad(const RefVector<This_t>& engines,
-                   const std::vector<const T*>& dpsiM_row_list,
-                   const int rowchanged,
-                   std::vector<GT>& grad_now)
+  static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines,
+                          const std::vector<const Value*>& dpsiM_row_list,
+                          const int rowchanged,
+                          std::vector<GT>& grad_now)
   {
-    if (!isSM1())
+    auto& engine_leader = engines.getLeader();
+    if (!engine_leader.isSM1())
       mw_prepareInvRow(engines, rowchanged);
 
-    const int nw = engines.size();
-    resize_evalGrad_scratch_arrays(nw);
-    Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(evalGrad_buffer_H2D.data()), 2, nw);
+    auto& hstream             = engine_leader.cuda_handles_.getResource().hstream;
+    auto& evalGrad_buffer_H2D = engine_leader.mw_mem_handle_.getResource().evalGrad_buffer_H2D;
+    auto& grads_value_v       = engine_leader.mw_mem_handle_.getResource().grads_value_v;
+
+    const int nw                     = engines.size();
+    constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
+    evalGrad_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
+    Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(evalGrad_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      if (isSM1())
-        ptr_buffer[0][iw] = engines[iw].get().psiMinv_dev_ptr + rowchanged * psiMinv.cols();
+      if (engine_leader.isSM1())
+      {
+        auto& psiMinv     = engines[iw].get_ref_psiMinv();
+        ptr_buffer[0][iw] = psiMinv.device_data() + rowchanged * psiMinv.cols();
+      }
       else
-        ptr_buffer[0][iw] = engines[iw].get().invRow_dev_ptr;
+        ptr_buffer[0][iw] = engines[iw].invRow.device_data();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(),
-                                   cudaMemcpyHostToDevice, hstream),
+    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D.device_data(), evalGrad_buffer_H2D.data(),
+                                   evalGrad_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync evalGrad_buffer_H2D failed!");
 
-    resizeGradsArray(nw, GT::Size);
+    if (grads_value_v.rows() != nw || grads_value_v.cols() != GT::Size)
+      grads_value_v.resize(nw, GT::Size);
 
-    const T** invRow_ptr    = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr);
-    const T** dpsiM_row_ptr = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr) + nw;
+    const Value** invRow_ptr    = reinterpret_cast<const Value**>(evalGrad_buffer_H2D.device_data());
+    const Value** dpsiM_row_ptr = reinterpret_cast<const Value**>(evalGrad_buffer_H2D.device_data()) + nw;
 
-    const int norb = psiMinv.rows();
-    cudaErrorCheck(CUDA::calcGradients_cuda(hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_dev_ptr, nw),
+    const int norb = engine_leader.get_ref_psiMinv().rows();
+    cudaErrorCheck(CUDA::calcGradients_cuda(hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_v.device_data(), nw),
                    "CUDA::calcGradients_cuda failed!");
-    cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_dev_ptr, grads_value_v.size() * sizeof(T),
-                                   cudaMemcpyDeviceToHost, hstream),
+    cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_v.device_data(),
+                                   grads_value_v.size() * sizeof(Value), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync grads_value_v failed!");
-    waitStream();
+    engine_leader.waitStream();
 
     for (int iw = 0; iw < nw; iw++)
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
-  template<typename VVT, typename RATIOT, typename OMPALLOC>
-  void updateRow(Matrix<T, OMPALLOC>& Ainv, int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
+  template<typename GT>
+  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
+                                  const std::vector<const Value*>& dpsiM_row_list,
+                                  OffloadMatrix<Complex>& mw_dspin,
+                                  const int rowchanged,
+                                  std::vector<GT>& grad_now,
+                                  std::vector<Complex>& spingrad_now)
+  {
+    throw std::runtime_error("MatrixDelayedUpdateCUDA needs implementation of mw_evalGradWithSpin");
+  }
+
+  /** Update the "local" psiMinv_ on the device.
+   *  Side Effect Transfers:
+   *  * phiV is left on host side in the single methods so it must be transferred to device
+   *  * psiMinv_ is transferred back to host since single calls from QMCHamitonian and others
+   *  * expect it to be.
+   *
+   *  Forced to use OpenMP target since resources are banned for single walker functions APIs
+   *  and the acquireRelease pattern for a single DDB was removed by #3324
+   */
+  template<typename VVT>
+  void updateRow(int rowchanged, const VVT& phiV, FullPrecValue c_ratio_in)
   {
     guard_no_delay();
+    auto& Ainv = psiMinv_;
     // update the inverse matrix
-    constexpr T cone(1), czero(0);
+    constexpr Value cone(1), czero(0);
     const int norb = Ainv.rows();
     const int lda  = Ainv.cols();
-    resize_updateRow_scratch_arrays(norb, 1);
+    temp.resize(norb);
+    rcopy.resize(norb);
     // invoke the Fahy's variant of Sherman-Morrison update.
-    int dummy_handle  = 0;
-    int success       = 0;
-    const T* phiV_ptr = phiV.data();
-    T* Ainv_ptr       = Ainv.data();
-    T* temp_ptr       = temp.data();
-    T* rcopy_ptr      = rcopy.data();
+    int dummy_handle      = 0;
+    const Value* phiV_ptr = phiV.data();
+    Value* Ainv_ptr       = Ainv.data();
+    Value* temp_ptr       = temp.data();
+    Value* rcopy_ptr      = rcopy.data();
+    // This must be Ainv must be tofrom due to NonlocalEcpComponent and possibly
+    // other modules assumptions about the state of psiMinv.
     PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.size()]) \
+                    map(always, tofrom: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
-      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
-      PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+      int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::gemv failed.");
+
+      PRAGMA_OFFLOAD("omp target parallel for simd is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+      for (int i = 0; i < norb; i++)
       {
-        temp_ptr[rowchanged] -= cone;
-        PRAGMA_OFFLOAD("omp parallel for simd")
-        for (int i = 0; i < norb; i++)
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
+        rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
+        if (i == 0)
+          temp_ptr[rowchanged] -= cone;
       }
-      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
-                             1, Ainv_ptr, lda);
+
+      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(FullPrecValue(-1) / c_ratio_in), rcopy_ptr, 1,
+                             temp_ptr, 1, Ainv_ptr, lda);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::ger failed.");
     }
   }
 
-  void mw_accept_rejectRow(const RefVector<This_t>& engines,
-                           const int rowchanged,
-                           const std::vector<T*>& psiM_g_list,
-                           const std::vector<T*>& psiM_l_list,
-                           const std::vector<bool>& isAccepted,
-                           const T* phi_vgl_v_dev_ptr,
-                           const size_t phi_vgl_stride,
-                           const std::vector<T>& ratios)
+  /** Accept or Reject row updates
+   *  many of these const arguments provide pointers or references
+   *  to objects that do get modified.
+   *  \param[in] engines
+   *  \param[in] rowchanged
+   *  \param[in] psiM_g_list
+   *  \param[in] psiM_l_list
+   *  \param[in] isAccepted
+   *  \param[in] phi_vgl_v          multiple walker orbital VGL
+   *  \param[inout] ratios
+   */
+  static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
+                                  const int rowchanged,
+                                  const std::vector<Value*>& psiM_g_list,
+                                  const std::vector<Value*>& psiM_l_list,
+                                  const std::vector<bool>& isAccepted,
+                                  const OffloadMWVGLArray<Value>& phi_vgl_v,
+                                  const std::vector<Value>& ratios)
   {
+    auto& engine_leader = engines.getLeader();
     // invRow consumed, mark invRow_id unset
-    invRow_id = -1;
+    engine_leader.invRow_id = -1;
 
-    if (isSM1())
+    if (engine_leader.isSM1())
     {
-      mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride,
-                   ratios);
+      mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
       return;
     }
 
-    const int lda_Binv   = Binv_gpu.cols();
-    const int norb       = psiMinv.rows();
-    const int lda        = psiMinv.cols();
-    const int nw         = engines.size();
-    const int n_accepted = psiM_g_list.size();
-    resize_accept_rejectRow_scratch_arrays(nw);
-    resize_fill_constant_arrays(nw);
+    auto& hstream                     = engine_leader.cuda_handles_.getResource().hstream;
+    auto& mw_mem                      = engine_leader.mw_mem_handle_.getResource();
+    auto& cminusone_vec               = mw_mem.cminusone_vec;
+    auto& cone_vec                    = mw_mem.cone_vec;
+    auto& czero_vec                   = mw_mem.czero_vec;
+    auto& accept_rejectRow_buffer_H2D = mw_mem.accept_rejectRow_buffer_H2D;
+    int& delay_count                  = engine_leader.delay_count;
+    const int lda_Binv                = engine_leader.Binv_gpu.cols();
+    const int norb                    = engine_leader.get_psiMinv().rows();
+    const int lda                     = engine_leader.get_psiMinv().cols();
+    const int nw                      = engines.size();
+    const int n_accepted              = psiM_g_list.size();
+    const size_t phi_vgl_stride       = nw * norb;
 
-    Matrix<T*> ptr_buffer(reinterpret_cast<T**>(accept_rejectRow_buffer_H2D.data()), 14, nw);
-    T* c_ratio_inv = reinterpret_cast<T*>(accept_rejectRow_buffer_H2D.data() + sizeof(T*) * 14 * nw);
+    constexpr size_t num_ptrs_packed = 12; // it must match packing and unpacking
+    accept_rejectRow_buffer_H2D.resize((sizeof(Value*) * num_ptrs_packed + sizeof(Value)) * nw);
+    engine_leader.resize_fill_constant_arrays(nw);
+
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.data()), num_ptrs_packed, nw);
+    Value* c_ratio_inv =
+        reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.data() + sizeof(Value*) * num_ptrs_packed * nw);
     for (int iw = 0, count_accepted = 0, count_rejected = 0; iw < nw; iw++)
     {
       This_t& engine = engines[iw];
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count_accepted]  = engine.psiMinv_dev_ptr + lda * rowchanged;
+        ptr_buffer[0][count_accepted]  = engine.psiMinv_.device_data() + lda * rowchanged;
         ptr_buffer[1][count_accepted]  = engine.V_gpu.data();
         ptr_buffer[2][count_accepted]  = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][count_accepted]  = engine.p_gpu.data();
         ptr_buffer[4][count_accepted]  = engine.Binv_gpu.data();
         ptr_buffer[5][count_accepted]  = engine.Binv_gpu.data() + delay_count * lda_Binv;
         ptr_buffer[6][count_accepted]  = engine.Binv_gpu.data() + delay_count;
-        ptr_buffer[7][count_accepted]  = reinterpret_cast<T*>(engine.delay_list_gpu.data());
+        ptr_buffer[7][count_accepted]  = reinterpret_cast<Value*>(engine.delay_list_gpu.data());
         ptr_buffer[8][count_accepted]  = engine.V_gpu.data() + norb * delay_count;
-        ptr_buffer[9][count_accepted]  = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
-        ptr_buffer[10][count_accepted] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_stride + norb * 3 * iw);
-        ptr_buffer[11][count_accepted] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_stride * 4 + norb * iw);
-        ptr_buffer[12][count_accepted] = psiM_g_list[count_accepted];
-        ptr_buffer[13][count_accepted] = psiM_l_list[count_accepted];
-        c_ratio_inv[count_accepted]    = T(1) / ratios[iw];
+        ptr_buffer[9][count_accepted]  = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
+        ptr_buffer[10][count_accepted] = psiM_g_list[count_accepted];
+        ptr_buffer[11][count_accepted] = psiM_l_list[count_accepted];
+        c_ratio_inv[count_accepted]    = Value(1) / ratios[iw];
         count_accepted++;
       }
       else
       {
-        ptr_buffer[0][n_accepted + count_rejected] = engine.psiMinv_dev_ptr + lda * rowchanged;
+        ptr_buffer[0][n_accepted + count_rejected] = engine.get_ref_psiMinv().device_data() + lda * rowchanged;
         ptr_buffer[1][n_accepted + count_rejected] = engine.V_gpu.data();
         ptr_buffer[2][n_accepted + count_rejected] = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][n_accepted + count_rejected] = engine.p_gpu.data();
         ptr_buffer[4][n_accepted + count_rejected] = engine.Binv_gpu.data();
         ptr_buffer[5][n_accepted + count_rejected] = engine.Binv_gpu.data() + delay_count * lda_Binv;
         ptr_buffer[6][n_accepted + count_rejected] = engine.Binv_gpu.data() + delay_count;
-        ptr_buffer[7][n_accepted + count_rejected] = reinterpret_cast<T*>(engine.delay_list_gpu.data());
+        ptr_buffer[7][n_accepted + count_rejected] = reinterpret_cast<Value*>(engine.delay_list_gpu.data());
         ptr_buffer[8][n_accepted + count_rejected] = engine.V_gpu.data() + norb * delay_count;
         count_rejected++;
       }
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(accept_rejectRow_buffer_H2D_dev_ptr, accept_rejectRow_buffer_H2D.data(),
+    cudaErrorCheck(cudaMemcpyAsync(accept_rejectRow_buffer_H2D.device_data(), accept_rejectRow_buffer_H2D.data(),
                                    accept_rejectRow_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync prepare_inv_row_buffer_H2D failed!");
 
-    T** invRow_mw_ptr       = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr);
-    T** V_mw_ptr            = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw);
-    T** U_row_mw_ptr        = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 2);
-    T** p_mw_ptr            = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 3);
-    T** Binv_mw_ptr         = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 4);
-    T** BinvRow_mw_ptr      = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 5);
-    T** BinvCol_mw_ptr      = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 6);
-    int** delay_list_mw_ptr = reinterpret_cast<int**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 7);
-    T** V_row_mw_ptr        = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 8);
-    T** phiV_mw_ptr         = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 9);
-    T** dpsiM_mw_in         = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 10);
-    T** d2psiM_mw_in        = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 11);
-    T** dpsiM_mw_out        = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 12);
-    T** d2psiM_mw_out       = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 13);
-    T* ratio_inv_mw_ptr     = reinterpret_cast<T*>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 14);
+    Value** invRow_mw_ptr = reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data());
+    Value** V_mw_ptr      = reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw);
+    Value** U_row_mw_ptr =
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 2);
+    Value** p_mw_ptr = reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 3);
+    Value** Binv_mw_ptr =
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 4);
+    Value** BinvRow_mw_ptr =
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 5);
+    Value** BinvCol_mw_ptr =
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 6);
+    int** delay_list_mw_ptr =
+        reinterpret_cast<int**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 7);
+    Value** V_row_mw_ptr =
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 8);
+    Value** phiVGL_mw_ptr =
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 9);
+    Value** dpsiM_mw_out =
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 10);
+    Value** d2psiM_mw_out =
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 11);
+    Value* ratio_inv_mw_ptr =
+        reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 12);
 
     //std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
     cudaErrorCheck(cuBLAS_MFs::copy_batched(hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
                    "cuBLAS_MFs::copy_batched failed!");
     // handle accepted walkers
-    // the new Binv is [[X Y] [Z y]]
+    // the new Binv is [[X Y] [Z sigma]]
     //BLAS::gemv('T', norb, delay_count + 1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cminusone_dev_ptr, V_mw_ptr, norb,
-                                            phiV_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, n_accepted),
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cminusone_vec.device_data(), V_mw_ptr,
+                                            norb, phiVGL_mw_ptr, 1, czero_vec.device_data(), p_mw_ptr, 1, n_accepted),
                    "cuBLAS_MFs::gemv_batched failed!");
     // Y
-    //BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
+    //BLAS::gemv('T', delay_count, delay_count, sigma, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
     //           lda_Binv);
     cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', delay_count, delay_count, ratio_inv_mw_ptr, Binv_mw_ptr,
-                                            lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvCol_mw_ptr, lda_Binv, n_accepted),
+                                            lda_Binv, p_mw_ptr, 1, czero_vec.device_data(), BinvCol_mw_ptr, lda_Binv,
+                                            n_accepted),
                    "cuBLAS_MFs::gemv_batched failed!");
     // X
     //BLAS::ger(delay_count, delay_count, cone, Binv[delay_count], 1, Binv.data() + delay_count, lda_Binv,
     //          Binv.data(), lda_Binv);
-    cudaErrorCheck(cuBLAS_MFs::ger_batched(hstream, delay_count, delay_count, cone_dev_ptr, BinvRow_mw_ptr, 1,
+    cudaErrorCheck(cuBLAS_MFs::ger_batched(hstream, delay_count, delay_count, cone_vec.device_data(), BinvRow_mw_ptr, 1,
                                            BinvCol_mw_ptr, lda_Binv, Binv_mw_ptr, lda_Binv, n_accepted),
                    "cuBLAS_MFs::ger_batched failed!");
-    // y and Z
-    cudaErrorCheck(CUDA::add_delay_list_save_y_VGL_batched(hstream, delay_list_mw_ptr, rowchanged, delay_count,
-                                                           Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr, phiV_mw_ptr,
-                                                           dpsiM_mw_in, d2psiM_mw_in, U_row_mw_ptr, dpsiM_mw_out,
-                                                           d2psiM_mw_out, norb, n_accepted, nw),
+    // sigma and Z
+    cudaErrorCheck(CUDA::add_delay_list_save_sigma_VGL_batched(hstream, delay_list_mw_ptr, rowchanged, delay_count,
+                                                               Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr, phiVGL_mw_ptr,
+                                                               phi_vgl_stride, U_row_mw_ptr, dpsiM_mw_out,
+                                                               d2psiM_mw_out, norb, n_accepted, nw),
                    "CUDA::add_delay_list_save_y_VGL_batched failed!");
     delay_count++;
     // update Ainv when maximal delay is reached
@@ -605,39 +706,46 @@ public:
   /** update the full Ainv and reset delay_count
    * @param Ainv inverse matrix
    */
-  void mw_updateInvMat(const RefVector<This_t>& engines)
+  static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines)
   {
+    auto& engine_leader = engines.getLeader();
+    int& delay_count    = engine_leader.delay_count;
     if (delay_count == 0)
       return;
     // update the inverse matrix
-    const int norb = psiMinv.rows();
-    const int lda  = psiMinv.cols();
-    const int nw   = engines.size();
-    resize_updateInv_scratch_arrays(nw);
-    resize_fill_constant_arrays(nw);
+    auto& hstream              = engine_leader.cuda_handles_.getResource().hstream;
+    auto& h_cublas             = engine_leader.cuda_handles_.getResource().h_cublas;
+    auto& updateInv_buffer_H2D = engine_leader.mw_mem_handle_.getResource().updateInv_buffer_H2D;
+    const int norb             = engine_leader.get_psiMinv().rows();
+    const int lda              = engine_leader.get_psiMinv().cols();
+    const int nw               = engines.size();
 
-    Matrix<T*> ptr_buffer(reinterpret_cast<T**>(updateInv_buffer_H2D.data()), 6, nw);
+    constexpr size_t num_ptrs_packed = 6; // it must match packing and unpacking
+    updateInv_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
+    engine_leader.resize_fill_constant_arrays(nw);
+
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateInv_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
       This_t& engine    = engines[iw];
       ptr_buffer[0][iw] = engine.U_gpu.data();
-      ptr_buffer[1][iw] = engine.psiMinv_dev_ptr;
+      ptr_buffer[1][iw] = engine.get_ref_psiMinv().device_data();
       ptr_buffer[2][iw] = engine.tempMat_gpu.data();
-      ptr_buffer[3][iw] = reinterpret_cast<T*>(engine.delay_list_gpu.data());
+      ptr_buffer[3][iw] = reinterpret_cast<Value*>(engine.delay_list_gpu.data());
       ptr_buffer[4][iw] = engine.V_gpu.data();
       ptr_buffer[5][iw] = engine.Binv_gpu.data();
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(updateInv_buffer_H2D_dev_ptr, updateInv_buffer_H2D.data(),
+    cudaErrorCheck(cudaMemcpyAsync(updateInv_buffer_H2D.device_data(), updateInv_buffer_H2D.data(),
                                    updateInv_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync updateInv_buffer_H2D failed!");
 
-    T** U_mw_ptr            = reinterpret_cast<T**>(updateInv_buffer_H2D_dev_ptr);
-    T** Ainv_mw_ptr         = reinterpret_cast<T**>(updateInv_buffer_H2D_dev_ptr + sizeof(T*) * nw);
-    T** tempMat_mw_ptr      = reinterpret_cast<T**>(updateInv_buffer_H2D_dev_ptr + sizeof(T*) * nw * 2);
-    int** delay_list_mw_ptr = reinterpret_cast<int**>(updateInv_buffer_H2D_dev_ptr + sizeof(T*) * nw * 3);
-    T** V_mw_ptr            = reinterpret_cast<T**>(updateInv_buffer_H2D_dev_ptr + sizeof(T*) * nw * 4);
-    T** Binv_mw_ptr         = reinterpret_cast<T**>(updateInv_buffer_H2D_dev_ptr + sizeof(T*) * nw * 5);
+    Value** U_mw_ptr        = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data());
+    Value** Ainv_mw_ptr     = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw);
+    Value** tempMat_mw_ptr  = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 2);
+    int** delay_list_mw_ptr = reinterpret_cast<int**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 3);
+    Value** V_mw_ptr        = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 4);
+    Value** Binv_mw_ptr     = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 5);
 
     /*
     if (delay_count == 1)
@@ -651,8 +759,8 @@ public:
     else
 */
     {
-      const int lda_Binv = Binv_gpu.cols();
-      constexpr T cone(1), czero(0), cminusone(-1);
+      const int lda_Binv = engine_leader.Binv_gpu.cols();
+      constexpr Value cone(1), czero(0), cminusone(-1);
       cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone,
                                             U_mw_ptr, norb, Ainv_mw_ptr, lda, &czero, tempMat_mw_ptr, lda_Binv, nw),
                        "cuBLAS::gemm_batched failed!");
@@ -668,50 +776,61 @@ public:
     delay_count = 0;
   }
 
+  /*
   inline void print_Ainv(const RefVector<This_t>& engines)
   {
     for (This_t& engine : engines)
     {
-      std::cout << "debug Ainv host  " << engine.psiMinv[0][0] << " " << engine.psiMinv[0][1] << " "
-                << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
-      auto* temp_ptr = engine.psiMinv.data();
-      PRAGMA_OFFLOAD("omp target update from(temp_ptr[:psiMinv.size()])")
-      std::cout << "debug Ainv devi  " << engine.psiMinv[0][0] << " " << engine.psiMinv[0][1] << " "
-                << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
+      std::cout << "debug Ainv host  " << engine.get_psiMinv()[0][0] << " " << engine.get_psiMinv()[0][32] << " "
+                << engine.get_psiMinv()[1][0] << " " << engine.get_psiMinv()[1][32] << std::endl;
+      auto* temp_ptr = engine.get_psiMinv().data();
+      PRAGMA_OFFLOAD("omp target update from(temp_ptr[:psiMinv_.size()])")
+      std::cout << "debug Ainv devi";
+      for (int row = 0; row < psiMinv_.rows(); row++)
+      {
+        for (int col = 0; col < psiMinv_.cols(); col++)
+          std::cout << " " << row << " " << col << " " << engine.get_psiMinv()[row][col];
+        std::cout << std::endl;
+      }
     }
   }
+*/
 
   /** return invRow host or device pointers based on on_host request
    * prepare invRow if not already.
    */
-  std::vector<const T*> mw_getInvRow(const RefVector<This_t>& engines, const int row_id, bool on_host)
+  static std::vector<const Value*> mw_getInvRow(const RefVectorWithLeader<This_t>& engines,
+                                                const int row_id,
+                                                bool on_host)
   {
-    if (isSM1())
-      waitStream();
-    else if (invRow_id != row_id)
+    auto& engine_leader = engines.getLeader();
+    if (engine_leader.isSM1())
+      engine_leader.waitStream();
+    else if (engine_leader.invRow_id != row_id)
     {
       // this can be skipped if mw_evalGrad gets called already.
       mw_prepareInvRow(engines, row_id);
-      waitStream();
+      engine_leader.waitStream();
     }
 
-    const size_t nw = engines.size();
-    std::vector<const T*> row_ptr_list;
+    const size_t ncols = engines.getLeader().get_psiMinv().cols();
+    const size_t nw    = engines.size();
+    std::vector<const Value*> row_ptr_list;
     row_ptr_list.reserve(nw);
     if (on_host)
     {
       // copy values to host and return host pointer
       for (This_t& engine : engines)
-        if (isSM1())
+        if (engine_leader.isSM1())
         {
-          auto* ptr = engine.psiMinv.data();
-          PRAGMA_OFFLOAD("omp target update from(ptr[row_id * psiMinv.cols():psiMinv.cols()])")
-          row_ptr_list.push_back(ptr + row_id * psiMinv.cols());
+          auto* ptr = engine.get_ref_psiMinv().data();
+          PRAGMA_OFFLOAD("omp target update from(ptr[row_id * ncols : ncols])")
+          row_ptr_list.push_back(ptr + row_id * ncols);
         }
         else
         {
           auto* ptr = engine.invRow.data();
-          PRAGMA_OFFLOAD("omp target update from(ptr[:invRow.size()])")
+          PRAGMA_OFFLOAD("omp target update from(ptr[:engine.invRow.size()])")
           row_ptr_list.push_back(ptr);
         }
     }
@@ -719,24 +838,73 @@ public:
     {
       // return device pointer
       for (This_t& engine : engines)
-        if (isSM1())
-          row_ptr_list.push_back(engine.psiMinv_dev_ptr + row_id * psiMinv.cols());
+        if (engine_leader.isSM1())
+          row_ptr_list.push_back(engine.get_ref_psiMinv().device_data() + row_id * ncols);
         else
-          row_ptr_list.push_back(engine.invRow_dev_ptr);
+          row_ptr_list.push_back(engine.invRow.device_data());
     }
     return row_ptr_list;
   }
 
-  inline void mw_transferAinv_D2H(const RefVector<This_t>& engines)
+  /// transfer Ainv to the host
+  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines)
   {
-    guard_no_delay();
+    auto& engine_leader = engines.getLeader();
+    auto& hstream       = engine_leader.cuda_handles_.getResource().hstream;
+    engine_leader.guard_no_delay();
 
     for (This_t& engine : engines)
-      cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv.data(), engine.psiMinv_dev_ptr, engine.psiMinv.size() * sizeof(T),
-                                     cudaMemcpyDeviceToHost, hstream),
+      cudaErrorCheck(cudaMemcpyAsync(engine.get_ref_psiMinv().data(), engine.get_ref_psiMinv().device_data(),
+                                     engine.get_psiMinv().size() * sizeof(Value), cudaMemcpyDeviceToHost, hstream),
                      "cudaMemcpyAsync Ainv failed!");
-    waitStream();
+    engine_leader.waitStream();
   }
+
+  /** transfer psiM_vgl to the host. psiM_vgl has 5 rows, V(1) G(3) L(1)
+   * @param engine_leader for accessing shared resource
+   * @param psiM_vgl_list list of psiM_vgl
+   * @param row_begin first row to copy
+   * @param row_size the number of rows to be copied
+   */
+  static void mw_transferVGL_D2H(This_t& engine_leader,
+                                 const RefVector<DualVGLVector<Value>>& psiM_vgl_list,
+                                 size_t row_begin,
+                                 size_t row_size)
+  {
+    auto& hstream = engine_leader.cuda_handles_.getResource().hstream;
+    for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
+    {
+      const size_t stride = psiM_vgl.capacity();
+      cudaErrorCheck(cudaMemcpyAsync(psiM_vgl.data() + row_begin * stride, psiM_vgl.device_data() + row_begin * stride,
+                                     row_size * stride * sizeof(Value), cudaMemcpyDeviceToHost, hstream),
+                     "cudaMemcpyAsync psiM_vgl D2H failed!");
+    }
+    engine_leader.waitStream();
+  }
+
+  /** transfer psiM_vgl to the device. psiM_vgl has 5 rows, V(1) G(3) L(1)
+   * @param engine_leader for accessing shared resource
+   * @param psiM_vgl_list list of psiM_vgl
+   * @param row_begin first row to copy
+   * @param row_size the number of rows to be copied
+   */
+  static void mw_transferVGL_H2D(This_t& engine_leader,
+                                 const RefVector<DualVGLVector<Value>>& psiM_vgl_list,
+                                 size_t row_begin,
+                                 size_t row_size)
+  {
+    auto& hstream = engine_leader.cuda_handles_.getResource().hstream;
+    for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
+    {
+      const size_t stride = psiM_vgl.capacity();
+      cudaErrorCheck(cudaMemcpyAsync(psiM_vgl.device_data() + row_begin * stride, psiM_vgl.data() + row_begin * stride,
+                                     row_size * stride * sizeof(Value), cudaMemcpyHostToDevice, hstream),
+                     "cudaMemcpyAsync psiM_vgl D2H failed!");
+    }
+    engine_leader.waitStream();
+  }
+
+  CUDALinearAlgebraHandles& getLAhandles() { return cuda_handles_; }
 };
 } // namespace qmcplusplus
 

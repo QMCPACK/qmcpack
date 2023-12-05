@@ -40,15 +40,15 @@ struct SHOSetBuilder : public SPOSetBuilder
   //construction/destruction
   SHOSetBuilder(ParticleSet& P, Communicate* comm);
 
-  ~SHOSetBuilder();
+  ~SHOSetBuilder() override;
 
   //reset parameters
   void reset();
 
   //SPOSetBuilder interface
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 
-  SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input) override;
 
   //local functions
   void update_basis_states(int smax);

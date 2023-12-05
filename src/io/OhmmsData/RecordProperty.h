@@ -16,6 +16,7 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include <algorithm>
+#include <optional>
 #include <vector>
 #include <string>
 #include <fstream>
@@ -39,7 +40,7 @@ struct RecordProperty
 class RecordPropertyList
 {
 public:
-  typedef std::vector<RecordProperty*> RecordList_t;
+  using RecordList_t = std::vector<RecordProperty*>;
 
   RecordPropertyList() {}
   virtual ~RecordPropertyList() { clear(); }
@@ -98,11 +99,11 @@ protected:
 template<class T>
 struct RecordNamedProperty : public RecordProperty
 {
-  std::ostream* OutStream;
+  std::optional<std::ofstream> OutStream;
   std::vector<T> Values;
   std::vector<std::string> Names;
 
-  RecordNamedProperty() : OutStream(0)
+  RecordNamedProperty()
   {
     Values.reserve(20);
     Names.reserve(20);
@@ -114,13 +115,7 @@ struct RecordNamedProperty : public RecordProperty
     Names.resize(n);
   }
 
-  RecordNamedProperty(const RecordNamedProperty<T>& a) : OutStream(0), Values(a.Values), Names(a.Names) {}
-
-  ~RecordNamedProperty()
-  {
-    if (OutStream)
-      delete OutStream;
-  }
+  RecordNamedProperty(const RecordNamedProperty<T>& a) : OutStream(), Values(a.Values), Names(a.Names) {}
 
   void clear()
   {
@@ -193,17 +188,15 @@ struct RecordNamedProperty : public RecordProperty
   }
 
   ///implement virtual functions
-  inline void reset(const char* fileroot, bool append = false)
+  inline void reset(const char* fileroot, bool append = false) override
   {
-    if (OutStream)
-      delete OutStream;
     if (append)
     {
-      OutStream = new std::ofstream(fileroot, std::ios_base::app);
+      OutStream = std::ofstream(fileroot, std::ios_base::app);
     }
     else
     {
-      OutStream = new std::ofstream(fileroot);
+      OutStream = std::ofstream(fileroot);
     }
     if (!append)
     {
@@ -217,7 +210,7 @@ struct RecordNamedProperty : public RecordProperty
     OutStream->setf(std::ios::right, std::ios::adjustfield);
   }
 
-  inline void report(int iter)
+  inline void report(int iter) override
   {
     if (stride && iter % stride == 0)
     {
@@ -227,8 +220,8 @@ struct RecordNamedProperty : public RecordProperty
     }
   }
 
-  void finalize() {}
-  bool put(xmlNodePtr cur);
+  void finalize() override {}
+  bool put(xmlNodePtr cur) override;
 };
 
 template<class T>

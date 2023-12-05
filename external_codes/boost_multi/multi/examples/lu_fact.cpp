@@ -80,8 +80,7 @@ int main(){
 
 		lu_fact(A);
 		lu_fact(AA);
-		using std::equal; using std::begin;
-		assert( equal(begin(A), end(A), begin(*multi::array_ptr(&AA))) );
+		assert( std::equal(begin(A), end(A), begin(*multi::array_ptr(&AA)), end(*multi::array_ptr(&AA))) );
 	}
 //	return 0;
 	{

@@ -36,7 +36,7 @@ public:
     {
       ParameterSet m_param;
       std::string print_components;
-      m_param.add(print_components, "print_components", "str::string");
+      m_param.add(print_components, "print_components");
       m_param.put(cur);
       if (print_components == "true" || print_components == "yes")
       {
@@ -52,18 +52,18 @@ public:
 
   ~EnergyEstimator() {}
 
-  void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData) {}
+  void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData) override {}
 
-  void accumulate_block(WalkerSet& wset)
+  void accumulate_block(WalkerSet& wset) override
   {
-    AFQMCTimers[energy_timer]->start();
+    ScopedTimer local_timer(AFQMCTimers[energy_timer]);
     size_t nwalk = wset.size();
-    if (eloc.size(0) != nwalk || eloc.size(1) != 3)
-      eloc.reextent({nwalk, 3});
-    if (ovlp.size(0) != nwalk)
-      ovlp.reextent(iextensions<1u>{nwalk});
-    if (wprop.size(0) != 4 || wprop.size(1) != nwalk)
-      wprop.reextent({4, nwalk});
+    if (std::get<0>(eloc.sizes()) != nwalk || std::get<1>(eloc.sizes()) != 3)
+      eloc.reextent({static_cast<boost::multi::size_t>(nwalk), 3});
+    if (std::get<0>(ovlp.sizes()) != nwalk)
+      ovlp.reextent(iextensions<1u>(nwalk));
+    if (std::get<0>(wprop.sizes()) != 4 || std::get<1>(wprop.sizes()) != nwalk)
+      wprop.reextent({4, static_cast<boost::multi::size_t>(nwalk)});
 
     ComplexType dum, et;
     wfn0.Energy(wset, eloc, ovlp);
@@ -78,7 +78,7 @@ public:
       std::fill_n(data.begin(), data.size(), ComplexType(0.0));
       for (int i = 0; i < nwalk; i++)
       {
-        if (std::isnan(real(wprop[0][i])))
+        if (qmcplusplus::isnan(std::real(wprop[0][i])))
           continue;
         if (importanceSampling)
         {
@@ -99,10 +99,9 @@ public:
       }
       TG.TG_heads().all_reduce_in_place_n(data.begin(), data.size(), std::plus<>());
     }
-    AFQMCTimers[energy_timer]->stop();
   }
 
-  void tags(std::ofstream& out)
+  void tags(std::ofstream& out) override
   {
     if (TG.Global().root())
     {
@@ -118,18 +117,18 @@ public:
     }
   }
 
-  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset) override
   {
     if (TG.Global().root())
     {
       int n = wset.get_global_target_population();
       out << data[0].real() / n << " " << data[0].imag() / n << " " << data[1].real() / n << " " << data[1].imag() / n
-          << " " << AFQMCTimers[energy_timer]->get_total() << " ";
+          << " " << AFQMCTimers[energy_timer].get().get_total() << " ";
       if (energy_components)
       {
         out << data[2].real() / n << " " << data[3].real() / n << " " << data[4].real() / n << " ";
       }
-      AFQMCTimers[energy_timer]->reset();
+      AFQMCTimers[energy_timer].get().reset();
     }
   }
 

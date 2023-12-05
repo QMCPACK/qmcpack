@@ -32,11 +32,11 @@ public:
   /// maximum value of the grid point.
   Potential* Vouter;
 
-  double V(double r);
-  double dVdr(double r);
-  double d2Vdr2(double r);
-  void Write(IOSectionClass& out);
-  void Read(IOSectionClass& in);
+  double V(double r) override;
+  double dVdr(double r) override;
+  double d2Vdr2(double r) override;
+  void Write(IOSectionClass& out) override;
+  void Read(IOSectionClass& in) override;
   SplinePot() : Vouter(NULL)
   { /* No nothing else for now */
   }

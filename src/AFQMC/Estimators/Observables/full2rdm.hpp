@@ -69,8 +69,8 @@ class full2rdm : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticVector      = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using StaticVector     = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
+  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -99,8 +99,8 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(rot_file, "rotation", "std::string");
-      m_param.add(path, "path", "std::string");
+      m_param.add(rot_file, "rotation");
+      m_param.add(path, "path");
       m_param.put(cur);
     }
 
@@ -119,14 +119,14 @@ public:
       {
         if (!dump.open(rot_file, H5F_ACC_RDONLY))
           APP_ABORT("Error opening orbitals file for n2r estimator.\n");
-        if (!dump.push(path, false))
-          APP_ABORT("Error in full2rdm: path not found.");
+        dump.push(path, false);
+
         stdCMatrix R;
         if (!dump.readEntry(R, "RotationMatrix"))
           APP_ABORT("Error reading RotationMatrix.\n");
-        if (R.size(1) != NMO)
+        if (std::get<1>(R.sizes()) != NMO)
           APP_ABORT("Error Wrong dimensions in RotationMatrix.\n");
-        dim[0] = R.size(0);
+        dim[0] = R.size();
         dim[1] = 0;
         // conjugate rotation matrix
         std::transform(R.origin(), R.origin() + R.num_elements(), R.origin(),
@@ -149,7 +149,7 @@ public:
       }
       TG.Node().barrier();
 
-      dm_size = XRot.size(0) * XRot.size(0) * XRot.size(0) * XRot.size(0);
+      dm_size = XRot.size() * XRot.size() * XRot.size() * XRot.size();
     }
     else
     {
@@ -188,22 +188,22 @@ public:
     static_assert(std::decay<MatG_host>::type::dimensionality == 4, "Wrong dimensionality");
     using std::fill_n;
     // assumes G[nwalk][spin][M][M]
-    int nw(G.size(0));
-    assert(G.size(0) == wgt.size(0));
-    assert(wgt.size(0) == nw);
-    assert(Xw.size(0) == nw);
-    assert(ovlp.size(0) >= nw);
+    int nw(G.size());
+    assert(G.size() == wgt.size());
+    assert(wgt.size() == nw);
+    assert(Xw.size() == nw);
+    assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
     assert(G.extensions() == G_host.extensions());
 
     // check structure dimensions
     if (iref == 0)
     {
-      if (denom.size(0) != nw)
+      if (denom.size() != nw)
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
+      if (std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -212,8 +212,8 @@ public:
     }
     else
     {
-      if (denom.size(0) != nw || DMWork.size(0) != nw || DMWork.size(1) != dm_size || DMAverage.size(0) != nave ||
-          DMAverage.size(1) != dm_size)
+      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size || std::get<0>(DMAverage.sizes()) != nave ||
+          std::get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -227,7 +227,7 @@ public:
   template<class HostCVec>
   void accumulate_block(int iav, HostCVec&& wgt, bool impsamp)
   {
-    int nw(denom.size(0));
+    int nw(denom.size());
     int i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), dm_size, TG.TG_local().size());
 
@@ -306,7 +306,7 @@ private:
   void acc_no_rotation(MatG&& G, CVec&& Xw)
   {
     // doing this 1 walker at a time and not worrying about speed
-    int nw(G.size(0));
+    int nw(G.size());
 
     int i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), NMO * NMO, TG.TG_local().size());
@@ -316,15 +316,13 @@ private:
     size_t M4(M2 * M2);
     size_t N = size_t(dN) * M2;
     DeviceBufferManager buffer_manager;
-    StaticMatrix R({dN, NMO * NMO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix R({dN, NMO * NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref Q(R.origin(), {NMO * NMO, NMO});
     CVector_ref R1D(R.origin(), R.num_elements());
     CVector_ref Q1D(Q.origin(), Q.num_elements());
 
     // put this in shared memory!!!
-    StaticMatrix Gt({NMO, NMO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GtC(Gt.origin(), {NMO * NMO, 1});
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     if (Grot.size() < R.num_elements())
@@ -416,7 +414,7 @@ private:
       set_buffer(N);
       CMatrix_ref R( Buff.origin(), {dN,NMO*NMO});
       CVector_ref R1D( Buff.origin(), {dN*NMO*NMO});
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA)
       if(Grot.size() < R.num_elements()) 
         Grot = stdCVector(iextensions<1u>(R.num_elements()));
 #endif
@@ -430,7 +428,7 @@ private:
         // use ger later
         ma::product( Gw.sliced(i0,iN), ma::T(Gw), R );
 
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA)
         using std::copy_n;
         copy_n(R.origin(),R.num_elements(),Grot.origin());
         ma::axpy( Xw[iw], Grot, DMWork[iw].sliced(i0*NMO*NMO,iN*NMO*NMO) );

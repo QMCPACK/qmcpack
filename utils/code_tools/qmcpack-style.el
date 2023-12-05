@@ -5,7 +5,7 @@
 ;; // This file is distributed under the University of Illinois/NCSA Open Source License.
 ;; // See LICENSE file in top directory for details.
 ;; //
-;; // Copyright (c) 2019 QMCPACK developers.
+;; // Copyright (c) 2021 QMCPACK developers.
 ;; //
 ;; // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 ;; //
@@ -18,7 +18,18 @@
 ;;  qmcpack coding standards and clang-format setup.
 ;;  You should still run clang-format on each file before pushing.
 
+;;  I use this by
+;;  (add-to-list 'load-path "/home/epd/qmcpack/utils/code_tools")
+;;  (require 'qmcpack-style)
+;;
 ;;  customize C Default Style if you want this style by default.
+;;
+;;  alternatively add a .dir-locals.el file to qmcpack/src
+;;  by running this elisp and saving the .dir.locals.el buffer that appears
+;;
+;;  (let ((default-directory "~/qmcpack/src"))
+;;     (add-dir-local-variable nil 'c-default-style "qmcpack"))
+;;
 
 ;;; Code:
 (defconst qmcpack-c-style

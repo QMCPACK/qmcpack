@@ -426,6 +426,11 @@ class GamessAnalyzer(SimulationAnalyzer):
         # read the punch file
         try:
             text = self.get_output('punch')
+            if text==None:
+                # Try to read .dat instead
+                self.info.files['punch'] = '{}.dat'.format(self.info.prefix)
+                text = self.get_output('punch')
+            #end if
             if text!=None:
                 #text = text.read()
                 punch = obj(norbitals=0)

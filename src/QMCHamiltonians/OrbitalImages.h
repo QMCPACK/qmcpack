@@ -111,11 +111,10 @@ public:
     DIM = OHMMS_DIM
   };
 
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef std::map<std::string, ParticleSet*> PSPool;
-
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector  = SPOSet::GradVector;
+  using Lattice_t   = ParticleSet::ParticleLayout;
+  using PSPool      = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   ///derivative types
   enum derivative_types_enum
@@ -142,7 +141,7 @@ public:
   };
 
   ///at put() ion particleset is obtained from ParticleSetPool
-  PSPool& psetpool;
+  const PSPool& psetpool;
 
   ///electron particleset
   ParticleSet* Peln;
@@ -167,10 +166,10 @@ public:
   std::vector<std::string> sposet_names;
 
   ///indices of orbitals within each sposet to evaluate
-  std::vector<std::vector<int>*> sposet_indices;
+  const std::shared_ptr<std::vector<std::vector<int>>> sposet_indices;
 
-  ///sposets obtained by name from SPOSetBuilderFactory
-  std::vector<SPOSet*> sposets;
+  ///sposets obtained by name from SPOMap
+  std::vector<std::unique_ptr<SPOSet>> sposets;
 
   ///evaluate points at grid cell centers instead of edges
   bool center_grid;
@@ -194,13 +193,13 @@ public:
   int batch_size;
 
   ///temporary vector to hold values of all orbitals at a single point
-  ValueVector_t spo_vtmp;
+  ValueVector spo_vtmp;
 
   ///temporary vector to hold gradients of all orbitals at a single point
-  GradVector_t spo_gtmp;
+  GradVector spo_gtmp;
 
   ///temporary vector to hold laplacians of all orbitals at a single point
-  ValueVector_t spo_ltmp;
+  ValueVector spo_ltmp;
 
   ///temporary array to hold values of a batch of orbitals at all grid points
   Array<ValueType, 2> batch_values;
@@ -214,32 +213,32 @@ public:
   ///temporary array to hold values of a single orbital at all grid points
   std::vector<ValueType> orbital;
 
+  //constructors
+  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const SPOMap& spomap);
+  OrbitalImages(const OrbitalImages& other);
 
-  //constructor/destructor
-  OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm);
-  ~OrbitalImages(){};
+  std::string getClassName() const override { return "OrbitalImages"; }
 
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
 
   ///read xml input
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   ///hijack estimator evaluate to evaluate and write all orbitals
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   //optional standard interface
-  //void get_required_traces(TraceManager& tm);
-  //void setRandomGenerator(RandomGenerator_t* rng);
+  //void getRequiredTraces(TraceManager& tm);
 
   //required for Collectables interface
-  void addObservables(PropertySetType& plist, BufferType& olist) {}
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
+  void addObservables(PropertySetType& plist, BufferType& olist) override {}
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override {}
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) {}
-  void setObservables(PropertySetType& plist) {}
-  void setParticlePropertyList(PropertySetType& plist, int offset) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
+  void setObservables(PropertySetType& plist) override {}
+  void setParticlePropertyList(PropertySetType& plist, int offset) override {}
 #if !defined(REMOVE_TRACEMANAGER)
   void checkout_scalar_arrays(TraceManager& tm) {}
   void collect_scalar_samples() {}
@@ -247,7 +246,7 @@ public:
 #endif
 
   //obsolete?
-  bool get(std::ostream& os) const { return false; }
+  bool get(std::ostream& os) const override { return false; }
 
   //local functions
   ///write brief report of configuration data
@@ -268,6 +267,10 @@ public:
                          value_types_enum value_type,
                          derivative_types_enum derivative_type = value_d,
                          int dimension                         = 0);
+
+private:
+  /// reference to the sposet_builder_factory
+  const SPOMap& spomap_;
 };
 
 } // namespace qmcplusplus

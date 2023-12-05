@@ -17,7 +17,7 @@
 #include <Configuration.h>
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Particle/ParticleSet.h"
-#include "QMCHamiltonians/observable_helper.h"
+#include "QMCHamiltonians/ObservableHelper.h"
 #include "OhmmsPETE/Tensor.h"
 
 namespace qmcplusplus
@@ -25,8 +25,8 @@ namespace qmcplusplus
 class ReferencePoints : public QMCTraits
 {
 public:
-  typedef TinyVector<RealType, DIM> Point;
-  typedef Tensor<RealType, DIM> Tensor_t;
+  using Point    = TinyVector<RealType, DIM>;
+  using Tensor_t = Tensor<RealType, DIM>;
 
   std::map<std::string, Point> points;
   Tensor_t axes;
@@ -34,7 +34,7 @@ public:
   bool put(xmlNodePtr cur, ParticleSet& P, std::vector<ParticleSet*>& Pref);
   bool put(ParticleSet& P, std::vector<ParticleSet*>& Pref);
   void write_description(std::ostream& os, std::string& indent);
-  void save(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void save(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
 
 private:
   enum Coordinate

@@ -35,7 +35,7 @@ def gen_prefactor():
   print '  tx = %g;'%xval
   print '  bd.compute_prefactors(a, tx);'
   for idx,s in spline_exprs:
-    print '  REQUIRE(a[%d] == Approx(%g));'%(idx, s.subs(xs,xval))
+    print '  CHECK(a[%d] == Approx(%g));'%(idx, s.subs(xs,xval))
 
   print
   xval = 0.8
@@ -43,9 +43,9 @@ def gen_prefactor():
   print '  tx = %g;'%xval
   print '  bd.compute_prefactors(a, da, d2a, tx);'
   for idx,s in spline_exprs:
-    print '  REQUIRE(a[%d] == Approx(%g));'%(idx, s.subs(xs,xval))
-    print '  REQUIRE(da[%d] == Approx(%g));'%(idx, diff(s,xs).subs(xs,xval))
-    print '  REQUIRE(d2a[%d] == Approx(%g));'%(idx, diff(s,xs,2).subs(xs,xval))
+    print '  CHECK(a[%d] == Approx(%g));'%(idx, s.subs(xs,xval))
+    print '  CHECK(da[%d] == Approx(%g));'%(idx, diff(s,xs).subs(xs,xval))
+    print '  CHECK(d2a[%d] == Approx(%g));'%(idx, diff(s,xs,2).subs(xs,xval))
 
 if __name__ == '__main__':
   gen_prefactor()

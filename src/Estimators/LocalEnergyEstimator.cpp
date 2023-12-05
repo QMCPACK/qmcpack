@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-LocalEnergyEstimator::LocalEnergyEstimator(QMCHamiltonian& h, bool use_hdf5) : UseHDF5(use_hdf5), refH(h)
+LocalEnergyEstimator::LocalEnergyEstimator(const QMCHamiltonian& h, bool use_hdf5) : UseHDF5(use_hdf5), refH(h)
 {
   SizeOfHamiltonians = h.sizeOfObservables();
   FirstHamiltonian   = h.startIndex();
@@ -25,29 +25,36 @@ LocalEnergyEstimator::LocalEnergyEstimator(QMCHamiltonian& h, bool use_hdf5) : U
   scalars_saved.resize(SizeOfHamiltonians + LE_MAX);
 }
 
-ScalarEstimatorBase* LocalEnergyEstimator::clone() { return new LocalEnergyEstimator(*this); }
+LocalEnergyEstimator::LocalEnergyEstimator(LocalEnergyInput&& input, const QMCHamiltonian& h)
+    : UseHDF5(input.get_use_hdf5()), refH(h), input_(input)
+{
+  SizeOfHamiltonians = h.sizeOfObservables();
+  FirstHamiltonian   = h.startIndex();
+  scalars.resize(SizeOfHamiltonians + LE_MAX);
+  scalars_saved.resize(SizeOfHamiltonians + LE_MAX);
+}
 
-void LocalEnergyEstimator::registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid)
+LocalEnergyEstimator* LocalEnergyEstimator::clone() { return new LocalEnergyEstimator(*this); }
+
+void LocalEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file)
 {
   if (!UseHDF5)
     return;
   int loc = h5desc.size();
   //add LocalEnergy and LocalPotential
-  h5desc.push_back(new observable_helper("LocalEnergy"));
-  h5desc.push_back(new observable_helper("LocalEnergy_sq"));
-  h5desc.push_back(new observable_helper("LocalPotential"));
+  using namespace std::string_literals;
+  h5desc.push_back({{"LocalEnergy"s}});
+  h5desc.push_back({{"LocalEnergy_sq"s}});
+  h5desc.push_back({{"LocalPotential"s}});
   std::vector<int> onedim(1, 1);
-  h5desc[loc]->set_dimensions(onedim, FirstIndex);
-  h5desc[loc++]->open(gid);
-  h5desc[loc]->set_dimensions(onedim, FirstIndex + 1);
-  h5desc[loc++]->open(gid);
-  h5desc[loc]->set_dimensions(onedim, FirstIndex + 2);
-  h5desc[loc++]->open(gid);
+  h5desc[loc++].set_dimensions(onedim, FirstIndex);
+  h5desc[loc++].set_dimensions(onedim, FirstIndex + 1);
+  h5desc[loc++].set_dimensions(onedim, FirstIndex + 2);
   //hamiltonian adds more
-  refH.registerObservables(h5desc, gid);
+  refH.registerObservables(h5desc, file);
   int correction = FirstIndex + 3;
   for (int i = loc; i < h5desc.size(); ++i)
-    h5desc[i]->lower_bound += correction;
+    h5desc[i].lower_bound += correction;
 }
 
 /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
@@ -56,9 +63,9 @@ void LocalEnergyEstimator::registerObservables(std::vector<observable_helper*>& 
 void LocalEnergyEstimator::add2Record(RecordListType& record)
 {
   FirstIndex = record.size();
-  int dumy   = record.add("LocalEnergy");
-  dumy       = record.add("LocalEnergy_sq");
-  dumy       = record.add("LocalPotential");
+  record.add("LocalEnergy");
+  record.add("LocalEnergy_sq");
+  record.add("LocalPotential");
   for (int i = 0; i < SizeOfHamiltonians; ++i)
     record.add(refH.getObservableName(i));
   LastIndex = record.size();

@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -12,10 +12,11 @@
 
 #ifndef QMCPLUSPLUS_MINIAPPS_INPUT_H
 #define QMCPLUSPLUS_MINIAPPS_INPUT_H
-#include "ParticleIO/ParticleIOUtility.h"
+
+#include "ParticleIOUtility.h"
 #if defined(USE_NIO)
-#include "Sandbox/input/nio.hpp"
+#include "input/nio.hpp"
 #else
-#include "Sandbox/input/graphite.hpp"
+#include "input/graphite.hpp"
 #endif
 #endif

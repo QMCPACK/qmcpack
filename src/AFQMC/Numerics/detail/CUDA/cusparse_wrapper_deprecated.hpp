@@ -44,10 +44,10 @@ inline cusparseStatus_t cusparse_csrmv(cusparseHandle_t handle,
                                        double* y)
 
 {
-  cusparseStatus_t sucess = cusparseDcsrmv(handle, cusparseOperation(Atrans), m, n, nnz, &alpha, descrA, csrValA,
+  cusparseStatus_t success = cusparseDcsrmv(handle, cusparseOperation(Atrans), m, n, nnz, &alpha, descrA, csrValA,
                                            csrRowPtrA, csrColIndA, x, &beta, y);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmv(cusparseHandle_t handle,
@@ -65,10 +65,10 @@ inline cusparseStatus_t cusparse_csrmv(cusparseHandle_t handle,
                                        float* y)
 
 {
-  cusparseStatus_t sucess = cusparseScsrmv(handle, cusparseOperation(Atrans), m, n, nnz, &alpha, descrA, csrValA,
+  cusparseStatus_t success = cusparseScsrmv(handle, cusparseOperation(Atrans), m, n, nnz, &alpha, descrA, csrValA,
                                            csrRowPtrA, csrColIndA, x, &beta, y);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmv(cusparseHandle_t handle,
@@ -86,13 +86,13 @@ inline cusparseStatus_t cusparse_csrmv(cusparseHandle_t handle,
                                        std::complex<double>* y)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseZcsrmv(handle, cusparseOperation(Atrans), m, n, nnz, reinterpret_cast<cuDoubleComplex const*>(&alpha),
                      descrA, reinterpret_cast<cuDoubleComplex const*>(csrValA), csrRowPtrA, csrColIndA,
                      reinterpret_cast<cuDoubleComplex const*>(x), reinterpret_cast<cuDoubleComplex const*>(&beta),
                      reinterpret_cast<cuDoubleComplex*>(y));
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 
@@ -110,13 +110,13 @@ inline cusparseStatus_t cusparse_csrmv(cusparseHandle_t handle,
                                        const std::complex<float> beta,
                                        std::complex<float>* y)
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseCcsrmv(handle, cusparseOperation(Atrans), m, n, nnz, reinterpret_cast<cuComplex const*>(&alpha), descrA,
                      reinterpret_cast<cuComplex const*>(csrValA), csrRowPtrA, csrColIndA,
                      reinterpret_cast<cuComplex const*>(x), reinterpret_cast<cuComplex const*>(&beta),
                      reinterpret_cast<cuComplex*>(y));
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 
@@ -138,10 +138,10 @@ inline cusparseStatus_t cusparse_csrmm(cusparseHandle_t handle,
                                        const int ldc)
 
 {
-  cusparseStatus_t sucess = cusparseDcsrmm(handle, cusparseOperation(Atrans), m, n, k, nnz, &alpha, descrA, csrValA,
+  cusparseStatus_t success = cusparseDcsrmm(handle, cusparseOperation(Atrans), m, n, k, nnz, &alpha, descrA, csrValA,
                                            csrRowPtrA, csrColIndA, B, ldb, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmm(cusparseHandle_t handle,
@@ -162,10 +162,10 @@ inline cusparseStatus_t cusparse_csrmm(cusparseHandle_t handle,
                                        const int ldc)
 
 {
-  cusparseStatus_t sucess = cusparseScsrmm(handle, cusparseOperation(Atrans), m, n, k, nnz, &alpha, descrA, csrValA,
+  cusparseStatus_t success = cusparseScsrmm(handle, cusparseOperation(Atrans), m, n, k, nnz, &alpha, descrA, csrValA,
                                            csrRowPtrA, csrColIndA, B, ldb, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmm(cusparseHandle_t handle,
@@ -186,13 +186,13 @@ inline cusparseStatus_t cusparse_csrmm(cusparseHandle_t handle,
                                        const int ldc)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseZcsrmm(handle, cusparseOperation(Atrans), m, n, k, nnz, reinterpret_cast<cuDoubleComplex const*>(&alpha),
                      descrA, reinterpret_cast<cuDoubleComplex const*>(csrValA), csrRowPtrA, csrColIndA,
                      reinterpret_cast<cuDoubleComplex const*>(B), ldb, reinterpret_cast<cuDoubleComplex const*>(&beta),
                      reinterpret_cast<cuDoubleComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmm(cusparseHandle_t handle,
@@ -213,13 +213,13 @@ inline cusparseStatus_t cusparse_csrmm(cusparseHandle_t handle,
                                        const int ldc)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseCcsrmm(handle, cusparseOperation(Atrans), m, n, k, nnz, reinterpret_cast<cuComplex const*>(&alpha),
                      descrA, reinterpret_cast<cuComplex const*>(csrValA), csrRowPtrA, csrColIndA,
                      reinterpret_cast<cuComplex const*>(B), ldb, reinterpret_cast<cuComplex const*>(&beta),
                      reinterpret_cast<cuComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmm2(cusparseHandle_t handle,
@@ -241,10 +241,10 @@ inline cusparseStatus_t cusparse_csrmm2(cusparseHandle_t handle,
                                         const int ldc)
 
 {
-  cusparseStatus_t sucess = cusparseDcsrmm2(handle, cusparseOperation(Atrans), cusparseOperation(Btrans), m, n, k, nnz,
+  cusparseStatus_t success = cusparseDcsrmm2(handle, cusparseOperation(Atrans), cusparseOperation(Btrans), m, n, k, nnz,
                                             &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, B, ldb, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmm2(cusparseHandle_t handle,
@@ -266,10 +266,10 @@ inline cusparseStatus_t cusparse_csrmm2(cusparseHandle_t handle,
                                         const int ldc)
 
 {
-  cusparseStatus_t sucess = cusparseScsrmm2(handle, cusparseOperation(Atrans), cusparseOperation(Btrans), m, n, k, nnz,
+  cusparseStatus_t success = cusparseScsrmm2(handle, cusparseOperation(Atrans), cusparseOperation(Btrans), m, n, k, nnz,
                                             &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, B, ldb, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmm2(cusparseHandle_t handle,
@@ -291,14 +291,14 @@ inline cusparseStatus_t cusparse_csrmm2(cusparseHandle_t handle,
                                         const int ldc)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseZcsrmm2(handle, cusparseOperation(Atrans), cusparseOperation(Btrans), m, n, k, nnz,
                       reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
                       reinterpret_cast<cuDoubleComplex const*>(csrValA), csrRowPtrA, csrColIndA,
                       reinterpret_cast<cuDoubleComplex const*>(B), ldb, reinterpret_cast<cuDoubleComplex const*>(&beta),
                       reinterpret_cast<cuDoubleComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_csrmm2(cusparseHandle_t handle,
@@ -320,13 +320,13 @@ inline cusparseStatus_t cusparse_csrmm2(cusparseHandle_t handle,
                                         const int ldc)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseCcsrmm2(handle, cusparseOperation(Atrans), cusparseOperation(Btrans), m, n, k, nnz,
                       reinterpret_cast<cuComplex const*>(&alpha), descrA, reinterpret_cast<cuComplex const*>(csrValA),
                       csrRowPtrA, csrColIndA, reinterpret_cast<cuComplex const*>(B), ldb,
                       reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_gemmi(cusparseHandle_t handle,
@@ -345,10 +345,10 @@ inline cusparseStatus_t cusparse_gemmi(cusparseHandle_t handle,
                                        const int ldc)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseDgemmi(handle, m, n, k, nnz, &alpha, A, lda, cscValB, cscColPtrB, cscRowIndB, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_gemmi(cusparseHandle_t handle,
@@ -367,10 +367,10 @@ inline cusparseStatus_t cusparse_gemmi(cusparseHandle_t handle,
                                        const int ldc)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseSgemmi(handle, m, n, k, nnz, &alpha, A, lda, cscValB, cscColPtrB, cscRowIndB, &beta, C, ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_gemmi(cusparseHandle_t handle,
@@ -389,13 +389,13 @@ inline cusparseStatus_t cusparse_gemmi(cusparseHandle_t handle,
                                        const int ldc)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseZgemmi(handle, m, n, k, nnz, reinterpret_cast<cuDoubleComplex const*>(&alpha),
                      reinterpret_cast<cuDoubleComplex const*>(A), lda,
                      reinterpret_cast<cuDoubleComplex const*>(cscValB), cscColPtrB, cscRowIndB,
                      reinterpret_cast<cuDoubleComplex const*>(&beta), reinterpret_cast<cuDoubleComplex*>(C), ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusparseStatus_t cusparse_gemmi(cusparseHandle_t handle,
@@ -414,13 +414,13 @@ inline cusparseStatus_t cusparse_gemmi(cusparseHandle_t handle,
                                        const int ldc)
 
 {
-  cusparseStatus_t sucess =
+  cusparseStatus_t success =
       cusparseCgemmi(handle, m, n, k, nnz, reinterpret_cast<cuComplex const*>(&alpha),
                      reinterpret_cast<cuComplex const*>(A), lda, reinterpret_cast<cuComplex const*>(cscValB),
                      cscColPtrB, cscRowIndB, reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(C),
                      ldc);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 } // namespace cusparse

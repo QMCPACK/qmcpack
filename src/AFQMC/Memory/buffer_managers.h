@@ -23,13 +23,12 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
-void setup_memory_managers(mpi3::shared_communicator& local, size_t size); 
+void setup_memory_managers(mpi3::shared_communicator& local, size_t size);
 void setup_memory_managers(mpi3::shared_communicator& node, size_t size, int nc);
 void update_memory_managers();
 void release_memory_managers();
 
-}
-}
+} // namespace afqmc
+} // namespace qmcplusplus
 
 #endif

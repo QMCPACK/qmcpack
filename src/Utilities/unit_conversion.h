@@ -20,7 +20,7 @@ namespace qmcplusplus
 {
 namespace Units
 {
-typedef QMCTraits::RealType real;
+using real = QMCTraits::RealType;
 
 namespace constants
 {

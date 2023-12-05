@@ -27,13 +27,13 @@ namespace formic {
 
     protected:
 
-      typedef formic::Matrix<                 int  >   i_mat;
-      typedef formic::Matrix<              double  >   d_mat;
-      typedef formic::Matrix< std::complex<double> >   c_mat;
+      using i_mat = formic::Matrix<                 int  >  ;
+      using d_mat = formic::Matrix<              double  >  ;
+      using c_mat = formic::Matrix< std::complex<double> >  ;
 
-      typedef formic::ConstMatrix<                 int  >   i_const_mat;
-      typedef formic::ConstMatrix<              double  >   d_const_mat;
-      typedef formic::ConstMatrix< std::complex<double> >   c_const_mat;
+      using i_const_mat = formic::ConstMatrix<                 int  >  ;
+      using d_const_mat = formic::ConstMatrix<              double  >  ;
+      using c_const_mat = formic::ConstMatrix< std::complex<double> >  ;
 
       /// \brief  returns true if the internal stream is in a bad state (for example if the last io operation failed) and false otherwise
       virtual bool fail() const = 0;
@@ -251,145 +251,296 @@ namespace formic {
       }
 
       /// \brief  returns true if the internal stream is in a bad state (for example if the last io operation failed) and false otherwise
-      bool fail() const {
+      bool fail() const override
+      {
         if ( *_s )
           return false;
         return true;
       }
 
     public:
+      ~TextArchiveTemplate() override {} //{ std::cout << "destroyed TextArchiveTemplate" << std::endl; }
 
-      ~TextArchiveTemplate() {} //{ std::cout << "destroyed TextArchiveTemplate" << std::endl; }
+      int getline(std::string& str) override
+      {
+        std::getline(*_s, str);
+        return 0;
+      }
+      int getline(std::string& str, char delim) override
+      {
+        std::getline(*_s, str, delim);
+        return 0;
+      }
 
-      int getline(std::string & str) { std::getline(*_s, str); return 0; }
-      int getline(std::string & str, char delim) { std::getline(*_s, str, delim); return 0; }
-
-      Archive & operator>>(                              bool& val ) { *_s >> std::boolalpha >> val; return *this; }
-      Archive & operator>>(                             short& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                    unsigned short& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                               int& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                      unsigned int& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                              long& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                     unsigned long& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                             float& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                            double& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                       long double& val ) { *_s >> val; return *this; }
-      Archive & operator>>(             std::complex<double> & val ) { *_s >> val; return *this; }
-      Archive & operator>>(                             void*& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                              char& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                       signed char& val ) { *_s >> val; return *this; }
-      Archive & operator>>(                     unsigned char& val ) { *_s >> val; return *this; }
+      Archive& operator>>(bool& val) override
+      {
+        *_s >> std::boolalpha >> val;
+        return *this;
+      }
+      Archive& operator>>(short& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(unsigned short& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(int& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(unsigned int& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(long& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(unsigned long& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(float& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(double& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(long double& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(std::complex<double>& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(void*& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(char& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(signed char& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
+      Archive& operator>>(unsigned char& val) override
+      {
+        *_s >> val;
+        return *this;
+      }
 
       //Archive & operator>>(                    std::streambuf*  sb ) { *_s >>  sb; return *this; }
 
       //Archive & operator>>(                              char* str ) { *_s >> str; return *this; }
       //Archive & operator>>(                       signed char* str ) { *_s >> str; return *this; }
       //Archive & operator>>(                     unsigned char* str ) { *_s >> str; return *this; }
-      Archive & operator>>(                      std::string & str ) { *_s >> str; return *this; }
+      Archive& operator>>(std::string& str) override
+      {
+        *_s >> str;
+        return *this;
+      }
 
-      Archive & operator>>(   std::istream& ( *pf )(std::istream&) ) { *_s >>  pf; return *this; }
-      Archive & operator>>(           std::ios& ( *pf )(std::ios&) ) { *_s >>  pf; return *this; }
-      Archive & operator>>( std::ios_base& ( *pf )(std::ios_base&) ) { *_s >>  pf; return *this; }
+      Archive& operator>>(std::istream& (*pf)(std::istream&)) override
+      {
+        *_s >> pf;
+        return *this;
+      }
+      Archive& operator>>(std::ios& (*pf)(std::ios&)) override
+      {
+        *_s >> pf;
+        return *this;
+      }
+      Archive& operator>>(std::ios_base& (*pf)(std::ios_base&)) override
+      {
+        *_s >> pf;
+        return *this;
+      }
 
-      Archive & operator>>(                std::vector<short>& val ) { return this->read_vector(val); }
-      Archive & operator>>(       std::vector<unsigned short>& val ) { return this->read_vector(val); }
-      Archive & operator>>(                  std::vector<int>& val ) { return this->read_vector(val); }
-      Archive & operator>>(         std::vector<unsigned int>& val ) { return this->read_vector(val); }
-      Archive & operator>>(                 std::vector<long>& val ) { return this->read_vector(val); }
-      Archive & operator>>(        std::vector<unsigned long>& val ) { return this->read_vector(val); }
-      Archive & operator>>(                std::vector<float>& val ) { return this->read_vector(val); }
-      Archive & operator>>(               std::vector<double>& val ) { return this->read_vector(val); }
-      Archive & operator>>(          std::vector<long double>& val ) { return this->read_vector(val); }
-      Archive & operator>>(                 std::vector<char>& val ) { return this->read_vector(val); }
-      Archive & operator>>(          std::vector<signed char>& val ) { return this->read_vector(val); }
-      Archive & operator>>(        std::vector<unsigned char>& val ) { return this->read_vector(val); }
-      Archive & operator>>(          std::vector<std::string>& val ) { return this->read_vector(val); }
-      Archive & operator>>(std::vector<std::complex<double> >& val ) { return this->read_vector(val); }
+      Archive& operator>>(std::vector<short>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<unsigned short>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<int>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<unsigned int>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<long>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<unsigned long>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<float>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<double>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<long double>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<char>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<signed char>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<unsigned char>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<std::string>& val) override { return this->read_vector(val); }
+      Archive& operator>>(std::vector<std::complex<double>>& val) override { return this->read_vector(val); }
 
-      Archive & operator>>(                   std::set<short>& val ) { return this->read_set(val); }
-      Archive & operator>>(          std::set<unsigned short>& val ) { return this->read_set(val); }
-      Archive & operator>>(                     std::set<int>& val ) { return this->read_set(val); }
-      Archive & operator>>(            std::set<unsigned int>& val ) { return this->read_set(val); }
-      Archive & operator>>(                    std::set<long>& val ) { return this->read_set(val); }
-      Archive & operator>>(           std::set<unsigned long>& val ) { return this->read_set(val); }
-      Archive & operator>>(                    std::set<char>& val ) { return this->read_set(val); }
-      Archive & operator>>(             std::set<signed char>& val ) { return this->read_set(val); }
-      Archive & operator>>(           std::set<unsigned char>& val ) { return this->read_set(val); }
-      Archive & operator>>(             std::set<std::string>& val ) { return this->read_set(val); }
+      Archive& operator>>(std::set<short>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<unsigned short>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<int>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<unsigned int>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<long>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<unsigned long>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<char>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<signed char>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<unsigned char>& val) override { return this->read_set(val); }
+      Archive& operator>>(std::set<std::string>& val) override { return this->read_set(val); }
 
-      Archive & operator>>(                             i_mat& val ) { return this->read_fmat(val); }
-      Archive & operator>>(                             d_mat& val ) { return this->read_fmat(val); }
-      Archive & operator>>(                             c_mat& val ) { return this->read_fmat(val); }
+      Archive& operator>>(i_mat& val) override { return this->read_fmat(val); }
+      Archive& operator>>(d_mat& val) override { return this->read_fmat(val); }
+      Archive& operator>>(c_mat& val) override { return this->read_fmat(val); }
 
-      Archive & operator<<(                         const bool val ) { *_s << " " << std::boolalpha << val; return *this; }
-      Archive & operator<<(                        const short val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(               const unsigned short val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(                          const int val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(                 const unsigned int val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(                         const long val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(                const unsigned long val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(                        const float val ) {
+      Archive& operator<<(const bool val) override
+      {
+        *_s << " " << std::boolalpha << val;
+        return *this;
+      }
+      Archive& operator<<(const short val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const unsigned short val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const int val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const unsigned int val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const long val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const unsigned long val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const float val) override
+      {
         *_s << " " << std::scientific << std::setprecision(15) << val;
         return *this;
       }
-      Archive & operator<<(                       const double val ) {
+      Archive& operator<<(const double val) override
+      {
         *_s << " " << std::scientific << std::setprecision(15) << val;
         return *this;
       }
-      Archive & operator<<(                  const long double val ) {
+      Archive& operator<<(const long double val) override
+      {
         *_s << " " << std::scientific << std::setprecision(15) << val;
         return *this;
       }
-      Archive & operator<<(        const std::complex<double>& val ) {
+      Archive& operator<<(const std::complex<double>& val) override
+      {
         *_s << " " << std::scientific << std::setprecision(15) << val;
         return *this;
       }
-      Archive & operator<<(                        const void* val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(                         const char val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(                  const signed char val ) { *_s << " " << val; return *this; }
-      Archive & operator<<(                const unsigned char val ) { *_s << " " << val; return *this; }
+      Archive& operator<<(const void* val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const char val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const signed char val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
+      Archive& operator<<(const unsigned char val) override
+      {
+        *_s << " " << val;
+        return *this;
+      }
 
       //Archive & operator<<(                    std::streambuf*  sb ) { *_s << " " <<  sb; return *this; }
 
-      Archive & operator<<(                        const char* str ) { *_s << " " << str; return *this; }
+      Archive& operator<<(const char* str) override
+      {
+        *_s << " " << str;
+        return *this;
+      }
       //Archive & operator<<(                 const signed char* str ) { *_s << " " << str; return *this; }
       //Archive & operator<<(               const unsigned char* str ) { *_s << " " << str; return *this; }
-      Archive & operator<<(                const std::string & str ) { *_s << " " << str; return *this; }
+      Archive& operator<<(const std::string& str) override
+      {
+        *_s << " " << str;
+        return *this;
+      }
 
-      Archive & operator<<(   std::ostream& ( *pf )(std::ostream&) ) { *_s << pf; return *this; }
-      Archive & operator<<(           std::ios& ( *pf )(std::ios&) ) { *_s << pf; return *this; }
-      Archive & operator<<( std::ios_base& ( *pf )(std::ios_base&) ) { *_s << pf; return *this; }
+      Archive& operator<<(std::ostream& (*pf)(std::ostream&)) override
+      {
+        *_s << pf;
+        return *this;
+      }
+      Archive& operator<<(std::ios& (*pf)(std::ios&)) override
+      {
+        *_s << pf;
+        return *this;
+      }
+      Archive& operator<<(std::ios_base& (*pf)(std::ios_base&)) override
+      {
+        *_s << pf;
+        return *this;
+      }
 
-      Archive & operator<<(          const std::vector<short>& val ) { return this->write_vector(val); }
-      Archive & operator<<( const std::vector<unsigned short>& val ) { return this->write_vector(val); }
-      Archive & operator<<(            const std::vector<int>& val ) { return this->write_vector(val); }
-      Archive & operator<<(   const std::vector<unsigned int>& val ) { return this->write_vector(val); }
-      Archive & operator<<(           const std::vector<long>& val ) { return this->write_vector(val); }
-      Archive & operator<<(  const std::vector<unsigned long>& val ) { return this->write_vector(val); }
-      Archive & operator<<(          const std::vector<float>& val ) { return this->write_vector(val); }
-      Archive & operator<<(         const std::vector<double>& val ) { return this->write_vector(val); }
-      Archive & operator<<(    const std::vector<long double>& val ) { return this->write_vector(val); }
-      Archive & operator<<(           const std::vector<char>& val ) { return this->write_vector(val); }
-      Archive & operator<<(    const std::vector<signed char>& val ) { return this->write_vector(val); }
-      Archive & operator<<(  const std::vector<unsigned char>& val ) { return this->write_vector(val); }
-      Archive & operator<<(    const std::vector<std::string>& val ) { return this->write_vector(val); }
-      Archive & operator<<( const std::vector<std::complex<double> >& val ) { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<short>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<unsigned short>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<int>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<unsigned int>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<long>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<unsigned long>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<float>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<double>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<long double>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<char>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<signed char>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<unsigned char>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<std::string>& val) override { return this->write_vector(val); }
+      Archive& operator<<(const std::vector<std::complex<double>>& val) override { return this->write_vector(val); }
 
-      Archive & operator<<(             const std::set<short>& val ) { return this->write_set(val); }
-      Archive & operator<<(    const std::set<unsigned short>& val ) { return this->write_set(val); }
-      Archive & operator<<(               const std::set<int>& val ) { return this->write_set(val); }
-      Archive & operator<<(      const std::set<unsigned int>& val ) { return this->write_set(val); }
-      Archive & operator<<(              const std::set<long>& val ) { return this->write_set(val); }
-      Archive & operator<<(     const std::set<unsigned long>& val ) { return this->write_set(val); }
-      Archive & operator<<(              const std::set<char>& val ) { return this->write_set(val); }
-      Archive & operator<<(       const std::set<signed char>& val ) { return this->write_set(val); }
-      Archive & operator<<(     const std::set<unsigned char>& val ) { return this->write_set(val); }
-      Archive & operator<<(       const std::set<std::string>& val ) { return this->write_set(val); }
+      Archive& operator<<(const std::set<short>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<unsigned short>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<int>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<unsigned int>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<long>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<unsigned long>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<char>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<signed char>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<unsigned char>& val) override { return this->write_set(val); }
+      Archive& operator<<(const std::set<std::string>& val) override { return this->write_set(val); }
 
-      Archive & operator<<(               const   i_const_mat& val ) { return this->write_fmat(val); }
-      Archive & operator<<(               const   d_const_mat& val ) { return this->write_fmat(val); }
-      Archive & operator<<(               const   c_const_mat& val ) { return this->write_fmat(val); }
-
+      Archive& operator<<(const i_const_mat& val) override { return this->write_fmat(val); }
+      Archive& operator<<(const d_const_mat& val) override { return this->write_fmat(val); }
+      Archive& operator<<(const c_const_mat& val) override { return this->write_fmat(val); }
   };
 
   class TextArchive : public TextArchiveTemplate<std::stringstream> {
@@ -408,7 +559,7 @@ namespace formic {
         _s = boost::shared_ptr<std::stringstream>( new std::stringstream() );
       }
 
-      ~TextArchive() {} //{ std::cout << "destroyed TextArchive" << std::endl; }
+      ~TextArchive() override {} //{ std::cout << "destroyed TextArchive" << std::endl; }
 
       std::string str() { return _s->str(); }
 
@@ -452,11 +603,11 @@ namespace formic {
 
       }
 
-      ~TextFileArchive() {
+      ~TextFileArchive() override
+      {
         _s->close();
         //std::cout << "destroyed TextFileArchive" << std::endl;
       }
-
   };
 
   template<class T> class BinaryArchiveTemplate : public Archive {
@@ -550,141 +701,150 @@ namespace formic {
       }
 
       /// \brief  returns true if the internal stream is in a bad state (for example if the last io operation failed) and false otherwise
-      bool fail() const {
+      bool fail() const override
+      {
         if ( *_s )
           return false;
         return true;
       }
 
     public:
+      ~BinaryArchiveTemplate() override {} //{ std::cout << "destroyed BinaryArchiveTemplate" << std::endl; }
 
-      ~BinaryArchiveTemplate() {} //{ std::cout << "destroyed BinaryArchiveTemplate" << std::endl; }
-
-      int getline(std::string & str) { std::getline(*_s, str); return 0; }
-      int getline(std::string & str, char delim) { std::getline(*_s, str, delim); return 0; }
+      int getline(std::string& str) override
+      {
+        std::getline(*_s, str);
+        return 0;
+      }
+      int getline(std::string& str, char delim) override
+      {
+        std::getline(*_s, str, delim);
+        return 0;
+      }
 
       // define input operators
-      Archive & operator>>(                              bool& val ) { return this->read(val); }
-      Archive & operator>>(                             short& val ) { return this->read(val); }
-      Archive & operator>>(                    unsigned short& val ) { return this->read(val); }
-      Archive & operator>>(                               int& val ) { return this->read(val); }
-      Archive & operator>>(                      unsigned int& val ) { return this->read(val); }
-      Archive & operator>>(                              long& val ) { return this->read(val); }
-      Archive & operator>>(                     unsigned long& val ) { return this->read(val); }
-      Archive & operator>>(                             float& val ) { return this->read(val); }
-      Archive & operator>>(                            double& val ) { return this->read(val); }
-      Archive & operator>>(                       long double& val ) { return this->read(val); }
-      Archive & operator>>(             std::complex<double> & val ) { return this->read(val); }
-      Archive & operator>>(                             void*& val ) { return this->read(val); }
-      Archive & operator>>(                              char& val ) { return this->read(val); }
-      Archive & operator>>(                       signed char& val ) { return this->read(val); }
-      Archive & operator>>(                     unsigned char& val ) { return this->read(val); }
+      Archive& operator>>(bool& val) override { return this->read(val); }
+      Archive& operator>>(short& val) override { return this->read(val); }
+      Archive& operator>>(unsigned short& val) override { return this->read(val); }
+      Archive& operator>>(int& val) override { return this->read(val); }
+      Archive& operator>>(unsigned int& val) override { return this->read(val); }
+      Archive& operator>>(long& val) override { return this->read(val); }
+      Archive& operator>>(unsigned long& val) override { return this->read(val); }
+      Archive& operator>>(float& val) override { return this->read(val); }
+      Archive& operator>>(double& val) override { return this->read(val); }
+      Archive& operator>>(long double& val) override { return this->read(val); }
+      Archive& operator>>(std::complex<double>& val) override { return this->read(val); }
+      Archive& operator>>(void*& val) override { return this->read(val); }
+      Archive& operator>>(char& val) override { return this->read(val); }
+      Archive& operator>>(signed char& val) override { return this->read(val); }
+      Archive& operator>>(unsigned char& val) override { return this->read(val); }
 
       //Archive & operator>>(                    std::streambuf*  sb ) { *_s >>  sb; return *this; }
 
       //Archive & operator>>(                              char* str ) { return this->rea }
       //Archive & operator>>(                       signed char* str ) { return this->rea }
       //Archive & operator>>(                     unsigned char* str ) { return this->rea }
-      Archive & operator>>(                      std::string & val ) {
+      Archive& operator>>(std::string& val) override
+      {
         std::vector<char> vec;
         *this >> vec;
         val.assign(vec.begin(), vec.end());
         return *this;
       }
 
-      Archive & operator>>(   std::istream& ( *pf )(std::istream&) ) { return *this; }
-      Archive & operator>>(           std::ios& ( *pf )(std::ios&) ) { return *this; }
-      Archive & operator>>( std::ios_base& ( *pf )(std::ios_base&) ) { return *this; }
+      Archive& operator>>(std::istream& (*pf)(std::istream&)) override { return *this; }
+      Archive& operator>>(std::ios& (*pf)(std::ios&)) override { return *this; }
+      Archive& operator>>(std::ios_base& (*pf)(std::ios_base&)) override { return *this; }
 
-      Archive & operator>>(                std::vector<short>& val ) { return this->read(val); }
-      Archive & operator>>(       std::vector<unsigned short>& val ) { return this->read(val); }
-      Archive & operator>>(                  std::vector<int>& val ) { return this->read(val); }
-      Archive & operator>>(         std::vector<unsigned int>& val ) { return this->read(val); }
-      Archive & operator>>(                 std::vector<long>& val ) { return this->read(val); }
-      Archive & operator>>(        std::vector<unsigned long>& val ) { return this->read(val); }
-      Archive & operator>>(                std::vector<float>& val ) { return this->read(val); }
-      Archive & operator>>(               std::vector<double>& val ) { return this->read(val); }
-      Archive & operator>>(          std::vector<long double>& val ) { return this->read(val); }
-      Archive & operator>>(                 std::vector<char>& val ) { return this->read(val); }
-      Archive & operator>>(          std::vector<signed char>& val ) { return this->read(val); }
-      Archive & operator>>(        std::vector<unsigned char>& val ) { return this->read(val); }
-      Archive & operator>>(          std::vector<std::string>& val ) { return this->read(val); }
-      Archive & operator>>(std::vector<std::complex<double> >& val ) { return this->read(val); }
+      Archive& operator>>(std::vector<short>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<unsigned short>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<int>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<unsigned int>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<long>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<unsigned long>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<float>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<double>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<long double>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<char>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<signed char>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<unsigned char>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<std::string>& val) override { return this->read(val); }
+      Archive& operator>>(std::vector<std::complex<double>>& val) override { return this->read(val); }
 
-      Archive & operator>>(                   std::set<short>& val ) { return this->read(val); }
-      Archive & operator>>(          std::set<unsigned short>& val ) { return this->read(val); }
-      Archive & operator>>(                     std::set<int>& val ) { return this->read(val); }
-      Archive & operator>>(            std::set<unsigned int>& val ) { return this->read(val); }
-      Archive & operator>>(                    std::set<long>& val ) { return this->read(val); }
-      Archive & operator>>(           std::set<unsigned long>& val ) { return this->read(val); }
-      Archive & operator>>(                    std::set<char>& val ) { return this->read(val); }
-      Archive & operator>>(             std::set<signed char>& val ) { return this->read(val); }
-      Archive & operator>>(           std::set<unsigned char>& val ) { return this->read(val); }
-      Archive & operator>>(             std::set<std::string>& val ) { return this->read(val); }
+      Archive& operator>>(std::set<short>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<unsigned short>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<int>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<unsigned int>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<long>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<unsigned long>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<char>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<signed char>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<unsigned char>& val) override { return this->read(val); }
+      Archive& operator>>(std::set<std::string>& val) override { return this->read(val); }
 
-      Archive & operator>>(                             i_mat& val ) { return this->read(val); }
-      Archive & operator>>(                             d_mat& val ) { return this->read(val); }
-      Archive & operator>>(                             c_mat& val ) { return this->read(val); }
+      Archive& operator>>(i_mat& val) override { return this->read(val); }
+      Archive& operator>>(d_mat& val) override { return this->read(val); }
+      Archive& operator>>(c_mat& val) override { return this->read(val); }
 
-      Archive & operator<<(                         const bool val ) { return this->write(val); }
-      Archive & operator<<(                        const short val ) { return this->write(val); }
-      Archive & operator<<(               const unsigned short val ) { return this->write(val); }
-      Archive & operator<<(                          const int val ) { return this->write(val); }
-      Archive & operator<<(                 const unsigned int val ) { return this->write(val); }
-      Archive & operator<<(                         const long val ) { return this->write(val); }
-      Archive & operator<<(                const unsigned long val ) { return this->write(val); }
-      Archive & operator<<(                        const float val ) { return this->write(val); }
-      Archive & operator<<(                       const double val ) { return this->write(val); }
-      Archive & operator<<(                  const long double val ) { return this->write(val); }
-      Archive & operator<<(        const std::complex<double>& val ) { return this->write(val); }
-      Archive & operator<<(                        const void* val ) { return this->write(val); }
-      Archive & operator<<(                         const char val ) { return this->write(val); }
-      Archive & operator<<(                  const signed char val ) { return this->write(val); }
-      Archive & operator<<(                const unsigned char val ) { return this->write(val); }
+      Archive& operator<<(const bool val) override { return this->write(val); }
+      Archive& operator<<(const short val) override { return this->write(val); }
+      Archive& operator<<(const unsigned short val) override { return this->write(val); }
+      Archive& operator<<(const int val) override { return this->write(val); }
+      Archive& operator<<(const unsigned int val) override { return this->write(val); }
+      Archive& operator<<(const long val) override { return this->write(val); }
+      Archive& operator<<(const unsigned long val) override { return this->write(val); }
+      Archive& operator<<(const float val) override { return this->write(val); }
+      Archive& operator<<(const double val) override { return this->write(val); }
+      Archive& operator<<(const long double val) override { return this->write(val); }
+      Archive& operator<<(const std::complex<double>& val) override { return this->write(val); }
+      Archive& operator<<(const void* val) override { return this->write(val); }
+      Archive& operator<<(const char val) override { return this->write(val); }
+      Archive& operator<<(const signed char val) override { return this->write(val); }
+      Archive& operator<<(const unsigned char val) override { return this->write(val); }
 
       //Archive & operator<<(                    std::streambuf*  sb ) { *_s << " " <<  sb; return *this; }
 
-      Archive & operator<<(                        const char* str ) { return *this << std::string(str); }
+      Archive& operator<<(const char* str) override { return *this << std::string(str); }
       //Archive & operator<<(                 const signed char* str ) { *_s << " " << str; return *this; }
       //Archive & operator<<(               const unsigned char* str ) { *_s << " " << str; return *this; }
-      Archive & operator<<(                const std::string & val ) {
+      Archive& operator<<(const std::string& val) override
+      {
         return *this << std::vector<char>(val.begin(), val.end());
       }
 
-      Archive & operator<<(   std::ostream& ( *pf )(std::ostream&) ) { return *this; }
-      Archive & operator<<(           std::ios& ( *pf )(std::ios&) ) { return *this; }
-      Archive & operator<<( std::ios_base& ( *pf )(std::ios_base&) ) { return *this; }
+      Archive& operator<<(std::ostream& (*pf)(std::ostream&)) override { return *this; }
+      Archive& operator<<(std::ios& (*pf)(std::ios&)) override { return *this; }
+      Archive& operator<<(std::ios_base& (*pf)(std::ios_base&)) override { return *this; }
 
-      Archive & operator<<(          const std::vector<short>& val ) { return this->write(val); }
-      Archive & operator<<( const std::vector<unsigned short>& val ) { return this->write(val); }
-      Archive & operator<<(            const std::vector<int>& val ) { return this->write(val); }
-      Archive & operator<<(   const std::vector<unsigned int>& val ) { return this->write(val); }
-      Archive & operator<<(           const std::vector<long>& val ) { return this->write(val); }
-      Archive & operator<<(  const std::vector<unsigned long>& val ) { return this->write(val); }
-      Archive & operator<<(          const std::vector<float>& val ) { return this->write(val); }
-      Archive & operator<<(         const std::vector<double>& val ) { return this->write(val); }
-      Archive & operator<<(    const std::vector<long double>& val ) { return this->write(val); }
-      Archive & operator<<(           const std::vector<char>& val ) { return this->write(val); }
-      Archive & operator<<(    const std::vector<signed char>& val ) { return this->write(val); }
-      Archive & operator<<(  const std::vector<unsigned char>& val ) { return this->write(val); }
-      Archive & operator<<(    const std::vector<std::string>& val ) { return this->write(val); }
-      Archive & operator<<( const std::vector<std::complex<double> >& val ) { return this->write(val); }
+      Archive& operator<<(const std::vector<short>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<unsigned short>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<int>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<unsigned int>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<long>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<unsigned long>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<float>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<double>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<long double>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<char>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<signed char>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<unsigned char>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<std::string>& val) override { return this->write(val); }
+      Archive& operator<<(const std::vector<std::complex<double>>& val) override { return this->write(val); }
 
-      Archive & operator<<(             const std::set<short>& val ) { return this->write(val); }
-      Archive & operator<<(    const std::set<unsigned short>& val ) { return this->write(val); }
-      Archive & operator<<(               const std::set<int>& val ) { return this->write(val); }
-      Archive & operator<<(      const std::set<unsigned int>& val ) { return this->write(val); }
-      Archive & operator<<(              const std::set<long>& val ) { return this->write(val); }
-      Archive & operator<<(     const std::set<unsigned long>& val ) { return this->write(val); }
-      Archive & operator<<(              const std::set<char>& val ) { return this->write(val); }
-      Archive & operator<<(       const std::set<signed char>& val ) { return this->write(val); }
-      Archive & operator<<(     const std::set<unsigned char>& val ) { return this->write(val); }
-      Archive & operator<<(       const std::set<std::string>& val ) { return this->write(val); }
+      Archive& operator<<(const std::set<short>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<unsigned short>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<int>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<unsigned int>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<long>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<unsigned long>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<char>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<signed char>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<unsigned char>& val) override { return this->write(val); }
+      Archive& operator<<(const std::set<std::string>& val) override { return this->write(val); }
 
-      Archive & operator<<(               const   i_const_mat& val ) { return this->write(val); }
-      Archive & operator<<(               const   d_const_mat& val ) { return this->write(val); }
-      Archive & operator<<(               const   c_const_mat& val ) { return this->write(val); }
-
+      Archive& operator<<(const i_const_mat& val) override { return this->write(val); }
+      Archive& operator<<(const d_const_mat& val) override { return this->write(val); }
+      Archive& operator<<(const c_const_mat& val) override { return this->write(val); }
   };
 
   class BinaryArchive : public BinaryArchiveTemplate<std::stringstream> {
@@ -703,8 +863,7 @@ namespace formic {
         _s = boost::shared_ptr<std::stringstream>( new std::stringstream() );
       }
 
-      ~BinaryArchive() {} //{ std::cout << "destroyed BinaryArchive" << std::endl; }
-
+      ~BinaryArchive() override {} //{ std::cout << "destroyed BinaryArchive" << std::endl; }
   };
 
   class BinaryFileArchive : public BinaryArchiveTemplate<std::fstream> {
@@ -751,12 +910,12 @@ namespace formic {
 
       }
 
-      ~BinaryFileArchive() {
+      ~BinaryFileArchive() override
+      {
         if (_s->is_open())
           _s->close();
         //std::cout << "destroyed BinaryFileArchive" << std::endl;
       }
-
   };
 
 }

@@ -3,10 +3,12 @@
 
 #include <complex>
 #include <cmath>
+#include <limits>
 
 // Copy and modify the ComplexApprox class to handle complex numbers for log(complex)
 
 namespace Catch {
+namespace Detail {
 class LogComplexApprox
 {
     std::complex<double> m_value;
@@ -78,20 +80,21 @@ public:
        return os;
     }
 };
+}
 
 template<>
-struct StringMaker<LogComplexApprox> {
-  static std::string convert(LogComplexApprox const &value);
+struct StringMaker<Catch::Detail::LogComplexApprox> {
+  static std::string convert(Catch::Detail::LogComplexApprox const &value);
 };
 
 #ifdef CATCH_IMPL
-std::string StringMaker<LogComplexApprox>::convert(LogComplexApprox const& value)
+  std::string StringMaker<Catch::Detail::LogComplexApprox>::convert(Catch::Detail::LogComplexApprox const& value)
 {
   return value.toString();
 }
 #endif
 }
 
-using Catch::LogComplexApprox;
+using Catch::Detail::LogComplexApprox;
 
 #endif

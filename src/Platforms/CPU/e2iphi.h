@@ -17,7 +17,6 @@
 
 // Supported libraries and defines:
 //
-// HAVE_AMDLIBM : AMD libm
 // HAVE_MKL_VML : Intel MKL VML, include with MKL
 // HAVE_MASSV   : IBM MASSV library
 
@@ -27,55 +26,9 @@
 #include <config.h>
 #include <vector>
 #include <complex>
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
-// #if defined(HAVE_ACML)
-// extern "C"
-// {
-// #include <acml_mv.h>
-// }
-
-#if defined(HAVE_AMDLIBM)
-#include <emmintrin.h>
-namespace std
-{
-#include <amdlibm.h>
-}
-
-/* additional translations for AMD libm */
-
-#undef vrda_sincos
-#define vrda_sincos std::amd_vrda_sincos
-
-#undef vrsa_sincosf
-#define vrsa_sincosf std::amd_vrsa_sincosf
-
-inline void eval_e2iphi(int n, double* restrict phi, double* restrict c, double* restrict s)
-{
-  vrda_sincos(n, phi, s, c);
-}
-
-inline void eval_e2iphi(int n, float* restrict phi, float* restrict c, float* restrict s)
-{
-  vrsa_sincosf(n, phi, s, c);
-}
-
-inline void eval_e2iphi(int n, double* restrict phi, std::complex<double>* restrict z)
-{
-  double c[n], s[n];
-  vrda_sincos(n, phi, s, c);
-  for (int i = 0; i < n; i++)
-    z[i] = std::complex<double>(c[i], s[i]);
-}
-
-inline void eval_e2iphi(int n, float* restrict phi, std::complex<float>* restrict z)
-{
-  float c[n], s[n];
-  vrsa_sincosf(n, phi, s, c);
-  for (int i = 0; i < n; i++)
-    z[i] = std::complex<double>(c[i], s[i]);
-}
-#elif defined(HAVE_MASSV)
+#if defined(HAVE_MASSV)
 #include <massv.h>
 inline void eval_e2iphi(int n, double* restrict phi, double* restrict c, double* restrict s) { vsincos(s, c, phi, &n); }
 inline void eval_e2iphi(int n, float* restrict phi, float* restrict c, float* restrict s) { vssincos(s, c, phi, &n); }
@@ -122,18 +75,10 @@ inline void eval_e2iphi(int n, const T* restrict phi, std::complex<T>* restrict 
 }
 #endif
 
-
 template<typename T>
 inline void eval_e2iphi(std::vector<T>& phi, std::vector<std::complex<T>>& z)
 {
   eval_e2iphi(phi.size(), &phi[0], &z[0]);
 }
-
-//template<typename T>
-//inline void
-//eval_e2iphi(qmcplusplus::Vector<T>& phi, qmcplusplus::Vector<std::complex<T> >& z)
-//{
-//  eval_e2iphi(phi.size(),phi.data(),z.data());
-//}
 
 #endif

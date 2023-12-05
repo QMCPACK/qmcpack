@@ -1,0 +1,71 @@
+# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:2;autowrap:nil;-*-
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.'
+FormatStyle: file
+
+CheckOptions:
+  - { key: readability-identifier-naming.ClassCase                   , value: lower_case  }
+  - { key: readability-identifier-naming.FunctionCase                , value: lower_case }
+  - { key: readability-identifier-naming.GlobalConstantCase          , value: aNy_CasE   }
+  - { key: readability-identifier-naming.NamespaceCase               , value: lower_case }
+  - { key: readability-identifier-naming.PrivateMemberPrefix         , value: ''         }
+  - { key: readability-identifier-naming.PrivateMemberSufix          , value: _          }
+  - { key: readability-identifier-naming.StructCase                  , value: lower_case }
+  - { key: readability-identifier-naming.TemplateParameterCase       , value: CamelCase  }
+  - { key: readability-identifier-length.MinimumVariableNameLength   , value: 2          }
+  - { key: readability-identifier-length.MinimumParameterNameLength  , value: 2          }
+  - { key: readability-identifier-length.MinimumLoopCounterNameLength, value: 2          }
+  - { key: readability-identifier-length.IgnoredLoopCounterNames     , value: "^[ijk_]$" }
+
+# - { key: readability-identifier-naming.VariableCase,          value: aNy_CasE   } for tests
+# - { key: readability-identifier-naming.PrivateMethodSuffix,   value:            }
+
+Checks: '*,
+  -altera-id-dependent-backward-branch,
+  -altera-struct-pack-align,
+  -altera-unroll-loops,
+  -cert-err58-cpp,
+  -clang-diagnostic-c++98-compat-unnamed-type-template-args,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-type-vararg,
+  -fuchsia-default-arguments-calls,
+  -fuchsia-default-arguments-declarations,
+  -fuchsia-overloaded-operator,
+  -fuchsia-statically-constructed-objects,
+  -fuchsia-trailing-return,
+  -hicpp-no-array-decay,
+  -hicpp-vararg,
+  -llvmlibc-callee-namespace,
+  -llvmlibc-implementation-in-namespace,
+  -llvmlibc-restrict-system-libc-headers,
+  -modernize-use-nodiscard,
+  -readability-magic-numbers
+'
+
+#  -altera-id-dependent-backward-branch,                  // seems like a buggy warning https://github.com/llvm/llvm-project/issues/52790
+#  -altera-struct-pack-align,                             // this asks to use non-standard pragmas such as __attribute__((aligned(0))) and _attribute__((packed)), may interfeere with gcc/nvcc compatibility?
+#  -altera-unroll-loops,                                  // expansion BOOST_REQUIRE macro requires this
+#  -cert-err58-cpp,                                       // expansion BOOST_AUTO_TEST_CASE macro requires this
+#  -clang-diagnostic-c++98-compat-unnamed-type-template-args  // allow lambda types in template parameters
+#  -cppcoreguidelines-avoid-magic-numbers,                // all tests use magic numbers
+#  -cppcoreguidelines-avoid-non-const-global-variables,   // expansion BOOST_AUTO_TEST_CASE macros require this
+#  -cppcoreguidelines-macro-usage,                        // definition of BOOST_TEST_MODULE macro requires this
+#  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,  // assert macros need this
+#  -cppcoreguidelines-pro-type-vararg,                    // expansion of BOOST_REQUIRE macros require this
+#  -fuchsia-default-arguments-declarations                // BOOST_AUTO_TEST_CASE_TEMPLATE
+#  -fuchsia-default-arguments-calls,                      // expansion of BOOST_REQUIRE macros require this
+#  -fuchsia-overloaded-operator,                          // this library overloads operators (==, >, +, &)
+#  -fuchsia-statically-constructed-objects,               // expansion of BOOST_AUTO_TEST_CASE creates these
+#  -fuchsia-trailing-return,                              // to allow any '-> decltype(auto)'
+#  -hicpp-no-array-decay,                                 // all assert macros require this
+#  -hicpp-vararg,                                         // all expansions of BOOST_TEST_REQUIRE macros require this
+#  -llvmlibc-implementation-in-namespace,                 // nonsense warning
+#  -llvmlibc-callee-namespace,                            // nonsense warning
+#  -llvmlibc-restrict-system-libc-headers,                // nonsense warning
+#  -modernize-use-nodiscard,                              // this would add [[nodiscard]] to almost all functions, adding a lot of noise
+#  -readability-magic-numbers,                            // all tests use magic numbers
+

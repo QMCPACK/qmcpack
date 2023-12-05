@@ -1027,6 +1027,18 @@ def test_job_run_command():
         ('amos'           , 'n2_t2'         ) : 'srun test.x',
         ('amos'           , 'n2_t2_e'       ) : 'srun test.x',
         ('amos'           , 'n2_t2_p2'      ) : 'srun test.x',
+        ('andes'          , 'n1'            ) : 'srun -N 1 -n 32 test.x',
+        ('andes'          , 'n1_p1'         ) : 'srun -N 1 -n 1 test.x',
+        ('andes'          , 'n2'            ) : 'srun -N 2 -n 64 test.x',
+        ('andes'          , 'n2_t2'         ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 32 test.x',
+        ('andes'          , 'n2_t2_e'       ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 32 test.x',
+        ('andes'          , 'n2_t2_p2'      ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 4 test.x',
+        ('archer2'        , 'n1'            ) : 'srun --distribution=block:block --hint=nomultithread -N 1 -n 128 test.x',
+        ('archer2'        , 'n1_p1'         ) : 'srun --distribution=block:block --hint=nomultithread -N 1 -n 1 test.x',
+        ('archer2'        , 'n2'            ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -n 256 test.x',
+        ('archer2'        , 'n2_t2'         ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
+        ('archer2'        , 'n2_t2_e'       ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
+        ('archer2'        , 'n2_t2_p2'      ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 4 test.x',
         ('attaway'        , 'n1'            ) : 'srun test.x',
         ('attaway'        , 'n1_p1'         ) : 'srun test.x',
         ('attaway'        , 'n2'            ) : 'srun test.x',
@@ -1087,12 +1099,6 @@ def test_job_run_command():
         ('eclipse'        , 'n2_t2'         ) : 'srun test.x',
         ('eclipse'        , 'n2_t2_e'       ) : 'srun test.x',
         ('eclipse'        , 'n2_t2_p2'      ) : 'srun test.x',
-        ('edison'         , 'n1'            ) : 'srun test.x',
-        ('edison'         , 'n1_p1'         ) : 'srun test.x',
-        ('edison'         , 'n2'            ) : 'srun test.x',
-        ('edison'         , 'n2_t2'         ) : 'srun test.x',
-        ('edison'         , 'n2_t2_e'       ) : 'srun test.x',
-        ('edison'         , 'n2_t2_p2'      ) : 'srun test.x',
         ('eos'            , 'n1'            ) : 'aprun -n 16 test.x',
         ('eos'            , 'n1_p1'         ) : 'aprun -n 1 test.x',
         ('eos'            , 'n2'            ) : 'aprun -n 32 test.x',
@@ -1141,6 +1147,18 @@ def test_job_run_command():
         ('oic5'           , 'n2_t2'         ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n2_t2_e'       ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
+        ('perlmutter'     , 'n1'            ) : 'srun test.x',
+        ('perlmutter'     , 'n1_p1'         ) : 'srun test.x',
+        ('perlmutter'     , 'n2'            ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2'         ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2_e'       ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2_p2'      ) : 'srun test.x',
+        ('polaris'        , 'n1'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 32 --ppn 32 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n1_p1'         ) : 'mpiexec --cpu-bind depth --depth=1 -n 1 --ppn 1 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n2'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 64 --ppn 32 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n2_t2'         ) : 'mpiexec --cpu-bind depth --depth=2 -n 32 --ppn 16 --env OMP_NUM_THREADS=2 test.x',
+        ('polaris'        , 'n2_t2_e'       ) : 'mpiexec --cpu-bind depth --depth=2 -n 32 --ppn 16 --env OMP_NUM_THREADS=2 test.x',
+        ('polaris'        , 'n2_t2_p2'      ) : 'mpiexec --cpu-bind depth --depth=2 -n 4 --ppn 2 --env OMP_NUM_THREADS=2 test.x',
         ('rhea'           , 'n1'            ) : 'srun -N 1 -n 16 test.x',
         ('rhea'           , 'n1_p1'         ) : 'srun -N 1 -n 1 test.x',
         ('rhea'           , 'n2'            ) : 'srun -N 2 -n 32 test.x',
@@ -1221,6 +1239,12 @@ def test_job_run_command():
         ('vesta'          , 'n2_t2'         ) : 'runjob --envs OMP_NUM_THREADS=2 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2_t2_e'       ) : 'runjob --envs OMP_NUM_THREADS=2 ENV_VAR=1 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2_t2_p2'      ) : 'runjob --envs OMP_NUM_THREADS=2 --np 4 -p 2 --verbose=INFO $LOCARGS : test.x',
+        ('kagayaki'       , 'n1'            ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n1_p1'         ) : 'mpirun -machinefile $PBS_NODEFILE -np 1 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2'            ) : 'mpirun -machinefile $PBS_NODEFILE -np 256 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2'         ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2_e'       ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2_p2'      ) : 'mpirun -machinefile $PBS_NODEFILE -np 4 -x OMP_NUM_THREADS test.x',
         })
 
     if testing.global_data['job_ref_table']:
@@ -1358,6 +1382,44 @@ def test_write_job():
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 srun test.x''',
+        andes = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+cd $SLURM_SUBMIT_DIR
+
+echo JobID : $SLURM_JOBID 
+echo Number of nodes requested: $SLURM_JOB_NUM_NODES 
+echo List of nodes assigned to the job: $SLURM_NODELIST 
+
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun -N 2 -n 64 test.x''',
+        archer2 = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --partition=standard
+#SBATCH --qos=standard
+
+echo JobID : $SLURM_JOBID
+echo Number of nodes requested: $SLURM_JOB_NUM_NODES
+echo List of nodes assigned to the job: $SLURM_NODELIST
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+
+srun --distribution=block:block --hint=nomultithread -N 2 -n 256 test.x''',
         attaway = '''#!/bin/bash
 #SBATCH -p batch
 #SBATCH --job-name jobname
@@ -1502,23 +1564,6 @@ srun test.x''',
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 srun test.x''',
-        edison = '''#!/bin/bash
-#SBATCH -p regular
-#SBATCH -J jobname
-#SBATCH -t 06:30:00
-#SBATCH -N 2
-#SBATCH --ntasks-per-node=24
-#SBATCH --cpus-per-task=1
-#SBATCH -o test.out
-#SBATCH -e test.err
-#SBATCH --export=ALL
-
-echo $SLURM_SUBMIT_DIR
-cd $SLURM_SUBMIT_DIR
-
-export OMP_NUM_THREADS=1
-export ENV_VAR=1
-srun test.x''',
         eos = '''#!/bin/bash
 #PBS -A ABC123
 #PBS -q batch
@@ -1646,6 +1691,41 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 mpirun -np 64 test.x''',
+        perlmutter = '''#!/bin/bash
+#SBATCH -C cpu
+#SBATCH -q regular
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH -c 2
+#SBATCH -J jobname
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
+
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        polaris = '''#!/bin/sh
+#PBS -l select=2:system=polaris
+#PBS -l place=scatter
+#PBS -l filesystems=home:eagle:grand
+#PBS -l walltime=06:30:00
+#PBS -A ABC123
+#PBS -q prod
+#PBS -N jobname
+#PBS -k doe
+#PBS -o test.out
+#PBS -e test.err
+
+cd ${PBS_O_WORKDIR}
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpiexec --cpu-bind depth --depth=1 -n 64 --ppn 32 --env OMP_NUM_THREADS=1 test.x''',
         rhea = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
@@ -1842,6 +1922,16 @@ echo "Cobalt location args: $LOCARGS" >&2
 
 
 runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
+        kagayaki = '''#!/bin/bash
+#PBS -N jobname
+#PBS -o test.out
+#PBS -e test.err
+#PBS -l select=2:ncpus=128:mpiprocs=128
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -machinefile $PBS_NODEFILE -np 256 -x OMP_NUM_THREADS test.x''',
         )
 
     def process_job_file(jf):
@@ -1869,6 +1959,7 @@ runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 
     def job_files_same(jf1,jf2):
         jf1 = process_job_file(jf1)
         jf2 = process_job_file(jf2)
+        if not object_eq(jf1,jf2): print(f"compare --------------------\n * wj *\n{jf1}\n * ref_wj *\n{jf2}\n")
         return object_eq(jf1,jf2)
     #end def job_files_same
 

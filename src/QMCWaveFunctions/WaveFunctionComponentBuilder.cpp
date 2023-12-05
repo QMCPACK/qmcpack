@@ -45,8 +45,6 @@ std::string WaveFunctionComponentBuilder::spo_tag = "psi";
 
 std::string WaveFunctionComponentBuilder::sposet_tag = "sposet";
 
-std::string WaveFunctionComponentBuilder::basisset_tag = "basisset";
-
 std::string WaveFunctionComponentBuilder::ionorb_tag = "ionwf";
 
 std::string WaveFunctionComponentBuilder::backflow_tag = "backflow";

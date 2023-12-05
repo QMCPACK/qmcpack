@@ -106,37 +106,37 @@ struct double_hyperslab_proxy : public container_proxy<CT>
 template<typename CT, unsigned MAXDIM>
 struct h5data_proxy<double_hyperslab_proxy<CT, MAXDIM>>
 {
-  double_hyperslab_proxy<CT, MAXDIM>& ref_;
-  h5data_proxy(double_hyperslab_proxy<CT, MAXDIM>& a) : ref_(a) {}
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  double_hyperslab_proxy<CT, MAXDIM>& ref;
+  h5data_proxy(double_hyperslab_proxy<CT, MAXDIM>& a) {}
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (ref_.use_slab)
+    if (ref.use_slab)
     {
-      return h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
-                      ref_.slab_offset.data(), ref_.mem_rank, ref_.mem_dims.data(), ref_.mem_dims_local.data(),
-                      ref_.mem_offset.data(), ref_.data(), xfer_plist);
+      return h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
+                      ref.slab_offset.data(), ref.mem_rank, ref.mem_dims.data(), ref.mem_dims_local.data(),
+                      ref.mem_offset.data(), ref.data(), xfer_plist);
     }
     else
     {
-      int rank = ref_.slab_rank;
-      if (!get_space(grp, aname, rank, ref_.slab_dims.data(), true))
+      int rank = ref.slab_rank;
+      if (!get_space(grp, aname, rank, ref.slab_dims.data(), true))
       {
-        ref_.change_shape();
+        ref.change_shape();
       }
-      return h5d_read(grp, aname, ref_.data(), xfer_plist);
+      return h5d_read(grp, aname, ref.data(), xfer_plist);
     }
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (ref_.use_slab)
+    if (ref.use_slab)
     {
-      return h5d_write(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
-                       ref_.slab_offset.data(), ref_.mem_rank, ref_.mem_dims.data(), ref_.mem_dims_local.data(),
-                       ref_.mem_offset.data(), ref_.data(), xfer_plist);
+      return h5d_write(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
+                       ref.slab_offset.data(), ref.mem_rank, ref.mem_dims.data(), ref.mem_dims_local.data(),
+                       ref.mem_offset.data(), ref.data(), xfer_plist);
     }
     else
     {
-      return h5d_write(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.data(), xfer_plist);
+      return h5d_write(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.data(), xfer_plist);
     }
   }
 };

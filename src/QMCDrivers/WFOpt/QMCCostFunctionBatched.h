@@ -12,8 +12,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_COSTFUNCTION_H
-#define QMCPLUSPLUS_COSTFUNCTION_H
+#ifndef QMCPLUSPLUS_COSTFUNCTION_BATCHED_H
+#define QMCPLUSPLUS_COSTFUNCTION_BATCHED_H
 
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
@@ -30,54 +30,59 @@ namespace qmcplusplus
 
 class CostFunctionCrowdData;
 
+namespace testing
+{
+class LinearMethodTestSupport;
+};
+
 
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
 public:
   ///Constructor.
-  QMCCostFunctionBatched(MCWalkerConfiguration& w,
+  QMCCostFunctionBatched(ParticleSet& w,
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
                          SampleStack& samples,
-                         int opt_num_crowds,
-                         int crowd_size,
+                         const std::vector<int>& walkers_per_crowd,
                          Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunctionBatched();
+  ~QMCCostFunctionBatched() override;
 
-  void getConfigurations(const std::string& aroot);
-  void checkConfigurations();
+  void getConfigurations(const std::string& aroot) override;
+  void checkConfigurations(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                   DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod);
+                                  const std::string& MinMethod) override;
 #endif
 
 
-  void resetPsi(bool final_reset = false);
-  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0);
-  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
+  void resetPsi(bool final_reset = false) override;
+  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
 
 protected:
-  std::unique_ptr<QMCHamiltonian> H_KE_Node;
-  std::unique_ptr<QMCHamiltonian> extractFixedHamiltonianComponents();
+  /// H components used in correlated sampling. It can be KE or KE+NLPP
+  std::vector<std::string> H_KE_node_names_;
 
   Matrix<Return_rt> RecordsOnNode_;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  Matrix<Return_rt> DerivRecords_;
+  Matrix<Return_t> DerivRecords_;
   Matrix<Return_rt> HDerivRecords_;
 
-  Return_rt correlatedSampling(bool needGrad = true);
+  EffectiveWeight correlatedSampling(bool needGrad = true) override;
 
   SampleStack& samples_;
 
-  int opt_batch_size_;
-  int opt_num_crowds_;
+  // Number of samples local to each MPI rank
+  int rank_local_num_samples_;
 
-  std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
+  // Number of walkers per crowd. Size of vector is number of crowds.
+  std::vector<int> walkers_per_crowd_;
 
   NewTimer& check_config_timer_;
   NewTimer& corr_sampling_timer_;
@@ -85,8 +90,11 @@ protected:
 
 
 #ifdef HAVE_LMY_ENGINE
-  int total_samples();
+  size_t total_samples();
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
 #endif
+
+  friend testing::LinearMethodTestSupport;
 };
 } // namespace qmcplusplus
 #endif

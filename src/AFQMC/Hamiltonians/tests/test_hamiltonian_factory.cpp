@@ -16,7 +16,7 @@
 #include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "hdf/hdf_archive.h"
 
 #undef APP_ABORT
@@ -74,15 +74,15 @@ void ham_factory(boost::mpi3::communicator& world)
     REQUIRE(NAEA == NAEB);
 
     std::map<std::string, AFQMCInfo> InfoMap;
-    InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
+    InfoMap.insert(std::make_pair("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-<parameter name=\"filetype\">hdf5</parameter> \
-<parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-</Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_block);
@@ -106,20 +106,19 @@ void ham_generation_timing(boost::mpi3::communicator& world)
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
-    int NMO, NAEA, NAEB;
-    std::tie(NMO, NAEA, NAEB) = read_info_from_hdf("./afqmc_timing.h5");
+    auto [NMO, NAEA, NAEB] = read_info_from_hdf("./afqmc_timing.h5");
 
     std::map<std::string, AFQMCInfo> InfoMap;
-    InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
+    InfoMap.insert(std::make_pair("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
 
-    const char* xml_block = "<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"version\">new</parameter> \
-    <parameter name=\"filename\">./afqmc_timing.h5</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-  </Hamiltonian> \
-";
+    const char* xml_block = R"(<Hamiltonian name="ham0" type="SparseGeneral" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="version">new</parameter>
+      <parameter name="filename">./afqmc_timing.h5</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_block);
     REQUIRE(okay);

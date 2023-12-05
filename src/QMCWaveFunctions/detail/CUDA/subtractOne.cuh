@@ -13,7 +13,13 @@
 #ifndef CUDA_SUBTRACTONE_H
 #define CUDA_SUBTRACTONE_H
 
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuComplex.h>
+#else
+#include <hip/hip_complex.h>
+#include "ROCm/cuda2hip.h"
+#endif
 
 template<typename T>
 __host__ __device__ __inline__ T subtractOne(T x)

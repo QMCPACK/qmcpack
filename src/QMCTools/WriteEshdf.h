@@ -31,8 +31,8 @@ class KPoint;
 */
 class EshdfFile
 {
-  typedef std::map<std::vector<int>, std::complex<double>> momap_t;
-  typedef std::pair<std::vector<int>, std::complex<double>> mopair_t;
+  using momap_t  = std::map<std::vector<int>, std::complex<double>>;
+  using mopair_t = std::pair<std::vector<int>, std::complex<double>>;
 
 private:
   qmcplusplus::hdf_archive outfile_;

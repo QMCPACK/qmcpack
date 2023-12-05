@@ -52,7 +52,7 @@ def compare_columns_dat_h5(fdat, fh5):
 
     # get .h5 values
     h5_loc = os.path.join(col, 'value')
-    h5y  = fp[h5_loc].value[:,-1]
+    h5y  = fp[h5_loc][:][:,-1]
 
     # get .dat values
     daty = df.loc[:,col].values

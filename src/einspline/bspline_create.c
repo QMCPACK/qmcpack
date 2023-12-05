@@ -1,21 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 //  einspline:  a library for creating and evaluating B-splines            //
 //  Copyright (C) 2007 Kenneth P. Esler, Jr.                               //
-//                                                                         //
-//  This program is free software; you can redistribute it and/or modify   //
-//  it under the terms of the GNU General Public License as published by   //
-//  the Free Software Foundation; either version 2 of the License, or      //
-//  (at your option) any later version.                                    //
-//                                                                         //
-//  This program is distributed in the hope that it will be useful,        //
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of         //
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          //
-//  GNU General Public License for more details.                           //
-//                                                                         //
-//  You should have received a copy of the GNU General Public License      //
-//  along with this program; if not, write to the Free Software            //
-//  Foundation, Inc., 51 Franklin Street, Fifth Floor,                     //
-//  Boston, MA  02110-1301  USA                                            //
+//  Released under the BSD-3-clause license                                //
 /////////////////////////////////////////////////////////////////////////////
 
 #include "bspline_create.h"
@@ -27,7 +13,7 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
-#include <inttypes.h>
+#include <stdint.h>
 
 int posix_memalign(void **memptr, size_t alignment, size_t size);
 
@@ -1854,9 +1840,6 @@ destroy_UBspline (Bspline *spline)
   free (spline);
 }
 
-void 
-destroy_NUBspline (Bspline *spline);
-
 void
 destroy_multi_UBspline (Bspline *spline);
 
@@ -1866,11 +1849,12 @@ destroy_Bspline (void *spline)
   Bspline *sp = (Bspline *)spline;
   if (sp->sp_code <= U3D) 
     destroy_UBspline (sp);
-  else if (sp->sp_code <= NU3D) 
-    destroy_NUBspline (sp);
   else if (sp->sp_code <= MULTI_U3D)
     destroy_multi_UBspline (sp);
   else
+  {
     fprintf (stderr, "Error in destroy_Bspline:  invalide spline code %d.\n",
 	     sp->sp_code);
+    abort();
+  }
 }

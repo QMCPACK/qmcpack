@@ -292,9 +292,6 @@ reference_code_tests = obj(
         short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
         short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
         ''',
-    v340_180505 = '''
-        short-C2_pp-msdj-traditional_vmc
-        ''',
     v340_180705 = '''
         short-LiH_dimer_ae_qp-vmc_hf_noj
         short-LiH_dimer_ae_pyscf-vmc_hf_noj

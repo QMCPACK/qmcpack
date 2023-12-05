@@ -25,13 +25,12 @@
 #include "Message/MPIObjectBase.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/TimerManager.h"
 #include "type_traits/template_types.hpp"
 #include "Containers/MinimalContainers/RecordArray.hpp"
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#endif
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include "TWFGrads.hpp"
+#include "Utilities/RuntimeOptions.h"
 
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
@@ -39,6 +38,8 @@
 
 namespace qmcplusplus
 {
+class MultiSlaterDetTableMethod;
+
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -50,39 +51,33 @@ namespace qmcplusplus
  *Each WaveFunctionComponent should provide proper evaluate functions
  *for the value, gradient and laplacian values.
  *
- * flex_ prefix is a function name signature indicating it is for handling
+ * mw_ prefix is a function name signature indicating it is for handling
  * a batch of TrialWaveFunction objects in a lock-step fashion. These functions
  * are defined statically because they should not have access to a
- * concrete TWF object except through the passed RefVector<TWF>&.
- *
- * It dispatches to mw_ functions of WaveFunctionComponent or single walker functions
- * based on the number of objects WFC in the input. This accomidates openmp's implicit detection
- * of nested parallelism.
+ * concrete TWF object except through the passed RefVectorWithLeader<TWF>&.
+ * It dispatches to mw_ functions of WaveFunctionComponent
  */
 class TrialWaveFunction
 {
 public:
   // derived types from WaveFunctionComponent
-  typedef WaveFunctionComponent::RealType RealType;
-  typedef WaveFunctionComponent::ComplexType ComplexType;
-  using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
-  typedef WaveFunctionComponent::ValueType ValueType;
-  typedef WaveFunctionComponent::PosType PosType;
-  typedef WaveFunctionComponent::GradType GradType;
-  typedef WaveFunctionComponent::BufferType BufferType;
-  typedef WaveFunctionComponent::WFBufferType WFBufferType;
-  typedef WaveFunctionComponent::HessType HessType;
-  typedef WaveFunctionComponent::HessVector_t HessVector_t;
-  using LogValueType = WaveFunctionComponent::LogValueType;
-  using PsiValueType = WaveFunctionComponent::PsiValueType;
+  using RealType    = WaveFunctionComponent::RealType;
+  using ComplexType = WaveFunctionComponent::ComplexType;
 
-#ifdef QMC_CUDA
-  using CTS = CUDAGlobalTypes;
-  typedef WaveFunctionComponent::RealMatrix_t RealMatrix_t;
-  typedef WaveFunctionComponent::ValueMatrix_t ValueMatrix_t;
-  typedef WaveFunctionComponent::GradMatrix_t GradMatrix_t;
-  typedef ParticleSet::Walker_t Walker_t;
+#ifndef NDEBUG
+  using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
 #endif
+
+  using ValueType    = WaveFunctionComponent::ValueType;
+  using GradType     = WaveFunctionComponent::GradType;
+  using BufferType   = WaveFunctionComponent::BufferType;
+  using WFBufferType = WaveFunctionComponent::WFBufferType;
+  using HessType     = WaveFunctionComponent::HessType;
+  using HessVector   = WaveFunctionComponent::HessVector;
+  using LogValue     = WaveFunctionComponent::LogValue;
+  using PsiValue     = WaveFunctionComponent::PsiValue;
+
+  using SPOMap = SPOSet::SPOMap;
 
   /// enum type for computing partial WaveFunctionComponents
   enum class ComputeType
@@ -93,11 +88,11 @@ public:
   };
 
   ///differential gradients
-  ParticleSet::ParticleGradient_t G;
+  ParticleSet::ParticleGradient G;
   ///differential laplacians
-  ParticleSet::ParticleLaplacian_t L;
+  ParticleSet::ParticleLaplacian L;
 
-  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false);
+  TrialWaveFunction(const RuntimeOptions& runtime_options, const std::string_view aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -115,46 +110,78 @@ public:
 
   inline RealType getPhaseDiff() const { return PhaseDiff; }
   inline void resetPhaseDiff() { PhaseDiff = 0.0; }
-  inline RealType getLogPsi() const { return LogValue; }
-  inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }
+  inline RealType getLogPsi() const { return log_real_; }
+  inline void setLogPsi(RealType LogPsi_new) { log_real_ = LogPsi_new; }
 
   /** add a WaveFunctionComponent
    * @param aterm a WaveFunctionComponent pointer
-   * @param aname a name to the added WaveFunctionComponent object for printing
    */
-  void addComponent(WaveFunctionComponent* aterm);
+  void addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
-  ///implement the virtual function
-  void reset();
-  /** set WaveFunctionComponent::IsOptimizing to true */
-  void startOptimization();
-  /** set WaveFunctionComponent::IsOptimizing to flase */
-  void stopOptimization();
-  /** check in an optimizable parameter
-   * * @param o a super set of optimizable variables
+
+  // Wavefunction Parameter Optimization
+  //
+  // The wavefunction consists of a set of components (derived from WaveFunctionComponent).
+  // Each of these components may or may not have variational parameters.
+  // In order to perform optimization:
+  //  1. Parameters are collected into a single list.
+  //  2. Optimization algorithm computes new values for those parameters.
+  //  3. Changed parameters are propagated back to each of the components.
+  //
+  // The collection of variables is of type VariableSet (opt_variables_type is a typedef).
+  // The variables local to each component are stored in WaveFunctionComponent::myVars, which
+  // is set to the local parameters when the component is set up.
+  // The call to checkInVariables collects all the local parameters into a global list (step 1).
+  // The resetIndex function on VariableSet then computes indices for this global list.
+  // The call to checkOutVariables sets up the mapping from global index to local index in each component's 'myVars'.
+  // Finally, the call to resetParameters progates the new values (step 3).
+  // The call to checkOutVariables is a prerequisite for resetParameters to set the local values successfully.
+
+  /** extract underlying OptimizableObject references
+   * @param opt_obj_refs aggregated list of optimizable object references
+   */
+  UniqueOptObjRefs extractOptimizableObjectRefs();
+
+  /** Check in an optimizable parameter
+   * @param o aggregated list of optimizable variables
    *
-   * Update myOptIndex if o is found among the "active" paramemters.
+   * Gather all the optimizable parameters from wavefunction components into a single list
    */
   void checkInVariables(opt_variables_type& o);
-  /** check out optimizable variables
+
+  /** Check out optimizable variables
+   * Assign index mappings from global list (o) to local values in each component
    */
   void checkOutVariables(const opt_variables_type& o);
-  ///reset member data
+
+  /**  Set values of parameters in each component from the global list
+   */
   void resetParameters(const opt_variables_type& active);
+
+
   /** print out state of the trial wavefunction
    */
   void reportStatus(std::ostream& os);
 
+  /** Initialize a TWF wrapper for fast derivative evaluation
+   */
+  void initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
   /** batched version of evaluateLog. gold reference */
-  static void flex_evaluateLog(const RefVector<TrialWaveFunction>& WF_list, const RefVector<ParticleSet>& P_list);
+  static void mw_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** recompute the value of the orbitals which require critical accuracy */
-  void recompute(ParticleSet& P);
+  void recompute(const ParticleSet& P);
+
+  /** batched version of recompute*/
+  static void mw_recompute(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           const std::vector<bool>& recompute);
 
   /** evaluate the log value of a many-body wave function
    * @param P input configuration containing N particles
@@ -188,11 +215,11 @@ public:
    * It is expected that evaluateDeltaLog(P,false) is called later
    * and the external object adds the varying G and L and the fixed terms.
    */
-  void evaluateDeltaLog(ParticleSet& P,
-                        RealType& logpsi_fixed,
-                        RealType& logpsi_opt,
-                        ParticleSet::ParticleGradient_t& fixedG,
-                        ParticleSet::ParticleLaplacian_t& fixedL);
+  void evaluateDeltaLogSetup(ParticleSet& P,
+                             RealType& logpsi_fixed,
+                             RealType& logpsi_opt,
+                             ParticleSet::ParticleGradient& fixedG,
+                             ParticleSet::ParticleLaplacian& fixedL);
 
   /** evaluate the sum of log value of optimizable many-body wavefunctions
    * @param wf_list vector of wavefunctions
@@ -211,15 +238,15 @@ public:
    *
    * Parameters fixedG_list and fixedL_list save the terms coming from the components
    * that do not have optimizable parameters.
-   * It is expected that flex_evaluateDeltaLog(P,false) is called later
+   * It is expected that mw_evaluateDeltaLog(P,false) is called later
    * and the external object adds the varying G and L and the fixed terms.
    */
-  static void flex_evaluateDeltaLogSetup(const RefVector<TrialWaveFunction>& wf_list,
-                                         const RefVector<ParticleSet>& p_list,
-                                         std::vector<RealType>& logpsi_fixed_list,
-                                         std::vector<RealType>& logpsi_opt_list,
-                                         RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
-                                         RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
+  static void mw_evaluateDeltaLogSetup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                       std::vector<RealType>& logpsi_fixed_list,
+                                       std::vector<RealType>& logpsi_opt_list,
+                                       RefVector<ParticleSet::ParticleGradient>& fixedG_list,
+                                       RefVector<ParticleSet::ParticleLaplacian>& fixedL_list);
 
   /** evaluate the log value for optimizable parts of a many-body wave function
    * @param wf_list vector of wavefunctions
@@ -237,19 +264,19 @@ public:
    *   default value.  call evaluateLog only on optimizable orbitals.  OK if nonlocal pp's aren't used.
    *
    * To save time, logpsi, G, and L are only computed for orbitals that change over the course of the optimization.
-   * It is assumed that the fixed components are stored elsewhere.  See flex_evaluateDeltaLogSetup defined above.
+   * It is assumed that the fixed components are stored elsewhere.  See mw_evaluateDeltaLogSetup defined above.
    * Nonlocal pseudopotential evaluation requires temporary information like matrix inverses, so while
    * the logpsi, G, and L don't change, evaluateLog is called anyways to compute these auxiliary quantities from scratch.
    * logpsi, G, and L associated with these non-optimizable orbitals are discarded explicitly and with dummy variables.
    */
 
 
-  static void flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
-                                    const RefVector<ParticleSet>& p_list,
-                                    std::vector<RealType>& logpsi_list,
-                                    RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
-                                    RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
-                                    bool recompute = false);
+  static void mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                  std::vector<RealType>& logpsi_list,
+                                  RefVector<ParticleSet::ParticleGradient>& dummyG_list,
+                                  RefVector<ParticleSet::ParticleLaplacian>& dummyL_list,
+                                  bool recompute = false);
 
 
   /** compute psi(R_new) / psi(R_current) ratio
@@ -262,30 +289,30 @@ public:
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
 
   /** batched version of calcRatio */
-  static void flex_calcRatio(const RefVector<TrialWaveFunction>& WF_list,
-                             const RefVector<ParticleSet>& P_list,
-                             int iat,
-                             std::vector<PsiValueType>& ratios,
-                             ComputeType ct = ComputeType::ALL);
+  static void mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<PsiValue>& ratios,
+                           ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
   /** batched version of evaluateRatios
-   * Note: unlike other flex_ static functions, *this is the batch leader instead of WF_list[0].
+   * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
-  void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list,
-                           const RefVector<const VirtualParticleSet>& VP_list,
-                           const RefVector<std::vector<ValueType>>& ratios_list,
-                           ComputeType ct = ComputeType::ALL);
+  static void mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
+                                const RefVector<std::vector<ValueType>>& ratios_list,
+                                ComputeType ct = ComputeType::ALL);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
-  void evaluateDerivRatios(VirtualParticleSet& P,
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
 
-  void printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
+  void printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag = "GL");
 
   /** Returns the logarithmic gradient of the trial wave function
    *  with respect to the iat^th atom of the source ParticleSet. */
@@ -296,15 +323,15 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& source,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad);
 
   /** compute psi(R_new) / psi(R_current) ratio and \nabla ln(psi(R_new)) gradients
    * It returns a complex value if the wavefunction is complex.
    * @param P the active ParticleSet
    * @param iat the index of a particle moved to the new position.
-   * @param grad_iat gradients
-   * @return ratio value
+   * @param grad_iat gradients. The consumer must verify if ratio is non-zero.
+   * @return ratio value. The caller must reject zero ratio moves.
    */
   ValueType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
@@ -312,21 +339,38 @@ public:
    * It returns a complex value if the wavefunction is complex.
    * @param P the active ParticleSet
    * @param iat the index of a particle moved to the new position.
-   * @param grad_iat real space gradient for iat
-   * @param spingrad_iat spin gradient for iat
-   * @return ratio value
+   * @param grad_iat real space gradient for iat. The consumer must verify if ratio is non-zero.
+   * @param spingrad_iat spin gradient for iat. The consumer must verify if ratio is non-zero.
+   * @return ratio value. The caller must reject zero ratio moves.
    */
   ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat);
 
-  /** batched version of ratioGrad 
+  /** batched version of ratioGrad
+   *
+   *  all vector sizes must match
+   *  implements switch between normal and WithSpin version
+   */
+  template<CoordsType CT>
+  static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list,
+                               int iat,
+                               std::vector<PsiValue>& ratios,
+                               TWFGrads<CT>& grads);
+
+  /** Prepare internal data for updating WFC correspond to a particle group
+   *  Particle groups usually correspond to determinants of different spins.
+   *  This call can be used to handle precomputation for PbyP moves.
+   * @param P quantum particle set
+   * @param ig particle group index
+   */
+  void prepareGroup(ParticleSet& P, int ig);
+  /** batched version of prepareGroup
    *
    *  all vector sizes must match
    */
-  static void flex_calcRatioGrad(const RefVector<TrialWaveFunction>& WF_list,
-                                 const RefVector<ParticleSet>& P_list,
-                                 int iat,
-                                 std::vector<PsiValueType>& ratios,
-                                 std::vector<GradType>& grad_new);
+  static void mw_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
+                              int ig);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
@@ -344,92 +388,93 @@ public:
     *
     * This is static because it should have no direct access
     * to any TWF.
+    * implements switch between normal and WithSpin version
     */
-  static void flex_evalGrad(const RefVector<TrialWaveFunction>& WF_list,
-                            const RefVector<ParticleSet>& P_list,
-                            int iat,
-                            std::vector<GradType>& grad_now);
+  template<CoordsType CT>
+  static void mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          TWFGrads<CT>& grads);
 
   void rejectMove(int iat);
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
-  /* flexible batched version of acceptMove */
-  static void flex_accept_rejectMove(const RefVector<TrialWaveFunction>& wf_list,
-                                     const RefVector<ParticleSet>& p_list,
-                                     int iat,
-                                     const std::vector<bool>& isAccepted,
-                                     bool safe_to_delay = false);
+  /* batched version of acceptMove */
+  static void mw_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool safe_to_delay = false);
+
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   *  See WaveFunctionComponent::completeUpdates for more detail */
   void completeUpdates();
-  /* flexible batched version of completeUpdates.  */
-  static void flex_completeUpdates(const RefVector<TrialWaveFunction>& WF_list);
+  /* batched version of completeUpdates.  */
+  static void mw_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list);
+
+  /** compute gradients and laplacian of the TWF with respect to each particle.
+   *  See WaveFunctionComponent::evaluateGL for more detail */
+  LogValue evaluateGL(ParticleSet& P, bool fromscratch);
+  /* batched version of evaluateGL.
+   */
+  static void mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            bool fromscratch);
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  /* flexible batched version of registerData.
-   * 
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
-   * The strange mix of argument types reflect this being called from MCPopulation instead
-   * of Crowd like most of the flex functions.
-   */
-  static void flex_registerData(const UPtrVector<TrialWaveFunction>& WF_list,
-                                const UPtrVector<ParticleSet>& P_list,
-                                const RefVector<WFBufferType>& buf_list);
-
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
-  /* flexible batched version of updateBuffer. 
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
-   */
-  static void flex_updateBuffer(const RefVector<TrialWaveFunction>& WF_list,
-                                const RefVector<ParticleSet>& P_list,
-                                const RefVector<WFBufferType>& buf_list,
-                                bool fromscratch = false);
-
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
-  /* flexible batched version of copyFromBuffer. 
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
+
+  /// initialize a shared resource and hand it to a collection
+  void createResource(ResourceCollection& collection) const;
+  /** acquire external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void flex_copyFromBuffer(const RefVector<TrialWaveFunction>& WF_list,
-                           const RefVector<ParticleSet>& P_list,
-                           const RefVector<WFBufferType>& buf_list) const;
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
+  /** release external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   RealType KECorrection() const;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
-                           bool project = false);
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi);
 
-  static void flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
-                                                const RefVector<ParticleSet>& p_list,
-                                                const opt_variables_type& optvars,
-                                                RecordArray<ValueType>& dlogpsi,
-                                                RecordArray<ValueType>& dhpsioverpsi);
+  static void mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                              const RefVectorWithLeader<ParticleSet>& p_list,
+                                              const opt_variables_type& optvars,
+                                              RecordArray<ValueType>& dlogpsi,
+                                              RecordArray<ValueType>& dhpsioverpsi);
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
   // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
-  void evaluateHessian(ParticleSet& P, HessVector_t& all_grad_grad_psi);
+  void evaluateHessian(ParticleSet& P, HessVector& all_grad_grad_psi);
 
-  TrialWaveFunction* makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<TrialWaveFunction> makeClone(ParticleSet& tqp) const;
 
-  std::vector<WaveFunctionComponent*>& getOrbitals() { return Z; }
+  std::vector<std::unique_ptr<WaveFunctionComponent>> const& getOrbitals() { return Z; }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
-  void setTwist(std::vector<RealType> t) { myTwist = t; }
-  const std::vector<RealType> twist() { return myTwist; }
+  void setTwist(const std::vector<RealType>& t) { myTwist = t; }
+  void setTwist(std::vector<RealType>&& t) { myTwist = std::move(t); }
+  const std::vector<RealType>& twist() const { return myTwist; }
 
   inline void setMassTerm(ParticleSet& P)
   {
@@ -442,17 +487,40 @@ public:
 
   RealType getReciprocalMass() { return OneOverM; }
 
-  /* flexible batched version of evaluateGL.
-   * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
-   */
-  void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
-
   const std::string& getName() const { return myName; }
 
   bool use_tasking() const { return use_tasking_; }
 
+  void storeXMLNode(xmlNodePtr node) { myNode_ = xmlCopyNode(node, 1); }
+
+  xmlNodePtr getNode() const { return myNode_; }
+
+  /// store an SPOSet map
+  void storeSPOMap(SPOMap&& spomap) { *spomap_ = std::move(spomap); }
+
+  /// look up SPOSet named 'name', if not found, throw exception.
+  const SPOSet& getSPOSet(const std::string& name) const;
+
+  /// spomap_ reference accessor
+  const SPOMap& getSPOMap() const { return *spomap_; }
+
+  /// find MSD WFCs if exist
+  RefVector<MultiSlaterDetTableMethod> findMSD() const;
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
+  /// @brief top-level runtime options from project data information > WaveFunctionPool
+  const RuntimeOptions& runtime_options_;
+
+  /** XML input node for a many-body wavefunction. Copied from the original one.
+   * WFOpt driver needs to look it up and make its own copies.
+   * YL: updating parameters in an XML file is extremely messy. Better to make WFOpt using h5 only.
+   */
+  xmlNodePtr myNode_;
+
+  /// Owned SPOSets. Once a TWF is fully built, SPOSet lookup should be done via TWF.
+  const std::shared_ptr<SPOMap> spomap_;
 
   ///getName is in the way
   const std::string myName;
@@ -469,8 +537,8 @@ private:
   ///diff of the phase of the trial wave function during ratio calls
   RealType PhaseDiff;
 
-  ///log of the trial wave function
-  RealType LogValue;
+  ///real part of trial wave function log
+  RealType log_real_;
 
   ///One over mass of target particleset, needed for Local Energy Derivatives
   RealType OneOverM;
@@ -479,137 +547,33 @@ private:
   const bool use_tasking_;
 
   ///a list of WaveFunctionComponents constituting many-body wave functions
-  std::vector<WaveFunctionComponent*> Z;
+  std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
+  /// For now, TrialWaveFunction will own the wrapper.
+  TWFFastDerivWrapper twf_prototype;
   /// timers at TrialWaveFunction function call level
-  std::vector<NewTimer*> TWF_timers_;
+  TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level
-  std::vector<NewTimer*> WFC_timers_;
+  std::vector<std::reference_wrapper<NewTimer>> WFC_timers_;
   std::vector<RealType> myTwist;
 
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
    */
-  static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& WF_list, int id);
+  static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& wf_list, int id);
 
-  static RefVector<WaveFunctionComponent> extractWFCRefList(const RefVector<TrialWaveFunction>& WF_list, int id);
+  static RefVectorWithLeader<WaveFunctionComponent> extractWFCRefList(
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      int id);
   /** }@ */
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
-  static RefVector<ParticleSet::ParticleGradient_t> extractGRefList(const RefVector<TrialWaveFunction>& wf_list);
+  static RefVector<ParticleSet::ParticleGradient> extractGRefList(
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
-  static RefVector<ParticleSet::ParticleLaplacian_t> extractLRefList(const RefVector<TrialWaveFunction>& wf_list);
-
-  ///////////////////////////////////////////
-  // Vectorized version for GPU evaluation //
-  ///////////////////////////////////////////
-#ifdef QMC_CUDA
-private:
-  gpu::device_host_vector<CTS::ValueType> GPUratios;
-  gpu::device_host_vector<CTS::GradType> GPUgrads;
-  gpu::device_host_vector<CTS::ValueType> GPUlapls;
-  int ndelay; // delay rank
-
-public:
-  void freeGPUmem();
-
-  void recompute(MCWalkerConfiguration& W, bool firstTime = true);
-
-  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, bool onlyOptimizable = false, int kblocksize = 1);
-  void getGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
-  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
-  void calcGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) { calcGradient(W, iat, 0, grad); }
-  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
-  void evaluateLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
-  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios);
-  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios, std::vector<GradType>& newG);
-  void ratio(MCWalkerConfiguration& W,
-             int iat,
-             std::vector<ValueType>& psi_ratios,
-             std::vector<GradType>& newG,
-             std::vector<ValueType>& newL);
-  void calcRatio(MCWalkerConfiguration& W,
-                 int iat,
-                 std::vector<ValueType>& psi_ratios,
-                 std::vector<GradType>& newG,
-                 std::vector<ValueType>& newL);
-  void addRatio(MCWalkerConfiguration& W,
-                int iat,
-                int k,
-                std::vector<ValueType>& psi_ratios,
-                std::vector<GradType>& newG,
-                std::vector<ValueType>& newL);
-  void addRatio(MCWalkerConfiguration& W,
-                int iat,
-                std::vector<ValueType>& psi_ratios,
-                std::vector<GradType>& newG,
-                std::vector<ValueType>& newL)
-  {
-    addRatio(W, iat, 0, psi_ratios, newG, newL);
-  }
-  void det_lookahead(MCWalkerConfiguration& W,
-                     std::vector<ValueType>& psi_ratios,
-                     std::vector<GradType>& grad,
-                     std::vector<ValueType>& lapl,
-                     int iat,
-                     int k,
-                     int kd,
-                     int nw);
-
-#ifdef QMC_COMPLEX
-  void convertRatiosFromComplexToReal(std::vector<ValueType>& psi_ratios, std::vector<RealType>& psi_ratios_real);
-#endif
-  void ratio(std::vector<Walker_t*>& walkers,
-             std::vector<int>& iatList,
-             std::vector<PosType>& rNew,
-             std::vector<ValueType>& psi_ratios,
-             std::vector<GradType>& newG,
-             std::vector<ValueType>& newL);
-
-  void NLratios(MCWalkerConfiguration& W,
-                gpu::device_vector<CUDA_PRECISION*>& Rlist,
-                gpu::device_vector<int*>& ElecList,
-                gpu::device_vector<int>& NumCoreElecs,
-                gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
-                gpu::device_vector<CUDA_PRECISION*>& RatioList,
-                int numQuadPoints);
-
-  void NLratios(MCWalkerConfiguration& W,
-                std::vector<NLjob>& jobList,
-                std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios);
-
-  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
-  void update(std::vector<Walker_t*>& walkers, int iat) { update(NULL, walkers, iat, NULL, 0); }
-  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList);
-
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
-
-
-  void evaluateDeltaLog(MCWalkerConfiguration& W, std::vector<RealType>& logpsi_opt);
-
-  void evaluateDeltaLog(MCWalkerConfiguration& W,
-                        std::vector<RealType>& logpsi_fixed,
-                        std::vector<RealType>& logpsi_opt,
-                        GradMatrix_t& fixedG,
-                        ValueMatrix_t& fixedL);
-
-  void evaluateOptimizableLog(MCWalkerConfiguration& W,
-                              std::vector<RealType>& logpsi_opt,
-                              GradMatrix_t& optG,
-                              ValueMatrix_t& optL);
-
-  void evaluateDerivatives(MCWalkerConfiguration& W,
-                           const opt_variables_type& optvars,
-                           RealMatrix_t& dlogpsi,
-                           RealMatrix_t& dhpsioverpsi);
-
-
-  void setndelay(int delay) { ndelay = delay; }
-
-  int getndelay() { return ndelay; }
-#endif
+  static RefVector<ParticleSet::ParticleLaplacian> extractLRefList(
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 };
 /**@}*/
 } // namespace qmcplusplus

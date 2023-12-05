@@ -30,7 +30,8 @@ namespace qmcplusplus
  * @tparam ST precision of spline
  *
  * Requires temporage storage and multiplication of phase vectors
- * Internal storage use double sized arrays of ST type, aligned and padded.
+ * The internal storage of complex spline coefficients uses double sized real arrays of ST type, aligned and padded.
+ * All the output orbitals are complex.
  */
 template<typename ST>
 class SplineC2C : public BsplineSet
@@ -44,10 +45,10 @@ public:
 
   // types for evaluation results
   using ComplexT = typename BsplineSet::ValueType;
-  using BsplineSet::GGGVector_t;
-  using BsplineSet::GradVector_t;
-  using BsplineSet::HessVector_t;
-  using BsplineSet::ValueVector_t;
+  using BsplineSet::GGGVector;
+  using BsplineSet::GradVector;
+  using BsplineSet::HessVector;
+  using BsplineSet::ValueVector;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
@@ -61,6 +62,9 @@ private:
   Tensor<ST, 3> GGt;
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
+
+  ///Copy of original splines for orbital rotation
+  std::shared_ptr<std::vector<ST>> coef_copy_;
 
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
@@ -77,14 +81,32 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2C()
-  {
-    is_complex = true;
-    className  = "SplineC2C";
-    KeyWord    = "SplineC2C";
-  }
+  SplineC2C(const std::string& my_name) : BsplineSet(my_name) {}
 
-  virtual SPOSet* makeClone() const override { return new SplineC2C(*this); }
+  SplineC2C(const SplineC2C& in);
+  virtual std::string getClassName() const override { return "SplineC2C"; }
+  virtual std::string getKeyword() const override { return "SplineC2C"; }
+  bool isComplex() const override { return true; };
+
+
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2C>(*this); }
+
+  bool isRotationSupported() const override { return true; }
+
+  /// Store an original copy of the spline coefficients for orbital rotation
+  void storeParamsBeforeRotation() override;
+
+  /*
+    Implements orbital rotations via [1,2].
+    Should be called by RotatedSPOs::apply_rotation()
+    This implementation requires that NSPOs > Nelec. In other words,
+    if you want to run a orbopt wfn, you must include some virtual orbitals!
+    Some results (using older Berkeley branch) were published in [3].
+    [1] Filippi & Fahy, JCP 112, (2000)
+    [2] Toulouse & Umrigar, JCP 126, (2007)
+    [3] Townsend et al., PRB 102, (2020)
+  */
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -143,61 +165,61 @@ public:
 
   bool write_splines(hdf_archive& h5f);
 
-  void assign_v(const PointType& r, const vContainer_type& myV, ValueVector_t& psi, int first, int last) const;
+  void assign_v(const PointType& r, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
-  virtual void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override;
 
-  virtual void evaluateDetRatios(const VirtualParticleSet& VP,
-                                 ValueVector_t& psi,
-                                 const ValueVector_t& psiinv,
-                                 std::vector<ValueType>& ratios) override;
+  void evaluateDetRatios(const VirtualParticleSet& VP,
+                         ValueVector& psi,
+                         const ValueVector& psiinv,
+                         std::vector<ValueType>& ratios) override;
 
   /** assign_vgl
    */
-  void assign_vgl(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi, int first, int last)
+  void assign_vgl(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi, int first, int last)
       const;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
-  void assign_vgl_from_l(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void assign_vgl_from_l(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
-  virtual void evaluateVGL(const ParticleSet& P,
-                           const int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P,
+                   const int iat,
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   ValueVector& d2psi) override;
 
   void assign_vgh(const PointType& r,
-                  ValueVector_t& psi,
-                  GradVector_t& dpsi,
-                  HessVector_t& grad_grad_psi,
+                  ValueVector& psi,
+                  GradVector& dpsi,
+                  HessVector& grad_grad_psi,
                   int first,
                   int last) const;
 
-  virtual void evaluateVGH(const ParticleSet& P,
-                           const int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           HessVector_t& grad_grad_psi) override;
+  void evaluateVGH(const ParticleSet& P,
+                   const int iat,
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   HessVector& grad_grad_psi) override;
 
   void assign_vghgh(const PointType& r,
-                    ValueVector_t& psi,
-                    GradVector_t& dpsi,
-                    HessVector_t& grad_grad_psi,
-                    GGGVector_t& grad_grad_grad_psi,
+                    ValueVector& psi,
+                    GradVector& dpsi,
+                    HessVector& grad_grad_psi,
+                    GGGVector& grad_grad_grad_psi,
                     int first = 0,
                     int last  = -1) const;
 
-  virtual void evaluateVGHGH(const ParticleSet& P,
-                             const int iat,
-                             ValueVector_t& psi,
-                             GradVector_t& dpsi,
-                             HessVector_t& grad_grad_psi,
-                             GGGVector_t& grad_grad_grad_psi) override;
+  void evaluateVGHGH(const ParticleSet& P,
+                     const int iat,
+                     ValueVector& psi,
+                     GradVector& dpsi,
+                     HessVector& grad_grad_psi,
+                     GGGVector& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
-  friend struct SplineSetReader;
-  friend struct BsplineReaderBase;
+  friend class SplineSetReader;
+  friend struct BsplineReader;
 };
 
 extern template class SplineC2C<float>;

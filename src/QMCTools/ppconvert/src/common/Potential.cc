@@ -17,7 +17,7 @@
 
 Potential* ReadPotential (IOSectionClass &in)
 {
-  string type;
+  std::string type;
   Potential *pot;
   assert (in.ReadVar ("Type", type));
   if (type == "Coulomb")
@@ -31,7 +31,7 @@ Potential* ReadPotential (IOSectionClass &in)
   else if (type == "NLPP")
     pot = new NLPPClass;
   else {
-    cerr << "Unrecognize potential type \"" << type << "\".  Exitting.\n";
+    std::cerr << "Unrecognize potential type \"" << type << "\".  Exitting.\n";
     exit(1);
   }
   pot->Read(in);

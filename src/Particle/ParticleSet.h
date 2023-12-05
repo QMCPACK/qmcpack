@@ -19,46 +19,31 @@
 #ifndef QMCPLUSPLUS_PARTICLESET_H
 #define QMCPLUSPLUS_PARTICLESET_H
 
+#include <memory>
 #include <Configuration.h>
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
-#include "Utilities/SpeciesSet.h"
-#include "Utilities/PooledData.h"
+#include "ResourceHandle.h"
+#include "SpeciesSet.h"
+#include "Pools/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+#include "SimulationCell.h"
+#include "MCCoords.hpp"
+#include "DTModes.h"
+
 namespace qmcplusplus
 {
-///forward declaration of DistanceTableData
-class DistanceTableData;
-
+///forward declaration of DistanceTable
+class DistanceTable;
+class DistanceTableAA;
+class DistanceTableAB;
+class ResourceCollection;
 class StructFact;
-
-/** Monte Carlo Data of an ensemble
- *
- * The quantities are shared by all the nodes in a group
- * - NumSamples number of samples
- * - Weight     total weight of a sample
- * - Energy     average energy of a sample
- * - Variance   variance
- * - LivingFraction fraction of walkers alive each step.
- */
-template<typename T>
-struct MCDataType
-{
-  T NumSamples;
-  T RNSamples;
-  T Weight;
-  T Energy;
-  T AlternateEnergy;
-  T Variance;
-  T R2Accepted;
-  T R2Proposed;
-  T LivingFraction;
-};
-
+struct SKMultiWalkerMem;
 
 /** Specialized paritlce class for atomistic simulations
  *
@@ -71,11 +56,11 @@ class ParticleSet : public QMCTraits, public OhmmsElementBase, public PtclOnLatt
 {
 public:
   /// walker type
-  typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
+  using Walker_t = Walker<QMCTraits, PtclOnLatticeTraits>;
   /// container type to store the property
-  typedef Walker_t::PropertyContainer_t PropertyContainer_t;
+  using PropertyContainer_t = Walker_t::PropertyContainer_t;
   /// buffer type for a serialized buffer
-  typedef PooledData<RealType> Buffer_t;
+  using Buffer_t = PooledData<RealType>;
 
   enum quantum_domains
   {
@@ -88,76 +73,25 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///property of an ensemble represented by this ParticleSet
-  //MCDataType<FullPrecRealType> EnsembleProperty;
-
-  ///ParticleLayout
-  ParticleLayout_t Lattice, PrimitiveLattice;
-  ///Long-range box
-  ParticleLayout_t LRBox;
-
-  ///unique, persistent ID for each particle
-  ParticleIndex_t ID;
-  ///index to the primitice cell with tiling
-  ParticleIndex_t PCID;
-  /** ID map that reflects species group
-   *
-   * IsGrouped=true, if ID==IndirectID
-   */
-  ParticleIndex_t IndirectID;
   ///Species ID
-  ParticleIndex_t GroupID;
+  ParticleIndex GroupID;
   ///Position
-  ParticlePos_t R;
+  ParticlePos R;
   ///internal spin variables for dynamical spin calculations
-  ParticleScalar_t spins;
+  ParticleScalar spins;
   ///gradients of the particles
-  ParticleGradient_t G;
+  ParticleGradient G;
   ///laplacians of the particles
-  ParticleLaplacian_t L;
-  ///differential gradients of the particles
-  ParticleGradient_t dG;
-  ///differential laplacians of the particles
-  ParticleLaplacian_t dL;
+  ParticleLaplacian L;
   ///mass of each particle
-  ParticleScalar_t Mass;
+  ParticleScalar Mass;
   ///charge of each particle
-  ParticleScalar_t Z;
+  ParticleScalar Z;
 
-  ///true if the particles are grouped
-  bool IsGrouped;
-  ///true if the particles have the same mass
-  bool SameMass;
-  ///threa id
-  Index_t ThreadID;
-  /** the index of the active particle during particle-by-particle moves
-   *
-   * when a single particle move is proposed, the particle id is assigned to activePtcl
-   * No matter the move is accepted or rejected, activePtcl is marked back to -1.
-   * This state flag is used for picking coordinates and distances for SPO evaluation.
-   */
-  Index_t activePtcl;
-  ///the group of the active particle during particle-by-particle moves
-  Index_t activeGroup;
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
-
-  ///the proposed position of activePtcl during particle-by-particle moves
-  SingleParticlePos_t activePos;
-
-  ///the proposed spin of activePtcl during particle-by-particle moves
-  Scalar_t activeSpinVal;
-
-  ///the proposed position in the Lattice unit
-  SingleParticlePos_t newRedPos;
-
-  ///SpeciesSet of particles
-  SpeciesSet mySpecies;
-
-  ///Structure factor
-  StructFact* SK;
 
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
@@ -191,9 +125,6 @@ public:
    */
   Buffer_t Collectables;
 
-  ///clones of this object: used by the thread pool
-  std::vector<ParticleSet*> myClones;
-
   ///Property history vector
   std::vector<std::vector<FullPrecRealType>> PropertyHistory;
   std::vector<int> PHindex;
@@ -203,37 +134,37 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+  ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
 
   ///default destructor
-  virtual ~ParticleSet();
+  ~ParticleSet() override;
 
-  /** create  particles
-   * @param n number of particles
-   */
-  void create(int n);
   /** create grouped particles
    * @param agroup number of particles per group
    */
   void create(const std::vector<int>& agroup);
 
-  ///write to a std::ostream
-  bool get(std::ostream&) const;
+  /** print particle coordinates to a std::ostream
+   * @param os output stream
+   * @param maxParticlesToPrint maximal number of particles to print. Pass 0 to print all.
+   */
+  void print(std::ostream& os, const size_t maxParticlesToPrint = 0) const;
 
-  ///read from std::istream
-  bool put(std::istream&);
-
-  ///reset member data
-  void reset();
+  ///dummy. For satisfying OhmmsElementBase.
+  bool get(std::ostream& os) const override;
+  ///dummy. For satisfying OhmmsElementBase.
+  bool put(std::istream&) override;
+  ///dummy. For satisfying OhmmsElementBase.
+  void reset() override;
 
   ///initialize ParticleSet from xmlNode
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   ///specify quantum_domain of particles
-  void set_quantum_domain(quantum_domains qdomain);
+  void setQuantumDomain(quantum_domains qdomain);
 
   void set_quantum() { quantum_domain = quantum; }
 
@@ -242,22 +173,25 @@ public:
   inline bool is_quantum() const { return quantum_domain == quantum; }
 
   ///check whether quantum domain is valid for particles
-  inline bool quantum_domain_valid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
+  inline bool quantumDomainValid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
 
   ///check whether quantum domain is valid for particles
-  inline bool quantum_domain_valid() const { return quantum_domain_valid(quantum_domain); }
+  inline bool quantumDomainValid() const { return quantumDomainValid(quantum_domain); }
 
   /** add a distance table
    * @param psrc source particle set
-   * @param need_full_table if true, DT is fully computed in loadWalker() and maintained up-to-date during p-by-p moving
+   * @param modes bitmask DistanceTable::DTModes
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, bool need_full_table = false);
+  int addTable(const ParticleSet& psrc, DTModes modes = DTModes::ALL_OFF);
 
-  /** get a distance table by table_ID
-   */
-  inline const DistanceTableData& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  ///get a distance table by table_ID
+  inline auto& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  ///get a distance table by table_ID and dyanmic_cast to DistanceTableAA
+  const DistanceTableAA& getDistTableAA(int table_ID) const;
+  ///get a distance table by table_ID and dyanmic_cast to DistanceTableAB
+  const DistanceTableAB& getDistTableAB(int table_ID) const;
 
   /** reset all the collectable quantities during a MC iteration
    */
@@ -269,20 +203,34 @@ public:
   void update(bool skipSK = false);
 
   /// batched version of update
-  static void flex_update(const RefVector<ParticleSet>& P_list, bool skipSK = false);
+  static void mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
 
   /** create Structure Factor with PBCs
    */
   void createSK();
 
+  bool hasSK() const { return bool(structure_factor_); }
+
+  /** return Structure Factor
+   */
+  const StructFact& getSK() const
+  {
+    assert(structure_factor_);
+    return *structure_factor_;
+  };
+
   /** Turn on per particle storage in Structure Factor
    */
   void turnOnPerParticleSK();
 
+  /** Get state (on/off) of per particle storage in Structure Factor
+   */
+  bool getPerParticleSKState() const;
+
   ///retrun the SpeciesSet of this particle set
-  inline SpeciesSet& getSpeciesSet() { return mySpecies; }
+  inline SpeciesSet& getSpeciesSet() { return my_species_; }
   ///retrun the const SpeciesSet of this particle set
-  inline const SpeciesSet& getSpeciesSet() const { return mySpecies; }
+  inline const SpeciesSet& getSpeciesSet() const { return my_species_; }
 
   ///return parent's name
   inline const std::string& parentName() const { return ParentName; }
@@ -296,60 +244,87 @@ public:
   }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
-  inline void setCoordinates(const ParticlePos_t& R) { return coordinates_->setAllParticlePos(R); }
-
-  //inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
 
   void resetGroups();
 
-  /** return the position of the active particle
-   *
-   * activePtcl=-1 is used to flag non-physical moves
-   */
-  inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
-  inline const Scalar_t& activeSpin(int iat) const { return (activePtcl == iat) ? activeSpinVal : spins[iat]; }
-  /** move the iat-th particle to activePos
+  const auto& getSimulationCell() const { return simulation_cell_; }
+  const auto& getLattice() const { return simulation_cell_.getLattice(); }
+  auto& getPrimitiveLattice() const { return const_cast<ParticleLayout&>(simulation_cell_.getPrimLattice()); }
+  const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
+
+  inline bool isSameMass() const { return same_mass_; }
+  inline bool isSpinor() const { return is_spinor_; }
+  inline void setSpinor(bool is_spinor) { is_spinor_ = is_spinor; }
+
+  /// return active particle id
+  inline Index_t getActivePtcl() const { return active_ptcl_; }
+  inline const PosType& getActivePos() const { return active_pos_; }
+  inline Scalar_t getActiveSpinVal() const { return active_spin_val_; }
+
+  /// return the active position if the particle is active or the return current position if not
+  inline const PosType& activeR(int iat) const
+  {
+    // When active_ptcl_ == iat, a move has been proposed.
+    return (active_ptcl_ == iat) ? active_pos_ : R[iat];
+  }
+
+  /// return the active spin value if the particle is active or return the current spin value if not
+  inline const Scalar_t& activeSpin(int iat) const
+  {
+    // When active_ptcl_ == iat, a move has been proposed.
+    return (active_ptcl_ == iat) ? active_spin_val_ : spins[iat];
+  }
+
+  /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
    * @param displ the displacement of the iat-th particle position
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    *
-   * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
-   * Evaluate the related distance table data DistanceTableData::Temp.
+   * Update active_ptcl_ index and active_pos_ position (R[iat]+displ) for a proposed move.
+   * Evaluate the related distance table data DistanceTable::Temp.
    * If maybe_accept = false, certain operations for accepting moves will be skipped for optimal performance.
    */
-  void makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept = true);
+  void makeMove(Index_t iat, const SingleParticlePos& displ, bool maybe_accept = true);
   /// makeMove, but now includes an update to the spin variable
-  void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
+  void makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
-  static void flex_makeMove(const RefVector<ParticleSet>& P_list,
-                            int iat,
-                            const std::vector<SingleParticlePos_t>& displs);
+  template<CoordsType CT>
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs);
 
-  /** move the iat-th particle to activePos
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          const std::vector<SingleParticlePos>& displs);
+
+  /// batched version makeMove for spin variable only
+  static void mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                              int iat,
+                              const std::vector<Scalar_t>& sdispls);
+
+  /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
    * @param displ random displacement of the iat-th particle
    * @return true, if the move is valid
    *
-   * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
-   * Evaluate the related distance table data DistanceTableData::Temp.
+   * Update active_ptcl_ index and active_pos_ position (R[iat]+displ) for a proposed move.
+   * Evaluate the related distance table data DistanceTable::Temp.
    *
    * When a Lattice is defined, passing two checks makes a move valid.
    * outOfBound(displ): invalid move, if displ is larger than half, currently, of the box in any direction
-   * isValid(Lattice.toUnit(activePos)): invalid move, if activePos goes out of the Lattice in any direction marked with open BC.
-   * Note: activePos and distances tables are always evaluated no matter the move is valid or not.
+   * isValid(Lattice.toUnit(active_pos_)): invalid move, if active_pos_ goes out of the Lattice in any direction marked with open BC.
+   * Note: active_pos_ and distances tables are always evaluated no matter the move is valid or not.
    */
-  bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
+  bool makeMoveAndCheck(Index_t iat, const SingleParticlePos& displ);
   /// makeMoveAndCheck, but now includes an update to the spin variable
-  bool makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
+  bool makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
   /** Handles virtual moves for all the particles to a single newpos.
    *
-   * The state activePtcl remains -1 and rejectMove is not needed.
+   * The state active_ptcl_ remains -1 and rejectMove is not needed.
    * acceptMove can not be used.
    * See QMCHamiltonians::MomentumEstimator as an example
    */
-  void makeVirtualMoves(const SingleParticlePos_t& newpos);
+  void makeVirtualMoves(const SingleParticlePos& newpos);
 
   /** move all the particles of a walker
    * @param awalker the walker to operate
@@ -360,52 +335,77 @@ public:
    * If big displacements or illegal positions are detected, return false.
    * If all good, R = awalker.R + dt* deltaR
    */
-  bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
+  bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos& deltaR, RealType dt);
 
-  bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
+  bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos& deltaR, const std::vector<RealType>& dt);
+
   /** move all the particles including the drift
    *
    * Otherwise, everything is the same as makeMove for a walker
    */
   bool makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                                     const ParticlePos_t& drift,
-                                     const ParticlePos_t& deltaR,
+                                     const ParticlePos& drift,
+                                     const ParticlePos& deltaR,
                                      RealType dt);
 
   bool makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                                     const ParticlePos_t& drift,
-                                     const ParticlePos_t& deltaR,
+                                     const ParticlePos& drift,
+                                     const ParticlePos& deltaR,
                                      const std::vector<RealType>& dt);
 
-  /** accept the move and update the particle attribute by the proposed move
-   *@param iat the index of the particle whose position and other attributes to be updated
-   *@param forward if true, moves of particles are proposed and accepted in order.
+  /** accept or reject a proposed move
+   *  Two operation modes:
+   *  The using and updating distance tables via `ParticleSet` operate in two modes, regular and forward modes.
    *
-   * partial_table_update = true case is an optimization by skipping the DT update to >iat rows.
-   * It works only if the move of each particle is proposed once and in order.
-   * Once the particle sweep is done, all the distance tables are up-to-date.
-   * This can be used during p-by-p moves.
+   *  Regular mode
+   *  The regular mode can only be used when the distance tables for particle pairs are fully up-to-date.
+   *  This is the case after calling `ParticleSet::update()` in a unit test or after p-by-p moves in a QMC driver.
+   *  In this mode, the distance tables remain up-to-date after calling `ParticleSet::acceptMove`
+   *  and calling `ParticleSet::rejectMove` is not mandatory.
    *
-   * partial_table_update = false case is the safe route. Uppon accept a move, all the distance tables are up-to-date.
-   * This can be used on moves proposed on randomly selected electrons.
+   *  Forward mode
+   *  The forward mode assumes that distance table is not fully up-to-date until every particle is accepted
+   *  or rejected to move once in order. This is the mode used in the p-by-p part of drivers.
+   *  In this mode, calling `ParticleSet::accept_rejectMove` is required to handle accept/reject rather than
+   *  calling individual `ParticleSet::acceptMove` and `ParticleSet::reject`.
+   *  `ParticleSet::accept_rejectMove(iel)` ensures the distance tables (jel < iel) part is fully up-to-date
+   *  regardless a move is accepted or rejected. For this reason, the rejecting operation inside
+   *  `ParticleSet::accept_rejectMove` involves writing the distances with respect to the old particle position.
    */
-  void acceptMove(Index_t iat, bool partial_table_update = false);
-  /// batched version of acceptMove
-  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update = false)
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().acceptMove(iat, partial_table_update);
-  }
+  void accept_rejectMove(Index_t iat, bool accepted, bool forward_mode = true);
 
-  /** reject the move
+  /** accept the move and update the particle attribute by the proposed move in regular mode
+   *@param iat the index of the particle whose position and other attributes to be updated
    */
-  void rejectMove(Index_t iat) { activePtcl = -1; }
-  /// batched version of rejectMove
-  static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().rejectMove(iat);
-  }
+  void acceptMove(Index_t iat);
+
+  /** reject a proposed move in regular mode
+   * @param iat the electron whose proposed move gets rejected.
+   */
+  void rejectMove(Index_t iat);
+
+  /// batched version of acceptMove and rejectMove fused, templated on CoordsType
+  template<CoordsType CT>
+  static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   Index_t iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool forward_mode = true);
+
+  /// batched version of acceptMove and rejectMove fused
+  static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   Index_t iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool forward_mode = true);
+
+  /** batched version  of acceptMove and reject Move fused, but only for spins
+   *
+   * note: should be called BEFORE mw_accept_rejectMove since the active_ptcl_ gets reset to -1
+   * This would cause the assertion that we have the right particle index to fail if done in the 
+   * wrong order
+   */
+  static void mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                       Index_t iat,
+                                       const std::vector<bool>& isAccepted);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -415,20 +415,18 @@ public:
   //        void resetPropertyHistory( );
   //        void addPropertyHistoryPoint(int index, RealType data);
 
-  void clearDistanceTables();
+  void convert(const ParticlePos& pin, ParticlePos& pout);
+  void convert2Unit(const ParticlePos& pin, ParticlePos& pout);
+  void convert2Cart(const ParticlePos& pin, ParticlePos& pout);
+  void convert2Unit(ParticlePos& pout);
+  void convert2Cart(ParticlePos& pout);
+  void convert2UnitInBox(const ParticlePos& pint, ParticlePos& pout);
+  void convert2CartInBox(const ParticlePos& pint, ParticlePos& pout);
 
-  void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
-  void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);
-  void convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout);
-  void convert2Unit(ParticlePos_t& pout);
-  void convert2Cart(ParticlePos_t& pout);
-  void convert2UnitInBox(const ParticlePos_t& pint, ParticlePos_t& pout);
-  void convert2CartInBox(const ParticlePos_t& pint, ParticlePos_t& pout);
-
-  void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout);
-  void applyBC(ParticlePos_t& pos);
-  void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
-  void applyMinimumImage(ParticlePos_t& pinout);
+  void applyBC(const ParticlePos& pin, ParticlePos& pout);
+  void applyBC(ParticlePos& pos);
+  void applyBC(const ParticlePos& pin, ParticlePos& pout, int first, int last);
+  void applyMinimumImage(ParticlePos& pinout) const;
 
   /** load a Walker_t to the current ParticleSet
    * @param awalker the reference to the walker to be loaded
@@ -437,6 +435,11 @@ public:
    * PbyP requires the distance tables and Sk with awalker.R
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
+  /** batched version of loadWalker */
+  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
+                            const RefVector<Walker_t>& walkers,
+                            const std::vector<bool>& recompute,
+                            bool pbyp);
 
   /** save this to awalker
    *
@@ -449,18 +452,19 @@ public:
    *
    *  just the R, G, and L
    */
-  static void flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers);
+  static void mw_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
-  /** update structure factor and unmark activePtcl
+  /** update structure factor and unmark active_ptcl_
+   *@param skip SK update if skipSK is true
    *
    * The Coulomb interaction evaluation needs the structure factor.
    * For these reason, call donePbyP after the loop of single
    * electron moves before evaluating the Hamiltonian. Unmark
-   * activePtcl is more of a safety measure probably not needed.
+   * active_ptcl_ is more of a safety measure probably not needed.
    */
-  void donePbyP();
+  void donePbyP(bool skipSK = false);
   /// batched version of donePbyP
-  static void flex_donePbyP(const RefVector<ParticleSet>& P_list);
+  static void mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
@@ -474,77 +478,19 @@ public:
   ///return the address of the i-th properties
   inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
-  inline void setTwist(SingleParticlePos_t& t) { myTwist = t; }
-  inline SingleParticlePos_t getTwist() const { return myTwist; }
+  inline void setTwist(const SingleParticlePos& t) { myTwist = t; }
+  inline const SingleParticlePos& getTwist() const { return myTwist; }
 
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
    */
   void randomizeFromSource(ParticleSet& src);
 
-  /** return the ip-th clone
-   * @param ip thread number
-   *
-   * Return itself if ip==0
-   */
-  inline ParticleSet* get_clone(int ip)
-  {
-    if (ip >= myClones.size())
-      return 0;
-    return (ip) ? myClones[ip] : this;
-  }
-
-  inline const ParticleSet* get_clone(int ip) const
-  {
-    if (ip >= myClones.size())
-      return 0;
-    return (ip) ? myClones[ip] : this;
-  }
-
-  inline int clones_size() const { return myClones.size(); }
-
-  /** update R of its own and its clones
-   * @param rnew new position array of N
-   */
-  template<typename PAT>
-  inline void update_clones(const PAT& rnew)
-  {
-    if (R.size() != rnew.size())
-      APP_ABORT("ParticleSet::updateR failed due to different sizes");
-    R = rnew;
-    for (int ip = 1; ip < myClones.size(); ++ip)
-      myClones[ip]->R = rnew;
-  }
-
-  /** reset internal data of clones including itself
-   */
-  void reset_clones();
-
   /** get species name of particle i
    */
-  inline const std::string& species_from_index(int i) { return mySpecies.speciesName[GroupID[i]]; }
+  inline const std::string& species_from_index(int i) { return my_species_.speciesName[GroupID[i]]; }
 
   inline size_t getTotalNum() const { return TotalNum; }
-
-  inline void resize(size_t numPtcl)
-  {
-    TotalNum = numPtcl;
-
-    R.resize(numPtcl);
-    spins.resize(numPtcl);
-    ID.resize(numPtcl);
-    PCID.resize(numPtcl);
-    GroupID.resize(numPtcl);
-    G.resize(numPtcl);
-    dG.resize(numPtcl);
-    L.resize(numPtcl);
-    dL.resize(numPtcl);
-    Mass.resize(numPtcl);
-    Z.resize(numPtcl);
-    IndirectID.resize(numPtcl);
-
-    coordinates_->resize(numPtcl);
-  }
 
   inline void clear()
   {
@@ -552,47 +498,33 @@ public:
 
     R.clear();
     spins.clear();
-    ID.clear();
-    PCID.clear();
     GroupID.clear();
     G.clear();
-    dG.clear();
     L.clear();
-    dL.clear();
     Mass.clear();
     Z.clear();
-    IndirectID.clear();
 
     coordinates_->resize(0);
   }
 
-  inline void assign(const ParticleSet& ptclin)
-  {
-    resize(ptclin.getTotalNum());
-    Lattice          = ptclin.Lattice;
-    PrimitiveLattice = ptclin.PrimitiveLattice;
-    R.InUnit         = ptclin.R.InUnit;
-    R                = ptclin.R;
-    spins            = ptclin.spins;
-    ID               = ptclin.ID;
-    GroupID          = ptclin.GroupID;
-    if (ptclin.SubPtcl.size())
-    {
-      SubPtcl.resize(ptclin.SubPtcl.size());
-      SubPtcl = ptclin.SubPtcl;
-    }
-  }
-
   ///return the number of groups
-  inline int groups() const { return SubPtcl.size() - 1; }
+  inline int groups() const { return group_offsets_->size() - 1; }
 
   ///return the first index of a group i
-  inline int first(int igroup) const { return SubPtcl[igroup]; }
+  inline int first(int igroup) const { return (*group_offsets_)[igroup]; }
 
   ///return the last index of a group i
-  inline int last(int igroup) const { return SubPtcl[igroup + 1]; }
+  inline int last(int igroup) const { return (*group_offsets_)[igroup + 1]; }
 
-  inline int groupsize(int igroup) const { return SubPtcl[igroup + 1] - SubPtcl[igroup]; }
+  ///return the group id of a given particle in the particle set.
+  inline int getGroupID(int iat) const
+  {
+    assert(iat >= 0 && iat < TotalNum);
+    return GroupID[iat];
+  }
+
+  ///return the size of a group
+  inline int groupsize(int igroup) const { return (*group_offsets_)[igroup + 1] - (*group_offsets_)[igroup]; }
 
   ///add attributes to list for IO
   template<typename ATList>
@@ -602,30 +534,21 @@ public:
     R.setObjName(ParticleTags::position_tag);
     spins.setTypeName(ParticleTags::scalartype_tag);
     spins.setObjName(ParticleTags::spins_tag);
-    ID.setTypeName(ParticleTags::indextype_tag);
-    ID.setObjName(ParticleTags::id_tag);
     GroupID.setTypeName(ParticleTags::indextype_tag);
     GroupID.setObjName(ParticleTags::ionid_tag);
     //add basic attributes
     AttribList.add(R);
     AttribList.add(spins);
-    AttribList.add(ID);
     AttribList.add(GroupID);
 
     G.setTypeName(ParticleTags::gradtype_tag);
     L.setTypeName(ParticleTags::laptype_tag);
-    dG.setTypeName(ParticleTags::gradtype_tag);
-    dL.setTypeName(ParticleTags::laptype_tag);
 
     G.setObjName("grad");
     L.setObjName("lap");
-    dG.setObjName("dgrad");
-    dL.setObjName("dlap");
 
     AttribList.add(G);
     AttribList.add(L);
-    AttribList.add(dG);
-    AttribList.add(dL);
 
     //more particle attributes
     Mass.setTypeName(ParticleTags::scalartype_tag);
@@ -635,21 +558,67 @@ public:
     Z.setTypeName(ParticleTags::scalartype_tag);
     Z.setObjName("charge");
     AttribList.add(Z);
-
-    PCID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
-    PCID.setObjName("pcid");
-    AttribList.add(PCID);
-
-    IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
-    IndirectID.setObjName("id1");
-    AttribList.add(IndirectID);
   }
+
+  inline void setMapStorageToInput(const std::vector<int>& mapping) { map_storage_to_input_ = mapping; }
+  inline const std::vector<int>& get_map_storage_to_input() const { return map_storage_to_input_; }
 
   inline int getNumDistTables() const { return DistTables.size(); }
 
-  static RefVector<DistanceTableData> extractDTRefList(const RefVector<ParticleSet>& p_list, int id);
+  inline auto& get_group_offsets() const { return *group_offsets_; }
+
+  /// initialize a shared resource and hand it to a collection
+  void createResource(ResourceCollection& collection) const;
+  /** acquire external resource and assocaite it with the list of ParticleSet
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
+   */
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
+  /** release external resource
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
+   */
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
+
+  static RefVectorWithLeader<DistanceTable> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list, int id);
+  static RefVectorWithLeader<DynamicCoordinates> extractCoordsRefList(const RefVectorWithLeader<ParticleSet>& p_list);
+  static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
+  /// reference to global simulation cell
+  const SimulationCell& simulation_cell_;
+
+  ///true if the particles have the same mass
+  bool same_mass_;
+  ///true is a dynamic spin calculation
+  bool is_spinor_;
+  /** the index of the active particle during particle-by-particle moves
+   *
+   * when a single particle move is proposed, the particle id is assigned to active_ptcl_
+   * No matter the move is accepted or rejected, active_ptcl_ is marked back to -1.
+   * This state flag is used for picking coordinates and distances for SPO evaluation.
+   */
+  Index_t active_ptcl_;
+  ///the proposed position of active_ptcl_ during particle-by-particle moves
+  SingleParticlePos active_pos_;
+  ///the proposed spin of active_ptcl_ during particle-by-particle moves
+  Scalar_t active_spin_val_;
+
+  /** Map storage index to the input index.
+   * If not empty, particles were reordered by groups when being loaded from XML input.
+   * When other input data are affected by reordering, its builder should query this mapping.
+   * map_storage_to_input_[5] = 2 means the index 5(6th) particle in this ParticleSet was read from
+   * the index 2(3th) particle in the XML input
+   */
+  std::vector<int> map_storage_to_input_;
+
+  ///SpeciesSet of particles
+  SpeciesSet my_species_;
+
+  ///Structure factor
+  std::unique_ptr<StructFact> structure_factor_;
+
+  ///multi walker structure factor data
+  ResourceHandle<SKMultiWalkerMem> mw_structure_factor_data_handle_;
+
   /** map to handle distance tables
    *
    * myDistTableMap[source-particle-tag]= locator in the distance table
@@ -658,14 +627,14 @@ protected:
   std::map<std::string, int> myDistTableMap;
 
   /// distance tables that need to be updated by moving this ParticleSet
-  std::vector<DistanceTableData*> DistTables;
+  std::vector<std::unique_ptr<DistanceTable>> DistTables;
 
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;
 
   TimerList_t myTimers;
 
-  SingleParticlePos_t myTwist;
+  SingleParticlePos myTwist;
 
   std::string ParentName;
 
@@ -673,7 +642,8 @@ protected:
   size_t TotalNum;
 
   ///array to handle a group of distinct particles per species
-  ParticleIndex_t SubPtcl;
+  std::shared_ptr<Vector<int, OMPallocator<int>>> group_offsets_;
+
   ///internal representation of R. It can be an SoA copy of R
   std::unique_ptr<DynamicCoordinates> coordinates_;
 
@@ -683,20 +653,47 @@ protected:
    * @param newpos a new particle position
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept = true);
+  void computeNewPosDistTables(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept = true);
 
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
    *
-   * @param P_list the list of wrapped ParticleSet references in a walker batch
+   * @param p_list the list of wrapped ParticleSet references in a walker batch
    * @param iat the particle that is moved on a sphere
    * @param new_positions new particle positions
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
-                                              Index_t iat,
-                                              const std::vector<SingleParticlePos_t>& new_positions,
-                                              bool maybe_accept = true);
+  static void mw_computeNewPosDistTables(const RefVectorWithLeader<ParticleSet>& p_list,
+                                         Index_t iat,
+                                         const std::vector<SingleParticlePos>& new_positions,
+                                         bool maybe_accept = true);
+
+  /** actual implemenation for accepting a proposed move in forward mode
+   *
+   * @param iat the index of the particle whose position and other attributes to be updated
+   */
+  void acceptMoveForwardMode(Index_t iat);
+
+  /** reject a proposed move in forward mode
+   * @param iat the electron whose proposed move gets rejected.
+   */
+  void rejectMoveForwardMode(Index_t iat);
+
+  /// resize internal storage
+  inline void resize(size_t numPtcl)
+  {
+    TotalNum = numPtcl;
+
+    R.resize(numPtcl);
+    spins.resize(numPtcl);
+    GroupID.resize(numPtcl);
+    G.resize(numPtcl);
+    L.resize(numPtcl);
+    Mass.resize(numPtcl);
+    Z.resize(numPtcl);
+
+    coordinates_->resize(numPtcl);
+  }
 };
 
 } // namespace qmcplusplus

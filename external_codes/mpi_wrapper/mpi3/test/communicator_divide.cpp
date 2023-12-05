@@ -1,6 +1,4 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -Wall -Wextra $0 -o $0x.x && time mpirun -n 8 $0x.x $@ && rm -f $0x.x; exit
-#endif
+// © Alfredo Correa 2018-2021
 
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
@@ -8,27 +6,15 @@ mpic++ -O3 -std=c++14 -Wall -Wextra $0 -o $0x.x && time mpirun -n 8 $0x.x $@ && 
 namespace mpi3 = boost::mpi3;
 using std::cout;
 
-int mpi3::main(int, char*[], mpi3::communicator world){
+auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world)-> int try {
+	assert( world.size() == 6 );
 
-	assert( world.size() == 8 );
-	
-	mpi3::communicator third(world / 3);
-	mpi3::communicator third2 = std::move(third);
-	assert(not third);
+	mpi3::communicator fifth = world/5;
 
-	cout 
-		<< "I am rank " << world.rank() << " in " << world.name() << ", "
-		<< "I am also " << third2.rank() << " in " << third2.name() << '\n'
-	;
-	
-	mpi3::communicator third3;
-	third3 = std::move(third2);
+	cout << "I am rank " << world.rank() << " in " << world.name() << ", ";
 
-	cout 
-		<< "I am rank " << world.rank() << " in " << world.name() << ", "
-		<< "I am also " << third3.rank() << " in " << third3.name() << '\n'
-	;
+	if(fifth){cout<<"I am also   "<< fifth.rank() <<" in "<< fifth.name() <<'\n';}
+	else     {cout<<"I am not in "<< fifth.name() <<'\n';}
 
 	return 0;
-}
-
+} catch(...) {return 1;}

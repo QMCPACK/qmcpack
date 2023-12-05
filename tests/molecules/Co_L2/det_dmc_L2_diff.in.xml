@@ -32,17 +32,21 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <determinantset type="MolecularOrbital" href="c4q.orbs.h5" source="ion0" transform="yes" name="LCAOBSet">
-            <slaterdeterminant>
-               <determinant id="updet" size="10">
-                  <occupation mode="ground">    </occupation>
-                  <coefficient size="171" spindataset="0">  </coefficient>
-               </determinant>
-               <determinant id="downdet" size="7">
-                  <occupation mode="ground">    </occupation>
-                  <coefficient size="171" spindataset="0">  </coefficient>
-               </determinant>
-            </slaterdeterminant>
+         <sposet_collection type="MolecularOrbital" href="c4q.orbs.h5" source="ion0" transform="yes" name="LCAOBSet">
+           <sposet name="spo-up" size="10">
+             <occupation mode="ground"/>   
+	     <coefficient size="171" spindataset="0"/> 
+           </sposet>
+	   <sposet name="spo-dn" size="7">
+             <occupation mode="ground"/>
+             <coefficient size="171" spindataset="0"/> 
+           </sposet>
+         </sposet_collection>
+	 <determinantset>	   
+          <slaterdeterminant>
+	       <determinant sposet="spo-up"/>
+	       <determinant sposet="spo-dn"/>
+          </slaterdeterminant>
          </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="Co" size="10" rcut="5.0" cusp="0.0">

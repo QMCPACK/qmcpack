@@ -9,34 +9,11 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
-
 
 
 #ifndef FORMIC_OHMMS_OPENMP_H
 #define FORMIC_OHMMS_OPENMP_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "Concurrency/OpenMP.h"
 
-#if defined(ENABLE_OPENMP)
-#include <omp.h>
-#else
-typedef int omp_int_t;
-inline omp_int_t omp_get_thread_num()
-{
-  return 0;
-}
-inline omp_int_t omp_get_max_threads()
-{
-  return 1;
-}
-inline omp_int_t omp_get_num_threads()
-{
-  return 1;
-}
-#endif
 #endif // FORMIC_OHMMS_OPENMP_H

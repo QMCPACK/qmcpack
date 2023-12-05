@@ -70,9 +70,3 @@ GeneralPot::GeneralPot() : PotGrid(NULL)
 {
 
 }
-
-GeneralPot::~GeneralPot()
-{
-  if (PotGrid != NULL)
-    delete PotGrid;
-}

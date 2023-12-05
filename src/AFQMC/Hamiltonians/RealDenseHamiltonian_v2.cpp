@@ -77,6 +77,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   auto distNode(TG.Node().split(0, TG.Node().rank()));
 #endif
   auto Qcomm_roots(Qcomm.split(distNode.rank(), Qcomm.rank()));
+  auto distNode_roots(TG.Global().split(distNode.rank(), TG.Global().rank()));
 
   hdf_archive dump(TG.Global());
   // right now only Node.root() reads
@@ -87,12 +88,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
       app_error() << " Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
     }
-    if (!dump.push("Hamiltonian", false))
-    {
-      app_error() << " Error in THCHamiltonian::getHamiltonianOperations():"
-                  << " Group not Hamiltonian found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Hamiltonian", false);
   }
 
   std::vector<int> Idata(8);
@@ -155,15 +151,14 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   if (distNode.root())
   {
     // read L
-    if (!dump.push("DenseFactorized", false))
-    {
-      app_error() << " Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
-                  << " Group DenseFactorized not found. \n";
-      APP_ABORT("");
-    }
+    dump.push("DenseFactorized", false);
     SpRMatrix_ref L(to_address(Likn.origin()), Likn.extensions());
-    hyperslab_proxy<SpRMatrix_ref, 2> hslab(L, std::array<int, 2>{NMO * NMO, global_ncvecs},
-                                            std::array<int, 2>{NMO * NMO, local_ncv}, std::array<int, 2>{0, nc0});
+    hyperslab_proxy<SpRMatrix_ref, 2> hslab(L,
+                                            std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
+                                                                  static_cast<size_t>(global_ncvecs)},
+                                            std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
+                                                                  static_cast<size_t>(local_ncv)},
+                                            std::array<size_t, 2>{0, static_cast<size_t>(nc0)});
     std::vector<int> shape;
     if (dump.getShape<boost::multi::array<RealType, 2>>("L", shape))
     {
@@ -180,11 +175,11 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n";
       APP_ABORT("");
     }
-    if (Likn.size(0) != NMO * NMO || Likn.size(1) != local_ncv)
+    if (std::get<0>(Likn.sizes()) != NMO * NMO || std::get<1>(Likn.sizes()) != local_ncv)
     {
       app_error() << " Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n"
-                  << " Unexpected dimensins: " << Likn.size(0) << " " << Likn.size(1) << std::endl;
+                  << " Unexpected dimensins: " << std::get<0>(Likn.sizes()) << " " << std::get<1>(Likn.sizes()) << std::endl;
       APP_ABORT("");
     }
     dump.pop();
@@ -196,10 +191,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   std::vector<shmSp3Tensor> Lnak;
   Lnak.reserve(PsiT.size());
   for (int nd = 0; nd < PsiT.size(); nd++)
-    Lnak.emplace_back(shmSp3Tensor({local_ncv, PsiT[nd].size(0), NMO}, shared_allocator<SPComplexType>{distNode}));
-  int nrow = NEL;
-  if (ndet > 1)
-    nrow = 0; // not used if ndet>1
+    Lnak.emplace_back(shmSp3Tensor({local_ncv, static_cast<boost::multi::size_t>(PsiT[nd].size(0)), NMO}, shared_allocator<SPComplexType>{distNode}));
   TG.Node().barrier();
 
   // for simplicity
@@ -275,7 +267,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
 
   if (distNode.root())
   {
-    Qcomm_roots.all_reduce_in_place_n(to_address(vn0.origin()), vn0.num_elements(), std::plus<>());
+    distNode_roots.all_reduce_in_place_n(to_address(vn0.origin()), vn0.num_elements(), std::plus<>());
     dump.pop();
     dump.close();
   }

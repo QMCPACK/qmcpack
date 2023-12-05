@@ -41,7 +41,7 @@ public:
     {
       ParameterSet m_param;
       std::string restore_paths;
-      m_param.add(block_size, "block_size", "int");
+      m_param.add(block_size, "block_size");
       m_param.put(cur);
     }
 
@@ -80,9 +80,9 @@ public:
 
   ~MixedRDMEstimator() {}
 
-  void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData) {}
+  void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData) override {}
 
-  void accumulate_block(WalkerSet& wset)
+  void accumulate_block(WalkerSet& wset) override
   {
     // check to see whether we should be accumulating estimates.
     CMatrix_ref OneRDM(DMBuffer.data(), {dm_dims.first, dm_dims.second});
@@ -92,9 +92,9 @@ public:
     wset.getProperty(WEIGHT, wgt);
 
     int nx((wset.getWalkerType() == COLLINEAR) ? 2 : 1);
-    if (wDMsum.size(0) != wset.size() || wDMsum.size(2) != nx)
+    if (std::get<0>(wDMsum.sizes()) != wset.size() || std::get<1>(wDMsum.sizes()) != nx)
       wDMsum.reextent({wset.size(), nx});
-    if (wOvlp.size(0) != wset.size() || wOvlp.size(2) != nx)
+    if (std::get<0>(wOvlp.sizes()) != wset.size() || std::get<1>(wOvlp.sizes()) != nx)
       wOvlp.reextent({wset.size(), nx});
 
     if (!importanceSampling)
@@ -108,9 +108,9 @@ public:
     iblock++;
   }
 
-  void tags(std::ofstream& out) {}
+  void tags(std::ofstream& out) override {}
 
-  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset) override
   {
     // I doubt we will ever collect a billion blocks of data.
     int n_zero = 9;
@@ -126,8 +126,8 @@ public:
         denom_average[0] /= block_size;
         dump.push("Mixed");
         std::string padded_iblock = std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-        boost::multi::array_ref<ComplexType, 1> wOvlp_(wOvlp.origin(), {wOvlp.size(0) * wOvlp.size(1)});
-        boost::multi::array_ref<ComplexType, 1> wDMsum_(wDMsum.origin(), {wDMsum.size(0) * wDMsum.size(1)});
+        boost::multi::array_ref<ComplexType, 1> wOvlp_(wOvlp.origin(), {std::get<0>(wOvlp.sizes()) * std::get<1>(wOvlp.sizes())});
+        boost::multi::array_ref<ComplexType, 1> wDMsum_(wDMsum.origin(), {std::get<0>(wDMsum.sizes()) * std::get<1>(wDMsum.sizes())});
         dump.write(DMAverage, "one_rdm_" + padded_iblock);
         dump.write(denom_average, "one_rdm_denom_" + padded_iblock);
         dump.write(wOvlp_, "one_rdm_walker_overlaps_" + padded_iblock);

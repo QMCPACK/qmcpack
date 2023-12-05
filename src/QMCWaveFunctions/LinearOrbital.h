@@ -24,25 +24,21 @@ namespace qmcplusplus
 class LinearOrbital : public WaveFunctionComponent
 {
 public:
-  virtual void checkInVariables(opt_variables_type& active) {}
-  virtual void checkOutVariables(const opt_variables_type& active) {}
-  virtual void resetParameters(const opt_variables_type& active) {}
-  virtual void reportStatus(std::ostream& os) {}
-
   TinyVector<ValueType, 3> coeff;
 
-  LinearOrbital() : WaveFunctionComponent("LinearOrbital")
+  LinearOrbital()
   {
     coeff[0] = 1.0;
     coeff[1] = 2.0;
     coeff[2] = 3.0;
   }
 
-  virtual LogValueType evaluateLog(ParticleSet& P,
-                                   ParticleSet::ParticleGradient_t& G,
-                                   ParticleSet::ParticleLaplacian_t& L)
+  std::string getClassName() const override { return "LinearOrbital"; }
+
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override
   {
-    APP_ABORT("LinearOrbital. evaluateLog");
     ValueType v = 0.0;
     for (int i = 0; i < P.R.size(); i++)
     {
@@ -52,26 +48,35 @@ public:
       }
       G[i] = coeff;
     }
-    L        = 0.0;
-    LogValue = convertValueToLog(v);
-    return LogValue;
+    L          = 0.0;
+    log_value_ = convertValueToLog(v);
+    return log_value_;
   }
 
-  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) {}
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
 
-  virtual void restore(int iat) {}
+  void restore(int iat) override {}
 
-  virtual PsiValueType ratio(ParticleSet& P, int iat) { return 1.0; }
+  PsiValue ratio(ParticleSet& P, int iat) override { return 1.0; }
 
-  virtual GradType evalGrad(ParticleSet& P, int iat) { return GradType(coeff); }
+  GradType evalGrad(ParticleSet& P, int iat) override { return GradType(coeff); }
 
-  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) { return 1.0; }
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return 1.0; }
 
-  virtual void registerData(ParticleSet& P, WFBufferType& buf) {}
+  void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) { return 0.0; }
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
+  {
+    return evaluateLog(P, P.G, P.L);
+  }
 
-  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) {}
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
+  {}
 };
 
 

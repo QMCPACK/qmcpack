@@ -60,8 +60,8 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
   {
     if (TA == 'N')
     {
-      nr = M.size(0);
-      nc = M.size(1);
+      nr = std::get<0>(M.sizes());
+      nc = std::get<1>(M.sizes());
       counts.resize(nr);
       for (int_type i = 0; i < nr; i++)
         for (int_type j = 0; j < nc; j++)
@@ -70,11 +70,11 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
     }
     else
     {
-      nr = M.size(1);
-      nc = M.size(0);
+      nr = std::get<1>(M.sizes());
+      nc = std::get<0>(M.sizes());
       counts.resize(nr);
-      for (int_type i = 0; i < M.size(0); i++)
-        for (int_type j = 0; j < M.size(1); j++)
+      for (int_type i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int_type j = 0; j < std::get<1>(M.sizes()); j++)
           if (std::abs(M[i][j]) > cutoff)
             ++counts[j];
     }
@@ -99,15 +99,15 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
     }
     else if (TA == 'T')
     {
-      for (int_type i = 0; i < M.size(1); i++)
-        for (int_type j = 0; j < M.size(0); j++)
+      for (int_type i = 0; i < std::get<1>(M.sizes()); i++)
+        for (int_type j = 0; j < std::get<0>(M.sizes()); j++)
           if (std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i, j}, static_cast<typename CSR::value_type>(M[j][i]));
     }
     else if (TA == 'H')
     {
-      for (int_type i = 0; i < M.size(1); i++)
-        for (int_type j = 0; j < M.size(0); j++)
+      for (int_type i = 0; i < std::get<1>(M.sizes()); i++)
+        for (int_type j = 0; j < std::get<0>(M.sizes()); j++)
           if (std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i, j}, static_cast<typename CSR::value_type>(ma::conj(M[j][i])));
     }
@@ -319,7 +319,7 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q,
 /*
  * Constructs a new csr_matrix from the elements in the container Q. 
  * The global matrix (including all elements in all cores) will be evenly distributed
- * accross the nodes in every task group. No particular stucture will be followed in the
+ * across the nodes in every task group. No particular structure will be followed in the
  * partitioning, only strict distribution of non-zero elements.
  * All TGs will have identical distributions among its nodes. 
  * This approach uses more memory (up to 2 copies of the submatrix), but avoids
@@ -402,7 +402,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container& Q,
     if (cnt * sizeof(Type) >= static_cast<long>(std::numeric_limits<int>::max()))
       throw std::out_of_range("row size exceeded the maximum");
   }
-  MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, Q.data(), recvcounts.data(), displ.data(), MPI_CHAR, &eq_cores);
+  MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, Q.data(), recvcounts.data(), displ.data(), MPI_CHAR, eq_cores.get());
 
   Timer.stop("G0");
   qmcplusplus::app_log() << " In construct_distributed_csr_matrix_from_distributed_containers Allgatherv: "
@@ -488,7 +488,7 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
           throw std::out_of_range("row size exceeded the maximum");
         int to_send_int = int(to_send * sizeof(Type));
         //out<<" sending " <<to_send <<" " <<deltaN <<" " <<i*ncores <<" " <<i <<std::endl;
-        MPI_Send(Q.data() + Q.size() - to_send, to_send_int, MPI_CHAR, i * ncores, tgrank, &eq_node_group);
+        MPI_Send(Q.data() + Q.size() - to_send, to_send_int, MPI_CHAR, i * ncores, tgrank, eq_node_group.get());
         //out<<" done sending " <<to_send <<" " <<deltaN <<" " <<i*ncores <<" " <<i <<std::endl;
         nbefore += to_send;
         deltaN -= to_send;
@@ -524,7 +524,7 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
           long curr_sz    = Q.size();
           Q.resize(curr_sz + to_recv);
           //out<<" receiving " <<to_recv <<" " <<deltaN <<" " <<nbefore <<" " <<ip <<std::endl;
-          MPI_Recv(Q.data() + curr_sz, to_recv_int, MPI_CHAR, ip, ip, &eq_node_group, &st);
+          MPI_Recv(Q.data() + curr_sz, to_recv_int, MPI_CHAR, ip, ip, eq_node_group.get(), &st);
           nbefore += to_recv;
           deltaN -= to_recv;
           //out<<" done receiving " <<to_recv <<" " <<deltaN <<" " <<nbefore <<" " <<ip <<std::endl;

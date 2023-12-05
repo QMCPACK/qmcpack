@@ -17,6 +17,7 @@
 
 #include "Libxml2Doc.h"
 #include "Utilities/Timer.h"
+#include <array>
 #include <fstream>
 #include <iostream>
 
@@ -40,9 +41,10 @@ OhmmsXPathObject::OhmmsXPathObject(const char* expression, xmlNodePtr cur)
   }
   else
   {
-    char local[128];
-    sprintf(local, ".%s", expression);
-    put(local, m_context);
+    std::array<char, 128> local;
+    if (std::snprintf(local.data(), local.size(), ".%s", expression) < 0)
+      throw std::runtime_error("Error generating expression");
+    put(local.data(), m_context);
   }
 }
 
@@ -137,7 +139,7 @@ bool Libxml2Document::parse(const std::string& xmlfile)
     xmlFreeDoc(m_doc);
   qmcplusplus::Timer aClock;
   int length   = 0;
-  char* buffer = 0;
+  std::string buffer;
   aClock.restart();
   if (OHMMS::Controller->master())
   {
@@ -147,20 +149,20 @@ bool Libxml2Document::parse(const std::string& xmlfile)
     length = is.tellg();
     is.seekg(0, std::ios::beg);
     // allocate memory:
-    buffer = new char[length + 1];
+    buffer.resize(length);
     // read data as a block:
-    is.read(buffer, length);
+    is.read(buffer.data(), length);
     is.close();
   }
   MPI_Bcast(&length, 1, MPI_INT, 0, OHMMS::Controller->getID());
   OHMMS::Controller->barrier();
   if (!(OHMMS::Controller->master()))
   {
-    buffer = new char[length + 1];
+    buffer.resize(length);
   }
-  MPI_Bcast(buffer, length, MPI_CHAR, 0, OHMMS::Controller->getID());
-  m_doc = xmlParseMemory(buffer, length);
-  delete[] buffer;
+  MPI_Bcast(buffer.data(), length, MPI_CHAR, 0, OHMMS::Controller->getID());
+  m_doc = xmlParseMemory(buffer.data(), length);
+  buffer.clear();
   qmcplusplus::app_log() << " Parsing " << xmlfile << " : " << aClock.elapsed() << " seconds " << std::endl;
   if (m_doc == NULL)
   {
@@ -199,7 +201,7 @@ bool Libxml2Document::parse(const std::string& xmlfile)
   return true;
 }
 
-bool Libxml2Document::parseFromString(const std::string& data)
+bool Libxml2Document::parseFromString(const std::string_view data)
 {
   if (m_doc != NULL)
     xmlFreeDoc(m_doc);
@@ -207,8 +209,7 @@ bool Libxml2Document::parseFromString(const std::string& data)
   // read xml document w/o memory limits
   // note that XML_PARSE_HUGE is part of an enum in libxml2
   // it is only available in libxml 2.7+
-  m_doc = xmlReadMemory(data.c_str(), data.length(), NULL, NULL, XML_PARSE_HUGE);
-  //m_doc = xmlParseFile(xmlfile.c_str());
+  m_doc = xmlReadMemory(data.data(), data.length(), NULL, NULL, XML_PARSE_HUGE);
 
   if (m_doc == NULL)
   {

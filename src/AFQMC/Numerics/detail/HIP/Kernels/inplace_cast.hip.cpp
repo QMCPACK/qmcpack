@@ -54,14 +54,15 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
 
 void inplace_cast(unsigned long n, std::complex<float>* A, std::complex<double>* B)
 {
-  while(n > 4ul*32ul) {
-    unsigned long ni = n/2uL;  // number of elements to be copied in this iteration, ni <= n/2
+  while (n > 4ul * 32ul)
+  {
+    unsigned long ni = n / 2uL; // number of elements to be copied in this iteration, ni <= n/2
     // copy_n_cast last ni elements
-    copy_n_cast(A+(n-ni), int(ni), B+(n-ni));
+    copy_n_cast(A + (n - ni), int(ni), B + (n - ni));
     n -= ni;
   }
-  hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(32), 0, 0, n,
-                     reinterpret_cast<thrust::complex<float>*>(A), reinterpret_cast<thrust::complex<double>*>(B));
+  hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(32), 0, 0, n, reinterpret_cast<thrust::complex<float>*>(A),
+                     reinterpret_cast<thrust::complex<double>*>(B));
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
@@ -76,14 +77,15 @@ void inplace_cast(unsigned long n, std::complex<double>* A, std::complex<float>*
 
 void inplace_cast(long n, std::complex<float>* A, std::complex<double>* B)
 {
-  while(n > long(4*32)) {
-    long ni = n/2uL;  // number of elements to be copied in this iteration, ni <= n/2
+  while (n > long(4 * 32))
+  {
+    long ni = n / 2uL; // number of elements to be copied in this iteration, ni <= n/2
     // copy_n_cast last ni elements
-    copy_n_cast(A+(n-ni), int(ni), B+(n-ni));
+    copy_n_cast(A + (n - ni), int(ni), B + (n - ni));
     n -= ni;
   }
-  hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(32), 0, 0, n,
-                     reinterpret_cast<thrust::complex<float>*>(A), reinterpret_cast<thrust::complex<double>*>(B));
+  hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(32), 0, 0, n, reinterpret_cast<thrust::complex<float>*>(A),
+                     reinterpret_cast<thrust::complex<double>*>(B));
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }

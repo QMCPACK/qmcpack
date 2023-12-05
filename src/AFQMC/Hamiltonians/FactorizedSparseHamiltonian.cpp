@@ -50,7 +50,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     APP_ABORT("Error: HSPotential not implemented with distributed Hamiltonian. \n");
 
   vn0.reextent({NMO, NMO});
-  std::fill_n(vn0.data(), NMO * NMO, ComplexType(0));
+  std::fill_n(vn0.data_elements(), NMO * NMO, ComplexType(0));
   for (int i = 0, cnt = 0; i < NMO; i++)
     for (int l = i; l < NMO; l++, cnt++)
     {
@@ -240,7 +240,7 @@ HamiltonianOperations FactorizedSparseHamiltonian::getHamiltonianOperations(bool
   if (type == COLLINEAR)
     assert(PsiT.size() % 2 == 0);
 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
   auto PsiTsp(csr::shm::CSRvector_to_single_precision<PsiT_Matrix_t<SPComplexType>>(PsiT));
 #else
   auto& PsiTsp(PsiT);

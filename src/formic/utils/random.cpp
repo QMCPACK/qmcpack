@@ -28,8 +28,7 @@ void formic::set_seed(unsigned int seed) {
   // produce a different seed for each process
   std::vector<unsigned int> seeds(nproc);
   for (int i = 0; i < nproc; i++) {
-    unsigned int temp;
-    for (int j = 0; j < 1000000; j++) temp = formic::global_lcg(); // separate the seeds by a million random numbers
+    for (int j = 0; j < 1000000; j++) formic::global_lcg(); // separate the seeds by a million random numbers
     seeds.at(i) = formic::global_lcg();
   }
 

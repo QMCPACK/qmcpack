@@ -13,7 +13,7 @@
 #define QMCPLUSPLUS_GAUSSIAN_FUNCTOR_H
 
 #include "OhmmsData/AttributeSet.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include <array>
 
 namespace qmcplusplus
@@ -222,9 +222,9 @@ public:
     app_log() << std::endl;
   }
 
-  CountingGaussian* makeClone(std::string fid) const
+  std::unique_ptr<CountingGaussian> makeClone(std::string fid) const
   {
-    CountingGaussian* rptr = new CountingGaussian(fid);
+    auto rptr = std::make_unique<CountingGaussian>(fid);
     for (int i = 0; i < A.size(); ++i)
       rptr->A[i] = A[i];
     for (int i = 0; i < B.size(); ++i)
@@ -645,7 +645,7 @@ public:
     }
   }
 
-  void evaluate_print(std::ostream& os, ParticleSet& P)
+  void evaluate_print(std::ostream& os, const ParticleSet& P)
   {
     // calculate all intermediates and values for electrons in a particle set
     std::vector<PosType> r_vec;

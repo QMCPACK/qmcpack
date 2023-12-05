@@ -17,6 +17,7 @@
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+#include "RandomNumberControl.h"
 #if defined(QMC_BUILD_COMPLETE)
 //REMOVE Broken warping
 //#if !defined(QMC_COMPLEX)
@@ -25,57 +26,27 @@
 //#endif
 //#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #endif
-#include "Message/OpenMP.h"
-
-#ifdef QMC_CUDA
-#include "QMCDrivers/VMC/VMC_CUDA.h"
-#endif
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
-QMCDriverInterface* VMCFactory::create(MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
-                                       QMCHamiltonian& h,
-                                       Communicate* comm)
+std::unique_ptr<QMCDriverInterface> VMCFactory::create(const ProjectData& project_data,
+                                                       MCWalkerConfiguration& w,
+                                                       TrialWaveFunction& psi,
+                                                       QMCHamiltonian& h,
+                                                       Communicate* comm,
+                                                       bool enable_profiling)
 {
-  int np = omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-  QMCDriverInterface* qmc = nullptr;
-#ifdef QMC_CUDA
-  if (VMCMode & 16)
-    qmc = new VMCcuda(w, psi, h, comm);
-  else
-#endif
-      if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
+  std::unique_ptr<QMCDriverInterface> qmc;
+  if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMC(w, psi, h, comm);
+    qmc = std::make_unique<VMC>(project_data, w, psi, h, RandomNumberControl::Children, comm, enable_profiling);
   }
-  //else if(VMCMode == 2) //(0,1,0)
-  //{
-  //  qmc = new VMCMultiple(w,psi,h);
-  //}
-  //else if(VMCMode == 3) //(0,1,1)
-  //{
-  //  qmc = new VMCPbyPMultiple(w,psi,h);
-  //}
   else if (VMCMode == 2 || VMCMode == 3)
   {
-    qmc = new CSVMC(w, psi, h, comm);
+    qmc = std::make_unique<CSVMC>(project_data, w, psi, h, comm);
   }
-  //#if !defined(QMC_COMPLEX)
-  //    else if(VMCMode == 6) //(1,1,0)
-  //    {
-  //      qmc = new VMCMultipleWarp(w,psi,h, ptclpool);
-  //    }
-  //    else if(VMCMode == 7) //(1,1,1)
-  //    {
-  //      qmc = new VMCPbyPMultiWarp(w,psi,h, ptclpool);
-  //    }
-  //#endif
-  //     else if(VMCMode == 8) //(only possible for WFMC run)
-  //     {
-  //       qmc = new WFMCSingleOMP(w,psi,h,hpool,ppool);
-  //     }
   qmc->setUpdateMode(VMCMode & 1);
   return qmc;
 }

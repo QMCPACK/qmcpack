@@ -22,6 +22,7 @@ using namespace IO;
 class Potential
 {
 public:
+  virtual ~Potential() = default;
   // Optional member functions -- if you're not a pseudoHamiltonian,
   // you do not need to define these
   virtual bool IsPH();

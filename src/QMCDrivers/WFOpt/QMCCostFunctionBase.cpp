@@ -19,18 +19,18 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
-#include "Optimize/LeastSquaredFit.h"
-#include <set>
+#include "Message/UniformCommunicateError.h"
+
+#include <array>
+
 //#define QMCCOSTFUNCTION_DEBUG
 
 
 namespace qmcplusplus
 {
-QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w,
-                                         TrialWaveFunction& psi,
-                                         QMCHamiltonian& h,
-                                         Communicate* comm)
+QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
     : MPIObjectBase(comm),
       reportH5(false),
       CI_Opt(false),
@@ -53,24 +53,21 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w,
       targetExcitedStr("no"),
       targetExcited(false),
       omega_shift(0.0),
-      msg_stream(0),
-      m_wfPtr(NULL),
-      m_doc_out(NULL),
-      includeNonlocalH("no"),
-      debug_stream(0)
+      msg_stream(nullptr),
+      m_wfPtr(nullptr),
+      m_doc_out(nullptr),
+      do_override_output(true)
 {
-  GEVType = "mixed";
-  //paramList.resize(10);
-  //costList.resize(10,0.0);
   //default: don't check fo MinNumWalkers
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
-  IsValid      = true;
-  useNLPPDeriv = false;
+  IsValid = true;
 #if defined(QMCCOSTFUNCTION_DEBUG)
-  char fname[16];
-  sprintf(fname, "optdebug.p%d", OHMMS::Controller->mycontext());
-  debug_stream = new std::ofstream(fname);
+  std::array<char, 16> fname;
+  int length = std::snprintf(fname.data(), fname.size(), "optdebug.p%d", OHMMS::Controller->rank());
+  if (length < 0)
+    throw std::runtime_error("Error generating filename");
+  debug_stream = std::make_unique<std::ofstream>(fname.data());
   debug_stream->setf(std::ios::scientific, std::ios::floatfield);
   debug_stream->precision(8);
 #endif
@@ -81,24 +78,22 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
 {
   delete_iter(dLogPsi.begin(), dLogPsi.end());
   delete_iter(d2LogPsi.begin(), d2LogPsi.end());
-  //     if (m_doc_out != NULL) xmlFreeDoc(m_doc_out);
-  if (debug_stream)
-    delete debug_stream;
+  if (m_doc_out != nullptr)
+    xmlFreeDoc(m_doc_out);
+  debug_stream.reset();
 }
 
-void QMCCostFunctionBase::setRng(std::vector<RandomGenerator_t*>& r)
+void QMCCostFunctionBase::setRng(RefVector<RandomBase<FullPrecRealType>> r)
 {
   if (MoverRng.size() < r.size())
   {
-    delete_iter(MoverRng.begin(), MoverRng.end());
-    delete_iter(RngSaved.begin(), RngSaved.end());
     MoverRng.resize(r.size());
     RngSaved.resize(r.size());
   }
   for (int ip = 0; ip < r.size(); ++ip)
-    MoverRng[ip] = r[ip];
+    MoverRng[ip] = &r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip)
-    RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
+    RngSaved[ip] = r[ip].get().makeClone();
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
@@ -131,7 +126,8 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   //reset the wave function
   resetPsi();
   //evaluate new local energies
-  NumWalkersEff = correlatedSampling(needGrad);
+  EffectiveWeight effective_weight = correlatedSampling(needGrad);
+  IsValid                          = isEffectiveWeightValid(effective_weight);
   return computedCost();
 }
 
@@ -155,15 +151,12 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   curVar     = SumValue[SUM_ESQ_BARE] * wgtinv - curAvg * curAvg;
   curVar_abs = SumValue[SUM_ABSE_WGT] / SumValue[SUM_WGT];
   // app_log() << "curVar     = " << curVar
-  //     << "   curAvg     = " << curAvg
-  //     << "   NumWalkersEff     = " << NumWalkersEff << std::endl;
+  //     << "   curAvg     = " << curAvg << std::endl;
   // app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << std::endl;
   // app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << std::endl;
   // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << std::endl;
   // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << std::endl;
   // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << std::endl;
-  Return_rt wgt_var = SumValue[SUM_WGTSQ] - SumValue[SUM_WGT] * SumValue[SUM_WGT];
-  wgt_var *= wgtinv;
   CostValue             = 0.0;
   const Return_rt small = 1.0e-10;
   if (std::abs(w_abs) > small)
@@ -174,22 +167,6 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
     CostValue += w_en * curAvg_w;
   if (std::abs(w_w) > small)
     CostValue += w_w * curVar;
-  //CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
-  // app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << std::endl;
-  IsValid = true;
-  if (NumWalkersEff < NumSamples * MinNumWalkers)
-  //    if (NumWalkersEff < MinNumWalkers)
-  {
-    ERRORMSG("CostFunction-> Number of Effective Walkers is too small! "
-             << std::endl
-             << "  Number of effective walkers (samples) / total number of samples = "
-             << (1.0 * NumWalkersEff) / NumSamples << std::endl
-             << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
-             << "  If this message appears frequently. You might have to be cautious. " << std::endl
-             << "  Find info about parameter \"minwalkers\" in the user manual!");
-    // ERRORMSG("Going to stop now.")
-    IsValid = false;
-  }
   return CostValue;
 }
 
@@ -201,18 +178,21 @@ void QMCCostFunctionBase::Report()
   if (!myComm->rank())
   {
     updateXmlNodes();
-    char newxml[128];
+    std::array<char, 128> newxml;
+    int length{0};
     if (Write2OneXml)
-      sprintf(newxml, "%s.opt.xml", RootName.c_str());
+      length = std::snprintf(newxml.data(), newxml.size(), "%s.opt.xml", RootName.c_str());
     else
-      sprintf(newxml, "%s.opt.%d.xml", RootName.c_str(), ReportCounter);
-    xmlSaveFormatFile(newxml, m_doc_out, 1);
+      length = std::snprintf(newxml.data(), newxml.size(), "%s.opt.%d.xml", RootName.c_str(), ReportCounter);
+    if (length < 0)
+      throw std::runtime_error("Error generating fileroot");
+    xmlSaveFormatFile(newxml.data(), m_doc_out, 1);
     if (msg_stream)
     {
       msg_stream->precision(8);
       *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue << std::setw(16)
-                  << NumWalkersEff << std::setw(16) << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w
-                  << std::setw(16) << curVar << std::setw(16) << curVar_abs << std::endl;
+                  << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w << std::setw(16) << curVar
+                  << std::setw(16) << curVar_abs << std::endl;
       *msg_stream << " curVars " << std::setw(5) << ReportCounter;
       for (int i = 0; i < OptVariables.size(); i++)
         *msg_stream << std::setw(16) << OptVariables[i];
@@ -232,17 +212,25 @@ void QMCCostFunctionBase::Report()
 
 void QMCCostFunctionBase::reportParameters()
 {
-  //final reset, restoring the WaveFunctionComponent::IsOptimizing to false
+  //final reset
   resetPsi(true);
   if (!myComm->rank())
   {
-    char newxml[128];
-    sprintf(newxml, "%s.opt.xml", RootName.c_str());
+    std::ostringstream vp_filename;
+    vp_filename << RootName << ".vp.h5";
+    hdf_archive hout;
+    OptVariables.writeToHDF(vp_filename.str(), hout);
+
+    UniqueOptObjRefs opt_obj_refs = Psi.extractOptimizableObjectRefs();
+    for (auto opt_obj : opt_obj_refs)
+      opt_obj.get().writeVariationalParameters(hout);
+
+    std::string newxml = RootName + ".opt.xml";
     *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
     OptVariables.print(*msg_stream);
     *msg_stream << "  </optVariables>" << std::endl;
     updateXmlNodes();
-    xmlSaveFormatFile(newxml, m_doc_out, 1);
+    xmlSaveFormatFile(newxml.c_str(), m_doc_out, 1);
   }
 }
 /** This function stores optimized CI coefficients in HDF5 
@@ -263,12 +251,13 @@ void QMCCostFunctionBase::reportParametersH5()
   if (!myComm->rank())
   {
     int ci_size = 0;
-    std::vector<opt_variables_type::value_type> CIcoeff;
+    std::vector<opt_variables_type::real_type> CIcoeff;
     for (int i = 0; i < OptVariables.size(); i++)
     {
-      char Coeff[128];
-      sprintf(Coeff, "CIcoeff_%d", ci_size + 1);
-      if (Coeff != OptVariables.name(i))
+      std::array<char, 128> Coeff;
+      if (std::snprintf(Coeff.data(), Coeff.size(), "CIcoeff_%d", ci_size + 1) < 0)
+        throw std::runtime_error("Error generating fileroot");
+      if (OptVariables.name(i) != Coeff.data())
       {
         if (ci_size > 0)
           break;
@@ -282,8 +271,7 @@ void QMCCostFunctionBase::reportParametersH5()
     if (ci_size > 0)
     {
       CI_Opt = true;
-      //         sprintf(newh5, "%s.opt.h5", RootName.c_str());
-      newh5 = RootName + ".opt.h5";
+      newh5  = RootName + ".opt.h5";
       *msg_stream << "  <Ci Coeffs saved in opt_coeffs=\"" << newh5 << "\">" << std::endl;
       hdf_archive hout;
       hout.create(newh5, H5F_ACC_TRUNC);
@@ -327,31 +315,37 @@ bool QMCCostFunctionBase::checkParameters()
  */
 bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
+  std::string includeNonlocalH;
   std::string writeXmlPerStep("no");
-  std::string computeNLPPderiv("no");
+  std::string computeNLPPderiv;
+  astring variational_subset_str;
   ParameterSet m_param;
-  m_param.add(writeXmlPerStep, "dumpXML", "string");
-  m_param.add(MinNumWalkers, "minwalkers", "scalar");
-  m_param.add(MaxWeight, "maxWeight", "scalar");
-  m_param.add(includeNonlocalH, "nonlocalpp", "string");
-  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", "string");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(GEVType, "GEVMethod", "string");
-  m_param.add(targetExcitedStr, "targetExcited", "string");
-  m_param.add(omega_shift, "omega", "double");
+  m_param.add(writeXmlPerStep, "dumpXML");
+  m_param.add(MinNumWalkers, "minwalkers");
+  m_param.add(MaxWeight, "maxWeight");
+  m_param.add(includeNonlocalH, "nonlocalpp", {}, TagStatus::DEPRECATED);
+  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {}, TagStatus::DEPRECATED);
+  m_param.add(w_beta, "beta");
+  m_param.add(GEVType, "GEVMethod");
+  m_param.add(targetExcitedStr, "targetExcited");
+  m_param.add(omega_shift, "omega");
+  m_param.add(do_override_output, "output_vp_override", {true});
+  m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
 
-  tolower(targetExcitedStr);
-  targetExcited = (targetExcitedStr == "yes");
+  if (!includeNonlocalH.empty())
+    app_warning() << "'nonlocalpp' no more affects any part of the execution. Please remove it from your input file."
+                  << std::endl;
+  if (!computeNLPPderiv.empty())
+    app_warning()
+        << "'use_nonlocalpp_deriv' no more affects any part of the execution. Please remove it from your input file."
+        << std::endl;
 
-  if (includeNonlocalH == "yes")
-    includeNonlocalH = "NonLocalECP";
+  targetExcitedStr = lowerCase(targetExcitedStr);
+  targetExcited    = (targetExcitedStr == "yes");
 
-  if (computeNLPPderiv != "no" && includeNonlocalH != "no")
-  {
-    app_log() << "   Going to include the derivatives of " << includeNonlocalH << std::endl;
-    useNLPPDeriv = true;
-  }
+  variational_subset_names = convertStrToVec<std::string>(variational_subset_str.s);
+
   // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
   Write2OneXml     = (writeXmlPerStep == "no");
@@ -409,10 +403,21 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     }
     cur = cur->next;
   }
+
+  UniqueOptObjRefs opt_obj_refs = extractOptimizableObjects(Psi);
+  app_log() << " TrialWaveFunction \"" << Psi.getName() << "\" has " << opt_obj_refs.size()
+            << " optimizable objects:" << std::endl;
+  for (OptimizableObject& obj : opt_obj_refs)
+    app_log() << "   '" << obj.getName() << "'" << (obj.isOptimized() ? " optimized" : " fixed") << std::endl;
+
   //build optimizables from the wavefunction
   OptVariablesForPsi.clear();
-  Psi.checkInVariables(OptVariablesForPsi);
+  for (OptimizableObject& obj : opt_obj_refs)
+    if (obj.isOptimized())
+      obj.checkInVariablesExclusive(OptVariablesForPsi);
   OptVariablesForPsi.resetIndex();
+  app_log() << " Variational subset selects " << OptVariablesForPsi.size() << " parameters." << std::endl;
+
   //synchronize OptVariables and OptVariablesForPsi
   OptVariables  = OptVariablesForPsi;
   InitVariables = OptVariablesForPsi;
@@ -479,6 +484,9 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   {
     APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
   }
+  else
+    app_log() << " In total " << NumOptimizables << " parameters being optimized after applying constraints."
+              << std::endl;
   //     app_log() << "<active-optimizables> " << std::endl;
   //     OptVariables.print(app_log());
   //     app_log() << "</active-optimizables>" << std::endl;
@@ -525,83 +533,91 @@ void QMCCostFunctionBase::updateXmlNodes()
   {
     m_doc_out          = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-    xmlAddChild(qm_root, m_wfPtr);
+    xmlNodePtr wf_root = xmlAddChild(qm_root, xmlCopyNode(m_wfPtr, 1));
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
+
+    if (do_override_output)
+    {
+      std::ostringstream vp_filename;
+      vp_filename << RootName << ".vp.h5";
+
+      OhmmsXPathObject vp_file_nodes("//override_variational_parameters", acontext);
+      if (vp_file_nodes.empty())
+      {
+        // Element is not present. Create a new one.
+        xmlNodePtr vp_file_node = xmlNewNode(NULL, BAD_CAST "override_variational_parameters");
+        xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        xmlAddChild(wf_root, vp_file_node);
+      }
+      else
+      {
+        // Element is present. Rewrite the href attribute.
+        for (int iparam = 0; iparam < vp_file_nodes.size(); iparam++)
+        {
+          xmlSetProp(vp_file_nodes[iparam], BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        }
+      }
+    }
 
     //check var
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      std::string aname(getXMLAttributeValue(cur, "id"));
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (oit != OptVariablesForPsi.end())
-      {
+      if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
         paramNodes[aname] = cur;
-      }
     }
     xmlXPathFreeObject(result);
     //check radfunc
     result = xmlXPathEvalExpression((const xmlChar*)"//radfunc", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      std::string aname(getXMLAttributeValue(cur, "id"));
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      std::string expID = aname + "_E";
-      xmlAttrPtr aptr   = xmlHasProp(cur, (const xmlChar*)"exponent");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
       {
-        attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
+        std::string expID = aname + "_E";
+        if (auto oit = OptVariablesForPsi.find(expID); oit != OptVariablesForPsi.end())
+          attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
       }
       std::string cID = aname + "_C";
-      aptr            = xmlHasProp(cur, (const xmlChar*)"contraction");
-      oit             = OptVariablesForPsi.find(cID);
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"contraction"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(cID); oit != OptVariablesForPsi.end())
+          attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
     }
     xmlXPathFreeObject(result);
     //check ci
     result = xmlXPathEvalExpression((const xmlChar*)"//ci", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      std::string aname(getXMLAttributeValue(cur, "id"));
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != NULL)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     //check csf
     result = xmlXPathEvalExpression((const xmlChar*)"//csf", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      std::string aname(getXMLAttributeValue(cur, "id"));
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     if (CI_Opt)
@@ -621,53 +637,43 @@ void QMCCostFunctionBase::updateXmlNodes()
     addCJParams(acontext, "//jastrow");
     xmlXPathFreeContext(acontext);
   }
-  //     Psi.reportStatus(app_log());
-  std::map<std::string, xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
-  while (pit != pit_end)
+  for (const auto& [pname, pptr] : paramNodes)
   {
     //FIXME real value is forced here to makde sure that the code builds
-    Return_rt v = std::real(OptVariablesForPsi[(*pit).first]);
-    getContent(v, (*pit).second);
-    //         vout <<(*pit).second<< std::endl;
-    ++pit;
+    Return_rt v = std::real(OptVariablesForPsi[pname]);
+    getContent(v, pptr);
   }
-  std::map<std::string, std::pair<xmlNodePtr, std::string>>::iterator ait(attribNodes.begin()),
-      ait_end(attribNodes.end());
-  while (ait != ait_end)
+  for (const auto& [aname, attrib] : attribNodes)
   {
     std::ostringstream vout;
     vout.setf(std::ios::scientific, std::ios::floatfield);
     vout.precision(16);
-    vout << OptVariablesForPsi[(*ait).first];
-    xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(), (const xmlChar*)vout.str().c_str());
-    ++ait;
+    vout << OptVariablesForPsi[aname];
+    xmlSetProp(attrib.first, (const xmlChar*)attrib.second.c_str(), (const xmlChar*)vout.str().c_str());
   }
-  std::map<std::string, xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
-  while (cit != cit_end)
+  for (const auto& [cname, cptr] : coeffNodes)
   {
-    std::string rname((*cit).first);
+    std::string rname(cname);
     OhmmsAttributeSet cAttrib;
     std::string datatype("none");
     std::string aname("0");
     cAttrib.add(datatype, "type");
     cAttrib.add(aname, "id");
-    cAttrib.put((*cit).second);
+    cAttrib.put(cptr);
     if (datatype == "Array")
     {
       //
       aname.append("_");
-      opt_variables_type::iterator vit(OptVariablesForPsi.begin());
       std::vector<Return_rt> c;
-      while (vit != OptVariablesForPsi.end())
+      for (const auto& [name, value] : OptVariablesForPsi)
       {
-        if ((*vit).first.find(aname) == 0)
+        if (name.find(aname) == 0)
         {
           //FIXME real value is forced here to makde sure that the code builds
-          c.push_back(std::real((*vit).second));
+          c.push_back(std::real(value));
         }
-        ++vit;
       }
-      xmlNodePtr contentPtr = cit->second;
+      xmlNodePtr contentPtr = cptr;
       if (xmlNodeIsText(contentPtr->children))
         contentPtr = contentPtr->children;
       getContent(c, contentPtr);
@@ -675,15 +681,15 @@ void QMCCostFunctionBase::updateXmlNodes()
     // counting jastrow variables
     else if (rname.find("cj_") == 0)
     {
-      printCJParams(cit->second, rname);
+      printCJParams(cptr, rname);
     }
     else
     {
-      xmlNodePtr cur = (*cit).second->children;
+      xmlNodePtr cur = cptr->children;
       while (cur != NULL)
       {
-        std::string cname((const char*)(cur->name));
-        if (cname == "lambda")
+        std::string childName((const char*)(cur->name));
+        if (childName == "lambda")
         {
           int i = 0;
           int j = -1;
@@ -691,12 +697,15 @@ void QMCCostFunctionBase::updateXmlNodes()
           pAttrib.add(i, "i");
           pAttrib.add(j, "j");
           pAttrib.put(cur);
-          char lambda_id[32];
+          std::array<char, 32> lambda_id;
+          int length{0};
           if (j < 0)
-            sprintf(lambda_id, "%s_%d", rname.c_str(), i);
+            length = std::snprintf(lambda_id.data(), lambda_id.size(), "%s_%d", rname.c_str(), i);
           else
-            sprintf(lambda_id, "%s_%d_%d", rname.c_str(), i, j);
-          opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id));
+            length = std::snprintf(lambda_id.data(), lambda_id.size(), "%s_%d_%d", rname.c_str(), i, j);
+          if (length < 0)
+            throw std::runtime_error("Error generating lambda_id");
+          opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id.data()));
           if (vTarget != OptVariablesForPsi.end())
           {
             std::ostringstream vout;
@@ -709,7 +718,6 @@ void QMCCostFunctionBase::updateXmlNodes()
         cur = cur->next;
       }
     }
-    ++cit;
   }
 }
 
@@ -1047,84 +1055,53 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
   }
 }
 
-bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
-                                           const std::vector<Return_rt>& gr,
-                                           Return_rt val0,
-                                           Return_rt& dl,
-                                           Return_rt& val_proj,
-                                           Return_rt& lambda_max)
+bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weight) const
 {
-  return false;
-  // PK: Commented out inaccessible code after return false, but why was return added?
-  //  const int maxclones=3;
-  //  const int max_poly=3;
-  //  //Matrix<Return_t> js(maxclones+1,x0.size());
-  //  Vector<Return_t> y(maxclones+1);
-  //  Vector<Return_t> sigma(maxclones+1);
-  //  Matrix<Return_t> A(maxclones+1,max_poly);
-  //  sigma=1e-6; //a small value
-  //  Return_t gr_norm=0.0;
-  //  for (int j=0; j<x0.size(); ++j)
-  //  {
-  //    //js(0,j)=x0[j];
-  //    gr_norm+=gr[j]*gr[j];
-  //  }
-  //  Return_t nw=1.0/static_cast<QMCTraits::RealType>(NumSamples);
-  //  //Return_t MaxDispl=0.04;
-  //  gr_norm=std::sqrt(gr_norm);
-  //  Return_t dx=lambda_max/gr_norm;
-  //  dx=std::min((QMCTraits::RealType)0.25,dx);
-  //  if (val0<1e12)
-  //  {
-  //    y[0]=val0;
-  //    sigma[0]=std::sqrt(val0)*nw;
-  //  }
-  //  else
-  //  {
-  //    for (int j=0; j<x0.size(); ++j)
-  //      Params(j)=x0[j];
-  //    Return_t costval=Cost();
-  //    y[0]=costval;
-  //    sigma[0]=std::sqrt(costval)*nw;
-  //  }
-  //  app_log() << "  lineoptimization (" << 0.0 << "," << y[0] << ")";
-  //  for (int k=0; k<max_poly; ++k)
-  //    A(0,k)=0.0;
-  //  Return_t dxmax=0.0;
-  //  for (int i=1; i<=maxclones; ++i)
-  //  {
-  //    dxmax+=dx;
-  //    //set OptParams to vary
-  //    for (int j=0; j<x0.size(); ++j)
-  //    {
-  //      //js(i,j)=OptParams[j]=x0[j]+dx*gr[j];
-  //      Params(j)=x0[j]+dxmax*gr[j];
-  //    }
-  //    Return_t costval=Cost();
-  //    y[i]=costval;
-  //    sigma[i]=std::sqrt(costval)*nw;
-  //    for (int k=0; k<max_poly; ++k)
-  //      A(i,k)=std::pow(dxmax,k);
-  //    app_log() << " (" << dxmax << "," << y[i] << ")";
-  //  }
-  //  app_log() << std::endl;
-  //  Vector<QMCTraits::RealType> polys(max_poly);
-  //  Vector<QMCTraits::RealType> errors(max_poly);
-  //  LeastSquaredFitLU(y,sigma,A,polys,errors);
-  //  dl=-polys[1]/polys[2]*0.5;
-  //  val_proj=polys[0]+dl*(polys[1]+dl*polys[2]);
-  //  if (dl<dx*0.25)
-  //    lambda_max *=0.5; // narrow the bracket
-  //  if (dl>dxmax*5.0)
-  //    lambda_max *=2.0; //widen the bracket
-  //  app_log() << "    minimum at " << dl << " estimated=" << val_proj << " LambdaMax " << lambda_max;
-  //  for (int j=0; j<x0.size(); ++j)
-  //    Params(j)=x0[j]+dl*gr[j];
-  //  val_proj=Cost();
-  //  app_log() << "  cost = " << val_proj << std::endl;
-  //  //Psi.reportStatus(app_log());
-  //  //return false;
-  //  return true;
+  app_log() << "Effective weight of all the samples measured by correlated sampling is " << effective_weight
+            << std::endl;
+  if (effective_weight < MinNumWalkers)
+  {
+    WARNMSG("    Smaller than the user specified threshold \"minwalkers\" = "
+            << MinNumWalkers << std::endl
+            << "  If this message appears frequently. You might have to be cautious. " << std::endl
+            << "  Find info about parameter \"minwalkers\" in the user manual!");
+    return false;
+  }
+
+  return true;
+}
+
+UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunction& psi) const
+{
+  const auto& names(variational_subset_names);
+  // survey all the optimizable objects
+  const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
+  // check if input names are valid
+  for (auto& name : names)
+    if (std::find_if(opt_obj_refs.begin(), opt_obj_refs.end(),
+                     [&name](const OptimizableObject& obj) { return name == obj.getName(); }) == opt_obj_refs.end())
+    {
+      std::ostringstream msg;
+      msg << "Variational subset entry '" << name << "' doesn't exist in the trial wavefunction which contains";
+      for (OptimizableObject& obj : opt_obj_refs)
+        msg << " '" << obj.getName() << "'";
+      msg << "." << std::endl;
+      throw UniformCommunicateError(msg.str());
+    }
+
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.setOptimization(names.empty() || std::find_if(names.begin(), names.end(), [&obj](const std::string& name) {
+                                           return name == obj.getName();
+                                         }) != names.end());
+  return opt_obj_refs;
+}
+
+void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const
+{
+  const auto opt_obj_refs = extractOptimizableObjects(psi);
+  for (OptimizableObject& obj : opt_obj_refs)
+    if (obj.isOptimized())
+      obj.resetParametersExclusive(opt_variables);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

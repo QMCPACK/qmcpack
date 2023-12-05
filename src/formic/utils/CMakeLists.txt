@@ -44,30 +44,32 @@ configure_file(mpi_interface.cpp.in ${FORMIC_BINARY_DIR}/src/formic/utils/mpi_in
 # ensure we can use the eigen headers
 include_directories(${EIGEN_INCLUDE_PATH})
 
-add_library(formic_utils matrix.cpp
-                         numeric.cpp
-                         numeric_matrix.cpp
-                         porabola_min_max.cpp
-                         reusable_array.cpp
-                         lapack_interface.cpp
-                         random.cpp
-                         timing.cpp
-                         ${FORMIC_BINARY_DIR}/src/formic/utils/mpi_interface.cpp
-                         lmyengine/block_mat.cpp
-                         lmyengine/block_alg.cpp
-                         lmyengine/block_detail.cpp
-                         lmyengine/energy_target.cpp
-                         lmyengine/engine.cpp
-                         lmyengine/engine_numeric.cpp
-                         lmyengine/engine_timing.cpp
-                         lmyengine/spam_solver.cpp
-                         lmyengine/var_dependencies.cpp)
+add_library(
+  formic_utils
+  matrix.cpp
+  numeric.cpp
+  numeric_matrix.cpp
+  porabola_min_max.cpp
+  reusable_array.cpp
+  lapack_interface.cpp
+  random.cpp
+  timing.cpp
+  ${FORMIC_BINARY_DIR}/src/formic/utils/mpi_interface.cpp
+  lmyengine/block_mat.cpp
+  lmyengine/block_alg.cpp
+  lmyengine/block_detail.cpp
+  lmyengine/energy_target.cpp
+  lmyengine/engine.cpp
+  lmyengine/engine_numeric.cpp
+  lmyengine/engine_timing.cpp
+  lmyengine/spam_solver.cpp
+  lmyengine/var_dependencies.cpp)
 
-TARGET_COMPILE_DEFINITIONS(formic_utils INTERFACE "HAVE_LMY_ENGINE")
-TARGET_LINK_LIBRARIES(formic_utils PRIVATE Math::BLAS_LAPACK Boost::boost)
-IF(HAVE_MPI)
-  TARGET_LINK_LIBRARIES(formic_utils PUBLIC MPI::MPI_CXX)
-ENDIF()
+target_compile_definitions(formic_utils INTERFACE "HAVE_LMY_ENGINE")
+target_link_libraries(formic_utils PRIVATE platform_LA Boost::boost)
+if(HAVE_MPI)
+  target_link_libraries(formic_utils PUBLIC MPI::MPI_CXX)
+endif()
 
 #target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
 

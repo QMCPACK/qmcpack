@@ -46,14 +46,14 @@ inline void FuncSolvePeriodicInterp1D(const std::vector<T>& data, std::vector<T>
     mu[row]        = diagInv * ratio;
     d[row]         = diagInv * (d[row] - ratio * d[row - 1]);
     // Last row
-    d[N - 1]     -= mu[N - 1] * d[row - 1];
+    d[N - 1] -= mu[N - 1] * d[row - 1];
     gamma[N - 1] -= mu[N - 1] * gamma[row - 1];
     mu[N - 1] = -mu[N - 1] * mu[row - 1];
   }
   // Last row:  gamma(N-1) hold diagonal element
   mu[N - 1] += ratio;
   gamma[N - 1] -= mu[N - 1] * (mu[N - 2] + gamma[N - 2]);
-  d[N - 1]     -= mu[N - 1] * d[N - 2];
+  d[N - 1] -= mu[N - 1] * d[N - 2];
   p[N - 1] = d[N - 1] / gamma[N - 1];
   // Now go back upward, back substituting
   for (int row = N - 2; row >= 0; row--)
@@ -88,14 +88,14 @@ struct SolvePeriodicInterp1D<double>
       mu[row]        = diagInv * ratio;
       d[row]         = diagInv * (d[row] - ratio * d[row - 1]);
       // Last row
-      d[N - 1]     -= mu[N - 1] * d[row - 1];
+      d[N - 1] -= mu[N - 1] * d[row - 1];
       gamma[N - 1] -= mu[N - 1] * gamma[row - 1];
       mu[N - 1] = -mu[N - 1] * mu[row - 1];
     }
     // Last row:  gamma(N-1) hold diagonal element
     mu[N - 1] += ratio;
     gamma[N - 1] -= mu[N - 1] * (mu[N - 2] + gamma[N - 2]);
-    d[N - 1]     -= mu[N - 1] * d[N - 2];
+    d[N - 1] -= mu[N - 1] * d[N - 2];
     p[N] = d[N - 1] / gamma[N - 1];
     // Now go back upward, back substituting
     for (int row = N - 2; row >= 0; row--)
@@ -106,8 +106,8 @@ struct SolvePeriodicInterp1D<double>
 template<>
 struct SolvePeriodicInterp1D<std::complex<double>>
 {
-  typedef std::complex<double> value_type;
-  typedef double real_type;
+  using value_type = std::complex<double>;
+  using real_type  = double;
 
   static inline void apply(const std::vector<value_type>& data, std::vector<value_type>& p)
   {
@@ -179,8 +179,8 @@ struct SolveFirstDerivInterp1D<double>
 template<>
 struct SolveFirstDerivInterp1D<std::complex<double>>
 {
-  typedef std::complex<double> value_type;
-  typedef double real_type;
+  using value_type = std::complex<double>;
+  using real_type  = double;
 
   template<class CT>
   static inline void apply(const CT& data, CT& p, int N, double* bcLower, double* bcUpper)
@@ -220,8 +220,8 @@ struct SolveFirstDerivInterp1D<float>
 template<>
 struct SolveFirstDerivInterp1D<std::complex<float>>
 {
-  typedef std::complex<float> value_type;
-  typedef float real_type;
+  using value_type = std::complex<float>;
+  using real_type  = float;
 
   template<class CT>
   static inline void apply(const CT& data, CT& p, int N, float* bcLower, float* bcUpper)
