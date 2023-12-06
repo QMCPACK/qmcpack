@@ -36,14 +36,14 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
- <sposet_builder name="spo_builder" type="spinorbspline" href="eshdf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="i" size="28" meshfactor="1.0" precision="single">
+ <sposet_collection name="spo_builder" type="spinorbspline" href="eshdf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="i" size="28" meshfactor="1.0" precision="single">
       <sposet type="bspline" name="myspo" size="28">
         <occupation mode="ground"/>
       </sposet>
-    </sposet_builder>
+    </sposet_collection>
     <determinantset>
       <slaterdeterminant>
-         <determinant id="det" group="u" sposet="myspo" size="28"/>
+         <determinant sposet="myspo"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">

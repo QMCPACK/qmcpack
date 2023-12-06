@@ -67,12 +67,12 @@ public:
     const int norb = logdetT.rows();
     resize(norb, m_queue);
 
-    auto c_event = m_queue.memcpy(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT));
-    auto t_event = syclBLAS::transpose(m_queue, Mat1_gpu.data(), norb, Mat1_gpu.cols(), Ainv_gpu.data(), norb,
-                                       Ainv_gpu.cols(), {c_event});
+    m_queue.memcpy(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT));
+    syclBLAS::transpose(m_queue, Mat1_gpu.data(), norb, Mat1_gpu.cols(), Ainv_gpu.data(), norb,
+                                       Ainv_gpu.cols());
     try
     {
-      syclSolver::getrf(m_queue, norb, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws, {t_event})
+      syclSolver::getrf(m_queue, norb, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws)
           .wait();
     }
     catch (sycl::exception const& ex)
@@ -86,9 +86,9 @@ public:
 
     log_value = computeLogDet_sycl<TREAL>(m_queue, norb, Ainv_gpu.cols(), Ainv_gpu.data(), ipiv.data());
 
-    c_event = syclSolver::getri(m_queue, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getri_ws);
+    syclSolver::getri(m_queue, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getri_ws);
 
-    m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), {c_event}).wait();
+    m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT)).wait();
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
@@ -105,15 +105,15 @@ public:
     const int norb = logdetT.rows();
     resize(norb, m_queue);
     //use Ainv_gpu for transpose
-    auto c_event = m_queue.memcpy(Ainv_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT));
+    m_queue.memcpy(Ainv_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT));
     //transpose
-    auto t_event = syclBLAS::transpose(m_queue, Ainv_gpu.data(), norb, Ainv_gpu.cols(), Mat1_gpu.data(), norb,
-                                       Mat1_gpu.cols(), {c_event});
+    syclBLAS::transpose(m_queue, Ainv_gpu.data(), norb, Ainv_gpu.cols(), Mat1_gpu.data(), norb,
+                                       Mat1_gpu.cols());
 
     //getrf (LU) -> getri (inverse)
     try
     {
-      syclSolver::getrf(m_queue, norb, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws, {t_event})
+      syclSolver::getrf(m_queue, norb, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws)
           .wait();
     }
     catch (sycl::exception const& ex)
@@ -127,11 +127,15 @@ public:
 
     log_value = computeLogDet_sycl<TREAL>(m_queue, norb, Mat1_gpu.cols(), Mat1_gpu.data(), ipiv.data());
 
-    c_event = syclSolver::getri(m_queue, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getri_ws);
+    syclSolver::getri(m_queue, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getri_ws);
 
-    t_event = syclBLAS::copy_n(m_queue, Mat1_gpu.data(), Mat1_gpu.size(), Ainv_gpu.data(), {c_event});
+    syclBLAS::copy_n(m_queue, Mat1_gpu.data(), Mat1_gpu.size(), Ainv_gpu.data());
 
-    m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), {t_event}).wait();
+    m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT)).wait();
+
+    for(int i = 0; i < norb; i++)
+      if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
+        throw std::runtime_error("Ainv[i][i] is NaN. i = " + std::to_string(i));
   }
 };
 } // namespace qmcplusplus

@@ -17,7 +17,7 @@
  *
  * Implement super function
  */
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "EinsplineSetBuilder.h"
 #include "BsplineReaderBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -220,10 +220,10 @@ void BsplineReaderBase::initialize_spo2band(int spin,
     int bi    = bigspace[i].BandIndex;
     double e  = bigspace[i].Energy;
     int nd    = (bigspace[i].MakeTwoCopies) ? 2 : 1;
-    PosType k = mybuilder->PrimCell.k_cart(mybuilder->TwistAngles[ti]);
+    PosType k = mybuilder->PrimCell.k_cart(mybuilder->primcell_kpoints[ti]);
     int s_size = std::snprintf(s.data(), s.size(), "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n",
-                               i, ns, ti, bi, e, k[0], k[1], k[2], mybuilder->TwistAngles[ti][0],
-                               mybuilder->TwistAngles[ti][1], mybuilder->TwistAngles[ti][2], nd);
+                               i, ns, ti, bi, e, k[0], k[1], k[2], mybuilder->primcell_kpoints[ti][0],
+                               mybuilder->primcell_kpoints[ti][1], mybuilder->primcell_kpoints[ti][2], nd);
     if (s_size < 0)
       throw std::runtime_error("Error generating bandinfo");
     o << s.data();

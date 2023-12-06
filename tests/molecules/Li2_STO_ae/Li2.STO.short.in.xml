@@ -47,7 +47,21 @@
         <var id="jud_b" name="B">0.821683</var>
       </correlation>
     </jastrow>
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
+    <sposet_collection type="MO" key="STO" transform="no" source="ion0">
+      <sposet name="spo-up" spin="1" size="3">
+          <coefficient id="updetC" type="Array" size="3">
+            0.606630 1.0 0.0 0.061592  0.606630  1.0 0.0 -0.061592
+            0.603086 1.0 0.0 2.946e-3 -0.603086 -1.0 0.0  2.946e-3
+            0.104957 0.0 1.0 0.305729  0.104957  0.0 1.0 -0.305729
+          </coefficient>
+      </sposet>
+      <sposet name="spo-dn" spin="-1" size="3">
+          <coefficient id="downdetC" type="Array" size="3">
+            0.606630 1.0 0.0 0.061592  0.606630  1.0 0.0 -0.061592
+            0.603086 1.0 0.0 2.946e-3 -0.603086 -1.0 0.0  2.946e-3
+            0.104957 0.0 1.0 0.305729  0.104957  0.0 1.0 -0.305729
+          </coefficient>
+      </sposet>
       <basisset>
         <atomicBasisSet type="STO" elementType="Li" normalized="no" expandYlm="no">
           <basisGroup rid="R0" n="1" l="0" m="0" type="Slater"><radfunc exponent="3.579103" node="1"/></basisGroup>
@@ -56,21 +70,11 @@
           <basisGroup rid="R3" n="2" l="1" m="0" type="Slater"><radfunc exponent="0.532615" node="2"/></basisGroup>
         </atomicBasisSet>
       </basisset>
+    </sposet_collection>
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="updet" spin="1" size="3">
-          <coefficient id="updetC" type="Array" size="3">
-            0.606630 1.0 0.0 0.061592  0.606630  1.0 0.0 -0.061592
-            0.603086 1.0 0.0 2.946e-3 -0.603086 -1.0 0.0  2.946e-3
-            0.104957 0.0 1.0 0.305729  0.104957  0.0 1.0 -0.305729
-          </coefficient>
-        </determinant>
-        <determinant id="downdet" spin="-1" size="3">
-          <coefficient id="downdetC" type="Array" size="3">
-            0.606630 1.0 0.0 0.061592  0.606630  1.0 0.0 -0.061592
-            0.603086 1.0 0.0 2.946e-3 -0.603086 -1.0 0.0  2.946e-3
-            0.104957 0.0 1.0 0.305729  0.104957  0.0 1.0 -0.305729
-          </coefficient>
-        </determinant>
+        <determinant sposet="spo-up"/>
+        <determinant sposet="spo-dn"/>
       </slaterdeterminant>
     </determinantset>
   </wavefunction>

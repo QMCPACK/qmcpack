@@ -22,9 +22,9 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
-#include "QMCWaveFunctions/einspline_helper.hpp"
-#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
-#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
+#include "einspline_helper.hpp"
+#include "BsplineReaderBase.h"
+#include "createBsplineReader.h"
 
 namespace qmcplusplus
 {
@@ -55,8 +55,9 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   {
     OhmmsAttributeSet a;
+    TinyVector<int, OHMMS_DIM> TileFactor_do_not_use;
     a.add(H5FileName, "href");
-    a.add(TileFactor, "tile");
+    a.add(TileFactor_do_not_use, "tile", {}, TagStatus::DELETED);
     a.add(sortBands, "sort");
     a.add(TileMatrix, "tilematrix");
     a.add(twist_num_inp, "twistnum");
@@ -74,6 +75,9 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a.add(spinSet, "spindataset");
     a.add(spinSet, "group");
     a.put(cur);
+
+    if (myName.empty())
+      myName = "einspline.spinor";
   }
 
   auto pit(ParticleSets.find(sourceName));
@@ -199,13 +203,15 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   MixedSplineReader->setRotate(false);
 
   //Make the up spin set.
-  HasCoreOrbs       = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
+  bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
   auto bspline_zd_u = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  bspline_zd_u->finalizeConstruction();
 
   //Make the down spin set.
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
-  HasCoreOrbs       = bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
+  bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
   auto bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
+  bspline_zd_d->finalizeConstruction();
 
   //register with spin set and we're off to the races.
   auto spinor_set = std::make_unique<SpinorSet>(spo_object_name);

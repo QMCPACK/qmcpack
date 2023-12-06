@@ -1994,6 +1994,15 @@ qmc_run_and_check(
   FALSE)
 
 qmc_run_and_check(
+  deterministic-input_check_bad_splineh5
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_input_check_bad_splineh5
+  det_qmc_input_check_bad_splineh5.in.xml
+  1
+  1
+  FALSE)
+
+qmc_run_and_check(
   deterministic-input_check_no_wf
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_input_check_no_wf

@@ -42,19 +42,19 @@ public:
   void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
   void resetParametersExclusive(const OptVariablesType& active) override;
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
 
   void restore(int iat) override {}
 
-  PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValue ratio(ParticleSet& P, int iat) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const OptVariablesType& optvars,
@@ -64,7 +64,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 

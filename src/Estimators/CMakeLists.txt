@@ -33,7 +33,9 @@ set(QMCEST_SRC
     MagnetizationDensity.cpp
     MagnetizationDensityInput.cpp
     PerParticleHamiltonianLoggerInput.cpp
-    PerParticleHamiltonianLogger.cpp)
+    PerParticleHamiltonianLogger.cpp
+    ReferencePointsInput.cpp
+    NEReferencePoints.cpp)
 
 ####################################
 # create libqmcestimators
@@ -47,4 +49,6 @@ endif()
 target_include_directories(qmcestimators PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcestimators PUBLIC containers qmcham qmcparticle qmcutil)
 
-add_subdirectory(tests)
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

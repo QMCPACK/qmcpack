@@ -25,10 +25,12 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
 
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
 
-  OffloadMWVGLArray phi_vgl_v; // [5][NW][NumMO]
-  OffloadMWVGLArray basis_mw;  // [5][NW][NumAO]
-  OffloadMWVArray phi_v;       // [NW][NumMO]
-  OffloadMWVArray basis_v_mw;  // [NW][NumMO]
+  OffloadMWVGLArray phi_vgl_v;    // [5][NW][NumMO]
+  OffloadMWVGLArray basis_vgl_mw; // [5][NW][NumAO]
+  OffloadMWVArray phi_v;          // [NW][NumMO]
+  OffloadMWVArray basis_v_mw;     // [NW][NumAO]
+  OffloadMWVArray vp_phi_v;       // [NVPs][NumMO]
+  OffloadMWVArray vp_basis_v_mw;  // [NVPs][NumAO]
 };
 
 LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
@@ -107,13 +109,18 @@ void LCAOrbitalSet::checkObject() const
 
 void LCAOrbitalSet::createResource(ResourceCollection& collection) const
 {
+  myBasisSet->createResource(collection);
+
   auto resource_index = collection.addResource(std::make_unique<LCAOMultiWalkerMem>());
 }
 
 void LCAOrbitalSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
 {
   assert(this == &spo_list.getLeader());
-  auto& spo_leader          = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+
+  spo_leader.myBasisSet->acquireResource(collection, extractBasisRefList(spo_list));
+
   spo_leader.mw_mem_handle_ = collection.lendResource<LCAOMultiWalkerMem>();
 }
 
@@ -121,9 +128,21 @@ void LCAOrbitalSet::releaseResource(ResourceCollection& collection, const RefVec
 {
   assert(this == &spo_list.getLeader());
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+
+  spo_leader.myBasisSet->releaseResource(collection, extractBasisRefList(spo_list));
+
   collection.takebackResource(spo_leader.mw_mem_handle_);
 }
 
+RefVectorWithLeader<typename LCAOrbitalSet::basis_type> LCAOrbitalSet::extractBasisRefList(
+    const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  RefVectorWithLeader<basis_type> basis_list(*spo_list.getCastedLeader<LCAOrbitalSet>().myBasisSet);
+  basis_list.reserve(spo_list.size());
+  for (size_t iw = 0; iw < spo_list.size(); iw++)
+    basis_list.push_back(*spo_list.getCastedElement<LCAOrbitalSet>(iw).myBasisSet);
+  return basis_list;
+}
 std::unique_ptr<SPOSet> LCAOrbitalSet::makeClone() const { return std::make_unique<LCAOrbitalSet>(*this); }
 
 void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
@@ -428,13 +447,15 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                                            OffloadMWVGLArray& phi_vgl_v) const
 {
   assert(this == &spo_list.getLeader());
-  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
-  auto& basis_mw   = spo_leader.mw_mem_handle_.getResource().basis_mw;
-  basis_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
+  auto& spo_leader   = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& basis_vgl_mw = spo_leader.mw_mem_handle_.getResource().basis_vgl_mw;
+  basis_vgl_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
 
   {
     ScopedTimer local(basis_timer_);
-    myBasisSet->mw_evaluateVGL(P_list, iat, basis_mw);
+    auto basis_list = spo_leader.extractBasisRefList(spo_list);
+    myBasisSet->mw_evaluateVGL(basis_list, P_list, iat, basis_vgl_mw);
+    basis_vgl_mw.updateFrom(); // TODO: remove this when gemm is implemented
   }
 
   if (Identity)
@@ -445,7 +466,7 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 
     for (size_t idim = 0; idim < DIM_VGL; idim++)
       for (int iw = 0; iw < nw; iw++)
-        std::copy_n(basis_mw.data_at(idim, iw, 0), output_size, phi_vgl_v.data_at(idim, iw, 0));
+        std::copy_n(basis_vgl_mw.data_at(idim, iw, 0), output_size, phi_vgl_v.data_at(idim, iw, 0));
   }
   else
   {
@@ -460,12 +481,45 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                  requested_orb_size,        // MOs
                  spo_list.size() * DIM_VGL, // walkers * DIM_VGL
                  BasisSetSize,              // AOs
-                 1, C_partial_view.data(), BasisSetSize, basis_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
+                 1, C_partial_view.data(), BasisSetSize, basis_vgl_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
                  requested_orb_size);
     }
   }
 }
 
+void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                OffloadMWVArray& vp_phi_v) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  //const size_t nw  = spo_list.size();
+  auto& vp_basis_v_mw = spo_leader.mw_mem_handle_.getResource().vp_basis_v_mw;
+  //Splatter basis_v
+  const size_t nVPs = vp_phi_v.size(0);
+  vp_basis_v_mw.resize(nVPs, BasisSetSize);
+
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValueVPs(basis_list, vp_list, vp_basis_v_mw);
+  vp_basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
+
+  if (Identity)
+  {
+    std::copy_n(vp_basis_v_mw.data_at(0, 0), OrbitalSetSize * nVPs, vp_phi_v.data_at(0, 0));
+  }
+  else
+  {
+    const size_t requested_orb_size = vp_phi_v.size(1);
+    assert(requested_orb_size <= OrbitalSetSize);
+    ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+    BLAS::gemm('T', 'N',
+               requested_orb_size, // MOs
+               nVPs,               // walkers * Virtual Particles
+               BasisSetSize,       // AOs
+               1, C_partial_view.data(), BasisSetSize, vp_basis_v_mw.data(), BasisSetSize, 0, vp_phi_v.data(),
+               requested_orb_size);
+  }
+}
 void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                                      const RefVectorWithLeader<ParticleSet>& P_list,
                                      int iat,
@@ -495,7 +549,9 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
   auto& basis_v_mw = spo_leader.mw_mem_handle_.getResource().basis_v_mw;
   basis_v_mw.resize(nw, BasisSetSize);
 
-  myBasisSet->mw_evaluateValue(P_list, iat, basis_v_mw);
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValue(basis_list, P_list, iat, basis_v_mw);
+  basis_v_mw.updateFrom(); // TODO: remove this when gemm is implemented
 
   if (Identity)
   {
@@ -521,15 +577,20 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
                                          const std::vector<const ValueType*>& invRow_ptr_list,
                                          std::vector<std::vector<ValueType>>& ratios_list) const
 {
-  const size_t nw = spo_list.size();
-  for (size_t iw = 0; iw < nw; iw++)
-  {
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& vp_phi_v   = spo_leader.mw_mem_handle_.getResource().vp_phi_v;
+
+  const size_t nVPs               = VirtualParticleSet::countVPs(vp_list);
+  const size_t requested_orb_size = psi_list[0].get().size();
+  vp_phi_v.resize(nVPs, requested_orb_size);
+
+  mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
+
+  size_t index = 0;
+  for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
-    {
-      spo_list[iw].evaluateValue(vp_list[iw], iat, psi_list[iw]);
-      ratios_list[iw][iat] = simd::dot(psi_list[iw].get().data(), invRow_ptr_list[iw], psi_list[iw].get().size());
-    }
-  }
+      ratios_list[iw][iat] = simd::dot(vp_phi_v.data_at(index++, 0), invRow_ptr_list[iw], requested_orb_size);
 }
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
@@ -540,6 +601,9 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
   Vector<ValueType> invTemp(Temp.data(1), BasisSetSize);
 
+  if (Identity)
+    std::copy_n(psiinv.data(), psiinv.size(), invTemp.data());
+  else
   {
     ScopedTimer local(mo_timer_);
     // when only a subset of orbitals is used, extract limited rows of C.

@@ -313,7 +313,9 @@ public:
     FiniteDiff_LowOrder,  // use simplest low-order formulas
     FiniteDiff_Richardson // use Richardson extrapolation
   };
-  FiniteDifference(size_t ndim_in, FiniteDiffType fd_type = FiniteDiff_Richardson) : ndim(ndim_in), m_RichardsonSize(10), m_fd_type(fd_type) {}
+  FiniteDifference(size_t ndim_in, FiniteDiffType fd_type = FiniteDiff_Richardson)
+      : ndim(ndim_in), m_RichardsonSize(10), m_fd_type(fd_type)
+  {}
 
   const size_t ndim;
   int m_RichardsonSize;
@@ -790,7 +792,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     ParticleSet::ParticleLaplacian L(nat), tmpL(nat), L1(nat);
 
 
-    LogValueType logpsi1 = orb->evaluateLog(W, G, L);
+    LogValue logpsi1 = orb->evaluateLog(W, G, L);
 
     fail_log << "WaveFunctionComponent " << iorb << " " << orb->getClassName() << " log psi = " << logpsi1 << std::endl;
 
@@ -804,7 +806,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       ParticleSet::SingleParticlePos zeroR;
       W.makeMove(it->index, zeroR);
 
-      LogValueType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
+      LogValue logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
       ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
@@ -836,7 +838,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         ParticleSet::ParticleGradient G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase& det = *sd->Dets[isd];
-        LogValueType logpsi2      = det.evaluateLog(W, G, L); // this won't work with backflow
+        LogValue logpsi2          = det.evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det.getFirstIndex() << " to "
                  << det.getLastIndex() << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
@@ -853,7 +855,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.R[it->index] = it->r;
           W.update();
 
-          LogValueType logpsi0 = det.evaluateLog(W, tmpG, tmpL);
+          LogValue logpsi0 = det.evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
           ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else

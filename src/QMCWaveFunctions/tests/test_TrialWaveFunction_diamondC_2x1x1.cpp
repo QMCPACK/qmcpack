@@ -18,7 +18,7 @@
 #include "ParticleSetPool.h"
 #include "DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
@@ -30,9 +30,9 @@
 
 namespace qmcplusplus
 {
-using LogValueType = TrialWaveFunction::LogValueType;
-using PsiValueType = TrialWaveFunction::PsiValueType;
-using GradType     = TrialWaveFunction::GradType;
+using LogValue = TrialWaveFunction::LogValue;
+using PsiValue = TrialWaveFunction::PsiValue;
+using GradType = TrialWaveFunction::GradType;
 
 struct double_tag
 {};
@@ -345,13 +345,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   displs = {delta_zero, delta};
   ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displs);
 
-  std::vector<PsiValueType> ratios(2);
+  std::vector<PsiValue> ratios(2);
   TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
   app_log() << "mixed move calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 
 #if defined(QMC_COMPLEX)
-  CHECK(ratios[0] == ComplexApprox(PsiValueType(1, 0)).epsilon(5e-4));
-  CHECK(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)).epsilon(5e-5));
+  CHECK(ratios[0] == ComplexApprox(PsiValue(1, 0)).epsilon(5e-4));
+  CHECK(ratios[1] == ComplexApprox(PsiValue(0.12487384604679, 0)).epsilon(5e-5));
 #else
   CHECK(ratios[0] == Approx(1).epsilon(5e-5));
 #if defined(MIXED_PRECISION)
@@ -509,16 +509,16 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   CHECK(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
 #endif // NDEBUG
-  std::vector<LogValueType> log_values(wf_ref_list.size());
+  std::vector<LogValue> log_values(wf_ref_list.size());
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
   for (int iw = 0; iw < log_values.size(); iw++)
     log_values[iw] = {wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()};
 #if defined(QMC_COMPLEX)
-  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-4.1148130068943, -6.2831779860047});
-  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-6.6269077659586, -3.1416312090662});
+  CHECK(LogComplexApprox(log_values[0]) == LogValue{-4.1148130068943, -6.2831779860047});
+  CHECK(LogComplexApprox(log_values[1]) == LogValue{-6.6269077659586, -3.1416312090662});
 #else
-  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-5.5011162672993, 9.4247779607694});
-  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-8.0131646238354, 6.2831853071796});
+  CHECK(LogComplexApprox(log_values[0]) == LogValue{-5.5011162672993, 9.4247779607694});
+  CHECK(LogComplexApprox(log_values[1]) == LogValue{-8.0131646238354, 6.2831853071796});
 #endif
 
   // This test has 4 electrons but only 2 particle moves are attempted.
@@ -527,7 +527,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
-    CHECK(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
+    CHECK(LogComplexApprox(log_values[iw]) == LogValue{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
 
   // test NLPP related APIs
   const int nknot = 3;

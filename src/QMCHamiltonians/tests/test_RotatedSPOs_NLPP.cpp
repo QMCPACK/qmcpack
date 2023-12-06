@@ -20,7 +20,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
 #include "Utilities/ProjectData.h"
 

@@ -59,7 +59,7 @@ private:
   std::shared_ptr<MultiBspline<ST>> SplineInst;
 
   ///Copy of original splines for orbital rotation
-  std::shared_ptr<std::vector<RealType>> coef_copy_;
+  std::shared_ptr<std::vector<ST>> coef_copy_;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;

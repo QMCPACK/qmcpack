@@ -110,7 +110,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
@@ -147,12 +147,12 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set Python Version
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Setup Dependencies
         run: |
@@ -205,11 +205,11 @@ jobs:
             container:
               image: ghcr.io/qmcpack/centos-stream-gcc11:latest
               options: -u 1001
-        
+
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
       - name: Echo Debug
         run: |
           echo $PATH
