@@ -127,5 +127,10 @@ private:
   bool have_center_ = false;
   bool have_corner_ = false;
 };
+
+extern template bool InputSection::setIfInInput<qmcplusplus::MagnetizationDensityInput::Integrator>(
+    qmcplusplus::MagnetizationDensityInput::Integrator& var,
+    const std::string& tag);
+
 } // namespace qmcplusplus
 #endif /* QMCPLUSPLUS_MAGNETIZATION_DENSITY_INPUT_H */

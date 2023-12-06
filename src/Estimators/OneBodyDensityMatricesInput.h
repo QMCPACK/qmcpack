@@ -155,6 +155,10 @@ public:
   friend class testing::OneBodyDensityMatricesTests;
 };
 
+extern template bool InputSection::setIfInInput<qmcplusplus::OneBodyDensityMatricesInput::Integrator>(
+    qmcplusplus::OneBodyDensityMatricesInput::Integrator& var,
+    const std::string& tag);
+
 } // namespace qmcplusplus
 
 #endif

@@ -320,8 +320,7 @@ void InputSection::report(std::ostream& out) const
 
 void InputSection::report() const
 {
-  auto& out = app_log();
-  report(out);
+  report(app_log());
 }
 
 std::any InputSection::lookupAnyEnum(const std::string& enum_name,
