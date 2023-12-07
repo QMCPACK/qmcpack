@@ -39,6 +39,20 @@ class MinimalWaveFunctionPool
 </wavefunction>
   )";
 
+  static constexpr const char* const wf_input_spinor = R"(
+<wavefunction name="psi0" target="e">
+   <sposet_collection name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" size="12"> 
+      <sposet name="spo_ud" size="12"/> 
+      <sposet name="spo_dm" size="8" index_min="12" index_max="20"/> 
+   </sposet_collection> 
+   <determinantset>
+      <slaterdeterminant>
+         <determinant sposet="spo_ud"/>
+      </slaterdeterminant>
+   </determinantset>
+</wavefunction>
+  )";
+
 public:
   static WaveFunctionPool make_diamondC_1x1x1(const RuntimeOptions& runtime_options,
                                               Communicate* comm,
@@ -48,6 +62,23 @@ public:
 
     Libxml2Document doc;
     bool okay = doc.parseFromString(wf_input);
+    REQUIRE(okay);
+
+    xmlNodePtr root = doc.getRoot();
+
+    wp.put(root);
+
+    return wp;
+  }
+
+  static WaveFunctionPool make_O2_spinor(const RuntimeOptions& runtime_options,
+                                         Communicate* comm,
+                                         ParticleSetPool& particle_pool)
+  {
+    WaveFunctionPool wp(runtime_options, particle_pool, comm);
+
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(wf_input_spinor);
     REQUIRE(okay);
 
     xmlNodePtr root = doc.getRoot();

@@ -33,6 +33,8 @@ public:
   std::vector<GradVector> component_gradients;
   ///temporary storage for laplacians
   std::vector<ValueVector> component_laplacians;
+  ///temporary storage for spin gradients
+  std::vector<ValueVector> component_spin_gradients;
   ///store the precomputed offsets
   std::vector<int> component_offsets;
 
@@ -57,6 +59,13 @@ public:
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
+
+  void evaluateVGL_spin(const ParticleSet& P,
+                        int iat,
+                        ValueVector& psi,
+                        GradVector& dpsi,
+                        ValueVector& d2psi,
+                        ValueVector& dspin_psi) override;
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)

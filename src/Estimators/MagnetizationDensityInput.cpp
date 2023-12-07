@@ -17,6 +17,10 @@
 #include "EstimatorInput.h"
 namespace qmcplusplus
 {
+template bool InputSection::setIfInInput<qmcplusplus::MagnetizationDensityInput::Integrator>(
+    qmcplusplus::MagnetizationDensityInput::Integrator& var,
+    const std::string& tag);
+
 MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr cur)
 {
   input_section_.readXML(cur);
