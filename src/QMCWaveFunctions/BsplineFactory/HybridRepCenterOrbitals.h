@@ -23,8 +23,6 @@
 #include "spline2/MultiBspline1D.hpp"
 #include "Numerics/SmoothFunctions.hpp"
 #include "hdf/hdf_archive.h"
-#include <memory>
-#include <vector>
 
 namespace qmcplusplus
 {
