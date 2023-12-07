@@ -428,6 +428,28 @@ public:
     }
 
     // There are TrueNOrb splines for every l,m pair, and also padding
+#ifdef QMC_COMPLEX
+    for (size_t lidx = 0; lidx < lm_tot; lidx++)
+      for (size_t i = 0; i < BasisSetSize; i++)
+        for (size_t j = 0; j < TrueNOrbs; j++)
+        {
+          const auto cur_elem = i * Nsplines + lidx * Npad + 2 * j;
+          ST newval_r{0.};
+          ST newval_i{0.};
+          for (size_t k = 0; k < TrueNOrbs; k++)
+          {
+            const auto index = i * Nsplines + lidx * Npad + 2 * k;
+            ST zr            = (*coef_copy_)[index];
+            ST zi            = (*coef_copy_)[index + 1];
+            ST wr            = rot_mat[k][j].real();
+            ST wi            = rot_mat[k][j].imag();
+            newval_r += zr * wr - zi * wi;
+            newval_i += zr * wi + zi * wr;
+          }
+          spl_coefs[cur_elem]     = newval_r;
+          spl_coefs[cur_elem + 1] = newval_i;
+        }
+#else
     for (size_t lidx = 0; lidx < lm_tot; lidx++)
       for (size_t i = 0; i < BasisSetSize; i++)
         for (size_t j = 0; j < TrueNOrbs; j++)
@@ -441,6 +463,7 @@ public:
           }
           spl_coefs[cur_elem] = newval;
         }
+#endif
   }
 };
 
