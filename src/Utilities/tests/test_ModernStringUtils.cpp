@@ -11,6 +11,7 @@
 
 #include "catch.hpp"
 #include "ModernStringUtils.hpp"
+#include <limits>
 
 /** \file
  */
@@ -86,6 +87,24 @@ TEST_CASE("ModernStringUtils_string2Real", "[utilities]")
   CHECK(value == Approx(101.52326626));
 } // namespace qmcplusplus
 
+TEST_CASE("ModernStringUtils_string2Int", "[utilities]")
+{
+  std::string_view svalue{"1003"};
+  auto value = string2Int<int>(svalue);
+  CHECK(value == 1003);
+  long too_large_for_int = std::numeric_limits<int>::max();
+  too_large_for_int += 2;
+  std::ostringstream input;
+  input << too_large_for_int;
+//Safety pre stdlibcxx 10 doesn't seem worth the effort
+#if _GLIBCXX_RELEASE > 10
+  CHECK_THROWS_AS(string2Int<int>(input.str()),std::range_error);
+#endif
+  long big_enough = string2Int<decltype(big_enough)>(input.str());
+  CHECK(big_enough == too_large_for_int);
+} // namespace qmcplusplus
+
+  
 TEST_CASE("ModernStringUtils_strip", "[utilities]")
 {
   using modernstrutil::strip;
