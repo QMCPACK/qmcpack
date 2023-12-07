@@ -427,7 +427,7 @@ public:
       std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
     }
 
-    //Here, ST is float but ValueType is double for R2R. Due to issues with type conversions, just doing naive matrix multiplication in this case to not lose precision on rot_mat
+    // There are TrueNOrb splines for every l,m pair, and also padding
     for (size_t lidx = 0; lidx < lm_tot; lidx++)
       for (size_t i = 0; i < BasisSetSize; i++)
         for (size_t j = 0; j < TrueNOrbs; j++)
