@@ -115,6 +115,7 @@ set(SPOSET_SRC
     test_hybridrep.cpp
     test_pw.cpp
     test_ConstantSPOSet.cpp
+    test_LCAOrbitalBuilder.cpp
     test_LCAO_diamondC_2x1x1.cpp
     test_RotatedSPOs.cpp
     ${MO_SRCS})
