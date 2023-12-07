@@ -326,7 +326,7 @@ struct device_pointer : base_device_pointer
   device_pointer() = default;
   device_pointer(std::nullptr_t) : impl_(nullptr) {}
   template<typename Q>
-  device_pointer(device_pointer<Q> const& ptr) : impl_(reinterpret_cast<T*>(ptr.impl_))
+  device_pointer(device_pointer<Q> const& ptr) : impl_(const_cast<T*>(reinterpret_cast<T const*>(ptr.impl_)))
   {}
   reference operator*() const { return reference(device_pointer{impl_}); }
   reference operator[](std::ptrdiff_t n) const { return reference(device_pointer{impl_ + n}); }
