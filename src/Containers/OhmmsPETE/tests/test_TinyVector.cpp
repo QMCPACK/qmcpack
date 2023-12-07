@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <iostream>
 
 using std::string;
 
@@ -82,4 +83,10 @@ TEST_CASE("tiny vector", "[OhmmsPETE]")
   test_tiny_vector_size_two<4>();
 }
 
+TEST_CASE("tiny vector operator out", "[OhmmsPETE]")
+{
+  TinyVector<double,3> point{0.0,-0.0,1.0};
+  std::cout << point;
+}
+  
 } // namespace qmcplusplus

@@ -38,6 +38,7 @@
 
 // include files
 #include <iomanip>
+#include <cmath>
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
 
@@ -225,7 +226,10 @@ struct printTinyVector<TinyVector<T, D>>
   inline static void print(std::ostream& os, const TinyVector<T, D>& r)
   {
     for (int d = 0; d < D; d++)
-      os << std::setw(18) << std::setprecision(10) << r[d];
+      if (FP_ZERO == std::fpclassify(r[d]))
+	os << std::setw(18) << std::setprecision(10) << 0;
+      else
+	os << std::setw(18) << std::setprecision(10) << r[d];
   }
 };
 
