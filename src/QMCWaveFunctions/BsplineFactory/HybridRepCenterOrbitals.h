@@ -430,18 +430,19 @@ public:
     }
 
     //Here, ST is float but ValueType is double for R2R. Due to issues with type conversions, just doing naive matrix multiplication in this case to not lose precision on rot_mat
-    for (size_t i = 0; i < BasisSetSize; i++)
-      for (size_t j = 0; j < TrueNOrbs; j++)
-      {
-        const auto cur_elem = Nsplines * i + j;
-        ParticleSet::FullPrecValueType newval{0.};
-        for (size_t k = 0; k < TrueNOrbs; k++)
+    for (size_t lidx = 0; lidx < lm_tot; lidx++)
+      for (size_t i = 0; i < BasisSetSize; i++)
+        for (size_t j = 0; j < TrueNOrbs; j++)
         {
-          const auto index = i * Nsplines + k;
-          newval += (*coef_copy_)[index] * rot_mat[k][j];
+          const auto cur_elem = i * Nsplines + lidx * Npad + j;
+          ParticleSet::FullPrecValueType newval{0.};
+          for (size_t k = 0; k < TrueNOrbs; k++)
+          {
+            const auto index = i * Nsplines + lidx * Npad + k;
+            newval += (*coef_copy_)[index] * rot_mat[k][j];
+          }
+          spl_coefs[cur_elem] = newval;
         }
-        spl_coefs[cur_elem] = newval;
-      }
   }
 };
 
