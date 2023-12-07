@@ -1,5 +1,8 @@
 find_package(Doxygen)
 if(NOT DOXYGEN_FOUND)
+    message(STATUS "The qmcpack_doxygen target for the QMCPACK developer/API "
+        "documentation requires doxygen and (optionally) dot from graphviz."
+    )
     return()
 endif()
 
@@ -44,8 +47,6 @@ set(DOXYGEN_HTML_TIMESTAMP YES)
 set(DOXYGEN_ENUM_VALUES_PER_LINE 1)
 set(DOXYGEN_GENERATE_TAGFILE qmc_doxygen_tags)
 set(DOXYGEN_CALL_GRAPH YES)
-# set(DOXYGEN_EXAMPLE_PATTERNS *.h *.cc)
-# set(DOXYGEN_EXAMPLE_RECURSIVE YES)
 
 doxygen_add_docs(qmcpack_doxygen
     ${PROJECT_SOURCE_DIR}/src
