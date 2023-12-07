@@ -146,6 +146,9 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(5e-5));
   CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738).epsilon(3e-5));
 
+  //Adding guard for now. On HybridRepReal enables OO at the moment. 
+  //Remove when complex is enabled
+#ifndef QMC_COMPLEX
   //Let's also add test for orbital optimzation
   SPOSet::ValueVector row0{0.56752158, -0.3152607, 0.03525207, -0.75979421};
   SPOSet::ValueVector row1{0.21452916, 0.75299027, -0.59552084, -0.17982718};
@@ -173,6 +176,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
   auto check = checkMatrix(psiM_rot_manual, psiM, true);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+#endif
 }
 
 TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")

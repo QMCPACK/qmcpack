@@ -435,7 +435,7 @@ public:
         for (size_t j = 0; j < TrueNOrbs; j++)
         {
           const auto cur_elem = i * Nsplines + lidx * Npad + j;
-          ParticleSet::FullPrecValueType newval{0.};
+          ST newval{0.};
           for (size_t k = 0; k < TrueNOrbs; k++)
           {
             const auto index = i * Nsplines + lidx * Npad + k;
