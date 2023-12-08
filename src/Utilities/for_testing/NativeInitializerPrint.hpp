@@ -20,7 +20,10 @@
 #ifndef QMCPLUSPLUS_NATIVE_INTITIALIZER_PRINT_HPP
 #define QMCPLUSPLUS_NATIVE_INTITIALIZER_PRINT_HPP
 
+#include <string>
 #include <iostream>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
 {
