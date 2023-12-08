@@ -114,7 +114,7 @@ struct TinyVector
   inline int size() const { return D; }
 
   inline TinyVector& operator=(const TinyVector& rhs) = default;
-  inline TinyVector& operator=(TinyVector&& rhs)      = default;
+  inline TinyVector& operator=(TinyVector&& rhs) = default;
 
   template<class T1>
   inline TinyVector<T, D>& operator=(const TinyVector<T1, D>& rhs)
@@ -229,9 +229,9 @@ struct printTinyVector<TinyVector<T, D>>
   {
     for (int d = 0; d < D; d++)
       if (FP_ZERO == std::fpclassify(r[d]))
-	os << std::setw(18) << std::setprecision(10) << 0;
+        os << std::setw(18) << std::setprecision(10) << 0;
       else
-	os << std::setw(18) << std::setprecision(10) << r[d];
+        os << std::setw(18) << std::setprecision(10) << r[d];
   }
 };
 
