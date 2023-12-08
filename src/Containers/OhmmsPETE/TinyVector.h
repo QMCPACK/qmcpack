@@ -219,7 +219,9 @@ template<class T>
 struct printTinyVector
 {};
 
-// specialized for Vector<TinyVector<T,D> >
+/** template functor for Vector<TinyVector<T,D> streamn output
+ *  0 equivalent values are output as 0.
+ */
 template<class T, unsigned D>
 struct printTinyVector<TinyVector<T, D>>
 {

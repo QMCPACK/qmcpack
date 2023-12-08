@@ -86,7 +86,10 @@ TEST_CASE("tiny vector", "[OhmmsPETE]")
 TEST_CASE("tiny vector operator out", "[OhmmsPETE]")
 {
   TinyVector<double,3> point{0.0,-0.0,1.0};
-  std::cout << point;
+  std::ostringstream ostr;
+  ostr << point;
+  std::string expected{"                 0                 0                 1"};
+  CHECK(expected == ostr.str());
 }
   
 } // namespace qmcplusplus
