@@ -113,6 +113,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
 
   SpinMass = 1.0;
   m_param.add(SpinMass, "SpinMass");
+  m_param.add(SpinMass, "spin_mass");
 
   Tau = 0.1;
   //m_param.add(Tau,"timeStep");
