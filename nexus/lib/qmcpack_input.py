@@ -2502,7 +2502,7 @@ class linear(QIxml):
                   'tries','min_walkers','samplesperthread',
                   'shift_i','shift_s','max_relative_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
-                  'nkept','max_seconds', 'spinmass'
+                  'nkept','max_seconds', 'spin_mass'
                   ]
     costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
@@ -2536,7 +2536,7 @@ class vmc(QIxml):
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','usedrift',
-                  'spinmass',
+                  'spin_mass',
                   'walkers','nonlocalpp','tau','walkersperthread','reconfiguration', # legacy - batched
                   'dmcwalkersperthread','current','ratio','firststep',
                   'minimumtargetwalkers','max_seconds']
@@ -2559,7 +2559,7 @@ class dmc(QIxml):
                   'stepsbetweensamples','samplesperthread','samples','reconfiguration',
                   'nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking',
                   'branching_cutoff_scheme','feedback','sigmabound',
-                  'spinmass',
+                  'spin_mass',
                   'walkers','nonlocalmove','pop_control','targetwalkers',               # legacy - batched
                   'minimumtargetwalkers','energybound','feedback','recordwalkers',
                   'fastgrad','popcontrol','branchinterval','usedrift','storeconfigs',
@@ -2814,7 +2814,7 @@ Names.set_expanded_names(
     l2_diffusion     = 'L2_diffusion',
     maxage           = 'MaxAge',
     sigmabound       = 'sigmaBound',
-    spinmass         = 'spinMass',
+    spin_mass         = 'spin_mass',
     )
 # afqmc names
 Names.set_afqmc_expanded_names(
@@ -6399,7 +6399,7 @@ shared_opt_legacy_defaults = obj(
     timestep             = 0.3,
     usedrift             = False,  
     max_seconds          = None,
-    spinmass             = None,
+    spin_mass             = None,
     )
 
 linear_quartic_legacy_defaults = obj(
@@ -6456,7 +6456,7 @@ vmc_legacy_defaults = obj(
     checkpoint  = -1,
     usedrift    = None,
     max_seconds = None,
-    spinmass    = None,
+    spin_mass    = None,
     )
 vmc_test_legacy_defaults = obj(
     warmupsteps = 10,
@@ -6485,7 +6485,7 @@ dmc_legacy_defaults = obj(
     vmc_timestep            = 0.3,
     vmc_usedrift            = None,
     vmc_checkpoint          = -1,
-    vmc_spinmass            = None,
+    vmc_spin_mass            = None,
     eq_dmc                  = False,
     eq_warmupsteps          = 20,
     eq_blocks               = 20,
@@ -6500,7 +6500,7 @@ dmc_legacy_defaults = obj(
     feedback                = None,
     sigmabound              = None,
     max_seconds             = None,
-    spinmass                = None,
+    spin_mass                = None,
     )
 dmc_test_legacy_defaults = obj(
     vmc_warmupsteps = 10,
@@ -6544,7 +6544,7 @@ shared_opt_batched_defaults = obj(
     substeps             = 10,                 
     timestep             = 0.3,
     usedrift             = False,
-    spinmass             = None,
+    spin_mass             = None,
     )
 
 linear_quartic_batched_defaults = obj(
@@ -6603,7 +6603,7 @@ vmc_batched_defaults = obj(
     checkpoint       = None,
     maxcpusecs       = None,
     crowds           = None,
-    spinmass         = None,
+    spin_mass         = None,
     )
 vmc_test_batched_defaults = obj(
     warmupsteps = 10,
@@ -6632,7 +6632,7 @@ dmc_batched_defaults = obj(
     vmc_timestep            = 0.3,
     vmc_usedrift            = False,
     vmc_checkpoint          = None,
-    vmc_spinmass            = None,
+    vmc_spin_mass            = None,
     eq_dmc                  = False,
     eq_warmupsteps          = 20,
     eq_blocks               = 20,
@@ -6649,7 +6649,7 @@ dmc_batched_defaults = obj(
     maxage                  = None,
     feedback                = None,
     sigmabound              = None,
-    spinmass                = None,
+    spin_mass                = None,
     )
 dmc_test_batched_defaults = obj(
     vmc_warmupsteps = 10,
@@ -6852,7 +6852,7 @@ def generate_legacy_vmc_calculations(
         checkpoint ,
         usedrift   ,
         max_seconds,
-        spinmass,    
+        spin_mass,    
         loc        = 'generate_vmc_calculations',
         ):
 
@@ -6872,8 +6872,8 @@ def generate_legacy_vmc_calculations(
     if max_seconds is not None:
         vmc_calc.max_seconds = max_seconds
     #end if
-    if spinmass is not None:
-        vmc_calc.spinmass = spinmass
+    if spin_mass is not None:
+        vmc_calc.spin_mass = spin_mass
     #end if
 
     vmc_calcs = [vmc_calc]
@@ -6899,7 +6899,7 @@ def generate_legacy_dmc_calculations(
         vmc_timestep           ,
         vmc_usedrift           ,
         vmc_checkpoint         ,
-        vmc_spinmass           ,
+        vmc_spin_mass           ,
         eq_dmc                 ,
         eq_warmupsteps         ,
         eq_blocks              ,
@@ -6914,7 +6914,7 @@ def generate_legacy_dmc_calculations(
         feedback               ,
         sigmabound             ,
         max_seconds            ,
-        spinmass               ,
+        spin_mass               ,
         loc                 = 'generate_dmc_calculations',
         ):
 
@@ -6945,8 +6945,8 @@ def generate_legacy_dmc_calculations(
     if max_seconds is not None:
         vmc_calc.max_seconds = max_seconds
     #end if
-    if vmc_spinmass is not None:
-        vmc_calc.spinmass = vmc_spinmass
+    if vmc_spin_mass is not None:
+        vmc_calc.spin_mass = vmc_spin_mass
     #end if
 
     dmc_calcs = [vmc_calc]
@@ -6983,7 +6983,7 @@ def generate_legacy_dmc_calculations(
         feedback                = feedback  ,
         sigmabound              = sigmabound,
         max_seconds             = max_seconds,
-        spinmass                = spinmass,
+        spin_mass                = spin_mass,
         )
     for calc in dmc_calcs:
         if isinstance(calc,dmc):
@@ -7099,7 +7099,7 @@ def generate_batched_vmc_calculations(
         checkpoint       ,
         maxcpusecs       ,
         crowds           ,
-        spinmass         ,
+        spin_mass         ,
         loc              = 'generate_vmc_calculations',
         ):
     
@@ -7121,7 +7121,7 @@ def generate_batched_vmc_calculations(
         #checkpoint       = checkpoint, # no checkpointing support yet
         maxcpusecs       = maxcpusecs,
         crowds           = crowds,
-        spinmass         = spinmass,
+        spin_mass         = spin_mass,
         )
     for name,value in optional_vmc_inputs.items():
         if value is not None:
@@ -7152,7 +7152,7 @@ def generate_batched_dmc_calculations(
         vmc_timestep           ,
         vmc_usedrift           ,
         vmc_checkpoint         ,
-        vmc_spinmass           ,
+        vmc_spin_mass           ,
         eq_dmc                 ,
         eq_warmupsteps         ,
         eq_blocks              ,
@@ -7169,7 +7169,7 @@ def generate_batched_dmc_calculations(
         maxage                 ,
         feedback               ,
         sigmabound             ,
-        spinmass               ,
+        spin_mass               ,
         loc                 = 'generate_dmc_calculations',
         ):
 
@@ -7191,7 +7191,7 @@ def generate_batched_dmc_calculations(
         total_walkers    = total_walkers,
         walkers_per_rank = walkers_per_rank,
         crowds           = crowds,
-        spinmass         = vmc_spinmass,
+        spin_mass         = vmc_spin_mass,
         #checkpoint       = vmc_checkpoint, # not supported yet
         )
     for name,value in optional_vmc_inputs.items():
@@ -7241,7 +7241,7 @@ def generate_batched_dmc_calculations(
         maxage                  = maxage,
         feedback                = feedback,
         sigmabound              = sigmabound,
-        spinmass                = spinmass,
+        spin_mass                = spin_mass,
         )
     for calc in dmc_calcs:
         if isinstance(calc,dmc):
