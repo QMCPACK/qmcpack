@@ -4,20 +4,6 @@
 # Note: vendor compilers can be just rebranded customized Clang compiler.
 # It requires more recent CMake to handle it properly. We need to handle such cases for older CMake.
 
-execute_process(
-  COMMAND ${CMAKE_CXX_COMPILER} --version
-  RESULT_VARIABLE VERSION_QUERY_RETURN
-  OUTPUT_VARIABLE VERSION_QUERY_OUTPUT)
-
-if(VERSION_QUERY_RETURN EQUAL 0)
-  if(CMAKE_VERSION VERSION_LESS 3.20
-     AND VERSION_QUERY_OUTPUT MATCHES "Intel"
-     AND VERSION_QUERY_OUTPUT MATCHES "oneAPI")
-    # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
-    message(FATAL_ERROR "Using Intel OneAPI compilers requires CMake 3.20.0 or later.")
-  endif()
-endif()
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(COMPILER GNU)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "XL")

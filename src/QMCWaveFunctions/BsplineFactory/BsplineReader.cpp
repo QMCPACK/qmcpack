@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
@@ -13,12 +13,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file BsplineReaderBase.cpp
+/** @file BsplineReader.cpp
  *
  * Implement super function
  */
 #include "EinsplineSetBuilder.h"
-#include "BsplineReaderBase.h"
+#include "BsplineReader.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 
@@ -27,30 +27,13 @@
 
 namespace qmcplusplus
 {
-BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
-    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false), rotate(true)
+BsplineReader::BsplineReader(EinsplineSetBuilder* e)
+    : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true)
 {
   myComm = mybuilder->getCommunicator();
 }
 
-void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<std::complex<double>>& cG)
-{
-  int ncg = 0;
-  if (myComm->rank() == 0)
-  {
-    std::string path = psi_g_path(ti, spin, ib);
-    mybuilder->H5File.read(cG, path);
-    ncg = cG.size();
-  }
-  myComm->bcast(ncg);
-  if (ncg != mybuilder->MaxNumGvecs)
-  {
-    APP_ABORT("Failed : ncg != MaxNumGvecs");
-  }
-  myComm->bcast(cG);
-}
-
-BsplineReaderBase::~BsplineReaderBase() {}
+BsplineReader::~BsplineReader() = default;
 
 inline std::string make_bandinfo_filename(const std::string& root,
                                           int spin,
@@ -82,7 +65,7 @@ inline std::string make_bandgroup_name(const std::string& root,
   return oo.str();
 }
 
-void BsplineReaderBase::setCommon(xmlNodePtr cur)
+void BsplineReader::setCommon(xmlNodePtr cur)
 {
   // check orbital normalization by default
   std::string checkOrbNorm("yes");
@@ -101,7 +84,7 @@ void BsplineReaderBase::setCommon(xmlNodePtr cur)
   saveSplineCoefs = saveCoefs == "yes";
 }
 
-std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur)
 {
   int ns(0);
   std::string spo_object_name;
@@ -137,7 +120,7 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
   return create_spline_set(spo_object_name, spin, vals);
 }
 
-std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   std::string spo_object_name;
   OhmmsAttributeSet a;
@@ -177,10 +160,10 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
    *
    * At gamma or arbitrary kpoints with complex wavefunctions, spo2band[i]==i
    */
-void BsplineReaderBase::initialize_spo2band(int spin,
-                                            const std::vector<BandInfo>& bigspace,
-                                            SPOSetInfo& sposet,
-                                            std::vector<int>& spo2band)
+void BsplineReader::initialize_spo2band(int spin,
+                                        const std::vector<BandInfo>& bigspace,
+                                        SPOSetInfo& sposet,
+                                        std::vector<int>& spo2band)
 {
   spo2band.reserve(bigspace.size());
   int ns = 0;
@@ -216,11 +199,11 @@ void BsplineReaderBase::initialize_spo2band(int spin,
     << std::endl;
   for (int i = 0; i < bigspace.size(); ++i)
   {
-    int ti    = bigspace[i].TwistIndex;
-    int bi    = bigspace[i].BandIndex;
-    double e  = bigspace[i].Energy;
-    int nd    = (bigspace[i].MakeTwoCopies) ? 2 : 1;
-    PosType k = mybuilder->PrimCell.k_cart(mybuilder->primcell_kpoints[ti]);
+    int ti     = bigspace[i].TwistIndex;
+    int bi     = bigspace[i].BandIndex;
+    double e   = bigspace[i].Energy;
+    int nd     = (bigspace[i].MakeTwoCopies) ? 2 : 1;
+    PosType k  = mybuilder->PrimCell.k_cart(mybuilder->primcell_kpoints[ti]);
     int s_size = std::snprintf(s.data(), s.size(), "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n",
                                i, ns, ti, bi, e, k[0], k[1], k[2], mybuilder->primcell_kpoints[ti][0],
                                mybuilder->primcell_kpoints[ti][1], mybuilder->primcell_kpoints[ti][2], nd);
