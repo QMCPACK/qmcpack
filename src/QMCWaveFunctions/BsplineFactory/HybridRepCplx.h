@@ -67,7 +67,7 @@ private:
 public:
   HybridRepCplx(const std::string& my_name) : SPLINEBASE(my_name) {}
 
-  bool isRotationSupported() const override { return true; }
+  bool isRotationSupported() const override { return SPLINEBASE::isRotationSupported(); }
   void storeParamsBeforeRotation() override
   {
     SPLINEBASE::storeParamsBeforeRotation();
