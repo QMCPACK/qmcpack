@@ -41,6 +41,7 @@
 #include <cmath>
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
@@ -221,6 +222,8 @@ struct printTinyVector
 
 /** template functor for Vector<TinyVector<T,D> streamn output
  *  0 equivalent values are output as 0.
+ *  In the case of complex or integer type T's this can be added if needed.
+ *  But now you don't pay for this if unless T is actually real.
  */
 template<class T, unsigned D>
 struct printTinyVector<TinyVector<T, D>>
@@ -228,10 +231,15 @@ struct printTinyVector<TinyVector<T, D>>
   inline static void print(std::ostream& os, const TinyVector<T, D>& r)
   {
     for (int d = 0; d < D; d++)
-      if (FP_ZERO == std::fpclassify(r[d]))
-        os << std::setw(18) << std::setprecision(10) << 0;
+      if constexpr(IsComplex_t<T>::value)
+	os << std::setw(18) << std::setprecision(10) << r[d];
+      else if constexpr(IsReal_t<T>::value)
+	if (FP_ZERO == std::fpclassify(r[d]))
+	  os << std::setw(18) << std::setprecision(10) << 0;
+	else
+	  os << std::setw(18) << std::setprecision(10) << r[d];
       else
-        os << std::setw(18) << std::setprecision(10) << r[d];
+	os << r[d];
   }
 };
 
