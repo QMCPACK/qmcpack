@@ -338,7 +338,7 @@ that are deterministic and known to be reliable.
 ctest -j 16 -R deterministic -LE unstable --output-on-failure
 ```
 
-These tests currently take a few seconds to run, and include all the unit tests. All tests should pass. Failing tests likely
+These tests currently take a few minutes to run, and include all the unit tests. All tests should pass. Failing tests likely
 indicate a significant problem that should be solved before using QMCPACK further. This ctest invocation can be used as part of an
 automated installation verification process. Many of the tests use a multiple of 16 processes, so on large core count machines
 a significant speedup can be obtained with -j 64 etc.
