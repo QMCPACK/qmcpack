@@ -1,0 +1,15 @@
+{
+   <suppression_for_cudaMalloc_and_cudaMallocManaged_allocations>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:*alloc
+   ...
+   obj:*libcuda.so.*
+   ...
+   obj:*libcuda.so.*
+   fun:__cudart*
+   ...
+   fun:__cudart*
+   fun:cudaMalloc*
+   ...
+}
