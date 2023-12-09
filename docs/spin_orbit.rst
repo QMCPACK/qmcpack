@@ -75,7 +75,7 @@ where we now utilize determinants of spinors, as opposed to the usual product of
           </correlation>
        </jastrow> 
       <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
-        <correlation speciesA="u" speciesB="u" size="8">
+        <correlation speciesA="u" speciesB="u" size="8" cusp="-0.5">
           <coefficients id="uu" type="Array">                  
           </coefficients>
         </correlation> 
@@ -88,8 +88,9 @@ need a product of up and down determinants.
 In the Jastrow specification, we only need to provide 
 the jastrow terms for the same spin as there is no longer a
 distinction between the up and down spins. 
+The electon-electron cusp in this case should be -1/2, as discussed in :cite:`Melton2016-2`.
 
-We also make a small modification in the particleset specification:
+We also make a small modification in the particleset specification 
 
 .. code-block::
   :caption: specification for the electron particle when performing spin-orbit calculations
