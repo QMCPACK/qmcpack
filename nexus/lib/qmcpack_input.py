@@ -1752,7 +1752,7 @@ class simulation(QIxml):
     attributes = ['method']
     #            rsqmc
     elements   = ['project','random','include','qmcsystem','particleset',
-                  'wavefunction','hamiltonian','estimators','init','traces',
+                  'wavefunction','hamiltonian','init','traces',
                   'qmc','loop','mcwalkerset','cmc']+\
                   ['afqmcinfo','walkerset','propagator','execute'] # afqmc
     afqmc_order = ['project','random','afqmcinfo','hamiltonian',
@@ -1801,7 +1801,6 @@ class qmcsystem(QIxml):
     attributes = ['dim'] #,'wavefunction','hamiltonian']  # breaks QmcpackInput
     elements = ['simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset','estimators']
 #end class qmcsystem
-
 
 
 class simulationcell(QIxml):
@@ -1940,9 +1939,9 @@ class radfunc(QIxml):
 #end class radfunc
 
 class slaterdeterminant(QIxml):
-    attributes = ['optimize','delay_rank','gpu','matrix_inverter']
+    attributes = ['optimize','delay_rank','gpu','matrix_inverter','batch']
     elements   = ['determinant']
-    write_types = obj(optimize=yesno,gpu=yesno)
+    write_types = obj(optimize=yesno,gpu=yesno,batch=yesno)
 #end class slaterdeterminant
 
 class determinant(QIxml):
@@ -4796,6 +4795,7 @@ def generate_determinantset(up             = 'u',
                             spo_down       = 'spo_d',
                             spin_polarized = False,
                             delay_rank     = None,
+                            det_batch      = None,
                             matrix_inv_cpu = None,
                             system         = None,
                             spinor         = None,
@@ -4855,6 +4855,9 @@ def generate_determinantset(up             = 'u',
         )
     if delay_rank is not None:
         dset.slaterdeterminant.delay_rank = delay_rank
+    #end if
+    if det_batch is not None:
+        dset.slaterdeterminant.batch = det_batch
     #end if
     if matrix_inv_cpu is not None and matrix_inv_cpu:
         dset.slaterdeterminant.matrix_inverter = 'host'
@@ -5293,6 +5296,7 @@ def generate_hamiltonian(name         = 'h0',
                          format       = 'xml',
                          estimators   = None,
                          system       = None,
+                         wf_elem      = None,
                          interactions = 'default',
                          ):
     if system is None:
@@ -5400,7 +5404,7 @@ def generate_hamiltonian(name         = 'h0',
                     static  = iname,
                     )
             elif isinstance(estimator,dm1b):
-                est = process_dm1b_estimator(estimator,wfname)
+                est = process_dm1b_estimator(estimator,wfname,wf_elem=wf_elem)
             #end if
             if est!=None:
                 ests.append(est)
@@ -5431,6 +5435,7 @@ def generate_estimators_batched(estimators,
                                 electrons    = 'e',
                                 ions         = 'ion0',
                                 wavefunction = 'psi0',
+                                wf_elem      = None,
                                 ):
     assert len(estimators)>0
     ename  = electrons
@@ -5457,7 +5462,7 @@ def generate_estimators_batched(estimators,
         elif isinstance(estimator,momentum):
             estimator.type = 'MomentumDistribution'
         elif isinstance(estimator,onebodydensitymatrices):
-            est = process_dm1b_estimator(estimator,wfname)
+            est = process_dm1b_estimator(estimator,wfname,wf_elem)
         #end if
         if est is not None:
             ests.append(est)
@@ -5468,7 +5473,7 @@ def generate_estimators_batched(estimators,
 #end def generate_estimators_batched
 
 
-def process_dm1b_estimator(dm,wfname):
+def process_dm1b_estimator(dm,wfname,wf_elem):
     reuse = False
     if 'reuse' in dm:
         reuse = bool(dm.reuse)
@@ -5491,7 +5496,7 @@ def process_dm1b_estimator(dm,wfname):
         #end if
         try:
             # get sposet from wavefunction
-            wf = QIcollections.get('wavefunctions',wfname)
+            wf = wf_elem
             dets = wf.get('determinant')
             det  = dets.get_single()
             if 'sposet' in det:
@@ -5499,7 +5504,7 @@ def process_dm1b_estimator(dm,wfname):
             else:
                 rsponame = det.id
             #end if
-            builders = QIcollections.get('sposet_builders')
+            builders = wf.get('sposet_builders')
             if builders is None:
                 builders = [wf.sposet_builders.bspline]
             #end if
@@ -5541,7 +5546,7 @@ def process_dm1b_estimator(dm,wfname):
         if not 'name' in spo:
             spo.name = 'spo_dm'
         #end if
-        builders = QIcollections.get('sposet_builders')
+        builders = wf.get('sposet_builders')
         if not spo.type in builders:
             bld = generate_sposet_builder(spo.type,sposets=[spo])
             builders.add(bld)
@@ -6528,14 +6533,14 @@ opt_batched_defaults = obj(
     cost            = 'variance',
     cycles          = 12,
     var_cycles      = 0,
-    var_samples     = None,
+    #var_samples     = None,
     init_cycles     = 0,
-    init_samples    = None,
+    #init_samples    = None,
     init_minwalkers = 1e-4,
     )
 
 shared_opt_batched_defaults = obj(
-    samples              = 204800,
+    #samples              = 204800,
     nonlocalpp           = True,
     use_nonlocalpp_deriv = True,
     warmupsteps          = 300,                
@@ -6545,6 +6550,8 @@ shared_opt_batched_defaults = obj(
     timestep             = 0.3,
     usedrift             = False,
     spin_mass            = None,
+    walkers_per_rank     = None,
+    total_walkers        = None,
     )
 
 linear_quartic_batched_defaults = obj(
@@ -7005,9 +7012,9 @@ def generate_batched_opt_calculations(
         cost       ,
         cycles     ,
         var_cycles ,
-        var_samples,
+        #var_samples,
         init_cycles,
-        init_samples,
+        #init_samples,
         init_minwalkers,
         loc        = 'generate_opt_calculations',
         **opt_inputs
@@ -7055,16 +7062,16 @@ def generate_batched_opt_calculations(
             reweightedvariance   = 0.0,
             **opt_inputs
             )
-        if var_samples is not None:
-            vmin_opt.samples = var_samples
-        #end if
+        #if var_samples is not None:
+        #    vmin_opt.samples = var_samples
+        ##end if
         opt_calcs.append(loop(max=var_cycles,qmc=vmin_opt))
     #end if
     if init_cycles>0:
         init_opt = opt(**opt_inputs)
-        if init_samples is not None:
-            init_opt.samples = init_samples
-        #end if
+        #if init_samples is not None:
+        #    init_opt.samples = init_samples
+        ##end if
         init_opt.minwalkers = init_minwalkers
         if not oneshift:
             init_opt.energy               = cost[0]
@@ -7323,6 +7330,7 @@ gen_basic_input_defaults = obj(
     spinor         = None,
     dla            = None,
     delay_rank     = None,
+    det_batch      = None,
     jastrows       = 'generateJ12',    
     interactions   = 'all',            
     corrections    = 'default',        
@@ -7531,6 +7539,7 @@ def generate_basic_input(**kwargs):
         dset = generate_determinantset(
             spin_polarized = kw.spin_polarized,
             delay_rank     = kw.delay_rank,
+            det_batch      = kw.det_batch,
             matrix_inv_cpu = kw.matrix_inv_cpu,
             system         = kw.system,
             spinor         = kw.spinor,
@@ -7625,17 +7634,18 @@ def generate_basic_input(**kwargs):
         #end if
     #end if
 
+    if spobuilders is not None:
+        wfn.sposet_builders = make_collection(spobuilders)
+    #end if
+
     hmltn = generate_hamiltonian(
         system       = kw.system,
         pseudos      = kw.pseudos,
         dla          = kw.dla,
         interactions = kw.interactions,
         estimators   = h_estimators,
+        wf_elem      = wfn,
         )
-
-    if spobuilders is not None:
-        wfn.sposet_builders = make_collection(spobuilders)
-    #end if
 
     qmcsys = qmcsystem(
         simulationcell  = simcell,
@@ -7671,13 +7681,10 @@ def generate_basic_input(**kwargs):
         #end if
     #end if
     if batched and d_estimators is not None and len(d_estimators)>0:
-        estimators = generate_estimators_batched(d_estimators)
-        for calc in kw.calculations:
-            if isinstance(calc,loop):
-                calc = calc.qmc
-            #end if
-            calc.estimators = estimators.copy()
-        #end for
+        ests = generate_estimators_batched(d_estimators,wf_elem=wfn)
+        ests_elem = estimators()
+        ests_elem.estimators = ests
+        sim.qmcsystem.estimators = ests_elem
     #end if
     sim.calculations = make_collection(kw.calculations).copy()
 
