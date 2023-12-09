@@ -67,6 +67,18 @@ private:
 public:
   HybridRepCplx(const std::string& my_name) : SPLINEBASE(my_name) {}
 
+  bool isRotationSupported() const override { return SPLINEBASE::isRotationSupported(); }
+  void storeParamsBeforeRotation() override
+  {
+    SPLINEBASE::storeParamsBeforeRotation();
+    HYBRIDBASE::storeParamsBeforeRotation();
+  }
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override
+  {
+    SPLINEBASE::applyRotation(rot_mat, use_stored_copy);
+    HYBRIDBASE::applyRotation(rot_mat, use_stored_copy);
+  }
+
   std::string getClassName() const final { return "Hybrid" + SPLINEBASE::getClassName(); }
   std::string getKeyword() const final { return "Hybrid" + SPLINEBASE::getKeyword(); }
   bool isOMPoffload() const final { return false; }
