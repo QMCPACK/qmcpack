@@ -7609,11 +7609,14 @@ def generate_basic_input(**kwargs):
 
     if kw.spinor is not None and kw.spinor:
       # remove u-d 
+      # also set correct cusp
       J2 = wfn.jastrows.get('J2')
       if J2 is not None:
         corr = J2.get('correlation')
         if 'ud' in corr:
           del corr.ud
+        if 'uu' in corr:
+          corr.uu.cusp = -0.5
 
     h_estimators = kw.estimators
     d_estimators = None
