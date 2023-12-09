@@ -287,11 +287,14 @@ class Qmcpack(Simulation):
                 spinor = input.get('spinor')
                 if spinor is not None and spinor:
                     # remove u-d term from optmized jastrow
+                    # also set correct cusp condition
                     J2 = optwf.get('J2')
                     if J2 is not None:
                         corr = J2.get('correlation')
                         if 'ud' in corr:
                             del corr.ud
+                        if 'uu' in corr:
+                            corr.uu.cusp = -0.5
                         #end if
                     #end if
                 #end if
