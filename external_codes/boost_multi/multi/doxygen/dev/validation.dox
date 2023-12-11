@@ -1,0 +1,187 @@
+/*! \page validation Validation DataBase
+
+\section valid_intro Validation types
+- Correctness
+- Input changes
+- Performance
+
+\section valid_method How to manage the tests
+
+Generatl consideration
+- Where to put hdf5 files and how to make them available
+- How to organize the data
+- How to inspect the data
+- Web portal
+
+\subsection valid_jk Validation suite by Jaron
+\code
+svn co https://subversion.assembla.com/svn/qmcdev/validate
+\endcode
+- PP, XML files in the repository
+
+\section valid_sys Candidate systems
+<table>
+<tr>
+<th>Name</th><th>BC</th><th>SPOSet</th><th>Jastrow</th><th>MSD</th><th>opt</th><th>vmc</th><th>dmc</th><th>build</th>
+</tr>
+<tr>
+<td>HEG                <td>PBC</td>      </td><td>HEG</td><td></td><td>N</td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<td>Li2                <td>open</td>      </td><td>LCAO/STO</td><td></td><td>N</td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<td>H2O                <td>open</td>      </td><td>LCAO/GTO</td><td></td><td>Y</td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<td>graphite</td><td>PBC</td> <td>bspline</td><td></td><td>N</td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<td>C20</td><td>open</td> <td>bspline</td><td></td><td>N</td><td></td><td></td><td></td><td></td>
+</tr>
+</table>
+
+\section luketests Tests provided by Luke
+
+\subsection  luke1 non-orthorhombic-wfn-test
+This test looks at whether qmcpack can handle a nonorthorombic unit cell 
+correctly.  The test is identical to the carbon test with no jastrow, but 
+is instead in a cell that is the primitive cell for fcc.  The C-nojastrow 
+test should be used to see that the kinetic energy of the wavefunction in 
+VMC is equal to that in DFT.  In this case, the kinetic energy of the DFT 
+wavefunction is identified in the pw2casino output as:  
+\code
+Kinetic energy      3.59554422756845       au
+\endcode
+
+Another useful test is to see whether the ion-ion energy is the same 
+between pwscf and qmcpack.  In this case IonIon from the vmc output should 
+be compared to Ewald energy from pw2casion: 
+\code
+Ewald energy       -7.97367317237205       au
+\endcode
+
+Please note that these results were achieved using the general version of the 
+code that can handle complex wavefunctions.
+
+\subsection luke2  real-vs-complex-test
+This test looks at the difference between the real and complex versions of the 
+code.  The system under consideration is a periodic cubic cell of carbon at 
+~ 100 GPa that contains a single carbon atom.  There are two four qmcpack input
+files, C-gamma-real.xml, C-gamma-complex.cml, C-L-real.xml and C-L-complex.xml.
+They are intended to be fed to qmcpack compiled either as real only 
+(for C-*-real.xml) or as a general complex code (C-*-complex.xml).  If all goes
+well than the answers between the two codes should be the same for the given 
+K-point.  Unfortunately this is not currently the case:
+
+\code
+gamma-real:     Total energy: -5.50372 +/-          0.00011
+gamma-complex:  Total energy: -5.509886 +/-         0.000099
+
+L-real:         Total energy: -5.26443 +/-          0.00011
+L-complex:      Total energy: -5.26385 +/-          0.00011
+\endcode
+
+The problem may be that the highest occupied energy level is triply degenerate 
+in both cases and the code is forced to make some arbitrary decisions.  See for
+example C-gamma-nscf.out and C-L-nscf.out which list the band energies after 
+the nscf calculations.
+
+\subsection luke3 cubic-wfn-test
+This test looks at the ability of the code to handle einspline wavefunctions.  
+The system under consideration is a periodic cubic cell of carbon at ~ 100 GPa 
+that contains a single carbon atom.  There is one qmcpack input file 
+C-nojastrow.xml.  Also included is C-pw2casino.out.  The C-nojastrow test 
+should be used to see that the kinetic energy of the wavefunction in VMC is 
+equal to that in DFT.  In this case, the kinetic energy of the DFT wavefunction 
+is identified in the pw2casino output as:
+\code
+Kinetic energy      3.79927940300310       au
+\endcode
+
+Another useful test is to see whether the ion-ion energy is the same between 
+pwscf and qmcpack.  In this case IonIon from the vmc output should be compared 
+to Ewald energy from pw2casion:
+\code
+Ewald energy       -4.53967596716976       au
+\endcode
+
+Please note that these results were achieved using the general version of the 
+code that can handle complex wavefunctions.
+
+
+\subsection luke4  wavefunction-tiling
+The goal of this test is to compare the facility of the code to tile
+wavefunctions from the primitive cell to a supercell versus a naive
+version where the wavefunctions are simply created in the supercell.
+
+There are two input files C-tiled.xml and C-nottiled.xml.  Running each
+of them will produce fairly accurate VMC and DMC energies of a 4 atom
+cubic supercell of FCC carbon.  The numbers produced should be:
+\code
+VMC:  LocalEnergy           =         -24.15795 +/-          0.00089
+DMC:  LocalEnergy           =         -24.22211 +/-          0.00089
+\endcode
+
+If available, this also provides a logical place to test the GPU version
+of the code.  The input file C-nottiled-gpu.xml is intended to be run
+on GPUs if available.  It should produce exactly the same VMC and DMC
+energies as the CPU versions for this problem.  One should also check
+whether the MPC is functioning properly on the GPUs.  For the DMC:
+
+\code
+CPU - MPC:   -7.9444 +/-           0.0019
+GPU - MPC:   66.2867 +/-           0.0053
+\endcode
+
+(OBVIOUSLY THE GPU MPC is currently broken, but the rest of the energy
+is working fine (11/21/2013))
+
+\subsection luke5 all-electron-test
+This test looks at the ability of the code to handle a mixture of 
+pseudopotentials and coulomb type external potentials in the same
+cell.  The test LiH-all-AE.xml is a primitive cell of LiH with both
+the Li and the H represented by coulomb potentials.  LiH-all-pseudo.xml
+has both of them represented by local pseudopotentials and
+LiH-H-AE.xml has a coulomb potential for H and a pseudopotential for Li.
+As these are very hard pseudopotentials, all of the energies should be
+quite close to one another.  Also it is worth checking that the IonIon
+term is very close to the output from quantum espresso as a sanity check.
+\code
+IonIon:   -3.53966338 Ha
+\endcode
+
+For reference VMC and DMC energies from the three runs are provided:
+\code
+ALL-AE VMC:         -8.3042 +/-           0.0023
+ALL-AE DMC:         -8.31500 +/-          0.00024
+
+H-AE VMC:           -8.2932 +/-           0.0014
+H-AE DMC:           -8.30101 +/-          0.00040
+
+ALL-pseudo VMC:     -8.2909 +/-           0.0017
+ALL-pseudo DMC:     -8.30102 +/-          0.00039
+\endcode
+
+\subsection luke6 mechanicstest
+This looks at the ability of the code to change parameters between DMC
+blocks.  C-change-population.xml changes the target DMC population between
+blocks.  Inspecting C-change-population.s00?.dmc.dat should show that the
+number of walkers hovers around 1024 for block 2, 2048 for block 3 and 
+4096 for block 4.
+
+C-change-timestep.xml changes the DMC timestep between blocks.  Doing a 
+grep on the output of this run for "  time step" should show the timestep
+changing from 0.01 to 0.005 to 0.0025.  The actual time step error is rather
+small in this case, but the acceptance ratio does change for the different
+blocks.  For block 2 it should be ~0.9968, for block 3 it should be
+~0.99873 and for block 4 it should be ~0.99949.
+
+\section h2o_msd All-electron multideterminant H2O
+
+- Threshold and J1/J2/J3
+- Optimization
+- VMC/DMC
+- Performance
+
+*/

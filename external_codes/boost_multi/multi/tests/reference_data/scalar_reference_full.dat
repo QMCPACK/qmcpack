@@ -1,0 +1,847 @@
+
+# Description of data
+#   ref_code      :  QMCPACK version used to generate the reference data.
+#   ref_code_hash :  Git hash of QMCPACK version used to generate the reference data.
+#   test_name     :  Name of short test.
+#   series        :  Series of the scalar.dat files used to make the reference data.
+#   quantity      :  QMCPACK scalar.dat quantity.
+#   ref_mean      :  High quality reference mean value.
+#   ref_err       :  Error bar of the reference mean.
+#   ref_steps     :  Number of MC steps included in the analysis of the reference data.
+#                    Typically, this corresponds to the exclusion of 20 equilibration blocks.
+#   short_err     :  Expected error bar for a short test run.
+#   short_steps   :  Number of MC steps expected to be included in analysis of each short test run.
+#                    Currently, this corresponds to the exclusion of 2 equilibration blocks.
+
+
+# What reference data should be included in CMakeLists.txt files
+#   - short_err and ref_err are related by the following formula:  
+#       short_err = sqrt(1.0 + ref_steps/short_steps)*ref_err
+#   - ref_mean and short_err are what should be used as reference data in CMakeLists.txt files.
+#   - An error bar for long tests can be derived by calculating the expected long_steps:
+#       long_steps = (blocks-blocks_equil)*steps_per_block
+#     and then applying the formula above to get the expected error bar:
+#       long_err = sqrt(1.0 + ref_steps/long_steps)*ref_err
+
+
+# Notes about data immediately below
+#   This collection of data was created from four sets of reference runs performed on OIC5 with the qtest script. 
+#   Each reference run was performed with 10x more blocks and 10x more steps than the short test inputs.
+#   The reference runs were performed with the following qtest commands:
+#     qtest -b 10 -s 10 --qmc_data=QMC_DATA --reference
+#     qtest -b 10 -s 10 --qmc_data=QMC_DATA --reference -l testset2
+#     qtest -b 10 -s 10 --qmc_data=QMC_DATA --reference -l testset3
+#     qtest -b 10 -s 10 --qmc_data=QMC_DATA --reference -l testset4
+#   The four sets of reference data were then joined into a single set by concatenating scalar.dat files together 
+#   following the removal of 20 equilibration blocks by default (same as using -e 20 below):
+#     qtest -b 10 -s 10 --qmc_data=QMC_DATA --reference --join='"" testset2 testset3 testset4'
+#   The resulting data set had approximately 40x more blocks and 10x more steps than typical short runs.
+#   The reference data below was created with the following command (again -e 20 is default):
+#     qtest -a -b 40 -s 10 --qmc_data=QMC_DATA --reference -l joined --njoined=4
+
+
+# test_name                                     series   quantity                     ref_mean                      ref_err             ref_steps              short_err            short_steps 
+
+# ref_code: v320_171020_aos_real_cpu_full            ref_code_hash: f1061720cd707163f9aa0ac8df73ecae93d20afa
+ short-C2_pp-msdj_vmc                                1   LocalEnergy                  -11.064939337862                0.000010989062    4960000                   0.000220055795    12400       
+ short-C2_pp-msdj_vmc                                1   Variance                       0.148986168139                0.000151098560    4960000                   0.003025746306    12400       
+ short-C2_pp-msdj_vmc                                1   Kinetic                        7.741318922518                0.000972134125    4960000                   0.019466970682    12400       
+ short-C2_pp-msdj_vmc                                1   LocalPotential               -18.806258260378                0.000809437015    4960000                   0.016208963594    12400       
+ short-C2_pp-msdj_vmc                                1   ElecElec                      12.122543260999                0.000089514395    4960000                   0.001792524363    12400       
+ short-C2_pp-msdj_vmc                                1   IonIon                         6.814189898500                0.000000000000    4960000                   0.000000000000    12400       
+ short-C2_pp-msdj_vmc                                1   LocalECP                     -39.414954449990                0.001503053303    4960000                   0.030098618937    12400       
+ short-C2_pp-msdj_vmc                                1   NonLocalECP                    1.671963030139                0.000091508683    4960000                   0.001832459949    12400       
+ short-C2_pp-msdj_vmc                                1   AcceptRatio                    0.720264202290                0.000037364070    4960000                   0.000748214919    12400       
+ short-C2_pp-msdj_vmc                                1   BlockWeight               128000.000000000000                0.000000000000    4960000                   0.000000000000    12400       
+ short-C2_pp-msdj_vmc                                1   TotalSamples          1269760000.000000000000                0.000000000000    4960000                   0.000000000000    12400       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   LocalEnergy                  -34.549539898120                0.000076839410    392000                    0.001538707986    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   Variance                       0.497508117484                0.000562829429    392000                    0.011270650532    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   Kinetic                       27.244677708135                0.001765844101    392000                    0.035361000566    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   LocalPotential               -61.794217606253                0.001781610029    392000                    0.035676713028    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   ElecElec                      37.369040139589                0.000871316320    392000                    0.017448095711    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   IonIon                        17.155636315000                0.000000000000    392000                    0.000000000000    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   LocalECP                    -120.115098458811                0.002466098202    392000                    0.049383578010    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   NonLocalECP                    3.796204397761                0.000823330300    392000                    0.016487176409    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   AcceptRatio                    0.800898066633                0.000008559666    392000                    0.000171407178    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   BlockWeight                51143.402806122453                7.242763919146    392000                  145.036234453952    980         
+ short-H2O_dimer_sep_pp-j3_dmc_la                    2   TotalSamples           200482139.000000000000                0.000000000000    392000                    0.000000000000    980         
+
+# ref_code: v340_180227_aos_real_cpu_full            ref_code_hash: 2aa757b813344cbf04c81550c26206142a29be90
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   LocalEnergy                  -34.556070141054                0.000076032257    392000                    0.001522544760    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   Variance                       0.572416463238                0.000748712224    392000                    0.014992950602    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   Kinetic                       27.804419020559                0.001668684814    392000                    0.033415387360    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   LocalPotential               -62.360489161606                0.001677194302    392000                    0.033585789724    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   ElecElec                      37.385516319112                0.000886545908    392000                    0.017753067973    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   IonIon                        17.155636315000                0.000000000000    392000                    0.000000000000    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   LocalECP                    -120.243566899543                0.002449341859    392000                    0.049048032503    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   NonLocalECP                    3.341925103599                0.000650760439    392000                    0.013031467636    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   AcceptRatio                    0.800353595601                0.000008492911    392000                    0.000170070410    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   BlockWeight                51124.527551020408                6.899941285333    392000                  138.171216561765    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm0                   2   TotalSamples           200408148.000000000000                0.000000000000    392000                    0.000000000000    980         
+
+# ref_code: v340_180227_aos_real_cpu_full            ref_code_hash: 2aa757b813344cbf04c81550c26206142a29be90
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   LocalEnergy                  -34.560423250334                0.000072806285    392000                    0.001457944721    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   Variance                       0.609619798864                0.001409827203    392000                    0.028231767739    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   Kinetic                       28.008873754880                0.003933862150    392000                    0.078775528164    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   LocalPotential               -62.569297005222                0.003936694544    392000                    0.078832246810    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   ElecElec                      37.416800213498                0.003595426511    392000                    0.071998359774    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   IonIon                        17.155636315000                0.000000000000    392000                    0.000000000000    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   LocalECP                    -120.317208601594                0.002622479566    392000                    0.052515112384    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   NonLocalECP                    3.175475067660                0.000655281629    392000                    0.013122004395    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   AcceptRatio                    0.800035763074                0.000008875931    392000                    0.000177740380    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   BlockWeight                51111.713265306120                6.833670932880    392000                  136.844153788076    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm1                   2   TotalSamples           200357916.000000000000                0.000000000000    392000                    0.000000000000    980         
+
+# ref_code: v340_180227_aos_real_cpu_full            ref_code_hash: 2aa757b813344cbf04c81550c26206142a29be90
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   LocalEnergy                  -34.560683215187                0.000073904651    392000                    0.001479939483    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   Variance                       0.646505053870                0.026707921423    392000                    0.534825709705    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   Kinetic                       27.901247614420                0.046460637974    392000                    0.930373550388    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   LocalPotential               -62.461930829606                0.046462619900    392000                    0.930413238425    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   ElecElec                      37.451862202341                0.046436875885    392000                    0.929897714926    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   IonIon                        17.155636315000                0.000000000000    392000                    0.000000000000    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   LocalECP                    -120.253337430628                0.002408742789    392000                    0.048235036760    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   NonLocalECP                    3.183908083459                0.000672975803    392000                    0.013476329953    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   AcceptRatio                    0.800274758323                0.000008349194    392000                    0.000167192480    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   BlockWeight                51116.739795918365                7.487792525153    392000                  149.942928465448    980         
+ short-H2O_dimer_sep_pp-j3_dmc_tm3                   2   TotalSamples           200377620.000000000000                0.000000000000    392000                    0.000000000000    980         
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   LocalEnergy                   -7.987296406451                0.000074356437    237600000                 0.001488986491    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   Variance                       2.645950616083                0.249208459365    237600000                 4.990395509762    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   Kinetic                        7.990591138593                0.000673949095    237600000                 0.013495820110    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   LocalPotential               -15.977887545045                0.000676377105    237600000                 0.013544440972    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   ElecElec                       3.488835952868                0.000046478263    237600000                 0.000930726491    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   IonIon                         0.995380039770                0.000000000000    237600000                 0.000000000000    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   Flux                           0.001092437557                0.001375251778    237600000                 0.027539395393    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   AcceptRatio                    0.633889389007                0.000003436834    237600000                 0.000068822547    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   BlockWeight               480000.000000000000                0.000000000000    237600000                 0.000000000000    594000      
+ short-LiH_dimer_ae_gms-vmc_hf_noj                   0   TotalSamples          3801600000.000000000000                0.000000000000    237600000                 0.000000000000    594000      
+
+# ref_code: v340_180705_aos_real_cpu_full            ref_code_hash: 8d443a259279bd6d5866176ee89e69a7e3036725
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   LocalEnergy                   -7.987279458481                0.000072461476    237600000                 0.001451039926    594000      
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   Variance                       3.135046478641                0.587024782071    237600000                11.755162100157    594000      
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   Kinetic                        7.991942008616                0.000672375511    237600000                 0.013464309115    594000      
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   LocalPotential               -15.979221467098                0.000675244532    237600000                 0.013521761216    594000      
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   ElecElec                       3.488843096567                0.000046372531    237600000                 0.000928609210    594000      
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   IonIon                         0.995380119260                0.000000000000    237600000                 0.000000000000    594000      
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   AcceptRatio                    0.633888022280                0.000003393306    237600000                 0.000067950900    594000      
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   BlockWeight               480000.000000000000                0.000000000000    237600000                 0.000000000000    594000      
+ short-LiH_dimer_ae_qp-vmc_hf_noj                    0   TotalSamples          3801600000.000000000000                0.000000000000    237600000                 0.000000000000    594000      
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_dimer_pp-vmc_hf_noj                       0   LocalEnergy                   -0.750747415546                0.000016083214    39200000                  0.000322066109    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   Variance                       0.125607666553                0.000413342738    39200000                  0.008277181878    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   Kinetic                        0.635524098053                0.000053592772    39200000                  0.001073194423    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   LocalPotential                -1.386271513599                0.000056118512    39200000                  0.001123772327    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   ElecElec                       0.481489616931                0.000025827616    39200000                  0.000517197607    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   IonIon                         0.331793346590                0.000000000000    39200000                  0.000000000000    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   LocalECP                      -2.239404721296                0.000070914075    39200000                  0.001420053245    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   NonLocalECP                    0.039850244178                0.000013390930    39200000                  0.000268153164    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   Flux                          -0.000350061174                0.000167318331    39200000                  0.003350546967    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   AcceptRatio                    0.913921031037                0.000006109559    39200000                  0.000122343824    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   BlockWeight               160000.000000000000                0.000000000000    39200000                  0.000000000000    98000       
+ short-LiH_dimer_pp-vmc_hf_noj                       0   TotalSamples           627200000.000000000000                0.000000000000    39200000                  0.000000000000    98000       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   LocalEnergy                   -0.785070072907                0.000008774130    7920000                   0.000175701816    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   Variance                       0.005562226488                0.000007173852    7920000                   0.000143656274    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   Kinetic                        0.669213043041                0.000117660072    7920000                   0.002356141106    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   LocalPotential                -1.454283115947                0.000117990670    7920000                   0.002362761325    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   ElecElec                       0.424967261145                0.000044752895    7920000                   0.000896176024    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   IonIon                         0.331793372150                0.000000000000    7920000                   0.000000000000    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   LocalECP                      -2.251691554083                0.000144856029    7920000                   0.002900739720    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   NonLocalECP                    0.040647804839                0.000030777939    7920000                   0.000616327748    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   Flux                          -0.000184666994                0.000348093629    7920000                   0.006970569489    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   AcceptRatio                    0.908505017624                0.000013908576    7920000                   0.000278519017    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   BlockWeight                16000.000000000000                0.000000000000    7920000                   0.000000000000    19800       
+ short-LiH_dimer_pp-vmc_hf_sdj_xml                   0   TotalSamples           126720000.000000000000                0.000000000000    7920000                   0.000000000000    19800       
+
+# ref_code: r6259_aos_complex_cpu_full               ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   LocalEnergy                   -8.452566362555                0.000176658331    15920000                  0.003537580321    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   Variance                       1.397287403630                0.002179590714    15920000                  0.043646270034    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   Kinetic                        7.497165382850                0.001756052144    15920000                  0.035164916780    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   LocalPotential               -15.949731745404                0.001783666732    15920000                  0.035717898473    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   ElecElec                      -0.552867210387                0.000308846633    15920000                  0.006184649006    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   IonIon                        -3.689226823400                0.000000000000    15920000                  0.000000000000    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   LocalECP                     -11.707637711574                0.001992875559    15920000                  0.039907301969    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   Flux                          -1.082410018224                0.003483305636    15920000                  0.069753141002    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   AcceptRatio                    0.999751169697                0.000000128993    15920000                  0.000002583083    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   BlockWeight               255566.392273869336              108.564431125167    15920000               2174.001039079325    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj             1   TotalSamples          4068616965.000000000000                0.000000000000    15920000                  0.000000000000    39800       
+
+# ref_code: r6259_aos_complex_cpu_full               ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   LocalEnergy                   -8.452200683195                0.000176795987    15920000                  0.003540336881    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   Variance                       1.397437475728                0.001580395172    15920000                  0.031647388656    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   Kinetic                        7.496716034197                0.001722665055    15920000                  0.034496340843    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   LocalPotential               -15.948916717393                0.001754409421    15920000                  0.035132021277    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   ElecElec                      -0.552556558497                0.000301881976    15920000                  0.006045181858    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   IonIon                        -3.689226823400                0.000000000000    15920000                  0.000000000000    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   LocalECP                     -11.707133335455                0.001957216391    15920000                  0.039193227686    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   Flux                          -1.082336671684                0.003408146376    15920000                  0.068248077994    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   AcceptRatio                    0.999751050905                0.000000128743    15920000                  0.000002578077    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   BlockWeight               255844.113065326645              107.058281982854    15920000               2143.840426008716    39800       
+ short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj           1   TotalSamples          4073038280.000000000000                0.000000000000    15920000                  0.000000000000    39800       
+
+# ref_code: r6259_aos_complex_cpu_full               ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   LocalEnergy                   -8.383792673049                0.000027500281    39920000                  0.000550692698    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   Variance                       1.599277542825                0.005810936822    39920000                  0.116363919178    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   Kinetic                        7.419827418978                0.000287609989    39920000                  0.005759385541    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   LocalPotential               -15.803620092026                0.000289359121    39920000                  0.005794411882    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   ElecElec                      -0.499508357703                0.000034787943    39920000                  0.000696628016    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   IonIon                        -3.689226823400                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   LocalECP                     -11.614884910880                0.000308640285    39920000                  0.006180516891    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   Flux                          -0.925365953958                0.000644635092    39920000                  0.012908807657    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   AcceptRatio                    0.439780192039                0.000001448676    39920000                  0.000029009714    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   BlockWeight               256000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj       0   TotalSamples         10219520000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+
+# ref_code: r6259_aos_complex_cpu_full               ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   LocalEnergy                   -8.383715030948                0.000028157802    39920000                  0.000563859546    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   Variance                       1.593080551090                0.002794154071    39920000                  0.055952891668    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   Kinetic                        7.419606402830                0.000299930797    39920000                  0.006006109529    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   LocalPotential               -15.803321433779                0.000302552997    39920000                  0.006058619043    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   ElecElec                      -0.499428618486                0.000036404202    39920000                  0.000728993577    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   IonIon                        -3.689226823400                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   LocalECP                     -11.614665991849                0.000323196472    39920000                  0.006472004308    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   Flux                          -0.927190802505                0.000658534791    39920000                  0.013187148913    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   AcceptRatio                    0.372096429480                0.000001515789    39920000                  0.000030353651    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   BlockWeight               256000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj             0   TotalSamples         10219520000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   LocalEnergy                   -8.549259572801                0.000173889487    15920000                  0.003482134264    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   Variance                       1.422523540770                0.001684550677    15920000                  0.033733101019    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   Kinetic                        7.490688517184                0.001733716011    15920000                  0.034717636065    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   LocalPotential               -16.039948089987                0.001767091034    15920000                  0.035385970380    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   ElecElec                      -0.540236326500                0.000303165903    15920000                  0.006070892477    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   IonIon                        -3.689226823400                0.000000000000    15920000                  0.000000000000    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   LocalECP                     -11.810484940042                0.001969739661    15920000                  0.039444005973    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   Flux                          -0.169129528243                0.003880311375    15920000                  0.077703174730    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   AcceptRatio                    0.999737420935                0.000000138858    15920000                  0.000002780629    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   BlockWeight               255778.485929648246              104.556950787403    15920000               2093.751307854332    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj           1   TotalSamples          4071993496.000000000000                0.000000000000    15920000                  0.000000000000    39800       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   LocalEnergy                   -8.549096647695                0.000172925081    15920000                  0.003462822048    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   Variance                       1.423156215675                0.001593194931    15920000                  0.031903703631    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   Kinetic                        7.490847992364                0.001717753633    15920000                  0.034397989694    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   LocalPotential               -16.039944640060                0.001748646755    15920000                  0.035016623980    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   ElecElec                      -0.540143714422                0.000299001385    15920000                  0.005987498069    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   IonIon                        -3.689226823400                0.000000000000    15920000                  0.000000000000    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   LocalECP                     -11.810574102198                0.001949977591    15920000                  0.039048270829    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   Flux                          -0.170552488128                0.003738122120    15920000                  0.074855837118    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   AcceptRatio                    0.999737818630                0.000000132619    15920000                  0.000002655693    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   BlockWeight               255684.485741206037              113.294779059209    15920000               2268.726182639075    39800       
+ short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj         1   TotalSamples          4070497013.000000000000                0.000000000000    15920000                  0.000000000000    39800       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   LocalEnergy                   -8.481060602822                0.000028019272    39920000                  0.000561085485    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   Variance                       1.620859575636                0.005480006334    39920000                  0.109737041320    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   Kinetic                        7.413658906823                0.000292778946    39920000                  0.005862893825    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   LocalPotential               -15.894719509642                0.000294514474    39920000                  0.005897647746    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   ElecElec                      -0.487682779719                0.000035576998    39920000                  0.000712428830    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   IonIon                        -3.689226823400                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   LocalECP                     -11.717809906484                0.000314521113    39920000                  0.006298280380    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   Flux                          -0.000108750974                0.000803604024    39920000                  0.016092158040    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   AcceptRatio                    0.439410328200                0.000001339271    39920000                  0.000026818881    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   BlockWeight               256000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj     0   TotalSamples         10219520000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   LocalEnergy                   -8.481024094977                0.000029372936    39920000                  0.000588192585    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   Variance                       1.676297367430                0.045926444757    39920000                  0.919676339554    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   Kinetic                        7.413803928047                0.000299851023    39920000                  0.006004512056    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   LocalPotential               -15.894828023022                0.000303526280    39920000                  0.006078109020    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   ElecElec                      -0.487620676804                0.000038075320    39920000                  0.000762457689    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   IonIon                        -3.689226823400                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   LocalECP                     -11.717980522781                0.000323294238    39920000                  0.006473962071    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   Flux                          -0.000110011648                0.000838537469    39920000                  0.016791699731    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   AcceptRatio                    0.374297725686                0.000001347548    39920000                  0.000026984628    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   BlockWeight               256000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj           0   TotalSamples         10219520000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   LocalEnergy                   -8.313999197826                0.000190162484    15920000                  0.003808000775    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   Variance                       1.369034340972                0.002675466462    15920000                  0.053576174150    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   Kinetic                        7.459629995733                0.001782292591    15920000                  0.035690381321    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   LocalPotential               -15.773629193559                0.001820439465    15920000                  0.036454271878    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   ElecElec                      -0.573389954377                0.000316965663    15920000                  0.006347232455    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   IonIon                        -3.689226823400                0.000000000000    15920000                  0.000000000000    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   LocalECP                     -11.511012415743                0.002017899874    15920000                  0.040408413487    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   Flux                          -0.157738129829                0.003657674369    15920000                  0.073244872159    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   AcceptRatio                    0.999744231573                0.000000134497    15920000                  0.000002693300    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   BlockWeight               255867.371231155790              109.683532972493    15920000               2196.411036107885    39800       
+ short-LiH_solid_1x1x1_pp-x-dmc-hf_noj               1   TotalSamples          4073408550.000000000000                0.000000000000    15920000                  0.000000000000    39800       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   LocalEnergy                   -8.313818769037                0.000182316969    15920000                  0.003650894459    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   Variance                       1.369232746940                0.003471795640    15920000                  0.069522653512    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   Kinetic                        7.455035560098                0.001818320428    15920000                  0.036411838195    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   LocalPotential               -15.768854329136                0.001850583599    15920000                  0.037057907691    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   ElecElec                      -0.573803465918                0.000328009723    15920000                  0.006568389584    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   IonIon                        -3.689226823400                0.000000000000    15920000                  0.000000000000    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   LocalECP                     -11.505824039779                0.002061239321    15920000                  0.041276285236    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   Flux                          -0.155617378027                0.003686037013    15920000                  0.073812833663    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   AcceptRatio                    0.999744544967                0.000000133953    15920000                  0.000002682407    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   BlockWeight               255905.537185929657              104.981966524879    15920000               2102.262241364706    39800       
+ short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj             1   TotalSamples          4074016152.000000000000                0.000000000000    15920000                  0.000000000000    39800       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   LocalEnergy                   -8.240084813862                0.000026374988    39920000                  0.000528158723    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   Variance                       1.566278533460                0.002524808869    39920000                  0.050559258201    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   Kinetic                        7.376986438813                0.000276182879    39920000                  0.005530557842    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   LocalPotential               -15.617071252675                0.000277907272    39920000                  0.005565088785    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   ElecElec                      -0.513765022614                0.000033318411    39920000                  0.000667200660    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   IonIon                        -3.689226823400                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   LocalECP                     -11.414079406620                0.000296055374    39920000                  0.005928504244    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   Flux                           0.001487677652                0.003195999402    39920000                  0.063999838150    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   AcceptRatio                    0.405045092245                0.000001612590    39920000                  0.000032292090    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   BlockWeight               256000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj         0   TotalSamples         10219520000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   LocalEnergy                   -8.240145481767                0.000026834814    39920000                  0.000537366732    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   Variance                       1.559806298196                0.002254667506    39920000                  0.045149681622    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   Kinetic                        7.376829474159                0.000293022547    39920000                  0.005867771931    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   LocalPotential               -15.616974955924                0.000295057469    39920000                  0.005908521212    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   ElecElec                      -0.513836636222                0.000034989604    39920000                  0.000700666274    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   IonIon                        -3.689226823400                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   LocalECP                     -11.413911496261                0.000315139939    39920000                  0.006310672361    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   Flux                           0.000077307332                0.000946710931    39920000                  0.018957871619    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   AcceptRatio                    0.324887652669                0.000001557560    39920000                  0.000031190115    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   BlockWeight               256000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+ short-LiH_solid_1x1x1_pp-x-vmc_hf_noj               0   TotalSamples         10219520000.000000000000                0.000000000000    39920000                  0.000000000000    99800       
+
+# ref_code: v340_180417_soa_real_cpu_full            ref_code_hash: d07f8ea7d0cddc6b112397afd7fc37e09e868489
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   LocalEnergy                 -370.883771046888                0.000300685367    784000                    0.006021219782    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   Variance                      11.113781511124                0.010359938334    784000                    0.207457603466    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   Kinetic                      230.544178159003                0.006068232810    784000                    0.121516267322    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   LocalPotential              -601.427949205924                0.006059902502    784000                    0.121349453035    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   ElecElec                      78.370465201171                0.002533550651    784000                    0.050734312249    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   IonIon                      -239.298142930000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   LocalECP                    -389.987606415679                0.006014633496    784000                    0.120442941896    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   NonLocalECP                  -50.512665066063                0.003722793126    784000                    0.074548874252    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   AcceptRatio                    0.225759148942                0.000003084357    784000                    0.000061764201    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   BlockWeight                51200.000000000000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48-batched_pp-vmc_sdj3                1   TotalSamples           200704000.000000000000                0.000000000000    784000                    0.000000000000    1960        
+
+# ref_code: v340_180417_soa_real_cpu_full            ref_code_hash: d07f8ea7d0cddc6b112397afd7fc37e09e868489
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   LocalEnergy                 -370.884715489367                0.000261940461    784000                    0.005245353644    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   Variance                       9.951329827209                0.006010135763    784000                    0.120352874863    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   Kinetic                      230.569504858115                0.006265630315    784000                    0.125469149280    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   LocalPotential              -601.454220347421                0.006254322046    784000                    0.125242701369    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   ElecElec                      78.374369496468                0.002445491122    784000                    0.048970921555    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   IonIon                      -239.298142930000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   LocalECP                    -389.993148200592                0.005712473930    784000                    0.114392201302    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   NonLocalECP                  -50.537298717862                0.003938882125    784000                    0.078876053085    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   AcceptRatio                    0.225757880101                0.000003073023    784000                    0.000061537238    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   BlockWeight                51200.000000000000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3      1   TotalSamples           200704000.000000000000                0.000000000000    784000                    0.000000000000    1960        
+
+# ref_code: v340_180417_soa_real_cpu_full            ref_code_hash: d07f8ea7d0cddc6b112397afd7fc37e09e868489
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   LocalEnergy                 -370.884534237092                0.000262705971    784000                    0.005260682970    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   Variance                      10.422017390225                0.451336930726    784000                    9.038014994450    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   Kinetic                      230.579127017000                0.005976944114    784000                    0.119688212610    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   LocalPotential              -601.463661254018                0.005952630339    784000                    0.119201329645    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   ElecElec                      78.375194342495                0.002392873033    784000                    0.047917245144    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   IonIon                      -239.298142930000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   LocalECP                    -389.995036640674                0.005588074884    784000                    0.111901112347    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   NonLocalECP                  -50.545676030372                0.003828523905    784000                    0.076666131452    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   AcceptRatio                    0.225754885797                0.000003046997    784000                    0.000061016067    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   BlockWeight                51200.000000000000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48-hybridrep-pp-vmc_sdj3              1   TotalSamples           200704000.000000000000                0.000000000000    784000                    0.000000000000    1960        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-NiO_a4_e48_pp-vmc_sdj                         1   LocalEnergy                 -370.794177544740                0.000316753143    784000                    0.006342976745    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   Variance                      12.829942624638                0.013276601655    784000                    0.265863740953    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   Kinetic                      230.431678590485                0.006164592252    784000                    0.123445863645    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   LocalPotential              -601.225856135390                0.006133207561    784000                    0.122817385697    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   ElecElec                      78.453583564035                0.002699056340    784000                    0.054048561088    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   IonIon                      -239.298140540000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   LocalECP                    -389.922383593342                0.006260785205    784000                    0.125372126027    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   NonLocalECP                  -50.458915563994                0.003836920714    784000                    0.076834277421    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   AcceptRatio                    0.225369741764                0.000003137541    784000                    0.000062829210    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   BlockWeight                51200.000000000000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48_pp-vmc_sdj                         1   TotalSamples           200704000.000000000000                0.000000000000    784000                    0.000000000000    1960        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   LocalEnergy                 -370.883975906543                0.000304907150    784000                    0.006105760921    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   Variance                      11.127115673139                0.011030144779    784000                    0.220878477069    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   Kinetic                      230.548830683832                0.005987480963    784000                    0.119899212846    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   LocalPotential              -601.432806590378                0.005958913433    784000                    0.119327148504    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   ElecElec                      78.369026159695                0.002404375000    784000                    0.048147571854    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   IonIon                      -239.298140540000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   LocalECP                    -389.986858722860                0.005736413328    784000                    0.114871587374    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   NonLocalECP                  -50.516833485183                0.003821969508    784000                    0.076534879754    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   AcceptRatio                    0.225761969534                0.000003012561    784000                    0.000060326487    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   BlockWeight                51200.000000000000                0.000000000000    784000                    0.000000000000    1960        
+ short-NiO_a4_e48_pp-vmc_sdj3                        1   TotalSamples           200704000.000000000000                0.000000000000    784000                    0.000000000000    1960        
+
+# ref_code: v311_170906_aos_real_cpu_full            ref_code_hash: 018e4bf160a8552d66cf9511af81c6a7a634ac50
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   LocEne_0                      -1.834034222227                0.000006508736    23952000                  0.000130337337    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   LocEne_1                      -1.833782391322                0.000006560824    23952000                  0.000131380398    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   dLocEne_0_1                   -0.000251830905                0.000003971997    23952000                  0.000079539178    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   ElecElec_0                    -0.775865394316                0.000006065675    23952000                  0.000121465047    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   ElecElec_1                    -0.775204292779                0.000006078927    23952000                  0.000121730418    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   dElecElec_0_1                 -0.000661101537                0.000001863995    23952000                  0.000037326471    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   IonIon_0                      -0.962899621840                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   IonIon_1                      -0.958165599910                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   dIonIon_0_1                   -0.004734021929                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   AcceptRatio                    0.766672709243                0.000009712425    23952000                  0.000194491159    59880       
+ short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj           0   BlockWeight               153600.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+
+# ref_code: v311_170906_aos_real_cpu_full            ref_code_hash: 018e4bf160a8552d66cf9511af81c6a7a634ac50
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   LocEne_0                      -1.834030973656                0.000006406192    23952000                  0.000128283895    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   LocEne_1                      -1.833774860468                0.000006412432    23952000                  0.000128408851    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   dLocEne_0_1                   -0.000256113188                0.000003574230    23952000                  0.000071573900    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   ElecElec_0                    -0.775840944343                0.000006108843    23952000                  0.000122329486    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   ElecElec_1                    -0.775180796755                0.000006142768    23952000                  0.000123008833    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   dElecElec_0_1                 -0.000660147588                0.000001841610    23952000                  0.000036878212    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   IonIon_0                      -0.962899621840                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   IonIon_1                      -0.958165599910                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   dIonIon_0_1                   -0.004734021929                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   AcceptRatio                    0.789689310207                0.000008169940    23952000                  0.000163602921    59880       
+ short-bccH_1x1x1_ae-csvmc-all_sdj                   0   BlockWeight               153600.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+
+# ref_code: v311_170906_aos_real_cpu_full            ref_code_hash: 018e4bf160a8552d66cf9511af81c6a7a634ac50
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   LocEne_0                      -1.834038756305                0.000004584819    23952000                  0.000091810929    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   LocEne_1                      -1.833787793696                0.000004569826    23952000                  0.000091510694    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   dLocEne_0_1                   -0.000250962608                0.000003154338    23952000                  0.000063165569    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   ElecElec_0                    -0.775852895423                0.000003972135    23952000                  0.000079541941    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   ElecElec_1                    -0.775194494289                0.000003988361    23952000                  0.000079866867    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   dElecElec_0_1                 -0.000658401134                0.000001087019    23952000                  0.000021767539    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   IonIon_0                      -0.962899621840                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   IonIon_1                      -0.958165599910                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   dIonIon_0_1                   -0.004734021929                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   AcceptRatio                    0.702961514174                0.000005111365    23952000                  0.000102355004    59880       
+ short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj          0   BlockWeight               153600.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+
+# ref_code: v300_170524_aos_real_cpu_full            ref_code_hash: dc06dbd3d600b43daa2dba64c7e5e668327532a4
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   LocalEnergy                   -1.841324263052                0.000027401774    7840000                   0.000548720097    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   Variance                       0.062417237029                0.000024398827    7840000                   0.000488586130    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   Kinetic                        0.178732041399                0.000168997985    7840000                   0.003384182012    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   LocalPotential                -2.020056304452                0.000166270649    7840000                   0.003329567151    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   ElecElec                      -0.779886857693                0.000039515444    7840000                   0.000791296149    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   IonIon                        -0.962899615080                0.000000000000    7840000                   0.000000000000    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   Flux                           0.014941764426                0.000285119794    7840000                   0.005709519425    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   AcceptRatio                    0.998712566924                0.000000875203    7840000                   0.000017525926    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   BlockWeight               511870.870408163290               51.141881546243    7840000                1024.115379868924    19600       
+ short-bccH_1x1x1_ae-dmc-all_sdj                     1   TotalSamples          2006533812.000000000000                0.000000000000    7840000                   0.000000000000    19600       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-bccH_1x1x1_ae-dmc_sdj                         1   LocalEnergy                   -1.841388542839                0.000026233951    7840000                   0.000525334459    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   Variance                       0.062450180813                0.000024424191    7840000                   0.000489094044    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   Kinetic                        0.178718697799                0.000166218841    7840000                   0.003328529697    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   LocalPotential                -2.020107240639                0.000162860424    7840000                   0.003261277449    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   ElecElec                      -0.779885842929                0.000039334497    7840000                   0.000787672689    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   IonIon                        -0.962899625270                0.000000000000    7840000                   0.000000000000    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   Flux                           0.015048802768                0.000280986602    7840000                   0.005626752320    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   AcceptRatio                    0.999330567405                0.000000436335    7840000                   0.000008737602    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   BlockWeight               511862.337755102024               49.704477643499    7840000                 995.331389147881    19600       
+ short-bccH_1x1x1_ae-dmc_sdj                         1   TotalSamples          2006500364.000000000000                0.000000000000    7840000                   0.000000000000    19600       
+
+# ref_code: v300_170407_aos_real_cpu_full            ref_code_hash: cdd68c9a77a1c44e1d7e7ddb9e53055a284e2126
+ short-bccH_1x1x1_ae-rmc_sdj                         1   LocalEnergy                   -1.841400000000                0.000120000000    7920000                   0.001205985075    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   Variance                       0.067710000000                0.000110000000    7920000                   0.001105486318    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   LocalPotential                -2.019700000000                0.000720000000    7920000                   0.007235910447    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   Kinetic_m                      0.178290000000                0.000720000000    7920000                   0.007235910447    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   Kinetic_p                      0.171880000000                0.000870000000    7920000                   0.008743391790    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   ElecElec_m                    -0.779980000000                0.000170000000    7920000                   0.001708478856    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   ElecElec_p                    -0.783740000000                0.000210000000    7920000                   0.002110473880    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   AcceptRatio                    0.999032100000                0.000003200000    7920000                   0.000032159602    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   BlockWeight             25600000.000000000000                0.000000000000    7920000                   0.000000000000    79200       
+ short-bccH_1x1x1_ae-rmc_sdj                         1   TotalSamples         50688000000.000000000000                0.000000000000    7920000                   0.000000000000    79200       
+
+# ref_code: v300_170524_aos_real_cpu_full            ref_code_hash: dc06dbd3d600b43daa2dba64c7e5e668327532a4
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   LocalEnergy                   -1.834029834475                0.000006457456    23952000                  0.000129310456    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   Variance                       0.062880077492                0.000005430804    23952000                  0.000108751765    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   Kinetic                        0.186708684527                0.000048616685    23952000                  0.000973548358    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   LocalPotential                -2.020738519002                0.000046768492    23952000                  0.000936538322    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   ElecElec                      -0.775860770523                0.000006070057    23952000                  0.000121552797    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   IonIon                        -0.962899615080                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   Flux                          -0.000181154109                0.000090886127    23952000                  0.001819993275    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   AcceptRatio                    0.766189752923                0.000009818685    23952000                  0.000196619014    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   BlockWeight               153600.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-vmc-all-nodrift_sdj             0   TotalSamples          6131712000.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+
+# ref_code: v300_170524_aos_real_cpu_full            ref_code_hash: dc06dbd3d600b43daa2dba64c7e5e668327532a4
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   LocalEnergy                   -1.834030571913                0.000006359225    23952000                  0.000127343381    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   Variance                       0.062882518917                0.000005451483    23952000                  0.000109165862    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   Kinetic                        0.186549257009                0.000044845390    23952000                  0.000898028235    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   LocalPotential                -2.020579828921                0.000043064114    23952000                  0.000862358211    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   ElecElec                      -0.775851098291                0.000006115146    23952000                  0.000122455703    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   IonIon                        -0.962899615080                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   Flux                           0.000114882292                0.000084225129    23952000                  0.001686606894    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   AcceptRatio                    0.788033306605                0.000008245273    23952000                  0.000165111463    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   BlockWeight               153600.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-vmc-all_sdj                     0   TotalSamples          6131712000.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-bccH_1x1x1_ae-vmc_sdj                         0   LocalEnergy                   -1.834033399740                0.000003494326    23952000                  0.000069973824    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   Variance                       0.062879904837                0.000003078315    23952000                  0.000061643210    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   Kinetic                        0.186612483144                0.000021075652    23952000                  0.000422039602    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   LocalPotential                -2.020645882884                0.000020237125    23952000                  0.000405248112    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   ElecElec                      -0.775862919020                0.000003714185    23952000                  0.000074376497    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   IonIon                        -0.962899625270                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   Flux                          -0.000008749477                0.000038676963    23952000                  0.000774505581    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   AcceptRatio                    0.943937548070                0.000001799934    23952000                  0.000036043650    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   BlockWeight               153600.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+ short-bccH_1x1x1_ae-vmc_sdj                         0   TotalSamples          6131712000.000000000000                0.000000000000    23952000                  0.000000000000    59880       
+
+# ref_code: v300_aos_real_cpu_full                   ref_code_hash: 0d4d897bf55776caa4dec1a9e4c60a77e2c1c807
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   LocalEnergy                   -1.834006336519                0.000011241863    2352000                   0.000225118131    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   Variance                       0.062843497735                0.000010313500    2352000                   0.000206527677    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   Kinetic                        0.186675629424                0.000067851890    2352000                   0.001358733038    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   LocalPotential                -2.020681965943                0.000064565272    2352000                   0.001292918564    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   ElecElec                      -0.775845953208                0.000011761397    2352000                   0.000235521791    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   IonIon                        -0.962899626680                0.000000000000    2352000                   0.000000000000    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   Flux                          -0.000111190431                0.000123816054    2352000                   0.002479414549    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   AcceptRatio                    0.943931810444                0.000005668860    2352000                   0.000113518833    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   BlockWeight               153600.000000000000                0.000000000000    2352000                   0.000000000000    5880        
+ short-bccH_1x1x1_ae-vmc_sdj-pw                      0   TotalSamples           602112000.000000000000                0.000000000000    2352000                   0.000000000000    5880        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-c_no-hf_vmc                                   0   LocalEnergy                  -37.688656906919                0.000114185931    798400000                 0.002286571486    1996000     
+ short-c_no-hf_vmc                                   0   Variance                       7.775185548521                0.035890465400    798400000                 0.718706009546    1996000     
+ short-c_no-hf_vmc                                   0   Kinetic                       37.698112296692                0.004826962603    798400000                 0.096659850798    1996000     
+ short-c_no-hf_vmc                                   0   LocalPotential               -75.386769203611                0.004826567151    798400000                 0.096651931878    1996000     
+ short-c_no-hf_vmc                                   0   ElecElec                      12.759486049481                0.000171566043    798400000                 0.003435607334    1996000     
+ short-c_no-hf_vmc                                   0   Coulomb                      -88.146255253091                0.004894790095    798400000                 0.098018095267    1996000     
+ short-c_no-hf_vmc                                   0   AcceptRatio                    0.647919934152                0.000002062219    798400000                 0.000041295903    1996000     
+ short-c_no-hf_vmc                                   0   BlockWeight               320000.000000000000                0.000000000000    798400000                 0.000000000000    1996000     
+ short-c_no-hf_vmc                                   0   TotalSamples         12774400000.000000000000                0.000000000000    798400000                 0.000000000000    1996000     
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-c_no-sj_dmc                                   0   LocalEnergy                  -37.769709615159                0.000051207983    199600000                 0.001025439060    499000      
+ short-c_no-sj_dmc                                   0   Variance                       0.632569308194                0.000119074928    199600000                 0.002384473575    499000      
+ short-c_no-sj_dmc                                   0   Kinetic                       37.232398608182                0.009727010220    199600000                 0.194783227861    499000      
+ short-c_no-sj_dmc                                   0   LocalPotential               -75.002108223339                0.009741827414    199600000                 0.195079941939    499000      
+ short-c_no-sj_dmc                                   0   ElecElec                      12.148998374011                0.000309385743    199600000                 0.006195444675    499000      
+ short-c_no-sj_dmc                                   0   Coulomb                      -87.151106597351                0.009862086837    199600000                 0.197488135008    499000      
+ short-c_no-sj_dmc                                   0   AcceptRatio                    0.653899971714                0.000003942586    199600000                 0.000078950223    499000      
+ short-c_no-sj_dmc                                   0   BlockWeight                80000.000000000000                0.000000000000    199600000                 0.000000000000    499000      
+ short-c_no-sj_dmc                                   0   TotalSamples          3193600000.000000000000                0.000000000000    199600000                 0.000000000000    499000      
+ short-c_no-sj_dmc                                   2   LocalEnergy                  -37.828242297763                0.000041927500    796000                    0.000839597533    1990        
+ short-c_no-sj_dmc                                   2   Variance                       0.622617021499                0.000045022303    796000                    0.000901570915    1990        
+ short-c_no-sj_dmc                                   2   Kinetic                       37.569624373562                0.001583025851    796000                    0.031700067962    1990        
+ short-c_no-sj_dmc                                   2   LocalPotential               -75.397866671326                0.001590728883    796000                    0.031854321058    1990        
+ short-c_no-sj_dmc                                   2   ElecElec                      12.355265930157                0.000441789467    796000                    0.008846827182    1990        
+ short-c_no-sj_dmc                                   2   Coulomb                      -87.753132601489                0.001792565872    796000                    0.035896103613    1990        
+ short-c_no-sj_dmc                                   2   AcceptRatio                    0.958739390593                0.000001345755    796000                    0.000026948723    1990        
+ short-c_no-sj_dmc                                   2   BlockWeight               395979.908542713558               39.853635358354    796000                  798.068426115164    1990        
+ short-c_no-sj_dmc                                   2   TotalSamples          6304000144.000000000000                0.000000000000    796000                    0.000000000000    1990        
+
+# ref_code: v300_170407_soa_real_cpu_full            ref_code_hash: cdd68c9a77a1c44e1d7e7ddb9e53055a284e2126
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   LocalEnergy                  -10.491422243970                0.000024719699    3193600                   0.000495011587    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   Variance                       0.384406060823                0.000254834008    3193600                   0.005103047033    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   Kinetic                       11.434445621324                0.000205971482    3193600                   0.004124575713    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   LocalPotential               -21.925867865291                0.000205334234    3193600                   0.004111814832    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   ElecElec                      -2.700464664942                0.000052718178    3193600                   0.001055680692    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   IonIon                       -12.775667433000                0.000000000000    3193600                   0.000000000000    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   LocalECP                      -7.047030147668                0.000231121725    3193600                   0.004628208936    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   NonLocalECP                    0.597294379836                0.000069959018    3193600                   0.001400928244    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   Flux                          -0.011058829991                0.013816324730    3193600                   0.276671687108    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   AcceptRatio                    0.761747593927                0.000003952585    3193600                   0.000079150453    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   BlockWeight                20480.000000000000                0.000000000000    3193600                   0.000000000000    7984        
+ short-diamondC_1x1x1_hybridrep_pp-vmc_sdj           0   TotalSamples           817561600.000000000000                0.000000000000    3193600                   0.000000000000    7984        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   LocalEnergy                  -10.531304509572                0.000122269949    3920000                   0.002448453821    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   Variance                       0.376497599265                0.000336174630    3920000                   0.006731891720    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   Kinetic                       11.484139015626                0.001369344861    3920000                   0.027421109472    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   LocalPotential               -22.015443525201                0.001395623447    3920000                   0.027947337747    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   ElecElec                      -2.716543566587                0.000392981777    3920000                   0.007869453952    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   IonIon                       -12.775667390000                0.000000000000    3920000                   0.000000000000    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   LocalECP                      -7.150962399967                0.001774866434    3920000                   0.035541672643    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   NonLocalECP                    0.627729831525                0.000401146923    3920000                   0.008032960873    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   AcceptRatio                    0.997856784357                0.000000716961    3920000                   0.000014357133    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   BlockWeight               255713.587499999994               78.007143007264    3920000                1562.091821380053    9800        
+ short-diamondC_1x1x1_pp-dmc_sdj                     1   TotalSamples          1002397263.000000000000                0.000000000000    3920000                   0.000000000000    9800        
+
+# ref_code: v340_180413_aos_real_cpu_full            ref_code_hash: b85b4c61de319fbd3227934094a2e8483509f703
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   LocalEnergy                  -10.491413865499                0.000029912750    196800                    0.000599002352    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   Variance                       0.385034184864                0.000329236235    196800                    0.006592950468    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   Kinetic                       11.434797896448                0.000248845675    196800                    0.004983130759    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   LocalPotential               -21.926211761939                0.000248422655    196800                    0.004974659790    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   ElecElec                      -2.700521281474                0.000067881428    196800                    0.001359324536    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   IonIon                       -12.775667436000                0.000000000000    196800                    0.000000000000    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   LocalECP                      -7.047043569620                0.000280687335    196800                    0.005620759503    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   NonLocalECP                    0.597020525586                0.000088710558    196800                    0.001776427540    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   AcceptRatio                    0.369016207253                0.000010612483    196800                    0.000212514806    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   BlockWeight               163840.000000000000                0.000000000000    196800                    0.000000000000    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            0   TotalSamples           806092800.000000000000                0.000000000000    196800                    0.000000000000    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   LocalEnergy                  -10.491484837376                0.000039061044    196800                    0.000782196797    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   Variance                       0.384503796973                0.000315321754    196800                    0.006314313203    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   Kinetic                       11.434327164597                0.000385368110    196800                    0.007716990389    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   LocalPotential               -21.925812001976                0.000389661549    196800                    0.007802966438    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   ElecElec                      -2.700608037894                0.000109329656    196800                    0.002189324655    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   IonIon                       -12.775667436000                0.000000000000    196800                    0.000000000000    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   LocalECP                      -7.046553570494                0.000478113082    196800                    0.009574207006    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   NonLocalECP                    0.597017042843                0.000111356188    196800                    0.002229905927    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   AcceptRatio                    0.248244550441                0.000010178475    196800                    0.000203823803    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   BlockWeight               163840.000000000000                0.000000000000    196800                    0.000000000000    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            1   TotalSamples           806092800.000000000000                0.000000000000    196800                    0.000000000000    492         
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   LocalEnergy                  -10.531001135281                0.000126413189    3920000                   0.002531422137    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   Variance                       0.375960748449                0.000280522989    3920000                   0.005617468477    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   Kinetic                       11.486688574567                0.001395060889    3920000                   0.027936072532    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   LocalPotential               -22.017689697854                0.001375306577    3920000                   0.027540492742    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   ElecElec                      -2.716934257006                0.000384309868    3920000                   0.007695799109    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   IonIon                       -12.775667436000                0.000000000000    3920000                   0.000000000000    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   LocalECP                      -7.152139490279                0.001692885443    3920000                   0.033900004578    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   NonLocalECP                    0.627051485859                0.000398397642    3920000                   0.007977906564    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   AcceptRatio                    0.986365352665                0.000004878409    3920000                   0.000097690064    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   BlockWeight               254535.376020408177               80.395023741724    3920000                1609.909095823544    9800        
+ short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj            2   TotalSamples           997778674.000000000000                0.000000000000    3920000                   0.000000000000    9800        
+
+# ref_code: v340_180329_soa_real_cpu_full            ref_code_hash: 292bb3bb8793ae1a7c6472a15e35023ba88da475
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   LocalEnergy                  -10.495853296208                0.000085102175    392000                    0.001704169726    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   Variance                       0.444719833482                0.004274287747    392000                    0.085592545431    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   Kinetic                       11.510223929044                0.000784107289    392000                    0.015701736226    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   LocalPotential               -22.006077225239                0.000784607138    392000                    0.015711745694    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   ElecElec                      -2.685859088397                0.000191167519    392000                    0.003828126585    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   IonIon                       -12.775667436000                0.000000000000    392000                    0.000000000000    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   LocalECP                      -7.198842031405                0.000898235863    392000                    0.017987159139    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   NonLocalECP                    0.654291330991                0.000259884755    392000                    0.005204188163    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   AcceptRatio                    0.759367085360                0.000016286677    392000                    0.000326140453    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   BlockWeight                25600.000000000000                0.000000000000    392000                    0.000000000000    980         
+ short-diamondC_1x1x1_pp-vmc_gaussian_sdj            0   TotalSamples           100352000.000000000000                0.000000000000    392000                    0.000000000000    980         
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   LocalEnergy                  -10.491438986865                0.000023787269    3193600                   0.000476339691    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   Variance                       0.384511718379                0.000289452347    3193600                   0.005796278732    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   Kinetic                       11.434285093757                0.000209059200    3193600                   0.004186407218    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   LocalPotential               -21.925724080625                0.000208541669    3193600                   0.004176043667    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   ElecElec                      -2.700574505183                0.000054137319    3193600                   0.001084098968    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   IonIon                       -12.775667390000                0.000000000000    3193600                   0.000000000000    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   LocalECP                      -7.046588087425                0.000235186240    3193600                   0.004709600786    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   NonLocalECP                    0.597105902152                0.000069854451    3193600                   0.001398834291    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   Flux                           0.076252267406                0.088983115591    3193600                   1.781885501084    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   AcceptRatio                    0.761747483615                0.000004031183    3193600                   0.000080724377    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   BlockWeight                20480.000000000000                0.000000000000    3193600                   0.000000000000    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj                     0   TotalSamples           817561600.000000000000                0.000000000000    3193600                   0.000000000000    7984        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   LocalEnergy                  -10.491435670203                0.000023657933    3193600                   0.000473749739    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   Variance                       0.376148982807                0.000276838029    3193600                   0.005543677211    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   Kinetic                       11.434640153046                0.000209154614    3193600                   0.004188317881    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   LocalPotential               -21.926075823249                0.000204734486    3193600                   0.004099804887    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   ElecElec                      -2.700443218830                0.000052713491    3193600                   0.001055586835    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   IonIon                       -12.775667390000                0.000000000000    3193600                   0.000000000000    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   LocalECP                      -7.047224975327                0.000230419161    3193600                   0.004614140103    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   NonLocalECP                    0.597259761077                0.000069719717    3193600                   0.001396136245    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   Flux                          -0.017319443784                0.016031155061    3193600                   0.321023629922    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   AcceptRatio                    0.761744685660                0.000003988539    3193600                   0.000079870431    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   BlockWeight                20480.000000000000                0.000000000000    3193600                   0.000000000000    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj-meshf               0   TotalSamples           817561600.000000000000                0.000000000000    3193600                   0.000000000000    7984        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   LocalEnergy                  -10.500668187915                0.000021615942    3193600                   0.000432858901    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   Variance                       0.315109978771                0.000806418425    3193600                   0.016148516376    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   Kinetic                       11.697475314021                0.000211783212    3193600                   0.004240955515    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   LocalPotential               -22.198143501933                0.000210104075    3193600                   0.004207330823    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   ElecElec                      -2.673127257969                0.000052761719    3193600                   0.001056552600    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   IonIon                       -12.775667390000                0.000000000000    3193600                   0.000000000000    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   LocalECP                      -7.395087559333                0.000237952323    3193600                   0.004764991555    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   NonLocalECP                    0.645738705535                0.000071345591    3193600                   0.001428694346    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   Flux                          -0.692828041494                0.012667970790    3193600                   0.253675917380    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   AcceptRatio                    0.742988171167                0.000004136795    3193600                   0.000082839255    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   BlockWeight                20480.000000000000                0.000000000000    3193600                   0.000000000000    7984        
+ short-diamondC_1x1x1_pp-vmc_sdj_kspace              0   TotalSamples           817561600.000000000000                0.000000000000    3193600                   0.000000000000    7984        
+
+# ref_code: v300_170407_soa_real_cpu_full            ref_code_hash: cdd68c9a77a1c44e1d7e7ddb9e53055a284e2126
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   LocalEnergy                  -21.668173343662                0.000087513483    798400                    0.001752456131    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   Variance                       1.011576168737                0.000437298349    798400                    0.008756892614    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   Kinetic                       20.065101661866                0.000545877610    798400                    0.010931190622    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   LocalPotential               -41.733275005528                0.000559090628    798400                    0.011195781101    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   ElecElec                      -5.428882678829                0.000149614347    798400                    0.002996024964    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   IonIon                       -25.551327183000                0.000000000000    798400                    0.000000000000    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   LocalECP                     -12.293639902627                0.000640444254    798400                    0.012824886192    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   NonLocalECP                    1.540574758843                0.000230740941    798400                    0.004620583743    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   Flux                          -0.069343617212                0.024133482384    798400                    0.483272608125    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   AcceptRatio                    0.786113057108                0.000005420252    798400                    0.000108540462    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   BlockWeight                 5120.000000000000                0.000000000000    798400                    0.000000000000    1996        
+ short-diamondC_2x1x1_hybridrep_pp-vmc_sdj           0   TotalSamples           204390400.000000000000                0.000000000000    798400                    0.000000000000    1996        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   LocalEnergy                  -21.846906711853                0.000567560363    920000                    0.011365387412    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   Variance                       0.907518194935                0.000688494864    920000                    0.013787098907    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   Kinetic                       20.357261700811                0.004086918716    920000                    0.081840483509    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   LocalPotential               -42.204168412659                0.004296153461    920000                    0.086030406013    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   ElecElec                      -5.499865512284                0.001192992872    920000                    0.023889663645    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   IonIon                       -25.551327250000                0.000000000000    920000                    0.000000000000    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   LocalECP                     -12.793918903939                0.005315573961    920000                    0.106444285617    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   NonLocalECP                    1.640943253089                0.001492120341    920000                    0.029879686543    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   AcceptRatio                    0.998157195505                0.000000939175    920000                    0.000018806965    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   BlockWeight               256021.254347826092              236.576857042908    920000                 4737.447870384276    2300        
+ short-diamondC_2x1x1_pp-dmc_sdj                     1   TotalSamples           235539554.000000000000                0.000000000000    920000                    0.000000000000    2300        
+
+# ref_code: v340_180329_soa_real_cpu_full            ref_code_hash: 292bb3bb8793ae1a7c6472a15e35023ba88da475
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   LocalEnergy                  -21.701059413048                0.000225103727    192000                    0.004507698620    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   Variance                       1.353939405529                0.001001361396    192000                    0.020052246328    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   Kinetic                       20.639674255315                0.001511979346    192000                    0.030277362808    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   LocalPotential               -42.340733668372                0.001517316599    192000                    0.030384241216    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   ElecElec                      -5.337307250298                0.000379423841    192000                    0.007597956495    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   IonIon                       -25.551326937000                0.000000000000    192000                    0.000000000000    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   LocalECP                     -13.192050121857                0.001747356715    192000                    0.034990790950    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   NonLocalECP                    1.739950640646                0.000563600648    192000                    0.011286094181    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   AcceptRatio                    0.778778558095                0.000016484513    192000                    0.000330102116    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   BlockWeight                25600.000000000000                0.000000000000    192000                    0.000000000000    480         
+ short-diamondC_2x1x1_pp-vmc_gaussian_sdj            0   TotalSamples            49152000.000000000000                0.000000000000    192000                    0.000000000000    480         
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   LocalEnergy                  -21.668190934054                0.000086318131    798400                    0.001728519226    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   Variance                       1.011255240843                0.000429560435    798400                    0.008601941007    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   Kinetic                       20.065318782310                0.000537936410    798400                    0.010772168215    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   LocalPotential               -41.733509716367                0.000550188933    798400                    0.011017524797    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   ElecElec                      -5.428607813750                0.000155536978    798400                    0.003114625557    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   IonIon                       -25.551327250000                0.000000000000    798400                    0.000000000000    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   LocalECP                     -12.293597171656                0.000629689422    798400                    0.012609520849    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   NonLocalECP                    1.540022518572                0.000231841462    798400                    0.004642621659    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   Flux                          -0.057994115151                0.025912273487    798400                    0.518892872203    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   AcceptRatio                    0.786120384996                0.000005373957    798400                    0.000107613405    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   BlockWeight                 5120.000000000000                0.000000000000    798400                    0.000000000000    1996        
+ short-diamondC_2x1x1_pp-vmc_sdj                     0   TotalSamples           204390400.000000000000                0.000000000000    798400                    0.000000000000    1996        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   LocalEnergy                   -1.481648784001                0.000006671055    10379200                  0.000133587772    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   Variance                       0.057361512596                0.000005338946    10379200                  0.000106912310    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   Kinetic                        0.127643472490                0.000014481532    10379200                  0.000289992452    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   LocalPotential                -1.609292256491                0.000014870525    10379200                  0.000297782031    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   ElecElec                      -0.531532400427                0.000007432573    10379200                  0.000148837158    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   IonIon                        -1.071511335600                0.000000000000    10379200                  0.000000000000    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   LocalECP                      -0.222802265110                0.000022263233    10379200                  0.000445820893    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   NonLocalECP                    0.216553744667                0.000017901910    10379200                  0.000358485468    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   Flux                           0.000045709302                0.000033470311    10379200                  0.000670242455    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   AcceptRatio                    0.968592280057                0.000001838020    10379200                  0.000036806322    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   BlockWeight                66560.000000000000                0.000000000000    10379200                  0.000000000000    25948       
+ short-hcpBe_1x1x1_pp-vmc_sdj                        0   TotalSamples          2657075200.000000000000                0.000000000000    10379200                  0.000000000000    25948       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-heg_14_gamma-hf                               0   LocalEnergy                   -0.812508536440                0.000013203510    127680000                 0.000264400082    319200      
+ short-heg_14_gamma-hf                               0   Variance                       0.190831398256                0.000123763686    127680000                 0.002478365881    319200      
+ short-heg_14_gamma-hf                               0   Kinetic                        0.627711205940                0.000000000000    127680000                 0.000000000000    319200      
+ short-heg_14_gamma-hf                               0   LocalPotential                -1.440219742382                0.000013203510    127680000                 0.000264400082    319200      
+ short-heg_14_gamma-hf                               0   ElecElec                      -1.440219742382                0.000013203510    127680000                 0.000264400082    319200      
+ short-heg_14_gamma-hf                               0   AcceptRatio                    0.877184852862                0.000001969139    127680000                 0.000039431978    319200      
+ short-heg_14_gamma-hf                               0   BlockWeight                64000.000000000000                0.000000000000    127680000                 0.000000000000    319200      
+ short-heg_14_gamma-hf                               0   TotalSamples          2042880000.000000000000                0.000000000000    127680000                 0.000000000000    319200      
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-heg_14_gamma-ni                               0   LocalEnergy                    0.627711205940                0.000000000000    392000                    0.000000000000    980         
+ short-heg_14_gamma-ni                               0   Variance                       0.000000000007                0.000000000000    392000                    0.000000000000    980         
+ short-heg_14_gamma-ni                               0   Kinetic                        0.627711205940                0.000000000000    392000                    0.000000000000    980         
+ short-heg_14_gamma-ni                               0   LocalPotential                 0.000000000000                0.000000000000    392000                    0.000000000000    980         
+ short-heg_14_gamma-ni                               0   AcceptRatio                    0.877270134840                0.000035742284    392000                    0.000715738679    980         
+ short-heg_14_gamma-ni                               0   BlockWeight                 1600.000000000000                0.000000000000    392000                    0.000000000000    980         
+ short-heg_14_gamma-ni                               0   TotalSamples             6272000.000000000000                0.000000000000    392000                    0.000000000000    980         
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-heg_14_gamma-ni_dmc                           1   LocalEnergy                    0.627711205940                0.000000000000    152000                    0.000000000000    380         
+ short-heg_14_gamma-ni_dmc                           1   Variance                       0.000000000007                0.000000000000    152000                    0.000000000000    380         
+ short-heg_14_gamma-ni_dmc                           1   Kinetic                        0.627711205940                0.000000000000    152000                    0.000000000000    380         
+ short-heg_14_gamma-ni_dmc                           1   LocalPotential                 0.000000000000                0.000000000000    152000                    0.000000000000    380         
+ short-heg_14_gamma-ni_dmc                           1   AcceptRatio                    0.998543335879                0.000003492153    152000                    0.000069930309    380         
+ short-heg_14_gamma-ni_dmc                           1   BlockWeight                10000.000000000000                0.000000000000    152000                    0.000000000000    380         
+ short-heg_14_gamma-ni_dmc                           1   TotalSamples            15200000.000000000000                0.000000000000    152000                    0.000000000000    380         
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-heg_14_gamma-sj                               0   LocalEnergy                   -1.073328754930                0.000013343436    12768000                  0.000267202098    31920       
+ short-heg_14_gamma-sj                               0   Variance                       0.024558110535                0.000008029930    12768000                  0.000160799223    31920       
+ short-heg_14_gamma-sj                               0   Kinetic                        0.781045290687                0.000020570993    12768000                  0.000411933814    31920       
+ short-heg_14_gamma-sj                               0   LocalPotential                -1.854374045618                0.000020732140    12768000                  0.000415160780    31920       
+ short-heg_14_gamma-sj                               0   ElecElec                      -1.854374045618                0.000020732140    12768000                  0.000415160780    31920       
+ short-heg_14_gamma-sj                               0   AcceptRatio                    0.805825126432                0.000007501765    12768000                  0.000150222727    31920       
+ short-heg_14_gamma-sj                               0   BlockWeight                 6400.000000000000                0.000000000000    12768000                  0.000000000000    31920       
+ short-heg_14_gamma-sj                               0   TotalSamples           204288000.000000000000                0.000000000000    12768000                  0.000000000000    31920       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-heg_14_gamma-sj_dmc                           2   LocalEnergy                   -1.110172304328                0.000016210322    3192000                   0.000324611445    7980        
+ short-heg_14_gamma-sj_dmc                           2   Variance                       0.022892723104                0.000002884533    3192000                   0.000057762728    7980        
+ short-heg_14_gamma-sj_dmc                           2   Kinetic                        0.770224619894                0.000027479015    3192000                   0.000550266847    7980        
+ short-heg_14_gamma-sj_dmc                           2   LocalPotential                -1.880396924223                0.000027682853    3192000                   0.000554348699    7980        
+ short-heg_14_gamma-sj_dmc                           2   ElecElec                      -1.880396924223                0.000027682853    3192000                   0.000554348699    7980        
+ short-heg_14_gamma-sj_dmc                           2   AcceptRatio                    0.998000308815                0.000000286686    3192000                   0.000005740883    7980        
+ short-heg_14_gamma-sj_dmc                           2   BlockWeight                79997.471334586473                1.970614476755    3192000                  39.461524144596    7980        
+ short-heg_14_gamma-sj_dmc                           2   TotalSamples          2553519285.000000000000                0.000000000000    3192000                   0.000000000000    7980        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-heg_14_gamma-sj_new                           0   LocalEnergy                   -1.073321105460                0.000013488223    12768000                  0.000270101455    31920       
+ short-heg_14_gamma-sj_new                           0   Variance                       0.024543779475                0.000005609991    12768000                  0.000112339982    31920       
+ short-heg_14_gamma-sj_new                           0   Kinetic                        0.781098085866                0.000020479738    12768000                  0.000410106434    31920       
+ short-heg_14_gamma-sj_new                           0   LocalPotential                -1.854419191326                0.000020689402    12768000                  0.000414304952    31920       
+ short-heg_14_gamma-sj_new                           0   ElecElec                      -1.854419191326                0.000020689402    12768000                  0.000414304952    31920       
+ short-heg_14_gamma-sj_new                           0   AcceptRatio                    0.805827429204                0.000007494964    12768000                  0.000150086537    31920       
+ short-heg_14_gamma-sj_new                           0   BlockWeight                 6400.000000000000                0.000000000000    12768000                  0.000000000000    31920       
+ short-heg_14_gamma-sj_new                           0   TotalSamples           204288000.000000000000                0.000000000000    12768000                  0.000000000000    31920       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-heg_14_gamma-sjb                              0   LocalEnergy                   -1.084995241655                0.000012485418    12768000                  0.000250020301    31920       
+ short-heg_14_gamma-sjb                              0   Variance                       0.022655803975                0.000036621567    12768000                  0.000733346308    31920       
+ short-heg_14_gamma-sjb                              0   Kinetic                        0.781676776323                0.000020865636    12768000                  0.000417834035    31920       
+ short-heg_14_gamma-sjb                              0   LocalPotential                -1.866672017978                0.000020273057    12768000                  0.000405967650    31920       
+ short-heg_14_gamma-sjb                              0   ElecElec                      -1.866672017978                0.000020273057    12768000                  0.000405967650    31920       
+ short-heg_14_gamma-sjb                              0   AcceptRatio                    0.807316567787                0.000007545272    12768000                  0.000151093954    31920       
+ short-heg_14_gamma-sjb                              0   BlockWeight                 6400.000000000000                0.000000000000    12768000                  0.000000000000    31920       
+ short-heg_14_gamma-sjb                              0   TotalSamples           204288000.000000000000                0.000000000000    12768000                  0.000000000000    31920       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-li2_sto-sj_dmc                                0   LocalEnergy                  -14.947221704021                0.000024545398    287280000                 0.000491521212    718200      
+ short-li2_sto-sj_dmc                                0   Variance                       0.170589099144                0.000070254626    287280000                 0.001406847789    718200      
+ short-li2_sto-sj_dmc                                0   Kinetic                       14.800953437706                0.000946322735    287280000                 0.018950098001    718200      
+ short-li2_sto-sj_dmc                                0   LocalPotential               -29.748175141724                0.000950765573    287280000                 0.019039065762    718200      
+ short-li2_sto-sj_dmc                                0   ElecElec                       6.208229390726                0.000084658442    287280000                 0.001695283980    718200      
+ short-li2_sto-sj_dmc                                0   Coulomb                      -37.738229913565                0.000980756979    287280000                 0.019639643199    718200      
+ short-li2_sto-sj_dmc                                0   IonIon                         1.781825381100                0.000000000000    287280000                 0.000000000000    718200      
+ short-li2_sto-sj_dmc                                0   AcceptRatio                    0.705042240221                0.000004128734    287280000                 0.000082677834    718200      
+ short-li2_sto-sj_dmc                                0   BlockWeight               144000.000000000000                0.000000000000    287280000                 0.000000000000    718200      
+ short-li2_sto-sj_dmc                                0   TotalSamples          4596480000.000000000000                0.000000000000    287280000                 0.000000000000    718200      
+ short-li2_sto-sj_dmc                                2   LocalEnergy                  -14.989463714638                0.000034481019    4788000                   0.000690481867    11970       
+ short-li2_sto-sj_dmc                                2   Variance                       0.151150336595                0.000018881183    4788000                   0.000378095395    11970       
+ short-li2_sto-sj_dmc                                2   Kinetic                       14.907403483581                0.000669007188    4788000                   0.013396858500    11970       
+ short-li2_sto-sj_dmc                                2   LocalPotential               -29.896867198221                0.000672956599    4788000                   0.013475945393    11970       
+ short-li2_sto-sj_dmc                                2   ElecElec                       6.246676595776                0.000275734611    4788000                   0.005521581282    11970       
+ short-li2_sto-sj_dmc                                2   Coulomb                      -37.925369175112                0.000828078169    4788000                   0.016582252412    11970       
+ short-li2_sto-sj_dmc                                2   IonIon                         1.781825381100                0.000000000000    4788000                   0.000000000000    11970       
+ short-li2_sto-sj_dmc                                2   AcceptRatio                    0.987958115612                0.000000627139    4788000                   0.000012558449    11970       
+ short-li2_sto-sj_dmc                                2   BlockWeight               239999.292105263157               16.510704703023    4788000                 330.626604020246    11970       
+ short-li2_sto-sj_dmc                                2   TotalSamples          7660777404.000000000000                0.000000000000    4788000                   0.000000000000    11970       
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-monoO_1x1x1_pp-vmc_sdj                        0   LocalEnergy                  -31.776474023774                0.000074683338    1596800                   0.001495532678    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   Variance                       1.408826342158                0.001406839969    1596800                   0.028171948425    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   Kinetic                       22.418118333660                0.000739066590    1596800                   0.014799796931    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   LocalPotential               -54.194592357436                0.000758165937    1596800                   0.015182261057    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   ElecElec                       4.940836673233                0.000270754397    1596800                   0.005421852575    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   IonIon                       -15.632666221000                0.000000000000    1596800                   0.000000000000    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   LocalECP                     -47.003326567257                0.001052870797    1596800                   0.021083721279    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   NonLocalECP                    3.500563757834                0.000347775845    1596800                   0.006964205869    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   Flux                          -0.007876769583                0.037686310169    1596800                   0.754667773021    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   AcceptRatio                    0.703559930428                0.000005697925    1596800                   0.000114100859    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   BlockWeight                10240.000000000000                0.000000000000    1596800                   0.000000000000    3992        
+ short-monoO_1x1x1_pp-vmc_sdj                        0   TotalSamples           408780800.000000000000                0.000000000000    1596800                   0.000000000000    3992        
+
+# ref_code: r6259_aos_real_cpu_full                  ref_code_hash: a63b16e5053a9500b22bb59ec4876d203074ff8c
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   LocalEnergy                  -31.913805831973                0.000128516360    5094400                   0.002573538103    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   Variance                       1.107196479966                0.001669219444    5094400                   0.033426093317    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   Kinetic                       24.494046680753                0.001430792406    5094400                   0.028651595602    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   LocalPotential               -56.407852512722                0.001419832863    5094400                   0.028432130924    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   ElecElec                       6.339840819298                0.000467182807    5094400                   0.009355328420    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   IonIon                       -15.632666221000                0.000000000000    5094400                   0.000000000000    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   LocalECP                     -51.009578345704                0.001943943217    5094400                   0.038927432584    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   NonLocalECP                    3.894551234926                0.000780359840    5094400                   0.015626693618    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   Flux                          -0.036333329935                0.093049037448    5094400                   1.863305522820    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   AcceptRatio                    0.542804968241                0.000009958428    5094400                   0.000199417365    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   BlockWeight                 5120.000000000000                0.000000000000    5094400                   0.000000000000    12736       
+ short-monoO_1x1x1_pp-vmc_sdj3                       0   TotalSamples            81510400.000000000000                0.000000000000    5094400                   0.000000000000    12736       
+
+# ref_code: v330_180107_aos_real_cpu_full            ref_code_hash: be540cfb2b625e7dc34d09a1f4aa4010d3d19106
+ short-sho-vmc                                       0   LocalEnergy                    0.450000000000                0.000000000000    203200                    0.000000000000    508         
+ short-sho-vmc                                       0   Variance                       0.000000000000                0.000000000000    203200                    0.000000000000    508         
+ short-sho-vmc                                       0   Kinetic                        0.224887484502                0.000140324633    203200                    0.002809998586    508         
+ short-sho-vmc                                       0   LocalPotential                 0.225112515498                0.000140324633    203200                    0.002809998586    508         
+ short-sho-vmc                                       0   latdev                         1.000500068879                0.000623665036    203200                    0.012488882613    508         
+ short-sho-vmc                                       0   AcceptRatio                    0.696409633366                0.000191677941    203200                    0.003838347777    508         
+ short-sho-vmc                                       0   BlockWeight                  320.000000000000                0.000000000000    203200                    0.000000000000    508         
+ short-sho-vmc                                       0   TotalSamples             3251200.000000000000                0.000000000000    203200                    0.000000000000    508         

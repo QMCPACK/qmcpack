@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+            <slaterdeterminant>
+               <determinant id="updet" size="4">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+               <determinant id="downdet" size="4">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
+            <correlation elementType="C" size="8" cusp="0.0">
+               <coefficients id="eC" type="Array"> -0.2517648875 -0.2099751445 -0.187607918 -0.1631682756 -0.1318686689 -0.09497835574 -0.05840885261 -0.02981584895</coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="u" size="8">
+               <coefficients id="uu" type="Array"> 0.2856707567 0.2259543453 0.1726216037 0.1272009754 0.08828660249 0.05730812546 0.03170806391 0.01532895417</coefficients>
+            </correlation>
+            <correlation speciesA="u" speciesB="d" size="8">
+               <coefficients id="ud" type="Array"> 0.4858518336 0.367446022 0.2710593239 0.1935238893 0.1310344771 0.08302486301 0.04524775706 0.02142480138</coefficients>
+            </correlation>
+         </jastrow>
+      </wavefunction>
+</qmcsystem>

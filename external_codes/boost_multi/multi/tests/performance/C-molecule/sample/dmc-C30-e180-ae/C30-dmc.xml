@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="C30" series="0"/>
+  <qmcsystem>
+    <particleset name="ion0" size="30">
+      <group name="C">
+        <parameter name="charge">6</parameter>
+        <parameter name="valence">6</parameter>
+        <parameter name="atomicnumber">6</parameter>
+      </group>
+      <attrib name="position" datatype="posArray">
+      1.1458927079e+01  0.0000000000e+00  9.4486306228e+00
+      1.1208522016e+01  2.3824449694e+00  9.4486306228e+00
+      1.0468250728e+01  4.6607656555e+00  9.4486306228e+00
+      9.2704666267e+00  6.7353885064e+00  9.4486306228e+00
+      7.6675186263e+00  8.5156425433e+00  9.4486306228e+00
+      5.7294632505e+00  9.9237221178e+00  9.4486306228e+00
+      3.5410028237e+00  1.0898087392e+01  9.4486306228e+00
+      1.1977835734e+00  1.1396153927e+01  9.4486306228e+00
+     -1.1977845697e+00  1.1396153822e+01  9.4486306228e+00
+     -3.5410037765e+00  1.0898087083e+01  9.4486306228e+00
+     -5.7294641181e+00  9.9237216169e+00  9.4486306228e+00
+     -7.6675193708e+00  8.5156418730e+00  9.4486306228e+00
+     -9.2704672156e+00  6.7353876960e+00  9.4486306228e+00
+     -1.0468251136e+01  4.6607647404e+00  9.4486306228e+00
+     -1.1208522224e+01  2.3824439895e+00  9.4486306228e+00
+     -1.1458927079e+01 -1.0017712662e-06  9.4486306228e+00
+     -1.1208521807e+01 -2.3824459492e+00  9.4486306228e+00
+     -1.0468250321e+01 -4.6607665707e+00  9.4486306228e+00
+     -9.2704660379e+00 -6.7353893169e+00  9.4486306228e+00
+     -7.6675178818e+00 -8.5156432136e+00  9.4486306228e+00
+     -5.7294623829e+00 -9.9237226187e+00  9.4486306228e+00
+     -3.5410018710e+00 -1.0898087702e+01  9.4486306228e+00
+     -1.1977825771e+00 -1.1396154031e+01  9.4486306228e+00
+      1.1977855659e+00 -1.1396153717e+01  9.4486306228e+00
+      3.5410047292e+00 -1.0898086773e+01  9.4486306228e+00
+      5.7294649856e+00 -9.9237211160e+00  9.4486306228e+00
+      7.6675201152e+00 -8.5156412027e+00  9.4486306228e+00
+      9.2704678044e+00 -6.7353868855e+00  9.4486306228e+00
+      1.0468251543e+01 -4.6607638252e+00  9.4486306228e+00
+      1.1208522432e+01 -2.3824430096e+00  9.4486306228e+00
+      </attrib>
+      <attrib name="ionid" datatype="stringArray">
+      C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C 
+      </attrib>
+    </particleset>
+    <particleset name="e" random="yes" randomsrc="ion0">
+      <group name="u" size="90">
+        <parameter name="charge">-1</parameter>
+      </group>
+      <group name="d" size="90">
+        <parameter name="charge">-1</parameter>
+      </group>
+    </particleset>
+    <wavefunction name="psi0" target="e">
+      <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="yes" href="../C30-e180-ae.h5">
+        <slaterdeterminant>
+          <determinant id="updet" size="90" cuspInfo="./CuspCorrection/updet.cuspInfo.xml">
+            <occupation mode="ground"/>
+            <coefficient size="450" spindataset="0"/>
+          </determinant>
+          <determinant id="downdet" size="90" cuspInfo="./CuspCorrection/downdet.cuspInfo.xml">
+            <occupation mode="ground"/>
+            <coefficient size="450" spindataset="0"/>
+          </determinant>
+        </slaterdeterminant>
+      </determinantset>
+      <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+        <correlation rcut="10" size="10" speciesA="u" speciesB="u">
+          <coefficients id="uu" type="Array"> 0.4310005154 0.2998083406 0.2164487962 0.1518026648 0.1117922777 0.07898218192 0.05663572315 0.03723584367 0.02131129135 0.01132293093</coefficients>
+        </correlation>
+        <correlation rcut="10" size="10" speciesA="u" speciesB="d">
+          <coefficients id="ud" type="Array"> 0.4983942585 0.3431656034 0.2155819718 0.1474313694 0.1003694869 0.06837347805 0.04532761942 0.02808081515 0.01410380492 0.006673967786</coefficients>
+        </correlation>
+      </jastrow>
+      <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation rcut="10" size="10" cusp="0" elementType="C">
+          <coefficients id="eC" type="Array"> -2.035932466 -1.527779202 -1.070343784 -0.8301710699 -0.5753845696 -0.2552565862 -0.2386688121 -0.4071827305 -0.3472064101 -0.1288905931</coefficients>
+        </correlation>
+      </jastrow>
+    </wavefunction>
+  </qmcsystem>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+  </qmc>
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">             yes </parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
+    <!--parameter name="targetwalkers">  32000 </parameter-->
+    <!--parameter name="max_walkers">   0    </parameter-->
+    <parameter name="debug_disable_branching">      yes </parameter>
+    <parameter name="warmupSteps">          250 </parameter>
+    <parameter name="timestep">           0.001 </parameter>
+    <parameter name="steps">                  5 </parameter>
+    <parameter name="blocks">                 5 </parameter>
+    <parameter name="nonlocalmoves">        yes </parameter>
+  </qmc>
+</simulation>

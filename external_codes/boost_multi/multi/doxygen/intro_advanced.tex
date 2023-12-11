@@ -1,0 +1,64 @@
+\section{Advanced topics}\label{start2.sec}
+ 
+\subsection{Managing external packages}\label{extlib.sec}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular*}{\textwidth}{llll}\hline
+\bfseries Name&\bfseries Category&\bfseries Environment variables&\bfseries cmake file\\
+\hline
+\hline
+\cmake& utility & & \\
+\hline
+\href{http://www.netlib.org}{blas/\-lapack}&Numerical library & {\tt MKL\_HOME} & FindLapack.cmake\\
+& &{\tt LAPACK}& \\
+& &{\tt ATLAS} & \\
+\hline
+\href{http://www.cmake.org}{hdf5} & I/O & {\tt HDF5\_HOME} & FindHDF5.cmake\\
+& & {\tt HDF\_HOME} &\\
+\hline
+\href{http://xmlsoft.org/}{libxml2}& I/O & {\tt LIBXML2\_HOME}& FindLibxml2.cmake\\
+\hline
+\boost& C++ standard libraries & {\tt BOOST\_HOME}& FindBoost.cmake\\
+\hline
+\end{tabular*}
+\end{center}
+\caption{Required packages. For each package, a cmake file is provided in {\tt CMake} directory. }
+\label{req.packages}
+\end{table}
+
+The cmake files distributed with QMCPACK are tailored for IA32/64 (linux and
+Mac OS X) and Power (AIX) systems. Once the CXX and CC are set properly, no
+extra action is required.  The build system will try to use the
+vendor-{}provided libraries, such as essl and mkl, for optimal performance.
+One can easily correct the problems which occur during cmake step by using
+ccmake or editing build/CMakeCache.txt file in the build directory.
+
+\subsection{Units} \label{units.sec}
+The default units of QMCPACK are Bohr, Hartree and Q$_{\text{e}}$=-{}1
+(electron charge). For the current release, the capability of unit conversions
+is \emph{NOT IMPLEMENTED}. 
+
+\subsection{QMCPACK schema/DTD} \label{schema.sec}
+
+The design of the schema/DTD for QMCPACK reflects the design of the code.  Some
+aspects may be at odd with the XML standard and its common practices in other
+areas. The guiding principle for the schema/DTD design is to make the xml
+structure facilitate the design of the code for the developers for better
+performance and memory use.  Although the applications are mainly dealing with
+atoms, molecules and solids, we choose rather general name conventions to
+represent the physical systems and problems for future applications. 
+
+%Documentations of the QMCPACK schema can be found
+%\href{/qmc/schema/docs/qmcplusplus.schema.html}{here }.
+
+Current implementation of QMCPACK does not validate the input file against the
+DTD or schema. However, the xml parser library
+\href{http://xmlsoft.org}{libxml2} used by QMCPACK implements a number of
+existing standards and the strict validation of the input xml files can be
+enabled at any moment. The parser works sequentially similarly to SAX and
+xpath/xref is utilized for few special cases. The application can only refer to
+the objects created by preceding elements. Therefore, the order of elements is
+important.  This is always true with valid xml documents and validating
+parsers.
+

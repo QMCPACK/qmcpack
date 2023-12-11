@@ -1,0 +1,26 @@
+#!/bin/bash
+#COBALT -q default
+#COBALT -A PSFMat
+#COBALT -n 1
+#COBALT -t 60
+#COBALT -O qmc-gpu
+
+. /soft/environment/softenv-1.6.2/etc/softenv-aliases.sh
+resoft ~/.soft.cooley.cuda
+
+NODES=`cat $COBALT_NODEFILE | wc -l`
+# for mvapich2
+export OMP_NUM_THREADS=6
+export MV2_ENABLE_AFFINITY=0
+
+PROCS_PERNODE=2
+PROCS=$((NODES * PROCS_PERNODE))
+
+SupercellSize=XX
+
+file_prefix=NiO-fcc-S$SupercellSize-dmc
+
+exe=~/opt/qmcpack/build_gpu_real/bin/qmcpack
+
+mpirun -f $COBALT_NODEFILE -np $PROCS -ppn $PROCS_PERNODE $exe $file_prefix.xml > $file_prefix.out
+

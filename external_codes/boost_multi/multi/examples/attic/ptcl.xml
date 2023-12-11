@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <simulationcell name="global">
+    <parameter name="lattice" units="bohr">
+    4.650993958258145    0.000000000000000    0.000000000000000
+   -2.325496979129072    4.027878920699780    0.000000000000000
+    0.000000000000000    0.000000000000000   12.676093926783608
+    </parameter>
+    <parameter name="bconds"> p p p </parameter>
+    <parameter name="LR_dim_cutoff"> 15 </parameter>
+  </simulationcell>
+  <particleset name="ion0" size="4">
+    <group name="C">
+      <parameter name="charge"> 4.00000000000000     </parameter>
+    </group>
+    <attrib name="ionid" datatype="stringArray"> C C C C </attrib>
+    <attrib name="position" datatype="posArray" condition="0">
+    0.000000000000000    0.000000000000000    0.000000000000000
+   -0.000000000002325    2.685252613801196    0.000000000000000
+    0.000000000000000    0.000000000000000    6.338046963391803
+    2.325496979131398    1.342626306898584    6.338046963391803
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" random_source="ion0">
+    <group name="u" size="8">
+      <parameter name="charge"> -1 </parameter>
+    </group>
+    <group name="d" size="8">
+      <parameter name="charge"> -1 </parameter>
+    </group>
+  </particleset>
+</qmcsystem>

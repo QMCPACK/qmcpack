@@ -1,0 +1,16 @@
+1    H  series 0  LocalEnergy = -0.454431 +/- 0.003970  189.2 
+2    H  series 1  LocalEnergy = -0.453352 +/- 0.004159  104.5 
+4    H  series 2  LocalEnergy = -0.449163 +/- 0.006544  114.1 
+8    H  series 3  LocalEnergy = -0.449491 +/- 0.014770  381.1 
+16   H  series 4  LocalEnergy = -0.446602 +/- 0.008809  78.2 
+20   H  series 5  LocalEnergy = -0.488375 +/- 0.006693  27.2 
+40   H  series 6  LocalEnergy = -0.427460 +/- 0.011425  50.0 
+50   H  series 7  LocalEnergy = -0.456044 +/- 0.014513  51.1 
+100  H  series 8  LocalEnergy = -0.450189 +/- 0.018320  24.1 
+200  H  series 9  LocalEnergy = -0.482306 +/- 0.028252  21.6 
+400  H  series 10  LocalEnergy = -0.405258 +/- 0.013696  22.4  
+500  H  series 11  LocalEnergy = -0.423111 +/- 0.003579   2.9  
+1000 H  series 12  LocalEnergy = -0.474759 +/- 0.016879   9.6  
+1250 H  series 13  LocalEnergy = -0.414045 +/- 0.003606   5.5  
+2500 H  series 14  LocalEnergy = -0.432808 +/- 0.004773   3.3  
+5000 H  series 15  LocalEnergy = -0.465723 +/- 0.004425   2.6  

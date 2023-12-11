@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:complexType name="qmcHamiltonianType">
+    <xs:annotation>
+      <xs:documentation>Hamiltonian</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="pairpot" type="pairOperatorType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+    <xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+    <xs:attribute name="type" use="optional" default="generic">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="generic"/>
+          <xs:enumeration value="molecule"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="pairOperatorType">
+    <xs:annotation>
+      <xs:documentation>
+        Represent pair operators that make up a Hamiltonian, e.g., Coulomb potential (coulomb).
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="type" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Type of a pair operator. Default is the Coulomb interactions of the target particleset. 
+        </xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="coulomb"/>
+          <xs:enumeration value="pseudo"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="source" type="xs:string" use="optional" default="e"/>
+    <xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+  </xs:complexType>
+</xs:schema>

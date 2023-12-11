@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<?iotk version="1.2.0"?>
+<?iotk file_version="1.0"?>
+<?iotk binary="F"?>
+<?iotk qe_syntax="F"?>
+<qmcsystem>
+  <simulationcell name="global">
+    <parameter name="lattice" units="bohr">
+   18.897261329999999    0.000000000000000    0.000000000000000
+    0.000000000000000   18.897261329999999    0.000000000000000
+    0.000000000000000    0.000000000000000   18.897261329999999
+    </parameter>
+    <parameter name="reciprocal" units="2pi/bohr">
+    0.052917720855798    0.000000000000000    0.000000000000000
+    0.000000000000000    0.052917720855798    0.000000000000000
+    0.000000000000000    0.000000000000000    0.052917720855798
+    </parameter>
+    <parameter name="bconds">
+      n n n
+    </parameter>
+  </simulationcell>
+  <particleset name="ion0" size="1">
+    <group name="O">
+      <parameter name="charge">
+ 6.00000000000000000
+      </parameter>
+    </group>
+    <attrib name="ionid" datatype="stringArray">
+O
+    </attrib>
+    <attrib name="position" datatype="posArray" condition="0">
+    9.448630670000000    9.448631610000000    9.448632549999999
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" random_source="ion0">
+    <group name="u" size="4">
+      <parameter name="charge">
+ -1
+      </parameter>
+    </group>
+    <group name="d" size="1">
+      <parameter name="charge">
+ -1
+      </parameter>
+    </group>
+  </particleset>
+</qmcsystem>
+ 

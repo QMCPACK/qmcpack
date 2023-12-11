@@ -1,0 +1,9 @@
+This directory contains example build scripts for QMCPACK. We
+recommend writing a similar script that records all the settings used
+for any machine you build on.
+
+It is highly preferred to configure cmake via command
+options. Previous versions of QMCPACK shipped with toolchain files for
+many systems, but we found them to be brittle and difficult to
+maintain. Today, cmake has much better support. Use of old toolchains
+is not recommended and is not supported.

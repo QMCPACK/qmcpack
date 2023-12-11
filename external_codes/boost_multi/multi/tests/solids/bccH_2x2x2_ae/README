@@ -1,0 +1,7 @@
+pwscf.pwscf.h5 is generated from "folded"
+gamma.pwscf.h5 is generated from "super"
+
+The orbitals include a real space cusp correction using pw2qmcpack.x from https://github.com/Paul-St-Young/qmcpack-espresso-5.3.0
+The standard converter included with QMCPACK does not yet support making these corrections.
+
+The pseudopotential is from http://www.quantum-espresso.org/wp-content/uploads/upf_files/H.coulomb-ae.UPF

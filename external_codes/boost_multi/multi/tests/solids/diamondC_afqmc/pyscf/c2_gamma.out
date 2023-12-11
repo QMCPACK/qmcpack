@@ -1,0 +1,138 @@
+#INFO: **** input file is /p/lscratchh/mmorale/PYSCF/debug/C/pyscf/c2_gamma.py ****
+#! /usr/bin/env python3
+
+import numpy
+from functools import reduce
+from pyscf.pbc import gto, scf 
+from pyscf.pbc import tools as pbctools
+
+alat0 = 3.6
+
+cell = gto.Cell()
+cell.a = (numpy.ones((3,3))-numpy.eye(3))*alat0/2.0
+cell.atom = (('C',0,0,0),('C',numpy.array([0.25,0.25,0.25])*alat0))
+cell.basis = 'gth-dzvp'
+cell.pseudo = 'gth-pade'
+cell.gs = [10]*3  
+cell.verbose = 4
+cell.build()
+
+mf = scf.RHF(cell)
+mf.chkfile = 'scf.gamma.dump'
+ehf = mf.kernel()
+
+from pyscf import tools 
+
+c = mf.mo_coeff
+
+h1e = reduce(numpy.dot, (c.T, mf.get_hcore(), c))
+eri = mf.with_df.ao2mo(c,compact=True)
+
+madelung = pbctools.pbc.madelung(cell, numpy.zeros(3))
+e0 = cell.energy_nuc() + madelung*cell.nelectron * -.5
+
+tools.fcidump.from_integrals('fcidump.gamma.dat', h1e, eri, c.shape[1],
+                             cell.nelectron, nuc = e0, ms=0, tol=1e-10)
+#INFO: ******************** input file end ********************
+
+
+System: ('Linux', 'quartz1916', '3.10.0-693.17.1.1chaos.ch6.x86_64', '#1 SMP Fri Jan 26 13:23:01 PST 2018', 'x86_64', 'x86_64')  Threads 1
+Python 2.7.13 (default, Jan  3 2017, 11:21:42) 
+[GCC 4.8.5 20150623 (Red Hat 4.8.5-11)]
+numpy 1.11.2  scipy 0.18.1
+Date: Fri Mar 23 10:18:19 2018
+PySCF version 1.4.1
+PySCF path  /usr/gapps/afqmc/codes/pyscf_repository/pyscf_v1.4b/pyscf
+GIT ORIG_HEAD 0a031966129f8ce065f12d5c624e19bd6b6cc552
+GIT HEAD      ref: refs/heads/master
+GIT master branch  36ef6cdf27870d35a46ca77d0a434c26d0aa2ce9
+
+[INPUT] VERBOSE 4
+[INPUT] num atoms = 2
+[INPUT] num electrons = 8
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT]  1 C      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr
+[INPUT]  2 C      0.900000000000   0.900000000000   0.900000000000 AA    1.700753512109   1.700753512109   1.700753512109 Bohr
+[INPUT] ---------------- BASIS SET ---------------- 
+[INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
+[INPUT] C
+[INPUT] 0    0    [4    /2   ]  4.3362376436      0.1490797872    0
+                                1.2881838513      -0.0292640031    0
+                                0.4037767149      -0.688204051    0
+                                0.1187877657      -0.3964426906    1
+[INPUT] 1    0    [4    /2   ]  4.3362376436      -0.0878123619    0
+                                1.2881838513      -0.27755603    0
+                                0.4037767149      -0.4712295093    0
+                                0.1187877657      -0.4058039291    1
+[INPUT] 2    0    [1    /1   ]  0.55                 1
+nuclear repulsion = -12.6692033995314
+number of shells = 6
+number of NR pGTOs = 42
+number of NR cGTOs = 26
+basis = gth-dzvp
+ecp = {}
+CPU time:         1.47
+lattice vectors  a1 [0.000000000, 3.401507024, 3.401507024]
+                 a2 [3.401507024, 0.000000000, 3.401507024]
+                 a3 [3.401507024, 3.401507024, 0.000000000]
+dimension = 3
+Cell volume = 78.7126
+rcut = 20.7795245394 (nimgs = [6 6 6])
+lattice sum = 1097 cells
+precision = 1e-08
+pseudo = gth-pade
+gs (FFT-mesh) = [10, 10, 10]
+    = ke_cutoff [ 127.9523481  127.9523481  127.9523481]
+ew_eta = 1.55387
+ew_cut = 4.38941179256 (nimgs = [2 2 2])
+
+
+******** <class 'pyscf.pbc.scf.hf.SCF'> flags ********
+method = SCF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-09
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = False
+chkfile to save SCF result = scf.gamma.dump
+max_memory 4000 MB (current use 61 MB)
+******** PBC SCF flags ********
+kpt = [ 0.  0.  0.]
+Exchange divergence treatment (exxdiv) = ewald
+    madelung (= occupied orbital energy shift) = 0.673945701372
+    Total energy shift due to Ewald probe charge = -1/2 * Nelec*madelung/cell.vol = -2.69578280549
+DF object = <pyscf.pbc.df.fft.FFTDF object at 0x2aaaac005210>
+
+
+******** <class 'pyscf.pbc.df.fft.FFTDF'> flags ********
+gs = [10, 10, 10]
+len(kpts) = 1
+
+WARN: ke_cutoff/gs (127.952 / [10, 10, 10]) is not enough for FFTDF to get integral accuracy 1e-08.
+Coulomb integral error is ~ 5.3e-07 Eh.
+Recomended ke_cutoff/gs are 174.5 / [12 12 12].
+
+Set gradient conv threshold to 3.16228e-05
+init E= -22.9613381570761
+  HOMO = 0.541386814114095  LUMO = 0.794246719488091
+cycle= 1 E= -10.3132406069019  delta_E= 12.6  |g|= 0.144  |ddm|= 6.54
+  HOMO = 0.236480171479407  LUMO = 1.06106258657973
+cycle= 2 E= -10.3192642219089  delta_E= -0.00602  |g|= 0.0397  |ddm|= 1.39
+  HOMO = 0.235265621275036  LUMO = 1.06185398843582
+cycle= 3 E= -10.3197771785554  delta_E= -0.000513  |g|= 0.00122  |ddm|= 0.643
+  HOMO = 0.234966832172034  LUMO = 1.06165531010392
+cycle= 4 E= -10.3197776711757  delta_E= -4.93e-07  |g|= 8.04e-05  |ddm|= 0.0162
+  HOMO = 0.234980504753782  LUMO = 1.06167723170213
+cycle= 5 E= -10.3197776727145  delta_E= -1.54e-09  |g|= 2.01e-06  |ddm|= 0.00257
+  HOMO = 0.234981109325377  LUMO = 1.06167708325591
+cycle= 6 E= -10.3197776727153  delta_E= -8.58e-13  |g|= 8.97e-07  |ddm|= 3.51e-05
+  HOMO = 0.23498153792554  LUMO = 1.06167692829355
+Extra cycle  E= -10.3197776727155  delta_E= -2.06e-13  |g|= 1.29e-07  |ddm|= 2.51e-05
+converged SCF energy = -10.3197776727155

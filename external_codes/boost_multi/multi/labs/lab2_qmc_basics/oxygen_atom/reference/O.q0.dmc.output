@@ -1,0 +1,690 @@
+  Input file(s): O.q0.dmc.in.xml 
+
+=====================================================
+                    QMCPACK 1.0.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Subversion branch 6936
+  Last modified     2016-05-23 14:12:59 +0000 (Mon, 23 May 2016)
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 32
+  MPI Nodes per group  = 32
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 16
+
+  Input XML = O.q0.dmc.in.xml
+
+  Project = O.q0.dmc
+  date    = 2016-06-06 19:48:47 UTC
+  host    = Q02-I2-J01.vesta.itd
+  user    = krogel
+
+  DO NOT READ DENSITY
+  Offset for the random number seeds based on time 927
+  Random number offset = 927  seeds = 7283-12037
+  Create Global SuperCell 
+  Simulation cell radius = 9.448631
+  Wigner-Seitz    radius = 9.448631
+<unitcell>
+<parameter name="lattice">
+     18.8972613300      0.0000000000      0.0000000000
+      0.0000000000     18.8972613300      0.0000000000
+      0.0000000000      0.0000000000     18.8972613300
+</parameter>
+<parameter name="bconds">  n  n  n </parameter>
+<note>
+Volume (A^3) = 6748.3345843151
+Reciprocal vectors without 2*pi.
+g_1 =       0.0529177209      0.0000000000      0.0000000000
+g_2 =       0.0000000000      0.0529177209      0.0000000000
+g_3 =       0.0000000000      0.0000000000      0.0529177209
+Metric tensor in real-space.
+h_1 = 357.1064857743 0.0000000000 0.0000000000 
+h_2 = 0.0000000000 357.1064857743 0.0000000000 
+h_3 = 0.0000000000 0.0000000000 357.1064857743 
+Metric tensor in g-space.
+h_1 = 0.1105508278 0.0000000000 0.0000000000 
+h_2 = 0.0000000000 0.1105508278 0.0000000000 
+h_3 = 0.0000000000 0.0000000000 0.1105508278 
+</note>
+<note>
+	Long-range breakup parameters:
+	rc*kc = 15.0000000000; rc = 1000000.0000000000; kc = 0.0000000000
+
+</note>
+</unitcell>
+  Creating ion0 particleset
+  Initializing the lattice of ion0 by the global supercell
+  All the species have the same mass 1.0000000000
+Particles are grouped. Safe to use groups 
+ion0
+  Creating e particleset
+  Initializing the lattice of e by the global supercell
+  All the species have the same mass 1.0000000000
+Particles are grouped. Safe to use groups 
+e
+ Adding WavefunctionFactory for psi0
+EinsplineSetBuilder:  using libeinspline for B-spline orbitals.
+Built BasisSetBuilder "bspline" of type bspline
+ Building SPOset  with  basis set.
+TOKEN=0 createSPOSetFromXML /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilder_createSPOs.cpp 42
+  Distance table for AA: source/target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = ion0 target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates 
+  ... ParticleSet::addTable Create Table #1 ion0_e
+  TileMatrix = 
+ [  1  0  0
+    0  1  0
+    0  0  1 ]
+  Reading 4 orbitals from HDF5 file.
+TOKEN=1 ReadOrbitalInfo /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderOld.cpp 34
+  HDF5 orbital file version 2.1.0
+TOKEN=2 ReadOrbitalInfo_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderESHDF.fft.cpp 47
+  Reading orbital file in ESHDF format.
+  ESHDF orbital file version 2.1.0
+  Lattice = 
+    [ 18.897261 -0.000000 -0.000000
+      -0.000000 18.897261 -0.000000
+      -0.000000 -0.000000 18.897261 ]
+TOKEN=3 CheckLattice /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 99
+  SuperLattice = 
+    [ 18.897261  0.000000  0.000000
+       0.000000 18.897261  0.000000
+       0.000000  0.000000 18.897261 ]
+bands=8, elecs=6, spins=2, twists=1, muffin tins=0, core states=0
+atomic orbital=0
+Atom type(0) = 8
+   Skip initialization of the density
+TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.0793897675
+TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0001074738
+Found 1 distinct supercell twists.
+number of things
+1
+1
+Super twist #0:  [   0.00000   0.00000   0.00000 ]
+  Using supercell twist 0:  [   0.00000   0.00000   0.00000]
+Using 1 copies of twist angle [-0.000, -0.000, -0.000]
+Using real orbitals.
+TOKEN=4 OccupyBands /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 763
+TOKEN=5 OccupyBands_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderESHDF.fft.cpp 307
+Sorting the bands now:
+We will read 4 distinct orbitals.
+There are 0 core states and 4 valence states.
+TOKEN=6 TileIons /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 291
+Rcut = 0.0000000000
+dilation = 1
+TOKEN=7 bcastSortBands /soft/applications/qmcpack/src/QMCWaveFunctions/einspline_helper.hpp 409
+BandInfoGroup::selectBands bigspace has 8 distinct orbitals 
+BandInfoGroup::selectBands using distinct orbitals [0,4)
+  Number of distinct bands 4
+  First Band index 0
+  First SPO index 0
+  Size of SPOs 4
+  AdoptorName = SplineR2RAdoptor
+  Using real einspline table
+NumDistinctOrbitals 4 numOrbs = 4
+  TwistIndex = 0 TwistAngle      -0.0000000000     -0.0000000000     -0.0000000000
+   HalfG =                  0                 0                 0
+TOKEN=8 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 669
+B-spline mesh factor is 1.0000000000
+B-spline mesh size is (216, 216, 216)
+Maxmimum number of Gvecs 591889
+  Using meshsize=               216               216               216
+  vs input meshsize=               216               216               216
+  Time to read the table in einspline.tile_100010001.spin_0.tw_0.l0u4.g216x216x216.h5 = 0.0014677825
+  SplineAdoptorReader initialize_spline_pio 6.0774259050 sec
+MEMORY increase 320 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 320 MB
+TIMER  EinsplineSetBuilder::ReadBands 6.4855948100
+   Using Identity for the LCOrbitalSet 
+Reuse BasisSetBuilder "bspline" type bspline
+ Building SPOset  with  basis set.
+TOKEN=9 createSPOSetFromXML /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilder_createSPOs.cpp 42
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+TOKEN=10 OccupyBands /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 763
+TOKEN=11 OccupyBands_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderESHDF.fft.cpp 307
+Sorting the bands now:
+We will read 2 distinct orbitals.
+There are 0 core states and 2 valence states.
+Rcut = 0.0000000000
+dilation = 1
+TOKEN=12 bcastSortBands /soft/applications/qmcpack/src/QMCWaveFunctions/einspline_helper.hpp 409
+BandInfoGroup::selectBands bigspace has 8 distinct orbitals 
+BandInfoGroup::selectBands using distinct orbitals [0,2)
+  Number of distinct bands 2
+  First Band index 0
+  First SPO index 0
+  Size of SPOs 2
+  AdoptorName = SplineR2RAdoptor
+  Using real einspline table
+NumDistinctOrbitals 2 numOrbs = 2
+  TwistIndex = 0 TwistAngle      -0.0000000000     -0.0000000000     -0.0000000000
+   HalfG =                  0                 0                 0
+TOKEN=13 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 669
+B-spline mesh factor is 1.0000000000
+B-spline mesh size is (216, 216, 216)
+Maxmimum number of Gvecs 591889
+  Using meshsize=               216               216               216
+  vs input meshsize=               216               216               216
+  Time to read the table in einspline.tile_100010001.spin_1.tw_0.l0u2.g216x216x216.h5 = 0.0015482125
+  SplineAdoptorReader initialize_spline_pio 5.7576231225 sec
+MEMORY increase 320 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 320 MB
+TIMER  EinsplineSetBuilder::ReadBands 5.9019750275
+   Using Identity for the LCOrbitalSet 
+  Creating a determinant updet group=0 sposet=updet
+  Reusing a SPO set updet
+
+  Creating a determinant downdet group=1 sposet=downdet
+  Reusing a SPO set downdet
+
+  FermionWF=SlaterDet
+  BsplineJastrowBuilder adds a functor with cusp = -0.2500000000
+ size = 8 parameters 
+ cusp = -0.2500000000
+ rcut = 10.0000000000
+Parameter     Name      Value
+uu_0 0.3122131228 1 1  ON 0
+uu_1 0.1129216488 1 1  ON 1
+uu_2 0.0292329763 1 1  ON 2
+uu_3 0.0067481266 1 1  ON 3
+uu_4 -0.0030261086 1 1  ON 4
+uu_5 -0.0037258671 1 1  ON 5
+uu_6 0.0315546197 1 1  ON 6
+uu_7 -0.0375206936 1 1  ON 7
+  BsplineJastrowBuilder adds a functor with cusp = -0.5000000000
+ size = 8 parameters 
+ cusp = -0.5000000000
+ rcut = 10.0000000000
+Parameter     Name      Value
+ud_0 0.3420356433 1 1  ON 0
+ud_1 0.0754861271 1 1  ON 1
+ud_2 0.0019019663 1 1  ON 2
+ud_3 -0.0179777117 1 1  ON 3
+ud_4 -0.0234467424 1 1  ON 4
+ud_5 -0.0195459235 1 1  ON 5
+ud_6 -0.0058688325 1 1  ON 6
+ud_7 -0.0463276949 1 1  ON 7
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+ size = 8 parameters 
+ cusp = 0.0000000000
+ rcut = 5.0000000000
+Parameter     Name      Value
+eO_0 -0.7281978474 1 1  ON 0
+eO_1 -0.6262003183 1 1  ON 1
+eO_2 -0.4506890625 1 1  ON 2
+eO_3 -0.2804368711 1 1  ON 3
+eO_4 -0.1591149617 1 1  ON 4
+eO_5 -0.0790700478 1 1  ON 5
+eO_6 -0.0344229020 1 1  ON 6
+eO_7 -0.0020596592 1 1  ON 7
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+  CoulombAA for ion0 is not created.  Number of particles == 1 and nonPeriodic
+
+  ECPotential builder for pseudopotential 
+
+  Adding pseudopotential for O
+   Linear grid  ri=0.0000000000 rf=10.0000000000 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+   Number of angular momentum channels 2
+   Maximum angular momentum channel 1
+   Creating a Linear Grid Rmax=1.3100000000
+  Using global grid with delta = 0.0010000000
+   Making L=1 a local potential with a radial cutoff of 9.9980000000
+  NonLocalECPComponent::resize_warrays 
+    Non-local pseudopotential parameters
+    Maximum angular mementum = 0
+    Number of non-local channels = 1
+       l(0)=0
+    Cutoff radius = 1.3100000000
+    Spherical grids and weights: 
+             1.0000000000      0.0000000000      0.0000000000        0.0833333333
+            -1.0000000000      0.0000000000      0.0000000000        0.0833333333
+             0.4472135955      0.8944271910      0.0000000000        0.0833333333
+            -0.4472135955      0.7236067977      0.5257311121        0.0833333333
+             0.4472135955      0.2763932023      0.8506508084        0.0833333333
+            -0.4472135955     -0.2763932023      0.8506508084        0.0833333333
+             0.4472135955     -0.7236067977      0.5257311121        0.0833333333
+            -0.4472135955     -0.8944271910      0.0000000000        0.0833333333
+             0.4472135955     -0.7236067977     -0.5257311121        0.0833333333
+            -0.4472135955     -0.2763932023     -0.8506508084        0.0833333333
+             0.4472135955      0.2763932023     -0.8506508084        0.0833333333
+            -0.4472135955      0.7236067977     -0.5257311121        0.0833333333
+    Maximum cutoff radius 1.3100000000
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  QMCHamiltonian::addOperator LocalECP to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+
+  Using NonLocalECP potential 
+    Maximum grid on a sphere for NonLocalECPotential: 12
+  QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
+
+  QMCHamiltonian::add2WalkerProperty added
+    4 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+ParticleSetPool::randomize 
+<init source="ion0" target="e">
+</init>
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 4 6 
+
+    6
+
+    u  8.7836431945e+00  1.0430076346e+01  8.8250774675e+00
+    u  1.0292490490e+01  1.0231755809e+01  8.8208235384e+00
+    u  9.1288882663e+00  7.8301765622e+00  1.1256603849e+01
+    u  6.9134200818e+00  8.6665401988e+00  1.1423839257e+01
+    d  9.6077273200e+00  1.0148128526e+01  1.1555351137e+01
+    d  1.0006563222e+01  1.0358223960e+01  8.7960116837e+00
+
+  ParticleSet ion0 : 0 1 
+
+    1
+
+    O  9.4486306700e+00  9.4486316100e+00  9.4486325500e+00
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  LocalECP        LocalECPotential: ion0
+  NonLocalECP     NonLocalECPotential: ion0
+
+=========================================================
+  Start VMCSingleOMP
+  File Root O.q0.dmc.s000 append = no 
+=========================================================
+  Adding 16 walkers to 0 existing sets
+  Total number of walkers: 5.1200000000e+02
+  Total weight: 5.1200000000e+02
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 3.0000000000e-01
+  blocks         = 20
+  steps          = 10
+  substeps       = 1
+  current        = 0
+  target samples = 2.0480000000e+03
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 50
+<parameter name="blocks" condition="int">20</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">4.0000000000e+00</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">50</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">50</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">2.0480000000e+03</parameter>
+<parameter name="samplesperthread" condition="real">4.0000000000e+00</parameter>
+<parameter name="steps" condition="int">10</parameter>
+<parameter name="stepsbetweensamples" condition="int">50</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">3.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">3.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">3.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">30</parameter>
+<parameter name="warmupsteps" condition="int">30</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 50 steps.
+</vmc>
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =2048
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Anonymous Buffer size per walker 389
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.3
+    reference energy   = -15.911
+    reference variance = 0.526016
+====================================================
+  QMC Execution time = 5.1856453625e-01 secs 
+Creating DMCMP for the qmc driver
+
+=========================================================
+  Start DMCOMP
+  File Root O.q0.dmc.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+  Cannot make clones again. Use existing 16 clones
+  Total number of walkers: 2.0480000000e+03
+  Total weight: 2.0480000000e+03
+  Creating WalkerController: target  number of walkers = 2048
+  Using WalkerControlMPI for dynamic population control.
+  START ALL OVER 
+  WalkerControlBase parameters 
+    maxCopy = 2
+   Max Walkers per node 129
+   Min Walkers per node 13
+  QMC counter      = 1
+  time step        = 4.0000000000e-02
+  effective time step = 4.0000000000e-02
+  trial energy     = -1.5911026949e+01
+  reference energy = -1.5911026949e+01
+  Feedback = 1.0000000000e+00
+  reference variance = 5.2601647353e-01
+  target walkers = 2048
+  branch cutoff = 5.0000000000e+01 7.5000000000e+01
+  Max and mimum walkers per node= 129 13
+  QMC Status (BranchMode) = 0000001101
+  Initial partition of walkers on a node: 0 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 
+  Updates by particle-by-particle moves using fast gradient version 
+  DMC moves are rejected when a node crossing is detected
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.8756
+  Energy Variance = 0.545087
+
+  Fluctuating population
+  Persistent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 4
+  Number of blocks = 400
+
+  DMC Engine Initialization = 2.2975358750e-02 secs 
+
+ Warmup is completed after 100
+
+  TauEff     = 3.7128316531e-02
+ TauEff/Tau = 9.2820791328e-01
+  Etrial     = -1.5928865818e+01
+ Running average of energy = -1.5894234211e+01
+                  Variance = 3.1507779879e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 1
+    time step                     = 0.04
+    effective time step           = 0.0371264
+    trial energy                  = -15.8826
+    reference energy              = -15.8954
+    reference variance            = 0.315078
+    target walkers                = 2048
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 129 13
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 1.7633552140e+01 secs 
+  Reusing DMCOMP
+BRANCH resetRun
+ SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
+ BranchMode : 0000001111 0000001111
+  WalkerControlBase parameters 
+    maxCopy = 2
+   Max Walkers per node 129
+   Min Walkers per node 13
+ iParam (old): 0                 1                 1                 2048              129               13                1                 0                 
+ iParam (new): 40                1                 1                 2048              129               13                1                 0                 
+ vParam (old): 4.0000000000e-02  3.7126406476e-02  -1.5882589256e+01 -1.5895365843e+01 -1.5865390620e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  3.1507779879e-01  -2.3858914155e+04 1.5010000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 2.0000000000e-02  3.7126406476e-02  -1.5882589256e+01 -1.5895365843e+01 -1.5865390620e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  3.1507779879e-01  -2.3858914155e+04 1.5010000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.8643
+  Energy Variance = 0.554883
+
+
+=========================================================
+  Start DMCOMP
+  File Root O.q0.dmc.s002 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+  Cannot make clones again. Use existing 16 clones
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.876
+  Energy Variance = 0.565674
+
+  Fluctuating population
+  Persistent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 8
+  Number of blocks = 400
+
+  DMC Engine Initialization = 1.9575962500e-03 secs 
+
+ Warmup is completed after 40
+
+  TauEff     = 1.9379554696e-02
+ TauEff/Tau = 9.6897773478e-01
+  Etrial     = -1.5903209390e+01
+ Running average of energy = -1.5895120050e+01
+                  Variance = 2.7818217963e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 2
+    time step                     = 0.02
+    effective time step           = 0.0193724
+    trial energy                  = -15.9011
+    reference energy              = -15.8923
+    reference variance            = 0.278182
+    target walkers                = 2048
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 129 13
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 2.3874008816e+01 secs 
+  Reusing DMCOMP
+BRANCH resetRun
+ SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
+ BranchMode : 0000001111 0000001111
+  WalkerControlBase parameters 
+    maxCopy = 2
+   Max Walkers per node 129
+   Min Walkers per node 13
+ iParam (old): 0                 1                 2                 2048              129               13                1                 0                 
+ iParam (new): 80                1                 2                 2048              129               13                1                 0                 
+ vParam (old): 2.0000000000e-02  1.9372350841e-02  -1.5901094420e+01 -1.5892343756e+01 -1.5888410344e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.7818217963e-01  -5.0235694680e+04 3.1610000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 1.0000000000e-02  1.9372350841e-02  -1.5901094420e+01 -1.5892343756e+01 -1.5888410344e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.7818217963e-01  -5.0235694680e+04 3.1610000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.8896
+  Energy Variance = 0.511148
+
+
+=========================================================
+  Start DMCOMP
+  File Root O.q0.dmc.s003 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+  Cannot make clones again. Use existing 16 clones
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.8948
+  Energy Variance = 0.509294
+
+  Fluctuating population
+  Persistent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 16
+  Number of blocks = 400
+
+  DMC Engine Initialization = 1.9874787500e-03 secs 
+
+ Warmup is completed after 80
+
+  TauEff     = 9.8684729137e-03
+ TauEff/Tau = 9.8684729137e-01
+  Etrial     = -1.5908806426e+01
+ Running average of energy = -1.5893384294e+01
+                  Variance = 2.8645045392e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 3
+    time step                     = 0.01
+    effective time step           = 0.00986962
+    trial energy                  = -15.8961
+    reference energy              = -15.8922
+    reference variance            = 0.28645
+    target walkers                = 2048
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 129 13
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 3.6473866541e+01 secs 
+  Reusing DMCOMP
+BRANCH resetRun
+ SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
+ BranchMode : 0000001111 0000001111
+  WalkerControlBase parameters 
+    maxCopy = 2
+   Max Walkers per node 129
+   Min Walkers per node 13
+ iParam (old): 0                 1                 3                 2048              129               13                1                 0                 
+ iParam (new): 160               1                 3                 2048              129               13                1                 0                 
+ vParam (old): 1.0000000000e-02  9.8696202048e-03  -1.5896120403e+01 -1.5892221763e+01 -1.5906143280e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.8645045392e-01  -1.0045474768e+05 6.3210000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 5.0000000000e-03  9.8696202048e-03  -1.5896120403e+01 -1.5892221763e+01 -1.5906143280e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.8645045392e-01  -1.0045474768e+05 6.3210000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.9062
+  Energy Variance = 0.51591
+
+
+=========================================================
+  Start DMCOMP
+  File Root O.q0.dmc.s004 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+  Cannot make clones again. Use existing 16 clones
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.8956
+  Energy Variance = 0.495378
+
+  Fluctuating population
+  Persistent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 32
+  Number of blocks = 400
+
+  DMC Engine Initialization = 2.0623612500e-03 secs 
+
+ Warmup is completed after 160
+
+  TauEff     = 4.9747552458e-03
+ TauEff/Tau = 9.9495104915e-01
+  Etrial     = -1.5931780390e+01
+ Running average of energy = -1.5899326331e+01
+                  Variance = 2.7800562392e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 4
+    time step                     = 0.005
+    effective time step           = 0.00497378
+    trial energy                  = -15.894
+    reference energy              = -15.8925
+    reference variance            = 0.278006
+    target walkers                = 2048
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 129 13
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 6.1736194723e+01 secs 
+  Reusing DMCOMP
+BRANCH resetRun
+ SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
+ BranchMode : 0000001111 0000001111
+  WalkerControlBase parameters 
+    maxCopy = 2
+   Max Walkers per node 129
+   Min Walkers per node 13
+ iParam (old): 0                 1                 4                 2048              129               13                1                 0                 
+ iParam (new): 320               1                 4                 2048              129               13                1                 0                 
+ vParam (old): 5.0000000000e-03  4.9737845856e-03  -1.5893977969e+01 -1.5892514197e+01 -1.5884468629e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.7800562392e-01  -2.0089726392e+05 1.2641000000e+04  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 2.5000000000e-03  4.9737845856e-03  -1.5893977969e+01 -1.5892514197e+01 -1.5884468629e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.7800562392e-01  -2.0089726392e+05 1.2641000000e+04  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.8839
+  Energy Variance = 0.494993
+
+
+=========================================================
+  Start DMCOMP
+  File Root O.q0.dmc.s005 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+  Cannot make clones again. Use existing 16 clones
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -15.8817
+  Energy Variance = 0.512153
+
+  Fluctuating population
+  Persistent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 64
+  Number of blocks = 400
+
+  DMC Engine Initialization = 2.0687787500e-03 secs 
+
+ Warmup is completed after 320
+
+  TauEff     = 2.4947976405e-03
+ TauEff/Tau = 9.9791905621e-01
+  Etrial     = -1.5872329047e+01
+ Running average of energy = -1.5896900324e+01
+                  Variance = 2.8968769517e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 5
+    time step                     = 0.0025
+    effective time step           = 0.00249483
+    trial energy                  = -15.8966
+    reference energy              = -15.8942
+    reference variance            = 0.289688
+    target walkers                = 2048
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 129 13
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 1.1213174474e+02 secs 
+  Total Execution time = 2.5257747381e+02 secs
+
+=========================================================
+  A new xml input file : O.q0.dmc.s005.cont.xml

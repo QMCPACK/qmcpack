@@ -1,0 +1,15 @@
+Cobalt location args: --block VST-00040-11151-32    
+2016-06-06 20:07:55.326 (INFO ) [0xfff84b4c530] ibm.runjob.AbstractOptions: using properties file /bgsys/local/etc/bg.properties
+2016-06-06 20:07:55.335 (INFO ) [0xfff84b4c530] ibm.runjob.AbstractOptions: max open file descriptors: 65536
+2016-06-06 20:07:55.335 (INFO ) [0xfff84b4c530] ibm.runjob.AbstractOptions: core file limit: 18446744073709551615
+2016-06-06 20:07:55.338 (INFO ) [0xfff84b4c530] 47982:tatu.runjob.client: scheduler job id is 344945
+2016-06-06 20:07:55.338 (INFO ) [0xfff84b4c530] 47982:tatu.runjob.client: scheduler reservation id is 213
+2016-06-06 20:07:55.340 (INFO ) [0xfff81583610] 47982:tatu.runjob.monitor: monitor started
+2016-06-06 20:07:55.670 (INFO ) [0xfff81583610] 47982:tatu.runjob.monitor: task record 1402462 created
+2016-06-06 20:07:55.671 (INFO ) [0xfff84b4c530] VST-00040-11151-32:47982:ibm.runjob.client.options.Parser: set local socket to runjob_mux from properties file
+2016-06-06 20:07:58.155 (INFO ) [0xfff84b4c530] VST-00040-11151-32:1585771:ibm.runjob.client.Job: job 1585771 started
+2016-06-06 20:08:02.160 (INFO ) [0xfff81583610] 47982:tatu.runjob.monitor: tracklib completed
+2016-06-06 20:08:47.579 (INFO ) [0xfff84b4c530] VST-00040-11151-32:1585771:ibm.runjob.client.Job: exited with status 0
+2016-06-06 20:08:47.579 (INFO ) [0xfff84b4c530] tatu.runjob.client: task exited with status 0
+2016-06-06 20:08:47.580 (INFO ) [0xfff81583610] 47982:tatu.runjob.monitor: monitor terminating
+2016-06-06 20:08:47.583 (INFO ) [0xfff84b4c530] tatu.runjob.client: monitor completed

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="bench" series="0"/>
+  <random seed="-1"/>
+  <include href="h.4x4x4.wfs.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+  </hamiltonian>
+  <init source="ion0" target="e"/>
+  <qmc method="vmc" multiple="no" warp="no" checkpoint="-1" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="useDrift">yes</parameter>                                               
+    <parameter name="blocks">VMCBLOCKS</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="walkers">VMCWALKERS</parameter>
+    <parameter name="samples">DMCSAMPLES</parameter>
+    <parameter name="warmupsteps">10</parameter>
+    <parameter name="timestep">2.0</parameter>
+  </qmc>
+  <qmc method="dmc" multiple="no" warp="no" checkpoint="-1"  move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="nonlocalmoves"> yes </parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="timestep">0.02</parameter>
+  </qmc>
+</simulation>

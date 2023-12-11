@@ -1,0 +1,36 @@
+/*!  \mainpage Developers' guides   
+QMCPACK is written in C++ and proficiency in C++ is required. Currently, C++03
+standard is adopted and the transition to C++11 will start after the code
+freeze at the end of 2013. MPI, OpenMP and CUDA are used for parallelizations.
+
+The most recent released version is available at
+https://www.qmcpack.org under UIUC/NCSA open-source licence. Those who
+are interested in QMCPACK development are strongly encouraged to
+contact the developers to establish collaborations so that one can
+access to the developers' svn repository. This is exactly the same as
+the release version except for being (i) slightly more recent, (ii) having fewer bugs due to bugfixes, and (iii) potentially having new bugs due to new features.
+Although it is not required, the developers will appreciate if any new
+software can be made available to others when the research and development
+is published.  The developers and users will comply with the
+constraints posed by the contributors under the terms of the licence.
+
+These tools are used in QMCPACK development and familiarity with them will be helpful in working with QMCPACK.
+- Compilers : GNU, Intel and IBM compilers are tested and supported. There
+  is no plan to support other compilers. 
+- subversion : revision system
+- cmake : 2.8 and later, build system
+- doxygen : 1.8, code documentation and the guides (including this.)
+
+\subpage dev_update
+
+\subpage validation
+
+\subpage dev_todo
+
+\subpage dev_basic
+
+\subpage dev_design
+
+\subpage dev_psi
+
+*/

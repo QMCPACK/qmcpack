@@ -1,0 +1,29 @@
+Jobid: 344933
+qsub --mode script -q qmcpack -A QMCPACK-training -n 32 -t 60 -O O.q0.dmc --mode script --env BG_SHAREDMEMSIZE=32 O.q0.dmc.qsub.in
+Mon Jun 06 19:47:13 2016 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_atom
+jobid 344933 submitted from terminal /dev/pts/10
+Mon Jun 06 19:48:24 2016 +0000 (UTC) krogel/344933: Initiating boot at location VST-00060-11171-32.
+Mon Jun 06 19:48:44 2016 +0000 (UTC) 
+Mon Jun 06 19:48:44 2016 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_atom/O.q0.dmc.qsub.in'
+Mon Jun 06 19:48:44 2016 +0000 (UTC) 
+Mon Jun 06 19:48:44 2016 +0000 (UTC) Environment:
+Mon Jun 06 19:48:44 2016 +0000 (UTC) COBALT_RESID=213
+Mon Jun 06 19:48:44 2016 +0000 (UTC) SHELL=/bin/bash
+Mon Jun 06 19:48:44 2016 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpZNlqQy
+Mon Jun 06 19:48:44 2016 +0000 (UTC) COBALT_PARTNAME=VST-00060-11171-32
+Mon Jun 06 19:48:44 2016 +0000 (UTC) COBALT_JOBID=344933
+Mon Jun 06 19:48:44 2016 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Mon Jun 06 19:48:44 2016 +0000 (UTC) COBALT_STARTTIME=1465242484
+Mon Jun 06 19:48:44 2016 +0000 (UTC) LOGNAME=krogel
+Mon Jun 06 19:48:44 2016 +0000 (UTC) USER=krogel
+Mon Jun 06 19:48:44 2016 +0000 (UTC) COBALT_ENDTIME=1465246084
+Mon Jun 06 19:48:44 2016 +0000 (UTC) COBALT_PARTSIZE=32
+Mon Jun 06 19:48:44 2016 +0000 (UTC) HOME=/home/krogel
+Mon Jun 06 19:48:44 2016 +0000 (UTC) COBALT_JOBSIZE=32
+Mon Jun 06 19:48:44 2016 +0000 (UTC) 
+Mon Jun 06 19:48:44 2016 +0000 (UTC) Info: stdin received from /dev/null
+Mon Jun 06 19:48:44 2016 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_atom/O.q0.dmc.output
+Mon Jun 06 19:48:44 2016 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_atom/O.q0.dmc.error
+Mon Jun 06 19:48:44 2016 +0000 (UTC) 
+Mon Jun 06 19:48:45 2016 +0000 (UTC) krogel/344933: Block VST-00060-11171-32 for location VST-00060-11171-32 successfully booted (Initiating). 
+Mon Jun 06 19:53:24 2016 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

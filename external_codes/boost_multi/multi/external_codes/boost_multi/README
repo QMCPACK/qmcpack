@@ -1,0 +1,3 @@
+command to update subtree to v0.80.1 tag. Run from top level QMCPACK source directory
+
+git subtree pull --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git v0.80.1

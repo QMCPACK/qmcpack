@@ -1,0 +1,26 @@
+Jobid: 203609
+qsub --mode script -A QMC_2014_training -t 60 -n 4 submit_qmcpack.csh
+Wed Jul 16 01:38:16 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/NumberWalkers/NW120
+Wed Jul 16 01:38:34 2014 +0000 (UTC) mmorales/203609: Initiating boot at location VST-22400-33511-32.
+Wed Jul 16 01:39:02 2014 +0000 (UTC) 
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/NumberWalkers/NW120/submit_qmcpack.csh'
+Wed Jul 16 01:39:02 2014 +0000 (UTC) 
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Environment:
+Wed Jul 16 01:39:02 2014 +0000 (UTC) SHELL=/bin/bash
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpCk_Ek7
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_PARTNAME=VST-22400-33511-32
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_JOBID=203609
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_STARTTIME=1405474707
+Wed Jul 16 01:39:02 2014 +0000 (UTC) LOGNAME=mmorales
+Wed Jul 16 01:39:02 2014 +0000 (UTC) USER=mmorales
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_ENDTIME=1405478307
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Wed Jul 16 01:39:02 2014 +0000 (UTC) HOME=/home/mmorales
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_JOBSIZE=4
+Wed Jul 16 01:39:02 2014 +0000 (UTC) 
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Info: stdin received from /dev/null
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/NumberWalkers/NW120/203609.output
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/NumberWalkers/NW120/203609.error
+Wed Jul 16 01:39:02 2014 +0000 (UTC) 
+Wed Jul 16 01:39:07 2014 +0000 (UTC) mmorales/203609: Block VST-22400-33511-32 for location VST-22400-33511-32 successfully booted (Initiating). 
+Wed Jul 16 01:43:39 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="He" series="0"/>
+
+  <!-- Location of atoms -->
+
+  <particleset name="ion0" size="1">
+    <group name="He">
+      <parameter name="charge">2</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+      0.0 0.0 0.0
+    </attrib>
+  </particleset>
+
+  <!-- Randomly create electrons around the atomic position -->
+
+  <particleset name="e" random="yes" randomsrc="ion0">
+    <group name="u" size="1">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="1">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+
+  <!-- Trial wavefunction - use Slater determinant multiplied by a Jastrow factor -->
+
+  <wavefunction name="psi0" target="e">
+
+   <!-- Electron-electron Jastrow of Pade form -->
+   <!-- For two electron system, only have up-down interaction -->
+
+   <jastrow name="Jee" type="Two-Body" function="pade">
+      <correlation speciesA="u" speciesB="d">
+        <var id="jud_b" name="B">0.821683</var>
+      </correlation>
+    </jastrow>
+
+    <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
+      <basisset>
+        <atomicBasisSet type="STO" elementType="He">
+          <basisGroup rid="R0" n="1" l="0" m="0" type="Slater">
+             <radfunc exponent="2.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant id="updet" spin="1" size="1"/>
+        <determinant id="downdet" spin="-1" size="1"/>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+
+
+  <!-- Hamiltonian - the energy of interactions between particles -->
+
+  <hamiltonian name="h0" type="generic" target="e">
+    <!-- Electon-electron -->
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <!-- Electon-ion -->
+    <pairpot name="Coulomb" type="coulomb" source="ion0" target="e"/>
+    <!-- Ion-ion (not needed for a single atom) -->
+    <!--<constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>-->
+  </hamiltonian>
+
+  <!-- QMC method(s) to run -->
+
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">500</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.1</parameter>
+  </qmc>
+
+</simulation>

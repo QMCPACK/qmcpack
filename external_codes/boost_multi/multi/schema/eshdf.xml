@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<eshdf>
+  <!-- XML representation of ESHDF File Format  -->
+  <version type="int" dims="[3]" h5t="Dataset" condition="M"/>
+  <schema_url type="string" h5t="Datatset" condition="O"/>
+  <supercell h5t="Group">
+    <primitive_vectors type="double"  dims="[3][3]" h5t="Datatset" condition="M"/>
+    <boundary_conditions type="int"  dims="[3]" h5t="Datatset" condition="O"/>
+  </supercell>
+  <atoms h5t="Group">
+    <number_of_atoms type="int" h5t="Datatset" condition="M"/>
+    <number_of_species type="int" h5t="Datatset" condition="M" id="Ns"/>
+    <species_id type="int" dims="[number_of_species]" h5t="Datatset" condition="M"/>
+    <positions type="double" dims="[number_of_atoms][3]" h5t="Datatset" condition="O"/>
+    <reduced_positions type="double" dims="[number_of_atoms][3]" h5t="Datatset" condition="M"/>
+    <forces type="double" dims="[number_of_atoms][3]" h5t="Datatset" condition="O"/>
+    <!-- species_i (for i=0; i<Ns; ++i) -->
+    <species_0 h5t="Group" type="SpeciesType">
+      <name type="string" h5t="Datatset" condition="M"/>
+      <valuence_charge type="int" h5t="Datatset" condition="M"/>
+      <atomic_number type="int" h5t="Datatset" condition="O"/>
+      <pseudopotential type="string" h5t="Datatset" condition="O"/>
+      <mass type="double" h5t="Datatset" condition="O"/>
+    </species_0>
+    <species_1 h5t="Group" type="SpeciesType"/>
+    <species_Ns-1 h5t="Group" type="SpeciesType"/>
+  </atoms>
+  <electrons h5t="Group">
+    <number_of_electrons type="int" dims="[2]" h5t="Datatset" condition="M"/>
+    <number_of_kpoints type="int" h5t="Datatset" condition="M" id="NK"/>
+    <number_of_spins type="int" h5t="Datatset" condition="M"/>
+    <psi_r_is_complex type="bool" h5t="Datatset" condition="M"/>
+    <psi_r_mesh type="int" dims="[3]" h5t="Datatset" condition="M"/>
+    <functional type="string" h5t="Datatset" condition="M"/>
+    <total_energy type="double" h5t="Datatset" condition="M"/>
+    <density h5t="Group">
+      <number_of_gvectors type="int" h5t="Datatset" condition="M"/>
+      <gvectors type="int" dims="[number_of_gvectors][3]" h5t="Datatset" condition="M"/>
+      <mesh type="int" dims="[3]" h5t="Datatset" condition="M">n0 n1 n2</mesh>
+      <spin_0 h5t="Group" type="densityType" condition="M">
+        <density_r type="double" dims="[n0][n1][n2]" h5t="Datatset" condition="M"/>
+        <density_g type="double" dims="[number_of_gvectors][2]" h5t="Datatset" condition="M"/>
+      </spin_0>
+      <spin_1 h5t="Group" type="densityType" condition="O"/>
+    </density>
+    <!-- kpoint_i (for i=0; i<NK; ++i) -->
+    <kpoint_0 type="kpointType" condition="M">
+      <reduced_k type="double" dims="[3]" h5t="Datatset" condition="M"/>
+      <weight type="double" h5t="Datatset" condition="M"/>
+      <number_of_gvectors type="int" h5t="Datatset" condition="M"/>
+      <gvectors type="int" dims="[number_of_gvectors][3]" h5t="Datatset" condition="M"/>
+      <spin_0 type="spinType" condition="M">
+        <number_of_states type="int" h5t="Datatset" condition="M" id="S"/>
+        <eivenvalues type="double" dims="[number_of_states]" h5t="Datatset" condition="M"/>
+        <occupations type="double" dims="[number_of_states]" h5t="Datatset" condition="M"/>
+        <!-- state_i (for i=0; i<NK; ++i) -->
+        <state_0 type="stateType">
+          <!-- psi_g or psi_r has to be provided -->
+          <psi_g type="double" dims="[number_of_gvectors][2]" h5t="Datatset" condition="O"/>
+          <psi_r type="double" dims="[n0][n1][n2]|[n0][n1][n2][2]" h5t="Datatset" condition="O"/>
+        </state_0>
+        <state_1 type="stateType"/>
+        <state_S-1 type="stateType"/>
+      </spin_0>
+      <spin_1 type="spinType" condition="O"/>
+    </kpoint_0>
+    <kpoint_1 type="kpointType"/>
+    <kpoint_NK-1 type="kpointType"/>
+  </electrons>
+</eshdf>

@@ -1,0 +1,67 @@
+&CONTROL
+  calculation='nscf',
+  outdir='monolayer WSe2',
+  prefix='calc',
+  pseudo_dir='/home/anindya/Desktop/pseudopotentials',
+  verbosity='low',
+  disk_io='high',
+  wf_collect=.true.,
+  etot_conv_thr=1d-02,
+  forc_conv_thr=1d-02,
+/
+
+&SYSTEM
+  noncolin=.true.,
+  lspinorb=.true.,
+  ibrav=0,
+  celldm(1)=6.2020811408d0, celldm(3)=4.3566118221d0,
+  nat=3,
+  ntyp=2,
+  ecutwfc=40.0d0,
+  nbnd=200,
+  vdw_corr='Grimme-D2',
+  starting_magnetization=0.05,
+  force_symmorphic=.true.,
+  input_dft='PBE',
+  esm_bc='bc1',
+  no_t_rev=.false.,
+/
+
+&ELECTRONS
+  diagonalization='david',
+  conv_thr=1d-08,
+  mixing_mode='plain',
+  mixing_beta=0.700d0,
+/
+
+&ions
+  ion_dynamics ='bfgs',
+/
+
+&cell
+  cell_dynamics ='bfgs',
+  cell_factor=15,
+/
+
+ATOMIC_SPECIES
+  Se 78.960000d0 Se_ONCV_PBE-1.0_nr.oncvpsp.upf
+  W 183.840000d0 W_ONCV_PBE-1.1_nr.oncvpsp.upf
+
+CELL_PARAMETERS (alat)
+   1.008112278   0.000000000   0.000000000
+  -0.504056139   0.873050842   0.000000000
+   0.000000000   0.000000000   2.445357065
+
+ATOMIC_POSITIONS {alat}
+  W        0.504056139   0.291016947   1.222674975
+  Se       0.504056139  -0.291016947   0.699051439
+  Se       0.504056139  -0.291016947   1.746298512
+
+
+K_POINTS {crystal_b}
+4
+
+0 0 0   20 
+0.33 0.33 0 20 
+0.5 0 0 20 
+0 0 0 20 

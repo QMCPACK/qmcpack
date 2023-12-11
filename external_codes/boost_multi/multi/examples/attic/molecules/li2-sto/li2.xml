@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="Li2" series="0">
+  <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      QMC of Li2 molecule using Slater-type Orbitals by Clementi-Rottie, see
+      JCP 99, 2865 (1993).  The spin configuration is (3,3).
+    </application>
+  </project>
+  <random parallel="true" seed="-1"/>
+  <particleset name="e">
+    <group name="u" size="3">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+        -0.287873  0.0225571  -2.70912
+        -0.188958 -0.102834    2.68775
+        -3.28186   1.03968    -0.0131958
+      </attrib>
+    </group>
+    <group name="d" size="3">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+        -1.08389   1.9679     -0.0128914
+        0.280143   0.421596    2.84353
+        0.236317   0.509483   -2.44384
+      </attrib>
+    </group>
+  </particleset>
+  <particleset name="ion0" size="2">
+    <group name="Li">
+      <parameter name="charge">3</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+      0.0 0.0 -2.5255
+      0.0 0.0  2.5255
+    </attrib>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+   <jastrow name="Jee" type="Two-Body" function="pade">
+      <correlation speciesA="u" speciesB="u">
+        <var id="juu_b" name="B">0.821683</var>
+      </correlation>
+      <correlation speciesA="u" speciesB="d">
+        <var id="jud_b" name="B">0.821683</var>
+      </correlation>
+    </jastrow>
+    <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <basisset>
+        <atomicBasisSet type="STO" elementType="Li" normalized="no" expandYlm="no">
+          <basisGroup rid="R0" n="1" l="0" m="0" type="Slater"><radfunc exponent="3.579103" node="1"/></basisGroup>
+          <basisGroup rid="R1" n="1" l="0" m="0" type="Slater"><radfunc exponent="2.338523" node="1"/></basisGroup>
+          <basisGroup rid="R2" n="2" l="0" m="0" type="Slater"><radfunc exponent="0.707563" node="2"/></basisGroup>
+          <basisGroup rid="R3" n="2" l="1" m="0" type="Slater"><radfunc exponent="0.532615" node="2"/></basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant id="updet" spin="1" size="3">
+          <coefficient id="updetC" type="Array" size="3">
+            0.606630 1.0 0.0 0.061592  0.606630  1.0 0.0 -0.061592
+            0.603086 1.0 0.0 2.946e-3 -0.603086 -1.0 0.0  2.946e-3
+            0.104957 0.0 1.0 0.305729  0.104957  0.0 1.0 -0.305729
+          </coefficient>
+        </determinant>
+        <determinant id="downdet" spin="-1" size="3">
+          <coefficient id="downdetC" type="Array" size="3">
+            0.606630 1.0 0.0 0.061592  0.606630  1.0 0.0 -0.061592
+            0.603086 1.0 0.0 2.946e-3 -0.603086 -1.0 0.0  2.946e-3
+            0.104957 0.0 1.0 0.305729  0.104957  0.0 1.0 -0.305729
+          </coefficient>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="Coulomb" type="coulomb" source="ion0" target="e"/>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+  </hamiltonian>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">500</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.05</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" target="e">
+    <parameter name="blocks">200</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.01</parameter>
+  </qmc>
+</simulation>

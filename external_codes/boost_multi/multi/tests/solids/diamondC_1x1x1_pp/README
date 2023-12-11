@@ -1,0 +1,356 @@
+
+
+============================
+k-space Jastrow test details
+============================
+The tests include short and long VMC runs for a primitive cell of 
+diamond with a k-space Jastrow factor added to the short-ranged 
+B-spline one used in other tests of this system.  The general form 
+for the k-space Jastrow XML input was inferred by reading the source.
+Starting with the optimized form of a J1 and J2 B-spline Jastrow, 
+empty one- and two-body k-space Jastrow terms with a k-space cutoff of 
+4.0 a.u. (resulting in 8 and 6 one- and two-body coefficients 
+respectively) were added and optimized with version 3.1.1 of QMCPACK.  
+Earlier versions, e.g. SVN revision 6259, produced only higher 
+variances during optimization.  With correct optimization, a lowering 
+in the energy and variance is observed over B-splines alone:
+
+  VMC         Energy                  Variance               ratio
+J12 B-spline -10.491929 +/- 0.001857  0.379176 +/- 0.006023  0.0361 
+J12 k-space  -10.500884 +/- 0.001790  0.326804 +/- 0.015445  0.0311 
+
+Reference data was generated with runs the same overall length 
+(blocks x steps) as those included in ./qmc-ref, but using more blocks 
+and fewer steps.  Using more blocks reduced the statistical error of 
+the error bars, but resulted in output data files that were too large 
+to include in the QMCPACK distribution.  The reference values and error 
+bars were therefore computed from the higher block count runs.  The 
+included reference runs were confirmed to be consistent with the original 
+higher block count runs.  All reference data was generated with the SVN 
+revision 6259 version of the code.
+
+Reference data from the high block count VMC runs is found below:
+
+             Energy                  Variance               ratio
+qmc_kspace  -10.500719 +/- 0.000176  0.312264 +/- 0.002852  0.0297
+
+For comparison, corresponding data for the lower block count VMC 
+reference data found in ./qmc-ref is:
+
+>qmca -e 2 -q ev qmc_kspace.s000.scalar.dat
+             Energy                  Variance               ratio
+qmc_kspace  -10.500721 +/- 0.000170  0.314640 +/- 0.001312  0.0300
+
+Test input files were created by reducing the number of steps from the 
+included reference by a factor of 10 for the "long" tests and by a 
+further factor of 10 for the "short" tests.
+
+Reference values for the mean local energy and variance were taken 
+from the high block count reference runs.  Expected error bars were 
+derived from the high block count data by multiplying the reference 
+error bars by a factor of sqrt(10+1) and sqrt(100+1) for the long 
+and short tests, respectively.  The factor of +1 accounts for the 
+error bar intrinsic to the high block count runs.  
+
+The target means and error bars for long and short tests are:
+
+                 refmean     referr    longerr   shorterr
+VMC J2 energy   -10.500719   0.000176  0.000584  0.001769
+       variance   0.312264   0.002852  0.009459  0.028662
+
+Error bars from typical long and short runs are shown below:
+
+Typical long run results:
+
+        Energy                  Variance               ratio
+long   -10.500184 +/- 0.000530  0.319563 +/- 0.008351  0.0304
+
+Typical short run results:
+
+        Energy                  Variance               ratio
+short  -10.500601 +/- 0.001779  0.308348 +/- 0.005698  0.0294
+
+Rough timings for the tests on an old (circa 2013) AMD system are:
+
+>grep 'Total Exe' *long*/*.out
+long_test/qmc.out:  Total Execution time = 7.2162347854e+01 secs
+
+>grep 'Total Exe' *short*/*.out
+short_test/qmc.out:  Total Execution time = 1.4235623075e+01 secs
+
+
+=====================================
+Density and spin density test details
+=====================================
+The tests include short/long VMC/DMC runs for a primitive cell of 
+diamond with density and spin density estimators enabled, each on a
+10x10x10 uniform grid over the simulation cell.  Reference data was 
+generated using SVN revision 6259.
+
+Reference runs were performed with 10x more blocks and 10x more steps
+than the target short test runs.  From the reference stat.h5 output 
+files, reduced reference data was produced using check_stats.py.  The 
+per block data for the 1000 grid elements was reduced into 8 partial 
+sums over the grid.  
+
+A summary of the reference files is given below.  The per block or 
+"stat_trace" data was actually produced from a reference run with 
+the same number of blocks and 100x more steps than the target short 
+test runs to reduce the file size.  These stat_trace files are 
+identical in format to scalar.dat files, but for the reduced full and 
+partial sums performed on the grid data.
+
+-------------------------------
+Reference files for VMC density
+-------------------------------
+# reference input file
+qmc_dens.in.xml
+
+# command run
+check_stats.py -v -s 0 -q density -e 20 -c 8 -m '0 10 100' -p qmc_dens
+
+# files produced 
+qmc_dens_ref.s000.stat_ref_density.dat    # reference mean/error bar (-m 0)
+qmc_dens_ref.s000.stat_trace_density.dat  # reference per block data (-m 0)
+qmc_dens_long.s000.stat_ref_density.dat   # reference mean/error bar for long runs (-m 10)
+qmc_dens_short.s000.stat_ref_density.dat  # reference mean/error bar for short runs (-m 100)
+
+-------------------------------
+Reference files for DMC density
+-------------------------------
+# reference input file
+qmc_dens_dmc.in.xml
+
+# command run
+check_stats.py -v -s 1 -q density -e 20 -c 8 -m '0 10 100' -p qmc_dens_dmc
+
+# files produced 
+qmc_dens_dmc_ref.s000.stat_ref_density.dat    # reference mean/error bar (-m 0)
+qmc_dens_dmc_ref.s000.stat_trace_density.dat  # reference per block data (-m 0)
+qmc_dens_dmc_long.s000.stat_ref_density.dat   # reference mean/error bar for long runs (-m 10)
+qmc_dens_dmc_short.s000.stat_ref_density.dat  # reference mean/error bar for short runs (-m 100)
+
+-----------------------------------
+Reference files for VMC spindensity
+-----------------------------------
+# reference input file
+qmc_dens.in.xml
+
+# command run
+check_stats.py -v -s 0 -q spindensity -e 20 -c 8 -m '0 10 100' -p qmc_spindens
+
+# files produced 
+qmc_spindens_ref.s000.stat_ref_spindensity.dat    # reference mean/error bar (-m 0)
+qmc_spindens_ref.s000.stat_trace_spindensity.dat  # reference per block data (-m 0)
+qmc_spindens_long.s000.stat_ref_spindensity.dat   # reference mean/error bar for long runs (-m 10)
+qmc_spindens_short.s000.stat_ref_spindensity.dat  # reference mean/error bar for short runs (-m 100)
+
+-----------------------------------
+Reference files for DMC spin density
+------------------------------------
+# reference input file
+qmc_spindens_dmc.in.xml
+
+# command run
+check_stats.py -v -s 1 -q spindensity -e 20 -c 8 -m '0 10 100' -p qmc_spindens_dmc
+
+# files produced 
+qmc_spindens_dmc_ref.s001.stat_ref_spindensity.dat    # reference mean/error bar (-m 0)
+qmc_spindens_dmc_ref.s001.stat_trace_spindensity.dat  # reference per block data (-m 0)
+qmc_spindens_dmc_long.s001.stat_ref_spindensity.dat   # reference mean/error bar for long runs (-m 10)
+qmc_spindens_dmc_short.s001.stat_ref_spindensity.dat  # reference mean/error bar for short runs (-m 100)
+
+-------------------------------------------------
+Reference files for deterministic VMC spindensity
+-------------------------------------------------
+# reference input file
+det_qmc_spindens_short.in.xml
+
+# command run
+check_stats.py -v -s 0 -q spindensity -e 0 -c 8 -m '0' -p det_qmc_spindens_short
+
+# files produced 
+det_qmc_spindens_short.s000.stat_ref_spindensity.dat
+
+# other
+The 2nd and 4th columns of det_qmc_spindens_short.s000.stat_ref_spindensity.dat 
+had to be modified for the deterministic test.  These are the "errorbars" and 
+are deterministically small.
+
+
+=================
+1RDM test details
+=================
+The code version and process for generating these tests was identical 
+to what was used for density and spin density (see above).
+
+One unique feature is that correct reference results depend on whether 
+the real or complex build is used.  This is because in the real build 
+the B-spline orbitals are not guaranteed to be orthogonal.
+
+------------------------------------------
+Reference files for VMC 1RDM w/o a Jastrow
+------------------------------------------
+# reference input file
+qmc_1rdm_noJ.in.xml
+
+# command run (run separately for real and complex)
+check_stats.py -v -q 1rdm -e 20 -c 8 -m '0 10 100' -p qmc_1rdm_noJ
+
+# files produced
+qmc_1rdm_noJ_ref_real.s000.stat_ref_1rdm.dat
+qmc_1rdm_noJ_ref_real.s000.stat_trace_1rdm.dat
+qmc_1rdm_noJ_long_real.s000.stat_ref_1rdm.dat
+qmc_1rdm_noJ_short_real.s000.stat_ref_1rdm.dat
+
+qmc_1rdm_noJ_long_comp.s000.stat_ref_1rdm.dat
+qmc_1rdm_noJ_ref_comp.s000.stat_ref_1rdm.dat
+qmc_1rdm_noJ_ref_comp.s000.stat_trace_1rdm.dat
+qmc_1rdm_noJ_short_comp.s000.stat_ref_1rdm.dat
+
+----------------------------------------
+Reference files for VMC 1RDM w a Jastrow
+----------------------------------------
+# reference input file
+qmc_1rdm_J2.in.xml
+
+# command run (run separately for real and complex)
+check_stats.py -v -q 1rdm -e 20 -c 8 -m '0 10 100' -p qmc_1rdm_J2
+
+# files produced
+qmc_1rdm_J2_ref_real.s000.stat_ref_1rdm.dat
+qmc_1rdm_J2_ref_real.s000.stat_trace_1rdm.dat
+qmc_1rdm_J2_long_real.s000.stat_ref_1rdm.dat
+qmc_1rdm_J2_short_real.s000.stat_ref_1rdm.dat
+
+qmc_1rdm_J2_long_comp.s000.stat_ref_1rdm.dat
+qmc_1rdm_J2_ref_comp.s000.stat_ref_1rdm.dat
+qmc_1rdm_J2_ref_comp.s000.stat_trace_1rdm.dat
+qmc_1rdm_J2_short_comp.s000.stat_ref_1rdm.dat
+
+
+===========================
+Energy density test details
+===========================
+The tests include short/long VMC/DMC runs for a primitive cell of 
+diamond with the energy density estimator enabled, using both voronoi 
+grids and uniform grids over the simulation cell.  Reference data was 
+generated using SVN revision 6259.
+
+These tests check the correctness of Traces data streaming from the 
+evaluate_sp function in the following QMCPACK classes:
+
+Kinetic, CoulombPBCAA, CoulombPBCAB, LocalECP, NonLocalECP
+
+Reference runs were performed with 10x more blocks and 10x more steps
+than the target short test runs.  From the reference stat.h5 output 
+files, reduced reference data was produced using check_stats.py.  
+
+A summary of the reference files is given below.  The per block or 
+"stat_trace" data was actually produced from a reference run with 
+the same number of blocks and 100x more steps than the target short 
+test runs to reduce the file size.  These stat_trace files are 
+identical in format to scalar.dat files, but for the reduced full and 
+partial sums performed on the grid data.
+
+In addition to checking the statistical correctness of full and 
+partial data sums, check_stats.py also checks that energy density 
+data written each block sums to match the relevant total, kinetic, 
+and potential energies written to the scalar.dat/dmc.dat file for 
+VMC/DMC.
+
+---------------------------------------------------
+Reference files for VMC uniform grid energy density
+---------------------------------------------------
+# reference input file
+qmc_edens_cell.in.xml
+
+# command run
+check_stats.py -v -s 0 -q 'energydensity,EDcell' -e 20 -c 8 -m '0 10 100' -p qmc_edens_cell
+
+# files produced 
+qmc_edens_cell_ref.s000.stat_ref_energydensity.dat    # reference mean/error bar (-m 0)
+qmc_edens_cell_ref.s000.stat_trace_energydensity.dat  # reference per block data (-m 0)
+qmc_edens_cell_long.s000.stat_ref_energydensity.dat   # reference mean/error bar for long runs (-m 10)
+qmc_edens_cell_short.s000.stat_ref_energydensity.dat  # reference mean/error bar for short runs (-m 100)
+
+---------------------------------------------------
+Reference files for VMC voronoi grid energy density
+---------------------------------------------------
+# reference input file
+qmc_edens_vor.in.xml
+
+# command run
+check_stats.py -v -s 0 -q 'energydensity,EDvoronoi' -e 20 -c 8 -m '0 10 100' -p qmc_edens_vor
+
+# files produced 
+qmc_edens_vor_ref.s000.stat_ref_energydensity.dat    # reference mean/error bar (-m 0)
+qmc_edens_vor_ref.s000.stat_trace_energydensity.dat  # reference per block data (-m 0)
+qmc_edens_vor_long.s000.stat_ref_energydensity.dat   # reference mean/error bar for long runs (-m 10)
+qmc_edens_vor_short.s000.stat_ref_energydensity.dat  # reference mean/error bar for short runs (-m 100)
+
+---------------------------------------------------
+Reference files for DMC uniform grid energy density
+---------------------------------------------------
+# reference input file
+qmc_edens_cell.in.xml
+
+# command run
+check_stats.py -v -s 1 -q 'energydensity,EDcell' -e 20 -c 8 -m '0 10 100' -p qmc_edens_cell_dmc
+
+# files produced 
+qmc_edens_cell_dmc_ref.s001.stat_ref_energydensity.dat    # reference mean/error bar (-m 0)
+qmc_edens_cell_dmc_ref.s001.stat_trace_energydensity.dat  # reference per block data (-m 0)
+qmc_edens_cell_dmc_long.s001.stat_ref_energydensity.dat   # reference mean/error bar for long runs (-m 10)
+qmc_edens_cell_dmc_short.s001.stat_ref_energydensity.dat  # reference mean/error bar for short runs (-m 100)
+
+
+============================
+Excited state test details
+============================
+The tests include short and long VMC/DMC runs for a primitive cell of
+diamond with electron promotion at Gamma point. Reference data was
+generated using QMCPACK 3.0.1
+
+Reference data was generated with runs the same overall length
+(blocks x steps) as those included in ./qmc-ref, but using 10x more blocks
+than target long test runs.
+
+Reference values for the mean local energy and variance were taken
+from the high block count reference runs. Expected error bars were
+derived from the high block count data by multiplying the reference
+error bars by a factor of sqrt(10+1), sqrt(100+1), and sqrt(9600+1) 
+for the long VMC/DMC, short DMC, and short VMC tests, respectively. 
+The factor of +1 accounts for the error bar intrinsic to the high block count runs.
+
+Reference data from the high block count VMC/DMC runs is found below:
+
+# VMC reference
+                               LocalEnergy               Variance           ratio 
+qmc_ref_excited  series 0  -9.997214 +/- 0.000022   0.420124 +/- 0.000378   0.0420                         
+
+# DMC reference
+                                        LocalEnergy               Variance           ratio 
+qmc_ref_vmc_dmc_excited  series 1  -10.057283 +/- 0.000320   0.411110 +/- 0.000441   0.0409                                   
+
+
+Typical long run results:
+
+# VMC run
+                    LocalEnergy               Variance           ratio
+long  series 0  -9.997288 +/- 0.000066   0.420501 +/- 0.000801   0.0421
+                    
+# DMC run                  
+                     LocalEnergy               Variance           ratio
+long  series 1  -10.057554 +/- 0.001018   0.412262 +/- 0.001642   0.0410
+
+
+Typical short run results:
+
+# VMC run
+                     LocalEnergy               Variance           ratio
+short  series 0  -9.999504 +/- 0.002103   0.437863 +/- 0.017384   0.0438
+                   
+# DMC run                                             
+                      LocalEnergy               Variance           ratio
+short  series 1  -10.052409 +/- 0.003526   0.406104 +/- 0.003185   0.0404

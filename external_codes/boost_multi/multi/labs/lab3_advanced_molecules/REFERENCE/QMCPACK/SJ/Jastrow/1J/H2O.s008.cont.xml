@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H2O" series="9"><host>Q02-I4-J04.vesta.itd</host><date>Wed Jul 16 01:51:58 2014
+</date><user>mmorales</user></project>
+
+  <!-- input from gaussian converter -->
+  <include href="H2O.ptcl.xml"/>
+  <include href="H2O.HF.wfs.xml"/>
+
+  <!--  Hamiltonian -->
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="ELEMENT-ECP" type="pseudo" source="ion0" target="e" format="xml" wavefunction="psi0">
+       <pseudo elementType="O" format="xml" href="/projects/QMC_2014_training/O.BFD.xml"/>
+       <pseudo elementType="H" format="xml" href="/projects/QMC_2014_training/H.BFD.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+  </hamiltonian>
+
+ <init source="ion0" target="e"/><mcwalkerset fileroot="H2O.s008" node="-1" nprocs="32" version="1 0" collected="yes"/>
+
+ <!-- Wavefunction Optimization  -->  
+ <loop max="8">
+  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+    <parameter name="blocks">     250  </parameter>
+    <parameter name="warmupsteps"> 25 </parameter>
+    <parameter name="steps"> 1 </parameter>
+    <parameter name="substeps"> 20 </parameter>
+    <parameter name="timestep"> 0.5 </parameter>
+    <parameter name="samples"> 128000  </parameter>
+    <cost name="energy">                   0.95 </cost>
+    <cost name="unreweightedvariance">     0.0 </cost>
+    <cost name="reweightedvariance">       0.05 </cost>
+    <parameter name="useDrift">  yes </parameter>
+    <parameter name="bigchange">10.0</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="usebuffer"> yes </parameter>
+    <parameter name="nonlocalpp"> yes </parameter>
+    <parameter name="MinMethod">quartic</parameter>
+    <parameter name="exp0">-6</parameter>
+    <parameter name="alloweddifference"> 1.0e-5 </parameter>
+    <parameter name="stepsize">  0.15 </parameter>
+    <parameter name="nstabilizers"> 1 </parameter>
+  </qmc>
+  </loop>  
+
+  <!-- VMC -->
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <parameter name="useDrift">yes</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="blocks">1000</parameter>
+    <parameter name="steps">1</parameter>
+    <parameter name="subSteps"> 100 </parameter>
+    <parameter name="walkers">16</parameter>
+    <parameter name="timestep">0.3</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
+
+
+</simulation>

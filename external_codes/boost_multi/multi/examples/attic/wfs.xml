@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="bspline" href="lda.pwscf.h5" sort="1" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0"
+      version="0.10">
+      <slaterdeterminant>
+        <determinant id="updet" size="8">
+          <occupation mode="ground" spindataset="0"/>
+        </determinant>
+        <determinant id="downdet" size="8">
+          <occupation mode="ground" spindataset="0"/>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="8">
+        <coefficients id="uu" type="Array"> 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 </coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="8">
+        <coefficients id="ud" type="Array">
+          0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 </coefficients> 
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+      <correlation elementType="C" size="8">
+        <coefficients id="eC" type="Array">
+          0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 </coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+</qmcsystem>
+

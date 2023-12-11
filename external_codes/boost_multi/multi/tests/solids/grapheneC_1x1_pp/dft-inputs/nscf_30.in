@@ -1,0 +1,33 @@
+&control
+    calculation = 'nscf'
+    prefix='Gr',
+    pseudo_dir = './',
+    outdir='./out',
+    tprnfor=.true.,
+    tstress=.true.,
+    wf_collect = .true.,
+/
+&system
+    ibrav             = 0,
+    nat               = 2,
+    ntyp              = 1,
+    ecutwfc = 10,
+    occupations='smearing', smearing='marzari-vanderbilt', degauss=0.001,
+    nosym=.true.
+    noinv=.true.
+/
+&electrons
+    conv_thr          = 1.0d-11,
+/
+ATOMIC_SPECIES
+ C  12.01078  C.BFD.upf
+CELL_PARAMETERS { bohr }
+    4.02781299      2.325608662        0.0000000000000000
+    4.02781299     -2.325608662    0.0000000000000000
+    0.0000000000000000     0.0000000   56.691779658
+ATOMIC_POSITIONS crystal
+C        0.234580802      0.085862533      0.5
+C        0.900790279     -0.247242206      0.5
+K_POINTS {crystal}
+1
+  0.00000000000000  0.00000000000000  0.00000000000000  1.00000000000000

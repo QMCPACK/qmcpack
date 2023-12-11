@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="qmc" series="2">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   <host>Q02-I2-J01.vesta.itd</host><date>Mon Jun  6 19:29:34 2016
+</date><user>krogel</user></project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                 18.89726133        0.00000000        0.00000000
+                  0.00000000       18.89726133        0.00000000
+                  0.00000000        0.00000000       18.89726133
+         </parameter>
+         <parameter name="bconds">
+            n n n
+         </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes" randomsrc="ion0">
+         <group name="u" size="7" mass="1.0">
+            <parameter name="charge">    -1                    </parameter>
+            <parameter name="mass">    1.0                   </parameter>
+         </group>
+         <group name="d" size="5" mass="1.0">
+            <parameter name="charge">    -1                    </parameter>
+            <parameter name="mass">    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="O" size="2" mass="29164.3928678">
+            <parameter name="charge">    6                     </parameter>
+            <parameter name="valence">    6                     </parameter>
+            <parameter name="atomicnumber">    8                     </parameter>
+            <parameter name="mass">    29164.3928678            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                     8.30780300        9.44863066        9.44863066
+                    10.58945833        9.44863066        9.44863066
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
+            <sposet type="bspline" name="spo_u" size="7" spindataset="0"/>
+            <sposet type="bspline" name="spo_d" size="5" spindataset="1"/>
+         </sposet_builder>
+         <determinantset>
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_u" size="7"/>
+               <determinant id="downdet" group="d" sposet="spo_d" size="5"/>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
+            <correlation elementType="O" size="8" rcut="5.0" cusp="0.0">
+               <coefficients id="eO" type="Array">                  
+-0.7857603664 -0.6843346811 -0.5091444542 -0.3353601601 -0.2004474919 -0.114436947 
+-0.05287575538 -0.01890909871
+               </coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
+               <coefficients id="uu" type="Array">                  
+0.2821859019 0.09389035346 0.01316517271 -0.004058492659 -0.02245807246 
+-0.01897277894 -0.02462026309 -0.01389903401
+               </coefficients>
+            </correlation>
+            <correlation speciesA="u" speciesB="d" size="8" rcut="10.0">
+               <coefficients id="ud" type="Array">                  
+0.3177092588 0.05144120505 -0.0259842962 -0.04491477992 -0.05950871316 
+-0.05510682604 -0.05833604399 -0.05519770851
+               </coefficients>
+            </correlation>
+         </jastrow>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+            <pseudo elementType="O" href="O.BFD.xml"/>
+         </pairpot>
+      </hamiltonian>
+   </qmcsystem><mcwalkerset fileroot="qmc.s001" node="-1" nprocs="32" version="1 0" collected="yes"/>
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers">    1               </parameter>
+      <parameter name="blocks">    20              </parameter>
+      <parameter name="steps">    10              </parameter>
+      <parameter name="subSteps">    2               </parameter>
+      <parameter name="timestep">    0.4             </parameter>
+      <parameter name="warmupSteps">    30              </parameter>
+      <parameter name="samples">    2048            </parameter>
+   </qmc>
+   <qmc method="dmc" move="pbyp">
+      <parameter name="blocks">    400             </parameter>
+      <parameter name="steps">    32              </parameter>
+      <parameter name="timestep">    0.01            </parameter>
+      <parameter name="nonlocalmoves">    yes             </parameter>
+      <parameter name="warmupSteps">    100             </parameter>
+   </qmc>
+</simulation>

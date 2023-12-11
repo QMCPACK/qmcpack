@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:complexType name="radfuncType">
+    <xs:annotation>
+      <xs:documentation>Type representing a radial functor, generic function on a one-dimensional grid
+      </xs:documentation>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="id" type="xs:string"></xs:attribute>
+        <xs:attribute name="exponent" type="xs:double" default="0.0"/>
+        <xs:attribute name="contraction" type="xs:double" default="1.0"/>
+        <xs:attribute name="node" type="xs:integer" default="1"/>
+        <xs:attribute name="rcut" type="xs:double" use="optional" default="10"></xs:attribute>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="gridType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="ri" type="xs:double" default="1.e-6"/>
+        <xs:attribute name="rf" type="xs:double" default="1.e2"/>
+        <xs:attribute name="npts" type="xs:integer" default="1001"/>
+        <xs:attribute name="src" type="xs:string"/>
+        <xs:attribute name="type" default="log">
+          <xs:simpleType>
+            <xs:restriction base="xs:NMTOKEN">
+              <xs:enumeration value="log"/>
+              <xs:enumeration value="linear"/>
+              <xs:enumeration value="numerical"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+</xs:schema>

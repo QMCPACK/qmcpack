@@ -1,0 +1,277 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \file formic/utils/mpi_interface.h
+///
+/// \brief   provides an interface to mpi
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+#ifndef FORMIC_MPI_INTERFACE_HEADER
+#define FORMIC_MPI_INTERFACE_HEADER
+
+#include <string>
+#include <vector>
+#include <complex>
+
+#include "formic/utils/exception.h"
+#include "formic/utils/matrix.h"
+
+${MPI_COMMENT_I}#include <mpi.h>
+
+${MPI_COMMENT_O}
+${MPI_COMMENT_O}  // declare some empty classes as placeholders if we are not using mpi
+${MPI_COMMENT_O}  class MPI_Comm {};
+${MPI_COMMENT_O}  class MPI_Op {};
+${MPI_COMMENT_O}  class MPI_Datatype {};
+${MPI_COMMENT_O}  extern MPI_Comm MPI_COMM_WORLD;
+${MPI_COMMENT_O}  extern MPI_Op MPI_SUM;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_CHAR;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_SHORT;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_INT;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_LONG;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_SIGNED_CHAR;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_UNSIGNED_CHAR;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_UNSIGNED_SHORT;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_UNSIGNED;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_UNSIGNED_LONG;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_FLOAT;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_DOUBLE;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_LONG_DOUBLE;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_BOOL;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_COMPLEX;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_DOUBLE_COMPLEX;
+${MPI_COMMENT_O}  extern MPI_Datatype MPI_LONG_DOUBLE_COMPLEX;
+${MPI_COMMENT_O}
+${MPI_COMMENT_O}  inline double MPI_Wtime() { return double(std::clock()) / double(CLOCKS_PER_SEC); }
+${MPI_COMMENT_O}
+
+namespace formic {
+
+  class Archive;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief   namespace to hold mpi related functions
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace mpi {
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   returns the global communicator
+  ///
+  /// \return the global communicator
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  inline MPI_Comm world() {
+    return MPI_COMM_WORLD;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   returns the number of processes in a communicator
+  ///
+  /// \param[in]     comm     the communicator to use (defaults to MPI_COMM_WORLD)
+  ///
+  /// \return the number of processes in comm
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  inline int size(const MPI_Comm & comm = MPI_COMM_WORLD) {
+    ${MPI_COMMENT_I}int size;
+    ${MPI_COMMENT_I}MPI_Comm_size(comm, &size);
+    ${MPI_COMMENT_I}return size;
+    ${MPI_COMMENT_O}return 1;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   returns rank of the current process in a communicator
+  ///
+  /// \param[in]     comm     the communicator to use (defaults to MPI_COMM_WORLD)
+  ///
+  /// \return the rank of the current process in comm
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  inline int rank(const MPI_Comm & comm = MPI_COMM_WORLD) {
+    ${MPI_COMMENT_I}int rank;
+    ${MPI_COMMENT_I}MPI_Comm_rank(comm, &rank);
+    ${MPI_COMMENT_I}return rank;
+    ${MPI_COMMENT_O}return 0;
+  }
+
+  void init(int argc, char **argv);
+  void finalize();
+  //std::string get_hostname();
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   waits for all processes in the communicator
+  ///
+  /// \param[in]     comm     the communicator to use (defaults to MPI_COMM_WORLD)
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  inline void barrier(const MPI_Comm & comm = MPI_COMM_WORLD) {
+    ${MPI_COMMENT_I}MPI_Barrier(comm);
+  }
+
+  // declare mpi templates, setting the default communicator to the global communicator
+  template<class T> void bcast(T * data, size_t n, int root = 0,
+                               const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void reduce(const T * send_buf, T * recv_buf, size_t n, const MPI_Op & op, int root = 0,
+                                const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void allreduce(const T * send_buf, T * recv_buf, size_t n, const MPI_Op & op,
+                                   const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void send(const T * buf, size_t n, const int dest, const int tag,
+                              const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void recv(T * buf, size_t n, const int source, const int tag,
+                              const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void scatter(const T * send_buf, T * recv_buf, size_t n, int root = 0,
+                                 const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void gather(const T * send_buf, T * recv_buf, size_t n, int root = 0,
+                                const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void allgather(const T * send_buf, T * recv_buf, size_t n,
+                                   const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void bcast(std::vector<T> & v, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void reduce(const std::vector<T> & send_v, std::vector<T> & recv_v,
+                                const MPI_Op & op, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void allreduce(const std::vector<T> & send_v, std::vector<T> & recv_v,
+                                   const MPI_Op & op, const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void send(const std::vector<T> & v, const int dest, const int tag,
+                              const MPI_Comm & comm = MPI_COMM_WORLD);
+  template<class T> void recv(std::vector<T> & v, const int source, const int tag,
+                              const MPI_Comm & comm = MPI_COMM_WORLD);
+
+//  template<class T> void bcast(T * const data, size_t n, int root = 0,
+//                               const MPI_Comm & comm = MPI_COMM_WORLD) {
+//    T * data_ptr = data;
+//    formic::mpi::bcast(data_ptr, n, root, comm);
+//  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   broadcast a single item
+  ///
+  /// \param[inout]  datum      the item to be broadcast
+  /// \param[in]     root       the process from which to broadcast
+  /// \param[in]     comm       the communicator to use
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class T> inline void bcast(T & datum, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD) {
+    formic::mpi::bcast(&datum, 1, root, comm);
+  }
+
+  void bcast(std::string & s, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD);
+
+  void bcast(std::vector<std::string> & v, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD);
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   broadcast a Matrix
+  ///
+  /// \param[inout]  mat        the matrix to be broadcast
+  /// \param[in]     root       the process from which to broadcast
+  /// \param[in]     comm       the communicator to use
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class S> inline void bcast(formic::Matrix<S> & mat, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD) {
+    unsigned long int n = mat.rows();
+    unsigned long int m = mat.cols();
+    formic::mpi::bcast(n, root, comm);
+    formic::mpi::bcast(m, root, comm);
+    if ( mat.rows() != n || mat.cols() != m )
+      mat.reset(n,m);
+    if ( mat.size() > 0 )
+      formic::mpi::bcast(mat.begin(), mat.size(), root, comm);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   broadcast a ColVec
+  ///
+  /// \param[inout]  vec        the vector to be broadcast
+  /// \param[in]     root       the process from which to broadcast
+  /// \param[in]     comm       the communicator to use
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class S> inline void bcast(formic::ColVec<S> & vec, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD) {
+    unsigned long int n = vec.size();
+    formic::mpi::bcast(n, root, comm);
+    if ( vec.size() != n )
+      vec.reset(n);
+    if ( vec.size() > 0 )
+      formic::mpi::bcast(vec.begin(), vec.size(), root, comm);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   broadcast a RowVec
+  ///
+  /// \param[inout]  vec        the vector to be broadcast
+  /// \param[in]     root       the process from which to broadcast
+  /// \param[in]     comm       the communicator to use
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class S> inline void bcast(formic::RowVec<S> & vec, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD) {
+    unsigned long int n = vec.size();
+    formic::mpi::bcast(n, root, comm);
+    if ( vec.size() != n )
+      vec.reset(n);
+    if ( vec.size() > 0 )
+      formic::mpi::bcast(vec.begin(), vec.size(), root, comm);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   reduces a formic::Matrix
+  ///
+  /// \param[in,out]  mat        the matrix to be reduced
+  /// \param[in]      root       the process from which to broadcast
+  /// \param[in]      comm       the communicator to use
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class S> inline void reduce(formic::Matrix<S> & mat, int root = 0, const MPI_Comm & comm = MPI_COMM_WORLD) {
+    if ( formic::mpi::rank() == root )
+      formic::mpi::reduce(mat.clone().begin(), mat.begin(), mat.size(), MPI_SUM, root, comm);
+    else
+      formic::mpi::reduce(        mat.begin(), mat.begin(), mat.size(), MPI_SUM, root, comm);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   allreduces a formic::Matrix
+  ///
+  /// \param[in,out]  mat        the matrix to be reduced
+  /// \param[in]      comm       the communicator to use
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class S> inline void allreduce(formic::Matrix<S> & mat, const MPI_Comm & comm = MPI_COMM_WORLD) {
+    formic::mpi::allreduce(mat.clone().begin(), mat.begin(), mat.size(), MPI_SUM, comm);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief   returns the appropriate MPI datatype
+  ///
+  /// \return the appropriate MPI datatype
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class T> inline MPI_Datatype datatype() {
+    throw formic::Exception("unknown mpi datatype");
+    return MPI_DOUBLE;
+  }
+  template <> inline MPI_Datatype  datatype< char                      >() { return MPI_CHAR;                }
+  template <> inline MPI_Datatype  datatype< signed short              >() { return MPI_SHORT;               }
+  template <> inline MPI_Datatype  datatype< signed int                >() { return MPI_INT;                 }
+  template <> inline MPI_Datatype  datatype< signed long               >() { return MPI_LONG;                }
+  template <> inline MPI_Datatype  datatype< signed char               >() { return MPI_SIGNED_CHAR;         }
+  template <> inline MPI_Datatype  datatype< unsigned char             >() { return MPI_UNSIGNED_CHAR;       }
+  template <> inline MPI_Datatype  datatype< unsigned short            >() { return MPI_UNSIGNED_SHORT;      }
+  template <> inline MPI_Datatype  datatype< unsigned int              >() { return MPI_UNSIGNED;            }
+  template <> inline MPI_Datatype  datatype< unsigned long int         >() { return MPI_UNSIGNED_LONG;       }
+  template <> inline MPI_Datatype  datatype< float                     >() { return MPI_FLOAT;               }
+  template <> inline MPI_Datatype  datatype< double                    >() { return MPI_DOUBLE;              }
+  template <> inline MPI_Datatype  datatype< long double               >() { return MPI_LONG_DOUBLE;         }
+  template <> inline MPI_Datatype  datatype< bool                      >() { return MPI_INT;                 }
+  template <> inline MPI_Datatype  datatype< std::complex<float>       >() { return MPI_COMPLEX;             }
+  template <> inline MPI_Datatype  datatype< std::complex<double>      >() { return MPI_DOUBLE_COMPLEX;      }
+  //template <> inline MPI_Datatype  datatype< std::complex<long double> >() { return MPI_LONG_DOUBLE_COMPLEX; }
+
+  template<class T> void read_and_bcast(formic::Archive & arch,
+                                        T & val,
+                                        const std::string & error_msg = "failed to read from archive in read_and_bcast",
+                                        int root = 0,
+                                        const MPI_Comm & comm = MPI_COMM_WORLD);
+
+} // end namespace mpi
+
+} // end namespace formic
+
+#endif

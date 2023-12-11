@@ -1,0 +1,39 @@
+/*! \page dev_todo ToDo
+
+\section todo_psi Wavefunction
+- analytic gradients for non-local PP optimization
+- single-precision for hybrid orbitals
+- truncated orbitals with PBC and complex orbitals
+- optimize composite SPOSet
+- grouping states with the same twist 
+- improve algorithms and implementations to construct hybrid orbitals
+- decide how to specify excited states and excitations in general
+
+\section todo_ham Hamiltonians
+- new observables
+- forces
+- break up \c HamiltonianFactory
+
+\section todo_qmc Drivers
+- Need to discuss pros and cons of reconfiguration vs the
+  dynamic population method.
+
+\section todo_tool Workflow and tools
+
+\section todo_comp Computer Science Development
+- threading
+ - plan to introduce \c VirtualParticleSet to handle 
+   - moves on the sphere for non-local PP
+   - other fine-grained parallelization
+ - RQMC and correlated sampling drivers
+- MPI update
+ - remove OOMPI
+ - \c boost::mpi, if \c cmake can do the job
+ - light-weight mpi 
+ - MPI3 and RDMA 
+- SIMD algorithms
+- accelerators
+ - A lot of features are missing on GPUs.
+ - Will have Xeon Phi port
+
+*/

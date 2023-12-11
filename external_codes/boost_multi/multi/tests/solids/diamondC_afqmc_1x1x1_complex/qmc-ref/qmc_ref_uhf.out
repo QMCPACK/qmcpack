@@ -1,0 +1,135 @@
+  Input file(s): qmc_ref_uhf.in.xml 
+
+=====================================================
+                    QMCPACK 3.6.0
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: develop
+  Last git commit: 4862d84198c38cac01cd448a768b0e1dce2875fb
+  Last git commit date: Fri Jan 4 13:29:36 2019 -0500
+  Last git commit subject: Merge pull request #1298 from mmorale3/remove_old_shm_classes
+=====================================================
+  Global options 
+
+  MPI Nodes             = 16
+  MPI Nodes per group   = 16
+  MPI Group ID          = 0
+  OMP 1st level threads = 2
+  OMP nested threading disabled or only 1 thread on the 2nd level
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Input XML = qmc_ref_uhf.in.xml
+
+/*************************************************
+ ********  This is an AFQMC calculation   ********
+ *************************************************
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 485
+
+  Range of prime numbers to use as seeds over processors and threads = 3469-3719
+
+
+
+****************************************************
+****************************************************
+****************************************************
+          Beginning Driver initialization.
+****************************************************
+****************************************************
+****************************************************
+
+ Using 1 cores per node in all TaskGroups. 
+
+****************************************************
+           Initializating Shared Walker Set 
+****************************************************
+ Using a collinear (UHF/ROHF) walker. 
+ Using asynchronous non-blocking swap load balancing algorithm. 
+ Using population control algorithm based on paired walker branching ( a la QWalk). 
+
+
+****************************************************
+               Initializating Hamiltonian 
+****************************************************
+
+ Initializing Hamiltonian from file: choldump.h5
+ -- Time to count elements in hdf5 read: 0.0253339
+ -- Time to read into ucsr matrix: 0.0208859
+ -- Time to read move ucsr into csr matrix: 0.00160694
+ Memory used by factorized 2-el integral table (on head node): 1.0211 MB. 
+ -- Time to initialize Hamiltonian from h5 file: 0.151146
+
+****************************************************
+               Initializating Wavefunction 
+****************************************************
+
+Reading a UHF-type trial wave-function. 
+ Wavefunction type: NOMSD
+Reading a UHF-type trial wave-function. 
+
+Partition of cholesky vector over nodes in TG: 227
+Number of terms in Cholesky Matrix per node in TG: 52994
+ Time for calculateHSPotentials: 0.0107272
+ Time for halfRotateCholeskyMatrixForBias: 0.111488
+ Calculating half-rotated Hamiltonian using Dense x Dense matrix multiplication. 
+ Approximate memory usage for half-rotated Hamiltonian construction: 
+   max. number of orbital in a node: 26
+   Qk/Rl matrices size (assuming dense) each = maxnorb * nup * ncholvecs complex numbers = 0.360229 MB 
+   Maximum size of communication buffer: 1024 MB
+   Temporary integral matrix Ta: 0.165039 MB 
+  Number of terms in Vijkl: 
+    Local: (min/max)254 0.00484467 MB  -  442 0.00843048 MB 
+    Node (min/max): 5512 0.105133 MB   -   5512 0.105133 MB 
+    Global: 5512 0.105133 MB
+
+ Time for halfRotateHijkl: 0.0285408
+
+****************************************************
+               Initializating Propagator 
+****************************************************
+
+ Using mean-field substraction in propagator: prop0
+ Largest component of Mean-field substraction potential: 1.30132
+
+
+ --------------- Parsing Propagator input ------------------ 
+
+ Using hybrid method to calculate the weights during the propagation.
+
+ Energy of starting determinant - E1, EJ, EXX: (-10.8097667941,0) (1.46757152068,0) (-0.977560027902,2.08356819284e-19)
+  BasicEstimator: Number of products in weight history: 0
+
+****************************************************
+****************************************************
+****************************************************
+          Finished Driver initialization.
+****************************************************
+****************************************************
+****************************************************
+
+Initial weight and number of walkers: 320 320
+Initial Eshift: 0
+----------------------------------------------------------------
+ Timer: 
+ Average time in Generic: 0.0285408496857
+ Average time in Generic1: 0.00160694122314
+----------------------------------------------------------------
+Stack timer profile
+Timer             Inclusive_time  Exclusive_time  Calls       Time_per_call
+Total             3690.7644     0.6623              1    3690.764443142
+  Block           3690.1021  1437.9375          10000       0.369010210
+    Energy           8.8674     8.8674          10000       0.000886741
+    G_for_vbias    129.6681   129.6681        1000000       0.000129668
+    Propagate      665.1451   665.1451        1000000       0.000665145
+    PseudoEnergy    32.5833    32.5833        1000000       0.000032583
+    vHS            989.2381   989.2381        1000000       0.000989238
+    vbias          426.6626   426.6626        1000000       0.000426663

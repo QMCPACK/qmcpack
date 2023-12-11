@@ -1,0 +1,1591 @@
+#! /usr/bin/env python3
+
+import os
+import sys
+from optparse import OptionParser
+
+
+def find_nexus_modules():
+    import sys
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
+#end def find_nexus_modules
+
+
+def import_nexus_module(module_name):
+    import inspect
+    import importlib
+    return importlib.import_module(module_name)
+#end def import_nexus_module
+
+
+# Load Nexus modules
+try:
+    # Attempt specialized path-based imports.
+    #  (The executable should still work even if Nexus is not installed)
+    find_nexus_modules()
+
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+
+    generic = import_nexus_module('generic')
+    obj = generic.obj
+    del generic
+
+    developer = import_nexus_module('developer')
+    DevBase     = developer.DevBase
+    unavailable = developer.unavailable
+    del developer
+
+    unit_converter = import_nexus_module('unit_converter')
+    convert = unit_converter.convert
+    del unit_converter
+
+    numerics = import_nexus_module('numerics')
+    simstats             = numerics.simstats
+    simplestats          = numerics.simplestats
+    equilibration_length = numerics.equilibration_length
+    del numerics
+except:
+    # Failing path-based imports, import installed Nexus modules.
+    from versions import nexus_version
+    from generic import obj
+    from developer import DevBase,unavailable
+    from unit_converter import convert
+    from numerics import simstats,simplestats,equilibration_length
+#end try
+
+
+# numpy imports
+try:
+    import numpy as np
+except (ImportError,RuntimeError):
+    np = unavailable('numpy')
+#end try
+
+
+# matplotlib imports
+matplotlib_import_success = False
+try:
+    import matplotlib.pyplot as plt
+
+    params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
+          'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
+    plt.rcParams.update(params)
+    matplotlib_import_success = True
+except (ImportError,RuntimeError):
+    matplotlib_import_success = False
+#end try
+
+
+
+def sigfig_round(some_float, nsigfig):
+    if nsigfig >= 1 and nsigfig == int(nsigfig):
+        return round(some_float, nsigfig - int(np.floor(np.log10(abs(some_float))))-1) 
+    else:
+        QMCA.class_error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig))
+    #end if
+#end sigfig_round
+
+
+
+class ColorWheel(DevBase):
+    def __init__(self):
+        colors  = 'Black Maroon DarkOrange Green DarkBlue Purple Gray Firebrick Orange MediumSeaGreen DodgerBlue MediumOrchid'.split()
+        lines  = '- -- -. :'.split()
+        markers = '. v s o ^ d p'.split() 
+        ls = []
+        for line in lines:
+            for color in colors:
+                ls.append((color,line))
+            #end for
+        #end for
+        ms = []
+        for i in range(len(markers)):
+            ms.append((colors[i],markers[i]))
+        #end for
+        mls = []
+        ic=-1
+        for line in lines:
+            for marker in markers:
+                ic = (ic+1)%len(colors)
+                mls.append((colors[ic],marker+line))
+            #end for
+        #end for
+        self.line_styles   = ls
+        self.marker_styles = ms
+        self.marker_line_styles = mls
+        self.reset()
+    #end def __init__
+
+    def next_line(self):
+        self.iline = (self.iline+1)%len(self.line_styles)
+        return self.line_styles[self.iline]
+    #end def next_line
+
+    def next_marker(self):
+        self.imarker = (self.imarker+1)%len(self.marker_styles)
+        return self.marker_styles[self.imarker]
+    #end def next_marker
+
+    def next_marker_line(self):
+        self.imarker_line = (self.imarker_line+1)%len(self.marker_line_styles)
+        return self.marker_line_styles[self.imarker_line]
+    #end def next_marker_line
+
+    def reset(self):
+        self.iline        = -1
+        self.imarker      = -1
+        self.imarker_line = -1
+    #end def reset
+
+    def reset_line(self):
+        self.iline        = -1
+    #end def reset_line
+
+    def reset_marker(self):
+        self.imarker      = -1
+    #end def reset_marker
+
+    def reset_marker_line(self):
+        self.imarker_line = -1
+    #end def reset_marker_line
+#end class ColorWheel
+color_wheel = ColorWheel()
+
+
+
+
+class QBase(DevBase):
+    options = obj()
+
+    autocorr = True
+
+    quantity_abbreviations = obj(
+        e   = 'LocalEnergy',    v  = 'Variance',       k    = 'Kinetic',
+        p   = 'LocalPotential', ee = 'ElecElec',       ii   = 'IonIon',      
+        l   = 'LocalECP',       n  = 'NonLocalECP',    ce   = 'CorrectedEnergy',
+        mpc = 'MPC',            kc = 'KEcorr',         bw   = 'BlockWeight',
+        bc  = 'BlockCPU',       ar = 'AcceptRatio',    eff  = 'Efficiency',
+        te  = 'TrialEnergy',    de = 'DiffEff',        w    = 'Weight',
+        nw  = 'NumOfWalkers',   sw = 'AvgSentWalkers', tt   = 'TotalTime', 
+        ts  = 'TotalSamples',   le2= 'LocalEnergy_sq', fl   = 'Flux',
+        # RMC
+        k_m  = 'Kinetic_m',     k_p  = 'Kinetic_p',    p_p  = 'LocalPotential_pure',
+        ee_m = 'ElecElec_m',    ee_p = 'ElecElec_p',
+        # CSVMC
+        e_A  = 'LocEne_0',      e_B  = 'LocEne_1',     de_AB  = 'dLocEne_0_1',
+        k_A  = 'Kinetic_0',     k_B  = 'Kinetic_1',    k_AB   = 'dKinetic_0_1',
+        p_A  = 'LocPot_0',      p_B  = 'LocPot_1',     p_AB   = 'dLocPot_0_1',
+        ee_A = 'ElecElec_0',    ee_B = 'ElecElec_1',   dee_AB = 'dElecElec_0_1',
+        ei_A = 'ElecIon_0',     ei_B = 'ElecIon_1',    ei_AB  = 'dElecIon_0_1',
+        ii_A = 'IonIon_0',      ii_B = 'IonIon_1',     dii_AB = 'dIonIon_0_1',
+        fl_A = 'Flux_0',        fl_B = 'Flux_1',       fl_AB  = 'dFlux_0_1',
+        wp_A = 'wpsi_0',        wp_B = 'wpsi_1',
+        # AFQMC
+        el = 'EnergyEstim__nume_real'
+        )
+
+    def log(self,*texts,**kwargs):
+        if len(kwargs)>0:
+            n = kwargs['n']
+        else:
+            n=0
+        #end if
+        text=''
+        for t in texts:
+            text+=str(t)+' '
+        #end for
+        pad = n*'  '
+        self._logfile.write(pad+text.replace('\n','\n'+pad)+'\n')
+    #end def log
+
+
+    def check_matplotlib_import(self):
+        if not self.options.nowarn and not matplotlib_import_success:
+            self.warn('Python library matplotlib raised uncaught exceptions during import.  Plots may or may not work.')
+        #end if
+    #end def check_matplotlib_import
+#end class QBase
+
+
+
+
+
+class DatAnalyzer(QBase):
+    first = 'LocalEnergy Variance Kinetic LocalPotential ElecElec LocalECP NonLocalECP IonIon'.split()
+    last = 'MPC KEcorr BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples TrialEnergy DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers CorrectedEnergy'.split()
+
+    nonenergy = set('BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers'.split())
+    whole_numbers = ['TotalSamples', 'NumOfWalkers']
+
+    energy_sq = set(['Variance','LocalEnergy_sq'])
+
+    non_ee_potentials = ['IonIon','LocalECP','NonLocalECP','ElecIon','IonElec']
+
+
+    def __init__(self,filepath,index,type='unknown',units='Ha'):
+        self.info  = obj(
+            index       = index,
+            type        = type,
+            units       = units,
+            series      = None,
+            filepath    = None,
+            filename    = None,
+            prefix      = None,
+            nsamples    = None,
+            weight      = 1.0,
+            load_failed = False,
+            )
+        self.data  = obj()
+        self.stats = obj()
+        self.load_data(filepath)
+    #end def __init__
+
+
+    def extract_info(self,filepath):
+        series = None
+        path,filename = os.path.split(filepath)
+        tokens = filename.split('.')
+        for token in tokens:
+            if len(token)==4 and token[0]=='s' and token[1:].isdigit():
+                series=int(token[1:])
+                break
+            #end if
+        #end for
+        if series is None:
+            self.error('unable to read series number for file '+filepath,'QMCA')
+        #end if
+        prefix = filepath.split('.s'+str(series).zfill(3))[0]
+        self.info.set(
+            series   = series,
+            filepath = filepath,
+            filename = filename,
+            prefix   = prefix
+            )
+    #end def extract_info
+
+        
+    def get_equilibration(self):
+        eq = self.options.equilibration
+        if eq=='auto':
+            if 'LocalEnergy' in self.data:
+                nbe = equilibration_length(self.data.LocalEnergy)
+            else:
+                nbe = 0
+            #end if
+        elif isinstance(eq,(int,np.int_)):
+            nbe = eq
+        elif not self.info.series in eq:
+            self.error('equilibration length was not provided for series {0}\nplease use the -e option to provide an equilibration length'.format(self.info.series),'QMCA')
+        else:
+            nbe = eq[self.info.series]
+        #end if
+        if nbe<0:
+            self.error('equilibration length cannot be negative\nyou requested an equilibration length of {0} for series {1}'.format(nbe,self.info.series),'QMCA')
+        #end if
+        return nbe
+    #end def get_equilibration
+
+
+    def load_data(self,filepath):
+        self.data.clear()
+        self.extract_info(filepath)
+        lt = np.loadtxt(filepath)
+        if len(lt.shape)==1:
+            lt.shape = (1,len(lt))
+        #end if
+        if lt.size==0:
+            self.info.load_failed = True
+            return
+        #end if
+        data = lt[:,1:].transpose()
+        self.info.nsamples = data.shape[1]
+        fobj = open(filepath,'r')
+        variables = fobj.readline().split()[2:]
+        # fobj.close()
+        Econv  = convert(1.0,'Ha',self.info.units)
+        Econv2 = Econv**2
+        for i in range(len(variables)):
+            var = variables[i]
+            if var in self.nonenergy:
+                self.data[var]=data[i,:]
+            elif var in self.energy_sq:
+                self.data[var]=Econv2*data[i,:]
+            else:
+                self.data[var]=Econv*data[i,:]
+            #end if
+        #end for
+    #end def load_data
+
+
+    def stat_value(self,v):
+        if self.autocorr:
+            (mean,var,error,kappa)=simstats(v)
+        else:
+            (mean,var,error,kappa)=simplestats(v,full=True)
+        #end if
+        sv = obj(
+            mean  = mean,
+            var   = var,
+            error = error,
+            kappa = kappa
+            )
+        return sv
+    #end def stat_value
+
+
+    def analyze(self):
+        self.stats.clear()
+        nbe = self.get_equilibration()
+        data  = self.data
+        stats = self.stats
+        for varname,samples in data.items():
+            if nbe>=len(samples):
+                self.error('equilibration length for series {0} is greater than the amount of data in the file ({1} elements)\nyou requested an equilibration length of {2}'.format(self.info.series,len(samples),nbe),'QMCA')
+            #end if
+            stats[varname] = self.stat_value(samples[nbe:])
+        #end for
+        if 'LocalEnergy_sq' in data and 'LocalEnergy' in data:
+            v = data.LocalEnergy_sq - data.LocalEnergy**2
+            data.Variance  = v
+            stats.Variance = self.stat_value(v[nbe:])
+        #end if
+
+        # Find finite size corrected energy
+        if 'LocalEnergy' in data and ('MPC' in data or 'KEcorr' in data):
+            le_recovered = False
+
+            # Attempt to make a correction that is right regardless of whether
+            # ElecElec/MPC are present or "physical" in QMCPACK's parlance.  
+            if 'Kinetic' in data:
+                # Attempt to reconstruct the total energy w/o e-e contribution
+                non_ee_energies = self.non_ee_potentials
+                nee = data.Kinetic.copy()
+                for pot in self.non_ee_potentials:
+                    if pot in data:
+                        nee += data[pot]
+                    #end if
+                #end for
+
+                # Allow the correction only if the local energy sum is correct.
+                # This might not be possible if the non-e-e potential energy terms 
+                # listed in non_ee_potentials are not comprehensive for whatever 
+                # reason (e.g. the user included a new potential of their own making 
+                # that qmca is not aware of).
+                le_ref = data.LocalEnergy.sum()
+                for ee in ('ElecElec','MPC'):
+                    if ee in data:
+                        le_sum = (nee + data[ee]).sum()
+                        le_recovered |= abs((le_sum-le_ref)/le_ref)<1e-8
+                    #end if
+                #end if
+
+                # Provided the local energy can be recovered, the corrected
+                # local energy is always correct if MPC is used when present.
+                if le_recovered:
+                    ce = nee
+                    if 'MPC' in data:
+                        ce += data.MPC
+                    elif 'ElecElec' in data:
+                        ce += data.ElecElec
+                    #end if
+                #end if
+            #end if
+
+            # Fall back to using LocalEnergy alone in case attempt above is 
+            # flawed due to imperfect knowledge.  This case represents an 
+            # assumption that MPC is used only as a post-correction.
+            if not le_recovered:
+                ce = data.LocalEnergy.copy()
+                if 'MPC' in data and 'ElecElec' in data:
+                    ce += data.MPC - data.ElecElec
+                #end if
+            #end if
+
+            # Add in the kinetic energy correction, if present.
+            if 'KEcorr' in data:
+                ce += data.KEcorr
+            #end if
+            data.CorrectedEnergy  = ce
+            stats.CorrectedEnergy = self.stat_value(ce[nbe:])
+        #end if
+
+        if len(data)>0:
+            example = data.first()
+            if 'NumOfWalkers' in data:
+                ts = data.NumOfWalkers.sum()
+                stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
+                data.TotalSamples = 0*example
+            #end if
+            if 'BlockWeight' in data:
+                bw = data.BlockWeight[nbe:]
+                ts = bw.sum()
+                stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
+                data.TotalSamples = 0*example
+            #end if
+            if 'BlockCPU' in data:
+                bc = data.BlockCPU[nbe:]
+                tt = bc.sum()
+                stats.TotalTime = obj(mean=tt,var=0.0,error=0.0,kappa=1.0)
+                data.TotalTime = 0*example
+            #end if
+            if 'LocalEnergy' in data and 'BlockWeight' in data and 'BlockCPU' in data:
+                e  = stats.LocalEnergy.error
+                w  = stats.BlockWeight.mean
+                t  = stats.BlockCPU.mean
+                wt = (bc*bw).sum()/3600
+
+                # def. of efficiency in energy.pl
+                #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
+
+                # efficiency based on total work and error bar
+                if (e > 0.0):
+                    stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                else:
+                    stats.Efficiency = obj(mean=0.0,var=0.0,error=0.0,kappa=1.0)
+                #end if
+                data.Efficiency  = 0*example
+            #end if
+        #end if
+    #end def analyze
+
+
+    def zero(self):
+        self.info.weight = 0.0
+        for d in self.data:
+            d[:] = 0.0
+        #end for
+        for s in self.stats:
+            s.set(
+                mean  = 0.0,
+                error = 0.0,
+                kappa = 0.0,
+                var   = 0.0
+                )
+        #end for
+    #end def zero
+
+
+    def accumulate(self,other,weight):
+        self.info.weight += weight
+        for q,v in other.data.items():
+            d = self.data[q]
+            minlen = min(len(d),len(v))
+            self.data[q] = d[0:minlen] + weight*v[0:minlen]
+        #end for
+    #end def accumulate
+
+
+    def normalize(self):
+        w = self.info.weight
+        for d in self.data:
+            d[:] /= w
+        #end for
+    #end def normalize
+
+
+    def join(self,others):
+        eq = self.options.equilibration
+        quantities = self.data.keys()
+        for q in quantities:
+            qlist = [self.data[q]]
+            for other in others:
+                if eq=='auto':
+                    nbe = 0
+                else:
+                    nbe = other.get_equilibration()
+                #end if
+                qlist.append(other.data[q][nbe:])
+            #end for
+            self.data[q] = np.concatenate(qlist)
+        #end for
+    #end def join
+            
+    
+    def write_stats(self,quantities,first_prefix=False,first_series=False,only_series=False):
+        opt   = self.options
+        stats = self.stats
+        prefix = self.info.prefix
+        series = self.info.series
+        qset  = set(quantities)
+        evset = set(['LocalEnergy','Variance'])
+        cvset = set(['CorrectedEnergy','Variance'])
+        if first_series and not only_series:
+            self.log('')
+        #end if
+
+        if opt.desired_error or opt.particle_number:
+            ratio = 1.0
+            current_error = sigfig_round(stats.LocalEnergy.error, 1) 
+            if opt.desired_error:
+                ratio = stats.LocalEnergy.error / opt.desired_error
+                phrase = "{:<50} {} {}".format(
+                             "To change the current error of {} {} to ".format(
+                                 current_error, 
+                                 opt.units
+                             ),
+                         opt.desired_error,
+                         opt.units
+                         )
+                self.log("\n{:<50}".format(phrase)) 
+            #end if
+            if opt.particle_number:
+                ratio *= opt.particle_number[0]/opt.particle_number[1]
+                phrase = "{:<50} {}".format(
+                            "To increase current particle number of {} to".format(
+                                opt.particle_number[1]
+                            ),
+                         opt.particle_number[0]
+                         )
+                if opt.desired_error:
+                    self.log("{:<50}".format(phrase)) 
+                else:
+                    self.log("\n{:<50}".format(phrase)) 
+                    phrase = "{:<50} {} {}".format(
+                                "Maintaining current error bar of ",
+                                    current_error, 
+                                    opt.units
+                             )
+                    self.log("{:<50}".format(phrase)) 
+                #end if
+            #end if
+            required_samples = int((ratio ** 2) * stats.TotalSamples.mean)
+            required_samples = int(sigfig_round(required_samples, 3))
+            factor = required_samples / stats.TotalSamples.mean
+            factor = sigfig_round(factor, 3)
+            self.log("{:<50} {:,}".format(
+                        "Change sample number to",
+                        required_samples
+                        )
+                    )
+            self.log("{:<50} {}\n".format(
+                        "Multiplying current sample number by a factor of",
+                        factor
+                        )
+                    )
+            exit()
+        #end if
+
+        if len(quantities)==1 and not opt.all_quantities:
+            line = self.stat_line(quantities[0],prec='8.6f')
+            self.log('{0}  series {1}  {2}'.format(prefix,series,line))
+        elif qset==evset:
+            if first_prefix and first_series:
+                self.log('                            LocalEnergy               Variance           ratio')
+            #end if
+            line = self.EV_line(['LocalEnergy','Variance'])
+            self.log('{0}  series {1}  {2}'.format(prefix,series,line))
+        elif qset==cvset:
+            if first_prefix and first_series:
+                self.log('                        CorrectedEnergy               Variance           ratio')
+            #end if
+            line = self.EV_line(['CorrectedEnergy','Variance'])
+            self.log('{0}  series {1}  {2}'.format(prefix,series,line))
+        else:
+            if opt.all_quantities:
+                squants = set(stats.keys())
+            else:
+                squants = set(quantities)
+            #end if
+            first = []
+            for qn in self.first:
+                if qn in squants:
+                    first.append(qn)
+                #end if
+            #end for
+            last = []
+            for qn in self.last:
+                if qn in squants:
+                    last.append(qn)
+                #end if
+            #end for
+            mid = sorted(list(squants-set(first)-set(last)))
+            order = first+mid+last
+            self.log('\n{0}  series {1}'.format(prefix,series))
+            for qname in order:
+                if qname in stats:
+                    if qname in self.whole_numbers:
+                        line = self.stat_line(qname,prec='16.0f')
+                    else:
+                        line = self.stat_line(qname)
+                    #end if
+                    if qname=='CorrectedEnergy':
+                        self.log(len(line)*'-',n=1)
+                    #end if
+                    self.log(line,n=1)
+                #end if
+            #end for
+        #end if
+    #end def write_stats
+
+    
+    def stat_line(self,qname,compress=False,prec='auto'):
+        opt = self.options
+        q = self.stats[qname]
+        if opt.precision is not None:
+            prec = opt.precision
+            line = '{0:<22}=  {1: '+prec+'} +/- {2: '+prec+'}'
+        elif prec=='auto':
+            if (q.mean !=0.0 and abs(q.error/q.mean) > 1e-8):
+                d = int(max(2,1-np.floor(np.log(q.error)/np.log(10.))))
+            else:
+                d = 2
+            #end if
+            d = str(d)
+            line = '{0:<22}=  {1:16.'+d+'f} +/- {2:16.'+d+'f}'
+        else:
+            line = '{0:<22}=  {1:'+prec+'} +/- {2:'+prec+'}'
+        #end if
+        vals = [qname,q.mean,q.error]
+        opt = self.options
+        if opt.show_variance:
+            line += '   {'+str(len(vals))+':4.3e}'
+            vals.append(q.var)
+        #end if
+        if opt.show_autocorr:
+            line += '   {'+str(len(vals))+':>4.1f}'
+            vals.append(q.kappa)
+        #end if
+        line = line.format(*vals)
+        if compress:
+            tokens = line.split()
+            line=''
+            for token in tokens:
+                line+=token+' '
+            #end for
+        #end if
+        return line
+    #end def stat_line
+
+
+    def EV_line(self,quants):
+        line = ''
+        for qname in quants:
+            qline = self.stat_line(qname,prec='8.6f')
+            line += qline.split('=')[1].strip()+'   '
+        #end for
+        E = self.stats[quants[0]]
+        V = self.stats[quants[1]]
+        line += '{0:6.4f}'.format(abs(V.mean/E.mean))
+        return line
+    #end def EV_line
+
+
+    def plot_series(self,quantity,style,prefix):
+        if not quantity in self.stats:
+            self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
+        #end if
+        s = self.info.series
+        q = self.stats[quantity]
+        #errorbar(s,q.mean,q.error,fmt=style,label=prefix)
+        return (s,s),(q.mean,q.mean),s,q.mean,q.error
+    #end def plot_series
+
+
+    def plot_trace(self,quantity,style,prefix,shift):
+        self.check_matplotlib_import()
+        if not quantity in self.data:
+            self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
+        #end if
+        nbe = self.get_equilibration()
+        q = self.data[quantity]
+        middle = int(len(q)//2)
+        qmean = q[middle:].mean()
+        qmax = q[middle:].max()
+        qmin = q[middle:].min()
+        ylims = (qmean-2*(qmean-qmin),qmean+2*(qmax-qmean))
+        smean,svar = self.stats[quantity].tuple('mean','var')
+        sstd = np.sqrt(svar)
+        s = np.arange(len(q))+shift
+        xlims = min(s),max(s)
+        #plot(s,q,style,label=prefix)
+        plt.plot([nbe+shift,nbe+shift],ylims,'k-.',lw=2)
+        plt.plot(xlims,[smean,smean],'r-')
+        plt.plot(xlims,[smean+sstd,smean+sstd],'r-.')
+        plt.plot(xlims,[smean-sstd,smean-sstd],'r-.')
+        return xlims,ylims,s,q
+    #end def plot_trace
+
+
+    def plot_histogram(self,quantity,style,prefix):
+        self.not_implemented()
+        #if not quantity in self.data:
+        #    self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
+        ##end if
+        #nbe = self.get_equilibration()
+        #q = self.data[quantity]
+        #middle = int(len(q)/2)
+        #qmean = q[middle:].mean()
+        #qmax = q[middle:].max()
+        #qmin = q[middle:].min()
+        #ylims = (qmean-2*(qmean-qmin),qmean+2*(qmax-qmean))
+        #smean,svar = self.stats[quantity].tuple('mean','var')
+        #sstd = np.sqrt(svar)
+        #s = np.arange(len(q))+shift
+        #xlims = min(s),max(s)
+        ##plot(s,q,style,label=prefix)
+        #plot([nbe+shift,nbe+shift],ylims,'k-.',lw=2)
+        #plot(xlims,[smean,smean],'r-')
+        #plot(xlims,[smean+sstd,smean+sstd],'r-.')
+        #plot(xlims,[smean-sstd,smean-sstd],'r-.')
+        #ylims = qmin,qmax
+        #return xlims,ylims,s,q
+    #end def plot_histogram
+#end class DatAnalyzer
+
+
+def comma_list(s):
+    if ',' in s:
+        s = s.replace(',',' ')
+    #end if
+    return s.split()
+#end def comma_list
+
+
+class QMCA(QBase):
+    def __init__(self):
+        self.parser      = None
+        self.file_list   = []
+        self.file_map    = obj()
+        self.prefix_list = []
+        self.data        = obj()
+        self.verbose     = False
+
+        self.read_command_line()
+        self.load_data()
+        self.analyze_data()
+        self.exit()
+    #end def __init__
+
+
+    def help(self):
+        self.log('\n'+self.parser.format_help().strip(),n=1)
+        self.log('\nAbbreviations and full names for quantities:\n'+str(self.quantity_abbreviations),n=1)
+        self.exit()
+    #end def help
+
+
+    def examples(self):
+        examples = '''  
+QMCA examples:
+=============
+
+ all quantities single file
+   qmca qmc.s000.scalar.dat
+   qmca qmc.s000.dmc.dat
+
+ single quantity (local energy) single file
+   qmca -q e qmc.s000.scalar.dat
+   qmca -q e qmc.s000.dmc.dat
+
+ single quantity (local energy) multiple files
+  multiple series
+   qmca -q e qmc.s*.scalar.dat
+  multiple prefixes
+   qmca -q e *.s000.scalar.dat
+  multiple series and prefixes
+   qmca -q e *.s*.scalar.dat
+
+ multiple quantities, multiple files
+   qmca -q ekp *.s*.scalar.dat
+
+ special format for energy, variance, & ratio
+   qmca -q ev qmc.s*.scalar.dat
+
+ setting equilibration lengths
+  equilibration length of 10 applied to all files    
+   qmca -e 10 qmc.s000.scalar.dat  qmc.s001.scalar.dat
+  equilibration lengths of 10 and 20 applied series 0 and 1    
+   qmca -e '10 20' qmc.s000.scalar.dat  qmc.s001.scalar.dat
+
+ twist averaging
+  equal weights
+   qmca -a qmc.g000.s*.scalar.dat qmc.g001.s*.scalar.dat
+  user specified weights (w=2 for g=0 and w=4 for g=1)
+   qmca -a -w '2 4' qmc.g000.s*.scalar.dat qmc.g001.s*.scalar.dat
+  save averaged data to scalar files (useful for timestep extrapolating averaged quantities)
+   qmca -a -w '2 4' --save_average qmc.g000.s*.scalar.dat qmc.g001.s*.scalar.dat
+
+ plotting vs series
+   qmca -p -q e -e 10 qmc.s*.scalar.dat
+
+ plotting vs samples (sample traces)
+   qmca -t -q e -e 10 qmc.s*.scalar.dat
+   
+ plotting multiple twists on the same plot
+   qmca -po -q e -e 10 qmc.g*.s*.scalar.dat
+   qmca -to -q e -e 10 qmc.g*.s*.scalar.dat
+   
+ plotting twist averages
+   qmca -pa -q e -e 10 qmc.g*.s*.scalar.dat
+   qmca -ta -q e -e 10 qmc.g*.s*.scalar.dat
+
+ multiple quantities and prefixes can be used for plots as well
+'''
+        self.log(examples)
+        self.exit()
+    #end def examples
+
+
+    def exit(self):
+        if self.verbose:
+            self.log('\nQMCA finished\n')
+        #end if
+        exit()
+    #end def exit
+
+
+    def read_command_line(self):
+        usage = '''usage: %prog [options] [file(s)]'''
+        parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
+        self.parser = parser
+        # available option letters: c, f, g, k, l, m, y, z
+        parser.add_option('-v','--verbose',dest='verbose',
+                          action='store_true',default=False,
+                          help='Print detailed information (default=%default).'
+                          )
+        parser.add_option('-q','--quantities',dest='quantities',
+                          default='all',
+                          help='Quantity or list of quantities to analyze.  See names and abbreviations below (default=%default).'
+                          )
+        parser.add_option('-u','--units',dest='units',
+                          default='Ha',
+                          help='Desired energy units.  Can be Ha (Hartree), Ry (Rydberg), eV (electron volts), kJ_mol (k. joule/mole), K (Kelvin), J (Joules) (default=%default).'
+                          )
+        parser.add_option('-e','--equilibration',dest='equilibration',
+                          default='auto',
+                          help='Equilibration length in blocks (default=%default).'
+                          )
+        parser.add_option('-a','--average',dest='average',
+                          action='store_true',default=False,
+                          help='Average over files in each series (default=%default).'
+                          )
+        parser.add_option('--save_average',dest='save_average',
+                          action='store_true',default=False,
+                          help='Save averaged data into scalar.dat files. (default=%default).'
+                          )
+        parser.add_option('-w','--weights',dest='weights',
+                          default='None',
+                          help='List of weights for averaging (default=%default).'
+                          )
+        parser.add_option('-j','--join',dest='join',
+                          default='None',
+                          help='Join data for a range of series (default=%default).'
+                          )
+        parser.add_option('-b','--reblock',dest='reblock',
+                          action='store_true',default=False,
+                          help='(pending) Use reblocking to calculate statistics (default=%default).'
+                          )
+        parser.add_option('-p','--plot',dest='plot',
+                          action='store_true',default=False,
+                          help='Plot quantities vs. series (default=%default).'
+                          )
+        parser.add_option('-t','--trace',dest='trace',
+                          action='store_true',default=False,
+                          help='Plot a trace of quantities (default=%default).'
+                          )
+        parser.add_option('-h','--histogram',dest='histogram',
+                          action='store_true',default=False,
+                          help='(pending) Plot a histogram of quantities (default=%default).'
+                          )
+        parser.add_option('-o','--overlay',dest='overlay',
+                          action='store_true',default=False,
+                          help='Overlay plots (default=%default).'
+                          )
+        parser.add_option('--legend',dest='legend',
+                          default='upper right',
+                          help='Placement of legend.  None for no legend, outside for outside legend (default=%default).'
+                          )
+        parser.add_option('--noautocorr',dest='noautocorr',
+                          action='store_true',default=False,
+                          help='Do not calculate autocorrelation. Warning: error bars are no longer valid! (default=%default).'
+                          )
+        parser.add_option('--noac',dest='noautocorr',
+                          action='store_true',default=False,
+                          help='Alias for --noautocorr (default=%default).'
+                          )
+        parser.add_option('--sac',dest='show_autocorr',
+                          action='store_true',default=False,
+                          help='Show autocorrelation of sample data (default=%default).'
+                          )
+        parser.add_option('--sv',dest='show_variance',
+                          action='store_true',default=False,
+                          help='Show variance of sample data (default=%default).'
+                          )
+        parser.add_option('--sort',dest='sort',
+                          action='store_true',default=False,
+                          help='Display output data sorted alphabetically by file name (default=%default).'
+                          )
+        parser.add_option('-i','--image',dest='image',
+                          action='store_true',default=False,
+                          help='(pending) Save image files (default=%default).'
+                          )
+        parser.add_option('-r','--report',dest='report',
+                          action='store_true',default=False,
+                          help='(pending) Write a report (default=%default).'
+                          )
+        parser.add_option('-s','--show_options',dest='show_options',
+                          action='store_true',default=False,
+                          help='Print user provided options (default=%default).'
+                          )
+        parser.add_option('-x','--examples',dest='examples',
+                          action='store_true',default=False,
+                          help='Print examples and exit (default=%default).'
+                          )
+        parser.add_option('--help',dest='help',
+                          action='store_true',default=False,
+                          help='Print help information and exit (default=%default).'
+                          )
+        parser.add_option('-d', '--desired_error', dest='desired_error',
+                          type="float", default=None,
+                          help='Show number of samples needed for desired error bar (default=%default).'
+                          )
+        parser.add_option('-n', '--enlarge_system',dest='particle_number',
+                          type="int", nargs=2, default=None,
+                          help=('Show number of samples needed to maintain '
+                                'error bar on larger system: desired particle number ' 
+                                'first, current particle number second (default=%default)'
+                               )
+                         )
+        parser.add_option('--fp',dest='precision',
+                          default=None,
+                          help='Sets the floating point precision of displayed statistical results.  Must be a floating point format string such as 16.8f, 8.6e, or similar (default=%default).'
+                          )
+        parser.add_option('--nowarn',dest='nowarn',
+                          action='store_true',default=False,
+                          help='Suppress warning messages (default=%default).'
+                          )
+        parser.add_option('--average_all',dest='average_all',
+                          action='store_true',default=False,
+                          help='Average over all files, ignoring differences in path (default=%default).'
+                          )
+        parser.add_option('--twist_info',dest='twist_info',
+                          default='use',
+                          help='Use twist weights in twist_info.dat files or not.  Options: "use", "ignore", "require".  "use" means use when present, "ignore" means do not use, "require" means must be used (default=%default).'
+                          )
+
+        unsupported = set('histogram image reblock report'.split())
+
+        units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',ry='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
+
+        options,files_in = parser.parse_args()
+        files_tmp = np.array(files_in)
+        file_order = files_tmp.argsort()
+        if len(files_in)>0:
+            files_in = list(files_tmp[file_order])
+        #end if
+        QBase.options.transfer_from(options.__dict__)
+        self.verbose = self.options.verbose
+        if self.verbose:
+            self.log('\nQMCA: Qmcpack Analysis Tool')
+            self.log('processing options',n=1)
+        #end if
+        opt = self.options
+        if opt.examples:
+            self.examples()
+        #end if
+        for optname in unsupported:
+            if opt[optname]!=False:
+                self.log('note: option "{0}" is not yet supported'.format(optname),n=1)
+                opt[optname]=False
+            #end if
+        #end for
+        if opt.noautocorr:
+            QBase.autocorr = False
+        #end if
+        u = opt.units.lower()
+        if not u in units:
+            self.error('unrecognized unit system requested: {0}\nvalid units are: {1}'.format(u, sorted(units.keys())))
+        else:
+            opt.units = units[u]
+        #end if
+        if opt.equilibration!='auto':
+            try:
+                eq = comma_list(opt.equilibration)
+                eq = np.array(eq,dtype=int)
+                if len(eq)==1:
+                    e = eq[0]
+                else:
+                    e = obj()
+                    for s,ev in enumerate(eq):
+                        e[s] = ev
+                    #end for
+                #end if
+                opt.equilibration = e
+            except:
+                self.error('cannot process equilibration option\nvalue must be an integer or list of integers\nyou provided: '+str(opt.equilibration))
+            #end if
+        #end if
+        if opt.average:
+            ws = opt.weights
+            if ws=='None':
+                opt.weights = None
+            else:
+                try:
+                    w = comma_list(ws)
+                    w = np.array(w,dtype=float)
+                    if len(w)==len(file_order):
+                        w = w[file_order]
+                    #end if
+                    opt.weights = w
+                    weight_failed = len(w.shape)!=1
+                except:
+                    self.error('cannot process weights option\nweights must be a list of real values\nyou provided: {0}'.format(ws))
+                #end try
+            #end if
+        #end if
+        if opt.join=='None':
+            opt.join=None
+        else:
+            join_failed = False
+            try:
+                j = comma_list(opt.join)
+                j = np.array(j,dtype=int)
+            except:
+                join_failed = True
+            #end try
+            if join_failed or len(j)!=2:
+                self.error('cannot process join option\njoin must be a pair of integers\nyou provided: {0}'.format(ws))
+            #end if
+            opt.join = j
+        #end if
+        if opt.image=='None':
+            opt.image=None
+        #end if
+        twist_info_options = ('use','ignore','require')
+        if opt.twist_info not in twist_info_options:
+            self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
+        #end if
+        opt.all_quantities = False
+        qabbr = self.quantity_abbreviations
+        if ' ' in opt.quantities:
+            quants = opt.quantities.split()
+        else:
+            quants = [opt.quantities]
+        #end if
+        remove = []
+        for i in range(len(quants)):
+            qo = quants[i]
+            q = qo.lower()
+            if q=='all':
+                opt.all_quantities=True
+                quants.extend(qabbr.values())
+                remove.append(qo)
+            elif not qo in qabbr.values():
+                if q in qabbr:
+                    quants[i] = qabbr[q]
+                else:
+                    match = False
+                    for qa in sorted(qabbr.keys()):
+                        qname = qabbr[qa]
+                        if qa in q:
+                            quants.append(qname)
+                            q=q.replace(qa,'')
+                            match=True
+                        #end if
+                    #end for
+                    if match and q=='':
+                        remove.append(qo)
+                    else:
+                        self.error('{0} is not a valid quantity\nplease choose quantities from the following list:\n{1}'.format(qo,str(qabbr)))
+                    #end if
+                #end if
+            #end if
+        #end for
+        opt.quantities = list(set(quants)-set(remove))
+        if opt.precision is not None:
+            try:
+                fp = ('{0: '+opt.precision+'}').format(1.234567)
+            except:
+                self.error('floating point format is not a proper format\nformat provided via --fp: {0}\nplease use a standard floating point format statement like 16.8f, 8.6e, or similar'.format(opt.precision))
+            #end try
+        #end if
+        if opt.show_options or self.verbose:
+            self.log('options provided:',n=1)
+            self.log(str(self.options),n=1)
+        #end if
+        if len(files_in)==0 or opt.help:
+            self.log('no files provided, please see help info below',n=1)
+            self.help()
+        #end if
+
+        self.file_list.extend(files_in)
+    #end def read_command_line
+
+
+    def load_data(self):
+        allowed_extensions = obj(scalar='scalar.dat',dmc='dmc.dat')
+        opt  = self.options
+        data = self.data
+        ifile = 0
+        seriesset = set()
+        for file in self.file_list:
+            if not os.path.exists(file):
+                self.error('file {0} does not exist'.format(file))
+            #end if
+            isdat = False
+            for filetype,ext in allowed_extensions.items():
+                if file.endswith(ext):
+                    isdat = True
+                    #try:
+                    d=DatAnalyzer(
+                        filepath = file,
+                        index    = ifile,
+                        type     = filetype,
+                        units    = opt.units
+                        )
+                    if d.info.load_failed:
+                        if not self.options.nowarn:
+                            self.warn('Load failed for {}, results unavailable.'.format(file))
+                        #end if
+                        continue
+                    #end if
+                    self.file_map[file] = d
+                    prefix = d.info.prefix
+                    series = d.info.series
+                    seriesset.add(series)
+                    if not prefix in data:
+                        data[prefix]=obj()
+                        self.prefix_list.append(prefix)
+                    #end if
+                    data[prefix][series] = d
+                    #except:
+                    #    self.log('problem encountered for {0}, results unavailable '.format(file))
+                    ##end try
+                    break
+                #end if
+            #end for
+            if not isdat:
+                self.error('{0} is not a valid source of input\nplease aim qmca at files with the following extensions: {1}'.format(file,allowed_extensions.list()))
+            #end if
+            ifile+=1
+        #end for
+        if opt.average:
+            for prefix,pdata in data.items():
+                pset = set(pdata.keys())
+                missing = seriesset-pset
+                if len(missing)>1:
+                    self.error('files with prefix {0} are missing series provided for other prefixes\nseries provided for prefix {0}: {1}\nseries missing: {2}'.format(prefix,sorted(list(pset)),sorted(list(missing))))
+                #end if
+            #end for
+            serieslist = sorted(list(seriesset))
+            for series in serieslist:
+                filetypes = set()
+                for prefix,pdata in data.items():
+                    filetypes.add(pdata[series].info.type)
+                #end for
+                if len(filetypes)>1:
+                    self.error('files with mixed extensions encountered for series {0}\nextensions encountered: {1}\nplease provide files with only one of the following extensions: {2}'.format(series,sorted(list(filetypes)),allowed_extensions.list()))
+                #end if
+            #end for
+            
+            weights = opt.weights
+            prefixes = sorted(list(data.keys()))
+
+            # identify batches of prefixes for averaging
+            batch_prefixes = obj()
+            for prefix in prefixes:
+                path,file = os.path.split(prefix)
+                tokens = file.split('.')
+                batch_prefix = os.path.join(path,tokens[0])
+                if batch_prefix not in batch_prefixes:
+                    batch_prefixes[batch_prefix] = []
+                #end if
+                batch_prefixes[batch_prefix].append(prefix)
+            #end for
+
+            # perform the averaging
+            file_list   = []
+            file_map    = obj()
+            prefix_list = []
+            avg_data    = obj()
+            if opt.average_all or weights is not None or len(batch_prefixes)==1:
+                # average all data together
+                if weights is not None:
+                    if len(weights)!=len(prefixes):
+                        self.error('one weight must be provided per file prefix for averaging\nyou provided {0} weights for {1} prefixes\nweights provided: {2}\nprefixes provided: {3}'.format(len(weights),len(prefixes),weights,prefixes))
+                    #end if
+                else:
+                    uniform_weights = len(prefixes)*[1.0]
+                    if opt.twist_info=='ignore':
+                        weights = uniform_weights
+                    else:
+                        weights = []
+                        for prefix in sorted(prefixes):
+                            twist_info_file = prefix+'.twist_info.dat'
+                            if os.path.exists(twist_info_file):
+                                fobj = open(twist_info_file)
+                                try:
+                                    weight = float(fobj.read().strip().split()[0])
+                                    weights.append(weight)
+                                except:
+                                    None
+                                #end try
+                            #end if
+                        #end for
+                        if len(weights)!=len(prefixes):
+                            if opt.twist_info=='require':
+                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                            else:
+                                weights = uniform_weights
+                            #end if
+                        #end if
+                    #end if
+                #end if
+                adata = obj()
+                ns=0
+                for series in serieslist:
+                    npf = 0
+                    for prefix in sorted(data.keys()):
+                        pdata = data[prefix]
+                        w = weights[npf]
+                        d = pdata[series]
+                        if npf==0:
+                            avg = d.copy()
+                            di = d.info
+                            avg.info.set(
+                                filename = di.filename.replace(di.prefix,'avg'),
+                                filepath = di.filepath.replace(di.prefix,'avg'),
+                                index    = ns,
+                                prefix   = 'avg'
+                                )
+                            avg.zero()
+                        #end if
+                        avg.accumulate(d,w)
+                        npf+=1
+                    #end for
+                    avg.normalize()
+                    file_list.append(avg.info.filepath)
+                    file_map[avg.info.filepath] = avg
+                    adata[series] = avg
+                    ns+=1
+                #end for
+                prefix_list.append('avg')
+                avg_data.avg = adata
+            else:
+                # average data by shared batch prefix
+                for batch_prefix in sorted(batch_prefixes.keys()):
+                    prefixes = batch_prefixes[batch_prefix]
+                    adata = obj()
+                    ns=0
+                    uniform_weights = len(prefixes)*[1.0]
+                    if opt.twist_info=='ignore':
+                        weights = uniform_weights
+                    else:
+                        weights = []
+                        for prefix in sorted(prefixes):
+                            twist_info_file = prefix+'.twist_info.dat'
+                            if os.path.exists(twist_info_file):
+                                fobj = open(twist_info_file)
+                                try:
+                                    weight = float(fobj.read().strip().split()[0])
+                                    weights.append(weight)
+                                except:
+                                    None
+                                #end try
+                            #end if
+                        #end for
+                        if len(weights)!=len(prefixes):
+                            if opt.twist_info=='require':
+                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                            else:
+                                weights = uniform_weights
+                            #end if
+                        #end if
+                    #end if
+                    for series in serieslist:
+                        npf = 0
+                        for prefix in sorted(prefixes):
+                            pdata = data[prefix]
+                            w = weights[npf]
+                            d = pdata[series]
+                            if npf==0:
+                                avg = d.copy()
+                                di = d.info
+                                avg.info.set(
+                                    filename = di.filename.replace(di.prefix,batch_prefix),
+                                    filepath = di.filepath.replace(di.prefix,batch_prefix),
+                                    index    = ns,
+                                    prefix   = batch_prefix,
+                                    )
+                                avg.zero()
+                            #end if
+                            avg.accumulate(d,w)
+                            npf+=1
+                        #end for
+                        avg.normalize()
+                        file_list.append(avg.info.filepath)
+                        file_map[avg.info.filepath] = avg
+                        adata[series] = avg
+                        ns+=1
+                    #end for
+                    prefix_list.append(batch_prefix)
+                    avg_data[batch_prefix] = adata
+                #end for
+            #end if
+            self.file_list   = file_list
+            self.file_map    = file_map
+            self.prefix_list = prefix_list
+            self.data        = avg_data
+        #end if
+        if opt.join is not None:
+            series_join = list(range(opt.join[0],opt.join[1]+1))
+            if len(series_join)>1:
+                sjmin = series_join[0]
+                sjmax = series_join[-1]
+                ds    = sjmax-sjmin
+                for prefix,pdata in self.data.items():
+                    for s in series_join:
+                        if s not in pdata:
+                            self.error('cannot join series {0}\ndata for this series is missing for {1}'.format(s,prefix))
+                        #end if
+                    #end for
+                    d = pdata[series_join[0]]
+                    others = []
+                    for s in series_join[1:]:
+                        others.append(pdata[s])
+                        del pdata[s]
+                    #end for
+                    d.join(others)
+                    for s in sorted(pdata.keys()):
+                        if s>sjmax:
+                            pdata[s-ds] = pdata[s]
+                            del pdata[s]
+                        #end if
+                    #end for
+                #end for
+                eq = opt.equilibration
+                if isinstance(eq,obj):
+                    for s in series_join[1:]:
+                        del eq[s]
+                    #end for
+                    for s in sorted(eq.keys()):
+                        if s>sjmax:
+                            eq[s-ds] = eq[s]
+                            del eq[s]
+                        #end if
+                    #end for
+                #end if
+            #end if
+        #end if
+    #end def load_data
+
+
+    def analyze_data(self):
+        for prefix in sorted(self.data.keys()):
+            pdata = self.data[prefix]
+            for series in sorted(pdata.keys()):
+                d = pdata[series]
+                fail = False
+                #try:
+                d.analyze()
+                #except:
+                #    self.log('problem encountered for {0}, results unavailable '.format(d.info.filepath))
+                #    fail = True
+                ##end try
+                if fail:
+                    del pdata[series]
+                #end if
+            #end for
+        #end for
+        opt = self.options
+        if opt.average and opt.save_average:
+            for fmap in self.file_map:
+                ndata = len(fmap.data.first())
+                data = [np.arange(ndata)]
+                keys = 'index'
+                fmt = ['%i']
+                for key in fmap.data.keys():
+                    data.append(fmap.data[key])
+                    keys+='     {}'.format(key)
+                    fmt.append('%.10e')
+                #end for
+                data = np.array(data).transpose()
+                np.savetxt(fmap.info.filepath,data,header=keys,fmt=fmt)
+            #end for
+        #end if
+        show_text  = True
+        plots = opt.plot or opt.trace or opt.histogram
+        if opt.sort:
+            prefix_list = sorted(self.data.keys())
+        else:
+            prefix_list = self.prefix_list
+        #end if
+        if show_text:
+            first_prefix = True
+            for prefix in prefix_list:
+                pdata = self.data[prefix]
+                first_series = True
+                only_series  = len(pdata)==1
+                for series in sorted(pdata.keys()):
+                    d = pdata[series]
+                    d.write_stats(opt.quantities,first_prefix,first_series,only_series)
+                    first_series=False
+                #end for
+                first_prefix = False
+            #end for
+        #end if
+        if plots:
+            self.check_matplotlib_import()
+            color       = 'b'
+            line        = '-'
+            marker      = '.'
+            plotstyle   = color+marker+line
+            tracestyle  = color+line
+            histstyle   = color+line
+            iplot,itrace,ihist = list(range(3))
+            modes = [opt.plot,opt.trace,opt.histogram]
+            quantities = []
+            for q in opt.quantities:
+                all_present = True
+                for pdata in self.data:
+                    for d in pdata:
+                        all_present &= q in d.data
+                    #end for
+                #end for
+                if all_present:
+                    quantities.append(q)
+                #end if
+            #end for
+            for quantity in quantities:
+                for mode in range(len(modes)):
+                    if modes[mode]:
+                        npf = 0
+                        for prefix in prefix_list:
+                            first_prefix = npf==0
+                            last_prefix  = npf==len(self.data)-1
+                            npf+=1
+                            if first_prefix or not opt.overlay:
+                                fig = plt.figure()
+                                ax = fig.add_subplot(111)
+                                xminp =  1e99
+                                xmaxp = -1e99
+                                yminp =  1e99
+                                ymaxp = -1e99
+                                color_wheel.reset()
+                            #end if
+                            lcolor,lstyle = color_wheel.next_line()
+                            mlcolor,mlstyle = color_wheel.next_marker_line()
+                            xvals = []
+                            yvals = []
+                            yerrs = []
+                            shifts = [0]
+                            series_list = []
+                            pdata = self.data[prefix]
+                            only_series  = len(pdata)==1
+                            shift        = 0
+                            ns = 0
+                            for series in sorted(pdata.keys()):
+                                first_series = ns==0
+                                ns+=1
+                                d = pdata[series]
+                                if mode==iplot:
+                                    xlims,ylims,xv,yv,ye = d.plot_series(quantity,plotstyle,prefix)
+                                    xvals.append(xv)
+                                    yvals.append(yv)
+                                    yerrs.append(ye)
+                                elif mode==itrace:
+                                    xlims,ylims,xv,yv = d.plot_trace(quantity,tracestyle,prefix,shift)
+                                    xvals.extend(xv)
+                                    yvals.extend(yv)
+                                elif mode==ihist:
+                                    xlims,ylims = d.plot_histogram(quantity,histstyle,prefix)
+                                #end if
+                                xminp = min(xminp,xlims[0])
+                                xmaxp = max(xmaxp,xlims[1])
+                                yminp = min(yminp,ylims[0])
+                                ymaxp = max(ymaxp,ylims[1])
+                                shift += d.info.nsamples
+                                shifts.append(shift)
+                                series_list.append(series)
+                            #end for
+                            if mode==iplot:
+                                plt.errorbar(xvals,yvals,yerrs,color=mlcolor,fmt=mlstyle,label=prefix)
+                            elif mode==itrace:
+                                plt.plot(xvals,yvals,lstyle,color=lcolor,label=prefix)
+                            #end if
+                            if last_prefix or not opt.overlay:
+                                dx = max(.1*abs(xminp-xmaxp),1)
+                                xminp -= dx
+                                xmaxp += dx
+                                dy = .1*abs(yminp-ymaxp)
+                                yminp -= dy
+                                ymaxp += dy
+                                plt.xlim([xminp,xmaxp])
+                                plt.ylim([yminp,ymaxp])
+                                if mode==iplot:
+                                    plt.xlabel('series')
+                                    plt.ylabel(quantity)
+                                    plt.title(quantity+' vs. series')
+                                elif mode==itrace:
+                                    for ishift in range(0,len(shifts)-1):
+                                        s1 = shifts[ishift]
+                                        s2 = shifts[ishift+1]
+                                        smid = (s1+s2)/2
+                                        if s2-s1<dx:
+                                            st = s1
+                                        else:
+                                            st = smid
+                                        #end if
+                                        plt.text(st,ymaxp-.5*dy,'s'+str(series_list[ishift]).zfill(3))
+                                        if ishift!=0:
+                                            plt.plot([s1,s1],[yminp,ymaxp],'k-')
+                                        #end if
+                                    #end for
+                                    plt.xlabel('samples')
+                                    plt.ylabel(quantity)
+                                    plt.title('Trace of '+quantity)
+                                elif mode==ihist:
+                                    plt.xlabel(quantity)
+                                    plt.ylabel('counts')
+                                    plt.title('Histogram of '+quantity)
+                                #end if
+                                if opt.legend.lower()!='none':
+                                    if opt.legend=='upper right':
+                                        ax.legend(loc='upper right')
+                                    elif opt.legend=='outside':
+                                        ax.legend(loc=2,bbox_to_anchor=(1.0,1.0),borderaxespad=0.)
+                                    #end if
+                                #end if
+                            #end if
+                        #end for
+                    #end if
+                #end for
+            #end for
+            plt.show()
+        #end if
+    #end def analyze_data
+#end class QMCA
+
+
+
+if __name__=='__main__':
+    QMCA()
+#end if
+
+   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  

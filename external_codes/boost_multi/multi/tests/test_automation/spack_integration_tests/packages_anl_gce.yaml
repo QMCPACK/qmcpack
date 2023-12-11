@@ -1,0 +1,16 @@
+packages:
+    python:
+       modules:
+         python@3.7.4: anaconda3/2019.10
+    intel-mkl:
+       paths:
+           intel-mkl@2018.3.222: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/intel/18.3/compilers_and_libraries_2018.3.222/linux/mkl
+           intel-mkl@2019.0.117: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/intel/19.0/compilers_and_libraries_2019.0.117/linux/mkl
+       buildable: False
+    fftw:
+       variants: ~mpi
+    all:
+       compiler: [gcc@7.4.0, clang, intel, pgi, gcc@8.3.0]
+       providers:
+         mpi: [mpich, openmpi, mvapich2]
+

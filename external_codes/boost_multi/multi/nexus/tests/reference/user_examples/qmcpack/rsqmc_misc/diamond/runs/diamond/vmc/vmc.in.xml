@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="vmc" series="0">
+      <application name="qmcpack" role="molecu" class="serial" version="1.0"/>
+      <parameter name="driver_version"> legacy </parameter>
+   </project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                  6.74632230        6.74632230        0.00000000
+                  0.00000000        6.74632230        6.74632230
+                  6.74632230        0.00000000        6.74632230
+         </parameter>
+         <parameter name="bconds">
+            p p p
+         </parameter>
+         <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes" randomsrc="ion0">
+         <group name="u" size="32" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="32" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="C" size="16" mass="21894.7135906">
+            <parameter name="charge"              >    4                     </parameter>
+            <parameter name="valence"             >    4                     </parameter>
+            <parameter name="atomicnumber"        >    6                     </parameter>
+            <parameter name="mass"                >    21894.7135906            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                     6.74632230        6.74632230        0.00000000
+                     1.68658057        1.68658057        1.68658058
+                     3.37316115        3.37316115        0.00000000
+                     5.05974173        5.05974172        1.68658058
+                     0.00000000        3.37316115        3.37316115
+                     1.68658058        5.05974172        5.05974173
+                     3.37316115        6.74632230        3.37316115
+                     5.05974173        8.43290287        5.05974173
+                     3.37316115        0.00000000        3.37316115
+                     5.05974172        1.68658057        5.05974173
+                     6.74632230        3.37316115        3.37316115
+                     8.43290287        5.05974172        5.05974173
+                    10.11948345       10.11948345        6.74632230
+                     5.05974173        5.05974172        8.43290287
+                     6.74632230        6.74632230        6.74632230
+                     8.43290287        8.43290287        8.43290287
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="MISSING.h5" tilematrix="2 0 0 0 2 0 0 0 2" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
+            <sposet type="bspline" name="spo_ud" size="32" spindataset="0"/>
+         </sposet_builder>
+         <determinantset>
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_ud" size="32"/>
+               <determinant id="downdet" group="d" sposet="spo_ud" size="32"/>
+            </slaterdeterminant>
+         </determinantset>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+            <pseudo elementType="C" href="C.BFD.xml"/>
+         </pairpot>
+         <pairpot type="MPC" name="MPC" source="e" target="e" ecut="60.0" physical="no"/>
+         <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
+      </hamiltonian>
+   </qmcsystem>
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="warmupSteps"         >    20              </parameter>
+      <parameter name="blocks"              >    200             </parameter>
+      <parameter name="steps"               >    10              </parameter>
+      <parameter name="subSteps"            >    2               </parameter>
+      <parameter name="timestep"            >    0.4             </parameter>
+   </qmc>
+</simulation>

@@ -1,0 +1,64 @@
+&CONTROL
+   calculation     = 'nscf'
+   outdir          = 'pwscf_output'
+   prefix          = 'pwscf'
+   pseudo_dir      = './'
+   tprnfor         = .true.
+   tstress         = .true.
+   verbosity       = 'high'
+   wf_collect      = .true.
+/
+
+&SYSTEM
+   celldm(1)       = 1.0
+   degauss         = 0.001
+   ecutrho         = 1750
+   ecutwfc         = 350
+   Hubbard_U(1)    = 1.0
+   ibrav           = 0
+   input_dft       = 'lda'
+   lda_plus_u      = .true.
+   nat             = 5
+   nbnd            = 30
+   nosym           = .true.
+   nspin           = 2
+   ntyp            = 3
+   occupations     = 'smearing'
+   smearing        = 'fermi-dirac'
+   starting_magnetization(1) = 1.0
+   tot_charge      = 0
+/
+
+&ELECTRONS
+   conv_thr        = 1e-08
+   electron_maxstep = 1000
+   mixing_beta     = 0.15
+   mixing_mode     = 'local-TF'
+/
+
+
+ATOMIC_SPECIES 
+   Co 58.933 Co.opt.upf
+   O  15.999 O.opt.upf
+   Sr 87.956 Sr.opt.upf
+
+ATOMIC_POSITIONS alat
+   Sr       0.00000000       0.00000000       0.00000000 
+   Co       0.00000000      -1.06131318       6.18578654 
+   O        0.00000000      -3.62354986       3.62354986 
+   O       -2.56223668       0.75046175       4.37401161 
+   O        2.56223668       0.75046175       4.37401161 
+
+K_POINTS crystal
+   4
+         0.00000000       0.00000000       0.00000000       1.00000000 
+        -0.00000000       0.50000000      -0.00000000       1.00000000 
+         0.50000000       0.50000000      -0.00000000       1.00000000 
+         0.50000000       0.50000000       0.50000000       1.00000000 
+
+CELL_PARAMETERS alat
+        -5.12447336      -3.62354986       3.62354986 
+         5.12447336      -3.62354986       3.62354986 
+         0.00000000       5.12447336       5.12447336 
+
+

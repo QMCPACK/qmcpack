@@ -1,0 +1,1770 @@
+#! /usr/bin/env python3
+
+# general imports
+import os
+import re
+import sys
+from optparse import OptionParser
+from numpy import ndarray,array,abs,sqrt
+
+# Nexus imports
+from generic import obj
+from developer import DevBase,ci,log,warn,error
+from execute import execute
+from fileio import TextFile
+from nexus import settings,job,run_project
+from nexus import input_template,generate_qmcpack
+from simulation import NullSimulationAnalyzer
+
+
+#======================================#
+# high level information and functions #
+#======================================#
+
+# find the path to the qtest executable and its parent directory
+script_path = os.path.realpath(__file__)
+parent_dir  = os.path.dirname(os.path.dirname(script_path))
+test_dir    = parent_dir
+source_dir  = os.path.dirname(test_dir)
+
+
+# object to store command line options
+options = obj()
+
+
+# general logging function
+def vlog(msg,n=0,indent='  '):
+    if options.verbose:
+        pad = n*indent
+        msg = pad+msg.replace('\n','\n'+pad)
+        log(msg)
+    #end if
+#end def vlog
+
+
+def vexit():
+    vlog('\nexiting')
+    exit()
+#end def vexit
+
+
+#============================#
+# test and build information #
+#============================#
+
+default_exclusions = set('opt fdlr grad lap deriv'.split())
+
+qmc_data_files = obj({
+    'NiO_a4_e48-batched_pp-vmc_sdj3'           : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    'NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3' : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    'NiO_a4_e48-hybridrep-pp-vmc_sdj3'         : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    'NiO_a4_e48_pp-vmc_sdj'                    : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    'NiO_a4_e48_pp-vmc_sdj3'                   : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    })
+
+requires_qmc_data = set(qmc_data_files.keys())
+
+
+build_type_order = ('array','value','device','precision')
+
+build_types = obj(
+    array     = ('aos'  ,'soa'    ),
+    value     = ('real' ,'complex'),
+    device    = ('cpu'  ,'gpu'    ),
+    precision = ('full' ,'mixed'  ),
+    method    = ('rsqmc','afqmc'  ),
+    )
+
+build_type_map = obj()
+for k,vlist in build_types.items():
+    for v in vlist:
+        build_type_map[v] = k
+    #end for
+#end for
+
+# release dates
+#   r6259   140228
+#   v3.0.0  170130
+#   v3.0.1  180303
+#   v3.1.0  170621
+#   v3.1.1  170801
+#   v3.2.0  170921
+#   v3.3.0  171218
+#   v3.4.0  180129
+#   v3.5.0  180802
+reference_code_hashes = obj(
+    r6259       = 'a63b16e5053a9500b22bb59ec4876d203074ff8c', # JTK
+    r6361       = 'deaca41a22cf0cbd4f76d1fd467a7b873ca9c0df', # JTK
+    r7115       = 'aab82c60cd3d124a8a5cb9ee38d7ebceb9a689e8', # PK
+    r7309       = 'd9825b9402c580ef6bbf9fea4585cd4f04425eda', # YL
+    v300        = '0d4d897bf55776caa4dec1a9e4c60a77e2c1c807', # PK
+    v300_170319 = '25fb25a4a0fb2e0ca8e8e2405b96b8e0080d9c80', # YL
+    v300_170407 = 'cdd68c9a77a1c44e1d7e7ddb9e53055a284e2126', # RC
+    v300_170524 = 'dc06dbd3d600b43daa2dba64c7e5e668327532a4', # PY
+    v311_170906 = '018e4bf160a8552d66cf9511af81c6a7a634ac50', # RC
+    v320_171020 = 'f1061720cd707163f9aa0ac8df73ecae93d20afa', # YL
+    v320_171113 = 'efcb969cdf8ffe56d74d03954e692a11e41206e6', # AB
+    v320_171120 = 'c1e67e38caa92af7586a4757da9e3323f04e4c4f', # NB
+    v330_180103 = 'e9f28206e0a44bcba1ba6c5d7c9769b093551a9b', # AB
+    v330_180107 = 'be540cfb2b625e7dc34d09a1f4aa4010d3d19106', # YL
+    v340_180227 = '2aa757b813344cbf04c81550c26206142a29be90', # YL
+    v340_180328 = 'ebe686dbc89f0c0962a30abae45caa455ae8bc22', # JTK
+    v340_180329 = '292bb3bb8793ae1a7c6472a15e35023ba88da475', # AB
+    v340_180413 = 'b85b4c61de319fbd3227934094a2e8483509f703', # YL
+    v340_180417 = 'd07f8ea7d0cddc6b112397afd7fc37e09e868489', # YL
+    v340_180505 = 'e83ba9606f43ed0feffe75a0e521008cecef0b3e', # YL
+    v340_180705 = '8d443a259279bd6d5866176ee89e69a7e3036725', # AB
+    )
+
+reference_code_tests = obj(
+    r6259 = '''
+        short-bccH_1x1x1_ae-vmc_sdj
+        short-bccH_1x1x1_ae-dmc_sdj
+        short-c_no-hf_vmc
+        short-c_no-sj_dmc
+        short-diamondC_1x1x1_pp-vmc_sdj
+        short-diamondC_1x1x1_pp-dmc_sdj
+        short-diamondC_2x1x1_pp-vmc_sdj
+        short-diamondC_2x1x1_pp-dmc_sdj
+        short-diamondC_1x1x1_pp-vmc_sdj_kspace
+        short-diamondC_1x1x1_pp-vmc-estimator-density
+        short-diamondC_1x1x1_pp-vmc-estimator-spindensity
+        short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell
+        short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi
+        short-diamondC_1x1x1_pp-dmc-estimator-density
+        short-diamondC_1x1x1_pp-dmc-estimator-spindensity
+        short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell
+        short-hcpBe_1x1x1_pp-vmc_sdj
+        short-heg_14_gamma-hf
+        short-heg_14_gamma-ni
+        short-heg_14_gamma-ni_dmc
+        short-heg_14_gamma-sj
+        short-heg_14_gamma-sj_dmc
+        short-heg_14_gamma-sj_new
+        short-heg_14_gamma-sjb
+        short-li2_sto-sj_dmc
+        short-LiH_dimer_ae_gms-vmc_hf_noj
+        short-LiH_dimer_pp-vmc_hf_noj
+        short-LiH_dimer_pp-vmc_hf_sdj_xml
+        short-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi
+        short-LiH_dimer_pp-vmc_hf_sdj_estimator_energydensity_voronoi
+        short-LiH_dimer_pp-vmc_hf_sdj_estimator_spindensity
+        short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj
+        short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj
+        short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj
+        short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+        short-LiH_solid_1x1x1_pp-x-dmc-hf_noj
+        short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj
+        short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj
+        short-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+        short-monoO_1x1x1_pp-vmc_sdj
+        short-monoO_1x1x1_pp-vmc_sdj3
+        short-diamondC_1x1x1_pp-vmc_sdj-meshf
+        short-H2O_dimer_sep_pp-j3_dmc_la
+        short-NiO_a4_e48_pp-vmc_sdj
+        short-NiO_a4_e48_pp-vmc_sdj3
+
+        '''.split(),
+    r6259_complex = '''
+        short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj
+        short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj
+        short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj
+        short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj
+        '''.split(),
+    r6361_complex = '''
+        short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm
+        short-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
+        '''.split(),
+    #r7115 = '''
+    #    short-bccH_1x1x1_ae-vmc_sdj-pw
+    #    '''.split(),
+    #r7309 = '''
+    #    short-H4-opt-OneShiftOnly
+    #    short-H4-opt-adaptive
+    #    short-H4-opt-cslinear-linemin
+    #    short-H4-opt-cslinear-quartic
+    #    short-H4-opt-cslinear-rescale
+    #    short-H4-opt-linear
+    #    short-H4-opt-linear-linemin
+    #    short-H4-opt-linear-rescale
+    #    short-diamondC_1x1x1_pp-opt_sdj
+    #    '''.split(),
+    v300 = '''
+        short-bccH_1x1x1_ae-vmc_sdj-pw
+        short-H4-opt-OneShiftOnly
+        short-H4-opt-adaptive
+        short-H4-opt-cslinear-linemin
+        short-H4-opt-cslinear-quartic
+        short-H4-opt-cslinear-rescale
+        short-H4-opt-linear
+        short-H4-opt-linear-linemin
+        short-H4-opt-linear-rescale
+        short-diamondC_1x1x1_pp-opt_sdj
+        ''',
+    #v300_170319 = '''
+    #    short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
+    #    short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+    #    short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
+    #    '''.split(),
+    v300_170407 = '''
+        short-bccH_1x1x1_ae-rmc_sdj
+        '''.split(),
+    v300_170407_soa = '''
+        short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
+        short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+        short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
+        '''.split(),
+    v300_170524 = '''
+        short-bccH_1x1x1_ae-vmc-all_sdj
+        short-bccH_1x1x1_ae-dmc-all_sdj
+        short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
+        ''',
+    v311_170906 = '''
+        short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
+        short-bccH_1x1x1_ae-csvmc-all_sdj
+        short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj
+        ''',
+    v320_171020 = '''
+        short-diamondC_2x1x1_pp-dmc-reconf_sdj
+        short-C2_pp-msdj_vmc
+        short-bccH_2x2x2_ae-deriv
+        short-bccH_2x2x2_ae-gamma-deriv
+        short-bccH_2x2x2_ae-grad_lap
+        short-bccH_3x3x3_ae-deriv
+        short-bccH_3x3x3_ae-gamma-deriv
+        short-bccH_3x3x3_ae-grad_lap
+        short-bccH_3x3x3_ae-not_orth-deriv
+        ''',
+    v320_171113 = '''
+        short-LiH_dimer_pp-vmc_hf_sdj_hdf5
+        ''',
+    #v320_171120 = '''
+    #    short-H2-FDLR
+    #    short-H2-orb-opt
+    #    short-H4-FDLR
+    #    '''.split(),
+    #v330_180103 = '''
+    #    short-H2-FDLR
+    #    short-H2-orb-opt
+    #    short-H4-FDLR
+    #    short-H4-orb-opt
+    #    short-H4-orb-opt-dmc
+    #    short-FeCO6_gms-vmc_noj
+    #    short-FeCO6_pyscf-vmc_noj
+    #    '''.split(),
+    v330_180107 = '''
+        short-H2-FDLR
+        short-H2-orb-opt
+        short-H4-FDLR
+        short-H4-orb-opt
+        short-H4-orb-opt-dmc
+        short-FeCO6_gms-vmc_noj
+        short-FeCO6_pyscf-vmc_noj
+        short-sho-grad_lap
+        short-sho-vmc
+        '''.split(),
+    #v330_180107 = '''
+    #    short-H2O_dimer_sep_pp-j3_dmc_tm0
+    #    short-H2O_dimer_sep_pp-j3_dmc_tm3
+    #    '''.split(),
+    v340_180227 = '''
+        short-H2O_dimer_sep_pp-j3_dmc_tm0
+        short-H2O_dimer_sep_pp-j3_dmc_tm3
+        short-H2O_dimer_sep_pp-j3_dmc_tm1
+        '''.split(),
+    v340_180328_afqmc = '''
+        short-diamondC-afqmc
+        short-diamondC-afqmc_hyb
+        short-diamondC-afqmc_hyb_nn2
+        short-diamondC-afqmc_incmf
+        short-diamondC-afqmc_incmf_nn2
+        short-diamondC-afqmc_nn2
+        '''.split(),
+    v340_180329_soa = '''
+        short-diamondC_1x1x1_pp-vmc_gaussian_sdj
+        short-diamondC_2x1x1_pp-vmc_gaussian_sdj
+        ''',
+    v340_180413 = '''
+        short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
+        ''',
+    v340_180417_soa = '''
+        short-NiO_a4_e48-batched_pp-vmc_sdj3
+        short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
+        short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
+        ''',
+    v340_180705 = '''
+        short-LiH_dimer_ae_qp-vmc_hf_noj
+        short-LiH_dimer_ae_pyscf-vmc_hf_noj
+        ''',
+    unknown = '''
+        '''.split(),
+    )
+
+for k,v in reference_code_tests.items():
+    if isinstance(v,str):
+        reference_code_tests[k] = v.split()
+    #end if
+#end for
+
+
+reference_code_by_test = obj()
+for code,test_list in reference_code_tests.items():
+    for test_name in test_list:
+        reference_code_by_test[test_name] = code
+    #end for
+#end for
+
+
+def get_reference_code(short_test,hash=False,full=False):
+    hash_ = hash
+    test_name = short_test.sname
+    if test_name not in reference_code_by_test:
+        code = 'missing'
+        hash = None
+    else:
+        code = reference_code_by_test[test_name]
+        code_build_types = set(code.split('_')) & set(build_type_map.keys())
+        for k in build_type_map.keys():
+            code = code.replace('_'+k,'')
+        #end for
+        hash = reference_code_hashes[code]
+        if full:
+            for k in build_type_order:
+                bt_list = build_types[k]
+                bt_used = bt_list[0] # default build type
+                for bt in bt_list:
+                    if bt in code_build_types:
+                        bt_used = bt
+                    #end if
+                #end for
+                code += '_'+bt_used
+            #end for
+        #end if
+    #end if
+    if not hash_:
+        return code
+    else:
+        return code,hash
+    #end if
+#end def get_reference_code
+
+
+
+
+#============================#
+# simulation jobs by machine #
+#============================#
+
+class MachineJobs(DevBase):
+    def __call__(self,short_test,count):
+        self.not_implemented()
+    #end def __call__
+#end class MachineJobs
+
+
+
+class OIC5Jobs(MachineJobs):
+    def __init__(self):
+        app_paths = obj(
+            r6259           = 'qmcapp_r6259',
+            r6259_complex   = 'qmcapp_r6259_complex',
+            r6361           = 'qmcapp_r6361',
+            r6361_complex   = 'qmcapp_r6361_complex',
+            r6366           = 'qmcapp_r6366',
+                            
+            #r7115           = 'qmcpack_r7115',
+            #r7309           = 'qmcpack_r7309',
+            #v300_170319     = 'qmcpack_v300_170319',
+            v300_170407     = 'qmcpack_v300_170407',
+            v300_170524     = 'qmcpack_v300_170524',
+            v311_170906     = 'qmcpack_v311_170906',
+            v330_180103     = 'qmcpack_v330_180103',
+            v330_180107     = 'qmcpack_v330_180107',
+            v340_180227     = 'qmcpack_v340_180227',
+            v340_180328     = 'qmcpack_v340_180328',
+            v340_180505     = 'qmcpack_v340_180505',
+
+            v300_170407_soa = 'qmcpack_v300_170407_soa',
+            v320_171113     = 'qmcpack_v320_171113',
+            v320_171020     = 'qmcpack_v320_171020',
+            v340_180329     = 'qmcpack_v340_180329',
+            v340_180329_soa = 'qmcpack_v340_180329_soa',
+            v340_180413     = 'qmcpack_v340_180413',
+            v340_180417     = 'qmcpack_v340_180417',
+            v340_180417_soa = 'qmcpack_v340_180417_soa',
+            v340_180705     = 'qmcpack_v340_180705',
+
+            v300            = 'qmcpack_v3_real',
+            v311            = 'qmcpack_v311_real',
+            v311nb          = 'qmcpack_v311nb_real',
+            v320            = 'qmcpack_v320_real',
+            v330            = 'qmcpack_v330_real',
+            v340            = 'qmcpack_v340_real',
+            v350            = 'qmcpack_v350_real',
+            )
+
+        apps_old_build = '''
+            r6259 
+            r6259_complex 
+            r6361 r6361_complex 
+            r6366
+            v300
+            v300_170407
+            '''.split()
+        apps_new_build = '''
+            v300_170524
+            v311_170906
+            v330_180103
+            v330_180107
+            v340_180227
+            v340_180328
+            v340_180505
+            v300_170407_soa
+            v320_171113    
+            v320_171020    
+            v340_180329    
+            v340_180329_soa
+            v340_180413    
+            v340_180417    
+            v340_180417_soa
+            v340_180705    
+            v311nb 
+            v320 
+            v330 
+            v340 
+            v350
+            '''.split()
+
+
+        old_presub = '''
+        module () 
+        { 
+            eval `/opt/modules/3.1.6/bin/modulecmd bash $*`
+        }
+        module purge
+        module load composerxe/2013.5.192
+        module load mpi/openmpi-1.6.4-gcc4
+        '''
+        new_presub = '''
+        module () 
+        { 
+            eval `/opt/modules/3.1.6/bin/modulecmd bash $*`
+        }
+        module purge
+        module load gcc/4.9.3
+        module load mpi/openmpi-1.4.5-gcc4
+        module load hdf5/1.8.8-gcc4-parallel
+        '''
+
+        app_presubs = obj()
+        for app in apps_old_build:
+            app_presubs[app] = old_presub
+        #end for
+        for app in apps_new_build:
+            app_presubs[app] = new_presub
+        #end for
+
+        self.app_paths   = app_paths
+        self.app_presubs = app_presubs
+        #self.job_inputs  = obj(cores=16,threads=1,hours=24,queue='mstqmc13q')
+        self.job_inputs  = obj(cores=16,threads=1,hours=24)
+    #end def __init__
+
+
+    def __call__(self,code,count):
+        if code not in self.app_paths:
+            return None
+        #end if
+        if count%3==0:
+            queue = 'mstqmc13q'
+        else:
+            queue = 'mst13q'
+        #end if
+        test_job = job(
+            queue  = queue,
+            presub = self.app_presubs[code],
+            app    = self.app_paths[code],
+            **self.job_inputs
+            )
+        return test_job
+    #end def __call__
+#end class OIC5Jobs
+
+
+
+
+#=====================================#
+# read_command_line and sub-functions #
+#=====================================#
+
+def read_command_line():
+
+    parser = OptionParser(
+        usage='usage: %prog [options]',
+        add_help_option=False,
+        version='%prog 0.1'
+        )
+
+    parser.add_option('-h','--help',dest='help',
+                      action='store_true',default=False,
+                      help='Print help information and exit (default=%default).'
+                      )
+    parser.add_option('-v','--verbose',dest='verbose',
+                      action='store_true',default=True,
+                      help='Print runtime information (default=%default).'
+                      )
+    parser.add_option('-R','--regex',dest='regex',
+                      help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
+                      )
+    parser.add_option('-E','--exclude',dest='exclude',
+                      help='Tests with names matching the regular expression (exclude) will not be run.  The default behavior is to run all tests (default=%default).'
+                      )
+    parser.add_option('-m','--machine',dest='machine',
+                      default='oic5',
+                      help='Machine to perform runs on (default=%default).'
+                      )
+    parser.add_option('-l','--label',dest='label',
+                      default='',
+                      help='Label for this set of test runs (default=%default).'
+                      )
+    parser.add_option('-b','--block_factor',dest='block_factor',
+                      type=int,default=100,
+                      help='Increase number of blocks by this factor relative to short tests (default=%default).'
+                      )
+    parser.add_option('-s','--step_factor',dest='step_factor',
+                      type=int,default=10,
+                      help='Increase number of steps by this factor relative to short tests (default=%default).'
+                      )
+    parser.add_option('-d','--qmc_data',dest='qmc_data',
+                      help='Path to QMC_DATA directory.  Optional unless running tests that require it (default=%default).'
+                      )
+    parser.add_option('-g','--generate',
+                      action='store_true',default=False,
+                      help='Generate test inputs (default=%default).'
+                      )
+    parser.add_option('-r','--run',
+                      action='store_true',default=False,
+                      help='Run the tests (default=%default).'
+                      )
+    parser.add_option('-a','--analyze',
+                      action='store_true',default=False,
+                      help='Analyze test results and print a summary (default=%default).'
+                      )
+    parser.add_option('-e','--equil',dest='equil',
+                      type=int,default=20,
+                      help='Number of blocks to exclude as equilibration during data analysis or joining (default=%default).'
+                      )
+    parser.add_option('--sleep',dest='sleep',
+                      type=float,default=3,
+                      help='Print list of selected tests and exit (default=%default).'
+                      )
+    parser.add_option('--run_dir',dest='run_dir',
+                      default='./test_runs',
+                      help='Directory to perform runs in (default=%default).'
+                      )
+    parser.add_option('--reference',dest='reference',
+                      action='store_true',default=False,
+                      help='Run each test with its known QMCPACK reference version.  This is only supported for select machine environments (default=%default).'
+                      )
+    parser.add_option('--join',dest='join',
+                      default='',
+                      help='List of testset labels to join (default=%default).'
+                      )
+    parser.add_option('--njoined',dest='njoined',
+                      type=int,default=1,
+                      help='Number of reference data sets that have been joined.  Used only in conjunction with -a if --join was used previously to combine reference data (default=%default).'
+                      )
+
+
+    options_in,files_in = parser.parse_args()
+
+    options.transfer_from(options_in.__dict__)
+
+    vlog('\nreading command line options')
+    vlog(str(options))
+
+    if options.help or len(sys.argv)==1 or len(files_in)>0:
+        print('\n'+parser.format_help().strip())
+        exit()
+    #end if
+
+    if options.qmc_data is not None:
+        if not os.path.exists(options.qmc_data):
+            error('QMC_DATA directory does not exist\ndirectory provided: {0}'.format(options.qmc_data))
+        #end if
+    #end if
+
+#end def read_command_line
+
+
+
+
+#============================================#
+# parse_qmcpack_cmakelists and sub-functions #
+#============================================#
+
+non_short_tests = []
+
+def parse_scalar_test(text,ref_lists):
+    text = text.replace('QMC_RUN_AND_CHECK','').strip().strip('()')
+    tokens = text.split()
+    name = tokens[0].strip('"')
+
+    #check that the test is actually short
+    if not name.startswith('short'):
+        non_short_tests.append(name)
+        return None
+    elif not name.startswith('short-'):
+        error('short test name misformatted in QMCPACK\nname should start with "short-"\ntest name: '+name)
+    #end if
+
+    # parse test contents
+    test = obj(
+        type    = 'scalar',
+        name    = name.split('-',1)[1],
+        sname   = name,
+        path    = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
+        prefix  = tokens[2],
+        infile  = tokens[3],
+        refdata = obj(),
+        )
+    for n in range(7,len(tokens)-1,2):
+        series    = tokens[n]
+        list_name = tokens[n+1]
+        test.refdata[series] = ref_lists[list_name]
+    #end for
+
+    return test
+#end def parse_scalar_test
+
+
+
+def parse_stat_test(text):
+    text = text.replace('SIMPLE_RUN_AND_CHECK','').strip().strip('()')
+    tokens = text.split()
+    name = tokens[0].strip('"')
+
+    #check that the test is actually short
+    if not name.startswith('short'):
+        non_short_tests.append(name)
+        return None
+    elif not name.startswith('short-'):
+        error('short test name misformatted in QMCPACK\nname should start with "short-"\ntest name: '+name)
+    #end if
+
+    # parse test contents
+    test = obj(
+        type   = 'stat',
+        name   = name.split('-',1)[1],
+        sname  = name,
+        path   = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
+        infile = tokens[2].replace('${IFEXT}',''),
+        )
+
+    return test
+#end def parse_stat_test
+
+
+
+def parse_qmcpack_cmakelists():
+
+    vlog('reading test info from QMCPACK CMakeLists.txt')
+    vlog('  test directory: '+test_dir)
+
+    # data structure to hold parsed short test information
+    short_tests = obj()
+
+    # recursive walk over test directories
+    for path,dirs,files in os.walk(test_dir):
+        for file in files:
+            # parse each CMakelists.txt file
+            if file=='CMakeLists.txt':
+
+                # open the CMakeLists.txt file and read raw contents
+                filepath = os.path.join(path,file)
+                f = open(filepath,'r')
+                raw = f.read()
+                f.close()
+
+                # remove comments from the file contents
+                text  = ''
+                lines = []
+                for line in raw.splitlines():
+                    ls = line.strip()
+                    if not ls.startswith('#'):
+                        cloc = line.find('#')
+                        if cloc!=-1:
+                            line = line[:cloc]
+                            ls = line.strip()
+                        #end if
+                        text += line+'\n'
+                        lines.append(ls)
+                    #end if
+                #end for
+
+                # make sure there are active tests
+                scalar_test = 'QMC_RUN_AND_CHECK' in text
+                stat_test   = 'SIMPLE_RUN_AND_CHECK' in text
+                if not scalar_test and not stat_test:
+                    continue
+                #end if
+
+                # find and parse all LIST() statements
+                ref_lists = obj()
+                for ls in lines:
+                    if ls.startswith('LIST') or ls.startswith('list'):
+                        s = ls.replace('(',' ( ').replace(')',' ) ')
+                        tokens = re.findall(r'(?:[^\s,"]|"(?:\\.|[^"])*")+', s)
+                        if tokens[2].lower()=='append':
+                            list_name = tokens[3]
+                            quant_name = tokens[4].strip('"')
+                            ref_value  = tuple(tokens[5].strip('"').split())
+                            if list_name not in ref_lists:
+                                ref_lists[list_name] = obj()
+                            #end if
+                            ref_lists[list_name][quant_name] = ref_value
+                        #end if
+                    #end if
+                #end for
+
+                # find and parse all short scalar tests
+                istart = 0
+                iend   = 0
+                while istart!=-1:
+                    istart = text.find('QMC_RUN_AND_CHECK',istart)
+                    if istart!=-1:
+                        iend = text.find(')',istart)
+                        if iend!=-1:
+                            test = parse_scalar_test(
+                                text      = text[istart:iend+1],
+                                ref_lists = ref_lists
+                                )
+                            if test is not None and test.name not in short_tests:
+                                short_tests[test.name] = test
+                            #end if
+                        #end if
+                        istart = iend
+                    #end if
+                #end while
+
+                # find and parse all short stat.h5 tests
+                istart = 0
+                iend   = 0
+                while istart!=-1:
+                    istart = text.find('SIMPLE_RUN_AND_CHECK',istart)
+                    if istart!=-1:
+                        iend = text.find(')',istart)
+                        if iend!=-1:
+                            test = parse_stat_test(
+                                text = text[istart:iend+1],
+                                )
+                            if test is not None and test.name not in short_tests:
+                                short_tests[test.name] = test
+                            #end if
+                        #end if
+                        istart = iend
+                    #end if
+                #end while
+
+            #end if
+        #end for
+    #end for
+
+    vlog('\ntests found:',n=1)
+    tests_found = []
+    for st in short_tests:
+        tests_found.append(st.sname)
+    #end for
+    tests_found = sorted(tests_found)
+    for t in tests_found:
+        vlog(t,n=2)
+    #end for
+
+    vlog('\ntests ignored (not short or long)',n=1)
+    for t in non_short_tests:
+        if not t.startswith('long'):
+            vlog(t,n=2)
+        #end if
+    #end for
+
+    vlog('\ntests not found:',n=1)
+    tests_with_ref_code = set(reference_code_by_test.keys())
+    tests_not_found = tests_with_ref_code - set(tests_found)
+    for t in tests_not_found:
+        vlog(t,n=2)
+    #end for
+
+    return short_tests
+#end def parse_qmcpack_cmakelists
+
+
+
+#==================================#
+# join_test_sets and sub-functions #
+#==================================#
+
+def get_testset_path(**kwargs):
+    machine = kwargs.get('machine',options.machine)
+    label   = kwargs.get('label'  ,options.label  )
+    if options.reference:
+        code_ref = 'reference'
+    else:
+        code_ref = kwargs.get('code')
+    #end if
+    block_factor = kwargs.get('block_factor',options.block_factor)
+    step_factor  = kwargs.get('step_factor' ,options.step_factor )
+    blocks_steps = 'blocks_{0}x_steps_{1}x'.format(block_factor,step_factor)
+    path = os.path.join(machine,label,code_ref,blocks_steps)
+    return path
+#end def get_testset_path
+
+
+def get_full_testset_path(**kwargs):
+    run_dir = kwargs.get('run_dir',options.run_dir)
+    partial_path = get_testset_path(**kwargs)
+    return os.path.join(run_dir,partial_path)
+#end def get_full_testset_path
+
+
+# read full contents of a file
+def read_file(filename):
+    f = open(filename,'r')
+    contents = f.read()
+    f.close()
+    return contents
+#end def read_file
+
+
+# write full contents of a file
+def write_file(filename,contents):
+    f = open(filename,'w')
+    f.write(contents.rstrip()+'\n')
+    f.close()
+    return contents
+#end def write_file
+
+
+# line_count function adapted from:
+#   https://stackoverflow.com/questions/845058/how-to-get-line-count-cheaply-in-python
+# based on "map_count"
+import mmap
+def line_count(filename):
+    f = open(filename, "r+")
+    buf = mmap.mmap(f.fileno(), 0)
+    lines = 0
+    readline = buf.readline
+    while readline():
+        lines += 1
+    #end while
+    f.close()
+    return lines
+#end def line_count
+##   based on "raw_count", python3 only
+#def line_count(filename):
+#    f = open(filename, 'rb')
+#    lines = 0
+#    buf_size = 1024 * 1024
+#    read_f = f.raw.read
+#
+#    buf = read_f(buf_size)
+#    while buf:
+#        lines += buf.count(b'\n')
+#        buf = read_f(buf_size)
+#    #end while
+#    return lines
+##end def line_count
+
+
+def filter_tests(short_tests):
+    tests = sorted(short_tests.keys())
+    for st in short_tests:
+        st.included = False
+    #end for
+
+    # exclude some tests by default (optimization, wftest, etc)
+    tests_in = tests
+    tests = []
+    for t in tests_in:
+        tokens = set(t.lower().replace('-','_').split('_'))
+        if len(default_exclusions & tokens)==0:
+            tests.append(t)
+        #end if
+    #end for
+
+    # include tests according to user regex
+    if options.regex is not None:
+        tests_in = tests
+        tests = []
+        for t in tests_in:
+            if re.search(options.regex,t):
+                tests.append(t)
+            #end if
+        #end for
+    #end if
+
+    #exclude tests according to user regex
+    if options.exclude is not None:
+        tests_in = tests
+        tests = []
+        for t in tests_in:
+            if not re.search(options.exclude,t):
+                tests.append(t)
+            #end if
+        #end for
+    #end if
+
+    return tests
+#end def filter_tests
+
+
+def join_test_sets(short_tests):
+    vlog('\njoining test sets')
+    vlog('test sets to join:',n=1)
+    testset_paths = []
+    for n,label in enumerate(options.join.split()):
+        if label=='""':
+            label=''
+        #end if
+        tspath = get_full_testset_path(label=label)
+        vlog('test set {0} = {1}'.format(n+1,tspath),n=2)
+        testset_paths.append(tspath)
+    #end for
+    nsets = len(testset_paths)
+    block_factor = nsets*options.block_factor
+    joinset_path = get_full_testset_path(label        = 'joined',
+                                         block_factor = block_factor)
+    vlog('\ndestination path:',n=1)
+    vlog(joinset_path,n=2)
+
+    # filter tests by user regex and defaults
+    tests = filter_tests(short_tests)
+
+    vlog('\njoining scalar data for each test set',n=1)
+    for t in tests:
+        st = short_tests[t]
+
+        # filter out e.g. stat.h5-based tests
+        if st.type!='scalar':
+            continue
+        #end if
+
+        name   = st.name
+        prefix = st.prefix
+
+        vlog('joining data for test: '+name,n=2)
+
+        # create the joined test directory
+        join_path = os.path.join(joinset_path,name)
+        if not os.path.exists(join_path):
+            os.makedirs(join_path)
+        #end if
+
+        # search for all scalar files matching the prefix
+        scalar_files  = obj()
+        scalar_series = obj()
+        for tpath in testset_paths:
+            test_path = os.path.join(tpath,name)
+            if not os.path.exists(test_path):
+                continue
+            #end if
+            files = os.listdir(test_path)
+            for file in files:
+                if file.startswith(prefix) and file.endswith('scalar.dat'):
+                    key = file.replace(prefix,'').replace('scalar.dat','').strip('.')
+                    if key not in scalar_files:
+                        scalar_files[key] = []
+                    #end if
+                    scalar_files[key].append(os.path.join(test_path,file))
+                    series = None
+                    for t in file.split('.'):
+                        if len(t)==4 and t[0]=='s' and t[1:].isdigit():
+                            series = str(int(t[1:]))
+                            break
+                        #end if
+                    #end for
+                    scalar_series[key] = series
+                elif file=='sim_qmc':
+                    test_sim_path = os.path.join(test_path,'sim_qmc')
+                    join_sim_path = os.path.join(join_path,'sim_qmc')
+                    if not os.path.exists(join_sim_path):
+                        execute('rsync -a {0} {1}/'.format(test_sim_path,join_path))
+                    #end if
+                #end if
+            #end for
+        #end for
+        if len(scalar_files)==0:
+            vlog('cannot join data\nno scalar files found\n',n=3)
+            continue
+        #end if
+
+        # ensure that all testsets have the same set of scalar files
+        can_join = True
+        for key,filepaths in scalar_files.items():
+            series = scalar_series[key]
+            if len(filepaths)!=nsets:
+                can_join = False
+                fps = ''
+                for fp in filepaths:
+                    fps += '  '+fp+'\n'
+                #end for
+                vlog('cannot join data\nmissing some scalar.dat files\nexpected {0} files, found {1}\nscalar files found:\n{2}'.format(nsets,len(filepaths),fps),n=3)
+            else:
+                deficient = False
+                lines_files = []
+                min_lines = 1
+                if series in st.refdata:
+                    min_lines += options.equil
+                #end if
+                for fp in filepaths:
+                    nlines = line_count(fp)
+                    lines_files.append((nlines,fp))
+                    if nlines<min_lines:
+                        deficient = True
+                    #end if
+                #end for
+                if deficient:
+                    can_join = False
+                    msg = 'cannot join data\nsome scalar files have too few lines\nminimum number of lines required (e.g. for equil): {0}\nline counts of files:\n'.format(min_lines)
+                    for nlines,fp in lines_files:
+                        msg+='  {0} {1}\n'.format(nlines,fp)
+                    #end for
+                    vlog(msg,n=3)
+                #end if
+            #end if
+        #end for
+        if not can_join:
+            continue
+        #end if
+
+        # combine each scalar file and write into joined test directory
+        success = True
+        for k in sorted(scalar_files.keys()):
+            filepaths = scalar_files[k]
+            series    = scalar_series[k]
+            lines_exclude = 1
+            if series in st.refdata:
+                lines_exclude += options.equil
+            #end if
+            contents = ''
+            for filepath in filepaths:
+                data = read_file(filepath)
+                tokens = data.split('\n',lines_exclude)
+                header = tokens[0]
+                data   = tokens[-1]
+                if len(contents)==0:
+                    filename = os.path.basename(filepath)
+                    vlog('joining '+filename,n=3)
+                    contents = header.rstrip()+'\n'
+                #end if
+                contents += data.rstrip()+'\n'
+            #end for
+            join_filepath = os.path.join(join_path,filename)
+            write_file(join_filepath,contents)
+        #end for
+    #end for
+#end def join_test_sets
+
+
+#======================================#
+# run_adjusted_tests and sub-functions #
+#======================================#
+
+def get_test_path(code,test_name):
+    testset_path = get_testset_path(code=code)
+    path = os.path.join(testset_path,test_name)
+    return path
+#end def get_test_path
+
+
+def make_symlinks(sim,short_test):
+    if len(short_test.hrefs)>0:
+        qmc_data = options.qmc_data
+        if qmc_data is not None:
+            qmc_data = os.path.abspath(qmc_data)
+        #end if
+        if not os.path.exists(sim.locdir):
+            os.makedirs(sim.locdir)
+        #end if
+        cwd = os.getcwd()
+        os.chdir(sim.locdir)
+        for href in short_test.hrefs:
+            href_full = os.path.join(short_test.path,href)
+            href = os.path.basename(href)
+            if not os.path.exists(href_full):
+                if qmc_data is not None:
+                    if short_test.name in qmc_data_files:
+                        if href in qmc_data_files[short_test.name]:
+                            href_full = os.path.join(qmc_data,href)
+                        #end if
+                    #end if
+                #end if
+                if not os.path.exists(href_full):
+                    error('href file does not exist\nfile path: {0}'.format(href_full))
+                #end if
+            #end if
+            if not os.path.exists(href):
+                os.system('ln -s {0} {1}'.format(href_full,href))
+            #end if
+        #end for
+        os.chdir(cwd)
+    #end if
+#end def make_symlinks
+
+
+# local state for error reporting by attribute and parameter functions
+reader_state = obj()
+
+def get_attribute_location(name,line):
+    i = line.find(name)
+    if i==-1:
+        error('cannot perform test {0}\nattribute {1} not found in short QMCPACK input file\ninput file location: {2}'.format(reader_state.test_name,name,reader_state.infilepath))
+    #end if
+    i1 = line.find('"',i)+1
+    i2 = line.find('"',i1)
+    return i1,i2
+#end def get_attribute_location
+
+
+def get_attribute(name,line):
+    i1,i2 = get_attribute_location(name,line)
+    attr = line[i1:i2]
+    return attr
+#end def get_attribute
+
+
+def set_attribute(name,value,line):
+    i1,i2 = get_attribute_location(name,line)
+    line = line[:i1]+str(value)+line[i2:]
+    return line
+#end def get_attribute
+
+
+def rescale_parameter(scale,line):
+    i1 = line.find('>')+1
+    i2 = line.rfind('<')
+    token = line[i1:i2].strip()
+    try:
+        n = int(token)
+    except:
+        n = int(float(token))
+    #end try
+    n *= scale
+    line = line.replace(token,str(n))
+    return line,n
+#end def rescale_parameter
+
+
+def follow_href(href,filepath,hrefs=None):
+    if hrefs is None:
+        hrefs = []
+    #end if
+    hrpath = os.path.join(os.path.dirname(filepath),href)
+    if href.endswith('xml'):
+        f = open(hrpath,'r')
+        in_comment = False
+        for line in f:
+            if '<!--' in line:
+                in_comment = True
+            #end if
+            if '-->' in line:
+                in_comment = False
+            #end if
+            if not in_comment and 'href=' in line:
+                href = get_attribute('href',line)
+                hrefs.append(href)
+                follow_href(href,hrpath,hrefs)
+            #end if
+        #end for
+        f.close()
+    #end if
+    return hrefs
+#end def follow_href
+
+
+def get_adjusted_input(short_test):
+    path       = short_test.path
+    infile     = short_test.infile
+    test_name  = short_test.name
+    infilepath = os.path.join(path,infile)
+
+    input_text   = ''
+    prefix       = None
+    series_start = 0
+    hrefs        = []
+    method_list  = []
+    blocks_list  = []
+    steps_list   = []
+
+    f = open(infilepath,'r')
+    in_comment = False
+    in_qmc = False
+    in_xmc = False
+    in_opt = False
+    replaced_blocks = False
+    replaced_steps  = False
+    xmc_methods = set(['vmc','dmc','rmc','csvmc'])
+    opt_methods = set(['linear','cslinear'])
+    test_methods = set(['wftest'])
+    reader_state.test_name  = test_name
+    reader_state.infilepath = infilepath
+    for line in f:
+        if '<!--' in line:
+            in_comment = True
+        #end if
+        if '-->' in line:
+            in_comment = False
+        #end if
+        if not in_comment:
+            if prefix is None and '<project' in line:
+                prefix = get_attribute('id',line)
+                if 'prefix' in short_test and prefix!=short_test.prefix:
+                    warn('QMCPACK test prefix does not match input file\ntest name: {0}\ntest prefix: {1}\ninput file prefix: {2}\ninput file location: {3}'.format(test_name,short_test.prefix,prefix,infilepath))
+                #end if
+                if 'series' in line:
+                    series_start = int(get_attribute('series',line))
+                #end if
+            elif 'href=' in line:
+                href = get_attribute('href',line)
+                line = set_attribute('href',os.path.basename(href),line)
+                hrefs.append(href)
+                hrefs.extend(follow_href(href,infilepath))
+            elif '<qmc ' in line:
+                method = get_attribute('method',line)
+                if method in xmc_methods:
+                    in_xmc = True
+                elif method in opt_methods:
+                    in_opt = True
+                elif method in test_methods:
+                    None
+                else:
+                    error('cannot perform test {0}\nunrecognized QMC method in short QMCPACK input file\nunrecognized method: {1}\ninput file location: {2}'.format(test_name,method,infilepath))
+                #end if
+                in_qmc = True
+                method_list.append(method)
+            elif in_qmc:
+                if '</qmc>' in line:
+                    in_qmc = False
+                    in_xmc = False
+                    in_opt = False
+                elif in_xmc:
+                    if '"blocks"' in line:
+                        line,blocks = rescale_parameter(options.block_factor,line)
+                        replaced_blocks = True
+                        blocks_list.append(blocks)
+                    elif '"steps"' in line:
+                        line,steps = rescale_parameter(options.step_factor,line)
+                        replaced_steps = True
+                        steps_list.append(steps)
+                    #end if
+                elif in_opt:
+                    None # not handling this case for now
+                #end if
+            #end if
+        #end if
+        input_text += line
+    #end for
+
+    f.close()
+
+    if prefix is None:
+        error('cannot perform test {0}\nprefix not found\ninput file location: {1}'.format(test_name,infilepath))
+    #end if
+
+    methods = obj()
+    blocks_steps = obj()
+    for s,m in enumerate(method_list):
+        methods[series_start+s] = m
+        if m in xmc_methods:
+            blocks_steps[series_start+s] = (blocks_list[s],steps_list[s])
+        #end if
+    #end for
+
+    input = input_template(input_text)
+
+    short_test.set(
+        prefix       = prefix,
+        series_start = series_start,
+        hrefs        = hrefs,
+        methods      = methods,
+        blocks_steps = blocks_steps,
+        )
+
+    return input
+#end def get_adjusted_input
+
+
+
+def run_adjusted_tests(short_tests):
+
+    vlog('\nrunning tests with {0}x more blocks and {1}x more steps'.format(options.block_factor,options.step_factor))
+    
+    settings(
+        results       = '',
+        runs          = options.run_dir,
+        status_only   = not options.generate and not options.run,
+        generate_only = 0,
+        sleep         = options.sleep,
+        machine       = options.machine,
+        command_line  = False,
+        )
+
+
+    if options.machine=='oic5':
+        get_reference_job = OIC5Jobs()
+    else:
+        error('machine {0} is not capable of running with reference code versions\nto run against reference versions, qtest must be modified for each target machine')
+    #end if
+
+    # filter tests by user regex and defaults
+    tests = filter_tests(short_tests)
+
+    vlog('\nlist of tests requested:',n=1)
+    for t in tests:
+        vlog(t,n=2)
+    #end for
+
+    qmc_data_tests = set(tests) & requires_qmc_data
+    if len(qmc_data_tests)>0:
+        vlog('\ntests requiring QMC_DATA',n=1)
+        for t in sorted(qmc_data_tests):
+            vlog(t,n=2)
+        #end for
+        if options.qmc_data is None:
+            error('QMC_DATA directory not provided\nplease use --qmc_data to specify its location')
+        #end if
+    #end if
+
+    if options.reference:
+        vlog('\ncreating simulation job for each test',n=1)
+        n = 0
+        refcode_unknown = []
+        refjob_unknown  = []
+        tests_to_run    = []
+        for test_name in tests:
+            vlog('creating simulation for: '+test_name,n=2)
+            short_test = short_tests[test_name]
+            code = get_reference_code(short_test)
+            if code=='unknown':
+                refcode_unknown.append('Reference code is not known for test.  Skipping test {0}'.format(test_name))
+            else:
+                test_job = get_reference_job(code,n)
+                if test_job is None:
+                    refjob_unknown.append('No reference job for code: {0}.  Skipping test {1}'.format(code,test_name))
+                else:
+                    tests_to_run.append('Will run test.  Reference code: {0}.  Adding test {1}'.format(code,test_name))
+                    short_test.included = True
+                    test_path  = get_test_path(code,test_name)
+                    test_input = get_adjusted_input(short_test)
+                    qmc = generate_qmcpack(
+                        identifier  = 'qmc',
+                        path        = test_path,
+                        job         = test_job,
+                        input       = test_input,
+                        skip_submit = options.generate,
+                        )
+                    qmc.analyzer_type = NullSimulationAnalyzer
+                    if options.generate or options.run:
+                        make_symlinks(qmc,short_test)
+                    #end if
+                    short_test.sim = qmc
+                #end if
+                n += 1
+            #end if
+        #end for
+        messages = refcode_unknown+refjob_unknown+tests_to_run
+        for msg in messages:
+            vlog(msg,n=2)
+        #end for
+    else:
+        None # not implemented yet
+    #end if
+
+
+    run_project()
+#end def run_adjusted_tests
+
+
+
+
+#=================================#
+# analyze_tests and sub-functions #
+#=================================#
+
+# quantity mapping for check_scalars.py to ctest/cmake (see macros.cmake)
+check_scalars_to_ctest = obj(
+    ke      = 'kinetic',
+    le      = 'totenergy',
+    va      = 'variance',
+    ee      = 'eeenergy',
+    ts      = 'samples',
+    lp      = 'potential',
+    ii      = 'ionion',
+    lpp     = 'localecp',
+    nlpp    = 'nonlocalecp',
+    fl      = 'flux',
+    ke_m    = 'kinetic_mixed',
+    ke_p    = 'kinetic_pure',
+    ee_m    = 'eeenergy_mixed',
+    ee_p    = 'eeenergy_pure',
+    lp_p    = 'potential_pure',
+    le_A    = 'totenergy_A',
+    le_B    = 'totenergy_B',
+    dle_AB  = 'dtotenergy_AB',
+    ii_A    = 'ionion_A',
+    ii_B    = 'ionion_B',
+    dii_AB  = 'dionion_AB',
+    ee_A    = 'eeenergy_A',
+    ee_B    = 'eeenergy_B',
+    dee_AB  = 'deeenergy_AB',
+    eloc    = 'Eloc',
+    elocest = 'ElocEstim',
+    latdev  = 'latdev',
+    )
+
+# quantity mapping for check_scalars.py to qmcpack output (see check_scalars.py)
+check_scalars_to_qmcpack_ordered = [
+    ('le'      , 'LocalEnergy'),
+    ('va'      , 'Variance'),
+    ('ke'      , 'Kinetic'),
+    ('lp'      , 'LocalPotential'),
+    ('ee'      , 'ElecElec'),
+    ('cl'      , 'Coulomb'),
+    ('ii'      , 'IonIon'),
+    ('lpp'     , 'LocalECP'),
+    ('nlpp'    , 'NonLocalECP'),
+    ('mpc'     , 'MPC'),
+    ('kec'     , 'KEcorr'),
+    ('fl'      , 'Flux'),
+    ('latdev'  , 'latdev'),
+    ('ke_m'    , 'Kinetic_m'),
+    ('ke_p'    , 'Kinetic_p'),
+    ('ee_m'    , 'ElecElec_m'),
+    ('ee_p'    , 'ElecElec_p'),
+    ('lp_p'    , 'LocalPotential_pure'),
+    ('le_A'    , 'LocEne_0'),
+    ('le_B'    , 'LocEne_1'),
+    ('dle_AB'  , 'dLocEne_0_1'),
+    ('ee_A'    , 'ElecElec_0'),
+    ('ee_B'    , 'ElecElec_1'),
+    ('dee_AB'  , 'dElecElec_0_1'),
+    ('ii_A'    , 'IonIon_0'),
+    ('ii_B'    , 'IonIon_1'),
+    ('dii_AB'  , 'dIonIon_0_1'),
+    ('eloc'    , 'Eloc'),
+    ('elocest' , 'ElocEstim'),
+    ('ar'      , 'AcceptRatio'),
+    ('bw'      , 'BlockWeight'),
+    ('ts'      , 'TotalSamples'),
+    ]
+check_scalars_to_qmcpack = obj(dict(check_scalars_to_qmcpack_ordered))
+
+qmcpack_quantity_order = []
+for n1,n2 in check_scalars_to_qmcpack_ordered:
+    qmcpack_quantity_order.append(n2)
+#end for
+
+# quantity mapping from ctest to qmcpack
+ctest_to_qmcpack = obj()
+for a,c in check_scalars_to_ctest.items():
+    if a in check_scalars_to_qmcpack:
+        ctest_to_qmcpack[c] = check_scalars_to_qmcpack[a]
+    #end if
+#end for
+qmcpack_to_ctest = ctest_to_qmcpack.inverse()
+
+# quantities that will not be updated
+non_update_quants = set([
+    'samples'
+    ])
+
+# quantities that are not statistical in nature (no fluctuations)
+non_stat_quants = set([
+    'samples',
+    'ionion',
+    'ionion_A',
+    'ionion_B',
+    'dionion_AB',
+    ])
+
+# tests that use exact wavefunctions (constant energy, zero variance)
+exact_wavefunction_tests = set([
+    'heg_14_gamma-ni',
+    'heg_14_gamma-ni_dmc',
+    'sho-vmc',
+    ])
+
+# returns filename for a scalar.dat file
+def get_scalar_filename(st,series):
+    return '{0}.s{1}.scalar.dat'.format(st.prefix,str(series).zfill(3))
+#end def get_scalar_filename
+
+# read quantities from qmca output saved in a file
+def read_qmca(filename,full=False):
+    data = obj()
+    text = read_file(filename).strip()
+    if len(text)==0:
+        error('qmca file is empty ({0})'.format(filename))
+    #end if
+    lines = text.splitlines()
+    if '=' in lines[0]:
+        error('qmca file is misformatted ({0})'.format(filename))
+    #end if
+    for line in lines[1:]:
+        try:
+            qname,tmp1,qmean,tmp2,qerror = line.split()
+            qmean  = float(qmean)
+            qerror = float(qerror)
+        except:
+            error('qmca file read failed ({0})\nline could not be processed: {1}'.format(filename,line))
+        #end try
+        if full:
+            data[qname] = qmean,qerror
+        elif qname in qmcpack_to_ctest:
+            cname = qmcpack_to_ctest[qname]
+            data[cname] = qmean,qerror
+        #end if
+    #end for
+    return data
+#end def read_qmca
+
+
+def analyze_tests(short_tests):
+    vlog('\nanalyzing test results')
+
+    # analyze each test
+    scomp = '' # string for comparison data file write
+    sref  = '' # string for reference data file write
+    sref_full = '' # string for full reference data file write
+    scomp += '# {0:<44}  {1:<4}   {2:<15}    {3:<18}  {4:<18}  {5:<18}  {6:<18}  {7:<18}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_short_err','ctest_mean','ctest_short_err')
+    sref += '# {0:<44}  {1:<4}   {2:<15}    {3:<18}  {4:<18}  {5:<12}  {6:<18}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
+    sref_full += '# {0:<44}  {1:<4}   {2:<15}    {3:^28}  {4:^28}  {5:<12}  {6:^28}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
+    tests = sorted(short_tests.keys())
+    tests_analyzed = []
+    for t in tests:
+        st = short_tests[t]
+        # only analyze tests included by request
+        if st.included:
+            sim = st.sim
+
+            # filter out unfinished tests and those w/o reference data
+            if not sim.finished:
+                vlog('skipping {0}, simulation not finished'.format(st.name),n=1)
+                continue
+            elif 'refdata' not in st:
+                vlog('skipping {0}, no old reference data'.format(st.name),n=1)
+                continue
+            #end if
+
+            vlog('analyzing {0}'.format(st.name),n=1)
+
+            # enter the test directory
+            cwd = os.getcwd()
+            os.chdir(sim.locdir)
+
+            # determine the status of the run
+            #   options are unknown/no_log/controlled_abort/hard_failure/complete
+            run_status = 'unknown'
+            if not os.path.exists(sim.outfile):
+                run_status = 'no_log'
+            else:
+                out = read_file(sim.outfile)
+                err = read_file(sim.errfile)
+                if 'Total Exe' in out:
+                    run_status = 'complete'
+                elif 'Aborting at' in err or 'Aborting at' in out:
+                    run_status = 'controlled_abort'
+                else:
+                    run_status = 'hard_failure'
+                #end if
+            #end if
+
+            # set equilibration steps
+            nequil_qmca     = options.equil
+            nequil_blocks   = options.equil
+            if options.njoined>1:
+                nequil_qmca   = 0 # equil steps removed from joined data
+                nequil_blocks = options.njoined*options.equil # blocks were removed from each set
+            #end if
+
+            # nequil_check is equilibration used by testing system
+            #   this is hard coded in macros.cmake
+            nequil_check = 2
+
+            # determine the status of the output data
+            #   options are unknown/absent/partial/complete
+            data_status = 'complete'
+            if len(st.blocks_steps)==0:
+                data_status = 'unknown'
+            #end if
+            for series,(blocks,steps) in st.blocks_steps.items():
+                blocks_expected = blocks
+                if options.njoined>1 and str(series) in st.refdata:
+                    blocks_expected -= nequil_blocks
+                #end if
+                filename = get_scalar_filename(st,series)
+                if not os.path.exists(filename):
+                    data_status = 'absent'
+                    break
+                else:
+                    nlines = line_count(filename)
+                    if nlines!=blocks_expected+1:
+                        data_status = 'partial'
+                        break
+                    #end if
+                #end if
+            #end for
+
+            #vlog('run/data status: {0}/{1}'.format(run_status,data_status),n=2)
+
+            # postprocess all reference data with qmca
+            if data_status=='complete':
+                tests_analyzed.append(t)
+                ref_code,ref_code_hash = get_reference_code(st,hash=True,full=True)
+                scomp += '\n'
+                sref  += '\n'
+                sref_full += '\n'
+                sref_full += '# ref_code: {0:<40} ref_code_hash: {1}\n'.format(ref_code,ref_code_hash)
+                # compare old and new ref data for each series
+                for series in sorted(st.refdata.keys()):
+                    old_refdata = st.refdata[series]
+                    scalar_file = get_scalar_filename(st,series)
+                    blocks,steps = st.blocks_steps[int(series)]
+
+                    # run qmca on the new reference output
+                    sfill = str(int(series)).zfill(3)
+                    qmca_in  = '{0}.s{1}.qmca.in'.format(st.prefix,sfill)
+                    qmca_out = '{0}.s{1}.qmca.out'.format(st.prefix,sfill)
+                    if not os.path.exists(qmca_out):
+                        vlog('creating '+qmca_out,n=2)
+                        command = "qmca --fp='18.12f' -e {0} {1}".format(nequil_qmca,scalar_file)
+                        write_file(qmca_in,command)
+                        out = execute(command)[0]
+                        write_file(qmca_out,out)
+                    #end for
+
+                    # load the new reference data
+                    new_refdata = read_qmca(qmca_out)
+
+                    # steps for new reference data
+                    steps_new = (blocks-nequil_blocks)*steps
+
+                    # steps in target short run (corresponds to old ref data)
+                    steps_old = (blocks/options.block_factor-nequil_check)*steps/options.step_factor
+                    # factor to scale ref error to get target error for test
+                    err_factor = sqrt(steps_new*1.0/steps_old)
+
+                    # compare old and new ref data for each quantity
+                    for q in sorted(old_refdata.keys()):
+                        if q not in new_refdata:
+                            error('reference quantity "{0}" not in new reference data'.format(q))
+                        #end if
+
+                        # get the old ref data
+                        val_old,err_old = old_refdata[q]
+                        val_old = float(val_old)
+                        err_old = float(err_old)
+
+                        # get the new ref data
+                        val_new,err_new = new_refdata[q]
+
+                        # compare the two
+                        dval = val_old-val_new
+                        if q in non_stat_quants:
+                            target_err = 0.0
+                        else:
+                            nsigma = abs(dval)/err_new
+                            target_err = sqrt(1.0+err_factor**2)*err_new
+                            relerr = abs(err_old-target_err)/target_err
+                            vlog('{0:<15} series {1}   nsigma diff {2:3.2f}  errorbar relerr {3:3.2f}'.format(q,series,nsigma,relerr),n=2)
+                        #end if
+
+
+                        # get test/file information
+                        if q not in non_update_quants:
+                            scomp += ' {0:<50}  {1:<2}  {2:<15}  {3: 18.12f}  {4: 18.12f}  {5: 18.12f}  {6: 18.12f}  {7: 18.12f}\n'.format(st.sname,series,q,val_new,err_new,target_err,val_old,err_old)
+                            sref += ' {0:<50}  {1:<2}  {2:<15}  {3: 18.12f}  {4: 18.12f}    {5:<12}{6: 18.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
+                        #end if
+
+
+                    #end for
+
+                    new_refdata_full = read_qmca(qmca_out,full=True)
+                    for q in qmcpack_quantity_order:
+                        if q in new_refdata_full:
+                            val_new,err_new = new_refdata_full[q]
+                            target_err = sqrt(1.0+err_factor**2)*err_new
+                            sref_full += ' {0:<50}  {1:<2}  {2:<15}  {3: 28.12f}  {4: 28.12f}    {5:<12}{6: 28.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
+                        #end if
+                    #end for
+
+                #end for
+
+            #end if
+
+            # exit the test directory
+            os.chdir(cwd)
+        #end if
+    #end for
+
+    f = open('./scalar_comparison.dat','w')
+    f.write(scomp)
+    f.close()
+
+    f = open('./scalar_reference.dat','w')
+    f.write(sref)
+    f.close()
+
+    f = open('./scalar_reference_full.dat','w')
+    f.write(sref_full)
+    f.close()
+
+
+    vlog('\n')
+    vlog('tests analyzed:',n=1)
+    for t in tests_analyzed:
+        vlog(t,n=2)
+    #end for
+
+    vlog('\n')
+    vlog('tests not analyzed:',n=1)
+    for t in tests:
+        st = short_tests[t]
+        if st.type=='scalar' and t not in tests_analyzed:
+            vlog(t,n=2)
+        #end if
+    #end for
+
+#end def analyze_tests
+
+
+
+
+
+#================#
+# main execution #
+#================#
+
+if __name__=='__main__':
+
+    # read command line options
+    read_command_line()
+
+    # extract short tests from QMCPACK CMakeLists.txt files
+    short_tests = parse_qmcpack_cmakelists()
+
+    # join testsets, if requested
+    if options.join!='':
+        join_test_sets(short_tests)
+        vexit()
+    #end if
+
+    # run adjusted tests with Nexus
+    run_adjusted_tests(short_tests)
+
+    # analyze results
+    if options.analyze:
+        analyze_tests(short_tests)
+    #end if
+
+    vexit()
+#end if

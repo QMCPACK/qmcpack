@@ -1,0 +1,53 @@
+/*! \page einsplinebuilder EinsplineSetBuilder
+
+EinsplineSetBuilder is used by BasisSetFactory to create a single-particle
+orbital set (SPOset) using einspline library.
+
+It has many data members that are initialized with the input file and used to
+extract a set of KS orbitals in the hdf5 file in ESHDF format.  The builder is
+rather complex to support multiple versions of the HDF5 files, muffin-tin
+orbitals and localized orbitals and to handle logical operations with the
+tiling etc.
+
+In EinsplineSetBuilder_createSPOSet.cpp, <c>SPOSetBase* createSPOSet(xmlNodePtr cur)</c> returns
+- an EinsplineSet (see EinsplineSet.h), EinsplineSetExtended<double>, EinsplineSetExtended<complex<double> >
+- BsplineSet<SA> (see EinsplineAdoptor.h)
+
+How EinsplineSetBuilder instantiates a SPOSetBase in createSPOSet
+1. Get attributes from xml <c>determinantset</c>  or <c>sposet</c>
+2. <c>ReadOrbitalInfo()</c> : the headnode obtains the basic properties of the orbitals from HDF5
+ - <c>ReadOrbitalInfo</c> in EinsplineSetBuilderOld.cpp selects ReadOrbitalInfo_ESHDF in EinsplineSetBuilderESHDF.fft.cpp
+3. <c>BroadcastOrbitalInfo()</c> : broadcast orbital information so that each MPI can do their job
+4. <c>AnalyzeTwists2()</c>: check if all the necessary k-points are available to construct a supercell via tiling
+5. Determine the precision, storage type (complex or real), truncation and create EinsplineSetExtended with storage type
+\code
+if (UseRealOrbitals)
+  OrbitalSet = new EinsplineSetExtended<double>;
+else
+  OrbitalSet = new EinsplineSetExtended<complex<double> >;
+\endcode
+ - This does not create big objects, e.g., bspline table, but make data available for OccupyBands the subsequent operations. 
+6. <c>OccupyBands_ESHDF()</c> (in EinsplineSetBuilderESHDF.fft.cpp ) for the working spin
+ - <c>SortBands</c> (<c>std::vector<BandInfo></c> type) is constructed. It contains an ordered list of bands that can be used to create a SPOSet.
+ - By defaults, SortBands is ordered according to the BandInfo::Energy (extracted from eingenvalue  /electrons/kpoint_K/spin_S/eigenvalues).
+ - With determinantset\@sort="2", SortBands is order with this priority, the band index, energy and twist.
+
+\section einspline_sec EinsplineSet
+
+
+\section adoptor_sec EinsplineAdoptor 
+EinsplineAdoptor is a base class and its derived class is a specialization for the types and storage policy.
+
+- SplineR2RAdoptor : real einspline to real SPOset, equivalent to EsinplineSetExtended<double>
+- SplineC2RPackedAdoptor : complex einspline to real SPOset, equivalent to EinsplineSetExtended<complex<double> >
+- SplineC2CPackedAdoptor : complex einspline to complex SPOset, equivalent to EinsplineSetExtended<complex<double> >
+
+The derived classes of EinsplineAdoptor have three template parameter, e.g.,
+SplineC2CPackedAdoptor<ST,TT,D>. Here
+- ST: spline datatype
+- TT: target datatype == SPOSet datatype
+- D : dimension
+The most common usage is SplineC2CPackedAdoptor<float,double,3>. 
+
+
+*/

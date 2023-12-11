@@ -1,0 +1,34 @@
+@startuml
+skinparam state {
+    StartColor Green
+    StopColor Red
+}
+
+hide empty description
+	
+state Invalid {
+    state Initializing {
+	state ValidParameters {
+	    }
+	
+	state ValidDependencies {
+		}
+    }
+	Constructed --> Initializing
+	Initializing --> Allocation
+	    }
+	    	Invalid -left-> put
+	        put -> ValidParameters
+		Invalid -left-> set
+		set -> ValidDependencies
+
+				Invalid -right-> Fail : makeClone
+		[*] --> Constructed
+	 Allocation --> Invalid
+	Invalid --> Valid
+		Valid -right-> Valid2 : makeClone
+
+	
+		
+		    
+@enduml

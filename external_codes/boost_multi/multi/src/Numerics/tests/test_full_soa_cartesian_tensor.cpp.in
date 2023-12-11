@@ -1,0 +1,85 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by:  Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//
+// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+#include "catch.hpp"
+#include "Message/Communicate.h"
+#include "Numerics/SoaCartesianTensor.h"
+
+#include <stdio.h>
+#include <string>
+
+using std::string;
+
+namespace qmcplusplus
+{
+
+typedef OHMMS_PRECISION real_type;
+
+
+// Use gen_gto.py to generate the checks
+
+TEST_CASE("SoA Cartesian Tensor evaluateV full", "[numerics]") {
+  SoaCartesianTensor<double> ct(6);
+
+  double x = 1.3;
+  double y = 1.2;
+  double z = -0.5;
+  ct.evaluateV(x,y,z);
+
+  double *XYZ = ct.cXYZ.data(0);
+
+%test_evaluateV
+
+}
+
+TEST_CASE("SoA Cartesian Tensor evaluateVGL full", "[numerics]") {
+  SoaCartesianTensor<double> ct(6);
+
+  double x = 1.3;
+  double y = 1.2;
+  double z = -0.5;
+  ct.evaluateVGL(x,y,z);
+
+  double *XYZ = ct.cXYZ.data(0);
+  double *gr0 = ct.cXYZ.data(1);
+  double *gr1 = ct.cXYZ.data(2);
+  double *gr2 = ct.cXYZ.data(3);
+  double *lap = ct.cXYZ.data(4);
+
+%test_evaluateVGL
+
+}
+
+TEST_CASE("SoA Cartesian Tensor evaluateVGH full", "[numerics]") {
+  SoaCartesianTensor<double> ct(6);
+
+  double x = 1.3;
+  double y = 1.2;
+  double z = -0.5;
+  ct.evaluateVGH(x,y,z);
+
+  double *XYZ = ct.cXYZ.data(0);
+  double *gr0 = ct.cXYZ.data(1);
+  double *gr1 = ct.cXYZ.data(2);
+  double *gr2 = ct.cXYZ.data(3);
+  double *h00 = ct.cXYZ.data(4);
+  double *h01 = ct.cXYZ.data(5);
+  double *h02 = ct.cXYZ.data(6);
+  double *h11 = ct.cXYZ.data(7);
+  double *h12 = ct.cXYZ.data(8);
+  double *h22 = ct.cXYZ.data(9);
+
+%test_evaluateVGH
+
+}
+
+}

@@ -1,0 +1,150 @@
+/* src/ohmms-config.h.in.  Generated from configure.in by autoheader.  */
+// -*- c++  -*-
+//
+//Ohmms Configuration Header. Automatically Generated
+//
+//See the LICENSE file in the top-level directory for copyright notices
+//
+#ifndef QMCPLUSPLUS_CONFIGURATION_H
+#define QMCPLUSPLUS_CONFIGURATION_H
+
+/* define the major version */
+#define QMCPACK_VERSION_MAJOR  @qmcpack_VERSION_MAJOR@
+
+/* define the minor version */
+#define QMCPACK_VERSION_MINOR  @qmcpack_VERSION_MINOR@
+
+/* define the patch version */
+#define QMCPACK_VERSION_PATCH  @qmcpack_VERSION_PATCH@
+
+/* define the release version */
+#cmakedefine QMCPACK_RELEASE  @QMCAPCK_RELEASE@
+
+/* define the git last commit date */
+// #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
+
+/* building from Git repository or not */
+#cmakedefine IS_GIT_PROJECT  @IS_GIT_PROJECT@
+
+/* define QMC_BUILD_SANDBOX_ONLY */
+#cmakedefine QMC_BUILD_SANDBOX_ONLY @QMC_BUILD_SANDBOX_ONLY@
+
+/* define PRINT_DEBUG */
+#cmakedefine PRINT_DEBUG @PRINT_DEBUG@
+
+/* Enable OpenMP offload. */
+#cmakedefine ENABLE_OFFLOAD @ENABLE_OFFLOAD@
+
+#ifdef ENABLE_OFFLOAD
+  #define PRAGMA_OFFLOAD(x) _Pragma(x)
+#else
+  #define PRAGMA_OFFLOAD(x)
+#endif
+
+/* Enable OpenMP taskloop. */
+#cmakedefine ENABLE_OMP_TASKLOOP @ENABLE_OMP_TASKLOOP@
+
+#ifdef ENABLE_OMP_TASKLOOP
+  #define PRAGMA_OMP_TASKLOOP(x) _Pragma(x)
+#else
+  #define PRAGMA_OMP_TASKLOOP(x) _Pragma("omp taskgroup")
+#endif
+
+/* Manage memory allocations via vendor APIs and associate them with the OpenMP runtime */
+#cmakedefine QMC_OFFLOAD_MEM_ASSOCIATED @QMC_OFFLOAD_MEM_ASSOCIATED@
+
+/* Define to 1 if you have MPI library */
+#cmakedefine HAVE_MPI @HAVE_MPI@
+
+/* Define the physical dimension of appliation. */
+#cmakedefine OHMMS_DIM @OHMMS_DIM@
+
+/* Define the index type: int, long */
+#cmakedefine OHMMS_INDEXTYPE @OHMMS_INDEXTYPE@
+
+/* Define the base precision: float, double */
+#cmakedefine OHMMS_PRECISION @OHMMS_PRECISION@
+
+/* Define the full precision: double, long double */
+#cmakedefine OHMMS_PRECISION_FULL @OHMMS_PRECISION_FULL@
+
+/* Define Cache/SIMD alignment in bytes */
+#cmakedefine QMC_SIMD_ALIGNMENT @QMC_SIMD_ALIGNMENT@
+
+/* Define to 1 if precision is mixed, only for the CPU code */
+#cmakedefine MIXED_PRECISION @MIXED_PRECISION@
+
+/* Define to 1 if complex wavefunctions are used */
+#cmakedefine QMC_COMPLEX @QMC_COMPLEX@
+
+/* Define if sincos function exists */
+#cmakedefine HAVE_SINCOS @HAVE_SINCOS@
+
+/* Define if external einspline is found */
+#cmakedefine HAVE_EINSPLINE_EXT @HAVE_EINSPLINE_EXT@
+
+#ifndef HAVE_EINSPLINE_EXT
+
+/* Define if posix_memalign function exists */
+#cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
+
+/* Define if pmmintrin.h exists */
+#cmakedefine HAVE_PMMINTRIN_H @HAVE_PMMINTRIN_H@
+
+/* Define if emmintrin.h exists */
+#cmakedefine HAVE_EMMINTRIN_H @HAVE_EMMINTRIN_H@
+
+#endif /* HAVE_EINSPLINE_EXT */
+
+/* Find ESSL library */
+#cmakedefine HAVE_ESSL @HAVE_ESSL@
+
+/* Using translation of CUDA to HIP for GPU execution */
+#cmakedefine QMC_CUDA2HIP @QMC_CUDA2HIP@
+
+/* Disable hipHostRegister/hipHostUnregister */
+#cmakedefine QMC_DISABLE_HIP_HOST_REGISTER @QMC_DISABLE_HIP_HOST_REGISTER@
+
+/* Using CUDA for GPU execution, next generation */
+#cmakedefine ENABLE_CUDA @ENABLE_CUDA@
+
+/* Using SYCL for GPU execution */
+#cmakedefine ENABLE_SYCL @ENABLE_SYCL@
+
+/* Using boost::stacktrace */
+#cmakedefine ENABLE_STACKTRACE @ENABLE_STACKTRACE@
+
+/* For AFQMC compilation  */
+#cmakedefine BUILD_AFQMC @BUILD_AFQMC@
+
+/* For AFQMC compilation  */
+#cmakedefine BUILD_AFQMC_WITH_NCCL @BUILD_AFQMC_WITH_NCCL@
+
+/* For FCIQMC compilation  */
+#cmakedefine BUILD_FCIQMC @BUILD_FCIQMC@
+
+#cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
+
+/* Disable trace manager and associated features */
+#cmakedefine DISABLE_TRACEMANAGER @DISABLE_TRACEMANAGER@
+
+/* Fully remove trace manager and associated features */
+#cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
+
+/* Fixed Size Walker Properties */
+#cmakedefine WALKER_MAX_PROPERTIES @WALKER_MAX_PROPERTIES@
+
+/* Internal timers */
+#cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@
+
+/* Use VTune API */
+#cmakedefine USE_VTUNE_API @USE_VTUNE_API@
+
+/* Use VTune Task API with timers */
+#cmakedefine USE_VTUNE_TASKS @USE_VTUNE_TASKS@
+
+/* Enable NVTX regions in CUDA code. */
+#cmakedefine USE_NVTX_API @USE_NVTX_API@
+
+#endif // QMCPLUSPLUS_CONFIGURATION_H
+

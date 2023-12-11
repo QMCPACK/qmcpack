@@ -1,0 +1,5 @@
+&inputpp
+  write_psir = .false.
+  prefix = 'atomO'
+  outdir = 'out'
+/

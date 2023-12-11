@@ -1,0 +1,5 @@
+
+MPI3 wrapper
+
+Created with (run from top level qmcpack directory):
+git subtree add --squash -P external_codes/mpi_wrapper/mpi3 https://gitlab.com/correaa/boost-mpi3.git master

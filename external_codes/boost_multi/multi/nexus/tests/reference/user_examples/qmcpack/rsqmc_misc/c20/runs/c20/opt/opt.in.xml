@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="opt" series="0">
+      <application name="qmcpack" role="molecu" class="serial" version="1.0"/>
+      <parameter name="driver_version"> legacy </parameter>
+   </project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                 12.42462807        0.00000000        0.00000000
+                  0.00000000       12.42462807        0.00000000
+                  0.00000000        0.00000000       12.42462807
+         </parameter>
+         <parameter name="bconds">
+            n n n
+         </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes" randomsrc="ion0">
+         <group name="u" size="40" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="40" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="C" size="20" mass="21894.7135906">
+            <parameter name="charge"              >    4                     </parameter>
+            <parameter name="valence"             >    4                     </parameter>
+            <parameter name="atomicnumber"        >    6                     </parameter>
+            <parameter name="mass"                >    21894.7135906            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                     5.67201488        2.07077134        6.12363826
+                     6.75261319       10.35385672        6.12363826
+                     7.08201324        3.22522394        3.94377340
+                     5.34261483        9.19940413        3.94377340
+                     3.47937320        3.67136938        6.12925830
+                     8.94525487        8.75325869        6.12925830
+                     7.01802334        3.26065630        8.19563830
+                     5.40660473        9.16397177        8.19563830
+                     3.36421329        5.32336419        8.38508335
+                     9.06041478        7.10126388        8.38508335
+                     9.32199067        4.47448409        7.52881820
+                     3.10263740        7.95014398        7.52881820
+                     5.59434335        4.95914404        2.66707443
+                     6.83028472        7.46548403        2.66707443
+                     5.52597495        4.97581520        9.75755364
+                     6.89865312        7.44881287        9.75755364
+                     9.21609041        4.62832480        4.86606936
+                     3.20853766        7.79630327        4.86606936
+                     3.20853766        5.19697363        3.97024846
+                     9.21609041        7.22765444        3.97024846
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="MISSING.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
+            <sposet type="bspline" name="spo_ud" size="40" spindataset="0"/>
+         </sposet_builder>
+         <determinantset>
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_ud" size="40"/>
+               <determinant id="downdet" group="d" sposet="spo_ud" size="40"/>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
+            <correlation elementType="C" size="8" rcut="6" cusp="0.0">
+               <coefficients id="eC" type="Array">                  
+0 0 0 0 0 0 0 0
+               </coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="u" size="8" rcut="8">
+               <coefficients id="uu" type="Array">                  
+0 0 0 0 0 0 0 0
+               </coefficients>
+            </correlation>
+            <correlation speciesA="u" speciesB="d" size="8" rcut="8">
+               <coefficients id="ud" type="Array">                  
+0 0 0 0 0 0 0 0
+               </coefficients>
+            </correlation>
+         </jastrow>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+            <pseudo elementType="C" href="C.BFD.xml"/>
+         </pairpot>
+      </hamiltonian>
+   </qmcsystem>
+   <loop max="6">
+      <qmc method="linear" move="pbyp" checkpoint="-1">
+         <cost name="energy"              >    0.0                </cost>
+         <cost name="unreweightedvariance">    1.0                </cost>
+         <cost name="reweightedvariance"  >    0.0                </cost>
+         <parameter name="warmupSteps"         >    100                </parameter>
+         <parameter name="blocks"              >    10                 </parameter>
+         <parameter name="timestep"            >    0.5                </parameter>
+         <parameter name="stepsbetweensamples" >    10                 </parameter>
+         <parameter name="samples"             >    16000              </parameter>
+         <parameter name="minwalkers"          >    0.1                </parameter>
+         <parameter name="alloweddifference"   >    0.0001             </parameter>
+         <parameter name="bigchange"           >    15.0               </parameter>
+         <parameter name="nonlocalpp"          >    yes                </parameter>
+         <parameter name="use_nonlocalpp_deriv">    yes                </parameter>
+      </qmc>
+   </loop>
+</simulation>

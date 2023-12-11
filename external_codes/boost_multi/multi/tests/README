@@ -1,0 +1,19 @@
+These directories contain input files for the automated test
+system. They are not intended to be run separately although any
+QMCPACK inputs should run to completion when run from the same
+directory as the input, e.g. mpirun -n 16 qmcpack vmc.in.xml
+
+To run the automated tests, from the build directory, run
+
+ctest -R short
+
+for the short running tests. These take a few minutes to run on a 16
+core machine. To run all tests simply run
+
+ctest
+
+Running all tests requires several hours due to strict statistics. You
+can increase verbosity with "ctest -V".
+
+The test definitions and configuration are in
+src/tests/system/CMakeLists.txt

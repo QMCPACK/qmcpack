@@ -1,0 +1,44 @@
+
+These tests include short and long AFQMC runs for a two atom diamond 
+primitive cell at the gamma point.  The wavefunction was generated 
+with PySCF and inputs and outputs are included in the ./pyscf 
+directory.  A few AFQMC run variants are checked, including local 
+energy weighting, hybrid weighting, subtracting/including mean field 
+values.  Each of the above cases is additionally tested with and 
+without parallel redistribution of the Cholesky matrix.  Reference 
+data was produced with the develop branch of the code as it existed 
+on 28 Mar 2018.
+
+Reference data from the high block count AFQMC runs is found below:
+
+               Eloc                  
+afqmc         -10.55274 +/- 0.00026
+afqmc hybrid  -10.55149 +/- 0.00064 (actually from ElocEstim)
+
+For comparison, corresponding data for the lower block count AFQMC 
+reference data found in ./qmc-ref is:
+
+>qmca -e 2 qmc-ref/qmc.s000.scalar.dat | grep Eloc
+qmc         -10.55310 +/- 0.00028 
+
+>qmca -e 2 qmc-ref/qmc_hybrid.s000.scalar.dat | grep ElocEstim
+qmc_hybrid  -10.5470 +/-  0.0023
+
+
+Test input files were created by reducing the number of steps from the 
+included reference by a factor of 10 for the "long" tests and by a 
+further factor of 10 for the "short" tests.
+
+A reference value for the mean local energy was taken from the high 
+block count reference run.  Expected error bars were derived from 
+the high block count data by multiplying the reference error bars by 
+a factor of sqrt(10+1) and sqrt(100+1) for the long and short tests, 
+respectively.  The factor of +1 accounts for the error bar intrinsic 
+to the high block count runs.  
+
+The target means and error bars for long and short tests are:
+
+                refmean     referr    longerr   shorterr
+afqmc          -10.55274    0.00026   0.00086   0.00261 
+afqmc hybrid   -10.55149    0.00064   0.00212   0.00643
+

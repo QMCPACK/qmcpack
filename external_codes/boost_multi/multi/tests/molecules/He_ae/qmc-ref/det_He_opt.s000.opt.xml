@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+
+   <!-- Electron-electron Jastrow of Pade form -->
+   <!-- For two electron system, only have up-down interaction -->
+
+   <jastrow name="Jee" type="Two-Body" function="pade">
+      <correlation speciesA="u" speciesB="d">
+        <var id="jud_b" name="B">4.2111744884e-01</var>
+      </correlation>
+    </jastrow>
+
+    <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
+      <basisset>
+        <atomicBasisSet type="STO" elementType="He">
+          <basisGroup rid="R0" n="1" l="0" m="0" type="Slater">
+             <radfunc exponent="2.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant id="updet" spin="1" size="1"/>
+        <determinant id="downdet" spin="-1" size="1"/>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>

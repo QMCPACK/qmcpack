@@ -1,0 +1,52 @@
+&CONTROL
+   calculation     = 'scf'
+   disk_io         = 'low'
+   prefix          = 'O.q1'
+   outdir          = './'
+   pseudo_dir      = './'
+   restart_mode    = 'from_scratch'
+   tprnfor         = .false.
+   tstress         = .false.
+   verbosity       = 'high'
+   wf_collect      = .true.
+/
+
+&SYSTEM
+   celldm(1)       = 1.0
+   degauss         = 0.0001
+   ecutrho         = 1200
+   ecutwfc         = 300
+   ibrav           = 0
+   input_dft       = 'lda'
+   nat             = 1
+   nosym           = .true.
+   nspin           = 2
+   ntyp            = 1
+   occupations     = 'smearing'
+   smearing        = 'fermi-dirac'
+   tot_charge      = 1
+   tot_magnetization = 3
+/
+
+&ELECTRONS
+   conv_thr        = 1e-06
+   electron_maxstep = 1000
+   mixing_beta     = 0.2
+/
+
+
+ATOMIC_SPECIES 
+   O  15.999 O.BFD.upf
+
+ATOMIC_POSITIONS alat
+   O     9.44863067       9.44863161       9.44863255
+
+K_POINTS automatic
+   1 1 1  0 0 0 
+
+CELL_PARAMETERS cubic
+        18.89726133       0.00000000       0.00000000 
+         0.00000000      18.89726133       0.00000000 
+         0.00000000       0.00000000      18.89726133
+
+

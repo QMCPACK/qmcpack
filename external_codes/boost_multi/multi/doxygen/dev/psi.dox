@@ -1,0 +1,33 @@
+/*! \page dev_psi Trial Wave Functions
+
+Each <c>wavefunction</c> XML element defines a trial wavefunction generally expressed as
+\f[
+\Psi_T({\bf R})=\Pi_k\Psi_k 
+\f]
+and WaveFunctionFactory processes the child nodes to add orbital components:
+\code
+<wavefunction name="psi0" target="e">
+  <jastrow name="J1" type="OneBody" function="bspline" source="ion0"/>
+  <jastrow name="J2" type="TwoBody" function="bspline" source="e"/>
+  <determinantset>
+  </determinantset>
+</wavefunction>
+\endcode
+The <c>wavefunction\@target</c> associates the trial wavefunction with the quantum
+particle set, "e", and their positions \f${\bf R}\f$. 
+Note that there can be several <c>wavefunction</c> and the <c>name</c> and
+<c>target</c> are used to distinguish them. The scoping works so that there is no need to provide target for
+each orbital.
+
+Internally, the log form of the trial wavefunction is used as
+\f[
+\ln \Psi_T({\bf R})=\sum_k\ln\Psi_k 
+\f]
+where \f$\Psi_k\f$ are derived classes from OrbitalBase.
+
+
+\subpage dev_jastrow
+
+\subpage einsplinebuilder
+*/
+

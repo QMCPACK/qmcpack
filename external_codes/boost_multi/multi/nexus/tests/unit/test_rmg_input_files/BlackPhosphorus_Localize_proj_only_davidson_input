@@ -1,0 +1,96 @@
+description="Black Phosphorus"
+
+#processor_grid="4 2 1"
+
+#wavefunction_grid="20 64 28"
+
+subdiag_driver = "lapack"
+kohn_sham_mg_levels = "2"
+kohn_sham_time_step = "0.66000000"
+potential_grid_refinement="2"
+
+
+occupations_type=
+#"Fixed" 
+"Fermi Dirac"
+
+#potential_acceleration_constant_step = "1.0"
+unoccupied_states_per_kpoint="10"
+system_charge="0"
+
+occupation_electron_temperature_eV="0.025"
+occupation_number_mixing="1.00"
+
+kpoint_mesh="2 1 2"
+#kpoint_mesh="1 1 1"
+kpoint_is_shift="0 0 0"
+#kpoints = "0.25  0.25  0.25  1.0"
+
+#kpoint_distribution="1"
+
+length_units=
+#"Bohr"
+"Angstrom"
+
+crds_units=
+#"Bohr"
+"Angstrom"
+
+bravais_lattice_type=
+"Orthorhombic Primitive"
+
+# Lattice constants 
+a_length="3.3136"
+b_length="10.478"
+c_length="4.3763"
+
+atomic_coordinate_type=
+"Absolute"
+#"Cell Relative"
+
+initial_diagonalization="true"
+
+atoms =
+"
+ P   0.0            0.0            0.0            1
+ P   1.6568         0.0            1.48364        1
+ P   1.6568         2.13054        2.18815        1
+ P   0.0            2.13054        3.67179        1
+"
+
+#pseudopotential="
+#	P   ./P.UPF
+#"
+
+start_mode=
+#"Random Start"
+#"Restart From File"
+"LCAO Start"
+
+calculation_mode=
+"Quench Electrons"
+#"Band Structure Only"
+
+#exchange_correlation_type=
+#"LDA"
+
+rms_convergence_criterion="1e-7"
+
+charge_density_mixing="0.2"
+projector_mixing="0.4"
+
+charge_mixing_type=
+#"Linear"
+"Pulay"
+#"Broyden"
+
+charge_pulay_order="5"
+charge_pulay_scale="0.5"
+
+max_scf_steps="20"
+localize_projectors = "false"
+localize_localpp = "true"
+kohn_sham_solver = "davidson"
+output_wave_function_file = "Waves/wave.out"
+
+potential_acceleration_constant_step = "0.00000000e+00"

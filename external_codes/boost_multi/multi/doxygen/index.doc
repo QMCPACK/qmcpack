@@ -1,0 +1,17 @@
+/*!  \mainpage Overview
+
+This website contains per class and per file-based documentation and
+diagrams for QMCPACK generated from the source code using the doxygen
+tool. QMCPACK is an open-source production level many-body ab initio
+Quantum Monte Carlo code for computing the electronic structure of
+atoms, molecules, and solids, including metals. Designed with the
+modularity afforded by object-oriented architecture, QMCPACK makes
+extensive use of template programming to achieve high
+computational efficiency through inlined specializations. Full details
+of QMCPACK are accessible via the main site http://www.qmcpack.org ,
+including the latest manual PDF at
+https://docs.qmcpack.org/qmcpack_manual.pdf
+
+Development of QMCPACK is managed via https://github.com/QMCPACK/qmcpack
+
+*/

@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="no">
+      <basisset name="LCAOBSet">
+        <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="He" normalized="no">
+          <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+          <!-- Possible substitution He00 by a Slater-type orbital
+  <basisGroup rid="He00" n="0" l="0" type="Slater">
+    <radfunc exponent="1.80302" contraction="1.0"/>
+  </basisGroup>
+-->
+          <basisGroup rid="He00" n="0" l="0" type="Gaussian">
+            <radfunc exponent="6.362421400000e+00" contraction="1.543289672950e-01"/>
+            <radfunc exponent="1.158923000000e+00" contraction="5.353281422820e-01"/>
+            <radfunc exponent="3.136498000000e-01" contraction="4.446345421850e-01"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant id="updet" size="1" cuspInfo="../CuspCorrection/updet.cuspInfo.xml">
+          <occupation mode="ground"/>
+          <coefficient size="1" id="updetC">
+  1.00000000000000e+00
+</coefficient>
+        </determinant>
+        <determinant id="downdet" size="1" cuspInfo="../CuspCorrection/downdet.cuspInfo.xml">
+          <occupation mode="ground"/>
+          <coefficient size="1" id="downdetC">
+  1.00000000000000e+00
+</coefficient>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+      <correlation rcut="10" size="10" speciesA="u" speciesB="d">
+        <coefficients id="ud" type="Array">0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+      <correlation rcut="10" size="10" cusp="0" elementType="He">
+        <coefficients id="eHe" type="Array">0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J3" type="eeI" function="polynomial" source="ion0" print="yes">
+      <correlation ispecies="He" especies="u" isize="3" esize="3" rcut="5">
+        <coefficients id="uuHe" type="Array" optimize="yes">
+        </coefficients>
+      </correlation>
+      <correlation ispecies="He" especies1="u" especies2="d" isize="3" esize="3" rcut="5">
+        <coefficients id="udHe" type="Array" optimize="yes">
+        </coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+</qmcsystem>

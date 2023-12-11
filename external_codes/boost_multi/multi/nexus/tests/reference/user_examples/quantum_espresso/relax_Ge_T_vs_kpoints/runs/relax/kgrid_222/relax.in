@@ -1,0 +1,73 @@
+&CONTROL
+   calculation     = 'relax'
+   disk_io         = 'low'
+   outdir          = 'pwscf_output'
+   prefix          = 'pwscf'
+   pseudo_dir      = './'
+   restart_mode    = 'from_scratch'
+   verbosity       = 'high'
+   wf_collect      = .false.
+/
+
+&SYSTEM
+   !celldm(1)       = 1.0
+   degauss         = 0.0001
+   ecutrho         = 200
+   ecutwfc         = 50
+   ibrav           = 0
+   input_dft       = 'pbe'
+   nat             = 17
+   nosym           = .true.
+   ntyp            = 1
+   occupations     = 'smearing'
+   smearing        = 'fermi-dirac'
+   tot_charge      = 0
+/
+
+&ELECTRONS
+   conv_thr        = 1e-06
+   diagonalization = 'david'
+   electron_maxstep = 1000
+   mixing_beta     = 0.7
+   mixing_mode     = 'plain'
+/
+
+&IONS
+   ion_dynamics    = 'bfgs'
+   pot_extrapolation = 'second_order'
+   upscale         = 100
+   wfc_extrapolation = 'second_order'
+/
+
+
+ATOMIC_SPECIES 
+   Ge 72.61 Ge.pbe-kjpaw.UPF
+
+ATOMIC_POSITIONS bohr
+   Ge       5.34792496       5.34792496       5.34792496 
+   Ge       0.00000000       0.00000000       0.00000000 
+   Ge       2.67396248       2.67396248       2.67396248 
+   Ge       5.34792496       5.34792496       0.00000000 
+   Ge       8.02188743       8.02188743       2.67396248 
+   Ge       0.00000000       5.34792496       5.34792496 
+   Ge       2.67396248       8.02188743       8.02188743 
+   Ge       5.34792496      10.69584991       5.34792496 
+   Ge       8.02188743      13.36981239       8.02188743 
+   Ge       5.34792496       0.00000000       5.34792496 
+   Ge       8.02188743       2.67396248       8.02188743 
+   Ge      10.69584991       5.34792496       5.34792496 
+   Ge      13.36981239       8.02188743       8.02188743 
+   Ge       5.34792496       5.34792496      10.69584991 
+   Ge       8.02188743       8.02188743      13.36981239 
+   Ge      10.69584991      10.69584991      10.69584991 
+   Ge      13.36981239      13.36981239      13.36981239 
+
+K_POINTS automatic
+   2 2 2  1 1 1 
+
+CELL_PARAMETERS bohr
+        10.69584991      10.69584991       0.00000000 
+         0.00000000      10.69584991      10.69584991 
+        10.69584991       0.00000000      10.69584991 
+
+

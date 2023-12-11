@@ -1,0 +1,38 @@
+<simulation method="afqmc">
+  <project id="qmc" series="0" />
+  <random seed="7" />
+  <AFQMCInfo name="info0">
+    <parameter name="NMO">9</parameter>
+    <parameter name="NAEA">5</parameter>
+    <parameter name="NAEB">5</parameter>
+  </AFQMCInfo>
+  <Hamiltonian info="info0" name="ham0">
+    <parameter name="filetype">hdf5</parameter>
+    <parameter name="filename">afqmc.h5</parameter>
+  </Hamiltonian>
+  <Wavefunction info="info0" name="wfn0" type="NOMSD">
+    <parameter name="filetype">hdf5</parameter>
+    <parameter name="filename">afqmc.h5</parameter>
+    <parameter name="cutoff">1e-8</parameter>
+  </Wavefunction>
+  <WalkerSet name="wset0" type="shared">
+    <parameter name="walker_type">CLOSED</parameter>
+  </WalkerSet>
+  <Propagator info="info0" name="prop0">
+    <parameter name="hybrid">yes</parameter>
+  </Propagator>
+  <execute ham="ham0" info="info0" prop="prop0" wfn="wfn0" wset="wset0">
+    <parameter name="blocks">1000</parameter>
+    <parameter name="timestep">0.01</parameter>
+    <Estimator name="back_propagation">
+      <parameter name="naverages">4</parameter>
+      <parameter name="block_size">2</parameter>
+      <parameter name="ortho">1</parameter>
+      <OneRDM />
+      <parameter name="nsteps">200</parameter>
+    </Estimator>
+    <parameter name="steps">10</parameter>
+    <parameter name="ncores">1</parameter>
+    <parameter name="nWalkers">10</parameter>
+  </execute>
+</simulation>

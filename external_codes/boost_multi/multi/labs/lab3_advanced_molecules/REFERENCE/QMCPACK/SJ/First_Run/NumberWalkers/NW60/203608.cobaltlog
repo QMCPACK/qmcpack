@@ -1,0 +1,26 @@
+Jobid: 203608
+qsub --mode script -A QMC_2014_training -t 60 -n 2 submit_qmcpack.csh
+Wed Jul 16 01:38:05 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/NumberWalkers/NW60
+Wed Jul 16 01:38:33 2014 +0000 (UTC) mmorales/203608: Initiating boot at location VST-22600-33711-32.
+Wed Jul 16 01:39:02 2014 +0000 (UTC) 
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/NumberWalkers/NW60/submit_qmcpack.csh'
+Wed Jul 16 01:39:02 2014 +0000 (UTC) 
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Environment:
+Wed Jul 16 01:39:02 2014 +0000 (UTC) SHELL=/bin/bash
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpVM4h4d
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_PARTNAME=VST-22600-33711-32
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_JOBID=203608
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_STARTTIME=1405474693
+Wed Jul 16 01:39:02 2014 +0000 (UTC) LOGNAME=mmorales
+Wed Jul 16 01:39:02 2014 +0000 (UTC) USER=mmorales
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_ENDTIME=1405478293
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Wed Jul 16 01:39:02 2014 +0000 (UTC) HOME=/home/mmorales
+Wed Jul 16 01:39:02 2014 +0000 (UTC) COBALT_JOBSIZE=2
+Wed Jul 16 01:39:02 2014 +0000 (UTC) 
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Info: stdin received from /dev/null
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/NumberWalkers/NW60/203608.output
+Wed Jul 16 01:39:02 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/NumberWalkers/NW60/203608.error
+Wed Jul 16 01:39:02 2014 +0000 (UTC) 
+Wed Jul 16 01:39:06 2014 +0000 (UTC) mmorales/203608: Block VST-22600-33711-32 for location VST-22600-33711-32 successfully booted (Initiating). 
+Wed Jul 16 01:47:45 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

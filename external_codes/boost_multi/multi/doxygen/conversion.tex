@@ -1,0 +1,53 @@
+\part{Conversion and visualization utilites for QMCPACK}\label{conversion.part}
+This part describes external utilities that are used to generate
+required input files for QMCPACK
+
+\section{Pseudopotential conversion}
+Although psuedopotential file formats are generally fairly simple, and
+some standards have been proposed, every major electronic structure
+code has adopted its own proprietary format for essentially the same
+data.  To overcome this problem, we have a developed a 
+
+\section{Orbital conversion}
+For typical materials and molecules simulations, QMCPACK requires
+the single-particle orbitals as input.  At present, for orbitals in
+Gaussian bases, the bases and coefficients are input directly in
+QMCPACK's XML format.  Alternatively, the orbitals may be represented
+either on a real-space mesh or a plane-wave expansion.  In these
+latter cases, the information is stored in a cross-platform binary
+format known as HDF5.  In particular, we have established a set of
+conventions for storing the atomic geometry, orbitals, and related
+information in and HDF5 in a format called ES-HDF.  In addition, we
+have included tools to convert to ES-HDF from the output of a number
+of common electronic structure codes:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+Source format            & source basis & conversion tool & output format \\\hline
+ABINIT                   & Plane waves  & wfconv          & ES-HDF \\
+CASINO                   & Plane waves  & wfconv          & ES-HDF \\
+GAMESS                   & Gaussians    & wfconv          & ES-HDF \\
+Quantum Espresso (PWscf) & Plane waves  & pw2qmcpack.x    & ES-HDF \\
+Qbox                     & Real-space   & wfconv          & ES-HDF \\
+GAUSSIAN                 & Gaussians    & convert4qmc     & XML    \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Using wfconv}
+\subsubsection{ABINIT}
+\tt{istwfk 1}
+\subsubsection{CASINO}
+\subsubsection{GAMESS}
+\subsubsection{Qbox}
+\subsection{Using the mixed-basis representation}
+
+\subsection{Converting from PWscf}
+
+
+\section{Visualizing orbitals with wfvis}
+\subsection{Building}
+\subsection{Basic operations}
+\subsection{Ray-tracing for publication-quality results}

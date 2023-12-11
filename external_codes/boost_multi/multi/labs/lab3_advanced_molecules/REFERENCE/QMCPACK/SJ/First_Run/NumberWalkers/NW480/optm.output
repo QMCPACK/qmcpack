@@ -1,0 +1,666 @@
+  Input file(s): vmc_dmc.xml 
+
+=====================================================
+                    QMCPACK 1.0.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Subversion branch 6312
+  Last modified     2014-05-19 15:22:38 +0000 (Mon, 19 May 2014)
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 16
+  MPI Nodes per group  = 16
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 16
+  Input XML = vmc_dmc.xml
+
+  Project = H2O
+  date    = 2014-07-16 01:39:32 UTC
+  host    = Q02-I4-J07.vesta.itd
+  user    = mmorales
+
+  DO NOT READ DENSITY
+  Offset for the random number seeds based on time 980
+  Random number offset = 980  seeds = 7741-10091
+  ParticleSetPool::put
+  Creating e particleset
+  XMLParticleParser::putSpecial
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+e
+  ParticleSetPool::put
+  Creating ion0 particleset
+  XMLParticleParser::putSpecial
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+ion0
+ Adding WavefunctionFactory for psi0
+  WaveFunctionFactory::build
+  WaveFunctionFactory::addFermionTerm
+  SlaterDetBuilder::put(xmlNodePtr)
+  BasisSetFactory::createBasisSet
+Using MolecularBasisBuilder<NGOBuilder>
+
+  MolecularBasisBuilder::put(xmlNodePtr)
+<input node="basisset"  name="LCAOBSet"/>
+  Distance table for AA: source/target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = ion0 target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates 
+  ... ParticleSet::addTable Create Table #1 ion0_e
+  AtomicBasisBuilder::put(xmlNodePtr)
+<input node="atomicBasisSet"  name="Gaussian-G2"  angular="cartesian"  type="Gaussian"  elementType="O"  normalized="no"/>
+  AtomicBasisBuilder::createAOSet(xmlNodePtr)
+  AO BasisSet for O
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.125346
+              contraction=0.055741 nomralized contraction = 0.0296669
+    Gaussian exponent = 0.268022
+              contraction=0.304848 nomralized contraction = 0.286897
+    Gaussian exponent = 0.573098
+              contraction=0.453752 nomralized contraction = 0.755101
+    Gaussian exponent = 1.22543
+              contraction=0.295926 nomralized contraction = 0.870791
+    Gaussian exponent = 2.62028
+              contraction=0.019567 nomralized contraction = 0.101812
+    Gaussian exponent = 5.60282
+              contraction=-0.128627 nomralized contraction = -1.18345
+    Gaussian exponent = 11.9802
+              contraction=0.012024 nomralized contraction = 0.19562
+    Gaussian exponent = 25.6168
+              contraction=0.000407 nomralized contraction = 0.0117085
+    Gaussian exponent = 54.7752
+              contraction=-7.59999e-05 nomralized contraction = -0.00386604
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.68663
+              contraction=1 nomralized contraction = 3.73922
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.237997
+              contraction=1 nomralized contraction = 0.860882
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.083598
+              contraction=0.044958 nomralized contraction = 0.00589571
+    Gaussian exponent = 0.167017
+              contraction=0.150175 nomralized contraction = 0.046777
+    Gaussian exponent = 0.333673
+              contraction=0.255999 nomralized contraction = 0.189397
+    Gaussian exponent = 0.666627
+              contraction=0.281879 nomralized contraction = 0.495337
+    Gaussian exponent = 1.33182
+              contraction=0.242835 nomralized contraction = 1.01356
+    Gaussian exponent = 2.66076
+              contraction=0.161134 nomralized contraction = 1.59746
+    Gaussian exponent = 5.31578
+              contraction=0.082308 nomralized contraction = 1.93814
+    Gaussian exponent = 10.6201
+              contraction=0.039899 nomralized contraction = 2.23155
+    Gaussian exponent = 21.2173
+              contraction=0.004679 nomralized contraction = 0.621585
+	Setting GridManager of 3 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 4 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.184696
+              contraction=1 nomralized contraction = 0.353229
+	Setting GridManager of 4 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 5 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.600621
+              contraction=1 nomralized contraction = 1.54254
+	Setting GridManager of 5 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 6 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.66934
+              contraction=1 nomralized contraction = 1.29244
+	Setting GridManager of 6 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 7 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 2.40428
+              contraction=1 nomralized contraction = 12.113
+	Setting GridManager of 7 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 8 3 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.4231
+              contraction=1 nomralized contraction = 4.36308
+	Setting GridManager of 8 radial orbital to false
+Adding 10 cartesian gaussian orbitals for l= 3
+   Maximu Angular Momentum   = 3
+   Number of Radial functors = 9
+   Basis size                = 34
+
+  AtomicBasisBuilder::put(xmlNodePtr)
+<input node="atomicBasisSet"  name="Gaussian-G2"  angular="cartesian"  type="Gaussian"  elementType="H"  normalized="no"/>
+  AtomicBasisBuilder::createAOSet(xmlNodePtr)
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 8.70089
+              contraction=0.0627182 nomralized contraction = 0.802752
+    Gaussian exponent = 1.95552
+              contraction=0.261959 nomralized contraction = 1.09445
+    Gaussian exponent = 0.559044
+              contraction=0.75701 nomralized contraction = 1.23652
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.164925
+              contraction=1 nomralized contraction = 0.653854
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.0320625
+              contraction=1 nomralized contraction = 0.191431
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.790074
+              contraction=1 nomralized contraction = 2.17305
+	Setting GridManager of 3 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 4 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.152351
+              contraction=1 nomralized contraction = 0.277679
+	Setting GridManager of 4 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 5 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.883818
+              contraction=1 nomralized contraction = 2.10215
+	Setting GridManager of 5 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   Maximu Angular Momentum   = 2
+   Number of Radial functors = 6
+   Basis size                = 15
+
+Built BasisSetBuilder "LCAOBSet" of type molecularorbital
+  BasisSetFactory::createBasisSet
+Reuse BasisSetBuilder "LCAOBSet" type MolecularOrbital
+ Building SPOset  with  basis set.
+  MolecularBasisBuilder::createSPO(xmlNodePtr)
+Creating LCOrbitalSet with the input coefficients
+  BasisSetFactory::createBasisSet
+Reuse BasisSetBuilder "LCAOBSet" type MolecularOrbital
+ Building SPOset  with  basis set.
+  MolecularBasisBuilder::createSPO(xmlNodePtr)
+Creating LCOrbitalSet with the input coefficients
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  Creating a determinant updet group=0 sposet=updet
+  Reusing a SPO set updet
+
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  Creating a determinant downdet group=1 sposet=downdet
+  Reusing a SPO set downdet
+
+  FermionWF=SlaterDet
+  JastrowBuilder::addTwoBody(xmlNodePtr)
+  BsplineJastrowBuilder::put(xmlNodePtr)
+  BsplineJastrowBuilder adds a functor with cusp = -0.25
+  BsplineFunctor::put(xmlNodePtr)
+ size = 10 parameters 
+ cusp = -0.25
+ rcut = 10
+Parameter     Name      Value
+uu_0 0.029047 1 1  ON 0
+uu_1 -0.100418 1 1  ON 1
+uu_2 -0.17527 1 1  ON 2
+uu_3 -0.223258 1 1  ON 3
+uu_4 -0.272803 1 1  ON 4
+uu_5 -0.325329 1 1  ON 5
+uu_6 -0.362453 1 1  ON 6
+uu_7 -0.395822 1 1  ON 7
+uu_8 -0.426858 1 1  ON 8
+uu_9 -0.439453 1 1  ON 9
+  BsplineJastrowBuilder adds a functor with cusp = -0.5
+  BsplineFunctor::put(xmlNodePtr)
+ size = 10 parameters 
+ cusp = -0.5
+ rcut = 10
+Parameter     Name      Value
+ud_0 0.930669 1 1  ON 0
+ud_1 0.628359 1 1  ON 1
+ud_2 0.463024 1 1  ON 2
+ud_3 0.375585 1 1  ON 3
+ud_4 0.333251 1 1  ON 4
+ud_5 0.297451 1 1  ON 5
+ud_6 0.255069 1 1  ON 6
+ud_7 0.197016 1 1  ON 7
+ud_8 0.135704 1 1  ON 8
+ud_9 0.11181 1 1  ON 9
+  JastrowBuilder::addOneBody(xmlNodePtr)
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  BsplineJastrowBuilder::put(xmlNodePtr)
+  BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr)
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  BsplineFunctor::put(xmlNodePtr)
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eO_0 -4.0158 1 1  ON 0
+eO_1 -3.62877 1 1  ON 1
+eO_2 -2.75734 1 1  ON 2
+eO_3 -1.83881 1 1  ON 3
+eO_4 -1.15124 1 1  ON 4
+eO_5 -0.462677 1 1  ON 5
+eO_6 -0.212032 1 1  ON 6
+eO_7 -0.139318 1 1  ON 7
+eO_8 0.513465 1 1  ON 8
+eO_9 6.44894 1 1  ON 9
+  BsplineFunctor::put(xmlNodePtr)
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eH_0 -0.335752 1 1  ON 0
+eH_1 -0.295754 1 1  ON 1
+eH_2 -0.27382 1 1  ON 2
+eH_3 -0.226322 1 1  ON 3
+eH_4 -0.176979 1 1  ON 4
+eH_5 -0.176265 1 1  ON 5
+eH_6 -0.189957 1 1  ON 6
+eH_7 -0.181647 1 1  ON 7
+eH_8 -0.038387 1 1  ON 8
+eH_9 0.345305 1 1  ON 9
+  JastrowBuilder::add_eeI(xmlNodePtr)
+  eeI_JastrowBuilder::put(xmlNodePtr)
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  PolynomialFunctor3D::put(xmlNodePtr)
+Parameter     Name      Value
+uuO_0 8.22771e-06 1 1  ON 0
+uuO_1 2.48082e-06 1 1  ON 1
+uuO_2 -5.35407e-06 1 1  ON 2
+uuO_3 -1.11264e-05 1 1  ON 3
+uuO_4 -2.20801e-06 1 1  ON 4
+uuO_5 5.21312e-06 1 1  ON 5
+uuO_6 -1.53787e-05 1 1  ON 6
+uuO_7 8.89903e-06 1 1  ON 7
+uuO_8 6.25726e-06 1 1  ON 8
+uuO_9 3.21458e-06 1 1  ON 9
+uuO_10 -7.71674e-06 1 1  ON 10
+uuO_11 -5.27568e-06 1 1  ON 11
+uuO_12 -1.77846e-06 1 1  ON 12
+uuO_13 7.92623e-06 1 1  ON 13
+uuO_14 1.76741e-06 1 1  ON 14
+uuO_15 5.45136e-08 1 1  ON 15
+uuO_16 2.80142e-06 1 1  ON 16
+uuO_17 4.57728e-06 1 1  ON 17
+uuO_18 7.63461e-06 1 1  ON 18
+uuO_19 -9.51067e-07 1 1  ON 19
+uuO_20 -2.34413e-06 1 1  ON 20
+uuO_21 -1.87878e-06 1 1  ON 21
+uuO_22 3.93736e-07 1 1  ON 22
+uuO_23 5.06535e-07 1 1  ON 23
+uuO_24 5.08672e-07 1 1  ON 24
+uuO_25 -1.35877e-07 1 1  ON 25
+  PolynomialFunctor3D::put(xmlNodePtr)
+Parameter     Name      Value
+udO_0 -6.93953e-06 1 1  ON 0
+udO_1 2.63417e-05 1 1  ON 1
+udO_2 4.04608e-05 1 1  ON 2
+udO_3 -8.00268e-06 1 1  ON 3
+udO_4 -5.3968e-06 1 1  ON 4
+udO_5 6.69737e-06 1 1  ON 5
+udO_6 5.43395e-05 1 1  ON 6
+udO_7 -6.33685e-06 1 1  ON 7
+udO_8 3.68047e-05 1 1  ON 8
+udO_9 -2.99606e-05 1 1  ON 9
+udO_10 1.99366e-06 1 1  ON 10
+udO_11 -3.22271e-05 1 1  ON 11
+udO_12 -8.09167e-06 1 1  ON 12
+udO_13 4.15739e-06 1 1  ON 13
+udO_14 4.84394e-06 1 1  ON 14
+udO_15 3.56365e-07 1 1  ON 15
+udO_16 3.78633e-05 1 1  ON 16
+udO_17 -1.41834e-05 1 1  ON 17
+udO_18 2.28269e-05 1 1  ON 18
+udO_19 1.29239e-06 1 1  ON 19
+udO_20 -4.93581e-06 1 1  ON 20
+udO_21 -3.05254e-06 1 1  ON 21
+udO_22 9.87029e-08 1 1  ON 22
+udO_23 1.84429e-06 1 1  ON 23
+udO_24 2.97056e-07 1 1  ON 24
+udO_25 -4.3643e-08 1 1  ON 25
+  PolynomialFunctor3D::put(xmlNodePtr)
+Parameter     Name      Value
+uuH_0 1.21983e-05 1 1  ON 0
+uuH_1 1.70285e-05 1 1  ON 1
+uuH_2 -1.60944e-05 1 1  ON 2
+uuH_3 -1.21461e-05 1 1  ON 3
+uuH_4 5.89794e-08 1 1  ON 4
+uuH_5 -7.84971e-07 1 1  ON 5
+uuH_6 7.75018e-06 1 1  ON 6
+uuH_7 -2.74556e-05 1 1  ON 7
+uuH_8 -1.37775e-05 1 1  ON 8
+uuH_9 -1.14428e-05 1 1  ON 9
+uuH_10 -1.06388e-05 1 1  ON 10
+uuH_11 2.73117e-05 1 1  ON 11
+uuH_12 8.30376e-07 1 1  ON 12
+uuH_13 1.58423e-05 1 1  ON 13
+uuH_14 -2.02534e-06 1 1  ON 14
+uuH_15 1.23654e-07 1 1  ON 15
+uuH_16 1.05822e-05 1 1  ON 16
+uuH_17 1.77824e-05 1 1  ON 17
+uuH_18 -2.15364e-05 1 1  ON 18
+uuH_19 2.19459e-06 1 1  ON 19
+uuH_20 -8.9199e-06 1 1  ON 20
+uuH_21 3.22949e-06 1 1  ON 21
+uuH_22 -5.14014e-07 1 1  ON 22
+uuH_23 2.92814e-06 1 1  ON 23
+uuH_24 -7.97265e-07 1 1  ON 24
+uuH_25 1.41116e-07 1 1  ON 25
+  PolynomialFunctor3D::put(xmlNodePtr)
+Parameter     Name      Value
+udH_0 -2.54349e-06 1 1  ON 0
+udH_1 -8.33732e-06 1 1  ON 1
+udH_2 3.04386e-06 1 1  ON 2
+udH_3 -3.54249e-06 1 1  ON 3
+udH_4 -2.70133e-06 1 1  ON 4
+udH_5 1.45878e-06 1 1  ON 5
+udH_6 7.95043e-06 1 1  ON 6
+udH_7 -1.87033e-05 1 1  ON 7
+udH_8 -2.24168e-06 1 1  ON 8
+udH_9 -4.86877e-06 1 1  ON 9
+udH_10 -6.17441e-06 1 1  ON 10
+udH_11 1.51731e-05 1 1  ON 11
+udH_12 -9.52902e-07 1 1  ON 12
+udH_13 9.6868e-06 1 1  ON 13
+udH_14 -1.64005e-06 1 1  ON 14
+udH_15 2.57667e-07 1 1  ON 15
+udH_16 1.39257e-05 1 1  ON 16
+udH_17 8.67619e-06 1 1  ON 17
+udH_18 -1.64788e-05 1 1  ON 18
+udH_19 2.49493e-06 1 1  ON 19
+udH_20 -7.72623e-06 1 1  ON 20
+udH_21 3.43106e-06 1 1  ON 21
+udH_22 -6.6016e-07 1 1  ON 22
+udH_23 2.3902e-06 1 1  ON 23
+udH_24 -9.16932e-07 1 1  ON 24
+udH_25 1.90216e-07 1 1  ON 25
+  HamiltonianPool::put
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+
+  ECPotential builder for pseudopotential 
+
+  Adding pseudopotential for O
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+   Number of angular momentum channels 2
+   Maximum angular momentum channel 1
+   Creating a Linear Grid Rmax=1.31
+  Using global grid with delta = 0.001
+   Making L=1 a local potential with a radial cutoff of 9.998
+  NonLocalECPComponent::resize_warrays 
+    Non-local pseudopotential parameters
+    Maximum angular mementum = 0
+    Number of non-local channels = 1
+       l(0)=0
+    Cutoff radius = 1.31
+    Spherical grids and weights: 
+                        1                 0                 0       0.08333333333
+                       -1   1.224646799e-16                 0       0.08333333333
+             0.4472135955       0.894427191                 0       0.08333333333
+            -0.4472135955      0.7236067977      0.5257311121       0.08333333333
+             0.4472135955      0.2763932023      0.8506508084       0.08333333333
+            -0.4472135955     -0.2763932023      0.8506508084       0.08333333333
+             0.4472135955     -0.7236067977      0.5257311121       0.08333333333
+            -0.4472135955      -0.894427191   1.095357397e-16       0.08333333333
+             0.4472135955     -0.7236067977     -0.5257311121       0.08333333333
+            -0.4472135955     -0.2763932023     -0.8506508084       0.08333333333
+             0.4472135955      0.2763932023     -0.8506508084       0.08333333333
+            -0.4472135955      0.7236067977     -0.5257311121       0.08333333333
+    Maximum cutoff radius 1.31
+
+  Adding pseudopotential for H
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+    Only one vps is found. Set the local component=0
+   Number of angular momentum channels 1
+   Maximum angular momentum channel 0
+   Creating a Linear Grid Rmax=1.17
+  Using global grid with delta = 0.001
+   Making L=0 a local potential with a radial cutoff of 9.998
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  QMCHamiltonian::addOperator LocalECP to H, physical Hamiltonian 
+  ForceBase::ForceBase
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+
+  Using NonLocalECP potential 
+    Maximum grid on a sphere for NonLocalECPotential: 12
+  QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
+  Distance table for AA: source/target = ion0
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 ion0_ion0
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+
+  QMCHamiltonian::add2WalkerProperty added
+    5 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+<init source="ion0" target="e">
+  ... ParticleSet::addTable Reuse Table #0 ion0_ion0
+</init>
+ParticleSetPool::randomize 
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 4 8 
+
+    8
+
+    u -6.5935955276e-01 -2.1844591246e-01 -2.0363786077e-01
+    u -5.8842455404e-01 -4.2100787311e-01 -2.1235108150e-02
+    u -1.7996934983e-01  5.7696493950e-01 -3.9832713507e-01
+    u  5.5324184650e-01 -1.2634643911e+00  6.7214616051e-01
+    d  1.6705272895e-01  3.2278640297e-01  6.2597471086e-01
+    d -2.8277098144e-01  5.3313167347e-01 -3.9969138799e-01
+    d  6.1602676388e-01  3.7976109852e-01  1.5314994695e-02
+    d  1.7970719966e-01  1.6583795493e+00  4.4464663863e-01
+
+  ParticleSet ion0 : 0 1 3 
+
+    3
+
+    O  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H  0.0000000000e+00 -1.4308249289e+00  1.1078707576e+00
+    H  0.0000000000e+00  1.4308249289e+00  1.1078707576e+00
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  LocalECP        LocalECPotential: ion0
+  NonLocalECP     NonLocalECPotential: ion0
+  IonIon          CoulombAA source/target ion0
+
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s000 append = no 
+=========================================================
+  Adding 16 walkers to 0 existing sets
+  Total number of walkers: 2.5600000000e+02
+  Total weight: 2.5600000000e+02
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 3.0000000000e-01
+  blocks         = 100
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 0.0000000000e+00
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 101
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">101</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">101</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">0.0000000000e+00</parameter>
+<parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">101</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">3.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">3.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">3.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">100</parameter>
+<parameter name="warmupsteps" condition="int">100</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 101 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 1
+  traces available          : 0
+
+  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =0
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Anonymous Buffer size per walker 944
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.3
+    reference energy   = -17.2333
+    reference variance = 0.438176
+====================================================
+  QMC Execution time = 7.0845968600e+00 secs 
+Creating DMCMP for the qmc driver
+
+=========================================================
+  Start DMCOMP
+  File Root H2O.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 1
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+  DMCOMP::resetUpdateEngines
+  Cannot make clones again. Use existing 16 clones
+  Total number of walkers: 2.5600000000e+02
+  Total weight: 2.5600000000e+02
+  Creating WalkerController: target  number of walkers = 480
+  Using WalkerControlMPI for dynamic population control.
+  START ALL OVER 
+  WalkerControlBase parameters 
+    maxCopy = 2
+   Max Walkers per node 61
+   Min Walkers per node 7
+  QMC counter      = 1
+  time step        = 4.0000000000e-02
+  effective time step = 4.0000000000e-02
+  trial energy     = -1.7233307393e+01
+  reference energy = -1.7233307393e+01
+  Feedback = 1.0000000000e+00
+  reference variance = 4.3817649415e-01
+  target walkers = 480
+  branch cutoff = 5.0000000000e+01 7.5000000000e+01
+  Max and mimum walkers per node= 61 7
+  QMC Status (BranchMode) = 0000001101
+  Total number of walkers: 5.1200000000e+02
+  Total weight: 5.1200000000e+02
+  Initial partition of walkers on a node: 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 
+  Updates by particle-by-particle moves using fast gradient version 
+  DMC moves are rejected when a node crossing is detected
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -17.2208
+  Energy Variance = 0.426292
+
+  Fluctuating population
+  Persisent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 100
+  Number of blocks = 100
+
+  DMC Engine Initialization = 3.0390845000e-02 secs 
+
+ Warmup is completed after 100
+
+  TauEff     = 3.7549455476e-02
+ TauEff/Tau = 9.3873638689e-01
+  Etrial     = -1.7275204519e+01
+ Running average of energy = -1.7265676194e+01
+                  Variance = 2.3681653273e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 1
+    time step                     = 0.04
+    effective time step           = 0.0375126
+    trial energy                  = -17.2791
+    reference energy              = -17.2647
+    reference variance            = 0.236817
+    target walkers                = 480
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 61 7
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 1.2602884971e+02 secs 
+  Total Execution time = 1.3315964720e+02 secs
+
+=========================================================
+  A new xml input file : H2O.s001.cont.xml

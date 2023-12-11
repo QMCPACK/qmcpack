@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="qmc_short_vmc_dmc" series="0"/>
+  <include href="C_Diamond.structure.xml"/>
+  <include href="C_Diamond-Twist0.wfj.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="PseudoPot" type="pseudo" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="C" href="C.BFD.xml"/>
+    </pairpot>
+  </hamiltonian>
+   <qmc method="vmc" move="pbyp">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers">    2 </parameter>
+     <parameter name="substeps">  1 </parameter>
+     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="steps">  1 </parameter>
+     <parameter name="blocks">  2 </parameter>
+     <parameter name="timestep">  1.0 </parameter>
+     <parameter name="usedrift">   no </parameter>
+   </qmc>
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="targetwalkers"> 32 </parameter>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupSteps">  20 </parameter>
+     <parameter name="timestep">  0.005 </parameter>
+     <parameter name="steps">   10 </parameter>
+     <parameter name="blocks">  100 </parameter>
+     <parameter name="nonlocalmoves">  no </parameter>
+   </qmc>
+
+</simulation>

@@ -1,0 +1,47 @@
+Cobalt location args: --block VST-00260-11371-32    
+2016-06-06 20:01:03.021 (INFO ) [0xfff7cc8c530] ibm.runjob.AbstractOptions: using properties file /bgsys/local/etc/bg.properties
+2016-06-06 20:01:03.022 (INFO ) [0xfff7cc8c530] ibm.runjob.AbstractOptions: max open file descriptors: 65536
+2016-06-06 20:01:03.022 (INFO ) [0xfff7cc8c530] ibm.runjob.AbstractOptions: core file limit: 18446744073709551615
+2016-06-06 20:01:03.025 (INFO ) [0xfff7cc8c530] 44709:tatu.runjob.client: scheduler job id is 344941
+2016-06-06 20:01:03.025 (INFO ) [0xfff7cc8c530] 44709:tatu.runjob.client: scheduler reservation id is 213
+2016-06-06 20:01:03.030 (INFO ) [0xfff79143610] 44709:tatu.runjob.monitor: monitor started
+2016-06-06 20:01:03.371 (INFO ) [0xfff79143610] 44709:tatu.runjob.monitor: task record 1402458 created
+2016-06-06 20:01:03.372 (INFO ) [0xfff7cc8c530] VST-00260-11371-32:44709:ibm.runjob.client.options.Parser: set local socket to runjob_mux from properties file
+2016-06-06 20:01:05.572 (INFO ) [0xfff7cc8c530] VST-00260-11371-32:1585767:ibm.runjob.client.Job: job 1585767 started
+Rank =    0  Free Memory =    57 MB
+Rank =    1  Free Memory =    57 MB
+Rank =    2  Free Memory =    57 MB
+Rank =    3  Free Memory =    57 MB
+Rank =    4  Free Memory =    57 MB
+Rank =    5  Free Memory =    57 MB
+Rank =    6  Free Memory =    57 MB
+Rank =    7  Free Memory =    57 MB
+Rank =    8  Free Memory =    57 MB
+Rank =    9  Free Memory =    57 MB
+Rank =   10  Free Memory =    57 MB
+Rank =   11  Free Memory =    57 MB
+Rank =   12  Free Memory =    57 MB
+Rank =   13  Free Memory =    57 MB
+Rank =   14  Free Memory =    57 MB
+Rank =   15  Free Memory =    57 MB
+Rank =   16  Free Memory =    57 MB
+Rank =   17  Free Memory =    57 MB
+Rank =   18  Free Memory =    57 MB
+Rank =   19  Free Memory =    57 MB
+Rank =   20  Free Memory =    57 MB
+Rank =   21  Free Memory =    57 MB
+Rank =   22  Free Memory =    57 MB
+Rank =   23  Free Memory =    57 MB
+Rank =   24  Free Memory =    57 MB
+Rank =   25  Free Memory =    57 MB
+Rank =   26  Free Memory =    57 MB
+Rank =   27  Free Memory =    57 MB
+Rank =   28  Free Memory =    57 MB
+Rank =   29  Free Memory =    57 MB
+Rank =   30  Free Memory =    57 MB
+Rank =   31  Free Memory =    57 MB
+2016-06-06 20:01:16.303 (INFO ) [0xfff79143610] 44709:tatu.runjob.monitor: tracklib completed
+2016-06-06 20:03:33.932 (INFO ) [0xfff7cc8c530] VST-00260-11371-32:1585767:ibm.runjob.client.Job: exited with status 0
+2016-06-06 20:03:33.932 (INFO ) [0xfff7cc8c530] tatu.runjob.client: task exited with status 0
+2016-06-06 20:03:33.932 (INFO ) [0xfff79143610] 44709:tatu.runjob.monitor: monitor terminating
+2016-06-06 20:03:33.936 (INFO ) [0xfff7cc8c530] tatu.runjob.client: monitor completed

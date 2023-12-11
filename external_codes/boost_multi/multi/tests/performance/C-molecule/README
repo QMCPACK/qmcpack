@@ -1,0 +1,114 @@
+Carbon molecules QMC Performance Benchmarks
+
+1. Introduction
+
+These benchmarks are VMC and DMC runs for carbon molecules
+in order to measure LCAO performance for various system sizes.   
+This is in contrast to the conventional integration tests where
+the particle counts are too small to be representative.
+Care is still needed to remove initialization, I/O, and compute
+a representative performance measure.
+
+See the explanation, discussion, and disclaimer in ../NiO/README for
+general guidelines. If you are interested in setting up a new benchmark
+or figure of merit, we encourage you to contact the developers.
+
+The ctest integration is sufficient to run the benchmarks and measure
+relative performance from version to version of QMCPACK and assess
+proposed code changes. To obtain highest performance on a particular
+platform, you will have to run the benchmarks in a standalone manner
+and tune thread counts, placement, walker count (etc.)
+
+2. Simulated system and QMC methods tested
+
+The simulated systems are various sizes of a carbon ring (C12,C18,C24,
+and C30) and C60 buckyball. All-electron tests (ae) using the cusp
+correction and pseudopotential tests (pp) are included.
+
+Name  Atoms Type  Electrons  Electrons per spin
+ C12    12   AE       72         36
+ C12    12   PP       48         24
+ C18    18   AE      108         54
+ C18    18   PP       72         36
+ C24    24   AE      144         72
+ C24    24   PP       96         48
+ C30    30   AE      180         90
+ C30    30   PP      120         60
+ C60    60   PP      240        120
+
+Runs consist of a number of short blocks of (i) VMC without drift (ii)
+VMC with drift term included (iii) DMC with constant population.
+
+Two sets of wavefunction are tested: LCAO with a one and
+two body Jastrow functions, and a more complex form with an additional
+three body Jastrow function. 
+
+The tests require at least QMCPACK 3.6.0.
+
+3. Requirements
+
+Download the necessary C-molecule h5 orbital files of different sizes from
+the following link
+
+https://anl.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+
+Or directly download files in the command line via curl -L -O -J <URL>
+
+# C12-e48-pp.h5
+https://m.box.com/file/474121722881/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C12-e72-ae.h5
+https://m.box.com/file/474099607858/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C18-e72-pp.h5
+https://m.box.com/file/474099751699/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C18-e108-ae.h5
+https://m.box.com/file/474116479642/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C24-e96-pp.h5
+https://m.box.com/file/474116394246/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C24-e144-ae.h5
+https://m.box.com/file/474086364543/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C30-e120-pp.h5
+https://m.box.com/file/474084269761/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C30-e180-ae.h5
+https://m.box.com/file/474119243687/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C60-e240-pp.h5
+https://m.box.com/file/474117801956/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+
+The above direct links were verified in July 2022 but may be fragile.
+
+Only the specific problem sizes needed for the intended benchmarking runs need to be downloaded.
+
+Please check the md5 value of h5 files before starting any
+benchmarking.
+
+$ md5sum *.h5
+8dcd0bb357442e853a126842546af2cc  C12-e48-pp.h5
+a76f999ac0c4df13baf8800ebbbfbf24  C12-e72-ae.h5
+b4fdeab06d9f8d5abb0ca7152eaf03a4  C18-e108-ae.h5
+43b4a4ac29b84ff4dc37aa56fc1ca313  C18-e72-pp.h5
+d3f184f6eb136477909539506e132a06  C24-e144-ae.h5
+e62de6f422e78538df5853af099f1a5c  C24-e96-pp.h5
+002e09fac80d51f68fb95b8a7ed6e9c6  C30-e120-pp.h5
+71d484f901741c559209d29e6adce09f  C30-e180-ae.h5
+6ce9deef7b9ed6c1f9ecab100fe5b2d4  C60-e240-pp.h5
+
+$ ls -l *.h5
+ 301840 C12-e48-pp.h5
+ 339864 C12-e72-ae.h5
+ 663864 C18-e108-ae.h5
+ 584080 C18-e72-pp.h5
+1117464 C24-e144-ae.h5
+ 979216 C24-e96-pp.h5
+1487248 C30-e120-pp.h5
+1700664 C30-e180-ae.h5
+5316568 C60-e240-pp.h5
+
+The data files should be placed in a directory labeled C-molecule.
+QMC_DATA should be set to the directory containing C-molecule
+when CMake is run.
+
+4. Throughput metric
+5. Benchmarking with ctest
+6. Running the benchmarks manually
+7. Additional considerations
+
+See ../NiO/README

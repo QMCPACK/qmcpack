@@ -1,0 +1,150 @@
+/*! \page dev_update Update
+
+\section newinp New/updated input elements
+
+\subsection sa Setting samples
+
+- Use these parameters to set the samples during a vmc block including
+the vmc stage during optimization
+\code
+<qmc method="vmc">
+  <parameter name="blocks">INT</parameter>
+  <parameter name="samplesperthread">INT</parameter>
+  <parameter name="stepsbetweensamples">INT</parameter>
+  <parameter name="substeps">INT</parameter>
+</qmc>
+\endcode
+ - Alternatively, one can set total samples with
+ \code
+  <parameter name="samples">INT</parameter>
+\endcode
+ - <c>steps</c> is computed to ensure the target
+   <c>samples=samplesperthread*MPI*threads</c> are generated. They are stored internally and
+   loaded when a dmc block starts.
+- The subsequent dmc blocks can overwrite the target samples
+   with <c>targetwalkers</c>. Note that it is the total
+   population not per MPI nor per thread.
+ \code
+ <parameter name="targetwalkers">INT</parameter>
+ \endcode
+
+\subsection sb Running DMC with reconfiguraton
+
+The fixed-population DMC, <c>reconfiguration="yes"</c>, can be
+used to speed up the equilibration and also to obtain the
+better parallel performance due to the perfect load balance.
+\code
+  <qmc method="vmc">
+    <parameter name="samplesperthread">1</parameter> 
+  </qmc>
+  <qmc method="dmc">
+    <parameter name="reconfiguration">yes</parameter>
+    <parameter name="timestep">0.02</parameter>
+  </qmc>
+  <qmc method="dmc">
+    <!-- change the time step and continue reconfiguration=yes -->
+    <parameter name="timestep">0.01</parameter>
+  </qmc>
+  <qmc method="dmc">
+    <!-- increase the population -->
+    <parameter name="reconfiguration">no</parameter>
+    <parameter name="targetwalkers">4096</parameter>
+    <parameter name="timestep">0.01</parameter>
+  </qmc>
+\endcode
+
+- New parameters to safeguars runs with any processors
+\code
+<parameter name="minimumtargetwalkers">INT</parameter>
+\endcode
+
+\subsection sc Defining single-particle orbital sets
+
+The original XML syntax to define a SPOset has many
+limitations.  Among them is the difficulty to compose a SPOSet
+of different types, e.g.,LCAO + Bspline. And,
+EinsplineSetBuilder is too big and unwieldy for changes. And,
+the SPOSets may be used by other classes than the determinant
+classes, e.g., estimators.
+
+The recent changes to address these issues are summarized here.
+
+\code
+<wavefunction name="psi0" target="e">
+  <sposet_builder type="bspline" href="pwscf.h5" sort="1"
+    tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0"
+    version="0.10" precision="float" truncate="no">
+    <!-- create a SPO set of 20 lowest states for spin 0 -->
+    <sposet name="spo0" size="20" group="0"/>
+    <!-- create a SPO set of [20,40) states for spin 0 -->
+    <sposet name="spo1" index_min="20" index_max="40" group="0"/>
+  </sposet_builder>
+  <!-- create a composite SPOset which has the two SPOsets -->
+  <sposet_builder type="composite">
+    <sposet name="updet" size="40" group="0">spo0 spo1</sposet>
+  </sposet_builder>
+  <determinantset>
+    <slaterdeterminant>
+      <!-- use the sposet="updet" of the composite type for both u/d groups -->
+      <determinant sposet="updet" size="40" name="u"/>
+      <determinant sposet="updet" size="40" name="d"/>
+    </slaterdeterminant>
+  </determinantset>
+</wavefunction>
+\endcode
+
+A simpler definition for the ground-state wavefunction is
+\code
+<wavefunction name="psi0" target="e">
+  <sposet_builder type="bspline" href="pwscf.h5" sort="1"
+    tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0"
+    version="0.10" precision="float" truncate="no">
+    <sposet name="spo0" size="40" group="0"/>
+  </sposet_builder>
+  <determinantset>
+    <slaterdeterminant>
+      <determinant sposet="spo0" size="40" name="u"/>
+      <determinant sposet="spo0" size="40" name="d"/>
+    </slaterdeterminant>
+  </determinantset>
+</wavefunction>
+\endcode
+
+The new input is equivalent to
+\code
+<wavefunction name="psi0" target="e">
+  <determinantset type="bspline" href="pwscf.h5" sort="1"
+    tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0"
+    version="0.10" precision="float" truncate="no">
+    <slaterdeterminant>
+      <determinant id="updet" size="40">
+        <occupation mode="ground" spindataset="0">
+        </occupation>
+      </determinant>
+      <determinant id="downdet" size="40">
+        <occupation mode="ground" spindataset="0">
+        </occupation>
+      </determinant>
+    </slaterdeterminant>
+  </determinantset>
+</wavefunction>
+\endcode
+
+For LCAO (MO, MolecularOrbitals) basis set, the only change is that sposet can
+be defined outside of the <c>determinantset</c>. The same basis set can be used
+as the basis for the observables.
+
+It should be straightforward to combine LCAO and 3D B-spline with two ionic
+systems, one to definte the LCAO basis set and one to define a periodic system.
+Other usages include
+- splitting a big 3D B-spline into multiple sets for threading and to improve
+memory access
+- handling hybrid orbitals (LAPW or MT orbitals)
+- definiing an optimizable SPOSets with fixed orbitals and excitations for the
+  multideterminants
+
+Other topics
+- More on SPOset for advanced orbitals, AFM, LDA+U, Jeremy
+- Multideterminant, Miguel
+
+*/

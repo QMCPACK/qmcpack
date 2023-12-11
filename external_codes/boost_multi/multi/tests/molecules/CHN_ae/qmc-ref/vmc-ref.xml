@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="vmc-ref" series="0"/>
+  <include href="../CHN.structure.xml"/>
+  <include href="../CHN.wfj.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">100000</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="warmupSteps">20</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+</simulation>

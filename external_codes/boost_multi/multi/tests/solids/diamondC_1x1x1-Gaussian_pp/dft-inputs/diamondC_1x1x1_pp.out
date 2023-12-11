@@ -1,0 +1,306 @@
+Discarded 6 diffused primitive functions, 0 contracted functions
+#INFO: **** input file is /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/solids/diamondC_1x1x1-Gaussian_pp/dft-inputs/diamondC_1x1x1_pp.py ****
+#! /usr/bin/env python3
+
+'''
+Gamma point post-HF calculation needs only real integrals.
+Methods implemented in finite-size system can be directly used here without
+any modification.
+'''
+
+
+import numpy
+from pyscf.pbc import gto, scf, dft
+from pyscf import gto as Mgto
+#from mpi4pyscf.pbc import df 
+from pyscf.pbc import df 
+from pyscf.pbc import ao2mo
+from pyscf.pbc import tools
+from pyscf.pbc.tools.pbc import super_cell
+
+
+nmp = [1, 1, 1]
+
+cell = gto.Cell()
+
+cell.a = '''
+         3.37316115       3.37316115       0.00000000
+         0.00000000       3.37316115       3.37316115
+         3.37316115       0.00000000       3.37316115'''
+cell.atom = '''  
+   C        0.00000000       0.00000000       0.00000000
+   C        1.686580575      1.686580575      1.686580575 
+            ''' 
+cell.basis='bfd-vtz'
+cell.ecp = 'bfd'
+
+
+cell.unit='B'
+cell.drop_exponent=0.1
+
+cell.verbose = 5
+
+
+cell.build()
+
+
+supcell = super_cell(cell, nmp)
+mydf = df.FFTDF(supcell)
+mydf.auxbasis = 'weigend'
+kpts=[]
+mf = dft.RKS(supcell)
+mf.xc = 'lda'
+
+mf.exxdiv = 'ewald'
+mf.with_df = mydf
+
+e_scf=mf.kernel()
+
+
+ener = open('e_scf','w')
+ener.write('%s\n' % (e_scf))
+print 'e_scf',e_scf
+
+
+title="C_Diamond"
+
+from PyscfToQmcpack import savetoqmcpack
+savetoqmcpack(supcell,mf,title=title,kpts=kpts)
+#INFO: ******************** input file end ********************
+
+
+System: ('Linux', 'abenali', '4.15.0-48-generic', '#51-Ubuntu SMP Wed Apr 3 08:28:49 UTC 2019', 'x86_64', 'x86_64')  Threads 8
+Python 2.7.15rc1 (default, Nov 12 2018, 14:31:15) 
+[GCC 7.3.0]
+numpy 1.14.0  scipy 1.0.0
+Date: Thu May  2 17:08:57 2019
+PySCF version 1.6.1
+PySCF path  /home/abenali/Work/src/pyscf/pyscf
+GIT ORIG_HEAD 2cd183cacbe44dc607e325b3aab196fd09b24068
+GIT HEAD      ref: refs/heads/dev
+GIT dev branch  09e76a37bba1258f387edc9bb3c45eb68014f488
+
+[CONFIG] conf_file None
+[INPUT] verbose = 5
+[INPUT] max_memory = 4000 
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 8
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = B
+[INPUT]  1 C      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr
+[INPUT]  2 C      0.892500004670   0.892500004670   0.892500004670 AA    1.686580575000   1.686580575000   1.686580575000 Bohr
+[INPUT] ---------------- BASIS SET ---------------- 
+[INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
+[INPUT] C
+[INPUT] 0    0    [8    /1   ]  13.073594         -0.000705
+                                6.541187          0.015176
+                                3.272791          -0.121499
+                                1.637494          -0.033512
+                                0.819297          0.180113
+                                0.409924          0.380369
+                                0.2051            0.397529
+                                0.102619          0.169852
+[INPUT] 0    0    [1    /1   ]  0.921552             1
+[INPUT] 0    0    [1    /1   ]  0.1328               1
+[INPUT] 1    0    [7    /1   ]  7.480076          0.021931
+                                3.741035          0.054425
+                                1.871016          0.112024
+                                0.935757          0.210979
+                                0.468003          0.289868
+                                0.234064          0.302667
+                                0.117063          0.191634
+[INPUT] 1    0    [1    /1   ]  0.126772             1
+[INPUT] 1    0    [1    /1   ]  0.376742             1
+[INPUT] 2    0    [1    /1   ]  0.329486             1
+[INPUT] 2    0    [1    /1   ]  1.141611             1
+[INPUT] 3    0    [1    /1   ]  0.773485             1
+
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+nuclear repulsion = -12.7756672328609
+number of shells = 18
+number of NR pGTOs = 108
+number of NR cGTOs = 58
+basis = bfd-vtz
+ecp = bfd
+CPU time:         1.00
+lattice vectors  a1 [3.373161150, 3.373161150, 0.000000000]
+                 a2 [0.000000000, 3.373161150, 3.373161150]
+                 a3 [3.373161150, 0.000000000, 3.373161150]
+dimension = 3
+low_dim_ft_type = None
+Cell volume = 76.7611
+exp_to_discard = 0.1
+rcut = 19.979446804953323 (nimgs = [6 6 6])
+lattice sum = 1031 cells
+precision = 1e-08
+pseudo = None
+ke_cutoff = 357.28958447816603
+    = [34 34 34] mesh (39304 PWs)
+ew_eta = 2.61119
+ew_cut = 2.673899610122948 (nimgs = [1 1 1])
+
+
+******** <class 'pyscf.pbc.dft.rks.RKS'> ********
+method = RKS-RHF-SCF-RHF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-07
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = False
+chkfile to save SCF result = /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/solids/diamondC_1x1x1-Gaussian_pp/dft-inputs/tmpOeVLFY
+max_memory 4000 MB (current use 71 MB)
+******** PBC SCF flags ********
+kpt = [0. 0. 0.]
+Exchange divergence treatment (exxdiv) = ewald
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    madelung (= occupied orbital energy shift) = 0.6796091074500152
+    Total energy shift due to Ewald probe charge = -1/2 * Nelec*madelung = -2.7184364298
+DF object = <pyscf.pbc.df.fft.FFTDF object at 0x145fede077d0>
+
+
+******** <class 'pyscf.pbc.df.fft.FFTDF'> ********
+mesh = [34 34 34] (39304 PWs)
+len(kpts) = 1
+XC functionals = lda
+Uniform grid, mesh = [34 34 34]
+Set gradient conv threshold to 0.000316228
+Big error detected in the electron number of initial guess density matrix (Ne/cell = 10.9584)!
+  This can cause huge error in Fock matrix and lead to instability in SCF for low-dimensional systems.
+  DM is normalized wrt the number of electrons 8
+cond(S) = 14423795.732824512
+    CPU time for setting up grids      1.99 sec, wall time      0.25 sec
+nelec by numeric integration = 7.999999999988884
+    CPU time for vxc      6.10 sec, wall time      0.77 sec
+Building PBC AO integrals incore
+    CPU time for vj and vk    437.84 sec, wall time     55.16 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 2.5615542037307737  Ecoul = 0.44294381513644204  Exc = -2.9207777298587034
+init E= -12.6919469438524
+    CPU time for initialize scf    729.82 sec, wall time     91.84 sec
+  HOMO = 0.460631152635541  LUMO = 0.690105470053074
+  mo_energy =
+[-0.28332576  0.46063014  0.46063115  0.46063115  0.69010547  0.69010651
+  0.69010651  0.93341634  1.26219038  1.49484748  1.49484748  1.5577749
+  1.55777506  1.55777506  1.91591181  2.23212632  2.23212895  2.23212895
+  2.96547873  2.96547968  2.96547968  3.15268874  3.15268874  3.35404621
+  3.35404621  3.35404621  3.50649519  3.50650306  3.50650306  4.16781613
+  4.16781641  4.16781641  4.49300656  4.49839862  4.49840021  4.49840021
+  4.67956972  4.67956972  4.72572148  4.72572284  4.72572284  4.92956617
+  4.92956617  5.00752312  5.00752312  5.00752312  5.16368478  6.04371445
+  6.04372586  6.04372586  6.09173011  6.09173209  6.09173209  6.29279499
+  8.04032773  8.04034758  8.04034759  8.79574995]
+nelec by numeric integration = 7.999999999995204
+    CPU time for vxc      5.83 sec, wall time      0.73 sec
+    CPU time for vj and vk      0.01 sec, wall time      0.00 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.6233446613990345  Ecoul = 1.7142235462122573  Exc = -3.331445134325365
+cycle= 1 E= -9.76954415957502  delta_E= 2.92  |g|= 0.486  |ddm|= 13.5
+    CPU time for cycle= 1      6.02 sec, wall time      0.76 sec
+  HOMO = 0.653583487999414  LUMO = 0.824266397270832
+  mo_energy =
+[-0.1851524   0.65358258  0.65358349  0.65358349  0.8242664   0.82426709
+  0.82426709  1.11563695  1.30417033  1.53149354  1.5314936   1.5314936
+  1.54270631  1.54270631  1.86434013  2.35907127  2.35907376  2.35907376
+  3.0867793   3.08677979  3.08677979  3.23527953  3.23527953  3.44535038
+  3.44535038  3.44535042  3.65253545  3.65254382  3.65254382  4.25200235
+  4.25200292  4.25200292  4.59094601  4.5909474   4.5909474   4.69195771
+  4.79145934  4.79146079  4.79146079  4.80419957  4.80419957  5.04740024
+  5.04740024  5.08876767  5.08876769  5.08876769  5.24127595  6.2020506
+  6.20206151  6.20206151  6.20716901  6.20717123  6.20717123  6.50815597
+  8.20328978  8.2033106   8.20331061  9.1056312 ]
+nelec by numeric integration = 7.999999999996765
+    CPU time for vxc      5.83 sec, wall time      0.73 sec
+    CPU time for vj and vk      0.01 sec, wall time      0.00 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.810152264159603  Ecoul = 1.3731779487540559  Exc = -3.2223422291331527
+cycle= 2 E= -9.81467924908044  delta_E= -0.0451  |g|= 0.118  |ddm|= 14.6
+    CPU time for cycle= 2      6.11 sec, wall time      0.77 sec
+  HOMO = 0.618737979156325  LUMO = 0.800051176592861
+  mo_energy =
+[-0.20215291  0.61873706  0.61873798  0.61873798  0.80005118  0.80005195
+  0.80005195  1.08285883  1.29027249  1.53263661  1.53263669  1.53263669
+  1.53399144  1.53399144  1.86508476  2.33092625  2.33092878  2.33092878
+  3.06523607  3.06523662  3.06523662  3.22075736  3.22075736  3.43012655
+  3.43012655  3.43012658  3.61963329  3.61964158  3.61964158  4.23434013
+  4.23434066  4.23434066  4.57336659  4.57336804  4.57336804  4.65700357
+  4.77719132  4.77719274  4.77719274  4.77840421  4.77840421  5.02317665
+  5.02317665  5.07435317  5.07435319  5.07435319  5.22448626  6.16952054
+  6.16953152  6.16953152  6.1824432   6.18244537  6.18244537  6.46042336
+  8.17024591  8.17026654  8.17026655  9.04179465]
+nelec by numeric integration = 7.99999999999649
+    CPU time for vxc      5.82 sec, wall time      0.73 sec
+    CPU time for vj and vk      0.01 sec, wall time      0.00 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.763763602038421  Ecoul = 1.4369843197870997  Exc = -3.242413480779164
+cycle= 3 E= -9.81733279181459  delta_E= -0.00265  |g|= 0.00344  |ddm|= 2.17
+    CPU time for cycle= 3      6.03 sec, wall time      0.76 sec
+  HOMO = 0.619448052622182  LUMO = 0.800505639812885
+  mo_energy =
+[-0.20194498  0.61944713  0.61944805  0.61944805  0.80050564  0.8005064
+  0.8005064   1.0835378   1.29025426  1.53226925  1.53226932  1.53226932
+  1.53399975  1.53399975  1.86457898  2.33140595  2.33140848  2.33140848
+  3.06552125  3.0655218   3.0655218   3.2209464   3.2209464   3.43032519
+  3.43032519  3.43032522  3.62027564  3.62028394  3.62028394  4.23450478
+  4.23450531  4.23450531  4.57361736  4.57361881  4.57361881  4.65766402
+  4.77727034  4.77727177  4.77727177  4.77884778  4.77884778  5.02360664
+  5.02360664  5.07455189  5.07455192  5.07455192  5.2246499   6.17012879
+  6.17013977  6.17013977  6.18282658  6.18282875  6.18282875  6.46146046
+  8.17093439  8.17095502  8.17095504  9.04332013]
+nelec by numeric integration = 7.999999999996495
+    CPU time for vxc      5.86 sec, wall time      0.74 sec
+    CPU time for vj and vk      0.01 sec, wall time      0.00 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.765010928012641  Ecoul = 1.4351635832738545  Exc = -3.2418423859143277
+cycle= 4 E= -9.81733510748878  delta_E= -2.32e-06  |g|= 0.000327  |ddm|= 0.0572
+    CPU time for cycle= 4      6.09 sec, wall time      0.76 sec
+  HOMO = 0.619451467734257  LUMO = 0.800507489730435
+  mo_energy =
+[-0.20194446  0.61945055  0.61945147  0.61945147  0.80050749  0.80050825
+  0.80050825  1.08354064  1.29025246  1.53226585  1.53226592  1.53226592
+  1.53399936  1.53399936  1.86457377  2.33140715  2.33140968  2.33140968
+  3.06552223  3.06552278  3.06552278  3.22094718  3.22094718  3.43032612
+  3.43032612  3.43032614  3.62027779  3.62028609  3.62028609  4.23450455
+  4.23450508  4.23450508  4.57361838  4.57361983  4.57361983  4.65766751
+  4.77727002  4.77727145  4.77727145  4.77884928  4.77884928  5.0236082
+  5.0236082   5.07455272  5.07455274  5.07455274  5.22464982  6.17013102
+  6.170142    6.170142    6.1828275   6.18282967  6.18282967  6.4614639
+  8.17093716  8.1709578   8.17095781  9.04332638]
+nelec by numeric integration = 7.999999999996502
+    CPU time for vxc      5.87 sec, wall time      0.74 sec
+    CPU time for vj and vk      0.01 sec, wall time      0.00 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.765017859066178  Ecoul = 1.435153394483536  Exc = -3.2418391416304875
+cycle= 5 E= -9.81733512094172  delta_E= -1.35e-08  |g|= 0.000232  |ddm|= 0.000984
+    CPU time for cycle= 5      6.08 sec, wall time      0.76 sec
+  HOMO = 0.619459863659866  LUMO = 0.800512384826005
+  mo_energy =
+[-0.20194247  0.61945894  0.61945986  0.61945986  0.80051238  0.80051315
+  0.80051315  1.08354789  1.29024995  1.5322595   1.53225958  1.53225958
+  1.53399917  1.53399917  1.86456406  2.33141102  2.33141355  2.33141355
+  3.06552535  3.0655259   3.0655259   3.22094951  3.22094951  3.43032875
+  3.43032875  3.43032877  3.62028368  3.62029198  3.62029198  4.23450517
+  4.2345057   4.2345057   4.57362133  4.57362277  4.57362277  4.65767608
+  4.77727029  4.77727172  4.77727172  4.77885358  4.77885358  5.02361253
+  5.02361253  5.07455512  5.07455514  5.07455514  5.22465068  6.17013704
+  6.17014802  6.17014802  6.18283068  6.18283285  6.18283285  6.46147302
+  8.17094424  8.17096487  8.17096489  9.04334164]
+nelec by numeric integration = 7.999999999996498
+    CPU time for vxc      5.86 sec, wall time      0.74 sec
+    CPU time for vj and vk      0.01 sec, wall time      0.00 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.765033303323849  Ecoul = 1.4351310107537587  Exc = -3.2418320026307588
+Extra cycle  E= -9.8173349214141  delta_E= 2e-07  |g|= 0.000913  |ddm|= 0.00205
+    CPU time for scf_cycle    766.22 sec, wall time     96.41 sec
+    CPU time for SCF    766.28 sec, wall time     96.42 sec
+converged SCF energy = -9.8173349214141
+e_scf -9.81733492141
+Using Python 2.x
+Wavefunction successfully saved to QMCPACK HDF5 Format
+Use: "convert4qmc -pyscf  C_Diamond.h5" to generate QMCPACK input files

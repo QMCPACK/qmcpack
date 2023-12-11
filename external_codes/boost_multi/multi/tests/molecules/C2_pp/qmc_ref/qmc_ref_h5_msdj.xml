@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="C2_TZ_PP_H5_REF_MSDJ" series="1"/>
+
+
+  <!-- input from gaussian converter -->
+  <include href="C2.structure.xml"/>
+  <include href="C2-H5.wfj.xml"/>
+
+  <!--  Hamiltonian -->
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="C" href="C.BFD.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+  </hamiltonian>
+
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">32800</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="warmupSteps">20</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+
+</simulation>

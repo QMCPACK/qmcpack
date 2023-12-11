@@ -1,0 +1,36 @@
+Goal: optimize the time-to-solution of a basic QMC workflow
+The total DMC projection time, blocks*steps of a dmc block, is fixed.
+
+Definitions
+* NP = # of MPI tasks
+* OMP_NUM_THREADS = # of OpenMP threads per MPI task
+
+How to run
+* Modify these variables in qmc.xml
+** DMCWALKERS : total number of samples for the main DMC block
+** VMCWALKERS : number of walkers per MPI tasks for the VMC block to generate DMCWALKERS samples
+** VMCBLOCKS  : number of VMC blocks needed to generate DMCWALKERS samples
+* One can use any number of parallel processing units
+** CPU: NP * OMP_NUM_THREADS 
+** GPU: NP (= # of GPUs)
+* DMCWALKERS has to be equal to or larger than 8000.
+* Choose VMCWALKERS and VMCBLOCKS for a given DMCWALKERS using this formula
+  VMCBLOCKS=DMCWALKERS/VMCWALKERS/NP
+* VMCWALKERS is a tuning parameter
+* The number of DMC blocks and steps are fixed
+
+Metrics
+* DMC energy and its errorbar
+   $qmcpack/utils/energy.pl bench.s001.dmc.dat 200
+* Time to solution: total run time
+* Efficiency defined as the number of samples generated per step excluding communication cost
+   $qmcpack/utils/energy.pl bench.s001.scalar.dat 20 | grep Efficiency
+
+Reference run 
+* input.xml: 128 MPI tasks and 8 threads, DMCWALKERS=8192
+* output files
+** ref.s000.scalar.dat
+** ref.s001.scalar.dat
+** ref.s001.dmc.dat
+** qmc.log
+** ref.analysis.out : reference metrics, the key metrics marked by <<<<

@@ -1,0 +1,57 @@
+&CONTROL
+   calculation     = 'nscf'
+   disk_io         = 'low'
+   outdir          = 'pwscf_output'
+   prefix          = 'pwscf'
+   pseudo_dir      = './'
+   restart_mode    = 'from_scratch'
+   tprnfor         = .true.
+   tstress         = .true.
+   verbosity       = 'high'
+   wf_collect      = .true.
+/
+
+&SYSTEM
+   !celldm(1)       = 1.0
+   degauss         = 0.0001
+   ecutrho         = 600
+   ecutwfc         = 150
+   ibrav           = 0
+   input_dft       = 'lda'
+   nat             = 2
+   nosym           = .true.
+   ntyp            = 1
+   occupations     = 'smearing'
+   smearing        = 'fermi-dirac'
+   tot_charge      = 0
+/
+
+&ELECTRONS
+   conv_thr        = 1e-06
+   diagonalization = 'david'
+   electron_maxstep = 1000
+   mixing_beta     = 0.7
+   mixing_mode     = 'plain'
+/
+
+
+ATOMIC_SPECIES 
+   C  12.011 C.BFD.upf
+
+ATOMIC_POSITIONS bohr
+   C        0.00000000       0.00000000       0.00000000 
+   C        2.32625287       1.34306272       0.00000000 
+
+K_POINTS crystal
+   4
+         0.25000000       0.25000000       0.50000000       0.25000000 
+         0.75000000       0.25000000       0.50000000       0.25000000 
+         0.25000000       0.75000000       0.50000000       0.25000000 
+         0.75000000       0.75000000       0.50000000       0.25000000 
+
+CELL_PARAMETERS bohr
+         4.65250574       0.00000000       0.00000000 
+        -2.32625287       4.02918816       0.00000000 
+        -0.00000000       0.00000000      18.89726133 
+
+

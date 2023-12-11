@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+<!-- Uncomment this out to use plane-wave basis functions
+    <determinantset type="PW" href="e200.pwscf.h5" version="1.10">
+--> 
+      <determinantset type="bspline" href="e200.pwscf.h5" sort="1" tilematrix="4 0 0 0 4 0 0 0 4" twistnum="0" source="ion0" version="0.10">
+        <slaterdeterminant>
+          <determinant id="updet" size="128">
+            <occupation mode="ground" spindataset="0">
+            </occupation>
+          </determinant>
+          <determinant id="downdet" size="128">
+            <occupation mode="ground" spindataset="0">
+            </occupation>
+          </determinant>
+        </slaterdeterminant>
+      </determinantset>
+      <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+        <correlation speciesA="u" speciesB="u" size="8">
+          <coefficients id="uu" type="Array"> 0.4378343869 0.2929797364 0.1879955556 0.1178666566 0.06993387117 0.04059397457 0.01999738315 0.008759605645</coefficients>
+        </correlation>
+        <correlation speciesA="u" speciesB="d" size="8">
+          <coefficients id="ud" type="Array"> 0.6494963918 0.3757433571 0.2196508582 0.1348387476 0.08165030057 0.04665236968 0.02322201705 0.009573212541</coefficients>
+        </correlation>
+      </jastrow>
+      <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="H" size="8">
+          <coefficients id="eH" type="Array"> 0.4965389582 0.5875948667 0.6302689648 0.6066828379 0.5180642247 0.4120768364 0.2356107758 0.07088550604</coefficients>
+        </correlation>
+      </jastrow>
+      <!-- add cusp-correction by adding a short-range J1 -->
+      <jastrow name="J1c" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="H" cusp="1" rcut="0.5" size="4">
+          <coefficients id="eHc" type="Array"> -0.1947549098 -0.1102429918 -0.05163952452 -0.01917582874</coefficients>
+        </correlation>
+      </jastrow>
+    </wavefunction>
+</qmcsystem>
