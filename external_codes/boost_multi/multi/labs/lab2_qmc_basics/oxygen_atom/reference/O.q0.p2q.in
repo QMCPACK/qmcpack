@@ -1,5 +1,0 @@
-&inputpp
-  prefix = 'O.q0'
-  outdir = './'
-  write_psir = .false.
-/

@@ -1,5 +1,0 @@
-&inputpp
-   outdir='./out'
-   prefix='NiO-fcc'
-   write_psir=.false.
-/

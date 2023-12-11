@@ -1,3 +1,0 @@
-#include <map>
-int main()
-{ }
