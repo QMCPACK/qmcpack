@@ -1,0 +1,34 @@
+/*! \page dev_design Architecture
+
+\section patetrn Design Patterns
+The main physical abstractions use the composite pattern.
+
+- Hamiltonian
+\image html  ham_class.png  "Hamiltonians"
+- Wavefunction
+\image html  wfs_class.png "Wavefunctions"
+
+These patterns are widely used at the initialization stage
+- Builder/Factory 
+- Singleton
+
+\section parallel Thread-level parallelization
+
+\image html  mpi_openmp_objects.png  "Objects in a MPI task"
+<!--
+\image latex mpi_openmp_objects.pdf "Objects" width=5cm
+-->
+Schematics to illustrate how objects are instantiated in a MPI task.  Each
+thread owns Walkers (squares), hamiltonians (open diamonds) and wavefunctions
+(red solid circles).  The objects are cloned per thread before starting the
+<c>qmc</c> sections except for read-only shared data such as 3D B-spline
+tables.  
+
+Cloning objects  is managed by <c>CloneManager</c> class from which QMC drivers
+are derived. The number of clones is set by the number of OpenMP threads,
+<c>omp_get_max_threads()</c>. The objects such as \c TrialWaveFunction and
+\c QMCHamiltonian are expensive to create/copy/clone and they are instantiated
+only once when the first <c>qmc</c> section is initialized.
+
+
+*/

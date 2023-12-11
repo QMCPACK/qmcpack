@@ -1,0 +1,11 @@
+Each directory contains the input files and README.  
+
+Setting up the benchmarks: getfiles.sh 
+  1. Obtain data and input files
+  2. Copy or create symbolic links to the downloaded files in each example directory. 
+
+Before running
+  1. Prepare a batch or run script to modify qmc.xml file according to the instructions in README
+
+After running
+  1. Compare results in ref.analysis.out

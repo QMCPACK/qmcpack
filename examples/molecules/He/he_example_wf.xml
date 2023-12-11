@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="He" series="0"/>
+
+  <!-- Location of atoms -->
+
+  <particleset name="ion0" size="1">
+    <group name="He">
+      <parameter name="charge">2</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+      0.0 0.0 0.0
+    </attrib>
+  </particleset>
+
+  <!-- Randomly create electrons around the atomic position -->
+
+  <particleset name="e" random="yes" randomsrc="ion0">
+    <group name="u" size="1">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="1">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+
+  <!-- Trial wavefunction - use Slater determinant multiplied by a Jastrow factor -->
+
+  <wavefunction name="psi0" target="e">
+    
+    <!-- Same wavefunction as in he_example_opt.xml, but directly implemented as an example -->
+    <example_he  name="mine" source="ion0">
+      <var id="B" name="B">0.821683</var>
+    </example_he>
+  </wavefunction>
+
+  <!-- Hamiltonian - the energy of interactions between particles -->
+
+  <hamiltonian name="h0" type="generic" target="e">
+    <!-- Electon-electron -->
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <!-- Electon-ion -->
+    <pairpot name="Coulomb" type="coulomb" source="ion0" target="e"/>
+    <!-- Ion-ion (not needed for a single atom) -->
+    <!--<constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>-->
+  </hamiltonian>
+
+  <!-- QMC method(s) to run -->
+
+  <!-- Optimize parameters - in this case only the B value on the Jastrow is adjustable -->
+
+  <loop max="10">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+    <parameter name="blocks">     100  </parameter>
+      <parameter name="warmupsteps"> 25 </parameter>
+      <parameter name="steps"> 1 </parameter>
+      <parameter name="substeps"> 20 </parameter>
+      <parameter name="timestep"> 0.5 </parameter>
+      <parameter name="samples"> 51200  </parameter>
+      <cost name="energy">                   0.95 </cost>
+      <cost name="unreweightedvariance">     0.0 </cost>
+      <cost name="reweightedvariance">       0.05 </cost>
+      <parameter name="useDrift">  yes </parameter>
+      <parameter name="bigchange">10.0</parameter>
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="MinMethod">quartic</parameter>
+      <parameter name="exp0">-6</parameter>
+      <parameter name="alloweddifference"> 1.0e-5 </parameter>
+      <parameter name="stepsize">  0.15 </parameter>
+      <parameter name="nstabilizers"> 1 </parameter>
+    </qmc>
+  </loop>
+
+  <!-- Run VMC to compute the energy of the optimized parameter -->
+
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">500</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.1</parameter>
+  </qmc>
+
+</simulation>

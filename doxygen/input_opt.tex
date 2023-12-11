@@ -1,0 +1,43 @@
+\subsection{Optimization}
+
+\begin{lstlisting}[language=xml,escapeinside={<:}{:>},
+emph={qmc},emphstyle=\bfseries\color{blue}]
+  <loop max="6">
+    <qmc method="linear" move="pbyp" checkpoint="100" gpu="no">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <!-- vmc sample generation -->
+      <parameter name="use_drift">yes</parameter>
+      <parameter name="warmup_steps">100</parameter>
+      <parameter name="blocks">100</parameter>
+      <parameter name="steps">100</parameter>
+      <parameter name="walkers">1</parameter>
+      <parameter name="time_step">0.5</parameter>
+      <parameter name="samples">8000</parameter>
+      <parameter name="maxWeight">1e6</parameter>
+      <parameter name="minWeight">0.0</parameter>
+      <parameter name="minKE">-1e6</parameter>
+      <cost name="energy"> 0.95 </cost>
+      <cost name="variance"> 0.00 </cost>
+      <cost name="reweightedvariance"> 0.05 </cost>
+      <parameter name="min_walkers"> 0.95 </parameter>
+      <parameter name="max_its"> 5 </parameter>
+      <parameter name="tries"> 3 </parameter>
+      <parameter name="exp0"> -8 </parameter>
+      <parameter name="alpha"> 0.01 </parameter>
+      <parameter name="xi"> 0.75 </parameter>
+      <parameter name="rescale"> yes  </parameter>
+      <parameter name="usegrad"> yes  </parameter>
+      <parameter name="linemin"> yes </parameter>
+      <parameter name="gradtol"> 5e-3 </parameter> 
+    </qmc>
+  </loop>
+\end{lstlisting}
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{llll}\hline
+\end{tabular}
+\end{center}
+\caption{Parameters ...}
+\label{req.packages}
+\end{table}
+

@@ -1,0 +1,8 @@
+# single det energy components
+E1  = -10.8097666899214
+EXX = -0.977592822424938
+EJ = 1.4675818396321503 
+
+
+According to DICE, the selCI variational energy is -10.5603974488.
+Taking only 100k dets.

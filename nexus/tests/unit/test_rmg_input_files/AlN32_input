@@ -1,0 +1,86 @@
+# Description of run.
+# Energy test
+test_energy="-215.98551732"
+
+description="AlN 32 atom wurtzite test cell"
+localize_projectors="false"
+localize_localpp="false"
+wavefunction_grid="48 48 72"
+occupations_type = "Fixed"
+
+# number of unoccupied states
+unoccupied_states_per_kpoint="16"
+
+# Units for bravais_lattice_type and atoms
+#crds_units=
+#"Bohr"
+#"Angstrom"
+
+bravais_lattice_type="Hexagonal Primitive"
+
+
+# Lattice constants 
+a_length="12.094"
+b_length="12.094"
+c_length="19.749501995162"
+alpha="0.0"
+beta="0.0"
+gamma="0.0"
+
+start_mode="LCAO Start"
+#start_mode="Random Start"
+#start_mode="Restart From File"
+
+calculation_mode="Quench Electrons"
+#calculation_mode="Relax Structure"
+
+kohn_sham_solver="davidson"
+charge_mixing_type = "Broyden"
+charge_density_mixing = "0.5"
+kohn_sham_mucycles = "3"
+max_scf_steps="20"
+potential_acceleration_constant_step="1.0"
+write_data_period="50"
+
+# Criterion used to judge SCF convergency 
+energy_convergence_criterion="1.0e-9"
+#rms_convergence_criterion = "1.0e-10"
+
+atomic_coordinate_type="Absolute"
+
+# List  atomic symbol, coordinates, and movable flag (1 == movable) 
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+Al       3.32585000       8.72809269      18.82374409  1
+Al       3.32585000       5.23685561      13.88636859  1
+Al       0.30235000       3.49123707      18.82374409  1
+Al       0.30235000       0.00000000      13.88636859  1
+Al       9.37285000       8.72809269      18.82374409  1
+Al       9.37285000       5.23685561      13.88636859  1
+Al       6.34935000       3.49123707      18.82374409  1
+Al       6.34935000       0.00000000      13.88636859  1
+Al       3.32585000       8.72809269       8.94899309  1
+Al       3.32585000       5.23685561       4.01161759  1
+Al       0.30235000       3.49123707       8.94899309  1
+Al       0.30235000       0.00000000       4.01161759  1
+Al       9.37285000       8.72809269       8.94899309  1
+Al       9.37285000       5.23685561       4.01161759  1
+Al       6.34935000       3.49123707       8.94899309  1
+Al       6.34935000       0.00000000       4.01161759  1 
+N        3.32585000       8.72809269      15.12071247  1
+N        3.32585000       5.23685561      10.18333697  1
+N        0.30235000       3.49123707      15.12071247  1
+N        0.30235000       0.00000000      10.18333697  1
+N        9.37285000       8.72809269      15.12071247  1
+N        9.37285000       5.23685561      10.18333697  1
+N        6.34935000       3.49123707      15.12071247  1
+N        6.34935000       0.00000000      10.18333697  1
+N        3.32585000       8.72809269       5.24596147  1
+N        3.32585000       5.23685561       0.30858597  1
+N        0.30235000       3.49123707       5.24596147  1
+N        0.30235000       0.00000000       0.30858597  1
+N        9.37285000       8.72809269       5.24596147  1
+N        9.37285000       5.23685561       0.30858597  1
+N        6.34935000       3.49123707       5.24596147  1
+N        6.34935000       0.00000000       0.30858597  1 
+"

@@ -1,0 +1,17 @@
+Cobalt location args: --block VST-02040-13151-32    
+2014-07-08 13:57:14.046 (INFO ) [0xfff9483bdd0] ibm.runjob.AbstractOptions: using properties file /bgsys/local/etc/bg.properties
+2014-07-08 13:57:14.046 (INFO ) [0xfff9483bdd0] ibm.runjob.AbstractOptions: max open file descriptors: 65536
+2014-07-08 13:57:14.046 (INFO ) [0xfff9483bdd0] ibm.runjob.AbstractOptions: core file limit: 18446744073709551615
+2014-07-08 13:57:14.047 (INFO ) [0xfff9483bdd0] 18334:tatu.runjob.client: scheduler job id is 201652
+2014-07-08 13:57:14.053 (INFO ) [0xfff8c0c34e0] 18334:tatu.runjob.monitor: monitor started
+2014-07-08 13:57:17.218 (INFO ) [0xfff8c0c34e0] 18334:tatu.runjob.monitor: task record 685334 created
+2014-07-08 13:57:17.219 (INFO ) [0xfff9483bdd0] VST-02040-13151-32:18334:ibm.runjob.client.options.Parser: set local socket to runjob_mux from properties file
+2014-07-08 13:57:19.704 (INFO ) [0xfff9483bdd0] VST-02040-13151-32:888071:ibm.runjob.client.Job: job 888071 started
+darshan library warning: unable to open log file /gpfs/mira-fs0/logs/darshan/mira/2014/7/8/krogel_pw2qmcpack.x_id201652_7-8-50239-12883963194280019488.darshan_partial: File does not exist, error stack:
+ADIO_RESOLVEFILETYPE_FNCALL(343): Invalid file name /gpfs/mira-fs0/logs/darshan/mira/2014/7/8/krogel_pw2qmcpack.x_id201652_7-8-50239-12883963194280019488.darshan_partial
+darshan library warning: unable to write log file /gpfs/mira-fs0/logs/darshan/mira/2014/7/8/krogel_pw2qmcpack.x_id201652_7-8-50239-12883963194280019488.darshan_partial
+2014-07-08 13:57:30.099 (INFO ) [0xfff9483bdd0] VST-02040-13151-32:888071:ibm.runjob.client.Job: exited with status 0
+2014-07-08 13:57:30.099 (INFO ) [0xfff9483bdd0] tatu.runjob.client: task exited with status 0
+2014-07-08 13:57:56.466 (INFO ) [0xfff8c0c34e0] 18334:tatu.runjob.monitor: tracklib completed
+2014-07-08 13:57:56.466 (INFO ) [0xfff8c0c34e0] 18334:tatu.runjob.monitor: monitor terminating
+2014-07-08 13:57:56.470 (INFO ) [0xfff9483bdd0] tatu.runjob.client: monitor completed

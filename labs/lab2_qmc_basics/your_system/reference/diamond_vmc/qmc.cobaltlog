@@ -1,0 +1,27 @@
+Jobid: 201678
+qsub --mode script -q default -A QMC_2014_Preparation -n 32 -t 120 -O qmc --mode script --env BG_SHAREDMEMSIZE=32 qmc.qsub.in
+Tue Jul 08 18:00:26 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc
+Tue Jul 08 18:01:08 2014 +0000 (UTC) krogel/201678: Initiating boot at location VST-00660-11771-32.
+Tue Jul 08 18:01:24 2014 +0000 (UTC) krogel/201678: Block VST-00660-11771-32 for location VST-00660-11771-32 successfully booted (Initiating). 
+Tue Jul 08 18:01:27 2014 +0000 (UTC) 
+Tue Jul 08 18:01:27 2014 +0000 (UTC) Command: '/gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/qmc.qsub.in'
+Tue Jul 08 18:01:27 2014 +0000 (UTC) 
+Tue Jul 08 18:01:27 2014 +0000 (UTC) Environment:
+Tue Jul 08 18:01:27 2014 +0000 (UTC) SHELL=/bin/bash
+Tue Jul 08 18:01:27 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpQlc1lr
+Tue Jul 08 18:01:27 2014 +0000 (UTC) COBALT_PARTNAME=VST-00660-11771-32
+Tue Jul 08 18:01:27 2014 +0000 (UTC) COBALT_JOBID=201678
+Tue Jul 08 18:01:27 2014 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Tue Jul 08 18:01:27 2014 +0000 (UTC) COBALT_STARTTIME=1404842436
+Tue Jul 08 18:01:27 2014 +0000 (UTC) LOGNAME=krogel
+Tue Jul 08 18:01:27 2014 +0000 (UTC) USER=krogel
+Tue Jul 08 18:01:27 2014 +0000 (UTC) COBALT_ENDTIME=1404849636
+Tue Jul 08 18:01:27 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Tue Jul 08 18:01:27 2014 +0000 (UTC) HOME=/home/krogel
+Tue Jul 08 18:01:27 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Tue Jul 08 18:01:27 2014 +0000 (UTC) 
+Tue Jul 08 18:01:27 2014 +0000 (UTC) Info: stdin received from /dev/null
+Tue Jul 08 18:01:27 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/qmc.output
+Tue Jul 08 18:01:27 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/qmc.error
+Tue Jul 08 18:01:27 2014 +0000 (UTC) 
+Tue Jul 08 18:05:10 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

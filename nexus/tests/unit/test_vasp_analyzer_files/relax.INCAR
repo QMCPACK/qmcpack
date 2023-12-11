@@ -1,0 +1,8 @@
+EDIFF  = 1e-06
+EDIFFG = -0.01
+ELMIN  = 5
+IBRION = 1
+ISTART = 0
+NELECT = 130
+NSW    = 20
+PREC   = normal

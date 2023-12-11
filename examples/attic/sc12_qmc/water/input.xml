@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="bench" series="0"/>
+  <random seed="13"/>
+  <!--
+  <include href="water.8.ptcl.xml"/>
+  -->
+  <include href="h2o.wfs.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+      <!--<pseudo elementType="H" href="H_lda.fsatom.xml" format="xml"/>-->
+      <pseudo elementType="O" href="TrailNeeds.O_HF.xml" format="xml"/>
+      <pseudo elementType="H">
+        <header symbol="H" atomic-number="1" zval="1.0" />
+        <local>
+          <grid type="linear" ri="0.0" rf="1" npts="101" />
+        </local>
+      </pseudo>
+    </pairpot>
+  </hamiltonian>
+  <init source="ion0" target="e"/>
+  <qmc method="vmc" multiple="no" warp="no" checkpoint="-1" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="useDrift">yes</parameter>                                               
+    <parameter name="blocks">8</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="walkers">1</parameter>
+    <parameter name="samples">8192</parameter>
+    <parameter name="warmupsteps">10</parameter>
+    <parameter name="timestep">2.0</parameter>
+  </qmc>
+  <qmc method="dmc" multiple="no" warp="no" checkpoint="-1"  move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="nonlocalmoves"> yes </parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="timestep">0.02</parameter>
+  </qmc>
+</simulation>

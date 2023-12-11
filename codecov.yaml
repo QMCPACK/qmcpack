@@ -1,0 +1,29 @@
+# Configuration file for codecov reporting code coverage
+
+# Percentage drop allowed
+coverage:
+  status:
+    project:
+      default:
+        threshold: 0.5%
+
+# Disable codecov comments in every PR
+comment: off
+
+# Ignore testing directory itself
+ignore:
+  - "external_codes"
+  - "tests"
+  - "src/*/tests"
+  - "src/*/*/tests"
+
+# Fixes report prefix paths from CI dynamic coverage action
+# from https://docs.codecov.io/docs/fixing-paths
+fixes:
+  - "/__w/::"
+
+# Wait for both real and complex reports
+# from https://docs.codecov.com/docs/notifications#preventing-notifications-until-after-n-builds
+codecov:
+  notify:
+    after_n_builds: 2

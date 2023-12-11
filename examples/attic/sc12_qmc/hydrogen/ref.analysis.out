@@ -1,0 +1,32 @@
+DMC energy and its errorbar
+  $energy.pl ref.s001.dmc.dat 200
+  
+LocalEnergy           =         -122.0781 +/-           0.0015
+Variance              =            7.9505 +/-           0.0087
+Weight                =              8186 +/-               25
+NumOfWalkers          =              8186 +/-               25
+AvgSentWalkers        =           0.40548 +/-          0.00054
+TrialEnergy           =         -122.0795 +/-           0.0031
+DiffEff               =         0.9951233 +/-        0.0000012
+LivingFraction        =          0.990206 +/-         0.000016
+
+Time to solution: total run time
+  $grep Execution qmc.log
+  QMC Execution time = 18.28826291 secs 
+  QMC Execution time = 4661.91432 secs 
+  Total Execution time = 4680.210571 secs
+
+Efficiency:
+    $energy.pl ref.s001.scalar.dat 20
+
+LocalEnergy           =         -122.0780 +/-           0.0020
+Variance              =              7.94 +/-             0.49
+LocalPotential        =          -344.294 +/-            0.017
+Kinetic               =           222.216 +/-            0.016
+ElecElec              =         -118.5973 +/-           0.0084
+IonElec               =           -37.168 +/-            0.016
+IonIon                =      -188.5283757 +/-        0.0000013
+BlockWeight           =            408455 +/-              614
+BlockCPU              =             46.28 +/-             0.17
+AcceptRatio           =        0.99706046 +/-       0.00000074
+Efficiency            =          8825.231 +/-            0.000

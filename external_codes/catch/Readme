@@ -1,0 +1,13 @@
+C++ Unit test framework
+
+https://github.com/catchorg/Catch2
+
+The single include file is downloaded from here:
+https://github.com/catchorg/Catch2/releases/download/v2.13.9/catch.hpp
+
+This patch was applied to eliminate warnings from sprintf
+https://github.com/catchorg/Catch2/commit/0e2895934cf778f3bd7e84b3df10dac81d4ef7e3
+
+The default value of m_scale in Approx was changed from 0.0 to 1.0 to match the
+original Catch behavior, and to avoid adding .scale(1.0) all over the code.
+

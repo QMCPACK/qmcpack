@@ -1,0 +1,4 @@
+&inputPP
+    prefix= 'lda',
+    outdir='.',
+/

@@ -1,0 +1,6 @@
+&projwfc
+  prefix = 'pwscf'
+  outdir = 'pwscf_output'
+  lwrite_overlaps = .true.
+/
+

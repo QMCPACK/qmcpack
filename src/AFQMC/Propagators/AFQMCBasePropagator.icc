@@ -1,0 +1,770 @@
+//////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source
+// License.  See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by:
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
+//
+// File created by:
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
+////////////////////////////////////////////////////////////////////////////////
+
+#include <vector>
+#include <map>
+#include <string>
+#include <iostream>
+#include <tuple>
+
+#include "AFQMC/config.h"
+#include "Utilities/FairDivide.h"
+#include "AFQMC/Propagators/WalkerSetUpdate.hpp"
+#include "AFQMC/Walkers/WalkerConfig.hpp"
+
+namespace qmcplusplus
+{
+namespace afqmc
+{
+/*
+ * Propagates the walker population nsteps forward with a fixed vbias (from the initial 
+ * configuration).   
+ */
+template<class WlkSet>
+void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt)
+{
+  AFQMCTimers[setup_timer].get().start();
+  auto walker_type = wset.getWalkerType();
+  int npol         = (walker_type == NONCOLLINEAR) ? 2 : 1;
+  int nsteps       = nsteps_;
+  int nwalk        = wset.size();
+  RealType sqrtdt  = std::sqrt(dt);
+  long Gsize       = wfn.size_of_G_for_vbias();
+  int localnCV     = wfn.local_number_of_cholesky_vectors();
+  // if transposed_XXX_=true  --> XXX[nwalk][...],
+  // if transposed_XXX_=false --> XXX[...][nwalk]
+  auto vhs_ext   = iextensions<2u>{NMO * NMO, nwalk * nsteps};
+  auto vhs3d_ext = iextensions<3u>{NMO, NMO, nwalk * nsteps};
+  auto G_ext     = iextensions<2u>{Gsize, nwalk};
+  if (transposed_vHS_)
+  {
+    vhs_ext   = iextensions<2u>{nwalk * nsteps, NMO * NMO};
+    vhs3d_ext = iextensions<3u>{nwalk * nsteps, NMO, NMO};
+  }
+  if (transposed_G_)
+    G_ext = iextensions<2u>{nwalk, Gsize};
+
+  if (std::get<0>(MFfactor.sizes()) != nsteps || std::get<1>(MFfactor.sizes()) != nwalk)
+    MFfactor = CMatrix({long(nsteps), long(nwalk)});
+  if (std::get<0>(hybrid_weight.sizes()) != nsteps || std::get<1>(hybrid_weight.sizes()) != nwalk)
+    hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
+  if (std::get<0>(new_overlaps.sizes()) != nwalk)
+    new_overlaps = CVector(iextensions<1u>{nwalk});
+  if (std::get<0>(new_energies.sizes()) != nwalk || std::get<1>(new_energies.sizes()) != 3)
+    new_energies = CMatrix({long(nwalk), 3});
+
+
+  //  shared buffer used for:
+  //  G_for_vbias:     [ Gsize * nwalk ]
+  //  vbias:           [ localnCV * nwalk ]
+  //  X:               [ localnCV * nwalk * nstep ]
+  //  vHS:             [ NMO*NMO * nwalk * nstep ]
+  // memory_needs: nwalk * ( 2*nsteps + Gsize + localnCV*(nstep+1) + NMO*NMO*nstep )
+
+  int cv0, cvN;
+  std::tie(cv0, cvN) = FairDivideBoundary(TG.getLocalTGRank(), localnCV, TG.getNCoresPerTG());
+
+  // if timestep changed, recalculate one body propagator
+  if (std::abs(dt - old_dt) > 1e-6)
+    generateP1(dt, walker_type);
+  AFQMCTimers[setup_timer].get().stop();
+
+  StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+
+  { // using scope to control lifetime of StaticArrays, avoiding unnecessary buffer space
+
+    StaticSPMatrix G(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+
+    // 1. Calculate Green function for all walkers
+    AFQMCTimers[G_for_vbias_timer].get().start();
+#if defined(MIXED_PRECISION)
+    {
+      int Gak0, GakN;
+      std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(G.num_elements()), TG.getNCoresPerTG());
+      StaticMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      wfn.MixedDensityMatrix_for_vbias(wset, Gc);
+      copy_n_cast(make_device_ptr(Gc.origin()) + Gak0, GakN - Gak0, make_device_ptr(G.origin()) + Gak0);
+    }
+    TG.local_barrier();
+#else
+    wfn.MixedDensityMatrix_for_vbias(wset, G);
+#endif
+    AFQMCTimers[G_for_vbias_timer].get().stop();
+    //std::cout<<" G: " <<ma::dot(G(G.extension(0),0),G(G.extension(0),0)) <<std::endl;
+
+    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    // 2. Calculate vbias for initial configuration
+    AFQMCTimers[vbias_timer].get().start();
+    if (free_projection)
+    {
+      fill_n(vbias.origin(), localnCV * nwalk, SPComplexType(0.0, 0.0));
+    }
+    else
+    {
+      wfn.vbias(G, vbias, sqrtdt);
+    }
+    AFQMCTimers[vbias_timer].get().stop();
+    //std::cout<<" vbias: " <<ma::sum(vbias) <<std::endl;
+
+    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    // 3. Assemble X(nCV,nsteps,nwalk)
+    AFQMCTimers[assemble_X_timer].get().start();
+    assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
+    if (TG.TG_local().size() > 1)
+    {
+      TG.TG_local().all_reduce_in_place_n(to_address(MFfactor.origin()), MFfactor.num_elements(), std::plus<>());
+      TG.TG_local().all_reduce_in_place_n(to_address(hybrid_weight.origin()), hybrid_weight.num_elements(),
+                                          std::plus<>());
+    }
+    AFQMCTimers[assemble_X_timer].get().stop();
+    // Store sqrtdt*X in wset if back propagating
+    int bp_step = wset.getBPPos(), bp_max = wset.NumBackProp();
+    if (bp_step >= 0 && bp_step < bp_max)
+    {
+      for (int ni = 0; ni < nsteps; ni++)
+      {
+        if (bp_step < bp_max)
+        {
+          auto&& V(*wset.getFields(bp_step));
+          if (nsteps == 1)
+          {
+            copy_n(X[cv0].origin(), nwalk * (cvN - cv0), V[cv0].origin());
+            ma::scal(SPComplexType(sqrtdt), V.sliced(cv0, cvN));
+          }
+          else
+          {
+            ma::add(SPComplexType(0.0), V.sliced(cv0, cvN), SPComplexType(sqrtdt),
+                    X({cv0, cvN}, {ni * nwalk, (ni + 1) * nwalk}), V.sliced(cv0, cvN));
+          }
+          bp_step++;
+        }
+      }
+      TG.TG_local().barrier();
+    }
+    //std::cout<<" X: " <<ma::sum(X) <<std::endl;
+
+    // 4. Calculate vHS(M*M,nsteps,nwalk)/vHS(nsteps,nwalk,M*M)
+    AFQMCTimers[vHS_timer].get().start();
+#if defined(MIXED_PRECISION)
+    // is this clever or dirsty? seems to work well and saves memory!
+    SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.origin())), vhs_ext);
+    wfn.vHS(X, vsp, sqrtdt);
+    TG.local_barrier();
+    if (TG.TG_local().root())
+      inplace_cast<SPComplexType, ComplexType>(vsp.origin(), vsp.num_elements());
+    TG.local_barrier();
+#else
+    wfn.vHS(X, vHS, sqrtdt);
+#endif
+    AFQMCTimers[vHS_timer].get().stop();
+    //std::cout<<" Pg vHS: " <<TG.Global().rank() <<" " <<ma::sum(vHS) <<"\n" <<std::endl;
+  }
+
+  C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()), vhs3d_ext);
+
+  int nx = 1;
+  if (walker_type == COLLINEAR)
+    nx = 2;
+
+  // from now on, individual work on each walker/step
+  const int ntasks_per_core     = int(nx * nwalk) / TG.getNCoresPerTG();
+  const int ntasks_total_serial = ntasks_per_core * TG.getNCoresPerTG();
+  const int nextra              = int(nx * nwalk) - ntasks_total_serial;
+
+  // each processor does ntasks_percore_serial overlaps serially
+  const int tk0 = TG.getLocalTGRank() * ntasks_per_core;
+  const int tkN = (TG.getLocalTGRank() + 1) * ntasks_per_core;
+
+  // make new communicator if nextra changed from last setting
+  reset_nextra(nextra);
+
+  for (int ni = 0; ni < nsteps_; ni++)
+  {
+    // 5. Propagate walkers
+    AFQMCTimers[propagate_timer].get().start();
+    if (nbatched_propagation != 0)
+    {
+      apply_propagators_batched('N', wset, ni, vHS3D);
+    }
+    else
+    {
+      apply_propagators('N', wset, ni, tk0, tkN, ntasks_total_serial, vHS3D);
+    }
+    AFQMCTimers[propagate_timer].get().stop();
+    //std::cout<<" propg wfn " <<std::endl; //: "
+    //std::cout<<ma::sum(*wset[0].SlaterMatrix(Alpha)) <<" " <<ma::sum(*wset[0].SlaterMatrix(Beta)) <<std::endl;
+
+    // 6. Calculate local energy/overlap
+    AFQMCTimers[pseudo_energy_timer].get().start();
+    if (hybrid)
+    {
+      wfn.Overlap(wset, new_overlaps);
+    }
+    else
+    {
+      wfn.Energy(wset, new_energies, new_overlaps);
+    }
+    TG.local_barrier();
+    AFQMCTimers[pseudo_energy_timer].get().stop();
+    //std::cout<<" pseudo energy " <<std::endl;
+
+    // 7. update weights/energy/etc, apply constrains/bounds/etc
+    AFQMCTimers[extra_timer].get().start();
+    if (TG.TG_local().root())
+    {
+      if (free_projection)
+      {
+        free_projection_walker_update(wset, dt, new_overlaps, MFfactor[ni], Eshift, hybrid_weight[ni], work);
+      }
+      else if (hybrid)
+      {
+        hybrid_walker_update(wset, dt, apply_constrain, importance_sampling, Eshift, new_overlaps, MFfactor[ni],
+                             hybrid_weight[ni], work);
+      }
+      else
+      {
+        local_energy_walker_update(wset, dt, apply_constrain, Eshift, new_overlaps, new_energies, MFfactor[ni],
+                                   hybrid_weight[ni], work);
+      }
+      if (wset.getBPPos() >= 0 && wset.getBPPos() < wset.NumBackProp())
+        wset.advanceBPPos();
+      // MAM: BP will not work if the nsteps*nsubsteps per block is not consistent with
+      //      steps in BP
+      if (wset.getBPPos() >= 0)
+        wset.advanceHistoryPos();
+    }
+    TG.local_barrier();
+    AFQMCTimers[extra_timer].get().stop();
+    //std::cout<<" update: " <<hybrid_weight[0][0]  <<" " <<MFfactor[0][0] <<std::endl <<std::endl;
+  }
+}
+
+
+/*
+ * This routine assumes that the 1 body propagator does not need updating
+ */
+template<class WlkSet, class CTens, class CMat>
+void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
+{
+  using std::copy_n;
+  auto walker_type = wset.getWalkerType();
+  int npol         = (walker_type == NONCOLLINEAR) ? 2 : 1;
+  int nwalk        = wset.size();
+  int globalnCV    = wfn.global_number_of_cholesky_vectors();
+
+  auto vhs_ext   = iextensions<2u>{NMO * NMO, nwalk};
+  auto vhs3d_ext = iextensions<3u>{NMO, NMO, nwalk};
+  if (transposed_vHS_)
+  {
+    vhs_ext   = iextensions<2u>{nwalk, NMO * NMO};
+    vhs3d_ext = iextensions<3u>{nwalk, NMO, NMO};
+  }
+
+  StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  StaticSPMatrix X({long(globalnCV), long(nwalk)},
+                   buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()), vhs3d_ext);
+
+  auto&& Fields(*wset.getFields());
+  assert(std::get<0>(Fields.sizes()) >= nbpsteps);
+  assert(std::get<1>(Fields.sizes()) == globalnCV);
+  assert(std::get<2>(Fields.sizes()) == nwalk);
+
+  int nrow(NMO * npol);
+  int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
+  assert(Refs.size() == nwalk);
+  int nrefs = std::get<1>(Refs.sizes());
+  assert(std::get<2>(Refs.sizes()) == nrow * ncol);
+
+  int cv0, cvN;
+  std::tie(cv0, cvN) = FairDivideBoundary(TG.getLocalTGRank(), globalnCV, TG.getNCoresPerTG());
+  int r0, rN;
+  std::tie(r0, rN) = FairDivideBoundary(TG.getLocalTGRank(), nrow * ncol, TG.getNCoresPerTG());
+
+  int nx = 1;
+  if (walker_type == COLLINEAR)
+    nx = 2;
+
+  assert(std::get<0>(detR.sizes()) == nwalk);
+  assert(std::get<1>(detR.sizes()) == nrefs * nx);
+  std::fill_n(detR.origin(), detR.num_elements(), ComplexType(1.0, 0.0));
+
+  // from now on, individual work on each walker/step
+  const int ntasks_per_core     = int(nx * nwalk) / TG.getNCoresPerTG();
+  const int ntasks_total_serial = ntasks_per_core * TG.getNCoresPerTG();
+  const int nextra              = int(nx * nwalk) - ntasks_total_serial;
+
+  // each processor does ntasks_percore_serial overlaps serially
+  const int tk0 = TG.getLocalTGRank() * ntasks_per_core;
+  const int tkN = (TG.getLocalTGRank() + 1) * ntasks_per_core;
+
+  // make new communicator if nextra changed from last setting
+  reset_nextra(nextra);
+
+  // to avoid having to modify the existing routines,
+  // I'm storing the walkers SlaterMatrix on SlaterMatrixAux
+  // and copying the back propagated references into SlaterMatrix
+  // 0. copy SlaterMatrix to SlaterMatrixAux
+  for (int i = 0; i < nwalk; i++)
+  {
+    copy_n((*wset[i].SlaterMatrix(Alpha)).origin() + r0, rN - r0, (*wset[i].SlaterMatrixAux(Alpha)).origin() + r0);
+    // optimize for the single reference case
+    if (nrefs == 1)
+      copy_n(Refs[i][0].origin() + r0, rN - r0, make_device_ptr((*wset[i].SlaterMatrix(Alpha)).origin()) + r0);
+  }
+  TG.TG_local().barrier();
+
+  for (int ni = nbpsteps - 1; ni >= 0; --ni)
+  {
+    // 1. Get X(nCV,nwalk) from wset
+    copy_n(Fields[ni][cv0].origin(), nwalk * (cvN - cv0), make_device_ptr(X[cv0].origin()));
+    TG.TG_local().barrier();
+
+    // 2. Calculate vHS(M*M,nwalk)/vHS(nwalk,M*M)
+    //  X has been scaled by sqrtdt to avoid needing it here
+#if defined(MIXED_PRECISION)
+    // is this clever or dirsty? seems to work well and saves memory!
+    SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.origin())), vhs_ext);
+    wfn.vHS(X, vsp);
+    TG.local_barrier();
+    if (TG.TG_local().root())
+      inplace_cast<SPComplexType, ComplexType>(vsp.origin(), vsp.num_elements());
+    TG.local_barrier();
+#else
+    wfn.vHS(X, vHS);
+#endif
+    //std::cout<<" BP vHS: " <<TG.Global().rank() <<" " <<ma::sum(vHS) <<"\n" <<std::endl;
+
+    for (int nr = 0; nr < nrefs; ++nr)
+    {
+      // 3. copy reference to SlaterMatrix
+      if (nrefs > 1)
+        for (int i = 0; i < nwalk; i++)
+          copy_n(Refs[i][nr].origin() + r0, rN - r0, make_device_ptr((*wset[i].SlaterMatrix(Alpha)).origin()) + r0);
+      TG.TG_local().barrier();
+
+      // 4. Propagate walkers
+      if (nbatched_propagation != 0)
+        apply_propagators_batched('H', wset, 0, vHS3D);
+      else
+        apply_propagators('H', wset, 0, tk0, tkN, ntasks_total_serial, vHS3D);
+      TG.local_barrier();
+
+      // always end (n==0) with an orthogonalization
+      if (ni == 0 || ni % nStabalize == 0)
+      {
+        // orthogonalize
+        if (nbatched_qr != 0)
+        {
+          if (walker_type != COLLINEAR)
+            Orthogonalize_batched(wset, detR(detR.extension(0), {nr, nr + 1}));
+          else
+            Orthogonalize_batched(wset, detR(detR.extension(0), {2 * nr, 2 * nr + 2}));
+        }
+        else
+        {
+          if (walker_type != COLLINEAR)
+            Orthogonalize_shared(wset, detR(detR.extension(0), {nr, nr + 1}));
+          else
+            Orthogonalize_shared(wset, detR(detR.extension(0), {2 * nr, 2 * nr + 2}));
+        }
+      }
+      TG.TG_local().barrier();
+
+      // 5. copy reference to back
+      if (nrefs > 1)
+        for (int i = 0; i < nwalk; i++)
+          copy_n(make_device_ptr((*wset[i].SlaterMatrix(Alpha)).origin()) + r0, rN - r0, Refs[i][nr].origin() + r0);
+      TG.TG_local().barrier();
+    }
+  }
+
+  // 6. restore the Slater Matrix
+  for (int i = 0; i < nwalk; i++)
+  {
+    if (nrefs == 1)
+      copy_n((*wset[i].SlaterMatrix(Alpha)).origin() + r0, rN - r0, Refs[i][0].origin() + r0);
+    copy_n((*wset[i].SlaterMatrixAux(Alpha)).origin() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).origin() + r0);
+  }
+  TG.TG_local().barrier();
+}
+
+
+template<class WSet>
+void AFQMCBasePropagator::apply_propagators(char TA,
+                                            WSet& wset,
+                                            int ni,
+                                            int tk0,
+                                            int tkN,
+                                            int ntasks_total_serial,
+                                            C3Tensor_ref& vHS3D)
+{
+  int nwalk        = wset.size();
+  auto walker_type = wset.getWalkerType();
+  bool noncol      = (walker_type == NONCOLLINEAR);
+
+  int spin(0);
+  if (spin_dependent_P1)
+  {
+    spin = 1;
+    if (walker_type != COLLINEAR)
+      APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
+  }
+
+  if (transposed_vHS_)
+  {
+    // vHS3D[nstep*nwalk][M][M]
+    if (walker_type == COLLINEAR)
+    {
+      // in this case, tk corresponds to 2x the walker number
+      for (int tk = tk0; tk < tkN; ++tk)
+      {
+        int nt = ni * nwalk + tk / 2;
+        if (tk % 2 == 0)
+          SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Alpha), P1[0], vHS3D[nt], order, TA);
+        else
+          SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Beta), P1[spin], vHS3D[nt], order, TA);
+      }
+      if (last_nextra > 0)
+      {
+        int tk = (ntasks_total_serial + last_task_index);
+        int nt = ni * nwalk + tk / 2;
+        if (tk % 2 == 0)
+          SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Alpha), P1[0], vHS3D[nt], local_group_comm, order, TA);
+        else
+          SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Beta), P1[spin], vHS3D[nt], local_group_comm, order, TA);
+      }
+    }
+    else
+    {
+      // in this case, tk corresponds to walker number
+      for (int tk = tk0; tk < tkN; ++tk)
+      {
+        int nt = ni * nwalk + tk;
+        SDetOp->Propagate(*wset[tk].SlaterMatrix(Alpha), P1[0], vHS3D[nt], order, TA, noncol);
+      }
+      if (last_nextra > 0)
+      {
+        int iw = ntasks_total_serial + last_task_index;
+        int nt = ni * nwalk + iw;
+        SDetOp->Propagate(*wset[iw].SlaterMatrix(Alpha), P1[0], vHS3D[nt], local_group_comm, order, TA, noncol);
+      }
+    }
+  }
+  else
+  {
+    if (std::get<0>(local_vHS.sizes()) != NMO || std::get<1>(local_vHS.sizes()) != NMO)
+      local_vHS = CMatrix({NMO, NMO});
+    // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
+    if (walker_type == COLLINEAR)
+    {
+      int oldw = -1;
+      // in this case, tk corresponds to 2x the walker number
+      for (int tk = tk0; tk < tkN; ++tk)
+      {
+        int nt = ni * nwalk + tk / 2;
+        if (oldw != tk / 2)
+        {
+          local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
+          oldw      = tk / 2;
+        }
+        if (tk % 2 == 0)
+          SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Alpha), P1[0], local_vHS, order, TA);
+        else
+          SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Beta), P1[spin], local_vHS, order, TA);
+      }
+      if (last_nextra > 0)
+      {
+        int tk    = (ntasks_total_serial + last_task_index);
+        int nt    = ni * nwalk + tk / 2;
+        local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
+        if (tk % 2 == 0)
+          SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Alpha), P1[0], local_vHS, local_group_comm, order, TA);
+        else
+          SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Beta), P1[spin], local_vHS, local_group_comm, order, TA);
+      }
+    }
+    else
+    {
+      // in this case, tk corresponds to walker number
+      for (int tk = tk0; tk < tkN; ++tk)
+      {
+        int nt    = ni * nwalk + tk;
+        local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
+        //std::cout<<" pp: " <<tk <<" " <<ma::sum(local_vHS) <<"\n" <<std::endl;
+        SDetOp->Propagate(*wset[tk].SlaterMatrix(Alpha), P1[0], local_vHS, order, TA, noncol);
+      }
+      if (last_nextra > 0)
+      {
+        int iw    = ntasks_total_serial + last_task_index;
+        int nt    = ni * nwalk + iw;
+        local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
+        SDetOp->Propagate(*wset[iw].SlaterMatrix(Alpha), P1[0], local_vHS, local_group_comm, order, TA, noncol);
+      }
+    }
+  }
+  TG.local_barrier();
+}
+
+template<class WSet>
+void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni, C3Tensor_ref& vHS3D)
+{
+  int nwalk        = wset.size();
+  auto walker_type = wset.getWalkerType();
+  bool noncol      = (walker_type == NONCOLLINEAR);
+  int nbatch       = std::min(nwalk, (nbatched_propagation < 0 ? nwalk : nbatched_propagation));
+
+  int spin(0);
+  if (spin_dependent_P1)
+  {
+    spin = 1;
+    if (walker_type != COLLINEAR)
+      APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
+  }
+
+  std::vector<CMatrix_ptr> Ai;
+  Ai.reserve(nbatch);
+  if (transposed_vHS_)
+  {
+    // vHS3D[nstep*nwalk][M][M]
+    // in this case, tk corresponds to 2x the walker number
+    int nt = ni * nwalk;
+    for (int iw = 0; iw < nwalk; iw += nbatch, nt += nbatch)
+    {
+      int nb = std::min(nbatch, nwalk - iw);
+      Ai.clear();
+      for (int ni = 0; ni < nb; ni++)
+        Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));
+      SDetOp->BatchedPropagate(Ai, P1[0], vHS3D.sliced(nt, nt + nb), order, TA, noncol);
+      if (walker_type == COLLINEAR)
+      {
+        Ai.clear();
+        for (int ni = 0; ni < nb; ni++)
+          Ai.emplace_back(wset[iw + ni].SlaterMatrix(Beta));
+        SDetOp->BatchedPropagate(Ai, P1[spin], vHS3D.sliced(nt, nt + nb), order, TA);
+      }
+    }
+  }
+  else
+  {
+    if (std::get<0>(local_vHS.sizes()) != nbatch || std::get<1>(local_vHS.sizes()) != NMO * NMO)
+      local_vHS = CMatrix({nbatch, NMO * NMO});
+    // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
+    int N2 = std::get<0>(vHS3D.sizes()) * std::get<1>(vHS3D.sizes());
+    CMatrix_ref vHS2D(vHS3D.origin(), {N2, std::get<2>(vHS3D.sizes())});
+    C3Tensor_ref local3D(local_vHS.origin(), {nbatch, NMO, NMO});
+    int nt = ni * nwalk;
+    for (int iw = 0; iw < nwalk; iw += nbatch, nt += nbatch)
+    {
+      int nb = std::min(nbatch, nwalk - iw);
+      ma::transpose(vHS2D(vHS2D.extension(0), {nt, nt + nb}), local_vHS.sliced(0, nb));
+      Ai.clear();
+      for (int ni = 0; ni < nb; ni++)
+        Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));
+      SDetOp->BatchedPropagate(Ai, P1[0], local3D.sliced(0, nb), order, TA, noncol);
+      if (walker_type == COLLINEAR)
+      {
+        Ai.clear();
+        for (int ni = 0; ni < nb; ni++)
+          Ai.emplace_back(wset[iw + ni].SlaterMatrix(Beta));
+        SDetOp->BatchedPropagate(Ai, P1[spin], local3D.sliced(0, nb), order, TA);
+      }
+    }
+  }
+}
+
+/*
+   * Orthogonalizes the Slater matrices of all walkers in the set.
+   */
+template<class WlkSet, class CMat>
+void AFQMCBasePropagator::Orthogonalize_shared(WlkSet& wset, CMat&& detR)
+{
+  auto walker_type = wset.getWalkerType();
+  double LogOverlapFactor(wset.getLogOverlapFactor());
+  if (walker_type != COLLINEAR)
+  {
+    int iw = 0;
+    for (typename WlkSet::iterator it = wset.begin(); it != wset.end(); ++it, ++iw)
+    {
+      if (iw % TG.getNCoresPerTG() == TG.getLocalTGRank())
+      {
+        detR[iw][0] *= SDetOp->Orthogonalize(*it->SlaterMatrix(Alpha), LogOverlapFactor);
+      }
+    }
+  }
+  else
+  {
+    int cnt = 0;
+    int iw  = 0;
+    for (typename WlkSet::iterator it = wset.begin(); it != wset.end(); ++it, ++iw)
+    {
+      if ((cnt++) % TG.getNCoresPerTG() == TG.getLocalTGRank())
+      {
+        detR[iw][0] *= SDetOp->Orthogonalize(*it->SlaterMatrix(Alpha), LogOverlapFactor);
+      }
+      if ((cnt++) % TG.getNCoresPerTG() == TG.getLocalTGRank())
+      {
+        detR[iw][1] *= SDetOp->Orthogonalize(*it->SlaterMatrix(Beta), LogOverlapFactor);
+      }
+    }
+  }
+  TG.local_barrier();
+}
+
+/*
+   * Orthogonalizes the Slater matrices of all walkers in the set.  
+   * Options:
+   *  - bool importanceSamplingt(default=true): use algorithm appropriate for importance sampling. 
+   *         This means that the determinant of the R matrix in the QR decomposition is ignored.
+   *         If false, add the determinant of R to the weight of the walker. 
+   */
+template<class WlkSet, class CMat>
+void AFQMCBasePropagator::Orthogonalize_batched(WlkSet& wset, CMat&& detR)
+{
+  auto walker_type = wset.getWalkerType();
+  if (TG.TG_local().size() > 1)
+    APP_ABORT(" Error: Batched routine called with TG.TG_local().size() > 1 \n");
+  using std::copy_n;
+  using std::fill_n;
+  const int nw = wset.size();
+  double LogOverlapFactor(wset.getLogOverlapFactor());
+  int nbatch = std::min(nw, (nbatched_qr < 0 ? nw : nbatched_qr));
+  if (local_vHS.num_elements() < nbatch)
+    local_vHS.reextent({nbatch, 1});
+  stdCVector detR_(iextensions<1u>{nbatch});
+  std::vector<CMatrix_ptr> Ai;
+  Ai.reserve(nbatch);
+  if (walker_type != COLLINEAR)
+  {
+    for (int iw = 0; iw < nw; iw += nbatch)
+    {
+      int nb = std::min(nbatch, nw - iw);
+      Ai.clear();
+      for (int ni = 0; ni < nb; ni++)
+        Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));
+      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.origin());
+      // GPU trickery,to make sure detR_ is in CPU, since detR is in CPU
+      copy_n(local_vHS.origin(), nb, detR_.origin());
+      for (int ni = 0; ni < nb; ni++)
+        detR[iw + ni][0] *= detR_[ni];
+    }
+  }
+  else
+  {
+    for (int iw = 0; iw < nw; iw += nbatch)
+    {
+      int nb = std::min(nbatch, nw - iw);
+      // Alpha
+      Ai.clear();
+      for (int ni = 0; ni < nb; ni++)
+        Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));
+      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.origin());
+      copy_n(local_vHS.origin(), nb, detR_.origin());
+      for (int ni = 0; ni < nb; ni++)
+        detR[iw + ni][0] *= detR_[ni];
+      // Beta
+      Ai.clear();
+      for (int ni = 0; ni < nb; ni++)
+        Ai.emplace_back(wset[iw + ni].SlaterMatrix(Beta));
+      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.origin());
+      copy_n(local_vHS.origin(), nb, detR_.origin());
+      for (int ni = 0; ni < nb; ni++)
+        detR[iw + ni][1] *= detR_[ni];
+    }
+  }
+  TG.local_barrier();
+}
+
+template<class MatA, class MatB, class MatC, class MatD>
+void AFQMCBasePropagator::assemble_X(size_t nsteps,
+                                     size_t nwalk,
+                                     RealType sqrtdt,
+                                     MatA&& X,
+                                     MatB&& vbias,
+                                     MatC&& MF,
+                                     MatD&& HWs,
+                                     bool addRAND)
+{
+  using XType = typename std::decay<MatA>::type::element;
+  using vType = typename std::decay<MatB>::type::element;
+  // remember to call vbi = apply_bound_vbias(*vb);
+  // X[m,ni,iw] = rand[m,ni,iw] + im * ( vbias[m,iw] - vMF[m]  )
+  // HW[ni,iw] = sum_m [ im * ( vMF[m] - vbias[m,iw] ) *
+  //                     ( rand[m,ni,iw] + halfim * ( vbias[m,iw] - vMF[m] ) ) ]
+  //           = sum_m [ im * ( vMF[m] - vbias[m,iw] ) *
+  //                     ( X[m,ni,iw] - halfim * ( vbias[m,iw] - vMF[m] ) ) ]
+  // MF[ni,iw] = sum_m ( im * X[m,ni,iw] * vMF[m] )
+
+  TG.local_barrier();
+  ComplexType im(0.0, 1.0);
+  int nCV = int(X.size());
+  // generate random numbers
+  if (addRAND)
+  {
+    int i0, iN;
+    std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(X.num_elements()), TG.TG_local().size());
+    sampleGaussianFields_n(make_device_ptr(X.origin()) + i0, iN - i0, rng);
+  }
+
+  // construct X
+  fill_n(make_device_ptr(HWs.origin()), HWs.num_elements(), ComplexType(0));
+  fill_n(make_device_ptr(MF.origin()), MF.num_elements(), ComplexType(0));
+
+// leaving compiler switch until I decide how to do this better
+// basically hide this decision somewhere based on the value of pointer!!!
+// TODO: Move this
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+  kernels::construct_X(nCV, nsteps, nwalk, free_projection, sqrtdt, vbias_bound, to_address(vMF.origin()),
+                       to_address(vbias.origin()), to_address(HWs.origin()), to_address(MF.origin()),
+                       to_address(X.origin()));
+#else
+  boost::multi::array_ref<XType, 3> X3D(to_address(X.origin()), {long(X.size()), long(nsteps), long(nwalk)});
+  int m0, mN;
+  std::tie(m0, mN) = FairDivideBoundary(TG.TG_local().rank(), nCV, TG.TG_local().size());
+  TG.local_barrier();
+  for (int m = m0; m < mN; ++m)
+  {
+    auto X_m = X3D[m];
+    auto vb_ = to_address(vbias[m].origin());
+    auto vmf_t = sqrtdt * apply_bound_vbias(vMF[m], 1.0);
+    auto vmf_ = sqrtdt * vMF[m];
+    // apply bounds to vbias
+    for (int iw = 0; iw < nwalk; iw++)
+      vb_[iw] = apply_bound_vbias(vb_[iw], sqrtdt);
+    for (int ni = 0; ni < nsteps; ni++)
+    {
+      auto X_ = X3D[m][ni].origin();
+      auto hws_ = to_address(HWs[ni].origin());
+      auto mf_ = to_address(MF[ni].origin());
+      for (int iw = 0; iw < nwalk; iw++)
+      {
+        // No force bias term when doing free projection.
+        ComplexType vdiff =
+            free_projection ? ComplexType(0.0, 0.0) : (im * (static_cast<ComplexType>(vb_[iw]) - vmf_t));
+        X_[iw] += static_cast<XType>(vdiff);
+        hws_[iw] -= vdiff * (static_cast<ComplexType>(X_[iw]) - 0.5 * vdiff);
+        mf_[iw] += im * static_cast<ComplexType>(X_[iw]) * vmf_;
+      }
+    }
+  }
+  TG.local_barrier();
+#endif
+}
+
+} // namespace afqmc
+
+} // namespace qmcplusplus

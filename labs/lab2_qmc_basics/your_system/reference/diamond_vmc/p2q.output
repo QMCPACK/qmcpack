@@ -1,0 +1,32 @@
+Tue Jul  8 13:57:14 UTC 2014
+
+     Program pw2qmcpack v.5.0   starts on  8Jul2014 at 13:57:19 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote.php
+
+     Parallel version (MPI), running on     1 processors
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1s, nr2s, nr3s values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = LDA ( 1 1 0 0 0)
+     EXX-fraction              =        0.00
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file C.BFD.upf: wavefunction(s)  0s 0p renormalized
+ 
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum        2893    2893    725               117377   117377   14771
+ 
+esh5 create pwscf_output/pwscf.pwscf.h5
+ Only 1 Kpoint. By pass everything 

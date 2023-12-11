@@ -1,0 +1,1956 @@
+  Input file(s): optm_vmc.xml 
+
+=====================================================
+                    QMCPACK 1.0.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Subversion branch 6312
+  Last modified     2014-05-19 15:22:38 +0000 (Mon, 19 May 2014)
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 32
+  MPI Nodes per group  = 32
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 16
+  Input XML = optm_vmc.xml
+
+  Project = H2O
+  date    = 2014-07-16 01:46:05 UTC
+  host    = Q02-I5-J04.vesta.itd
+  user    = mmorales
+
+  DO NOT READ DENSITY
+  Offset for the random number seeds based on time 349
+  Random number offset = 349  seeds = 2371-6691
+  ParticleSetPool::put
+  Creating e particleset
+  XMLParticleParser::putSpecial
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+e
+  ParticleSetPool::put
+  Creating ion0 particleset
+  XMLParticleParser::putSpecial
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+ion0
+ Adding WavefunctionFactory for psi0
+  WaveFunctionFactory::build
+  WaveFunctionFactory::addFermionTerm
+  SlaterDetBuilder::put(xmlNodePtr)
+  BasisSetFactory::createBasisSet
+Using MolecularBasisBuilder<NGOBuilder>
+
+  MolecularBasisBuilder::put(xmlNodePtr)
+<input node="basisset"  name="LCAOBSet"/>
+  Distance table for AA: source/target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = ion0 target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates 
+  ... ParticleSet::addTable Create Table #1 ion0_e
+  AtomicBasisBuilder::put(xmlNodePtr)
+<input node="atomicBasisSet"  name="Gaussian-G2"  angular="cartesian"  type="Gaussian"  elementType="O"  normalized="no"/>
+  AtomicBasisBuilder::createAOSet(xmlNodePtr)
+  AO BasisSet for O
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.125346
+              contraction=0.055741 nomralized contraction = 0.0296669
+    Gaussian exponent = 0.268022
+              contraction=0.304848 nomralized contraction = 0.286897
+    Gaussian exponent = 0.573098
+              contraction=0.453752 nomralized contraction = 0.755101
+    Gaussian exponent = 1.22543
+              contraction=0.295926 nomralized contraction = 0.870791
+    Gaussian exponent = 2.62028
+              contraction=0.019567 nomralized contraction = 0.101812
+    Gaussian exponent = 5.60282
+              contraction=-0.128627 nomralized contraction = -1.18345
+    Gaussian exponent = 11.9802
+              contraction=0.012024 nomralized contraction = 0.19562
+    Gaussian exponent = 25.6168
+              contraction=0.000407 nomralized contraction = 0.0117085
+    Gaussian exponent = 54.7752
+              contraction=-7.59999e-05 nomralized contraction = -0.00386604
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.68663
+              contraction=1 nomralized contraction = 3.73922
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.237997
+              contraction=1 nomralized contraction = 0.860882
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.083598
+              contraction=0.044958 nomralized contraction = 0.00589571
+    Gaussian exponent = 0.167017
+              contraction=0.150175 nomralized contraction = 0.046777
+    Gaussian exponent = 0.333673
+              contraction=0.255999 nomralized contraction = 0.189397
+    Gaussian exponent = 0.666627
+              contraction=0.281879 nomralized contraction = 0.495337
+    Gaussian exponent = 1.33182
+              contraction=0.242835 nomralized contraction = 1.01356
+    Gaussian exponent = 2.66076
+              contraction=0.161134 nomralized contraction = 1.59746
+    Gaussian exponent = 5.31578
+              contraction=0.082308 nomralized contraction = 1.93814
+    Gaussian exponent = 10.6201
+              contraction=0.039899 nomralized contraction = 2.23155
+    Gaussian exponent = 21.2173
+              contraction=0.004679 nomralized contraction = 0.621585
+	Setting GridManager of 3 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 4 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.184696
+              contraction=1 nomralized contraction = 0.353229
+	Setting GridManager of 4 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 5 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.600621
+              contraction=1 nomralized contraction = 1.54254
+	Setting GridManager of 5 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 6 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.66934
+              contraction=1 nomralized contraction = 1.29244
+	Setting GridManager of 6 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 7 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 2.40428
+              contraction=1 nomralized contraction = 12.113
+	Setting GridManager of 7 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 8 3 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.4231
+              contraction=1 nomralized contraction = 4.36308
+	Setting GridManager of 8 radial orbital to false
+Adding 10 cartesian gaussian orbitals for l= 3
+   Maximu Angular Momentum   = 3
+   Number of Radial functors = 9
+   Basis size                = 34
+
+  AtomicBasisBuilder::put(xmlNodePtr)
+<input node="atomicBasisSet"  name="Gaussian-G2"  angular="cartesian"  type="Gaussian"  elementType="H"  normalized="no"/>
+  AtomicBasisBuilder::createAOSet(xmlNodePtr)
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 8.70089
+              contraction=0.0627182 nomralized contraction = 0.802752
+    Gaussian exponent = 1.95552
+              contraction=0.261959 nomralized contraction = 1.09445
+    Gaussian exponent = 0.559044
+              contraction=0.75701 nomralized contraction = 1.23652
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.164925
+              contraction=1 nomralized contraction = 0.653854
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.0320625
+              contraction=1 nomralized contraction = 0.191431
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.790074
+              contraction=1 nomralized contraction = 2.17305
+	Setting GridManager of 3 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 4 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.152351
+              contraction=1 nomralized contraction = 0.277679
+	Setting GridManager of 4 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 5 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.883818
+              contraction=1 nomralized contraction = 2.10215
+	Setting GridManager of 5 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   Maximu Angular Momentum   = 2
+   Number of Radial functors = 6
+   Basis size                = 15
+
+Built BasisSetBuilder "LCAOBSet" of type molecularorbital
+  BasisSetFactory::createBasisSet
+Reuse BasisSetBuilder "LCAOBSet" type MolecularOrbital
+ Building SPOset  with  basis set.
+  MolecularBasisBuilder::createSPO(xmlNodePtr)
+Creating LCOrbitalSet with the input coefficients
+  BasisSetFactory::createBasisSet
+Reuse BasisSetBuilder "LCAOBSet" type MolecularOrbital
+ Building SPOset  with  basis set.
+  MolecularBasisBuilder::createSPO(xmlNodePtr)
+Creating LCOrbitalSet with the input coefficients
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  Creating a determinant updet group=0 sposet=updet
+  Reusing a SPO set updet
+
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  Creating a determinant downdet group=1 sposet=downdet
+  Reusing a SPO set downdet
+
+  FermionWF=SlaterDet
+  JastrowBuilder::addTwoBody(xmlNodePtr)
+  BsplineJastrowBuilder::put(xmlNodePtr)
+  BsplineJastrowBuilder adds a functor with cusp = -0.25
+  BsplineFunctor::put(xmlNodePtr)
+ size = 10 parameters 
+ cusp = -0.25
+ rcut = 10
+Parameter     Name      Value
+uu_0 0 1 1  ON 0
+uu_1 0 1 1  ON 1
+uu_2 0 1 1  ON 2
+uu_3 0 1 1  ON 3
+uu_4 0 1 1  ON 4
+uu_5 0 1 1  ON 5
+uu_6 0 1 1  ON 6
+uu_7 0 1 1  ON 7
+uu_8 0 1 1  ON 8
+uu_9 0 1 1  ON 9
+  BsplineJastrowBuilder adds a functor with cusp = -0.5
+  BsplineFunctor::put(xmlNodePtr)
+ size = 10 parameters 
+ cusp = -0.5
+ rcut = 10
+Parameter     Name      Value
+ud_0 0 1 1  ON 0
+ud_1 0 1 1  ON 1
+ud_2 0 1 1  ON 2
+ud_3 0 1 1  ON 3
+ud_4 0 1 1  ON 4
+ud_5 0 1 1  ON 5
+ud_6 0 1 1  ON 6
+ud_7 0 1 1  ON 7
+ud_8 0 1 1  ON 8
+ud_9 0 1 1  ON 9
+  JastrowBuilder::addOneBody(xmlNodePtr)
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  BsplineJastrowBuilder::put(xmlNodePtr)
+  BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr)
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  BsplineFunctor::put(xmlNodePtr)
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eO_0 0 1 1  ON 0
+eO_1 0 1 1  ON 1
+eO_2 0 1 1  ON 2
+eO_3 0 1 1  ON 3
+eO_4 0 1 1  ON 4
+eO_5 0 1 1  ON 5
+eO_6 0 1 1  ON 6
+eO_7 0 1 1  ON 7
+eO_8 0 1 1  ON 8
+eO_9 0 1 1  ON 9
+  BsplineFunctor::put(xmlNodePtr)
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eH_0 0 1 1  ON 0
+eH_1 0 1 1  ON 1
+eH_2 0 1 1  ON 2
+eH_3 0 1 1  ON 3
+eH_4 0 1 1  ON 4
+eH_5 0 1 1  ON 5
+eH_6 0 1 1  ON 6
+eH_7 0 1 1  ON 7
+eH_8 0 1 1  ON 8
+eH_9 0 1 1  ON 9
+  HamiltonianPool::put
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+
+  ECPotential builder for pseudopotential 
+
+  Adding pseudopotential for O
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+   Number of angular momentum channels 2
+   Maximum angular momentum channel 1
+   Creating a Linear Grid Rmax=1.31
+  Using global grid with delta = 0.001
+   Making L=1 a local potential with a radial cutoff of 9.998
+  NonLocalECPComponent::resize_warrays 
+    Non-local pseudopotential parameters
+    Maximum angular mementum = 0
+    Number of non-local channels = 1
+       l(0)=0
+    Cutoff radius = 1.31
+    Spherical grids and weights: 
+                        1                 0                 0       0.08333333333
+                       -1   1.224646799e-16                 0       0.08333333333
+             0.4472135955       0.894427191                 0       0.08333333333
+            -0.4472135955      0.7236067977      0.5257311121       0.08333333333
+             0.4472135955      0.2763932023      0.8506508084       0.08333333333
+            -0.4472135955     -0.2763932023      0.8506508084       0.08333333333
+             0.4472135955     -0.7236067977      0.5257311121       0.08333333333
+            -0.4472135955      -0.894427191   1.095357397e-16       0.08333333333
+             0.4472135955     -0.7236067977     -0.5257311121       0.08333333333
+            -0.4472135955     -0.2763932023     -0.8506508084       0.08333333333
+             0.4472135955      0.2763932023     -0.8506508084       0.08333333333
+            -0.4472135955      0.7236067977     -0.5257311121       0.08333333333
+    Maximum cutoff radius 1.31
+
+  Adding pseudopotential for H
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+    Only one vps is found. Set the local component=0
+   Number of angular momentum channels 1
+   Maximum angular momentum channel 0
+   Creating a Linear Grid Rmax=1.17
+  Using global grid with delta = 0.001
+   Making L=0 a local potential with a radial cutoff of 9.998
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  QMCHamiltonian::addOperator LocalECP to H, physical Hamiltonian 
+  ForceBase::ForceBase
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+
+  Using NonLocalECP potential 
+    Maximum grid on a sphere for NonLocalECPotential: 12
+  QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
+  Distance table for AA: source/target = ion0
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 ion0_ion0
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+
+  QMCHamiltonian::add2WalkerProperty added
+    5 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+<init source="ion0" target="e">
+  ... ParticleSet::addTable Reuse Table #0 ion0_ion0
+</init>
+ParticleSetPool::randomize 
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 4 8 
+
+    8
+
+    u -8.6837128900e-02  6.9683633715e-01  1.7555753220e-01
+    u  3.2618930373e-01  5.4848979580e-01  3.4161600791e-01
+    u  3.8041099172e-01  2.3147396536e-01 -5.7065689830e-01
+    u  2.5558848699e-01 -7.5567316625e-01  1.0550821457e+00
+    d  6.5012157813e-01 -2.8927032478e-01 -1.3268996827e-01
+    d  3.6024692558e-01  6.2581535055e-01 -5.0192772996e-02
+    d  1.8080633302e-01  5.6628321136e-01 -4.1300654875e-01
+    d  3.5166068719e-04  1.9410505964e+00  5.9443949697e-01
+
+  ParticleSet ion0 : 0 1 3 
+
+    3
+
+    O  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H  0.0000000000e+00 -1.4308249289e+00  1.1078707576e+00
+    H  0.0000000000e+00  1.4308249289e+00  1.1078707576e+00
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  LocalECP        LocalECPotential: ion0
+  NonLocalECP     NonLocalECPotential: ion0
+  IonIon          CoulombAA source/target ion0
+
+Loop execution max-interations = 8
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root H2O.s000 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+  Adding 16 walkers to 0 existing sets
+  Total number of walkers: 5.1200000000e+02
+  Total weight: 5.1200000000e+02
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s000 append = no 
+=========================================================
+  Using the current 16 walkers.
+  Total number of walkers: 5.1200000000e+02
+  Total weight: 5.1200000000e+02
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 5.0000000000e-01
+  blocks         = 250
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 1.2800000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">250</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.2800000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+<optimization-report>
+<vmc stage="main" blocks="1">
+  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =128000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Anonymous Buffer size per walker 623
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.5
+    reference energy   = -16.9515
+    reference variance = 1.22074
+====================================================
+  Execution time = 5.5086538888e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot H2O.s000
+  QMCCostFunctionOMP is created with 16
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 16
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 5.1200000000e-02 MB
+Deriv,HDerivRecord:      3.8400000000e+00 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      1.0240000000e+00
+Orbitals + dervs:        8.0000000000e-04      3.2000000000e+00
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.7006336211e+01
+  VMC Evar = 1.5549917052e+00
+  Total weights = 1.2800000000e+05
+  Execution time = 8.8065192500e-01
+  </log>
+</opt>
+<opt stage="main" walkers="128000">
+  <log>
+Iteration: 1/1
+od_largest 1.2417984541e+02
+  stabilityBase -1.6000000000e+01
+  stabilizerScale 2.0000000000e+00
+  Using XS:-1.6000000000e+01 0 0
+  Good Step. Largest LM parameter change:1.2060606236e+00
+ OldCost: -1.6078269816e+01 NewCost: -1.6350124251e+01 Delta Cost:-2.7185443535e-01
+      Current ene:     -1.7228574308e+01
+      Current var:     3.4042683896e-01
+      Current ene_urw:     -1.7201707033e+01
+      Current var_urw: 4.3479432424e-01
+Setting new Parameters
+ERROR   Execution time = 1.1140041764e+01
+  </log>
+  <optVariables href="H2O.s000.opt.xml">
+uu_0 5.4857278433e-01 1 1  ON 0
+uu_1 3.7740049671e-01 1 1  ON 1
+uu_2 2.8213086312e-01 1 1  ON 2
+uu_3 2.2899705298e-01 1 1  ON 3
+uu_4 2.0306516057e-01 1 1  ON 4
+uu_5 1.9774437506e-01 1 1  ON 5
+uu_6 2.0428171866e-01 1 1  ON 6
+uu_7 2.0995055783e-01 1 1  ON 7
+uu_8 2.1693916366e-01 1 1  ON 8
+uu_9 2.0707048962e-01 1 1  ON 9
+ud_0 3.7127346126e-01 1 1  ON 10
+ud_1 9.2895785203e-02 1 1  ON 11
+ud_2 -4.5331088994e-02 1 1  ON 12
+ud_3 -1.1561163782e-01 1 1  ON 13
+ud_4 -1.5671294932e-01 1 1  ON 14
+ud_5 -1.7172846024e-01 1 1  ON 15
+ud_6 -1.7200669984e-01 1 1  ON 16
+ud_7 -1.4555319890e-01 1 1  ON 17
+ud_8 -1.0897458753e-01 1 1  ON 18
+ud_9 -8.0099798047e-02 1 1  ON 19
+eO_0 -2.0935993644e-01 1 1  ON 20
+eO_1 1.6958526003e-01 1 1  ON 21
+eO_2 6.2948315833e-01 1 1  ON 22
+eO_3 9.0638337365e-01 1 1  ON 23
+eO_4 1.0782148150e+00 1 1  ON 24
+eO_5 1.2060606236e+00 1 1  ON 25
+eO_6 1.1741678013e+00 1 1  ON 26
+eO_7 1.1304713453e+00 1 1  ON 27
+eO_8 8.4414687295e-01 1 1  ON 28
+eO_9 7.4836134078e-01 1 1  ON 29
+eH_0 7.5707494020e-03 1 1  ON 30
+eH_1 5.8626059342e-02 1 1  ON 31
+eH_2 9.2093371732e-02 1 1  ON 32
+eH_3 1.3275337235e-01 1 1  ON 33
+eH_4 1.5533022167e-01 1 1  ON 34
+eH_5 1.5384085156e-01 1 1  ON 35
+eH_6 1.2946071501e-01 1 1  ON 36
+eH_7 8.4596485469e-02 1 1  ON 37
+eH_8 4.0595032175e-02 1 1  ON 38
+eH_9 1.7412787955e-01 1 1  ON 39
+  </optVariables>
+   Restore the number of walkers to 16, removing 234 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 1.1177118525e+01 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root H2O.s001 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=1  my_counter=1
+  time step      = 5.0000000000e-01
+  blocks         = 250
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 1.2800000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">250</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.2800000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="250">
+  Cannot make clones again. Use existing 16 clones
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Total Sample Size   =128000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 1
+    time step          = 0.5
+    reference energy   = -17.1599
+    reference variance = 0.581265
+====================================================
+  Execution time = 5.3025190625e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot H2O.s001
+  QMCCostFunctionOMP is created with 16
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 16
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 5.1200000000e-02 MB
+Deriv,HDerivRecord:      3.8400000000e+00 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      1.0240000000e+00
+Orbitals + dervs:        8.0000000000e-04      3.2000000000e+00
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.7223665028e+01
+  VMC Evar = 3.4828226922e-01
+  Total weights = 1.2800000000e+05
+  Execution time = 8.8168776375e-01
+  </log>
+</opt>
+<opt stage="main" walkers="128000">
+  <log>
+Iteration: 1/1
+od_largest 8.4138417864e+00
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:4.5236966336e-01
+ OldCost: -1.6345067663e+01 NewCost: -1.6345612916e+01 Delta Cost:-5.4525293853e-04
+      Current ene:     -1.7224706995e+01
+      Current var:     3.5717457157e-01
+      Current ene_urw:     -1.7223992360e+01
+      Current var_urw: 3.6218131715e-01
+Setting new Parameters
+ERROR   Execution time = 1.0947475888e+01
+  </log>
+  <optVariables href="H2O.s001.opt.xml">
+uu_0 4.2250330833e-01 1 1  ON 0
+uu_1 2.4600045565e-01 1 1  ON 1
+uu_2 1.4131929530e-01 1 1  ON 2
+uu_3 8.1973051956e-02 1 1  ON 3
+uu_4 5.1292341768e-02 1 1  ON 4
+uu_5 4.4363659571e-02 1 1  ON 5
+uu_6 4.9514521967e-02 1 1  ON 6
+uu_7 6.3880345546e-02 1 1  ON 7
+uu_8 8.8832213257e-02 1 1  ON 8
+uu_9 1.3237387662e-01 1 1  ON 9
+ud_0 2.8275140311e-01 1 1  ON 10
+ud_1 -8.9401638521e-04 1 1  ON 11
+ud_2 -1.4403651426e-01 1 1  ON 12
+ud_3 -2.2034384729e-01 1 1  ON 13
+ud_4 -2.6537958930e-01 1 1  ON 14
+ud_5 -2.8441089206e-01 1 1  ON 15
+ud_6 -2.8463171310e-01 1 1  ON 16
+ud_7 -2.6244246021e-01 1 1  ON 17
+ud_8 -2.3510111970e-01 1 1  ON 18
+ud_9 -1.7456907407e-01 1 1  ON 19
+eO_0 1.1985147234e-01 1 1  ON 20
+eO_1 5.1065391100e-01 1 1  ON 21
+eO_2 9.9785942761e-01 1 1  ON 22
+eO_3 1.2938687700e+00 1 1  ON 23
+eO_4 1.4904452268e+00 1 1  ON 24
+eO_5 1.6233936586e+00 1 1  ON 25
+eO_6 1.6265374647e+00 1 1  ON 26
+eO_7 1.4412073489e+00 1 1  ON 27
+eO_8 9.6530283374e-01 1 1  ON 28
+eO_9 6.7872572354e-01 1 1  ON 29
+eH_0 -7.2213645626e-02 1 1  ON 30
+eH_1 -1.7998092707e-02 1 1  ON 31
+eH_2 1.9006668972e-02 1 1  ON 32
+eH_3 6.2487533126e-02 1 1  ON 33
+eH_4 8.8427804017e-02 1 1  ON 34
+eH_5 8.9619619163e-02 1 1  ON 35
+eH_6 5.5779224674e-02 1 1  ON 36
+eH_7 8.8975324802e-04 1 1  ON 37
+eH_8 -4.5748484184e-02 1 1  ON 38
+eH_9 -8.5570985803e-02 1 1  ON 39
+  </optVariables>
+   Restore the number of walkers to 16, removing 234 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 1.0981351698e+01 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root H2O.s002 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s002 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=2  my_counter=2
+  time step      = 5.0000000000e-01
+  blocks         = 250
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 1.2800000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">250</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.2800000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="250">
+  Cannot make clones again. Use existing 16 clones
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Total Sample Size   =128000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 2
+    time step          = 0.5
+    reference energy   = -17.261
+    reference variance = 0.615063
+====================================================
+  Execution time = 5.2774873575e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot H2O.s002
+  QMCCostFunctionOMP is created with 16
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 16
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 5.1200000000e-02 MB
+Deriv,HDerivRecord:      3.8400000000e+00 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      1.0240000000e+00
+Orbitals + dervs:        8.0000000000e-04      3.2000000000e+00
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.7229326155e+01
+  VMC Evar = 3.6305891554e-01
+  Total weights = 1.2800000000e+05
+  Execution time = 8.8155937000e-01
+  </log>
+</opt>
+<opt stage="main" walkers="128000">
+  <log>
+Iteration: 1/1
+od_largest 8.8415027281e+00
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:1.3371788755e-01
+ OldCost: -1.6349706901e+01 NewCost: -1.6349719578e+01 Delta Cost:-1.2676808712e-05
+      Current ene:     -1.7229415403e+01
+      Current var:     3.6450109078e-01
+      Current ene_urw:     -1.7229308434e+01
+      Current var_urw: 3.6506768884e-01
+Setting new Parameters
+ERROR   Execution time = 1.0907567731e+01
+  </log>
+  <optVariables href="H2O.s002.opt.xml">
+uu_0 3.6521917484e-01 1 1  ON 0
+uu_1 1.8773570195e-01 1 1  ON 1
+uu_2 8.1970223806e-02 1 1  ON 2
+uu_3 2.1760224138e-02 1 1  ON 3
+uu_4 -9.6895715659e-03 1 1  ON 4
+uu_5 -1.6876532753e-02 1 1  ON 5
+uu_6 -1.1442476952e-02 1 1  ON 6
+uu_7 5.1190316440e-03 1 1  ON 7
+uu_8 3.2951675218e-02 1 1  ON 8
+uu_9 9.2104934843e-02 1 1  ON 9
+ud_0 2.8938927306e-01 1 1  ON 10
+ud_1 5.1117240218e-03 1 1  ON 11
+ud_2 -1.3843210143e-01 1 1  ON 12
+ud_3 -2.1578182349e-01 1 1  ON 13
+ud_4 -2.6132216933e-01 1 1  ON 14
+ud_5 -2.8041912416e-01 1 1  ON 15
+ud_6 -2.8046891244e-01 1 1  ON 16
+ud_7 -2.5781095873e-01 1 1  ON 17
+ud_8 -2.2676062231e-01 1 1  ON 18
+ud_9 -1.5723715012e-01 1 1  ON 19
+eO_0 6.5029901897e-03 1 1  ON 20
+eO_1 3.9894358085e-01 1 1  ON 21
+eO_2 8.8961892768e-01 1 1  ON 22
+eO_3 1.1882655771e+00 1 1  ON 23
+eO_4 1.3848941855e+00 1 1  ON 24
+eO_5 1.5103221898e+00 1 1  ON 25
+eO_6 1.5074505687e+00 1 1  ON 26
+eO_7 1.3074894613e+00 1 1  ON 27
+eO_8 8.4153582148e-01 1 1  ON 28
+eO_9 7.2084194966e-01 1 1  ON 29
+eH_0 -1.7184789268e-01 1 1  ON 30
+eH_1 -1.1854559101e-01 1 1  ON 31
+eH_2 -8.0346986323e-02 1 1  ON 32
+eH_3 -3.6387638508e-02 1 1  ON 33
+eH_4 -9.6255660544e-03 1 1  ON 34
+eH_5 -6.5334298599e-03 1 1  ON 35
+eH_6 -3.7218188633e-02 1 1  ON 36
+eH_7 -8.9937972990e-02 1 1  ON 37
+eH_8 -1.1952265369e-01 1 1  ON 38
+eH_9 -1.3723529365e-01 1 1  ON 39
+  </optVariables>
+   Restore the number of walkers to 16, removing 234 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 1.0941709888e+01 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root H2O.s003 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s003 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=3  my_counter=3
+  time step      = 5.0000000000e-01
+  blocks         = 250
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 1.2800000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">250</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.2800000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="250">
+  Cannot make clones again. Use existing 16 clones
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Total Sample Size   =128000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 3
+    time step          = 0.5
+    reference energy   = -17.1826
+    reference variance = 0.557981
+====================================================
+  Execution time = 5.2736984637e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot H2O.s003
+  QMCCostFunctionOMP is created with 16
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 16
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 5.1200000000e-02 MB
+Deriv,HDerivRecord:      3.8400000000e+00 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      1.0240000000e+00
+Orbitals + dervs:        8.0000000000e-04      3.2000000000e+00
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.7229098987e+01
+  VMC Evar = 3.5171535785e-01
+  Total weights = 1.2800000000e+05
+  Execution time = 8.7898651500e-01
+  </log>
+</opt>
+<opt stage="main" walkers="128000">
+  <log>
+Iteration: 1/1
+od_largest 2.8022578870e+01
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 2.6100813906e+02
+ERROR CostFunction-> Number of Effective Walkers is too small 1.9565330177e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0651460779e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0065845827e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0007511596e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000912881e+00
+  Failed Step. Largest LM parameter change:1.2984654216e+06
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000024755e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00
+  Failed Step. Largest LM parameter change:1.0211994608e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 7.5830879651e+03
+ERROR CostFunction-> Number of Effective Walkers is too small 7.8318055832e+01
+ERROR CostFunction-> Number of Effective Walkers is too small 2.8727775110e+00
+  Failed Step. Largest LM parameter change:1.1105474254e+01
+ERROR   Using XS:0.0000000000e+00 3 0
+  Good Step. Largest LM parameter change:2.3325420052e+00
+ OldCost: -1.6350058270e+01 NewCost: -1.6350113809e+01 Delta Cost:-5.5538466537e-05
+      Current ene:     -1.7229397738e+01
+      Current var:     3.5628085290e-01
+      Current ene_urw:     -1.7229274440e+01
+      Current var_urw: 3.5817934037e-01
+Setting new Parameters
+ERROR   Execution time = 1.8864277740e+01
+  </log>
+  <optVariables href="H2O.s003.opt.xml">
+uu_0 2.3295370003e-01 1 1  ON 0
+uu_1 5.2140769261e-02 1 1  ON 1
+uu_2 -5.7154955109e-02 1 1  ON 2
+uu_3 -1.1983242553e-01 1 1  ON 3
+uu_4 -1.5459384012e-01 1 1  ON 4
+uu_5 -1.6213486839e-01 1 1  ON 5
+uu_6 -1.5270329249e-01 1 1  ON 6
+uu_7 -1.2944413037e-01 1 1  ON 7
+uu_8 -1.0969552584e-01 1 1  ON 8
+uu_9 -6.1908745347e-02 1 1  ON 9
+ud_0 5.4412504057e-01 1 1  ON 10
+ud_1 2.5904488986e-01 1 1  ON 11
+ud_2 1.1288750897e-01 1 1  ON 12
+ud_3 3.2588907789e-02 1 1  ON 13
+ud_4 -1.3986850146e-02 1 1  ON 14
+ud_5 -3.4280141830e-02 1 1  ON 15
+ud_6 -3.4235864315e-02 1 1  ON 16
+ud_7 -1.0839521587e-02 1 1  ON 17
+ud_8 2.2711544399e-02 1 1  ON 18
+ud_9 9.7773931525e-02 1 1  ON 19
+eO_0 1.8397970164e+00 1 1  ON 20
+eO_1 2.2400555874e+00 1 1  ON 21
+eO_2 2.7409041745e+00 1 1  ON 22
+eO_3 3.0506542517e+00 1 1  ON 23
+eO_4 3.2533816191e+00 1 1  ON 24
+eO_5 3.3830977692e+00 1 1  ON 25
+eO_6 3.3775287085e+00 1 1  ON 26
+eO_7 3.0901551448e+00 1 1  ON 27
+eO_8 2.6036815537e+00 1 1  ON 28
+eO_9 3.0533839549e+00 1 1  ON 29
+eH_0 -3.8596571024e-01 1 1  ON 30
+eH_1 -3.3176267534e-01 1 1  ON 31
+eH_2 -2.9145509360e-01 1 1  ON 32
+eH_3 -2.4665088760e-01 1 1  ON 33
+eH_4 -2.1847898357e-01 1 1  ON 34
+eH_5 -2.1435531900e-01 1 1  ON 35
+eH_6 -2.4699541172e-01 1 1  ON 36
+eH_7 -3.0931372780e-01 1 1  ON 37
+eH_8 -2.6922112857e-01 1 1  ON 38
+eH_9 -1.4978687501e-01 1 1  ON 39
+  </optVariables>
+   Restore the number of walkers to 16, removing 234 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 1.8897861559e+01 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root H2O.s004 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s004 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=4  my_counter=4
+  time step      = 5.0000000000e-01
+  blocks         = 250
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 1.2800000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">250</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.2800000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="250">
+  Cannot make clones again. Use existing 16 clones
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Total Sample Size   =128000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 4
+    time step          = 0.5
+    reference energy   = -17.0319
+    reference variance = 4.11989
+====================================================
+  Execution time = 5.2832762163e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot H2O.s004
+  QMCCostFunctionOMP is created with 16
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 16
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 5.1200000000e-02 MB
+Deriv,HDerivRecord:      3.8400000000e+00 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      1.0240000000e+00
+Orbitals + dervs:        8.0000000000e-04      3.2000000000e+00
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.7226052784e+01
+  VMC Evar = 4.1651230149e-01
+  Total weights = 1.2800000000e+05
+  Execution time = 8.8110442875e-01
+  </log>
+</opt>
+<opt stage="main" walkers="128000">
+  <log>
+Iteration: 1/1
+od_largest 1.0023944696e+01
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:1.1542454983e+00
+ OldCost: -1.6343924529e+01 NewCost: -1.6344067269e+01 Delta Cost:-1.4273952809e-04
+      Current ene:     -1.7226335289e+01
+      Current var:     4.1902510915e-01
+      Current ene_urw:     -1.7226229138e+01
+      Current var_urw: 4.2005973183e-01
+Setting new Parameters
+ERROR   Execution time = 1.0968023334e+01
+  </log>
+  <optVariables href="H2O.s004.opt.xml">
+uu_0 2.3818118606e-01 1 1  ON 0
+uu_1 5.8979330905e-02 1 1  ON 1
+uu_2 -5.2429991229e-02 1 1  ON 2
+uu_3 -1.1563226267e-01 1 1  ON 3
+uu_4 -1.5038379306e-01 1 1  ON 4
+uu_5 -1.5973893528e-01 1 1  ON 5
+uu_6 -1.4725177766e-01 1 1  ON 6
+uu_7 -1.2310436418e-01 1 1  ON 7
+uu_8 -9.5512160602e-02 1 1  ON 8
+uu_9 -7.1790199196e-02 1 1  ON 9
+ud_0 4.3974488257e-01 1 1  ON 10
+ud_1 1.5270399683e-01 1 1  ON 11
+ud_2 6.3231772814e-03 1 1  ON 12
+ud_3 -7.4328776568e-02 1 1  ON 13
+ud_4 -1.2145983171e-01 1 1  ON 14
+ud_5 -1.4110052770e-01 1 1  ON 15
+ud_6 -1.4183757542e-01 1 1  ON 16
+ud_7 -1.1946965895e-01 1 1  ON 17
+ud_8 -9.0168464964e-02 1 1  ON 18
+ud_9 3.9350812894e-03 1 1  ON 19
+eO_0 2.5434378186e+00 1 1  ON 20
+eO_1 2.9432825253e+00 1 1  ON 21
+eO_2 3.4473755844e+00 1 1  ON 22
+eO_3 3.7559092282e+00 1 1  ON 23
+eO_4 3.9598067657e+00 1 1  ON 24
+eO_5 4.0730315690e+00 1 1  ON 25
+eO_6 4.0127135967e+00 1 1  ON 26
+eO_7 3.7081261709e+00 1 1  ON 27
+eO_8 3.0749559308e+00 1 1  ON 28
+eO_9 1.8991384566e+00 1 1  ON 29
+eH_0 -8.1259453294e-01 1 1  ON 30
+eH_1 -7.5980965819e-01 1 1  ON 31
+eH_2 -7.1950268256e-01 1 1  ON 32
+eH_3 -6.7328845358e-01 1 1  ON 33
+eH_4 -6.4549773182e-01 1 1  ON 34
+eH_5 -6.3472106511e-01 1 1  ON 35
+eH_6 -6.6372745070e-01 1 1  ON 36
+eH_7 -6.8734404514e-01 1 1  ON 37
+eH_8 -6.4624396728e-01 1 1  ON 38
+eH_9 -5.3582832432e-01 1 1  ON 39
+  </optVariables>
+   Restore the number of walkers to 16, removing 234 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 1.1005612921e+01 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root H2O.s005 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s005 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=5  my_counter=5
+  time step      = 5.0000000000e-01
+  blocks         = 250
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 1.2800000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">250</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.2800000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="250">
+  Cannot make clones again. Use existing 16 clones
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Total Sample Size   =128000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 5
+    time step          = 0.5
+    reference energy   = -17.2711
+    reference variance = 0.515953
+====================================================
+  Execution time = 5.3066559650e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot H2O.s005
+  QMCCostFunctionOMP is created with 16
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 16
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 5.1200000000e-02 MB
+Deriv,HDerivRecord:      3.8400000000e+00 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      1.0240000000e+00
+Orbitals + dervs:        8.0000000000e-04      3.2000000000e+00
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.7225757692e+01
+  VMC Evar = 3.5882768792e-01
+  Total weights = 1.2800000000e+05
+  Execution time = 8.7094122125e-01
+  </log>
+</opt>
+<opt stage="main" walkers="128000">
+  <log>
+Iteration: 1/1
+od_largest 1.0179684384e+01
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:1.9074775900e+00
+ OldCost: -1.6346528423e+01 NewCost: -1.6347644495e+01 Delta Cost:-1.1160724563e-03
+      Current ene:     -1.7226870131e+01
+      Current var:     3.5764258246e-01
+      Current ene_urw:     -1.7225881438e+01
+      Current var_urw: 3.5863071209e-01
+Setting new Parameters
+ERROR   Execution time = 1.0963410964e+01
+  </log>
+  <optVariables href="H2O.s005.opt.xml">
+uu_0 2.9916902427e-01 1 1  ON 0
+uu_1 1.1818741993e-01 1 1  ON 1
+uu_2 8.1905341337e-03 1 1  ON 2
+uu_3 -5.5462391713e-02 1 1  ON 3
+uu_4 -8.9749927947e-02 1 1  ON 4
+uu_5 -9.8212267705e-02 1 1  ON 5
+uu_6 -9.3823093783e-02 1 1  ON 6
+uu_7 -7.3481550245e-02 1 1  ON 7
+uu_8 -3.2412179192e-02 1 1  ON 8
+uu_9 -6.5970439972e-02 1 1  ON 9
+ud_0 4.2555392153e-01 1 1  ON 10
+ud_1 1.3806037439e-01 1 1  ON 11
+ud_2 -7.7397307867e-03 1 1  ON 12
+ud_3 -8.9106083321e-02 1 1  ON 13
+ud_4 -1.3522545668e-01 1 1  ON 14
+ud_5 -1.5555174417e-01 1 1  ON 15
+ud_6 -1.5543746578e-01 1 1  ON 16
+ud_7 -1.3720989215e-01 1 1  ON 17
+ud_8 -8.0310525393e-02 1 1  ON 18
+ud_9 -5.8910090724e-02 1 1  ON 19
+eO_0 6.3972906229e-01 1 1  ON 20
+eO_1 1.0408420939e+00 1 1  ON 21
+eO_2 1.5443376125e+00 1 1  ON 22
+eO_3 1.8543865489e+00 1 1  ON 23
+eO_4 2.0523291757e+00 1 1  ON 24
+eO_5 2.1899081432e+00 1 1  ON 25
+eO_6 2.1758349373e+00 1 1  ON 26
+eO_7 2.0071971185e+00 1 1  ON 27
+eO_8 1.5117131534e+00 1 1  ON 28
+eO_9 1.5510719010e+00 1 1  ON 29
+eH_0 -6.0972141966e-01 1 1  ON 30
+eH_1 -5.5890946766e-01 1 1  ON 31
+eH_2 -5.1827066169e-01 1 1  ON 32
+eH_3 -4.7235563703e-01 1 1  ON 33
+eH_4 -4.4367771154e-01 1 1  ON 34
+eH_5 -4.4052743720e-01 1 1  ON 35
+eH_6 -4.5545217754e-01 1 1  ON 36
+eH_7 -5.1116220061e-01 1 1  ON 37
+eH_8 -5.0805448752e-01 1 1  ON 38
+eH_9 -5.7708117341e-01 1 1  ON 39
+  </optVariables>
+   Restore the number of walkers to 16, removing 234 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 1.1001718565e+01 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root H2O.s006 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s006 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=6  my_counter=6
+  time step      = 5.0000000000e-01
+  blocks         = 250
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 1.2800000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">250</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.2800000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="250">
+  Cannot make clones again. Use existing 16 clones
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Total Sample Size   =128000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 6
+    time step          = 0.5
+    reference energy   = -17.2791
+    reference variance = 0.579924
+====================================================
+  Execution time = 5.2629759562e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot H2O.s006
+  QMCCostFunctionOMP is created with 16
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 16
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 5.1200000000e-02 MB
+Deriv,HDerivRecord:      3.8400000000e+00 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      1.0240000000e+00
+Orbitals + dervs:        8.0000000000e-04      3.2000000000e+00
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.7229395241e+01
+  VMC Evar = 3.5297840306e-01
+  Total weights = 1.2800000000e+05
+  Execution time = 8.7400620500e-01
+  </log>
+</opt>
+<opt stage="main" walkers="128000">
+  <log>
+Iteration: 1/1
+od_largest 9.8709742356e+00
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:1.3764382851e+00
+ OldCost: -1.6350276559e+01 NewCost: -1.6350410118e+01 Delta Cost:-1.3355936906e-04
+      Current ene:     -1.7229486823e+01
+      Current var:     3.5204728705e-01
+      Current ene_urw:     -1.7229492774e+01
+      Current var_urw: 3.5272174229e-01
+Setting new Parameters
+ERROR   Execution time = 1.0910416442e+01
+  </log>
+  <optVariables href="H2O.s006.opt.xml">
+uu_0 1.2173621323e-01 1 1  ON 0
+uu_1 -5.8997168619e-02 1 1  ON 1
+uu_2 -1.7036646966e-01 1 1  ON 2
+uu_3 -2.3522707641e-01 1 1  ON 3
+uu_4 -2.7027949463e-01 1 1  ON 4
+uu_5 -2.8124467206e-01 1 1  ON 5
+uu_6 -2.7441843576e-01 1 1  ON 6
+uu_7 -2.5795108832e-01 1 1  ON 7
+uu_8 -2.4897897289e-01 1 1  ON 8
+uu_9 -1.2594133692e-01 1 1  ON 9
+ud_0 4.6142869698e-01 1 1  ON 10
+ud_1 1.7473642323e-01 1 1  ON 11
+ud_2 2.8103196652e-02 1 1  ON 12
+ud_3 -5.2174043658e-02 1 1  ON 13
+ud_4 -9.9219628679e-02 1 1  ON 14
+ud_5 -1.1823881872e-01 1 1  ON 15
+ud_6 -1.1838757578e-01 1 1  ON 16
+ud_7 -9.5479243382e-02 1 1  ON 17
+ud_8 -7.6898922775e-02 1 1  ON 18
+ud_9 -1.4212185511e-02 1 1  ON 19
+eO_0 1.3252817050e-02 1 1  ON 20
+eO_1 4.1297276269e-01 1 1  ON 21
+eO_2 9.1925682294e-01 1 1  ON 22
+eO_3 1.2317653738e+00 1 1  ON 23
+eO_4 1.4323247672e+00 1 1  ON 24
+eO_5 1.5624871285e+00 1 1  ON 25
+eO_6 1.5525590846e+00 1 1  ON 26
+eO_7 1.1782608809e+00 1 1  ON 27
+eO_8 6.5981775408e-01 1 1  ON 28
+eO_9 1.7463361583e-01 1 1  ON 29
+eH_0 -8.6570593822e-02 1 1  ON 30
+eH_1 -3.0969687625e-02 1 1  ON 31
+eH_2 9.8007776706e-03 1 1  ON 32
+eH_3 5.5749092314e-02 1 1  ON 33
+eH_4 8.4801088223e-02 1 1  ON 34
+eH_5 9.1286889665e-02 1 1  ON 35
+eH_6 6.5025694090e-02 1 1  ON 36
+eH_7 2.2723891147e-02 1 1  ON 37
+eH_8 1.4574767335e-01 1 1  ON 38
+eH_9 2.4040898216e-01 1 1  ON 39
+  </optVariables>
+   Restore the number of walkers to 16, removing 234 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 1.0944509280e+01 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root H2O.s007 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s007 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=7  my_counter=7
+  time step      = 5.0000000000e-01
+  blocks         = 250
+  steps          = 1
+  substeps       = 20
+  current        = 0
+  target samples = 1.2800000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">250</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.2800000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">2.5000000000e+02</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 0
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="250">
+  Cannot make clones again. Use existing 16 clones
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Total Sample Size   =128000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 7
+    time step          = 0.5
+    reference energy   = -17.2839
+    reference variance = 0.58763
+====================================================
+  Execution time = 5.2579981800e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot H2O.s007
+  QMCCostFunctionOMP is created with 16
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 16
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 250 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 5.1200000000e-02 MB
+Deriv,HDerivRecord:      3.8400000000e+00 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      1.0240000000e+00
+Orbitals + dervs:        8.0000000000e-04      3.2000000000e+00
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.7225741006e+01
+  VMC Evar = 3.5932223128e-01
+  Total weights = 1.2800000000e+05
+  Execution time = 8.7512768500e-01
+  </log>
+</opt>
+<opt stage="main" walkers="128000">
+  <log>
+Iteration: 1/1
+od_largest 8.0292784619e+00
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8840620089e+02
+ERROR CostFunction-> Number of Effective Walkers is too small 2.4455682061e+01
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7081197941e+03
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8840620089e+02
+  Good Step. Largest LM parameter change:7.3415202904e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7081197941e+03
+ OldCost: -1.6346487844e+01 NewCost: 1.2535537799e+01 Delta Cost:2.8882025643e+01
+      Current ene:     -3.9840652381e+00
+      Current var:     3.2640799551e+02
+      Current ene_urw:     -3.5820058787e+01
+      Current var_urw: 1.4043303005e+03
+ Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. 
+  Good Step, but cost function invalid
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8841086908e+02
+ERROR CostFunction-> Number of Effective Walkers is too small 2.4455800874e+01
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7081409103e+03
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8841086908e+02
+  Good Step. Largest LM parameter change:7.3415168726e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7081409103e+03
+ OldCost: -1.6346487844e+01 NewCost: 1.2535509142e+01 Delta Cost:2.8881996986e+01
+      Current ene:     -3.9840772618e+00
+      Current var:     3.2640765081e+02
+      Current ene_urw:     -3.5820041445e+01
+      Current var_urw: 1.4043272257e+03
+ Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. 
+  Good Step, but cost function invalid
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8844512225e+02
+ERROR CostFunction-> Number of Effective Walkers is too small 2.4456672672e+01
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7082958502e+03
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8844512225e+02
+  Good Step. Largest LM parameter change:7.3414917945e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7082958502e+03
+ OldCost: -1.6346487844e+01 NewCost: 1.2535298868e+01 Delta Cost:2.8881786712e+01
+      Current ene:     -3.9841654846e+00
+      Current var:     3.2640512156e+02
+      Current ene_urw:     -3.5819914202e+01
+      Current var_urw: 1.4043046650e+03
+ Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. 
+  Good Step, but cost function invalid
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8868575371e+02
+ERROR CostFunction-> Number of Effective Walkers is too small 2.4462797346e+01
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7093842476e+03
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8868575371e+02
+  Good Step. Largest LM parameter change:7.3413156431e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7093842476e+03
+ OldCost: -1.6346487844e+01 NewCost: 1.2533821909e+01 Delta Cost:2.8880309753e+01
+      Current ene:     -3.9847851622e+00
+      Current var:     3.2638735627e+02
+      Current ene_urw:     -3.5819020438e+01
+      Current var_urw: 1.4041462091e+03
+ Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. 
+  Good Step, but cost function invalid
+ERROR   Using XS:2.0000000000e+00 4 0
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8997374134e+02
+ERROR CostFunction-> Number of Effective Walkers is too small 2.4495586193e+01
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7152078668e+03
+ERROR CostFunction-> Number of Effective Walkers is too small 9.8997374134e+02
+  Good Step. Largest LM parameter change:7.3403735056e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 6.7152078668e+03
+ OldCost: -1.6346487844e+01 NewCost: 1.2525923364e+01 Delta Cost:2.8872411208e+01
+      Current ene:     -3.9880991783e+00
+      Current var:     3.2629235167e+02
+      Current ene_urw:     -3.5814240566e+01
+      Current var_urw: 1.4032991163e+03
+ Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. 
+  Good Step, but cost function invalid
+ERROR   Using XS:4.0000000000e+00 5 0
+  Good Step. Largest LM parameter change:1.1405548109e-01
+ OldCost: -1.6346487844e+01 NewCost: -1.6346547282e+01 Delta Cost:-5.9438028934e-05
+      Current ene:     -1.7225687395e+01
+      Current var:     3.5711486010e-01
+      Current ene_urw:     -1.7225849755e+01
+      Current var_urw: 3.5722433908e-01
+Setting new Parameters
+ERROR   Execution time = 2.6167316750e+01
+  </log>
+  <optVariables href="H2O.s007.opt.xml">
+uu_0 1.0984924099e-01 1 1  ON 0
+uu_1 -6.9396551618e-02 1 1  ON 1
+uu_2 -1.8052303701e-01 1 1  ON 2
+uu_3 -2.4535891699e-01 1 1  ON 3
+uu_4 -2.7977544866e-01 1 1  ON 4
+uu_5 -2.9130350244e-01 1 1  ON 5
+uu_6 -2.8711859928e-01 1 1  ON 6
+uu_7 -2.6730408814e-01 1 1  ON 7
+uu_8 -2.9879580496e-01 1 1  ON 8
+uu_9 -7.0530632405e-02 1 1  ON 9
+ud_0 4.5967411504e-01 1 1  ON 10
+ud_1 1.7575153113e-01 1 1  ON 11
+ud_2 2.7794941958e-02 1 1  ON 12
+ud_3 -5.0218854385e-02 1 1  ON 13
+ud_4 -9.9455890890e-02 1 1  ON 14
+ud_5 -1.1341940671e-01 1 1  ON 15
+ud_6 -1.1725788645e-01 1 1  ON 16
+ud_7 -9.7998552428e-02 1 1  ON 17
+ud_8 -7.6531929339e-02 1 1  ON 18
+ud_9 -4.6649128842e-02 1 1  ON 19
+eO_0 -3.9851758880e-02 1 1  ON 20
+eO_1 3.5402355877e-01 1 1  ON 21
+eO_2 8.6209931377e-01 1 1  ON 22
+eO_3 1.1717624887e+00 1 1  ON 23
+eO_4 1.3699118920e+00 1 1  ON 24
+eO_5 1.4990220543e+00 1 1  ON 25
+eO_6 1.5326226304e+00 1 1  ON 26
+eO_7 1.0717686121e+00 1 1  ON 27
+eO_8 7.3941571385e-01 1 1  ON 28
+eO_9 1.0260955923e-01 1 1  ON 29
+eH_0 1.6917017260e-02 1 1  ON 30
+eH_1 7.3456830948e-02 1 1  ON 31
+eH_2 1.1516991378e-01 1 1  ON 32
+eH_3 1.6081904330e-01 1 1  ON 33
+eH_4 1.8875937336e-01 1 1  ON 34
+eH_5 1.9447610326e-01 1 1  ON 35
+eH_6 1.6905146691e-01 1 1  ON 36
+eH_7 1.2752511272e-01 1 1  ON 37
+eH_8 2.5980315444e-01 1 1  ON 38
+eH_9 3.5209444958e-01 1 1  ON 39
+  </optVariables>
+   Restore the number of walkers to 16, removing 234 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 2.6200824131e+01 secs 
+
+=========================================================
+  Start VMCSingleOMP
+  File Root H2O.s008 append = no 
+=========================================================
+  Using the current 16 walkers.
+  Total number of walkers: 5.1200000000e+02
+  Total weight: 5.1200000000e+02
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 3.0000000000e-01
+  blocks         = 1000
+  steps          = 1
+  substeps       = 100
+  current        = 0
+  target samples = 0.0000000000e+00
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1001
+<parameter name="blocks" condition="int">1000</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1001</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1001</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">0.0000000000e+00</parameter>
+<parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1001</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">100</parameter>
+<parameter name="substeps" condition="int">100</parameter>
+<parameter name="tau" condition="au">3.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">3.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">3.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">100</parameter>
+<parameter name="warmupsteps" condition="int">100</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1001 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 1
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+  Cannot make clones again. Use existing 16 clones
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =0
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Anonymous Buffer size per walker 623
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 8
+    time step          = 0.3
+    reference energy   = -17.2615
+    reference variance = 0.57335
+====================================================
+  QMC Execution time = 9.2252458384e+01 secs 
+  Total Execution time = 2.0401054973e+02 secs
+
+=========================================================
+  A new xml input file : H2O.s008.cont.xml

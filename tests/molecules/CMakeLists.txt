@@ -1,0 +1,25 @@
+#
+# Molecules
+#
+
+add_subdirectory("Li2_STO_ae")
+add_subdirectory("C2_pp")
+add_subdirectory("C4_ae")
+add_subdirectory("LiH_ae_gms")
+add_subdirectory("LiH_ae_pyscf")
+add_subdirectory("O_ae_pyscf_UHF")
+add_subdirectory("LiH_ae_qp")
+add_subdirectory("LiH_pp")
+add_subdirectory("H2_ae")
+add_subdirectory("H4_ae")
+add_subdirectory("H4_msd_ae")
+add_subdirectory("H2O_dimer_sep_pp")
+add_subdirectory("FeCO6_b3lyp_gms")
+add_subdirectory("FeCO6_b3lyp_pyscf")
+add_subdirectory("CHN_ae")
+add_subdirectory("LiH_ae_MSD")
+add_subdirectory("He_ae")
+add_subdirectory("He_param")
+add_subdirectory("Co_L2")
+add_subdirectory("Be_STO")
+add_subdirectory("H_positron")

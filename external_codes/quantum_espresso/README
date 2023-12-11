@@ -1,0 +1,39 @@
+The files in this directory support making a modified version of
+quantum espresso that includes the pw2qmcpack converter.
+
+The download_and_patch_qe6.4.1.sh script will automatically download
+and patch quantum espresso. Similarly named scripts are provided for
+earlier versions. After patching you can move the espresso directory
+anywhere convenient. There is no need to keep it within the QMCPACK
+source tree. However, if you are using NEXUS you should update your
+PATH so that the correct executables are found.
+
+If you have already downloaded quantum espresso you can, e.g.,
+
+patch -p1 -i ../add_pw2qmcpack_to_qe-6.4.1.diff
+
+from within the top level quantum espresso directory.
+
+Due to internal changes in quantum espresso, generally the patch and
+pw2qmcpack files only work for one specific version.
+
+Notes for maintainers:
+
+1. Update the new version of QE. Hopefully the old patch
+works. Typically there are small makefile updates. If install/configure.ac is
+updated, be sure to run autoconf to generate a new install/configure.
+
+2. Create a new patch.
+
+diff -urN qe-x.y_original qe-x.y_updated >add_pw2qmcpack_to_qe-x.y.diff
+or
+git diff release-branch..patched-release-branch >add_pw2qmcpack_to_qe-x.y.diff
+
+3. Update the download_and_patch script. Change the version number and
+directory location on QE Forge. The latter varies with no clear logic.
+
+4. Check that QE patches and builds correctly using the download script.
+
+5. Add the new patch and download script to git and commit.
+
+

@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="O.q0.dmc" series="0">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   </project>
+
+   <include href="O.q0.ptcl.xml"/>
+
+   <!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
+   <include href="OPT_XML"/>
+
+   <hamiltonian name="h0" type="generic" target="e">
+      <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+      <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+      <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+         <pseudo elementType="O" href="O.BFD.xml"/>
+      </pairpot>
+   </hamiltonian>
+
+   <!-- fill in VWARMUP, VBLOCKS, VSTEPS, VTIMESTEP, DWALKERS -->
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="warmupSteps"         >    VWARMUP         </parameter>
+      <parameter name="blocks"              >    VBLOCKS         </parameter>
+      <parameter name="steps"               >    VSTEPS          </parameter>
+      <parameter name="timestep"            >    VTIMESTEP       </parameter>
+      <parameter name="samples"             >    DWALKERS        </parameter>
+   </qmc>
+
+   <!-- fill in DWARMUP, DBLOCKS, DSTEPS, DTIMESTEP -->
+   <!-- make multiple copies w/ different timesteps (largest first) -->
+   <!--  (blocks*steps*timestep = const1, warmup*timestep = const2) -->
+   <qmc method="dmc" move="pbyp">
+      <parameter name="warmupSteps"         >    DWARMUP         </parameter>
+      <parameter name="blocks"              >    DBLOCKS         </parameter>
+      <parameter name="steps"               >    DSTEPS          </parameter>
+      <parameter name="timestep"            >    DTIMESTEP       </parameter>
+      <parameter name="nonlocalmoves"       >    yes             </parameter>
+   </qmc>
+</simulation>

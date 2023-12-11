@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Jeongnim Kim (University of Illinois) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/qmcbase.xsd"/>
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/particleset.xsd"/>
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/hamiltonian.xsd"/>
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/wavefunction.xsd"/>
+  <xs:complexType name="qmcType">
+    <xs:annotation>
+      <xs:documentation>A QMC section</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="record" type="recordType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="cost" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="method" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="vmc"/>
+          <xs:enumeration value="vmc-ptcl"/>
+          <xs:enumeration value="vmc-multiple"/>
+          <xs:enumeration value="dmc"/>
+          <xs:enumeration value="dmc-ptcl"/>
+          <xs:enumeration value="rmc"/>
+          <xs:enumeration value="rmc-multiple"/>
+          <xs:enumeration value="dummy"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:element name="simulation">
+    <xs:annotation>
+      <xs:documentation>Main node to perform QMC simulations</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="project" type="projectType"/>
+        <xs:element name="random" type="randomType" minOccurs="0"/>
+        <xs:element name="particleset" type="particleSetType" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="include" minOccurs="0" maxOccurs="unbounded">
+          <xs:annotation>
+            <xs:documentation>include an anyURI that contains qmcsystem</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:attribute name="href" type="xs:anyURI" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="wavefunction" type="wavefunctionType" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="hamiltonian" type="qmcHamiltonianType" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="mcwalkerset" type="hdfFileType" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="init" type="genericActionType" minOccurs="0"/>
+        <xs:element name="qmc" type="qmcType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="genericActionType">
+    <xs:attribute name="source" type="xs:string" use="optional"/>
+    <xs:attribute name="target" type="xs:string" use="optional"/>
+  </xs:complexType>
+  <xs:complexType name="recordType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="stride" type="xs:integer" use="optional" default="-1"/>
+  </xs:complexType>
+</xs:schema>

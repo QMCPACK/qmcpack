@@ -1,0 +1,15 @@
+/*!  \page cando_p Features
+
+\htmlonly
+
+<h2>QMC methods and algorithms available in QMCPACK</h2>
+These QMC methods are implemented
+<ul>
+<li>Variational Monte Carlo</li>
+<li>Optimization based on VMC and linear method</li>
+<li>Diffusion Monte Carlo</li>
+<li>Reptation Monte Carlo</li>
+</ul>
+
+\endhtmlonly
+*/

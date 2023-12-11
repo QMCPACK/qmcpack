@@ -1,0 +1,9 @@
+#!/bin/bash
+#COBALT -q qmcpack
+#COBALT -A QMCPACK-training
+#COBALT -n 32
+#COBALT -t 60
+#COBALT -O O.q0.dft
+LOCARGS="--block $COBALT_PARTNAME ${COBALT_CORNER:+--corner} $COBALT_CORNER ${COBALT_SHAPE:+--shape} $COBALT_SHAPE"
+echo "Cobalt location args: $LOCARGS" >&2
+runjob --np 512 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : /soft/applications/qmcpack/Binaries/pw.x -input O.q0.dft.in

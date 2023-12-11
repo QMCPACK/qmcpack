@@ -1,0 +1,16 @@
+Wave Function Generation & Conversion
+====
+Step 1. gms: GAMESS run to generate Slater determinant of Hartree-Fock orbitals
+
+Step 2. convert: use convert4qmc to convert GAMESS output to QMCPACK input wave function,
+use the --add3BodyJ to include a 3-body Jastrow term.
+
+*Step 3. ../pseudo
+convert BFD pseudopotential from GAMESS format to QMCPACK format 
+
+Step 4. opt: optimize Jastrow coefficients
+
+Diffusion Monte Carlo Systemmatic Biases 
+====
+Step 5. dmc_timestep: check timestep bias
+Step 6. dmc_walkers : check population control bias

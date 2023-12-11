@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="qmc_short_vmc_dmc" series="0">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   </project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                  3.77945227        0.00000000        0.00000000
+                 -0.00000000        3.77945227        0.00000000
+                 -0.00000000       -0.00000000        3.77945227
+         </parameter>
+         <parameter name="bconds">
+            p p p
+         </parameter>
+         <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes">
+         <group name="u" size="1" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="1" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="H" size="2" mass="1837.36221934">
+            <parameter name="charge"              >    1                     </parameter>
+            <parameter name="valence"             >    1                     </parameter>
+            <parameter name="atomicnumber"        >    1                     </parameter>
+            <parameter name="mass"                >    1837.36221934            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                     0.00000000        0.00000000        0.00000000
+                     1.88972614        1.88972614        1.88972614
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+            <slaterdeterminant>
+               <determinant id="updet" size="1">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+               <determinant id="downdet" size="1">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
+            <correlation elementType="H" size="8" cusp="1.0">
+               <coefficients id="eH" type="Array">                  
+0.00206602038 -0.002841926986 0.0036266191 -0.001913930279 8.457152991e-06 
+0.0007380321824 3.635172529e-05 0.0001299635851
+               </coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="d" size="8">
+               <coefficients id="ud" type="Array">                  
+0.5954603818 0.5062051797 0.3746940461 0.2521010502 0.1440163317 0.07796688253 
+0.03804420551 0.01449320872
+               </coefficients>
+            </correlation>
+         </jastrow>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+         <estimator type="flux" name="Flux"/>
+      </hamiltonian>
+   </qmcsystem>
+
+    <qmc method="vmc" move="pbyp">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers">    256 </parameter>
+     <parameter name="substeps">  1 </parameter>
+     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="steps">  1 </parameter>
+     <parameter name="blocks">  1 </parameter>
+     <parameter name="timestep">  0.3 </parameter>
+     <parameter name="usedrift">   no </parameter>
+   </qmc>
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="targetwalkers"> 256 </parameter>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="timestep">  0.01 </parameter>
+     <parameter name="steps">   200 </parameter>
+     <parameter name="blocks">  100 </parameter>
+     <parameter name="nonlocalmoves">  no </parameter>
+   </qmc>
+   
+</simulation>

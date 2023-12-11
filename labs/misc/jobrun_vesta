@@ -1,0 +1,280 @@
+#! /usr/bin/env python3
+
+import os
+import sys
+
+#=======#
+# usage # 
+#=======#
+#  jobrun_vesta exe_name exe_inputs/options
+
+
+#=============#
+# global data #
+#=============#
+# the account to charge time to 
+account = 'QMCPACK-training' # participant account!
+#account = 'QMCPACK'  # instructor account!
+
+# executables jobrun_vesta knows how to handle
+exe_name_list = 'ppconvert rungms convert4qmc pw.x pw2qmcpack.x qmcpack qmcpack_comp'.split()
+exe_names = set(exe_name_list)
+
+# protect user against errors and print pedagogical error messages
+guard = True
+#guard = False
+
+# examples displayed to user if no arguments are provided
+examples = '''
+jobrun_vesta ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" --p_ref "1s(2)2p(4)" --d_ref "1s(2)2p(4)" --log_grid --upf O.BFD.upf
+
+jobrun_vesta rungms H2O.PBE
+
+jobrun_vesta convert4qmc -gamess H2O.CISD.orbs.output -ci H2O.CISD.orbs.output -threshold 0.01 -readInitialGuess 60  -add3BodyJ
+
+jobrun_vesta pw.x scf.in
+
+jobrun_vesta pw2qmcpack.x p2q.in
+
+jobrun_vesta qmcpack opt.in.xml
+'''
+
+# portions of template qsub script
+cobalt_header = '''#!/bin/bash
+#COBALT -q qmcpack
+#COBALT -A {0}
+#COBALT -n {1}
+#COBALT -t {2}
+#COBALT -O {3}
+'''
+#cobalt_header = '''#!/bin/bash
+##COBALT -q default
+##COBALT -A {0}
+##COBALT -n {1}
+##COBALT -t {2}
+##COBALT -O {3}
+#'''
+
+
+cobalt_shape = '''LOCARGS="--block $COBALT_PARTNAME ${COBALT_CORNER:+--corner} $COBALT_CORNER ${COBALT_SHAPE:+--shape} $COBALT_SHAPE"
+echo "Cobalt location args: $LOCARGS" >&2
+'''
+runjob='runjob --np {0} -p {1} $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS={2} : {3}{4}'
+
+
+#==================#
+# global functions #
+#==================#
+def error(msg):
+    print 'jobrun error:\n  '+msg.replace('\n','\n  ')
+    print 'exiting'
+    sys.exit()
+#end def error
+
+def join_args(args):
+    s = ''
+    for a in args:
+        s+=' '+a
+    #end for
+    return s.lstrip()
+#end def join_args
+
+
+#==================#
+# actual execution #
+#==================#
+# get the tokens provided by the user
+args = sys.argv[1:]
+
+# require at least one argument, the exe name
+if len(args)==0:
+    error('no arguments provided to jobrun_vesta\nfirst argument to jobrun_vesta must be the exe name\nvalid options are: {0}\nan example for each executable is shown below\n{1}'.format(exe_name_list,examples))
+#end if
+
+# get the exe name and any arguments for the exe itself
+exe_name = args[0]
+exe_arg_list = args[1:]
+
+# exe must be known
+if exe_name not in exe_names:
+    error('invalid exe name: {0}\nvalid options are: {1}'.format(exe_name,exe_name_list))
+#end if
+
+# generate submission command based on target executable
+script = False
+runstr = None
+command = ''
+if exe_name=='ppconvert':
+    #===========#
+    # ppconvert #
+    #===========#
+    for n in range(len(exe_arg_list)-1): # put " back on arguments
+        arg1 = exe_arg_list[n]
+        arg2 = exe_arg_list[n+1]
+        if arg1.startswith('--') and arg1.endswith('ref'):
+            if not arg2.startswith('"'):
+                arg2 = '"'+arg2
+            #end if
+            if not arg2.endswith('"'):
+                arg2 = arg2+'"'
+            #end if
+            exe_arg_list[n+1] = arg2
+        #end if
+    #end for
+    script  = True
+    #exe     = '/soft/applications/qmcpack/Binaries/ppconvert'
+    exe     = '/home/yeluo/qmcdev/trunk/src/QMCTools/ppconvert/build/ppconvert'
+    prefix  = 'ppconv'
+    nodes   = 1
+    procs   = 1
+    threads = 1
+    time    = 60
+    argstr  = ' '+join_args(exe_arg_list)+'\n'
+    runstr  = exe+argstr
+    
+elif exe_name=='rungms':
+    #========#
+    # GAMESS #
+    #========#
+    if len(exe_arg_list)!=1:
+        error('must provide a single argument to rungms, the input file prefix\narguments provided: {0}'.format(exe_arg_list))
+    #end if
+    infile_prefix = exe_arg_list[0]
+    if guard:
+        if infile_prefix.endswith('.inp'):
+            infile = infile_prefix
+            infile_prefix = infile_prefix.rsplit('.',1)[0]
+            error('rungms expects the input file prefix, not the file itself\nfile provided: {0}\nprefix expected: {1}'.format(infile,infile_prefix))
+        else:
+            infile = infile_prefix+'.inp'
+        #end if
+        if not os.path.exists(infile):
+            error('gamess input file does not exist: {0}'.format(infile))
+        #end if
+    #end if
+    #gms   = '/soft/applications/qmcpack/Binaries/gmsbgq'
+    gms   = '/home/yeluo/qmcdev/DFT_Binaries/gmsbgq.old' # 1 May 2012 (R2) 
+    nodes = 32
+    time  = 20
+    mode  = 'c1'
+    # rungms prefix nodes time mode account prefix
+    command = '{0} {1} {2} {3} {4} {5} {1}'.format(gms,infile_prefix,nodes,time,mode,account,infile_prefix)
+elif exe_name=='convert4qmc':
+    #=============#
+    # convert4qmc #
+    #=============#
+    prefix   = 'c4q'
+    for n in range(len(exe_arg_list)):
+        if exe_arg_list[n]=='-prefix' and n+1<len(exe_arg_list):
+            prefix = exe_arg_list[n+1]
+        #end if
+    #end for
+    script  = True
+    exe     = '/soft/applications/qmcpack/Binaries/convert4qmc'
+    nodes   = 1
+    procs   = 1
+    threads = 1
+    time    = 10
+    argstr  = ' '+join_args(exe_arg_list)+'\n'
+
+elif exe_name=='pw.x':
+    #======#
+    # pw.x #
+    #======#
+    if len(exe_arg_list)!=1:
+        error('must provide a single argument to pw.x, the input file\narguments provided: {0}\n(pw.x can accept other inputs outside the training environment)'.format(exe_arg_list))
+    #end if
+    infile = exe_arg_list[0]
+    if guard:
+        if not os.path.exists(infile):
+            error('pw.x input file does not exist: {0}'.format(infile))
+        #end if
+    #end if
+    if '.' in infile:
+        prefix = infile.rsplit('.',1)[0]
+    else:
+        prefix = infile
+    #end if
+    script  = True
+    exe     = '/soft/applications/qmcpack/Binaries/pw.x'
+    nodes   = 32
+    procs   = 16
+    threads = 1
+    time    = 60
+    argstr  =  ' -input '''+infile+'\n'
+
+elif exe_name=='pw2qmcpack.x':
+    #==============#
+    # pw2qmcpack.x #
+    #==============#
+    if len(exe_arg_list)!=1:
+        error('must provide a single argument to pw2qmcpack.x, the input file\narguments provided: {0}\n(pw2qmcpack.x can accept other inputs outside the training environment)'.format(exe_arg_list))
+    #end if
+    infile = exe_arg_list[0]
+    if guard:
+        if not os.path.exists(infile):
+            error('pw2qmcpack.x input file does not exist: {0}'.format(infile))
+        #end if
+    #end if
+    if '.' in infile:
+        prefix = infile.rsplit('.',1)[0]
+    else:
+        prefix = infile
+    #end if
+    script  = True
+    exe     = '/soft/applications/qmcpack/Binaries/pw2qmcpack.x'
+    nodes   = 1
+    procs   = 1
+    threads = 1
+    time    = 60
+    argstr  = '<'+infile+'\n'
+
+elif exe_name=='qmcpack' or exe_name=='qmcpack_comp':
+    #=========#
+    # QMCPACK #
+    #=========#
+    if len(exe_arg_list)!=1:
+        error('must provide a single argument to qmcpack, the input file\narguments provided: {0}\n(qmcpack can accept other inputs outside the training environment)'.format(exe_arg_list))
+    #end if
+    infile = exe_arg_list[0]
+    if guard:
+        if not os.path.exists(infile):
+            error('qmcpack input file does not exist: {0}'.format(infile))
+        #end if
+    #end if
+    if '.' in infile:
+        if infile.endswith('.in.xml'):
+            prefix = infile.rsplit('.',2)[0]
+        else:
+            prefix = infile.rsplit('.',1)[0]
+        #end if
+    else:
+        prefix = infile
+    #end if
+    script  = True
+    exe     = '/soft/applications/qmcpack/Binaries/'+exe_name
+    nodes   = 32
+    procs   = 1
+    threads = 16
+    #threads = 64
+    time    = 60
+    argstr  = ' '+infile+'\n'
+#end if
+
+if script:
+    script_text = cobalt_header.format(account,nodes,time,prefix)
+    script_text += cobalt_shape
+    if runstr is None:
+        script_text += runjob.format(nodes*procs,procs,threads,exe,argstr)
+    else:
+        script_text += runstr+'\n'
+    #end if
+    script_file = prefix+'.qsub.in'
+    open(script_file,'w').write(script_text)
+    os.system('chmod +x '+script_file)
+    command = 'qsub --mode script --env BG_SHAREDMEMSIZE=32 {0}'.format(script_file)
+#end if
+
+# execute the submission command
+print command
+os.system(command)

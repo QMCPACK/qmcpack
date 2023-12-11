@@ -1,0 +1,5 @@
+&inputpp
+   outdir='.'
+   prefix='LiH-arb'
+   write_psir=.false.
+/

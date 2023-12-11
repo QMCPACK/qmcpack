@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H4" series="0"/>
+  <random seed="350"/>
+  <!-- input from gaussian converter -->
+  <include href="H4.ptcl.xml"/>
+  <include href="H4.wfn.xml"/>
+  <hamiltonian name="h0" type="generic" target="e"> 
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
+    <pairpot name="IonElec"  type="coulomb" source="ion0"/>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
+  </hamiltonian> 
+
+  <loop max="5">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+      <parameter name="walkers">    1  </parameter>
+      <parameter name="samples"> 249600 </parameter>
+      <parameter name="stepsbetweensamples"> 1 </parameter>
+      <parameter name="steps"> 78 </parameter>
+      <parameter name="substeps"> 10 </parameter>
+      <parameter name="warmupsteps"> 5000 </parameter>
+      <parameter name="blocks">  200  </parameter>
+      <parameter name="timestep"> 1.0 </parameter>
+      <parameter name="useDrift">  no </parameter>
+      <estimator name="LocalEnergy" hdf5="no"/>
+           <cost name="energy">               0.95 </cost>
+           <cost name="unreweightedvariance"> 0.00 </cost>
+           <cost name="reweightedvariance">   0.05 </cost>
+    </qmc>
+  </loop>
+</simulation>

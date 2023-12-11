@@ -1,0 +1,44 @@
+&CONTROL
+   calculation     = 'scf'
+   outdir          = 'pwscf_output'
+   prefix          = 'pwscf'
+   pseudo_dir      = './'
+   wf_collect      = .true.
+/
+
+&SYSTEM
+   ecutwfc         = 200
+   ibrav           = 0
+   input_dft       = 'lda'
+   nat             = 2
+   nosym           = .true.
+   nspin           = 1
+   ntyp            = 1
+   tot_charge      = 0
+/
+
+&ELECTRONS
+   conv_thr        = 1e-08
+/
+
+
+ATOMIC_SPECIES 
+   C  12.011 C.BFD.upf
+
+ATOMIC_POSITIONS bohr
+   C        0.00000000       0.00000000       0.00000000 
+   C        1.68658058       1.68658058       1.68658057 
+
+K_POINTS crystal
+   4
+         0.00000000       0.00000000       0.00000000       1.00000000 
+         0.50000000       0.00000000       0.00000000       1.00000000 
+         0.00000000       0.50000000      -0.00000000       1.00000000 
+         0.50000000       0.50000000       0.00000000       1.00000000 
+
+CELL_PARAMETERS bohr
+         3.37316115       3.37316115      -0.00000000 
+         0.00000000       3.37316115       3.37316115 
+         3.37316115       0.00000000       3.37316115 
+
+

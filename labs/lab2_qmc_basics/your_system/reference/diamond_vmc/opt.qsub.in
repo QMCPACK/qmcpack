@@ -1,0 +1,16 @@
+#!/bin/bash
+#COBALT -q default
+#COBALT -A QMC_2014_Preparation
+#COBALT -n 32
+#COBALT -t 120
+#COBALT -O opt
+
+LOCARGS="--block $COBALT_PARTNAME ${COBALT_CORNER:+--corner} $COBALT_CORNER ${COBALT_SHAPE:+--shape} $COBALT_SHAPE"
+echo "Cobalt location args: $LOCARGS" >&2
+
+
+date
+export OMP_NUM_THREADS=16
+
+runjob --np 32 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=16 : /soft/applications/qmcpack/build_XL_real/bin/qmcapp opt.in.xml
+

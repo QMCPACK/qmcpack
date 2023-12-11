@@ -1,0 +1,28 @@
+Jobid: 344910
+qsub --mode script -q qmcpack -A QMCPACK-Training -n 1 -t 60 -O p2q --mode script --env BG_SHAREDMEMSIZE=32 p2q.qsub.in
+Mon Jun 06 19:22:54 2016 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_1.0
+Mon Jun 06 19:23:33 2016 +0000 (UTC) krogel/344910: Initiating boot at location VST-20060-31171-32.
+Mon Jun 06 19:23:50 2016 +0000 (UTC) 
+Mon Jun 06 19:23:50 2016 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_1.0/p2q.qsub.in'
+Mon Jun 06 19:23:50 2016 +0000 (UTC) 
+Mon Jun 06 19:23:50 2016 +0000 (UTC) Environment:
+Mon Jun 06 19:23:50 2016 +0000 (UTC) COBALT_RESID=213
+Mon Jun 06 19:23:50 2016 +0000 (UTC) SHELL=/bin/bash
+Mon Jun 06 19:23:50 2016 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpqCl5RQ
+Mon Jun 06 19:23:50 2016 +0000 (UTC) COBALT_PARTNAME=VST-20060-31171-32
+Mon Jun 06 19:23:50 2016 +0000 (UTC) COBALT_JOBID=344910
+Mon Jun 06 19:23:50 2016 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Mon Jun 06 19:23:50 2016 +0000 (UTC) COBALT_STARTTIME=1465240983
+Mon Jun 06 19:23:50 2016 +0000 (UTC) LOGNAME=krogel
+Mon Jun 06 19:23:50 2016 +0000 (UTC) USER=krogel
+Mon Jun 06 19:23:50 2016 +0000 (UTC) COBALT_ENDTIME=1465244583
+Mon Jun 06 19:23:50 2016 +0000 (UTC) COBALT_PARTSIZE=32
+Mon Jun 06 19:23:50 2016 +0000 (UTC) HOME=/home/krogel
+Mon Jun 06 19:23:50 2016 +0000 (UTC) COBALT_JOBSIZE=1
+Mon Jun 06 19:23:50 2016 +0000 (UTC) 
+Mon Jun 06 19:23:50 2016 +0000 (UTC) Info: stdin received from /dev/null
+Mon Jun 06 19:23:50 2016 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_1.0/p2q.output
+Mon Jun 06 19:23:50 2016 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_1.0/p2q.error
+Mon Jun 06 19:23:50 2016 +0000 (UTC) 
+Mon Jun 06 19:23:54 2016 +0000 (UTC) krogel/344910: Block VST-20060-31171-32 for location VST-20060-31171-32 successfully booted (Initiating). 
+Mon Jun 06 19:24:56 2016 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

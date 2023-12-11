@@ -1,0 +1,101 @@
+\documentclass[letterpaper]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\author{Kenneth P. Esler Jr.}
+\title{Computing the Zero-Variance term for Forces}
+\begin{document}
+\maketitle
+The zero-variance term is of the form
+\begin{equation}
+\int \psi_T^2 (\hat{H} - E_L) \frac{\partial_\alpha \psi_T}{\psi_T}.
+\end{equation}
+Consider
+\begin{equation}
+\nabla \partial_\alpha \ln(\Psi_T) = \frac{\nabla \psi^\alpha_T}{\psi_T} - \frac{\psi^\alpha_T}{\psi_T} \frac{\nabla \psi_T}{\psi_T} 
+\end{equation}
+\begin{eqnarray}
+\nabla^2\partial_\alpha \ln(\psi_T) & = & \nabla\cdot \left[
+\frac{\nabla \psi^\alpha_T}{\psi_T} - \frac{\psi^\alpha_T}{\psi_T} \frac{\nabla \psi_T}{\psi_T} \right] \\
+& = & \frac{\nabla^2 \psi^\alpha_T}{\psi_T} - 2\frac{\nabla \psi^{\alpha}_T}{\psi_T} \cdot \frac{\nabla \psi_T}{\psi_T} - \frac{\psi^\alpha_T}{\psi_T} \left[\frac{\nabla^2\psi_T}{\psi_T} - 2\left(\frac{\nabla\psi_T}{\psi_T}\right)^2\right] \\
+& = & \frac{\nabla^2 \psi_T^\alpha}{\psi_T} - 2\left[\frac{\nabla \psi_T^\alpha}{\psi_T} - \frac{\psi^\alpha_T}{\psi_T}\frac{\nabla\psi_T}{\psi_T}\right]\cdot \frac{\nabla \psi_T}{\psi_T} - \frac{\psi^\alpha}{\psi} \frac{\nabla \psi_T}{\psi_T} 
+\end{eqnarray}
+Then
+\begin{equation}
+ \nabla^2 \partial_\alpha \ln(\psi_T) + 2 \left[\nabla \partial_\alpha \ln(\psi_T)\right]\cdot \left[\nabla \ln{\psi_T}\right]  =  \frac{\nabla^2 \psi_T^\alpha}{\psi_T} - \frac{\psi^\alpha}{\psi} \frac{\nabla^2 \psi_T}{\psi_T}
+\end{equation}
+
+
+The kinetic contribution will involve the term,
+\begin{equation}
+\frac{\nabla^2 \psi_T^\alpha}{\psi_T} = \nabla^2 \partial_\alpha \ln
+\psi_T + 2 (\nabla \partial_\alpha \ln \psi_T)\cdot (\nabla \ln \psi_T)
+\end{equation}
+Let us begin with the term
+\begin{equation}
+\nabla \partial_\alpha \ln \psi_T =
+\nabla\left(\frac{\psi^\alpha_T}{\psi_T}\right)
+\end{equation}
+For a Dirac determinant, we can write, dropping the subscript ``T'', 
+\begin{equation}
+\frac{\psi^\alpha}{\psi} = \phi^\alpha_{ij} M^{-1}_{ji},
+\end{equation}
+where $\phi^{\alpha}_{ij} = \partial_\alpha \phi_j(r_i)$ and $M_{ij} =
+\phi_j(r_i)$.  We now want to compute the gradient of this term
+w.r.t. the n$^\text{th}$ electron:
+\begin{equation}
+\nabla_n \left(\frac{\psi^\alpha_T}{\psi_T}\right)  = 
+(\nabla_n \phi_{ij}^\alpha)M^{-1}_{ji} + \phi^\alpha_{ij} (\nabla_n M^{-1}_{ji}).
+\end{equation}
+The first term on the R.H.S. can be computed directly if the gradient
+of the $\phi^\alpha$s are known.  For the second term, we make use of
+the identity 
+\begin{equation}
+\nabla_n (M^{-1}) = -M^{-1} (\nabla_n M) M^{-1}.
+\end{equation}
+Then, defining 
+\begin{eqnarray}
+\phi^\alpha_{ij} (\nabla_n M^{-1}_{ji}) & = & -\text{Tr}\left[\phi^\alpha M^{-1}
+  (\nabla_n M)M^{-1}\right] \\
+& = & -\phi^\alpha_{ij} M^{-1}_{jk} (\nabla_n \phi_{kl}) M^{-1}_{li}
+\end{eqnarray}
+
+For the Laplacian, we have,
+\begin{equation}
+\nabla_n\cdot\nabla_n\left(\frac{\psi^\alpha}{\psi}\right) =
+(\nabla_n^2\phi_{ij}^\alpha)M^{-1}_{ji} +
+2(\nabla_n\phi_{ij}^\alpha)\cdot(\nabla_n M^{-1}_{ji}) +
+\phi^\alpha_{ij}(\nabla^2 M^{-1}_{ji})
+\end{equation} 
+Now, the last term is the novel one:
+\begin{eqnarray}
+\nabla^2 M^{-1} & = & -\nabla\cdot [M^{-1}(\nabla M) M^{-1}] \\
+& = & M^{-1}(\nabla M)M^{-1}(\nabla M) M^{-1} - M^{-1}(\nabla^2 M)M^{-1}
++ M^{-1}(\nabla M) M^{-1} (\nabla M) M^{-1} \\
+& = & -M^{-1} (\nabla^2 M) M^{-1} + 2 M^{-1}(\nabla M) M^{-1}(\nabla M) M^{-1}
+\end{eqnarray}
+
+\section{The one-body Jastrow}
+The one-body Jastrow factor is given by
+\begin{equation}
+\psi_1(\{r\};\{I\}) = \sum_{r_i,I_j} \exp\left[-u(|r_i - I_j|)\right].
+\end{equation}
+Then
+\begin{equation}
+\nabla_{I_j} \ln(\psi_1) = \sum_{r_i} \left.\frac{\partial u}{\partial r}\right|_{r_{ij}} \frac{r_i - I_j}{|r_i-I_j|}.
+\end{equation}
+We need the gradient of this term w.r.t. $r_i$:
+\begin{eqnarray}
+\nabla_{r_i} \nabla_{I_j} \ln(\psi_1) = 
+\left[\left.\frac{\partial^2 u}{\partial r^2} \right|_{r_{ij}} 
+- \frac{1}{r_{ij}}\left.\frac{\partial u}{\partial r}\right|_{r_{ij}}
+\right]\frac{(r_i - I_j)\otimes(r_i-I_j)}{|r_i-I_j|^2} + \left.\frac{\partial u}{\partial r}\right|_{r_{ij}} 
+\frac{\mathbf{1}}{|r_i - I_j|}
+\end{eqnarray}
+Now, we need the laplacian,
+\begin{eqnarray}
+\nabla^2_{r_i} \nabla_{I_j} \ln(\psi_1) & = & \left[
+\frac{\partial^3 u}{\partial r^3} + \frac{2}{r}\frac{\partial^2u}{\partial r^2} - \frac{2}{r^2}\frac{\partial u}{\partial r} \right] 
+\frac{I_j - r_i}{|I_j - r_i|}
+\end{eqnarray}
+
+\end{document}

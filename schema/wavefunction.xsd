@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/qmcbase.xsd"/>
+  <xs:complexType name="gridType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="ri" type="xs:double" default="1.e-6"/>
+        <xs:attribute name="rf" type="xs:double" default="1.e2"/>
+        <xs:attribute name="npts" type="xs:integer" default="1001"/>
+        <xs:attribute name="step" type="xs:double" default="0.0125"/>
+        <xs:attribute name="scale" type="xs:double" default="-1.0"/>
+        <xs:attribute name="type" default="log">
+          <xs:simpleType>
+            <xs:restriction base="xs:NMTOKEN">
+              <xs:enumeration value="log"/>
+              <xs:enumeration value="linear"/>
+              <xs:enumeration value="numerical"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="radfuncType">
+    <xs:annotation>
+      <xs:documentation>
+      Type representing a radial functor, generic function on an one-dimensional grid.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:attribute name="id" type="xs:string"></xs:attribute>
+      <xs:attribute name="exponent" type="xs:double" default="0.0"/>
+      <xs:attribute name="contraction" type="xs:double" default="1.0"/>
+      <xs:attribute name="node" type="xs:integer" default="1"/>
+      <xs:attribute name="rcut" type="xs:double" use="optional" default="10"></xs:attribute>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="basisGroupType">
+    <xs:sequence>
+      <xs:element name="radfunc" type="radfuncType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="rid" type="xs:string" use="required"/>
+    <xs:attribute name="n" type="xs:integer"/>
+    <xs:attribute name="l" type="xs:integer" default="0"/>
+    <xs:attribute name="m" type="xs:integer" default="0"/>
+    <xs:attribute name="type" default="Gaussian">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="Gaussian"/>
+          <xs:enumeration value="Slater"/>
+          <xs:enumeration value="Pade"/>
+          <xs:enumeration value="WM"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="atomicBasisSetType">
+    <xs:sequence>
+      <xs:element name="grid" type="gridType" minOccurs="0"/>
+      <xs:element name="basisGroup" type="basisGroupType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+    <xs:attribute name="type" use="optional" default="Any">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="Any"/>
+          <xs:enumeration value="Numerical"/>
+          <xs:enumeration value="Gaussian"/>
+          <xs:enumeration value="STO"/>
+          <xs:enumeration value="WM"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="elementType" type="xs:string" use="required"/>
+    <xs:attribute name="normalized" use="optional" default="no">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="yes"/>
+          <xs:enumeration value="no"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="angular" use="optional" default="spherical">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="spherical"/>
+          <xs:enumeration value="explicit"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="expandYlm" use="optional" default="yes">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="yes"/>
+          <xs:enumeration value="no"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="detType">
+    <xs:sequence>
+      <xs:element name="occupation" type="arrayDataType" minOccurs="0"/>
+      <xs:element name="coefficient" type="arrayDataType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="optional"/>
+    <xs:attribute name="spin" type="xs:integer" use="optional"/>
+    <xs:attribute name="orbitals" type="xs:integer" use="required"/>
+    <xs:attribute name="ref" type="xs:string"/>
+    <!-- this should be idref -->
+  </xs:complexType>
+  <xs:complexType name="basissetType">
+    <xs:sequence>
+      <xs:element name="atomicBasisSet" type="atomicBasisSetType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="slaterDetType">
+    <xs:sequence>
+      <xs:element name="determinant" type="detType" maxOccurs="2"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="jastrowFuncType">
+    <xs:annotation>
+      <xs:documentation>jastrow functor</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="speciesA" type="xs:string" use="required"/>
+    <xs:attribute name="speciesB" type="xs:string" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="jastrowType">
+    <xs:annotation>
+      <xs:documentation>Jastrow correlation function</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="parameter" type="parameterType"
+        minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="correlation" type="jastrowFuncType"
+        minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="basisset" type="basissetType"
+        minOccurs="0" maxOccurs="1" />
+      <xs:element name="coefficient" type="sparseArrayType"></xs:element>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="type" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKENS">
+          <xs:enumeration value="One-Body"/>
+          <xs:enumeration value="Two-Body"/>
+          <xs:enumeration value="Three-Body"/>
+          <xs:enumeration value="Polarization"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="function" type="xs:string" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="detSetType">
+    <xs:sequence>
+      <xs:element name="basisset" type="basissetType" minOccurs="0"/>
+      <xs:element name="slaterdeterminant" type="slaterDetType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="type">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="MolecularOrbital"/>
+          <xs:enumeration value="PlaneWave"/>
+          <xs:enumeration value="PW"/>
+          <xs:enumeration value="bspline"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="source" type="xs:string" use="optional" default="i"/>
+    <xs:attribute name="usegrid" default="no">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="yes"/>
+          <xs:enumeration value="no"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="wavefunctionType">
+    <xs:annotation>
+      <xs:documentation>A many-body trial wave function</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="jastrow" type="jastrowType" minOccurs="0" maxOccurs="unbounded">
+        <xs:annotation>
+          <xs:documentation>Any number of correlation functions</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="determinantset" type="detSetType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="ref" type="xs:IDREF" use="optional" default="e"/>
+  </xs:complexType>
+</xs:schema>

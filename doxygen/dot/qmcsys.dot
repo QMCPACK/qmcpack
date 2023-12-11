@@ -1,0 +1,21 @@
+digraph hierarch {
+//label="Trial Wavefunction";
+labelloc="top";
+labelfloat=true
+nodesep=0.5
+
+node[shape=record,fontname=Ariel]
+edge[dir=back,arrowtail=odiamond]
+
+1[label="{qmcsystem| ?simulationcell\n ?particleset\n ?wavefunction\n ?hamiltonian | }"]
+2[label="{simulationcell| ... |}"]
+3[label="{particleset|...|name}"]
+4[label="{wavefunction|...|name\n target}"]
+5[label="{hamiltonian|...|name\n target}"]
+
+1 -> 2 [headlabel="0..1"]
+1 -> 3 [headlabel="0..*"]
+1 -> 4 [headlabel="0..*"]
+1 -> 5 [headlabel="0..*"]
+}
+

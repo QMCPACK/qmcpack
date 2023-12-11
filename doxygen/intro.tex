@@ -1,0 +1,122 @@
+\part{Introduction to QMCPACK}\label{intro.part}%\hyperlabel{intro.part}%
+
+ This guide is not meant to discuss Quantum Monte Carlo methods and is
+written on the assumption that the users are familiar with various QMC
+algorithms. There are many excellent tutorials and talks on QMC methods
+and numerous published works. A short list includes 
+
+\begin{itemize}
+\item{}\href{http://www.physics.uiuc.edu/people/Ceperley/}{Home page of Prof. David M Ceperley}  
+\item{}\href{http://cms.mcc.uiuc.edu/wiki/display/ss2007qmc/Home}{
+Quantum Monte Carlo from Minerals and Materials to Molecules,
+2007 Summer School on Computational Materials Science}
+%\item{}\href{http://cdsagenda5.ictp.trieste.it/full_display.php?ida=a0332}
+%{Joint DEMOCRITUS-ICTP School on Continuum Quantum Monte CarloMethods (Trieste, Italy, 2004) }  
+\item{}\href{http://www.tcm.phy.cam.ac.uk/~mdt26/casino2.html}{QUANTUM MONTE CARLO AND THE CASINO PROGRAM, UK}  
+\end{itemize}
+
+\section{Getting and building QMCPACK}\label{start.sec}
+
+Consult \wiki for the updated instructions and helps on advanced topics.
+
+\subsection{Prerequisite}\label{pre.sec}
+
+QMCPACK can be installed on any Unix/Linux distribution with recent gnu
+compilers (4.1 and higher). Other tested compilers are Intel compilers and IBM
+VisualAge C++.  \boost provides current status of C++ compilers. Please check
+if your compiler can support {\tt boost/random} library, which is the minimum
+requirement to compile QMCPACK and associated packages.
+
+In order to install QMCPACK, the users have to install \cmake and several
+required packages. These packages are included in the standard Linux/cygwin
+distributions or can be downloaded by following the links. If these libraries
+are installed in standard directories, {\tt /usr}, {\tt /usr/local}, no action
+is necessary.  Alternatively, the users can set environment variables \texttt{
+XYZ\_HOME} where \texttt{XYZ} stands for the name of package; the build utility
+can locate the libraries and use them.
+
+The build utility \cmake will look for {\tt XYZ\_HOME/include} for the header
+files and \texttt{XYZ\_HOME/lib} for the library files in addition to the 
+standard paths.  When multiple environment variables apply to a library, e.g., {\tt
+blas/lapack}, the search is done according to the given  order.  On many HPC
+centers, these packages are managed by utilities like \textbf{module} and
+\textbf{softenv}. Consult the documentations on each site. 
+
+\subsection{Building using {\tt cmake}}\label{cmake.sec}
+
+For {\tt bash} users,
+\begin{enumerate}
+\item Download the source code using subversion:
+\begin{lstlisting}
+  svn co http://cms.mcc.uiuc.edu/svn/qmcpack-dev/trunk qmcpack
+\end{lstlisting}
+\item Move to a build directory:
+\begin{lstlisting}
+  cd qmcpack/build
+\end{lstlisting}
+\item Set compilers and \texttt{XYZ\_HOME} for the required external packages:
+\begin{lstlisting}
+  export CXX=g++
+  export CC=gcc
+\end{lstlisting}
+\item Run {\tt cmake} to create \nolinkurl{Makefile}s:
+\begin{lstlisting}
+  cmake ..
+\end{lstlisting}
+\item Build everything:
+\begin{lstlisting}
+  make
+\end{lstlisting}
+\end{enumerate}
+
+If everything goes well, main executable {\tt qmcapp} and other utilites are
+located in {\tt bin} directory. 
+
+Customized compiler flags are provided for these compilers:
+\begin{itemize}
+\item{}GNU compilers 4.1 and higher : GNUCompilers.cmake 
+\begin{lstlisting}
+  export CXX=g++
+  export CC=gcc
+\end{lstlisting}
+\item{}Intel compilers 9.* and higher : IntelCompilers.cmake 
+\begin{lstlisting}
+  export CXX=icpc
+  export CC=icc
+\end{lstlisting}
+\item{}IBM Visual Age C++ : IBMCompilers.cmake
+\begin{lstlisting}
+  export CXX=xlC_r
+  export CC=xlc_r
+\end{lstlisting}
+\end{itemize}
+The OpenMP parallelization is automatically enabled with these compilers. To
+enable MPI parallelization on distributed-memory computers, set {\tt CXX} to an
+appropriate compiler, e.g. {\tt mpicxx}.
+  
+\subsection{Running QMC}
+
+Once the compilation is completed, \textbf{bin/qmcapp} the main QMCPACK
+application will be created in the build directory.  In your shell (assuming
+that you are currently in \emph{todir}/build directory), simply type
+
+\begin{verbatim}
+  $ bin/qmcapp 
+\end{verbatim}
+and a message will appear indicating no valid input file is provided. 
+ 
+\begin{lstlisting}[float]
+=====================================================
+                    qmcpack 0.4                       
+
+(c) Copyright 2003-  qmcpack developers            
+=====================================================
+ERROR No input file is given.
+ERROR usage: qmcapp input-file
+Bye \end{lstlisting}
+  
+
+However, getting this message is important since it indicates the compilation
+is completed and your run-{}time environments are properly set.  Now, QMCPACK
+is ready to run.
+ 

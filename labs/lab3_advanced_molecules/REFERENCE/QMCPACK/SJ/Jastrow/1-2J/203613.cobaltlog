@@ -1,0 +1,26 @@
+Jobid: 203613
+qsub --mode script -A QMC_2014_training -t 60 -n 32 submit_qmcpack.csh
+Wed Jul 16 01:45:10 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/Jastrow/1-2J
+Wed Jul 16 01:45:40 2014 +0000 (UTC) mmorales/203613: Initiating boot at location VST-22400-33511-32.
+Wed Jul 16 01:45:58 2014 +0000 (UTC) 
+Wed Jul 16 01:45:58 2014 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/Jastrow/1-2J/submit_qmcpack.csh'
+Wed Jul 16 01:45:58 2014 +0000 (UTC) 
+Wed Jul 16 01:45:58 2014 +0000 (UTC) Environment:
+Wed Jul 16 01:45:58 2014 +0000 (UTC) SHELL=/bin/bash
+Wed Jul 16 01:45:58 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpyf9e0t
+Wed Jul 16 01:45:58 2014 +0000 (UTC) COBALT_PARTNAME=VST-22400-33511-32
+Wed Jul 16 01:45:58 2014 +0000 (UTC) COBALT_JOBID=203613
+Wed Jul 16 01:45:58 2014 +0000 (UTC) COBALT_STARTTIME=1405475115
+Wed Jul 16 01:45:58 2014 +0000 (UTC) LOGNAME=mmorales
+Wed Jul 16 01:45:58 2014 +0000 (UTC) USER=mmorales
+Wed Jul 16 01:45:58 2014 +0000 (UTC) COBALT_ENDTIME=1405478715
+Wed Jul 16 01:45:58 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Wed Jul 16 01:45:58 2014 +0000 (UTC) HOME=/home/mmorales
+Wed Jul 16 01:45:58 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Wed Jul 16 01:45:58 2014 +0000 (UTC) 
+Wed Jul 16 01:45:58 2014 +0000 (UTC) Info: stdin received from /dev/null
+Wed Jul 16 01:45:58 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/Jastrow/1-2J/203613.output
+Wed Jul 16 01:45:58 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/Jastrow/1-2J/203613.error
+Wed Jul 16 01:45:58 2014 +0000 (UTC) 
+Wed Jul 16 01:46:01 2014 +0000 (UTC) mmorales/203613: Block VST-22400-33511-32 for location VST-22400-33511-32 successfully booted (Initiating). 
+Wed Jul 16 01:49:43 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

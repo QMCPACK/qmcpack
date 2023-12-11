@@ -1,0 +1,71 @@
+&CONTROL
+   calculation     = 'scf'
+   disk_io         = 'low'
+   outdir          = 'pwscf_output'
+   prefix          = 'pwscf'
+   pseudo_dir      = './'
+   restart_mode    = 'from_scratch'
+   tprnfor         = .true.
+   tstress         = .true.
+   verbosity       = 'high'
+   wf_collect      = .true.
+/
+
+&SYSTEM
+   !celldm(1)       = 1.0
+   degauss         = 0.0001
+   ecutrho         = 600
+   ecutwfc         = 150
+   ibrav           = 0
+   input_dft       = 'lda'
+   nat             = 20
+   nosym           = .true.
+   ntyp            = 1
+   occupations     = 'smearing'
+   smearing        = 'fermi-dirac'
+   tot_charge      = 0
+/
+
+&ELECTRONS
+   conv_thr        = 1e-06
+   diagonalization = 'david'
+   electron_maxstep = 1000
+   mixing_beta     = 0.7
+   mixing_mode     = 'plain'
+/
+
+
+ATOMIC_SPECIES 
+   C  12.011 C.BFD.upf
+
+ATOMIC_POSITIONS bohr
+   C        5.67201488       2.07077135       6.12363826 
+   C        6.75261319      10.35385673       6.12363826 
+   C        7.08201324       3.22522394       3.94377340 
+   C        5.34261483       9.19940413       3.94377340 
+   C        3.47937320       3.67136938       6.12925830 
+   C        8.94525487       8.75325869       6.12925830 
+   C        7.01802334       3.26065630       8.19563830 
+   C        5.40660473       9.16397177       8.19563830 
+   C        3.36421329       5.32336419       8.38508335 
+   C        9.06041478       7.10126388       8.38508335 
+   C        9.32199067       4.47448409       7.52881820 
+   C        3.10263740       7.95014398       7.52881820 
+   C        5.59434335       4.95914404       2.66707443 
+   C        6.83028472       7.46548403       2.66707443 
+   C        5.52597495       4.97581520       9.75755364 
+   C        6.89865312       7.44881287       9.75755364 
+   C        9.21609041       4.62832480       4.86606936 
+   C        3.20853766       7.79630327       4.86606936 
+   C        3.20853766       5.19697363       3.97024846 
+   C        9.21609041       7.22765444       3.97024846 
+
+K_POINTS automatic
+   1 1 1  0 0 0 
+
+CELL_PARAMETERS bohr
+        12.42462807       0.00000000       0.00000000 
+         0.00000000      12.42462807       0.00000000 
+         0.00000000       0.00000000      12.42462807 
+
+

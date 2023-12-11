@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="eg" series="0">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      Sample qmc runs for HEG. See Note 1 and 2 to modify the number of
+      particles.
+    </application>
+  </project>
+  <!-- set seed to -1 for random seems -->
+  <random seed="11"/>
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="rs" condition="14">5</parameter>
+      <parameter name="bconds">p p p</parameter>
+      <parameter name="LR_dim_cutoff">6</parameter>
+    </simulationcell>
+    <particleset name="e" random="yes">
+      <group name="u" size="7">
+        <parameter name="charge">-1</parameter>
+        <parameter name="mass">1</parameter>
+      </group>
+      <group name="d" size="7">
+        <parameter name="charge">-1</parameter>
+        <parameter name="mass">1</parameter>
+      </group>
+    </particleset>
+    <wavefunction name="psi0" target="e">
+      <determinantset type="electron-gas" shell="1" randomize="true"/>
+    </wavefunction>
+    <hamiltonian name="h0" type="generic" target="e">
+      <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    </hamiltonian>
+  </qmcsystem>
+  <qmc method="vmc" move="walker">
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">1000</parameter>
+    <parameter name="walkers">1</parameter>
+    <parameter name="time_step">2.0</parameter>
+  </qmc>
+</simulation>

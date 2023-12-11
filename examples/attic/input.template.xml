@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="myproject" series="0"/>
+  <randmo seed="-1"/> <!-- time-based parallel random seeds -->
+  <include href="ptcl.xml"/> <!-- define particlesets: ions and e -->
+  <include href="wfs.xml"/>  <!-- define trial wavefunction -->
+  <include href="ham.xml"/>  <!-- define hamiltonian -->
+  <loop max="4">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="blocks">     5  </parameter>
+      <parameter name="warmupsteps"> 10 </parameter>
+      <parameter name="stepsbetweensamples">    10 </parameter>
+      <parameter name="timestep">  2.00 </parameter>
+      <parameter name="samples">  24000 </parameter>
+      <parameter name="minwalkers">  0.5 </parameter>
+      <parameter name="maxWeight">    1e9 </parameter>
+      <parameter name="useDrift">  yes </parameter>
+      <cost name="energy">                   0.95 </cost>
+      <cost name="unreweightedvariance">     0.0 </cost>
+      <cost name="reweightedvariance">       0.05 </cost>
+      <parameter name="MinMethod">rescale</parameter>
+      <parameter name="GEVMethod">mixed</parameter>
+      <parameter name="beta">  0.05  </parameter>
+      <parameter name="exp0"> -6 </parameter>
+      <parameter name="bigchange">1.1</parameter>
+      <parameter name="alloweddifference"> 1.0e-8 </parameter>
+      <parameter name="stepsize">5.0e-1</parameter>
+      <parameter name="stabilizerscale">  0.5 </parameter>
+      <parameter name="nstabilizers"> 10 </parameter>
+      <parameter name="max_its"> 1 </parameter>
+      <parameter name="cgsteps"> 3 </parameter>     
+      <parameter name="eigcg">   1 </parameter>
+    </qmc>
+  </loop>
+  <qmc method="vmc" multiple="no" warp="no" checkpoint="100" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="useDrift">yes</parameter>                                               
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="samples">8000</parameter>
+    <parameter name="warmupsteps">10</parameter>
+    <parameter name="timestep">2.0</parameter>
+  </qmc>
+  <qmc method="dmc" multiple="no" warp="no" checkpoint="100" move="pbyp">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="nonlocalmoves"> yes </parameter>
+    <parameter name="blocks">2</parameter>
+    <parameter name="steps">25</parameter>
+    <parameter name="warmupsteps">25</parameter>
+    <parameter name="timestep">5.e-2</parameter>
+  </qmc>
+  <qmc method="dmc" multiple="no" warp="no" checkpoint="100"  move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="nonlocalmoves"> yes </parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="blocks">1000</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="timestep">0.02</parameter>
+  </qmc>
+</simulation>

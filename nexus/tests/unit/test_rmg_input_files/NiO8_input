@@ -1,0 +1,254 @@
+# Description of run.
+description="NiO 8 atom cell in anti-ferromagnetic configuration solved using Davidson diagonalization"
+test_energy="-677.71977422"
+
+# Uncommenting this will print out more information
+#verbose="true"
+
+# Wavefunction grid
+wavefunction_grid="36 36 36"
+#coalesce_states = "true"
+#coalesce_factor = "6"
+
+# Maximum number of scf steps per quench or MD step
+# The default of 500 is much larger than is normally needed.
+max_scf_steps = "100"
+
+# Ratio of the potential grid density to the wavefunction grid
+# density. For example if the wavefunction grid is (72,72,72) and 
+# potential_grid_refinement = "2" then the potential grid would be
+# (144,144,144). The default value is 2 but it may sometimes be
+# beneficial to adjust this. (For USPP the minimum value is also 2
+# and it cannot be set lower. NCPP can be set to 1).
+potential_grid_refinement = "2"
+
+# Most pseudopotentials specify the exchange correlation type they
+# were generated with and the default value of AUTO_XC means that
+# the type specified in the pseudopotial is what RMG will use. That
+# can be overridden by specifying a value here. For a full list of
+# the available types look in the source distribution at the file
+# Headers/InputOpts.h around line 146.
+#exchange_correlation_type = "gaupbe"
+#exx_integrals_filepath = "ExxIntegrals"
+
+# The Beta function projectors for a particular ion decay rapidly
+# in real-space with increasing r. For large cells truncating the
+# real-space representation of the projector can lead to
+# significant computational savings with a small loss of accuracy.
+# For smaller cells the computational cost is the same for localized
+# or delocalized projectors so it is better to set localize_projectors
+# to false.
+localize_projectors = "false"
+
+# The local potential associated with a particular ion also decays
+# rapidly in real-space with increasing r. As with beta projectors
+# truncating the real-space representation for large cells can lead
+# to significant computational savings with a small loss of accuracy
+# but it should be set to false for small cells.
+localize_localpp = "false"
+
+# RMG uses finite differencing to represent the kinetic energy operator
+# and the accuracy of the representation is controllable by the
+# kohn_sham_fd_order parameter. The default is 8 and is fine for most
+# purposes but higher accuracy is obtainable with 10th order at the cost
+# of some additional computational expense.
+#kohn_sham_fd_order = "10"
+
+# Atomic forces may be computed to varying degrees of accuracy depending
+# on the requirements of a specific problem. A value of 0 implies highest
+# accuracy.
+force_grad_order = "0"
+
+# The kpoint mesh is setup using these parameters. The default values
+# shown below are for a gamma point calculation.
+kpoint_mesh = "2 2 2"
+kpoint_is_shift = "0 0 0 "
+
+# RMG supports several different ways of specifying orbital occupations.
+# For a spin polarized system one may specify the occupations for up and
+# down separately. In the case of a non-zero electronic temperature these
+# will be adjusted as the calculation proceeds. For a non-spin polarized
+# calculation look at one of the other examples.
+#occupations_type = "Fixed"
+#occupations_type = "Fermi Dirac"
+occupations_type = "MethfesselPaxton"
+
+states_count_and_occupation_spin_up = "48 1.0 8 0.0"
+states_count_and_occupation_spin_down = "48 1.0 8 0.0"
+
+
+# Specify the output wavefunction file.
+# Not bothering to write it for this example.
+#output_wave_function_file = "/dev/null"
+#output_wave_function_file = "Waves/wave.out"
+
+# Specify the input wavefunction file for restarts
+#input_wave_function_file = "Waves/wave.out"
+
+# Specify whether or not zfp compression is used on the wavefunction files
+#compressed_outfile = "true"
+#compressed_infile = "true"
+
+
+# is that described by Dudarev et. al Phys. Reb. B 57, 1505 (1998)
+# These input options are subject to change as the LDA+U support is expanded.
+ldaU_mode = "Simple"
+#ldaU_radius = "7.00000000"
+#atomic_orbital_type = "localized"
+Hubbard_U=
+"
+Ni 6.5
+"
+
+
+# RMG includes a default set of ultra-soft pseudopotentials but the
+# LDA+U implementation does not yet support USPP so we specify a set
+# of norm-conserving pseudopotentials to use for this calculation.
+#pseudo_dir = "/home/luw/ONCVPSP/abinit"
+pseudopotential = "
+Ni Ni_oncv.UPF
+O O_oncv.UPF
+"
+
+# Units for bravais_lattice_type and atoms
+# Default is Bohr
+#crds_units="Bohr"
+#crds_units="Angstrom"
+
+# RMG supports the following lattice types (Hexagonal at gamma-only)
+bravais_lattice_type="Cubic Primitive"
+#bravais_lattice_type="Orthorhombic Primitive"
+#bravais_lattice_type="Hexagonal Primitive"
+
+# Lattice constants 
+a_length="7.8811"
+b_length="7.8811"
+c_length="7.8811"
+alpha="0.0"
+beta="0.0"
+gamma="0.0"
+
+# In most cases LCAO or Restart but certain special scenarios
+# may require a Random or Modified LCAO start
+start_mode="LCAO Start"
+#start_mode="Random Start"
+#start_mode="Modified LCAO Start"
+#start_mode="Restart From File"
+
+
+# This is not an exhaustive list of options but does
+# contain the most frequently used ones.
+calculation_mode="Quench Electrons"
+#calculation_mode="Relax Structure"
+#calculation_mode="Constant Volume And Energy"
+#calculation_mode="Constant Temperature And Energy"
+#calculation_mode="Band Structure Only"
+
+
+# RMG supports a pure multigrid Kohn-Sham solver as well as
+# a multigrid preconditioned davidson solver. The davidson
+# solver is usually better for smaller problems with the pure
+# multigrid solver often being a better choice for very large
+# problems.
+kohn_sham_solver="davidson"
+#kohn_sham_solver="multigrid"
+
+# Davidson solver options.
+# The davidson solver expands the eigenspace with the maximum expansion
+# factor being set by the value of davidson_multiplier. Larger values
+# often lead to faster convergence but because the computational cost
+# of the davidson diagonalization step scales as the cube of the number of
+# eigenvectors the optimal value based on the fastest time to solution
+# depends on the number of orbitals. If not specified explicitly RMG uses
+# the following algorithm to set the value.
+#
+#   Number of orbitals <= 600          davidson_multiplier = "4"
+#   600 < Number of orbitals <= 900    davidson_multiplier = "3"
+#   Number of orbitals > 900           davidson_multiplier = "2"
+#
+#   For very large problems the N^3 scaling makes even a factor of 2
+#   prohibitively costly and the multigrid solver is a better choice.
+#
+davidson_multiplier = "4"
+
+# Maximum number of inner davidsion iterations. 
+davidson_max_steps = "15"
+
+# Kohn Sham mg levels. May sometimes need to be adjusted but default is
+# usually OK.
+kohn_sham_mg_levels = "3"
+
+# Number of kohn_sham_mucycles per scf step. A higher or lower value is
+# sometimes beneficial but the default of 2 is usually fine.
+#kohn_sham_mucycles = "2"
+
+
+# RMG supports a variety of subspace diagonalization options depending
+# on the hardware and libraries available for a specific platform
+#subdiag_driver="cusolver"
+#subdiag_driver="scalapack"
+subdiag_driver="lapack"
+
+# When the number of eigenvectors is large using folded_spectrum is
+# substantially faster than standard diagonalization. It also tends
+# to converge better for metallic systems. It works with the
+# multigrid kohn_sham_solver but not the davidson solver.
+#folded_spectrum = "true"
+
+# The folded spectrum width ranges from 0.10 to 1.0. For insulators and
+# semiconductors a value of 0.3 is appropriate. For metals values between
+# 0.15 to 0.2 tend to be better. The default value is 0.3
+#folded_spectrum_width = "0.30000000"
+
+# RMG supports Broyden, Pulay and Linear mixing
+# When the davidson Kohn-Sham solver is selected Broyden or
+# Pulay are preferred. For the multigrid solver Linear with
+# potential acceleration is often (but not always) the best
+# choice.
+charge_mixing_type = "Broyden"
+#charge_mixing_type = "Pulay"
+#charge_mixing_type = "Linear"
+
+# This parameter is used for all scf steps when linear mixing is
+# selected and also for the first few steps of Broyden or Pulay.
+charge_density_mixing = "0.25"
+#charge_broyden_scale="0.1"
+
+# When set to a non-zero value this parameter causes RMG to
+# perform a band by band update of the self-consistent potential
+# during the course of an SCF step when the multigrid kohn_sham_solver
+# is chosen. This means that updates to the lower energy orbitals
+# are incorporated into the SCF potential seen by the higher energy orbitals
+# as soon as they are computed. This can lead to faster convergence
+# and better stability for many systems. The option should only be used
+# with Linear mixing. Even when the davidson solver is chosen this parameter
+# may be used since the first few steps with davidson usually uses the
+# multigrid solver.
+potential_acceleration_constant_step="1.0"
+
+# How often to save wavefunctions to disk during a quench. The
+# default is every 5 steps but that may generate excessive I/O
+# in which case the period can be increased.
+write_data_period="5"
+#write_data_period="50"
+
+# Criterion used to judge SCF convergency 
+energy_convergence_criterion="1.0e-10"
+rms_convergence_criterion = "1.0e-8"
+
+atomic_coordinate_type="Cell Relative"
+#atomic_coordinate_type="Absolute"
+
+# List  atomic symbol, coordinates, and movable flag (1 == movable) as well as initial
+# spin polarization for magnetic systems.
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+O        0.000000       0.000000       0.500000    1    0.0
+O        0.000000       0.500000       0.000000    1    0.0
+O        0.500000       0.000000       0.000000    1    0.0
+O        0.500000       0.500000       0.500000    1    0.0
+Ni        0.005000        0.000000        0.000000    1    0.25
+Ni        0.500000        0.500000        0.000000    1    0.25
+Ni        0.000000        0.500000        0.500000    1   -0.25
+Ni        0.500000        0.000000        0.500000    1   -0.25
+"

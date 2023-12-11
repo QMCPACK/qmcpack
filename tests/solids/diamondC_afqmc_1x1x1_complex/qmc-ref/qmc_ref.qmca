@@ -1,0 +1,56 @@
+
+qmc_ref_thc series 0 
+  EnergyEstim__deno_imag=  0.000000000000000000024 +/- 0.000000000000000000033 
+  EnergyEstim__deno_real=              1.00 +/-             0.00 
+  EnergyEstim__nume_imag=          0.000208 +/-         0.000096 
+  EnergyEstim__nume_real=         -10.33408 +/-          0.00043 
+  EnergyEstim__timer    =        0.00032045 +/-       0.00000026 
+  Eshift                =           6.56291 +/-          0.00075 
+  Ovlp                  =           0.40740 +/-          0.00017 
+  PseudoEloc            =           6.56204 +/-          0.00037 
+  freeMemory            =         124804.68 +/-             2.35 
+  nWalkers              =            320.00 +/-             0.00 
+  time                  =           5005.50 +/-          1820.99 
+  weight                =         319.93007 +/-          0.00017 
+
+qmc_ref_chol  series 0 
+  EnergyEstim__deno_imag=  -0.000000000000000000030 +/- 0.000000000000000000032 
+  EnergyEstim__deno_real=              1.00 +/-             0.00 
+  EnergyEstim__nume_imag=          -0.00002 +/-          0.00014 
+  EnergyEstim__nume_real=         -10.55201 +/-          0.00033 
+  EnergyEstim__timer    =        0.00036789 +/-       0.00000074 
+  Eshift                =           6.28010 +/-          0.00090 
+  Ovlp                  =           0.19732 +/-          0.00013 
+  PseudoEloc            =           6.28046 +/-          0.00028 
+  freeMemory            =         108153.06 +/-          1189.52 
+  nWalkers              =            320.00 +/-             0.00 
+  time                  =           5005.50 +/-          1820.99 
+  weight                =         319.77758 +/-          0.00045 
+
+qmc_ref_uhf  series 0 
+  EnergyEstim__deno_imag=  0.000000000000000000038 +/- 0.000000000000000000054 
+  EnergyEstim__deno_real=              1.00 +/-             0.00 
+  EnergyEstim__nume_imag=           0.00014 +/-          0.00014 
+  EnergyEstim__nume_real=         -10.55151 +/-          0.00031 
+  EnergyEstim__timer    =         0.0008867 +/-        0.0000012 
+  Eshift                =           6.27941 +/-          0.00092 
+  Ovlp                  =           0.19761 +/-          0.00012 
+  PseudoEloc            =           6.28059 +/-          0.00028 
+  freeMemory            =         123301.02 +/-             1.07 
+  nWalkers              =            320.00 +/-             0.00 
+  time                  =           5005.50 +/-          1820.99 
+  weight                =         319.77846 +/-          0.00039 
+
+qmc_ref_phmsd  series 0 
+  EnergyEstim__deno_imag=  0.000000000000000000002 +/- 0.000000000000000000062 
+  EnergyEstim__deno_real=              1.00 +/-             0.00 
+  EnergyEstim__nume_imag=           0.00008 +/-          0.00012 
+  EnergyEstim__nume_real=         -10.55085 +/-          0.00026 
+  EnergyEstim__timer    =         0.0058799 +/-        0.0000020 
+  Eshift                =           6.26356 +/-          0.00087 
+  Ovlp                  =           0.17948 +/-          0.00012 
+  PseudoEloc            =           6.26336 +/-          0.00023 
+  freeMemory            =         121597.11 +/-             0.90 
+  nWalkers              =            320.00 +/-             0.00 
+  time                  =           5005.50 +/-          1820.99 
+  weight                =         319.78828 +/-          0.00038 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Jeongnim Kim (University of Illinois) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/qmcbase.xsd"/>
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/particleset.xsd"/>
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/hamiltonian.xsd"/>
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/wavefunction.xsd"/>
+  <xs:element name="qmcsystem">
+    <xs:annotation>
+      <xs:documentation>Define a QMC system</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="particleset" type="ParticleSetType" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="wavefunction" type="wavefunctionType" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="hamiltonian" type="qmcHamiltonianType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

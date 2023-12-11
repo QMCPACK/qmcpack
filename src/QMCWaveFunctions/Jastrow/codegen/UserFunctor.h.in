@@ -1,0 +1,139 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2019 QMCPACK developers.
+//
+// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//
+// File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+
+$dire_codegen_warning
+
+/** @file UserFunctor.h
+ * @brief User-defined functor
+ */
+#ifndef QMCPLUSPLUS_USERFUNCTOR_H
+#define QMCPLUSPLUS_USERFUNCTOR_H
+#include "OptimizableFunctorBase.h"
+#include "OhmmsData/AttributeSet.h"
+#include <cmath>
+// #include <vector>
+#include "OhmmsPETE/TinyVector.h"
+
+
+namespace qmcplusplus
+{
+/** Implements the function
+$func_str
+ *
+ */
+template<class T>
+struct UserFunctor : public OptimizableFunctorBase
+{
+
+$param_defs
+
+  ///default constructor
+  UserFunctor() { reset(); }
+
+// void setCusp(real_type cusp)
+$set_cusp
+
+  OptimizableFunctorBase* makeClone() const { return new UserFunctor(*this); }
+
+  void reset()
+  {
+  }
+
+
+
+// inline real_type evaluate(real_type r) const
+$evaluate_func
+
+// const inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
+$evaluate_func_2nd_derivative
+
+// inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
+$evaluate_func_3rd_derivative
+
+
+  inline real_type evaluateV(const int iat,
+                             const int iStart,
+                             const int iEnd,
+                             const T* restrict _distArray,
+                             T* restrict distArrayCompressed) const
+  {
+  // specialized evaluation loop?
+    real_type sum(0);
+    for (int idx = iStart; idx < iEnd; idx++)
+      if (idx != iat)
+        sum += evaluate(_distArray[idx]);
+    return sum;
+  }
+
+  inline void evaluateVGL(const int iat,
+                          const int iStart,
+                          const int iEnd,
+                          const T* distArray,
+                          T* restrict valArray,
+                          T* restrict gradArray,
+                          T* restrict laplArray,
+                          T* restrict distArrayCompressed,
+                          int* restrict distIndices) const
+  {
+    // specialized evaluation loop?
+    for (int idx = iStart; idx < iEnd; idx++)
+    {
+      valArray[idx] = evaluate(distArray[idx], gradArray[idx], laplArray[idx]);
+      gradArray[idx] /= distArray[idx];
+    }
+    if (iat >= iStart && iat < iEnd)
+      valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
+  }
+
+  inline real_type f(real_type r) { return evaluate(r); }
+
+  inline real_type df(real_type r)
+  {
+    real_type dudr, d2udr2;
+    real_type res = evaluate(r, dudr, d2udr2);
+    return dudr;
+  }
+
+// inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
+$evaluate_all_parameter_derivatives
+
+// inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+$evaluate_parameter_derivative
+
+//  bool put(xmlNodePtr cur)
+$xml_input
+
+  void checkInVariables(opt_variables_type& active)
+  {
+    active.insertFrom(myVars);
+    //myVars.print(std::cout);
+  }
+
+  void checkOutVariables(const opt_variables_type& active)
+  {
+    myVars.getIndex(active);
+    //myVars.print(std::cout);
+  }
+
+//void resetParameters(const opt_variables_type& active)
+$reset_parameters
+};
+
+
+
+
+} // namespace qmcplusplus
+#endif

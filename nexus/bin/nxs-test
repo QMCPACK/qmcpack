@@ -1,0 +1,2499 @@
+#! /usr/bin/env python3
+
+import os
+import sys
+import shutil
+import traceback
+from optparse import OptionParser
+
+# find the path to the nxs-test executable and its parent directory
+scriptpath=os.path.realpath(__file__)
+parent_dir=os.path.dirname(os.path.dirname(scriptpath))
+
+# allow override during install
+host_dir = None
+if host_dir is not None:
+    parent_dir = host_dir
+#end if
+
+# save nexus directories
+library_dir   = os.path.join(parent_dir,'lib')
+test_dir      = os.path.join(parent_dir,'tests')
+reference_dir = os.path.join(parent_dir,'tests/reference')
+example_dir   = os.path.join(parent_dir,'examples')
+
+# ensure that nxs-test executable is resident in a nexus directory tree
+dirs_check = ['examples','bin','lib','tests','tests/reference']
+for d in dirs_check:
+    pd = os.path.join(parent_dir,d)
+    if not os.path.exists(pd):
+        print('nxs-test executable is not run within a Nexus directory tree\nthe following directories must be present: {0}\nthe following directories are present: {1}\nexecutable launched from path: {2}'.format(dirs_check,os.listdir(parent_dir),parent_dir))
+        exit(1)
+    #end if
+#end for
+
+# enforce association between nxs-test executable and Nexus library
+sys.path.insert(0,library_dir)
+
+from generic import generic_settings,object_interface,NexusError
+
+generic_settings.raise_error = True
+
+
+
+# add unit test modules
+sys.path.append(os.path.abspath(os.path.join(__file__,'..','..','tests','unit')))
+
+unit_test_module_lists = dict()
+unit_test_modules      = dict()
+
+import inspect
+import importlib
+
+def import_unit_test_module_list(module_name):
+    if module_name not in unit_test_module_lists:
+        module = importlib.import_module(module_name)
+        unit_test_list = []
+        for name,member in inspect.getmembers(module):
+            if name.startswith('test_') and inspect.isfunction(member):
+                unit_test = member
+                unit_test_list.append((name,unit_test))
+            #end if
+        #end for
+        unit_test_module_lists[module_name] = unit_test_list
+    #end if
+    return unit_test_module_lists[module_name]
+#end def import unit_test_module_list
+
+
+def import_unit_test_module(module_name):
+    if module_name not in unit_test_modules:
+        unit_test_list = import_unit_test_module_list(module_name)
+        unit_test_modules[module_name] = dict(unit_test_list)
+    #end if
+    return unit_test_modules[module_name]
+#end def import unit_test_module
+
+
+def import_from_unit_test_module(module_name,test_name):
+    module = import_unit_test_module(module_name)
+    if test_name not in module:
+        print('function "{}" is not in module "{}"\nfunctions present: {}'.format(test_name,module_name,sorted(module.keys())))
+        exit(1)
+    #end if
+    return module[test_name]
+#end def import_from_unit_test_module
+
+
+# import core testing functions (shared between nxs-test and unit tests)
+from testing import *
+import testing as nexus_testing
+
+
+
+# exception indicating test failure
+class NexusTestFail(Exception):
+    None
+#end class NexusTestFail
+
+# exception indicating that developer constructed test incorrectly
+class NexusTestMisconstructed(Exception):
+    None
+#end class NexusTestMisconstructed
+
+# exception used during detailed developer checks of the testing system
+class NexusTestTripped(Exception):
+    None
+#end class NexusTestTripped
+
+
+
+
+class NexusTestBase(object):
+    nexus_test_dir    = '.nexus_test' # nxs-test directory
+
+    launch_path       = None  # path from which nxs-test exe was launched
+    current_test      = None  # current NexusTest
+    current_label     = ''    # current nlabel()
+    test_count        =  0    # current test count
+    label_count       =  0    # current label count in NexusTest.operation()
+    current_assert    =  0    # current assert count
+
+    assert_trip       = -1    # developer tool to trip assert's one by one
+                              # if set to n, an exception will be raised for the
+                              # n-th assert call
+
+    # keep a running count of assert calls
+    @staticmethod
+    def assert_called():
+        NexusTestBase.current_assert+=1
+        ca = NexusTestBase.current_assert
+        if ca==NexusTestBase.assert_trip:
+            raise NexusTestTripped
+        #end if
+    #end def assert_called
+
+    # provide a directory path to place test output data in
+    @staticmethod
+    def test_path():
+        test   = NexusTestBase.current_test
+        label  = NexusTestBase.current_label
+        label  = label.replace(' ','_').replace('-','_')
+        tcount = str(NexusTestBase.test_count).zfill(2)
+        lcount = str(NexusTestBase.label_count).zfill(2)
+        if test.test_dir is None:
+            test_dir  = '{0}_{1}'.format(tcount,test.name)
+        else:
+            test_dir = test.test_dir
+        #end if
+        label_dir = '{0}_{1}'.format(lcount,label)
+        ntdir  = NexusTestBase.nexus_test_dir
+        nlpath = NexusTestBase.launch_path
+        if len(label)==0:
+            testpath = os.path.join(nlpath,ntdir,test_dir)
+        else:
+            testpath = os.path.join(nlpath,ntdir,test_dir,label_dir)
+        #end if
+        return testpath
+    #end def test_path
+        
+    @staticmethod
+    def test_path_from_dir(test_dir):
+        ntdir  = NexusTestBase.nexus_test_dir
+        nlpath = NexusTestBase.launch_path
+        return os.path.join(nlpath,ntdir,test_dir)
+    #end def test_path_from_dir
+#end class NexusTestBase
+
+
+
+# class used to divert log output when desired
+class FakeLog:
+    def __init__(self):
+        self.reset()
+    #end def __init__
+
+    def reset(self):
+        self.s = ''
+    #end def reset
+
+    def write(self,s):
+        self.s+=s
+    #end def write
+
+    def close(self):
+        None
+    #end def close
+#end class FakeLog
+
+
+# dict to temporarily store logger when log output is diverted
+logging_storage = dict()
+
+
+# developer function interface for test creation below
+
+# label a section of tests
+def nlabel(label):
+    os.chdir(NexusTestBase.launch_path)
+    NexusTestBase.current_label = label
+    NexusTestBase.label_count  += 1
+    NexusTestBase.current_test.subtests.append(label)
+#end def nlabel
+
+
+# divert nexus log output
+def nlog_divert():
+    logging_storage['devlog'] = generic_settings.devlog
+    logging_storage['objlog'] = object_interface._logfile 
+    logfile = FakeLog()
+    generic_settings.devlog   = logfile
+    object_interface._logfile = logfile
+#end def nlog_divert
+
+
+# restore nexus log output
+def nlog_restore():
+    generic_settings.devlog   = logging_storage['devlog']
+    object_interface._logfile = logging_storage['devlog']
+#end def nlog_restore
+
+
+# logging functions for tests
+def nlog(msg,n=0,indent='  '):
+    if len(msg)>0:
+        indent = n*indent
+        msg=indent+msg.replace('\n','\n'+indent)+'\n'
+    #end if
+    sys.stdout.write(msg)
+#end def nlog
+
+def nmessage(msg,header=None,n=0):
+    if header is None:
+        nlog(msg,n=n)
+    else:
+        nlog(header,n=n)
+        nlog(msg,n=n+1)
+    #end if
+#end def nmessage
+
+def nerror(msg,header='nexus test',n=0):
+    nmessage(msg,header+' error:',n=n)
+    sys.exit(1)
+#end def nerror
+
+
+# enter the current testing directory
+def nenter(path=None,preserve=False,relative=False):
+    if not relative:
+        testpath = NexusTestBase.test_path()
+        if path is None:
+            path = testpath
+        else:
+            path = os.path.join(testpath,path)
+        #end if
+    #end if
+    if not preserve and os.path.exists(path):
+        try:
+            shutil.rmtree(path)
+        except Exception as e:
+            if os.path.exists(path):
+                raise e
+            #end if
+        #end try
+    #end if
+    if not os.path.exists(path):
+        os.makedirs(path)
+    #end if
+    os.chdir(path)
+    NexusTestBase.entered = True
+    return path
+#end def nenter
+
+
+# leave the current testing directory
+def nleave():
+    os.chdir(NexusTestBase.launch_path)
+    NexusTestBase.entered = False
+#end def nleave
+
+
+# create multiple directories in the local test directory
+def ncreate_dirs(*dirs):
+    if not NexusTestBase.entered:
+        raise NexusTestMisconstructed
+    #end if
+    for dir in dirs:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        #end if
+    #end for
+#end def ncreate_dirs
+
+
+# create a single directory, optionally filled with files
+def ncreate_dir(dir,files):
+    ncreate_dirs(dir)
+    filepaths = [os.path.join(dir,file) for file in files]
+    ncreate_files(*filepaths)
+#end def ncreate_dir
+
+
+# create a set of empty files in the local test directory
+def ncreate_files(*files):
+    if not NexusTestBase.entered:
+        raise NexusTestMisconstructed
+    #end if
+    for file in files:
+        if not os.path.exists(file):
+            open(file,'w').close()
+        #end if
+    #end for
+#end def ncreate_files
+
+
+# declare that a test has passed
+def npass():
+    None
+#end def npass
+
+
+# declare that a test has failed
+def nfail(msg=''):
+    exception = NexusTestFail(msg)
+    raise exception
+#end def nfail
+
+
+# check an assertion
+def nassert(result):
+    if not isinstance(result,bool):
+        raise NexusTestMisconstructed
+    elif not result:
+        nfail()
+    else:
+        npass()
+    #end if
+    NexusTestBase.assert_called()
+#end def nassert
+
+
+# run a unit test from an external file
+def nunit(test_name):
+    module_name = 'test_'+NexusTestBase.current_test.name
+    if not test_name.startswith('test_'):
+        test_name = 'test_'+test_name
+    #end if
+    unit_test   = import_from_unit_test_module(module_name,test_name)
+    load_external_unit_tests()
+    run_external_unit_test(test_name,unit_test)
+#end def nunit
+
+
+# run all uncalled unit tests from an external file
+def nunit_all():
+    nexus_test = NexusTestBase.current_test
+    module_name = 'test_'+NexusTestBase.current_test.name
+    module = import_unit_test_module(module_name)
+    load_external_unit_tests()
+    uncalled_tests = sorted(nexus_test.unit_tests-nexus_test.unit_tests_called)
+    for test_name in uncalled_tests:
+        unit_test = module[test_name]
+        run_external_unit_test(test_name,unit_test)
+    #end for
+#end def nunit_all
+
+
+# ensure all external unit tests are loaded
+def load_external_unit_tests():
+    nexus_test = NexusTestBase.current_test
+    if len(nexus_test.unit_tests)==0:
+        module_name = 'test_'+nexus_test.name
+        module = import_unit_test_module(module_name)
+        nexus_test.unit_tests = set(module.keys())
+    #end if
+#end def load_external_unit_tests
+
+
+# actually execute the unit test (not to be called directly within a Nexus test)
+def run_external_unit_test(test_name,unit_test):
+    nexus_test = NexusTestBase.current_test
+    if test_name not in nexus_test.unit_tests:
+        raise NexusTestMisconstructed('unit test "{}" does not exist for function "{}"'.format(test_name,nexus_test.name))
+    elif test_name in nexus_test.unit_tests_called:
+        raise NexusTestMisconstructed('unit test "{}" has already been called in function "{}"'.format(test_name,nexus_test.name))
+    #end if
+    nlabel(test_name)
+    nexus_test.unit_tests_called.add(test_name)
+    unit_test()
+#end def run_external_unit_test
+
+
+# class to represent a test
+#   a test is created by writing a single function 
+#   each test function contains subtests labeled with nlabel
+#   each subtest has a collection of assert statements, etc
+class NexusTest(NexusTestBase):
+
+    status_options = dict(
+        unused = 0,
+        passed = 1,
+        failed = 2,
+        )
+
+    status_map = dict()
+    for k,v in status_options.items():
+        status_map[v] = k
+    #end for
+
+    test_list = []
+    test_dict = {}
+
+    # capture launch path and clear out any old test data
+    #   to be called once at user launch
+    @staticmethod
+    def setup():
+        NexusTestBase.launch_path = os.getcwd()
+        nexus_test_dir = './'+NexusTestBase.nexus_test_dir
+    #end def setup
+
+
+    # register the current test object in the global test list
+    def __init__(self,operation,name=None,op_inputs=None,test_dir=None,optional=False):
+        if not callable(operation):
+            raise NexusTestMisconstructed
+        #end if
+        if name is None:
+            name = operation.__name__ 
+        elif not isinstance(name,str):
+            raise NexusTestMisconstructed
+        #end if
+        if op_inputs is not None and not isinstance(op_inputs,(tuple,dict)):
+            raise NexusTestMisconstructed
+        #end if
+        if test_dir is not None and not isinstance(test_dir,str):
+            raise NexusTestMisconstructed
+        #end if
+        self.name              = name
+        self.operation         = operation
+        self.op_inputs         = op_inputs
+        self.test_dir          = test_dir
+        self.optional          = optional
+        self.exception         = None
+        self.status            = NexusTest.status_options['unused']
+        self.unit_tests        = set() # complete set of unit tests
+        self.unit_tests_called = set() # set of unit tests called so far
+        self.subtests          = []    # list of subtests called
+        NexusTest.test_list.append(self)
+        NexusTest.test_dict[self.name] = self
+    #end def __init__
+
+
+    @property
+    def unused(self):
+        return self.status==NexusTest.status_options['unused']
+    #end def unused
+
+    @property
+    def passed(self):
+        return self.status==NexusTest.status_options['passed']
+    #end def passed
+
+    @property
+    def failed(self):
+        return self.status==NexusTest.status_options['failed']
+    #end def failed
+
+
+    # run the current test
+    def run(self):
+        nleave()
+        NexusTestBase.current_test  = self
+        NexusTestBase.current_label = ''
+        NexusTestBase.test_count   += 1
+        NexusTestBase.label_count   = 0
+        failed = False
+        try:
+            if self.op_inputs is None:
+                self.operation()
+            elif isinstance(self.op_inputs,tuple):
+                self.operation(*self.op_inputs)
+            elif isinstance(self.op_inputs,dict):
+                self.operation(**self.op_inputs)
+            else:
+                raise NexusTestMisconstructed
+            #end if
+            check_final_state()
+            self.status=NexusTest.status_options['passed']
+        except Exception as e:
+            t,v,tb = sys.exc_info()
+            self.exception = e
+            self.traceback = tb
+            self.status=NexusTest.status_options['failed']
+            failed = True
+        #end try
+        uncalled_unit_tests = self.unit_tests-self.unit_tests_called
+        if not failed and len(uncalled_unit_tests)>0:
+            raise NexusTestMisconstructed('not all unit tests were called\n  uncalled unit tests: {}\n  please add these either by calling "nunit" for each of them\n  or by calling "nunit_all" at the end of function "{}"'.format(sorted(uncalled_unit_tests),self.name))
+        #end if
+    #end def run
+
+
+    # generate a message describing the outcome of the test
+    def message(self):
+        s = ''
+        s+='Test name     : {0}\n'.format(self.name)
+        status = NexusTest.status_map[self.status]
+        if self.failed and self.exception is not None:# and not isinstance(self.exception,NexusTestFail):
+            if len(NexusTestBase.current_label)>0:
+                s+='Test sublabel : {0}\n'.format(NexusTestBase.current_label)
+            #end if
+            e = self.exception
+            btrace = traceback.format_tb(self.traceback)
+            if isinstance(e,NexusTestFail):
+                btrace = btrace[:-1]
+                msg = str(e)
+                if len(msg)>0:
+                    s+='Test exception: {0}\n'.format('\n  '+msg.replace('\n','\n  '))
+                #end if
+            elif isinstance(e,NexusTestMisconstructed):
+                btrace = btrace[:-1]
+                s+='Test exception: Nexus test is misconstructed.  Please contact developers.\n'
+            else:
+                s+='Test exception: "{0}"\n'.format(e.__class__.__name__+': '+str(e).replace('\n','\n              '))
+            #end if
+            s+='Test backtrace:\n'
+            for s2 in btrace: 
+                s+=s2
+            #end for
+        #end if
+        return s
+    #end def message
+#end class NexusTest
+
+
+
+
+#===============================================#
+#   testing infrastructure above, tests below   #
+#===============================================#
+
+
+
+def versions():
+    nunit('import')
+
+    nunit('constants')
+
+    nunit('time')
+
+    nunit('version_processing')
+
+    nunit('versions_object')
+
+    nunit_all()
+#end def versions
+
+
+
+def required_dependencies():
+    nunit('numpy_available')
+
+    nunit_all()
+#end def required_dependencies
+
+
+
+def optional_dependencies():
+    nunit('scipy_available')
+
+    nunit('h5py_available')
+
+    nunit('matplotlib_available')
+
+    nunit('pydot_available')
+
+    nunit('spglib_available')
+
+    nunit('pycifrw_available')
+
+    nunit('seekpath_available')
+
+    nunit_all()
+#end def optional_dependencies
+
+
+
+def nexus_imports():
+    nunit('imports')
+    
+    nunit_all()
+#end def nexus_imports
+
+
+
+def testing():
+    nunit('import')
+
+    nunit('value_checks')
+
+    nunit('object_checks')
+
+    nunit('text_checks')
+
+    nunit_all()
+#end def testing
+
+
+
+def execute():
+    nunit('import')
+
+    nunit('execute')
+
+    nunit_all()
+#end def execute
+
+
+
+def memory():
+    nunit('import')
+
+    nunit('memory')
+
+    nunit('resident')
+
+    nunit('stacksize')
+
+    nunit_all()
+#end def memory
+
+
+
+def plotting():
+    nunit('import')
+
+    nunit_all()
+#end def plotting
+
+
+
+def superstring():
+    nunit('imports')
+
+    nunit('string2val')
+
+    nunit('split_delims')
+
+    nunit('valid_variable_name')
+
+    nunit('find_matching_pair')
+
+    nunit('remove_pair_sections')
+
+    nunit('remove_empty_lines')
+
+    nunit_all()
+#end def superstring
+
+
+
+def generic_operation():
+    nunit('logging')
+
+    nunit('intrinsics')
+
+    nunit('extensions')
+
+    nunit_all()
+#end def generic_operation
+
+
+
+def developer():
+    nunit('import')
+
+    nunit('unavailable')
+
+    nunit_all()
+#end def developer
+
+
+
+def unit_converter():
+    nunit('import')
+
+    nunit('convert')
+
+    nunit('convert_scalar_to_all')
+
+    nunit_all()
+#end def unit_converter
+
+
+
+def periodic_table():
+    nunit('import')
+
+    nunit('periodic_table')
+
+    nunit('is_element')
+
+    nunit_all()
+#end def periodic_table
+
+
+
+def numerics():
+    nunit('import')
+
+    nunit('ndgrid')
+
+    nunit('distance_table')
+
+    nunit('nearest_neighbors')
+
+    nunit('simplestats')
+
+    nunit('simstats')
+
+    nunit('equilibration_length')
+
+    nunit('morse')
+
+    nunit('eos')
+
+    nunit_all()
+#end def numerics
+
+
+
+def grid_functions():
+    nunit('imports')
+
+    # supporting functions
+    nunit('coord_conversion')
+
+    nunit('unit_grid_points')
+
+    nunit('parallelotope_grid_points')
+
+    nunit('spheroid_grid_points')
+
+    # Grid tests
+    nunit('grid_initialization')
+
+    nunit('parallelotope_grid_initialization')
+
+    nunit('grid_reset')
+
+    nunit('grid_set_operations')
+
+    nunit('grid_copy')
+
+    nunit('grid_translate')
+
+    nunit('grid_reshape')
+
+    nunit('grid_unit_points')
+
+    nunit('grid_cell_indices')
+
+    nunit('grid_inside')
+
+    nunit('grid_project')
+
+    nunit('grid_radius')
+
+    nunit('grid_axes_volume')
+
+    nunit('grid_volume')
+
+    nunit('grid_cell_volumes')
+
+    nunit('grid_unit_metric')
+
+    # GridFunction tests
+
+    # any remaining tests
+    nunit_all()
+#end def grid_functions
+
+
+
+def fileio():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('textfile')
+
+    nunit('xsffile')
+
+    nunit('xsffile_density')
+
+    nunit('poscar_file')
+
+    nunit('chgcar_file')
+
+    nunit_all()
+#end def fileio
+
+
+
+def hdfreader():
+    nunit('import')
+
+    nunit_all()
+#end def hdfreader
+
+
+
+def xmlreader():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('read')
+
+    nunit_all()
+#end def xmlreader
+
+
+
+def structure():
+
+    nunit('files')
+
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('reference_inputs')
+
+    nunit('direct_init')
+
+    nunit('generate_init')
+
+    nunit('crystal_init')
+
+    nunit('diagonal_tiling')
+
+    nunit('matrix_tiling')
+
+    nunit('gen_molecule')
+
+    nunit('gen_diamond_direct')
+
+    nunit('gen_diamond_lattice')
+
+    nunit('gen_graphene')
+
+    nunit('read_write')
+
+    nunit('bounding_box')
+
+    nunit('opt_tiling')
+
+    nunit('unit_coords')
+
+    nunit('monkhorst_pack_kpoints')
+
+    nunit('count_kshells')
+
+    nunit('rinscribe')
+
+    nunit('rwigner')
+
+    nunit('volume')
+
+    nunit('min_image_distances')
+
+    nunit('freeze')
+
+    nunit('interpolate')
+
+    nunit_all()
+#end def structure
+
+
+
+def physical_system():
+    nunit('import')
+
+    nunit('particle_initialization')
+
+    nunit('physical_system_initialization')
+
+    nunit('change_units')
+
+    nunit('rename')
+
+    nunit('tile')
+
+    nunit('kf_rpa')
+
+    nunit_all()
+#end def physical_system
+
+
+
+def basisset():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('basissets')
+
+    nunit('process_gaussian_text')
+
+    nunit('gaussianbasisset')
+
+    nunit_all()
+#end def basisset
+
+
+
+def pseudopotential():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('pp_elem_label')
+
+    nunit('pseudopotentials')
+
+    nunit('ppset')
+
+    nunit('pseudopotential_classes')
+
+    nunit_all()
+#end def pseudopotential
+
+
+
+def nexus_base():
+    nunit('import')
+
+    nunit('namespaces')
+
+    nunit('empty_init')
+
+    nunit('write_splash')
+
+    nunit('enter_leave')
+
+    nunit_all()
+#end def nexus_base
+
+
+
+def machines():
+
+    nunit('import')
+
+    nunit('cpu_count')
+
+    nunit('options')
+
+    nunit('job_init')
+
+    nunit('job_time')
+
+    nunit('job_set_id')
+
+    nunit('job_get_machine')
+
+    nunit('job_set_environment')
+
+    nunit('job_clone')
+
+    nunit('job_serial_clone')
+
+    nunit('machine_virtuals')
+
+    nunit('machine_list')
+
+    nunit('machine_add')
+
+    nunit('machine_get')
+
+    nunit('machine_instantiation')
+
+    nunit('workstation_init')
+
+    nunit('workstation_scheduling')
+
+    nunit('supercomputer_init')
+
+    nunit('supercomputer_scheduling')
+
+    nunit('process_job')
+
+    nunit('job_run_command')
+
+    nunit('write_job')
+
+    nunit_all()
+#end def machines
+
+
+
+def simulation():
+
+    nunit('import')
+
+    nunit('simulation_input')
+
+    nunit('simulation_analyzer')
+
+    nunit('simulation_input_template')
+
+    nunit('simulation_input_multi_template')
+
+    nunit('code_name')
+
+    nunit('init')
+
+    nunit('virtuals')
+
+    nunit('reset_indicators')
+
+    nunit('indicator_checks')
+
+    nunit('create_directories')
+
+    nunit('file_text')
+
+    nunit('depends')
+
+    nunit('undo_depends')
+
+    nunit('has_generic_input')
+
+    nunit('check_dependencies')
+
+    nunit('get_dependencies')
+
+    nunit('downstream_simids')
+
+    nunit('copy_file')
+
+    nunit('save_load_image')
+
+    nunit('load_analyzer_image')
+
+    nunit('save_attempt')
+
+    nunit('write_inputs')
+
+    nunit('send_files')
+
+    nunit('submit')
+
+    nunit('update_process_id')
+
+    nunit('check_status')
+
+    nunit('get_output')
+
+    nunit('analyze')
+
+    nunit('progress')
+
+    nunit('execute')
+
+    nunit('reset_wait_ids')
+
+    nunit('check_subcascade')
+
+    nunit('block_dependents')
+
+    nunit('reconstruct_cascade')
+
+    nunit('traverse_cascade')
+
+    nunit('traverse_full_cascade')
+
+    nunit('test_write_dependents')
+
+    nunit('generate_simulation')
+
+    nunit_all()
+#end def simulation
+
+
+
+def bundle():
+    nunit('import')
+
+    nunit('bundle')
+
+    nunit_all()
+#end def bundle
+
+
+
+def project_manager():
+    nunit('import')
+
+    nunit('init')
+
+    nunit('add_simulations')
+
+    nunit('traverse_cascades')
+
+    nunit('screen_fake_sims')
+
+    nunit('resolve_file_collisions')
+
+    nunit('propagate_blockages')
+
+    nunit('load_cascades')
+    
+    nunit('check_dependencies')
+
+    nunit('write_simulation_status')
+
+    nunit('run_project')
+
+    nunit_all()
+#end def project_manager
+
+
+
+def settings_operation():
+    nunit('import')
+
+    nunit('settings')
+
+    nunit_all()
+#end def settings_operation
+
+
+
+def vasp_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('keyword_consistency')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def vasp_input
+
+
+
+def pwscf_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('input')
+
+    nunit_all()
+#end def pwscf_input
+
+
+
+def pwscf_postprocessor_input():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def pwscf_postprocessor_input
+
+
+
+def gamess_input():
+    nunit('files')
+    
+    nunit('import')
+    
+    nunit('keyspec_groups')
+    
+    nunit('empty_init')
+    
+    nunit('read')
+    
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def gamess_input
+
+
+
+def pyscf_input():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('generate')
+
+    nunit('write')
+
+    nunit_all()
+#end def pyscf_input
+
+
+
+def quantum_package_input():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('generate')
+
+    nunit_all()
+#end def quantum_package_input
+
+
+
+def rmg_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def rmg_input
+
+
+
+def qmcpack_converter_input():
+    nunit('import')
+
+    nunit('pw2qmcpack_input_empty_init')
+
+    nunit('pw2qmcpack_input_read')
+
+    nunit('pw2qmcpack_input_write')
+
+    nunit('pw2qmcpack_input_generate')
+
+    nunit('convert4qmc_input_empty_init')
+
+    nunit('convert4qmc_input_generate')
+
+    nunit('convert4qmc_input_write')
+
+    nunit('pyscf_to_afqmc_input_init')
+
+    nunit('pyscf_to_afqmc_input_write')
+
+    nunit_all()
+#end def qmcpack_converter_input
+
+
+
+def qmcpack_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('qixml_class_init')
+
+    nunit('compose')
+
+    nunit('generate')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('get')
+
+    nunit('incorporate_system')
+
+    nunit('generate_kspace_jastrow')
+
+    nunit('excited_state')
+
+    nunit_all()
+#end def qmcpack_input
+
+
+
+def vasp_analyzer():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def vasp_analyzer
+
+
+
+def pwscf_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def pwscf_analyzer
+
+
+
+def pwscf_postprocessor_analyzers():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('projwfc_analyzer')
+
+    nunit_all()
+#end def pwscf_postprocessor_analyzers
+
+
+
+def gamess_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('analyze')
+
+    nunit_all()
+#end def gamess_analyzer
+
+
+
+def pyscf_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def pyscf_analyzer
+
+
+
+def quantum_package_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def quantum_package_analyzer
+
+
+
+def rmg_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def rmg_analyzer
+
+
+
+def qmcpack_converter_analyzers():
+    nunit('import')
+
+    nunit('pw2qmcpack_analyzer_init')
+
+    nunit('convert4qmc_analyzer_init')
+
+    nunit('pyscf_to_afqmc_analyzer_init')
+
+    nunit_all()
+#end def qmcpack_converter_analyzers
+
+
+
+def qmcpack_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('vmc_dmc_analysis')
+
+    nunit('optimization_analysis')
+
+    nunit('twist_average_analysis')
+
+    nunit_all()
+#end def qmcpack_analyzer
+
+
+
+def vasp_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit('get_output_files')
+
+    nunit_all()
+#end def vasp_simulation
+
+
+
+def pwscf_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+    
+    nunit('check_result')
+
+    nunit('get_result')
+    
+    nunit('incorporate_result')
+    
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def pwscf_simulation
+
+
+
+def gamess_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def gamess_simulation
+
+
+
+def pyscf_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+    
+    nunit('check_sim_status')
+    
+    nunit_all()
+#end def pyscf_simulation
+
+
+
+def quantum_package_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def quantum_package_simulation
+
+
+
+def rmg_simulation():
+    nunit('import')
+
+    #nunit('minimal_init')
+
+    nunit_all()
+#end def rmg_simulation
+
+
+
+def pwscf_postprocessor_simulations():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def pwscf_postprocessor_simulations
+
+
+
+def qmcpack_converter_simulations():
+    nunit('pw2qmcpack_import')
+
+    nunit('pw2qmcpack_minimal_init')
+
+    nunit('pw2qmcpack_check_result')
+
+    nunit('pw2qmcpack_get_result')
+
+    nunit('pw2qmcpack_incorporate_result')
+
+    nunit('pw2qmcpack_check_sim_status')
+
+
+    nunit('convert4qmc_import')
+
+    nunit('convert4qmc_minimal_init')
+
+    nunit('convert4qmc_check_result')
+
+    nunit('convert4qmc_get_result')
+
+    nunit('convert4qmc_incorporate_result')
+
+    nunit('convert4qmc_check_sim_status')
+
+
+    nunit('pyscf_to_afqmc_import')
+
+    nunit('pyscf_to_afqmc_minimal_init')
+
+    nunit('pyscf_to_afqmc_check_result')
+
+    nunit('pyscf_to_afqmc_get_result')
+
+    nunit('pyscf_to_afqmc_incorporate_result')
+
+    nunit('pyscf_to_afqmc_check_sim_status')
+
+    nunit_all()
+#end def qmcpack_converter_simulations
+
+
+
+def qmcpack_simulation():
+    nunit('import')
+
+    nunit('minimal_init')
+
+    nunit('check_result')
+
+    nunit('get_result')
+
+    nunit('incorporate_result')
+
+    nunit('check_sim_status')
+
+    nunit_all()
+#end def qmcpack_simulation
+
+
+
+def observables():
+    nunit('import')
+
+    nunit('defined_attribute_base')
+
+    nunit_all()
+#end def observables
+
+
+
+def nxs_redo():
+    nunit('test_redo')
+
+    nunit_all()
+#end def nxs_redo
+
+
+
+def nxs_sim():
+    nunit('sim')
+
+    nunit_all()
+#end def nxs_sim
+
+
+
+def qmc_fit():
+    nunit_all()
+#end def qmc_fit
+
+
+
+def qdens():
+    nunit_all()
+#end def qdens
+
+
+def qdens_radial():
+    nunit_all()
+#end def qdens
+
+
+def qmca():
+    nunit('help')
+
+    nunit('examples')
+
+    nunit('unit_conversion')
+
+    nunit('selected_quantities')
+
+    nunit('all_quantities')
+
+    nunit('energy_variance')
+
+    nunit('multiple_equilibration')
+
+    nunit('join')
+
+    nunit('multiple_directories')
+
+    nunit('twist_average')
+
+    nunit('weighted_twist_average')
+
+    nunit_all()
+#end def qmca
+
+
+
+
+example_information = dict(
+    pwscf_relax_Ge_T = dict(
+        path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
+        scripts = [
+            'relax_vs_kpoints_example.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','runs/relax/kgrid_111/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_222/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_444/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_666/relax.in'),
+            ],
+        ),
+    gamess_H2O = dict(
+        path = 'gamess/H2O',
+        scripts = [
+            'h2o_pp_hf.py',
+            'h2o_pp_cisd.py',
+            'h2o_pp_casscf.py',
+            ],
+        files = [
+            ('gamess'    ,'input','runs/pp_hf/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_cisd/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_cisd/cisd.inp'),
+            ('gamess'    ,'input','runs/pp_casscf/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_casscf/cas.inp'),
+            ],
+        ),
+    qmcpack_H2O = dict(
+        path = 'qmcpack/rsqmc_misc/H2O',
+        scripts = [
+            'H2O.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','runs/scf.in'),
+            ('pw2qmcpack','input','runs/p2q.in'),
+            ('qmcpack'   ,'input','runs/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/dmc.in.xml'),
+            ],
+        ),
+    qmcpack_LiH = dict(
+        path = 'qmcpack/rsqmc_misc/LiH',
+        scripts = [
+            'LiH.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','runs/scf.in'),
+            ('pwscf'     ,'input','runs/nscf.in'),
+            ('pw2qmcpack','input','runs/p2q.in'),
+            ('qmcpack'   ,'input','runs/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/dmc.in.xml'),
+            ],
+        ),
+    qmcpack_c20 = dict(
+        path = 'qmcpack/rsqmc_misc/c20',
+        scripts = [
+            'c20.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','runs/c20/scf/scf.in'),
+            ('pw2qmcpack','input','runs/c20/nscf/p2q.in'),
+            ('qmcpack'   ,'input','runs/c20/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/c20/qmc/qmc.in.xml'),
+            ],
+        ),
+    qmcpack_diamond = dict(
+        path = 'qmcpack/rsqmc_misc/diamond',
+        scripts = [
+            'diamond.py',
+            'diamond_vacancy.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','runs/diamond/scf/scf.in'),
+            ('pw2qmcpack','input','runs/diamond/scf/conv.in'),
+            ('qmcpack'   ,'input','runs/diamond/vmc/vmc.in.xml'),
+            ('pwscf'     ,'input','runs/diamond_vacancy/relax/relax.in'),
+            ('pwscf'     ,'input','runs/diamond_vacancy/scf/scf.in'),
+            ],
+        ),
+    qmcpack_graphene = dict(
+        path = 'qmcpack/rsqmc_misc/graphene',
+        scripts = [
+            'graphene.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','runs/graphene/scf/scf.in'),
+            ('pwscf'     ,'input','runs/graphene/nscf/nscf.in'),
+            ('pw2qmcpack','input','runs/graphene/nscf/p2q.in'),
+            ('pwscf'     ,'input','runs/graphene/nscf_opt/nscf.in'),
+            ('pw2qmcpack','input','runs/graphene/nscf_opt/p2q.in'),
+            ('qmcpack'   ,'input','runs/graphene/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/graphene/qmc/qmc.in.xml'),
+            ],
+        ),
+    qmcpack_oxygen_dimer = dict(
+        path = 'qmcpack/rsqmc_misc/oxygen_dimer',
+        scripts = [
+            'oxygen_dimer.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','scale_1.0/scf.in'),
+            ('pw2qmcpack','input','scale_1.0/p2q.in'),
+            ('qmcpack'   ,'input','scale_1.0/opt.in.xml'),
+            ('qmcpack'   ,'input','scale_1.0/qmc.in.xml'),
+            ],
+        ),
+    )
+
+user_examples_data = dict()
+
+def user_examples(label):
+
+    from pwscf_input import PwscfInput
+    from qmcpack_converters import Pw2qmcpackInput
+    from gamess_input import GamessInput
+    from qmcpack_input import QmcpackInput
+
+    # load information for a single user example
+    if label not in example_information:
+        raise NexusTestMisconstructed
+    #end if
+    einfo = example_information[label]
+
+    # create local directory for these tests
+    test_dir = nenter(preserve=True)
+
+    # create a local file to track any test failures
+    #   this is optionally used when updating reference files automatically
+    example_failures_filename = 'test_failures.txt'
+    test_failures_file = user_examples_data['failures_file']
+    if test_failures_file is None:
+        test_failures_file = open(user_examples_data['failures_filepath'],'w')
+        user_examples_data['failures_file'] = test_failures_file
+    #end if
+
+    # copy over nexus user examples into reference generation directory
+    #   only do this the first time as all user example tests share a test directory
+    if not os.path.exists(os.path.join(test_dir,'qmcpack')):
+        command = 'rsync -av --ignore-existing {0}/* {1}/'.format(example_dir,test_dir)
+        out,err,rc = execute(command)
+        if rc>0:
+            nfail('copying example directory failed\nattempted command:\n'+command)
+        #end if
+    #end if
+
+    # execute all example scripts in generate_only mode
+    path = einfo['path']
+    cwd = os.getcwd()
+    tpath = os.path.join(test_dir,path)
+    # remove prexisting example files
+    nenter(tpath,relative=True)
+    # copy over nexus examples files just for this example
+    epath = os.path.join(example_dir,path)
+    command = 'rsync -av {0}/* ./'.format(epath)
+    out,err,rc = execute(command)
+    if rc>0:
+        nfail('copying example directory failed\nattempted command:\n'+command)
+    #end if
+    for script in einfo['scripts']:
+        # run the example script
+        command = sys.executable+' ./'+script+' --generate_only --sleep=0.01'
+        out,err,rc = nexus_testing.execute(command)
+    #end for
+    os.chdir(cwd)
+
+    # check that generated files match reference files
+    ref_example_dir = os.path.join(reference_dir,'user_examples')
+    input_classes = dict(
+        pwscf      = PwscfInput,
+        pw2qmcpack = Pw2qmcpackInput,
+        gamess     = GamessInput,
+        qmcpack    = QmcpackInput,
+        )
+    example_path = einfo['path']
+    for code,filetype,filepath in einfo['files']:
+        ref_filepath = os.path.join(ref_example_dir,example_path,filepath)
+        gen_filepath = os.path.join(test_dir,example_path,filepath)
+        # check that the reference file exists
+        if not os.path.exists(ref_filepath):
+            nfail('reference file is missing\nfile should be located at: {0}'.format(ref_filepath))
+        #end if
+        # check that the generated file exists
+        if not os.path.exists(gen_filepath):
+            nfail('input file was not generated: {0}'.format(gen_filepath))
+        #end if
+        # check that the generated file matches the reference file
+        #   read the files into Nexus' object representation
+        #   use object_diff to compare object represenations
+        #   this is needed to compare floats within a tolerance
+        if filetype=='input':
+            input_class = input_classes[code]
+            ref_input = input_class(ref_filepath)
+            gen_input = input_class(gen_filepath)
+            diff,dgen,dref = object_diff(gen_input,ref_input,full=True)
+            if diff:
+                # assume failure
+                failed = True
+                # if difference due to periodically equivalent points
+                # then it is not a failure
+                check_pbc = False
+                if len(dgen)==1 and len(dref)==1:
+                    kgen = list(dgen.keys())[0].rsplit('/',1)[1]
+                    kref = list(dref.keys())[0].rsplit('/',1)[1]
+                    check_pbc |= code=='qmcpack' and kgen==kref=='position'
+                    check_pbc |= code=='pwscf'   and kgen==kref=='positions'
+                #end if
+                if check_pbc:
+                    try:
+                        # extract Structure objects from SimulationInput objects
+                        rs = ref_input.return_structure()
+                        gs = gen_input.return_structure()
+                        # compare minimum image distances of all atomic coordinates
+                        d = rs.min_image_distances(gs.pos,pairs=False)
+                        # allow for small deviation due to precision of ascii floats in the text input files 
+                        if d.min()<1e-6:
+                            failed = False
+                        #end if
+                    except:
+                        None
+                    #end try
+                #end if
+                if failed:
+                    # store failing reference files
+                    test_failures_file.write(ref_filepath+'\n')
+                    # report on failures
+                    from generic import obj
+                    dgen = obj(dgen)
+                    dref = obj(dref)
+                    msg = 'reference and generated input files differ\n'
+                    msg += 'reference file: '+filepath+'\n'
+                    msg += 'reference file difference\n'
+                    msg += 40*'='+'\n'
+                    msg += str(dref)
+                    msg += 'generated file difference\n'
+                    msg += 40*'='+'\n'
+                    msg += str(dgen)
+                    nfail(msg)
+                #end if
+            #end if
+        else:
+            raise NexusTestMisconstructed
+        #end if
+    #end for
+#end def user_examples
+
+
+
+# create labeled tests from simple functions above
+
+# ordered according to logical dependencies
+NexusTest( versions                        )
+NexusTest( required_dependencies           )
+NexusTest( optional_dependencies           , optional=True)
+NexusTest( nexus_imports                   )
+NexusTest( testing                         )
+NexusTest( execute                         )
+NexusTest( memory                          )
+NexusTest( superstring                     )
+NexusTest( generic_operation               , 'generic' )
+NexusTest( developer                       )
+NexusTest( plotting                        )
+NexusTest( unit_converter                  )
+NexusTest( periodic_table                  )
+NexusTest( numerics                        )
+NexusTest( grid_functions                  )
+NexusTest( fileio                          )
+NexusTest( hdfreader                       )
+NexusTest( xmlreader                       )
+NexusTest( structure                       )
+NexusTest( physical_system                 )
+NexusTest( basisset                        )
+NexusTest( pseudopotential                 )
+NexusTest( nexus_base                      )
+NexusTest( machines                        )
+NexusTest( simulation                      , 'simulation_module' )
+NexusTest( bundle                          )
+NexusTest( project_manager                 )
+NexusTest( settings_operation              , 'settings' )
+NexusTest( vasp_input                      )
+NexusTest( pwscf_input                     )
+NexusTest( pwscf_postprocessor_input       )
+NexusTest( gamess_input                    )
+NexusTest( pyscf_input                     )
+NexusTest( quantum_package_input           )
+NexusTest( rmg_input                       )
+NexusTest( qmcpack_converter_input         )
+NexusTest( qmcpack_input                   )
+NexusTest( vasp_analyzer                   )
+NexusTest( pwscf_analyzer                  )
+NexusTest( pwscf_postprocessor_analyzers   )
+NexusTest( gamess_analyzer                 )
+NexusTest( pyscf_analyzer                  )
+NexusTest( quantum_package_analyzer        )
+NexusTest( rmg_analyzer                    )
+NexusTest( qmcpack_converter_analyzers     )
+NexusTest( qmcpack_analyzer                )
+NexusTest( vasp_simulation                 )
+NexusTest( pwscf_simulation                )
+NexusTest( gamess_simulation               )
+NexusTest( pyscf_simulation                )
+NexusTest( quantum_package_simulation      )
+NexusTest( rmg_simulation                  )
+NexusTest( pwscf_postprocessor_simulations )
+NexusTest( qmcpack_converter_simulations   )
+NexusTest( qmcpack_simulation              )
+NexusTest( observables                     )
+NexusTest( nxs_redo                        )
+NexusTest( nxs_sim                         )
+NexusTest( qmca                            )
+NexusTest( qmc_fit                         )
+NexusTest( qdens                           )
+NexusTest( qdens_radial                    )
+
+# ordered alphabetically (pytest order)
+#NexusTest( basisset                        )
+#NexusTest( bundle                          )
+#NexusTest( developer                       )
+#NexusTest( execute                         )
+#NexusTest( fileio                          )
+#NexusTest( gamess_analyzer                 )
+#NexusTest( gamess_input                    )
+#NexusTest( gamess_simulation               )
+#NexusTest( generic_operation               , 'generic' )
+#NexusTest( grid_functions                  )
+#NexusTest( hdfreader                       )
+#NexusTest( machines                        )
+#NexusTest( memory                          )
+#NexusTest( nexus_base                      )
+#NexusTest( nexus_imports                   )
+#NexusTest( numerics                        )
+#NexusTest( nxs_redo                        )
+#NexusTest( nxs_sim                         )
+#NexusTest( observables                     )
+#NexusTest( optional_dependencies           , optional=True)
+#NexusTest( periodic_table                  )
+#NexusTest( physical_system                 )
+#NexusTest( plotting                        )
+#NexusTest( project_manager                 )
+#NexusTest( pseudopotential                 )
+#NexusTest( pwscf_analyzer                  )
+#NexusTest( pwscf_input                     )
+#NexusTest( pwscf_postprocessor_analyzers   )
+#NexusTest( pwscf_postprocessor_input       )
+#NexusTest( pwscf_postprocessor_simulations )
+#NexusTest( pwscf_simulation                )
+#NexusTest( pyscf_analyzer                  )
+#NexusTest( pyscf_input                     )
+#NexusTest( pyscf_simulation                )
+#NexusTest( qdens                           )
+#NexusTest( qdens_radial                    )
+#NexusTest( qmc_fit                         )
+#NexusTest( qmca                            )
+#NexusTest( qmcpack_analyzer                )
+#NexusTest( qmcpack_converter_analyzers     )
+#NexusTest( qmcpack_converter_input         )
+#NexusTest( qmcpack_converter_simulations   )
+#NexusTest( qmcpack_input                   )
+#NexusTest( qmcpack_simulation              )
+#NexusTest( quantum_package_analyzer        )
+#NexusTest( quantum_package_input           )
+#NexusTest( quantum_package_simulation      )
+#NexusTest( required_dependencies           )
+#NexusTest( settings_operation              , 'settings' )
+#NexusTest( simulation                      , 'simulation_module' )
+#NexusTest( structure                       )
+#NexusTest( superstring                     )
+#NexusTest( testing                         )
+#NexusTest( unit_converter                  )
+#NexusTest( vasp_analyzer                   )
+#NexusTest( vasp_simulation                 )
+#NexusTest( vasp_input                      )
+#NexusTest( versions                        )
+#NexusTest( xmlreader                       )
+
+for label in sorted(example_information.keys()):
+    NexusTest(
+        name      = 'example_'+label,  # individually label tests
+        operation = user_examples,     # all tests call the same test function
+        op_inputs = dict(label=label), #   but with different inputs
+        test_dir  = 'user_examples',   # all tests are run in the same base directory 
+        )
+#end for
+
+
+
+# launch the actual testing framework
+
+# Returns failure error code to OS.
+# Explicitly prints 'fail' after an optional message.
+def exit_fail(msg=None):
+    if msg!=None:
+        print(msg)
+    #end if
+    print('Test status: fail')
+    exit(1)
+#end def exit_fail
+
+# Returns success error code to OS.
+# Explicitly prints 'pass' after an optional message.
+def exit_pass(msg=None):
+    if msg!=None:
+        print(msg)
+    #end if
+    print('Test status: pass')
+    exit(0)
+#end def exit_pass
+
+# execute function
+from subprocess import Popen,PIPE
+def execute(command,verbose=False,skip=False):
+    out,err = '',''
+    if skip:
+        if verbose:
+            print('Would have executed:\n  '+command)
+        #end if
+    else:
+        if verbose:
+            print('Executing:\n  '+command)
+        #end if
+        process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+        out,err = process.communicate()
+    #end if
+    return out,err,process.returncode
+#end def execute
+
+
+
+def regenerate_reference(update=False):
+    # create directory for reference file generation
+    refgen_dir = './reference_regen'
+    if os.path.exists(refgen_dir):
+        shutil.rmtree(refgen_dir)
+    #end if
+    os.makedirs(refgen_dir)
+
+    nlog('generating reference data in {0}'.format(refgen_dir))
+
+    # create directory for example reference generation
+    exdir = user_examples_data['dir']
+    refgen_example_dir = os.path.join(refgen_dir,exdir)
+    if not os.path.exists(refgen_example_dir):
+        os.makedirs(refgen_example_dir)
+    #end if
+
+    # copy over nexus user examples into reference generation directory
+    out,err,rc = execute('rsync -av {0}/* {1}/'.format(example_dir,refgen_example_dir))
+    if rc>0:
+        nerror('rsync of example directory failed, exiting',n=1)
+    #end if
+
+    # execute all example scripts in generate_only mode
+    for label,einfo in example_information.items():
+        example_path = einfo['path']
+        for script in einfo['scripts']:
+            nlog('generating reference data for '+script,n=1)
+            path = os.path.join(refgen_example_dir,example_path)
+            cwd = os.getcwd()
+            nlog('current directory: '+cwd,n=2)
+            nlog('entering directory: '+path,n=2)
+            os.chdir(path)
+            if not os.path.exists('./'+script):
+                nerror('script file {} does not exist'.format(script),n=2)
+            #end if
+            command =  sys.executable+' ./'+script+' --generate_only --sleep=0.1'
+            nlog('executing command: '+command,n=2)
+            out,err,rc = execute(command)
+            if rc>0:
+                nerror('example script failed to run',n=2)
+            #end if
+            os.chdir(cwd)
+        #end for
+    #end for
+
+    # update the reference set of example files
+    if update:
+        nlog('\nupdating reference data')
+        if options.update_dryrun:
+            nlog('performing a dryrun, no files will be updated',n=1)
+        #end if
+        failures_filepath = user_examples_data['failures_filepath']
+        nlog('attempting to load example failures file',n=1)
+        nlog('file location: {}'.format(failures_filepath),n=2)
+        failures_list = []
+        if os.path.exists(failures_filepath):
+            f = open(failures_filepath,'r')
+            failures_list.extend(f.read().splitlines())
+            f.close()
+            nlog('file read successfully',n=2)
+            nlog('files for previously failed examples:',n=2)
+            for filepath in failures_list:
+                nlog(filepath,n=3)
+            #end for
+        else:
+            nlog('file does not exist, skipping',n=2)
+        #end if
+        nlog('collecting file transfer information',n=1)
+        new_examples = []
+        failed_examples = []
+        all_examples = []
+        ref_example_dir = os.path.join(reference_dir,exdir)
+        for label,einfo in example_information.items():
+            example_path = einfo['path']
+            for code,filetype,filepath in einfo['files']:
+                ref_filepath = os.path.join(ref_example_dir,example_path,filepath)
+                gen_filepath = os.path.join(refgen_example_dir,example_path,filepath)
+                ref_path,ref_file = os.path.split(ref_filepath)
+                transfer = label,gen_filepath,ref_filepath
+                if not os.path.exists(ref_filepath):
+                    new_examples.append(transfer)
+                elif ref_filepath in failures_list:
+                    failed_examples.append(transfer)
+                #end if
+                all_examples.append(transfer)
+            #end for
+        #end for
+        if options.update_mode=='new':
+            nlog('only new examples will be updated',n=1)
+            update_examples = new_examples
+        elif options.update_mode=='failed':
+            nlog('both failed and new examples will be updated',n=1)
+            update_examples = failed_examples + new_examples
+        elif options.update_mode=='all':
+            nlog('all examples will be updated',n=1)
+            update_examples = all_examples
+        #end if
+        if len(update_examples)==0:
+            nlog('no examples selected for update!',n=1)
+        for label,gen_filepath,ref_filepath in update_examples:
+            ref_path,ref_file = os.path.split(ref_filepath)
+            nlog('update for '+label,n=2)
+            nlog('ref file: '+ref_filepath,n=3)
+            nlog('gen file: '+gen_filepath,n=3)
+            if options.update_dryrun:
+                nlog('reference file not updated',n=3)
+            else:
+                if not os.path.exists(ref_path):
+                    os.makedirs(ref_path)
+                #end if
+                shutil.copy2(gen_filepath,ref_path)
+                nlog('reference file updated',n=3)
+            #end if
+        #end for
+    #end if
+
+#end def regenerate_reference
+
+
+
+
+
+def find_nexus_modules():
+    import sys
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
+#end def find_nexus_modules
+
+
+def import_nexus_module(module_name):
+    import importlib
+    return importlib.import_module(module_name)
+#end def import_nexus_module
+
+
+# Get Nexus version
+try:
+    # Attempt specialized path-based imports.
+    #  (The executable should still work even if Nexus is not installed)
+    find_nexus_modules()
+
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+except:
+    try:
+        from versions import nexus_version
+    except:
+        nexus_version = 0,0,0
+    #end try
+#end try
+
+
+
+if __name__=='__main__':
+    import re
+    from time import time # used to get user wall clock rather than cpu time
+
+    tstart_all = time()
+
+    # read command line input
+    regex = None
+    ctest = False
+
+    parser = OptionParser(
+        usage='usage: %prog [options]',
+        add_help_option=False,
+        version='%prog {}.{}.{}'.format(*nexus_version)
+        )
+
+    parser.add_option('-h','--help',dest='help',
+                      action='store_true',default=False,
+                      help='Print help information and exit (default=%default).'
+                      )
+    parser.add_option('-v','--verbose',dest='verbose',
+                      action='store_true',default=False,
+                      help='Print detailed information (default=%default).'
+                      )
+    parser.add_option('-R','--regex',dest='regex',
+                      default='none',
+                      help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
+                      )
+    parser.add_option('--list',dest='list',
+                      action='store_true',default=False,
+                      help='List tests in human readable format. (default=%default).'
+                      )
+    parser.add_option('--full',dest='full',
+                      action='store_true',default=False,
+                      help='Test optional features (default=%default).'
+                      )
+    parser.add_option('--ctestlist',dest='ctestlist',
+                      action='store_true',default=False,
+                      help='List tests in CMake format. Intended for use within CTest (default=%default).'
+                      )
+    parser.add_option('--ctest',dest='ctest',
+                      action='store_true',default=False,
+                      help='Compatibility mode for calls from the CTest framework (default=%default).'
+                      )
+    parser.add_option('--pythonpath',dest='pythonpath',
+                      default='none',
+                      help='Sets PYTHONPATH environment variable for any scripts executed by nxs-test.  The default behavior is to use PYTHONPATH as already defined in the host environment.'
+                      )
+    parser.add_option('--trip',dest='trip',
+                      default='none',
+                      help='Cause the "trip"-th assertion statement to fail.  Useful when to ensure that the CMake script is working properly when interfacing with CTest (default=%default).'
+                      )
+    parser.add_option('--generate_reference',dest='generate_reference',
+                      action='store_true',default=False,
+                      help='Regenerate reference data, but do not overwrite existing reference files.  Intended for developer use (default=%default).'
+                      )
+    parser.add_option('--update_reference',dest='update_reference',
+                      action='store_true',default=False,
+                      help='Regenerate reference data and update existing reference files.  Intended for developer use (default=%default).'
+                      )
+    parser.add_option('--update_mode',dest='update_mode',
+                      default='new',
+                      help='Modes of operation when updating reference files.  Intended for developer use.  Options are "new", "failed", "all" (default=%default).'
+                      )
+    parser.add_option('--update_dryrun',dest='update_dryrun',
+                      action='store_true',default=False,
+                      help='Perform a dryrun of updating reference files, reporting on files that will be update in a non-dryrun.  Intended for developer use (default=%default).'
+                      )
+    parser.add_option('--job_ref_table',dest='job_ref_table',
+                      action='store_true',default=False,
+                      help='Print reference data for job run commands on various machines.  Intended for developer use (default=%default).'
+                      )
+
+    options,files_in = parser.parse_args()
+
+    if options.help:
+        print('\n'+parser.format_help().strip())
+        exit()
+    #end if
+
+    global_data['verbose']       = options.verbose
+    global_data['job_ref_table'] = options.job_ref_table
+
+    if options.regex!='none':
+        regex = options.regex
+    #end if
+    ctest = options.ctest
+    if options.trip!='none':
+        try:
+            NexusTestBase.assert_trip = int(options.trip)
+        except:
+            msg='command line option "--trip" must be an integer, received {0}'.format(options.trip)
+            exit_fail(msg)
+        #end try
+    #end if
+
+    # clear out old test data
+    NexusTest.setup()
+
+    # initialize user example data
+    ued = user_examples_data
+    ued['dir']               = 'user_examples'
+    ued['test_path']         = NexusTestBase.test_path_from_dir(ued['dir'])
+    ued['failures_filename'] = 'test_failures.txt'
+    ued['failures_filepath'] = os.path.join(ued['test_path'],ued['failures_filename'])
+    ued['failures_file']     = None
+
+    # If requested, regenerate reference data and exit
+    update_modes = ('new','failed','all')
+    if options.update_mode not in update_modes:
+        msg = 'command line option "--update_mode" must be {}, received {}'.format(update_modes,options.update_mode)
+        exit_fail(msg)
+    #end if
+    if options.generate_reference:
+        regenerate_reference(update=False)
+        exit()
+    #end if
+    if options.update_reference:
+        #exit_fail('Automatic update of reference data is not yet supported.')
+        regenerate_reference(update=True)
+        exit()
+    #end if
+
+    # remove failures file prior to testing
+    if os.path.exists(ued['failures_filepath']):
+        os.remove(ued['failures_filepath'])
+    #end if
+    del ued
+
+    # identify test list to run
+    tests = []
+    for test in NexusTest.test_list:
+        if regex is None:
+            tests.append(test)
+        elif re.search(regex,test.name):
+            tests.append(test)
+        #end if
+    #end for
+    if options.list:
+        print('Test list:')
+        for test in tests:
+            print(' ',test.name)
+        #end for
+        exit()
+    #end if
+    if len(tests)!=1 and ctest:
+        exit_fail('Exactly one test should be selected when using ctest\n  tests requested: {0}'.format([test.name for test in tests]))
+    #end if
+    if options.ctestlist:
+        c = ''
+        for test in tests:
+            c+=test.name+';'
+        #end for
+        sys.stdout.write(c[:-1])
+        exit()
+    #end if
+    if options.pythonpath!='none':
+        os.environ['PYTHONPATH']=options.pythonpath
+    #end if
+
+    # guard against missing numpy (required)
+    if len(tests)>0 and not numpy_available:
+        print('\nNumPy is required to run the tests.\nPlease install NumPy and try again.\n')
+        exit(1)
+    #end if
+
+    # run each test and print the test outcome
+    if not ctest:
+        print('')
+    #end if
+    nrunnable = 0
+    for test in tests:
+        if test.optional and not options.full:
+            continue
+        #end if
+        nrunnable += 1
+    #end for
+    n=0
+    npassed = 0
+    nfailed = 0
+    nrun    = 0
+    for test in tests:
+        t1 = time()
+
+        # skip optional tests, unless requested
+        if test.optional and not options.full:
+            continue
+        #end if
+        n+=1
+
+        # run the test
+        test.run()
+        nrun += 1
+
+        # print the pass/fail line
+        if len(test.name)<40:
+            title = test.name+(40-len(test.name))*'.'
+        else:
+            title = test.name
+        #end if
+        if test.passed:
+            status = 'Passed'
+            npassed+=1
+        elif test.failed:
+            status = 'Failed'
+            nfailed+=1
+        else:
+            status = 'Unknown'
+        #end if
+        t2 = time()
+        if not ctest:
+            slt = str(nrunnable)
+            sn  = str(n)
+            if len(sn)<len(slt):
+                sn = (len(slt)-len(sn))*' '+sn
+            #end if
+            print(' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1))
+            if options.verbose:
+                pad = (len(sn)+len(slt)+5)*' '
+                for subtest in test.subtests:
+                    print(pad+'subtest: '+subtest)
+                #end for
+            #end if
+        #end if
+        
+        # print more information if failed
+        msg = test.message()
+        if test.failed:
+            if not ctest:
+                print(msg)
+            else:
+                exit_fail(msg)
+            #end if
+        elif test.passed and ctest:
+            exit_pass(msg)
+        #end if
+    #end for
+
+    tstop_all = time()
+
+    # print pass/fail and timing summary
+    if not ctest:
+        print('')
+        print('{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+nrunnable)),nfailed,nrunnable))
+        print('')
+        print('Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all))
+    #end if
+
+    # cleanup
+    if user_examples_data['failures_file'] is not None:
+        user_examples_data['failures_file'].close()
+    #end if
+#end if

@@ -1,0 +1,227 @@
+#! /usr/bin/env python3
+
+import os
+import sys
+from subprocess import Popen,PIPE
+from optparse import OptionParser
+
+#=======#
+# setup #
+#=======#
+
+# define usage
+usage = 'usage: "install path/to/install/directory"'
+
+# find paths to install script and source directory
+installer  = os.path.realpath(__file__)
+source_dir = os.path.dirname(installer)
+lib_dir    = os.path.join(source_dir,'lib')
+bin_dir    = os.path.join(source_dir,'bin')
+
+# function to report errors
+def error(msg):
+    print('install error: '+msg)
+    sys.exit(1)
+#end def error
+
+# function to execute shell commands
+def execute(command):
+    process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+    out,err = process.communicate()
+    if process.returncode!=0:
+        error('problem encountered, see output below\nout: {0}\nerr: {1}'.format(out,err))
+    #end if
+    return out,err
+#end def execute
+
+
+
+def find_nexus_modules():
+    import sys
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','lib'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
+#end def find_nexus_modules
+
+
+def import_nexus_module(module_name):
+    import importlib
+    return importlib.import_module(module_name)
+#end def import_nexus_module
+
+
+# Get Nexus version
+try:
+    # Attempt specialized path-based imports.
+    #  (The executable should still work even if Nexus is not installed)
+    find_nexus_modules()
+
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+except:
+    try:
+        from versions import nexus_version
+    except:
+        nexus_version = 0,0,0
+    #end try
+#end try
+
+
+#================#
+# main execution #
+#================#
+
+# process command line flags
+parser = OptionParser(
+        usage='usage: %prog [options]',
+        add_help_option=False,
+        version='%prog {}.{}.{}'.format(*nexus_version)
+        )
+parser.add_option('-h','--help',dest='help',
+                  action='store_true',default=False,
+                  help='Print help information and exit (default=%default).'
+                  )
+parser.add_option('-l','--leave_paths',dest='leave_paths',
+                  action='store_true',default=False,
+                  help='Do not add paths to Linux configuration files, e.g. .bashrc (default=%default).'
+                  )
+parser.add_option('-c','--config_file',dest='config_file',default='none',
+                  help='Name of config file for install.  Default is to search for one based on the local shell.')
+options,args = parser.parse_args()
+
+if options.help:
+    print('\n'+parser.format_help().strip())
+    exit()
+#end if
+
+# check user input
+if len(args)==0:
+    install_dir = source_dir
+elif len(args)>1:
+    error('install only takes one argument\nyou provided {0}\n{1}'.format(args,usage))
+else:
+    install_dir = os.path.realpath(args[0])
+#end if
+
+# copy binaries to install dir
+if install_dir!=source_dir:
+    # create install directory, if needed
+    install_dir = args[0]
+    if not os.path.exists(install_dir):
+        os.makedirs(install_dir)
+    #end if
+
+    # copy binaries
+    execute('cp {0}/bin/* {1}'.format(source_dir,install_dir))
+
+    # update path in nxs-test
+    nxs_test = os.path.join(install_dir,'nxs-test')
+    f = open(nxs_test,'r')
+    contents = f.read()
+    f.close()
+    contents = contents.replace('host_dir = None','host_dir = "{0}"'.format(source_dir))
+    f = open(nxs_test,'w')
+    f.write(contents)
+    f.close()
+
+    # update bin directory for install
+    bin_dir = install_dir
+#end if
+
+# install library (add lib path to PYTHONPATH)
+
+# determine shell
+if options.leave_paths:
+    shell   = 'bash'
+    rc_file = '.bashrc'
+else:
+    def get_shell():
+        shells = 'bash tcsh csh ksh zsh'.split()
+        texts = [
+            os.readlink('/proc/%d/exe' % os.getppid()),
+            os.environ['SHELL']
+            ]
+        for text in texts: 
+            for shell in shells:
+                if shell in text:
+                    return shell
+                #end if
+            #end for
+        #end for
+        error('user shell could not be identified')
+    #end def get_shell
+    shell = get_shell()
+    shell_rc_files = dict(
+        sh   = ['.profile'],
+        ksh  = ['.kshrc','.profile'],
+        csh  = ['.cshrc','.login'],
+        tcsh = ['.tcshrc','.cshrc','.login'],
+        bash = ['.bash_profile','.bash_login','.bashrc','.profile'],
+        zsh  = ['.zprofile','.zlogin','.zshrc','.zshenv'],
+        )
+    if shell not in shell_rc_files:
+        error('user shell "{0}" is not recognized'.format(shell))
+    #end if
+
+    # find config (rc) file for shell
+    if options.config_file=='none':
+        rc_files = shell_rc_files[shell]
+    else:
+        rc_files = [options.config_file]
+    #end if
+    home = os.path.expanduser('~') # this is cross-platform
+    rc_file = None
+    search_paths = []
+    for rc in rc_files:
+        rc_filepath = os.path.join(home,rc)
+        search_paths.append(rc_filepath)
+        if os.path.exists(rc_filepath):
+            rc_file = rc_filepath
+            break
+        #end if
+    #end for
+    if rc_file is None:
+        error('could not identify unix config (rc) file for shell "{0}"\nlocations searched: {1}'.format(shell,search_paths))
+    #end if
+#end if
+
+# get format for setting env variables in shell
+set_env_formats = dict(
+    ksh  = 'export {0}={1}\n',
+    csh  = 'setenv {0} {1}\n',
+    tcsh = 'setenv {0} {1}\n',
+    bash = 'export {0}={1}\n',
+    zsh  = 'export {0}={1}\n',
+    )
+set_env_fmt = set_env_formats[shell]
+
+header_start = '### added by Nexus '
+header = '### added by Nexus 2.0.0 installer ###'
+footer = '### end Nexus additions ###'
+paths  = set_env_fmt.format('PATH',bin_dir+':$PATH')
+paths += set_env_fmt.format('PYTHONPATH',lib_dir+':$PYTHONPATH')
+
+# add lib path to PYTHONPATH in config file
+if options.leave_paths:
+    print('Nexus installation not complete.  Please add the following paths to {0}:\n{1}'.format(rc_file,paths))
+else:
+    execute('cp {0} {0}-nexus.bak'.format(rc_file))
+    f = open(rc_file,'r')
+    rc_contents = f.read()
+    f.close()
+    if header_start in rc_contents and footer in rc_contents:
+        header_loc = rc_contents.find(header_start)
+        footer_loc = rc_contents.find(footer)
+        before_header = rc_contents[:header_loc]
+        after_footer  = rc_contents[footer_loc+len(footer):]
+        rc_contents = before_header + after_footer
+    #end if
+    rc_contents = rc_contents.rstrip()+'\n\n\n'
+    rc_contents += header+'\n'
+    rc_contents += paths
+    rc_contents += footer+'\n'
+    f = open(rc_file,'w')
+    f.write(rc_contents)
+    f.close()
+#end if

@@ -1,0 +1,21 @@
+digraph hierarch {
+//label="Trial Wavefunction";
+labelloc="top";
+labelfloat=true
+
+node[shape=record,fontname=Ariel]
+edge[dir=back,arrowtail=odiamond]
+
+wfs[label="{wavefunction|+jastrow\n +determinantset}"]
+
+j1[label="jastrow/@type=\"OneBody\""]
+j2[label="jastrow/@type=\"TwoBody\""]
+as[label="determinantset"]
+
+//obase[label="OrbitalBase"]
+wfs->j1[arrowtail=empty,headport=n]
+wfs->j2[arrowtail=empty]
+wfs->as[arrowtail=empty]
+//wfs->obase[headlabel="1..*"]
+}
+

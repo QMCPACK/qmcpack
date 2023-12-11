@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<qmcsystem>
+<simulationcell>
+<parameter name="rs" condition="14">5</parameter>
+<parameter name="bconds">p p p</parameter>
+<parameter name="LR_dim_cutoff">6</parameter>
+</simulationcell>
+<particleset name="e" random="yes">
+<group name="u" size="7">
+<parameter name="charge">-1</parameter>
+</group>
+<group name="d" size="7">
+<parameter name="charge">-1</parameter>
+</group>
+</particleset>
+</qmcsystem>

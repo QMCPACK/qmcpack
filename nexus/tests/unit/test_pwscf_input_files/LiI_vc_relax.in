@@ -1,0 +1,41 @@
+&CONTROL
+  calculation = 'vc-relax'
+  forc_conv_thr =   1.0000000000d-06
+  max_seconds = 41040
+  outdir = './out/'
+  prefix = 'aiida'
+  pseudo_dir = './pseudo/'
+  restart_mode = 'from_scratch'
+  verbosity = 'high'
+/
+&SYSTEM
+  ecutrho = 320
+  ecutwfc = 40
+  ibrav = 0
+  nat = 2
+  ntyp = 2
+/
+&ELECTRONS
+  conv_thr =   2.0000000000d-13
+  diagonalization = 'cg'
+  electron_maxstep = 250
+  mixing_beta =   5.0000000000d-01
+/
+&IONS
+  ion_dynamics = 'bfgs'
+/
+&CELL
+  cell_dynamics = 'bfgs'
+/
+ATOMIC_SPECIES
+I      126.90447 I.pbe-n-kjpaw_psl.0.2.UPF
+Li     6.941 li_pbe_v1.4.uspp.F.UPF
+ATOMIC_POSITIONS angstrom
+Li          -0.1060843391       0.1252198426      -0.1297082643 
+I            2.8682092421      -3.1071500893      -2.8862875975 
+K_POINTS automatic
+10 10 10 0 0 0
+CELL_PARAMETERS angstrom
+      0.0000000000      -2.9650000000      -2.9650000000
+      2.9650000000       0.0000000000      -2.9650000000
+      2.9650000000      -2.9650000000       0.0000000000

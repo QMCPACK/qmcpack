@@ -1,0 +1,26 @@
+Jobid: 203595
+qsub --mode script -A QMC_2014_training -t 60 -n 32 submit_qmcpack.csh
+Wed Jul 16 01:16:42 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/SPOrbitals/PBE0
+Wed Jul 16 01:17:42 2014 +0000 (UTC) mmorales/203595: Initiating boot at location VST-20420-31531-32.
+Wed Jul 16 01:18:04 2014 +0000 (UTC) 
+Wed Jul 16 01:18:04 2014 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/SPOrbitals/PBE0/submit_qmcpack.csh'
+Wed Jul 16 01:18:04 2014 +0000 (UTC) 
+Wed Jul 16 01:18:04 2014 +0000 (UTC) Environment:
+Wed Jul 16 01:18:04 2014 +0000 (UTC) SHELL=/bin/bash
+Wed Jul 16 01:18:04 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpyJ3h_P
+Wed Jul 16 01:18:04 2014 +0000 (UTC) COBALT_PARTNAME=VST-20420-31531-32
+Wed Jul 16 01:18:04 2014 +0000 (UTC) COBALT_JOBID=203595
+Wed Jul 16 01:18:04 2014 +0000 (UTC) COBALT_STARTTIME=1405473430
+Wed Jul 16 01:18:04 2014 +0000 (UTC) LOGNAME=mmorales
+Wed Jul 16 01:18:04 2014 +0000 (UTC) USER=mmorales
+Wed Jul 16 01:18:04 2014 +0000 (UTC) COBALT_ENDTIME=1405477030
+Wed Jul 16 01:18:04 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Wed Jul 16 01:18:04 2014 +0000 (UTC) HOME=/home/mmorales
+Wed Jul 16 01:18:04 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Wed Jul 16 01:18:04 2014 +0000 (UTC) 
+Wed Jul 16 01:18:04 2014 +0000 (UTC) Info: stdin received from /dev/null
+Wed Jul 16 01:18:04 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/SPOrbitals/PBE0/203595.output
+Wed Jul 16 01:18:04 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/SPOrbitals/PBE0/203595.error
+Wed Jul 16 01:18:04 2014 +0000 (UTC) 
+Wed Jul 16 01:18:09 2014 +0000 (UTC) mmorales/203595: Block VST-20420-31531-32 for location VST-20420-31531-32 successfully booted (Initiating). 
+Wed Jul 16 01:25:11 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

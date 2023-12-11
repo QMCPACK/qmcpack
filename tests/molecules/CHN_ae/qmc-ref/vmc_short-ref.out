@@ -1,0 +1,554 @@
+  Input file(s): vmc_short-ref.in.qmc.xml 
+
+=====================================================
+                    QMCPACK 3.5.0 
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: CuspCorrection_SOA
+  Last git commit: 50ec4acb7ac39d2c9381752892965522b15d3328-dirty
+  Last git commit date: Wed Nov 28 17:37:18 2018 -0600
+  Last git commit subject: Merge branch CuspCorrection_SOA of https://github.com/anbenali/qmcpack into CuspCorrection_SOA
+=====================================================
+  Global options 
+
+  MPI Nodes             = 1
+  MPI Nodes per group   = 1
+  MPI Group ID          = 0
+  OMP 1st level threads = 16
+  OMP nested threading disabled or only 1 thread on the 2nd level
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Structure-of-arrays (SoA) optimization enabled
+
+  Input XML = vmc_short-ref.in.qmc.xml
+
+  Project = vmc_short-ref
+  date    = 2018-11-29 12:00:13 CST
+  host    = abenali
+
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 301
+
+  Range of prime numbers to use as seeds over processors and threads = 1999-2113
+
+
+ Particle Set 
+ ------------
+  Name: ion0
+  All the species have the same mass 1
+  Particle set size: 3
+
+ Particle Set 
+ ------------
+  Name: e
+  All the species have the same mass 1
+  Particle set size: 14
+
+ Wavefunction setup: 
+ ------------------- 
+  Name: psi0
+  LCAO: SoaAtomicBasisSet<MultiQuintic,1>
+
+  Distance table for similar particles (A-A):
+    source/target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  Distance table for dissimilar particles (A-B):
+    source: ion0  target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+Reading BasisSet from HDF5 file:../CHN.h5
+<input node="atomicBasisSet" name="cc-pvtz" expandYlm="pyscf" angular="spherical" elementType="N" normalized="no" type="Numerical" expM="0" />
+  AO BasisSet for N
+   Spherical Harmonics contain (-1)^m factor
+   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 1 0 0
+   R(n,l,m,s) 5 1 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 2 0 0
+   R(n,l,m,s) 8 2 0 0
+   R(n,l,m,s) 9 3 0 0
+Expanding Ylm as L=1 as (1,-1,0) and L>1 as -l,-l+1,...,l-1,l
+   Adding 1 spherical orbitals
+   Adding 1 spherical orbitals
+   Adding 1 spherical orbitals
+   Adding 1 spherical orbitals
+   Adding 3 spherical orbitals
+   Adding 3 spherical orbitals
+   Adding 3 spherical orbitals
+   Adding 5 spherical orbitals
+   Adding 5 spherical orbitals
+   Adding 7 spherical orbitals
+   Maximum Angular Momentum  = 3
+   Number of Radial functors = 10
+   Basis size                = 30
+
+<input node="atomicBasisSet" name="cc-pvtz" expandYlm="pyscf" angular="spherical" elementType="H" normalized="no" type="Numerical" expM="0" />
+  AO BasisSet for H
+   Spherical Harmonics contain (-1)^m factor
+   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 1 0 0
+   R(n,l,m,s) 4 1 0 0
+   R(n,l,m,s) 5 2 0 0
+Expanding Ylm as L=1 as (1,-1,0) and L>1 as -l,-l+1,...,l-1,l
+   Adding 1 spherical orbitals
+   Adding 1 spherical orbitals
+   Adding 1 spherical orbitals
+   Adding 3 spherical orbitals
+   Adding 3 spherical orbitals
+   Adding 5 spherical orbitals
+   Maximum Angular Momentum  = 2
+   Number of Radial functors = 6
+   Basis size                = 14
+
+<input node="atomicBasisSet" name="cc-pvtz" expandYlm="pyscf" angular="spherical" elementType="C" normalized="no" type="Numerical" expM="0" />
+  AO BasisSet for C
+   Spherical Harmonics contain (-1)^m factor
+   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 1 0 0
+   R(n,l,m,s) 5 1 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 2 0 0
+   R(n,l,m,s) 8 2 0 0
+   R(n,l,m,s) 9 3 0 0
+Expanding Ylm as L=1 as (1,-1,0) and L>1 as -l,-l+1,...,l-1,l
+   Adding 1 spherical orbitals
+   Adding 1 spherical orbitals
+   Adding 1 spherical orbitals
+   Adding 1 spherical orbitals
+   Adding 3 spherical orbitals
+   Adding 3 spherical orbitals
+   Adding 3 spherical orbitals
+   Adding 5 spherical orbitals
+   Adding 5 spherical orbitals
+   Adding 7 spherical orbitals
+   Maximum Angular Momentum  = 3
+   Number of Radial functors = 10
+   Basis size                = 30
+
+  Created SPOSet builder named 'LCAOBSet' of type molecularorbital
+Reuse SPOSetBuilder "LCAOBSet" type MolecularOrbital
+  Building SPOSet '' with '' basis set.
+Reading cusp info from : updet.cuspInfo.xml
+Found precomputed cusp data for spo set: updet
+Reuse SPOSetBuilder "LCAOBSet" type MolecularOrbital
+  Building SPOSet '' with '' basis set.
+Reading cusp info from : downdet.cuspInfo.xml
+Found precomputed cusp data for spo set: downdet
+  Creating a determinant updet group=0 sposet=updet
+  Reusing a SPO set updet
+Using DiracDeterminant 
+
+  Creating a determinant downdet group=1 sposet=downdet
+  Reusing a SPO set downdet
+Using DiracDeterminant 
+
+  FermionWF = SlaterDet
+  RadialJastrowBuilder adds a functor with cusp = -0.25
+ size = 10 parameters 
+ cusp = -0.25
+ rcut = 10
+Parameter     Name      Value
+uu_0 0.294122 1 1  ON 0
+uu_1 0.117147 1 1  ON 1
+uu_2 0.0425278 1 1  ON 2
+uu_3 -0.0103775 1 1  ON 3
+uu_4 -0.0535495 1 1  ON 4
+uu_5 -0.0949254 1 1  ON 5
+uu_6 -0.108115 1 1  ON 6
+uu_7 -0.13442 1 1  ON 7
+uu_8 -0.121105 1 1  ON 8
+uu_9 -0.0581075 1 1  ON 9
+  RadialJastrowBuilder adds a functor with cusp = -0.5
+ size = 10 parameters 
+ cusp = -0.5
+ rcut = 10
+Parameter     Name      Value
+ud_0 0.511521 1 1  ON 0
+ud_1 0.159726 1 1  ON 1
+ud_2 0.0128303 1 1  ON 2
+ud_3 -0.0386679 1 1  ON 3
+ud_4 -0.0855933 1 1  ON 4
+ud_5 -0.120836 1 1  ON 5
+ud_6 -0.128153 1 1  ON 6
+ud_7 -0.117775 1 1  ON 7
+ud_8 -0.0993797 1 1  ON 8
+ud_9 -0.056155 1 1  ON 9
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eC_0 -1.2931 1 1  ON 0
+eC_1 -0.852096 1 1  ON 1
+eC_2 -0.0947643 1 1  ON 2
+eC_3 0.169954 1 1  ON 3
+eC_4 0.402257 1 1  ON 4
+eC_5 0.588348 1 1  ON 5
+eC_6 0.778071 1 1  ON 6
+eC_7 0.437126 1 1  ON 7
+eC_8 -0.00597941 1 1  ON 8
+eC_9 -0.110744 1 1  ON 9
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eN_0 -1.80613 1 1  ON 0
+eN_1 -1.29857 1 1  ON 1
+eN_2 -0.189213 1 1  ON 2
+eN_3 0.0870198 1 1  ON 3
+eN_4 0.407962 1 1  ON 4
+eN_5 0.644644 1 1  ON 5
+eN_6 0.776403 1 1  ON 6
+eN_7 0.681531 1 1  ON 7
+eN_8 0.379093 1 1  ON 8
+eN_9 0.205927 1 1  ON 9
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eH_0 -0.0542919 1 1  ON 0
+eH_1 -0.0348315 1 1  ON 1
+eH_2 0.0249613 1 1  ON 2
+eH_3 0.019115 1 1  ON 3
+eH_4 0.0437609 1 1  ON 4
+eH_5 0.0645989 1 1  ON 5
+eH_6 0.0803605 1 1  ON 6
+eH_7 0.026873 1 1  ON 7
+eH_8 -0.0902004 1 1  ON 8
+eH_9 0.0276161 1 1  ON 9
+Parameter     Name      Value
+uuC_0 0.000677588 1 1  ON 0
+uuC_1 0.00153235 1 1  ON 1
+uuC_2 -0.000978886 1 1  ON 2
+uuC_3 -0.0029819 1 1  ON 3
+uuC_4 -0.000545289 1 1  ON 4
+uuC_5 0.000140735 1 1  ON 5
+uuC_6 -0.00142483 1 1  ON 6
+uuC_7 -0.00909782 1 1  ON 7
+uuC_8 -0.00763617 1 1  ON 8
+uuC_9 0.00454399 1 1  ON 9
+uuC_10 -0.00173875 1 1  ON 10
+uuC_11 0.0186327 1 1  ON 11
+uuC_12 -0.00116924 1 1  ON 12
+uuC_13 -0.000280529 1 1  ON 13
+uuC_14 -0.00273776 1 1  ON 14
+uuC_15 0.000872374 1 1  ON 15
+uuC_16 -0.0153747 1 1  ON 16
+uuC_17 0.00846949 1 1  ON 17
+uuC_18 -0.0292129 1 1  ON 18
+uuC_19 0.00957814 1 1  ON 19
+uuC_20 0.00668103 1 1  ON 20
+uuC_21 0.00578375 1 1  ON 21
+uuC_22 -0.00292108 1 1  ON 22
+uuC_23 -0.00125586 1 1  ON 23
+uuC_24 -0.00187425 1 1  ON 24
+uuC_25 0.00093083 1 1  ON 25
+Parameter     Name      Value
+udC_0 -0.00213485 1 1  ON 0
+udC_1 -0.00324973 1 1  ON 1
+udC_2 0.0057959 1 1  ON 2
+udC_3 -0.00059201 1 1  ON 3
+udC_4 -0.00231864 1 1  ON 4
+udC_5 -0.000132765 1 1  ON 5
+udC_6 -0.00749961 1 1  ON 6
+udC_7 0.00636906 1 1  ON 7
+udC_8 0.000265073 1 1  ON 8
+udC_9 0.0103581 1 1  ON 9
+udC_10 0.0015501 1 1  ON 10
+udC_11 -0.00333302 1 1  ON 11
+udC_12 -0.00132809 1 1  ON 12
+udC_13 -0.0120484 1 1  ON 13
+udC_14 -0.00316586 1 1  ON 14
+udC_15 0.00100023 1 1  ON 15
+udC_16 -0.0124559 1 1  ON 16
+udC_17 -0.0192135 1 1  ON 17
+udC_18 0.00469718 1 1  ON 18
+udC_19 0.00305445 1 1  ON 19
+udC_20 0.0150836 1 1  ON 20
+udC_21 0.000497054 1 1  ON 21
+udC_22 -0.00151651 1 1  ON 22
+udC_23 -0.00808983 1 1  ON 23
+udC_24 0.00069455 1 1  ON 24
+udC_25 0.000380144 1 1  ON 25
+Parameter     Name      Value
+uuN_0 -0.000393885 1 1  ON 0
+uuN_1 0.000695833 1 1  ON 1
+uuN_2 -0.000315028 1 1  ON 2
+uuN_3 -0.00141963 1 1  ON 3
+uuN_4 0.00130177 1 1  ON 4
+uuN_5 0.000290447 1 1  ON 5
+uuN_6 -0.00377681 1 1  ON 6
+uuN_7 -0.000308751 1 1  ON 7
+uuN_8 -0.011243 1 1  ON 8
+uuN_9 0.00677477 1 1  ON 9
+uuN_10 0.00154558 1 1  ON 10
+uuN_11 0.00701299 1 1  ON 11
+uuN_12 0.00574368 1 1  ON 12
+uuN_13 -0.00721961 1 1  ON 13
+uuN_14 -0.00659356 1 1  ON 14
+uuN_15 0.000141529 1 1  ON 15
+uuN_16 -0.0171953 1 1  ON 16
+uuN_17 -0.0120621 1 1  ON 17
+uuN_18 -0.000215978 1 1  ON 18
+uuN_19 -0.00333692 1 1  ON 19
+uuN_20 0.0138678 1 1  ON 20
+uuN_21 -0.00132763 1 1  ON 21
+uuN_22 0.000955522 1 1  ON 22
+uuN_23 -0.00635131 1 1  ON 23
+uuN_24 0.00231395 1 1  ON 24
+uuN_25 -0.000888624 1 1  ON 25
+Parameter     Name      Value
+udN_0 -0.000946511 1 1  ON 0
+udN_1 -0.00454476 1 1  ON 1
+udN_2 0.00514598 1 1  ON 2
+udN_3 0.0027488 1 1  ON 3
+udN_4 0.0022955 1 1  ON 4
+udN_5 0.000179077 1 1  ON 5
+udN_6 -0.0119742 1 1  ON 6
+udN_7 0.00734562 1 1  ON 7
+udN_8 -0.000638575 1 1  ON 8
+udN_9 0.0124129 1 1  ON 9
+udN_10 0.00896198 1 1  ON 10
+udN_11 -0.0216152 1 1  ON 11
+udN_12 0.00372252 1 1  ON 12
+udN_13 -0.0176373 1 1  ON 13
+udN_14 -0.00595904 1 1  ON 14
+udN_15 0.000787382 1 1  ON 15
+udN_16 -0.00733595 1 1  ON 16
+udN_17 -0.0455151 1 1  ON 17
+udN_18 0.0520066 1 1  ON 18
+udN_19 -0.00921574 1 1  ON 19
+udN_20 0.0147837 1 1  ON 20
+udN_21 -0.0100763 1 1  ON 21
+udN_22 0.00201888 1 1  ON 22
+udN_23 -0.00800138 1 1  ON 23
+udN_24 0.00442516 1 1  ON 24
+udN_25 -0.000996511 1 1  ON 25
+Parameter     Name      Value
+uuH_0 -5.7566e-05 1 1  ON 0
+uuH_1 -0.00349249 1 1  ON 1
+uuH_2 -0.00507382 1 1  ON 2
+uuH_3 -0.000113401 1 1  ON 3
+uuH_4 -9.89321e-05 1 1  ON 4
+uuH_5 -0.00074409 1 1  ON 5
+uuH_6 -0.00382063 1 1  ON 6
+uuH_7 -0.0493286 1 1  ON 7
+uuH_8 -0.00178664 1 1  ON 8
+uuH_9 0.0178134 1 1  ON 9
+uuH_10 -0.000772208 1 1  ON 10
+uuH_11 0.0207463 1 1  ON 11
+uuH_12 -0.00913569 1 1  ON 12
+uuH_13 -0.0103909 1 1  ON 13
+uuH_14 -0.0060034 1 1  ON 14
+uuH_15 0.00265376 1 1  ON 15
+uuH_16 -0.00663554 1 1  ON 16
+uuH_17 -0.0241936 1 1  ON 17
+uuH_18 0.0320411 1 1  ON 18
+uuH_19 -0.000993535 1 1  ON 19
+uuH_20 -0.00265649 1 1  ON 20
+uuH_21 -0.00953439 1 1  ON 21
+uuH_22 0.00218342 1 1  ON 22
+uuH_23 0.00703077 1 1  ON 23
+uuH_24 0.00175959 1 1  ON 24
+uuH_25 -0.000952265 1 1  ON 25
+Parameter     Name      Value
+udH_0 -0.0113349 1 1  ON 0
+udH_1 0.00114214 1 1  ON 1
+udH_2 0.0091271 1 1  ON 2
+udH_3 -0.00367696 1 1  ON 3
+udH_4 -0.00671023 1 1  ON 4
+udH_5 0.000202593 1 1  ON 5
+udH_6 0.00108353 1 1  ON 6
+udH_7 0.0113617 1 1  ON 7
+udH_8 -0.00950669 1 1  ON 8
+udH_9 0.0179134 1 1  ON 9
+udH_10 -0.00606138 1 1  ON 10
+udH_11 0.0126071 1 1  ON 11
+udH_12 -0.00206712 1 1  ON 12
+udH_13 -0.0292216 1 1  ON 13
+udH_14 -0.0104908 1 1  ON 14
+udH_15 0.00253402 1 1  ON 15
+udH_16 -0.0457085 1 1  ON 16
+udH_17 -0.0395685 1 1  ON 17
+udH_18 0.00797582 1 1  ON 18
+udH_19 0.00823624 1 1  ON 19
+udH_20 0.0532575 1 1  ON 20
+udH_21 -0.0107385 1 1  ON 21
+udH_22 -0.00115107 1 1  ON 22
+udH_23 -0.0340411 1 1  ON 23
+udH_24 0.013211 1 1  ON 24
+udH_25 -0.00202791 1 1  ON 25
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+
+  Distance table for similar particles (A-A):
+    source/target: ion0
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+  QMCHamiltonian::addOperator IonElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonElec
+
+  QMCHamiltonian::add2WalkerProperty added
+    4 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+ParticleSetPool::randomize 
+<init source="ion0" target="e">
+</init>
+  Initialization Execution time = 0.2698 secs
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 7 14 
+
+    14
+
+    u  2.4287783890e+00 -5.9482455738e-01 -4.2884736715e-01
+    u  1.1357686169e+00 -3.9558929227e-01  1.9231306194e-01
+    u  2.0329433376e+00 -8.5572511792e-01 -4.4496763316e-01
+    u  5.1659633685e-02 -7.2359819454e-01  2.8737966235e-01
+    u  2.1110681233e-01 -7.3885230494e-01 -1.6283760431e-01
+    u -3.6481528599e-01 -7.4220264678e-01 -6.6155070642e-01
+    u -3.1431168974e-01  4.7536027361e-01  3.9494785526e-01
+    d  1.4521533007e+00 -7.3220278235e-01 -5.1918664470e-01
+    d  2.3867945314e+00 -6.2153418332e-01 -4.6469832710e-01
+    d  2.5777653782e+00  1.6743250737e-01 -8.0589622294e-02
+    (... and 4 more particle positions ...)
+
+  ParticleSet ion0 : 0 1 2 3 
+
+    3
+
+    C  1.8347707842e+00 -1.4380775084e-01 -1.2169881020e-01
+    N -3.3187723932e-01 -1.4380836170e-01 -1.2169813853e-01
+    H  3.8512674839e+00 -1.4380836170e-01 -1.2169813853e-01
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  IonIon          CoulombAA source/target ion0
+
+  IonElec         CoulombAB source=ion0
+
+
+=========================================================
+  Start VMCSingleOMP
+  File Root vmc_short-ref.s000 append = no 
+=========================================================
+  Adding 16 walkers to 0 existing sets
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 5.0000000000e-01
+  blocks         = 200
+  steps          = 50
+  substeps       = 5
+  current        = 0
+  target samples = 1.6000000000e+05
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">200</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.0000000000e+04</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.6000000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">1.0000000000e+04</parameter>
+<parameter name="steps" condition="int">50</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">5</parameter>
+<parameter name="substeps" condition="int">5</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">no</parameter>
+<parameter name="usedrift" condition="string">no</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">20</parameter>
+<parameter name="warmupsteps" condition="int">20</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+===== Memory Usage before cloning =====
+Available memory on node 0, free + buffers : 21663 MB
+Memory footprint by rank 0 on node 0       : 47 MB
+==================================================
+===== Memory Usage after cloning =====
+Available memory on node 0, free + buffers : 21659 MB
+Memory footprint by rank 0 on node 0       : 51 MB
+==================================================
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+
+  Using Particle by Particle moves
+  Walker moves without drift
+  Total Sample Size   =160000
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 21658 MB
+Memory footprint by rank 0 on node 0       : 52 MB
+==================================================
+  Anonymous Buffer size per walker : 6976 Bytes.
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.5
+    reference energy   = -93.4243
+    reference variance = 0.926296
+====================================================
+  QMC Execution time = 4.8512e+01 secs 
+  Total Execution time = 4.8522e+01 secs
+
+=========================================================
+  A new xml input file : vmc_short-ref.s000.cont.xml

@@ -1,0 +1,52 @@
+#!/bin/bash
+##PBS -q core32q
+##PBS -l mppwidth=32
+#PBS -l nodes=32:ppn=32
+#PBS -l walltime=1:00:00
+#PBS -N j128
+#PBS -e qmcpack.err
+#PBS -o qmcpack.out
+#PBS -V
+
+cd $PBS_O_WORKDIR
+
+#set to use default group that includes PAPI_FP_OPS
+export PAT_RT_HWPC=0
+
+#set to see where MPI tasks were placed
+export MPICH_CPUMASK_DISPLAY=1
+
+cd $PBS_O_WORKDIR
+export HUGETLB_MORECORE=yes
+export OMP_NUM_THREADS=8
+export MPICH_RANK_REORDER_DISPLAY=1
+export COUNTER1=GET_TIME_OF_DAY
+
+export MPICH_PTL_SEND_CREDITS=-1
+export MPICH_MAX_SHORT_MSG_SIZE=1024
+export MPICH_PTL_UNEX_EVENTS=800000
+export MPICH_UNEX_BUFFER_SIZE=16M
+export MPI_MSGS_PER_PROC=32768
+
+let NP=128
+let NPPNODE=4
+
+#export qmcexe=/u/sciteam/jnkim/build/qmcpack-dev/bin/qmcapp
+
+export twalkers=8
+export VMCBLOCKS=$twalkers
+export VMCWALKERS=1
+let SAMPLES=$NP*$OMP_NUM_THREADS*$VMCBLOCKS
+
+export qmcexe=/u/sciteam/jnkim/build/qmcpack-dev-cpu/bin/qmcapp
+#export title=jyc.cpu.nofma.gr4x4x1.p${NP}x${OMP_NUM_THREADS}.w${twalkers}
+#export qmcexe=/u/sciteam/jnkim/build/qmcpack-prec/bin/qmcapp
+
+#cat qmc.xml\
+#| sed s/TITLE/bench/ \
+#| sed s/VMCBLOCKS/$VMCBLOCKS/ \
+#| sed s/VMCWALKERS/$VMCWALKERS/ \
+#| sed s/DMCSAMPLES/$SAMPLES/ \
+#> input.xml
+
+aprun -n ${NP} -N ${NPPNODE} -d ${OMP_NUM_THREADS} ${qmcexe} input.xml &> qmc.log

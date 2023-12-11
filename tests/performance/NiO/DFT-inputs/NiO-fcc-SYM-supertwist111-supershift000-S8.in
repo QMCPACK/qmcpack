@@ -1,0 +1,73 @@
+ &control
+    calculation = 'scf'
+    restart_mode='from_scratch',
+    prefix='NiO-fcc',
+    tstress = .true.
+    tprnfor = .true.
+    pseudo_dir = 'pw_pseudo/',
+    outdir='./out',
+    verbosity = 'high'
+ /
+ &system
+    ibrav=0,
+    
+    nat=32,
+    ntyp      = 3,
+    ecutwfc=1,
+    lda_plus_u = .true.,
+    Hubbard_U(2) = 6.5,
+    Hubbard_U(3) = 6.5,
+    occupations='smearing',
+    smearing='mv', degauss=0.002,
+    nspin=2, 
+    starting_magnetization(2)= 1.0,
+    starting_magnetization(3)=-1.0,
+ /
+ &electrons
+    mixing_beta = 0.7
+    conv_thr =  1.0d-10
+ /
+CELL_PARAMETERS
+7.8811  7.8811  0
+-7.8811  7.8811  0
+0  0  15.7622
+0.50 0.00 -0.50
+ATOMIC_SPECIES
+ O    1.  O.ncpp
+ Ni   1.  Ni.opt.upf
+ Ni1  1.  Ni.opt.upf
+ATOMIC_POSITIONS crystal
+O   0.5  0  0.25
+O   0  0  0.75
+O   0.25  0.25  0.5
+O   0.5  0.5  0.25
+O   0.75  0.25  0
+O   0  0.5  0.75
+O   0.25  0.75  0.5
+O   0.75  0.75  0
+O   0  0  0.25
+O   0.25  0.25  0
+O   0.5  0  0.75
+O   0.75  0.25  0.5
+O   0  0.5  0.25
+O   0.25  0.75  0
+O   0.5  0.5  0.75
+O   0.75  0.75  0.5
+Ni   0  0  0
+Ni   0  0.5  0
+Ni   0.25  0.25  0.75
+Ni   0.5  0  0.5
+Ni   0.5  0.5  0.5
+Ni   0.75  0.25  0.25
+Ni   0.25  0.75  0.75
+Ni   0.75  0.75  0.25
+Ni1   0.5  0  0
+Ni1   0  0  0.5
+Ni1   0.25  0.25  0.25
+Ni1   0.5  0.5  0
+Ni1   0.75  0.25  0.75
+Ni1   0  0.5  0.5
+Ni1   0.25  0.75  0.25
+Ni1   0.75  0.75  0.75
+K_POINTS automatic
+1  1  1  0   0   0

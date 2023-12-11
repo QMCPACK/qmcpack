@@ -1,0 +1,5 @@
+&inputpp
+   outdir='.'
+   prefix='LiH-x'
+   write_psir=.false.
+/

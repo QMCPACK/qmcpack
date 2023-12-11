@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H4-linear" series="0"/>
+  <!--random seed="605"/-->
+  <!-- input from gaussian converter -->
+  <include href="H4.ptcl.xml"/>
+  <include href="H4.wfs.xml"/>
+  <hamiltonian name="h0" type="generic" target="e"> 
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
+    <pairpot name="IonElec"  type="coulomb" source="ion0"/>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
+  </hamiltonian> 
+
+<loop max="6">
+  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+    <parameter name="walkers">    1  </parameter>
+    <parameter name="blocks">   128  </parameter>
+    <parameter name="warmupsteps"> 50 </parameter>
+    <parameter name="steps"> 128 </parameter>
+    <parameter name="substeps"> 10 </parameter>
+    <parameter name="timestep"> 0.5 </parameter>
+    <parameter name="samples"> 262144 </parameter>
+         <cost name="energy">                   1.00 </cost>
+         <cost name="unreweightedvariance">     0.00 </cost>
+         <cost name="reweightedvariance">       0.00 </cost>
+    <parameter name="useDrift">  yes </parameter>
+    <parameter name="bigchange">15.0</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="MinMethod">quartic</parameter>
+    <parameter name="exp0">-6</parameter>
+    <parameter name="alloweddifference"> 1.0e-4 </parameter>
+    <parameter name="stepsize">  0.35 </parameter>
+    <parameter name="nstabilizers"> 1 </parameter>
+  </qmc>
+</loop>
+
+</simulation>

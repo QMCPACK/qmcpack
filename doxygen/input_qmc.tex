@@ -1,0 +1,62 @@
+\subsection{Parameters for qmc sections}\label{common.sec}
+
+\begin{table}[h]
+\begin{center}
+%\begin{tabular*}{\textwidth}{l l m{5cm} l}\hline
+\begin{tabular}{l c p{0.4\textwidth} c c }
+\hline
+\bfseries name & \bfseries method& \bfseries description & \bfseries datatype & \bfseries requirement \\
+\hline
+ walkers & all & number of walkers per thread & integer& $> 0$ \\
+warmup\_steps & all & steps during a warm-up stage& integer& $\geq 0$ \\
+blocks & all& number of blocks  & integer& $> 0$ \\
+steps& all& number of steps per block & integer&  $> 0$ \\
+time\_step& all & time step & real& $> 0.0$ \\
+use\_drift& vmc & use drift for VMC sampling & choice& yes$|$no \\
+samples& vmc & configurations accumulated for optimizations or subsequent DMC runs & integer& $\geq 0$ \\
+\hline
+\end{tabular}
+%\end{tabular*}
+\end{center}
+\caption{Parameters for \texttt{qmc} sections. }
+\label{req.packages}
+\end{table}
+
+
+\begin{lstlisting}[language=xml,
+emph={qmc,parameter},emphstyle=\bfseries\color{blue}]
+  <qmc method="vmc" move="pbyp" checkpoint="100">
+    <parameter name="walkers">1</parameter>
+    <parameter name="warmup_steps">100</parameter>
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="time_step">0.5</parameter>
+  <qmc>
+\end{lstlisting}
+
+\subsection{Diffusion Monte Carlo simulations}\label{dmc.sec}
+A typical input for running DMC is:
+\begin{lstlisting}[language=xml,escapeinside={<:}{:>},
+emph={qmc},emphstyle=\bfseries\color{blue}]
+  <qmc method="vmc" move="pbyp" checkpoint="100">
+    <parameter name="use_drift">yes</parameter>
+    <parameter name="warmup_steps">100</parameter>
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="walkers">1</parameter>
+    <parameter name="time_step">0.5</parameter>
+    <parameter name="samples">8000</parameter>
+  <qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="100">
+    <parameter name="time_step">0.01</parameter>
+    <parameter name="warmup_steps">1000</parameter>
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">100</parameter>
+  </qmc>
+\end{lstlisting}
+
+Note that a \texttt{vmc} section precedes a \texttt{dmc}. In addition to
+a usual set of parameters for \texttt{vmc} as discussed in section ~\ref{common.sec},
+\begin{lstlisting}[language=xml, emph={parameter},emphstyle=\bfseries\color{blue}]
+  <parameter name="samples">8000</parameter>
+\end{lstlisting}

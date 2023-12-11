@@ -1,0 +1,22 @@
+
+-- Keeping H1 in host memory in HamOps and Propagator
+
+-- make sure you can initialize arrays (by copy or move) from arrays using different allocators.
+   Then you can decide to initialize arrays in host memory in factories and the constructor
+   takes care of initializing the object's array in the appropriate memory space during construction!
+
+-- when more of the cuda code is complete, guard cpu only code with ifndef ENABLE_CUDA
+
+
+-- right now the use of csr_matrix in cuda code is unsafe and generally difficult.
+   To solve this, make a new csr_matrix-like class that looks like csr_matrix but that doesn't
+   allow mutation/modification. This allows you to store things like nnz directly, since this class
+   can't add/remove elements. Then pass nnz through the dispatching of csrmm and csrmv. This class 
+   is memory owning. 
+
+
+-- new strategy for observables
+1. Let the estimator do all the implementation of walker averaged properties, 
+   because there seems to be no way to make use of the PHMSD compact representation of references.
+2. The BP class will generate the new green functions (from wset and Refs) and will calculate all desired
+   properties based on them. The wave-function still provides the mapping from G to property, e.g. for EKT. 

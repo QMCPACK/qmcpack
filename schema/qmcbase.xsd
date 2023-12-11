@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:complexType name="parameterType">
+    <xs:annotation>
+      <xs:documentation>A generic named parameter</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="xs:anyType">
+        <xs:attribute name="id" type="xs:ID" use="optional">
+          <xs:annotation>
+            <xs:documentation>ID of the parameter.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="name" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>The name of the parameter.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="type" type="xs:string" use="optional"/>
+        <xs:attribute name="unit" type="xs:string" use="optional"/>
+        <xs:attribute name="value" type="xs:anySimpleType" use="optional"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="projectType">
+    <xs:annotation>
+      <xs:documentation>Define a project.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="application" type="applicationType" minOccurs="0"/>
+      <xs:element name="summary" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>Project title</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="series" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>Project series number.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="randomType">
+    <xs:attribute name="parallel" default="true">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="seed" type="xs:string" default="-1"/>
+  </xs:complexType>
+  <xs:complexType name="hdfFileType">
+    <xs:annotation>
+      <xs:documentation>Define a hdf5 file</xs:documentation>
+    </xs:annotation>
+  </xs:complexType>
+  <xs:complexType name="arrayDataType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="id" type="xs:string">
+        </xs:attribute>
+        <xs:attribute name="type" default="Array">
+          <xs:simpleType>
+            <xs:restriction base="xs:NMTOKEN">
+              <xs:enumeration value="Array"/>
+              <xs:enumeration value="no"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="size" type="xs:integer" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="sparseArrayType">
+    <xs:sequence>
+      <xs:element name="lambda" type="sparseElementType"
+        minOccurs="1" maxOccurs="unbounded">
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="type" type="xs:string"></xs:attribute>
+    <xs:attribute name="id" type="xs:string"></xs:attribute>
+    <xs:attribute name="offset" type="xs:integer" use="optional" default="1"></xs:attribute>
+    <xs:attribute name="diagonal" default="no">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="yes"/>
+          <xs:enumeration value="no"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sameBlocksForGroup" default="no">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="yes"/>
+          <xs:enumeration value="no"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="sparseElementType">
+    <xs:annotation>
+      <xs:documentation>Define an element of a spare matrix M(i,j)</xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="i" type="xs:integer" use="required"/>
+    <xs:attribute name="j" type="xs:integer" use="optional"/>
+    <xs:attribute name="c" type="xs:double" use="required"/>
+  </xs:complexType>
+</xs:schema>

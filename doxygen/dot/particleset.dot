@@ -1,0 +1,23 @@
+digraph hierarch {
+//label="Trial Wavefunction";
+labelloc="top";
+labelfloat=true
+nodesep=1.0
+
+node[shape=record,fontname=Ariel]
+edge[dir=back,arrowtail=odiamond]
+
+pset[label="{particleset|+group\n +attrib| name\n ?size\n ?random=(no\|yes)\n  ?random_source}"]
+species[label="{group|+parameter\n+attrib| name\n ?size}"]
+att[label="{attrib| +text | name\n datatype \n?size}"]
+param[label="{parameter| +text | name}"]
+
+pset -> species
+pset->att
+species->att
+species->param
+
+{rank=same;pset;species}
+
+}
+

@@ -1,0 +1,26 @@
+Jobid: 203606
+qsub --mode script -A QMC_2014_training -t 60 -n 32 submit_qmcpack.csh
+Wed Jul 16 01:35:02 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/MSD/CASCI/thr0.01
+Wed Jul 16 01:35:48 2014 +0000 (UTC) mmorales/203606: Initiating boot at location VST-22420-33531-32.
+Wed Jul 16 01:36:06 2014 +0000 (UTC) 
+Wed Jul 16 01:36:06 2014 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/MSD/CASCI/thr0.01/submit_qmcpack.csh'
+Wed Jul 16 01:36:06 2014 +0000 (UTC) 
+Wed Jul 16 01:36:06 2014 +0000 (UTC) Environment:
+Wed Jul 16 01:36:06 2014 +0000 (UTC) SHELL=/bin/bash
+Wed Jul 16 01:36:06 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpNbrpOK
+Wed Jul 16 01:36:06 2014 +0000 (UTC) COBALT_PARTNAME=VST-22420-33531-32
+Wed Jul 16 01:36:06 2014 +0000 (UTC) COBALT_JOBID=203606
+Wed Jul 16 01:36:06 2014 +0000 (UTC) COBALT_STARTTIME=1405474517
+Wed Jul 16 01:36:06 2014 +0000 (UTC) LOGNAME=mmorales
+Wed Jul 16 01:36:06 2014 +0000 (UTC) USER=mmorales
+Wed Jul 16 01:36:06 2014 +0000 (UTC) COBALT_ENDTIME=1405478117
+Wed Jul 16 01:36:06 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Wed Jul 16 01:36:06 2014 +0000 (UTC) HOME=/home/mmorales
+Wed Jul 16 01:36:06 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Wed Jul 16 01:36:06 2014 +0000 (UTC) 
+Wed Jul 16 01:36:06 2014 +0000 (UTC) Info: stdin received from /dev/null
+Wed Jul 16 01:36:06 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/MSD/CASCI/thr0.01/203606.output
+Wed Jul 16 01:36:06 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/MSD/CASCI/thr0.01/203606.error
+Wed Jul 16 01:36:06 2014 +0000 (UTC) 
+Wed Jul 16 01:36:11 2014 +0000 (UTC) mmorales/203606: Block VST-22420-33531-32 for location VST-22420-33531-32 successfully booted (Initiating). 
+Wed Jul 16 01:50:04 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

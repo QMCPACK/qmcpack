@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Jeongnim Kim (University of Illinois) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/qmcbase.xsd"/>
+  <xs:complexType name="attribType">
+    <xs:annotation>
+      <xs:documentation>Generic attribute type of a class or object.</xs:documentation>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="name" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>Name of the attribute type.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="datatype" use="required">
+          <xs:annotation>
+            <xs:documentation>
+            Data type of the attribType: stringArray, indexArray, posArray and scalarArray.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:simpleType>
+            <xs:restriction base="xs:NMTOKEN">
+              <xs:enumeration value="posArray"/>
+              <xs:enumeration value="indexArray"/>
+              <xs:enumeration value="scalarArray"/>
+              <xs:enumeration value="stringArray"/>
+              <xs:enumeration value="tensorArray"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="condition" use="optional" default="0">
+          <xs:annotation>
+            <xs:documentation>
+            True if the values are in the unit. An example is posArray which can be in the unit 
+            of a supercell or Cartesian unit.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:simpleType>
+            <xs:restriction base="xs:NMTOKEN">
+              <xs:enumeration value="0"/>
+              <xs:enumeration value="1"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="groupType">
+    <xs:annotation>
+      <xs:documentation>Species group</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="attrib" type="attribType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="size" type="xs:int" use="optional" default="0"/>
+  </xs:complexType>
+  <xs:complexType name="applicationType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="role" type="xs:string"/>
+        <xs:attribute name="class" type="xs:string"/>
+        <xs:attribute name="version" type="xs:string"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="unitcellType">
+    <xs:annotation>
+      <xs:documentation>Define the unit cell of a simulation.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="particleSetType">
+    <xs:annotation>
+      <xs:documentation>Define a set of particles. Typically used to give an input configuration. UnitCell is optional.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence minOccurs="0">
+      <xs:element name="unitcell" type="unitcellType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>Define the unit cell of a simulation.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="group" type="groupType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="attrib" type="attribType" minOccurs="0" maxOccurs="unbounded">
+        <xs:annotation>
+          <xs:documentation>Add generic particle attributes. The number of data per attribute is defined by num of ParticleSetType.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="optional"/>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="size" type="xs:int" use="optional" default="0">
+      <xs:annotation>
+        <xs:documentation>
+          The number of particles contained in a ParticleSet.  If it is non-zero integer, 
+          ohmms assumes that the input attributes (attribType) 
+          contain the same number of data.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="src" type="xs:string" use="optional"/>
+  </xs:complexType>
+</xs:schema>

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <particleset name="e">
+    <group name="u" size="N_ELEC_HALF">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+        ELEC_UP_POS
+      </attrib>
+    </group>
+    <group name="d" size="N_ELEC_HALF">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+        ELEC_DOWN_POS
+      </attrib>
+    </group>
+  </particleset>
+  <particleset name="ion0" size="N_ATOM">
+    <group name="O">
+      <parameter name="charge">6</parameter>
+      <parameter name="valence">4</parameter>
+      <parameter name="atomicnumber">8</parameter>
+    </group>
+    <group name="H">
+      <parameter name="charge">1</parameter>
+      <parameter name="valence">1</parameter>
+      <parameter name="atomicnumber">1</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+      ATOM_POS
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      ATOM_LABEL
+    </attrib>
+  </particleset>
+</qmcsystem>

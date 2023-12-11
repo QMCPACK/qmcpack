@@ -1,0 +1,37 @@
+
+     Program pw2qmcpack v.5.0   starts on  6Jun2016 at 20: 2: 7 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote.php
+
+     Parallel version (MPI), running on     1 processors
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1s, nr2s, nr3s values from input
+ exclusive time read pseudo (s) 0.000000000000000000E+00
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = LDA ( 1 1 0 0 0)
+     EXX-fraction              =        0.00
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file O.BFD.upf: wavefunction(s)  0s 0p renormalized
+ 
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum       34109   34109   8529              4738093  4738093  591889
+ 
+ exclusive time read charge density (s) 5.46999999999999886
+ exclusive time fft charge density (s) 9.02000000000000313
+ exclusive time read wave function (s) 7.99000000000000199
+ inclusive time in read_file_lite (s) 40.7399999999999949
+esh5 create pwscf_output/pwscf.pwscf.h5
+ inclusive time in big loop (s) 6.17999999999999972
+ inclusive time in compute_qmcpack (s) 10.3000000000000043

@@ -1,0 +1,28 @@
+Jobid: 344912
+qsub --mode script -q qmcpack -A QMCPACK-Training -n 32 -t 60 -O opt --mode script --env BG_SHAREDMEMSIZE=32 opt.qsub.in
+Mon Jun 06 19:25:20 2016 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_1.0
+Mon Jun 06 19:25:58 2016 +0000 (UTC) krogel/344912: Initiating boot at location VST-00040-11151-32.
+Mon Jun 06 19:26:15 2016 +0000 (UTC) 
+Mon Jun 06 19:26:15 2016 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_1.0/opt.qsub.in'
+Mon Jun 06 19:26:15 2016 +0000 (UTC) 
+Mon Jun 06 19:26:15 2016 +0000 (UTC) Environment:
+Mon Jun 06 19:26:15 2016 +0000 (UTC) COBALT_RESID=213
+Mon Jun 06 19:26:15 2016 +0000 (UTC) SHELL=/bin/bash
+Mon Jun 06 19:26:15 2016 +0000 (UTC) COBALT_NODEFILE=/tmp/tmp3cQLhS
+Mon Jun 06 19:26:15 2016 +0000 (UTC) COBALT_PARTNAME=VST-00040-11151-32
+Mon Jun 06 19:26:15 2016 +0000 (UTC) COBALT_JOBID=344912
+Mon Jun 06 19:26:15 2016 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Mon Jun 06 19:26:15 2016 +0000 (UTC) COBALT_STARTTIME=1465241129
+Mon Jun 06 19:26:15 2016 +0000 (UTC) LOGNAME=krogel
+Mon Jun 06 19:26:15 2016 +0000 (UTC) USER=krogel
+Mon Jun 06 19:26:15 2016 +0000 (UTC) COBALT_ENDTIME=1465244729
+Mon Jun 06 19:26:15 2016 +0000 (UTC) COBALT_PARTSIZE=32
+Mon Jun 06 19:26:15 2016 +0000 (UTC) HOME=/home/krogel
+Mon Jun 06 19:26:15 2016 +0000 (UTC) COBALT_JOBSIZE=32
+Mon Jun 06 19:26:15 2016 +0000 (UTC) 
+Mon Jun 06 19:26:15 2016 +0000 (UTC) Info: stdin received from /dev/null
+Mon Jun 06 19:26:15 2016 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_1.0/opt.output
+Mon Jun 06 19:26:15 2016 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_1.0/opt.error
+Mon Jun 06 19:26:15 2016 +0000 (UTC) 
+Mon Jun 06 19:26:20 2016 +0000 (UTC) krogel/344912: Block VST-00040-11151-32 for location VST-00040-11151-32 successfully booted (Initiating). 
+Mon Jun 06 19:28:25 2016 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

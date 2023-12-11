@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H" series="0">
+  <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      QMC of H atom
+    </application>
+  </project>
+  <random seed="-1"/>
+  <particleset name="e">
+    <group name="u" size="1">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+        -0.500000  0.5000000  -0.50000
+      </attrib>
+    </group>
+  </particleset>
+  <particleset name="ion0" size="1">
+    <group name="H">
+      <parameter name="charge">1</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+      0.0 0.0 0.0
+    </attrib>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
+       <basisset name="LCAOBSet">
+         <atomicBasisSet name="3-21G" angular="cartesian" type="Gaussian" elementType="H" normalized="no">
+           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+           <basisGroup rid="H00" n="0" l="0" type="Gaussian">
+             <radfunc exponent="1.309756377000e+00" contraction="4.301284940000e-01"/>
+             <radfunc exponent="2.331359740000e-01" contraction="6.789135310000e-01"/>
+           </basisGroup>
+         </atomicBasisSet>
+       </basisset>
+      <slaterdeterminant>
+        <determinant id="updet" spin="1" size="1">
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="Coulomb" type="coulomb" source="ion0" target="e"/>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+  </hamiltonian>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">50000</parameter>
+    <parameter name="steps">1</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">25000</parameter>
+    <parameter name="steps">2</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">12500</parameter>
+    <parameter name="steps">4</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">6250</parameter>
+    <parameter name="steps">8</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">3125</parameter>
+    <parameter name="steps">16</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">2500</parameter>
+    <parameter name="steps">20</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">1250</parameter>
+    <parameter name="steps">40</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">1000</parameter>
+    <parameter name="steps">50</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">500</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">250</parameter>
+    <parameter name="steps">200</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">125</parameter>
+    <parameter name="steps">400</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">500</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks"> 50</parameter>
+    <parameter name="steps">1000</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks"> 40</parameter>
+    <parameter name="steps">1250</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks"> 20</parameter>
+    <parameter name="steps">2500</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+  <qmc method="vmc" target="e">
+    <parameter name="blocks"> 10</parameter>
+    <parameter name="steps">5000</parameter>
+    <parameter name="samples">1600</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+  </qmc>
+</simulation>

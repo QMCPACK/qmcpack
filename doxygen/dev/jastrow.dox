@@ -1,0 +1,10 @@
+/*! \page dev_jastrow Jastrow functions
+
+Jastrow functions use template classes with the template parameter FUNC for the radial function type,
+- \c OneBodyJastrowOrbital<FUNC> : OneBody
+- \c TwoBodyJastrowOrbital<FUNC> : TwoBody
+- \c eeI_JastrowOrbital<FUNC> : ThreeBody
+
+The most commonly FUNCtor is <c>BsplineFunctor<T>, T=double</c> with <c>jastrow/\@function="bspline"</c>.
+
+*/

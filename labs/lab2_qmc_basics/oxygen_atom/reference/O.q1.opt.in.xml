@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<simulation>
+
+   <!-- all output files will be prefixed by "O.q0.opt" -->
+   <project id="O.q1.opt" series="0">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   </project>
+
+
+   <!-- include simulationcell and particle information from pw2qmcpqack -->
+   <include href="O.q1.ptcl.xml"/>
+
+
+   <!-- include wavefunction information from pw2qmcpqack -->
+   <include href="O.q1.wfs.xml"/>
+
+ 
+   <!-- many body Hamiltonian (kinetic energy is implicit) -->
+   <hamiltonian name="h0" type="generic" target="e">
+
+      <!-- electron-electron Coulomb interaction-->
+      <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+
+      <!-- ion-ion Coulomb interaction (irrelevant for a single atom, of course) -->
+      <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+
+      <!-- electron-ion interactions (pseudopotentials) -->
+      <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+         <!-- O pseudopotential read from "O.BFD.xml" -->
+         <pseudo elementType="O" href="O.BFD.xml"/>
+      </pairpot>
+   </hamiltonian>
+
+
+   <!-- QMC run parameters below -->
+
+   <!--  linear optimization method -->
+   <!--    fill in MAX, ECOST, UVCOST, RVCOST, TS, SAMPLES    -->
+   <!--    samples MUST be a multiple of # threads (512 on Vesta) -->
+   <loop max="12">  <!-- regenerate Monte Carlo samples and optimize MAX times -->
+      <qmc method="linear" move="pbyp" checkpoint="-1">
+         <cost name="energy"              >  0.0   </cost>
+         <cost name="unreweightedvariance">  1.0  </cost>
+         <cost name="reweightedvariance"  >  0.0  </cost>
+         <parameter name="timestep"         >    0.3           </parameter>
+         <parameter name="samples"          >    51200         </parameter>
+         <parameter name="warmupSteps"      >    50            </parameter>
+         <parameter name="blocks"           >    200           </parameter>
+         <parameter name="subSteps"         >    1             </parameter>
+         <parameter name="nonlocalpp"       >    yes           </parameter>
+         <parameter name="useBuffer"        >    yes           </parameter>
+         <parameter name="walkers"          >    1             </parameter>
+         <parameter name="minwalkers"       >    0.5           </parameter>
+         <parameter name="maxWeight"        >    1000000000.0  </parameter>
+         <parameter name="useDrift"         >    no            </parameter>
+         <parameter name="MinMethod"        >    quartic       </parameter>
+         <parameter name="beta"             >    0.025         </parameter>
+         <parameter name="exp0"             >    -16           </parameter>
+         <parameter name="bigchange"        >    15.0          </parameter>
+         <parameter name="alloweddifference">    0.0001        </parameter>
+         <parameter name="stepsize"         >    0.2           </parameter>
+         <parameter name="stabilizerscale"  >    1.0           </parameter>
+         <parameter name="nstabilizers"     >    3             </parameter>
+      </qmc>
+   </loop>
+</simulation>
