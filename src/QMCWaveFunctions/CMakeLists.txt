@@ -37,11 +37,8 @@ set(WFBASE_SRCS
     HarmonicOscillator/SHOSet.cpp
     HarmonicOscillator/SHOSetBuilder.cpp
     ExampleHeBuilder.cpp
-    ExampleHeComponent.cpp)
-
-if(NOT QMC_COMPLEX)
-  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp)
-endif(NOT QMC_COMPLEX)
+    ExampleHeComponent.cpp
+    RotatedSPOs.cpp)
 
 if(QMC_COMPLEX)
   set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp)
@@ -86,17 +83,19 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/EinsplineSetBuilderCommon.cpp
         BsplineFactory/EinsplineSetBuilderESHDF.fft.cpp
         BsplineFactory/EinsplineSetBuilder_createSPOs.cpp
-        BsplineFactory/createComplexDouble.cpp
-        BsplineFactory/createComplexSingle.cpp
+        BsplineFactory/createBsplineComplex.cpp
         BsplineFactory/HybridRepCenterOrbitals.cpp
+        BsplineFactory/SplineSetReader.cpp
+        BsplineFactory/HybridRepSetReader.cpp
+        BsplineFactory/OneSplineOrbData.cpp
         BandInfo.cpp
-        BsplineFactory/BsplineReaderBase.cpp)
+        BsplineFactory/BsplineReader.cpp)
     set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp Fermion/MultiDiracDeterminant.2.cpp)
     if(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
     else(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createRealSingle.cpp BsplineFactory/createRealDouble.cpp
+      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createBsplineReal.cpp
         BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
     endif(QMC_COMPLEX)

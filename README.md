@@ -45,7 +45,7 @@ P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5
 # Installation Prerequisites
 
  * C++ 17 and C99 capable compilers. 
- * CMake v3.17.0 or later, build utility, http://www.cmake.org
+ * CMake v3.21.0 or later, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library. Use vendor and platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5 v1.10.0 or later, portable I/O library, http://www.hdfgroup.org/HDF5/
@@ -53,7 +53,8 @@ P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.
  * Python3. Older versions are not supported as of January 2020.
- * CUDA v11.0 or later. Optional, but required for builds with NVIDIA GPU support.
+ * CUDA v11.0 or later. Optional, but required for builds with NVIDIA GPU support. Use 12.3 or newer if possible. 11.3-12.2 have
+   a bug affecting multideterminant calculations. Single determinant calculations are OK.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
 over two years old may work but is discouraged and untested. Proprietary compilers (Intel, NVHPC) are generally supported over the
@@ -65,14 +66,14 @@ Nightly testing currently includes at least the following software versions:
 
 * Compilers
   * GCC 13.2.0, 11.4.0
-  * Clang/LLVM 16.0.6
+  * Clang/LLVM 17.0.4
 * Boost 1.83.0, 1.77.0
-* HDF5 1.14.2
+* HDF5 1.14.3
 * FFTW 3.3.10, 3.3.8
-* CMake 3.27.4, 3.21.3
+* CMake 3.27.9, 3.21.4
 * MPI
-  * OpenMPI 4.1.5
-* CUDA 11.2
+  * OpenMPI 4.1.6
+* CUDA 12.3
 
 GitHub Actions-based tests include additional version combinations from within our two year support window. On a developmental basis
 we also check the latest Clang and GCC development versions, AMD Clang and Intel OneAPI compilers. 
@@ -90,28 +91,34 @@ sphinx from the sources in docs/. A PDF version is still available at https://qm
 
 ## Quick build
 
- If you are feeling lucky and are on a standard UNIX-like system such
- as a Linux workstation:
+On a standard UNIX-like system such as a Linux workstation:
 
- * Safest quick build option is to specify the C and C++ compilers
-   through their MPI wrappers. Here we use Intel MPI and Intel
-   compilers. Move to the build directory, run CMake and make
+* Safest quick build option is to specify the C and C++ compilers
+  through their MPI wrappers. Here we use Intel MPI and Intel
+  compilers. Move to the build directory, run CMake and make
 ```
 cd build
 cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
 make -j 8
 ```
 
- * Substitute mpicc and mpicxx or other wrapped compiler names to suit
-   your system. e.g. With OpenMPI use
+* Substitute mpicc and mpicxx or other wrapped compiler names to suit
+  your system. e.g. With OpenMPI use
 ```
 cd build
 cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
 make -j 8
 ```
 
+* Non-MPI build:
+```
+cd build
+cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DQMC_MPI=0 ..
+make -j 8
+```
+
 * If you are feeling particularly lucky, you can skip the compiler
-   specification:
+  specification:
 ```
 cd build
 cmake ..
@@ -319,33 +326,34 @@ performance tests are provided to aid in monitoring performance.
 
 From the build directory, invoke ctest specifying only the unit tests
 ```
-ctest -R unit
+ctest -j 16 -R unit --output-on-failure
 ```
-All of these tests should pass.
+All of these tests should pass within a few minutes. Modify the parallization setting (-j 16) to suit the core count of your system.
 
 ## Run the deterministic tests
 
 From the build directory, invoke ctest specifying only tests
 that are deterministic and known to be reliable.
 ```
-ctest -R deterministic -LE unstable
+ctest -j 16 -R deterministic -LE unstable --output-on-failure
 ```
 
-These tests currently take a few seconds to run, and include all the unit tests. All tests should pass. Failing tests likely
+These tests currently take a few minutes to run, and include all the unit tests. All tests should pass. Failing tests likely
 indicate a significant problem that should be solved before using QMCPACK further. This ctest invocation can be used as part of an
-automated installation verification process.
+automated installation verification process. Many of the tests use a multiple of 16 processes, so on large core count machines
+a significant speedup can be obtained with -j 64 etc.
  
 ## Run the short (quick) tests
 
- From the build directory, invoke ctest specifying only tests
- including "short" to run that are known to be stable.
+From the build directory, invoke ctest specifying only tests
+including "short" to run that are known to be stable.
 ```
-ctest -R short -LE unstable
+ctest -j 16 -R short -LE unstable --output-on-failure
 ```
 
- These tests currently take up to around one hour. On average, all
- tests should pass at a three sigma level of reliability. Any
- initially failing test should pass when rerun.
+These tests currently take up to around one hour. On average, all
+tests should pass at a three sigma level of reliability. Any
+initially failing test should pass when rerun.
 
 ## Run individual tests
 
@@ -356,7 +364,7 @@ ctest -R name-of-test-to-run
 
 # Contributing
 
-Contributions of any size are very welcome. Guidance for contributing to QMCPACK is included in Chapter 1 of the manual
+Contributions of any size are very welcome. Guidance for contributing to QMCPACK is included in the manual
 https://qmcpack.readthedocs.io/en/develop/introduction.html#contributing-to-qmcpack. We use a git flow model including pull
 request reviews. A continuous integration system runs on pull requests. See https://github.com/QMCPACK/qmcpack/wiki for details.
 For an extensive contribution, it can be helpful to discuss on the [Google QMCPACK

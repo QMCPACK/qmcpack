@@ -1,5 +1,4 @@
-FROM ubuntu:20.04
-LABEL maintainer="williamfgc@yahoo.com"
+FROM ubuntu:22.04
 
 RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get clean &&\
@@ -12,18 +11,17 @@ RUN wget https://apt.kitware.com/kitware-archive.sh &&\
     sh kitware-archive.sh
 
 RUN export DEBIAN_FRONTEND=noninteractive &&\
-    apt-get install gcc g++ \ 
-    clang \
-    clang-format \
-    clang-tidy \
+    apt-get install gcc-12 g++-12 \ 
+    clang-14 \
+    clang-format-14 \
+    clang-tidy-14 \
+    libomp-14-dev \
     gcovr \
     python3 \
     cmake \
     ninja-build \
     libboost-all-dev \
     git \
-    libopenmpi-dev \
-    libhdf5-openmpi-dev \
     libhdf5-serial-dev \
     hdf5-tools \
     libfftw3-dev \
@@ -49,8 +47,20 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
 RUN export DEBIAN_FRONTEND=noninteractive &&\
     pip3 install cif2cell
 
+# add gcc-12 as gcc
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+
+# add clang-14 as clang
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100
+
+# add clang-format and clang-tidy as well as libomp
+RUN update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-14 100 && \
+    update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-14 100 && \
+    update-alternatives --install /usr/bin/clang-tidy-diff.py clang-tidy-diff.py /usr/bin/clang-tidy-diff-14.py 100
+
 # must add a user different from root 
-# to run MPI executables
 RUN useradd -ms /bin/bash user
 # allow in sudoers to install packages
 RUN adduser user sudo

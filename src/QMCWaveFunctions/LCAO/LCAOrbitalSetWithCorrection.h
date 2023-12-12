@@ -29,15 +29,20 @@ class LCAOrbitalSetWithCorrection : public SPOSet
 public:
   using basis_type = LCAOrbitalSet::basis_type;
   /** constructor
+     * @param my_name name of the SPOSet object
+     * @param bs pointer to the BasisSet
+     * @param norb number of orbitals
+     * @param identity if true, the MO coefficients matrix is identity
      * @param ions
      * @param els
-     * @param bs pointer to the BasisSet
      * @param rl report level
      */
   LCAOrbitalSetWithCorrection(const std::string& my_name,
+                              std::unique_ptr<basis_type>&& bs,
+                              size_t norbs,
+                              bool identity,
                               ParticleSet& ions,
-                              ParticleSet& els,
-                              std::unique_ptr<basis_type>&& bs);
+                              ParticleSet& els);
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
 

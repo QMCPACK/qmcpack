@@ -94,8 +94,8 @@ public:
     std::any assignAnyEnum(const std::string& name) const override;
   };
 
-  using Position = QMCTraits::PosType;
-  using Real     = QMCTraits::RealType;
+  using Real     = QMCTraits::FullPrecRealType;
+  using Position = TinyVector<Real, OHMMS_DIM>;
 
   /** default copy constructor
    *  This is required due to OBDMI being part of a variant used as a vector element.
@@ -154,6 +154,10 @@ public:
   template<typename T>
   friend class testing::OneBodyDensityMatricesTests;
 };
+
+extern template bool InputSection::setIfInInput<qmcplusplus::OneBodyDensityMatricesInput::Integrator>(
+    qmcplusplus::OneBodyDensityMatricesInput::Integrator& var,
+    const std::string& tag);
 
 } // namespace qmcplusplus
 

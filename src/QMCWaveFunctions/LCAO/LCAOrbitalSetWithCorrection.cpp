@@ -15,17 +15,19 @@
 namespace qmcplusplus
 {
 LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(const std::string& my_name,
+                                                         std::unique_ptr<basis_type>&& bs,
+                                                         size_t norbs,
+                                                         bool identity,
                                                          ParticleSet& ions,
-                                                         ParticleSet& els,
-                                                         std::unique_ptr<basis_type>&& bs)
-    : SPOSet(my_name), lcao(my_name + "_modified", std::move(bs)), cusp(ions, els)
-{}
+                                                         ParticleSet& els)
+    : SPOSet(my_name), lcao(my_name + "_modified", std::move(bs), norbs, identity), cusp(ions, els, norbs)
+{
+  OrbitalSetSize = norbs;
+}
 
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 {
-  assert(lcao.getOrbitalSetSize() == norbs && "norbs doesn't agree with lcao!");
-  OrbitalSetSize = norbs;
-  cusp.setOrbitalSetSize(norbs);
+  throw std::runtime_error("LCAOrbitalSetWithCorrection::setOrbitalSetSize should not be called");
 }
 
 

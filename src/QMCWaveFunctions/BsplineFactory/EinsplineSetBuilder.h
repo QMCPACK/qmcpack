@@ -34,8 +34,8 @@ class Communicate;
 
 namespace qmcplusplus
 {
-///forward declaration of BsplineReaderBase
-struct BsplineReaderBase;
+///forward declaration of BsplineReader
+struct BsplineReader;
 
 // Helper needed for TwistMap
 struct Int3less
@@ -128,8 +128,8 @@ public:
    */
   std::vector<std::unique_ptr<std::vector<BandInfo>>> FullBands;
 
-  /// reader to use BsplineReaderBase
-  std::unique_ptr<BsplineReaderBase> MixedSplineReader;
+  /// reader to use BsplineReader
+  std::unique_ptr<BsplineReader> MixedSplineReader;
 
   ///This is true if we have the orbital derivatives w.r.t. the ion positions
   bool HaveOrbDerivs;

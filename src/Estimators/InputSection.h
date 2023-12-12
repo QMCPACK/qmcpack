@@ -28,16 +28,22 @@
 namespace qmcplusplus
 {
 
+  /** Input section provides basic parsing and a uniform method of access to the raw parsed input.
+   *  It is still expected to be a composed part of the actual input class for a simulation class.
+   *  It does not operate at reduced precision, i.e. numerical input is always parsed and retrieved
+   *  at full precision. Gettting values from input section is strongly typed so you will get errors
+   *  if you try to get numeric types at reduced precision.
+   */
 class InputSection
 {
 public:
-  using FullPrecReal = QMCTraits::FullPrecRealType;
-  using Real         = QMCTraits::RealType;
-  using Position     = QMCTraits::PosType;
+  using Real         = QMCTraits::FullPrecRealType;
+  using Position     = typename QMCTypes<Real,OHMMS_DIM>::PosType;
 
   InputSection()                          = default;
   InputSection(const InputSection& other) = default;
-
+  InputSection& operator=(const InputSection& other) = default;
+  
 protected:
   // Internal data below comprise the input specification.
   //   Most apply attributes to input variables.
@@ -233,11 +239,11 @@ protected:
   static std::any lookupAnyEnum(const std::string& enum_name,
                                 const std::string& enum_value,
                                 const std::unordered_map<std::string, std::any>& enum_map);
-
 protected:
   // Simple dump of contents. Useful for developing and as
   // debugging function useful when input sections local error reports
   // may be insufficient.
+  void report() const;
   void report(std::ostream& out) const;
 
 private:
