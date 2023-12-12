@@ -1,0 +1,14 @@
+# run `cmake-format --in-place CMakeLists.txt` comply with the format in this file, for all files: `find . \( -name '*.cmake' -o -name 'CMakeLists.txt' \) -exec cmake-format -i {} \;`
+bullet_char: '*'
+dangle_parens: true
+line_ending: unix
+line_width: 240
+max_pargs_hwrap: 3
+separate_ctrl_name_with_space: false
+separate_fn_name_with_space: false
+tab_size: 4
+use_tabchars: true
+command_case: lower
+keyword_case: upper
+enable_sort: true
+autosort: true
