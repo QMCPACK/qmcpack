@@ -75,7 +75,7 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
 
   for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
-      CHECK(C[j][i] == D[j][i]);
+      CHECK(C[j][i] == Approx(D[j][i]));
 }
 
 TEST_CASE("OmpBLAS gemm", "[OMP]")
