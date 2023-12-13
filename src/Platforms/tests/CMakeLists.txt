@@ -19,9 +19,7 @@ if(ENABLE_SYCL)
   add_subdirectory(SYCL)
 endif()
 
-if(ENABLE_OFFLOAD)
-  add_subdirectory(OMPTarget)
-endif(ENABLE_OFFLOAD)
+add_subdirectory(OMPTarget)
 
 set(UTEST_EXE test_platforms)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
