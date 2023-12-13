@@ -45,7 +45,7 @@ ompBLAS_status gemm_impl(ompBLAS_handle& handle,
     for (size_t m = 0; m < M; m++)
       for (size_t n = 0; n < N; n++)
       {
-        C[n * ldc + m] *= beta;
+        C[n * ldc + m] = beta == T(0) ? T(0) : C[n * ldc + m] * beta;
         for (size_t k = 0; k < K; k++)
           C[n * ldc + m] += alpha * A[lda * m + k] * B[ldb * n + k];
       }
@@ -56,7 +56,7 @@ ompBLAS_status gemm_impl(ompBLAS_handle& handle,
     for (size_t m = 0; m < M; m++)
       for (size_t n = 0; n < N; n++)
       {
-        C[n * ldc + m] *= beta;
+        C[n * ldc + m] = beta == T(0) ? T(0) : C[n * ldc + m] * beta;
         for (size_t k = 0; k < K; k++)
           C[n * ldc + m] += alpha * A[lda * m + k] * B[ldb * k + n];
       }
@@ -67,7 +67,7 @@ ompBLAS_status gemm_impl(ompBLAS_handle& handle,
     for (size_t m = 0; m < M; m++)
       for (size_t n = 0; n < N; n++)
       {
-        C[n * ldc + m] *= beta;
+        C[n * ldc + m] = beta == T(0) ? T(0) : C[n * ldc + m] * beta;
         for (size_t k = 0; k < K; k++)
           C[n * ldc + m] += alpha * A[lda * k + m] * B[ldb * k + n];
       }
@@ -78,7 +78,7 @@ ompBLAS_status gemm_impl(ompBLAS_handle& handle,
     for (size_t m = 0; m < M; m++)
       for (size_t n = 0; n < N; n++)
       {
-        C[n * ldc + m] *= beta;
+        C[n * ldc + m] = beta == T(0) ? T(0) : C[n * ldc + m] * beta;
         for (size_t k = 0; k < K; k++)
           C[n * ldc + m] += alpha * A[lda * k + m] * B[ldb * n + k];
       }
