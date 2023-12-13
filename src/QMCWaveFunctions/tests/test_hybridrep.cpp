@@ -93,10 +93,15 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   ions_.update();
   elec_.update();
 
-  // for vgl
-  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  /* for vgl
+   * In DiracDeterminant, these psiM, dpsiM, and d2psiM 
+   * are always sized to elec_.R.size() x elec_.R.size()
+   * Using the same sizes for these. This tests the case 
+   * that spo->OrbitalSetSize > elec_.R.size()
+   */
+  SPOSet::ValueMatrix psiM(elec_.R.size(), elec_.R.size());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), elec_.R.size());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), elec_.R.size());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // due to the different ordering of bands skip the tests on CUDA+Real builds
@@ -149,6 +154,11 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   //Let's also add test for orbital optimzation
   if (spo->isRotationSupported())
   {
+    SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+    SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+    SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+    spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+
     SPOSet::ValueVector row0{0.56752158, -0.3152607, 0.03525207, -0.75979421};
     SPOSet::ValueVector row1{0.21452916, 0.75299027, -0.59552084, -0.17982718};
     SPOSet::ValueVector row2{0.24049122, 0.55674778, 0.79497536, -0.01449368};
