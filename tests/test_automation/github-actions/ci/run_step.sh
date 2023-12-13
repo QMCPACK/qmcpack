@@ -155,7 +155,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC11-NoMPI-Werror-"*)
+      *"GCC12-NoMPI-Werror-"*)
         echo 'Configure for building with gcc -Werror flag enabled'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \

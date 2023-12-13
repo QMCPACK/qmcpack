@@ -79,12 +79,13 @@ public:
    *  the same CoordType.
    */
   ReferencePointsInput() = default;
-  
+
   ReferencePointsInput(xmlNodePtr cur);
   ReferencePointsInput(const ReferencePointsInput& rpi) = default;
 
   Coord get_coord_form() const { return coord_form_; }
   const Points& get_points() const { return points_; }
+
 private:
   void readRefPointsXML(xmlNodePtr cur);
   // As far as I can tell if not specified in input this is what is happening in legacy.
@@ -94,11 +95,12 @@ private:
   static constexpr std::string_view error_tag{"ReferencePointsInput input: "};
 };
 
-  /** factory function used by InputSection to make reference points Input
+/** factory function used by InputSection to make reference points Input
    *  \param[out]  value_label     key value in delegating InputSection for storing the constructed Input from processed node.
    */
-  std::any makeReferencePointsInput(xmlNodePtr, std::string& value_label);
+std::any makeReferencePointsInput(xmlNodePtr, std::string& value_label);
 
+extern template bool InputSection::setIfInInput<ReferencePointsInput::Coord>(ReferencePointsInput::Coord& var,
+                                                                             const std::string& tag);
 } // namespace qmcplusplus
-
 #endif

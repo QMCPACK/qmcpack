@@ -26,6 +26,11 @@ struct IsComplex_t<std::complex<T>> : public std::true_type
 
 template<typename T>
 using IsComplex = std::enable_if_t<IsComplex_t<T>::value, bool>;
+
+// for symmetry with IsComplex_t
+template<typename T>
+using IsReal_t = std::is_floating_point<T>;
+
 template<typename T>
 using IsReal = std::enable_if_t<std::is_floating_point<T>::value, bool>;
 
