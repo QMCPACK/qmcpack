@@ -16,7 +16,7 @@ target_link_libraries(qmc_external_mpi_wrapper INTERFACE MPI::MPI_CXX Boost::boo
 
 add_library(qmc_external_multi INTERFACE)
 target_include_directories(qmc_external_multi INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/boost_multi/multi/include)
-target_compile_definitions(qmc_external_multi PUBLIC -D_MULTI_FORCE_TRIVIAL_STD_COMPLEX )
+target_compile_definitions(qmc_external_multi INTERFACE -D_MULTI_FORCE_TRIVIAL_STD_COMPLEX )
 
 add_library(qmc_external_thrust INTERFACE)
 target_include_directories(qmc_external_thrust INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thrust)
