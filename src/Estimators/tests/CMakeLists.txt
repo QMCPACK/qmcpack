@@ -42,6 +42,7 @@ set(SRCS
     test_EstimatorManagerCrowd.cpp
     test_MagnetizationDensityInput.cpp
     test_MagnetizationDensity.cpp
+    test_ParseGridInput.cpp
     test_PerParticleHamiltonianLogger.cpp
     test_ReferencePointsInput.cpp
     test_ReferencePoints.cpp
