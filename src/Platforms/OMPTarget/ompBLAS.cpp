@@ -83,6 +83,8 @@ ompBLAS_status gemm_impl(ompBLAS_handle& handle,
           C[n * ldc + m] += alpha * A[lda * k + m] * B[ldb * n + k];
       }
   }
+  else
+    throw std::runtime_error("Error: trans=='C' not yet implemented for ompBLAS::gemm.");
 
   // #endif
   return 0;

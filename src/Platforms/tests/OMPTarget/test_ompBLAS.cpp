@@ -25,11 +25,11 @@ namespace qmcplusplus
 template<typename T>
 void test_gemm(const int M, const int N, const int K, const char transa, const char transb)
 {
-  const int a0 = transa == 'T' ? K : M;
-  const int a1 = transa == 'T' ? M : K;
+  const int a0 = transa == 'T' ? M : K;
+  const int a1 = transa == 'T' ? K : M;
 
-  const int b0 = transb == 'T' ? N : K;
-  const int b1 = transb == 'T' ? K : N;
+  const int b0 = transb == 'T' ? K : N;
+  const int b1 = transb == 'T' ? N : K;
 
   using vec_t = Vector<T, OMPallocator<T>>;
   using mat_t = Matrix<T, OMPallocator<T>>;
@@ -38,8 +38,8 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
 
   mat_t A(a0, a1); // Input matrix
   mat_t B(b0, b1); // Input matrix
-  mat_t C(M, N);   // Result matrix ompBLAS
-  mat_t D(M, N);   // Result matrix BLAS
+  mat_t C(N, M);   // Result matrix ompBLAS
+  mat_t D(N, M);   // Result matrix BLAS
 
   // Fill data
   for (int j = 0; j < a0; j++)
@@ -51,8 +51,8 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
       B[j][i] = i * 4 + j * 5;
 
   // Fill C and D with 0
-  for (int j = 0; j < M; j++)
-    for (int i = 0; i < N; i++)
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
       C[j][i] = D[j][i] = T(0);
 
   A.updateTo();
@@ -62,20 +62,25 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
   T alpha(1);
   T beta(0);
 
-  // in Fortran, B[M][N] is viewed as B^T
-  // transa/transb == 'N'/'N', the actual calculation is A[K,M] * B[N,K] = C[M,N]
-  // transa/transb == 'N'/'T', the actual calculation is A[K,M] * B[K,N] = C[M,N]
-  // transa/transb == 'T'/'N', the actual calculation is A[M,K] * B[N,K] = C[M,N]
-  // transa/transb == 'T'/'T', the actual calculation is A[M,K] * B[K,N] = C[M,N]
-  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha, A.device_data(), a0, B.device_data(), b0, beta, C.device_data(),
+  // U[X,Y] denotes a row-major matrix U with X rows and Y cols
+  // element U(i,j) is located at: U.data() + sizeof(U_type) * (i*ldU + j)
+  //
+  // A,B,C,D are treated as row-major matrices, but the arguments to gemm are treated as col-major
+  // so the call below to ompBLAS::gemm is equivalent to one of the following (with row-major matrices)
+  // transa/transb == 'N'/'N':   C[N,M] = A[K,M] * B[N,K]; C = B * A
+  // transa/transb == 'N'/'T':   C[N,M] = A[K,M] * B[K,N]; C = B^t * A
+  // transa/transb == 'T'/'N':   C[N,M] = A[M,K] * B[N,K]; C = B * A^t
+  // transa/transb == 'T'/'T':   C[N,M] = A[M,K] * B[K,N]; C = B^t * A^t
+
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha, A.device_data(), a1, B.device_data(), b1, beta, C.device_data(),
                 M);
   C.updateFrom();
 
-  BLAS::gemm(transa, transb, M, N, K, alpha, A.data(), a0, B.data(), b0, beta, D.data(), M);
+  BLAS::gemm(transa, transb, M, N, K, alpha, A.data(), a1, B.data(), b1, beta, D.data(), M);
 
-  for (int j = 0; j < M; j++)
-    for (int i = 0; i < N; i++)
-      CHECK(C[j][i] == Approx(D[j][i]));
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+      CHECK(T(0) == Approx(std::abs(C[j][i] - D[j][i])));
 }
 
 TEST_CASE("OmpBLAS gemm", "[OMP]")
