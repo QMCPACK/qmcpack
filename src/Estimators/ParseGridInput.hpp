@@ -47,17 +47,6 @@ struct AxisGrid
            int rhs_dimensions);
 
   AxisGrid(const AxisGrid& rhs);
-  // AxisGrid& operator=(const AxisGrid& rhs) {
-  //   ndom_int = rhs.ndom_int;
-  //   ndu_int = rhs.ndu_int;
-  //   du_int = rhs.du_int;
-  //   umin = rhs.umin;
-  //   umax = rhs.umax;
-  //   odu = rhs.odu;
-  //   gmap = rhs.gmap;
-  //   ndu_per_interval = rhs.ndu_per_interval;
-  //   dimensions = rhs.dimensions;
-  // }
 
   AxisGrid& operator=(AxisGrid rhs);
 
@@ -71,11 +60,6 @@ struct AxisGrid
             ag.dimensions == dimensions);
   }
 
-  // I think the parse should just return something like this.
-  // std::vector<REAL> points;
-  // std::vector<REAL> p_to_p_du;
-  // however the parse was/is hopelessly tangled up with a great deal of calculation.
-  // which produces this
   std::vector<int> ndom_int;
   std::vector<int> ndu_int;
   std::vector<REAL> du_int;
@@ -88,8 +72,8 @@ struct AxisGrid
 };
 
 /** Parses the one dimensional grid specification format originated for EnergyDensity
- *  This has be refactored from QMCHamiltonian/SpaceGrid.cpp but it is ridiculously hard to read.
- * My evidence for correctness is that it can pass the unit test I wrote.  By inspection I would have guessed it would be broken.
+ *  This has be refactored from QMCHamiltonian/SpaceGrid.cpp.
+ *  My evidence for correctness is that it can pass the unit test I wrote, there was no legacy test.
  */
 template<typename REAL>
 AxisGrid<REAL> parseGridInput(std::istringstream& grid_input_stream);

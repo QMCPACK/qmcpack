@@ -142,7 +142,6 @@ TEMPLATE_TEST_CASE("ParseGridInput::Bad", "[estimators]", float, double)
 
   std::istringstream grid_input_5("0.1 (10) 0.2 (20) 0.35 (10) 0.73"s);
   CHECK_THROWS_AS(parseGridInput<Real>(grid_input_5), UniformCommunicateError);
-
 }
 
 TEMPLATE_TEST_CASE("ParseGridInput_constructors", "[estimators]", float, double)
@@ -191,5 +190,5 @@ TEMPLATE_TEST_CASE("ParseGridInput_constructors", "[estimators]", float, double)
   CHECK(start_grid == copied_grid);
   CHECK(start_grid == assigned_grid);
 }
-  
+
 } // namespace qmcplusplus
