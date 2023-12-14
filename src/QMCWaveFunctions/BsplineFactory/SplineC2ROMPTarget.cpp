@@ -131,6 +131,7 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
     const size_t first_spo_local     = first_spo;
     const size_t nComplexBands_local = nComplexBands;
     const auto requested_orb_size    = psi.size();
+    const auto num_complex_splines   = kPoints.size();
 
     {
       ScopedTimer offload(offload_timer_);
@@ -150,7 +151,7 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_ptr + first + index);
         const size_t first_cplx = first / 2;
-        const size_t last_cplx  = last / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(x, y, z, results_scratch_ptr, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
@@ -208,6 +209,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psiinv.size();
+  const auto num_complex_splines   = kPoints.size();
 
   {
     ScopedTimer offload(offload_timer_);
@@ -234,7 +236,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
-        const size_t last_cplx  = last / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
@@ -332,6 +334,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   auto* ratios_private_ptr         = mw_ratios_private.data();
   const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
+  const auto num_complex_splines   = kPoints.size();
 
   {
     ScopedTimer offload(offload_timer_);
@@ -360,7 +363,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
-        const size_t last_cplx  = last / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
@@ -546,6 +549,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi.size();
+  const auto num_complex_splines   = kPoints.size();
 
   {
     ScopedTimer offload(offload_timer_);
@@ -581,7 +585,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
                      offload_scratch_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
       }
       const size_t first_cplx = first / 2;
-      const size_t last_cplx  = last / 2;
+      const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = first_cplx; index < last_cplx; index++)
         C2R::assign_vgl(x, y, z, results_scratch_ptr, sposet_padded_size, mKK_ptr, offload_scratch_ptr,
@@ -631,6 +635,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi_v_list[0].get().size();
+  const auto num_complex_splines   = kPoints.size();
 
   {
     ScopedTimer offload(offload_timer_);
@@ -672,7 +677,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
                        offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
         }
         const size_t first_cplx = first / 2;
-        const size_t last_cplx  = last / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr,
@@ -798,6 +803,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   const auto requested_orb_size    = phi_vgl_v.size(2);
   const size_t phi_vgl_stride      = num_pos * requested_orb_size;
   const size_t nComplexBands_local = nComplexBands;
+  const auto num_complex_splines   = kPoints.size();
 
   {
     ScopedTimer offload(offload_timer_);
@@ -842,7 +848,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                        offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
         }
         const size_t first_cplx = first / 2;
-        const size_t last_cplx  = last / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, sposet_padded_size, mKK_ptr,
