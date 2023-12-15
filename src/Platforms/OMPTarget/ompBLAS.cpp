@@ -719,5 +719,59 @@ ompBLAS_status copy_batched_offset(ompBLAS_handle&                   handle,
   return copy_batched_offset_impl(handle, n, x, x_offset, incx, y, y_offset, incy, batch_count);
 }
 #endif
+
+template<typename T>
+ompBLAS_status copy_impl(ompBLAS_handle& handle,
+                         const int n,
+                         const T* const x,
+                         const int incx,
+                         T* const y,
+                         const int incy)
+{
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for is_device_ptr(x, y)")
+  for (size_t i = 0; i < n; i++)
+    y[i * incy] = x[i * incx];
+  return 0;
+}
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const float* const x,
+                    const int incx,
+                    float* const y,
+                    const int incy)
+{
+  return copy_impl(handle, n, x, incx, y, incy);
+}
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const double* const x,
+                    const int incx,
+                    double* const y,
+                    const int incy)
+{
+  return copy_impl(handle, n, x, incx, y, incy);
+}
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const std::complex<float>* const x,
+                    const int incx,
+                    std::complex<float>* const y,
+                    const int incy)
+{
+  return copy_impl(handle, n, x, incx, y, incy);
+}
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const std::complex<double>* const x,
+                    const int incx,
+                    std::complex<double>* const y,
+                    const int incy)
+{
+  return copy_impl(handle, n, x, incx, y, incy);
+}
 } // namespace ompBLAS
 } // namespace qmcplusplus
