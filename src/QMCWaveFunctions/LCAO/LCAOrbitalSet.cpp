@@ -465,7 +465,7 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
   {
     const size_t output_size = phi_vgl_v.size(2);
     const size_t nw          = phi_vgl_v.size(1);
-    for (size_t idim = 0; idim < DIM_VGL; idim +)
+    for (size_t idim = 0; idim < DIM_VGL; idim++)
     {
       success = ompBLAS::copy(dummy_handle, output_size * nw, basis_vgl_v.device_data_at(idim, 0, 0), 1,
                               phi_vgl_v.device_data_at(idim, 0, 0), 1);
