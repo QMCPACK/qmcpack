@@ -80,7 +80,10 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
 
   for (int j = 0; j < N; j++)
     for (int i = 0; i < M; i++)
-      CHECK(T(0) == Approx(std::abs(C[j][i] - D[j][i])));
+    {
+      CHECK(std::real(C[j][i]) == Approx(std::real(D[j][i])));
+      CHECK(std::imag(C[j][i]) == Approx(std::imag(D[j][i])));
+    }
 }
 
 TEST_CASE("OmpBLAS gemm", "[OMP]")
