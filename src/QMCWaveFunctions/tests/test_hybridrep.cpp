@@ -265,10 +265,15 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
 #endif
 
-  // for vgl
-  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  /* for vgl
+   * In DiracDeterminant, these psiM, dpsiM, and d2psiM 
+   * are always sized to elec_.R.size() x elec_.R.size()
+   * Using the same sizes for these. This tests the case 
+   * that spo->OrbitalSetSize > elec_.R.size()
+   */
+  SPOSet::ValueMatrix psiM(elec_.R.size(), elec_.R.size());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), elec_.R.size());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), elec_.R.size());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if defined(QMC_COMPLEX)
