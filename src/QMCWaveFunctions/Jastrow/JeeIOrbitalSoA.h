@@ -1119,45 +1119,53 @@ public:
 
   inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {
-    ParticleSet::ParticleGradient tempG;
-    ParticleSet::ParticleLaplacian tempL;
-    tempG.resize(P.getTotalNum());
-    tempL.resize(P.getTotalNum());
-    QTFull::RealType delta = 0.00001;
-    QTFull::RealType c1    = 1.0 / delta / 2.0;
-    QTFull::RealType c2    = 1.0 / delta / delta;
+    GradType return_val(0);
+    constexpr valT czero(0);
+    constexpr valT cone(1);
+    constexpr valT cminus(-1);
+    constexpr valT ctwo(2);
+    constexpr valT lapfac = OHMMS_DIM - cone;
 
-    GradType g_return(0.0);
-    // GRAD TEST COMPUTATION
-    PosType rI = source.R[isrc];
-    for (int iondim = 0; iondim < 3; iondim++)
-    {
-      source.R[isrc][iondim] = rI[iondim] + delta;
-      source.update();
-      P.update();
+    const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+    const auto& ee_dists  = ee_table.getDistances();
+    const auto& ee_displs = ee_table.getDisplacements();
 
-      LogValue log_p = evaluateLog(P, tempG, tempL);
-
-      source.R[isrc][iondim] = rI[iondim] - delta;
-      source.update();
-      P.update();
-      LogValue log_m = evaluateLog(P, tempG, tempL);
-
-      QTFull::RealType log_p_r(0.0), log_m_r(0.0);
-
-      log_p_r = log_p.real();
-      log_m_r = log_m.real();
-      //symmetric finite difference formula for gradient.
-      g_return[iondim] = c1 * (log_p_r - log_m_r);
-
-      //reset everything to how it was.
-      source.R[isrc][iondim] = rI[iondim];
-    }
-    // this last one makes sure the distance tables and internal neighbourlist correspond to unperturbed source.
-    source.update();
-    P.update();
     build_compact_list(P);
-    return g_return;
+    TinyVector<RealType,3> u3grad;
+    Tensor<RealType,3> u3hess;
+    int iat=isrc;
+
+    posT ion_deriv(0);
+    const int ig = Ions.GroupID[iat];
+    for (int jg = 0; jg < eGroups; ++jg)
+      for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
+      {
+        const int jel       = elecs_inside(jg, iat)[jind];
+        const valT r_Ij     = elecs_inside_dist(jg, iat)[jind];
+        const posT disp_Ij  = cminus * elecs_inside_displ(jg, iat)[jind];
+        const valT r_Ij_inv = cone / r_Ij;
+
+        for (int kg = 0; kg < eGroups; ++kg)
+          for (int kind = 0; kind < elecs_inside(kg, iat).size(); kind++)
+          {
+            const FT& feeI(*F(ig, jg, kg));
+            const int kel = elecs_inside(kg, iat)[kind];
+            if (kel < jel)
+            {
+              const valT r_Ik     = elecs_inside_dist(kg, iat)[kind];
+              const posT disp_Ik  = cminus * elecs_inside_displ(kg, iat)[kind];
+              const valT r_Ik_inv = cone / r_Ik;
+
+              const valT r_jk     = ee_dists[jel][kel];
+              const posT disp_jk  = ee_displs[jel][kel];
+              const valT r_jk_inv = cone / r_jk;
+              feeI.evaluate(r_jk, r_Ij, r_Ik, u3grad, u3hess);
+              ion_deriv+=u3grad[1]*disp_Ij*r_Ij_inv + u3grad[2]*disp_Ik*r_Ik_inv;
+            }
+          }
+      }
+    return_val = ion_deriv;
+    return return_val;
   }
 
   inline GradType evalGradSource(ParticleSet& P,
