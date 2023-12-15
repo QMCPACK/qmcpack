@@ -95,7 +95,7 @@ inline void SplineC2R<ST>::assign_v(const PointType& r,
     const ST val_r = myV[2 * j];
     const ST val_i = myV[2 * j + 1];
     qmcplusplus::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
-    if (j < requested_orb_size)
+    if (j + nComplexBands < requested_orb_size)
       psi_s[j] = val_r * c - val_i * s;
   }
 }
