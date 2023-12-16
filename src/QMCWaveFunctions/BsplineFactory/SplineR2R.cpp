@@ -154,7 +154,7 @@ inline void SplineR2R<ST>::assign_v(int bc_sign, const vContainer_type& myV, Val
 {
   // protect last against kPoints.size() and psi.size()
   size_t last_real = std::min(kPoints.size(), psi.size());
-  last = last > last_real ? last_real : last;
+  last             = last > last_real ? last_real : last;
 
   const ST signed_one = (bc_sign & 1) ? -1 : 1;
 #pragma omp simd
@@ -232,7 +232,7 @@ inline void SplineR2R<ST>::assign_vgl(int bc_sign,
 {
   // protect last against kPoints.size() and psi.size()
   size_t last_real = std::min(kPoints.size(), psi.size());
-  last = last > last_real ? last_real : last;
+  last             = last > last_real ? last_real : last;
 
   const ST signed_one = (bc_sign & 1) ? -1 : 1;
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
@@ -316,7 +316,7 @@ void SplineR2R<ST>::assign_vgh(int bc_sign,
 {
   // protect last against kPoints.size() and psi.size()
   const size_t last_real = std::min(kPoints.size(), psi.size());
-  last = last > last_real ? last_real : last;
+  last                   = last > last_real ? last_real : last;
 
   const ST signed_one = (bc_sign & 1) ? -1 : 1;
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
@@ -401,7 +401,7 @@ void SplineR2R<ST>::assign_vghgh(int bc_sign,
 {
   // protect last against kPoints.size() and psi.size()
   const size_t last_real = std::min(kPoints.size(), psi.size());
-  last = last < 0 ? last_real : (last > last_real ? last_real : last);
+  last                   = last < 0 ? last_real : (last > last_real ? last_real : last);
 
   const ST signed_one = (bc_sign & 1) ? -1 : 1;
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),

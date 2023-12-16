@@ -61,7 +61,7 @@ inline void SplineC2COMPTarget<ST>::assign_v(const PointType& r,
 {
   // protect last
   const size_t last_cplx = std::min(kPoints.size(), psi.size());
-  last = last > last_cplx ? last_cplx : last;
+  last                   = last > last_cplx ? last_cplx : last;
 
   const ST x = r[0], y = r[1], z = r[2];
   const ST* restrict kx = myKcart->data(0);
@@ -138,7 +138,7 @@ void SplineC2COMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   auto* psiinv_ptr               = psiinv_pos_copy.data();
   auto* ratios_private_ptr       = ratios_private.data();
   const size_t first_spo_local   = first_spo;
-  const auto orb_size = psiinv.size();
+  const auto orb_size            = psiinv.size();
 
   {
     ScopedTimer offload(offload_timer_);
@@ -334,7 +334,7 @@ inline void SplineC2COMPTarget<ST>::assign_vgl_from_l(const PointType& r,
   const ST* restrict g2 = myG.data(2);
 
   const size_t last_cplx = last_spo > psi.size() ? psi.size() : last_spo;
-  const size_t N = last_cplx - first_spo;
+  const size_t N         = last_cplx - first_spo;
 #pragma omp simd
   for (size_t j = 0; j < N; ++j)
   {
@@ -411,7 +411,7 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
   auto* myKcart_ptr              = myKcart->data();
   const size_t first_spo_local   = first_spo;
-  const auto orb_size = psi.size();
+  const auto orb_size            = psi.size();
 
   {
     ScopedTimer offload(offload_timer_);
@@ -451,8 +451,8 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       const size_t last_cplx  = omptarget::min(last / 2, orb_size);
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = first_cplx; index < last_cplx; index++)
-        C2C::assign_vgl(x, y, z, results_scratch_ptr, sposet_padded_size, mKK_ptr, offload_scratch_ptr, spline_padded_size, G,
-                        myKcart_ptr, myKcart_padded_size, first_spo_local, index);
+        C2C::assign_vgl(x, y, z, results_scratch_ptr, sposet_padded_size, mKK_ptr, offload_scratch_ptr,
+                        spline_padded_size, G, myKcart_ptr, myKcart_padded_size, first_spo_local, index);
     }
   }
 
@@ -477,7 +477,7 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   const size_t num_pos          = psi_v_list.size();
   const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-  const auto spline_padded_size        = myV.size();
+  const auto spline_padded_size = myV.size();
   const auto sposet_padded_size = getAlignedSize<ValueType>(OrbitalSetSize);
   offload_scratch.resize(spline_padded_size * num_pos * SoAFields3D::NUM_FIELDS);
   const auto orb_size = psi_v_list[0].get().size();
@@ -710,8 +710,8 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2C::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, sposet_padded_size, mKK_ptr,
-                          offload_scratch_iw_ptr, spline_padded_size, G, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                          index);
+                          offload_scratch_iw_ptr, spline_padded_size, G, myKcart_ptr, myKcart_padded_size,
+                          first_spo_local, index);
 
         ValueType* restrict psi    = psi_iw_ptr;
         ValueType* restrict dpsi_x = psi_iw_ptr + sposet_padded_size;
@@ -777,7 +777,7 @@ void SplineC2COMPTarget<ST>::assign_vgh(const PointType& r,
 {
   // protect last
   const size_t last_cplx = std::min(kPoints.size(), psi.size());
-  last = last > last_cplx ? last_cplx : last;
+  last                   = last > last_cplx ? last_cplx : last;
 
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
            g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),
@@ -919,7 +919,7 @@ void SplineC2COMPTarget<ST>::assign_vghgh(const PointType& r,
 {
   // protect last
   const size_t last_cplx = std::min(kPoints.size(), psi.size());
-  last = last < 0 ? last_cplx : (last > last_cplx ? last_cplx : last);
+  last                   = last < 0 ? last_cplx : (last > last_cplx ? last_cplx : last);
 
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
            g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),
