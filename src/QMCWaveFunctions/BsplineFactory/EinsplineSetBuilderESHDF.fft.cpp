@@ -301,8 +301,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
             density_G.assign(Density_G_DP.begin(), Density_G_DP.end());
             if (!density_G.size())
             {
-              app_error() << "  Density reduced G-vectors defined, but not the"
-                          << " density.\n";
+              app_error() << "  Density reduced G-vectors defined, but not the" << " density.\n";
               abort();
             }
             else
@@ -350,8 +349,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
             VHXC_G.assign(VHXC_G_DP.begin(), VHXC_G_DP.end());
             if (!VHXC_G.size())
             {
-              app_error() << "  VHXC reduced G-vectors defined, but not the"
-                          << " VHXC.\n";
+              app_error() << "  VHXC reduced G-vectors defined, but not the" << " VHXC.\n";
               abort();
             }
             else
