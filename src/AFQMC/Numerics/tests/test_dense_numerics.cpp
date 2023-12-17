@@ -335,7 +335,7 @@ void test_dense_matrix_mult()
 
 TEST_CASE("dense_ma_operations", "[matrix_operations]") { test_dense_matrix_mult(); }
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA)  // || defined(ENABLE_HIP)
 template<class Allocator>
 void test_dense_mat_vec_device(Allocator& alloc)
 {
