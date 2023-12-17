@@ -23,9 +23,8 @@ namespace qmcplusplus
 template<typename ST>
 std::unique_ptr<BsplineReader> createBsplineReal(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
 {
-  app_summary()
-      << "    Using real valued spline SPOs with real " << SplineStoragePrecision<ST>::value
-      << " precision storage (R2R)." << std::endl;
+  app_summary() << "    Using real valued spline SPOs with real " << SplineStoragePrecision<ST>::value
+                << " precision storage (R2R)." << std::endl;
   if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
     app_summary() << "OpenMP offload has not been implemented to support real valued spline SPOs with real storage!"
                   << std::endl;
