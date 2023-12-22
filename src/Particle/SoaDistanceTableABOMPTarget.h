@@ -301,8 +301,8 @@ public:
     {
       ScopedTimer offload(dt_leader.offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
-                        map(always, to: input_ptr[:offload_input.size()]) \
-                        depend(out:r_dr_ptr[:mw_r_dr.size()]) nowait")
+                          map(always, to: input_ptr[:offload_input.size()]) \
+                          depend(out:r_dr_ptr[:mw_r_dr.size()])")
       for (int iat = 0; iat < total_targets; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
