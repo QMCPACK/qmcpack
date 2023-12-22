@@ -177,12 +177,13 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang16-NoMPI-Offload-Real"*)
+      *"Clang16-NoMPI-Offload"*)
         echo 'Configure for building OpenMP offload with clang16 on x86_64 target'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=clang-16 \
               -DCMAKE_CXX_COMPILER=clang++-16 \
               -DQMC_MPI=0 \
+              -DQMC_COMPLEX=$IS_COMPLEX \
               -DENABLE_OFFLOAD=ON \
               -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
               -DUSE_OBJECT_TARGET=ON \

@@ -36,6 +36,7 @@ jobs:
             Clang14-NoMPI-ASan-Complex,
             Clang14-NoMPI-UBSan-Real,
             Clang16-NoMPI-Offload-Real,
+            Clang16-NoMPI-Offload-Complex,
           ]
         include:
           - jobname: GCC9-NoMPI-Debug-Real
@@ -104,6 +105,11 @@ jobs:
               options: -u 1001
 
           - jobname: Clang16-NoMPI-Offload-Real
+            container:
+              image: ghcr.io/qmcpack/ubuntu22-clang:latest
+              options: -u 1001
+
+          - jobname: Clang16-NoMPI-Offload-Complex
             container:
               image: ghcr.io/qmcpack/ubuntu22-clang:latest
               options: -u 1001
