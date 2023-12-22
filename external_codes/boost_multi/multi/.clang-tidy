@@ -1,0 +1,47 @@
+# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:2;autowrap:nil;-*-
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.'
+FormatStyle: file
+
+CheckOptions:
+  - { key: readability-identifier-naming.ClassCase                   , value: lower_case }
+  - { key: readability-identifier-naming.FunctionCase                , value: lower_case }
+  - { key: readability-identifier-naming.GlobalConstantCase          , value: aNy_CasE   }
+  - { key: readability-identifier-naming.NamespaceCase               , value: lower_case }
+  - { key: readability-identifier-naming.PrivateMemberPrefix         , value: ''         }
+  - { key: readability-identifier-naming.PrivateMemberSufix          , value: _          }
+  - { key: readability-identifier-naming.StructCase                  , value: lower_case }
+  - { key: readability-identifier-naming.TemplateParameterCase       , value: CamelCase  }
+  - { key: readability-identifier-length.MinimumLoopCounterNameLength, value: 2          }
+  - { key: readability-identifier-length.MinimumParameterNameLength  , value: 2          }
+  - { key: readability-identifier-length.MinimumVariableNameLength   , value: 2          }
+  - { key: readability-identifier-length.IgnoredLoopCounterNames     , value: "^[ijk_]$" }
+  - { key: readability-identifier-length.IgnoredVariableNames        , value: "^[ijk]$"  }
+  - { key: readability-identifier-naming.GlobalConstantCase          , value: aNy_CasE   }
+  - { key: readability-identifier-naming.PrivateMemberSufix          , value: _          }
+
+# for range-for loops, e.g. `for(auto i : is) ...`
+#  - { key: readability-identifier-length.IgnoredVariableNames        , value: "^[ijk]$"  }
+
+Checks: '*,
+  -altera-struct-pack-align,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-macro-usage,
+  -fuchsia-overloaded-operator,
+  -fuchsia-trailing-return,
+  -llvmlibc-*,
+  -modernize-use-nodiscard,
+  -readability-magic-numbers
+'
+
+## explanation of the suppressed rules above:
+#  -altera-struct-pack-align,                             // this asks to use non-standard pragmas such as __attribute__((aligned(0))) and _attribute__((packed)), may interfeere with gcc/nvcc compatibility?
+#  -cppcoreguidelines-avoid-magic-numbers,                // all tests use magic numbers
+#  -cppcoreguidelines-macro-usage,                        // BLAS adaptors uses a lot of macros
+#  -fuchsia-overloaded-operator,                          // this library overloads operators (==, <, +, &)
+#  -fuchsia-trailing-return,                              // to allow any '-> decltype(auto)', contradicts modernize trailing
+#  -llvmlibc-*,                                           // nonsense warnings, for llvm developers
+#  -modernize-use-nodiscard,                              // this would add [[nodiscard]] to almost all functions, adding a lot of noise
+#  -readability-magic-numbers,                            // all tests use magic numbers
+
