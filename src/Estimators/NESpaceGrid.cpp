@@ -479,7 +479,7 @@ void NESpaceGrid::write(hdf_archive& file) const
   if (observable_helper_)
   {
 #ifdef MIXED_PRECISION
-    std::vector<QMCT::FullPrecRealType> expanded_data(data_.size(), 0.0);
+    std::vector<QMCTraits::FullPrecRealType> expanded_data(data_.size(), 0.0);
     std::copy_n(data_.begin(), data_.size(), expanded_data.begin());
     assert(!data_.empty());
     // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
