@@ -37,6 +37,10 @@ namespace qmcplusplus
  *  This class has more going on than just representing a spacial grid
  *  I'm still working out how much of this just because of the Voronoi code that shouldn't be
  *  part of the same class as the simpler grid and how much is particleset contimination etc.
+ *
+ *  For memory considerations it is quite possible this could be at single precision even
+ *  if the actual montecarlo is being carried out in double precision. Eventually this should
+ *  be determined from input in some way.
  */
 namespace testing
 {
@@ -44,10 +48,11 @@ template<typename T>
 class NESpaceGridTests;
 }
 
+template<typename REAL>
 class NESpaceGrid
 {
 public:
-  using Real        = QMCTraits::RealType;
+  using Real        = REAL;
   using Point       = typename NEReferencePoints::Point;
   using Points      = typename NEReferencePoints::Points;
   using BufferType  = PooledData<Real>;
@@ -237,6 +242,9 @@ public:
   template<typename T>
   friend class testing::NESpaceGridTests;
 };
+
+extern template class NESpaceGrid<float>;
+extern template class NESpaceGrid<double>;
 
 
 } // namespace qmcplusplus
