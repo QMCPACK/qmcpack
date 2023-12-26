@@ -1,14 +1,15 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2023 Alfredo A. Correa
 
 #ifndef MULTI_DETAIL_INDEX_RANGE_HPP
 #define MULTI_DETAIL_INDEX_RANGE_HPP
 
-#include "multi/detail/serialization.hpp"
-#include "multi/detail/tuple_zip.hpp"
-#include "multi/detail/types.hpp"
+#include "../../multi/detail/implicit_cast.hpp"
+#include "../../multi/detail/serialization.hpp"
+#include "../../multi/detail/tuple_zip.hpp"
+#include "../../multi/detail/types.hpp"
 
-#include <algorithm>  // for min
+#include <algorithm>  // for std::min
+#include <functional> // for std::plus<>
 #include <iterator>   // for std::random_iterator_tag // std::reverse_iterator
 #include <limits>     // for numeric_limits
 #include <utility>    // for forward
@@ -50,25 +51,25 @@ class iterator_facade {
 	constexpr auto operator[](difference_type n) const {return *(self() + n);}
 };
 
-template<typename IndexType = std::true_type, typename IndexTypeLast = IndexType>
+template<typename IndexType = std::true_type, typename IndexTypeLast = IndexType, class Plus = std::plus<>, class Minus = std::minus<> >
 class range {
 	IndexType     first_ = {};
-	IndexTypeLast last_  = first_;
+	IndexTypeLast last_  = first_;  // TODO(correaa) check how to do partially initialzed
 
  public:
 	template<class Archive>  // , class ArT = multi::archive_traits<Ar>>
 	void serialize(Archive& arxiv, unsigned /*version*/) {
 		arxiv & multi::archive_traits<Archive>::make_nvp("first", first_);
-	//	arxiv &                  BOOST_SERIALIZATION_NVP(         first_);
-	//	arxiv &                        cereal:: make_nvp("first", first_);
-	//	arxiv &                               CEREAL_NVP(         first_);
-	//	arxiv &                                                   first_ ;
+	// arxiv &                  BOOST_SERIALIZATION_NVP(         first_);
+	// arxiv &                        cereal:: make_nvp("first", first_);
+	// arxiv &                               CEREAL_NVP(         first_);
+	// arxiv &                                                   first_ ;
 
 		arxiv & multi::archive_traits<Archive>::make_nvp("last" , last_ );
-	//	arxiv &                  BOOST_SERIALIZATION_NVP(         last_ );
-	//	arxiv &                        cereal:: make_nvp("last" , last_ );
-	//	arxiv &                               CEREAL_NVP(         last_ );
-	//	arxiv &                                                   last_  ;
+	// arxiv &                  BOOST_SERIALIZATION_NVP(         last_ );
+	// arxiv &                        cereal:: make_nvp("last" , last_ );
+	// arxiv &                               CEREAL_NVP(         last_ );
+	// arxiv &                                                   last_  ;
 	}
 
 	using value_type      = IndexType;
@@ -81,13 +82,21 @@ class range {
 
 	range() = default;
 
-	template<class Range, typename = std::enable_if_t<std::is_same_v<std::decay_t<Range>, value_type>> >
-	// cxxcheck-suppress internalAstError ; because bug in cppcheck
-	constexpr explicit range(Range&& other)
+	template<class Range, decltype(
+		detail::implicit_cast<IndexType    >(std::declval<Range&&>().first()),
+		detail::implicit_cast<IndexTypeLast>(std::declval<Range&&>().last())
+	)* = nullptr>
+	constexpr /*implicit*/ range(Range&& other)  // NOLINT(bugprone-forwarding-reference-overload,google-explicit-constructor,hicpp-explicit-conversions)
 	: first_{std::forward<Range>(other).first()}, last_{std::forward<Range>(other).last()} {}
 
-	constexpr range(IndexType first, IndexTypeLast last) noexcept : first_{first}, last_{last} {}
-	[[deprecated]] constexpr explicit range(IndexType first) : range{first, first + 1} {}
+	template<class Range, decltype(
+		detail::explicit_cast<IndexType    >(std::declval<Range&&>().first()),
+		detail::explicit_cast<IndexTypeLast>(std::declval<Range&&>().last())
+	)* = nullptr>
+	constexpr explicit     range(Range&& other)  // NOLINT(bugprone-forwarding-reference-overload)
+	: first_{std::forward<Range>(other).first()}, last_{std::forward<Range>(other).last()} {}
+
+	constexpr range(IndexType first, IndexTypeLast last) : first_{first}, last_{last} {}
 
 	class const_iterator : public boost::multi::iterator_facade<
 		const_iterator,
@@ -159,7 +168,7 @@ class range {
 		}
 		return begin() + (value - front());
 	}
-	template<class Value> [[nodiscard]] constexpr auto contains(Value const& value) const {return (value >=first_) and (value < last_);}
+	template<class Value> [[nodiscard]] constexpr auto contains(Value const& value) const -> bool {return (value >=first_) && (value < last_);}
 	template<class Value> [[nodiscard]] constexpr auto count   (Value const& value) const -> value_type {return contains(value);}
 
 	friend constexpr auto intersection(range const& self, range const& other) {
@@ -167,10 +176,13 @@ class range {
 		auto new_first = max(self.first(), other.first());
 		auto new_last  = min(self.last() , other.last() );
 		new_first = min(new_first, new_last);
-		return range<decltype(new_first), decltype(new_last)>{new_first, new_last};
+		return range<decltype(new_first), decltype(new_last)>(new_first, new_last);
 	}
 	[[nodiscard]] constexpr auto contains(value_type const& value) const {return value >= first_ and value < last_;}
 };
+
+template<typename IndexType, typename IndexTypeLast = IndexType>  // , class Plus = std::plus<>, class Minus = std::minus<> >
+range(IndexType, IndexTypeLast) -> range<IndexType, IndexTypeLast>; // #3
 
 template<class IndexType = std::true_type, typename IndexTypeLast = IndexType>
 constexpr auto make_range(IndexType first, IndexTypeLast last) -> range<IndexType, IndexTypeLast> {
@@ -230,20 +242,23 @@ struct extension_t : public range<IndexType, IndexTypeLast> {
 
 //  template<class OStream>
 //  friend auto operator<<(OStream& os, extension_t const& self) -> decltype(os<<"[]") {
-//  	if(self.empty()) {
-//  		return os << static_cast<range<IndexType> const&>(self);
-//  	}
-//  	if(self.first() == 0) {
-//  		return os <<"["<< self.last() <<"]";
-//  	}
-//  	return os << static_cast<range<IndexType> const&>(self);
+//      if(self.empty()) {
+//          return os << static_cast<range<IndexType> const&>(self);
+//      }
+//      if(self.first() == 0) {
+//          return os <<"["<< self.last() <<"]";
+//      }
+//      return os << static_cast<range<IndexType> const&>(self);
 //  }
 
-	[[nodiscard]] constexpr auto start () const -> IndexType {return this->first();}
-	[[nodiscard]] constexpr auto finish() const -> IndexType {return this->last ();}
+	// [[nodiscard]] constexpr auto start () const -> IndexType {return this->first();}
+	// [[nodiscard]] constexpr auto finish() const -> IndexType {return this->last ();}
 
-	friend constexpr auto operator==(extension_t const& self, extension_t const& other) {return static_cast<range<IndexType> const&>(self) == static_cast<range<IndexType> const&>(other);}
-	friend constexpr auto operator!=(extension_t const& self, extension_t const& other) {return static_cast<range<IndexType> const&>(self) != static_cast<range<IndexType> const&>(other);}
+	constexpr auto operator==(extension_t const& other) const {return static_cast<range<IndexType> const&>(*this) == static_cast<range<IndexType> const&>(other);}
+	constexpr auto operator!=(extension_t const& other) const {return static_cast<range<IndexType> const&>(*this) != static_cast<range<IndexType> const&>(other);}
+
+	// friend constexpr auto operator==(extension_t const& self, extension_t const& other) {return static_cast<range<IndexType> const&>(self) == static_cast<range<IndexType> const&>(other);}
+	// friend constexpr auto operator!=(extension_t const& self, extension_t const& other) {return static_cast<range<IndexType> const&>(self) != static_cast<range<IndexType> const&>(other);}
 
 	friend constexpr auto intersection(extension_t const& ex1, extension_t const& ex2) -> extension_t {
 		using std::max; using std::min;
@@ -253,6 +268,12 @@ struct extension_t : public range<IndexType, IndexTypeLast> {
 		return extension_t{first, last};
 	}
 };
+
+template<class IndexType, class IndexTypeLast>
+extension_t(IndexType, IndexTypeLast) -> extension_t<IndexType, IndexTypeLast>;
+
+template<class IndexType>
+extension_t(IndexType) -> extension_t<IndexType>;
 
 template<class IndexType = std::ptrdiff_t, class IndexTypeLast = decltype(std::declval<IndexType>() + 1)>
 constexpr auto make_extension_t(IndexType first, IndexTypeLast last) -> extension_t<IndexType, IndexTypeLast> {
@@ -291,44 +312,6 @@ struct repeat<T, 0, TT> {
 	using type = TT<>;
 };
 
-//template<class T, std::size_t N>
-//constexpr auto array_size_impl(const std::array<T, N>&)
-//  -> std::integral_constant<std::size_t, N>;
-
-//template<class... T>
-//constexpr auto array_size_impl(const std::tuple<T...>&)
-//    -> std::integral_constant<std::size_t, std::tuple_size<std::tuple<T...>>{}>;
-
-//template<class Array>
-//using array_size = decltype(array_size_impl(std::declval<const Array&>()));
-
-//template<class Array>
-//constexpr auto static_size() -> std::decay_t<decltype(array_size<Array>::value)> {
-//	return array_size<Array>::value;
-//}
-//template<class Array>
-//constexpr auto static_size(Array const& /*unused*/) -> decltype(static_size<Array>()) {
-//	return static_size<Array>();
-//}
-
-//// TODO(correaa) consolidate with tuple_tail defined somewhere else
-//template<class Tuple>
-//constexpr auto head(Tuple&& t)
-//->decltype(std::get<0>(std::forward<Tuple>(t))) {
-//	return std::get<0>(std::forward<Tuple>(t)); }
-
-//template<typename Tuple, std::size_t... Ns>
-//constexpr auto tail_impl(std::index_sequence<Ns...> /*012*/, [[maybe_unused]] Tuple&& t) {  // [[maybe_unused]] needed by icpc "error #869: parameter "t" was never referenced"
-//	using boost::multi::detail::get;
-//	return boost::multi::detail::tuple{get<Ns + 1U>(std::forward<Tuple>(t))...};
-////  return make_tuple(std::get<Ns + 1U>(std::forward<Tuple>(t))...);
-//}
-
-//template<class Tuple>
-//constexpr auto tail(Tuple const& t) {
-//	return tail_impl(std::make_index_sequence<std::tuple_size_v<Tuple> - 1U>(), t);
-//}
-
 }  // end namespace detail
 
 template<dimensionality_type D> using index_extensions = typename detail::repeat<index_extension, D, tuple>::type;
@@ -341,4 +324,4 @@ constexpr auto contains(index_extensions<D> const& iex, Tuple const& tup) {
 }
 
 }  // end namespace boost::multi
-#endif
+#endif  // MULTI_DETAIL_INDEX_RANGE_HPP

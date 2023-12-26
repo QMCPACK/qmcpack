@@ -9,8 +9,8 @@
 #include "../../array.hpp"
 #include "../../config/NODISCARD.hpp"
 
-#include<boost/mpi3/communicator.hpp>
-#include<boost/mpi3/environment.hpp>
+#include<mpi3/communicator.hpp>
+#include<mpi3/environment.hpp>
 
 #include "../fftw.hpp"
 
@@ -51,20 +51,20 @@ struct array<T, multi::dimensionality_type{2}, Alloc>{
 	array_ptr<T, 2, typename std::allocator_traits<Alloc>::pointer> local_ptr_;
 	ptrdiff_t                                                       n0_;
 
-	static std::pair<typename std::allocator_traits<Alloc>::size_type, multi::extensions_type_<2>> 
-	local_2d(multi::extensions_type_<2> ext, boost::mpi3::communicator const& comm){
+	static std::pair<typename std::allocator_traits<Alloc>::size_type, multi::extensions_t<2>>
+	local_2d(multi::extensions_t<2> ext, boost::mpi3::communicator const& comm){
 		ptrdiff_t local_n0, local_0_start;
 		auto count = fftw_mpi_local_size_2d(std::get<0>(ext).size(), std::get<1>(ext).size(), comm.get(), &local_n0, &local_0_start);
 		assert( count >= local_n0*std::get<1>(ext).size() );
 		return {count, {{local_0_start, local_0_start + local_n0}, std::get<1>(ext)}};
 	}
-	static auto local_count_2d(multi::extensions_type_<2> ext, boost::mpi3::communicator const& comm){
+	static auto local_count_2d(multi::extensions_t<2> ext, boost::mpi3::communicator const& comm){
 		return local_2d(ext, comm).first;
 	}
-	static auto local_extension_2d(multi::extensions_type_<2> ext, boost::mpi3::communicator const& comm){
+	static auto local_extension_2d(multi::extensions_t<2> ext, boost::mpi3::communicator const& comm){
 		return local_2d(ext, comm).second;
 	}
-	array(multi::extensions_type_<2> ext, bmpi3::communicator comm = mpi3::environment::self(), Alloc alloc = {}) :
+	array(multi::extensions_t<2> ext, bmpi3::communicator comm = mpi3::environment::self(), Alloc alloc = {}) :
 		comm_{std::move(comm)},
 		alloc_{alloc},
 		local_count_{local_count_2d(ext, comm_)},
@@ -100,7 +100,7 @@ struct array<T, multi::dimensionality_type{2}, Alloc>{
 	array_ref <T, 2> local_cutout()      &{return *local_ptr_;}
 	array_cref<T, 2> local_cutout() const&{return *local_ptr_;}
 	ptrdiff_t        local_count() const&{return  local_count_;}
-	multi::extensions_type_<2> extensions() const&{return {n0_, std::get<1>(local_cutout().extensions())};}
+	multi::extensions_t<2> extensions() const&{return {n0_, std::get<1>(local_cutout().extensions())};}
 	ptrdiff_t num_elements() const&{return multi::layout_t<2>(extensions()).num_elements();}
 	operator multi::array<T, 2>() const&{ static_assert( std::is_trivially_copy_assignable<T>{}, "!" );
 		multi::array<T, 2> ret(extensions(), alloc_);

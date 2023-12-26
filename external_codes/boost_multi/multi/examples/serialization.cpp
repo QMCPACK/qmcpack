@@ -7,9 +7,9 @@ $CXX $0 -o $0x -lboost_unit_test_framework -lstdc++fs -lboost_serialization -lbo
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../adaptors/serialization/xml_archive.hpp"
-//#include<boost/archive/xml_oarchive.hpp>
-//#include<boost/archive/xml_iarchive.hpp>
+//#include "../adaptors/serialization/xml_archive.hpp"
+#include<boost/archive/xml_oarchive.hpp>
+#include<boost/archive/xml_iarchive.hpp>
 
 #include<boost/archive/text_oarchive.hpp>
 #include<boost/archive/text_iarchive.hpp>
@@ -19,7 +19,7 @@ $CXX $0 -o $0x -lboost_unit_test_framework -lstdc++fs -lboost_serialization -lbo
 #include<boost/serialization/binary_object.hpp>
 #include<boost/serialization/complex.hpp>
 
-#include "../array.hpp"
+#include <multi/array.hpp>
 
 //#include "../adaptors/cuda.hpp"
 
@@ -71,12 +71,24 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small_xml){
 	}
 	std::cout<< fs::file_size(name) <<'\n';
 	fs::remove(name);
+
+	{
+		std::ostringstream oss;
+		{
+			boost::archive::text_oarchive xoa{oss};
+
+			std::vector<int> v = {1, 2, 3};
+			// std::for_each(v.begin(), v.end(), [&xoa](auto const& e){xoa << e;});
+			std::accumulate(v.begin(), v.end(), &xoa, [](boost::archive::text_oarchive* x, int e) {return &(*x << BOOST_SERIALIZATION_NVP(e));});
+		}
+		std::cout << oss.str() << std::endl;
+	}
 }
 
 BOOST_AUTO_TEST_CASE(multi_serialization_small_xml){
 	multi::array<double, 2> d2D({10, 10});
 	std::mt19937 e{std::random_device{}()};
-//	auto g = std::bind(std::uniform_real_distribution<>{}, e);//
+//  auto g = std::bind(std::uniform_real_distribution<>{}, e);//
 	auto g = [&](){return std::uniform_real_distribution<>{}(e);};
 	std::for_each(begin(d2D), end(d2D), [&](auto&& r){std::generate(begin(r), end(r), g);});
 	auto const name = "serialization-small.xml";
@@ -121,17 +133,17 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_large_xml){
 
 BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 	{
-		multi::static_array<double, 0> d0D = 12.;
+		multi::static_array<double, 0> d0D{12.0};
 		std::ofstream ofs{"serialization-static_0D.xml"}; assert(ofs);
 		boost::archive::xml_oarchive{ofs} << BOOST_SERIALIZATION_NVP(d0D);
 		fs::remove("serialization-static_0D.xml");
 	}
 	{
 		multi::array<double, 2> d2D = {
-			{150., 16., 17., 18., 19.}, 
-			{  5.,  5.,  5.,  5.,  5.}, 
-			{100., 11., 12., 13., 14.}, 
-			{ 50.,  6.,  7.,  8.,  9.}  
+			{150.0, 16.0, 17.0, 18.0, 19.0},
+			{  5.0,  5.0,  5.0,  5.0,  5.0},
+			{100.0, 11.0, 12.0, 13.0, 14.0},
+			{ 50.0,  6.0,  7.0,  8.0,  9.0},
 		};
 		auto gen = [d = std::uniform_real_distribution<double>{-1, 1}, e = std::mt19937{std::random_device{}()}]() mutable{return d(e);};
 		std::for_each(
@@ -148,22 +160,23 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 	}
 	{
 		multi::array<double, 2> d2D = {
-			{150., 16., 17., 18., 19.}, 
-			{  5.,  5.,  5.,  5.,  5.}, 
-			{100., 11., 12., 13., 14.}, 
-			{ 50.,  6.,  7.,  8.,  9.}  
+			{150.0, 16.0, 17.0, 18.0, 19.0},
+			{  5.0,  5.0,  5.0,  5.0,  5.0},
+			{100.0, 11.0, 12.0, 13.0, 14.0},
+			{ 50.0,  6.0,  7.0,  8.0,  9.0},
 		};
 		d2D.reextent({2000, 2000});
-		auto gen = [d = std::uniform_real_distribution<double>{-1, 1}, e = std::mt19937{std::random_device{}()}]() mutable{return d(e);};
+		auto gen = [d = std::uniform_real_distribution<double>{-1, 1}, e = std::mt19937{std::random_device{}()}]() mutable { return d(e); };
 		std::for_each(
-			begin(d2D), end(d2D), 
-			[&](auto&& r){std::generate(begin(r), end(r), gen);}
+			begin(d2D), end(d2D),
+			[&](auto&& r) { std::generate(begin(r), end(r), gen); }
 		);
-		[&, _ = watch("xml write double")]{
-			std::ofstream ofs{"serialization-double.xml"}; assert(ofs);
+		[&, _ = watch("xml write double")] {
+			std::ofstream ofs{"serialization-double.xml"};
+			assert(ofs);
 			boost::archive::xml_oarchive{ofs} << BOOST_SERIALIZATION_NVP(d2D);
 		}();
-		std::cerr<<"size "<< double(fs::file_size("serialization-double.xml"))/1e6 <<"MB\n";
+		std::cerr << "size " << double(fs::file_size("serialization-double.xml")) / 1e6 << "MB\n";
 		fs::remove("serialization-double.xml");
 	}
 
@@ -237,7 +250,7 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 		fs::remove("serialization.txt");
 	}
 	{
-		multi::array<complex, 2> d2D_copy;//(extensions(d2D), 9999.);
+		multi::array<complex, 2> d2D_copy;  //(extensions(d2D), 9999.0);
 		[&, _ = watch("text read")]{
 			std::ifstream ifs{"serialization.txt"}; assert(ifs);
 			boost::archive::text_iarchive{ifs} >> d2D_copy;
@@ -246,7 +259,7 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 		fs::remove("serialization.txt");
 	}
 	{
-		multi::array<complex, 2> d2D_copy;//(extensions(d2D), 9999.);
+		multi::array<complex, 2> d2D_copy;  //(extensions(d2D), 9999.0);
 		[&, _=watch("binary read")]{
 			std::ifstream ifs{"serialization.bin"}; assert(ifs);
 			boost::archive::binary_iarchive{ifs} >> d2D_copy;
@@ -319,8 +332,8 @@ BOOST_AUTO_TEST_CASE(test_utility_serialization_2d){
 		fs::remove("utility_serialization_carr.xml");
 	}
 	{
-//		std::ofstream ofs{"utility_serialization_Marr.xml"}; assert(ofs);
-//		arxiv::xml_oarchive{ofs} << BOOST_SERIALIZATION_NVP(Marr);
+//      std::ofstream ofs{"utility_serialization_Marr.xml"}; assert(ofs);
+//      arxiv::xml_oarchive{ofs} << BOOST_SERIALIZATION_NVP(Marr);
 	}
 }
 

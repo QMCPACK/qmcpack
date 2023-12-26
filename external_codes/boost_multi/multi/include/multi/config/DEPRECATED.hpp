@@ -1,20 +1,23 @@
-#ifndef MULTI_CONFIG_DEPRECATED_HPP // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-#define MULTI_CONFIG_DEPRECATED_HPP
-// © Alfredo A. Correa 2019-2020
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+#ifndef MULTI_CONFIG_DEPRECATED_HPP_
+#define MULTI_CONFIG_DEPRECATED_HPP_
+// Copyright 2019-2022 Alfredo A. Correa
 
 #ifndef __has_cpp_attribute
 #define __has_cpp_attribute(name) 0
 #endif
 
-#ifdef __NVCC__
-	#define DEPRECATED(MsG) __attribute__((deprecated))
-#else
-	#if __has_cpp_attribute(deprecated)
-		#define	DEPRECATED(MsG) [[deprecated(MsG)]]
-	#else
-		#define DEPRECATED(MsG)
-	#endif
-#endif
+#define DEPRECATED(MsG) [[deprecated]]
+
+//  #ifdef __NVCC__
+//  	#define DEPRECATED(MsG) __attribute__((deprecated))
+//  #else
+//  	#if __has_cpp_attribute(deprecated)
+//  		#define	DEPRECATED(MsG) [[deprecated(MsG)]]
+//  	#else
+//  		#define DEPRECATED(MsG)
+//  	#endif
+//  #endif
 
 #if not defined(__INTEL_COMPILER)
 #define BEGIN_NO_DEPRECATED \
@@ -52,5 +55,5 @@ _Pragma("warning pop") \
 	ExpR \
 	END_NO_DEPRECATED
 
-#endif
+#endif  // MULTI_CONFIG_DEPRECATED_HPP_
 

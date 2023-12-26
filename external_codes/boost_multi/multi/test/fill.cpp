@@ -1,28 +1,29 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2022 Alfredo A. Correa
+// Copyright 2019-2023 Alfredo A. Correa
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi fill"
+// #define BOOST_TEST_MODULE "C++ Unit Tests for Multi fill"  // NOLINT(cppcoreguidelines-macro-usage) title
 #include<boost/test/unit_test.hpp>
 
-#include "../include/multi/array.hpp"
+#include <multi/array.hpp>
 
 #include<algorithm>  // for transform
 #include<limits>
 #include<random>
-#include<type_traits> // enable_if_t
+#include<type_traits>  // enable_if_t
 
+namespace {
 // from Howard Hinnart hash
-static constexpr auto fnv1a(void const* key, std::size_t len, std::size_t hash) noexcept {  // NOLINT(bugprone-easily-swappable-parameters)
-	auto const *first = static_cast<unsigned char const*>(key);
-	unsigned char const* const last = first + len;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic): low level
-	for(; first < last; ++first) {  // NOLINT(altera-id-dependent-backward-branch,cppcoreguidelines-pro-bounds-pointer-arithmetic): low level
-		hash = (hash ^ *first) * 1099511628211U;  // prime
-	}
-	return hash;
+auto fnv1a(void const* key, std::ptrdiff_t len, std::size_t hash) noexcept {  // NOLINT(bugprone-easily-swappable-parameters)
+	auto const* first = static_cast<unsigned char const*>(key);
+	return std::accumulate(
+		first, std::next(first, len), hash,
+		[prime = 1099511628211U](auto acc, auto elem) {return (acc ^ elem) * prime;}
+	);
 }
+}  // namespace
 
 // static constexpr auto fnv1a(void const* key, std::size_t len) noexcept {
-// 	return fnv1a(key, len, 14695981039346656037U);
+//  return fnv1a(key, len, 14695981039346656037U);
 // }
 
 class fnv1a_t {
@@ -32,7 +33,7 @@ class fnv1a_t {
 	using result_type = std::size_t;
 	static constexpr auto min() {return std::numeric_limits<result_type>::min();}
 	static constexpr auto max() {return std::numeric_limits<result_type>::max();}
-	void operator()(void const* key, std::size_t len) noexcept {h = fnv1a(key, len, h);}
+	void operator()(void const* key, std::ptrdiff_t len) noexcept {h = fnv1a(key, len, h);}
 	template<class T, std::enable_if_t<std::is_fundamental_v<T>, int> = 0>
 	auto operator()(T const& value) noexcept -> decltype(auto) {operator()(&value, sizeof(value)); return *this;}
 //  result_type operator()() && noexcept{return h;}
@@ -85,26 +86,26 @@ BOOST_AUTO_TEST_CASE(fill_1d) {
 
 BOOST_AUTO_TEST_CASE(fill_member) {
 	namespace multi = boost::multi;
-	multi::array<double, 1> d1D = {1., 2., 3., 4.};
-	d1D.fill(42.);
+	multi::array<double, 1> d1D = {1.0, 2.0, 3.0, 4.0};
+	d1D.fill(42.0);
 
 	multi::array<double, 2> d2D = {
-		{150., 16., 17., 18., 19.},
-		{  5.,  5.,  5.,  5.,  5.},
-		{100., 11., 12., 13., 14.},
-		{ 50.,  6.,  7.,  8.,  9.}
+		{150.0, 16.0, 17.0, 18.0, 19.0},
+		{  5.0,  5.0,  5.0,  5.0,  5.0},
+		{100.0, 11.0, 12.0, 13.0, 14.0},
+		{ 50.0,  6.0,  7.0,  8.0,  9.0}
 	};
 
 	BOOST_REQUIRE(   d2D.elements().size()  == d2D.num_elements()  );
 	BOOST_REQUIRE(   d2D.elements().base()  == d2D.base()          );
-	BOOST_REQUIRE(   d2D.elements()[3]      == 18.                 );
+	BOOST_REQUIRE(   d2D.elements()[3]      == 18.0                 );
 	BOOST_REQUIRE( &*d2D.elements().begin() == d2D.data_elements() );
 	BOOST_REQUIRE( &*d2D.elements().end()   == d2D.data_elements() + d2D.num_elements() );
-//	std::fill( d2D.elements().begin(), d2D.elements().end() , 99. );
-//	multi::adl_fill_n( d2D.elements().begin(), d2D.elements().size(), 99. );
-	d2D.elements().fill(99.);
+//  std::fill( d2D.elements().begin(), d2D.elements().end() , 99. );
+//  multi::adl_fill_n( d2D.elements().begin(), d2D.elements().size(), 99. );
+	d2D.elements().fill(99.0);
 
-	BOOST_REQUIRE( d2D[1][1] == 99. );
+	BOOST_REQUIRE( d2D[1][1] == 99.0 );
 }
 
 BOOST_AUTO_TEST_CASE(fill) {
@@ -113,10 +114,10 @@ BOOST_AUTO_TEST_CASE(fill) {
 	namespace multi = boost::multi;
 
 	multi::array<double, 2> d2D = {
-		{150., 16., 17., 18., 19.},
-		{  5.,  5.,  5.,  5.,  5.},
-		{100., 11., 12., 13., 14.},
-		{ 50.,  6.,  7.,  8.,  9.}
+		{150.0, 16.0, 17.0, 18.0, 19.0},
+		{  5.0,  5.0,  5.0,  5.0,  5.0},
+		{100.0, 11.0, 12.0, 13.0, 14.0},
+		{ 50.0,  6.0,  7.0,  8.0,  9.0}
 	};
 	using std::all_of;
 	BOOST_REQUIRE( all_of(begin(d2D[1]), end(d2D[1]), [](auto const& elem) {return elem == 5.;}) );
@@ -140,8 +141,8 @@ BOOST_AUTO_TEST_CASE(fill) {
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(fill_1D) {
-	multi::array<double, 1> arr = {1., 2., 3.};
-	multi::array<double, 2> arr2({10, 3});
+	multi::array<double, 1> const arr = {1.0, 2.0, 3.0};
+	multi::array<double, 2>       arr2({10, 3});
 
 	std::fill( begin(arr2), end(arr2), arr );
 
@@ -151,15 +152,13 @@ BOOST_AUTO_TEST_CASE(fill_1D) {
 	BOOST_REQUIRE( arr2[9] == arr );
 }
 
-#define FWD(a) std::forward<decltype(a)>(a)
-
 template<class BinaryOp, class Column, class Array, class Out>
 auto broadcast(BinaryOp op, Column const& col, Array const& in, Out&& out) -> Out&& {  // NOLINT(readability-identifier-length) clang-tidy 14 bug
 	std::transform(
 		begin(~in), end(~in), begin(~out), begin(~out),
 		[acol = (~col)[0], &op](auto const& Acol, auto&& Bcol) {
 			std::transform(begin(Acol), end(Acol), begin(acol), begin(Bcol), op);
-			return FWD(Bcol);
+			return std::forward<decltype(Bcol)>(Bcol);
 		}
 	);
 
@@ -167,7 +166,7 @@ auto broadcast(BinaryOp op, Column const& col, Array const& in, Out&& out) -> Ou
 }
 
 BOOST_AUTO_TEST_CASE (julia_broadcast, *boost::unit_test::tolerance(0.00001) ) {
-	multi::array<double, 2> col = {
+	multi::array<double, 2> const col = {
 		{0.1},
 		{0.2}
 	};

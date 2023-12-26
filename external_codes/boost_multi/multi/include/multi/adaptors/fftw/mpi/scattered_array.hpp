@@ -356,8 +356,8 @@ public:
 		else assert(0);
 		return *this;
 	}
-	basic_array<T, typename std::pointer_traits<local_pointer_t>::template rebind<T const>> transposed() const{
-		return basic_array<T, typename std::pointer_traits<local_pointer_t>::template rebind<T const>>{
+	subarray<T, typename std::pointer_traits<local_pointer_t>::template rebind<T const>> transposed() const{
+		return subarray<T, typename std::pointer_traits<local_pointer_t>::template rebind<T const>>{
 			layout_t{n0_, true, FFTW_MPI_DEFAULT_BLOCK}, this->local_cutout().layout().transpose(), this->local_cutout().data_elements()
 		};
 	}

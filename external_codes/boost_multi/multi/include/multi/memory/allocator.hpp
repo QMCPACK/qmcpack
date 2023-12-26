@@ -1,8 +1,8 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 // © Alfredo A. Correa 2019-2022
 
-#ifndef MULTI_MEMORY_ALLOCATOR_HPP
-#define MULTI_MEMORY_ALLOCATOR_HPP
+#ifndef MULTI_MEMORY_ALLOCATOR_HPP_
+#define MULTI_MEMORY_ALLOCATOR_HPP_
 
 #include "../config/NODISCARD.hpp"
 #include "../detail/memory.hpp"
@@ -40,7 +40,7 @@ class allocator {
 
 	allocator(memory_type* mp, constructor_type const& ctor) : mp_{mp}, ctor_{ctor} {}
 	// cppcheck-suppress noExplicitConstructor ; allocator *is* a pointer to a heap
-	allocator(memory_type* mp) : allocator(mp, constructor_type{}) {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : to allow pointer syntax
+	allocator(memory_type* mp) : allocator(mp, constructor_type{}) {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions,runtime/explicit) to allow pointer syntax
 
 	explicit allocator(constructor_type const& ctor) : mp_{}, ctor_{ctor} {}
 
@@ -70,44 +70,4 @@ class allocator {
 };
 
 }  // end namespace boost::multi::memory
-
-//#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
-
-//#define BOOST_TEST_MODULE "C++ Unit Tests for Multi memory allocator"
-//#define BOOST_TEST_DYN_LINK
-//#include<boost/test/unit_test.hpp>
-
-//#include "../memory/monotonic.hpp"
-//#include<boost/align/is_aligned.hpp>
-
-//namespace multi = boost::multi;
-
-//BOOST_AUTO_TEST_CASE(multi_memory_allocator) {
-//	alignas(double) char buffer[280*sizeof(double)];  // flawfinder: ignore, test for legacy type
-//	multi::memory::monotonic<char*> m(buffer);
-//	multi::memory::allocator<double, multi::memory::monotonic<char*> > A(&m);
-//	double* p = A.allocate(1);
-//	A.construct(p, 8.);
-//	BOOST_REQUIRE( *p == 8. );
-//	BOOST_REQUIRE( boost::alignment::is_aligned(p, alignof(double)) );
-
-//	double* arr = A.allocate(255);
-//	A.construct(arr, 81.);
-//	BOOST_REQUIRE( *arr == 81. );
-//}
-
-//BOOST_AUTO_TEST_CASE(multi_memory_allocator) {
-//	alignas(double) std::array<char, 280*sizeof(double)> buffer;  // char buffer[280*sizeof(double)];
-//	multi::memory::monotonic<char*> m(buffer.data(), buffer.size());
-//	multi::memory::allocator<double, multi::memory::monotonic<char*> > A(&m);
-//	double* p = A.allocate(1);
-//	A.construct(p, 8.);
-//	BOOST_REQUIRE( *p == 8. );
-//	BOOST_REQUIRE( boost::alignment::is_aligned(p, alignof(double)) );
-
-//	double* arr = A.allocate(255);
-//	A.construct(arr, 81.);
-//	BOOST_REQUIRE( *arr == 81. );
-//}
-//#endif
-#endif
+#endif  // MULTI_MEMORY_ALLOCATOR_HPP_

@@ -1,8 +1,8 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 // Copyright 2020-2022 Alfredo A. Correa
 
-#ifndef MULTI_CONFIG_MAYBE_UNUSED_HPP
-#define MULTI_CONFIG_MAYBE_UNUSED_HPP
+#ifndef MULTI_CONFIG_MAYBE_UNUSED_HPP_
+#define MULTI_CONFIG_MAYBE_UNUSED_HPP_
 
 #ifndef __has_cpp_attribute
 #define __has_cpp_attribute(name) 0
@@ -22,5 +22,5 @@
 	#define MAYBE_UNUSED MULTI_MAYBE_UNUSED  // NOLINT(cppcoreguidelines-macro-usage) TODO(correaa) check if this is really necessary in C++17
 #endif
 
-#endif
+#endif  // MULTI_CONFIG_MAYBE_UNUSED_HPP_
 

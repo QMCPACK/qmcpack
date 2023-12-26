@@ -71,7 +71,7 @@ template<class TT>
 #ifdef __GCC__
 __attribute__((used))
 #endif
-int TV_ttf_display_type(boost::multi::basic_array<TT, 1> const* mad2P) {
+int TV_ttf_display_type(boost::multi::subarray<TT, 1> const* mad2P) {
 	boost::multi::array<TT, 1> const value = *mad2P;
 	return TV_ttf_display_type(std::addressof(value));
 }
@@ -80,7 +80,7 @@ template<class TT>
 #ifdef __GCC__
 __attribute__((used))
 #endif
-int TV_ttf_display_type(boost::multi::basic_array<TT, 2> const* mad2P) {
+int TV_ttf_display_type(boost::multi::subarray<TT, 2> const* mad2P) {
 	boost::multi::array<TT, 2> const value = *mad2P;
 	return TV_ttf_display_type(std::addressof(value));
 }
@@ -99,19 +99,19 @@ template int TV_ttf_display_type<std::complex<float> >(boost::multi::array<std::
 template int TV_ttf_display_type<int                 >(boost::multi::array<int                 , 2> const*);
 template int TV_ttf_display_type<long                >(boost::multi::array<long                , 2> const*);
 
-template int TV_ttf_display_type<double              >(boost::multi::basic_array<double              , 1> const*);
-template int TV_ttf_display_type<float               >(boost::multi::basic_array<float               , 1> const*);
-template int TV_ttf_display_type<std::complex<double>>(boost::multi::basic_array<std::complex<double>, 1> const*);
-template int TV_ttf_display_type<std::complex<float> >(boost::multi::basic_array<std::complex<float> , 1> const*);
-template int TV_ttf_display_type<int                 >(boost::multi::basic_array<int                 , 1> const*);
-template int TV_ttf_display_type<long                >(boost::multi::basic_array<long                , 1> const*);
+template int TV_ttf_display_type<double              >(boost::multi::subarray<double              , 1> const*);
+template int TV_ttf_display_type<float               >(boost::multi::subarray<float               , 1> const*);
+template int TV_ttf_display_type<std::complex<double>>(boost::multi::subarray<std::complex<double>, 1> const*);
+template int TV_ttf_display_type<std::complex<float> >(boost::multi::subarray<std::complex<float> , 1> const*);
+template int TV_ttf_display_type<int                 >(boost::multi::subarray<int                 , 1> const*);
+template int TV_ttf_display_type<long                >(boost::multi::subarray<long                , 1> const*);
 
-template int TV_ttf_display_type<double              >(boost::multi::basic_array<double              , 2> const*);
-template int TV_ttf_display_type<float               >(boost::multi::basic_array<float               , 2> const*);
-template int TV_ttf_display_type<std::complex<double>>(boost::multi::basic_array<std::complex<double>, 2> const*);
-template int TV_ttf_display_type<std::complex<float> >(boost::multi::basic_array<std::complex<float> , 2> const*);
-template int TV_ttf_display_type<int                 >(boost::multi::basic_array<int                 , 2> const*);
-template int TV_ttf_display_type<long                >(boost::multi::basic_array<long                , 2> const*);
+template int TV_ttf_display_type<double              >(boost::multi::subarray<double              , 2> const*);
+template int TV_ttf_display_type<float               >(boost::multi::subarray<float               , 2> const*);
+template int TV_ttf_display_type<std::complex<double>>(boost::multi::subarray<std::complex<double>, 2> const*);
+template int TV_ttf_display_type<std::complex<float> >(boost::multi::subarray<std::complex<float> , 2> const*);
+template int TV_ttf_display_type<int                 >(boost::multi::subarray<int                 , 2> const*);
+template int TV_ttf_display_type<long                >(boost::multi::subarray<long                , 2> const*);
 
 #if defined(__INCLUDE_LEVEL__) and (not __INCLUDE_LEVEL__)
 

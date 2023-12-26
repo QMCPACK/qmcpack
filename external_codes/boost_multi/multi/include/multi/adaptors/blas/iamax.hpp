@@ -20,11 +20,14 @@ auto iamax(It first, It last)
 	return iamax_n(first, std::distance(first, last)); }
 
 template<class X1D>
-auto iamax(X1D const& x)
+auto iamax(X1D const& x)  // NOLINT(readability-identifier-length) x conventional blas name
 ->decltype(iamax(begin(x), end(x))) {assert( not offset(x) );
 	return iamax(begin(x), end(x)); }
 
-template<class X1D> auto amax(X1D const& x) {return begin(x) + iamax(x);}
+template<class X1D>
+auto amax(X1D const& x) {  // NOLINT(readability-identifier-length) x conventional blas name
+	return begin(x) + iamax(x);
+}
 
 } // end namespace boost::multi::blas
 

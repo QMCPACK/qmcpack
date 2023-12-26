@@ -1,47 +1,35 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX $0 -o $0x `pkg-config --libs blas` -lcudart -lcublas -lboost_unit_test_framework&&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2019-2020
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2019-2023 Alfredo A. Correa
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS nrm2"
-#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS nrm2"
 #include<boost/test/unit_test.hpp>
 
-#include "../../blas.hpp"
-#include "../../../array.hpp"
-#include "../../../adaptors/cuda.hpp"
-#include "../../../adaptors/blas/cuda.hpp"
+#include <multi/adaptors/blas.hpp>
+#include <multi/array.hpp>
+
+#include <multi/adaptors/complex.hpp>
 
 #include<complex>
 
 namespace multi = boost::multi;
 
-using complex = std::complex<double>; constexpr complex I{0,1};
+using complex = multi::complex<double>;
+constexpr complex I{0.0, 1.0};  // NOLINT(readability-identifier-length) imaginary unit
 
 BOOST_AUTO_TEST_CASE(multi_blas_nrm2){
 	namespace blas = multi::blas;
-	multi::array<double, 2> const A = {
-		{1.,  2.,  3.,  4.},
-		{5.,  6.,  7.,  8.},
-		{9., 10., 11., 12.}
+
+	multi::array<double, 2> const A = {  // NOLINT(readability-identifier-length) blas conventional name
+		{1.0,  2.0,  3.0,  4.0},
+		{5.0,  6.0,  7.0,  8.0},
+		{9.0, 10.0, 11.0, 12.0}
 	};
 	BOOST_REQUIRE( blas::nrm2(A[1]) == std::sqrt(blas::dot(A[1], A[1])) );
 
 	{
-		multi::array<complex, 1> A = {1.+I, 3.+2.*I, 3.+4.*I};
-		BOOST_REQUIRE( blas::dot(A, A)() == (1.+I)*(1.+I) + (3.+2.*I)*(3.+2.*I) + (3.+4.*I)*(3.+4.*I) );
-	}
-	{
-		multi::cuda::array<double, 2> const Agpu = A;
-		multi::cuda::static_array<double, 0> n = 1.2;
-		blas::nrm2(Agpu[1], n);
-	}
-	{
-		multi::cuda::array<double, 2> Agpu = A;
-		double n = 99.;
-		blas::nrm2(Agpu[1], n); // cuda supports putting scalar results in CPU
-		double n2{blas::nrm2(Agpu[1])};
-		BOOST_REQUIRE( n == n2 );
+		multi::array<complex, 1> const x = {1.0 + 1.0*I, 3.0 + 2.0*I, 3.0 + 4.0*I};  // NOLINT(readability-identifier-length) blas conventional name
+		BOOST_REQUIRE( blas::dot(x, x) == (1.0 + 1.0*I)*(1.0 + 1.0*I) + (3.0 + 2.0*I)*(3.0 + 2.0*I) + (3.0 + 4.0*I)*(3.0 + 4.0*I) );
+		using std::sqrt;
+		BOOST_REQUIRE( blas::nrm2(x) == sqrt(norm(1.0 + 1.0*I) + norm(3.0 + 2.0*I) + norm(3.0 + 4.0*I)) );
 	}
 }
-

@@ -1,8 +1,8 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o $0x&&$0x&&rm $0x;exit
-#endif
-#ifndef MULTI_MEMORY_FALLBACK_HPP
-#define MULTI_MEMORY_FALLBACK_HPP
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2019-2022 Alfredo A. Correa
+
+#ifndef MULTI_MEMORY_FALLBACK_HPP_
+#define MULTI_MEMORY_FALLBACK_HPP_
 
 #if defined(__cpp_lib_memory_resource) and (__cpp_lib_memory_resource>=201603L)
 #include<memory_resource>
@@ -11,8 +11,10 @@ $CXX $0 -o $0x&&$0x&&rm $0x;exit
 #include "../memory/block.hpp"
 #include "../memory/allocator.hpp"
 
-#include<stdlib.h> // aligned_alloc, in c++17 this will be <cstdlib>
-#include <cstddef> // std::max_align_t
+
+#include <algorithm>  // for max
+#include <cstdlib>    // aligned_alloc, in c++17 this will be <cstdlib>
+#include <cstddef>    // std::max_align_t
 
 namespace boost {
 namespace multi {
@@ -29,7 +31,7 @@ struct resource<T*>{
 };
 
 template<class Ptr = memory::byte*>
-inline auto get_default_resource(){
+inline auto get_default_resource() {
 	static resource<Ptr> instance_;
 	return &instance_;
 }
@@ -41,53 +43,53 @@ template<class MemoryResource1, class MemoryResource2
 	= memory::resource<>
 #endif
 >
-class fallback : public MemoryResource1{
+class fallback : public MemoryResource1 {
 	MemoryResource2* back_ = nullptr;
-	long fallbacks_ = 0;
-public:
-	long fallbacks() const{return fallbacks_;}
+	std::size_t fallbacks_ = 0;
+
+ public:
+	std::size_t fallbacks() const {return fallbacks_;}
 	fallback() = default;
 
 	fallback(MemoryResource1 const& mr, MemoryResource2* back) : MemoryResource1{mr}, back_{back} {}
 
 	// cppcheck-suppress noExplicitConstructor ; allocators are pointers to memory resources
-	fallback(MemoryResource1 const& mr)
+	fallback(MemoryResource1 const& mr)  // NOLINT(runtime/explicit)
 	: fallback{
 		mr,
 #if(__cpp_lib_memory_resource>=201603L)
 		std::pmr::get_default_resource()
 #else
-		nullptr//memory::get_default_resource<>()
+		nullptr  // memory::get_default_resource<>()
 #endif
 	} {}
 
-
-	typename fallback::void_pointer 
-	allocate(size_type required_bytes, typename fallback::size_type align = alignof(std::max_align_t)) try{
+	typename fallback::void_pointer
+	allocate(size_type required_bytes, typename fallback::size_type align = alignof(std::max_align_t)) try {
 		return MemoryResource1::allocate(required_bytes, align);
-	}catch(...){
+	} catch(...) {
 		++fallbacks_;
 		return back_->allocate(required_bytes, align);
 	}
-	void deallocate(typename fallback::void_pointer p, typename fallback::size_type discarded_bytes) try{
+	void deallocate(typename fallback::void_pointer p, typename fallback::size_type discarded_bytes) try {
 		MemoryResource1::deallocate(p, discarded_bytes);
-	}catch(...){back_->deallocate(p, discarded_bytes);}
+	} catch(...) {back_->deallocate(p, discarded_bytes);}
 };
 
 template<class T, class MR1, class MR2
 #if(__cpp_lib_memory_resource>=201603L)
-	= std::pmr::memory_resource //= std::allocator<std::byte>
+	= std::pmr::memory_resource  // = std::allocator<std::byte>
 #else
 	= memory::resource<>
 #endif
-> 
-using fallback_allocator = memory::allocator<T, fallback<MR1, MR2>>;//, alignof(T)>>;
+>
+using fallback_allocator = memory::allocator<T, fallback<MR1, MR2>>;  // , alignof(T)>>;
 
 }  // end namespace memory
 }  // end namespace multi
 }  // end namespace boost
 
-#if not __INCLUDE_LEVEL__ //  _TEST_MULTI_MEMORY_FALLBACK
+#if not __INCLUDE_LEVEL__   // _TEST_MULTI_MEMORY_FALLBACK
 
 #include "../../multi/array.hpp"
 #include "../memory/stack.hpp"
@@ -113,7 +115,7 @@ int main() {
 }
 {
 	alignas(double) std::array<char, 256*sizeof(double)> buffer;  // char buffer[256*sizeof(double)];
-	memory::fallback<memory::monotonic<char*>> m(buffer.data(), buffer.size());//, boost::multi::memory::get_default_resource());
+	memory::fallback<memory::monotonic<char*>> m(buffer.data(), buffer.size());  // , boost::multi::memory::get_default_resource());
 	auto p1 = m.allocate(100*sizeof(double), alignof(double));
 	auto p2 = m.allocate(200*sizeof(double), alignof(double));
 	m.deallocate(p2, 200*sizeof(double));
@@ -159,7 +161,7 @@ int main() {
 }
 cout <<"----------"<< std::endl;
 {
-	memory::fallback<memory::stack<char*>> f;//({buffer.data(), (std::ptrdiff_t)buffer.size()}); // TODO error in nvcc
+	memory::fallback<memory::stack<char*>> f;  // ({buffer.data(), (std::ptrdiff_t)buffer.size()}); // TODO error in nvcc
 	for(int i = 0; i != 3; ++i) {
 		std::vector<char> buffer(f.max_needed());
 		f = {{buffer.data(), (std::ptrdiff_t)buffer.size()}};
@@ -170,7 +172,7 @@ cout <<"----------"<< std::endl;
 }
 cout <<"----------"<< std::endl;
 {
-	memory::fallback<memory::stack<memory::byte*>> f;//({buffer.data(), (std::ptrdiff_t)buffer.size()});
+	memory::fallback<memory::stack<memory::byte*>> f;  // ({buffer.data(), (std::ptrdiff_t)buffer.size()});
 	for(int i = 0; i != 3; ++i) {
 		std::vector<memory::byte> buffer(f.max_needed());
 		f = {{buffer.data(), (std::ptrdiff_t)buffer.size()}};
@@ -192,4 +194,4 @@ cout <<"----------"<< std::endl;
 }
 }
 #endif
-#endif
+#endif  // MULTI_MEMORY_FALLBACK_HPP_

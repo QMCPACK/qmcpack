@@ -151,4 +151,3 @@ static void MeasureMultiRaw(benchmark::State& state) {
 BENCHMARK(MeasureBoostMultiArrayRaw);
 
 BENCHMARK_MAIN();
-
