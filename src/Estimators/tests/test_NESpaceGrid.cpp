@@ -18,7 +18,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "EstimatorTesting.h"
 #include "Particle/tests/MinimalParticlePool.h"
-
+#include "NativeInitializerPrint.hpp"
 /** \file
  *  This is a postfacto unit testing written for NESpaceGrid during porting of EnergyDensity
  *  to the batched version of the estimators.
@@ -29,14 +29,14 @@ namespace qmcplusplus
 
 namespace testing
 {
-template<typename T>
+template<typename REAL>
 class NESpaceGridTests
 {
 public:
-  static const auto& getData(const NESpaceGrid& nesg) { return nesg.data_; }
-  static int getBufferStart(const NESpaceGrid& nesg) { return nesg.buffer_start_; }
-  static int getBufferEnd(const NESpaceGrid& nesg) { return nesg.buffer_end_; }
-  static auto* getOdu(const NESpaceGrid& nesg) { return nesg.odu_; }
+  static const auto& getData(const NESpaceGrid<REAL>& nesg) { return nesg.data_; }
+  static int getBufferStart(const NESpaceGrid<REAL>& nesg) { return nesg.buffer_start_; }
+  static int getBufferEnd(const NESpaceGrid<REAL>& nesg) { return nesg.buffer_end_; }
+  static auto* getOdu(const NESpaceGrid<REAL>& nesg) { return nesg.odu_; }
 };
 
 template<ValidSpaceGridInput::valid VALID>
@@ -61,11 +61,16 @@ public:
     bool okay       = doc.parseFromString(Input::xml[VALID]);
     xmlNodePtr node = doc.getRoot();
     sgi_            = std::make_unique<SpaceGridInput>(node);
-    ReferencePointsInput rpi;
-    ref_psets_.push_back(pset_ions_);
-    ref_points_ = std::make_unique<NEReferencePoints>(std::move(rpi), pset_elec_, ref_psets_);
-  }
 
+    using RPInput = ValidReferencePointsInputs;
+    Libxml2Document doc2;
+    bool okay2       = doc.parseFromString(RPInput::xml[RPInput::CELL]);
+    xmlNodePtr node2 = doc.getRoot();
+    rpi_             = std::make_unique<ReferencePointsInput>(node2);
+    ref_psets_.push_back(pset_ions_);
+    ref_points_ = std::make_unique<NEReferencePoints>(*rpi_, pset_elec_, ref_psets_);
+  }
+  UPtr<ReferencePointsInput> rpi_;
   UPtr<SpaceGridInput> sgi_;
   UPtr<NEReferencePoints> ref_points_;
   RefVector<ParticleSet> ref_psets_;
@@ -73,6 +78,39 @@ public:
   ParticleSet pset_elec_;
   ParticleSet pset_ions_;
 };
+
+template<>
+class SpaceGridEnv<ValidSpaceGridInput::valid::CYLINDRICAL>
+{
+public:
+  using Input = ValidSpaceGridInput;
+  SpaceGridEnv(Communicate* comm)
+      : particle_pool_(MinimalParticlePool::make_H2(comm)),
+        pset_elec_(*(particle_pool_.getParticleSet("e"))),
+        pset_ions_(*(particle_pool_.getParticleSet("ion")))
+  {
+    Libxml2Document doc;
+    bool okay       = doc.parseFromString(Input::xml[ValidSpaceGridInput::valid::CYLINDRICAL]);
+    xmlNodePtr node = doc.getRoot();
+    sgi_            = std::make_unique<SpaceGridInput>(node);
+
+    using RPInput = ValidReferencePointsInputs;
+    Libxml2Document doc2;
+    bool okay2       = doc.parseFromString(RPInput::xml[RPInput::CELL]);
+    xmlNodePtr node2 = doc.getRoot();
+    rpi_             = std::make_unique<ReferencePointsInput>(node2);
+    ref_psets_.push_back(pset_ions_);
+    ref_points_ = std::make_unique<NEReferencePoints>(*rpi_, pset_elec_, ref_psets_);
+  }
+  UPtr<ReferencePointsInput> rpi_;
+  UPtr<SpaceGridInput> sgi_;
+  UPtr<NEReferencePoints> ref_points_;
+  RefVector<ParticleSet> ref_psets_;
+  ParticleSetPool particle_pool_;
+  ParticleSet pset_elec_;
+  ParticleSet pset_ions_;
+};
+
 } // namespace testing
 
 constexpr bool generate_test_data = false;
@@ -88,7 +126,7 @@ TEST_CASE("SpaceGrid::Construction", "[estimators]")
 
   // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
   // It is a smell.
-  NESpaceGrid space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
 
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
@@ -103,6 +141,50 @@ TEST_CASE("SpaceGrid::Construction", "[estimators]")
   // CHECK(buffer_end == 7999);
 }
 
+TEST_CASE("SpaceGrid::CYLINDRICAL", "[estimators]")
+{
+  using Input = testing::ValidSpaceGridInput;
+  Communicate* comm;
+  comm = OHMMS::Controller;
+
+  testing::SpaceGridEnv<Input::valid::CYLINDRICAL> sge(comm);
+
+  // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
+  // It is a smell.
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
+
+  using NES         = testing::NESpaceGridTests<double>;
+  auto buffer_start = NES::getBufferStart(space_grid);
+  auto buffer_end   = NES::getBufferEnd(space_grid);
+  space_grid.write_description(std::cout, std::string(""));
+  auto& sgi = *(sge.sgi_);
+  auto& agr = sgi.get_axis_grids();
+  for (int id = 0; id < OHMMS_DIM; ++id)
+    CHECK(NES::getOdu(space_grid)[id] == agr[id].odu);
+}
+
+TEST_CASE("SpaceGrid::SPHERICAL", "[estimators]")
+{
+  using Input = testing::ValidSpaceGridInput;
+  Communicate* comm;
+  comm = OHMMS::Controller;
+
+  testing::SpaceGridEnv<Input::valid::SPHERICAL> sge(comm);
+
+  // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
+  // It is a smell.
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
+
+  using NES         = testing::NESpaceGridTests<double>;
+  auto buffer_start = NES::getBufferStart(space_grid);
+  auto buffer_end   = NES::getBufferEnd(space_grid);
+  space_grid.write_description(std::cout, std::string(""));
+  auto& sgi = *(sge.sgi_);
+  auto& agr = sgi.get_axis_grids();
+  for (int id = 0; id < OHMMS_DIM; ++id)
+    CHECK(NES::getOdu(space_grid)[id] == agr[id].odu);
+}
+
 TEST_CASE("SpaceGrid::Basic", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
@@ -110,7 +192,7 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, true);
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
@@ -121,6 +203,10 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
     CHECK(NES::getOdu(space_grid)[id] == agr[id].odu);
   //CHECK(buffer_start == 0);
   //CHECK(buffer_end == 23999);
+
+  CHECK(space_grid.nDomains() == 8000);
+
+  CHECK(space_grid.getDataVector().size() == 24000);
 
   Matrix<Real> values;
   values.resize(sge.pset_elec_.getTotalNum(), num_values);
@@ -223,19 +309,57 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 0) == Approx(5.0));
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 1) == Approx(5.1));
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 2) == Approx(5.2));
+}
 
-  // hdf_archive file(comm, false);
-  // file.create("space_grid_test.hdf");
-  // //std::vector<size_t> my_indexes;
-  // auto nvalues = buffer_end - buffer_start + 1;
-  // //std::array<hsize_t, 2> ng{1, nvalues};
-  // hdf_path hdf_name{"space_grid_3"};
-  // file.push(hdf_name);
-  // Vector<Real> data;
-  // std::size_t offset = 0;
-  // data.attachReference(grid_data, nvalues);
-  // file.write(data, "value");
-  // file.pop();
+TEST_CASE("SpaceGrid::Accumulate::outside", "[estimators]")
+{
+  using Input = testing::ValidSpaceGridInput;
+  Communicate* comm;
+  comm = OHMMS::Controller;
+  testing::SpaceGridEnv<Input::valid::CYLINDRICAL> sge(comm);
+  int num_values = 3;
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  using NES         = testing::NESpaceGridTests<double>;
+  auto buffer_start = NES::getBufferStart(space_grid);
+  auto buffer_end   = NES::getBufferEnd(space_grid);
+  space_grid.write_description(std::cout, std::string(""));
+  auto& sgi = *(sge.sgi_);
+  auto& agr = sgi.get_axis_grids();
+  for (int id = 0; id < OHMMS_DIM; ++id)
+    CHECK(NES::getOdu(space_grid)[id] == agr[id].odu);
+
+  CHECK(space_grid.nDomains() == 2000);
+  CHECK(space_grid.getDataVector().size() == 6000);
+
+  Matrix<Real> values;
+  values.resize(sge.pset_elec_.getTotalNum(), num_values);
+
+  for (int ip = 0; ip < sge.pset_elec_.getTotalNum(); ++ip)
+    for (int iv = 0; iv < num_values; ++iv)
+      values(ip, iv) = ip + 0.1 * iv;
+
+  const int ei_tid = sge.pset_elec_.addTable(sge.pset_ions_);
+  sge.pset_elec_.update();
+  sge.pset_ions_.update();
+
+  std::vector<bool> p_outside(8, false);
+  space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+
+  // new pset R's
+  // check again
+  auto min_R =
+    ParticleSet::ParticlePos{{1.883366346, 2.136350632, 3.188981533},   {0.09710352868, -0.76751858, -1.89306891}};
+  sge.pset_elec_.applyMinimumImage(min_R);
+  sge.pset_elec_.R = min_R;
+
+  sge.pset_elec_.update();
+  std::cout << NativePrint(p_outside) << '\n';
+  
+  std::vector<bool> p_outside_2(8, false);
+  space_grid.accumulate(sge.pset_elec_.R, values, p_outside_2, sge.pset_elec_.getDistTableAB(ei_tid));
+
+  std::cout << NativePrint(p_outside_2) << '\n';
+
 }
 
 TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
@@ -245,7 +369,7 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
 
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
@@ -285,7 +409,7 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
   comm = OHMMS::Controller;
   testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
   int num_values = 3;
-  NESpaceGrid space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
   using NES         = testing::NESpaceGridTests<double>;
   auto buffer_start = NES::getBufferStart(space_grid);
   auto buffer_end   = NES::getBufferEnd(space_grid);
@@ -327,7 +451,7 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
   bool okay_read = hd.open(test_file);
   hd.push("spacegrid1");
   //hdf5 values always end up as doubles
-  Matrix<double> read_values(1,24000);
+  Matrix<double> read_values(1, 24000);
   hd.readEntry(read_values, "value");
 
   auto tensorAccessor = [](const auto& grid_data, int i, int j, int k, int iv) -> double {
@@ -335,7 +459,7 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
   };
 
   auto value = tensorAccessor(read_values, 10, 17, 9, 0);
-  
+
   CHECK(tensorAccessor(read_values, 10, 17, 9, 0) == Approx(2.0));
   CHECK(tensorAccessor(read_values, 10, 17, 9, 1) == Approx(2.1));
   CHECK(tensorAccessor(read_values, 10, 17, 9, 2) == Approx(2.2));

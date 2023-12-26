@@ -84,12 +84,13 @@ SpaceGridInput::SpaceGridInput(xmlNodePtr cur)
     axis_grids_[d]   = axis_input->get_grid();
     axis_scales_[d]  = axis_input->get_scale();
   }
-  if(input_section_.has("origin"))
+  checkGrids();
+  if (input_section_.has("origin"))
   {
     auto space_grid_origin = input_section_.get<SpaceGridOriginInput>("origin");
-    origin_p1_ = space_grid_origin.get_p1();
-    origin_p2_ = space_grid_origin.get_p2();
-    origin_fraction_ = space_grid_origin.get_fraction();
+    origin_p1_             = space_grid_origin.get_p1();
+    origin_p2_             = space_grid_origin.get_p2();
+    origin_fraction_       = space_grid_origin.get_fraction();
   }
 }
 
@@ -106,6 +107,33 @@ void SpaceGridInput::checkAxes(std::vector<std::any>& axes)
                                     input_section_.get<std::string>("coord"));
   }
 }
+
+void SpaceGridInput::checkGrids()
+{
+  //check that all axis grid values fall in the allowed intervals for the coord label
+  for (int d = 0; d < OHMMS_DIM; d++)
+  {
+    if (axis_labels_[d] == "r" || axis_labels_[d] == "phi" || axis_labels_[d] == "theta")
+    {
+      if (axis_grids_[d].umin < 0.0 || axis_grids_[d].umax > 1.0)
+      {
+        std::ostringstream error;
+        error << " grid values for " << axis_labels_[d] << " must fall in [0,1]" << std::endl;
+        error << " interval provided: [" << axis_grids_[d].umin << "," << axis_grids_[d].umax << "]" << std::endl;
+        throw UniformCommunicateError(error.str());
+      }
+    }
+    // all other legal labels {"x","y","z"} can be over -1.0 to 1.0 
+    else if (axis_grids_[d].umin < -1.0 || axis_grids_[d].umax > 1.0)
+    {
+      std::ostringstream error;
+      error << "  grid values for " << axis_labels_[d] << " must fall in [-1,1]" << std::endl;
+      error << "  interval provided: [" << axis_grids_[d].umin << "," << axis_grids_[d].umax << "]" << std::endl;
+      throw UniformCommunicateError(error.str());
+    }
+  }
+}
+
 
 std::any SpaceGridInput::SpaceGridInputSection::assignAnyEnum(const std::string& name) const
 {

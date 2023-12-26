@@ -45,18 +45,17 @@ public:
 
   inline static const std::unordered_map<std::string, std::any> lookup_input_enum_value{{"coord-cartesian",
                                                                                          CoordForm::CARTESIAN},
-                                                                                        {"coord-cyclindrical",
+                                                                                        {"coord-cylindrical",
                                                                                          CoordForm::CYLINDRICAL},
                                                                                         {"coord-spherical",
                                                                                          CoordForm::SPHERICAL}};
 
-  using label_set = std::vector<std::string_view>;
-  // legal labels for each coordinate type.  These are actually effectively enums
-  inline static const label_set ax_cartesian{"x", "y", "z"};
-  inline static const label_set ax_cylindrical{"r", "phi", "z"};
-  inline static const label_set ax_spherical{"r", "phi", "theta"};
-
-  inline static const std::unordered_map<CoordForm, label_set> axes_label_sets{{CoordForm::CARTESIAN, ax_cartesian},
+  using LabelSet = std::vector<std::string_view>;
+  // legal labels for each coordinate type.  These are effectively enums
+  inline static const LabelSet ax_cartesian{"x", "y", "z"};
+  inline static const LabelSet ax_cylindrical{"r", "phi", "z"};
+  inline static const LabelSet ax_spherical{"r", "phi", "theta"};
+  inline static const std::unordered_map<CoordForm, LabelSet> axes_label_sets{{CoordForm::CARTESIAN, ax_cartesian},
                                                                                {CoordForm::CYLINDRICAL, ax_cylindrical},
                                                                                {CoordForm::SPHERICAL, ax_spherical}};
 
@@ -162,8 +161,6 @@ public:
   SpaceGridInput(xmlNodePtr cur);
   SpaceGridInput(const SpaceGridInput& sgi) = default;
 
-  void checkAxes(std::vector<std::any>& axes);
-
   CoordForm get_coord_form() const { return coord_form_; }
   bool isPeriodic() const { return !(coord_form_ == CoordForm::CYLINDRICAL || coord_form_ == CoordForm::SPHERICAL); }
   const std::array<std::string, OHMMS_DIM>& get_axis_p1s() const { return axis_p1s_; }
@@ -178,9 +175,12 @@ public:
   /** axes_label_set accessor, avoids a bunch of switch statements
    *  at must be used because std::unordered_map::operator[] can't return a const reference
    */
-  const label_set& get_axes_label_set() const { return axes_label_sets.at(coord_form_); }
+  const LabelSet& get_axes_label_set() const { return axes_label_sets.at(coord_form_); }
 
 private:
+  void checkAxes(std::vector<std::any>& axes);
+  void checkGrids();
+
   SpaceGridInputSection input_section_;
   CoordForm coord_form_;
   // origin in optional so this is required.
@@ -194,6 +194,10 @@ private:
   std::array<AxisGrid<Real>, OHMMS_DIM> axis_grids_;
 };
 
+/** factory function for a SpaceGridInput
+ *  \param[in]  input node for SpaceGridInput
+ *  \param[out] value label returned to caller
+ */
 std::any makeSpaceGridInput(xmlNodePtr, std::string& value_label);
 
 } // namespace qmcplusplus

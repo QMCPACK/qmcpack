@@ -37,6 +37,10 @@ namespace qmcplusplus
  *  This class has more going on than just representing a spacial grid
  *  I'm still working out how much of this just because of the Voronoi code that shouldn't be
  *  part of the same class as the simpler grid and how much is particleset contimination etc.
+ *
+ *  For memory considerations it is quite possible this could be at single precision even
+ *  if the actual montecarlo is being carried out in double precision. Eventually this should
+ *  be determined from input in some way.
  */
 namespace testing
 {
@@ -44,10 +48,11 @@ template<typename T>
 class NESpaceGridTests;
 }
 
+template<typename REAL>
 class NESpaceGrid
 {
 public:
-  using Real        = QMCTraits::RealType;
+  using Real        = REAL;
   using Point       = typename NEReferencePoints::Point;
   using Points      = typename NEReferencePoints::Points;
   using BufferType  = PooledData<Real>;
@@ -65,7 +70,7 @@ public:
    * \param[in]  sgi            input object for space grid.
    * \param[in]  reference      reference points from which origin and on other reference points referenced in input object are to be found
    * \param[in]  nvalues        number of fields the owning class wants for each grid point.
-   * \param[in]  is_period      properly names is what is says
+   * \param[in]  is_periodic    properly names is what is says
    */
   NESpaceGrid(SpaceGridInput& sgi, const Points& points, const int nvalues, const bool is_periodic);
 
@@ -74,7 +79,7 @@ public:
    * \param[in]  reference      reference points from which origin and on other reference points referenced in input object are to be found
    * \param[in]  ndp            number of particles that can move
    * \param[in]  nvalues        number of fields the owning class wants for each grid point.
-   * \param[in]  is_period      properly names is what is says
+   * \param[in]  is_periodic      properly names is what is says
    */
   NESpaceGrid(SpaceGridInput& sgi, const Points& points, const int ndp, const int nvalues, const bool is_periodic);
 
@@ -143,6 +148,10 @@ private:
    */
   static Point deriveOrigin(const SpaceGridInput& input, const Points& points);
 
+  /** dispatch to correct initialize for coord type
+   */
+  bool initializeCoordSystem();
+
   /** Initialize NESpaceGrid for rectilinear grid
    *  \param[in]  input     SpaceGridInput object
    *  \param[in]  points    ReferencePoints object for grid
@@ -152,6 +161,26 @@ private:
    *    axinv_     the inverse of the axes with scaling applied   
    */
   bool initializeRectilinear(const SpaceGridInput& input, const Points& points);
+
+  /** Initialize NESpaceGrid for cylindrical grid
+   *  \param[in]  input     SpaceGridInput object
+   *  \param[in]  points    ReferencePoints object for grid
+   *  Causes side effects updating
+   *    origin_    fixed up origin for grid
+   *    axes_      axes with scaling applied to it.
+   *    axinv_     the inverse of the axes with scaling applied   
+   */
+  bool initializeCylindrical(const SpaceGridInput& input, const Points& points);
+
+  /** Initialize NESpaceGrid for cylindrical grid
+   *  \param[in]  input     SpaceGridInput object
+   *  \param[in]  points    ReferencePoints object for grid
+   *  Causes side effects updating
+   *    origin_    fixed up origin for grid
+   *    axes_      axes with scaling applied to it.
+   *    axinv_     the inverse of the axes with scaling applied   
+   */
+  bool initializeSpherical(const SpaceGridInput& input, const Points& points);
 
   // /** Initialize NESpaceGrid for voronoi grid
   //  *  \param[in]  input        SpaceGridInput object
@@ -176,7 +205,8 @@ private:
    */
   static void processAxis(const SpaceGridInput& input, const Points& points, AxTensor& axes, AxTensor& axinv);
 
-  static bool checkAxisGridValues(const SpaceGridInput& input_, const AxTensor& axes);
+  // should be handled in SpaceGridInput now.
+  //static bool checkAxisGridValues(const SpaceGridInput& input_, const AxTensor& axes);
 
   /** refrence points for the space grid
    *  this reference it to the EstimatorManagers EDE's spacegrid_inputs_
@@ -237,6 +267,9 @@ public:
   template<typename T>
   friend class testing::NESpaceGridTests;
 };
+
+extern template class NESpaceGrid<float>;
+extern template class NESpaceGrid<double>;
 
 
 } // namespace qmcplusplus

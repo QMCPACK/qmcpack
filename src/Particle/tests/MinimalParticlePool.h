@@ -134,6 +134,39 @@ class MinimalParticlePool
 </tmp>
 )";
 
+  static constexpr const char* const particles_xml_H2 = R"(
+<tmp>
+  <particleset name="ion" size="2">
+    <group name="H">
+      <parameter name="charge">1</parameter>
+      <parameter name="valence">1</parameter>
+      <parameter name="atomicnumber">1</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+  0.0000000000e+00  0.0000000000e+00 -9.4486299390e-01
+  0.0000000000e+00  0.0000000000e+00  9.4486299390e-01
+</attrib>
+    <attrib name="ionid" datatype="stringArray">
+ H H 
+</attrib>
+  </particleset>
+  <particleset name="e">
+    <group name="u" size="1">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+  5.2261545687e-01  4.6234802699e-01 -1.2355134293e+00
+</attrib>
+    </group>
+    <group name="d" size="1">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+  6.4451072699e-01  1.3453681375e-01  1.3161796485e+00
+</attrib>
+    </group>
+  </particleset>
+</tmp>
+)";
+
 public:
   static void parseParticleSetXML(const char* xml_string, ParticleSetPool& pp)
   {
@@ -172,6 +205,27 @@ public:
   {
     ParticleSetPool pp(c);
     parseParticleSetXML(particles_xml_NiO_a4, pp);
+    return pp;
+  }
+
+  static ParticleSetPool make_H2(Communicate* c)
+  {
+    Libxml2Document doc;
+
+    doc.parseFromString(particles_xml_H2);
+
+    xmlNodePtr root     = doc.getRoot();
+    xmlNodePtr part_ion = xmlFirstElementChild(root);
+
+    ParticleSetPool pp(c);
+    // Don't set up simulation cell lattice before reading particle sets
+    // convention is to leave out when doing open boundary cond.
+
+    pp.put(part_ion);
+    xmlNodePtr part_elec = xmlNextElementSibling(part_ion);
+    pp.put(part_elec);
+    pp.randomize();
+
     return pp;
   }
 };

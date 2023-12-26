@@ -74,22 +74,27 @@ void InputSection::readXML(xmlNodePtr cur)
   // at anyrate one of these must match the section_name.
   std::string lcase_section_name{lowerCase(section_name)};
 
-  auto checkSectionName = [&section_name = section_name, &section_name_alternates = section_name_alternates](auto& possible_sname){
+  auto checkSectionName = [&section_name            = section_name,
+                           &section_name_alternates = section_name_alternates](auto& possible_sname) {
     std::string lcase_section_name{lowerCase(section_name)};
     if (possible_sname == lcase_section_name)
       return true;
     if (section_name_alternates.size() > 0)
       return std::any_of(section_name_alternates.begin(), section_name_alternates.end(),
-                      [&possible_sname](auto& name_alternate) {
-                        std::string lcase_alternate{lowerCase(name_alternate)};
-                        return possible_sname == lcase_alternate;
-                      });
+                         [&possible_sname](auto& name_alternate) {
+                           std::string lcase_alternate{lowerCase(name_alternate)};
+                           return possible_sname == lcase_alternate;
+                         });
     return false;
   };
 
-  if (!(checkSectionName(section_ename) || checkSectionName(section_method) ||
-        checkSectionName(section_type) || checkSectionName(section_name_actual)))
-    throw UniformCommunicateError("Input is invalid  " + lcase_section_name + " does not match input node!");
+  if (!(checkSectionName(section_ename) || checkSectionName(section_method) || checkSectionName(section_type) ||
+        checkSectionName(section_name_actual)))
+  {
+    std::stringstream error;
+    error << "Input is invalid \"" << lcase_section_name << "\" does not match a defined input node!";
+    throw UniformCommunicateError(error.str());
+  }
 
   // these attributes don't get an element name passed to them because by convention we save and define them unqualified.
   readAttributes(cur, "", {"type"});
@@ -318,10 +323,7 @@ void InputSection::report(std::ostream& out) const
   out << "\n\n";
 }
 
-void InputSection::report() const
-{
-  report(app_log());
-}
+void InputSection::report() const { report(app_log()); }
 
 std::any InputSection::lookupAnyEnum(const std::string& enum_name,
                                      const std::string& enum_value,

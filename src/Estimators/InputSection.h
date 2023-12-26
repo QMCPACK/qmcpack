@@ -209,7 +209,7 @@ protected:
    */
   [[noreturn]] virtual std::any assignAnyEnum(const std::string& tag) const
   {
-    throw std::runtime_error("derived class must provide assignAnyEnum method if enum parameters are used");
+    throw UniformCommunicateError("derived class must provide assignAnyEnum method if enum parameters are used");
   }
 
   /** Derived class can overrides this to do custom parsing of the element values for Custom elements
@@ -224,7 +224,7 @@ protected:
                                                 const std::string& name,
                                                 std::istringstream& svalue)
   {
-    throw std::runtime_error("derived class must provide handleCustom method if custom parameters are used");
+    throw UniformCommunicateError("derived class must provide handleCustom method if custom parameters are used");
   }
 
   /** Assign any enum helper for InputSection derived class

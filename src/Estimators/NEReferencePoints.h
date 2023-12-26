@@ -37,7 +37,7 @@ namespace qmcplusplus
 class NEReferencePoints
 {
 public:
-  using Real   = QMCTraits::RealType;
+  using Real   = QMCTraits::FullPrecRealType;
   using Axes   = Tensor<Real, OHMMS_DIM>;
   using Point  = TinyVector<Real, OHMMS_DIM>;
   using Points = std::map<std::string, Point>;
@@ -47,6 +47,7 @@ public:
    *                        those take from the pset, and ref_psets
    *  \param[in] pset       pset that supplies the lattice information for reference points
    *  \param[in] ref_psets  pset reference vector the particle points in this/these psets are reference points
+   *                        ions are surfaced in the reference points as ion{num} with no special formatting.
    */
   NEReferencePoints(const ReferencePointsInput& rp_input, const ParticleSet& pset, RefVector<ParticleSet>& ref_psets);
   NEReferencePoints(const NEReferencePoints& nerp) = default;

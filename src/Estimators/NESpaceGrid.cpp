@@ -31,40 +31,64 @@ using std::floor;
 using std::sin;
 using std::sqrt;
 
-NESpaceGrid::NESpaceGrid(SpaceGridInput& sgi,
-                         const NEReferencePoints::Points& points,
-                         const int nvalues,
-                         const bool is_periodic)
+template<typename REAL>
+NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
+                               const NEReferencePoints::Points& points,
+                               const int nvalues,
+                               const bool is_periodic)
     : NESpaceGrid(sgi, points, 0, nvalues, is_periodic)
 {}
 
-NESpaceGrid::NESpaceGrid(SpaceGridInput& sgi,
-                         const NEReferencePoints::Points& points,
-                         const int ndp,
-                         const int nvalues,
-                         const bool is_periodic)
+template<typename REAL>
+NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
+                               const NEReferencePoints::Points& points,
+                               const int ndp,
+                               const int nvalues,
+                               const bool is_periodic)
     : input_(sgi), ndparticles_(ndp), is_periodic_(is_periodic), points_(points), nvalues_per_domain_(nvalues)
 {
-  bool init_success = initializeRectilinear(input_, points_);
+  bool init_success = initializeCoordSystem();
   if (!init_success)
     throw std::runtime_error("NESpaceGrid initialization failed");
 }
 
-NESpaceGrid::NESpaceGrid(SpaceGridInput& sgi,
-                         const NEReferencePoints::Points& points,
-                         ParticlePos& static_particle_positions,
-                         std::vector<Real>& Z,
-                         const int ndp,
-                         const int nvalues,
-                         const bool is_periodic)
+template<typename REAL>
+NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
+                               const NEReferencePoints::Points& points,
+                               ParticlePos& static_particle_positions,
+                               std::vector<Real>& Z,
+                               const int ndp,
+                               const int nvalues,
+                               const bool is_periodic)
     : input_(sgi), ndparticles_(ndp), is_periodic_(is_periodic), points_(points), nvalues_per_domain_(nvalues)
 {
-  bool init_success = initializeRectilinear(input_, points_);
+  bool init_success = initializeCoordSystem();
   if (!init_success)
     throw std::runtime_error("NESpaceGrid initialization failed");
 }
 
-void NESpaceGrid::processAxis(const SpaceGridInput& input, const Points& points, AxTensor& axes, AxTensor& axinv)
+template<typename REAL>
+bool NESpaceGrid<REAL>::initializeCoordSystem()
+{
+  using CoordForm   = SpaceGridInput::CoordForm;
+  bool init_success = false;
+  switch (input_.get_coord_form())
+  {
+  case (CoordForm::CARTESIAN):
+    init_success = initializeRectilinear(input_, points_);
+    break;
+  case (CoordForm::CYLINDRICAL):
+    init_success = initializeCylindrical(input_, points_);
+    break;
+  case (CoordForm::SPHERICAL):
+    init_success = initializeSpherical(input_, points_);
+    break;
+  }
+  return init_success;
+}
+
+template<typename REAL>
+void NESpaceGrid<REAL>::processAxis(const SpaceGridInput& input, const Points& points, AxTensor& axes, AxTensor& axinv)
 {
   auto& axis_labels = input.get_axis_labels();
   auto& axis_p1s    = input.get_axis_p1s();
@@ -82,7 +106,8 @@ void NESpaceGrid::processAxis(const SpaceGridInput& input, const Points& points,
   axinv = inverse(axes);
 }
 
-NESpaceGrid::Point NESpaceGrid::deriveOrigin(const SpaceGridInput& input, const Points& points)
+template<typename REAL>
+typename NESpaceGrid<REAL>::Point NESpaceGrid<REAL>::deriveOrigin(const SpaceGridInput& input, const Points& points)
 {
   const std::string& origin_p1 = input.get_origin_p1();
   const std::string& origin_p2 = input.get_origin_p2();
@@ -97,23 +122,61 @@ NESpaceGrid::Point NESpaceGrid::deriveOrigin(const SpaceGridInput& input, const 
     return points.at("zero");
 }
 
-bool NESpaceGrid::initializeRectilinear(const SpaceGridInput& input, const Points& points)
+template<typename REAL>
+bool NESpaceGrid<REAL>::initializeRectilinear(const SpaceGridInput& input, const Points& points)
 {
   // This code should be refactored to SpaceGridInput such that a simple map of
   // axis is available.
 
   origin_ = deriveOrigin(input, points);
   processAxis(input, points, axes_, axinv_);
-  bool succeeded = checkAxisGridValues(input, axes_);
+
+  // this should all be done in SpaceGrid input parsing/construction now.
+  // bool succeeded = checkAxisGridValues(input, axes_);
 
   someMoreAxisGridStuff();
 
   copyToSoA();
 
-  return succeeded;
+  return true;
 }
 
-void NESpaceGrid::someMoreAxisGridStuff()
+template<typename REAL>
+bool NESpaceGrid<REAL>::initializeCylindrical(const SpaceGridInput& input, const Points& points)
+{
+  // This code should be refactored to SpaceGridInput such that a simple map of
+  // axis is available.
+
+  origin_ = deriveOrigin(input, points);
+  processAxis(input, points, axes_, axinv_);
+  // bool succeeded = checkAxisGridValues(input, axes_);
+
+  someMoreAxisGridStuff();
+
+  copyToSoA();
+
+  return true;
+}
+
+template<typename REAL>
+bool NESpaceGrid<REAL>::initializeSpherical(const SpaceGridInput& input, const Points& points)
+{
+  // This code should be refactored to SpaceGridInput such that a simple map of
+  // axis is available.
+
+  origin_ = deriveOrigin(input, points);
+  processAxis(input, points, axes_, axinv_);
+  //bool succeeded = checkAxisGridValues(input, axes_);
+
+  someMoreAxisGridStuff();
+
+  copyToSoA();
+
+  return true;
+}
+
+template<typename REAL>
+void NESpaceGrid<REAL>::someMoreAxisGridStuff()
 {
   auto& axis_grids = input_.get_axis_grids();
   // This dates back to the legacy implementation and I'm not sure why both code blocks are here.
@@ -224,28 +287,7 @@ void NESpaceGrid::someMoreAxisGridStuff()
       }
     }
   }
-  ////the following check is only valid if grid spans maximum amount
-  ////check that the amount of space the grid takes up is correct
-  //Real vfrac;
-  //switch(coordinate){
-  //case(cartesian):
-  //  vfrac=1.0;
-  //  break;
-  //case(cylindrical):
-  //  vfrac=M_PI/4.0;
-  //  break;
-  //case(spherical):
-  //  vfrac=M_PI/6.0;
-  //  break;
-  //default:
-  //  vfrac=vol_tot/volume;
-  //}
-  //if(std::abs(vol_tot/volume-vfrac)>1e-6){
-  //  app_log()<<"  "<<coord<<" relative volume"<< std::endl;
-  //  app_log()<<"  spacegrid volume fraction "<<vol_tot/volume<< std::endl;
-  //  app_log()<<"                  should be "<<vfrac<< std::endl;
-  //  succeeded=false;
-  //}
+
   //find the actual volume of the grid
   for (int d = 0; d < OHMMS_DIM; d++)
   {
@@ -279,53 +321,36 @@ void NESpaceGrid::someMoreAxisGridStuff()
   return;
 }
 
-bool NESpaceGrid::checkAxisGridValues(const SpaceGridInput& input, const AxTensor& axes)
-{
-  auto& axis_labels = input.get_axis_labels();
-  auto& axis_grids  = input.get_axis_grids();
+// template<typename REAL>
+// bool NESpaceGrid<REAL>::checkAxisGridValues(const SpaceGridInput& input, const AxTensor& axes)
+// {
+//   auto& axis_labels = input.get_axis_labels();
+//   auto& axis_grids  = input.get_axis_grids();
 
-  //check that all axis grid values fall in the allowed intervals
-  std::map<std::string, int> cartmap;
-  for (int d = 0; d < OHMMS_DIM; d++)
-  {
-    cartmap[std::string(SpaceGridInput::ax_cartesian.at(d))] = d;
-  }
-  bool succeeded = true;
-  for (int d = 0; d < OHMMS_DIM; d++)
-  {
-    if (cartmap.find(axis_labels[d]) != cartmap.end())
-    {
-      if (axis_grids[d].umin < -1.0 || axis_grids[d].umax > 1.0)
-      {
-        app_log() << "  grid values for " << axis_labels[d] << " must fall in [-1,1]" << std::endl;
-        app_log() << "  interval provided: [" << axis_grids[d].umin << "," << axis_grids[d].umax << "]" << std::endl;
-        succeeded = false;
-      }
-    }
-    else if (axis_labels[d] == "phi")
-    {
-      if (std::abs(axis_grids[d].umin) + std::abs(axis_grids[d].umax) > 1.0)
-      {
-        app_log() << "  phi interval cannot be longer than 1" << std::endl;
-        app_log() << "  interval length provided: " << std::abs(axis_grids[d].umin) + std::abs(axis_grids[d].umax)
-                  << std::endl;
-        succeeded = false;
-      }
-    }
-    else
-    {
-      if (axis_grids[d].umin < 0.0 || axis_grids[d].umax > 1.0)
-      {
-        app_log() << "  grid values for " << axis_labels[d] << " must fall in [0,1]" << std::endl;
-        app_log() << "  interval provided: [" << axis_grids[d].umin << "," << axis_grids[d].umax << "]" << std::endl;
-        succeeded = false;
-      }
-    }
-  }
-  return succeeded;
-}
+//   //check that all axis grid values fall in the allowed intervals for the coord label
+//   bool succeeded = true;
+//   for (int d = 0; d < OHMMS_DIM; d++)
+//   {
+    
+//     if (axis_labels[d] == "phi" || axis_labels[d] == "theta" )
+//       if (axis_grids[d].umin < 0.0 || axis_grids[d].umax > 1.0)
+//       {
+//         app_log() << "  grid values for " << axis_labels[d] << " must fall in [0,1]" << std::endl;
+//         app_log() << "  interval provided: [" << axis_grids[d].umin << "," << axis_grids[d].umax << "]" << std::endl;
+//         succeeded = false;
+//       }
+//    else
+//         if (axis_grids[d].umin < -1.0 || axis_grids[d].umax > 1.0)
+//         {
+//           app_log() << "  grid values for " << axis_labels[d] << " must fall in [-1,1]" << std::endl;
+//           app_log() << "  interval provided: [" << axis_grids[d].umin << "," << axis_grids[d].umax << "]" << std::endl;
+//           succeeded = false;
+//         }
+//   return succeeded;
+// }
 
-void NESpaceGrid::write_description(std::ostream& os, const std::string& indent)
+template<typename REAL>
+void NESpaceGrid<REAL>::write_description(std::ostream& os, const std::string& indent)
 {
   os << indent + "SpaceGrid" << std::endl;
   std::string s;
@@ -367,7 +392,8 @@ void NESpaceGrid::write_description(std::ostream& os, const std::string& indent)
   os << indent + "end NESpaceGrid" << std::endl;
 }
 
-void NESpaceGrid::registerGrid(hdf_archive& file, int grid_index)
+template<typename REAL>
+void NESpaceGrid<REAL>::registerGrid(hdf_archive& file, int grid_index)
 {
   using iMatrix = Matrix<int>;
   iMatrix imat;
@@ -405,9 +431,9 @@ void NESpaceGrid::registerGrid(hdf_archive& file, int grid_index)
   axtmap["x"]     = 0;
   axtmap["y"]     = 1;
   axtmap["z"]     = 2;
-  axtmap["r"]     = 3;
-  axtmap["phi"]   = 4;
-  axtmap["theta"] = 5;
+  axtmap["r"]     = 0;
+  axtmap["phi"]   = 1;
+  axtmap["theta"] = 2;
   int axtypes[OHMMS_DIM];
   auto& axis_labels = input_.get_axis_labels();
   for (int d = 0; d < OHMMS_DIM; d++)
@@ -474,20 +500,24 @@ void NESpaceGrid::registerGrid(hdf_archive& file, int grid_index)
   return;
 }
 
-void NESpaceGrid::write(hdf_archive& file) const
+template<typename REAL>
+void NESpaceGrid<REAL>::write(hdf_archive& file) const
 {
   if (observable_helper_)
   {
-#ifdef MIXED_PRECISION
-    std::vector<QMCT::FullPrecRealType> expanded_data(data_.size(), 0.0);
-    std::copy_n(data_.begin(), data_.size(), expanded_data.begin());
-    assert(!data_.empty());
-    // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
-    // std::cout << "data size: " << data_->size() << " : " << total << '\n';
-    observable_helper_->write(expanded_data.data(), file);
-#else
-    observable_helper_->write(data_.data(), file);
-#endif
+    if constexpr (std::is_same<Real, QMCTraits::FullPrecRealType>::value)
+    {
+      observable_helper_->write(data_.data(), file);
+    }
+    else
+    {
+      std::vector<QMCTraits::FullPrecRealType> expanded_data(data_.size(), 0.0);
+      std::copy_n(data_.begin(), data_.size(), expanded_data.begin());
+      assert(!data_.empty());
+      // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
+      // std::cout << "data size: " << data_->size() << " : " << total << '\n';
+      observable_helper_->write(expanded_data.data(), file);
+    }
     file.pop();
   }
   return;
@@ -495,7 +525,8 @@ void NESpaceGrid::write(hdf_archive& file) const
 
 #define NESpaceGrid_CHECK
 
-void NESpaceGrid::copyToSoA()
+template<typename REAL>
+void NESpaceGrid<REAL>::copyToSoA()
 {
   auto& agr = input_.get_axis_grids();
   for (int id = 0; id < OHMMS_DIM; ++id)
@@ -508,10 +539,11 @@ void NESpaceGrid::copyToSoA()
   }
 }
 
-void NESpaceGrid::accumulate(const ParticlePos& R,
-                             const Matrix<Real>& values,
-                             std::vector<bool>& particles_outside,
-                             const DistanceTableAB& dtab)
+template<typename REAL>
+void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
+                                   const Matrix<Real>& values,
+                                   std::vector<bool>& particles_outside,
+                                   const DistanceTableAB& dtab)
 {
   // //find cell center nearest to each dynamic particle
   // int nd, nn;
@@ -547,7 +579,10 @@ void NESpaceGrid::accumulate(const ParticlePos& R,
   accumulate(R, values, particles_outside);
 }
 
-void NESpaceGrid::accumulate(const ParticlePos& R, const Matrix<Real>& values, std::vector<bool>& particles_outside)
+template<typename REAL>
+void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
+                                   const Matrix<Real>& values,
+                                   std::vector<bool>& particles_outside)
 {
   int p, v;
   int nparticles = values.size1();
@@ -557,6 +592,8 @@ void NESpaceGrid::accumulate(const ParticlePos& R, const Matrix<Real>& values, s
   const Real o2pi = 1.0 / (2.0 * M_PI);
   using CoordForm = SpaceGridInput::CoordForm;
   auto& agr       = input_.get_axis_grids();
+  std::fill(particles_outside.begin(),particles_outside.end(), true);
+  
   switch (input_.get_coord_form())
   {
   case CoordForm::CARTESIAN:
@@ -608,7 +645,7 @@ void NESpaceGrid::accumulate(const ParticlePos& R, const Matrix<Real>& values, s
     for (p = 0; p < nparticles; p++)
     {
       Point ub = dot(axinv_, (R[p] - origin_));
-      Point u{sqrt(ub[0] * ub[0] + ub[1] * ub[1]), atan2(ub[1], ub[0]) * o2pi + .5, ub[2]};
+      Point u{sqrt(ub[0] * ub[0] + ub[1] * ub[1]), static_cast<Real>(atan2(ub[1], ub[0]) * o2pi + .5), ub[2]};
       if (u[0] > umin_[0] && u[0] < umax_[0] && u[1] > umin_[1] && u[1] < umax_[1] && u[2] > umin_[2] &&
           u[2] < umax_[2])
       {
@@ -645,11 +682,12 @@ void NESpaceGrid::accumulate(const ParticlePos& R, const Matrix<Real>& values, s
     break;
   default:
     app_log() << "  coordinate type must be cartesian, cylindrical, spherical" << std::endl;
-    throw std::runtime_error("SpaceGrid::evaluate received an invalid coordinate type");
+    throw std::runtime_error("SpaceGrid<REAL>::evaluate received an invalid coordinate type");
   }
 }
 
-void NESpaceGrid::sum(const BufferType& buf, Real* vals)
+template<typename REAL>
+void NESpaceGrid<REAL>::sum(const BufferType& buf, Real* vals)
 {
   for (int v = 0; v < nvalues_per_domain_; v++)
   {
@@ -664,7 +702,8 @@ void NESpaceGrid::sum(const BufferType& buf, Real* vals)
   }
 }
 
-void NESpaceGrid::collect(NESpaceGrid& reduction_grid, RefVector<NESpaceGrid> grid_for_each_crowd)
+template<typename REAL>
+void NESpaceGrid<REAL>::collect(NESpaceGrid& reduction_grid, RefVector<NESpaceGrid> grid_for_each_crowd)
 {
   for (NESpaceGrid& crowd_grid : grid_for_each_crowd)
   {
@@ -674,11 +713,16 @@ void NESpaceGrid::collect(NESpaceGrid& reduction_grid, RefVector<NESpaceGrid> gr
   }
 }
 
-void NESpaceGrid::zero() { data_.clear(); }
-
-bool NESpaceGrid::check_grid(void)
+template<typename REAL>
+void NESpaceGrid<REAL>::zero()
 {
-  app_log() << "SpaceGrid::check_grid" << std::endl;
+  data_.clear();
+}
+
+template<typename REAL>
+bool NESpaceGrid<REAL>::check_grid(void)
+{
+  app_log() << "SpaceGrid<REAL>::check_grid" << std::endl;
   const Real o2pi = 1.0 / (2.0 * M_PI);
   int iu[OHMMS_DIM];
   int idomain;
@@ -724,8 +768,10 @@ bool NESpaceGrid::check_grid(void)
   {
     app_log() << "  NESpaceGrid cells do not map onto themselves" << std::endl;
   }
-  app_log() << "end NESpaceGrid::check_grid" << std::endl;
+  app_log() << "end NESpaceGrid<REAL>::check_grid" << std::endl;
   return ok;
 }
 
+template class NESpaceGrid<float>;
+template class NESpaceGrid<double>;
 } // namespace qmcplusplus
