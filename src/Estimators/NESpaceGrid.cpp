@@ -627,7 +627,7 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
     for (p = 0; p < nparticles; p++)
     {
       Point ub = dot(axinv_, (R[p] - origin_));
-      Point u{sqrt(ub[0] * ub[0] + ub[1] * ub[1]), atan2(ub[1], ub[0]) * o2pi + .5, ub[2]};
+      Point u{sqrt(ub[0] * ub[0] + ub[1] * ub[1]), atan2(ub[1], ub[0]) * o2pi + static_cast<Real>(.5), ub[2]};
       if (u[0] > umin_[0] && u[0] < umax_[0] && u[1] > umin_[1] && u[1] < umax_[1] && u[2] > umin_[2] &&
           u[2] < umax_[2])
       {
