@@ -216,7 +216,8 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
   ref_points.write_description(ostr_stream, "  ");
 
   std::string expected_description;
-  if constexpr (std::is_same_v<NEReferencePoints::Real, double>)
+  // ParticleSet still lowers the coordinate precision in mixed
+  if constexpr (std::is_same_v<QMCTraits::RealType, double>)
     expected_description = R"(  reference_points
     a1:         3.37316115        3.37316115                 0
     a2:                  0        3.37316115        3.37316115
@@ -276,9 +277,9 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
   std::ostringstream ostr_testing_stream;
   ostr_testing_stream << test_ref_points;
   std::string expected_testable_description;
-  if constexpr (std::is_same_v<NEReferencePoints::Real, double>)
+  if constexpr (std::is_same_v<QMCTraits::RealType, double>)
   {
-    std::cout << "NEReferencePoints::Real == double\n";
+    std::cout << "ParticleSet coords were double\n";
     expected_testable_description = R"({
  {"a1", {      3.37316115,3.37316115,0}},
  {"a2", {               0,3.37316115,3.37316115}},
@@ -308,7 +309,7 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
   }
   else
   {
-    std::cout << "NEReferencePoints::Real == float\n";
+    std::cout << "ParticleSet coords were in float.\n";
     expected_testable_description = R"({
  {"a1", {3.37316107749939,3.37316107749939,0}},
  {"a2", {               0,3.37316107749939,3.37316107749939}},
