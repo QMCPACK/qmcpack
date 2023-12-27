@@ -107,8 +107,7 @@ PSetsAndRefList makePsets()
 auto expectedReferencePoints()
 {
   typename NEReferencePoints::Points expected_reference_points;
-  if constexpr (std::is_same_v<NEReferencePoints::Real, double>)
-    expected_reference_points = {
+  expected_reference_points = {
         {"a1", {3.37316107749939, 3.37316107749939, 0}},
         {"a2", {0, 3.37316107749939, 3.37316107749939}},
         {"a3", {3.37316107749939, 0, 3.37316107749939}},
@@ -131,32 +130,6 @@ auto expectedReferencePoints()
         {"r1", {3.37316107749939, 3.37316107749939, 0}},
         {"r2", {0, 3.37316107749939, 3.37316107749939}},
         {"r3", {3.37316107749939, 0, 3.37316107749939}},
-        {"zero", {0, 0, 0}},
-    };
-  else
-    expected_reference_points = {
-        {"a1", {3.37316115, 3.37316115, 0}},
-        {"a2", {0, 3.37316115, 3.37316115}},
-        {"a3", {3.37316115, 0, 3.37316115}},
-        {"cmmm", {-3.37316115, -3.37316115, -3.37316115}},
-        {"cmmp", {0, -3.37316115, 0}},
-        {"cmpm", {-3.37316115, 0, 0}},
-        {"cmpp", {0, 0, 3.37316115}},
-        {"cpmm", {0, 0, -3.37316115}},
-        {"cpmp", {3.37316115, 0, 0}},
-        {"cppm", {0, 3.37316115, 0}},
-        {"cppp", {3.37316115, 3.37316115, 3.37316115}},
-        {"f1m", {-1.686580575, -1.686580575, 0}},
-        {"f1p", {1.686580575, 1.686580575, 0}},
-        {"f2m", {0, -1.686580575, -1.686580575}},
-        {"f2p", {0, 1.686580575, 1.686580575}},
-        {"f3m", {-1.686580575, 0, -1.686580575}},
-        {"f3p", {1.686580575, 0, 1.686580575}},
-        {"ion1", {0, 0, 0}},
-        {"ion2", {1.68658058, 1.68658058, 1.68658058}},
-        {"r1", {3.37316115, 3.37316115, 0}},
-        {"r2", {0, 3.37316115, 3.37316115}},
-        {"r3", {3.37316115, 0, 3.37316115}},
         {"zero", {0, 0, 0}},
     };
   return expected_reference_points;
@@ -215,9 +188,7 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
   std::ostringstream ostr_stream;
   ref_points.write_description(ostr_stream, "  ");
 
-  std::string expected_description;
-  if constexpr (std::is_same_v<NEReferencePoints::Real, double>)
-    expected_description = R"(  reference_points
+  std::string expected_description{R"(  reference_points
     a1:         3.37316115        3.37316115                 0
     a2:                  0        3.37316115        3.37316115
     a3:         3.37316115                 0        3.37316115
@@ -242,34 +213,7 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
     r3:         3.37316115                 0        3.37316115
     zero:                  0                 0                 0
   end reference_points
-)";
-  else
-    expected_description = R"(  reference_points
-    a1:        3.373161077       3.373161077                 0
-    a2:                  0       3.373161077       3.373161077
-    a3:        3.373161077                 0       3.373161077
-    cmmm:       -3.373161077      -3.373161077      -3.373161077
-    cmmp:                  0      -3.373161077                 0
-    cmpm:       -3.373161077                 0                 0
-    cmpp:                  0                 0       3.373161077
-    cpmm:                  0                 0      -3.373161077
-    cpmp:        3.373161077                 0                 0
-    cppm:                  0       3.373161077                 0
-    cppp:        3.373161077       3.373161077       3.373161077
-    f1m:       -1.686580539      -1.686580539                 0
-    f1p:        1.686580539       1.686580539                 0
-    f2m:                  0      -1.686580539      -1.686580539
-    f2p:                  0       1.686580539       1.686580539
-    f3m:       -1.686580539                 0      -1.686580539
-    f3p:        1.686580539                 0       1.686580539
-    ion1:                  0                 0                 0
-    ion2:        1.686580539       1.686580539       1.686580539
-    r1:        3.373161077       3.373161077                 0
-    r2:                  0       3.373161077       3.373161077
-    r3:        3.373161077                 0       3.373161077
-    zero:                  0                 0                 0
-  end reference_points
-)";
+)"};
   CHECK(ostr_stream.str() == expected_description);
   // This subclass and function are used to generate the test data and may be useful for further test cases in future.
   testing::TestableNEReferencePoints test_ref_points(ref_points);
