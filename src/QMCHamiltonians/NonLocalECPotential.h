@@ -20,10 +20,11 @@
 #include "Configuration.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/ForceBase.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "Particle/NeighborLists.h"
 namespace qmcplusplus
 {
+class NonLocalECPComponent;
 template<typename T>
 struct NLPPJob;
 

@@ -46,6 +46,8 @@ ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
       targetPsi(psi)
 {}
 
+ECPotentialBuilder::~ECPotentialBuilder() = default;
+
 bool ECPotentialBuilder::put(xmlNodePtr cur)
 {
   if (localPot.empty())
