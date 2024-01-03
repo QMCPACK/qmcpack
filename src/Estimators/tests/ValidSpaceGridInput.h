@@ -22,14 +22,14 @@ namespace testing
 
 struct ValidSpaceGridInput
 {
-  static constexpr std::array<std::string_view, 4> xml{
+  static constexpr std::array<std::string_view, 5> xml{
       R"XML(
   <spacegrid coord="cartesian">
     <axis p1="a1" scale=".5" label="x" grid="-1 (.1) 1"/>
     <axis p1="a2" scale=".5" label="y" grid="-1 (.1) 1"/>
     <axis p1="a3" scale=".5" label="z" grid="-1 (.1) 1"/>
   </spacegrid>
-      )XML",
+)XML",
       R"XML(
   <spacegrid coord="cartesian">
      <origin p1="zero"/>
@@ -37,7 +37,15 @@ struct ValidSpaceGridInput
      <axis p1="a2" scale=".5" label="y" grid="-1 (.1) 1"/>
      <axis p1="a3" scale=".5" label="z" grid="-1 (.1) 1"/>
   </spacegrid>
-      )XML",
+)XML",
+      R"XML(
+  <spacegrid coord="cylindrical">
+     <origin p1="zero"/>
+     <axis p1="r1" scale=".5" label="r" grid="-1 (.1) 1"/>
+     <axis p1="r2" scale=".5" label="phi" grid="-1 (.1) 1"/>
+     <axis p1="r3" scale=".5" label="z" grid="-1 (.1) 1"/>
+  </spacegrid>
+)XML",
       R"XML(
   <spacegrid coord="spherical">
     <origin p1="ion01"/>
@@ -55,13 +63,14 @@ struct ValidSpaceGridInput
   </spacegrid>
 )XML"};
 
-enum valid
-{
-  DEFAULT = 0,
-  ORIGIN,
-  WITH_STEP,
-  WITHOUT_STEP
-};
+  enum valid
+  {
+    DEFAULT = 0,
+    ORIGIN,
+    CYLINDRICAL,
+    WITH_STEP,
+    WITHOUT_STEP
+  };
 };
 
 struct InvalidSpaceGridInput

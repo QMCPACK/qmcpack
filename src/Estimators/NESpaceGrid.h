@@ -148,6 +148,10 @@ private:
    */
   static Point deriveOrigin(const SpaceGridInput& input, const Points& points);
 
+  /** dispatch to correct initialize for coord type
+   */
+  bool initializeCoordSystem();
+
   /** Initialize NESpaceGrid for rectilinear grid
    *  \param[in]  input     SpaceGridInput object
    *  \param[in]  points    ReferencePoints object for grid
@@ -157,6 +161,26 @@ private:
    *    axinv_     the inverse of the axes with scaling applied   
    */
   bool initializeRectilinear(const SpaceGridInput& input, const Points& points);
+
+  /** Initialize NESpaceGrid for cylindrical grid
+   *  \param[in]  input     SpaceGridInput object
+   *  \param[in]  points    ReferencePoints object for grid
+   *  Causes side effects updating
+   *    origin_    fixed up origin for grid
+   *    axes_      axes with scaling applied to it.
+   *    axinv_     the inverse of the axes with scaling applied   
+   */
+  bool initializeCylindrical(const SpaceGridInput& input, const Points& points);
+
+  /** Initialize NESpaceGrid for cylindrical grid
+   *  \param[in]  input     SpaceGridInput object
+   *  \param[in]  points    ReferencePoints object for grid
+   *  Causes side effects updating
+   *    origin_    fixed up origin for grid
+   *    axes_      axes with scaling applied to it.
+   *    axinv_     the inverse of the axes with scaling applied   
+   */
+  bool initializeSpherical(const SpaceGridInput& input, const Points& points);
 
   // /** Initialize NESpaceGrid for voronoi grid
   //  *  \param[in]  input        SpaceGridInput object

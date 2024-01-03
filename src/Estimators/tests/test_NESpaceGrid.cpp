@@ -61,11 +61,16 @@ public:
     bool okay       = doc.parseFromString(Input::xml[VALID]);
     xmlNodePtr node = doc.getRoot();
     sgi_            = std::make_unique<SpaceGridInput>(node);
-    ReferencePointsInput rpi;
-    ref_psets_.push_back(pset_ions_);
-    ref_points_ = std::make_unique<NEReferencePoints>(std::move(rpi), pset_elec_, ref_psets_);
-  }
 
+    using RPInput = ValidReferencePointsInputs;
+    Libxml2Document doc2;
+    bool okay2       = doc.parseFromString(RPInput::xml[RPInput::CELL]);
+    xmlNodePtr node2 = doc.getRoot();
+    rpi_ = std::make_unique<ReferencePointsInput>(node);
+    ref_psets_.push_back(pset_ions_);
+    ref_points_ = std::make_unique<NEReferencePoints>(*rpi_, pset_elec_, ref_psets_);
+  }
+  UPtr<ReferencePointsInput> rpi_;
   UPtr<SpaceGridInput> sgi_;
   UPtr<NEReferencePoints> ref_points_;
   RefVector<ParticleSet> ref_psets_;
@@ -103,6 +108,29 @@ TEST_CASE("SpaceGrid::Construction", "[estimators]")
   // CHECK(buffer_end == 7999);
 }
 
+TEST_CASE("SpaceGrid::CYLINDRICAL", "[estimators]")
+{
+  using Input = testing::ValidSpaceGridInput;
+  Communicate* comm;
+  comm = OHMMS::Controller;
+
+  testing::SpaceGridEnv<Input::valid::CYLINDRICAL> sge(comm);
+
+  // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
+  // It is a smell.
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), 1, false);
+
+  using NES         = testing::NESpaceGridTests<double>;
+  auto buffer_start = NES::getBufferStart(space_grid);
+  auto buffer_end   = NES::getBufferEnd(space_grid);
+  space_grid.write_description(std::cout, std::string(""));
+  auto& sgi = *(sge.sgi_);
+  auto& agr = sgi.get_axis_grids();
+  for (int id = 0; id < OHMMS_DIM; ++id)
+    CHECK(NES::getOdu(space_grid)[id] == agr[id].odu);
+
+}
+  
 TEST_CASE("SpaceGrid::Basic", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;

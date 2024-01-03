@@ -47,7 +47,7 @@ NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
                                const bool is_periodic)
     : input_(sgi), ndparticles_(ndp), is_periodic_(is_periodic), points_(points), nvalues_per_domain_(nvalues)
 {
-  bool init_success = initializeRectilinear(input_, points_);
+  bool init_success = initializeCoordSystem();
   if (!init_success)
     throw std::runtime_error("NESpaceGrid initialization failed");
 }
@@ -62,9 +62,29 @@ NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
                                const bool is_periodic)
     : input_(sgi), ndparticles_(ndp), is_periodic_(is_periodic), points_(points), nvalues_per_domain_(nvalues)
 {
-  bool init_success = initializeRectilinear(input_, points_);
+  bool init_success = initializeCoordSystem();
   if (!init_success)
     throw std::runtime_error("NESpaceGrid initialization failed");
+}
+
+template<typename REAL>
+bool NESpaceGrid<REAL>::initializeCoordSystem()
+{
+  using CoordForm   = SpaceGridInput::CoordForm;
+  bool init_success = false;
+  switch (input_.get_coord_form())
+  {
+  case (CoordForm::CARTESIAN):
+    init_success = initializeRectilinear(input_, points_);
+    break;
+  case (CoordForm::CYLINDRICAL):
+    init_success = initializeCylindrical(input_, points_);
+    break;
+  case (CoordForm::SPHERICAL):
+    init_success = initializeSpherical(input_, points_);
+    break;
+  }
+  return init_success;
 }
 
 template<typename REAL>
@@ -104,6 +124,40 @@ typename NESpaceGrid<REAL>::Point NESpaceGrid<REAL>::deriveOrigin(const SpaceGri
 
 template<typename REAL>
 bool NESpaceGrid<REAL>::initializeRectilinear(const SpaceGridInput& input, const Points& points)
+{
+  // This code should be refactored to SpaceGridInput such that a simple map of
+  // axis is available.
+
+  origin_ = deriveOrigin(input, points);
+  processAxis(input, points, axes_, axinv_);
+  bool succeeded = checkAxisGridValues(input, axes_);
+
+  someMoreAxisGridStuff();
+
+  copyToSoA();
+
+  return succeeded;
+}
+
+template<typename REAL>
+bool NESpaceGrid<REAL>::initializeCylindrical(const SpaceGridInput& input, const Points& points)
+{
+  // This code should be refactored to SpaceGridInput such that a simple map of
+  // axis is available.
+
+  origin_ = deriveOrigin(input, points);
+  processAxis(input, points, axes_, axinv_);
+  bool succeeded = checkAxisGridValues(input, axes_);
+
+  someMoreAxisGridStuff();
+
+  copyToSoA();
+
+  return succeeded;
+}
+
+template<typename REAL>
+bool NESpaceGrid<REAL>::initializeSpherical(const SpaceGridInput& input, const Points& points)
 {
   // This code should be refactored to SpaceGridInput such that a simple map of
   // axis is available.
@@ -294,9 +348,10 @@ bool NESpaceGrid<REAL>::checkAxisGridValues(const SpaceGridInput& input, const A
 
   //check that all axis grid values fall in the allowed intervals
   std::map<std::string, int> cartmap;
+
   for (int d = 0; d < OHMMS_DIM; d++)
   {
-    cartmap[std::string(SpaceGridInput::ax_cartesian.at(d))] = d;
+    cartmap[std::string(input.get_axes_label_set().at(d))] = d;
   }
   bool succeeded = true;
   for (int d = 0; d < OHMMS_DIM; d++)
@@ -415,9 +470,9 @@ void NESpaceGrid<REAL>::registerGrid(hdf_archive& file, int grid_index)
   axtmap["x"]     = 0;
   axtmap["y"]     = 1;
   axtmap["z"]     = 2;
-  axtmap["r"]     = 3;
-  axtmap["phi"]   = 4;
-  axtmap["theta"] = 5;
+  axtmap["r"]     = 0;
+  axtmap["phi"]   = 1;
+  axtmap["theta"] = 2;
   int axtypes[OHMMS_DIM];
   auto& axis_labels = input_.get_axis_labels();
   for (int d = 0; d < OHMMS_DIM; d++)
