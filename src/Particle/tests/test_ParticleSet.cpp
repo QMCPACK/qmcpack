@@ -19,12 +19,6 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTable.h"
 
-
-#include <stdio.h>
-#include <string>
-
-using std::string;
-
 namespace qmcplusplus
 {
 TEST_CASE("ParticleSet distance table management", "[particle]")
