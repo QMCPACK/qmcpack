@@ -92,16 +92,14 @@ class MinimalParticlePool
 )";
 
 public:
-  static ParticleSetPool make_diamondC_1x1x1(Communicate* c)
+  static void parseParticleSetXML(const char* xml_string, ParticleSetPool& pp)
   {
     Libxml2Document doc;
 
-    doc.parseFromString(particles_xml);
+    doc.parseFromString(xml_string);
 
     xmlNodePtr root     = doc.getRoot();
     xmlNodePtr sim_cell = xmlFirstElementChild(root);
-
-    ParticleSetPool pp(c);
 
     // Need to set up simulation cell lattice before reading particle sets
     pp.readSimulationCellXML(sim_cell);
@@ -111,30 +109,19 @@ public:
     xmlNodePtr part_elec = xmlNextElementSibling(part_ion);
     pp.put(part_elec);
     pp.randomize();
+  }
 
+  static ParticleSetPool make_diamondC_1x1x1(Communicate* c)
+  {
+    ParticleSetPool pp(c);
+    parseParticleSetXML(particles_xml, pp);
     return pp;
   }
 
   static ParticleSetPool make_O2_spinor(Communicate* c)
   {
-    Libxml2Document doc;
-
-    doc.parseFromString(particles_xml_spinor);
-
-    xmlNodePtr root     = doc.getRoot();
-    xmlNodePtr sim_cell = xmlFirstElementChild(root);
-
     ParticleSetPool pp(c);
-
-    // Need to set up simulation cell lattice before reading particle sets
-    pp.readSimulationCellXML(sim_cell);
-
-    xmlNodePtr part_ion = xmlNextElementSibling(sim_cell);
-    pp.put(part_ion);
-    xmlNodePtr part_elec = xmlNextElementSibling(part_ion);
-    pp.put(part_elec);
-    pp.randomize();
-
+    parseParticleSetXML(particles_xml_spinor, pp);
     return pp;
   }
 };
