@@ -15,7 +15,8 @@ set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
 add_executable(
   ${UTEST_EXE}
-  test_particle.cpp
+  test_ParticleSet.cpp
+  test_VirtualParticleSet.cpp
   test_walker.cpp
   test_particle_pool.cpp
   test_sample_stack.cpp

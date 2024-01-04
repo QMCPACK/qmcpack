@@ -91,17 +91,58 @@ class MinimalParticlePool
 </tmp>
 )";
 
+  static constexpr const char* const particles_xml_NiO_a4 = R"(
+<tmp>
+  <simulationcell>
+    <parameter name="lattice">
+      3.94055   3.94055   7.8811
+      7.8811   3.94055   3.94055
+      3.94055   7.8811   3.94055
+    </parameter>
+    <parameter name="bconds">p p p </parameter>
+    <parameter name="LR_dim_cutoff">15</parameter>
+  </simulationcell>
+  <particleset name="i" size="4">
+    <group name="O">
+      <parameter name="charge">6.000000</parameter>
+      <parameter name="valence">6.000000</parameter>
+      <parameter name="atomicnumber">8.000000</parameter>
+    </group>
+    <group name="Ni">
+      <parameter name="charge">18</parameter>
+      <parameter name="valence">18</parameter>
+      <parameter name="atomicnumber">28</parameter>
+    </group>
+    <attrib name="position" datatype="posArray" condition="1">
+    0.25   0.25   0.25
+    0.75   0.75   0.75
+    0   0   0
+    0.5   0.5   0.5
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      O  O  Ni  Ni
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="i">
+    <group name="u" size="24">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="24">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+</tmp>
+)";
+
 public:
-  static ParticleSetPool make_diamondC_1x1x1(Communicate* c)
+  static void parseParticleSetXML(const char* xml_string, ParticleSetPool& pp)
   {
     Libxml2Document doc;
 
-    doc.parseFromString(particles_xml);
+    doc.parseFromString(xml_string);
 
     xmlNodePtr root     = doc.getRoot();
     xmlNodePtr sim_cell = xmlFirstElementChild(root);
-
-    ParticleSetPool pp(c);
 
     // Need to set up simulation cell lattice before reading particle sets
     pp.readSimulationCellXML(sim_cell);
@@ -111,30 +152,26 @@ public:
     xmlNodePtr part_elec = xmlNextElementSibling(part_ion);
     pp.put(part_elec);
     pp.randomize();
+  }
 
+  static ParticleSetPool make_diamondC_1x1x1(Communicate* c)
+  {
+    ParticleSetPool pp(c);
+    parseParticleSetXML(particles_xml, pp);
     return pp;
   }
 
   static ParticleSetPool make_O2_spinor(Communicate* c)
   {
-    Libxml2Document doc;
-
-    doc.parseFromString(particles_xml_spinor);
-
-    xmlNodePtr root     = doc.getRoot();
-    xmlNodePtr sim_cell = xmlFirstElementChild(root);
-
     ParticleSetPool pp(c);
+    parseParticleSetXML(particles_xml_spinor, pp);
+    return pp;
+  }
 
-    // Need to set up simulation cell lattice before reading particle sets
-    pp.readSimulationCellXML(sim_cell);
-
-    xmlNodePtr part_ion = xmlNextElementSibling(sim_cell);
-    pp.put(part_ion);
-    xmlNodePtr part_elec = xmlNextElementSibling(part_ion);
-    pp.put(part_elec);
-    pp.randomize();
-
+  static ParticleSetPool make_NiO_a4(Communicate* c)
+  {
+    ParticleSetPool pp(c);
+    parseParticleSetXML(particles_xml_NiO_a4, pp);
     return pp;
   }
 };
