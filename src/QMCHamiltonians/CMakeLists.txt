@@ -46,6 +46,7 @@ set(HAMSRCS
     SpeciesKineticEnergy.cpp
     LatticeDeviationEstimator.cpp
     SpaceWarpTransformation.cpp
+    SelfHealingOverlapLegacy.cpp
     ObservableHelper.cpp)
 
 if(OHMMS_DIM MATCHES 3)

@@ -31,9 +31,6 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const Tri
         "SelfHealingOverlap requires one and only one multi slater determinant component in the trial wavefunction.");
 
   const MultiSlaterDetTableMethod& msd = msd_refvec[0];
-
-  // JTK: how to get # of coeff in multidet at this point?
-  //size_t data_size = 1486;
   const size_t data_size = msd.getLinearExpansionCoefs().size();
   data_.resize(data_size, 0.0);
 }
@@ -81,8 +78,6 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     RealType weight        = walker.Weight;
     auto& wcs              = psi.getOrbitals();
 
-    const int np = pset.getTotalNum();
-
     // separate jastrow and fermi wavefunction components
     std::vector<WaveFunctionComponent*> wcs_jastrow;
     std::vector<WaveFunctionComponent*> wcs_fermi;
@@ -95,16 +90,12 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     // fermionic must have only one component, and must be multideterminant
     assert(wcs_fermi.size() == 1);
     WaveFunctionComponent& wf = *wcs_fermi[0];
-    //if(wf.getClassName()!="MultiSlaterDetTableMethod")
     if (!wf.isMultiDet())
       throw std::runtime_error("SelfHealingOverlap estimator requires use of multideterminant wavefunction");
 
     // collect parameter derivatives: (dpsi/dc_i)/psi
-    // JTK: parameter derivative of multidet wf does not include first determinant.  How to get its value?
     Vector<ValueType> det_ratios; // JTK: should be class variable?
-    //wf.evaluateDerivativesWF_local(det_ratios);
     wf.detRatios(det_ratios);
-    //app_log()<<"param count: "<<det_ratios.size()<<std::endl;
 
     // collect jastrow prefactor
     WaveFunctionComponent::LogValue Jval = 0.0;
@@ -120,8 +111,6 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     for (int ic = 0; ic < det_ratios.size(); ++ic)
       data_[ic] += weight * Jprefactor * det_ratios[ic];
   }
-
-  //throw std::runtime_error("SelfHealingOverlap accumulate");
 }
 
 
@@ -146,7 +135,6 @@ void SelfHealingOverlap::registerOperatorEstimator(hdf_archive& file)
   ng[0] = data_.size();
   h5desc_.push_back({{"sh_coeff"}});
   auto& h5o = h5desc_.back();
-  ////h5o.set_dimensions(ng, my_index_);
   h5o.set_dimensions(ng, 0); // JTK: doesn't seem right
 }
 
