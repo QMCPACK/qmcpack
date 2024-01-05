@@ -66,7 +66,7 @@ public:
     Libxml2Document doc2;
     bool okay2       = doc.parseFromString(RPInput::xml[RPInput::CELL]);
     xmlNodePtr node2 = doc.getRoot();
-    rpi_ = std::make_unique<ReferencePointsInput>(node);
+    rpi_ = std::make_unique<ReferencePointsInput>(node2);
     ref_psets_.push_back(pset_ions_);
     ref_points_ = std::make_unique<NEReferencePoints>(*rpi_, pset_elec_, ref_psets_);
   }
