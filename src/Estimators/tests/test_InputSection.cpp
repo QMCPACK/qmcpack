@@ -265,23 +265,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 
       // read xml
       TestInputSection ti;
-      std::cerr << "Invalid input: " << label << '\n';
-      try
-      {
-        CHECK_THROWS_AS(ti.readXML(cur), UniformCommunicateError); //  ti.readXML(cur);
-      }
-      catch (UniformCommunicateError& uce)
-      {
-        std::cout << uce.what();
-      }
-      catch (std::exception& exc)
-      {
-        std::cout << exc.what();
-      }
-      catch (...)
-      {
-        std::cout << "caught something unexpected." << std::endl;
-      }
+      CHECK_THROWS_AS(ti.readXML(cur), UniformCommunicateError);
     }
   }
 }
