@@ -92,8 +92,9 @@ void InputSection::readXML(xmlNodePtr cur)
         checkSectionName(section_name_actual)))
   {
     std::stringstream error;
-    error << "Input is invalid  " << lcase_section_name << " does not match input node!";
-    throw UniformCommunicateError(error.str());
+    error << "Input is invalid \"" << lcase_section_name << "\" does not match a defined input node!";
+    std::cout << error.str() << '\n';
+    throw UniformCommunicateError("yo"); //error.str());
   }
 
   // these attributes don't get an element name passed to them because by convention we save and define them unqualified.
