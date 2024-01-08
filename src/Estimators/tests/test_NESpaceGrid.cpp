@@ -66,7 +66,7 @@ public:
     Libxml2Document doc2;
     bool okay2       = doc.parseFromString(RPInput::xml[RPInput::CELL]);
     xmlNodePtr node2 = doc.getRoot();
-    rpi_ = std::make_unique<ReferencePointsInput>(node2);
+    rpi_             = std::make_unique<ReferencePointsInput>(node2);
     ref_psets_.push_back(pset_ions_);
     ref_points_ = std::make_unique<NEReferencePoints>(*rpi_, pset_elec_, ref_psets_);
   }
@@ -128,9 +128,8 @@ TEST_CASE("SpaceGrid::CYLINDRICAL", "[estimators]")
   auto& agr = sgi.get_axis_grids();
   for (int id = 0; id < OHMMS_DIM; ++id)
     CHECK(NES::getOdu(space_grid)[id] == agr[id].odu);
-
 }
-  
+
 TEST_CASE("SpaceGrid::Basic", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
@@ -149,6 +148,10 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
     CHECK(NES::getOdu(space_grid)[id] == agr[id].odu);
   //CHECK(buffer_start == 0);
   //CHECK(buffer_end == 23999);
+
+  CHECK(space_grid.nDomains() == 8000);
+
+  CHECK(space_grid.getDataVector().size() == 24000);
 
   Matrix<Real> values;
   values.resize(sge.pset_elec_.getTotalNum(), num_values);
@@ -355,7 +358,7 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
   bool okay_read = hd.open(test_file);
   hd.push("spacegrid1");
   //hdf5 values always end up as doubles
-  Matrix<double> read_values(1,24000);
+  Matrix<double> read_values(1, 24000);
   hd.readEntry(read_values, "value");
 
   auto tensorAccessor = [](const auto& grid_data, int i, int j, int k, int iv) -> double {
@@ -363,7 +366,7 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
   };
 
   auto value = tensorAccessor(read_values, 10, 17, 9, 0);
-  
+
   CHECK(tensorAccessor(read_values, 10, 17, 9, 0) == Approx(2.0));
   CHECK(tensorAccessor(read_values, 10, 17, 9, 1) == Approx(2.1));
   CHECK(tensorAccessor(read_values, 10, 17, 9, 2) == Approx(2.2));

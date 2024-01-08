@@ -193,6 +193,10 @@ private:
   std::array<AxisGrid<Real>, OHMMS_DIM> axis_grids_;
 };
 
+/** factory function for a SpaceGridInput
+ *  \param[in]  input node for SpaceGridInput
+ *  \param[out] value label returned to caller
+ */
 std::any makeSpaceGridInput(xmlNodePtr, std::string& value_label);
 
 } // namespace qmcplusplus
