@@ -572,6 +572,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
 
+  sposet->finalizeConstruction();
   return sposet;
 }
 

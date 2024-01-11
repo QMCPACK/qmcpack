@@ -81,6 +81,13 @@ public:
     */
   void checkObject() const final;
 
+  /** update C on device
+   */
+  void finalizeConstruction() override
+  {
+    C->updateTo();
+  }
+
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) final;
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) final;
