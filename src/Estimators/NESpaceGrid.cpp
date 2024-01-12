@@ -130,13 +130,15 @@ bool NESpaceGrid<REAL>::initializeRectilinear(const SpaceGridInput& input, const
 
   origin_ = deriveOrigin(input, points);
   processAxis(input, points, axes_, axinv_);
-  bool succeeded = checkAxisGridValues(input, axes_);
+
+  // this should all be done in SpaceGrid input parsing/construction now.
+  // bool succeeded = checkAxisGridValues(input, axes_);
 
   someMoreAxisGridStuff();
 
   copyToSoA();
 
-  return succeeded;
+  return true;
 }
 
 template<typename REAL>
@@ -147,13 +149,13 @@ bool NESpaceGrid<REAL>::initializeCylindrical(const SpaceGridInput& input, const
 
   origin_ = deriveOrigin(input, points);
   processAxis(input, points, axes_, axinv_);
-  bool succeeded = checkAxisGridValues(input, axes_);
+  // bool succeeded = checkAxisGridValues(input, axes_);
 
   someMoreAxisGridStuff();
 
   copyToSoA();
 
-  return succeeded;
+  return true;
 }
 
 template<typename REAL>
@@ -164,13 +166,13 @@ bool NESpaceGrid<REAL>::initializeSpherical(const SpaceGridInput& input, const P
 
   origin_ = deriveOrigin(input, points);
   processAxis(input, points, axes_, axinv_);
-  bool succeeded = checkAxisGridValues(input, axes_);
+  //bool succeeded = checkAxisGridValues(input, axes_);
 
   someMoreAxisGridStuff();
 
   copyToSoA();
 
-  return succeeded;
+  return true;
 }
 
 template<typename REAL>
@@ -285,28 +287,7 @@ void NESpaceGrid<REAL>::someMoreAxisGridStuff()
       }
     }
   }
-  ////the following check is only valid if grid spans maximum amount
-  ////check that the amount of space the grid takes up is correct
-  //Real vfrac;
-  //switch(coordinate){
-  //case(cartesian):
-  //  vfrac=1.0;
-  //  break;
-  //case(cylindrical):
-  //  vfrac=M_PI/4.0;
-  //  break;
-  //case(spherical):
-  //  vfrac=M_PI/6.0;
-  //  break;
-  //default:
-  //  vfrac=vol_tot/volume;
-  //}
-  //if(std::abs(vol_tot/volume-vfrac)>1e-6){
-  //  app_log()<<"  "<<coord<<" relative volume"<< std::endl;
-  //  app_log()<<"  spacegrid volume fraction "<<vol_tot/volume<< std::endl;
-  //  app_log()<<"                  should be "<<vfrac<< std::endl;
-  //  succeeded=false;
-  //}
+
   //find the actual volume of the grid
   for (int d = 0; d < OHMMS_DIM; d++)
   {
@@ -340,53 +321,33 @@ void NESpaceGrid<REAL>::someMoreAxisGridStuff()
   return;
 }
 
-template<typename REAL>
-bool NESpaceGrid<REAL>::checkAxisGridValues(const SpaceGridInput& input, const AxTensor& axes)
-{
-  auto& axis_labels = input.get_axis_labels();
-  auto& axis_grids  = input.get_axis_grids();
+// template<typename REAL>
+// bool NESpaceGrid<REAL>::checkAxisGridValues(const SpaceGridInput& input, const AxTensor& axes)
+// {
+//   auto& axis_labels = input.get_axis_labels();
+//   auto& axis_grids  = input.get_axis_grids();
 
-  //check that all axis grid values fall in the allowed intervals
-  std::map<std::string, int> cartmap;
-
-  for (int d = 0; d < OHMMS_DIM; d++)
-  {
-    cartmap[std::string(input.get_axes_label_set().at(d))] = d;
-  }
-  bool succeeded = true;
-  for (int d = 0; d < OHMMS_DIM; d++)
-  {
-    if (cartmap.find(axis_labels[d]) != cartmap.end())
-    {
-      if (axis_grids[d].umin < -1.0 || axis_grids[d].umax > 1.0)
-      {
-        app_log() << "  grid values for " << axis_labels[d] << " must fall in [-1,1]" << std::endl;
-        app_log() << "  interval provided: [" << axis_grids[d].umin << "," << axis_grids[d].umax << "]" << std::endl;
-        succeeded = false;
-      }
-    }
-    else if (axis_labels[d] == "phi")
-    {
-      if (std::abs(axis_grids[d].umin) + std::abs(axis_grids[d].umax) > 1.0)
-      {
-        app_log() << "  phi interval cannot be longer than 1" << std::endl;
-        app_log() << "  interval length provided: " << std::abs(axis_grids[d].umin) + std::abs(axis_grids[d].umax)
-                  << std::endl;
-        succeeded = false;
-      }
-    }
-    else
-    {
-      if (axis_grids[d].umin < 0.0 || axis_grids[d].umax > 1.0)
-      {
-        app_log() << "  grid values for " << axis_labels[d] << " must fall in [0,1]" << std::endl;
-        app_log() << "  interval provided: [" << axis_grids[d].umin << "," << axis_grids[d].umax << "]" << std::endl;
-        succeeded = false;
-      }
-    }
-  }
-  return succeeded;
-}
+//   //check that all axis grid values fall in the allowed intervals for the coord label
+//   bool succeeded = true;
+//   for (int d = 0; d < OHMMS_DIM; d++)
+//   {
+    
+//     if (axis_labels[d] == "phi" || axis_labels[d] == "theta" )
+//       if (axis_grids[d].umin < 0.0 || axis_grids[d].umax > 1.0)
+//       {
+//         app_log() << "  grid values for " << axis_labels[d] << " must fall in [0,1]" << std::endl;
+//         app_log() << "  interval provided: [" << axis_grids[d].umin << "," << axis_grids[d].umax << "]" << std::endl;
+//         succeeded = false;
+//       }
+//    else
+//         if (axis_grids[d].umin < -1.0 || axis_grids[d].umax > 1.0)
+//         {
+//           app_log() << "  grid values for " << axis_labels[d] << " must fall in [-1,1]" << std::endl;
+//           app_log() << "  interval provided: [" << axis_grids[d].umin << "," << axis_grids[d].umax << "]" << std::endl;
+//           succeeded = false;
+//         }
+//   return succeeded;
+// }
 
 template<typename REAL>
 void NESpaceGrid<REAL>::write_description(std::ostream& os, const std::string& indent)
@@ -631,6 +592,8 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
   const Real o2pi = 1.0 / (2.0 * M_PI);
   using CoordForm = SpaceGridInput::CoordForm;
   auto& agr       = input_.get_axis_grids();
+  std::fill(particles_outside.begin(),particles_outside.end(), true);
+  
   switch (input_.get_coord_form())
   {
   case CoordForm::CARTESIAN:

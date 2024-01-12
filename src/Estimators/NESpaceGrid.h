@@ -70,7 +70,7 @@ public:
    * \param[in]  sgi            input object for space grid.
    * \param[in]  reference      reference points from which origin and on other reference points referenced in input object are to be found
    * \param[in]  nvalues        number of fields the owning class wants for each grid point.
-   * \param[in]  is_period      properly names is what is says
+   * \param[in]  is_periodic    properly names is what is says
    */
   NESpaceGrid(SpaceGridInput& sgi, const Points& points, const int nvalues, const bool is_periodic);
 
@@ -79,7 +79,7 @@ public:
    * \param[in]  reference      reference points from which origin and on other reference points referenced in input object are to be found
    * \param[in]  ndp            number of particles that can move
    * \param[in]  nvalues        number of fields the owning class wants for each grid point.
-   * \param[in]  is_period      properly names is what is says
+   * \param[in]  is_periodic      properly names is what is says
    */
   NESpaceGrid(SpaceGridInput& sgi, const Points& points, const int ndp, const int nvalues, const bool is_periodic);
 
@@ -205,7 +205,8 @@ private:
    */
   static void processAxis(const SpaceGridInput& input, const Points& points, AxTensor& axes, AxTensor& axinv);
 
-  static bool checkAxisGridValues(const SpaceGridInput& input_, const AxTensor& axes);
+  // should be handled in SpaceGridInput now.
+  //static bool checkAxisGridValues(const SpaceGridInput& input_, const AxTensor& axes);
 
   /** refrence points for the space grid
    *  this reference it to the EstimatorManagers EDE's spacegrid_inputs_

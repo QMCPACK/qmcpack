@@ -22,7 +22,17 @@ namespace testing
 
 struct ValidSpaceGridInput
 {
-  static constexpr std::array<std::string_view, 5> xml{
+  enum valid
+  {
+    DEFAULT = 0,
+    ORIGIN,
+    CYLINDRICAL,
+    SPHERICAL,
+    WITH_STEP,
+    WITHOUT_STEP,
+    NUM_CASES
+  };
+  static constexpr std::array<std::string_view, NUM_CASES> xml{
       R"XML(
   <spacegrid coord="cartesian">
     <axis p1="a1" scale=".5" label="x" grid="-1 (.1) 1"/>
@@ -41,14 +51,14 @@ struct ValidSpaceGridInput
       R"XML(
   <spacegrid coord="cylindrical">
      <origin p1="zero"/>
-     <axis p1="r1" scale=".5" label="r" grid="-1 (.1) 1"/>
-     <axis p1="r2" scale=".5" label="phi" grid="-1 (.1) 1"/>
+     <axis p1="r1" scale=".5" label="r" grid="0 (.1) 1"/>
+     <axis p1="r2" scale=".5" label="phi" grid="0 (.1) 1"/>
      <axis p1="r3" scale=".5" label="z" grid="-1 (.1) 1"/>
   </spacegrid>
 )XML",
       R"XML(
   <spacegrid coord="spherical">
-    <origin p1="ion01"/>
+    <origin p1="ion1"/>
     <axis p1="r1" scale="6.9" label="r"     grid="0 (0.1) 1"/>
     <axis p1="r2" scale="6.9" label="phi"   grid="0 (0.1) 1"/>
     <axis p1="r3" scale="6.9" label="theta" grid="0 (0.1) 1"/>
@@ -56,21 +66,20 @@ struct ValidSpaceGridInput
 )XML",
       R"XML(
   <spacegrid coord="spherical">
-    <origin p1="ion02"/>
+    <origin p1="ion1"/>
+    <axis p1="r1" scale="6.9" label="r" grid="0 (0.1) 1"/>
+    <axis p1="r2" scale="6.9" label="phi" grid="0 (0.1) 1"/>
+    <axis p1="r3" scale="6.9" label="theta" grid="0 (0.1) 1"/>
+  </spacegrid>
+)XML",
+      R"XML(
+  <spacegrid coord="spherical">
+    <origin p1="ion2"/>
     <axis p1="r1" scale="6.9" label="r"     grid="0 1"/>
     <axis p1="r2" scale="6.9" label="phi"   grid="0 1"/>
     <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
   </spacegrid>
 )XML"};
-
-  enum valid
-  {
-    DEFAULT = 0,
-    ORIGIN,
-    CYLINDRICAL,
-    WITH_STEP,
-    WITHOUT_STEP
-  };
 };
 
 struct InvalidSpaceGridInput
@@ -123,7 +132,6 @@ struct InvalidSpaceGridInput
     MISSINGAXIS,
     BADGRID
   };
-
 };
 } // namespace testing
 } // namespace qmcplusplus

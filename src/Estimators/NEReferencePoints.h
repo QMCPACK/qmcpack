@@ -47,6 +47,7 @@ public:
    *                        those take from the pset, and ref_psets
    *  \param[in] pset       pset that supplies the lattice information for reference points
    *  \param[in] ref_psets  pset reference vector the particle points in this/these psets are reference points
+   *                        ions are surfaced in the reference points as ion{num} with no special formatting.
    */
   NEReferencePoints(const ReferencePointsInput& rp_input, const ParticleSet& pset, RefVector<ParticleSet>& ref_psets);
   NEReferencePoints(const NEReferencePoints& nerp) = default;

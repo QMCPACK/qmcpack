@@ -112,7 +112,7 @@ TEST_CASE("SpaceGridInputs::parseXML::axes", "[estimators]")
                             },   //ndu_per_interval
     10); //dimensions
   CHECK(axis_grid[0] == expected_1);
-  CHECK(sgi.get_origin_p1() == "ion01");
+  CHECK(sgi.get_origin_p1() == "ion1");
   CHECK(sgi.get_origin_p2().empty());
   CHECK(sgi.get_origin_fraction() == 0.0);
 }

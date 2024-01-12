@@ -51,7 +51,7 @@ public:
                                                                                          CoordForm::SPHERICAL}};
 
   using LabelSet = std::vector<std::string_view>;
-  // legal labels for each coordinate type.  These are actually effectively enums
+  // legal labels for each coordinate type.  These are effectively enums
   inline static const LabelSet ax_cartesian{"x", "y", "z"};
   inline static const LabelSet ax_cylindrical{"r", "phi", "z"};
   inline static const LabelSet ax_spherical{"r", "phi", "theta"};
@@ -161,8 +161,6 @@ public:
   SpaceGridInput(xmlNodePtr cur);
   SpaceGridInput(const SpaceGridInput& sgi) = default;
 
-  void checkAxes(std::vector<std::any>& axes);
-
   CoordForm get_coord_form() const { return coord_form_; }
   bool isPeriodic() const { return !(coord_form_ == CoordForm::CYLINDRICAL || coord_form_ == CoordForm::SPHERICAL); }
   const std::array<std::string, OHMMS_DIM>& get_axis_p1s() const { return axis_p1s_; }
@@ -180,6 +178,9 @@ public:
   const LabelSet& get_axes_label_set() const { return axes_label_sets.at(coord_form_); }
 
 private:
+  void checkAxes(std::vector<std::any>& axes);
+  void checkGrids();
+
   SpaceGridInputSection input_section_;
   CoordForm coord_form_;
   // origin in optional so this is required.
