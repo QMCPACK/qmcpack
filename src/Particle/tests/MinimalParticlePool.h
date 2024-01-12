@@ -129,6 +129,9 @@ class MinimalParticlePool
     </group>
     <group name="d" size="24">
       <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+</tmp>
 )";
 
   static constexpr const char* const particles_xml_H2 = R"(
@@ -159,7 +162,6 @@ class MinimalParticlePool
       <attrib name="position" datatype="posArray">
   6.4451072699e-01  1.3453681375e-01  1.3161796485e+00
 </attrib>
->>>>>>> d48be715e (coverage Spherical check for grid ranges moved to input docs)
     </group>
   </particleset>
 </tmp>
