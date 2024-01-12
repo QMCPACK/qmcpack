@@ -427,6 +427,7 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
   mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
 
   const size_t nw = phi_vgl_v.size(1);
+  phi_vgl_v.updateFrom();
 
   //TODO: make this cleaner?
   for (int iw = 0; iw < nw; iw++)
@@ -594,6 +595,7 @@ void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list
 
   const size_t output_size = phi_v.size(1);
   const size_t nw          = phi_v.size(0);
+  phi_v.updateFrom();
 
   for (int iw = 0; iw < nw; iw++)
     std::copy_n(phi_v.data_at(iw, 0), output_size, psi_v_list[iw].get().data());
