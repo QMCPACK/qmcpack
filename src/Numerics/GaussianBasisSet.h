@@ -100,6 +100,10 @@ struct GaussianCombo
   real_type src_d5;
   real_type src_delta;
 
+  // The short-ranged cusp is intended to be used with transform="yes" and
+  // so it only implements the function value and first derivative at the
+  // smallest grid endpoint (which is assumed to not be in the interpolation region)
+
   real_type evalShortRangeCusp(real_type r)
   {
     //real_type val = src_a * std::exp(-src_alpha * r) + src_c;
