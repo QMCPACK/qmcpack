@@ -567,7 +567,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   GroupParameter.create_dataset("numMO",(1,),dtype="i4",data=NbMO)
   GroupParameter.create_dataset("numAO",(1,),dtype="i4",data=NbAO)
   
-  make_multidet(cell,mf,H5_qmcpack)
+  make_multidet(cell,mf,title)
   H5_qmcpack.close()
 
   print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
@@ -575,11 +575,11 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   # Close the file before exiting
 
 
-def make_multidet(cell, mf, h5_file_handle):
+def make_multidet(cell, mf, title):
   from pyscf import mcscf
   import numpy
   import h5py, re, sys
-  possible_determinant_source =[mcscf.casci.CASCI]
+  possible_determinant_source =[mcscf.casci.CASCI, mcscf.mc1step.CASSCF]
   if type(mf) in possible_determinant_source:
     a = mf.fcisolver.large_ci(mf.ci, mf.ncas, mf.nelecas, tol=0.0, return_strs=True)
     dets_a = []
@@ -598,7 +598,8 @@ def make_multidet(cell, mf, h5_file_handle):
         dets_a.append(chunks_a)
         dets_b.append(chunks_b)
         coeffs.append(i[0])
-    groupApp=h5_file_handle.create_group("MultiDet")
+    H5_qmcpack_multidet = h5py.File(title+'_multidet.h5','w')
+    groupApp=H5_qmcpack_multidet.create_group("MultiDet")
     dets_a = numpy.array(dets_a)
     dets_b = numpy.array(dets_b)
 
@@ -611,3 +612,4 @@ def make_multidet(cell, mf, h5_file_handle):
     groupApp.create_dataset('nstate', (1,),dtype = "i4",data = mf.mo_coeff.shape[0])
     groupApp.create_dataset('nexcitedstate', (1,),dtype = "i4",data = 2)
 
+    H5_qmcpack_multidet.close()
