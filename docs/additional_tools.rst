@@ -544,9 +544,11 @@ Supported codes
   and CCSD, and for both isolated systems and periodic boundary
   conditions. PySCF can be downloaded from https://github.com/sunqm/pyscf.
   Many examples and tutorials can be found on the PySCF website, and all
-  types of single determinants calculations are compatible with , thanks
-  to active support from the authors of PySCF. A few additional steps are
-  necessary to generate an output readable by ``convert4qmc``.
+  types of single determinants calculations are compatible with QMCPack, 
+  thanks to active support from the authors of PySCF. Additionally, support 
+  for multideterminant trial wave functions generated through the CASSCF or 
+  CASCI modules are also supported. A few additional steps are necessary to 
+  generate an output readable by ``convert4qmc``.
 
   This example shows how to run a Hartree-Fock calculation for the :math:`LiH`
   dimer molecule from PySCF and convert the wavefunction for QMCPACK.
