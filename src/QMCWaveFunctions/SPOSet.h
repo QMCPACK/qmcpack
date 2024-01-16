@@ -61,6 +61,8 @@ public:
   template<typename DT>
   using OffloadMatrix      = Matrix<DT, OffloadPinnedAllocator<DT>>;
   using OffloadValueMatrix = OffloadMatrix<ValueType>;
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
   /** constructor */
   SPOSet(const std::string& my_name);

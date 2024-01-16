@@ -15,6 +15,7 @@
 #include "CPU/BLAS.hpp"
 #include "OMPTarget/ompBLAS.hpp"
 #include <ResourceCollection.h>
+#include <numeric>
 
 namespace qmcplusplus
 {
@@ -26,12 +27,15 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
 
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
 
-  OffloadMWVGLArray phi_vgl_v;    // [5][NW][NumMO]
-  OffloadMWVGLArray basis_vgl_mw; // [5][NW][NumAO]
-  OffloadMWVArray phi_v;          // [NW][NumMO]
-  OffloadMWVArray basis_v_mw;     // [NW][NumAO]
-  OffloadMWVArray vp_phi_v;       // [NVPs][NumMO]
-  OffloadMWVArray vp_basis_v_mw;  // [NVPs][NumAO]
+  OffloadMWVGLArray phi_vgl_v;                           // [5][NW][NumMO]
+  OffloadMWVGLArray basis_vgl_mw;                        // [5][NW][NumAO]
+  OffloadMWVArray phi_v;                                 // [NW][NumMO]
+  OffloadMWVArray basis_v_mw;                            // [NW][NumAO]
+  OffloadMWVArray vp_phi_v;                              // [NVPs][NumMO]
+  OffloadMWVArray vp_basis_v_mw;                         // [NVPs][NumAO]
+  OffloadVector<const ValueType*> invRow_deviceptr_list; // [NVPs]
+  OffloadVector<ValueType> ratios_buffer;                // [NVPs]
+  OffloadVector<size_t> nVP_index_list;                  // [NVPs]
 };
 
 LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity)
@@ -677,10 +681,55 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
   mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
 
+#if defined(ENABLE_OFFLOAD)
+  const size_t nw             = vp_list.size();
+  auto& invRow_deviceptr_list = spo_leader.mw_mem_handle_.getResource().invRow_deviceptr_list;
+  auto& ratios_buffer         = spo_leader.mw_mem_handle_.getResource().ratios_buffer;
+
+  invRow_deviceptr_list.resize(nVPs);
+  ratios_buffer.resize(nVPs);
+
+  std::vector<size_t> nVP_mw(nw, 0);  // number of VPs per walker
+  std::vector<size_t> iVP0_mw(nw, 0); // first VP idx of each walker
+
+  for (size_t iw = 0; iw < nw; iw++)
+    nVP_mw[iw] = vp_list[iw].getTotalNum();
+  // fill with cumulative number of VPs up to current walker
+  std::exclusive_scan(nVP_mw.begin(), nVP_mw.end(), iVP0_mw.begin(), 0);
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto istart = iVP0_mw[iw];
+    auto nvp_i  = nVP_mw[iw];
+    std::fill(invRow_deviceptr_list.begin() + istart, invRow_deviceptr_list.begin() + istart + nvp_i,
+              invRow_ptr_list[iw]);
+    //for (size_t idx = 0; idx< nvp_i; idx++)
+    //  invRow_deviceptr_list[istart+idx] = invRow_ptr_list[iw];
+  }
+  auto* invRow_deviceptr_list_ptr = invRow_deviceptr_list.data();
+  auto* vp_phi_v_ptr              = vp_phi_v.data();
+  auto* ratios_buffer_ptr         = ratios_buffer.data();
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+      map(always,to: invRow_deviceptr_list_ptr[:nVPs]) \
+      map(to: vp_phi_v_ptr[:nVPs*requested_orb_size]) \
+      map(always, from: ratios_buffer_ptr[:nVPs])")
+  for (size_t ivp = 0; ivp < nVPs; ivp++)
+  {
+    ratios_buffer_ptr[ivp] = 0;
+    for (size_t iorb = 0; iorb < requested_orb_size; iorb++)
+      ratios_buffer_ptr[ivp] += vp_phi_v_ptr[ivp * requested_orb_size + iorb] * invRow_deviceptr_list_ptr[ivp][iorb];
+  }
+
+  size_t index = 0;
+  for (size_t iw = 0; iw < nw; iw++)
+    for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+      ratios_list[iw][iat] = ratios_buffer[index++];
+#else
   size_t index = 0;
   for (size_t iw = 0; iw < vp_list.size(); iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
       ratios_list[iw][iat] = simd::dot(vp_phi_v.data_at(index++, 0), invRow_ptr_list[iw], requested_orb_size);
+#endif
 }
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
