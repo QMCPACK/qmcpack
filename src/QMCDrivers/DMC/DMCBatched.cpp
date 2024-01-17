@@ -53,18 +53,17 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                    std::move(pop),
                    "DMCBatched::",
                    comm,
-                   "DMCBatched",
-                   std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
+                   "DMCBatched"),
       dmcdriver_input_(input),
       dmc_timers_("DMCBatched::")
 {}
 
 DMCBatched::~DMCBatched() = default;
 
-void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
+void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& hamiltonian)
 {
-  golden_hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
-                                      dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
+  hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
+                               dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
 }
 
 template<CoordsType CT>
@@ -474,6 +473,12 @@ bool DMCBatched::run()
       for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
+
+        // ensure all the live walkers carry the up-to-date T-move settings.
+        // Such info should be removed from each NLPP eventually and be kept in the driver.
+        for (UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
+          setNonLocalMoveHandler(*ham);
+
         dmc_state.step = step;
         crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                    std::ref(crowds_));
