@@ -1745,14 +1745,16 @@ Batched ``dmc`` driver (experimental)
 
 .. math::
 
+  E_\text{ref}   = E_\text{pop\_avg}
   E_\text{trial} = E_\text{pop\_avg}+(\ln \texttt{targetwalkers}-\ln W_\text{pop}) / \texttt{timestep}
 
 where :math:`E_\text{pop\_avg}` is the local energy average over the walker population at the current step
 and :math:`W_\text{pop}` is the current population weight before the population adjustment in branching.
-After the warm-up phase, the trial energy is updated as
+After the warm-up phase, the reference and trial energy values are updated as
 
 .. math::
 
+  E_\text{ref}   = \sum_\text{post warm up} E_\text{pop\_avg} / Nsteps_\text{post warm up}
   E_\text{trial} = E_\text{ref}+\texttt{feedback}\cdot(\ln\texttt{targetWalkers}-\ln W_\text{pop})
 
 where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the post warm-up steps up to the current step. The update frequency is controlled by ``energyUpdateInterval``.
