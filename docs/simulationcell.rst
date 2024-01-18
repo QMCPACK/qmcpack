@@ -303,7 +303,7 @@ Optional group attributes
   +--------------------+--------------+--------------------------------------------+-------------+------------------------+
 
 -  | ``condition``
-   | When ``datatype`` is posArray, set 0 for cartesian coordinates or set 1 for factional coordinates.
+   | When ``datatype`` is posArray, set 0 for cartesian coordinates or set 1 for fractional coordinates.
 
 Example use cases
 ~~~~~~~~~~~~~~~~~
