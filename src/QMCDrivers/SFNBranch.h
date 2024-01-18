@@ -122,7 +122,7 @@ public:
     TAU = 0,
     TAUEFF, // effective time step
     ETRIAL, // Trial energy
-    EREF,   // Center of the branching cutoff energy window
+    EREF,   // Best estimate of the ground state energy. Center of the branching cutoff energy window
     ENOW,   // weighted average energy of the population in the current step
     BRANCHMAX,
     BRANCHCUTOFF,
