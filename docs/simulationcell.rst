@@ -216,6 +216,20 @@ Optional particleset attributes
 -  | ``size``
    | Number of particles in set.
 
+-  | ``random``
+   | Randomize starting positions of particles. Each component of each
+     particle’s position is randomized independently in the range of the
+     simulation cell in that component’s direction.
+
+-  | ``randomsrc``/``random_source``
+   | Specify source particle set around which to randomize the initial
+     positions of this particle set.
+
+-  | ``spinor``
+   | Sets an internal flag that the particleset (usually for electrons) is
+     a spinor object. This is used in the wavefunction builders and QMC drivers
+     to determiane if spin sampling will be used
+
 ``Group`` element:
 
   +-----------------+---------------------------+
@@ -250,40 +264,8 @@ Optional particleset attributes
   | ``atomicnumber`` | Integer  | *Any*  | 0       | Atomic number of particles in set  |
   +------------------+----------+--------+---------+------------------------------------+
 
-``attrib`` element:
-
-  +---------------------+------------------------------------+
-  | Parent elements     | ``particleset``, ``group``         |
-  +---------------------+------------------------------------+
-
-  Attribute:
-
-  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
-  | **Name**           | **Datatype** | **Values**                                 | **Default** | **Description**        |
-  +====================+==============+============================================+=============+========================+
-  | ``name``           | String       | *Any*                                      | *None*      | Name of attrib         |
-  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
-  | ``datatype``       | String       | IntArray, realArray, posArray, stringArray | *None*      | Type of data in attrib |
-  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
-  | ``size``:math:`^o` | String       | *Any*                                      | *None*      | Size of data in attrib |
-  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
-
--  | ``random``
-   | Randomize starting positions of particles. Each component of each
-     particle’s position is randomized independently in the range of the
-     simulation cell in that component’s direction.
-
--  | ``randomsrc``/``random_source``
-   | Specify source particle set around which to randomize the initial
-     positions of this particle set.
-
--  | ``spinor``
-   | Sets an internal flag that the particleset (usually for electrons) is
-     a spinor object. This is used in the wavefunction builders and QMC drivers
-     to determiane if spin sampling will be used
-
-Required name attributes
-^^^^^^^^^^^^^^^^^^^^^^^^
+Required group attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 -  | ``name``/``id``
    | Unique name for the particle set group. Typically, element symbols
@@ -299,6 +281,29 @@ Optional group attributes
 -  | ``unit``
    | Units for mass of particles in set (au[:math:`m_e` = 1] or
      amu[:math:`\frac{1}{12}m_{\rm ^{12}C}` = 1]).
+
+``attrib`` element:
+
+  +---------------------+------------------------------------+
+  | Parent elements     | ``particleset``, ``group``         |
+  +---------------------+------------------------------------+
+
+  Attribute:
+
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+  | **Name**           | **Datatype** | **Values**                                 | **Default** | **Description**        |
+  +====================+==============+============================================+=============+========================+
+  | ``name``           | String       | ionid, *Any*                               | *None*      | Name of attrib         |
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+  | ``datatype``       | String       | IntArray, realArray, posArray, stringArray | *None*      | Type of data in attrib |
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+  | ``condition``      | Integer      | 0, 1                                       | 0           | Select coordinates     |
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+  | ``size``:math:`^o` | String       | *Any*                                      | *None*      | Size of data in attrib |
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+
+-  | ``condition``
+   | When ``datatype`` is posArray, set 0 for cartesian coordinates or set 1 for fractional coordinates.
 
 Example use cases
 ~~~~~~~~~~~~~~~~~

@@ -457,29 +457,25 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_si
     //cloning is not going to work
     if (t_id == PA_IndexType)
     {
-      ParticleIndex* obj = nullptr;
-      obj                = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleIndex* obj = ref_AttribList.getAttribute<PtclOnLatticeTraits::Index_t>(otype, oname);
       ParticleAttribXmlNode<ParticleIndex> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_ScalarType)
     {
-      ParticleScalar* obj = nullptr;
-      obj                 = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleScalar* obj = ref_AttribList.getAttribute<PtclOnLatticeTraits::Scalar_t>(otype, oname);
       ParticleAttribXmlNode<ParticleScalar> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_PositionType)
     {
-      ParticlePos* obj = nullptr;
-      obj              = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticlePos* obj = ref_AttribList.getAttribute<PtclOnLatticeTraits::SingleParticlePos>(otype, oname);
       ParticleAttribXmlNode<ParticlePos> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_TensorType)
     {
-      ParticleTensor* obj = nullptr;
-      obj                 = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleTensor* obj = ref_AttribList.getAttribute<PtclOnLatticeTraits::Tensor_t>(otype, oname);
       ParticleAttribXmlNode<ParticleTensor> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, in_offset, copy_size, out_offset);
     }
