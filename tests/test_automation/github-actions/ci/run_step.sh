@@ -281,11 +281,11 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"macOS-GCC11-NoMPI-Real"*)
+      *"macOS-GCC12-NoMPI-Real"*)
         echo 'Configure for building on macOS using gcc11'
         cmake -GNinja \
-              -DCMAKE_C_COMPILER=gcc-11 \
-              -DCMAKE_CXX_COMPILER=g++-11 \
+              -DCMAKE_C_COMPILER=gcc-12 \
+              -DCMAKE_CXX_COMPILER=g++-12 \
               -DQMC_MPI=0 \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
