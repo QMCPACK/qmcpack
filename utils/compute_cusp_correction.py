@@ -181,7 +181,7 @@ def find_s_orbitals(fname):
             bas_group = atbs["basisGroup" + str(ig)]
             l = bas_group["l"][0]
             n = bas_group["n"][0]
-            if l == 0 and n in [0, 1]:
+            if l == 0:
                 print("  ", ig, n, l)
                 s_orbs.append((ib, elem, ig, n, l))
 
