@@ -141,7 +141,7 @@ jobs:
           fail_ci_if_error: true # optional (default = false)
 
   macos:
-    runs-on: macos-11
+    runs-on: macos-13
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: macOS
@@ -149,7 +149,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jobname: [macOS-GCC11-NoMPI-Real]
+        jobname: [macOS-GCC12-NoMPI-Real]
 
     steps:
       - name: Checkout Action
