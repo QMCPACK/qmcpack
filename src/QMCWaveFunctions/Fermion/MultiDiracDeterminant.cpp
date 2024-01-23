@@ -416,7 +416,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
   if (curRatio == ValueType(0))
   {
     std::ostringstream msg;
-    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    msg << "MultiDiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
     throw std::runtime_error(msg.str());
   }
   log_value_ref_det_ += convertValueToLog(curRatio);
