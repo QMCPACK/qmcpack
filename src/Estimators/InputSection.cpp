@@ -17,6 +17,19 @@
 namespace qmcplusplus
 {
 
+[[noreturn]] std::any InputSection::assignAnyEnum(const std::string& tag) const
+{
+  throw UniformCommunicateError("derived class must provide assignAnyEnum method if enum parameters are used");
+}
+
+[[noreturn]] void InputSection::setFromStreamCustom(const std::string& ename,
+                                                    const std::string& name,
+                                                    std::istringstream& svalue)
+{
+  throw UniformCommunicateError("derived class must provide handleCustom method if custom parameters are used");
+}
+
+
 void InputSection::readAttributes(xmlNodePtr cur,
                                   const std::string& element_name,
                                   const std::vector<std::string>& do_not_consume)
