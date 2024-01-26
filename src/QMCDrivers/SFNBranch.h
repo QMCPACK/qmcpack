@@ -122,7 +122,9 @@ public:
     TAU = 0,
     TAUEFF, // effective time step
     ETRIAL, // Trial energy
-    EREF,   // Center of the branching cutoff energy window
+    EREF,   // Estimate of the ground state energy based on the single step population average during warmup
+            // or the historical average of population average post warmup.
+            // Center of the branching cutoff energy window.
     ENOW,   // weighted average energy of the population in the current step
     BRANCHMAX,
     BRANCHCUTOFF,

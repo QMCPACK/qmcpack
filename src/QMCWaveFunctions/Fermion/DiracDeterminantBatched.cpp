@@ -447,7 +447,7 @@ void DiracDeterminantBatched<DET_ENGINE>::acceptMove(ParticleSet& P, int iat, bo
   if (curRatio == PsiValue(0))
   {
     std::ostringstream msg;
-    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    msg << "DiracDeterminantBatched::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
     throw std::runtime_error(msg.str());
   }
   const int WorkingIndex = iat - FirstIndex;
@@ -506,7 +506,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
 
       {
         std::ostringstream msg;
-        msg << "DiracDeterminant::mw_accept_rejectMove det.curRatio is " << det.curRatio << "! Report a bug."
+        msg << "DiracDeterminantBatched::mw_accept_rejectMove det.curRatio is " << det.curRatio << "! Report a bug."
             << std::endl;
         throw std::runtime_error(msg.str());
       }
