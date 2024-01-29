@@ -86,7 +86,7 @@ struct GaussianCombo
   };
 
   bool hasShortRangeCusp = false;
-  real_type src_rcut;
+  real_type src_rcut     = 0.0;
   real_type src_alpha;
   real_type src_a;
   real_type src_c;
@@ -98,7 +98,7 @@ struct GaussianCombo
   real_type src_d3;
   real_type src_d4;
   real_type src_d5;
-  real_type src_delta;
+  real_type src_delta = 0.0;
 
   // The short-ranged cusp is intended to be used with transform="yes" and
   // so it only implements the function value and first derivative at the
@@ -400,9 +400,11 @@ bool GaussianCombo<T>::putBasisGroupH5(hdf_archive& hin, Communicate& myComm)
       hin.read(src_d3, "d3");
       hin.read(src_d4, "d4");
       hin.read(src_d5, "d5");
-      hin.read(src_d5, "delta");
+      hin.read(src_delta, "delta");
       app_log() << " short range cusp rcut = " << src_rcut << " alpha = " << src_alpha << " a = " << src_a
-                << " src_c = " << src_c << std::endl;
+                << " src_cp = " << src_cp << " delta = " << src_delta << std::endl;
+      app_log() << "      d0 = " << src_d0 << " d1  = " << src_d1 << " d2 = " << src_d2 << " d3 = " << src_d3
+                << " d4  = " << src_d4 << " d5 = " << src_d5 << std::endl;
       hin.pop();
     }
     myComm.bcast(hasShortRangeCusp);
