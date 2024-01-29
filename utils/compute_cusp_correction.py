@@ -181,7 +181,7 @@ def find_s_orbitals(fname):
             bas_group = atbs["basisGroup" + str(ig)]
             l = bas_group["l"][0]
             n = bas_group["n"][0]
-            if l == 0:
+            if l == 0 and n in [0, 1]:
                 print("  ", ig, n, l)
                 s_orbs.append((ib, elem, ig, n, l))
 
@@ -302,7 +302,8 @@ def get_reference_vals(basis, rc=0.2):
     npts = 80
     uplim = np.log(rc) / np.log(10)
     # xpts = np.logspace(-2.0, uplim, npts)
-    xpts = np.linspace(0.01, rc, npts)
+    # Get better results if the fit starts from 0.1 rather than a smaller value.
+    xpts = np.linspace(0.1, rc, npts)
     vals = np.zeros(npts)
 
     for i, x in enumerate(xpts):
@@ -385,10 +386,6 @@ def find_roots(initial_rc, popt, basis):
 
     roots.sort()
 
-    # This is a big hack - not sure if it works
-    if len(roots) == 0:
-        roots = [initial_rc]
-
     return roots
 
 
@@ -422,22 +419,29 @@ def compute_cusp_correction(fname_in, s_orbs, fname_out=None, root_idx=None):
     if fname_out:
         fout = h5py.File(fname_out, "a")
 
-    initial_rc = 0.2
     for (ib, elem, bs_idx, n, l) in s_orbs:
         print(f"Processing {elem} orbital {bs_idx} n = {n} l = {l}")
-        if elem == "H":
-            initial_rc = 4.0
+        initial_rc = 0.2
         basis = bs[elem]
-        xpts, vals = get_reference_vals(basis[bs_idx], initial_rc)
-        res = optimize.curve_fit(target_f, xpts, vals, maxfev=3000)
-        popt = res[0]
-        a, alpha, c = popt
-        print(f" optimized a = {a} alpha = {alpha} c = {c}")
 
-        # Find possible roots to choose for actual r_c
-        # to keep the second derivative continuous
+        # Find initial_rc adaptively, so it results in at least one root
+        for itry in range(5):
+            xpts, vals = get_reference_vals(basis[bs_idx], initial_rc)
+            res = optimize.curve_fit(target_f, xpts, vals, maxfev=3000)
+            popt = res[0]
+            a, alpha, c = popt
+            print(f" optimized a = {a} alpha = {alpha} c = {c}")
 
-        roots = find_roots(initial_rc, popt, basis[bs_idx])
+            # Find possible roots to choose for actual r_c
+            # to keep the second derivative continuous
+
+            roots = find_roots(initial_rc, popt, basis[bs_idx])
+
+            if len(roots) > 0:
+                break
+
+            initial_rc *= 2
+            print("No roots found, try rc = ", initial_rc)
 
         # print('roots',sorted(roots))
         # print('roots',roots)
