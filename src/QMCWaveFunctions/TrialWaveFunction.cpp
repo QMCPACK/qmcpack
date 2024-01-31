@@ -564,9 +564,9 @@ void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>
   const int num_wfc             = wf_leader.Z.size();
   auto& wavefunction_components = wf_leader.Z;
 
+  TWFGrads<CT> grads_z(num_wf);
   for (int i = 0; i < num_wfc; i++)
   {
-    TWFGrads<CT> grads_z(num_wf);
     ScopedTimer localtimer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
     const auto wfc_list(extractWFCRefList(wf_list, i));
     wavefunction_components[i]->mw_evalGrad(wfc_list, p_list, iat, grads_z);
