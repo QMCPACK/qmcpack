@@ -73,7 +73,7 @@ using stack_allocator = multi::memory::allocator<T, stack<char*>>;
 namespace multi = boost::multi;
 namespace memory = multi::memory;
 
-BOOST_AUTO_TEST_CASE(multi_memory_allocator) {
+BOOST_AUTO_TEST_CASE(const multi_memory_allocator) {
 	alignas(double) std::array<char, 256*sizeof(double)> buffer;
 	memory::stack<char*> stck(buffer.data(), buffer.size());
 	auto p1 = stck.allocate(1*sizeof(double), alignof(double));

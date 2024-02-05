@@ -106,9 +106,9 @@ int main() {
 {
 	alignas(double) std::array<char, 256*sizeof(double)> buffer;  // char buffer[256*sizeof(double)];
 	memory::monotonic<char*> m(buffer.data(), buffer.size());
-	auto p1 = m.allocate(100*sizeof(double), alignof(double));
+	auto* p1 = m.allocate(100*sizeof(double), alignof(double));
 	try {
-		auto p2 = m.allocate(200*sizeof(double), alignof(double));
+		auto* p2 = m.allocate(200*sizeof(double), alignof(double));
 		m.deallocate(p2, 200*sizeof(double));
 	} catch(std::bad_alloc& e) {std::cout <<"throw "<< e.what() << std::endl;}
 	m.deallocate(p1, 100*sizeof(double));
@@ -116,8 +116,8 @@ int main() {
 {
 	alignas(double) std::array<char, 256*sizeof(double)> buffer;  // char buffer[256*sizeof(double)];
 	memory::fallback<memory::monotonic<char*>> m(buffer.data(), buffer.size());  // , boost::multi::memory::get_default_resource());
-	auto p1 = m.allocate(100*sizeof(double), alignof(double));
-	auto p2 = m.allocate(200*sizeof(double), alignof(double));
+	auto* p1 = m.allocate(100*sizeof(double), alignof(double));
+	auto* p2 = m.allocate(200*sizeof(double), alignof(double));
 	m.deallocate(p2, 200*sizeof(double));
 	m.deallocate(p1, 100*sizeof(double));
 	assert( m.fallbacks() == 1 );
@@ -125,8 +125,8 @@ int main() {
 {
 	alignas(double) std::array<char, 256*sizeof(double)> buffer;  // char buffer[256*sizeof(double)];
 	memory::stack<char*> s(buffer.data(), buffer.size());
-	auto p1 = s.allocate(1*sizeof(double), alignof(double));
-	auto p2 = s.allocate(100*sizeof(double), alignof(double));
+	auto* p1 = s.allocate(1*sizeof(double), alignof(double));
+	auto* p2 = s.allocate(100*sizeof(double), alignof(double));
 	s.deallocate(p2, 100*sizeof(double));
 	s.deallocate(p1, 1*sizeof(double));
 	assert( s.max_needed() == 101*sizeof(double) );
@@ -134,15 +134,15 @@ int main() {
 {
 	alignas(double) std::array<char, 256*sizeof(double)> buffer;  // char buffer[256*sizeof(double)];
 	memory::fallback<memory::stack<char*>> s(buffer.data(), buffer.size());
-	auto p1 = s.allocate(10000*sizeof(double), alignof(double));
+	auto* p1 = s.allocate(10000*sizeof(double), alignof(double));
 	s.deallocate(p1, 10000*sizeof(double));
 	assert( s.fallbacks() == 1 );
 }
 {
 	alignas(double) std::array<char, 256*sizeof(double)> buffer;  // char buffer[256*sizeof(double)];
 	memory::fallback<memory::stack<char*>> s(buffer.data(), buffer.size());
-	auto p2 = s.allocate(255*sizeof(double), alignof(double));
-	auto p3 = s.allocate(255*sizeof(double), alignof(double));
+	auto* p2 = s.allocate(255*sizeof(double), alignof(double));
+	auto* p3 = s.allocate(255*sizeof(double), alignof(double));
 	s.deallocate(p3, 255*sizeof(double));
 	s.deallocate(p2, 255*sizeof(double));
 	assert( s.fallbacks() == 1 );

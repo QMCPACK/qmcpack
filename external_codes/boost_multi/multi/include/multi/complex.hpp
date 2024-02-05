@@ -1,6 +1,8 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 // Copyright 2020-2023 Alfredo A. Correa
 
+// TODO(correaa) move this header to blas/numeric
+
 #ifndef MULTI_COMPLEX_HPP
 #define MULTI_COMPLEX_HPP
 

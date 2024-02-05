@@ -1,18 +1,29 @@
-// Copyright 2020-2023 Alfredo A. Correa
+// Copyright 2020-2024 Alfredo A. Correa
 
 #ifndef MULTI_ADAPTORS_FFT_HPP
 #define MULTI_ADAPTORS_FFT_HPP
 
 #include "../adaptors/fftw.hpp"
+
+#if defined(__NVCC__)
 #include "../adaptors/cufft.hpp"
+#elif defined(__HIPCC__)
+// #elif (defined(__HIP_PLATFORM_AMD__) or defined(__HIP_PLATFORM_NVIDIA__))
+#include "../adaptors/hipfft.hpp"
 
-namespace boost{
-namespace multi{
-namespace fft{
+// namespace boost::multi{
+//     namespace cufft = hipfft;
+// }
 
-	static constexpr int forward = fftw::forward;//FFTW_FORWARD;
+#endif
+
+namespace boost {
+namespace multi {
+namespace fft {
+
+	static constexpr int forward = fftw::forward;  // FFTW_FORWARD;
 	static constexpr int none = 0;
-	static constexpr int backward = fftw::backward;//FFTW_BACKWARD;
+	static constexpr int backward = fftw::backward;  // FFTW_BACKWARD;
 
 	static_assert( forward != none and none != backward and backward != forward, "!");
 
@@ -33,7 +44,7 @@ namespace fft{
 
 }}}
 
-#if not __INCLUDE_LEVEL__
+#if not __INCLUDE_LEVEL__  // TODO(correaa) remove this in-header test
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi FFT adaptor"
 #define BOOST_TEST_DYN_LINK

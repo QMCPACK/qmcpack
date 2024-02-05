@@ -1,4 +1,4 @@
-// Copyright 2019-2023 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
 
 #include <boost/test/unit_test.hpp>
 
@@ -57,7 +57,7 @@ class allocator2 {
  public:
 	using value_type = T;
 
-	allocator2() noexcept = delete;
+	allocator2() noexcept = default;
 	// NOLINTNEXTLINE(runtime/explicit)
 	allocator2(std::int64_t* heap) : heap_{heap} { assert(heap_); }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 	template<class U> allocator2(allocator2<U> const& other) noexcept : heap_{other.heap_} {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
@@ -130,8 +130,7 @@ BOOST_AUTO_TEST_CASE(scoped_allocator_array_vector) {
 	using OuterCont = multi::array<InnerCont, 2, std::scoped_allocator_adaptor<allocator1<InnerCont>, allocator2<int>>>;
 
 	{
-		// OuterCont cont({3, 4}, {&heap1, &heap2});  // gives ambiguous construction in libc++
-		OuterCont cont({3, 4}, {&heap1,  allocator2<int>{&heap2}});  // gives ambiguous construction in libc++
+		OuterCont cont({3, 4}, {&heap1,  allocator2<int>{&heap2}});  // without allocator2<>{...} gives ambiguous construction in libc++
 
 		cont[1][2].resize(10);
 		cont[1][2].resize(100);
@@ -150,12 +149,30 @@ BOOST_AUTO_TEST_CASE(scoped_allocator_array_vector_auto) {
 	using OuterCont = multi::array<InnerCont, 2, std::scoped_allocator_adaptor<allocator1<>, allocator2<>>>;
 
 	{
-		// OuterCont cont({3, 4}, {&heap1, &heap2});  // gives ambiguous construction in libc++
-		OuterCont cont({3, 4}, {&heap1, allocator2<>{&heap2}});
+		OuterCont cont({3, 4}, {&heap1, allocator2<>{&heap2}});  // without allocator2<>{...} gives ambiguous construction in libc++
 
-		cont[1][2].resize(10);
+		cont[1][2].resize( 10);
 		cont[1][2].resize(100);
 		cont[1][2].resize(200);
+
+		BOOST_TEST( heap1 == 1  );
+		BOOST_TEST( heap2 == 1L );
+	}
+}
+
+BOOST_AUTO_TEST_CASE(scoped_allocator_array_array_auto) {
+	std::int32_t heap1 = 0;
+	std::int64_t heap2 = 0;
+
+	using InnerCont = multi::array<int, 2, allocator2<int>>;
+	using OuterCont = multi::array<InnerCont, 2, std::scoped_allocator_adaptor<allocator1<>, allocator2<>>>;
+
+	{
+		OuterCont cont({3, 4}, {&heap1, allocator2<>{&heap2}});  // without allocator2<>{...} gives ambiguous construction in libc++
+
+		cont[1][2].reextent({ 10,  10});
+		cont[1][2].reextent({100, 100});
+		cont[1][2].reextent({200, 200});
 
 		BOOST_TEST( heap1 == 1  );
 		BOOST_TEST( heap2 == 1L );

@@ -263,7 +263,7 @@ template<class T, std::size_t N> struct num_elements_t<T(&)[N]> : num_elements_t
 template<class T, std::size_t N>
 constexpr auto num_elements(const T(&/*array*/)[N]) noexcept {return num_elements_t<T[N]>{};}  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : for backwards compatibility
 
-template<class Vector, typename = std::enable_if_t<std::is_same_v<typename Vector::pointer, decltype(std::declval<Vector>().data())>>>
+template<class Vector, typename = std::enable_if_t<std::is_same_v<typename Vector::pointer, decltype(std::declval<Vector>().data())>>, class = decltype(Vector{}.resize(1))>
 auto data_elements(Vector const& vec)
 ->decltype(vec.data()) {
 	return vec.data(); }
@@ -349,9 +349,9 @@ auto extension(Container const& cont)  // TODO(correaa) consider "extent"
 ->decltype(multi::extension_t<std::make_signed_t<decltype(size(cont))>>(0, static_cast<std::make_signed_t<decltype(size(cont))>>(size(cont)))) {
 	return multi::extension_t<std::make_signed_t<decltype(size(cont))>>(0, static_cast<std::make_signed_t<decltype(size(cont))>>(size(cont))); }
 
-template<class T, typename = decltype(std::declval<T>().shape())>
-       auto has_shape_aux(T const&) -> std::true_type;
-inline auto has_shape_aux(...     ) -> std::false_type;
+// template<class T, typename = decltype(std::declval<T>().shape())>
+//        auto has_shape_aux(T const&) -> std::true_type;
+// inline auto has_shape_aux(...     ) -> std::false_type;
 
 template<class T> struct has_shape : decltype(has_shape_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) trick
 
@@ -384,12 +384,12 @@ template<class Element, class T, std::enable_if_t<has_extensions<T>::value, int>
 }
 
 
-template<class BoostMultiArray, std::enable_if_t<has_shape<BoostMultiArray>::value && !has_extensions<BoostMultiArray>::value, int> =0>
-constexpr auto extensions(BoostMultiArray const& array) {
-	return extensions_aux2(array, std::make_index_sequence<BoostMultiArray::dimensionality>{});
-}
+// template<class BoostMultiArray, std::enable_if_t<has_shape<BoostMultiArray>::value && !has_extensions<BoostMultiArray>::value, int> =0>
+// constexpr auto extensions(BoostMultiArray const& array) {
+// 	return extensions_aux2(array, std::make_index_sequence<BoostMultiArray::dimensionality>{});
+// }
 
-template<class T, std::enable_if_t<!has_extensions<T>::value && !has_shape<T>::value, int> =0>
+template<class T, std::enable_if_t<!has_extensions<T>::value /*&& !has_shape<T>::value*/, int> =0>
 constexpr auto extensions(T const& /*unused*/) -> multi::layout_t<0>::extensions_type {return {};}
 
 template<class T, std::size_t N>

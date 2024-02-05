@@ -35,13 +35,13 @@ int main() {
 
 		assert(arr1d[3] == 5);
 		assert(arr2d[4][5] == 1.0);
-		assert(arr3d[2][3][4] == 1u);
+		assert(arr3d[2][3][4] == 1U);
 
 		arr1d[3]    = 33;
 		arr2d[4][5] = 45.001;
 		std::iota(arr3d[6][7].begin(), arr3d[6][7].end(), 100);
 
-		assert(arr3d_copy[6][7][8] == 1u);
+		assert(arr3d_copy[6][7][8] == 1U);
 
 		auto&& arr3d_assign = *m.construct<marray<unsigned, 3>>("arr3d_assign")(m.get_allocator());
 		arr3d_assign        = arr3d;

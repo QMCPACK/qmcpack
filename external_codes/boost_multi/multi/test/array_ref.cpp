@@ -227,21 +227,25 @@ BOOST_AUTO_TEST_CASE(array_ref_reindexed) {
 	BOOST_REQUIRE( &mar.stenciled({2, 4})[2][0] == mar.stenciled({2, 4}).base() );
 
 	{
+		// NOLINTBEGIN(fuchsia-default-arguments-calls) std::string ctor
 		multi::array<std::string, 2> arrB = {
-			{"a", "b", "c", "d", "e"}, // std::string NOLINT(fuchsia-default-arguments-calls)
-			{"f", "g", "h", "f", "g"}, // std::string NOLINT(fuchsia-default-arguments-calls)
-			{"h", "i", "j", "k", "l"}, // std::string NOLINT(fuchsia-default-arguments-calls)
+			{"a", "b", "c", "d", "e"},
+			{"f", "g", "h", "f", "g"},
+			{"h", "i", "j", "k", "l"},
 		};
+		// NOLINTEND(fuchsia-default-arguments-calls) std::string ctor
 		arrB.reindex(2);
 		BOOST_REQUIRE( size(arrB) == 3 );
 		BOOST_REQUIRE( arrB[2][0] == "a" );
 	}
 	{
+		// NOLINTBEGIN(fuchsia-default-arguments-calls) std::string ctor
 		multi::array<std::string, 2> arrB = {
-			{"a", "b", "c", "d", "e"}, // std::string NOLINT(fuchsia-default-arguments-calls)
-			{"f", "g", "h", "f", "g"}, // std::string NOLINT(fuchsia-default-arguments-calls)
-			{"h", "i", "j", "k", "l"}, // std::string NOLINT(fuchsia-default-arguments-calls)
+			{"a", "b", "c", "d", "e"},
+			{"f", "g", "h", "f", "g"},
+			{"h", "i", "j", "k", "l"},
 		};
+		// NOLINTEND(fuchsia-default-arguments-calls) std::string ctor
 		arrB.reindex(2, 1);
 		BOOST_REQUIRE( size(arrB) == 3 );
 		BOOST_REQUIRE( arrB[2][1] == "a" );
@@ -493,13 +497,16 @@ BOOST_AUTO_TEST_CASE(array_ref_original_tests_const_carray) {
 }
 
 BOOST_AUTO_TEST_CASE(array_ref_original_tests_const_carray_string) {
+	// NOLINTBEGIN(fuchsia-default-arguments-calls) std::string ctor
 	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test legacy type
 	std::string const dc3D[4][2][3] = {
-		{{"A0a", "A0b", "A0c"}, {"A1a", "A1b", "A1c"}}, // std::string NOLINT(fuchsia-default-arguments-calls)
-		{{"B0a", "B0b", "B0c"}, {"B1a", "B1b", "B1c"}}, // std::string NOLINT(fuchsia-default-arguments-calls)
-		{{"C0a", "C0b", "C0c"}, {"C1a", "C1b", "C1c"}}, // std::string NOLINT(fuchsia-default-arguments-calls)
-		{{"D0a", "D0b", "D0c"}, {"D1a", "D1b", "D1c"}}, // std::string NOLINT(fuchsia-default-arguments-calls)
+		{{"A0a", "A0b", "A0c"}, {"A1a", "A1b", "A1c"}},
+		{{"B0a", "B0b", "B0c"}, {"B1a", "B1b", "B1c"}},
+		{{"C0a", "C0b", "C0c"}, {"C1a", "C1b", "C1c"}},
+		{{"D0a", "D0b", "D0c"}, {"D1a", "D1b", "D1c"}},
 	};
+	// NOLINTEND(fuchsia-default-arguments-calls) std::string ctor
+
 	multi::array_cref<std::string, 3> cref(&dc3D[0][0][0], {4, 2, 3});
 	BOOST_REQUIRE( num_elements(cref) == 24 and cref[2][1][1] == "C1b" );
 	auto const& A2 = cref.sliced(0, 3).rotated()[1].sliced(0, 2).unrotated();
@@ -748,7 +755,12 @@ BOOST_AUTO_TEST_CASE(as_span) {
 		multi::static_array<int, 1> marr({10}, 99);
 		print_me1(*multi::array_ptr<int, 1>{marr.data_elements(), 10});
 
-		// print_me2(&marr);
+		auto& alias = marr;
+		marr = alias;
+		BOOST_REQUIRE(marr[5] = 99);
+
+		marr = alias();
+		BOOST_REQUIRE(marr[5] = 99);
 	}
 	{
 		int arr[] = {1, 2, 3, 4};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test c-arrays
@@ -1013,4 +1025,18 @@ BOOST_AUTO_TEST_CASE(function_passing_4) {
 	BOOST_REQUIRE(( trace_separate_ref                         (arr) == 3 ));
 	BOOST_REQUIRE(( trace_separate_sub                         (arr) == 3 ));
 #endif
+}
+
+BOOST_AUTO_TEST_CASE(array_fill_constructor) {
+	multi::array<double, 2> arr(3, multi::array<double, 1>{1.0, 2.0, 3.0, 4.0});
+
+	BOOST_REQUIRE( arr[0][1] == 2.0 );
+	BOOST_REQUIRE( arr[1][1] == 2.0 );
+}
+
+BOOST_AUTO_TEST_CASE(array_fill_constructor_1D) {
+	multi::array<double, 1> arr(3, 1.0);
+
+	BOOST_REQUIRE( arr[0] == 1.0 );
+	BOOST_REQUIRE( arr[1] == 1.0 );
 }

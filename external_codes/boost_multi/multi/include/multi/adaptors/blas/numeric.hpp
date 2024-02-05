@@ -120,7 +120,7 @@ public:
 	template<class Sink> friend constexpr auto operator<<(Sink&& sink, involuted const& self) -> Sink& {
 		return sink<< self.operator decay_type();
 	}
-	constexpr auto conj() const& {return adl_conj(operator decay_type());}
+	constexpr auto conj() const& {return ::boost::multi::adl_conj(this->operator decay_type());}
 
 	template<class T = void*>
 	friend constexpr auto imag(involuted const& self) {
@@ -220,7 +220,7 @@ struct conjugate {
 		return conj(static_cast<Complex>(zee));
 	}
 	#endif
-	#if defined(__HIP_PLATFORM_AMD__)
+	#if defined(__HIPCC__) || defined(__HIP_PLATFORM_AMD__)
 	template<class Complex>
 	constexpr auto operator()(::thrust::tagged_reference<Complex, ::thrust::hip::tag> zee) const {
 		return conj(static_cast<Complex>(zee));

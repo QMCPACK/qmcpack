@@ -1,11 +1,10 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2022 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
 
 #ifndef MULTI_MEMORY_MONOTONIC_HPP_
 #define MULTI_MEMORY_MONOTONIC_HPP_
 
-#include "../memory/block.hpp"
-#include "../memory/allocator.hpp"
+#include "../multi_memory/block.hpp"
+#include "../multi_memory/allocator.hpp"
 
 #include<cstddef>     // for max_align_t
 #include<stdexcept>
@@ -21,10 +20,10 @@ namespace memory {
 template<class T>
 T* align_up(T* ptr, std::size_t bytes = alignof(std::max_align_t)) {
 //  return
-//  	reinterpret_cast<T*>(
-//  		  (reinterpret_cast<std::uintptr_t>(ptr) + (bytes-1))
-//  		& ~(bytes-1)
-//  	)
+//      reinterpret_cast<T*>(
+//            (reinterpret_cast<std::uintptr_t>(ptr) + (bytes-1))
+//          & ~(bytes-1)
+//      )
 //  ;
 	using uintptr_t = std::uint64_t;
 	static_assert( sizeof(uintptr_t) == sizeof(T*), "this function works in 64 bit systems" );
@@ -41,8 +40,8 @@ Ptr align_up(Ptr ptr, std::size_t bytes = alignof(std::max_align_t)) {
 
 	static_assert( sizeof(*p_)==1 , "!");  //  crash
 //  auto q_ = reinterpret_cast<decltype(p_)>(
-//  	(reinterpret_cast<std::uintptr_t>(p_) + (align-1))
-//  	& ~(align-1)
+//      (reinterpret_cast<std::uintptr_t>(p_) + (align-1))
+//      & ~(align-1)
 //  );
 	auto q_ = align_up(p_, bytes);
 	return ptr + std::distance(p_, q_);
@@ -127,9 +126,10 @@ using monotonic_allocator = multi::memory::allocator<T, monotonic<char*>>;
 
 #include "../../multi/array.hpp"
 
+#include<cassert>
+#include<cmath>
 #include<iostream>
 #include<vector>
-#include<cmath>
 
 namespace multi = boost::multi;
 using std::cout;
@@ -137,20 +137,22 @@ using std::cout;
 int main(){
 {
 	multi::memory::null_t<char*> mr;
+	bool flagged = false;
 	try {
 		mr.allocate(1*sizeof(double), alignof(double));
-	} catch(...) {}
+	} catch(...) {
+		flagged = true;
+	}
+	assert(flagged)
 }
 {
 	alignas(double) std::array<char, 256*sizeof(double)> buffer;  // char buffer[256*sizeof(double)];
 	multi::memory::monotonic<char*> m(buffer.data(), buffer.size());
-	auto p1 = m.allocate(1*sizeof(double), alignof(double));
-	auto p2 = m.allocate(255*sizeof(double), alignof(double));
+	auto* p1 = m.allocate(1*sizeof(double), alignof(double));
+	auto* p2 = m.allocate(255*sizeof(double), alignof(double));
 	m.deallocate(p2, 255*sizeof(double));
 	m.deallocate(p1, 1*sizeof(double));
-	try {
-		m.deallocate(reinterpret_cast<char*>(p1) + 10000, 1*sizeof(double));
-	} catch(...){}
+	m.deallocate(reinterpret_cast<char*>(p1) + 10000, 1*sizeof(double));
 }
 {
 	alignas(double) std::array<char, 300*sizeof(double)> buffer;  // char buffer[300*sizeof(double)];

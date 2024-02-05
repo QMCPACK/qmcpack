@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Alfredo A. Correa
+// Copyright 2020-2024 Alfredo A. Correa
 
 #ifndef MULTI_ADAPTORS_CUDA_CUBLAS_ERROR_HPP
 #define MULTI_ADAPTORS_CUDA_CUBLAS_ERROR_HPP
@@ -63,7 +63,7 @@ struct error_category : std::error_category{
 };
 
 inline std::error_code make_error_code(cublas::error err) noexcept{
-	return std::error_code(int(err), cublas::error_category::instance());
+	return {int(err), cublas::error_category::instance()};
 }
 
 }

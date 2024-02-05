@@ -11,7 +11,7 @@ clang++-9 -std=c++17 -O3 -DNDEBUG -DBOOST_DISABLE_ASSERTS $0 -o $0x -lbenchmark 
 const long X_SIZE = 4000;
 const long Y_SIZE = 4000;
 
-typedef boost::multi_array<double, 2> ImageArrayType;
+using ImageArrayType = boost::multi_array<double, 2>;
 
 static void MeasureNative2(benchmark::State& state) {
 

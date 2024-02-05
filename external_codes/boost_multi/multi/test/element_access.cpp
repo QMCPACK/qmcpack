@@ -1,4 +1,4 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2024 Alfredo A. Correa
 
 #include <boost/test/unit_test.hpp>
 
@@ -20,13 +20,17 @@ template<class Array> auto paren(Array&& arr, bee const& /*unused*/) -> decltype
 
 BOOST_AUTO_TEST_CASE(overload_initlist) {
 	multi::array<double, 1> arr = {10.0};
+
 	test_bee::bee const zero;
+
 	BOOST_REQUIRE( &arr(0) == &arr(zero) );
 }
 
 BOOST_AUTO_TEST_CASE(overload_paren) {
 	multi::array<double, 1> arr({10});
+
 	test_bee::bee const zero;
+
 	BOOST_REQUIRE( &arr(0) == &arr(zero) );
 }
 
@@ -43,7 +47,10 @@ BOOST_AUTO_TEST_CASE(empty_intersection) {
 
 BOOST_AUTO_TEST_CASE(multi_tests_element_access_with_tuple) {
 	multi::array<double, 2> arr({3, 3}, 44.0);
-	std::array<int, 2> point = {{1, 2}};
+
+	std::array<int, 2> point = {
+		{1, 2}
+	};
 
 	BOOST_REQUIRE(  arr[point[0]][point[1]] ==  arr(1, 2) );
 	BOOST_REQUIRE( &arr(point[0], point[1]) == &arr[point[0]][point[1]] );
@@ -58,7 +65,9 @@ BOOST_AUTO_TEST_CASE(multi_tests_element_access_with_tuple) {
 BOOST_AUTO_TEST_CASE(multi_tests_extension_with_tuple) {
 	{
 		multi::array<double, 2>::extensions_type const ext = {3, 4};
+
 		multi::array<double, 2> const arr(ext, 44.0);
+
 		BOOST_REQUIRE( size(arr) == 3 );
 	}
 	{
@@ -79,13 +88,13 @@ BOOST_AUTO_TEST_CASE(multi_test_constness_reference) {
 
 	BOOST_REQUIRE( size( carr(1, {0, 3}) ) == 3 );
 
-	BOOST_REQUIRE( carr(1, {0, 3})[1] == 99. );
+	BOOST_REQUIRE( carr(1, {0, 3})[1] == 99.0 );
 	static_assert(decltype(carr({0, 3}, 1))::rank_v == 1);
 	BOOST_REQUIRE( size(carr.sliced(0, 3)) == 3 );
 
 	BOOST_REQUIRE( carr.range({0, 3}).rotated()[1].unrotated().size() == 3 );
 
-	BOOST_REQUIRE( carr({0, 3}, {0, 3})[1][1] == 99. );
+	BOOST_REQUIRE( carr({0, 3}, {0, 3})[1][1] == 99.0 );
 
 	static_assert(not std::is_assignable_v<decltype(carr(1, {0, 3})[1]), double>);
 }
@@ -123,6 +132,16 @@ BOOST_AUTO_TEST_CASE(multi_test_stencil) {
 
 	BOOST_REQUIRE( &arr({1, 3}, {2, 5}).elements().front() == &arr(1, 2) );
 	BOOST_REQUIRE( &arr({1, 3}, {2, 5}).elements().back()  == &arr(2, 4) );
+}
+
+BOOST_AUTO_TEST_CASE(empty_elements) {
+	multi::array<double, 2> arr1;
+	multi::array<double, 2> arr2;
+
+	BOOST_REQUIRE( arr1.elements().size() == 0 );
+	BOOST_REQUIRE( arr2.elements().size() == 0 );
+	BOOST_REQUIRE(   arr1.elements() == arr2.elements()  );
+	BOOST_REQUIRE( !(arr1.elements() != arr2.elements()) );
 }
 
 BOOST_AUTO_TEST_CASE(multi_test_elements_1D) {
@@ -230,7 +249,7 @@ BOOST_AUTO_TEST_CASE(elements_rvalues_nomove) {
 
 	assign_elements_from_to(std::move(arr), q2);
 
-//  BOOST_REQUIRE( arr[0].empty() );  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved) for testing purposes
+	//  BOOST_REQUIRE( arr[0].empty() );  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved) for testing purposes
 
 	BOOST_REQUIRE( q1 == q2 );
 }

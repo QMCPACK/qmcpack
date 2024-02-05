@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Alfredo A. Correa
+// Copyright 2020-2024 Alfredo A. Correa
 #pragma once
 
 #include <multi/config/MARK.hpp>
@@ -96,16 +96,16 @@ using std::is_assignable;
 using std::is_assignable_v;
 using std::is_convertible_v;
 
-enum type {S, D, C, Z};
+// enum class type {S, D, C, Z};
 
-template<class T>
-constexpr auto type_of(T const& = {}) -> cublas::type {
-	static_assert(is_s<T>{} or is_d<T>{} or is_c<T>{} or is_z<T>{});
-	     if(is_s<T>{}) {return S;}
-	else if(is_d<T>{}) {return D;}
-	else if(is_c<T>{}) {return C;}
-	else if(is_z<T>{}) {return Z;}
-}
+// template<class T>
+// constexpr auto type_of(T const& = {}) -> cublas::type {
+//  static_assert(is_s<T>{} || is_d<T>{} || is_c<T>{} || is_z<T>{});
+//       if(is_s<T>{}) {return type::S;}
+//  else if(is_d<T>{}) {return type::D;}
+//  else if(is_c<T>{}) {return type::C;}
+//  else if(is_z<T>{}) {return type::Z;}
+// }
 
 #ifdef __NVCC__
 	using Complex = cuComplex;
@@ -115,35 +115,15 @@ constexpr auto type_of(T const& = {}) -> cublas::type {
 	using DoubleComplex = hipblasDoubleComplex;
 #endif
 
-template<class T>
-constexpr auto data_cast(T* p) {
-	     if constexpr(is_s<T>{}) {return reinterpret_cast<float        *>(p);}
-	else if constexpr(is_d<T>{}) {return reinterpret_cast<double       *>(p);}
-	else if constexpr(is_c<T>{}) {return reinterpret_cast<Complex      *>(p);}
-	else if constexpr(is_z<T>{}) {return reinterpret_cast<DoubleComplex*>(p);}
-}
+template<class T, std::enable_if_t<is_s<T>{}, int> =0> constexpr auto data_cast(T      * p) {return reinterpret_cast<float        *>(p);}
+template<class T, std::enable_if_t<is_d<T>{}, int> =0> constexpr auto data_cast(T      * p) {return reinterpret_cast<double       *>(p);}
+template<class T, std::enable_if_t<is_c<T>{}, int> =0> constexpr auto data_cast(T      * p) {return reinterpret_cast<Complex      *>(p);}
+template<class T, std::enable_if_t<is_z<T>{}, int> =0> constexpr auto data_cast(T      * p) {return reinterpret_cast<DoubleComplex*>(p);}
 
-template<class T>
-constexpr auto data_cast(T const* p) {
-	     if constexpr(is_s<T>{}) {return reinterpret_cast<float         const*>(p);}
-	else if constexpr(is_d<T>{}) {return reinterpret_cast<double        const*>(p);}
-	else if constexpr(is_c<T>{}) {return reinterpret_cast<Complex       const*>(p);}
-	else if constexpr(is_z<T>{}) {return reinterpret_cast<DoubleComplex const*>(p);}
-}
-
-// template<cublas::type T> auto const cublas_gemv = std::enable_if_t<T!=T>{};
-
-// template<> auto const cublas_gemv<S> = hicu(blasSgemv);
-// template<> auto const cublas_gemv<D> = hicu(blasDgemv);
-// template<> auto const cublas_gemv<C> = hicu(blasCgemv);
-// template<> auto const cublas_gemv<Z> = hicu(blasZgemv);
-
-#define DECLRETURN(ExpR) -> decltype(ExpR) {return ExpR;}  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing
-#define JUSTRETURN(ExpR)                   {return ExpR;}  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing
-
-// template<cublas::type T> struct cublas {
-//  static constexpr auto gemv = cublas_gemv<T>;
-// };
+template<class T, std::enable_if_t<is_s<T>{}, int> =0> constexpr auto data_cast(T const* p) {return reinterpret_cast<float        const*>(p);}
+template<class T, std::enable_if_t<is_d<T>{}, int> =0> constexpr auto data_cast(T const* p) {return reinterpret_cast<double       const*>(p);}
+template<class T, std::enable_if_t<is_c<T>{}, int> =0> constexpr auto data_cast(T const* p) {return reinterpret_cast<Complex      const*>(p);}
+template<class T, std::enable_if_t<is_z<T>{}, int> =0> constexpr auto data_cast(T const* p) {return reinterpret_cast<DoubleComplex const*>(p);}
 
 class context : private std::unique_ptr<typename std::pointer_traits<hicu(blasHandle_t)>::element_type, decltype(&hicu(blasDestroy))> {
 	using pimpl_t = std::unique_ptr<typename std::pointer_traits<hicu(blasHandle_t)>::element_type, decltype(&hicu(blasDestroy))>;

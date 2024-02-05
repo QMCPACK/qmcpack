@@ -129,6 +129,8 @@ foreach(TEST_FILE ${TEST_SRCS})
 	target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
 	target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_TEST_DYN_LINK=1")
 
+	target_link_libraries(${TEST_EXE} PRIVATE ${BLAS_LIBRARIES})  # there is no BLAS_INCLUDE_DIRS
+
     target_link_libraries(${TEST_EXE} PRIVATE multi)
 	target_link_libraries(${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
 

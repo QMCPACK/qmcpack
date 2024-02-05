@@ -17,7 +17,7 @@ namespace thrust {
 
 namespace boost {
 namespace multi {
-namespace memor y{
+namespace memory {
 
 template<typename T>
 //template<>

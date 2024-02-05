@@ -88,7 +88,7 @@ int main() {
 		assert(v[1] == 4.0);
 	}
 	{
-		auto r = multi::make_extension_t(10l);
+		auto r = multi::make_extension_t(10L);
 		auto f = [](auto x) {
 			std::size_t seed = 1234;
 			//  boost::hash_combine(seed, );
@@ -101,9 +101,7 @@ int main() {
 			boost::make_transform_iterator(r.end(), f)
 		);
 
-		std::size_t seed = 12349l;
-		//  boost::hash_combine(seed, );
-		//  seed ^= boost::hash<std::size_t>{}(13) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+		std::size_t seed = 12349L;
 		boost::hash_combine(seed, 13);
 
 		assert(v.size() == r.size());
@@ -113,11 +111,6 @@ int main() {
 			return x >= 0.0 and x < 1.0;
 		}));
 	}
-
-	// struct conj_t : thrust::unary_function<std::complex<double>, std::complex<double>> {
-	//   std::complex<double> operator()(std::complex<double> const& e) const {return std::conj(e);}
-	// } conj;
-
 	{
 		using namespace std::complex_literals;
 		multi::array<std::complex<double>, 1> A = {1.0 + 2.0i, 3.0 + 4.0i, 5.0 + 7.0i};
@@ -127,16 +120,5 @@ int main() {
 		std::vector<std::complex<double>> v(thrust::make_transform_iterator(A.elements().begin(), conj), thrust::make_transform_iterator(A.elements().end(), conj));
 		std::cout << v[1] << std::endl;
 		assert(v[1] == 3.0 - 4.0i);
-
-		//  using ittc = std::iterator_traits<conjr<std::complex<double>>>::iterator_category;
-
-		//  using rt = boost::result_of<const std::complex<double> &(std::complex<double> &)>::type;
-		//  using conjugater = decltype(boost::make_transform_iterator(A.data_elements(), conj));
-		//  conjugater ll(A.data_elements(), conj);
-		//  auto conjA = A.template static_array_cast<std::complex<double>, thrust::transform_iterator<conj_t, std::complex<double>*> >();
-		//  A.static_array_cast<std::complex<double>, transformer<std::complex<double>, decltype(conj)> >(conj);
-
-		//      return {this->layout(), P2{this->base(), std::forward<Args>(args)...}};
-		//  boost::multi::basic_array<std::complex<double>, 1, std::decay_t<decltype(thrust::make_transform_iterator(A.base(), conj))>> bb{A.layout(), thrust::make_transform_iterator(A.base(), conj)};
 	}
 }

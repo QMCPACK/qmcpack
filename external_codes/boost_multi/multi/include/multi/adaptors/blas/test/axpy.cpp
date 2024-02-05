@@ -1,4 +1,4 @@
-// Copyright 2019-2023 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS axpy"
 #include <boost/test/unit_test.hpp>
@@ -14,7 +14,7 @@
 namespace multi = boost::multi;
 namespace blas  = multi::blas;
 
-using complex = multi::complex<double>;
+using complex = multi::complex<double>;  // test internal implementation of complex (partially formed complex)
 
 BOOST_AUTO_TEST_CASE(multi_blas_axpy_real) {
 	multi::array<double, 2> arr = {

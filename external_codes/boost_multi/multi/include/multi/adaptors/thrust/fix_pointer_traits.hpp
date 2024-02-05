@@ -18,18 +18,12 @@ template<class T> struct pointer_traits;
 
 }  // end namespace thrust
 
-// namespace std {
-
 template<class... As>
-struct std::pointer_traits<::thrust::pointer<As...>>
+struct std::pointer_traits<::thrust::pointer<As...>>  // NOLINT(cert-dcl58-cpp) normal way to specialize pointer_traits
 : ::thrust::detail::pointer_traits<thrust::pointer<As...>> {
 	template<class T>
 	using rebind = typename ::thrust::detail::pointer_traits<::thrust::pointer<As...>>::template rebind<T>::other;
 };
 
-//}  
-
-// end namespace std
 // end of nvcc thrust 11.5 workaround
-
 #endif

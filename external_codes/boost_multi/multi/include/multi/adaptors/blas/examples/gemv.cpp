@@ -4,13 +4,14 @@
 #include <iostream>
 
 int main() {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays) test legacy types
     float matA[3][3] = {
         {1.1, 2.2, 3.3},
         {4.4, 5.5, 6.6},
         {7.7, 8.8, 9.9},
     };
-    float vecB[3] = {1.0, 2.0, 3.0};
-    float vecC[3] = {0.0, 0.0, 0.0};
+    float vecB[3] = {1.0, 2.0, 3.0};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test legacy types
+    float vecC[3] = {0.0, 0.0, 0.0};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test legacy types
 
     namespace multi = boost::multi;
 

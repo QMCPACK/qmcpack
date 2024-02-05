@@ -247,4 +247,7 @@ BOOST_AUTO_TEST_CASE(multi_reverse_iterator_2D) {
 	auto rbegin = std::make_reverse_iterator(arr.end());
 
 	BOOST_TEST( (*rbegin)[1] == 200.0 );
+
+	BOOST_REQUIRE( arr.begin()   < arr.begin() + 1 );
+	BOOST_REQUIRE( arr.end() - 1 < arr.end()       );
 }

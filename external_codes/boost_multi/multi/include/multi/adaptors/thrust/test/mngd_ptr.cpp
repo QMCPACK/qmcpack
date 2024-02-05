@@ -1,4 +1,3 @@
-
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS gemm"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
@@ -27,18 +26,16 @@ BOOST_AUTO_TEST_CASE(multi_cuda_mngd_ptr){
 	f(p);
 }
 
-template<class T> void what(T&&) = delete;
-
-BOOST_AUTO_TEST_CASE(multi_cuda_mngd_ptr_call_gemm){
-	using complex = std::complex<double>; complex const I{0, 1};
+BOOST_AUTO_TEST_CASE(const multi_cuda_mngd_ptr_call_gemm){
+	using complex = std::complex<double>; complex const I{0.0, 1.0};
 	boost::multi::cuda::managed::array<complex, 2> m = {
-		{ 1. + 2.*I, 3. - 3.*I, 1.-9.*I},
-		{ 9. + 1.*I, 7. + 4.*I, 1.-8.*I},
+		{ 1.0 + 2.0*I, 3.0 - 3.0*I, 1.0 - 9.0*I},
+		{ 9.0 + 1.0*I, 7.0 + 4.0*I, 1.0 - 8.0*I},
 	};
 	boost::multi::cuda::managed::array<complex, 2> const b = {
-		{ 11.+1.*I, 12.+1.*I, 4.+1.*I, 8.-2.*I},
-		{  7.+8.*I, 19.-2.*I, 2.+1.*I, 7.+1.*I},
-		{  5.+1.*I,  3.-1.*I, 3.+8.*I, 1.+1.*I}
+		{ 11.0 + 1.0*I, 12.0 + 1.0*I, 4.0 + 1.0*I, 8.0 - 2.0*I},
+		{  7.0 + 8.0*I, 19.0 - 2.0*I, 2.0 + 1.0*I, 7.0 + 1.0*I},
+		{  5.0 + 1.0*I,  3.0 - 1.0*I, 3.0 + 8.0*I, 1.0 + 1.0*I},
 	};
 //	{
 //		blas::context ctxt;
@@ -57,10 +54,10 @@ BOOST_AUTO_TEST_CASE(multi_cuda_mngd_ptr_call_gemm){
 //	}
 	{
 		multi::cuda::cublas::context ctxt;
-		auto c =+ blas::gemm(&ctxt, 1., m, b);
+		auto c =+ blas::gemm(&ctxt, 1.0, m, b);
 		static_assert( std::is_same<decltype(c), multi::cuda::managed::array<complex, 2>>{} );
 		BOOST_REQUIRE( c[1][2] == complex(112, 12) );
-		BOOST_REQUIRE( b[1][2] == 2.+1.*I );
+		BOOST_REQUIRE( b[1][2] == 2.0 + 1.0*I );
 	}
 //	{
 //		auto c =+ blas::gemm(1., m, b);

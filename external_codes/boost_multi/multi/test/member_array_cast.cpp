@@ -104,7 +104,7 @@ struct employee {
 };
 
 // TODO(correaa) this doesn't work with NVCC (triggered by adl fill)
-#if !(defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__))
+#if !(defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__))
 BOOST_AUTO_TEST_CASE(member_array_cast_soa_aos_employee) {
 	using namespace std::string_literals;  // NOLINT(build/namespaces) for ""s
 
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(element_transformed_from_member) {
 #endif
 
 // TODO(correaa) this doesn't work with NVCC (triggered by adl fill)
-#if !(defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__))
+#if !(defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__))
 BOOST_AUTO_TEST_CASE(element_transformed_from_member_no_amp) {
 	using namespace std::string_literals;  // NOLINT(build/namespaces) for ""s
 

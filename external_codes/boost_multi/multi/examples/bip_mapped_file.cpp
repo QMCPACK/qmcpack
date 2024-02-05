@@ -1,7 +1,7 @@
 #ifdef COMPILATION  // clang-format off
 ${CXX:-c++} -std=c++17 $CXXFLAGS -I../include $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #endif  // clang-format on
-// Copyright 2019-2023 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi interacting with Boost Interprocess"
 #define BOOST_TEST_DYN_LINK
@@ -48,11 +48,11 @@ namespace multi = boost::multi;
 template<class T, multi::dimensionality_type D>
 using marray = multi::array<T, D, mallocator<T>>;
 
-BOOST_AUTO_TEST_CASE(multi_test_bip) {
+BOOST_AUTO_TEST_CASE(const multi_test_bip) {
 
 	path const file = "bip_mapped_file.bin";
-	mremove(file);
 	{
+		mremove(file);
 		manager m{bip::create_only, file.c_str(), 1 << 25};  // objects with same name produce boost::interprocess_exception::library_error
 		auto&&  arr1d = *m.construct<marray<int, 1>>("arr1d")(std::tuple{10}, 99, get_allocator(m));
 		auto&&  arr2d = *m.construct<marray<double, 2>>("arr2d")(std::tuple{10, 10}, 0.0, get_allocator(m));
@@ -101,14 +101,14 @@ BOOST_AUTO_TEST_CASE(multi_test_bip) {
 		m.destroy<marray<int, 1>>("arr1d");
 		m.destroy<marray<double, 2>>("arr2d");
 		m.destroy<marray<unsigned, 3>>("arr3d");
+		mremove(file);
 	}
-	mremove(file);
 }
 
 template<class T> using alloc = bip::adaptive_pool<
 	T, bip::managed_shared_memory::segment_manager>;
 
-BOOST_AUTO_TEST_CASE(scoped_allocator_vector_of_arrays) {
+BOOST_AUTO_TEST_CASE(const scoped_allocator_vector_of_arrays) {
 
 	using bipc_row    = multi::array<int, 1, alloc<int>>;
 	using bipc_matrix = std::vector<bipc_row, std::scoped_allocator_adaptor<alloc<bipc_row>>>;
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(scoped_allocator_vector_of_arrays) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(scoped_allocator_arrays_of_vector) {
+BOOST_AUTO_TEST_CASE(const scoped_allocator_arrays_of_vector) {
 
 	using bipc_row    = std::vector<int, alloc<int>>;
 	using bipc_matrix = multi::array<bipc_row, 1, std::scoped_allocator_adaptor<alloc<bipc_row>>>;
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(scoped_allocator_arrays_of_vector) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(scoped_allocator_arrays_of_array) {
+BOOST_AUTO_TEST_CASE(const scoped_allocator_arrays_of_array) {
 
 	using bipc_row    = multi::array<int, 1, alloc<int>>;
 	using bipc_matrix = multi::array<bipc_row, 1, std::scoped_allocator_adaptor<alloc<bipc_row>>>;

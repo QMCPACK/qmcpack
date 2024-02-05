@@ -25,7 +25,8 @@
 #include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
-#include "multi/memory/fallback.hpp"
+
+#include "AFQMC/Memory/multi_memory/fallback.hpp"
 
 #include "Utilities/TimerManager.h"
 

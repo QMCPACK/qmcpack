@@ -1,4 +1,4 @@
-// © Alfredo A. Correa 2020-2023
+// © Alfredo A. Correa 2020-2024
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuFFT adaptor"
 #include<boost/test/unit_test.hpp>
@@ -8,13 +8,22 @@
 // #include "../../../adaptors/cuda.hpp"
 #include "../../../adaptors/fft.hpp"
 #include "../../../adaptors/fftw.hpp"
+
+#if (not (defined(__HIP_PLATFORM_AMD__) or defined(__HIP_PLATFORM_NVIDIA__))) and (not defined(__HIPCC__))
 #include "../../../adaptors/cufft.hpp"
+#else
+#include "../../../adaptors/hipfft.hpp"
+#endif
+
 #include "../../../adaptors/thrust.hpp"
 
 #include<thrust/complex.h>
 #include "../../../complex.hpp"
 
-#include<cuda_runtime.h> // cudaDeviceSynchronize
+#if not defined(__HIP_PLATFORM_AMD__) and not defined(__HIPCC__)
+#include<cuda_runtime.h>  // cudaDeviceSynchronize
+#else
+#endif
 
 #include <chrono>
 #include <complex>
@@ -37,11 +46,11 @@ __attribute__((always_inline)) inline void DoNotOptimize(const T &value) {
 struct watch : private std::chrono::high_resolution_clock{
 	std::string label_; time_point  start_;
 	watch(std::string label ="") : label_{label}, start_{}{
-		cudaDeviceSynchronize();
+		cudaDeviceSynchronize()==cudaSuccess?void():assert(0);
 		start_ = now();
 	}
-	~watch(){
-		cudaDeviceSynchronize();
+	~watch() {
+		cudaDeviceSynchronize()==cudaSuccess?void():assert(0);
 		auto const count = std::chrono::duration<double>(now() - start_).count();
 		std::cerr<< label_<<": "<< count <<" sec"<<std::endl;
 	}
@@ -490,20 +499,20 @@ BOOST_AUTO_TEST_CASE(cufft_3D_timing, *boost::unit_test::tolerance(0.0001)){
 		}
 
 		auto const in_gpu = multi::thrust::cuda::array<complex, 3>{in_cpu};  // (x, 10.0);
-		cudaDeviceSynchronize();
+		cudaDeviceSynchronize()==cudaSuccess?void():assert(0);
 		{
 			auto       fw_gpu = multi::thrust::cuda::array<complex, 3>(extensions(in_gpu), 99.0);
-			cudaDeviceSynchronize();
+			cudaDeviceSynchronize()==cudaSuccess?void():assert(0);
 		//  boost::timer::auto_cpu_timer t; //  0.208237s wall, 0.200000s user + 0.010000s system = 0.210000s CPU (100.8%)
 			boost::multi::cufft::dft({true, true}, in_gpu, fw_gpu, multi::cufft::forward);
-			cudaDeviceSynchronize();
+			cudaDeviceSynchronize()==cudaSuccess?void():assert(0);
 			BOOST_TEST( (static_cast<complex>(fw_gpu[8][9][10]) - fw_cpu[8][9][10]).real() == 0.0 );
 			BOOST_TEST( (static_cast<complex>(fw_gpu[8][9][10]) - fw_cpu[8][9][10]).imag() == 0.0 );
 		}
 		{
 		//  boost::timer::auto_cpu_timer t; //  0.208237s wall, 0.200000s user + 0.010000s system = 0.210000s CPU (100.8%)
 			auto const fw_gpu2 = boost::multi::cufft::dft({true, true}, in_gpu, multi::cufft::forward);
-			cudaDeviceSynchronize();
+			cudaDeviceSynchronize()==cudaSuccess?void():assert(0);
 			BOOST_TEST( (static_cast<complex>(fw_gpu2[8][9][10]) - fw_cpu[8][9][10]).real() == 0.0 );
 			BOOST_TEST( (static_cast<complex>(fw_gpu2[8][9][10]) - fw_cpu[8][9][10]).imag() == 0.0 );
 		}

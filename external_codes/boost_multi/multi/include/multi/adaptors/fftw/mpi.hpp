@@ -45,7 +45,7 @@ struct array<T, multi::dimensionality_type{2}, Alloc>{
 	using element_type = T;
 
 	mutable bmpi3::communicator comm_;
-	Alloc           alloc_;
+	Alloc alloc_;
 
 	typename std::allocator_traits<Alloc>::size_type                local_count_;
 	array_ptr<T, 2, typename std::allocator_traits<Alloc>::pointer> local_ptr_;
@@ -53,7 +53,9 @@ struct array<T, multi::dimensionality_type{2}, Alloc>{
 
 	static std::pair<typename std::allocator_traits<Alloc>::size_type, multi::extensions_t<2>>
 	local_2d(multi::extensions_t<2> ext, boost::mpi3::communicator const& comm){
-		ptrdiff_t local_n0, local_0_start;
+		ptrdiff_t local_n0;
+		ptrdiff_t local_0_start;
+
 		auto count = fftw_mpi_local_size_2d(std::get<0>(ext).size(), std::get<1>(ext).size(), comm.get(), &local_n0, &local_0_start);
 		assert( count >= local_n0*std::get<1>(ext).size() );
 		return {count, {{local_0_start, local_0_start + local_n0}, std::get<1>(ext)}};
@@ -84,7 +86,7 @@ struct array<T, multi::dimensionality_type{2}, Alloc>{
 	{
 		local_cutout() = other.local_cutout();
 	}
-	array(array&& other) :
+	array(array&& other) noexcept :
 		comm_       {std::move(other.comm_)},
 		alloc_      {std::move(other.alloc_)},
 		local_count_{std::exchange(other.local_count_, 0)},

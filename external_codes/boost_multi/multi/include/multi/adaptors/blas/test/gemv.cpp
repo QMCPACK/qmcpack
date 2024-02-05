@@ -31,8 +31,18 @@ void MV(M const& a, VI const& x, VO&& y) {  // NOLINT(readability-identifier-nam
 	);
 }
 
+// #ifdef _MULTI_USING_BLAS_MKL
+// #include <mkl/mkl_service.h>  // for mkl_free_buffers
+// struct Fixture {
+//   Fixture()   {mkl_disable_fast_mm(); }  // this is reported to solve memory leaks, but it doesn't with BLA_VENDOR=Intel10_64ilp (non seq) and INTEL_MKL_VERSION 20200004
+//   ~Fixture()  { mkl_free_buffers(); }  // this is reported to solve memory leaks, but it doesn't with BLA_VENDOR=Intel10_64ilp (non seq) and INTEL_MKL_VERSION 20200004
+// };
+
+// BOOST_GLOBAL_FIXTURE(Fixture);
+// #endif
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(multi_blas_gemv, T, fp_types) {
-	multi::array<T, 2> const a = {  // NOLINT(readability-identifier-length) BLAS naming
+	multi::array<T, 2> const a = {      // NOLINT(readability-identifier-length) BLAS naming
 		{ 9.0, 24.0, 30.0, 9.0},
 		{ 4.0, 10.0, 12.0, 7.0},
 		{14.0, 16.0, 36.0, 1.0}

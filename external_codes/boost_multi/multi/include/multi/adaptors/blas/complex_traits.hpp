@@ -1,14 +1,14 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2023 Alfredo A. Correa
+// Copyright 2023-2024 Alfredo A. Correa
 
 #ifndef MULTI_ADAPTORS_BLAS_COMPLEX_TRAITS_HPP
 #define MULTI_ADAPTORS_BLAS_COMPLEX_TRAITS_HPP
 #pragma once
 
-#include<complex>  // for std::complex
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)  // defined(__HIP_PLATFORM_AMD__) || defined(__HIP_PLATFORM_NVIDIA__)
 #include<thrust/complex.h>
 #endif
+
+#include<complex>  // for std::complex
 
 namespace boost::multi::blas {
 
@@ -24,7 +24,7 @@ struct complex_traits<std::complex<T>> {
 	constexpr static auto imaginary_unit() { return ::std::complex<T>{0, 1}; }
 };
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)  // defined(__HIP_PLATFORM_AMD__) || defined(__HIP_PLATFORM_NVIDIA__)
 template<class T>
 struct complex_traits<::thrust::complex<T>> {
 	using real_type = typename ::thrust::complex<T>::value_type;

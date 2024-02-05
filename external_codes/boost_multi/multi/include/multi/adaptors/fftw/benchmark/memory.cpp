@@ -42,8 +42,8 @@ static void Allocation(benchmark::State& state){
     benchmark::ClobberMemory();
 }
 
-BENCHMARK(Allocation<std        ::allocator<complex>>)->DenseRange(100, 500, 28);
-BENCHMARK(Allocation<multi::fftw::allocator<complex>>)->DenseRange(100, 500, 28);
+BENCHMARK(Allocation<std        ::allocator<complex>>)->DenseRange(100, 500, 28);  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+BENCHMARK(Allocation<multi::fftw::allocator<complex>>)->DenseRange(100, 500, 28);  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 template <class Alloc>
 static void Allocation1D(benchmark::State& state){

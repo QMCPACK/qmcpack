@@ -1,5 +1,4 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2020-2023 Alfredo A. Correa
+// Copyright 2020-2024 Alfredo A. Correa
 
 #ifndef MULTI_ADAPTORS_CUFFTW_HPP
 #define MULTI_ADAPTORS_CUFFTW_HPP
@@ -8,15 +7,19 @@
 #include "../adaptors/../array.hpp"
 #include "../adaptors/../config/NODISCARD.hpp"
 
-#include "../adaptors/cuda.hpp"
+// #include "../adaptors/cuda.hpp"
 
 #include<tuple>
 #include<array>
 
 // #include "../complex.hpp"
 
+#include<thrust/memory.h>  // for raw_pointer_cast
+
+#if not defined(__HIP_ROCclr__)
 #include <cufft.h>
 #include <cufftXt.h>
+#endif
 
 namespace boost{
 namespace multi{
@@ -26,26 +29,35 @@ namespace cufft{
 static char const* _cudaGetErrorEnum(cufftResult error) {
     switch (error) {
         case CUFFT_SUCCESS:        return "CUFFT_SUCCESS";
-        case CUFFT_INVALID_PLAN:   return "CUFFT_INVALID_PLAN";
+
         case CUFFT_ALLOC_FAILED:   return "CUFFT_ALLOC_FAILED";
+		case CUFFT_EXEC_FAILED:    return "CUFFT_EXEC_FAILED";
+		case CUFFT_INCOMPLETE_PARAMETER_LIST: return "CUFFT_INCOMPLETE_PARAMETER_LIST";
+		case CUFFT_INTERNAL_ERROR: return "CUFFT_INTERNAL_ERROR";
+		case CUFFT_INVALID_DEVICE: return "CUFFT_INVALID_DEVICE";
+        case CUFFT_INVALID_PLAN:   return "CUFFT_INVALID_PLAN";
+		case CUFFT_INVALID_SIZE:   return "CUFFT_INVALID_SIZE";
 		case CUFFT_INVALID_TYPE:   return "CUFFT_INVALID_TYPE";
 		case CUFFT_INVALID_VALUE:  return "CUFFT_INVALID_VALUE";
-		case CUFFT_INTERNAL_ERROR: return "CUFFT_INTERNAL_ERROR";
-		case CUFFT_EXEC_FAILED:    return "CUFFT_EXEC_FAILED";
+		case CUFFT_NO_WORKSPACE:   return "CUFFT_NO_WORKSPACE";
+		case CUFFT_NOT_IMPLEMENTED:return "CUFFT_NOT_IMPLEMENTED";
+		case CUFFT_NOT_SUPPORTED : return "CUFFT_NOT_SUPPORTED";
+		case CUFFT_PARSE_ERROR:    return "CUFFT_PARSE_ERROR";
         case CUFFT_SETUP_FAILED:   return "CUFFT_SETUP_FAILED";
-		case CUFFT_INVALID_SIZE:   return "CUFFT_INVALID_SIZE";
 		case CUFFT_UNALIGNED_DATA: return "CUFFT_UNALIGNED_DATA";
+		// case CUFFT_LICENSE_ERROR:  return "CUFFT_LICENSE_ERROR";
     }
     return "<unknown>";
 }
 
-#define cufftSafeCall(err) __cufftSafeCall(err, __FILE__, __LINE__)
-inline void __cufftSafeCall(cufftResult err, const char *file, const int line) {
+#define cufftSafeCall(err) implcufftSafeCall(err, __FILE__, __LINE__)
+inline void implcufftSafeCall(cufftResult err, const char *file, const int line) {
 	if( CUFFT_SUCCESS != err) {
 		std::cerr <<"CUFFT error in file "<< __FILE__ <<", line "<< __LINE__ <<"\nerror "<< err <<": "<<_cudaGetErrorEnum(err)<<"\n";
 		//fprintf(stderr, "CUFFT error in file '%s', line %d\n %s\nerror %d: %s\nterminating!\n", __FILE__, __LINE__, err, 
         //                        _cudaGetErrorEnum(err));
-		cudaDeviceReset(); assert(0);
+		cudaDeviceReset()==cudaSuccess?void():assert(0);
+		assert(0);
 	}
 }
 
@@ -61,6 +73,7 @@ class sign {
 constexpr sign forward{CUFFT_FORWARD};
 constexpr sign none{0};
 constexpr sign backward{CUFFT_INVERSE};
+// constexpr sign backward{CUFFT_BACKWARD};
 
 static_assert(forward != none and none != backward and backward != forward, "!");
 
@@ -71,17 +84,20 @@ struct plan {
 	void* workArea_;
 
 	using complex_type = cufftDoubleComplex;
-	cufftHandle h_;
+	cufftHandle h_;  // TODO(correaa) put this in a unique_ptr
 	std::array<std::pair<bool, fftw_iodim64>, DD + 1> which_iodims_{};
 	int first_howmany_;
 
 public:
 	using allocator_type = Alloc;
 
-	plan(plan&& other) :
+	plan(plan&& other) noexcept :
 		h_{std::exchange(other.h_, {})},
-		which_iodims_{other.which_iodims_},
-		first_howmany_{other.first_howmany_}
+		which_iodims_{std::exchange(other.which_iodims_, {})},
+		first_howmany_{std::exchange(other.first_howmany_, {})},
+		workSize_{std::exchange(other.workSize_, {})},
+		workArea_{std::exchange(other.workArea_, {})},
+		alloc_{std::move(other.alloc_)}
 	{}
 
     template<
@@ -204,7 +220,7 @@ public:
 					/*size_t **/          &workSize_
 				));
 				cufftSafeCall(cufftGetSize(h_, &workSize_));
-				workArea_ = raw_pointer_cast(alloc_.allocate(workSize_));
+				workArea_ = ::thrust::raw_pointer_cast(alloc_.allocate(workSize_)); static_assert(sizeof(Alloc) == 1000);
 				// auto s = cudaMalloc(&workArea_, workSize_);
 				// if(s != cudaSuccess) {throw std::runtime_error{"L212"};}
 				cufftSafeCall(cufftSetWorkArea(h_, workArea_));
@@ -216,7 +232,7 @@ public:
 		std::sort(which_iodims_.begin() + first_howmany_, which_iodims_.begin() + D, [](auto const& a, auto const& b){return get<1>(a).n > get<1>(b).n;});
 
 		if(first_howmany_ <= D - 1) {
-			if constexpr(std::is_same_v<Alloc, void*>) {
+			if constexpr(std::is_same_v<Alloc, void*>) {  // NOLINT(bugprone-branch-clone) workaround bug in DeepSource
 				cufftSafeCall(::cufftPlanMany(
 					/*cufftHandle *plan*/ &h_,
 					/*int rank*/          dims_end - dims.begin(),
@@ -248,7 +264,7 @@ public:
 					/*size_t **/          &workSize_
 				));
 				cufftSafeCall(cufftGetSize(h_, &workSize_));
-				workArea_ = raw_pointer_cast(alloc_.allocate(workSize_));
+				workArea_ = ::thrust::raw_pointer_cast(alloc_.allocate(workSize_));
 				cufftSafeCall(cufftSetWorkArea(h_, workArea_));
 			}
 			if(not h_) {throw std::runtime_error{"cufftPlanMany null"};}
@@ -328,7 +344,7 @@ public:
 
 	~plan() {
 		if constexpr(not std::is_same_v<Alloc, void*>) {
-			alloc_.deallocate(typename std::allocator_traits<Alloc>::pointer((char*)workArea_), workSize_);
+			if(workSize_ > 0) {alloc_.deallocate(typename std::allocator_traits<Alloc>::pointer((char*)workArea_), workSize_);}
 		}
 		if(h_) {cufftSafeCall(cufftDestroy(h_));}
 	}
@@ -338,19 +354,19 @@ public:
 
 template<dimensionality_type D, class Alloc = void*>
 struct cached_plan {
-	inline static std::map<std::tuple<std::array<bool, D>, multi::layout_t<D>, multi::layout_t<D>>, plan<D, Alloc> > cache;
 	typename std::map<std::tuple<std::array<bool, D>, multi::layout_t<D>, multi::layout_t<D>>, plan<D, Alloc> >::iterator it;
 
 	cached_plan(cached_plan const&) = delete;
 	cached_plan(cached_plan&&) = delete;
 
 	cached_plan(std::array<bool, D> which, boost::multi::layout_t<D, boost::multi::size_type> in, boost::multi::layout_t<D, boost::multi::size_type> out, Alloc const& alloc = {}) {
-		it = cache.find(std::tuple<std::array<bool, D>, multi::layout_t<D>, multi::layout_t<D>>{which, in, out});
-		if(it == cache.end()) {it = cache.insert(std::make_pair(std::make_tuple(which, in, out), plan<D, Alloc>(which, in, out, alloc))).first;}
+		static thread_local std::map<std::tuple<std::array<bool, D>, multi::layout_t<D>, multi::layout_t<D>>, plan<D, Alloc> >& LEAKY_cache = *new std::map<std::tuple<std::array<bool, D>, multi::layout_t<D>, multi::layout_t<D>>, plan<D, Alloc> >;
+		it = LEAKY_cache.find(std::tuple<std::array<bool, D>, multi::layout_t<D>, multi::layout_t<D>>{which, in, out});
+		if(it == LEAKY_cache.end()) {it = LEAKY_cache.insert(std::make_pair(std::make_tuple(which, in, out), plan<D, Alloc>(which, in, out, alloc))).first;}
 	}
 	template<class IPtr, class OPtr>
 	void execute(IPtr idata, OPtr odata, int direction) {
-		assert(it != cache.end());
+		// assert(it != LEAKY_cache.end());
 		it->second.execute(idata, odata, direction);
 	}
 };
@@ -418,7 +434,7 @@ constexpr auto array_tail(Array const& t)
 template<typename In,  std::size_t D = In::dimensionality>
 NODISCARD("when passing a const argument")
 auto dft(std::array<bool, D> which, In const& i, int sign)->std::decay_t<decltype(
-dft(which, i, typename In::decay_type(extensions(i), get_allocator(i)), sign))>{return 
+dft(which, i, typename In::decay_type(extensions(i), get_allocator(i)), sign))>{return
 dft(which, i, typename In::decay_type(extensions(i), get_allocator(i)), sign);}
 
 template<typename In,  std::size_t D = In::dimensionality>

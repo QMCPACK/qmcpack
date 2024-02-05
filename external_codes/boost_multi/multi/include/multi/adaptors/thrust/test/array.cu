@@ -56,6 +56,30 @@ using types_list = boost::mpl::list<
 
 BOOST_AUTO_TEST_CASE(dummy_test) {}
 
+BOOST_AUTO_TEST_CASE(cuda_universal_empty) {
+	using complex = std::complex<double>;
+	multi::array<complex, 2, thrust::cuda::universal_allocator<complex>> A;
+	multi::array<complex, 2, thrust::cuda::universal_allocator<complex>> B = A;
+	BOOST_REQUIRE( A.is_empty() );
+	BOOST_REQUIRE( B.is_empty() );
+	BOOST_REQUIRE( A == B );
+}
+
+BOOST_AUTO_TEST_CASE(cuda_allocators) {
+
+	multi::array<double, 1, thrust::cuda::allocator<double> > A1(200, 0.0);
+
+	BOOST_REQUIRE( size(A1) == 200 );
+	A1[100] = 1.0;
+
+	multi::array<double, 1, thrust::cuda::allocator<double>> const B1(200, 2.0);
+	BOOST_REQUIRE( B1[10] == 2.0 );
+
+	A1[10] = B1[10];
+	BOOST_REQUIRE( A1[10] == 2.0 );
+}
+
+
 BOOST_AUTO_TEST_CASE(test_univ_alloc) {
 	multi::array<double, 2, thrust::cuda::universal_allocator<double> > Dev({128, 128});
 	*raw_pointer_cast(Dev.base()) = 99.0;

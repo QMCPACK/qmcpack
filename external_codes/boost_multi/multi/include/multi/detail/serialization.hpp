@@ -1,5 +1,4 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2021 Alfredo A. Correa
+// Copyright 2018-2024 Alfredo A. Correa
 
 #ifndef MULTI_DETAIL_SERIALIZATION_HPP_
 #define MULTI_DETAIL_SERIALIZATION_HPP_
@@ -43,29 +42,30 @@ template<class T> class NameValuePair;  // dependency "in name only", if you get
 namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
 namespace multi {
 
-template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> and (MA::dimensionality > -1) , int> =0>
-auto operator>>(Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
-->decltype(arxiv>> self) {
-	return arxiv>> self; }
-
-template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> and (MA::dimensionality > -1), int> =0>
-auto operator& (Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
-->decltype(arxiv& self) {
-	return arxiv& self; }
-
 template<class Ar, class Enable = void>
 struct archive_traits {
 	template<class T>
 	inline static auto make_nvp  (char const* /*n*/, T&& value) noexcept {return std::forward<T>(value);}
 };
 
+template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1) , int> =0>
+auto operator>>(Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
+->decltype(arxiv>> self) {
+	return arxiv>> self; }
+
+template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> =0>
+auto operator& (Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
+->decltype(arxiv& self) {
+	return arxiv& self; }
+
 template<class Ar>
-struct archive_traits<Ar, typename std::enable_if<std::is_base_of_v<boost::archive::detail::common_oarchive<Ar>, Ar> || std::is_base_of_v<boost::archive::detail::common_iarchive<Ar>, Ar>>::type> {
+struct archive_traits<Ar, typename std::enable_if_t<std::is_base_of_v<boost::archive::detail::common_oarchive<Ar>, Ar> || std::is_base_of_v<boost::archive::detail::common_iarchive<Ar>, Ar>>> {
 	template<class T> using nvp           = boost::serialization::nvp          <T>;
 	template<class T> using array_wrapper = boost::serialization::array_wrapper<T>;
 	template<class T> struct binary_object_t {using type = boost::serialization::binary_object;};
-	template<class T>        inline static auto make_nvp          (char const* name, T&  value) noexcept -> const nvp<T> {return nvp<T>{name, value};}  // NOLINT(readability-const-return-type) : original boost declaration
-	template<class T>        inline static auto make_nvp          (char const* name, T&& value) noexcept -> const nvp<T> {return nvp<T>{name, value};}  // NOLINT(readability-const-return-type) : original boost declaration
+
+	template<class T>        inline static auto make_nvp          (char const* name, T&  value) noexcept -> const nvp<T> {return nvp<T>{name, value};}  // NOLINT(readability-const-return-type) : match original boost declaration
+	template<class T>        inline static auto make_nvp          (char const* name, T&& value) noexcept -> const nvp<T> {return nvp<T>{name, value};}  // NOLINT(readability-const-return-type) : match original boost declaration
 
 	template<class T>        inline static auto make_array        (               T* first, std::size_t size) noexcept -> const array_wrapper<T> {return array_wrapper<T>{first, size};}  // NOLINT(readability-const-return-type) original boost declaration
 	template<class T = void> inline static auto make_binary_object(      const void* first, std::size_t size) noexcept -> const typename binary_object_t<T>::type {return typename binary_object_t<T>::type(first, size); }  // if you get an error here you need to eventually `#include<boost/serialization/binary_object.hpp>`// NOLINT(readability-const-return-type,clang-diagnostic-ignored-qualifiers) : original boost declaration
@@ -74,21 +74,21 @@ struct archive_traits<Ar, typename std::enable_if<std::is_base_of_v<boost::archi
 #if 1
 template<class Ar>
 struct archive_traits<
-	Ar, 
-	typename std::enable_if<
-		   std::is_base_of_v<cereal::OutputArchive<Ar, 0>, Ar> or std::is_base_of_v<cereal::OutputArchive<Ar, 1>, Ar>
-		or std::is_base_of_v<cereal::InputArchive <Ar, 0>, Ar> or std::is_base_of_v<cereal:: InputArchive<Ar, 1>, Ar>
-	>::type
+	Ar,
+	typename std::enable_if_t<
+		   std::is_base_of_v<cereal::OutputArchive<Ar, 0>, Ar> || std::is_base_of_v<cereal::OutputArchive<Ar, 1>, Ar>
+		|| std::is_base_of_v<cereal::InputArchive <Ar, 0>, Ar> || std::is_base_of_v<cereal:: InputArchive<Ar, 1>, Ar>
+	>
 > {
-	using self_t = archive_traits<Ar, typename std::enable_if<
-		   std::is_base_of_v<cereal::OutputArchive<Ar, 0>, Ar> or std::is_base_of_v<cereal::OutputArchive<Ar, 1>, Ar>
-		or std::is_base_of_v<cereal:: InputArchive<Ar, 0>, Ar> or std::is_base_of_v<cereal:: InputArchive<Ar, 1>, Ar>
-	>::type>;
+	using self_t = archive_traits<Ar, typename std::enable_if_t<
+		   std::is_base_of_v<cereal::OutputArchive<Ar, 0>, Ar> || std::is_base_of_v<cereal::OutputArchive<Ar, 1>, Ar>
+		|| std::is_base_of_v<cereal:: InputArchive<Ar, 0>, Ar> || std::is_base_of_v<cereal:: InputArchive<Ar, 1>, Ar>
+	>>;
 
 	template<class T>
-	inline static auto make_nvp  (char const* name, T&& value) noexcept {return cereal::NameValuePair<T&>{name, value};}  // if you get an error here you many need to #include <cereal/archives/xml.hpp> at some point
+	inline static auto make_nvp  (char const* name, T&& value) noexcept {return cereal::NameValuePair<T&>{name, std::forward<T>(value)};}  // if you get an error here you many need to #include <cereal/archives/xml.hpp> at some point
 	template<class T>
-	inline static auto make_nvp  (char const* name, T&  value) noexcept {return cereal::NameValuePair<T&>{name, value};}  // if you get an error here you many need to #include <cereal/archives/xml.hpp> at some point
+	inline static auto make_nvp  (char const* name, T&  value) noexcept {return cereal::NameValuePair<T&>{name,                 value};}  // if you get an error here you many need to #include <cereal/archives/xml.hpp> at some point
 
 	template<class T>
 	struct array_wrapper {
@@ -136,8 +136,8 @@ namespace serialization {
 //   auto x = boost::multi::extensions(arr);
 //   ar & multi::archive_traits<Archive>::make_nvp("extensions", x);
 //   if( x != boost::multi::extensions(arr) ) {
-//   	arr.resize( std::array<std::size_t, 2>{} );
-//  	arr.resize( std::array<std::size_t, 2>{static_cast<std::size_t>(std::get<0>(x).size()), static_cast<std::size_t>(std::get<1>(x).size())} );
+//      arr.resize( std::array<std::size_t, 2>{} );
+//      arr.resize( std::array<std::size_t, 2>{static_cast<std::size_t>(std::get<0>(x).size()), static_cast<std::size_t>(std::get<1>(x).size())} );
 //   }
 //   ar & multi::archive_traits<Archive>::make_nvp("data_elements", multi::archive_traits<Archive>::make_array(boost::multi::data_elements(arr), static_cast<std::size_t>(boost::multi::num_elements(arr))));
 // }

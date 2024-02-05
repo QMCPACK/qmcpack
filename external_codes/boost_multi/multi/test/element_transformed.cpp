@@ -237,6 +237,6 @@ BOOST_AUTO_TEST_CASE(indirect_transformed_carray) {
 
 	auto const& const_indirect_v = indirect_v;
 
-	BOOST_TEST(  const_indirect_v[1][2] ==  11111.0 );  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) testing legacy type
+	BOOST_REQUIRE(  const_indirect_v[1][2] ==  11111.0 );  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) testing legacy type
 //  const_indirect_v[1][2] = 999.;  // doesn't compile, good!
 }

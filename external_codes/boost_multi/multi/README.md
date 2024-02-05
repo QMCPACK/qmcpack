@@ -5,14 +5,13 @@
 
 > **Disclosure: This is not an official or accepted Boost library and is unrelated to the std::mdspan proposal.**
 
-_© Alfredo A. Correa, 2018-2023_
+_© Alfredo A. Correa, 2018-2024_
 
 _Multi_ is a modern C++ library that provides access and manipulation of data in multidimensional arrays, for both CPU and GPU memory.
 
 Multidimensional array data structures are fundamental to several branches of computing, such as data analysis, image processing, and scientific simulations, and in combination with GPUs to Artificial Intelligence and Machine Learning.
-
-This library offers array containers and views in arbitrary dimensions with well-behaved value semantics, offering total compatibility with the Standard Algorithms (STL), special memory (including GPUs), and following modern C++ design principles.
-It requires at least C++17.
+This library offers array containers and views in arbitrary dimensions with well-behaved value semantics, offering total compatibility with the standard algorithms and ranges (STL) and special memory (including GPUs) and following modern C++ design principles.
+It requires, at least, C++17.
 
 Some features of this library:
 
@@ -23,9 +22,10 @@ Some features of this library:
 * Arbitrary pointer types (fancy pointers, memory spaces)
 * Simplified implementation (~4000 lines)
 
-Do not confuse this library with [Boost.MultiArray](https://www.boost.org/doc/libs/1_69_0/libs/multi_array/doc/index.html), or with the standard MDSpan proposal `std::mdspan`.
-`Multi` shares some of their goals but at a different level of generality.
-The code is completely independent and with important differences in the implementation and semantics.
+Do not confuse this library with [Boost.MultiArray](https://www.boost.org/doc/libs/1_69_0/libs/multi_array/doc/index.html) 
+or with the standard MDSpan proposal `std::mdspan`.
+This library shares some of their goals but at a different level of generality.
+The code is completely independent and has important implementation and semantics differences.
 
 ## Contents
 [[_TOC_]]
@@ -34,8 +34,8 @@ The code is completely independent and with important differences in the impleme
 
 You can try the library [online](https://godbolt.org/z/dvacqK8jE) before using it.
 
-_Multi_ doesn't require installation, a single header `#include <multi/array.hpp>` is enough to use the full core library.
-_Multi_ has no dependencies (except for the standard C++ library) and can be used immediately after downloading it.
+_Multi_ doesn't require installation; a single header `#include <multi/array.hpp>` is enough to use the entire core library.
+_Multi_ has no dependencies (except for the standard C++ library) and can be used immediately after downloading.
 
 ```bash
 git clone https://gitlab.com/correaa/boost-multi.git
@@ -74,24 +74,23 @@ FetchContent_MakeAvailable(multi)
 target_link_libraries(my_target PUBLIC multi)
 ```
 
-The code requires compilers with standard C++17 support, for reference any of:
-LLVM's       `clang` [(5.0+)](https://godbolt.org/z/51E1hjfnn) (`libc++` and `libstdc++`), 
-GNU's        `g++` [(7.1+)](https://godbolt.org/z/1nGEbKc5a), 
-Nvidia's    [`nvcc`](https://godbolt.org/z/abdT73PqM) (11.4+) and `nvc++` (22.7+), 
-Intel's      `icpc` (2021.2.0+) and `icpx` (2022.0.0+), 
+The code requires compilers with standard C++17 support; for reference any of:
+LLVM's       `clang` [(5.0+)](https://godbolt.org/z/51E1hjfnn) (`libc++` and `libstdc++`),
+GNU's        `g++` [(7.1+)](https://godbolt.org/z/1nGEbKc5a),
+Nvidia's    [`nvcc`](https://godbolt.org/z/abdT73PqM) (11.4+) and `nvc++` (22.7+),
+Intel's      `icpc` (2021.2.0+) and `icpx` (2022.0.0+),
 Baxter's    [`circle`](https://www.circle-lang.org/) (build 187+),
 and 
 Microsoft's [MSVC](https://visualstudio.microsoft.com/vs/features/cplusplus/) (+19.14 in [conformant mode](https://godbolt.org/z/vrfh1fxWK)).
 
 Optional "adaptor" sublibraries (included in `multi/adaptors/`) have specific dependencies, Boost.Serialization, fftw, blas, lapack, thurst, CUDA
-(which can be installed with `sudo apt install libboost-serializa
-tion-dev libfftw3-dev libblas64-dev liblapack64-dev libthrust-dev libcudart11.0` or `sudo dnf install blas-devel fftw-devel`.)
+(which can be installed with `sudo apt install libboost-serialization-dev libfftw3-dev libblas64-dev liblapack64-dev libthrust-dev libcudart11.0` or `sudo dnf install blas-devel fftw-devel`.)
 HIP support is experimental.
 
 ## Types
 
 * `multi::array<T, D, A = std::allocator<T>>`: 
-Array of integer positive dimension `D`, it has value semantics if element type `T` has value semantics. 
+Array of integer positive dimension `D`, it has value semantics if element type `T` has value semantics.
 Memory is requested by an allocator of type `A` (supports stateful and polymorphic allocators).
 * `multi::array_ref<T, D, P = T*>`: 
 Array interpretation of a random access range, usually a contiguous memory block. 
@@ -99,13 +98,13 @@ It has reference semantics.
 `P` does not need to be a language-pointer, it can be anything that behaves like a pointer (derreference and random access arithmetics).
 `array<T, D, A>` is implicitly an `array_ref<T, D, A::pointer>`, the reverse conversion is only explicit.
 * Other derived "unspecified types" fulfill a `MultiSubarray` concept, for example by taking partial indices or rotations (transpositions).
-These derived referencial types can be named by life-time extensions `auto&&` or `auto const&`,
+These derived referential types can be named by life-time extensions `auto&&` or `auto const&`,
 and they can decay to value types (copied elements).
-`array`s automatically fulfill the concept being a `MultiSubarray`.
+`array`s automatically fulfill the concept of being a `MultiSubarray``.
 * `MultiSubarray::(const_)iterator`:
 Iterator to subarrays of lower dimension.
 For `D == 1` this is an iterator to an element (or scalar, with zero dimension).
-This types are generated by `begin` and `end` (member) functions.
+These types are generated by `begin` and `end` (member) functions.
 * `MultiSubarray::(const_)reference`:
 Reference to subarrays of lower dimension.
 For `D > 1`, these references are not true language-references, but types that emulate them (with reference semantics).
@@ -122,11 +121,13 @@ multi::array<double, 2> A = {
     {4.0, 5.0, 6.0}
 };
 
-assert( A.size() == 2 );
-assert( A.num_elements() == 6 );
+auto const [n, m] = A.sizes();
 
-assert( std::get<0>(A.sizes()) == 2 );
-assert( std::get<1>(A.sizes()) == 3 );
+assert( n == 2 );  // or std::get<0>(A.sizes()) == 2
+assert( m == 3 );  // or std::get<1>(A.sizes()) == 3
+
+assert( A.size() == 2 );  // size in first dimension, or std::get<0>(A.sizes())
+assert( A.num_elements() == 6 );  // total number of elements
 ```
 
 The value of an array can be copied, (moved,) and compared;
@@ -164,7 +165,7 @@ auto element_1_1(ArrayDouble2D const& m) -> double const& {return m[1][1];}
 assert( &element_1_1(A) == &A[1][1] );
 ```
 
-The function expects any array or subarray of dimension 2 and return an element with type `double`. 
+The function expects any array or subarray of dimension 2 and return an element with type `double`.
 
 The generic function template arguments that are not intended to be modified are passed by `const&`; otherwise, they are passed by forward-reference `&&`.
 In this way, the functions can be applied on subblocks of larger matrices.
@@ -192,13 +193,11 @@ int main() {
 		100.0, 11.0, 12.0, 13.0, 14.0,
 		 50.0,  6.0,  7.0,  8.0,  9.0
 	};  // block of 20 elements ...
-	multi::array_ref<double, 2> d2D_ref{&d_data[0], {4, 5}};  // interpreted as a 4 by 5 array
+	multi::array_ref<double, 2> d2D_ref{&d_data[0], {4, 5}};  // .. interpreted as a 4 by 5 array
 	...
 ```
 
-Note that the syntax of creating a reference array involves passing the pointer to a memory block (20 elements here) and the logical dimensions of that memory block (4 by 5 here).
-
-Next we print the elements in a way that corresponds to the logical arrangement:
+Next, we print the elements in a way that corresponds to the logical arrangement:
 
 ```cpp
 	...
@@ -216,16 +215,16 @@ Next we print the elements in a way that corresponds to the logical arrangement:
 This will output:
 
 > ```
-> 150 16 17 18 19  
-> 30 1 2 3 4  
-> 100 11 12 13 14  
+> 150 16 17 18 19
+> 30 1 2 3 4
+> 100 11 12 13 14
 > 50 6 7 8 9
 > ```
 
 The arrays provide iterator-based access, which allows it to interface with algorithms and implement new ones.
 
-It is sometimes said (by Sean Parent) that the whole of STL algorithms can be seen as intermediate pieces to implement `std::stable_sort`. 
-Pressumably, if one can sort over a range, one can perform any other standard algorithm.
+It is sometimes said (by Sean Parent) that the whole of STL algorithms can be seen as intermediate pieces to implement `std::stable_sort`.
+Presumably, if one can sort over a range, one can perform any other standard algorithm.
 
 ```cpp
 		...
@@ -236,9 +235,9 @@ Pressumably, if one can sort over a range, one can perform any other standard al
 If we print the result, we will get:
 
 > ```
-> 30 1 2 3 4  
-> 50 6 7 8 9  
-> 100 11 12 13 14  
+> 30 1 2 3 4
+> 50 6 7 8 9
+> 100 11 12 13 14
 > 150 16 17 18 19
 > ```
 
@@ -248,7 +247,7 @@ Since the sorted array is a reference to the original data, the original C-array
 (Note that `std::sort` cannot be applied directly to a multidimensional C-array or to Boost.MultiArray types, among other libraries.
 The arrays implemented by this library are, to the best of my knowledge, the only ones that support all STL algorithms directly.)
 
-If we want to order the matrix in a per-column basis we need to "view" the matrix as range of columns.
+If we want to order the matrix in a per-column basis, we need to "view" the matrix as range of columns.
 This is done in the bidimensional case, by accessing the matrix as a range of columns:
 
 ```cpp
@@ -348,27 +347,28 @@ auto C2 = + A2( {0, 2}, {0, 2} );
 Note the use of the prefix `+` as an indicator that a copy must be created (it has no arithmetic implications).
 Due to limitations of the language, omiting the `+` will create effectively another reference  non-indepdent view of the left-hand-side, which is generally undesired.
 
-Subviews can also assigned but only if the shape of the left-hand side (LHS) and right-hand side (RHS) match.
-Otherwise the behavior is undefined (in debug mode the program will fail an `assert`).
+Subviews can also assigned, but only if the shape of the left-hand side (LHS) and right-hand side (RHS) match.
+Otherwise, the behavior is undefined (in debug mode, the program will fail an `assert`).
 
 ```cpp
 C2( {0, 2}, {0, 2} ) = A2( {0, 2}, {0, 2} );  // both are 2x2 views of arrays, *elements* are copied
 ```
 
 Introducing the same or overlapping arrays in the RHS and LHS produces undefined behavior in general (and the library doesn't check);
-Notably, this instruction does not transpose the array, but produces an undefined result:
+Notably, this instruction does not transpose the array but produces an undefined result:
 
 ```cpp
-A2 = A2.transposed();
+A2 =   A2.transposed();
 ```
 
-While this instead does produce a transposition, at the cost of making a copy (`+`) of the tranposed array first and assigning (or moving) it back to the original array.
+While this instead does produce a transposition, at the cost of making one copy (implied by `+`) of the transposed array first and assigning (or moving) it back to the original array.
 
 ```cpp
 A2 = + A2.transposed();
 ```
 
-In-place transposition is an active subject of research; _optimal_ in speed and memory transpositions might require specially designed libraries.
+In-place transposition is an active subject of research;
+_optimal_ speed and memory transpositions might require specially designed libraries.
 
 Finally, arrays can be efficiently moved by transferring ownership of the internal data.
 
@@ -377,14 +377,14 @@ auto B2 = std::move(A2);  // A2 is empty after this
 ```
 
 Subarrays do not own the data therefore they cannot be moved in the same sense.
-However, indivial elements of a view can be moved, this is particularly useful if the elements are expensive to copy.
-A "moved" subview is simply another kind view of the elements.
+However, individual elements of a view can be moved; this is particularly useful if the elements are expensive to copy.
+A "moved" subview is simply another kind of view of the elements.
 
 ```cpp
-multi::array<std::vector<double>, 2> A({10, 10});
+multi::array<std::vector<double>, 2> A({10, 10}, std::vector<double>(1000));
 multi::array<std::vector<double>, 2> B({10, 10});
 ...
-B[1] = A[2].element_moved();  // 10 *elements* of the third row of A is moved into the second row of B.
+B[1] = A[2].element_moved();  // 10 *elements* of the third row of A is moved into the second row of B. A[2] still has 10 (moved-from) empty vectors
 ```
 
 ## Change sizes (extents)
@@ -776,39 +776,39 @@ The library provides a basic form of broadcasting with certain limitations.
 Here is an example of an algorithm designed for two 2D arrays to obtain the row-by-row inner product.
 
 ```cpp
-    auto row_by_row_dot = [](auto const& A2D, auto const& B2D, auto& results) {
-        std::transform(A2D.begin(), A2D.end(), B2D.begin(), results.begin(),
-            [](auto const& Arow, auto const& Brow) {return std::inner_product(Arow.begin(), Arow.end(), Brow.begin(), 0);}
-        );
-    };
+auto row_by_row_dot = [](auto const& A2D, auto const& B2D, auto& results) {
+	std::transform(A2D.begin(), A2D.end(), B2D.begin(), results.begin(),
+		[](auto const& Arow, auto const& Brow) {return std::inner_product(Arow.begin(), Arow.end(), Brow.begin(), 0);}
+	);
+};
 
-    auto A = multi::array<int, 2>{{ 0,  1}, { 2,  3}, { 4,  5}};
-    auto B = multi::array<int, 2>{{10, 11}, {12, 13}, {14, 15}};
+auto A = multi::array<int, 2>{{ 0,  1}, { 2,  3}, { 4,  5}};
+auto B = multi::array<int, 2>{{10, 11}, {12, 13}, {14, 15}};
 
-    auto dots = multi::array<int, 1>({A.size()});
+auto dots = multi::array<int, 1>({A.size()});
 
-    row_by_row_dot(A, B, dots);
+row_by_row_dot(A, B, dots);
 ```
 
 If, for some reason, we want to obtain the inner product against a _single_ right-hand vector instead of several (a single 1D array of two elements), we would need to (re)write the function (or copy the repeated vector into the 2D `B` array, which is not ideal.)
 Broadcasting can help reuse the same function without changes.
 
 ```cpp
-    multi::array<int, 1> b = {10, 11};
+multi::array<int, 1> b = {10, 11};
 
-    row_by_row_dot(A, b.broadcasted(), dots);
+row_by_row_dot(A, b.broadcasted(), dots);
 ```
 
 The alternative, not using broadcast, is to write a very similar function,
 
 ```cpp
-    auto row_fixed_dot = [](auto const& A2D, auto const& b1D, auto& results) {
-        std::transform(A2D.begin(), A2D.end(), results.begin(),
-            [&b1D](auto const& Arow) {return std::inner_product(Arow.begin(), Arow.end(), b1D.begin(), 0);}
-        );
-    };
+auto row_fixed_dot = [](auto const& A2D, auto const& b1D, auto& results) {
+	std::transform(A2D.begin(), A2D.end(), results.begin(),
+		[&b1D](auto const& Arow) {return std::inner_product(Arow.begin(), Arow.end(), b1D.begin(), 0);}
+	);
+};
 
-    row_fixed_dot(A, b, dots3);
+row_fixed_dot(A, b, dots3);
 ```
 (https://godbolt.org/z/9ndvfKqhc)
 
@@ -820,13 +820,15 @@ Second, these array views are strictly read-only and alias their element address
 For illustration purposes only, `fill` here is replaced by `copy`; problematic uses are highlighted:
 
 ```cpp
-    multi::array<double, 2> B({10, 2});
-    std::fill(B.begin(), B.end(), b);                                       // canonical way
-    std::copy_n(b.broadcasted().begin(), v.size(), v.end());                // equivalent, using broadcast
+multi::array<double, 2> B({10, 2});
+std::fill. (B.begin(), B.end(), b);                                       // canonical way
+std::fill_n(B.begin(), B.size(), b);                                      // canonical way
 
-    std::copy_n(b.broadcasted().begin(), b.broadcasted().size(), v.end());  // incorrect, undefined behavior, no useful size()
-    std::copy  (b.begin(), b.end(), v.begin());                             // incorrect, undefined behavior, non-terminating loop
-	B = b.broadcasted();                                                    // incorrect, undefined behavior
+std::copy_n(b.broadcasted().begin(), B.size(), B.begin());                // equivalent, using broadcast
+
+std::copy_n(b.broadcasted().begin(), b.broadcasted().size(), B.begin());  // incorrect, undefined behavior, no useful size()
+std::copy  (b.broadcasted().begin(), b.broadcasted().end(), B.begin());   // incorrect, undefined behavior, non-terminating loop (end is not reacheable)
+B = b.broadcasted();                                                      // incorrect, undefined behavior, B would be of infinite allocated size
 ```
 
 Unlike popular languages, broadcasting is not automatic in the library and is applied to the leading dimension only, one dimension at a time.
@@ -838,22 +840,22 @@ These algorithms need to be compatible with broadcasted views (e.g., no explicit
 As a final example, consider a function that computes the elements-by-element product of two 2D arrays,
 
 ```cpp
-    auto hadamard = [](auto const& A, auto const& B, auto&& C) {
-        auto const [is, js] = C.extensions();
-        for(auto i : is) for(auto j : js) C[i][j] = A[i][j]*B[i][j];
-    };
+auto hadamard = [](auto const& A, auto const& B, auto&& C) {
+	auto const [is, js] = C.extensions();
+	for(auto i : is) for(auto j : js) C[i][j] = A[i][j]*B[i][j];
+};
 ```
 
 As it is, this function can be reused to calculate the outer product of two 1D arrays:
 
 ```cpp
-    auto outer = [&]<typename T>(auto const& a, auto const& b, T&& C) {
-        return hadamard(~(a.broadcasted()), b.broadcasted(), std::forward<T>(C));
-    };
+auto outer = [&]<typename T>(auto const& a, auto const& b, T&& C) {
+	return hadamard(~(a.broadcasted()), b.broadcasted(), std::forward<T>(C));
+};
 ```
 (https://godbolt.org/z/5o95qGdKz)
 
-Note that the function acting on 2D arrays, doesn't use the undefined (infinite) sizes (second dimension of `A` and first dimension of `B`).
+Note that the function `hadamard`, acting on 2D arrays, doesn't use the undefined (infinite) sizes (second dimension of `A` and first dimension of `B`).
 
 ## Partially formed elements
 
@@ -1035,8 +1037,9 @@ Along with STL itself, the library tries to interact with other existing quality
 
 ### Ranges (C++20)
 
-[Standard ranges](https://en.cppreference.com/w/cpp/ranges) provides algorithms that omit the use of iterators when they are not necessary.
-In this example, for a specific array the first row with odd sum has their values replaced:
+[Standard ranges](https://en.cppreference.com/w/cpp/ranges) provides algorithms that omit the use of iterators when they are not necessary for the benefit of composition.
+
+In this example, we replace the values of the the first row for which the sum of the elements is odd:
 
 ```cpp
     static constexpr auto accumulate = [](auto const& R) {return std::ranges::fold_left(R, 0, std::plus<>{});};
@@ -1054,21 +1057,48 @@ In this example, for a specific array the first row with odd sum has their value
 ```
 [(live)](https://godbolt.org/z/cT9WGffM3)
 
-
-Together with the array constructors, the ranges library enable a functional programming style;
-this allows to work with immutable variables in many cases in place of mutable imperative code.
+Together with the array constructors, the ranges library enable a more functional programming style;
+this allows to work with immutable variables in many cases instead of mutable variables.
 
 ```cpp
     multi::array<double, 2> const A = {{...}};
     multi::array<double, 1> const V = {...};
 
     multi::array<double, 1> const R = std::views::zip_transform(std::plus<>{}, A[0], V);
+
 	// multi::array<double, 1> R(V.size());  // in the alternative imperative code, R is created...
     // for(auto i : R.extension()) {R[i] = A[0][i] + V[i];}  // ...then mutated
 ```
 [(live)](https://godbolt.org/z/M84arKMnT)
 
-Finally, using ranges, views and the pipe (`|`) notation, this one-line expression will give the maximum value of the rows sums, [`std::ranges::max(arr | std::views::transform(accumulate))`](https://godbolt.org/z/hvqnsf4xb)
+
+The "pipe" (`|`) notation of standard ranges allow one-line expressions.
+In this example, the expression will yield the maximum value of the rows sums: [`std::ranges::max(arr | std::views::transform(accumulate))`](https://godbolt.org/z/hvqnsf4xb)
+
+Like in classic STL, standard range algorithms acting on sequences operate in the first dimension by default, for example lexicographical sorting on rows can be performed with the `std::ranges::sort` algorithm.
+
+```
+	auto A = multi::array<char, 2>{
+		{'S', 'e', 'a', 'n', ' ', ' '},
+		{'A', 'l', 'e', 'x', ' ', ' '},
+		{'B', 'j', 'a', 'r', 'n', 'e'},
+	};
+	assert(not std::ranges::is_sorted(A));
+
+	std::ranges::sort(A);
+
+	assert(    std::ranges::is_sorted(A));
+
+	assert(
+		A == multi::array<char, 2>{
+			{'A', 'l', 'e', 'x', ' ', ' '},
+			{'B', 'j', 'a', 'r', 'n', 'e'},
+			{'S', 'e', 'a', 'n', ' ', ' '},
+		}
+	);
+```
+
+To operate on the second dimension (sort by columns), use `std::ranges::sort(~A)` (or ``std::ranges::sort(A.transposed())`).
 
 ### Polymorphic Memory Resources
 
@@ -1230,6 +1260,7 @@ However, note that the user must ensure that data is serialized and deserialized
 the underlying serialization libraries only do minimal consistency checks for efficiency reasons and don't try to second-guess file formats or contained types.
 Serialization is a relatively low-level feature for which efficiency and economy of bytes is a priority.
 Cryptic errors and crashes can occur if serialization libraries, file formats, or C++ types are mixed between writes and reads.
+Some formats are human-readable, but not particularly pretty for showing as output (see section on Formatting on how to print to the screen).
 
 References to subarrays (views) can also be serialized; however, size information is not saved in such cases.
 The reasoning is that references to subarrays cannot be resized in their number of elements if there is a size mismatch during deserialization.
@@ -1490,9 +1521,10 @@ int main() {
 	...
 	using array2D = multi::array<double, 2, caching_allocator<double>>;
 
-	for(int i = 0; i != 10; ++i) { array2D A({100, 100}); ... use A ...}
+	for(int i = 0; i != 10; ++i) { array2D A({100, 100}); /*... use A ...*/ }
 }
 ```
+https://godbolt.org/z/rKG8PhsEh
 
 In the example, most of the memory requests are handled by reutilizing the memory pool avoiding expensive system allocations.
 More targeted usage patterns may require locally (non-globally) defined memory resources.
@@ -1550,6 +1582,71 @@ int main() {
 }
 ```
 [(live)](https://godbolt.org/z/eKbeosrWa)
+
+## SYCL
+
+The SYCL library promises the unify CPU, GPU and FPGA code.
+At the moment, the array containers can use the Unified Shared Memory (USM) allocator, but no other tests have been investigated.
+
+```cpp
+    sycl::queue q;
+
+    sycl::usm_allocator<int, sycl::usm::alloc::shared> q_alloc(q);
+    multi::array<int, 1, decltype(q_alloc)> data(N, 1.0, q_alloc);
+
+    //# Offload parallel computation to device
+    q.parallel_for(sycl::range<1>(N), [=,ptr = data.base()] (sycl::id<1> i) {
+        ptr[i] *= 2;
+    }).wait();
+```
+https://godbolt.org/z/8WG8qaf4s
+
+Algorithms are expected to work with oneAPI execution policies as well (not tested)
+
+```cpp
+    auto policy = oneapi::dpl::execution::dpcpp_default;
+    sycl::usm_allocator<int, sycl::usm::alloc::shared> alloc(policy.queue());
+    multi::array<int, 1, decltype(alloc)> vec(n, alloc);
+
+    std::fill(policy, vec.begin(), vec.end(), 42);
+```
+
+## Formatting ({fmt} pretty printing)
+
+The library doesn't have a "pretty" printing facility to display arrays;
+fortunatelly it automatically works with the external library [{fmt}](https://fmt.dev/latest/index.html), both for arrays and subarrays.
+This example prints a 2-dimensional subblock of a larger array.
+
+```cpp
+#include "fmt/ranges.h"
+...
+    multi::array<double, 2> A2 = {
+        {1.0, 2.0,      3.0}, 
+        /*-subblock-**/
+        {3.0, 4.0, /**/ 5.0},
+        {6.0, 7.0, /**/ 8.0},
+    };
+
+    fmt::print("A2 subblock = {}", A2({1, 3}, {0, 2}));  // second and third row, first and second column
+```
+with the "flat" output `A2 subblock = [[3, 4], [6, 7]]`
+
+https://godbolt.org/z/EE5sqTdvf
+
+For 2 or more dimensions the output can be conveniently structured in different lines using the `fmt::join` facility:
+
+```cpp
+    fmt::print("{}\n", fmt::join(A2({1, 3}, {0, 2}), "\n"));  // first dimension rows are printer are in different lines
+```
+with the output:
+
+> ```
+> [3, 4]
+> [6, 7]
+> ```
+
+
+When saving arrays to files, consider using serialization (see section) instead.
 
 ## TotalView
 

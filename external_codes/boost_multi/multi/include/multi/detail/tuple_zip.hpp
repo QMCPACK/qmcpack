@@ -288,59 +288,57 @@ struct std::tuple_element<N, boost::multi::detail::tuple<T0, Ts...>> {  // NOLIN
 	using type = typename tuple_element<N - 1, boost::multi::detail::tuple<Ts...>>::type;
 };
 
-// NOLINTBEGIN(cert-dcl58-cpp) define stuff in STD  // TODO(correaa) this is bad
-namespace std {
+namespace std {  // NOLINT(cert-dcl58-cpp) define stuff in STD  // TODO(correaa) this is bad
 
 template<std::size_t N, class... Ts>
-constexpr auto get(boost::multi::detail::tuple<Ts...> const& t)  // NOLINT(readability-identifier-length) std naming
-	-> decltype(boost::multi::detail::get<N>(t)) {
-	return boost::multi::detail::get<N>(t);
+constexpr auto get(boost::multi::detail::tuple<Ts...> const& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+	-> decltype(boost::multi::detail::get<N>(tp)) {
+	return boost::multi::detail::get<N>(tp);
 }
 
 template<std::size_t N, class... Ts>
-constexpr auto get(boost::multi::detail::tuple<Ts...>& t)  // NOLINT(readability-identifier-length) std naming
-	-> decltype(boost::multi::detail::get<N>(t)) {
-	return boost::multi::detail::get<N>(t);
+constexpr auto get(boost::multi::detail::tuple<Ts...>& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+	-> decltype(boost::multi::detail::get<N>(tp)) {
+	return boost::multi::detail::get<N>(tp);
 }
 
 template<std::size_t N, class... Ts>
-constexpr auto get(boost::multi::detail::tuple<Ts...>&& t)  // NOLINT(readability-identifier-length) std naming
-	-> decltype(boost::multi::detail::get<N>(std::move(t))) {
-	return boost::multi::detail::get<N>(std::move(t));
+constexpr auto get(boost::multi::detail::tuple<Ts...>&& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+	-> decltype(boost::multi::detail::get<N>(std::move(tp))) {
+	return boost::multi::detail::get<N>(std::move(tp));
 }
 
 template<class F, class Tuple, std::size_t... I>
-constexpr auto std_apply_timpl(F&& f, Tuple&& t, std::index_sequence<I...> /*012*/) -> decltype(auto) {  // NOLINT(readability-identifier-length) std naming
-	(void)t;  // fix "error #827: parameter "t" was never referenced" in NVC++ and "error #869: parameter "t" was never referenced" in oneAPI-ICPC
-	return std::forward<F>(f)(boost::multi::detail::get<I>(std::forward<Tuple>(t))...);
+constexpr auto std_apply_timpl(F&& fn, Tuple&& tp, std::index_sequence<I...> /*012*/) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+	(void)tp;  // fix "error #827: parameter "t" was never referenced" in NVC++ and "error #869: parameter "t" was never referenced" in oneAPI-ICPC
+	return std::forward<F>(fn)(boost::multi::detail::get<I>(std::forward<Tuple>(tp))...);
 }
 
 template<class F, class... Ts>
-constexpr auto apply(F&& f, boost::multi::detail::tuple<Ts...> const& t) -> decltype(auto) {  // NOLINT(readability-identifier-length) std naming
+constexpr auto apply(F&& fn, boost::multi::detail::tuple<Ts...> const& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
 	return std_apply_timpl(
-		std::forward<F>(f), t,
+		std::forward<F>(fn), tp,
 		std::make_index_sequence<sizeof...(Ts)>{}
 	);
 }
 
 template<class F, class... Ts>
-constexpr auto apply(F&& f, boost::multi::detail::tuple<Ts...>& t) -> decltype(auto) {  // NOLINT(readability-identifier-length) std naming
+constexpr auto apply(F&& fn, boost::multi::detail::tuple<Ts...>& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
 	return std_apply_timpl(
-		std::forward<F>(f), t,
+		std::forward<F>(fn), tp,
 		std::make_index_sequence<sizeof...(Ts)>{}
 	);
 }
 
 template<class F, class... Ts>
-constexpr auto apply(F&& f, boost::multi::detail::tuple<Ts...>&& t) -> decltype(auto) {  // NOLINT(readability-identifier-length) std naming
+constexpr auto apply(F&& fn, boost::multi::detail::tuple<Ts...>&& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
 	return std_apply_timpl(
-		std::forward<F>(f), std::move(t),
+		std::forward<F>(fn), std::move(tp),
 		std::make_index_sequence<sizeof...(Ts)>{}
 	);
 }
 
 }  // end namespace std
-// NOLINTEND(cert-dcl58-cpp) define stuff in STD
 
 namespace boost::multi {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
 namespace detail {
