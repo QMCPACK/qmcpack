@@ -15,6 +15,7 @@
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"
+#include "SelfHealingOverlapInput.h"
 #include "MagnetizationDensityInput.h"
 #include "PerParticleHamiltonianLoggerInput.h"
 #include "ModernStringUtils.hpp"
@@ -87,6 +88,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<SpinDensityInput>(child);
       else if (atype == "momentumdistribution")
         appendEstimatorInput<MomentumDistributionInput>(child);
+      else if (atype == "selfhealingoverlap")
+        appendEstimatorInput<SelfHealingOverlapInput>(child);
       else if (atype == "perparticlehamiltonianlogger")
         appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
       else if (atype == "magnetizationdensity")
