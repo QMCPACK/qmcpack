@@ -109,6 +109,7 @@ public:
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist();
   }
+
   ///destructor
   ~hdf_archive();
 
@@ -200,7 +201,6 @@ public:
   void push(const std::string& gname, bool createit = true);
   void push(const hdf_path& gname, bool createit = true);
 
-
   inline void pop()
   {
     if (file_id == is_closed || group_id.empty())
@@ -255,9 +255,7 @@ public:
   void write(T& data, const std::string& aname)
   {
     if (!writeEntry(data, aname))
-    {
       throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
-    }
   }
 
   /** write the container data with a specific shape and check status

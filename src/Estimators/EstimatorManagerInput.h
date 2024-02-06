@@ -37,6 +37,7 @@ class EstimatorManagerInputTests;
  *  We know all the estimator types at compile time and it is useful to have type safety for their usage.
  *  All input clasess must satisfy std::is_trivially_copyable..
  */
+class EnergyDensityInput;
 class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
@@ -47,7 +48,8 @@ using EstimatorInput  = std::variant<std::monostate,
                                     SpinDensityInput,
                                     OneBodyDensityMatricesInput,
                                     MagnetizationDensityInput,
-                                    PerParticleHamiltonianLoggerInput>;
+                                    PerParticleHamiltonianLoggerInput,
+                                    EnergyDensityInput>;
 using EstimatorInputs = std::vector<EstimatorInput>;
 
 /** The scalar esimtator inputs

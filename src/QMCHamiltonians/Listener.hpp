@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -18,6 +18,7 @@
  *  implementation of observables that rely on per particle Hamiltonian values.
  */
 
+#include <complex>
 #include <functional>
 
 #include "type_traits/template_types.hpp"
@@ -82,6 +83,30 @@ struct ListenerOption
   const std::vector<ListenerVector<T>>& ion_values;
 };
 
+/// Type for representing per particle energy values at the Crowd scope.
+template<typename T>
+using CrowdEnergyValues = std::unordered_map<std::string, std::vector<Vector<T>>>;
+/** utility function to reduce over hamiltonian components for per particle energies.
+ *  i.e. overall all names for a particular walker in a CrowdEnergyValues.
+ *  \param[in]   cev_in        crowd energy values type
+ *  \param[out]  values_out    reduced walker vector of per particle values. assumed to have sizes for walker and particles commensurate with cev_in
+ */
+template<typename T>
+void combinePerParticleEnergies(const CrowdEnergyValues<T>& cev_in, std::vector<Vector<T>>& values_out);
+
+extern template void combinePerParticleEnergies<double>(const CrowdEnergyValues<double>& cev_in,
+                                                        std::vector<Vector<double>>& values_out);
+
+extern template void combinePerParticleEnergies<float>(const CrowdEnergyValues<float>& cev_in,
+                                                       std::vector<Vector<float>>& values_out);
+
+extern template void combinePerParticleEnergies<std::complex<double>>(
+    const CrowdEnergyValues<std::complex<double>>& cev_in,
+    std::vector<Vector<std::complex<double>>>& values_out);
+
+extern template void combinePerParticleEnergies<std::complex<float>>(
+    const CrowdEnergyValues<std::complex<float>>& cev_in,
+    std::vector<Vector<std::complex<float>>>& values_out);
 } // namespace qmcplusplus
 
 

@@ -32,6 +32,7 @@ std::unique_ptr<QMCFixedSampleLinearOptimizeBatched> QMCWFOptLinearFactoryNew(
     const std::optional<EstimatorManagerInput>& global_emi,
     WalkerConfigurations& wc,
     MCPopulation&& pop,
+    const ParticleSetPool::PoolType& pset_pool,
     SampleStack& samples,
     Communicate* comm);
 } // namespace qmcplusplus

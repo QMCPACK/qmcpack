@@ -47,9 +47,11 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            const std::optional<EstimatorManagerInput>& global_emi,
                            WalkerConfigurations& wc,
                            MCPopulation&& population,
+			   const PSPool& pset_pool,
                            const std::string timer_prefix,
                            Communicate* comm,
-                           const std::string& QMC_driver_type)
+                           const std::string& QMC_driver_type,
+                           SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
@@ -59,7 +61,8 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       timers_(timer_prefix),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
-      walker_configs_ref_(wc)
+      walker_configs_ref_(wc),
+      setNonLocalMoveHandler_(snlm_handler)
 {
   // This is done so that the application level input structures reflect the actual input to the code.
   // While the actual simulation objects still take singular input structures at construction.
@@ -79,6 +82,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                                             makeEstimatorManagerInput(global_emi,
                                                                       qmcdriver_input_.get_estimator_manager_input()),
                                             population_.get_golden_hamiltonian(), population.get_golden_electrons(),
+					    pset_pool,
                                             population.get_golden_twf());
 
   drift_modifier_.reset(
@@ -197,8 +201,8 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
  */
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
-  app_log() << "\n=========================================================" << "\n  Start " << QMCType
-            << "\n  File Root " << get_root_name();
+  app_log() << "\n========================================================="
+            << "\n  Start " << QMCType << "\n  File Root " << get_root_name();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())
@@ -285,6 +289,14 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
     for (int i = 0; i < num_walkers_to_kill; ++i)
       population_.killLastWalker();
   }
+
+  // \todo: this could be what is breaking spawned walkers
+  for (UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
+    setNonLocalMoveHandler_(*ham);
+
+  // For the dead ones too. Since this should be on construction but...
+  for (UPtr<QMCHamiltonian>& ham : population_.get_dead_hamiltonians())
+    setNonLocalMoveHandler_(*ham);
 }
 
 /** Creates Random Number generators for crowds and step contexts
@@ -389,6 +401,8 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 
   return o_stream;
 }
+
+void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham) {}
 
 QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate& comm,
                                                                          const IndexType current_configs,

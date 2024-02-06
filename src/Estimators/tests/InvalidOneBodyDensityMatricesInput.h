@@ -18,9 +18,12 @@ namespace qmcplusplus
 {
 namespace testing
 {
-// clang-format: off
-constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sections{
-    R"(
+
+struct InvalidOneBodyDensityMatricesInput
+{
+  // clang-format: off
+  static constexpr std::array<const char*, 4> xml{
+      R"XML(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  spo_u spo_uv  </parameter>
   <parameter name="evaluator"    >  matrix        </parameter>
@@ -30,8 +33,8 @@ constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sec
   <parameter name="timestep"     >  0.5           </parameter>
   <parameter name="use_drift"    >  no            </parameter>
 </estimator>
-)",
-    R"(
+)XML",
+      R"XML(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  dm_basis      </parameter>
   <parameter name="evaluator"    >  loop          </parameter>
@@ -41,8 +44,8 @@ constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sec
   <parameter name="timestep"     >  0.5           </parameter>
   <parameter name="use_drift"    >  yes           </parameter>
 </estimator>
-)",
-    R"(
+)XML",
+      R"XML(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  dm_basis      </parameter>
   <parameter name="evaluator"    >  loop          </parameter>
@@ -53,8 +56,8 @@ constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sec
   <parameter name="use_drift"    >  yes           </parameter>
   <parameter name="acceptance_ratio"> yes         </parameter>
 </estimator>
-)",
-    R"(
+)XML",
+      R"XML(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  dm_basis      </parameter>
   <parameter name="evaluator"    >  loop          </parameter>
@@ -65,14 +68,18 @@ constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sec
   <parameter name="use_drift"    >  yes           </parameter>
   <parameter name="acceptance_ratio"> yes         </parameter>
 </estimator>
-)"
-    // clang-format: on
+)XML"
+      // clang-format: on
+  };
+  enum invalid
+  {
+    bad_integrator = 0,
+    bad_scale,
+    bad_acceptance_ratio,
+    uniform_grid_samples
+  };
 };
 
-constexpr int invalid_obdm_input_bad_integrator       = 0;
-constexpr int invalid_obdm_input_bad_scale            = 1;
-constexpr int invalid_obdm_input_bad_acceptance_ratio = 2;
-constexpr int invalid_obdm_input_uniform_grid_samples = 3;
 } // namespace testing
 } // namespace qmcplusplus
 

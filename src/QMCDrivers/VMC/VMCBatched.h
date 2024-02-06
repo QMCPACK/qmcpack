@@ -76,6 +76,7 @@ public:
              VMCDriverInput&& input,
              WalkerConfigurations& wc,
              MCPopulation&& pop,
+	     const QMCDriverNew::PSPool& pset_pool,
              SampleStack& samples_,
              Communicate* comm);
 

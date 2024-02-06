@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2021 QMCPACK developers.
+#// Copyright (c) 2024 QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -30,6 +30,8 @@ set(SRCS
     test_EstimatorManagerNew.cpp
     test_trace_manager.cpp
     EstimatorTesting.cpp
+    GenerateRandomParticleSets.cpp
+    MockGoldWalkerElements.cpp
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
@@ -53,6 +55,8 @@ set(SRCS
     test_EstimatorManagerCrowd.cpp
     test_SpaceGridInput.cpp
     test_NESpaceGrid.cpp
+    test_EnergyDensityInput.cpp
+    test_EnergyDensityEstimator.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})

@@ -20,6 +20,7 @@ std::unique_ptr<QMCDriverInterface> DMCFactoryNew::create(const ProjectData& pro
                                                           const std::optional<EstimatorManagerInput> global_emi,
                                                           WalkerConfigurations& wc,
                                                           MCPopulation&& pop,
+							  const ParticleSetPool::PoolType& pset_pool,
                                                           Communicate* comm)
 {
   app_summary() << "\n========================================"
@@ -40,7 +41,7 @@ std::unique_ptr<QMCDriverInterface> DMCFactoryNew::create(const ProjectData& pro
   }
 
   auto qmc = std::make_unique<DMCBatched>(project_data, std::move(qmcdriver_input), global_emi,
-                                          std::move(dmcdriver_input), wc, std::move(pop), comm);
+                                          std::move(dmcdriver_input), wc, std::move(pop), pset_pool, comm);
   // This can probably be eliminated completely since we only support PbyP
   qmc->setUpdateMode(dmc_mode_ & 1);
   return qmc;
