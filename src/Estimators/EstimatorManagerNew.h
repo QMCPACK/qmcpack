@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -21,6 +21,7 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "OperatorEstBase.h"
 #include "Particle/Walker.h"
+#include <ParticleSetPool.h>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "type_traits/template_types.hpp"
 #include "EstimatorManagerInput.h"
@@ -52,22 +53,25 @@ public:
   using QMCT      = QMCTraits;
   using FPRBuffer = std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-
-  ///default constructor
+  using PSPool = typename ParticleSetPool::PoolType;
+  /// default constructor
   EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   /** Batched version constructor.
    *
-   *  \param[in]  emi    EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
-   *  \param[in]  H      Fully Constructed Golden Hamiltonian.
-   *  \param[in]  pset   The electron or equiv. pset
-   *  \param[in]  twf    The fully constructed TrialWaveFunction.
+   *  \param[in]  comm        MPI communicator
+   *  \param[in]  emi         EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
+   *  \param[in]  H           Fully Constructed Golden Hamiltonian.
+   *  \param[in]  pset        The electron or equiv. pset
+   *  \param[in]  pset_pool   Application ParticleSet pool
+   *  \param[in]  twf         The fully constructed TrialWaveFunction.
    */
   EstimatorManagerNew(Communicate* comm,
                       EstimatorManagerInput&& emi,
                       const QMCHamiltonian& H,
                       const ParticleSet& pset,
+		      const PSPool& pset_pool,
                       const TrialWaveFunction& twf);
   ///destructor
   ~EstimatorManagerNew();

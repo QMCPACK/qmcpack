@@ -10,13 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "EstimatorManagerInput.h"
+#include "EstimatorInputDelegates.h"
 #include <algorithm>
-#include "ScalarEstimatorInputs.h"
-#include "MomentumDistributionInput.h"
-#include "OneBodyDensityMatricesInput.h"
-#include "SpinDensityInput.h"
-#include "MagnetizationDensityInput.h"
-#include "PerParticleHamiltonianLoggerInput.h"
 #include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
@@ -91,6 +86,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
       else if (atype == "magnetizationdensity")
         appendEstimatorInput<MagnetizationDensityInput>(child);
+      else if (atype == "energydensity")
+        appendEstimatorInput<EnergyDensityInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");

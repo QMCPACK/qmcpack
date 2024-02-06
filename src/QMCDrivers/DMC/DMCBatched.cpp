@@ -45,25 +45,28 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                        DMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
+		       const QMCDriverNew::PSPool& pset_pool,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    global_emi,
                    wc,
                    std::move(pop),
+		   pset_pool,
                    "DMCBatched::",
                    comm,
-                   "DMCBatched"),
+                   "DMCBatched",
+                   std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
       dmcdriver_input_(input),
       dmc_timers_("DMCBatched::")
 {}
 
 DMCBatched::~DMCBatched() = default;
 
-void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& hamiltonian)
+void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
 {
-  hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
-                               dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
+  golden_hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
+                                      dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
 }
 
 template<CoordsType CT>
