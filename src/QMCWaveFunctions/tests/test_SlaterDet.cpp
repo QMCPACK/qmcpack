@@ -152,11 +152,11 @@ public:
 
 TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
 {
-  Communicate* comm                       = OHMMS::Controller;
+  Communicate* comm = OHMMS::Controller;
 
-  auto particle_pool                      = MinimalParticlePool::make_O2_spinor(comm);
-  auto& elec0                              = *(particle_pool).getParticleSet("e");
-  auto& elec1                              = *(particle_pool).getParticleSet("e");
+  auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
+  auto& elec0        = *(particle_pool).getParticleSet("e");
+  auto& elec1        = *(particle_pool).getParticleSet("e");
   RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});
 
   std::unique_ptr<ConstantSPOSet> spo_ptr0 = std::make_unique<ConstantSPOSet>("dummySPO", 3, 3);
@@ -188,7 +188,7 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
     std::vector<SPOSet::ValueType> ratios(2);
     std::vector<SPOSet::ComplexType> spingrads(2);
     slaterdet0.mw_evalGrad(sd_list, p_list, 0, grads);
-    for (auto grad: grads)
+    for (auto grad : grads)
     {
       CHECK(grad[0] == ValueApprox(123.));
       CHECK(grad[1] == ValueApprox(456.));
@@ -196,31 +196,31 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
     }
 
     slaterdet0.mw_evalGradWithSpin(sd_list, p_list, 0, grads, spingrads);
-    for (auto grad: grads)
+    for (auto grad : grads)
     {
       CHECK(grad[0] == ValueApprox(0.123));
       CHECK(grad[1] == ValueApprox(0.456));
       CHECK(grad[2] == ValueApprox(0.789));
     }
-    for (auto sgrad: spingrads)
+    for (auto sgrad : spingrads)
       CHECK(sgrad == ComplexApprox(SPOSet::ComplexType(0.1, 0.2)));
 
     slaterdet0.mw_ratioGrad(sd_list, p_list, 0, ratios, grads);
-    for (auto grad: grads)
+    for (auto grad : grads)
     {
       CHECK(grad[0] == ValueApprox(123.));
       CHECK(grad[1] == ValueApprox(456.));
       CHECK(grad[2] == ValueApprox(789.));
     }
-    
+
     slaterdet0.mw_ratioGradWithSpin(sd_list, p_list, 0, ratios, grads, spingrads);
-    for (auto grad: grads)
+    for (auto grad : grads)
     {
       CHECK(grad[0] == ValueApprox(0.123));
       CHECK(grad[1] == ValueApprox(0.456));
       CHECK(grad[2] == ValueApprox(0.789));
     }
-    for (auto sgrad: spingrads)
+    for (auto sgrad : spingrads)
       CHECK(sgrad == ComplexApprox(SPOSet::ComplexType(0.1, 0.2)));
   }
   //Now do with MW
@@ -248,7 +248,7 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
     std::vector<SPOSet::ValueType> ratios(2);
     std::vector<SPOSet::ComplexType> spingrads(2);
     slaterdet0.mw_evalGrad(sd_list, p_list, 0, grads);
-    for (auto grad: grads)
+    for (auto grad : grads)
     {
       CHECK(grad[0] == ValueApprox(321.));
       CHECK(grad[1] == ValueApprox(654.));
@@ -256,31 +256,31 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
     }
 
     slaterdet0.mw_evalGradWithSpin(sd_list, p_list, 0, grads, spingrads);
-    for (auto grad: grads)
+    for (auto grad : grads)
     {
       CHECK(grad[0] == ValueApprox(0.321));
       CHECK(grad[1] == ValueApprox(0.654));
       CHECK(grad[2] == ValueApprox(0.987));
     }
-    for (auto sgrad: spingrads)
+    for (auto sgrad : spingrads)
       CHECK(sgrad == ComplexApprox(SPOSet::ComplexType(0.2, 0.1)));
 
     slaterdet0.mw_ratioGrad(sd_list, p_list, 0, ratios, grads);
-    for (auto grad: grads)
+    for (auto grad : grads)
     {
       CHECK(grad[0] == ValueApprox(321.));
       CHECK(grad[1] == ValueApprox(654.));
       CHECK(grad[2] == ValueApprox(987.));
     }
-    
+
     slaterdet0.mw_ratioGradWithSpin(sd_list, p_list, 0, ratios, grads, spingrads);
-    for (auto grad: grads)
+    for (auto grad : grads)
     {
       CHECK(grad[0] == ValueApprox(0.321));
       CHECK(grad[1] == ValueApprox(0.654));
       CHECK(grad[2] == ValueApprox(0.987));
     }
-    for (auto sgrad: spingrads)
+    for (auto sgrad : spingrads)
       CHECK(sgrad == ComplexApprox(SPOSet::ComplexType(0.2, 0.1)));
   }
 }
