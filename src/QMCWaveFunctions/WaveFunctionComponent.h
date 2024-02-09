@@ -527,7 +527,6 @@ public:
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
 
-private:
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param p_list the list of ParticleSet pointers in a walker batch
