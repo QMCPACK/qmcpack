@@ -185,7 +185,7 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
     ResourceCollectionTeamLock<WaveFunctionComponent> mw_sd_lock(sd_res, sd_list);
 
     std::vector<SPOSet::GradType> grads(2);
-    std::vector<SPOSet::ValueType> ratios(2);
+    std::vector<WaveFunctionComponent::PsiValue> ratios(2);
     std::vector<SPOSet::ComplexType> spingrads(2);
     slaterdet0.mw_evalGrad(sd_list, p_list, 0, grads);
     for (auto grad : grads)
