@@ -139,13 +139,6 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(const LRHandlerBas
                                                               const LinearGrid<T>* agrid)
 {
   using func_type = OneDimCubicSpline<T>;
-  std::unique_ptr<LinearGrid<T>> agrid_local;
-  if (agrid == nullptr)
-  {
-    agrid_local = std::make_unique<LinearGrid<T>>();
-    agrid_local->set(0.0, rcut, 1001);
-    agrid = agrid_local.get();
-  }
   const int ng = agrid->size();
   std::vector<T> v(ng);
   T r = (*agrid)[0];
@@ -170,13 +163,6 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(const LRHandl
                                                                    const LinearGrid<T>* agrid)
 {
   using func_type = OneDimCubicSpline<T>;
-  std::unique_ptr<LinearGrid<T>> agrid_local;
-  if (agrid == nullptr)
-  {
-    agrid_local = std::make_unique<LinearGrid<T>>();
-    agrid_local->set(0.0, rcut, 1001);
-    agrid = agrid_local.get();
-  }
   int ng = agrid->size();
   std::vector<T> v(ng);
   T r = (*agrid)[0];
