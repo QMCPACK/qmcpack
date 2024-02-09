@@ -31,10 +31,10 @@ public:
   T LR_rc;
   T LR_kc;
   T LR_tol;
-  unsigned ewaldGrid;
   ///number of strictly enforced periodic spatial dimensions
   /// ewald_strict2d sets ndim=2, otherwise ndim=3
   unsigned ndim;
+  unsigned ewaldGrid;
 
   ///default constructor
   LRBreakupParameters() : LR_dim_cutoff(15.0), LR_rc(1e6), LR_kc(0.0), LR_tol(3e-4), ndim(3),
