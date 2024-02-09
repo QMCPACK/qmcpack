@@ -11,7 +11,7 @@
 namespace qmcplusplus
 {
 QMCFiniteSize::QMCFiniteSize()
-    : skparser(NULL), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0), myGrid(NULL)
+    : skparser(NULL), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0)
 {
   IndexType mtheta = 80;
   IndexType mphi   = 80;
@@ -21,7 +21,7 @@ QMCFiniteSize::QMCFiniteSize()
 }
 
 QMCFiniteSize::QMCFiniteSize(SkParserBase* skparser_i)
-    : skparser(skparser_i), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0), myGrid(NULL)
+    : skparser(skparser_i), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0)
 {
   mtheta     = 80;
   mphi       = 80;
@@ -147,9 +147,15 @@ void QMCFiniteSize::initBreakup()
   P      = ptclPool.getParticleSet("e");
   AA     = LRCoulombSingleton::getHandler(*P);
   myRcut = AA->get_rc();
+  if (myGrid == nullptr)
+  {
+    myGrid = std::make_shared<LinearGrid<RealType>>();
+    int ng = P->getLattice().ewaldGrid;
+    myGrid->set(0, myRcut, ng);
+  }
   if (rVs == nullptr)
   {
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid.get());
   }
 }
 
