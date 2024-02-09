@@ -94,6 +94,17 @@ void SlaterDet::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionCompo
                                      spingrad_now);
 }
 
+
+void SlaterDet::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    int iat,
+                                    std::vector<GradType>& grad_now,
+                                    std::vector<ComplexType>& spingrad_now) const override
+{
+  const int det_id = getDetID(iat);
+  Dets[det_id]->mw_evalGradWithSpin(extract_DetRef_list(wfc_list, det_id), p_list, iat, grad_now, spingrad_now);
+}
+
 void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
