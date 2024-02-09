@@ -224,7 +224,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   e_den_est.accumulate(walker_refs, p_list, twf_list, ham_list, rng);
   auto spacegrids = e_den_est.getSpaceGrids();
 
-  NESpaceGrid<double> grid   = spacegrids[0];
+  NESpaceGrid<decltype(e_den_est)::Real> grid   = spacegrids[0];
   double summed_grid = 0;
   // grid memory layout is (W)eight (T) Kinetic (V) potential
   for (int i = 0; i < 16000; i++)
