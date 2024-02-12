@@ -849,6 +849,11 @@ public:
   }
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override {}
 #ifdef QMC_COMPLEX
+  void evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dspin_psi) override
+  {
+    for (auto& sg : dspin_psi)
+      sg = ComplexType(0.9, 0.8);
+  }
   void evaluateVGL_spin(const ParticleSet& P,
                         int iat,
                         ValueVector& psi,
@@ -883,12 +888,12 @@ public:
     }
   }
 #endif
-      void evaluate_notranspose(const ParticleSet& P,
-                                int first,
-                                int last,
-                                ValueMatrix& logdet,
-                                GradMatrix& dlogdet,
-                                ValueMatrix& d2logdet) override
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override
   {}
   std::string getClassName() const override { return my_name_; }
 };
@@ -971,8 +976,13 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     RefVector<SPOSet::GradVector> dpsi_v_list{dpsi0, dpsi1};
     SPOSet::ValueVector d2psi0(3);
     SPOSet::ValueVector d2psi1(3);
+    SPOSet::ValueVector dspin(3);
     RefVector<SPOSet::ValueVector> d2psi_v_list{d2psi0, d2psi1};
     SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin(2, 3);
+    // check evaluate_spin, gets used by SlaterDet in evaluateVGL_spin. So checking to make sure RotatedSPO has it
+    rot_spo0.evaluate_spin(elec0, 0, psi0, dspin);
+    for (auto& m : dspin)
+      CHECK(m == ComplexApprox(SPOSet::ComplexType(0.9, 0.8)));
     rot_spo0.mw_evaluateVGLWithSpin(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
     for (int iw = 0; iw < spo_list.size(); iw++)
     {

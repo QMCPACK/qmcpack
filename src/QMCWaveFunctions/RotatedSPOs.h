@@ -337,6 +337,14 @@ public:
     Phi_->evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   }
 
+  void evaluate_spin(const ParticleSet& P, 
+                     int iat, 
+                     ValueVector& psi, 
+                     ValueVector& dspin_psi) override
+  {
+    Phi_->evaluate_spin(P, iat, psi, dspin_psi);
+  }
+
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
