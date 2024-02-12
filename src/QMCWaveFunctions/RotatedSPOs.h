@@ -288,6 +288,12 @@ public:
     Phi_->evaluateVGL(P, iat, psi, dpsi, d2psi);
   }
 
+  void evaluateVGL_spin(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi, ValueVector& dspin_psi) override
+  {
+    assert(psi.size() <= OrbitalSetSize);
+    Phi_->evaluateVGL_spin(P, iat, psi, dpsi, d2psi, dspin_psi);
+  }
+
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,
                          const ValueVector& psiinv,
