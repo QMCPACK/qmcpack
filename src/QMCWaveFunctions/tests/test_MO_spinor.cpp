@@ -91,8 +91,8 @@ void test_lcao_spinor()
   REQUIRE(spo);
 
   //For this test, we are making the number of total orbitals in the SPOSet larger
-  //than what is requested for all SPOSet calls. 
-  //That will allow us to check the behavior of SpinorSet doing the right thing if 
+  //than what is requested for all SPOSet calls.
+  //That will allow us to check the behavior of SpinorSet doing the right thing if
   //OrbitalSetSize > norbs_requested. This is necessary for things like orb opt with single determinants
   SPOSet::ValueMatrix psiM(elec_.R.size(), elec_.R.size());
   SPOSet::GradMatrix dpsiM(elec_.R.size(), elec_.R.size());

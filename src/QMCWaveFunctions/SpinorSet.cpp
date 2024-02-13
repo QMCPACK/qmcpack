@@ -55,7 +55,6 @@ void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&&
 
   spo_up = std::move(up);
   spo_dn = std::move(dn);
-
 }
 
 void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
@@ -183,8 +182,8 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   RefVector<ValueVector> up_d2psi_v_list, dn_d2psi_v_list;
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& spo = spo_list.getCastedElement<SpinorSet>(iw);
-    auto& psi = psi_v_list[iw].get();
+    auto& spo                   = spo_list.getCastedElement<SpinorSet>(iw);
+    auto& psi                   = psi_v_list[iw].get();
     const size_t norb_requested = psi.size();
 
     spo.psi_work_up.resize(norb_requested);

@@ -288,7 +288,12 @@ public:
     Phi_->evaluateVGL(P, iat, psi, dpsi, d2psi);
   }
 
-  void evaluateVGL_spin(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi, ValueVector& dspin_psi) override
+  void evaluateVGL_spin(const ParticleSet& P,
+                        int iat,
+                        ValueVector& psi,
+                        GradVector& dpsi,
+                        ValueVector& d2psi,
+                        ValueVector& dspin_psi) override
   {
     assert(psi.size() <= OrbitalSetSize);
     Phi_->evaluateVGL_spin(P, iat, psi, dpsi, d2psi, dspin_psi);
@@ -343,10 +348,7 @@ public:
     Phi_->evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   }
 
-  void evaluate_spin(const ParticleSet& P, 
-                     int iat, 
-                     ValueVector& psi, 
-                     ValueVector& dspin_psi) override
+  void evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dspin_psi) override
   {
     Phi_->evaluate_spin(P, iat, psi, dspin_psi);
   }
