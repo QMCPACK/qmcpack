@@ -426,6 +426,12 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                                    const RefVector<ValueVector>& d2psi_v_list) const
 {
   assert(this == &spo_list.getLeader());
+  if (!useOMPoffload_)
+  {
+    SPOSet::mw_evaluateVGL(spo_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+    return;
+  }
+
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
   auto& phi_vgl_v  = spo_leader.mw_mem_handle_.getResource().phi_vgl_v;
 
@@ -594,6 +600,12 @@ void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list
                                      const RefVector<ValueVector>& psi_v_list) const
 {
   assert(this == &spo_list.getLeader());
+  if (!useOMPoffload_)
+  {
+    SPOSet::mw_evaluateValue(spo_list, P_list, iat, psi_v_list);
+    return;
+  }
+
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
   auto& phi_v      = spo_leader.mw_mem_handle_.getResource().phi_v;
   phi_v.resize(spo_list.size(), OrbitalSetSize);
@@ -674,6 +686,12 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
                                          std::vector<std::vector<ValueType>>& ratios_list) const
 {
   assert(this == &spo_list.getLeader());
+  if (!useOMPoffload_)
+  {
+    SPOSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+    return;
+  }
+
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
   auto& vp_phi_v   = spo_leader.mw_mem_handle_.getResource().vp_phi_v;
 
@@ -773,6 +791,12 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   assert(this == &spo_list.getLeader());
   assert(phi_vgl_v.size(0) == DIM_VGL);
   assert(phi_vgl_v.size(1) == spo_list.size());
+
+  if (!useOMPoffload_)
+  {
+    SPOSet::mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
+    return;
+  }
 
   mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
   // Device data of phi_vgl_v must be up-to-date upon return
