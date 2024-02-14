@@ -2775,7 +2775,7 @@ class SnlMachine(Supercomputer):
 
     #for mpiexec
     def post_process_job(self,job):
-        job.run_options.add(bindto="--bind-to core",npernode="--npernode {}".format(job.processes_per_node))
+        job.run_options.add(bindto="--bind-to none",npernode="--npernode {}".format(job.processes_per_node))
 
     def write_job_header(self,job):
         if job.queue is None:

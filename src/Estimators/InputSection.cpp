@@ -17,6 +17,19 @@
 namespace qmcplusplus
 {
 
+[[noreturn]] std::any InputSection::assignAnyEnum(const std::string& tag) const
+{
+  throw UniformCommunicateError("derived class must provide assignAnyEnum method if enum parameters are used");
+}
+
+[[noreturn]] void InputSection::setFromStreamCustom(const std::string& ename,
+                                                    const std::string& name,
+                                                    std::istringstream& svalue)
+{
+  throw UniformCommunicateError("derived class must provide handleCustom method if custom parameters are used");
+}
+
+
 void InputSection::readAttributes(xmlNodePtr cur,
                                   const std::string& element_name,
                                   const std::vector<std::string>& do_not_consume)
@@ -74,22 +87,27 @@ void InputSection::readXML(xmlNodePtr cur)
   // at anyrate one of these must match the section_name.
   std::string lcase_section_name{lowerCase(section_name)};
 
-  auto checkSectionName = [&section_name = section_name, &section_name_alternates = section_name_alternates](auto& possible_sname){
+  auto checkSectionName = [&section_name            = section_name,
+                           &section_name_alternates = section_name_alternates](auto& possible_sname) {
     std::string lcase_section_name{lowerCase(section_name)};
     if (possible_sname == lcase_section_name)
       return true;
     if (section_name_alternates.size() > 0)
       return std::any_of(section_name_alternates.begin(), section_name_alternates.end(),
-                      [&possible_sname](auto& name_alternate) {
-                        std::string lcase_alternate{lowerCase(name_alternate)};
-                        return possible_sname == lcase_alternate;
-                      });
+                         [&possible_sname](auto& name_alternate) {
+                           std::string lcase_alternate{lowerCase(name_alternate)};
+                           return possible_sname == lcase_alternate;
+                         });
     return false;
   };
 
-  if (!(checkSectionName(section_ename) || checkSectionName(section_method) ||
-        checkSectionName(section_type) || checkSectionName(section_name_actual)))
-    throw UniformCommunicateError("Input is invalid  " + lcase_section_name + " does not match input node!");
+  if (!(checkSectionName(section_ename) || checkSectionName(section_method) || checkSectionName(section_type) ||
+        checkSectionName(section_name_actual)))
+  {
+    std::stringstream error;
+    error << "Input is invalid \"" << lcase_section_name << "\" does not match a defined input node!";
+    throw UniformCommunicateError(error.str());
+  }
 
   // these attributes don't get an element name passed to them because by convention we save and define them unqualified.
   readAttributes(cur, "", {"type"});
@@ -318,10 +336,7 @@ void InputSection::report(std::ostream& out) const
   out << "\n\n";
 }
 
-void InputSection::report() const
-{
-  report(app_log());
-}
+void InputSection::report() const { report(app_log()); }
 
 std::any InputSection::lookupAnyEnum(const std::string& enum_name,
                                      const std::string& enum_value,

@@ -152,8 +152,9 @@ template<typename ST>
 inline void SplineR2R<ST>::assign_v(int bc_sign, const vContainer_type& myV, ValueVector& psi, int first, int last)
     const
 {
-  // protect last
-  last = last > kPoints.size() ? kPoints.size() : last;
+  // protect last against kPoints.size() and psi.size()
+  size_t last_real = std::min(kPoints.size(), psi.size());
+  last             = last > last_real ? last_real : last;
 
   const ST signed_one = (bc_sign & 1) ? -1 : 1;
 #pragma omp simd
@@ -229,8 +230,9 @@ inline void SplineR2R<ST>::assign_vgl(int bc_sign,
                                       int first,
                                       int last) const
 {
-  // protect last
-  last = last > kPoints.size() ? kPoints.size() : last;
+  // protect last against kPoints.size() and psi.size()
+  size_t last_real = std::min(kPoints.size(), psi.size());
+  last             = last > last_real ? last_real : last;
 
   const ST signed_one = (bc_sign & 1) ? -1 : 1;
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
@@ -270,8 +272,9 @@ inline void SplineR2R<ST>::assign_vgl_from_l(int bc_sign, ValueVector& psi, Grad
   const ST* restrict g1 = myG.data(1);
   const ST* restrict g2 = myG.data(2);
 
+  const size_t last_real = last_spo > psi.size() ? psi.size() : last_spo;
 #pragma omp simd
-  for (int psiIndex = first_spo; psiIndex < last_spo; ++psiIndex)
+  for (int psiIndex = first_spo; psiIndex < last_real; ++psiIndex)
   {
     const size_t j    = psiIndex - first_spo;
     psi[psiIndex]     = signed_one * myV[j];
@@ -311,8 +314,9 @@ void SplineR2R<ST>::assign_vgh(int bc_sign,
                                int first,
                                int last) const
 {
-  // protect last
-  last = last > kPoints.size() ? kPoints.size() : last;
+  // protect last against kPoints.size() and psi.size()
+  const size_t last_real = std::min(kPoints.size(), psi.size());
+  last                   = last > last_real ? last_real : last;
 
   const ST signed_one = (bc_sign & 1) ? -1 : 1;
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
@@ -395,8 +399,9 @@ void SplineR2R<ST>::assign_vghgh(int bc_sign,
                                  int first,
                                  int last) const
 {
-  // protect last
-  last = last < 0 ? kPoints.size() : (last > kPoints.size() ? kPoints.size() : last);
+  // protect last against kPoints.size() and psi.size()
+  const size_t last_real = std::min(kPoints.size(), psi.size());
+  last                   = last < 0 ? last_real : (last > last_real ? last_real : last);
 
   const ST signed_one = (bc_sign & 1) ? -1 : 1;
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),

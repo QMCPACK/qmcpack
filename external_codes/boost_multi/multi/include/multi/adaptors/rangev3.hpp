@@ -17,17 +17,17 @@ namespace concepts{ // needed for later version of rangesv3
 #if 0
 	template<class MA>
 	struct common_reference<
-		boost::multi::basic_array<typename MA::element, MA::dimensionality, typename MA::element_const_ptr, typename MA::layout_t>&&, 
+		boost::multi::subarray<typename MA::element, MA::dimensionality, typename MA::element_const_ptr, typename MA::layout_t>&&, 
 		MA&
 	>{
-		using type = boost::multi::basic_array<typename MA::element, MA::dimensionality, typename MA::element_const_ptr, typename MA::layout_t>&&;
+		using type = boost::multi::subarray<typename MA::element, MA::dimensionality, typename MA::element_const_ptr, typename MA::layout_t>&&;
 	};
 	template<class MA>
 	struct common_reference<
 		MA&, 
-		boost::multi::basic_array<typename MA::element, MA::dimensionality, typename MA::element_const_ptr, typename MA::layout_t>&&
+		boost::multi::subarray<typename MA::element, MA::dimensionality, typename MA::element_const_ptr, typename MA::layout_t>&&
 	>{
-		using type = boost::multi::basic_array<typename MA::element, MA::dimensionality, typename MA::element_const_ptr, typename MA::layout_t>&&;
+		using type = boost::multi::subarray<typename MA::element, MA::dimensionality, typename MA::element_const_ptr, typename MA::layout_t>&&;
 	};
 #endif
 }

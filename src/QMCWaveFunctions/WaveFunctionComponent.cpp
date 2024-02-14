@@ -95,7 +95,10 @@ void WaveFunctionComponent::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFu
 {
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    grad_now[iw] = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  {
+    spingrad_now[iw] = 0;
+    grad_now[iw]     = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  }
 }
 
 void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,

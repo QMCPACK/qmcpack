@@ -1,7 +1,7 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXX $0 -o $0x `pkg-config --libs blas lapack` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2020
+// Copyright 2020-2024 Alfredo A. Correa
 
 #ifndef MULTI_ADAPTORS_LAPACK_SYEV_HPP
 #define MULTI_ADAPTORS_LAPACK_SYEV_HPP
@@ -23,23 +23,28 @@ template<class Array2D, class Array1D, class Array1DW>
 auto syev(blas::filling uplo, Array2D&& a, Array1D&& w, Array1DW&& work)
 ->decltype(syev('V', uplo==blas::filling::upper?'L':'U', size(a), base(a), stride(a), base(w), base(work), size(work), std::declval<int&>()), a({0l, 1l}, {0l, 1l}))
 {
-	assert( size(work) >= std::max(1l, 3*size(a)-1l) );
+	assert( size(work) >= std::max(1L, 3*size(a)-1L) );
 	assert( size(a) == size(w) );
 	assert( stride(w)==1 );
 	assert( stride(work)==1 );
+
 	if(size(a)==0) return std::forward<Array2D>(a)();
+
 	int info = -1;
-	     if(stride(rotated(a))==1) syev('V', uplo==blas::filling::upper?'L':'U', size(a), base(a), stride(        a ), base(w), base(work), size(work), info);
-	else if(stride(        a )==1) syev('V', uplo==blas::filling::upper?'U':'L', size(a), base(a), stride(rotated(a)), base(w), base(work), size(work), info);
-	else                           assert(0); // case not contemplated by lapack
-	if(info < 0) assert(0); // bad argument
+
+	if(stride(rotated(a))==1) {syev('V', uplo==blas::filling::upper?'L':'U', size(a), base(a), stride(        a ), base(w), base(work), size(work), info);}
+	else if(stride(        a )==1) {syev('V', uplo==blas::filling::upper?'U':'L', size(a), base(a), stride(rotated(a)), base(w), base(work), size(work), info);}
+	else {assert(0);}  // case not contemplated by lapack
+
+	if(info < 0) {assert(0);}  // bad argument
+
 	return std::forward<Array2D>(a)({0, size(a)-info}, {0, size(a)-info});
 }
 
 template<class Array2D, class Array1D, class Array1DW = typename std::decay_t<Array1D>::decay_type>
 auto syev(blas::filling uplo, Array2D&& a, Array1D&& w)
-->decltype(syev(uplo, std::forward<Array2D>(a), std::forward<Array1D>(w), Array1DW(std::max(1l, 3*size(a)-1l), get_allocator(w)))){
-	return syev(uplo, std::forward<Array2D>(a), std::forward<Array1D>(w), Array1DW(std::max(1l, 3*size(a)-1l), get_allocator(w)));}// TODO obtain automatic size from lapack info routine
+->decltype(syev(uplo, std::forward<Array2D>(a), std::forward<Array1D>(w), Array1DW(std::max(1L, 3*size(a)-1L), get_allocator(w)))){
+	return syev(uplo, std::forward<Array2D>(a), std::forward<Array1D>(w), Array1DW(std::max(1L, 3*size(a)-1L), get_allocator(w)));}  // TODO(correaa) obtain automatic size from lapack info routine
 
 template<class Array2D, class Array1D>
 NODISCARD("because input array is const, output gives eigenvectors")
@@ -227,5 +232,3 @@ BOOST_AUTO_TEST_CASE(lapack_syev, *boost::unit_test::tolerance(0.00001) ){
 }
 #endif
 #endif
-
-

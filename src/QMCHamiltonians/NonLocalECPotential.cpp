@@ -346,6 +346,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     vi_samples.resize(nw, O_leader.IonConfig.getTotalNum());
   }
 
+  // the VP of the first NonLocalECPComponent is responsible for holding the shared resource.
   auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
   assert(pp_component != std::end(O_leader.PPset));
 
@@ -767,9 +768,10 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
 {
   auto new_res = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
   for (int ig = 0; ig < PPset.size(); ++ig)
-    if (PPset[ig]->getVP())
+    if (PPset[ig] && PPset[ig]->getVP()) // H pp doesn't contain non-local channels and PPset[ig] can be nullptr
     {
       PPset[ig]->getVP()->createResource(new_res->collection);
+      // the VP of the first NonLocalECPComponent is responsible for creating the shared resource.
       break;
     }
   auto resource_index = collection.addResource(std::move(new_res));

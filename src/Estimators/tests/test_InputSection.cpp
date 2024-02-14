@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 #include <sstream>
-
+#include <map>
 
 namespace qmcplusplus
 {
@@ -85,7 +85,11 @@ public:
 class TestAssignAnyEnum : public InputSection
 {
 public:
-  TestAssignAnyEnum() { enums = {"testenum"}; }
+  TestAssignAnyEnum()
+  {
+    section_name = "unknown";
+    enums        = {"testenum"};
+  }
 };
 
 
@@ -114,7 +118,7 @@ TEST_CASE("InputSection::assignAnyEnum", "[estimators]")
   };
 
   TestAssignAnyEnum taae;
-  CHECK_THROWS_AS(taae.get<SomeEnum>("testenum"), std::runtime_error);
+  CHECK_THROWS_AS(taae.get<SomeEnum>("testenum"), UniformCommunicateError);
 }
 
 TEST_CASE("InputSection::readXML", "[estimators]")
@@ -228,7 +232,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     //     required attribute/parameter is missing
     //     unrecognized attribute/parameter encountered
 
-    std::unordered_map<std::string, const char*> invalid_inputs =
+    std::map<std::string, std::string_view> invalid_inputs =
         {{"missing_attribute", R"(
 <test>
   <parameter name="count"> 15 </parameter>
@@ -250,6 +254,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 )"},
          {"invalid_section_name", R"(<not_test><parameter name="nothing"></parameter></not_test>)"}};
 
+    std::cout << "really going to try bad sections\n" << std::endl;
     for (auto& [label, xml] : invalid_inputs)
     {
       // parse xml doc

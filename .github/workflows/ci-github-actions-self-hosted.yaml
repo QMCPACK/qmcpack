@@ -52,7 +52,7 @@ jobs:
       # just like any other third-party service
       - name: Create PR status
         if: steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1.1.6
+        uses: guibranco/github-status-action-v2@v1.1.7
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-sulfur CI ${{ matrix.jobname }}"
@@ -91,7 +91,7 @@ jobs:
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1.1.6
+        uses: guibranco/github-status-action-v2@v1.1.7
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-sulfur CI ${{matrix.jobname}}"
@@ -151,7 +151,7 @@ jobs:
       # just like any other third-party service
       - name: Create PR status
         if: steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1.1.6
+        uses: guibranco/github-status-action-v2@v1.1.7
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-sulfur CI ${{ matrix.jobname }}"
@@ -190,7 +190,7 @@ jobs:
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1.1.6
+        uses: guibranco/github-status-action-v2@v1.1.7
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-sulfur CI ${{matrix.jobname}}"
@@ -247,7 +247,7 @@ jobs:
       # just like any other third-party service
       - name: Create PR status
         if: steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1.1.6
+        uses: guibranco/github-status-action-v2@v1.1.7
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-nitrogen CI ${{matrix.jobname}}"
@@ -286,7 +286,7 @@ jobs:
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1.1.6
+        uses: guibranco/github-status-action-v2@v1.1.7
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-nitrogen CI ${{matrix.jobname}}"

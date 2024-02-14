@@ -43,7 +43,7 @@ private:
 };
 
 template<class T, unsigned D>
-std::ostream& operator<<(std::ostream& out, const NativePrint<TinyVector<T, D>>& np_vec)
+inline std::ostream& operator<<(std::ostream& out, const NativePrint<TinyVector<T, D>>& np_vec)
 {
   out << "{ ";
   auto vec = np_vec.get_obj();
@@ -54,7 +54,7 @@ std::ostream& operator<<(std::ostream& out, const NativePrint<TinyVector<T, D>>&
 }
 
 template<class T>
-std::ostream& operator<<(std::ostream& out, const NativePrint<std::vector<T>>& np_vec)
+inline std::ostream& operator<<(std::ostream& out, const NativePrint<std::vector<T>>& np_vec)
 {
   out << "{ ";
   auto vec = np_vec.get_obj();
@@ -64,8 +64,22 @@ std::ostream& operator<<(std::ostream& out, const NativePrint<std::vector<T>>& n
   return out;
 }
 
+template<>
+inline std::ostream& operator<<(std::ostream& out, const NativePrint<std::vector<bool>>& np_vec)
+{
+  out << "{ ";
+  auto vec = np_vec.get_obj();
+  for (const bool& t : vec)
+  {
+    std::string bool_str = t ? "true" : "false";
+    out << std::setprecision(10) << bool_str << ", ";
+  }
+  out << " }";
+  return out;
+}
+
 template<class T>
-std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>& np_vec)
+inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>& np_vec)
 {
   out << "{ ";
   auto vec = np_vec.get_obj();

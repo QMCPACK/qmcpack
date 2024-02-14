@@ -8,12 +8,17 @@
 # build_alcf_polaris_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_alcf_polaris_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
+# extract parallel hdf5 library from GNU
+module load PrgEnv-gnu
+module load cray-hdf5-parallel/1.12.2.3
+HDF5_ROOT_SAVE=$HDF5_ROOT
+
 module load mpiwrappers/cray-mpich-llvm llvm/release-17.0.0
-module load cudatoolkit-standalone/11.2.2
-module load cray-fftw/3.3.8.13
-module load cray-hdf5-parallel/1.12.1.3
+module load cudatoolkit-standalone/11.8.0
+module load cray-fftw
 module load cmake/3.23.2
 
+export HDF5_ROOT=$HDF5_ROOT_SAVE
 export BOOST_ROOT=/soft/applications/qmcpack/boost_1_79_0
 export CMAKE_PREFIX_PATH=/soft/libraries/openblas/0.3.20-omp:$CMAKE_PREFIX_PATH
 

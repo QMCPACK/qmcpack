@@ -1,11 +1,11 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2022 Alfredo A. Correa
+// Copyright 2019-2023 Alfredo A. Correa
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi static array cast"
+// #define BOOST_TEST_MODULE "C++ Unit Tests for Multi static array cast"  // test tile NOLINT(cppcoreguidelines-macro-usage)
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
-#include "multi/config/NO_UNIQUE_ADDRESS.hpp"
+#include <multi/array.hpp>
+#include <multi/config/NO_UNIQUE_ADDRESS.hpp>  // TODO(remove in c++20)
 
 #include<numeric>
 
@@ -15,7 +15,7 @@ template<class It, class F> class involuter;
 
 template<class Ref, class Involution>
 class involuted {
-	Ref r_;
+	Ref r_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 	MULTI_NO_UNIQUE_ADDRESS Involution f_;
 
  public:
@@ -28,9 +28,9 @@ class involuted {
 	constexpr auto operator=(involuted const& other) = delete;
 	~involuted() = default;
 	// NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions): simulates a reference
-	constexpr operator decay_type() const& {return f_(r_);}
+	constexpr operator decay_type() const& noexcept {return f_(r_);}
 	// NOLINTNEXTLINE(google-runtime-operator,fuchsia-overloaded-operator): simulates reference
-	constexpr auto operator&() && -> decltype(auto) {return involuter<decltype(&std::declval<Ref>()), Involution>{&r_, f_};} //  NOLINT(runtime/operator)
+	constexpr auto operator&() && -> decltype(auto) {return involuter<decltype(&std::declval<Ref>()), Involution>{&r_, f_};}  //  NOLINT(runtime/operator)
 	// NOLINTNEXTLINE(fuchsia-trailing-return,-warnings-as-errors): trailing return helps reading
 	template<class DecayType> constexpr auto operator=(DecayType&& other) & -> involuted& {r_ = f_(std::forward<DecayType>(other)); return *this;}
 	// NOLINTNEXTLINE(fuchsia-trailing-return): trailing return helps reading
@@ -51,8 +51,6 @@ class involuter {
 	It it_;
 	MULTI_NO_UNIQUE_ADDRESS F f_;
 	template<class, class> friend class involuter;
-//	template<class From, std::enable_if_t<std::is_convertible<From, It>{}, int> =0>
-//	static constexpr auto implicit_cast(From&& f) {return static_cast<It>(f);}
 
  public:
 	using pointer           = involuter<typename std::iterator_traits<It>::pointer, F>;
@@ -65,19 +63,22 @@ class involuter {
 	using iterator_category = typename std::iterator_traits<It>::iterator_category;
 	explicit constexpr involuter(It it) : it_{std::move(it)}, f_{} {}  // NOLINT(readability-identifier-length) clang-tidy 14 bug
 	constexpr involuter(It it, F fun) : it_{std::move(it)}, f_{std::move(fun)} {}
-//	involuter(involuter const& other) = default;
+
 	// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions): this is needed to make involuter<T> implicitly convertible to involuter<T const>
-	template<class Other> constexpr involuter(involuter<Other, F> const& other) : it_{multi::implicit_cast<It>(other.it_)}, f_{other.f_} {}
-//	auto operator=(involuter const& other) -> involuter& = default;
-	constexpr auto operator*() const {return reference{*it_, f_};}
+	template<class Other> constexpr involuter(involuter<Other, F> const& other) : it_{multi::detail::implicit_cast<It>(other.it_)}, f_{other.f_} {}
+
+	constexpr auto operator* () const {return reference{ *it_, f_};}
+	constexpr auto operator->() const {return pointer  {&*it_, f_};}
+
 	constexpr auto operator==(involuter const& other) const {return it_ == other.it_;}
 	constexpr auto operator!=(involuter const& other) const {return it_ != other.it_;}
+	constexpr auto operator< (involuter const& other) const {return it_ <  other.it_;}
+
 	constexpr auto operator+=(typename involuter::difference_type n) -> decltype(auto) {it_+=n; return *this;}
 	constexpr auto operator+ (typename involuter::difference_type n) const {return involuter{it_+n, f_};}
 	constexpr auto operator- (typename involuter::difference_type n) const {return involuter{it_-n, f_};}
 	constexpr auto operator-(involuter const& other) const {return it_ - other.it_;}
-	constexpr auto operator->() const {return pointer{&*it_, f_};}
-//	~involuter() = default;
+
 	constexpr auto operator[](typename involuter::difference_type n) const {return reference{*(it_ + n), f_};}
 };
 
@@ -86,7 +87,7 @@ template<class T, class F> involuted(T&&, F)->involuted<T const, F>;
 #endif
 
 template<class Ref> using negated = involuted<Ref, std::negate<>>;
-template<class It>  using negater = involuter<It, std::negate<>>;
+template<class Ptr> using negater = involuter<Ptr, std::negate<>>;
 
 BOOST_AUTO_TEST_CASE(multi_array_involution) {
 	double doub = 5;
@@ -127,8 +128,8 @@ BOOST_AUTO_TEST_CASE(static_array_cast_2) {
 
 BOOST_AUTO_TEST_CASE(static_array_cast_3) {
 {
-	multi::static_array<double, 1> arr  { {  0.,   1.,   2.,   3.,  4.} };
-	multi::static_array<double, 1> arr2 = { -0.,  -1.,  -2.,  -3., -4.};
+	multi::static_array<double, 1> const arr  { {  0.0,   1.0,   2.0,   3.0,  4.0} };
+	multi::static_array<double, 1> arr2 = { -0.0,  -1.0,  -2.0,  -3.0, -4.0};
 	auto&& neg_arr = multi::static_array_cast<double, involuter<double*, std::negate<>>>(arr);
 	BOOST_REQUIRE( neg_arr[2] == arr2[2] );
 	BOOST_REQUIRE( arr2[2] == neg_arr[2] );

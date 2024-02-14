@@ -1,11 +1,14 @@
-#ifndef MULTI_ADAPTORS_BLAS_TRAITS_HPP// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2019-2023 Alfredo A. Correa
+
+#ifndef MULTI_ADAPTORS_BLAS_TRAITS_HPP
 #define MULTI_ADAPTORS_BLAS_TRAITS_HPP
-// Copyright 2019-2021 Alfredo A. Correa
+#pragma once
 
 #include<complex>
 #include<type_traits>
 
-namespace boost::multi::blas{
+namespace boost::multi::blas {
 
 // TODO(correaa) : create a BinaryDouble concept?
 
@@ -13,25 +16,25 @@ namespace boost::multi::blas{
 	auto is_s_aux(F&&) -> std::true_type ;
 	auto is_s_aux(...) -> std::false_type;
 
-	template<class T> struct is_s : decltype(is_s_aux(std::declval<T>())){using archetype = float;};
+	template<class T> struct is_s : decltype(is_s_aux(std::declval<T>())) {using archetype = float;};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
 	template<class D, class=std::enable_if_t<sizeof(D)==sizeof(double) and std::is_convertible<decltype(std::declval<D&&>()/std::declval<D&&>()), double>{}>>
 	auto is_d_aux(D&&) -> std::true_type ;
 	auto is_d_aux(...) -> std::false_type;
 
-	template<class T> struct is_d : decltype(is_d_aux(std::declval<T>())){using archetype = double;};
+	template<class T> struct is_d : decltype(is_d_aux(std::declval<T>())) {using archetype = double;};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
 	template<class C, class=std::enable_if_t<sizeof(C)==sizeof(std::complex<float>) and is_s<decltype(std::declval<C>().real())>{} and is_s<decltype(std::declval<C>().imag())>{}>>
 	auto is_c_aux(C&&) -> std::true_type;
 	auto is_c_aux(...) -> std::false_type;
 
-	template<class C> struct is_c : decltype(is_c_aux(std::declval<C>())){using archetype = std::complex<float>;};
+	template<class C> struct is_c : decltype(is_c_aux(std::declval<C>())) {using archetype = std::complex<float>;};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
 	template<class Z, class=std::enable_if_t<sizeof(Z)==sizeof(std::complex<double>) and is_d<decltype(std::declval<Z>().real())>{} and is_d<decltype(std::declval<Z>().imag())>{}>>
 	auto is_z_aux(Z&&) -> std::true_type ;
 	auto is_z_aux(...) -> std::false_type;
 
-	template<class Z> struct is_z : decltype(is_z_aux(std::declval<Z>())){using archetype = std::complex<double>;};
+	template<class Z> struct is_z : decltype(is_z_aux(std::declval<Z>())) {using archetype = std::complex<double>;};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
 } // end namespace boost::multi::blas
 #endif

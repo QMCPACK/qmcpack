@@ -32,7 +32,7 @@ class managed_allocator {
 	static_assert( std::is_same<T, std::decay_t<T>>{}, "!" );
 
  public:
-//	using allocator_type = managed_allocator<T>;
+//  using allocator_type = managed_allocator<T>;
 	using value_type = T;
 	using pointer = ::thrust::cuda::pointer<T>;
 	using size_type = ::size_t; // as specified by CudaMalloc
@@ -59,38 +59,38 @@ class managed_allocator {
 		if(!ret) throw bad_alloc{};
 		return pointer{ret};
 	}
-	pointer allocate(size_type n, const_void_pointer hint) {
-		MULTI_MARK_SCOPE("thrust::managed_allocate");
+	[[deprecated]] pointer allocate(size_type n, const_void_pointer hint) {
+		// MULTI_MARK_SCOPE("thrust::managed_allocate");
 
 		auto const ret = allocate(n);
 		// if(not hint){
-		// 	if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), /*device*/ 0) != cudaSuccess) throw std::runtime_error{"cannot prefetch"};
-		// 	return ret;
+		//  if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), /*device*/ 0) != cudaSuccess) throw std::runtime_error{"cannot prefetch"};
+		//  return ret;
 		// }
 		// cudaPointerAttributes attr; if(cudaPointerGetAttributes(&attr, raw_pointer_cast(hint))!=cudaSuccess) throw std::runtime_error{"cannot use attributes for hint"};
 		// switch(attr.type){
-		// 	case cudaMemoryTypeUnregistered:{//std::cout<< n <<" cudaMemoryTypeUnregistered"<< attr.device <<" "<< attr.device <<" cpuid:"<< cudaCpuDeviceId <<std::endl;
-		// 		if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), cudaCpuDeviceId) != cudaSuccess) throw std::runtime_error{"could not prefetch in managed memory"};
-		// 		return ret;
-		// 	}
-		// 	case cudaMemoryTypeHost        :{//std::cout<< n <<" cudaMemoryTypeHost "<< attr.device <<" "<< cudaCpuDeviceId <<std::endl;
-		// 		if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), cudaCpuDeviceId) != cudaSuccess) throw std::runtime_error{"could not prefetch in managed memory"};
-		// 		return ret;
-		// 	}
-		// 	case  cudaMemoryTypeDevice     :{//std::cout<< n <<" cudaMemoryTypeDevice "<< attributes.device <<" "<< attributes.device<<std::endl;
-		// 		if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), attr.device) != cudaSuccess) throw std::runtime_error{"could not prefetch in managed memory"};
-		// 		return ret;
-		// 	}
-		// 	case  cudaMemoryTypeManaged    :{//std::cout<< n <<" cudaMemoryTypeManaged "<< attr.device <<" "<< attr.device <<std::endl;
-		// 		if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), attr.device /*0?*/) != cudaSuccess) throw std::runtime_error{"could not prefetch in managed memory"};
-		// 		return ret;
-		// 	}
+		//  case cudaMemoryTypeUnregistered:{//std::cout<< n <<" cudaMemoryTypeUnregistered"<< attr.device <<" "<< attr.device <<" cpuid:"<< cudaCpuDeviceId <<std::endl;
+		//      if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), cudaCpuDeviceId) != cudaSuccess) throw std::runtime_error{"could not prefetch in managed memory"};
+		//      return ret;
+		//  }
+		//  case cudaMemoryTypeHost        :{//std::cout<< n <<" cudaMemoryTypeHost "<< attr.device <<" "<< cudaCpuDeviceId <<std::endl;
+		//      if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), cudaCpuDeviceId) != cudaSuccess) throw std::runtime_error{"could not prefetch in managed memory"};
+		//      return ret;
+		//  }
+		//  case  cudaMemoryTypeDevice     :{//std::cout<< n <<" cudaMemoryTypeDevice "<< attributes.device <<" "<< attributes.device<<std::endl;
+		//      if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), attr.device) != cudaSuccess) throw std::runtime_error{"could not prefetch in managed memory"};
+		//      return ret;
+		//  }
+		//  case  cudaMemoryTypeManaged    :{//std::cout<< n <<" cudaMemoryTypeManaged "<< attr.device <<" "<< attr.device <<std::endl;
+		//      if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), attr.device /*0?*/) != cudaSuccess) throw std::runtime_error{"could not prefetch in managed memory"};
+		//      return ret;
+		//  }
 		// }
 		return ret;
 	}
-	void deallocate(pointer p, size_type) {
-		MULTI_MARK_SCOPE("thrust::managed_deallocate");
-	//	cuda::managed::free(static_cast<managed::ptr<void>>(p));
+	[[deprecate]] void deallocate(pointer p, size_type) {
+		// MULTI_MARK_SCOPE("thrust::managed_deallocate");
+	//  cuda::managed::free(static_cast<managed::ptr<void>>(p));
 		cudaFree(raw_pointer_cast(p));
 	}
 	template<class P, class... Args>

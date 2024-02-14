@@ -1,8 +1,8 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 // Copyright 2019-2022 Alfredo A. Correa
 
-#ifndef MULTI_CONFIG_NODISCARD_HPP
-#define MULTI_CONFIG_NODISCARD_HPP
+#ifndef MULTI_CONFIG_NODISCARD_HPP_
+#define MULTI_CONFIG_NODISCARD_HPP_
 
 #ifndef __has_cpp_attribute
 #define __has_cpp_attribute(name) 0
@@ -13,7 +13,7 @@
 	#define NODISCARD(MsG)
 #elif (__has_cpp_attribute(nodiscard) and (__cplusplus>=201703L))
 	#if (__has_cpp_attribute(nodiscard)>=201907) and (__cplusplus>201703L)
-		#define NODISCARD(MsG) [[nodiscard(MsG)]]
+		#define NODISCARD(MsG) [[nodiscard]]  // [[nodiscard(MsG)]] in c++20 empty message is not allowed with paren
 	#else
 		#define NODISCARD(MsG) [[nodiscard]]  // NOLINT(cppcoreguidelines-macro-usage) TODO(correaa) check if this is needed in C++17
 	#endif
@@ -36,4 +36,4 @@
 	#endif
 #endif
 
-#endif
+#endif  // MULTI_CONFIG_NODISCARD_HPP_

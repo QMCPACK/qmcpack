@@ -59,7 +59,7 @@ struct error_category : std::error_category{
 	static error_category& instance(){static cusolver::error_category instance; return instance;}
 };
 inline std::error_code make_error_code(cusolver::status s) noexcept{
-	return std::error_code(int(s), cusolver::error_category::instance());
+	return {int(s), cusolver::error_category::instance()};
 }
 
 struct version_t{

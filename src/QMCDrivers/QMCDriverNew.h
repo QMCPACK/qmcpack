@@ -133,8 +133,7 @@ public:
                MCPopulation&& population,
                const std::string timer_prefix,
                Communicate* comm,
-               const std::string& QMC_driver_type,
-               SetNonLocalMoveHandler = &QMCDriverNew::defaultSetNonLocalMoveHandler);
+               const std::string& QMC_driver_type);
 
   ///Move Constructor
   QMCDriverNew(QMCDriverNew&&) = default;
@@ -186,7 +185,7 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override {};
 
   void createRngsStepContexts(int num_crowds);
 
@@ -231,9 +230,7 @@ public:
    */
   void process(xmlNodePtr cur) override = 0;
 
-  static void initialLogEvaluation(int crowd_id,
-                                   UPtrVector<Crowd>& crowds,
-                                   UPtrVector<ContextForSteps>& step_context);
+  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
 
   /** should be set in input don't see a reason to set individually
@@ -465,10 +462,6 @@ protected:
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);
-
-  SetNonLocalMoveHandler setNonLocalMoveHandler_;
-
-  static void defaultSetNonLocalMoveHandler(QMCHamiltonian& gold_ham);
 
   friend class qmcplusplus::testing::VMCBatchedTest;
   friend class qmcplusplus::testing::DMCBatchedTest;

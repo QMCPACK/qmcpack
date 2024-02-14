@@ -120,7 +120,7 @@ public:
 
   QMCRunType getRunType() override { return QMCRunType::DMC_BATCH; }
 
-  void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
+  void setNonLocalMoveHandler(QMCHamiltonian& hamiltonian);
 
 private:
   const DMCDriverInput dmcdriver_input_;

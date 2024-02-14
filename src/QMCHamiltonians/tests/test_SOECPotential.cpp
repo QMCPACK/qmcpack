@@ -20,8 +20,10 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "TestListenerFunction.h"
 #include "Utilities/RuntimeOptions.h"
+
 namespace qmcplusplus
 {
 namespace testing

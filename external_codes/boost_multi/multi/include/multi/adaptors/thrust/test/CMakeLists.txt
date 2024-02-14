@@ -6,6 +6,10 @@ project(
 	LANGUAGES CXX CUDA
 )
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr --extended-lambda --Werror=cross-execution-space-call -Xcudafe \"--display_error_number\"")
 
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
@@ -16,42 +20,19 @@ find_program(MEMORYCHECK_COMMAND valgrind)
 set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --error-exitcode=1")
 include(CTest)
 
-# TODO(correaa) this will be simpler in Cmake 3.24 https://stackoverflow.com/a/72332793/225186
-if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-	# temporary workaround to detect CUDA arch, for between the deprecation of FindCUDA in CMake 3.10 and the availability of FindCudaToolkit in CMake 3.17 # https://stackoverflow.com/a/68223399/225186
-	include(FindCUDA/select_compute_arch)
-	cuda_detect_installed_gpus(INSTALLED_GPU_CCS_1)
-	string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
-	string(
-		REPLACE " "
-				";"
-				INSTALLED_GPU_CCS_3
-				"${INSTALLED_GPU_CCS_2}"
-	)
-	string(
-		REPLACE "."
-				""
-				CUDA_ARCH_LIST
-				"${INSTALLED_GPU_CCS_3}"
-	)
-	set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_LIST})
-	set_property(GLOBAL PROPERTY CUDA_ARCHITECTURES "${CUDA_ARCH_LIST}")
+find_package(Boost COMPONENTS unit_test_framework timer)
+if(NOT Boost_FOUND)
+	message(ERROR "  Cannot find Boost.Timer. Try\n    sudo apt install libboost-timer-dev  # in Debian/Ubuntu")
 endif()
-
-if("30;35;50;52;60;61;70;70+PTX;75;75+PTX" STREQUAL "${CUDA_ARCH_LIST}" OR "" STREQUAL "${CUDA_ARCH_LIST}")
-	message(STATUS "gpu not detected ${CUDA_ARCH_LIST}")
-	set(TEST_SRCS)
-else()
-	message(STATUS "gpu detected: ${CUDA_ARCH_LIST}")
-endif()
-
-find_package(Boost REQUIRED COMPONENTS unit_test_framework timer)
 
 set(TEST_SRCS
     array.cu
+    memory_resource.cu
+	set_identity_kernel.cu
     speed.cu
     speed_algo.cu
     universal.cu
+	vector.cu
 )
 
 foreach(TEST_FILE ${TEST_SRCS})
@@ -59,6 +40,7 @@ foreach(TEST_FILE ${TEST_SRCS})
 	add_executable(${TEST_EXE} ${TEST_FILE})
 	if(ENABLE_CUDA OR DEFINED CXXCUDA)
 		set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
+		set_property(TARGET ${TEST_EXE} PROPERTY CUDA_STANDARD 17)
 	endif()
 
 	target_include_directories(${TEST_EXE}        PUBLIC ../../../../../include)
@@ -68,14 +50,9 @@ foreach(TEST_FILE ${TEST_SRCS})
 	target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
 	target_link_libraries(${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
 	target_link_directories(${TEST_EXE} PRIVATE ${Boost_LIBRARY_DIRS})
-    if("30;35;50;52;60;61;70;70+PTX;75;75+PTX" STREQUAL "${CUDA_ARCH_LIST}" OR "" STREQUAL "${CUDA_ARCH_LIST}" OR NOT ENABLE_GPU)
-	    message(STATUS "gpu not detected ${CUDA_ARCH_LIST}")
-    else()
-	    message(STATUS "gpu detected: ${CUDA_ARCH_LIST}")
-	    add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
-    endif()
-    if(ENABLE_GPU)
-	    message(STATUS "gpu run forced")
+    if(ENABLE_CUDA)
 	    add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
     endif()
 endforeach()
+
+set_tests_properties(speed.cu.x PROPERTIES RUN_SERIAL TRUE)

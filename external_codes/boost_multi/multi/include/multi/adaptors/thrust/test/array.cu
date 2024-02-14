@@ -1,50 +1,106 @@
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2021-2023 Alfredo A. Correa
+
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUDA thrust"
-#include<boost/test/unit_test.hpp>
-
-#include "../../../adaptors/thrust/fix_complex_traits.hpp"
-#include          "../../../detail/fix_complex_traits.hpp"
-
+#include <boost/test/unit_test.hpp>
+#include <boost/mpl/list.hpp>
 #include <boost/timer/timer.hpp>
 
-#include "../../../adaptors/thrust.hpp"
+#include <multi/array.hpp>
+#include <multi/adaptors/thrust.hpp>
+#include <multi/adaptors/thrust/managed_allocator.hpp>
 
 #include <thrust/complex.h>
 #include <thrust/device_ptr.h>
 #include <thrust/system/cuda/memory.h>
 #include <thrust/uninitialized_copy.h>
 
-//#include "../../../memory/adaptors/cuda/allocator.hpp"
-#include "../../../memory/adaptors/cuda/cached/allocator.hpp"
-#include "../../../memory/adaptors/cuda/managed/allocator.hpp"
-
-#include<multi/adaptors/thrust/managed_allocator.hpp>
-
-#include <boost/mpl/list.hpp>
-
 #include <numeric>
 
 namespace multi = boost::multi;
+
+#ifdef __NVCC__
+template<>
+inline constexpr bool ::boost::multi::force_element_trivial_default_construction<::std::complex<double>> = true;
+template<>
+inline constexpr bool ::boost::multi::force_element_trivial_default_construction<::std::complex<float>> = true;
+template<>
+inline constexpr bool ::boost::multi::force_element_trivial_default_construction<::thrust::complex<double>> = true;
+template<>
+inline constexpr bool ::boost::multi::force_element_trivial_default_construction<::thrust::complex<float>> = true;
+#else  // vvv nvcc (12.1?) doesn't support this kind of customization: "error: expected initializer before ‘<’"
+template<class T>
+inline constexpr bool ::boost::multi::force_element_trivial_default_construction<::std::complex<T>> = std::is_trivially_default_constructible<T>::value;
+template<class T>
+inline constexpr bool ::boost::multi::force_element_trivial_default_construction<::thrust::complex<T>> = std::is_trivially_default_constructible<T>::value;
+#endif
 
 namespace {
 
 template<class T> using test_allocator =
 //  multi ::memory::cuda::allocator<T>
-//	multi ::memory::cuda::managed::allocator<T>//, std::integral_constant<int, 0> >
-//	multi ::memory::cuda::cached::allocator<T, std::integral_constant<int, 0> >
-	multi::thrust::cuda::managed_allocator<T>
-//	thrust::cuda::allocator<T>
+//  multi ::memory::cuda::managed::allocator<T>//, std::integral_constant<int, 0> >
+//  multi ::memory::cuda::cached::allocator<T, std::integral_constant<int, 0> >
+//  multi::thrust::cuda::managed_allocator<T>
+	thrust::cuda::allocator<T>
 ;
 
 }
 
 using types_list = boost::mpl::list<
-  //char,
+	// char,
 	double,
-  //std::complex<double>,
+	// std::complex<double>,
 	thrust::complex<double>
 >;
 
-#if 1
+BOOST_AUTO_TEST_CASE(dummy_test) {}
+
+BOOST_AUTO_TEST_CASE(cuda_universal_empty) {
+	using complex = std::complex<double>;
+	multi::array<complex, 2, thrust::cuda::universal_allocator<complex>> A;
+	multi::array<complex, 2, thrust::cuda::universal_allocator<complex>> B = A;
+	BOOST_REQUIRE( A.is_empty() );
+	BOOST_REQUIRE( B.is_empty() );
+	BOOST_REQUIRE( A == B );
+}
+
+BOOST_AUTO_TEST_CASE(cuda_allocators) {
+
+	multi::array<double, 1, thrust::cuda::allocator<double> > A1(200, 0.0);
+
+	BOOST_REQUIRE( size(A1) == 200 );
+	A1[100] = 1.0;
+
+	multi::array<double, 1, thrust::cuda::allocator<double>> const B1(200, 2.0);
+	BOOST_REQUIRE( B1[10] == 2.0 );
+
+	A1[10] = B1[10];
+	BOOST_REQUIRE( A1[10] == 2.0 );
+}
+
+
+BOOST_AUTO_TEST_CASE(test_univ_alloc) {
+	multi::array<double, 2, thrust::cuda::universal_allocator<double> > Dev({128, 128});
+	*raw_pointer_cast(Dev.base()) = 99.0;
+}
+
+BOOST_AUTO_TEST_CASE(mtc_universal_array) {
+	multi::thrust::cuda::universal_array<double, 2> Dev({128, 128});
+	*raw_pointer_cast(Dev.base()) = 99.0;
+}
+
+BOOST_AUTO_TEST_CASE(mtc_universal_coloncolon_array) {
+	multi::thrust::cuda::universal::array<double, 2> Dev({128, 128});
+	*raw_pointer_cast(Dev.base()) = 99.0;
+}
+
+BOOST_AUTO_TEST_CASE(test_alloc) {
+	multi::array<double, 2, thrust::cuda::allocator<double> > Dev({128, 128});
+	// *raw_pointer_cast(Dev.base()) = 99.0;  // segmentation fault (correct behavior)
+}
+
+#ifdef NDEBUG
 BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_copy_1D_issue123, T, types_list) {  // BOOST_AUTO_TEST_CASE(fdfdfdsfds) { using T = char;
 	static_assert( multi::is_trivially_default_constructible<T>{}, "!");
 	static_assert( std::is_trivially_copy_constructible<T>{}     , "!");
@@ -163,6 +219,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_copy_1D_issue123, T, types_list) {  // BOOS
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_cpugpu_2D_issue123, T, types_list) {
+// BOOST_AUTO_TEST_CASE(thrust_cpugpu_2D_issue123) { using T = double;
 
 	auto const exts = multi::extensions_t<2>({10240, 10240});
 
@@ -278,7 +335,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_cpugpu_2D_issue123, T, types_list) {
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_cpugpu_issue123_3D, T, types_list) {
-
+// BOOST_AUTO_TEST_CASE(thrust_cpugpu_issue123_3D) { using T = double;
 	auto const exts = multi::extensions_t<3>({1024, 1024, 100});
 
 	std::cout<<"| 3D `"<< typeid(T).name() <<"` max data size "<< exts.num_elements()*sizeof(T) / 1073741824. <<" GB | speed |\n|---|---|"<<std::endl;
@@ -447,7 +504,7 @@ BOOST_AUTO_TEST_CASE(thrust_equality_2D_small_host_issue123) {
 	BOOST_REQUIRE(    std::equal(Host().elements().begin(), Host().elements().end(), Hos2().elements().begin()) );
 	BOOST_REQUIRE( thrust::equal(Host().elements().begin(), Host().elements().end(), Hos2().elements().begin()) );
 
-//	BOOST_REQUIRE( Host() == Hos2() );
+//  BOOST_REQUIRE( Host() == Hos2() );
 }
 
 BOOST_AUTO_TEST_CASE(thrust_equality_2D_small_gpu_issue123) {
@@ -572,7 +629,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_equality_issue123_3D, T, types_list) {
 	}
 	{
 		boost::timer::auto_cpu_timer t{""};
-	//	BOOST_REQUIRE( Host({0, 512}, {0, 512}, {0, 512}) == Hos2({0, 512}, {0, 512}, {0, 512}) );
+	//  BOOST_REQUIRE( Host({0, 512}, {0, 512}, {0, 512}) == Hos2({0, 512}, {0, 512}, {0, 512}) );
 		BOOST_REQUIRE( std::equal( Host({0, 512}, {0, 512}, {0, 512}).elements().begin(), Host({0, 512}, {0, 512}, {0, 512}).elements().end(), Hos2({0, 512}, {0, 512}, {0, 512}).elements().begin() ) );
 		std::cout<<"| strided    host == host | "<< Hos2({0, 512},{0, 512}, {0, 512}).num_elements()*sizeof(T) / (t.elapsed().wall/1e9) / 1073741824. << "GB/sec |\n";
 	}
@@ -633,79 +690,75 @@ BOOST_AUTO_TEST_CASE(thrust_complex_cached_without_values_2D) {
 BOOST_AUTO_TEST_CASE(array) {
 
 //{
-//	multi::thrust::cuda::array<double, 2> C({2, 3});
+//  multi::thrust::cuda::array<double, 2> C({2, 3});
 
-//	C[0][0] = 0. ;
-//	C[1][1] = 11.;
-//	BOOST_TEST_REQUIRE( C[1][1] == 11. );
+//  C[0][0] = 0. ;
+//  C[1][1] = 11.;
+//  BOOST_TEST_REQUIRE( C[1][1] == 11. );
 //}
 
 //{
-//	multi::array<double, 2> const H = {
-//		{00., 01., 02.},
-//		{10., 11., 12.},
-//	};
+//  multi::array<double, 2> const H = {
+//      {00., 01., 02.},
+//      {10., 11., 12.},
+//  };
 
-//	BOOST_TEST_REQUIRE( H[1][1] == 11. );
+//  BOOST_TEST_REQUIRE( H[1][1] == 11. );
 
-//	{
-//		multi::thrust::cuda::array<double, 2> C(H.extensions());
-//		BOOST_REQUIRE( C.num_elements() == H.num_elements() );
+//  {
+//      multi::thrust::cuda::array<double, 2> C(H.extensions());
+//      BOOST_REQUIRE( C.num_elements() == H.num_elements() );
 
-//		thrust::copy_n(H.data_elements(), H.num_elements(), C.data_elements());
-//		BOOST_TEST_REQUIRE( C[1][1] == 11. );
-//		BOOST_REQUIRE( C == H );
-//	}
-//	{
-//		multi::thrust::cuda::array<double, 2> C(H.extensions());
-//		BOOST_REQUIRE( C.num_elements() == H.num_elements() );
+//      thrust::copy_n(H.data_elements(), H.num_elements(), C.data_elements());
+//      BOOST_TEST_REQUIRE( C[1][1] == 11. );
+//      BOOST_REQUIRE( C == H );
+//  }
+//  {
+//      multi::thrust::cuda::array<double, 2> C(H.extensions());
+//      BOOST_REQUIRE( C.num_elements() == H.num_elements() );
 
-//		std::copy_n(H.data_elements(), H.num_elements(), C.data_elements());
-//		BOOST_TEST_REQUIRE( C[1][1] == 11. );
-//		BOOST_REQUIRE( C == H );
-//	}
-//	{
-//		multi::thrust::cuda::array<double, 2> C(H.extensions());
-//		BOOST_REQUIRE( C.num_elements() == H.num_elements() );
+//      std::copy_n(H.data_elements(), H.num_elements(), C.data_elements());
+//      BOOST_TEST_REQUIRE( C[1][1] == 11. );
+//      BOOST_REQUIRE( C == H );
+//  }
+//  {
+//      multi::thrust::cuda::array<double, 2> C(H.extensions());
+//      BOOST_REQUIRE( C.num_elements() == H.num_elements() );
 
-//		std::uninitialized_copy_n(H.data_elements(), H.num_elements(), C.data_elements());
-//		BOOST_TEST_REQUIRE( C[1][1] == 11. );
-//		BOOST_REQUIRE( C == H );
-//	}
-//	{
-//		multi::thrust::cuda::array<double, 2> C(H.extensions());
-//		BOOST_REQUIRE( C.num_elements() == H.num_elements() );
+//      std::uninitialized_copy_n(H.data_elements(), H.num_elements(), C.data_elements());
+//      BOOST_TEST_REQUIRE( C[1][1] == 11. );
+//      BOOST_REQUIRE( C == H );
+//  }
+//  {
+//      multi::thrust::cuda::array<double, 2> C(H.extensions());
+//      BOOST_REQUIRE( C.num_elements() == H.num_elements() );
 
-//		thrust::uninitialized_copy_n(H.data_elements(), H.num_elements(), C.data_elements());
-//		BOOST_TEST_REQUIRE( C[1][1] == 11. );
-//		BOOST_REQUIRE( C == H );
-//	}
-//	{
-//		multi::thrust::cuda::array<double, 2> C(H.extensions());
-//		BOOST_REQUIRE( C.extensions() == H.extensions() );
-//		thrust::copy_n(H.begin(), H.size(), C.begin());
-//		BOOST_REQUIRE( C == H );
-//	}
-//	{
-//		multi::thrust::cuda::array<double, 2> C(H.extensions());
-//		BOOST_REQUIRE( C.extensions() == H.extensions() );
-//		std::copy_n(H.begin(), H.size(), C.begin());
-//		BOOST_REQUIRE( C == H );
-//	}
-//	{
-//		multi::thrust::cuda::array<double, 2> C(H.extensions());
-//		C = H;
-//		BOOST_REQUIRE( C == H );
-//	}
-//	{
-//		multi::thrust::cuda::array<double, 2> C = H;
-//		BOOST_REQUIRE( C == H );
-//	}
+//      thrust::uninitialized_copy_n(H.data_elements(), H.num_elements(), C.data_elements());
+//      BOOST_TEST_REQUIRE( C[1][1] == 11. );
+//      BOOST_REQUIRE( C == H );
+//  }
+//  {
+//      multi::thrust::cuda::array<double, 2> C(H.extensions());
+//      BOOST_REQUIRE( C.extensions() == H.extensions() );
+//      thrust::copy_n(H.begin(), H.size(), C.begin());
+//      BOOST_REQUIRE( C == H );
+//  }
+//  {
+//      multi::thrust::cuda::array<double, 2> C(H.extensions());
+//      BOOST_REQUIRE( C.extensions() == H.extensions() );
+//      std::copy_n(H.begin(), H.size(), C.begin());
+//      BOOST_REQUIRE( C == H );
+//  }
+//  {
+//      multi::thrust::cuda::array<double, 2> C(H.extensions());
+//      C = H;
+//      BOOST_REQUIRE( C == H );
+//  }
+//  {
+//      multi::thrust::cuda::array<double, 2> C = H;
+//      BOOST_REQUIRE( C == H );
+//  }
 //}
 
 }
 #endif
-
-// Local Variables:
-// mode: c++
-// End:
