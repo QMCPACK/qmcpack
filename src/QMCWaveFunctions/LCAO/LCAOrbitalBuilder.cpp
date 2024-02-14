@@ -16,6 +16,7 @@
 
 
 #include "LCAOrbitalBuilder.h"
+#include <PlatformSelector.hpp>
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "MultiQuinticSpline1D.h"
@@ -133,6 +134,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   aAttrib.add(h5_path, "href");
   aAttrib.add(PBCImages, "PBCimages");
   aAttrib.add(SuperTwist, "twist");
+  aAttrib.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   aAttrib.put(cur);
 
   if (cuspC == "yes")
@@ -481,6 +483,8 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spoAttrib.add(norbs, "orbitals", {}, TagStatus::DELETED);
   spoAttrib.put(cur);
 
+  const bool useOffload = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
+
   // look for coefficients element. If found the MO coefficients matrix is not identity
   bool identity = true;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
@@ -500,6 +504,8 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::unique_ptr<SPOSet> sposet;
   if (doCuspCorrection)
   {
+    if (useOffload)
+      myComm->barrier_and_abort("LCAO with cusp correction doesn't support OpenMP offload\n");
 #if defined(QMC_COMPLEX)
     myComm->barrier_and_abort(
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
@@ -514,7 +520,11 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
   {
-    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet), norbs, identity);
+    if (useOffload)
+      app_summary() << "    Running OpenMP offload code path." << std::endl;
+    else
+      app_summary() << "    Running on CPU." << std::endl;
+    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet), norbs, identity, useOffload);
     if (!identity)
       loadMO(*lcos, cur);
     sposet = std::move(lcos);

@@ -46,13 +46,11 @@ public:
      * @param norb number of orbitals
      * @param identity if true, the MO coefficients matrix is identity
      */
-  LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity = false);
+  LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity, bool use_offload);
 
   LCAOrbitalSet(const LCAOrbitalSet& in);
 
-#if defined(ENABLE_OFFLOAD)
-  bool isOMPoffload() const override { return true; }
-#endif
+  bool isOMPoffload() const override { return useOMPoffload_; }
 
   std::string getClassName() const final { return "LCAOrbitalSet"; }
 
@@ -234,9 +232,11 @@ protected:
   const IndexType BasisSetSize;
   /// a copy of the original C before orbital rotation is applied;
   std::shared_ptr<OffloadValueMatrix> C_copy;
-
   ///true if C is an identity matrix
   const bool Identity;
+  /// whether offload is on or off at runtime.
+  const bool useOMPoffload_;
+
   ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
   vgl_type Temp;
   ///Tempv(OrbitalSetSize) Tempv=C*Temp
@@ -325,6 +325,7 @@ private:
 
   /// helper function for extracting a list of basis sets from a list of LCAOrbitalSet
   RefVectorWithLeader<basis_type> extractBasisRefList(const RefVectorWithLeader<SPOSet>& spo_list) const;
+
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
   /// timer for basis set

@@ -38,10 +38,11 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   OffloadVector<size_t> nVP_index_list;                  // [NVPs]
 };
 
-LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity)
+LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity, bool use_offload)
     : SPOSet(my_name),
       BasisSetSize(bs ? bs->getBasisSetSize() : 0),
       Identity(identity),
+      useOMPoffload_(use_offload),
       basis_timer_(createGlobalTimer("LCAOrbitalSet::Basis", timer_level_fine)),
       mo_timer_(createGlobalTimer("LCAOrbitalSet::MO", timer_level_fine))
 {
@@ -70,6 +71,7 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
       BasisSetSize(in.BasisSetSize),
       C_copy(in.C_copy),
       Identity(in.Identity),
+      useOMPoffload_(in.useOMPoffload_),
       basis_timer_(in.basis_timer_),
       mo_timer_(in.mo_timer_)
 {

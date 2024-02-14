@@ -31,7 +31,7 @@ using std::string;
 namespace qmcplusplus
 {
 
-void test_LCAO_DiamondC_2x1x1_real()
+void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 {
   using VT       = SPOSet::ValueType;
   Communicate* c = OHMMS::Controller;
@@ -91,7 +91,18 @@ void test_LCAO_DiamondC_2x1x1_real()
   // diamondC_2x1x1
   // from tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond-Twist0.wfj.xml
   const std::string wf_xml_str = R"(
-    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond_2x1x1-Gaussian.h5" PBCimages="5  5  5">
+    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond_2x1x1-Gaussian.h5" PBCimages="5  5  5" gpu="no">
+      <basisset name="LCAOBSet" key="GTO" transform="yes">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+      </basisset>
+      <sposet name="spoud" size="8">
+        <occupation mode="ground"/>
+        <coefficient size="116" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+  )";
+  const std::string wf_omp_xml_str = R"(
+    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond_2x1x1-Gaussian.h5" PBCimages="5  5  5" gpu="omptarget">
       <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
       </basisset>
@@ -102,7 +113,7 @@ void test_LCAO_DiamondC_2x1x1_real()
     </sposet_collection>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_xml_str);
+  bool okay = doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str);
   REQUIRE(okay);
 
   xmlNodePtr root       = doc.getRoot();
@@ -277,6 +288,7 @@ void test_LCAO_DiamondC_2x1x1_real()
     //     app_log() << "CHECK(Approx(std::real(dpsiref_1[" << iorb << "][" << idim << "])) == " << dpsiref_1[iorb][idim] << ");\n";
     // }
   }
+
   SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
   {
     // make VPs
@@ -396,7 +408,7 @@ void test_LCAO_DiamondC_2x1x1_real()
   }
 }
 
-void test_LCAO_DiamondC_2x1x1_cplx()
+void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
 {
   using VT       = SPOSet::ValueType;
   Communicate* c = OHMMS::Controller;
@@ -456,7 +468,18 @@ void test_LCAO_DiamondC_2x1x1_cplx()
   // diamondC_2x1x1
   // from tests/solids/diamondC_2x1x1-Gaussian_pp_cplx/C_Diamond-tiled-cplx.wfj.xml
   const std::string wf_xml_str = R"(
-    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.07761248  0.07761248  -0.07761248" href="C_Diamond_2x1x1-Gaussian-tiled-cplx.h5" PBCimages="5  5  5">
+    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.07761248  0.07761248  -0.07761248" href="C_Diamond_2x1x1-Gaussian-tiled-cplx.h5" PBCimages="5  5  5" gpu="no">
+      <basisset name="LCAOBSet" key="GTO" transform="yes">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+      </basisset>
+      <sposet name="spoud" size="8" >
+        <occupation mode="ground"/>
+        <coefficient size="52" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+  )";
+  const std::string wf_omp_xml_str = R"(
+    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.07761248  0.07761248  -0.07761248" href="C_Diamond_2x1x1-Gaussian-tiled-cplx.h5" PBCimages="5  5  5" gpu="omptarget">
       <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
       </basisset>
@@ -467,7 +490,7 @@ void test_LCAO_DiamondC_2x1x1_cplx()
     </sposet_collection>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_xml_str);
+  bool okay = doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str);
   REQUIRE(okay);
 
   xmlNodePtr root       = doc.getRoot();
@@ -710,6 +733,7 @@ void test_LCAO_DiamondC_2x1x1_cplx()
     //               << "])) == " << std::imag(dpsiref_1[iorb][idim]) << ");" << std::endl;
     // }
   }
+
   SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
   {
     // make VPs
@@ -839,12 +863,19 @@ void test_LCAO_DiamondC_2x1x1_cplx()
   }
 }
 
-
 TEST_CASE("LCAOrbitalSet batched PBC DiamondC", "[wavefunction]")
 {
-  SECTION("2x1x1 real") { test_LCAO_DiamondC_2x1x1_real(); }
+  SECTION("2x1x1 real") { test_LCAO_DiamondC_2x1x1_real(false); }
 #ifdef QMC_COMPLEX
-  SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(); }
+  SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(false); }
+#endif
+}
+
+TEST_CASE("LCAOrbitalSet batched PBC DiamondC offload", "[wavefunction]")
+{
+  SECTION("2x1x1 real offload") { test_LCAO_DiamondC_2x1x1_real(true); }
+#ifdef QMC_COMPLEX
+  SECTION("2x1x1 cplx offload") { test_LCAO_DiamondC_2x1x1_cplx(true); }
 #endif
 }
 } // namespace qmcplusplus
