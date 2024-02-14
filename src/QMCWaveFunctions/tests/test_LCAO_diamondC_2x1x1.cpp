@@ -330,18 +330,21 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
 
     // fill invrow with dummy data for each walker
-    std::vector<SPOSet::ValueType> psiMinv_data_(norb);
-    std::vector<SPOSet::ValueType> psiMinv_data_2(norb);
-    SPOSet::ValueVector psiMinv_ref_0(norb);
-    SPOSet::ValueVector psiMinv_ref_1(norb);
+    SPOSet::OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+    SPOSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
     for (int i = 0; i < norb; i++)
     {
-      psiMinv_data_[i]  = 0.1 * i;
-      psiMinv_data_2[i] = 0.2 * i;
-      psiMinv_ref_0[i]  = psiMinv_data_[i];
-      psiMinv_ref_1[i]  = psiMinv_data_2[i];
+      psiMinv_data_0[i]  = 0.1 * i;
+      psiMinv_data_1[i] = 0.2 * i;
     }
-    std::vector<const SPOSet::ValueType*> invRow_ptr_list{psiMinv_data_.data(), psiMinv_data_2.data()};
+    psiMinv_data_0.updateTo();
+    psiMinv_data_1.updateTo();
+
+    std::vector<const SPOSet::ValueType*> invRow_ptr_list;
+    if (spo->isOMPoffload())
+      invRow_ptr_list = {psiMinv_data_0.device_data(), psiMinv_data_1.device_data()};
+    else
+      invRow_ptr_list = {psiMinv_data_0.data(), psiMinv_data_1.data()};
 
     // ratios_list
     std::vector<std::vector<SPOSet::ValueType>> ratios_list(nw);
@@ -349,16 +352,16 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
       ratios_list[iw].resize(nvp_list[iw]);
 
     // just need dummy refvec with correct size
-    SPOSet::ValueVector tmp_psi1(norb), tmp_psi2(norb);
-    RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi1, tmp_psi2};
+    SPOSet::ValueVector tmp_psi0(norb), tmp_psi1(norb);
+    RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi0, tmp_psi1};
     spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
                               tmp_psi_list, invRow_ptr_list, ratios_list);
 
     std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
     std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);
     // single-walker functions for reference
-    spo->evaluateDetRatios(VP_, tmp_psi1, psiMinv_ref_0, ratios_ref_0);
-    spo_2->evaluateDetRatios(VP_2, tmp_psi2, psiMinv_ref_1, ratios_ref_1);
+    spo->evaluateDetRatios(VP_, tmp_psi0, psiMinv_ref_0, ratios_ref_0);
+    spo_2->evaluateDetRatios(VP_2, tmp_psi1, psiMinv_ref_1, ratios_ref_1);
 
     for (int ivp = 0; ivp < nvp_; ivp++)
       CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));
@@ -776,18 +779,21 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
 
     // fill invrow with dummy data for each walker
-    std::vector<SPOSet::ValueType> psiMinv_data_(norb);
-    std::vector<SPOSet::ValueType> psiMinv_data_2(norb);
-    SPOSet::ValueVector psiMinv_ref_0(norb);
-    SPOSet::ValueVector psiMinv_ref_1(norb);
+    SPOSet::OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+    SPOSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
     for (int i = 0; i < norb; i++)
     {
-      psiMinv_data_[i]  = 0.1 * i;
-      psiMinv_data_2[i] = 0.2 * i;
-      psiMinv_ref_0[i]  = psiMinv_data_[i];
-      psiMinv_ref_1[i]  = psiMinv_data_2[i];
+      psiMinv_data_0[i]  = 0.1 * i;
+      psiMinv_data_1[i] = 0.2 * i;
     }
-    std::vector<const SPOSet::ValueType*> invRow_ptr_list{psiMinv_data_.data(), psiMinv_data_2.data()};
+    psiMinv_data_0.updateTo();
+    psiMinv_data_1.updateTo();
+
+    std::vector<const SPOSet::ValueType*> invRow_ptr_list;
+    if (spo->isOMPoffload())
+      invRow_ptr_list = {psiMinv_data_0.device_data(), psiMinv_data_1.device_data()};
+    else
+      invRow_ptr_list = {psiMinv_data_0.data(), psiMinv_data_1.data()};
 
     // ratios_list
     std::vector<std::vector<SPOSet::ValueType>> ratios_list(nw);
@@ -795,15 +801,16 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
       ratios_list[iw].resize(nvp_list[iw]);
 
     // just need dummy refvec with correct size
-    SPOSet::ValueVector tmp_psi_list(norb);
+    SPOSet::ValueVector tmp_psi0(norb), tmp_psi1(norb);
+    RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi0, tmp_psi1};
     spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
-                              RefVector<SPOSet::ValueVector>{tmp_psi_list}, invRow_ptr_list, ratios_list);
+                              tmp_psi_list, invRow_ptr_list, ratios_list);
 
     std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
     std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);
     // single-walker functions for reference
-    spo->evaluateDetRatios(VP_, tmp_psi_list, psiMinv_ref_0, ratios_ref_0);
-    spo_2->evaluateDetRatios(VP_2, tmp_psi_list, psiMinv_ref_1, ratios_ref_1);
+    spo->evaluateDetRatios(VP_, tmp_psi0, psiMinv_ref_0, ratios_ref_0);
+    spo_2->evaluateDetRatios(VP_2, tmp_psi1, psiMinv_ref_1, ratios_ref_1);
 
     for (int ivp = 0; ivp < nvp_; ivp++)
       CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));

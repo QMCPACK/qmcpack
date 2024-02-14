@@ -504,13 +504,13 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::unique_ptr<SPOSet> sposet;
   if (doCuspCorrection)
   {
-    if (useOffload)
-      myComm->barrier_and_abort("LCAO with cusp correction doesn't support OpenMP offload\n");
 #if defined(QMC_COMPLEX)
     myComm->barrier_and_abort(
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
+    if (useOffload)
+      app_warning() << "    LCAO with cusp correction doesn't support OpenMP offload. Running on CPU." << std::endl;
     auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, std::move(myBasisSet), norbs, identity,
                                                               sourcePtcl, targetPtcl);
     if (!identity)
