@@ -282,10 +282,11 @@ case "$1" in
               ${GITHUB_WORKSPACE}
       ;;
       *"macOS-GCC12-NoMPI-Real"*)
-        echo 'Configure for building on macOS using gcc11'
+        echo 'Configure for building on macOS using gcc12'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc-12 \
               -DCMAKE_CXX_COMPILER=g++-12 \
+              -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" \
               -DQMC_MPI=0 \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
