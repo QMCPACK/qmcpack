@@ -36,7 +36,7 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   OffloadMWVArray vp_phi_v;                              // [NVPs][NumMO]
   OffloadMWVArray vp_basis_v_mw;                         // [NVPs][NumAO]
   OffloadVector<const ValueType*> invRow_deviceptr_list; // [NVPs]
-  OffloadVector<ValueType> ratios_buffer;                // [NVPs]
+  OffloadMatrix<ValueType> rg_buffer;                    // [4][NVPs]
   OffloadVector<size_t> nVP_index_list;                  // [NVPs]
 };
 
@@ -561,7 +561,6 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
   myBasisSet->mw_evaluateValueVPs(basis_list, vp_list, vp_basis_v_mw);
 
 #if defined(ENABLE_OFFLOAD)
-
   int dummy_handle = 0;
   int success      = 0;
 
@@ -606,6 +605,7 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
   }
 #endif
 }
+
 void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                                      const RefVectorWithLeader<ParticleSet>& P_list,
                                      int iat,
@@ -716,10 +716,10 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 #if defined(ENABLE_OFFLOAD)
   const size_t nw             = vp_list.size();
   auto& invRow_deviceptr_list = spo_leader.mw_mem_handle_.getResource().invRow_deviceptr_list;
-  auto& ratios_buffer         = spo_leader.mw_mem_handle_.getResource().ratios_buffer;
+  auto& rg_buffer             = spo_leader.mw_mem_handle_.getResource().rg_buffer;
 
   invRow_deviceptr_list.resize(nVPs);
-  ratios_buffer.resize(nVPs);
+  rg_buffer.resize(4, nVPs);
 
   for (size_t iw = 0, istart = 0; iw < nw; iw++)
   {
@@ -729,25 +729,23 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   }
   auto* invRow_deviceptr_list_ptr = invRow_deviceptr_list.data();
   auto* vp_phi_v_ptr              = vp_phi_v.data();
-  auto* ratios_buffer_ptr         = ratios_buffer.data();
+  auto* rg_buffer_ptr             = rg_buffer.data();
   PRAGMA_OFFLOAD("omp target teams distribute parallel for \
       map(always,to: invRow_deviceptr_list_ptr[:nVPs]) \
       map(to: vp_phi_v_ptr[:nVPs*requested_orb_size]) \
-      map(always, from: ratios_buffer_ptr[:nVPs])")
+      map(always, from: rg_buffer_ptr[:nVPs])")
   for (size_t ivp = 0; ivp < nVPs; ivp++)
   {
-    ratios_buffer_ptr[ivp] = 0;
+    rg_buffer_ptr[ivp] = 0;
     for (size_t iorb = 0; iorb < requested_orb_size; iorb++)
-      ratios_buffer_ptr[ivp] += vp_phi_v_ptr[ivp * requested_orb_size + iorb] * invRow_deviceptr_list_ptr[ivp][iorb];
+      rg_buffer_ptr[ivp] += vp_phi_v_ptr[ivp * requested_orb_size + iorb] * invRow_deviceptr_list_ptr[ivp][iorb];
   }
 
-  size_t index = 0;
-  for (size_t iw = 0; iw < nw; iw++)
+  for (size_t iw = 0, index = 0; iw < nw; iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
-      ratios_list[iw][iat] = ratios_buffer[index++];
+      ratios_list[iw][iat] = rg_buffer[0][index++];
 #else
-  size_t index = 0;
-  for (size_t iw = 0; iw < vp_list.size(); iw++)
+  for (size_t iw = 0, index = 0; iw < vp_list.size(); iw++)
     for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
       ratios_list[iw][iat] = simd::dot(vp_phi_v.data_at(index++, 0), invRow_ptr_list[iw], requested_orb_size);
 #endif
@@ -805,6 +803,57 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
 
   const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size(2);
+#if defined(ENABLE_OFFLOAD)
+  auto& spo_leader            = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& invRow_deviceptr_list = spo_leader.mw_mem_handle_.getResource().invRow_deviceptr_list;
+  auto& rg_buffer             = spo_leader.mw_mem_handle_.getResource().rg_buffer;
+
+  invRow_deviceptr_list.resize(nw);
+  rg_buffer.resize(4, nw);
+
+  for (size_t iw = 0; iw < nw; iw++)
+    invRow_deviceptr_list[iw] = invRow_ptr_list[iw];
+
+  auto* invRow_deviceptr_list_ptr = invRow_deviceptr_list.data();
+  auto* phi_vgl_v_ptr             = phi_vgl_v.data();
+  auto* rg_buffer_ptr             = rg_buffer.data();
+  const size_t phi_vgl_stride     = nw * norb_requested;
+  std::cout << "check " << phi_vgl_stride << "  " << norb_requested << "  " << rg_buffer.size() << std::endl;
+
+  PRAGMA_OFFLOAD("omp target teams distribute \
+                  map(always,to: invRow_deviceptr_list_ptr[:nw]) \
+                  map(to: phi_vgl_v_ptr[:nw*norb_requested]) \
+                  map(always, from: rg_buffer_ptr[:rg_buffer.size()])")
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto* phi_v_ptr  = phi_vgl_v_ptr + iw * norb_requested;
+    auto* phi_gx_ptr = phi_v_ptr + phi_vgl_stride;
+    auto* phi_gy_ptr = phi_gx_ptr + phi_vgl_stride;
+    auto* phi_gz_ptr = phi_gy_ptr + phi_vgl_stride;
+    auto* invRow     = invRow_deviceptr_list_ptr[iw];
+
+    ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
+    PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
+    for (size_t iorb = 0; iorb < norb_requested; iorb++)
+    {
+      ratio += phi_v_ptr[iorb] * invRow[iorb];
+      grad_x += phi_gx_ptr[iorb] * invRow[iorb];
+      grad_y += phi_gy_ptr[iorb] * invRow[iorb];
+      grad_z += phi_gz_ptr[iorb] * invRow[iorb];
+    }
+
+    rg_buffer_ptr[iw]          = ratio;
+    rg_buffer_ptr[iw + nw]     = grad_x / ratio;
+    rg_buffer_ptr[iw + nw * 2] = grad_y / ratio;
+    rg_buffer_ptr[iw + nw * 3] = grad_z / ratio;
+  }
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    ratios[iw] = rg_buffer[0][iw];
+    grads[iw]  = {rg_buffer[1][iw], rg_buffer[2][iw], rg_buffer[3][iw]};
+  }
+#else
   for (int iw = 0; iw < nw; iw++)
   {
     ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_vgl_v.data_at(0, iw, 0), norb_requested);
@@ -813,6 +862,7 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
       dphi[idim] = simd::dot(invRow_ptr_list[iw], phi_vgl_v.data_at(idim + 1, iw, 0), norb_requested) / ratios[iw];
     grads[iw] = dphi;
   }
+#endif
 }
 
 void LCAOrbitalSet::evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& dhpsi)

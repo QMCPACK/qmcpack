@@ -290,6 +290,42 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     //   for (int idim = 0; idim < 3; idim++)
     //     app_log() << "CHECK(Approx(std::real(dpsiref_1[" << iorb << "][" << idim << "])) == " << dpsiref_1[iorb][idim] << ");\n";
     // }
+
+    // fill invrow with dummy data for each walker
+    OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+    LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
+    for (int i = 0; i < norb; i++)
+    {
+      psiMinv_data_0[i] = 0.1 * i;
+      psiMinv_data_1[i] = 0.2 * i;
+    }
+    psiMinv_data_0.updateTo();
+    psiMinv_data_1.updateTo();
+
+    std::vector<const SPOSet::ValueType*> invRow_ptr_list;
+    if (spo->isOMPoffload())
+      invRow_ptr_list = {psiMinv_data_0.device_data(), psiMinv_data_1.device_data()};
+    else
+      invRow_ptr_list = {psiMinv_data_0.data(), psiMinv_data_1.data()};
+
+    SPOSet::OffloadMWVGLArray phi_vgl_v;
+    std::vector<SPOSet::ValueType> ratios(nw);
+    std::vector<SPOSet::GradType> grads(nw);
+    phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, norb);
+
+    spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, invRow_ptr_list, phi_vgl_v, ratios, grads);
+
+    SECTION("multi-walker VGLandDetRatioGrads")
+    {
+      CHECK(Approx(std::real(ratios[0])) == 0.193096895);
+      CHECK(Approx(std::real(grads[0][0])) == 0.5969699486);
+      CHECK(Approx(std::real(grads[0][1])) == -0.776008772);
+      CHECK(Approx(std::real(grads[0][2])) == 0.7457653703);
+      CHECK(Approx(std::real(ratios[1])) == 0.3558058932);
+      CHECK(Approx(std::real(grads[1][0])) == 0.5857037763);
+      CHECK(Approx(std::real(grads[1][1])) == -0.8617132632);
+      CHECK(Approx(std::real(grads[1][2])) == 0.7299292825);
+    }
   }
 
   SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
