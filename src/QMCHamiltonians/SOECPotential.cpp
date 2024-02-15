@@ -101,6 +101,24 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
   }
 }
 
+void SOECPotential::evaluateImplFast(ParticleSet& P, bool keep_grid)
+{
+  value_ = 0.0;
+  if (!keep_grid)
+    for (int ipp = 0; ipp < ppset_.size(); ipp++)
+      if (ppset_[ipp])
+        ppset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*my_rng_));
+
+  //SOECP used with spinors, need 1 electron group
+  assert(psi_wrapper_.numGroups() == 1);
+  ValueMatrix X_;    //Working arrays for derivatives
+  ValueMatrix Minv_; //Working array for derivatives.
+  ValueMatrix B_;
+  ValueMatrix B_gs_;
+  ValueMatrix M_;
+  ValueMatrix M_gs_;
+}
+
 SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P,
                                                                    const opt_variables_type& optvars,
                                                                    const Vector<ValueType>& dlogpsi,

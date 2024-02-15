@@ -14,6 +14,7 @@
 
 #include "QMCHamiltonians/SOECPComponent.h"
 #include "Particle/NeighborLists.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -107,7 +108,10 @@ private:
   //multi walker resource
   ResourceHandle<SOECPotentialMultiWalkerResource> mw_res_handle_;
 
+  TWFFastDerivWrapper psi_wrapper_;
+
   void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
+  void evaluateImplFast(ParticleSet& P, bool keep_grid = false);
 
   //for testing
   friend class testing::TestSOECPotential;
