@@ -113,6 +113,12 @@ void LCAOrbitalSet::checkObject() const
   }
 }
 
+void LCAOrbitalSet::finalizeConstruction()
+{
+  if(C)
+    C->updateTo();
+}
+
 void LCAOrbitalSet::createResource(ResourceCollection& collection) const
 {
   myBasisSet->createResource(collection);

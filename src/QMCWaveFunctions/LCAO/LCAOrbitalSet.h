@@ -81,10 +81,7 @@ public:
 
   /** update C on device
    */
-  void finalizeConstruction() override
-  {
-    C->updateTo();
-  }
+  void finalizeConstruction() override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) final;
 
