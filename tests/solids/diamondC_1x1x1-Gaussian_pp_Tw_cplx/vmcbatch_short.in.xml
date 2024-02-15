@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="vmcbatch_short" series="0">
-     <parameter name="driver_version"> btach </parameter>
+     <parameter name="driver_version"> batch </parameter>
   </project>     
   <include href="C_diamond-twist-third.structure.xml"/>
   <include href="C_diamond-twist-third.wfj.xml"/>
