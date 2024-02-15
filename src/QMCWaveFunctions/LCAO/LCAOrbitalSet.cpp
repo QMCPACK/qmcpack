@@ -15,7 +15,6 @@
 #include "CPU/BLAS.hpp"
 #include "OMPTarget/ompBLAS.hpp"
 #include <ResourceCollection.h>
-#include <numeric>
 
 namespace qmcplusplus
 {
@@ -715,22 +714,12 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   invRow_deviceptr_list.resize(nVPs);
   ratios_buffer.resize(nVPs);
 
-  std::vector<size_t> nVP_mw(nw, 0);  // number of VPs per walker
-  std::vector<size_t> iVP0_mw(nw, 0); // first VP idx of each walker
-
-  for (size_t iw = 0; iw < nw; iw++)
-    nVP_mw[iw] = vp_list[iw].getTotalNum();
-  // fill with cumulative number of VPs up to current walker
-  std::exclusive_scan(nVP_mw.begin(), nVP_mw.end(), iVP0_mw.begin(), 0);
-
-  for (size_t iw = 0; iw < nw; iw++)
+  for (size_t iw = 0, istart = 0; iw < nw; iw++)
   {
-    auto istart = iVP0_mw[iw];
-    auto nvp_i  = nVP_mw[iw];
+    const size_t nvp_i  = vp_list[iw].getTotalNum();
     std::fill(invRow_deviceptr_list.begin() + istart, invRow_deviceptr_list.begin() + istart + nvp_i,
               invRow_ptr_list[iw]);
-    //for (size_t idx = 0; idx< nvp_i; idx++)
-    //  invRow_deviceptr_list[istart+idx] = invRow_ptr_list[iw];
+    istart += nvp_i;
   }
   auto* invRow_deviceptr_list_ptr = invRow_deviceptr_list.data();
   auto* vp_phi_v_ptr              = vp_phi_v.data();
