@@ -30,10 +30,10 @@ namespace qmcplusplus
 struct LCAOrbitalSet : public SPOSet
 {
 public:
-  using basis_type = SoaBasisSetBase<ValueType>;
-  using vgl_type   = basis_type::vgl_type;
-  using vgh_type   = basis_type::vgh_type;
-  using vghgh_type = basis_type::vghgh_type;
+  using basis_type         = SoaBasisSetBase<ValueType>;
+  using vgl_type           = basis_type::vgl_type;
+  using vgh_type           = basis_type::vgh_type;
+  using vghgh_type         = basis_type::vghgh_type;
   using OffloadValueMatrix = OffloadMatrix<ValueType>;
 
   ///pointer to the basis set
@@ -47,7 +47,11 @@ public:
      * @param norb number of orbitals
      * @param identity if true, the MO coefficients matrix is identity
      */
-  LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity, bool use_offload);
+  LCAOrbitalSet(const std::string& my_name,
+                std::unique_ptr<basis_type>&& bs,
+                size_t norbs,
+                bool identity,
+                bool use_offload);
 
   LCAOrbitalSet(const LCAOrbitalSet& in);
 

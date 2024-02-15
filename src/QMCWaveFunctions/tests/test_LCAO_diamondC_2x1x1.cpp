@@ -31,8 +31,8 @@ using std::string;
 namespace qmcplusplus
 {
 
-  template<typename DT>
-  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+template<typename DT>
+using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
 void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 {
@@ -93,7 +93,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 
   // diamondC_2x1x1
   // from tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond-Twist0.wfj.xml
-  const std::string wf_xml_str = R"(
+  const std::string wf_xml_str     = R"(
     <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond_2x1x1-Gaussian.h5" PBCimages="5  5  5" gpu="no">
       <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
@@ -337,7 +337,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
     for (int i = 0; i < norb; i++)
     {
-      psiMinv_data_0[i]  = 0.1 * i;
+      psiMinv_data_0[i] = 0.1 * i;
       psiMinv_data_1[i] = 0.2 * i;
     }
     psiMinv_data_0.updateTo();
@@ -357,8 +357,8 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     // just need dummy refvec with correct size
     SPOSet::ValueVector tmp_psi0(norb), tmp_psi1(norb);
     RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi0, tmp_psi1};
-    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
-                              tmp_psi_list, invRow_ptr_list, ratios_list);
+    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}), tmp_psi_list,
+                              invRow_ptr_list, ratios_list);
 
     std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
     std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);
@@ -474,7 +474,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
 
   // diamondC_2x1x1
   // from tests/solids/diamondC_2x1x1-Gaussian_pp_cplx/C_Diamond-tiled-cplx.wfj.xml
-  const std::string wf_xml_str = R"(
+  const std::string wf_xml_str     = R"(
     <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.07761248  0.07761248  -0.07761248" href="C_Diamond_2x1x1-Gaussian-tiled-cplx.h5" PBCimages="5  5  5" gpu="no">
       <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
@@ -786,7 +786,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
     for (int i = 0; i < norb; i++)
     {
-      psiMinv_data_0[i]  = 0.1 * i;
+      psiMinv_data_0[i] = 0.1 * i;
       psiMinv_data_1[i] = 0.2 * i;
     }
     psiMinv_data_0.updateTo();
@@ -806,8 +806,8 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     // just need dummy refvec with correct size
     SPOSet::ValueVector tmp_psi0(norb), tmp_psi1(norb);
     RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi0, tmp_psi1};
-    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
-                              tmp_psi_list, invRow_ptr_list, ratios_list);
+    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}), tmp_psi_list,
+                              invRow_ptr_list, ratios_list);
 
     std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
     std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);

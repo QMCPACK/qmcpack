@@ -40,7 +40,11 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   OffloadVector<size_t> nVP_index_list;                  // [NVPs]
 };
 
-LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs, size_t norbs, bool identity, bool use_offload)
+LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name,
+                             std::unique_ptr<basis_type>&& bs,
+                             size_t norbs,
+                             bool identity,
+                             bool use_offload)
     : SPOSet(my_name),
       BasisSetSize(bs ? bs->getBasisSetSize() : 0),
       Identity(identity),
@@ -117,7 +121,7 @@ void LCAOrbitalSet::checkObject() const
 
 void LCAOrbitalSet::finalizeConstruction()
 {
-  if(C)
+  if (C)
     C->updateTo();
 }
 
@@ -719,9 +723,8 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
   for (size_t iw = 0, istart = 0; iw < nw; iw++)
   {
-    const size_t nvp_i  = vp_list[iw].getTotalNum();
-    std::fill(invRow_deviceptr_list.begin() + istart, invRow_deviceptr_list.begin() + istart + nvp_i,
-              invRow_ptr_list[iw]);
+    const size_t nvp_i = vp_list[iw].getTotalNum();
+    std::fill_n(invRow_deviceptr_list.begin() + istart, nvp_i, invRow_ptr_list[iw]);
     istart += nvp_i;
   }
   auto* invRow_deviceptr_list_ptr = invRow_deviceptr_list.data();
