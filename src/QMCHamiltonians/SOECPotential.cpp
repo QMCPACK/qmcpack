@@ -109,14 +109,47 @@ void SOECPotential::evaluateImplFast(ParticleSet& P, bool keep_grid)
       if (ppset_[ipp])
         ppset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*my_rng_));
 
+  std::vector<ValueMatrix> mats_minv;
+  std::vector<ValueMatrix> mats_b;
+  std::vector<ValueMatrix> mats_b_gs;
+  std::vector<ValueMatrix> mats_m;
+  std::vector<ValueMatrix> mats_m_gs;
+
   //SOECP used with spinors, need 1 electron group
-  assert(psi_wrapper_.numGroups() == 1);
-  ValueMatrix X_;    //Working arrays for derivatives
-  ValueMatrix Minv_; //Working array for derivatives.
-  ValueMatrix B_;
-  ValueMatrix B_gs_;
-  ValueMatrix M_;
-  ValueMatrix M_gs_;
+  const size_t ngroups = psi_wrapper_.numGroups();
+  assert(ngroups == 1);
+  {
+    mats_minv.resize(ngroups);
+    mats_b.resize(ngroups);
+    mats_b_gs.resize(ngroups);
+    mats_m.resize(ngroups);
+    mats_m_gs.resize(ngroups);
+
+    for (int gid = 0; gid < ngroups; gid++)
+    {
+      const size_t sid    = psi_wrapper_.getTWFGroupIndex(gid);
+      const size_t norbs  = psi_wrapper_.numOrbitals(sid);
+      const size_t first  = P.first(gid);
+      const size_t last   = P.last(gid);
+      const size_t nptcls = last - first;
+      mats_m[sid].resize(nptcls, norbs);
+      mats_b[sid].resize(nptcls, norbs);
+      mats_m_gs[sid].resize(nptcls, nptcls);
+      mats_minv[sid].resize(nptcls, nptcls);
+      mats_b_gs[sid].resize(nptcls, nptcls);
+    }
+  }
+
+  psi_wrapper_.wipeMatrices(mats_m);
+  psi_wrapper_.wipeMatrices(mats_m_gs);
+  psi_wrapper_.wipeMatrices(mats_b);
+  psi_wrapper_.wipeMatrices(mats_b_gs);
+  psi_wrapper_.wipeMatrices(mats_minv);
+
+  psi_wrapper_.getM(P, mats_m);
+  psi_wrapper_.getGSMatrices(mats_m, mats_m_gs);
+  psi_wrapper_.invertMatrices(mats_m_gs, mats_minv);
+
 }
 
 SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P,
