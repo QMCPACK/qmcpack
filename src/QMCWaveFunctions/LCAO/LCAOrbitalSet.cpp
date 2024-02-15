@@ -818,7 +818,6 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   auto* phi_vgl_v_ptr             = phi_vgl_v.data();
   auto* rg_buffer_ptr             = rg_buffer.data();
   const size_t phi_vgl_stride     = nw * norb_requested;
-  std::cout << "check " << phi_vgl_stride << "  " << norb_requested << "  " << rg_buffer.size() << std::endl;
 
   PRAGMA_OFFLOAD("omp target teams distribute \
                   map(always,to: invRow_deviceptr_list_ptr[:nw]) \
