@@ -21,6 +21,9 @@ namespace qmcplusplus
 
 struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
 {
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
   LCAOMultiWalkerMem() : Resource("LCAOrbitalSet") {}
   LCAOMultiWalkerMem(const LCAOMultiWalkerMem&) : LCAOMultiWalkerMem() {}
 

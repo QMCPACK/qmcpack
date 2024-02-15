@@ -34,6 +34,7 @@ public:
   using vgl_type   = basis_type::vgl_type;
   using vgh_type   = basis_type::vgh_type;
   using vghgh_type = basis_type::vghgh_type;
+  using OffloadValueMatrix = OffloadMatrix<ValueType>;
 
   ///pointer to the basis set
   std::unique_ptr<basis_type> myBasisSet;

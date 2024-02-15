@@ -31,6 +31,9 @@ using std::string;
 namespace qmcplusplus
 {
 
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
 void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 {
   using VT       = SPOSet::ValueType;
@@ -330,8 +333,8 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
 
     // fill invrow with dummy data for each walker
-    SPOSet::OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
-    SPOSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
+    OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+    LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
     for (int i = 0; i < norb; i++)
     {
       psiMinv_data_0[i]  = 0.1 * i;
@@ -779,8 +782,8 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
 
     // fill invrow with dummy data for each walker
-    SPOSet::OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
-    SPOSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
+    OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+    LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
     for (int i = 0; i < norb; i++)
     {
       psiMinv_data_0[i]  = 0.1 * i;
