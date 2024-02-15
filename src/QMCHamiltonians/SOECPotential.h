@@ -80,6 +80,8 @@ public:
   //return a shared resource to a collection
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
+  TWFFastDerivWrapper psi_wrapper_;
+
 protected:
   RandomBase<FullPrecRealType>* my_rng_;
   std::vector<SOECPComponent*> pp_;
@@ -107,8 +109,6 @@ private:
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
   //multi walker resource
   ResourceHandle<SOECPotentialMultiWalkerResource> mw_res_handle_;
-
-  TWFFastDerivWrapper psi_wrapper_;
 
   void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
   void evaluateImplFast(ParticleSet& P, bool keep_grid = false);

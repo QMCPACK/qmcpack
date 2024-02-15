@@ -16,6 +16,7 @@
 #include "Numerics/Ylm.h"
 #include "CPU/BLAS.hpp"
 #include "NLPPJob.h"
+#include "TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -190,6 +191,27 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
     pairpot += psiratio_[iq] * lsum * spin_quad_weights_[iq];
   }
   return std::real(pairpot);
+}
+
+void SOECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
+                                                         const int iat,
+                                                         const TWFFastDerivWrapper& psi,
+                                                         const int iel,
+                                                         const RealType r,
+                                                         const PosType& dr, 
+                                                         std::vector<ValueMatrix>& mats_b)
+{
+  using ValueVector = SPOSet::ValueVector;
+  //Some initial computation to find out the species and row number of electron.
+  const IndexType gid        = W.getGroupID(iel);
+  const IndexType sid        = psi.getTWFGroupIndex(gid);
+  const IndexType firstIndex = W.first(gid);
+  const IndexType thisIndex  = iel - firstIndex;
+  const IndexType numOrbs = psi.numOrbitals(sid);
+  ValueVector phi_row; //phi_0(r), phi_1(r), ...
+  ValueVector temp_row;
+  phi_row.resize(numOrbs);
+  temp_row.resize(numOrbs);
 }
 
 void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,

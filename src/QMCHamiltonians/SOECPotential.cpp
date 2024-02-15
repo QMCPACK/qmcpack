@@ -15,6 +15,7 @@
 #include "NLPPJob.h"
 #include <ResourceCollection.h>
 #include <optional>
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -150,6 +151,30 @@ void SOECPotential::evaluateImplFast(ParticleSet& P, bool keep_grid)
   psi_wrapper_.getGSMatrices(mats_m, mats_m_gs);
   psi_wrapper_.invertMatrices(mats_m_gs, mats_minv);
 
+  //loop over all the ions
+  const auto& myTable = P.getDistTableAB(my_table_index_);
+  // clear all the electron and ion neighbor lists
+  for (int iat = 0; iat < num_ions_; iat++)
+    ion_neighbor_elecs_.getNeighborList(iat).clear();
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+    elec_neighbor_ions_.getNeighborList(jel).clear();
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+  {
+    const auto& dist               = myTable.getDistRow(jel);
+    const auto& displ              = myTable.getDisplRow(jel);
+    std::vector<int>& NeighborIons = elec_neighbor_ions_.getNeighborList(jel);
+    for (int iat = 0; iat < num_ions_; iat++)
+      if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
+      {
+        pp_[iat]->evaluateOneBodyOpMatrixContribution(P, iat, psi_wrapper_, jel, dist[iat], -displ[iat], mats_b);
+        NeighborIons.push_back(iat);
+        ion_neighbor_elecs_.getNeighborList(iat).push_back(jel);
+      }
+  }
+
+  psi_wrapper_.getGSMatrices(mats_b, mats_b_gs);
+  ValueType trace = psi_wrapper_.trAB(mats_minv, mats_b_gs);
+  convertToReal(trace, value_);
 }
 
 SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P,
