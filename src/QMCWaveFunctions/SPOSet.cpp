@@ -44,6 +44,16 @@ void SPOSet::checkOutVariables(const opt_variables_type& active)
                            "must be overloaded when the SPOSet is optimizable.");
 }
 
+void SPOSet::evaluateValueSpinDecomposed(const ParticleSet& P,
+                                         int iat,
+                                         ValueVector& up_component,
+                                         ValueVector& dn_component)
+{
+  throw std::logic_error(getClassName() +
+                         "::evaluateValueSpinDecomposed"
+                         "should only be implemented for SpinorSet.");
+}
+
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                ValueVector& psi,
                                const ValueVector& psiinv,

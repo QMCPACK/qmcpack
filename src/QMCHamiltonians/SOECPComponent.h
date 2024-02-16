@@ -62,6 +62,7 @@ private:
 
   ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
   ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
+  ComplexType matrixElementDecomposed(int l, int m1, int m2, RealType spin, bool plus = true);
   int kroneckerDelta(int x, int y);
 
   std::vector<PosType> deltaV_;

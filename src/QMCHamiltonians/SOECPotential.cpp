@@ -174,6 +174,7 @@ void SOECPotential::evaluateImplFast(ParticleSet& P, bool keep_grid)
 
   psi_wrapper_.getGSMatrices(mats_b, mats_b_gs);
   ValueType trace = psi_wrapper_.trAB(mats_minv, mats_b_gs);
+  std::cout << trace << std::endl;
   convertToReal(trace, value_);
 }
 

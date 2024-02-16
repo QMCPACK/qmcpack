@@ -85,6 +85,36 @@ void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
   psi = eis * psi_work_up + emis * psi_work_down;
 }
 
+void SpinorSet::evaluateValueSpinDecomposed(const ParticleSet& P,
+                                            int iat,
+                                            ValueVector& up_components,
+                                            ValueVector& dn_components)
+{
+  const size_t norb_requested = up_components.size();
+  assert(norb_requested == dn_components.size());
+  psi_work_up.resize(norb_requested);
+  psi_work_down.resize(norb_requested);
+  psi_work_up   = 0.0;
+  psi_work_down = 0.0;
+
+  spo_up->evaluateValue(P, iat, psi_work_up);
+  spo_dn->evaluateValue(P, iat, psi_work_down);
+
+  ParticleSet::Scalar_t s = P.activeSpin(iat);
+
+  RealType coss(0.0), sins(0.0);
+
+  coss = std::cos(s);
+  sins = std::sin(s);
+
+  //This is only supported in the complex build, so ValueType is some complex number depending on the precision.
+  ValueType eis(coss, sins);
+  ValueType emis(coss, -sins);
+
+  up_components = eis * psi_work_up;
+  dn_components = emis * psi_work_down;
+}
+
 void SpinorSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   const size_t norb_requested = psi.size();
