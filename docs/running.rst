@@ -79,7 +79,7 @@ caused by datasets that have to be duplicated on each MPI rank.
 We recommend users study the hardware architecture of a compute node before starting any calculation on it.
 Suboptimal choice of the number of MPI ranks and their binding to the hardware may lead to significant waste of compute resource.
 The rule of thumb is to have the number of MPI ranks per node equal to the number of memory domains with uniform access
-attached to the dominant compute devices within a compute node.
+attached to the dominant compute devices within a compute node. Fewer can be used when memory is constrained.
 On most CPU-only machines, each CPU socket has its dedicated memory with uniform access from all its cores and cross-socket access is non-uniform.
 Users may simply place one MPI rank per socket.
 There are CPU sockets consisting of core clusters and cross-cluster memory access is non-uniform like Fujitsu A64FX.
@@ -106,7 +106,10 @@ rank by specifying environment variable OMP\_NUM\_THREADS.
 It is recommended to set the number of OpenMP threads equal to the number
 of physical CPU cores that can be exclusively assigned to each MPI rank.
 Even when the GPU-acceleration is enabled, using threads significantly
-reduces the time spent on the calculations performed by the CPU.
+reduces the time spent on the calculations performed by the CPU. Some MPI launchers
+require proper configuration to map the OpenMP threads to the processor cores correctly
+and avoid assigning multiple threads to the same processor core. If this happens very significant
+slowdowns result. Users should check their MPI documentation and verify performance before doing costly production calculations.
 
 Nested OpenMP threads
 ~~~~~~~~~~~~~~~~~~~~~
