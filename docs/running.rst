@@ -106,7 +106,7 @@ rank by specifying environment variable OMP\_NUM\_THREADS.
 It is recommended to set the number of OpenMP threads equal to the number
 of physical CPU cores that can be exclusively assigned to each MPI rank.
 Even when the GPU-acceleration is enabled, using threads significantly
-reduces the time spent on the calculations performed by the CPU. Some MPI launchers
+reduces the time spent on the calculations performed by the CPU. Almost all the MPI launchers
 require proper configuration to map the OpenMP threads to the processor cores correctly
 and avoid assigning multiple threads to the same processor core. If this happens very significant
 slowdowns result. Users should check their MPI documentation and verify performance before doing costly production calculations.
