@@ -376,20 +376,8 @@ case "$1" in
     fi
 
     # Add ctest concurrent parallel jobs 
-    # Default for Linux GitHub Action runners
-    CTEST_JOBS="2"
-    # Default for macOS GitHub Action runners
-    if [[ "${GH_OS}" =~ (macOS) ]]
-    then
-      CTEST_JOBS="3"
-    fi
-
-    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
-    then
-      CTEST_JOBS="32"
-    fi
-    
-    ctest --output-on-failure $TEST_LABEL -j $CTEST_JOBS
+    # 4 for Linux and macOS GitHub Actions free runners
+    ctest --output-on-failure $TEST_LABEL -j 4
     ;;
   
   # Generate coverage reports
