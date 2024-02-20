@@ -67,7 +67,7 @@ public:
     twf.initializeTWFFastDerivWrapper(elec, so_ecp.psi_wrapper_);
   }
 
-  static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, Real& value)
+  static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
   {
     so_ecp.evaluateImplFast(elec, true);
     value = so_ecp.getValue();
