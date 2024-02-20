@@ -172,6 +172,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     {
       app_log() << "    Using fast SOECP evaluation. Spin integration is exact" << std::endl;
       apot->useFastEvaluation();
+      targetPsi.initializeTWFFastDerivWrapper(targetPtcl, apot->psi_wrapper_);
     }
     else
       app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;

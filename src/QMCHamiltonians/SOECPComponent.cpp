@@ -242,7 +242,7 @@ void SOECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
 
   for (int iq = 0; iq < nknot_; iq++)
   {
-    W.makeMoveWithSpin(iel, deltaV_[iq], 0.0);
+    W.makeMove(iel, deltaV_[iq]);
     psi.getRowMSpinDecomposed(W, iel, up_row, dn_row);
     RealType jratio = psi.evaluateJastrowRatio(W, iel);
     W.rejectMove(iel);
@@ -255,7 +255,7 @@ void SOECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
         ComplexType Y = sphericalHarmonic(l, m1, dr);
         for (int m2 = -l; m2 <= l; m2++)
         {
-          ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq % nknot_]));
+          ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq]));
           ComplexType so_up = matrixElementDecomposed(l, m1, m2, sold, true);
           ComplexType so_dn = matrixElementDecomposed(l, m1, m2, sold, false);
           //Note: Need 4pi weight. In Normal NonLocalECP, 1/4Pi generated from transformation to legendre polynomials and gets absorbed into the
