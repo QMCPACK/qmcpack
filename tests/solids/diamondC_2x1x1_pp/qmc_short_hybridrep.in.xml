@@ -81,7 +81,7 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
-         <estimator type="flux" name="Flux"/>
+         <flux name="Flux"/>
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">

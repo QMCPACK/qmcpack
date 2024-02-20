@@ -52,7 +52,12 @@ public:
   HamiltonianPool& operator=(HamiltonianPool&&) = delete;
   ~HamiltonianPool();
 
-  bool put(xmlNodePtr cur);
+  /** put method that actually constructs the object.
+   *  \param[in] cur       xml that contains the actual arguments required to make a valid hamiltonians in the QMCHamiltonian
+   *  \param[in] batched   if true reject legacy input for estimators.
+   *  returns if put was successful, ignored in QMCMain.cpp!
+   */
+  bool put(xmlNodePtr cur, bool batched);
   bool get(std::ostream& os) const;
   void reset();
 
