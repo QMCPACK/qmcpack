@@ -65,6 +65,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   std::string pbc;
   std::string forces;
   std::string physicalSO;
+  std::string fast_so;
 
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format", {"table", "xml"});
@@ -73,6 +74,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   pAttrib.add(pbc, "pbc", {"yes", "no"});
   pAttrib.add(forces, "forces", {"no", "yes"});
   pAttrib.add(physicalSO, "physicalSO", {"yes", "no"});
+  pAttrib.add(fast_so, "fastSO", {"yes", "no"});
   pAttrib.put(cur);
 
   bool doForces = (forces == "yes") || (forces == "true");
@@ -166,10 +168,15 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     }
     app_log() << "\n  Using SOECP potential \n"
               << "    Maximum grid on a sphere for SOECPotential: " << nknot_max << std::endl;
-    app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
+    if (fast_so == "yes")
+    {
+      app_log() << "    Using fast SOECP evaluation. Spin integration is exact" << std::endl;
+      apot->useFastEvaluation();
+    }
+    else
+      app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
     if (NLPP_algo == "batched")
       app_log() << "    Using batched ratio computing in SOECP potential" << std::endl;
-
     if (physicalSO == "yes")
       targetH.addOperator(std::move(apot), "SOECP"); //default is physical operator
     else

@@ -43,7 +43,7 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
  *\param psi Trial wave function
 */
 SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
-    : my_rng_(nullptr), ion_config_(ions), psi_(psi), peln_(els), elec_neighbor_ions_(els), ion_neighbor_elecs_(ions)
+    : my_rng_(nullptr), ion_config_(ions), psi_(psi), peln_(els), elec_neighbor_ions_(els), ion_neighbor_elecs_(ions), use_fast_evaluation_(false)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
@@ -62,13 +62,19 @@ void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
 SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
 {
-  evaluateImpl(P, false);
+  if (use_fast_evaluation_)
+    evaluateImplFast(P, false);
+  else
+    evaluateImpl(P, false);
   return value_;
 }
 
 SOECPotential::Return_t SOECPotential::evaluateDeterministic(ParticleSet& P)
 {
-  evaluateImpl(P, true);
+  if (use_fast_evaluation_)
+    evaluateImplFast(P, true);
+  else
+    evaluateImpl(P, true);
   return value_;
 }
 
@@ -174,7 +180,6 @@ void SOECPotential::evaluateImplFast(ParticleSet& P, bool keep_grid)
 
   psi_wrapper_.getGSMatrices(mats_b, mats_b_gs);
   ValueType trace = psi_wrapper_.trAB(mats_minv, mats_b_gs);
-  std::cout << trace << std::endl;
   convertToReal(trace, value_);
 }
 

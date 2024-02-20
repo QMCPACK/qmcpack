@@ -255,10 +255,12 @@ void SOECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
         ComplexType Y = sphericalHarmonic(l, m1, dr);
         for (int m2 = -l; m2 <= l; m2++)
         {
-          ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq]));
+          ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq % nknot_]));
           ComplexType so_up = matrixElementDecomposed(l, m1, m2, sold, true);
           ComplexType so_dn = matrixElementDecomposed(l, m1, m2, sold, false);
-          temp_row          = sgridweight_m_[iq] * vrad_[il] * cY * Y * jratio * (up_row * so_up + dn_row * so_dn);
+          //Note: Need 4pi weight. In Normal NonLocalECP, 1/4Pi generated from transformation to legendre polynomials and gets absorbed into the
+          // quadrature integration. We don't get the 1/4Pi from legendre here, so we need to scale by 4Pi.
+          temp_row = 4.0 * M_PI * sgridweight_m_[iq] * vrad_[il] * Y * cY * jratio * (up_row * so_up + dn_row * so_dn);
           for (int iorb = 0; iorb < numOrbs; iorb++)
             mats_b[sid][thisIndex][iorb] += temp_row[iorb];
         }
