@@ -705,7 +705,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
-  RealType H2_avg     = 1.0 / (curAvg_w * curAvg_w);
   RealType V_avg      = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_t> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
@@ -737,7 +736,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
 
     auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_t* Dsaved,
-                                const Return_rt* HDsaved, Return_rt weight, Return_rt eloc_new, RealType H2_avg,
+                                const Return_rt* HDsaved, Return_rt weight, Return_rt eloc_new,
                                 RealType V_avg, std::vector<Return_t>& D_avg, RealType b2, RealType curAvg_w,
                                 Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) {
       int local_pm_start = crowd_ranges[crowd_id];
@@ -774,7 +773,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
     ParallelExecutor<> crowd_tasks;
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, HDsaved, weight, eloc_new,
-                H2_avg, V_avg, D_avg, w_beta, curAvg_w, Left, Right);
+                V_avg, D_avg, w_beta, curAvg_w, Left, Right);
   }
   myComm->allreduce(Right);
   myComm->allreduce(Left);
