@@ -643,17 +643,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
 {
   ScopedTimer tmp_timer(fill_timer_);
 
-  RealType b1, b2;
-  if (GEVType == "H2")
-  {
-    b1 = w_beta;
-    b2 = 0;
-  }
-  else
-  {
-    b2 = w_beta;
-    b1 = 0;
-  }
+  RealType b2(w_beta);
 
   Right = 0.0;
   Left  = 0.0;
@@ -661,9 +651,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   //     resetPsi();
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
-  //    RealType H2_avg = 1.0/curAvg2_w;
   RealType H2_avg = 1.0 / (curAvg_w * curAvg_w);
-  //    RealType H2_avg = 1.0/std::sqrt(curAvg_w*curAvg_w*curAvg2_w);
   RealType V_avg = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_t> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
@@ -702,9 +690,6 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
         Return_t vterm =
             HDsaved[pm] * (eloc_new - curAvg_w) + (Dsaved[pm] - D_avg[pm]) * eloc_new * (eloc_new - RealType(2.0) * curAvg_w);
         //                Return_t vterm = (HDsaved[pm]+(Dsaved[pm]-D_avg[pm])*eloc_new -curAvg_w)*(eloc_new-curAvg_w);
-        //                 H2
-        Right(0, pm + 1) += b1 * H2_avg * std::real(vterm) * weight;
-        Right(pm + 1, 0) += b1 * H2_avg * std::real(vterm) * weight;
         //                 Variance
         Left(0, pm + 1) += b2 * std::real(vterm) * weight;
         Left(pm + 1, 0) += b2 * std::real(vterm) * weight;
@@ -724,8 +709,6 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
           //                  RealType varij=weight*(HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new-curAvg_w)*
           //                                      (HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new-curAvg_w);
           Left(pm + 1, pm2 + 1) += b2 * (varij + V_avg * ovlij);
-          //                H2
-          Right(pm + 1, pm2 + 1) += b1 * H2_avg * varij;
         }
       }
     }
@@ -733,9 +716,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   myComm->allreduce(Right);
   myComm->allreduce(Left);
   Left(0, 0)  = (1 - b2) * curAvg_w + b2 * V_avg;
-  Right(0, 0) = 1.0 + b1 * H2_avg * V_avg;
-  if (GEVType == "H2")
-    return H2_avg;
+  Right(0, 0) = 1.0;
 
   return 1.0;
 }

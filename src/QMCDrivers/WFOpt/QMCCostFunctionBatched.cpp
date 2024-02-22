@@ -700,27 +700,12 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 {
   ScopedTimer tmp_timer(fill_timer_);
 
-  RealType b1, b2;
-  if (GEVType == "H2")
-  {
-    b1 = w_beta;
-    b2 = 0;
-  }
-  else
-  {
-    b2 = w_beta;
-    b1 = 0;
-  }
-
   Right = 0.0;
   Left  = 0.0;
 
-  //     resetPsi();
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
-  //    RealType H2_avg = 1.0/curAvg2_w;
   RealType H2_avg = 1.0 / (curAvg_w * curAvg_w);
-  //    RealType H2_avg = 1.0/std::sqrt(curAvg_w*curAvg_w*curAvg2_w);
   RealType V_avg = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_t> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
@@ -753,7 +738,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
     auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_t* Dsaved,
                                 const Return_rt* HDsaved, Return_rt weight, Return_rt eloc_new, RealType H2_avg,
-                                RealType V_avg, std::vector<Return_t>& D_avg, RealType b1, RealType b2,
+                                RealType V_avg, std::vector<Return_t>& D_avg, RealType b2,
                                 RealType curAvg_w, Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) {
       int local_pm_start = crowd_ranges[crowd_id];
       int local_pm_end   = crowd_ranges[crowd_id + 1];
@@ -764,9 +749,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
         Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
         Return_t vterm =
             HDsaved[pm] * (eloc_new - curAvg_w) + (Dsaved[pm] - D_avg[pm]) * eloc_new * (eloc_new - RealType(2.0) * curAvg_w);
-        //                 H2
-        Right(0, pm + 1) += b1 * H2_avg * std::real(vterm) * weight;
-        Right(pm + 1, 0) += b1 * H2_avg * std::real(vterm) * weight;
         //                 Variance
         Left(0, pm + 1) += b2 * std::real(vterm) * weight;
         Left(pm + 1, 0) += b2 * std::real(vterm) * weight;
@@ -784,22 +766,18 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
           RealType varij = weight * std::real((HDsaved[pm] - RealType(2.0) * std::conj(Dsaved[pm] - D_avg[pm]) * eloc_new) *
               (HDsaved[pm2] - RealType(2.0) * (Dsaved[pm2] - D_avg[pm2]) * eloc_new));
           Left(pm + 1, pm2 + 1) += b2 * (varij + V_avg * ovlij);
-          //                H2
-          Right(pm + 1, pm2 + 1) += b1 * H2_avg * varij;
         }
       }
     };
 
     ParallelExecutor<> crowd_tasks;
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, HDsaved, weight, eloc_new,
-                H2_avg, V_avg, D_avg, b1, b2, curAvg_w, Left, Right);
+                H2_avg, V_avg, D_avg, w_beta, curAvg_w, Left, Right);
   }
   myComm->allreduce(Right);
   myComm->allreduce(Left);
-  Left(0, 0)  = (1 - b2) * curAvg_w + b2 * V_avg;
-  Right(0, 0) = 1.0 + b1 * H2_avg * V_avg;
-  if (GEVType == "H2")
-    return H2_avg;
+  Left(0, 0)  = (1 - w_beta) * curAvg_w + w_beta * V_avg;
+  Right(0, 0) = 1.0;
 
   return 1.0;
 }
