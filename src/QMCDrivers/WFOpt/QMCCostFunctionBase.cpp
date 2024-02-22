@@ -317,6 +317,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   std::string includeNonlocalH;
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
+  std::string GEVType;
   astring variational_subset_str;
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
@@ -325,6 +326,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(includeNonlocalH, "nonlocalpp", {}, TagStatus::DEPRECATED);
   m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {}, TagStatus::DEPRECATED);
   m_param.add(w_beta, "beta");
+  m_param.add(GEVType, "GEVMethod", {}, TagStatus::DEPRECATED);
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
   m_param.add(do_override_output, "output_vp_override", {true});
