@@ -736,9 +736,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
 
     auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_t* Dsaved,
-                                const Return_rt* HDsaved, Return_rt weight, Return_rt eloc_new,
-                                RealType V_avg, std::vector<Return_t>& D_avg, RealType b2, RealType curAvg_w,
-                                Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) {
+                                const Return_rt* HDsaved, Return_rt weight, Return_rt eloc_new, RealType V_avg,
+                                std::vector<Return_t>& D_avg, RealType b2, RealType curAvg_w, Matrix<Return_rt>& Left,
+                                Matrix<Return_rt>& Right) {
       int local_pm_start = crowd_ranges[crowd_id];
       int local_pm_end   = crowd_ranges[crowd_id + 1];
 
