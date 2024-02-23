@@ -69,7 +69,6 @@ public:
   std::shared_ptr<const RadFunctorType> dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
-  int MaxGridPoints;
 
   ///number of particles per species of A
   std::vector<int> NofSpeciesA;

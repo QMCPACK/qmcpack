@@ -45,7 +45,6 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       myTableIndex(elns.addTable(ions)),
       myConst(0.0),
       ComputeForces(computeForces),
-      MaxGridPoints(10000),
       Peln(elns),
       pset_ions_(ions)
 {
@@ -515,17 +514,15 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   kcdifferent =
       (std::abs(pset_ions_.getLattice().LR_kc - P.getLattice().LR_kc) > std::numeric_limits<RealType>::epsilon());
   minkc = std::min(pset_ions_.getLattice().LR_kc, P.getLattice().LR_kc);
-  //AB->initBreakup(*PtclB);
   //initBreakup is called only once
-  //AB = LRCoulombSingleton::getHandler(*PtclB);
   AB      = LRCoulombSingleton::getHandler(P);
   myConst = evalConsts(P);
   myRcut  = AB->get_rc(); //Basis.get_rc();
   // create the spline function for the short-range part assuming pure potential
-  auto myGrid = LinearGrid<RealType>();
-  int ng = P.getLattice().num_ewald_grid_points;
-  app_log() << "    CoulombPBCAB::initBreakup\n  Setting a linear grid=[0,"
-            << myRcut << ") number of grid points =" << ng << std::endl;
+  auto myGrid  = LinearGrid<RealType>();
+  const int ng = P.getLattice().num_ewald_grid_points;
+  app_log() << "    CoulombPBCAB::initBreakup\n  Setting a linear grid=[0," << myRcut
+            << ") number of grid points =" << ng << std::endl;
   myGrid.set(0, myRcut, ng);
   if (V0 == nullptr)
   {
@@ -563,9 +560,11 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
  */
 void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 {
-  int ng = std::min(MaxGridPoints, static_cast<int>(myRcut / 1e-3) + 1);
-  app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0,"
-            << myRcut << ") number of grid =" << ng << std::endl;
+  //FIXME still using magic numbers in the local potential grid.
+  const int MaxGridPoints = 10000;
+  const size_t ng         = std::min(MaxGridPoints, static_cast<int>(myRcut / 1e-3) + 1);
+  app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0," << myRcut << ") number of grid =" << ng
+            << std::endl;
   auto agrid_local = LinearGrid<RealType>();
   agrid_local.set(0.0, myRcut, ng);
   RealType dr = agrid_local[1] - agrid_local[0];
