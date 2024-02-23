@@ -147,15 +147,12 @@ void QMCFiniteSize::initBreakup()
   P      = ptclPool.getParticleSet("e");
   AA     = LRCoulombSingleton::getHandler(*P);
   myRcut = AA->get_rc();
-  if (myGrid == nullptr)
-  {
-    myGrid = std::make_shared<LinearGrid<RealType>>();
-    int ng = P->getLattice().num_ewald_grid_points;
-    myGrid->set(0, myRcut, ng);
-  }
+  auto myGrid = LinearGrid<RealType>();
+  int ng = P->getLattice().num_ewald_grid_points;
+  myGrid.set(0, myRcut, ng);
   if (rVs == nullptr)
   {
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid.get());
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
   }
 }
 

@@ -64,8 +64,6 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
-  ///radial grid
-  std::shared_ptr<GridType> myGrid;
   std::string PtclRefName;
 
   std::vector<RealType> Zat, Zspec;

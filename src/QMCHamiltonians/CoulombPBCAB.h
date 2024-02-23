@@ -61,8 +61,6 @@ public:
   Return_t myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
-  ///radial grid
-  std::shared_ptr<GridType> myGrid;
   ///Always mave a radial functor for the bare coulomb
   std::shared_ptr<const RadFunctorType> V0;
   ///Radial functor for bare coulomb, optimized for forces

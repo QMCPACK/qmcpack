@@ -522,17 +522,14 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   myConst = evalConsts(P);
   myRcut  = AB->get_rc(); //Basis.get_rc();
   // create the spline function for the short-range part assuming pure potential
-  if (myGrid == nullptr)
-  {
-    myGrid = std::make_shared<LinearGrid<RealType>>();
-    int ng = P.getLattice().num_ewald_grid_points;
-    app_log() << "    CoulombPBCAB::initBreakup\n  Setting a linear grid=[0,"
-              << myRcut << ") number of grid points =" << ng << std::endl;
-    myGrid->set(0, myRcut, ng);
-  }
+  auto myGrid = LinearGrid<RealType>();
+  int ng = P.getLattice().num_ewald_grid_points;
+  app_log() << "    CoulombPBCAB::initBreakup\n  Setting a linear grid=[0,"
+            << myRcut << ") number of grid points =" << ng << std::endl;
+  myGrid.set(0, myRcut, ng);
   if (V0 == nullptr)
   {
-    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid.get());
+    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid);
     if (Vat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
@@ -546,9 +543,9 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   {
     dAB = LRCoulombSingleton::getDerivHandler(P);
     if (fV0 == nullptr)
-      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid.get());
+      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid);
     if (dfV0 == nullptr)
-      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid.get());
+      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid);
     if (fVat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
