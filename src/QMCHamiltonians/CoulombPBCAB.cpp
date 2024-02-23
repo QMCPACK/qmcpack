@@ -566,10 +566,9 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
   int ng = std::min(MaxGridPoints, static_cast<int>(myRcut / 1e-3) + 1);
   app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0,"
             << myRcut << ") number of grid =" << ng << std::endl;
-  std::unique_ptr<LinearGrid<RealType>> agrid_local;
-  agrid_local = std::make_unique<LinearGrid<RealType>>();
-  agrid_local->set(0.0, myRcut, ng);
-  RealType dr = (*agrid_local)[1] - (*agrid_local)[0];
+  auto agrid_local = LinearGrid<RealType>();
+  agrid_local.set(0.0, myRcut, ng);
+  RealType dr = agrid_local[1] - agrid_local[0];
   if (Vspec[groupID] == nullptr)
   {
     V0.reset();
@@ -578,7 +577,7 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     std::vector<RealType> v(ng);
     for (int ig = 1; ig < ng - 2; ig++)
     {
-      RealType r = (*agrid_local)[ig];
+      RealType r = agrid_local[ig];
       //need to multiply r for the LR
       v[ig] = -r * AB->evaluateLR(r) + ppot->splint(r);
     }
@@ -587,7 +586,7 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     v[ng - 2]      = 0.0;
     v[ng - 1]      = 0.0;
     RealType deriv = (v[1] - v[0]) / dr;
-    auto rfunc     = std::make_unique<RadFunctorType>(agrid_local->makeClone(), v);
+    auto rfunc     = std::make_unique<RadFunctorType>(agrid_local.makeClone(), v);
     rfunc->spline(0, deriv, ng - 1, 0.0);
     for (int iat = 0; iat < NptclA; iat++)
     {
@@ -609,7 +608,7 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     RealType lr_val(0), lr_deriv(0);
     for (int ig = 1; ig < ng - 2; ig++)
     {
-      RealType r = (*agrid_local)[ig];
+      RealType r = agrid_local[ig];
       ppot_val   = ppot->splint(r, ppot_deriv, ppot_2deriv);
       lr_val     = dAB->evaluateLR(r);
       lr_deriv   = dAB->lrDf(r);
@@ -626,8 +625,8 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     dv[ng - 2] = 0;
     dv[ng - 1] = 0;
 
-    auto ffunc  = std::make_unique<RadFunctorType>(agrid_local->makeClone(), v);
-    auto fdfunc = std::make_unique<RadFunctorType>(agrid_local->makeClone(), dv);
+    auto ffunc  = std::make_unique<RadFunctorType>(agrid_local.makeClone(), v);
+    auto fdfunc = std::make_unique<RadFunctorType>(agrid_local.makeClone(), dv);
 
     RealType fderiv = (dv[1] - dv[0]) / dr;
 
