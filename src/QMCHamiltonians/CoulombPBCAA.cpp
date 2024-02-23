@@ -461,7 +461,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   if (myGrid == nullptr)
   {
     myGrid = std::make_shared<LinearGrid<RealType>>();
-    int ng = P.getLattice().ewaldGrid;
+    int ng = P.getLattice().num_ewald_grid_points;
     app_log() << "    CoulombPBCAA::initBreakup\n  Setting a linear grid=[0,"
               << myRcut << ") number of grid points =" << ng << std::endl;
     myGrid->set(0, myRcut, ng);

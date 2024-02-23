@@ -118,7 +118,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if (aname == "ewald_grid")
       {
-        putContent(ref_.ewaldGrid, cur);
+        putContent(ref_.num_ewald_grid_points, cur);
       }
       else if (aname == "LR_handler")
       {

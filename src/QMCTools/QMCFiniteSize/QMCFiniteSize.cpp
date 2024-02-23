@@ -150,7 +150,7 @@ void QMCFiniteSize::initBreakup()
   if (myGrid == nullptr)
   {
     myGrid = std::make_shared<LinearGrid<RealType>>();
-    int ng = P->getLattice().ewaldGrid;
+    int ng = P->getLattice().num_ewald_grid_points;
     myGrid->set(0, myRcut, ng);
   }
   if (rVs == nullptr)
