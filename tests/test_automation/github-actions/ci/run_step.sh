@@ -282,10 +282,11 @@ case "$1" in
               ${GITHUB_WORKSPACE}
       ;;
       *"macOS-GCC12-NoMPI-Real"*)
-        echo 'Configure for building on macOS using gcc11'
+        echo 'Configure for building on macOS using gcc12'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc-12 \
               -DCMAKE_CXX_COMPILER=g++-12 \
+              -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" \
               -DQMC_MPI=0 \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -375,20 +376,8 @@ case "$1" in
     fi
 
     # Add ctest concurrent parallel jobs 
-    # Default for Linux GitHub Action runners
-    CTEST_JOBS="2"
-    # Default for macOS GitHub Action runners
-    if [[ "${GH_OS}" =~ (macOS) ]]
-    then
-      CTEST_JOBS="3"
-    fi
-
-    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
-    then
-      CTEST_JOBS="32"
-    fi
-    
-    ctest --output-on-failure $TEST_LABEL -j $CTEST_JOBS
+    # 4 for Linux and macOS GitHub Actions free runners
+    ctest --output-on-failure $TEST_LABEL -j 4
     ;;
   
   # Generate coverage reports
