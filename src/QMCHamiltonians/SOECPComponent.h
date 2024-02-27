@@ -60,10 +60,10 @@ private:
   ///Non-Local part of the pseudo-potential
   std::vector<RadialPotentialType*> sopp_m_;
 
-  ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
-  ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
-  ComplexType matrixElementDecomposed(int l, int m1, int m2, RealType spin, bool plus = true);
-  int kroneckerDelta(int x, int y);
+  static ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
+  static ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
+  static ComplexType matrixElementDecomposed(int l, int m1, int m2, RealType spin, bool plus = true);
+  static int kroneckerDelta(int x, int y);
 
   std::vector<PosType> deltaV_;
   std::vector<RealType> deltaS_;
