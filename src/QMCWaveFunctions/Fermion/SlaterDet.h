@@ -23,12 +23,6 @@
 
 namespace qmcplusplus
 {
-// NOTE NOTE NOTE
-// template<bool backflow>
-//  class SlaterDet: public WaveFunctionComponent {}
-//     then change SlaterDet to SlaterDet<false>
-//     and SlaterDeterminantWithBackflow to SlaterDet<true>
-//     and remove all virtuals and inline them
 class TWFFastDerivWrapper;
 
 class SlaterDet : public WaveFunctionComponent
@@ -249,7 +243,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  virtual SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
+  SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
