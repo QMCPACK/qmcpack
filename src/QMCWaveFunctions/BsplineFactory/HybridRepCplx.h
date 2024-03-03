@@ -123,7 +123,7 @@ public:
                          const ValueVector& psiinv,
                          std::vector<ValueType>& ratios) override
   {
-    if (VP.isOnSphere())
+    if (VP.isOnSphere() && HYBRIDBASE::is_batched_safe(VP))
     {
       // resize scratch space
       psi_AO.resize(psi.size());
