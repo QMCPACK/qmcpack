@@ -72,7 +72,7 @@ struct LRCoulombSingleton
    */
   static std::unique_ptr<RadFunctorType> createSpline4RbyVs(const LRHandlerType* aLR,
                                                             mRealType rcut,
-                                                            const GridType* agrid = nullptr);
+                                                            const GridType& agrid);
   /** create a linear spline of the derivative of short-range potential
    * @param aLR LRHandler
    * @param rcut cutoff radius
@@ -84,7 +84,7 @@ struct LRCoulombSingleton
    */
   static std::unique_ptr<RadFunctorType> createSpline4RbyVsDeriv(const LRHandlerType* aLR,
                                                                  mRealType rcut,
-                                                                 const GridType* agrid = nullptr);
+                                                                 const GridType& agrid);
 };
 
 } // namespace qmcplusplus

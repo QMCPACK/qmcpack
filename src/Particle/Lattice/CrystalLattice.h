@@ -235,10 +235,11 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   template<typename T1>
   CrystalLattice<T, D>& operator=(const CrystalLattice<T1, D>& rhs)
   {
-    Base::LR_dim_cutoff = rhs.LR_dim_cutoff;
-    Base::LR_kc         = rhs.LR_kc;
-    Base::LR_rc         = rhs.LR_rc;
-    Base::ndim          = rhs.ndim;
+    Base::LR_dim_cutoff         = rhs.LR_dim_cutoff;
+    Base::LR_kc                 = rhs.LR_kc;
+    Base::LR_rc                 = rhs.LR_rc;
+    Base::num_ewald_grid_points = rhs.num_ewald_grid_points;
+    Base::ndim                  = rhs.ndim;
 
     explicitly_defined = rhs.explicitly_defined;
     BoxBConds          = rhs.BoxBConds;
