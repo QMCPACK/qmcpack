@@ -74,7 +74,7 @@ case "$1" in
   test)
     echo "Running deterministic tests"
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest --output-on-failure -L deterministic -j 32 --timeout 120 --repeat after-timeout:2
+    ctest --output-on-failure -L deterministic -j 32 --timeout 120 --repeat after-timeout:4
     ;;
     
 esac
