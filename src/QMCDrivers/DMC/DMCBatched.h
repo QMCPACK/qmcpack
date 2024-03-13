@@ -81,6 +81,7 @@ public:
              DMCDriverInput&& input,
              WalkerConfigurations& wc,
              MCPopulation&& pop,
+	     const QMCDriverNew::PSPool& pset_pool,
              Communicate* comm);
 
   /// Copy Constructor (disabled)
@@ -120,7 +121,7 @@ public:
 
   QMCRunType getRunType() override { return QMCRunType::DMC_BATCH; }
 
-  void setNonLocalMoveHandler(QMCHamiltonian& hamiltonian);
+  void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
 
 private:
   const DMCDriverInput dmcdriver_input_;

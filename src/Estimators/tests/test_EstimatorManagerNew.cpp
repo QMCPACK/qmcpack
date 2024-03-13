@@ -63,7 +63,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
   auto& ham             = *(hamiltonian_pool.getPrimary());
-  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, particle_pool.getPool(), twf);
 
   CHECK(emn.getNumEstimators() == 2);
   // Because the only scalar estimator becomes the main estimator.
@@ -77,12 +77,12 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   Libxml2Document estimators_doc2 = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi2(estimators_doc2.getRoot());
 
-  CHECK(emi2.get_estimator_inputs().size() == 2);
+  CHECK(emi2.get_estimator_inputs().size() == 3);
   CHECK(emi2.get_scalar_estimator_inputs().size() == 5);
 
-  EstimatorManagerNew emn2(comm, std::move(emi2), ham, pset, twf);
+  EstimatorManagerNew emn2(comm, std::move(emi2), ham, pset, particle_pool.getPool(), twf);
 
-  CHECK(emn2.getNumEstimators() == 2);
+  CHECK(emn2.getNumEstimators() == 3);
   // Because the only scalar estimator becomes the main estimator.
   CHECK(emn2.getNumScalarEstimators() == 0);
   EstimatorManagerNewTestAccess emnta2(emn2);

@@ -75,6 +75,15 @@ void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walker
   //       clear log values
 }
 
+PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll()
+{
+  Real sum{0};
+  for (auto& [component, values] : values_)
+    for (auto& a_vector : values)
+      sum += std::accumulate(a_vector.begin(), a_vector.end(), 0.0);
+  return sum;
+}
+
 std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone() const
 {
   std::size_t data_size    = data_.size();
@@ -104,6 +113,7 @@ void PerParticleHamiltonianLogger::registerListeners(QMCHamiltonian& ham_leader)
 {
   ListenerVector<Real> listener(name_, getLogger());
   QMCHamiltonian::mw_registerLocalEnergyListener(ham_leader, listener);
+  QMCHamiltonian::mw_registerLocalIonPotentialListener(ham_leader, listener);
 }
 
 void PerParticleHamiltonianLogger::startBlock(int steps)

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -17,11 +17,13 @@
 #include <cstdint>
 
 #include "EstimatorManagerNew.h"
+#include "EstimatorInputDelegates.h"
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
 #include "MagnetizationDensity.h"
 #include "PerParticleHamiltonianLogger.h"
+#include "EnergyDensityEstimator.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -90,12 +92,13 @@ bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Arg
 }
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
+EstimatorManagerNew::EstimatorManagerNew(Communicate* comm,
                                          EstimatorManagerInput&& emi,
                                          const QMCHamiltonian& H,
                                          const ParticleSet& pset,
+					 const PSPool& pset_pool,
                                          const TrialWaveFunction& twf)
-    : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
+    : RecordCount(0), my_comm_(comm), max4ascii(8), FieldWidth(20)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
@@ -104,7 +107,9 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
-          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank())))
+          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
+	  createEstimator<EnergyDensityInput>(est_input, pset_pool)
+	  ))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 

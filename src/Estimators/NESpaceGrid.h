@@ -53,12 +53,13 @@ class NESpaceGrid
 {
 public:
   using Real        = REAL;
+  using FullPrecReal        = QMCTraits::FullPrecRealType;
   using Point       = typename NEReferencePoints::Point;
   using Points      = typename NEReferencePoints::Points;
   using BufferType  = PooledData<Real>;
   using POLT        = PtclOnLatticeTraits;
   using ParticlePos = POLT::ParticlePos;
-  using AxTensor    = Tensor<Real, OHMMS_DIM>;
+  using AxTensor    = Tensor<FullPrecReal, OHMMS_DIM>;
   enum class ReferenceEnergy
   {
     vacuum,
@@ -235,8 +236,8 @@ private:
    *  as derived inputs.  i.e. they are immutable and only based on the input.
    *  Alternately they would be appropriate to calculate at construction time.
    *  @{ */
-  Matrix<Real> domain_volumes_;
-  Matrix<Real> domain_centers_;
+  Matrix<FullPrecReal> domain_volumes_;
+  Matrix<FullPrecReal> domain_centers_;
   //really only used for cartesian-like grids
   Point origin_;
   AxTensor axes_;
@@ -245,7 +246,7 @@ private:
   /// @}
 
   Real volume_;
-  Matrix<Real> domain_uwidths_;
+  Matrix<FullPrecReal> domain_uwidths_;
   std::string axlabel_[OHMMS_DIM];
   std::array<std::vector<int>, 3> gmap_;
   Real odu_[OHMMS_DIM];

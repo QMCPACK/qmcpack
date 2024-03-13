@@ -452,3 +452,38 @@ TEST_CASE("hdf_archive_dataset_type_checking", "[hdf]")
   REQUIRE(is_correct_type == false);
   REQUIRE_THROWS_AS(hd2.is_dataset_of_type<uint64_t>("tag_doesnt_exist"), std::runtime_error);
 }
+
+TEST_CASE("hdf_std_vec_bool", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_vec_bool.hdf");
+
+  std::vector<bool> v(3, false);
+  v[0] = true;
+
+  bool okay = hd.writeEntry(v, "vector_bool");
+  REQUIRE(okay);
+
+  const std::vector<bool> v_const(v);
+  okay = hd.writeEntry(v_const, "vector_bool_const");
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  okay = hd2.open("test_vec_bool.hdf");
+  REQUIRE(okay);
+
+  std::vector<bool> v2;
+  okay = hd2.readEntry(v2, "vector_bool");
+  REQUIRE(v2.size() == 3);
+  for (int i = 0; i < v.size(); i++)
+    CHECK(v[i] == v2[i]);
+
+  std::vector<bool> v2_for_const;
+  okay = hd2.readEntry(v2_for_const, "vector_bool_const");
+  REQUIRE(v2_for_const.size() == 3);
+  for (int i = 0; i < v_const.size(); i++)
+    CHECK(v_const[i] == v2_for_const[i]);
+
+}
