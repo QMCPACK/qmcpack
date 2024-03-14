@@ -112,13 +112,16 @@ bool HDFWalkerOutput::dump(const WalkerConfigurations& W, int nblock, const bool
 
 void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_archive& hout, int nblock, const bool identify_block)
 {
+  std::string dataset_name = hdf::walkers;
   if (identify_block)
   { // change h5 slab name to record more than one block
+    std::stringstream block_str;
+    block_str << nblock;
+    dataset_name += block_str.str();
   } else { // remove previous checkpoint
-    std::vector<std::string> names = {"block", hdf::num_walkers, "walker_partition", hdf::walkers, hdf::walker_weights};
+    std::vector<std::string> names = {"block", hdf::num_walkers, "walker_partition", dataset_name, hdf::walker_weights};
     for (auto aname : names)
       if (hout.is_dataset(aname)) hout.unlink(aname);
-    hout.write(nblock, "block");
   }
 
   const int wb = OHMMS_DIM * number_of_particles_;
@@ -132,7 +135,11 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
 
   auto& walker_offsets = W.getWalkerOffsets();
   number_of_walkers_ = walker_offsets[myComm->size()];
-  hout.write(number_of_walkers_, hdf::num_walkers);
+  if (!identify_block)
+  {
+    hout.write(nblock, "block");
+    hout.write(number_of_walkers_, hdf::num_walkers);
+  }
 
   if (hout.is_parallel())
   {
@@ -161,7 +168,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
       std::array<size_t, 3> counts{W.getActiveWalkers(), number_of_particles_, OHMMS_DIM};
       std::array<size_t, 3> offsets{static_cast<size_t>(walker_offsets[myComm->rank()]), 0, 0};
       hyperslab_proxy<BufferType, 3> slab(RemoteData[0], gcounts, counts, offsets);
-      hout.write(slab, hdf::walkers);
+      hout.write(slab, dataset_name);
     }
     {
       std::array<size_t, 1> gcounts{number_of_walkers_};
@@ -198,7 +205,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
     int buffer_id = (myComm->size() > 1) ? 1 : 0;
     {
       std::array<size_t, 3> gcounts{number_of_walkers_, number_of_particles_, OHMMS_DIM};
-      hout.writeSlabReshaped(RemoteData[buffer_id], gcounts, hdf::walkers);
+      hout.writeSlabReshaped(RemoteData[buffer_id], gcounts, dataset_name);
     }
     {
       std::array<size_t, 1> gcounts{number_of_walkers_};
