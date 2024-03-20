@@ -54,6 +54,14 @@ public:
    */
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
+  /** evaluate values, depcomposed by spin components
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param up components of spinors
+   * @param dn components of spinors
+   */
+  void evaluateValueSpinDecomposed(const ParticleSet& P, int iat, ValueVector& up_components, ValueVector& dn_components) override;
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
    * @param iat active particle

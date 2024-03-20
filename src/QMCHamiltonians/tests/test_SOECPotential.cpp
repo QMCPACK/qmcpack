@@ -9,6 +9,7 @@
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia Nationaln Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include "SOECPComponent.h"
 #include "catch.hpp"
 
 #include "Configuration.h"
@@ -59,6 +60,17 @@ public:
                               bool keep_grid)
   {
     so_ecp.mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, keep_grid);
+  }
+
+  static void initializeTWFFast(SOECPotential& so_ecp, TrialWaveFunction& twf, ParticleSet& elec)
+  {
+    twf.initializeTWFFastDerivWrapper(elec, so_ecp.psi_wrapper_);
+  }
+
+  static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
+  {
+    so_ecp.evaluateImplFast(elec, true);
+    value = so_ecp.getValue();
   }
 };
 } // namespace testing
@@ -231,10 +243,20 @@ void doSOECPotentialTest(bool use_VPs)
 
   //use single walker API to get reference value
   auto value = o_list[0].evaluateDeterministic(p_list[0]);
+
+  //also check whether or not reference value from single_walker API is actually correct
+  //this value comes directly from the reference code soecp_eval_reference.cpp
+  CHECK(value == Approx(-3.530511241));
+
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(value));
+
+  //Now lets try out the fast implementation
+  testing::TestSOECPotential::initializeTWFFast(so_ecp, psi, elec);
+  testing::TestSOECPotential::evalFast(so_ecp, elec, value);
+  CHECK(value == Approx(-3.530511241));
 
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp));
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp2));
@@ -251,9 +273,6 @@ void doSOECPotentialTest(bool use_VPs)
   // check the second walker which will be unchanged.
   CHECK(std::accumulate(local_pots2[1], local_pots2[1] + local_pots2.cols(), 0.0) == Approx(value));
 
-  //also check whether or not reference value from single_walker API is actually correct
-  //this value comes directly from the reference code soecp_eval_reference.cpp
-  CHECK(value == Approx(-3.530511241));
 }
 
 TEST_CASE("SOECPotential", "[hamiltonian]")

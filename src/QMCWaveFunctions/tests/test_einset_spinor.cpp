@@ -306,6 +306,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   int OrbitalSetSize = spo->getOrbitalSetSize();
   //temporary arrays for holding the values of the up and down channels respectively.
   SPOSet::ValueVector psi_work;
+  SPOSet::ValueVector psi_work_up;
+  SPOSet::ValueVector psi_work_down;
 
   //temporary arrays for holding the gradients of the up and down channels respectively.
   SPOSet::GradVector dpsi_work;
@@ -318,6 +320,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   psi_work.resize(OrbitalSetSize);
+  psi_work_up.resize(OrbitalSetSize);
+  psi_work_down.resize(OrbitalSetSize);
 
   dpsi_work.resize(OrbitalSetSize);
 
@@ -360,6 +364,21 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
     CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
     CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+
+    spo->evaluateValueSpinDecomposed(elec_, iat, psi_work_up, psi_work_down);
+    RealType s = elec_.spins[iat];
+    RealType coss(0.0), sins(0.0);
+    coss = std::cos(s);
+    sins = std::sin(s);
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+
+    CHECK(psi_work_up[0] == ComplexApprox(psiM_up[iat][0] * eis).epsilon(h));
+    CHECK(psi_work_up[1] == ComplexApprox(psiM_up[iat][1] * eis).epsilon(h));
+    CHECK(psi_work_up[2] == ComplexApprox(psiM_up[iat][2] * eis).epsilon(h));
+    CHECK(psi_work_down[0] == ComplexApprox(psiM_down[iat][0] * emis).epsilon(h));
+    CHECK(psi_work_down[1] == ComplexApprox(psiM_down[iat][1] * emis).epsilon(h));
+    CHECK(psi_work_down[2] == ComplexApprox(psiM_down[iat][2] * emis).epsilon(h));
     elec_.rejectMove(iat);
   }
 

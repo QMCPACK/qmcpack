@@ -16,6 +16,8 @@
 #include "Numerics/Ylm.h"
 #include "CPU/BLAS.hpp"
 #include "NLPPJob.h"
+#include "TWFFastDerivWrapper.h"
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
@@ -135,6 +137,25 @@ SOECPComponent::ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int 
   }
 }
 
+SOECPComponent::ComplexType SOECPComponent::matrixElementDecomposed(int l, int m1, int m2, RealType spin, bool plus)
+{
+  RealType pm = plus ? RealType(1) : RealType(-1);
+  RealType mp = -1 * pm;
+
+
+  ComplexType lx = lmMatrixElements(l, m1, m2, 0);
+  ComplexType ly = lmMatrixElements(l, m1, m2, 1);
+  ComplexType lz = lmMatrixElements(l, m1, m2, 2);
+
+  RealType cos2s = std::cos(2 * spin);
+  RealType sin2s = std::sin(2 * spin);
+  ComplexType phase(cos2s, mp * sin2s);
+  ComplexType eye(0, 1);
+  RealType onehalf = 0.5;
+  ComplexType val  = onehalf * (pm * lz + phase * (lx + pm * eye * ly));
+  return val;
+}
+
 SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
                                                      int iat,
                                                      TrialWaveFunction& Psi,
@@ -190,6 +211,70 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
     pairpot += psiratio_[iq] * lsum * spin_quad_weights_[iq];
   }
   return std::real(pairpot);
+}
+
+void SOECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
+                                                         const int iat,
+                                                         const TWFFastDerivWrapper& psi,
+                                                         const int iel,
+                                                         const RealType r,
+                                                         const PosType& dr,
+                                                         std::vector<ValueMatrix>& mats_b)
+{
+  if constexpr (!IsComplex_t<ValueType>::value)
+    throw std::runtime_error("SOECPComponent::evaluateOneBodyOpMatrixContribution only implemented in complex build");
+  else
+  {
+    RealType sold              = W.spins[iel];
+    using ValueVector          = SPOSet::ValueVector;
+    const IndexType gid        = W.getGroupID(iel);
+    const IndexType sid        = psi.getTWFGroupIndex(gid);
+    const IndexType firstIndex = W.first(gid);
+    const IndexType thisIndex  = iel - firstIndex;
+    const IndexType numOrbs    = psi.numOrbitals(sid);
+
+    ValueVector temp_row, up_row, dn_row;
+    up_row.resize(numOrbs);
+    dn_row.resize(numOrbs);
+    temp_row.resize(numOrbs);
+
+    //buildQuadraturePointDeltaPositions
+    for (int j = 0; j < nknot_; j++)
+      deltaV_[j] = r * rrotsgrid_m_[j] - dr;
+
+    //calculate radial potentials
+    for (int ip = 0; ip < nchannel_; ip++)
+      vrad_[ip] = sopp_m_[ip]->splint(r);
+
+    for (int iq = 0; iq < nknot_; iq++)
+    {
+      W.makeMove(iel, deltaV_[iq]);
+      psi.getRowMSpinDecomposed(W, iel, up_row, dn_row);
+      RealType jratio = psi.evaluateJastrowRatio(W, iel);
+      W.rejectMove(iel);
+
+      for (int il = 0; il < nchannel_; il++)
+      {
+        int l = il + 1;
+        for (int m1 = -l; m1 <= l; m1++)
+        {
+          ComplexType Y = sphericalHarmonic(l, m1, dr);
+          for (int m2 = -l; m2 <= l; m2++)
+          {
+            ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq]));
+            ComplexType so_up = matrixElementDecomposed(l, m1, m2, sold, true);
+            ComplexType so_dn = matrixElementDecomposed(l, m1, m2, sold, false);
+            RealType fourpi   = 4.0 * M_PI;
+            //Note: Need 4pi weight. In Normal NonLocalECP, 1/4Pi generated from transformation to legendre polynomials and gets absorbed into the
+            // quadrature integration. We don't get the 1/4Pi from legendre here, so we need to scale by 4Pi.
+            temp_row = fourpi * sgridweight_m_[iq] * vrad_[il] * Y * cY * jratio * (up_row * so_up + dn_row * so_dn);
+            for (int iorb = 0; iorb < numOrbs; iorb++)
+              mats_b[sid][thisIndex][iorb] += temp_row[iorb];
+          }
+        }
+      }
+    }
+  }
 }
 
 void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
