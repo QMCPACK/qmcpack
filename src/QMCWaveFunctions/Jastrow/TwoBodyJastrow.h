@@ -27,6 +27,7 @@
 #include "J2KECorrection.h"
 
 #include "BsplineFunctor.h"
+#include "SpinFunctor.h"
 #include "PadeFunctors.h"
 #include "UserFunctor.h"
 #include "FakeFunctor.h"
