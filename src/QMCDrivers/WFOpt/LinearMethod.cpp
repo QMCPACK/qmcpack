@@ -93,7 +93,7 @@ void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
 
   invert_matrix(B, false);
 
-  Matrix<double> prdMat(Nl, Nl);
+  Matrix<Real> prdMat(Nl, Nl);
 
   qmcplusplus::MatrixOperators::product(B, A, prdMat);
 
