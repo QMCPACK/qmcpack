@@ -36,6 +36,18 @@ class LinearMethod
   void getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const;
 
 public:
+  // Use generalized eigenvalue solver
+  void solveGeneralizedEigenvalues(Matrix<Real>& A,
+                                   Matrix<Real>& B,
+                                   std::vector<Real>& eigenvals,
+                                   Matrix<Real>& eigenvectors) const;
+
+  // Solve by explicitly inverting the overlap matrix
+  void solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
+                                       Matrix<Real>& B,
+                                       std::vector<Real>& eigenvals,
+                                       Matrix<Real>& eigenvectors) const;
+
   //asymmetric generalized EV
   Real getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const;
   //asymmetric EV

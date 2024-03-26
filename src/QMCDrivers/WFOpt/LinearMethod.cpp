@@ -20,9 +20,116 @@
 #include <vector>
 #include "QMCCostFunctionBase.h"
 #include <CPU/BLAS.hpp>
+#include "Numerics/MatrixOperators.h"
+#include "Numerics/DeterminantOperators.h"
+
 
 namespace qmcplusplus
 {
+
+
+// A - Ham
+// B - Overlap
+void LinearMethod::solveGeneralizedEigenvalues(Matrix<Real>& A,
+                                               Matrix<Real>& B,
+                                               std::vector<Real>& eigenvals,
+                                               Matrix<Real>& eigenvectors) const
+{
+  int Nl = A.rows();
+  assert(A.rows() == A.cols());
+  assert(Nl == eigenvals.size());
+  assert(Nl == eigenvectors.rows());
+  assert(Nl == eigenvectors.cols());
+
+  // transpose the A and B (row-major vs. column-major)
+  for (int i = 0; i < Nl; i++)
+    for (int j = i + 1; j < Nl; j++)
+    {
+      std::swap(A(i, j), A(j, i));
+      std::swap(B(i, j), B(j, i));
+    }
+
+  //   Getting the optimal worksize
+  char jl('N');
+  char jr('V');
+  std::vector<Real> alphar(Nl), alphai(Nl), beta(Nl);
+  //Matrix<Real> eigenT(Nl, Nl);
+  int info;
+  int lwork(-1);
+  std::vector<Real> work(1);
+  Real tt(0);
+  int t(1);
+  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
+               eigenvectors.data(), &Nl, &work[0], &lwork, &info);
+  lwork = int(work[0]);
+  work.resize(lwork);
+
+  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
+               eigenvectors.data(), &Nl, &work[0], &lwork, &info);
+  if (info != 0)
+  {
+    APP_ABORT("Invalid Matrix Diagonalization Function!");
+  }
+
+  for (int i = 0; i < Nl; i++)
+  {
+    eigenvals[i] = alphar[i] / beta[i];
+  }
+}
+
+
+// A - Ham
+// B - Overlap
+void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
+                                                   Matrix<Real>& B,
+                                                   std::vector<Real>& eigenvals,
+                                                   Matrix<Real>& eigenvectors) const
+{
+  int Nl = A.rows();
+  assert(A.rows() == A.cols());
+  assert(Nl == eigenvals.size());
+  assert(Nl == eigenvectors.rows());
+  assert(Nl == eigenvectors.cols());
+
+  invert_matrix(B, false);
+
+  Matrix<double> prdMat(Nl, Nl);
+
+  qmcplusplus::MatrixOperators::product(B, A, prdMat);
+
+  // transpose the result (why?)
+  for (int i = 0; i < Nl; i++)
+    for (int j = i + 1; j < Nl; j++)
+      std::swap(prdMat(i, j), prdMat(j, i));
+
+  //   Getting the optimal worksize
+  char jl('N');
+  char jr('V');
+  std::vector<Real> alphar(Nl), alphai(Nl);
+  //Matrix<Real> eigenT(Nl, Nl);
+  Matrix<Real> eigenD(Nl, Nl);
+  int info;
+  int lwork(-1);
+  std::vector<Real> work(1);
+  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
+               &work[0], &lwork, &info);
+  lwork = int(work[0]);
+  work.resize(lwork);
+
+  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
+               &work[0], &lwork, &info);
+  if (info != 0)
+  {
+    APP_ABORT("Invalid Matrix Diagonalization Function!");
+  }
+
+  for (int i = 0; i < Nl; i++)
+  {
+    eigenvals[i] = alphar[i];
+  }
+}
+
+
 LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const
 {
   int Nl(ev.size());
