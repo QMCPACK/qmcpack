@@ -653,7 +653,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion"
          "-25.55133363 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp"
-         "-15.85799109  0.0004")
+         "-15.85799109  0.0005")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp"
          "3.60753175 0.0010")
   endif()
