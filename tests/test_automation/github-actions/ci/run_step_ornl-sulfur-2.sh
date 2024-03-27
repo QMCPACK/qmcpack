@@ -142,6 +142,7 @@ case "$1" in
     export OMPI_MCA_btl=self
     # Clang helper threads used by target nowait is very broken. Disable this feature
     export LIBOMP_USE_HIDDEN_HELPER_TASK=0
+    export OMP_TARGET_OFFLOAD=mandatory
 
     echo "Running deterministic tests"
     cd ${GITHUB_WORKSPACE}/../qmcpack-build-2
