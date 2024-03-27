@@ -58,10 +58,11 @@ case "$1" in
       *"V100-Clang16-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with CUDA and AFQMC using LLVM OpenMP offload"
 
-        LLVM_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/llvm-16.0.2-ltjkfjdu6p2cfcyw3zalz4x5sz5do3cr
+        LLVM_DIR=$HOME/opt/llvm/18.1.2
         
         echo "Set PATHs to cuda-11.2"
         export PATH=$HOME/opt/cuda/11.2/bin:$PATH
+        export LD_LIBRARY_PATH=$LLVM_DIR/lib:$LD_LIBRARY_PATH
         export OMPI_CC=$LLVM_DIR/bin/clang
         export OMPI_CXX=$LLVM_DIR/bin/clang++
 
