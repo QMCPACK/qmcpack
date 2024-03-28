@@ -58,10 +58,11 @@ case "$1" in
       *"V100-Clang16-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with CUDA and AFQMC using LLVM OpenMP offload"
 
-        LLVM_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/llvm-16.0.2-ltjkfjdu6p2cfcyw3zalz4x5sz5do3cr
+        LLVM_DIR=$HOME/opt/llvm/18.1.2
         
         echo "Set PATHs to cuda-11.2"
         export PATH=$HOME/opt/cuda/11.2/bin:$PATH
+        export LD_LIBRARY_PATH=$LLVM_DIR/lib:$LD_LIBRARY_PATH
         export OMPI_CC=$LLVM_DIR/bin/clang
         export OMPI_CXX=$LLVM_DIR/bin/clang++
 
@@ -141,9 +142,12 @@ case "$1" in
     export OMPI_MCA_btl=self
     # Clang helper threads used by target nowait is very broken. Disable this feature
     export LIBOMP_USE_HIDDEN_HELPER_TASK=0
+    export OMP_TARGET_OFFLOAD=mandatory
 
     echo "Running deterministic tests"
     cd ${GITHUB_WORKSPACE}/../qmcpack-build-2
+    if [ -f ./bin/qmcpack ]; then ldd ./bin/qmcpack; fi
+    if [ -f ./bin/qmcpack_complex ]; then ldd ./bin/qmcpack_complex; fi
     ctest --output-on-failure -E ppconvert -L deterministic -j 32
     ;;
     
