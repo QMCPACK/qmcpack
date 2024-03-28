@@ -88,12 +88,8 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
             okay = False
 
         if len(stderr.strip()) != 0:
-            # some MPI output on stderr is okay
-            # TODO - more general way of checking acceptable stderr strings
-            if not stderr.startswith('Rank'):
-                print("Stderr not empty")
-                print(stderr)
-                okay = False
+            print("Stderr not empty:")
+            print(stderr)
 
         if not os.path.exists(gold_file):
             print("Gold file missing")
