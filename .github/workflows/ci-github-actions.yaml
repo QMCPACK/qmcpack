@@ -141,7 +141,7 @@ jobs:
           fail_ci_if_error: true # optional (default = false)
 
   macos:
-    runs-on: macos-13
+    runs-on: macos-12
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: macOS
@@ -155,15 +155,10 @@ jobs:
       - name: Checkout Action
         uses: actions/checkout@v4
 
-      - name: Set Python Version
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
       - name: Setup Dependencies
         run: |
           brew install ninja hdf5 fftw boost
-          pip3 install numpy h5py pandas
+          python3 -m pip install numpy h5py pandas
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
