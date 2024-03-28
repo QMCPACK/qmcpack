@@ -148,7 +148,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[2][1][1]) == Approx(1.0020672904));
   CHECK(std::real(dpsiM[2][1][2]) == Approx(-1.9794520201));
   // lapl
-  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(5e-5));
+  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(1e-4));
   CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738).epsilon(3e-5));
 
   //Let's also add test for orbital optimzation

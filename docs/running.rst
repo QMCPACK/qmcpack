@@ -72,14 +72,23 @@ Running in parallel with MPI
 QMCPACK is fully parallelized with MPI. When performing an ensemble job, all
 the MPI ranks are first equally divided into groups that perform individual
 QMC calculations. Within one calculation, all the walkers are fully distributed
-across all the MPI ranks in the group. Since MPI requires distributed memory,
-there must be at least one MPI per node. To maximize the efficiency, more facts
-should be taken into account. When using MPI+threads on compute nodes with more
-than one NUMA domain (e.g., AMD Interlagos CPU on Titan or a node with multiple
-CPU sockets), it is recommended to place as many MPI ranks as the number of
-NUMA domains if the memory is sufficient (e.g., one MPI task per socket). On clusters with more than one
-GPU per node (NVIDIA Tesla K80), it is necessary to use the same number of MPI
-ranks as the number of GPUs per node to let each MPI rank take one GPU.
+across all the MPI ranks in the group. Each compute node must have at least one MPI rank.
+Having one MPI rank per CPU core is a bad practice due to high total memory footprint
+caused by datasets that have to be duplicated on each MPI rank.
+
+We recommend users study the hardware architecture of a compute node before starting any calculation on it.
+Suboptimal choice of the number of MPI ranks and their binding to the hardware may lead to significant waste of compute resource.
+The rule of thumb is to have the number of MPI ranks per node equal to the number of memory domains with uniform access
+attached to the dominant compute devices within a compute node. Fewer can be used when memory is constrained.
+On most CPU-only machines, each CPU socket has its dedicated memory with uniform access from all its cores and cross-socket access is non-uniform.
+Users may simply place one MPI rank per socket.
+There are CPU sockets consisting of core clusters and cross-cluster memory access is non-uniform like Fujitsu A64FX.
+In such case, the largest uniform access memory domain is a cluster and thus users should place one MPI rank per cluster for optimal code performance.
+On machines with GPU accelerators, GPUs are the primary compute devices and thus users should count the number of
+uniform access memory domains attached to GPUs. Usually each GPU card has a single GPU die with its own dedicated graphic memory, counted as one domain.
+users may simply place one MPI rank per GPU card. High-end GPU cards may have more than a single GPU memory domain.
+For example, AMD Instinct MI250X and Intel Data Center GPU Max 1550 cards both have two memory domains per card.
+users should place one MPI rank per GPU memory domain (AMD GCD, Intel tile).
 
 .. _openmprunning:
 
@@ -89,15 +98,18 @@ Using OpenMP threads
 Modern processors integrate multiple identical cores even with
 hardware threads on a single die to increase the total performance and
 maintain a reasonable power draw. QMCPACK takes advantage of this
-compute capability by using threads and the OpenMP programming model
-as well as threaded linear algebra libraries. By default, QMCPACK is
+compute capability by using threads directly via the OpenMP programming model
+and indirectly via threaded linear algebra libraries. By default, QMCPACK is
 always built with OpenMP enabled. When launching calculations, users
 should instruct QMCPACK to create the right number of threads per MPI
-rank by specifying environment variable OMP\_NUM\_THREADS. Assuming
-one MPI rank per socket, the number of threads should typically be the
-number of cores on that socket. Even in the GPU-accelerated version,
-using threads significantly reduces the time spent on the calculations
-performed by the CPU.
+rank by specifying environment variable OMP\_NUM\_THREADS.
+It is recommended to set the number of OpenMP threads equal to the number
+of physical CPU cores that can be exclusively assigned to each MPI rank.
+Even when the GPU-acceleration is enabled, using threads significantly
+reduces the time spent on the calculations performed by the CPU. Almost all the MPI launchers
+require proper configuration to map the OpenMP threads to the processor cores correctly
+and avoid assigning multiple threads to the same processor core. If this happens very significant
+slowdowns result. Users should check their MPI documentation and verify performance before doing costly production calculations.
 
 Nested OpenMP threads
 ~~~~~~~~~~~~~~~~~~~~~
