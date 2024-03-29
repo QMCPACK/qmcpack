@@ -1,20 +1,16 @@
 #!/bin/bash
 # This recipe is intended for ALCF Sunspot https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Jan 8th 2023
+# last revision: Mar 29th 2024
 #
 # How to invoke this script?
 # build_alcf_sunspot_icpx.sh # build all the variants assuming the current directory is the source directory.
 # build_alcf_sunspot_icpx.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_alcf_sunspot_icpx.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
-module load spack libxml2 cmake
-module load cray-hdf5
-module load oneapi/eng-compiler/2023.05.15.007
+module load cmake hdf5/1.14.3 boost/1.83.0
+module load oneapi/eng-compiler/2023.12.15.002
 
 module list >& module_list.txt
-
-# edit this line for your own boost header files.
-export BOOST_ROOT=/home/yeluo/opt/boost_1_80_0
 
 echo "**********************************"
 echo '$ icpx -v'
@@ -23,7 +19,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=sunspot
-Compiler=icpx20230613
+Compiler=icpx20231130
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
