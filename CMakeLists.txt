@@ -9,6 +9,9 @@ cmake_minimum_required(VERSION 3.21.0)
 if(POLICY CMP0127)
   cmake_policy(SET CMP0127 NEW) # Condition evaluation v3.22+ https://cmake.org/cmake/help/latest/policy/CMP0127.html
 endif()
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW) # v3.27+ find_package() uses upper-case <PACKAGENAME>_ROOT variables.
+endif()
 
 ######################################################################
 # QMCPACK project
