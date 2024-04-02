@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 // for return types
-using PsiValueType = WaveFunctionComponent::PsiValueType;
+using PsiValue = WaveFunctionComponent::PsiValue;
 
 WaveFunctionComponent::WaveFunctionComponent(const std::string& obj_name)
     : UpdateMode(ORB_WALKER), Bytes_in_WFBuffer(0), my_name_(obj_name), log_value_(0.0)
@@ -95,13 +95,16 @@ void WaveFunctionComponent::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFu
 {
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    grad_now[iw] = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  {
+    spingrad_now[iw] = 0;
+    grad_now[iw]     = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  }
 }
 
 void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
-                                         std::vector<PsiValueType>& ratios) const
+                                         std::vector<PsiValue>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
@@ -109,7 +112,7 @@ void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionC
 }
 
 
-PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+PsiValue WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + getClassName() + " class.");
   return ValueType();
@@ -119,7 +122,7 @@ template<CoordsType CT>
 void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
-                                         std::vector<PsiValueType>& ratios,
+                                         std::vector<PsiValue>& ratios,
                                          TWFGrads<CT>& grad_new) const
 {
   if constexpr (CT == CoordsType::POS_SPIN)
@@ -131,7 +134,7 @@ void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionC
 void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
-                                         std::vector<PsiValueType>& ratios,
+                                         std::vector<PsiValue>& ratios,
                                          std::vector<GradType>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
@@ -142,7 +145,7 @@ void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionC
 void WaveFunctionComponent::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                  const RefVectorWithLeader<ParticleSet>& p_list,
                                                  int iat,
-                                                 std::vector<PsiValueType>& ratios,
+                                                 std::vector<PsiValue>& ratios,
                                                  std::vector<GradType>& grad_new,
                                                  std::vector<ComplexType>& spingrad_new) const
 {
@@ -172,10 +175,10 @@ void WaveFunctionComponent::mw_completeUpdates(const RefVectorWithLeader<WaveFun
     wfc_list[iw].completeUpdates();
 }
 
-WaveFunctionComponent::LogValueType WaveFunctionComponent::evaluateGL(const ParticleSet& P,
-                                                                      ParticleSet::ParticleGradient& G,
-                                                                      ParticleSet::ParticleLaplacian& L,
-                                                                      bool fromscratch)
+WaveFunctionComponent::LogValue WaveFunctionComponent::evaluateGL(const ParticleSet& P,
+                                                                  ParticleSet::ParticleGradient& G,
+                                                                  ParticleSet::ParticleLaplacian& L,
+                                                                  bool fromscratch)
 {
   return evaluateLog(P, G, L);
 }
@@ -277,13 +280,13 @@ template void WaveFunctionComponent::mw_ratioGrad<CoordsType::POS>(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
     int iat,
-    std::vector<PsiValueType>& ratios,
+    std::vector<PsiValue>& ratios,
     TWFGrads<CoordsType::POS>& grad_new) const;
 template void WaveFunctionComponent::mw_ratioGrad<CoordsType::POS_SPIN>(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
     int iat,
-    std::vector<PsiValueType>& ratios,
+    std::vector<PsiValue>& ratios,
     TWFGrads<CoordsType::POS_SPIN>& grad_new) const;
 
 } // namespace qmcplusplus

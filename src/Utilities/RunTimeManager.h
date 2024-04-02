@@ -22,28 +22,32 @@
 
 namespace qmcplusplus
 {
-template<class CLOCK = CPUClock>
+template<class CLOCK = ChronoClock>
 class RunTimeManager
 {
 public:
-  inline double elapsed() { return CLOCK()() - start_time; }
+  inline double elapsed()
+  {
+    std::chrono::duration<double> elapsed = CLOCK::now() - start_time;
+    return elapsed.count();
+  }
   // Initialize the start time at static class initialization time
-  RunTimeManager() : start_time(CLOCK()()) {}
+  RunTimeManager() : start_time(CLOCK::now()) {}
 
   bool isStopNeeded() const { return need_to_stop_; }
   void markStop() { need_to_stop_ = true; }
 
 private:
-  const double start_time;
+  const typename CLOCK::time_point start_time;
   bool need_to_stop_;
 };
 
-extern RunTimeManager<CPUClock> run_time_manager;
+extern RunTimeManager<ChronoClock> run_time_manager;
 
-extern template class RunTimeManager<CPUClock>;
-extern template class RunTimeManager<FakeCPUClock>;
+extern template class RunTimeManager<ChronoClock>;
+extern template class RunTimeManager<FakeChronoClock>;
 
-template<class CLOCK = CPUClock>
+template<class CLOCK = ChronoClock>
 class LoopTimer
 {
 public:
@@ -55,14 +59,14 @@ public:
 private:
   int nloop;
   bool ticking;
-  double start_time;
+  typename CLOCK::time_point start_time;
   double total_time;
 };
 
-extern template class LoopTimer<CPUClock>;
-extern template class LoopTimer<FakeCPUClock>;
+extern template class LoopTimer<ChronoClock>;
+extern template class LoopTimer<FakeChronoClock>;
 
-template<class CLOCK = CPUClock>
+template<class CLOCK = ChronoClock>
 class RunTimeControl
 {
   const int MaxCPUSecs;
@@ -108,8 +112,8 @@ public:
   void loop_margin(int loopMargin) { m_loop_margin = loopMargin; }
 };
 
-extern template class RunTimeControl<CPUClock>;
-extern template class RunTimeControl<FakeCPUClock>;
+extern template class RunTimeControl<ChronoClock>;
+extern template class RunTimeControl<FakeChronoClock>;
 
 } // namespace qmcplusplus
 #endif

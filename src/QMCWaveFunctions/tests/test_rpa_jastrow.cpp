@@ -31,19 +31,19 @@ namespace qmcplusplus
 TEST_CASE("RPA Jastrow", "[wavefunction]")
 {
   // initialize simulationcell for kvectors
-  const char* xmltext = "<tmp> \
-  <simulationcell>\
-     <parameter name=\"lattice\" units=\"bohr\">\
-              6.00000000        0.00000000        0.00000000\
-              0.00000000        6.00000000        0.00000000\
-              0.00000000        0.00000000        6.00000000\
-     </parameter>\
-     <parameter name=\"bconds\">\
-        p p p\
-     </parameter>\
-     <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
-  </simulationcell>\
-</tmp> ";
+  const char* xmltext = R"(<tmp>
+  <simulationcell>
+     <parameter name="lattice" units="bohr">
+              6.00000000        0.00000000        0.00000000
+              0.00000000        6.00000000        0.00000000
+              0.00000000        0.00000000        6.00000000
+     </parameter>
+     <parameter name="bconds">
+        p p p
+     </parameter>
+     <parameter name="LR_dim_cutoff"> 15 </parameter>
+  </simulationcell>
+</tmp>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xmltext);
   REQUIRE(okay);
@@ -63,31 +63,18 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
 
   ions_.setName("ion");
   ions_.create({2});
-  ions_.R[0][0] = 2.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = -2.0;
-  ions_.R[1][1] = 0.0;
-  ions_.R[1][2] = 0.0;
+  ions_.R[0] = {2.0, 0.0, 0.0};
+  ions_.R[1] = {-2.0, 0.0, 0.0};
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
   ions_.update();
 
   elec_.setName("elec");
-  elec_.create({2,2});
-  elec_.R[0][0] = 1.00;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 0.0;
-  elec_.R[1][2] = 0.0;
-  elec_.R[2][0] = -1.00;
-  elec_.R[2][1] = 0.0;
-  elec_.R[2][2] = 0.0;
-  elec_.R[3][0] = 0.0;
-  elec_.R[3][1] = 0.0;
-  elec_.R[3][2] = 2.0;
-
+  elec_.create({2, 2});
+  elec_.R[0] = {1.00, 0.0, 0.0};
+  elec_.R[1] = {0.0, 0.0, 0.0};
+  elec_.R[2] = {-1.00, 0.0, 0.0};
+  elec_.R[3] = {0.0, 0.0, 2.0};
   SpeciesSet& target_species(elec_.getSpeciesSet());
   int upIdx                          = target_species.addSpecies("u");
   int downIdx                        = target_species.addSpecies("d");
@@ -98,9 +85,9 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  xmltext = "<tmp> \
-  <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\
-</tmp> ";
+  xmltext = R"(<tmp>
+  <jastrow name="Jee" type="Two-Body" function="rpa"/>
+</tmp>)";
   okay    = doc.parseFromString(xmltext);
   REQUIRE(okay);
 
@@ -114,6 +101,6 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   elec_.update();
 
   double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(-1.3327837613)); // note: number not validated
+  CHECK(logpsi_real == Approx(-1.3327837613)); // note: number not validated
 }
 } // namespace qmcplusplus

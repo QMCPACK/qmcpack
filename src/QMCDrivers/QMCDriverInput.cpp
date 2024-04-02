@@ -37,11 +37,11 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   // so its better it not live long
 
   std::string debug_checks_str;
+  std::string measure_imbalance_str;
+  int Period4CheckPoint{0};
   int dummy_int = 0;
 
   ParameterSet parameter_set;
-  parameter_set.add(store_config_period_, "storeconfigs");
-  parameter_set.add(store_config_period_, "store_configs");
   parameter_set.add(recalculate_properties_period_, "checkProperties");
   parameter_set.add(recalculate_properties_period_, "checkproperties");
   parameter_set.add(recalculate_properties_period_, "check_properties");
@@ -79,10 +79,15 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   aAttrib.add(qmc_method_, "method");
   aAttrib.add(update_mode_, "move");
   aAttrib.add(scoped_profiling_, "profiling");
-
+  aAttrib.add(Period4CheckPoint, "checkpoint");
   aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor
   aAttrib.put(cur);
+
+  //set default to match legacy QMCDriver
+  check_point_period_.stride = Period4CheckPoint;
+  check_point_period_.period = Period4CheckPoint;
+
   if (cur != NULL)
   {
     //initialize the parameter set
@@ -151,7 +156,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
 
-  dump_config_ = (check_point_period_.period >= 0);
+  dump_config_ = (Period4CheckPoint >= 0);
 }
 
 } // namespace qmcplusplus

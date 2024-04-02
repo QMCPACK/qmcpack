@@ -55,7 +55,7 @@ MultiArray2DY&& copy(MultiArray2DX&& x, MultiArray2DY&& y)
   }
   else
   {
-    copy2D(x.size(), x.size(1), pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
+    copy2D(x.size(), std::get<1>(x.sizes()), pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
   }
   return std::forward<MultiArray2DY>(y);
 }
@@ -70,16 +70,16 @@ MultiArrayNDY&& copy(MultiArrayNDX&& x, MultiArrayNDY&& y)
 {
 #ifndef NDEBUG
   // only on contiguous arrays
-  long sz(x.size());
-  for (int i = 1; i < int(std::decay<MultiArrayNDX>::type::dimensionality); ++i)
-    sz *= x.size(i);
-  assert(x.num_elements() == sz);
-  assert(x.stride(std::decay<MultiArrayNDX>::type::dimensionality - 1) == 1);
-  sz = y.size();
-  for (int i = 1; i < int(std::decay<MultiArrayNDY>::type::dimensionality); ++i)
-    sz *= y.size(i);
-  assert(y.num_elements() == sz);
-  assert(y.stride(std::decay<MultiArrayNDY>::type::dimensionality - 1) == 1);
+//  long sz(x.size());
+//  for (int i = 1; i < int(std::decay<MultiArrayNDX>::type::dimensionality); ++i)
+//    sz *= x.size(i);
+//  assert(x.num_elements() == sz);
+  assert(std::get<std::decay<MultiArrayNDX>::type::dimensionality - 1>(x.strides()) == 1);
+//  sz = y.size();
+//  for (int i = 1; i < int(std::decay<MultiArrayNDY>::type::dimensionality); ++i)
+//   sz *= y.size(i);
+//  assert(y.num_elements() == sz);
+  assert(std::get<std::decay<MultiArrayNDY>::type::dimensionality - 1>(y.strides()) == 1);
   assert(x.num_elements() == y.num_elements());
 #endif
   copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
@@ -129,11 +129,11 @@ template<class T,
 MultiArrayND&& scal(T a, MultiArrayND&& x)
 {
 #ifndef NDEBUG
-  long sz(x.size());
-  for (int i = 1; i < int(std::decay<MultiArrayND>::type::dimensionality); ++i)
-    sz *= x.size(i);
-  assert(x.num_elements() == sz);
-  assert(x.stride(std::decay<MultiArrayND>::type::dimensionality - 1) == 1); // only on contiguous arrays
+//  long sz(x.size());
+//  for (int i = 1; i < int(std::decay<MultiArrayND>::type::dimensionality); ++i)
+//    sz *= x.size(i);
+//  assert(x.num_elements() == sz);
+  assert(std::get<std::decay<MultiArrayND>::type::dimensionality - 1>(x.strides()) == 1); // only on contiguous arrays
 #endif
   scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
   return std::forward<MultiArrayND>(x);
@@ -181,7 +181,7 @@ template<class T,
 MultiArray2DB&& axpy(T x, MultiArray2DA const& a, MultiArray2DB&& b)
 {
   assert(a.num_elements() == b.num_elements());
-  assert(a.stride() == a.size(1)); // only on contiguous arrays
+  assert(a.stride() == std::get<1>(a.sizes())); // only on contiguous arrays
   assert(a.stride(1) == 1);         // only on contiguous arrays
   assert(b.stride() == std::get<1>(b.sizes())); // only on contiguous arrays
   assert(b.stride(1) == 1);         // only on contiguous arrays

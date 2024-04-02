@@ -9,11 +9,19 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "SYCLDeviceManager.h"
 #include "SYCLruntime.hpp"
 
 namespace qmcplusplus
 {
-sycl::queue getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceQueue(); }
+sycl::queue& getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceDefaultQueue(); }
+size_t getSYCLdeviceFreeMem()
+{
+  auto device = getSYCLDefaultDeviceDefaultQueue().get_device();
+  if (device.has(sycl::aspect::ext_intel_free_memory))
+    return getSYCLDefaultDeviceDefaultQueue().get_device().get_info<sycl::ext::intel::info::device::free_memory>();
+  else
+    return 0;
+}
 } // namespace qmcplusplus

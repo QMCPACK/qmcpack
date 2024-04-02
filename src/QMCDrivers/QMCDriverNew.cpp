@@ -49,8 +49,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            MCPopulation&& population,
                            const std::string timer_prefix,
                            Communicate* comm,
-                           const std::string& QMC_driver_type,
-                           SetNonLocalMoveHandler snlm_handler)
+                           const std::string& QMC_driver_type)
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
@@ -58,11 +57,10 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
       timers_(timer_prefix),
-      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
-      walker_configs_ref_(wc),
-      setNonLocalMoveHandler_(snlm_handler)
+      walker_configs_ref_(wc)
 {
   // This is done so that the application level input structures reflect the actual input to the code.
   // While the actual simulation objects still take singular input structures at construction.
@@ -143,8 +141,6 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
   // set num_global_walkers explicitly and then make local walkers.
   population_.set_num_global_walkers(awc.global_walkers);
 
-  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
-
   if (qmcdriver_input_.areWalkersSerialized())
   {
     if (estimator_manager_->areThereListeners())
@@ -153,6 +149,14 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
   }
   else
   {
+    // This needs to happen before walkers are made. i.e. this allows hamiltonian operators to update state
+    // the based on the presence of per particle listeners. In the case immediately encountered the operator CoulombPBCAA will
+    // call its associated particle set and turnOnPerParticleSK.
+    // The design for "initialization" of walker elements is for the golden elements to go through all pre walking state changes
+    // and then for the golden elements to be cloned for each walker.
+    if (estimator_manager_->areThereListeners())
+      population_.get_golden_hamiltonian().informOperatorsOfListener();
+
     app_debug() << "Creating multi walker shared resources" << std::endl;
     population_.get_golden_electrons().createResource(golden_resource_.pset_res);
     population_.get_golden_twf().createResource(golden_resource_.twf_res);
@@ -160,12 +164,16 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
     app_debug() << "Multi walker shared resources creation completed" << std::endl;
   }
 
+  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
+
   crowds_.resize(awc.walkers_per_crowd.size());
 
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i] = std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
+    crowds_[i] =
+        std::make_unique<Crowd>(*estimator_manager_, golden_resource_, population_.get_golden_electrons(),
+                                population_.get_golden_twf(), population_.get_golden_hamiltonian(), dispatchers_);
   }
 
   //now give walkers references to their walkers
@@ -183,8 +191,8 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
  */
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
-  app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << get_root_name();
+  app_log() << "\n=========================================================" << "\n  Start " << QMCType
+            << "\n  File Root " << get_root_name();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())
@@ -225,10 +233,10 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
+    population_.saveWalkerConfigurations(walker_configs_ref_);
+    setWalkerOffsets(walker_configs_ref_, myComm);
     wOut->dump(walker_configs_ref_, block);
-#ifndef USE_FAKE_RNG
     RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
-#endif
   }
 }
 
@@ -236,6 +244,8 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   population_.saveWalkerConfigurations(walker_configs_ref_);
   setWalkerOffsets(walker_configs_ref_, myComm);
+  app_log() << "  Carry over " << walker_configs_ref_.getGlobalNumWalkers()
+            << " walker configurations to the next QMC driver." << std::endl;
 
   const bool DumpConfig = qmcdriver_input_.get_dump_config();
   if (DumpConfig && dumpwalkers)
@@ -244,10 +254,8 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   infoSummary.flush();
   infoLog.flush();
 
-#ifndef USE_FAKE_RNG
   if (DumpConfig)
     RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
-#endif
 
   return true;
 }
@@ -271,14 +279,6 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
     for (int i = 0; i < num_walkers_to_kill; ++i)
       population_.killLastWalker();
   }
-
-  // \todo: this could be what is breaking spawned walkers
-  for (UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
-    setNonLocalMoveHandler_(*ham);
-
-  // For the dead ones too. Since this should be on construction but...
-  for (UPtr<QMCHamiltonian>& ham : population_.get_dead_hamiltonians())
-    setNonLocalMoveHandler_(*ham);
 }
 
 /** Creates Random Number generators for crowds and step contexts
@@ -363,10 +363,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
 
   auto doesDoinTheseLastMatter = [](MCPWalker& walker) {
-    walker.ReleasedNodeAge    = 0;
-    walker.ReleasedNodeWeight = 0;
-    walker.Weight             = 1;
-    walker.wasTouched         = false;
+    walker.Weight     = 1.;
+    walker.wasTouched = false;
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     doesDoinTheseLastMatter(walkers[iw]);
@@ -386,57 +384,62 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
   return o_stream;
 }
 
-void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham) {}
-
-QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num_ranks,
-                                                                         int rank_id,
-                                                                         IndexType required_total,
-                                                                         IndexType walkers_per_rank,
-                                                                         RealType reserve_walkers,
+QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate& comm,
+                                                                         const IndexType current_configs,
+                                                                         const IndexType requested_total_walkers,
+                                                                         const IndexType requested_walkers_per_rank,
+                                                                         const RealType reserve_walkers,
                                                                          int num_crowds)
 {
+  const int num_ranks = comm.size();
+  const int rank_id   = comm.rank();
+
   // Step 1. set num_crowds by input and Concurrency::maxCapacity<>()
   checkNumCrowdsLTNumThreads(num_crowds);
   if (num_crowds == 0)
     num_crowds = Concurrency::maxCapacity<>();
 
   AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
+  awc.walkers_per_rank.resize(num_ranks, 0);
 
   // Step 2. decide awc.global_walkers and awc.walkers_per_rank based on input values
-  if (required_total != 0)
+  if (requested_total_walkers != 0)
   {
-    if (required_total < num_ranks)
+    if (requested_total_walkers < num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks.  The request of " << required_total
+      error << "Running on " << num_ranks << " MPI ranks.  The request of " << requested_total_walkers
             << " global walkers cannot be satisfied! Need at least one walker per MPI rank.";
       throw UniformCommunicateError(error.str());
     }
-    if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
+    if (requested_walkers_per_rank != 0 && requested_total_walkers != requested_walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total << " global walkers and "
-            << walkers_per_rank << " walkers per rank cannot be satisfied!";
+      error << "Running on " << num_ranks << " MPI ranks, The request of " << requested_total_walkers
+            << " global walkers and " << requested_walkers_per_rank << " walkers per rank cannot be satisfied!";
       throw UniformCommunicateError(error.str());
     }
-    awc.global_walkers   = required_total;
-    awc.walkers_per_rank = fairDivide(required_total, num_ranks);
+    awc.global_walkers   = requested_total_walkers;
+    awc.walkers_per_rank = fairDivide(requested_total_walkers, num_ranks);
   }
-  else
+  else // requested_total_walkers == 0
   {
-    if (walkers_per_rank != 0)
-      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, walkers_per_rank);
-    else
-      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, num_crowds);
-    awc.global_walkers = awc.walkers_per_rank[0] * num_ranks;
+    if (requested_walkers_per_rank != 0)
+      awc.walkers_per_rank[rank_id] = requested_walkers_per_rank;
+    else if (current_configs) // requested_walkers_per_rank == 0 and current_configs > 0
+      awc.walkers_per_rank[rank_id] = current_configs;
+    else // requested_walkers_per_rank == 0 and current_configs == 0
+      awc.walkers_per_rank[rank_id] = num_crowds;
+    comm.allreduce(awc.walkers_per_rank);
+    awc.global_walkers = std::accumulate(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(), 0);
   }
-
-  // Step 3. decide awc.walkers_per_crowd
-  awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
 
   if (awc.global_walkers % num_ranks)
     app_warning() << "TotalWalkers (" << awc.global_walkers << ") not divisible by number of ranks (" << num_ranks
                   << "). This will result in a loss of efficiency.\n";
+
+  // Step 3. decide awc.walkers_per_crowd
+  awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
 
   if (awc.walkers_per_rank[rank_id] % num_crowds)
     app_warning() << "Walkers per rank (" << awc.walkers_per_rank[rank_id] << ") not divisible by number of crowds ("
@@ -526,7 +529,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-  std::vector<TrialWaveFunction::LogValueType> log_values(walker_twfs.size());
+  std::vector<TrialWaveFunction::LogValue> log_values(walker_twfs.size());
   std::vector<ParticleSet::ParticleGradient> Gs;
   std::vector<ParticleSet::ParticleLaplacian> Ls;
   Gs.reserve(log_values.size());
@@ -554,7 +557,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   {
     auto& ref_G = walker_twfs[iw].G;
     auto& ref_L = walker_twfs[iw].L;
-    TrialWaveFunction::LogValueType ref_log{walker_twfs[iw].getLogPsi(), walker_twfs[iw].getPhase()};
+    TrialWaveFunction::LogValue ref_log{walker_twfs[iw].getLogPsi(), walker_twfs[iw].getPhase()};
     if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
     {
       success = false;
@@ -621,7 +624,6 @@ void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Commun
   for (int ip = 0; ip < comm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
 
-  walker_configs.setGlobalNumWalkers(nwoff[comm->size()]);
   walker_configs.setWalkerOffsets(nwoff);
 }
 

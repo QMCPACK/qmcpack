@@ -11,10 +11,9 @@
 
 set(WFSSRCS_CUDA cuBLAS_LU.cu delayed_update_helper.cu matrix_update_helper.cu)
 
-if(NOT QMC_CUDA2HIP)
-  add_library(qmcwfs_cuda ${WFSSRCS_CUDA})
-else()
-  hip_add_library(qmcwfs_cuda ${WFSSRCS_CUDA})
-endif(NOT QMC_CUDA2HIP)
+add_library(qmcwfs_cuda ${WFSSRCS_CUDA})
+if(QMC_CUDA2HIP)
+  set_source_files_properties(${WFSSRCS_CUDA} PROPERTIES LANGUAGE HIP)
+endif()
 
 target_link_libraries(qmcwfs_cuda PRIVATE platform_LA qmc_external_thrust)

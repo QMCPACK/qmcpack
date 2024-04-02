@@ -221,38 +221,33 @@ void SkAllEstimator::setParticlePropertyList(PropertySetType& plist, int offset)
 }
 
 
-void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  if (hdf5_out)
-  {
-    // Create HDF group in stat.h5 with SkAllEstimator's name
-    hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  if (!hdf5_out)
+    return;
 
-    // Add k-point information
-    h5desc.emplace_back("kpoints");
-    auto& ohKPoints = h5desc.back();
-    ohKPoints.open(sgid); // add to SkAll hdf group
-    ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().kpts_cart), "value");
+  // Add k-point information
+  hdf_path hdf_name{name_};
+  h5desc.emplace_back(hdf_name / "kpoints");
+  auto& ohKPoints = h5desc.back();
+  ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().kpts_cart), "value",
+                        file);
 
-    // Add electron-electron S(k)
-    std::vector<int> ng(1);
-    ng[0] = NumK;
-    //  modulus
-    h5desc.emplace_back("rhok_e_e");
-    auto& ohRhoKEE = h5desc.back();
-    ohRhoKEE.set_dimensions(ng, my_index_);
-    ohRhoKEE.open(sgid); // add to SkAll hdf group
-    //  real part
-    h5desc.emplace_back("rhok_e_r");
-    auto& ohRhoKER = h5desc.back();
-    ohRhoKER.set_dimensions(ng, my_index_ + NumK);
-    ohRhoKER.open(sgid); // add to SkAll hdf group
-    //  imaginary part
-    h5desc.emplace_back("rhok_e_i");
-    auto& ohRhoKEI = h5desc.back();
-    ohRhoKEI.set_dimensions(ng, my_index_ + 2 * NumK);
-    ohRhoKEI.open(sgid); // add to SkAll hdf group
-  }
+  // Add electron-electron S(k)
+  std::vector<int> ng(1);
+  ng[0] = NumK;
+  //  modulus
+  h5desc.emplace_back(hdf_name / "rhok_e_e");
+  auto& ohRhoKEE = h5desc.back();
+  ohRhoKEE.set_dimensions(ng, my_index_);
+  //  real part
+  h5desc.emplace_back(hdf_name / "rhok_e_r");
+  auto& ohRhoKER = h5desc.back();
+  ohRhoKER.set_dimensions(ng, my_index_ + NumK);
+  //  imaginary part
+  h5desc.emplace_back(hdf_name / "rhok_e_i");
+  auto& ohRhoKEI = h5desc.back();
+  ohRhoKEI.set_dimensions(ng, my_index_ + 2 * NumK);
 }
 
 bool SkAllEstimator::put(xmlNodePtr cur)

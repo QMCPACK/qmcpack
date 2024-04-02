@@ -1021,6 +1021,12 @@ def test_job_run_command():
     #end def job_command_equal
 
     job_run_ref = obj({
+        ('amber'          , 'n1'            ) : 'mpiexec --bind-to none -n 112 --npernode 112 test.x',
+        ('amber'          , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('amber'          , 'n2'            ) : 'mpiexec --bind-to none -n 224 --npernode 112 test.x',
+        ('amber'          , 'n2_t2'         ) : 'mpiexec --bind-to none -n 112 --npernode 56 test.x',
+        ('amber'          , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 112 --npernode 56 test.x',
+        ('amber'          , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
         ('amos'           , 'n1'            ) : 'srun test.x',
         ('amos'           , 'n1_p1'         ) : 'srun test.x',
         ('amos'           , 'n2'            ) : 'srun test.x',
@@ -1039,12 +1045,12 @@ def test_job_run_command():
         ('archer2'        , 'n2_t2'         ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
         ('archer2'        , 'n2_t2_e'       ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
         ('archer2'        , 'n2_t2_p2'      ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 4 test.x',
-        ('attaway'        , 'n1'            ) : 'srun test.x',
-        ('attaway'        , 'n1_p1'         ) : 'srun test.x',
-        ('attaway'        , 'n2'            ) : 'srun test.x',
-        ('attaway'        , 'n2_t2'         ) : 'srun test.x',
-        ('attaway'        , 'n2_t2_e'       ) : 'srun test.x',
-        ('attaway'        , 'n2_t2_p2'      ) : 'srun test.x',
+        ('attaway'        , 'n1'            ) : 'mpiexec --bind-to none -n 36 --npernode 36 test.x',
+        ('attaway'        , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('attaway'        , 'n2'            ) : 'mpiexec --bind-to none -n 72 --npernode 36 test.x',
+        ('attaway'        , 'n2_t2'         ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
+        ('attaway'        , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
+        ('attaway'        , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
         ('bluewaters_xe'  , 'n1'            ) : 'aprun -n 32 test.x',
         ('bluewaters_xe'  , 'n1_p1'         ) : 'aprun -n 1 test.x',
         ('bluewaters_xe'  , 'n2'            ) : 'aprun -n 64 test.x',
@@ -1075,12 +1081,12 @@ def test_job_run_command():
         ('cetus'          , 'n2_t2'         ) : 'runjob --envs OMP_NUM_THREADS=2 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('cetus'          , 'n2_t2_e'       ) : 'runjob --envs OMP_NUM_THREADS=2 ENV_VAR=1 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('cetus'          , 'n2_t2_p2'      ) : 'runjob --envs OMP_NUM_THREADS=2 --np 4 -p 2 --verbose=INFO $LOCARGS : test.x',
-        ('chama'          , 'n1'            ) : 'srun test.x',
-        ('chama'          , 'n1_p1'         ) : 'srun test.x',
-        ('chama'          , 'n2'            ) : 'srun test.x',
-        ('chama'          , 'n2_t2'         ) : 'srun test.x',
-        ('chama'          , 'n2_t2_e'       ) : 'srun test.x',
-        ('chama'          , 'n2_t2_p2'      ) : 'srun test.x',
+        ('chama'          , 'n1'            ) : 'mpiexec --bind-to none -n 16 --npernode 16 test.x',
+        ('chama'          , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('chama'          , 'n2'            ) : 'mpiexec --bind-to none -n 32 --npernode 16 test.x',
+        ('chama'          , 'n2_t2'         ) : 'mpiexec --bind-to none -n 16 --npernode 8 test.x',
+        ('chama'          , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 16 --npernode 8 test.x',
+        ('chama'          , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
         ('cooley'         , 'n1'            ) : 'mpirun -np 12 test.x',
         ('cooley'         , 'n1_p1'         ) : 'mpirun -np 1 test.x',
         ('cooley'         , 'n2'            ) : 'mpirun -np 24 test.x',
@@ -1093,24 +1099,24 @@ def test_job_run_command():
         ('cori'           , 'n2_t2'         ) : 'srun test.x',
         ('cori'           , 'n2_t2_e'       ) : 'srun test.x',
         ('cori'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('eclipse'        , 'n1'            ) : 'srun test.x',
-        ('eclipse'        , 'n1_p1'         ) : 'srun test.x',
-        ('eclipse'        , 'n2'            ) : 'srun test.x',
-        ('eclipse'        , 'n2_t2'         ) : 'srun test.x',
-        ('eclipse'        , 'n2_t2_e'       ) : 'srun test.x',
-        ('eclipse'        , 'n2_t2_p2'      ) : 'srun test.x',
-        ('edison'         , 'n1'            ) : 'srun test.x',
-        ('edison'         , 'n1_p1'         ) : 'srun test.x',
-        ('edison'         , 'n2'            ) : 'srun test.x',
-        ('edison'         , 'n2_t2'         ) : 'srun test.x',
-        ('edison'         , 'n2_t2_e'       ) : 'srun test.x',
-        ('edison'         , 'n2_t2_p2'      ) : 'srun test.x',
+        ('eclipse'        , 'n1'            ) : 'mpiexec --bind-to none -n 36 --npernode 36 test.x',
+        ('eclipse'        , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('eclipse'        , 'n2'            ) : 'mpiexec --bind-to none -n 72 --npernode 36 test.x',
+        ('eclipse'        , 'n2_t2'         ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
+        ('eclipse'        , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
+        ('eclipse'        , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
         ('eos'            , 'n1'            ) : 'aprun -n 16 test.x',
         ('eos'            , 'n1_p1'         ) : 'aprun -n 1 test.x',
         ('eos'            , 'n2'            ) : 'aprun -n 32 test.x',
         ('eos'            , 'n2_t2'         ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
         ('eos'            , 'n2_t2_e'       ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
         ('eos'            , 'n2_t2_p2'      ) : 'aprun -ss -cc numa_node -d 2 -n 4 test.x',
+        ('ghost'          , 'n1'            ) : 'mpiexec --bind-to none -n 36 --npernode 36 test.x',
+        ('ghost'          , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('ghost'          , 'n2'            ) : 'mpiexec --bind-to none -n 72 --npernode 36 test.x',
+        ('ghost'          , 'n2_t2'         ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
+        ('ghost'          , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
+        ('ghost'          , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
         ('jaguar'         , 'n1'            ) : 'aprun -n 16 test.x',
         ('jaguar'         , 'n1_p1'         ) : 'aprun -n 1 test.x',
         ('jaguar'         , 'n2'            ) : 'aprun -n 32 test.x',
@@ -1135,6 +1141,12 @@ def test_job_run_command():
         ('lonestar'       , 'n2_t2'         ) : 'ibrun -n 12 -o 0 test.x',
         ('lonestar'       , 'n2_t2_e'       ) : 'ibrun -n 12 -o 0 test.x',
         ('lonestar'       , 'n2_t2_p2'      ) : 'ibrun -n 4 -o 0 test.x',
+        ('manzano'        , 'n1'            ) : 'mpiexec --bind-to none -n 48 --npernode 48 test.x',
+        ('manzano'        , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('manzano'        , 'n2'            ) : 'mpiexec --bind-to none -n 96 --npernode 48 test.x',
+        ('manzano'        , 'n2_t2'         ) : 'mpiexec --bind-to none -n 48 --npernode 24 test.x',
+        ('manzano'        , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 48 --npernode 24 test.x',
+        ('manzano'        , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
         ('matisse'        , 'n1'            ) : 'mpirun -np 16 test.x',
         ('matisse'        , 'n1_p1'         ) : 'mpirun -np 1 test.x',
         ('matisse'        , 'n2'            ) : 'mpirun -np 32 test.x',
@@ -1153,24 +1165,36 @@ def test_job_run_command():
         ('oic5'           , 'n2_t2'         ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n2_t2_e'       ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
+        ('perlmutter'     , 'n1'            ) : 'srun test.x',
+        ('perlmutter'     , 'n1_p1'         ) : 'srun test.x',
+        ('perlmutter'     , 'n2'            ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2'         ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2_e'       ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2_p2'      ) : 'srun test.x',
+        ('polaris'        , 'n1'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 32 --ppn 32 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n1_p1'         ) : 'mpiexec --cpu-bind depth --depth=1 -n 1 --ppn 1 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n2'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 64 --ppn 32 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n2_t2'         ) : 'mpiexec --cpu-bind depth --depth=2 -n 32 --ppn 16 --env OMP_NUM_THREADS=2 test.x',
+        ('polaris'        , 'n2_t2_e'       ) : 'mpiexec --cpu-bind depth --depth=2 -n 32 --ppn 16 --env OMP_NUM_THREADS=2 test.x',
+        ('polaris'        , 'n2_t2_p2'      ) : 'mpiexec --cpu-bind depth --depth=2 -n 4 --ppn 2 --env OMP_NUM_THREADS=2 test.x',
         ('rhea'           , 'n1'            ) : 'srun -N 1 -n 16 test.x',
         ('rhea'           , 'n1_p1'         ) : 'srun -N 1 -n 1 test.x',
         ('rhea'           , 'n2'            ) : 'srun -N 2 -n 32 test.x',
         ('rhea'           , 'n2_t2'         ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
         ('rhea'           , 'n2_t2_e'       ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
         ('rhea'           , 'n2_t2_p2'      ) : 'srun -N 2 -n 4 -c 2 --cpu-bind=cores test.x',
-        ('skybridge'      , 'n1'            ) : 'srun test.x',
-        ('skybridge'      , 'n1_p1'         ) : 'srun test.x',
-        ('skybridge'      , 'n2'            ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2'         ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2_e'       ) : 'srun test.x',
-        ('skybridge'      , 'n2_t2_p2'      ) : 'srun test.x',
-        ('solo'           , 'n1'            ) : 'srun test.x',
-        ('solo'           , 'n1_p1'         ) : 'srun test.x',
-        ('solo'           , 'n2'            ) : 'srun test.x',
-        ('solo'           , 'n2_t2'         ) : 'srun test.x',
-        ('solo'           , 'n2_t2_e'       ) : 'srun test.x',
-        ('solo'           , 'n2_t2_p2'      ) : 'srun test.x',
+        ('skybridge'      , 'n1'            ) : 'mpiexec --bind-to none -n 16 --npernode 16 test.x',
+        ('skybridge'      , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('skybridge'      , 'n2'            ) : 'mpiexec --bind-to none -n 32 --npernode 16 test.x',
+        ('skybridge'      , 'n2_t2'         ) : 'mpiexec --bind-to none -n 16 --npernode 8 test.x',
+        ('skybridge'      , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 16 --npernode 8 test.x',
+        ('skybridge'      , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
+        ('solo'           , 'n1'            ) : 'mpiexec --bind-to none -n 36 --npernode 36 test.x',
+        ('solo'           , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('solo'           , 'n2'            ) : 'mpiexec --bind-to none -n 72 --npernode 36 test.x',
+        ('solo'           , 'n2_t2'         ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
+        ('solo'           , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
+        ('solo'           , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
         ('stampede2'      , 'n1'            ) : 'ibrun -n 68 -o 0 test.x',
         ('stampede2'      , 'n1_p1'         ) : 'ibrun -n 1 -o 0 test.x',
         ('stampede2'      , 'n2'            ) : 'ibrun -n 136 -o 0 test.x',
@@ -1221,18 +1245,24 @@ def test_job_run_command():
         ('tomcat3'        , 'n2_t2'         ) : 'mpirun -np 64 test.x',
         ('tomcat3'        , 'n2_t2_e'       ) : 'mpirun -np 64 test.x',
         ('tomcat3'        , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('uno'            , 'n1'            ) : 'srun test.x',
-        ('uno'            , 'n1_p1'         ) : 'srun test.x',
-        ('uno'            , 'n2'            ) : 'srun test.x',
-        ('uno'            , 'n2_t2'         ) : 'srun test.x',
-        ('uno'            , 'n2_t2_e'       ) : 'srun test.x',
-        ('uno'            , 'n2_t2_p2'      ) : 'srun test.x',
+        ('uno'            , 'n1'            ) : 'mpiexec --bind-to none -n 16 --npernode 16 test.x',
+        ('uno'            , 'n1_p1'         ) : 'mpiexec --bind-to none -n 1 --npernode 1 test.x',
+        ('uno'            , 'n2'            ) : 'mpiexec --bind-to none -n 32 --npernode 16 test.x',
+        ('uno'            , 'n2_t2'         ) : 'mpiexec --bind-to none -n 16 --npernode 8 test.x',
+        ('uno'            , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 16 --npernode 8 test.x',
+        ('uno'            , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
         ('vesta'          , 'n1'            ) : 'runjob --envs OMP_NUM_THREADS=1 --np 16 -p 16 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n1_p1'         ) : 'runjob --envs OMP_NUM_THREADS=1 --np 1 -p 1 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2'            ) : 'runjob --envs OMP_NUM_THREADS=1 --np 32 -p 16 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2_t2'         ) : 'runjob --envs OMP_NUM_THREADS=2 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2_t2_e'       ) : 'runjob --envs OMP_NUM_THREADS=2 ENV_VAR=1 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
         ('vesta'          , 'n2_t2_p2'      ) : 'runjob --envs OMP_NUM_THREADS=2 --np 4 -p 2 --verbose=INFO $LOCARGS : test.x',
+        ('kagayaki'       , 'n1'            ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n1_p1'         ) : 'mpirun -machinefile $PBS_NODEFILE -np 1 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2'            ) : 'mpirun -machinefile $PBS_NODEFILE -np 256 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2'         ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2_e'       ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
+        ('kagayaki'       , 'n2_t2_p2'      ) : 'mpirun -machinefile $PBS_NODEFILE -np 4 -x OMP_NUM_THREADS test.x',
         })
 
     if testing.global_data['job_ref_table']:
@@ -1356,6 +1386,19 @@ def test_write_job():
     Machine.allow_warnings = False
 
     job_write_ref = dict(
+        amber = '''#!/bin/bash
+#SBATCH -p batch
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 224 --npernode 112 test.x''',
         amos = '''#!/bin/bash -x
 #SBATCH --export=ALL
 #SBATCH -J None
@@ -1413,15 +1456,14 @@ srun --distribution=block:block --hint=nomultithread -N 2 -n 256 test.x''',
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=36
-#SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
 
-export OMP_NUM_THREADS=1
+
 export ENV_VAR=1
-srun test.x''',
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 72 --npernode 36 test.x''',
         bluewaters_xe = '''#!/bin/bash
 #PBS -N jobname
 #PBS -l walltime=06:30:00
@@ -1501,15 +1543,14 @@ runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=16
-#SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
 
-export OMP_NUM_THREADS=1
+
 export ENV_VAR=1
-srun test.x''',
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 32 --npernode 16 test.x''',
         cooley = '''#!/bin/bash
 #COBALT -q default
 #COBALT -A ABC123
@@ -1543,32 +1584,14 @@ srun test.x''',
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=36
-#SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
 
-export OMP_NUM_THREADS=1
-export ENV_VAR=1
-srun test.x''',
-        edison = '''#!/bin/bash
-#SBATCH -p regular
-#SBATCH -J jobname
-#SBATCH -t 06:30:00
-#SBATCH -N 2
-#SBATCH --ntasks-per-node=24
-#SBATCH --cpus-per-task=1
-#SBATCH -o test.out
-#SBATCH -e test.err
-#SBATCH --export=ALL
 
-echo $SLURM_SUBMIT_DIR
-cd $SLURM_SUBMIT_DIR
-
-export OMP_NUM_THREADS=1
 export ENV_VAR=1
-srun test.x''',
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 72 --npernode 36 test.x''',
         eos = '''#!/bin/bash
 #PBS -A ABC123
 #PBS -q batch
@@ -1586,6 +1609,19 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 aprun -n 32 test.x''',
+        ghost = '''#!/bin/bash
+#SBATCH -p batch
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 72 --npernode 36 test.x''',
         jaguar = '''#!/bin/bash
 #PBS -A ABC123
 #PBS -q batch
@@ -1654,6 +1690,19 @@ aprun -n 24 test.x''',
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 ibrun -n 24 -o 0 test.x''',
+        manzano = '''#!/bin/bash
+#SBATCH -p batch
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 96 --npernode 48 test.x''',
         matisse = '''#!/bin/bash -x
 #SBATCH --export=ALL
 #SBATCH -J None
@@ -1696,6 +1745,41 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 mpirun -np 64 test.x''',
+        perlmutter = '''#!/bin/bash
+#SBATCH -C cpu
+#SBATCH -q regular
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH -c 2
+#SBATCH -J jobname
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
+
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        polaris = '''#!/bin/sh
+#PBS -l select=2:system=polaris
+#PBS -l place=scatter
+#PBS -l filesystems=home:eagle:grand
+#PBS -l walltime=06:30:00
+#PBS -A ABC123
+#PBS -q prod
+#PBS -N jobname
+#PBS -k doe
+#PBS -o test.out
+#PBS -e test.err
+
+cd ${PBS_O_WORKDIR}
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpiexec --cpu-bind depth --depth=1 -n 64 --ppn 32 --env OMP_NUM_THREADS=1 test.x''',
         rhea = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
@@ -1719,29 +1803,27 @@ srun -N 2 -n 32 test.x''',
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=16
-#SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
 
-export OMP_NUM_THREADS=1
+
 export ENV_VAR=1
-srun test.x''',
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 32 --npernode 16 test.x''',
         solo = '''#!/bin/bash
 #SBATCH -p batch
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=36
-#SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
 
-export OMP_NUM_THREADS=1
+
 export ENV_VAR=1
-srun test.x''',
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 72 --npernode 36 test.x''',
         stampede2 = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
@@ -1871,15 +1953,14 @@ mpirun -np 128 test.x >test.out 2>test.err''',
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=16
-#SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
 
-export OMP_NUM_THREADS=1
+
 export ENV_VAR=1
-srun test.x''',
+export OMP_NUM_THREADS=1
+mpiexec --bind-to none -n 32 --npernode 16 test.x''',
         vesta = '''#!/bin/bash
 #COBALT -q default
 #COBALT -A ABC123
@@ -1892,6 +1973,16 @@ echo "Cobalt location args: $LOCARGS" >&2
 
 
 runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
+        kagayaki = '''#!/bin/bash
+#PBS -N jobname
+#PBS -o test.out
+#PBS -e test.err
+#PBS -l select=2:ncpus=128:mpiprocs=128
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+mpirun -machinefile $PBS_NODEFILE -np 256 -x OMP_NUM_THREADS test.x''',
         )
 
     def process_job_file(jf):

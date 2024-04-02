@@ -26,6 +26,7 @@
 #include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
+#include "Utilities/ProjectData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -80,6 +81,8 @@ public:
 
   using Walker_t = MCWalkerConfiguration::Walker_t;
   using Buffer_t = Walker_t::Buffer_t;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -94,17 +97,13 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w,
+  QMCDriver(const ProjectData& project_data,
+            MCWalkerConfiguration& w,
             TrialWaveFunction& psi,
             QMCHamiltonian& h,
             Communicate* comm,
             const std::string& QMC_driver_type,
             bool enable_profiling = false);
-
-  ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver&) = delete;
-  ///Copy operator (disabled).
-  QMCDriver& operator=(const QMCDriver&) = delete;
 
   ~QMCDriver() override;
 
@@ -186,20 +185,22 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///return the random generators
-  inline RefVector<RandomGenerator> getRngRefs() const
+  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
   {
-    RefVector<RandomGenerator> RngRefs;
+    RefVector<RandomBase<FullPrecRealType>> RngRefs;
     for (int i = 0; i < Rng.size(); ++i)
       RngRefs.push_back(*Rng[i]);
     return RngRefs;
   }
 
   ///return the i-th random generator
-  inline RandomGenerator& getRng(int i) override { return (*Rng[i]); }
+  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
 
   unsigned long getDriverMode() override { return qmc_driver_mode.to_ulong(); }
 
 protected:
+  /// @brief top-level project data information
+  const ProjectData& project_data_;
   ///branch engine
   std::unique_ptr<BranchEngineType> branchEngine;
   ///drift modifer
@@ -230,7 +231,6 @@ protected:
   *
   * The unit is in steps.
   */
-  int storeConfigs;
 
   ///Period to recalculate the walker properties from scratch.
   int Period4CheckProperties;
@@ -325,7 +325,7 @@ protected:
   std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  UPtrVector<RandomGenerator> Rng;
+  UPtrVector<RandomBase<FullPrecRealType>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
@@ -365,7 +365,7 @@ protected:
   const std::string& get_root_name() const override { return RootName; }
 
 private:
-  NewTimer* checkpointTimer;
+  NewTimer& checkpoint_timer_;
   ///time the driver lifetime
   ScopedTimer driver_scope_timer_;
   ///profile the driver lifetime

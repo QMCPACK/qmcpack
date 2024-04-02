@@ -51,20 +51,18 @@ public:
   template<typename DT>
   using UnpinnedOffloadMatrix = Matrix<DT, OffloadAllocator<DT>>;
 
-  using IndexVector = SPOSet::IndexVector;
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradVector  = SPOSet::GradVector;
-  using GradMatrix  = SPOSet::GradMatrix;
-  using HessMatrix  = SPOSet::HessMatrix;
-  using HessType    = SPOSet::HessType;
 
   struct MultiDiracDetMultiWalkerResource : public Resource
   {
     MultiDiracDetMultiWalkerResource() : Resource("MultiDiracDeterminant") {}
     MultiDiracDetMultiWalkerResource(const MultiDiracDetMultiWalkerResource&) : MultiDiracDetMultiWalkerResource() {}
 
-    Resource* makeClone() const override { return new MultiDiracDetMultiWalkerResource(*this); }
+    std::unique_ptr<Resource> makeClone() const override
+    {
+      return std::make_unique<MultiDiracDetMultiWalkerResource>(*this);
+    }
 
     void resizeConstants(size_t nw)
     {
@@ -187,7 +185,7 @@ public:
                              const opt_variables_type& optvars,
                              Vector<ValueType>& dlogpsi,
                              const MultiDiracDeterminant& pseudo_dn,
-                             const PsiValueType& psiCurrent,
+                             const PsiValue& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
                              const std::vector<size_t>& C2node_dn);
@@ -195,7 +193,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -224,10 +222,10 @@ public:
    * These functions should not be called.
    ***************************************************************************/
 
-  PsiValueType ratio(ParticleSet& P, int iat) override
+  PsiValue ratio(ParticleSet& P, int iat) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return PsiValueType();
+    return PsiValue();
   }
 
   GradType evalGrad(ParticleSet& P, int iat) override
@@ -236,15 +234,15 @@ public:
     return GradType();
   }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return PsiValueType();
+    return PsiValue();
   }
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
@@ -326,8 +324,8 @@ public:
   const Matrix<ValueType>& getSpinGrads() const { return spingrads; }
   const Matrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
 
-  PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
-  LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
+  PsiValue getRefDetRatio() const { return static_cast<PsiValue>(curRatio); }
+  LogValue getLogValueRefDet() const { return log_value_ref_det_; }
 
 private:
   void mw_InverseUpdateByColumn(MultiDiracDetMultiWalkerResource& mw_res,
@@ -342,7 +340,6 @@ private:
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
-   * @param det0_list list of reference det value
    * @param table_matrix_list list of table_matrix
    *
    * this is a general implementation. Support abitrary excitation level
@@ -353,15 +350,19 @@ private:
                                SmallMatrixDetCalculator<ValueType>& det_calculator,
                                const OffloadVector<int>& data,
                                const OffloadVector<RealType>& sign,
-                               const OffloadVector<ValueType>& det0_list,
                                const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
                                const RefVector<OffloadVector<ValueType>>& ratios_list) const;
+
+  /** update ratios of the reference deteriminant
+   * @param det0_list list of reference det value
+   */
+  void mw_updateRatios_det0(const OffloadVector<ValueType>& det0_list,
+                            const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
 
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
-   * @param det0_list list of reference det value
    * @param table_matrix_list list of table_matrix
    *
    * this is intended to be customized based on EXT_LEVEL
@@ -371,7 +372,6 @@ private:
                        const size_t data_offset,
                        const OffloadVector<int>& data,
                        const OffloadVector<RealType>& sign,
-                       const OffloadVector<ValueType>& det0_list,
                        const OffloadVector<ValueType*>& table_matrix_deviceptr_list,
                        const size_t num_table_matrix_cols,
                        const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
@@ -573,7 +573,7 @@ private:
   /// new value of the reference determinant over the old value upon a proposed move
   ValueType curRatio;
   /// log value of the reference determinant
-  LogValueType log_value_ref_det_;
+  LogValue log_value_ref_det_;
   /// store determinant grads (old and new)
   Matrix<GradType> grads, new_grads;
   /// store determinant lapls (old and new)
@@ -602,7 +602,7 @@ private:
   /// for matrices with leading dimensions <= MaxSmallDet, compute determinant with direct expansion.
   static constexpr size_t MaxSmallDet = 5;
 
-  std::unique_ptr<MultiDiracDetMultiWalkerResource> mw_res_;
+  ResourceHandle<MultiDiracDetMultiWalkerResource> mw_res_handle_;
 };
 
 

@@ -4,6 +4,7 @@
  * @brief Top level class for AFQMC. Parses input and performs setup of classes.
  */
 
+#include <array>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -31,30 +32,31 @@
 
 namespace qmcplusplus
 {
-TimerList_t AFQMCTimers;
-TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames = {{block_timer, "Block"},
-                                                  {pseudo_energy_timer, "PseudoEnergy"},
-                                                  {energy_timer, "Energy"},
-                                                  {vHS_timer, "vHS"},
-                                                  {assemble_X_timer, "X"},
-                                                  {vbias_timer, "vbias"},
-                                                  {G_for_vbias_timer, "G_for_vbias"},
-                                                  {propagate_timer, "Propagate"},
-                                                  {back_propagate_timer, "BackPropagate"},
-                                                  {E_comm_overhead_timer, "Energy_comm_overhead"},
-                                                  {vHS_comm_overhead_timer, "vHS_comm_overhead"},
-                                                  {popcont_timer, "population_control"},
-                                                  {ortho_timer, "walker_orthogonalization"},
-                                                  {setup_timer, "setup"},
-                                                  {extra_timer, "extra"},
-                                                  {T1_t, "T1_t"},
-                                                  {T2_t, "T2_t"},
-                                                  {T3_t, "T3_t"},
-                                                  {T4_t, "T4_t"},
-                                                  {T5_t, "T5_t"},
-                                                  {T6_t, "T6_t"},
-                                                  {T7_t, "T7_t"},
-                                                  {T8_t, "T8_t"}};
+const TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames = {{block_timer, "Block"},
+                                                        {pseudo_energy_timer, "PseudoEnergy"},
+                                                        {energy_timer, "Energy"},
+                                                        {vHS_timer, "vHS"},
+                                                        {assemble_X_timer, "X"},
+                                                        {vbias_timer, "vbias"},
+                                                        {G_for_vbias_timer, "G_for_vbias"},
+                                                        {propagate_timer, "Propagate"},
+                                                        {back_propagate_timer, "BackPropagate"},
+                                                        {E_comm_overhead_timer, "Energy_comm_overhead"},
+                                                        {vHS_comm_overhead_timer, "vHS_comm_overhead"},
+                                                        {popcont_timer, "population_control"},
+                                                        {ortho_timer, "walker_orthogonalization"},
+                                                        {setup_timer, "setup"},
+                                                        {extra_timer, "extra"},
+                                                        {T1_t, "T1_t"},
+                                                        {T2_t, "T2_t"},
+                                                        {T3_t, "T3_t"},
+                                                        {T4_t, "T4_t"},
+                                                        {T5_t, "T5_t"},
+                                                        {T6_t, "T6_t"},
+                                                        {T7_t, "T7_t"},
+                                                        {T8_t, "T8_t"}};
+
+TimerList_t AFQMCTimers(getGlobalTimerManager(), AFQMCTimerNames, timer_level_coarse);
 
 namespace afqmc
 {
@@ -86,8 +88,7 @@ AFQMCFactory::AFQMCFactory(boost::mpi3::communicator& comm_)
   // Global host buffers manager
   HostBufferManager host_buffer(10uL * 1024uL * 1024uL);  // setup monostate
   DeviceBufferManager dev_buffer(10uL * 1024uL * 1024uL); // setup monostate
-  timer_manager.set_timer_threshold(timer_level_coarse);
-  setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
+  getGlobalTimerManager().set_timer_threshold(timer_level_coarse);
 }
 
 AFQMCFactory::~AFQMCFactory() { release_memory_managers(); }
@@ -198,28 +199,33 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
 
 bool AFQMCFactory::execute(xmlNodePtr cur)
 {
-  if (cur == NULL)
+  if (cur == nullptr)
     return false;
 
   int groupid = 0; //myComm->getGroupID();
-  char fileroot[256];
+  std::array<char, 256> fileroot;
 
   bool no_gtag = (qmc_common.mpi_groups == 1);
 
   xmlNodePtr curRoot = cur;
   cur                = curRoot->children;
-  while (cur != NULL)
+  while (cur != nullptr)
   {
     std::string cname((const char*)(cur->name));
     if (cname == "execute")
     {
+      int length{0};
       if (no_gtag) //qnproc_g == nproc)
-        sprintf(fileroot, "%s.s%03d", project_title.c_str(), m_series);
+        length = std::snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", project_title.c_str(), m_series);
       else
-        sprintf(fileroot, "%s.g%03d.s%03d", project_title.c_str(), groupid, m_series);
+        length =
+            std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", project_title.c_str(), groupid, m_series);
+
+      if (length < 0)
+        throw std::runtime_error("Error generating fileroot");
 
       // execute driver
-      if (!DriverFac.executeDriver(std::string(fileroot), m_series, cur))
+      if (!DriverFac.executeDriver(std::string(fileroot.data(), length), m_series, cur))
       {
         app_error() << "Error in DriverFactory::executeDriver::run()" << std::endl;
         return false;

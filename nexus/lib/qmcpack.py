@@ -39,7 +39,7 @@ from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,g
 from qmcpack_input import generate_opt,generate_opts
 from qmcpack_input import check_excitation_type
 from qmcpack_analyzer import QmcpackAnalyzer
-from qmcpack_converters import Pw2qmcpack,Convert4qmc,PyscfToAfqmc
+from qmcpack_converters import Pw2qmcpack,Convert4qmc,Convertpw4qmc,PyscfToAfqmc
 from debug import ci,ls,gs
 from developer import unavailable
 from nexus_base import nexus_core
@@ -174,7 +174,7 @@ class Qmcpack(Simulation):
         input = self.input
         system = self.system
         if result_name=='orbitals':
-            if isinstance(sim,Pw2qmcpack):
+            if isinstance(sim,Pw2qmcpack) or isinstance(sim,Convertpw4qmc):
 
                 h5file = result.h5file
 
@@ -283,6 +283,21 @@ class Qmcpack(Simulation):
                 opt = QmcpackInput(opt_file)
                 wavefunction = input.get('wavefunction')
                 optwf = opt.qmcsystem.wavefunction
+                # handle spinor case
+                spinor = input.get('spinor')
+                if spinor is not None and spinor:
+                    # remove u-d term from optmized jastrow
+                    # also set correct cusp condition
+                    J2 = optwf.get('J2')
+                    if J2 is not None:
+                        corr = J2.get('correlation')
+                        if 'ud' in corr:
+                            del corr.ud
+                        if 'uu' in corr:
+                            corr.uu.cusp = -0.5
+                        #end if
+                    #end if
+                #end if
                 def process_jastrow(wf):                
                     if 'jastrow' in wf:
                         js = [wf.jastrow]
@@ -307,7 +322,7 @@ class Qmcpack(Simulation):
                     #end for
                     return jd
                 #end def process_jastrow
-                if wavefunction==None:
+                if wavefunction is None:
                     qs = input.get('qmcsystem')
                     qs.wavefunction = optwf.copy()
                 else:
@@ -880,6 +895,11 @@ def generate_qmcpack(**kwargs):
     #end if
 
     if 'input' not in sim_args:
+        run_path = None
+        if 'path' in sim_args:
+            run_path = os.path.join(nexus_core.local_directory,nexus_core.runs,sim_args.path)
+        #end if
+        inp_args.run_path = run_path
         sim_args.input = generate_qmcpack_input(**inp_args)
     #end if
     qmcpack = Qmcpack(**sim_args)

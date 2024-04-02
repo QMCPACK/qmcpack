@@ -43,10 +43,11 @@ class WaveFunctionTester : public QMCDriver
 {
 public:
   /// type definition
-  using LogValueType = WaveFunctionComponent::LogValueType;
+  using LogValue = WaveFunctionComponent::LogValue;
 
   /// Constructor.
-  WaveFunctionTester(MCWalkerConfiguration& w,
+  WaveFunctionTester(const ProjectData& project_data,
+                     MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
@@ -110,6 +111,7 @@ private:
   //vector<RealType> Mv3(std::vector<std::vector<RealType> >& M, std::vector<RealType>& v);
 
   std::ofstream fout;
+  const size_t ndim;
 };
 } // namespace qmcplusplus
 #endif

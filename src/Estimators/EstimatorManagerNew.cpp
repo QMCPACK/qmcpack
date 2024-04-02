@@ -9,15 +9,19 @@
 // File refactored from: EstimatorManagerBase.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <array>
 #include <functional>
 #include <numeric>
 #include <algorithm>
 #include <variant>
+#include <cstdint>
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
+#include "MagnetizationDensity.h"
+#include "PerParticleHamiltonianLogger.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -28,7 +32,6 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
@@ -40,7 +43,7 @@
 namespace qmcplusplus
 {
 
-using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+using SPOMap = SPOSet::SPOMap;
 
 EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* c)
     : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
@@ -55,7 +58,7 @@ bool EstimatorManagerNew::areThereListeners() const
   return std::any_of(operator_ests_.begin(), operator_ests_.end(),
                      [](auto& oper_est) { return oper_est->isListenerRequired(); });
 }
-  
+
 template<class EstInputType, typename... Args>
 bool EstimatorManagerNew::createEstimator(EstimatorInput& input, Args&&... args)
 {
@@ -99,7 +102,9 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
                                                      pset.getLattice()) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
-                                                       twf.getSPOMap(), pset)))
+                                                       twf.getSPOMap(), pset) ||
+          createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
+          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank())))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 
@@ -202,17 +207,19 @@ void EstimatorManagerNew::startDriverRun()
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (!DebugArchive)
   {
-    char fname[128];
-    sprintf(fname, "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank());
-    DebugArchive = std::make_unique<std::ofstream>(fname);
+    std::array<char, 128> fname;
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_->getName().c_str(),
+                      my_comm_->rank()) < 0)
+      throw std::runtime_error("Error generating filename");
+    DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
   }
 #endif
   if (my_comm_->rank() == 0)
   {
-    std::string fname(my_comm_->getName());
-    fname.append(".scalar.dat");
-    Archive = std::make_unique<std::ofstream>(fname.c_str());
+    std::filesystem::path fname(my_comm_->getName());
+    fname.concat(".scalar.dat");
+    Archive = std::make_unique<std::ofstream>(fname);
     addHeader(*Archive);
     if (h5desc.size())
     {
@@ -221,11 +228,11 @@ void EstimatorManagerNew::startDriverRun()
     fname  = my_comm_->getName() + ".stat.h5";
     h_file = std::make_unique<hdf_archive>();
     h_file->create(fname);
-    main_estimator_->registerObservables(h5desc, h_file->getFileID());
+    main_estimator_->registerObservables(h5desc, *h_file);
     for (int i = 0; i < scalar_ests_.size(); i++)
-      scalar_ests_[i]->registerObservables(h5desc, h_file->getFileID());
+      scalar_ests_[i]->registerObservables(h5desc, *h_file);
     for (auto& uope : operator_ests_)
-      uope->registerOperatorEstimator(h_file->getFileID());
+      uope->registerOperatorEstimator(*h_file);
   }
 }
 
@@ -296,10 +303,10 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   accepts_and_rejects[my_comm_->rank()]                    = accepts;
   accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
   my_comm_->allreduce(accepts_and_rejects);
-  unsigned long total_block_accept =
-      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), 0);
-  unsigned long total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
-                                                     accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
+  int64_t total_block_accept =
+      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), int64_t(0));
+  int64_t total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
+                                               accepts_and_rejects.begin() + my_comm_->size() * 2, int64_t(0));
 
   //Transfer FullPrecisionRead data
   const size_t n1 = AverageCache.size();
@@ -346,8 +353,8 @@ void EstimatorManagerNew::writeScalarH5()
   {
     for (int o = 0; o < h5desc.size(); ++o)
       // cheating here, remove SquaredAverageCache from API
-      h5desc[o].write(AverageCache.data(), AverageCache.data());
-    H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
+      h5desc[o].write(AverageCache.data(), *h_file);
+    h_file->flush();
   }
 
   if (Archive)
@@ -412,8 +419,8 @@ void EstimatorManagerNew::writeOperatorEstimators()
     if (h_file)
     {
       for (auto& op_est : operator_ests_)
-        op_est->write();
-      H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
+        op_est->write(*h_file);
+      h_file->flush();
     }
   }
 }
@@ -504,6 +511,12 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
         operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
                                                                              pset.getSpeciesSet(), twf.getSPOMap(),
                                                                              pset_target));
+      }
+      else if (est_type == "MagnetizationDensity")
+      {
+        MagnetizationDensityInput magdensinput(cur);
+        ParticleSet pset_target(pset);
+        operator_ests_.emplace_back(std::make_unique<MagnetizationDensity>(std::move(magdensinput), pset.getLattice()));
       }
       else
       {

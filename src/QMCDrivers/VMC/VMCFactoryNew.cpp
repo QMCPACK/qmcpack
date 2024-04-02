@@ -27,19 +27,23 @@ std::unique_ptr<QMCDriverInterface> VMCFactoryNew::create(const ProjectData& pro
                                                           SampleStack& samples,
                                                           Communicate* comm)
 {
-#if defined(QMC_CUDA)
-  comm->barrier_and_abort("VMC batched driver is not supported by legacy CUDA builds.");
-#endif
-
   app_summary() << "\n========================================"
                    "\n  Reading VMC driver XML input section"
                    "\n========================================"
                 << std::endl;
 
   QMCDriverInput qmcdriver_input;
-  qmcdriver_input.readXML(input_node_);
   VMCDriverInput vmcdriver_input;
-  vmcdriver_input.readXML(input_node_);
+  try
+  {
+    qmcdriver_input.readXML(input_node_);
+    vmcdriver_input.readXML(input_node_);
+  }
+  catch (const std::exception& e)
+  {
+    throw UniformCommunicateError(e.what());
+  }
+
   std::unique_ptr<QMCDriverInterface> qmc;
 
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)

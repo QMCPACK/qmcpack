@@ -74,7 +74,6 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
 
   std::unique_ptr<mGridType> createGrid(xmlNodePtr cur, bool useLinear = false);
   RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, mGridType* agrid);
-  RadialPotentialType* createVrWithData(xmlNodePtr cur, mGridType* agrid, int rCorrection = 0);
 
   void doBreakUp(const std::vector<int>& angList,
                  const Matrix<mRealType>& vnn,

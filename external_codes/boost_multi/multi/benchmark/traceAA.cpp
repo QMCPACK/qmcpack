@@ -1,12 +1,13 @@
 #if COMPILATION_INSTRUCTIONS
-c++ -std=c++14 -O2 -Ofast -DNDEBUG -Wall -Wextra -Wpedantic $0 -o $0x.x && $0x.x 16384 128 128 $@ && rm -f $0x.x; exit
+c++ -std=c++17 -O2 -Ofast -DNDEBUG -Wall -Wextra -Wpedantic $0 -o $0x.x && $0x.x 16384 128 128 $@ && rm -f $0x.x; exit
 #endif
 
 #include<iostream>
 #include<cstdlib>
 #include<sys/time.h>
 #include<numeric>
-#include "/home/correaa/prj/alf/boost/multi/array.hpp"
+
+#include "../include/multi/array.hpp"
 
 using std::cout;
 using std::cerr;
@@ -169,10 +170,10 @@ int main(int, char*[]){
 //		cerr<<" test N ni nj\n";
 //		exit(1);
 //	}
-	int const N = 32768;// atoi(argv[1]);
+	std::ptrdiff_t const N = 32768;  // atoi(argv[1]);
 	cout << "N = " << N << '\n';
-	int const ni = 64; // atoi(argv[2]);
-	int const nj = 64; //atoi(argv[3]);
+	int const ni = 64;  // atoi(argv[2]);
+	int const nj = 64;  //atoi(argv[3]);
 	{
 		cout << "Miguel traceAA\n";
 		double* A = new double[N*N];
@@ -204,10 +205,10 @@ int main(int, char*[]){
 	{
 		cout << "Multi manual blocking traceAA\n";
 		boost::multi::array<double, 2> A({N, N});
-		std::iota(A.data(), A.data() + N*N, 1.11);
+		std::iota(A.elements().begin(), A.elements().end(), 1.11);
 		double ss = trace_AA(A, ni, nj);
 		std::cout << ss <<'\n';
-		std::iota(A.data(), A.data() + N*N, 1.23);
+		std::iota(A.elements().begin(), A.elements().end(), 1.23);
 		double t1 = getTime();
 		double s = trace_AA(A, ni, nj);
 		t1 = getTime()-t1;
@@ -217,10 +218,10 @@ int main(int, char*[]){
 	{
 		cout << "Multi subarray blocking traceAA\n";
 		boost::multi::array<double, 2> A({N, N});
-		std::iota(A.data(), A.data() + N*N, 1.11);
+		std::iota(A.elements().begin(), A.elements().end(), 1.11);
 		double ss = trace_AA2(A, ni, nj);
 		std::cout << ss <<'\n';
-		std::iota(A.data(), A.data() + N*N, 1.23);
+		std::iota(A.elements().begin(), A.elements().end(), 1.23);
 		double t1 = getTime();
 		double s = trace_AA2(A, ni, nj);
 		t1 = getTime()-t1;
@@ -230,15 +231,17 @@ int main(int, char*[]){
 	{
 		cout << "Multi RECURSIVE subarray blocking traceAA\n";
 		boost::multi::array<double, 2> A({N, N});
-		std::iota(A.data(), A.data() + N*N, 1.11);
+		std::iota(A.elements().begin(), A.elements().end(), 1.11);
 		double ss = trace_AA4(A, A.rotated(), A.size()/4, A.size()/4);
 		std::cout << ss <<'\n';
-		std::iota(A.data(), A.data() + N*N, 1.23);
+
+		std::iota(A.elements().begin(), A.elements().end(), 1.23);
 		double t1 = getTime();
 		double s = trace_AA4(A, A.rotated(), A.size()/4, A.size()/4);
 		t1 = getTime()-t1;
 		cout<<" S: " <<s <<endl;
 		cout<<" Time: "<< t1 <<endl;
 	}
+
 	return 0;
 }

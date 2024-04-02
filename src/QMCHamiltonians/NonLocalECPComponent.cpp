@@ -22,7 +22,18 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr) {}
+NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true) {}
+
+// unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
+// This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
+NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset)
+    : NonLocalECPComponent(nl_ecpc)
+{
+  for (int i = 0; i < nl_ecpc.nlpp_m.size(); ++i)
+    nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
+  if (nl_ecpc.VP)
+    VP = new VirtualParticleSet(pset, nknot, nl_ecpc.VP->getNumDistTables());
+}
 
 NonLocalECPComponent::~NonLocalECPComponent()
 {
@@ -32,14 +43,9 @@ NonLocalECPComponent::~NonLocalECPComponent()
     delete VP;
 }
 
-NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet& qp)
+void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid)
 {
-  NonLocalECPComponent* myclone = new NonLocalECPComponent(*this);
-  for (int i = 0; i < nlpp_m.size(); ++i)
-    myclone->nlpp_m[i] = nlpp_m[i]->makeClone();
-  if (VP)
-    myclone->VP = new VirtualParticleSet(qp, nknot);
-  return myclone;
+  do_randomize_grid_ = do_randomize_grid;
 }
 
 void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
@@ -134,7 +140,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   if (VP)
   {
     // Compute ratios with VP
-    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
+    VP->makeMoves(W, iel, deltaV, true, iat);
     if (use_DLA)
       psi.evaluateRatios(*VP, psiratio, TrialWaveFunction::ComputeType::FERMIONIC);
     else
@@ -231,7 +237,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
 
     ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
 
-    VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
+    VirtualParticleSet::mw_makeMoves(vp_list, p_list, deltaV_list, joblist, true);
 
     if (use_DLA)
       TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
@@ -242,7 +248,6 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
   else
   {
     // Compute ratios without VP. This is working but very slow code path.
-#pragma omp parallel for
     for (size_t i = 0; i < p_list.size(); i++)
     {
       NonLocalECPComponent& component(ecp_component_list[i]);
@@ -310,7 +315,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
+    VP->makeMoves(W, iel, deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else
@@ -460,7 +465,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
+    VP->makeMoves(W, iel, deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else
@@ -509,7 +514,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   for (size_t jat = 0; jat < ions.getTotalNum(); jat++)
   {
     convertToReal(psi.evalGradSource(W, ions, jat), pulay_ref[jat]);
-    gradpotterm_   = 0;
+    gradpotterm_ = 0;
     for (size_t j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
@@ -766,7 +771,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
   for (int j = 0; j < nknot; j++)
   {
-    ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
     W.makeMove(iel, deltaV[j], false);
     iongrad_phi = 0.0;
     spo.evaluateGradSourceRow(W, iel, ions, iat_src, iongrad_phi);
@@ -784,7 +788,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     //data structures allows us to not modify the rather complicated expressions we have already derived.
     if (iat == iat_src)
     {
-      ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         //Treating exp(J(q))/exp(J(r))phi_j(q) as the fundamental block.
@@ -804,8 +807,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
   for (int j = 0; j < nknot; j++)
   {
-    ScopedTimer prefactortimer(*timer_manager.createTimer("NLPP::dB::prefactors"));
-
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
 
@@ -822,7 +823,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
     for (int l = 0; l < lmax; l++)
     {
-      ScopedTimer lgpolytimer(*timer_manager.createTimer("NLPP::dB::lgpoly"));
       //Legendre polynomial recursion formula.
       lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
       lpol[l + 1] *= Lfactor2[l];
@@ -837,7 +837,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
     for (int l = 0; l < nchannel; l++)
     {
-      ScopedTimer finalltimer(*timer_manager.createTimer("NLPP::dB::final_l_timer"));
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
 
@@ -858,7 +857,9 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         //this is for diagonal case.
-        udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb], rrotsgrid_m[j]);
+        //The GradType is necessary here, since rrotsgrid_m is real.  This dot() will only return the real part in this case.  
+        //Does correct thing if both entries are complex.
+        udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb], GradType(rrotsgrid_m[j]));
         wfgradmat[j][iorb]      = gradphimat[j][iorb] - dr * (udotgradpsimat[j][iorb] * rinv);
         gpot[iorb] += dvdr_prefactor[j] * phimat[j][iorb];
         glpoly[iorb] += dlpoly_prefactor[j] * phimat[j][iorb];
@@ -871,31 +872,27 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 }
 
 ///Randomly rotate sgrid_m
-void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
+void NonLocalECPComponent::rotateQuadratureGrid(const TensorType& rmat)
 {
-  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
-  RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
-      cps(std::cos(psi));
-  TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
-                  -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
   for (int i = 0; i < sgridxyz_m.size(); i++)
-    rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
+    if (do_randomize_grid_)
+      rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
+    else
+      rrotsgrid_m[i] = sgridxyz_m[i];
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG)
+void NonLocalECPComponent::rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat)
 {
-  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
-  RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
-      cps(std::cos(psi));
-  TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
-                  -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
   SpherGridType::iterator it(sgridxyz_m.begin());
   SpherGridType::iterator it_end(sgridxyz_m.end());
   SpherGridType::iterator jt(rrotsgrid_m.begin());
   while (it != it_end)
   {
-    *jt = dot(rmat, *it);
+    if (do_randomize_grid_)
+      *jt = dot(rmat, *it);
+    else
+      *jt = *it;
     ++it;
     ++jt;
   }
@@ -920,8 +917,8 @@ void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy
 }
 
 /// \relates NonLocalEcpComponent
-template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator& myRNG);
-template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator& myRNG);
+template void NonLocalECPComponent::rotateQuadratureGrid(std::vector<float>& sphere, const TensorType& rmat);
+template void NonLocalECPComponent::rotateQuadratureGrid(std::vector<double>& sphere, const TensorType& rmat);
 
 
 } // namespace qmcplusplus

@@ -14,6 +14,7 @@
 #include "FillData.h"
 // Input data and gold data for fillFromText test
 #include "diamond_fill_data.h"
+#include "Utilities/RuntimeOptions.h"
 
 
 namespace qmcplusplus
@@ -39,6 +40,11 @@ TEST_CASE("compute_batch_parameters", "[drivers]")
   compute_batch_parameters(sample_size, batch_size, num_batches, final_batch_size);
   CHECK(num_batches == 3);
   CHECK(final_batch_size == 3);
+
+  batch_size = 0;
+  compute_batch_parameters(sample_size, batch_size, num_batches, final_batch_size);
+  CHECK(num_batches == 0);
+  CHECK(final_batch_size == 0);
 }
 
 namespace testing
@@ -52,7 +58,8 @@ public:
   const SimulationCell simulation_cell;
   MCWalkerConfiguration w;
   QMCHamiltonian h;
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options_;
+  TrialWaveFunction psi = TrialWaveFunction(runtime_options_);
   QMCCostFunctionBatched costFn;
 
   LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate* comm)
@@ -61,7 +68,7 @@ public:
 
   std::vector<QMCCostFunctionBase::Return_rt>& getSumValue() { return costFn.SumValue; }
   Matrix<QMCCostFunctionBase::Return_rt>& getRecordsOnNode() { return costFn.RecordsOnNode_; }
-  Matrix<QMCCostFunctionBase::Return_rt>& getDerivRecords() { return costFn.DerivRecords_; }
+  Matrix<QMCCostFunctionBase::Return_t>& getDerivRecords() { return costFn.DerivRecords_; }
   Matrix<QMCCostFunctionBase::Return_rt>& getHDerivRecords() { return costFn.HDerivRecords_; }
 
   void set_samples_and_param(int nsamples, int nparam)

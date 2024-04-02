@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 
 #include <stdio.h>
@@ -39,7 +40,7 @@ TEST_CASE("Pade functor", "[wavefunction]")
 
   double r = 1.2;
   double u = pf.evaluate(r);
-  REQUIRE(u == Approx(2.232142857142857));
+  CHECK(u == Approx(2.232142857142857));
 }
 
 TEST_CASE("Pade2 functor", "[wavefunction]")
@@ -55,7 +56,7 @@ TEST_CASE("Pade2 functor", "[wavefunction]")
 
   double r = 1.2;
   double u = pf2.evaluate(r);
-  REQUIRE(u == Approx(0.11657142857142856));
+  CHECK(u == Approx(0.11657142857142856));
 }
 
 
@@ -70,19 +71,11 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   ions_.setName("ion");
   ions_.create({1});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-
+  ions_.R[0] = {0.0, 0.0, 0.0};
   elec_.setName("elec");
   elec_.create({2, 0});
-  elec_.R[0][0] = -0.28;
-  elec_.R[0][1] = 0.0225;
-  elec_.R[0][2] = -2.709;
-  elec_.R[1][0] = -1.08389;
-  elec_.R[1][1] = 1.9679;
-  elec_.R[1][2] = -0.0128914;
-
+  elec_.R[0]                   = {-0.28, 0.0225, -2.709};
+  elec_.R[1]                   = {-1.08389, 1.9679, -0.0128914};
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -93,14 +86,14 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   tspecies(massIdx, upIdx)     = 1;
   tspecies(massIdx, downIdx)   = 1;
 
-  const char* particles = "<tmp> \
-<jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
-  <correlation speciesA=\"u\" speciesB=\"u\"> \
-        <var id=\"juu_b\" name=\"B\">0.1</var> \
-  </correlation> \
-</jastrow> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<jastrow name="Jee" type="Two-Body" function="pade">
+  <correlation speciesA="u" speciesB="u">
+        <var id="juu_b" name="B">0.1</var>
+  </correlation>
+</jastrow>
+</tmp>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -118,7 +111,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   elec_.update();
 
   double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(-1.862821769493147));
+  CHECK(logpsi_real == Approx(-1.862821769493147));
 }
 
 TEST_CASE("Pade2 Jastrow", "[wavefunction]")
@@ -164,16 +157,16 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"pade2\" print=\"yes\" source=\"ion0\"> \
-    <correlation elementType=\"H\"> \
-        <var id=\"J1H_A\" name=\"A\">0.8</var> \
-        <var id=\"J1H_B\" name=\"B\">5.0</var> \
-        <var id=\"J1H_C\" name=\"C\">-0.1</var> \
-    </correlation> \
-  </jastrow> \
-</wavefunction> \
-";
+  const char* jasxml = R"(<wavefunction name="psi0" target="e">
+  <jastrow name="J1" type="One-Body" function="pade2" print="yes" source="ion0">
+    <correlation elementType="H">
+        <var id="J1H_A" name="A">0.8</var>
+        <var id="J1H_B" name="B">5.0</var>
+        <var id="J1H_C" name="C">-0.1</var>
+    </correlation>
+  </jastrow>
+</wavefunction>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);
@@ -183,7 +176,8 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   // update all distance tables
   elec_.update();
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(jas1);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);

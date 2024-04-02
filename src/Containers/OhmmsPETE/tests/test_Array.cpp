@@ -41,9 +41,9 @@ TEST_CASE("array", "[OhmmsPETE]")
   for (auto& element : B)
     element *= 3.1;
 
-  REQUIRE(B(0) == Approx(3.1));
-  REQUIRE(B(1) == Approx(3.1));
-  REQUIRE(B(2) == Approx(3.1));
+  CHECK(B(0) == Approx(3.1));
+  CHECK(B(1) == Approx(3.1));
+  CHECK(B(2) == Approx(3.1));
   REQUIRE(B == B);
   REQUIRE(!(B == A));
   REQUIRE(A != B);

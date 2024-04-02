@@ -40,7 +40,7 @@ public:
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
 
-
+  TWFFastDerivWrapper() = default;
   /** @brief Add a particle group.
    *
    *  Here, a "group" corresponds to a subset of particles which are antisymmetric with 
@@ -55,10 +55,7 @@ public:
    *  @return void.
    */
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
-  inline void addJastrow(WaveFunctionComponent* j)
-  {
-    jastrow_list_.push_back(j);
-  };
+  inline void addJastrow(WaveFunctionComponent* j) { jastrow_list_.push_back(j); };
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *

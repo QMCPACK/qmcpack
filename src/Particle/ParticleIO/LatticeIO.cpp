@@ -116,6 +116,10 @@ bool LatticeParser::put(xmlNodePtr cur)
       {
         putContent(ref_.LR_dim_cutoff, cur);
       }
+      else if (aname == "ewald_grid")
+      {
+        putContent(ref_.num_ewald_grid_points, cur);
+      }
       else if (aname == "LR_handler")
       {
         std::string handler_type("opt_breakup");
@@ -236,7 +240,7 @@ bool LatticeParser::put(xmlNodePtr cur)
 bool LatticeXMLWriter::get(std::ostream& os) const
 {
   os << "<unitcell>" << std::endl;
-  os << "<parameter name=\"lattice\" datatype=\"tensor\">" << std::endl;
+  os << R"(<parameter name="lattice" datatype="tensor">)" << std::endl;
   os << ref_.R << "</parameter>" << std::endl;
   os << "<parameter name=\"bconds\">";
   const int DIM = ParticleLayout::SingleParticlePos::Size;

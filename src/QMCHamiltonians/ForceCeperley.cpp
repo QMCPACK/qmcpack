@@ -30,23 +30,23 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
 {
   ReportEngine PRE("ForceCeperley", "ForceCeperley");
   name_  = "Ceperley_Force_Base";
-  prefix = "HFCep";
+  prefix_ = "HFCep";
   // Defaults
   Rcut    = 0.4;
   m_exp   = 2;
   N_basis = 4;
-  forces  = 0.0;
+  forces_ = 0.0;
   ///////////////////////////////////////////////////////////////
   ions.update();
-  evaluate_IonIon(forces_IonIon);
+  evaluate_IonIon(forces_ion_ion_);
 }
 
 void ForceCeperley::evaluate_IonIon(ParticleSet::ParticlePos& forces) const
 {
   forces = 0.0;
-  const auto& d_aa(Ions.getDistTableAA(d_aa_ID));
-  const ParticleScalar* restrict Zat = Ions.Z.first_address();
-  for (size_t ipart = 1; ipart < Nnuc; ipart++)
+  const auto& d_aa(ions_.getDistTableAA(d_aa_ID));
+  const ParticleScalar* restrict Zat = ions_.Z.first_address();
+  for (size_t ipart = 1; ipart < n_nuc_; ipart++)
   {
     const auto& dist  = d_aa.getDistRow(ipart);
     const auto& displ = d_aa.getDisplRow(ipart);
@@ -81,25 +81,25 @@ void ForceCeperley::InitMatrix()
 
 ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
 {
-  if (addionion == true)
-    forces = forces_IonIon;
+  if (add_ion_ion_ == true)
+    forces_ = forces_ion_ion_;
   else
-    forces = 0.0;
+    forces_ = 0.0;
   const auto& d_ab                   = P.getDistTableAB(d_ei_ID);
-  const ParticleScalar* restrict Zat = Ions.Z.first_address();
+  const ParticleScalar* restrict Zat = ions_.Z.first_address();
   const ParticleScalar* restrict Qat = P.Z.first_address();
-  for (int jat = 0; jat < Nel; jat++)
+  for (int jat = 0; jat < n_el_; jat++)
   {
     const auto& dist  = d_ab.getDistRow(jat);
     const auto& displ = d_ab.getDisplRow(jat);
-    for (int iat = 0; iat < Nnuc; iat++)
+    for (int iat = 0; iat < n_nuc_; iat++)
     {
       // electron contribution (special treatment if distance is inside cutoff!)
       RealType r       = dist[iat];
       RealType zoverr3 = Qat[jat] * Zat[iat] / (r * r * r);
       if (r >= Rcut)
       {
-        forces[iat] += zoverr3 * displ[iat];
+        forces_[iat] += zoverr3 * displ[iat];
       }
       else
       {
@@ -110,7 +110,7 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
         }
         g_q *= zoverr3;
         // negative sign accounts for definition of target as electrons
-        forces[iat] += g_q * displ[iat];
+        forces_[iat] += g_q * displ[iat];
       }
     }
   }
@@ -121,13 +121,13 @@ bool ForceCeperley::put(xmlNodePtr cur)
 {
   std::string ionionforce("yes");
   OhmmsAttributeSet attr;
-  attr.add(prefix, "name");
-  attr.add(ionionforce, "addionion");
+  attr.add(prefix_, "name");
+  attr.add(ionionforce, "add_ion_ion_");
   attr.put(cur);
-  addionion = (ionionforce == "yes") || (ionionforce == "true");
+  add_ion_ion_ = (ionionforce == "yes") || (ionionforce == "true");
   app_log() << "ionionforce = " << ionionforce << std::endl;
-  app_log() << "addionion=" << addionion << std::endl;
-  app_log() << "FirstTime= " << FirstTime << std::endl;
+  app_log() << "add_ion_ion_=" << add_ion_ion_ << std::endl;
+  app_log() << "first_time_= " << first_time_ << std::endl;
   ParameterSet fcep_param_set;
   fcep_param_set.add(Rcut, "rcut");
   fcep_param_set.add(N_basis, "nbasis");
@@ -146,82 +146,3 @@ std::unique_ptr<OperatorBase> ForceCeperley::makeClone(ParticleSet& qp, TrialWav
   return std::make_unique<ForceCeperley>(*this);
 }
 } // namespace qmcplusplus
-
-//  void ForceCeperley::addObservables(PropertySetType& plist) {
-//    //cerr << "ForceBase::addObs sound off" << std::endl;
-//    //obsName << myName << "0_x";
-//    //myIndex = plist.add(obsName.str());
-//    //obsName.clear();
-//    mySize = Nnuc*OHMMS_DIM;
-//    //cerr << "ForceBase mySize is " << Nnuc << " * " << OHMMS_DIM << " = " << mySize << std::endl;
-//    checkInit = true;
-//    if(myIndex<0) myIndex=plist.size();
-//    int tmpIndex;
-//    bool firstTime = true;
-//    for(int iat=0; iat<Nnuc; iat++) {
-//      for(int x=0; x<OHMMS_DIM; x++) {
-//        std::ostringstream obsName;
-//        obsName << "HFCep_" << iat << "_" << x;
-//        tmpIndex = plist.add(obsName.str());
-//        //if(firstTime) {
-//        //  firstTime = false;
-//        //  myIndex = tmpIndex;// + 3;
-//        //}
-//        std::cerr << iat << ", " << x << " stored at " << tmpIndex << std::endl;
-//      }
-//    }
-//    std::cerr << "AddObs myIndex is " << myIndex << " last " << tmpIndex << std::endl;
-//  }
-//  // debugging version only z component
-//  //void ForceCeperley::addObservables(PropertySetType& plist) {
-//  //  mySize = Nnuc*OHMMS_DIM;
-//  //  checkInit = true;
-//  //  int tmpIndex;
-//  //  bool firstTime = true;
-//  //  for(int iat=0; iat<Nnuc; iat++) {
-//  //    //for(int x=0; x<OHMMS_DIM; x++) {
-//  //      std::ostringstream obsName;
-//  //      obsName << "HFCep_" << iat << "_Z_sr";
-//  //      tmpIndex = plist.add(obsName.str());
-//  //      if(firstTime) {
-//  //        firstTime = false;
-//  //        myIndex = tmpIndex;
-//  //        std::cerr << "ForceCeperley addObs setting myindex " << myIndex << std::endl;
-//  //      }
-//  //      std::ostringstream obsName2;
-//  //      obsName2 << "HFCep_" << iat << "_Z_lr";
-//  //      tmpIndex = plist.add(obsName2.str());
-//  //      //cerr << iat << ", " << x << " stored at " << tmpIndex << std::endl;
-//  //    //}
-//  //  }
-//  //}
-//
-//  //// overriding base class definition to print out short and long range contribs
-//  //void ForceCeperley::setObservables(PropertySetType& plist) {
-//  //  //cerr << "ForceBase::setObs storing forces ";
-//  //  int index = myIndex;
-//  //  for(int iat=0; iat<Nnuc; iat++) {
-//  //    // HACK only z component
-//  //    //for(int x=0; x<OHMMS_DIM; x++) {
-//  //    plist[index] = forces(iat,2);
-//  //    //cerr << index << ": " << plist[index] << "; ";
-//  //    index++;
-//  //    plist[index] = storeForces(iat,2);
-//  //    //cerr << index << ": " << plist[index] << "; ";
-//  //    index++;
-//  //    //}
-//  //  }
-//  //  //cerr << std::endl;
-//  //}
-//  void ForceCeperley::setObservables(PropertySetType& plist) {
-//    ///cerr << "ForceBase::setObs storing forces";
-//    int index = myIndex;
-//    for(int iat=0; iat<Nnuc; iat++) {
-//      for(int x=0; x<OHMMS_DIM; x++) {
-//        plist[index] = forces(iat,x) + storeForces(iat,x);
-//        //cerr << " " << index << ":" << plist[index];
-//        index++;
-//      }
-//    }
-//    //cerr << std::endl;
-//  }

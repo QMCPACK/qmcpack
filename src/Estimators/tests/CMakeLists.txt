@@ -14,8 +14,10 @@ set(SRC_DIR estimators)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+set(UTEST_HDF_INPUT_SPINOR ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear_1x1x1_pp/o2_45deg_spins.pwscf.h5)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT_SPINOR} ${UTEST_DIR}/o2_45deg_spins.pwscf.h5)
 
 set(SRCS
     test_accumulator.cpp
@@ -33,23 +35,34 @@ set(SRCS
     test_InputSection.cpp
     test_EstimatorManagerInput.cpp
     test_ScalarEstimatorInputs.cpp
+    test_SizeLimitedDataQueue.cpp
+    test_MomentumDistribution.cpp
+    test_OneBodyDensityMatricesInput.cpp
+    test_OneBodyDensityMatrices.cpp
+    test_EstimatorManagerCrowd.cpp
+    test_MagnetizationDensityInput.cpp
+    test_MagnetizationDensity.cpp
+    test_ParseGridInput.cpp
+    test_PerParticleHamiltonianLogger.cpp
+    test_ReferencePointsInput.cpp
+    test_ReferencePoints.cpp
+    test_MomentumDistribution.cpp
+    test_OneBodyDensityMatricesInput.cpp
+    test_OneBodyDensityMatrices.cpp
+    test_PerParticleHamiltonianLogger.cpp
+    test_EstimatorManagerCrowd.cpp
+    test_SpaceGridInput.cpp
+    test_NESpaceGrid.cpp
     )
 
-# OneBodyDensityMatrices are not tested with legacy CUDA
-# DiracDeterminantsCUDA cannot be copied
-if(NOT QMC_CUDA)
-  set(SRCS ${SRCS} test_MomentumDistribution.cpp test_OneBodyDensityMatricesInput.cpp test_OneBodyDensityMatrices.cpp)
-endif()
-
 add_executable(${UTEST_EXE} ${SRCS})
-use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators utilities_for_test sposets_for_testing)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
     qmcutil
-    qmcestimators_unit
-    qmcham_unit
+    qmcestimators
+    qmcham
     qmcwfs
     qmcparticle
     qmcwfs_omptarget
@@ -71,9 +84,10 @@ if(HAVE_MPI)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
-      qmcestimators_unit
-      qmcham_unit
-      qmcdriver_unit
+      qmcutil
+      qmcestimators
+      qmcham
+      qmcdriver
       qmcwfs
       qmcparticle
       qmcwfs_omptarget
@@ -82,7 +96,7 @@ if(HAVE_MPI)
       platform_omptarget_LA
       utilities_for_test)
   endif()
-  target_link_libraries(${UTEST_EXE} catch_main qmcestimators_unit)
+  target_link_libraries(${UTEST_EXE} catch_main qmcestimators)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()

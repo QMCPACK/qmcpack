@@ -129,9 +129,9 @@ public:
     using grad_type  = GradMatrix::value_type;
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector v(logdet[i], OrbitalSetSize);
-      GradVector g(dlogdet[i], OrbitalSetSize);
-      ValueVector l(d2logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], logdet.cols());
+      GradVector g(dlogdet[i], dlogdet.cols());
+      ValueVector l(d2logdet[i], d2logdet.cols());
       evaluateVGL(P, iat, v, g, l);
     }
   }
@@ -173,9 +173,9 @@ public:
 
       for (int iw = 0; iw < nw; iw++)
       {
-        mw_psi_v.emplace_back(logdet_list[iw].get()[i], OrbitalSetSize);
-        mw_dpsi_v.emplace_back(dlogdet_list[iw].get()[i], OrbitalSetSize);
-        mw_d2psi_v.emplace_back(d2logdet_list[iw].get()[i], OrbitalSetSize);
+        mw_psi_v.emplace_back(logdet_list[iw].get()[i], logdet_list[iw].get().cols());
+        mw_dpsi_v.emplace_back(dlogdet_list[iw].get()[i], dlogdet_list[iw].get().cols());
+        mw_d2psi_v.emplace_back(d2logdet_list[iw].get()[i], d2logdet_list[iw].get().cols());
         psi_v_list.push_back(mw_psi_v.back());
         dpsi_v_list.push_back(mw_dpsi_v.back());
         d2psi_v_list.push_back(mw_d2psi_v.back());
@@ -194,9 +194,9 @@ public:
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector v(logdet[i], OrbitalSetSize);
-      GradVector g(dlogdet[i], OrbitalSetSize);
-      HessVector h(grad_grad_logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], logdet.cols());
+      GradVector g(dlogdet[i], dlogdet.cols());
+      HessVector h(grad_grad_logdet[i], grad_grad_logdet.cols());
       evaluateVGH(P, iat, v, g, h);
     }
   }
@@ -211,10 +211,10 @@ public:
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector v(logdet[i], OrbitalSetSize);
-      GradVector g(dlogdet[i], OrbitalSetSize);
-      HessVector h(grad_grad_logdet[i], OrbitalSetSize);
-      GGGVector gh(grad_grad_grad_logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], logdet.cols());
+      GradVector g(dlogdet[i], dlogdet.cols());
+      HessVector h(grad_grad_logdet[i], grad_grad_logdet.cols());
+      GGGVector gh(grad_grad_grad_logdet[i], grad_grad_grad_logdet.cols());
       evaluateVGHGH(P, iat, v, g, h, gh);
     }
   }
@@ -242,8 +242,8 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend struct SplineSetReader;
-  friend struct BsplineReaderBase;
+  friend class SplineSetReader;
+  friend struct BsplineReader;
 };
 
 } // namespace qmcplusplus

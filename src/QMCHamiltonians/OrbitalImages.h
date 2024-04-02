@@ -230,11 +230,10 @@ public:
 
   //optional standard interface
   //void getRequiredTraces(TraceManager& tm);
-  //void setRandomGenerator(RandomGenerator* rng);
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist) override {}
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override {}
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override {}
 
   //should be empty for Collectables interface
   void resetTargetParticleSet(ParticleSet& P) override {}

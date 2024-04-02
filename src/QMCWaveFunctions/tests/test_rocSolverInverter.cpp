@@ -47,7 +47,7 @@ TEMPLATE_TEST_CASE("rocSolverInverter", "[wavefunction][fermion]", double, float
     fillIdentityMatrix(m);
 
     solver.invert_transpose(m, m_invT, m_invGPU, log_value);
-    REQUIRE(log_value == LogComplexApprox(0.0));
+    CHECK(log_value == LogComplexApprox(0.0));
 
     Matrix<Value> eye;
     eye.resize(3, 3);
@@ -65,7 +65,7 @@ TEMPLATE_TEST_CASE("rocSolverInverter", "[wavefunction][fermion]", double, float
 
     simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
     solver.invert_transpose(a_T, m_invT, m_invGPU, log_value);
-    REQUIRE(log_value == LogComplexApprox(TestMatrix1::logDet()));
+    CHECK(log_value == LogComplexApprox(TestMatrix1::logDet()));
 
     Matrix<Value> b(3, 3);
 

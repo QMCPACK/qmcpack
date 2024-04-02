@@ -98,7 +98,8 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng) override;
+                  const RefVector<QMCHamiltonian>& hams,
+                  RandomBase<FullPrecRealType>& rng) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of MomentumDistribution's data.
@@ -121,7 +122,7 @@ public:
    *, needs to be unraveled and simplified the hdf5 output is another 
    *  big state big coupling design.
    */
-  void registerOperatorEstimator(hid_t gid) override;
+  void registerOperatorEstimator(hdf_archive& file) override;
 
 private:
   MomentumDistribution(const MomentumDistribution& md) = default;

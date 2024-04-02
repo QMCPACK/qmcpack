@@ -63,7 +63,7 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
          </group>
       </particleset>
       <wavefunction target="e" id="psi0">
-         <determinantset type="MolecularOrbital" source="ion0" transform="yes" name="LCAOBSet">
+         <sposet_collection type="MolecularOrbital" source="ion0" transform="yes" name="LCAOBSet">
             <basisset name="LCAOBSet">
                <atomicBasisSet type="Gaussian" elementType="Li" normalized="no" name="Gaussian-G2" angular="cartesian">
                   <grid npts="1001" type="log" ri="1e-06" rf="100.0"/>
@@ -199,9 +199,9 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
                      <radfunc exponent="2.358000000000e+00" contraction="1.000000000000e+00"/>
                   </basisGroup>
                </atomicBasisSet>
-            </basisset>
-            <slaterdeterminant>
-               <determinant id="updet" size="2">
+              </basisset>
+
+              <sposet name="spo-up" size="2">
                   <occupation mode="ground"/>
                   <coefficient id="updetC" size="135">                     
 8.960260000000e-01 1.766000000000e-03 1.434860000000e-01 4.391000000000e-03 
@@ -6112,8 +6112,8 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
 2.950800000000e-02 2.950800000000e-02 0.000000000000e+00 0.000000000000e+00 
 0.000000000000e+00
                   </coefficient>
-               </determinant>
-               <determinant id="downdet" size="2">
+              </sposet>
+              <sposet name="spo-dn" size="2">
                   <occupation mode="ground"/>
                   <coefficient id="downdetC" size="135">                     
 8.960260000000e-01 1.766000000000e-03 1.434860000000e-01 4.391000000000e-03 
@@ -12024,9 +12024,14 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
 2.950800000000e-02 2.950800000000e-02 0.000000000000e+00 0.000000000000e+00 
 0.000000000000e+00
                   </coefficient>
-               </determinant>
-            </slaterdeterminant>
-         </determinantset>
+	  </sposet>
+       </sposet_collection>	  
+       <determinantset>
+	 <slaterdeterminant>
+           <determinant sposet="spo-up"/>
+	   <determinant sposet="spo-dn"/>
+         </slaterdeterminant>
+       </determinantset>
       </wavefunction>
       <hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>

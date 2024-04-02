@@ -22,6 +22,106 @@
 
 namespace qmcplusplus
 {
+template<typename T>
+void test_gemm(const int M, const int N, const int K, const char transa, const char transb)
+{
+  const int a0 = transa == 'T' ? M : K;
+  const int a1 = transa == 'T' ? K : M;
+
+  const int b0 = transb == 'T' ? K : N;
+  const int b1 = transb == 'T' ? N : K;
+
+  using vec_t = Vector<T, OMPallocator<T>>;
+  using mat_t = Matrix<T, OMPallocator<T>>;
+
+  ompBLAS::ompBLAS_handle handle;
+
+  mat_t A(a0, a1); // Input matrix
+  mat_t B(b0, b1); // Input matrix
+  mat_t C(N, M);   // Result matrix ompBLAS
+  mat_t D(N, M);   // Result matrix BLAS
+
+  // Fill data
+  for (int j = 0; j < a0; j++)
+    for (int i = 0; i < a1; i++)
+      A[j][i] = i * 3 + j * 4;
+
+  for (int j = 0; j < b0; j++)
+    for (int i = 0; i < b1; i++)
+      B[j][i] = i * 4 + j * 5;
+
+  // Fill C and D with 0
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+      C[j][i] = D[j][i] = T(0);
+
+  A.updateTo();
+  B.updateTo();
+  C.updateTo();
+
+  T alpha(1);
+  T beta(0);
+
+  // U[X,Y] denotes a row-major matrix U with X rows and Y cols
+  // element U(i,j) is located at: U.data() + sizeof(U_type) * (i*ldU + j)
+  //
+  // A,B,C,D are treated as row-major matrices, but the arguments to gemm are treated as col-major
+  // so the call below to ompBLAS::gemm is equivalent to one of the following (with row-major matrices)
+  // transa/transb == 'N'/'N':   C[N,M] = A[K,M] * B[N,K]; C = B * A
+  // transa/transb == 'N'/'T':   C[N,M] = A[K,M] * B[K,N]; C = B^t * A
+  // transa/transb == 'T'/'N':   C[N,M] = A[M,K] * B[N,K]; C = B * A^t
+  // transa/transb == 'T'/'T':   C[N,M] = A[M,K] * B[K,N]; C = B^t * A^t
+
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha, A.device_data(), a1, B.device_data(), b1, beta, C.device_data(),
+                M);
+  C.updateFrom();
+
+  BLAS::gemm(transa, transb, M, N, K, alpha, A.data(), a1, B.data(), b1, beta, D.data(), M);
+
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+    {
+      CHECK(std::real(C[j][i]) == Approx(std::real(D[j][i])));
+      CHECK(std::imag(C[j][i]) == Approx(std::imag(D[j][i])));
+    }
+}
+
+TEST_CASE("OmpBLAS gemm", "[OMP]")
+{
+  const int M = 37;
+  const int N = 71;
+  const int K = 23;
+
+  // Non-batched test
+  std::cout << "Testing NN gemm" << std::endl;
+  test_gemm<float>(M, N, K, 'N', 'N');
+  test_gemm<double>(M, N, K, 'N', 'N');
+#if defined(QMC_COMPLEX)
+  test_gemm<std::complex<float>>(N, M, K, 'N', 'N');
+  test_gemm<std::complex<double>>(N, M, K, 'N', 'N');
+#endif
+  std::cout << "Testing NT gemm" << std::endl;
+  test_gemm<float>(M, N, K, 'N', 'T');
+  test_gemm<double>(M, N, K, 'N', 'T');
+#if defined(QMC_COMPLEX)
+  test_gemm<std::complex<float>>(N, M, K, 'N', 'T');
+  test_gemm<std::complex<double>>(N, M, K, 'N', 'T');
+#endif
+  std::cout << "Testing TN gemm" << std::endl;
+  test_gemm<float>(M, N, K, 'T', 'N');
+  test_gemm<double>(M, N, K, 'T', 'N');
+#if defined(QMC_COMPLEX)
+  test_gemm<std::complex<float>>(N, M, K, 'T', 'N');
+  test_gemm<std::complex<double>>(N, M, K, 'T', 'N');
+#endif
+  std::cout << "Testing TT gemm" << std::endl;
+  test_gemm<float>(M, N, K, 'T', 'T');
+  test_gemm<double>(M, N, K, 'T', 'T');
+#if defined(QMC_COMPLEX)
+  test_gemm<std::complex<float>>(N, M, K, 'T', 'T');
+  test_gemm<std::complex<double>>(N, M, K, 'T', 'T');
+#endif
+}
 
 template<typename T>
 void test_gemv(const int M_b, const int N_b, const char trans)

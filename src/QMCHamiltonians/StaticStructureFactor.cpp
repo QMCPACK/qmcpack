@@ -104,23 +104,20 @@ void StaticStructureFactor::addObservables(PropertySetType& plist, BufferType& c
 }
 
 
-void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5desc.emplace_back("kpoints");
+  h5desc.emplace_back(hdf_path(name_) / "kpoints");
   auto& oh = h5desc.back();
-  oh.open(sgid); // add to SkAll hdf group
-  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.getSimulationCell().getKLists().kpts_cart), "value");
+  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.getSimulationCell().getKLists().kpts_cart), "value", file);
 
   std::vector<int> ng(2);
   ng[0] = 2;
   ng[1] = nkpoints;
   for (int s = 0; s < nspecies; ++s)
   {
-    h5desc.emplace_back(species_name[s]);
+    h5desc.emplace_back(hdf_path{species_name[s]});
     auto& ohSpeciesName = h5desc.back();
     ohSpeciesName.set_dimensions(ng, my_index_ + s * 2 * nkpoints);
-    ohSpeciesName.open(sgid);
   }
 }
 

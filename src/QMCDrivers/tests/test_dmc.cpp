@@ -27,6 +27,7 @@
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
+#include "Utilities/RuntimeOptions.h"
 
 
 #include <stdio.h>
@@ -45,20 +46,13 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 1.0;
+  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.0, 1.0};
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -71,13 +65,13 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   elec.addTable(ions);
   elec.update();
 
-
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   auto orb_uptr = std::make_unique<ConstantOrbital>();
   auto orb      = orb_uptr.get();
   psi.addComponent(std::move(orb_uptr));
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -106,13 +100,13 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See ParticleBase/tests/test_random_seq.cpp for the gaussian random numbers
-  REQUIRE(elec.R[0][0] == Approx(0.6276702589209545));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.3723297410790455));
+  CHECK(elec.R[0][0] == Approx(0.6276702589209545));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.3723297410790455));
 
-  REQUIRE(elec.R[1][0] == Approx(0.0));
-  REQUIRE(elec.R[1][1] == Approx(-0.3723297410790455));
-  REQUIRE(elec.R[1][2] == Approx(1.0));
+  CHECK(elec.R[1][0] == Approx(0.0));
+  CHECK(elec.R[1][1] == Approx(-0.3723297410790455));
+  CHECK(elec.R[1][2] == Approx(1.0));
 
 
   // Check rejection in case of node-crossing
@@ -139,20 +133,13 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 1.0;
+  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.0, 1.0};
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -165,11 +152,11 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   elec.addTable(ions);
   elec.update();
 
-
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   psi.addComponent(std::make_unique<LinearOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -198,12 +185,12 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See ParticleBase/tests/test_random_seq.cpp for the gaussian random numbers
   //  See DMC_propagator notebook for computation of these values
-  REQUIRE(elec.R[0][0] == Approx(0.695481606677082));
-  REQUIRE(elec.R[0][1] == Approx(0.135622695565971));
-  REQUIRE(elec.R[0][2] == Approx(-0.168895697756948));
+  CHECK(elec.R[0][0] == Approx(0.695481606677082));
+  CHECK(elec.R[0][1] == Approx(0.135622695565971));
+  CHECK(elec.R[0][2] == Approx(-0.168895697756948));
 
-  REQUIRE(elec.R[1][0] == Approx(0.0678113477829853));
-  REQUIRE(elec.R[1][1] == Approx(-0.236707045539933));
-  REQUIRE(elec.R[1][2] == Approx(1.20343404334896));
+  CHECK(elec.R[1][0] == Approx(0.0678113477829853));
+  CHECK(elec.R[1][1] == Approx(-0.236707045539933));
+  CHECK(elec.R[1][2] == Approx(1.20343404334896));
 }
 } // namespace qmcplusplus

@@ -24,8 +24,8 @@ The single particle spinors used in QMCPACK take the form
 .. math::
   :label: seqn1
 
-    \phi(\mathbf{r},s) &=& \, \phi^\uparrow(\mathbf{r}) \chi^\uparrow(s) + \phi^{\downarrow}(\mathbf{r})\chi^\downarrow(s) \\
-                       &=& \, \phi^\uparrow(\mathbf{r}) e^{i s} + \phi^{\downarrow}(\mathbf{r}) e^{-i s}\:,
+    \phi(\mathbf{r},s) = \phi^\uparrow(\mathbf{r}) \chi^\uparrow(s) + \phi^{\downarrow}(\mathbf{r})\chi^\downarrow(s) \\
+                       =  \phi^\uparrow(\mathbf{r}) e^{i s} + \phi^{\downarrow}(\mathbf{r}) e^{-i s}
 
 where :math:`s` is the spin variable and using the complex spin representation.
 In order to carry out spin-orbit calculations in solids, the single-particle spinors
@@ -75,7 +75,7 @@ where we now utilize determinants of spinors, as opposed to the usual product of
           </correlation>
        </jastrow> 
       <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
-        <correlation speciesA="u" speciesB="u" size="8">
+        <correlation speciesA="u" speciesB="u" size="8" cusp="-0.5">
           <coefficients id="uu" type="Array">                  
           </coefficients>
         </correlation> 
@@ -88,8 +88,9 @@ need a product of up and down determinants.
 In the Jastrow specification, we only need to provide 
 the jastrow terms for the same spin as there is no longer a
 distinction between the up and down spins. 
+The electon-electron cusp in this case should be -1/2, as discussed in :cite:`Melton2016-2`.
 
-We also make a small modification in the particleset specification:
+We also make a small modification in the particleset specification 
 
 .. code-block::
   :caption: specification for the electron particle when performing spin-orbit calculations
@@ -167,7 +168,7 @@ As described in :cite:`Melton2016-2`, the relativistic (semilocal) ECPs take the
 .. math::
   :label: seqn5
   
-  W^{\rm RECP} = W_{LJ}(r) + \sum_{\ell j m_j} W_{\ell j}(r) | \ell j m_j \rangle \langle \ell j m_j | \:,
+  W^{\rm RECP} = W_{LJ}(r) + \sum_{\ell j m_j} W_{\ell j}(r) | \ell j m_j \rangle \langle \ell j m_j |
 
 where the projectors :math:`|\ell j m_j\rangle` are the so-called spin spherical harmonics. 
 An equivalent formulation is to decouple the fully relativistic effective core potential (RECP) into *averaged relativistic* (ARECP)  and *spin-orbit* (SORECP) contributions:
@@ -175,9 +176,9 @@ An equivalent formulation is to decouple the fully relativistic effective core p
 .. math::
   :label: seqn6
 
-  W^{\rm RECP} &=& \, W^{\rm ARECP} + W^{\rm SOECP} \\
-  W^{\rm ARECP} &=& \, W^{\rm ARECP}_L(r) + \sum_{\ell m_\ell} W_\ell^{ARECP}(r) | \ell m_\ell \rangle \langle \ell m_\ell| \\
-  W^{\rm SORECP} &=& \sum_\ell \frac{2}{2\ell + 1} \Delta W^{\rm SORECP}_\ell(r) \sum\limits_{m_\ell,m_\ell'} |\ell m_\ell\rangle \langle \ell m_\ell | \vec{\ell} \cdot \vec{s} | \ell m_\ell' \rangle \langle \ell m_\ell'|\:.
+  W^{\rm RECP} =  W^{\rm ARECP} + W^{\rm SOECP} \\
+  W^{\rm ARECP} =  W^{\rm ARECP}_L(r) + \sum_{\ell m_\ell} W_\ell^{ARECP}(r) | \ell m_\ell \rangle \langle \ell m_\ell| \\
+  W^{\rm SORECP} = \sum_\ell \frac{2}{2\ell + 1} \Delta W^{\rm SORECP}_\ell(r) \sum\limits_{m_\ell,m_\ell'} |\ell m_\ell \rangle \langle \ell m_\ell | \vec{\ell} \cdot \vec{s} | \ell m_\ell' \rangle \langle \ell m_\ell'|
 
 Note that the :math:`W^{\rm ARECP}` takes exactly the same form as 
 the semilocal pseudopotentials used in standard QMC calculations. 
@@ -188,8 +189,8 @@ We note the following relations between the two representations of the relativis
 .. math::
   :label: seqn7
 
-  W^{\rm ARECP}_\ell(r) &=& \frac{\ell+1}{2\ell+1} W^{\rm RECP}_{\ell,j=\ell+1/2}(r) + \frac{\ell}{2\ell+1} W^{\rm RECP}_{\ell,j=\ell-1/2}(r) \\
-  \Delta W^{\rm SORECP}_\ell(r) &=& W^{\rm RECP}_{\ell,j=\ell+1/2}(r) - W^{\rm RECP}_{\ell,j=\ell-1/2}(r)
+  W^{\rm ARECP}_\ell(r) = \frac{\ell+1}{2\ell+1} W^{\rm RECP}_{\ell,j=\ell+1/2}(r) + \frac{\ell}{2\ell+1} W^{\rm RECP}_{\ell,j=\ell-1/2}(r) \\
+  \Delta W^{\rm SORECP}_\ell(r) = W^{\rm RECP}_{\ell,j=\ell+1/2}(r) - W^{\rm RECP}_{\ell,j=\ell-1/2}(r)
 
 The structure of the spin-orbit ``.xml`` is 
 

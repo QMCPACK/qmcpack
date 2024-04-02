@@ -29,14 +29,14 @@ public:
 
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
   void setObservables(PropertySetType& plist) override;
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
   bool putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode);
   bool put(xmlNodePtr cur) override { return false; };
   bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
-  void setRandomGenerator(RandomGenerator* rng) override;
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override;
   //resize the internal data by input k-point list
   void resize(const std::vector<PosType>& kin, const int Min);
   ///number of samples
@@ -48,7 +48,7 @@ public:
   ///normalization factor for n(k)
   RealType norm_nofK;
   ///random generator
-  RandomGenerator myRNG;
+  std::unique_ptr<RandomBase<FullPrecRealType>> myRNG;
   ///sample positions
   std::vector<PosType> vPos;
   ///wavefunction ratios

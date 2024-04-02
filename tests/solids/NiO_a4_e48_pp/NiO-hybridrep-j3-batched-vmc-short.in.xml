@@ -52,16 +52,14 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset type="einspline" href="NiO-fcc-supertwist111-supershift000-S1.h5" source="i" tilematrix="1 0 0 1 0 1 1 1 0" twistnum="-1" gpu="yes" meshfactor="0.9" precision="single" twist="0  0  0" hybridrep="yes">
+    <sposet_collection type="bspline" href="NiO-fcc-supertwist111-supershift000-S1.h5" source="i" tilematrix="1 0 0 1 0 1 1 1 0" twistnum="-1" gpu="yes" meshfactor="0.9" precision="single" twist="0  0  0" hybridrep="yes">
+       <sposet type="bspline" name="spo_u" size="24" spindataset="0"/>
+       <sposet type="bspline" name="spo_d" size="24" spindataset="1"/>
+    </sposet_collection> 
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="updet" size="24" ref="updet">
-          <occupation mode="ground" spindataset="0">
-          </occupation>
-        </determinant>
-        <determinant id="downdet" size="24" ref="downdet">
-          <occupation mode="ground" spindataset="1">
-          </occupation>
-        </determinant>
+        <determinant sposet="spo_u"/>
+        <determinant sposet="spo_d"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">

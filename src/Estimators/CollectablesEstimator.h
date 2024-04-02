@@ -37,7 +37,7 @@ public:
   */
   CollectablesEstimator* clone() override;
 
-  void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override;
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override;
   void add2Record(RecordListType& record) override;
   /** do nothing with accumulate */
   void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override {}
@@ -50,6 +50,8 @@ public:
     for (int i = 0; i < data.size(); ++i)
       scalars[i](data[i], wgt);
   }
+
+  std::string getName() const override { return "CollectiblesEstimator"; }
 
   const std::string type_str = "ColletiblesEstimatorNotSupportedInBatchedVersion";
   const std::string& getSubTypeStr() const override { return type_str; }

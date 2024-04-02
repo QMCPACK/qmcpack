@@ -71,7 +71,7 @@ protected:
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  Matrix<Return_rt> DerivRecords_;
+  Matrix<Return_t> DerivRecords_;
   Matrix<Return_rt> HDerivRecords_;
 
   EffectiveWeight correlatedSampling(bool needGrad = true) override;
@@ -84,15 +84,13 @@ protected:
   // Number of walkers per crowd. Size of vector is number of crowds.
   std::vector<int> walkers_per_crowd_;
 
-  std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
-
   NewTimer& check_config_timer_;
   NewTimer& corr_sampling_timer_;
   NewTimer& fill_timer_;
 
 
 #ifdef HAVE_LMY_ENGINE
-  int total_samples();
+  size_t total_samples();
   Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
 #endif
 

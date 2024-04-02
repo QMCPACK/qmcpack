@@ -133,8 +133,7 @@ public:
                MCPopulation&& population,
                const std::string timer_prefix,
                Communicate* comm,
-               const std::string& QMC_driver_type,
-               SetNonLocalMoveHandler = &QMCDriverNew::defaultSetNonLocalMoveHandler);
+               const std::string& QMC_driver_type);
 
   ///Move Constructor
   QMCDriverNew(QMCDriverNew&&) = default;
@@ -186,25 +185,22 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override {};
 
   void createRngsStepContexts(int num_crowds);
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  inline RefVector<RandomGenerator> getRngRefs() const
+  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
   {
-    RefVector<RandomGenerator> RngRefs;
+    RefVector<RandomBase<FullPrecRealType>> RngRefs;
     for (int i = 0; i < Rng.size(); ++i)
       RngRefs.push_back(*Rng[i]);
     return RngRefs;
   }
 
-  // ///return the random generators
-  //       inline std::vector<std::unique_ptr RandomGenerator*>& getRng() { return Rng; }
-
   ///return the i-th random generator
-  inline RandomGenerator& getRng(int i) override { return (*Rng[i]); }
+  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
 
   /** intended for logging output and debugging
    *  you should base behavior on type preferably at compile time or if
@@ -296,11 +292,11 @@ protected:
    *  makes unit testing much quicker.
    *
    */
-  static QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(int num_ranks,
-                                                                    int rank_id,
-                                                                    IndexType desired_count,
-                                                                    IndexType walkers_per_rank,
-                                                                    RealType reserve_walkers,
+  static QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(Communicate& comm,
+                                                                    const IndexType current_configs,
+                                                                    const IndexType requested_total_walkers,
+                                                                    const IndexType requested_walkers_per_rank,
+                                                                    const RealType reserve_walkers,
                                                                     int num_crowds);
 
   static size_t determineStepsPerBlock(IndexType global_walkers,
@@ -337,20 +333,20 @@ protected:
     NewTimer& production_timer;
     NewTimer& resource_timer;
     DriverTimers(const std::string& prefix)
-        : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
-          run_steps_timer(*timer_manager.createTimer(prefix + "RunSteps", timer_level_medium)),
-          create_walkers_timer(*timer_manager.createTimer(prefix + "CreateWalkers", timer_level_medium)),
-          init_walkers_timer(*timer_manager.createTimer(prefix + "InitWalkers", timer_level_medium)),
-          buffer_timer(*timer_manager.createTimer(prefix + "Buffer", timer_level_medium)),
-          movepbyp_timer(*timer_manager.createTimer(prefix + "MovePbyP", timer_level_medium)),
-          hamiltonian_timer(*timer_manager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
-          collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium)),
-          estimators_timer(*timer_manager.createTimer(prefix + "Estimators", timer_level_medium)),
-          imbalance_timer(*timer_manager.createTimer(prefix + "Imbalance", timer_level_medium)),
-          endblock_timer(*timer_manager.createTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
-          startup_timer(*timer_manager.createTimer(prefix + "Startup", timer_level_medium)),
-          production_timer(*timer_manager.createTimer(prefix + "Production", timer_level_medium)),
-          resource_timer(*timer_manager.createTimer(prefix + "Resources", timer_level_medium))
+        : checkpoint_timer(createGlobalTimer(prefix + "CheckPoint", timer_level_medium)),
+          run_steps_timer(createGlobalTimer(prefix + "RunSteps", timer_level_medium)),
+          create_walkers_timer(createGlobalTimer(prefix + "CreateWalkers", timer_level_medium)),
+          init_walkers_timer(createGlobalTimer(prefix + "InitWalkers", timer_level_medium)),
+          buffer_timer(createGlobalTimer(prefix + "Buffer", timer_level_medium)),
+          movepbyp_timer(createGlobalTimer(prefix + "MovePbyP", timer_level_medium)),
+          hamiltonian_timer(createGlobalTimer(prefix + "Hamiltonian", timer_level_medium)),
+          collectables_timer(createGlobalTimer(prefix + "Collectables", timer_level_medium)),
+          estimators_timer(createGlobalTimer(prefix + "Estimators", timer_level_medium)),
+          imbalance_timer(createGlobalTimer(prefix + "Imbalance", timer_level_medium)),
+          endblock_timer(createGlobalTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
+          startup_timer(createGlobalTimer(prefix + "Startup", timer_level_medium)),
+          production_timer(createGlobalTimer(prefix + "Production", timer_level_medium)),
+          resource_timer(createGlobalTimer(prefix + "Resources", timer_level_medium))
     {}
   };
 
@@ -371,7 +367,7 @@ protected:
 
   /**}@*/
 
-  std::vector<std::unique_ptr<Crowd>> crowds_;
+  UPtrVector<Crowd> crowds_;
 
   std::string h5_file_root_;
 
@@ -432,19 +428,13 @@ protected:
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
-  std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
+  UPtrVector<ContextForSteps> step_contexts_;
 
   ///Random number generators
-  UPtrVector<RandomGenerator> Rng;
+  UPtrVector<RandomBase<FullPrecRealType>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
-
-  ///temporary storage for drift
-  ParticleSet::ParticlePos drift;
-
-  ///temporary storage for random displacement
-  ParticleSet::ParticlePos deltaR;
 
   // ///alternate method of setting QMC run parameters
   // IndexType nStepsBetweenSamples;
@@ -478,10 +468,6 @@ protected:
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);
-
-  SetNonLocalMoveHandler setNonLocalMoveHandler_;
-
-  static void defaultSetNonLocalMoveHandler(QMCHamiltonian& gold_ham);
 
   friend class qmcplusplus::testing::VMCBatchedTest;
   friend class qmcplusplus::testing::DMCBatchedTest;

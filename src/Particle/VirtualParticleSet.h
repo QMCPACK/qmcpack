@@ -19,6 +19,7 @@
 
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
+#include <ResourceHandle.h>
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
@@ -29,17 +30,24 @@ template<typename T>
 struct NLPPJob;
 struct VPMultiWalkerMem;
 
-/** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
-   */
+/** A ParticleSet that handles virtual moves of a selected particle of a given physical ParticleSet
+ * Virtual moves are defined as moves being proposed but will never be accepted.
+ * VirtualParticleSet is introduced to avoid changing any internal states of the physical ParticleSet.
+ * For this reason, the physical ParticleSet is always marked const.
+ * It is heavily used by non-local PP evaluations.
+ */
 class VirtualParticleSet : public ParticleSet
 {
 private:
   /// true, if virtual particles are on a sphere for NLPP
   bool onSphere;
   /// multi walker resource
-  std::unique_ptr<VPMultiWalkerMem> mw_mem_;
+  ResourceHandle<VPMultiWalkerMem> mw_mem_handle_;
 
   Vector<int, OffloadPinnedAllocator<int>>& getMultiWalkerRefPctls();
+
+  /// ParticleSet this object refers to after makeMoves
+  std::optional<std::reference_wrapper<const ParticleSet>> refPS;
 
 public:
   /// Reference particle
@@ -48,7 +56,7 @@ public:
   int refSourcePtcl;
 
   /// ParticleSet this object refers to
-  const ParticleSet& refPS;
+  const ParticleSet& getRefPS() const { return refPS.value(); }
 
   inline bool isOnSphere() const { return onSphere; }
 
@@ -57,8 +65,9 @@ public:
   /** constructor 
      * @param p ParticleSet whose virtual moves are handled by this object
      * @param nptcl number of virtual particles
+     * @param dt_count_limit distance tables corresepond to [0, dt_count_limit) of the reference particle set are created
      */
-  VirtualParticleSet(const ParticleSet& p, int nptcl);
+  VirtualParticleSet(const ParticleSet& p, int nptcl, size_t dt_count_limit = 0);
 
   ~VirtualParticleSet();
 
@@ -74,22 +83,55 @@ public:
   static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<VirtualParticleSet>& vp_list);
 
   /** move virtual particles to new postions and update distance tables
+     * @param refp reference particle set
      * @param jel reference particle that all the VP moves from
-     * @param ref_pos reference particle position
      * @param deltaV Position delta for virtual moves.
      * @param sphere set true if VP are on a sphere around the reference source particle
      * @param iat reference source particle
      */
-  void makeMoves(int jel,
-                 const PosType& ref_pos,
+  void makeMoves(const ParticleSet& refp,
+                 int jel,
                  const std::vector<PosType>& deltaV,
                  bool sphere = false,
                  int iat     = -1);
 
+  inline size_t getTotalNum() const { return TotalNum; }
+  /**Extract list of Distance Tables
+    */
+  static const RefVectorWithLeader<const DistanceTableAB> extractDTRefList(
+      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+      int id);
+  /**Extract list of VP coordinates, flattened over all walkers
+    */
+  static const std::vector<QMCTraits::PosType> extractVPCoords(
+      const RefVectorWithLeader<const VirtualParticleSet>& vp_list);
+  /** move virtual particles to new postions and update distance tables
+     * @param refp reference particle set
+     * @param jel reference particle that all the VP moves from
+     * @param deltaV Position delta for virtual moves.
+     * @param deltaS Spin delta for virtual moves.
+     * @param sphere set true if VP are on a sphere around the reference source particle
+     * @param iat reference source particle
+     */
+  void makeMovesWithSpin(const ParticleSet& refp,
+                         int jel,
+                         const std::vector<PosType>& deltaV,
+                         const std::vector<RealType>& deltaS,
+                         bool sphere = false,
+                         int iat     = -1);
+
   static void mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
                            const RefVector<const std::vector<PosType>>& deltaV_list,
                            const RefVector<const NLPPJob<RealType>>& joblist,
                            bool sphere);
+
+  static void mw_makeMovesWithSpin(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   const RefVector<const std::vector<PosType>>& deltaV_list,
+                                   const RefVector<const std::vector<RealType>>& deltaS_list,
+                                   const RefVector<const NLPPJob<RealType>>& joblist,
+                                   bool sphere);
 
   static RefVectorWithLeader<ParticleSet> RefVectorWithLeaderParticleSet(
       const RefVectorWithLeader<VirtualParticleSet>& vp_list)

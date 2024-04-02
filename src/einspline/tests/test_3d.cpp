@@ -51,12 +51,12 @@ TEST_CASE("double_3d_natural","[einspline]")
 
   double val;
   eval_UBspline_3d_d(s.get(), 1.0, 1.0, 1.0, &val);
-  REQUIRE(val == Approx(2.0));
+  CHECK(val == Approx(2.0));
   
   //This puts the value right below the limit
   double pos=10.0-5*std::numeric_limits<double>::epsilon();
   eval_UBspline_3d_d(s.get(), pos, pos, pos, &val);
-  REQUIRE(val == Approx(9.0));
+  CHECK(val == Approx(9.0));
 
 }
 
@@ -92,14 +92,14 @@ TEST_CASE("double_3d_periodic","[einspline]")
 
   double val;
   eval_UBspline_3d_d(s.get(), 0.0, 0.0, 0.0, &val);
-  REQUIRE(val == Approx(0.0));
+  CHECK(val == Approx(0.0));
 
   double pos=0.99999999;
   eval_UBspline_3d_d(s.get(), pos, pos, pos, &val);
-  REQUIRE(val == Approx(0.0));
+  CHECK(val == Approx(0.0));
 
   eval_UBspline_3d_d(s.get(), delta, delta, delta, &val);
-  REQUIRE(val == Approx(data[N*N + N + 1]));
+  CHECK(val == Approx(data[N*N + N + 1]));
 
   auto m =
       std::unique_ptr<multi_UBspline_3d_d, void (*)(void*)>{create_multi_UBspline_3d_d(grid, grid, grid, bc, bc, bc, 1),
@@ -109,7 +109,7 @@ TEST_CASE("double_3d_periodic","[einspline]")
   set_multi_UBspline_3d_d(m.get(), 0, data);
 
   eval_multi_UBspline_3d_d(m.get(), delta, delta, delta, &val);
-  REQUIRE(val == Approx(data[N*N + N + 1]));
+  CHECK(val == Approx(data[N*N + N + 1]));
 
   BCtype_s bc_s;
   bc_s.lCode = PERIODIC;
@@ -123,24 +123,24 @@ TEST_CASE("double_3d_periodic","[einspline]")
 
   float fval;
   eval_multi_UBspline_3d_s(ms.get(), delta, delta, delta, &fval);
-  REQUIRE(fval == Approx(data[N*N + N + 1]));
+  CHECK(fval == Approx(data[N*N + N + 1]));
 
   float grads[3];
   float hess[9];
   eval_multi_UBspline_3d_s_vgh(ms.get(), 0.1, 0.2, 0.0, &fval, grads, hess);
 
   // See miniqmc-python/splines/test_3d.py for values
-  REQUIRE(grads[0] == Approx(5.11104213833));
-  REQUIRE(grads[1] == Approx(5.98910634201));
-  REQUIRE(grads[2] == Approx(-6.17832080889));
+  CHECK(grads[0] == Approx(5.11104213833));
+  CHECK(grads[1] == Approx(5.98910634201));
+  CHECK(grads[2] == Approx(-6.17832080889));
 
   // All off-diagonal values of the Hessian for this data should be zero
-  REQUIRE(hess[1] == Approx(0.0));
-  REQUIRE(hess[2] == Approx(0.0));
+  CHECK(hess[1] == Approx(0.0));
+  CHECK(hess[2] == Approx(0.0));
 
-  REQUIRE(hess[3] == Approx(0.0));
-  REQUIRE(hess[5] == Approx(0.0));
+  CHECK(hess[3] == Approx(0.0));
+  CHECK(hess[5] == Approx(0.0));
 
-  REQUIRE(hess[6] == Approx(0.0));
-  REQUIRE(hess[7] == Approx(0.0));
+  CHECK(hess[6] == Approx(0.0));
+  CHECK(hess[7] == Approx(0.0));
 }

@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_SPINORSET_H
 
 #include "QMCWaveFunctions/SPOSet.h"
+#include <ResourceHandle.h>
 
 namespace qmcplusplus
 {
@@ -31,6 +32,11 @@ public:
   bool isOptimizable() const override { return spo_up->isOptimizable() || spo_dn->isOptimizable(); }
   bool isOMPoffload() const override { return spo_up->isOMPoffload() || spo_dn->isOMPoffload(); }
   bool hasIonDerivs() const override { return spo_up->hasIonDerivs() || spo_dn->hasIonDerivs(); }
+  bool isRotationSupported() const override { return spo_up->isRotationSupported() && spo_dn->isRotationSupported(); }
+
+  void storeParamsBeforeRotation() override;
+
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
   //This class is initialized by separately building the up and down channels of the spinor set and
   //then registering them.
@@ -79,7 +85,7 @@ public:
    * @param psi_v_list the list of value vector pointers in a walker batch
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
-   * @param dspin_v_list the list of spin gradients vector pointers in a walker batch
+   * @param mw_dspin dual matrix of spin gradients. nw x num_orbitals
    */
   void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                               const RefVectorWithLeader<ParticleSet>& P_list,
@@ -87,7 +93,8 @@ public:
                               const RefVector<ValueVector>& psi_v_list,
                               const RefVector<GradVector>& dpsi_v_list,
                               const RefVector<ValueVector>& d2psi_v_list,
-                              const RefVector<ValueVector>& dspin_v_list) const override;
+                              OffloadMatrix<ComplexType>& mw_dspin) const override;
+
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
    *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return.
@@ -167,7 +174,22 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
+  void createResource(ResourceCollection& collection) const override;
+
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
+  /// check if the multi walker resource is owned. For testing only.
+  bool isResourceOwned() const { return bool(mw_res_handle_); }
+
 private:
+  struct SpinorSetMultiWalkerResource;
+  ResourceHandle<SpinorSetMultiWalkerResource> mw_res_handle_;
+
+  std::pair<RefVectorWithLeader<SPOSet>, RefVectorWithLeader<SPOSet>> extractSpinComponentRefList(
+      const RefVectorWithLeader<SPOSet>& spo_list) const;
+
   //Sposet for the up and down channels of our spinors.
   std::unique_ptr<SPOSet> spo_up;
   std::unique_ptr<SPOSet> spo_dn;

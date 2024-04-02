@@ -14,14 +14,20 @@
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
-
+#include "io/hdf/hdf_archive.h"
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos)
-    : SPOSet(my_name), OptimizableObject(my_name), Phi(std::move(spos)), nel_major_(0), params_supplied(false)
+    : SPOSet(my_name),
+      OptimizableObject(my_name),
+      Phi_(std::move(spos)),
+      nel_major_(0),
+      params_supplied_(false),
+      apply_rotation_timer_(createGlobalTimer("RotatedSPOs::apply_rotation", timer_level_fine))
 {
-  OrbitalSetSize = Phi->getOrbitalSetSize();
+  OrbitalSetSize = Phi_->getOrbitalSetSize();
 }
 
 RotatedSPOs::~RotatedSPOs() {}
@@ -29,8 +35,14 @@ RotatedSPOs::~RotatedSPOs() {}
 
 void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
 {
-  params          = param_list;
-  params_supplied = true;
+  const size_t num_param = IsComplex_t<ValueType>::value ? param_list.size() / 2 : param_list.size();
+  params_.resize(num_param);
+
+  //handling both real and complex by casting data to RealType*, since laid out as real_0, imag_0, real_1, imag_1, etc
+  auto* params_data_alias = (RealType*)params_.data();
+  std::copy(param_list.begin(), param_list.end(), params_data_alias);
+
+  params_supplied_ = true;
 }
 
 void RotatedSPOs::createRotationIndices(int nel, int nmo, RotationIndices& rot_indices)
@@ -40,21 +52,45 @@ void RotatedSPOs::createRotationIndices(int nel, int nmo, RotationIndices& rot_i
       rot_indices.emplace_back(i, j);
 }
 
+void RotatedSPOs::createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices)
+{
+  rot_indices.reserve(nmo * (nmo - 1) / 2);
+
+  // start with core-active rotations - put them at the beginning of the list
+  // so it matches the other list of rotation indices
+  for (int i = 0; i < nel; i++)
+    for (int j = nel; j < nmo; j++)
+      rot_indices.emplace_back(i, j);
+
+  // Add core-core rotations - put them at the end of the list
+  for (int i = 0; i < nel; i++)
+    for (int j = i + 1; j < nel; j++)
+      rot_indices.emplace_back(i, j);
+
+  // Add active-active rotations - put them at the end of the list
+  for (int i = nel; i < nmo; i++)
+    for (int j = i + 1; j < nmo; j++)
+      rot_indices.emplace_back(i, j);
+}
+
 void RotatedSPOs::constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                                const std::vector<ValueType>& param,
                                                ValueMatrix& rot_mat)
 {
   assert(rot_indices.size() == param.size());
-  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+  // Assumes rot_mat is of the correct size
+
+  rot_mat = 0.0;
 
   for (int i = 0; i < rot_indices.size(); i++)
   {
-    const int p      = rot_indices[i].first;
-    const int q      = rot_indices[i].second;
-    const RealType x = param[i];
+    const int p       = rot_indices[i].first;
+    const int q       = rot_indices[i].second;
+    const ValueType x = param[i];
 
     rot_mat[q][p] = x;
-    rot_mat[p][q] = -x;
+    //This conj is from type_traits/complex_help.hpp.  So conj(Real) returns Real and not complex.
+    rot_mat[p][q] = -qmcplusplus::conj(x);
   }
 }
 
@@ -63,7 +99,7 @@ void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& ro
                                                        std::vector<ValueType>& param)
 {
   assert(rot_indices.size() == param.size());
-  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+  // Assumes rot_mat is of the correct size
 
   for (int i = 0; i < rot_indices.size(); i++)
   {
@@ -73,9 +109,170 @@ void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& ro
   }
 }
 
+void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
+{
+  const size_t nact_rot = m_act_rot_inds_.size();
+  std::vector<ValueType> delta_param(nact_rot);
+
+  //cast ValueType to RealType for delta param
+  //allows us to work with both real and complex since
+  //active and myVars are stored as only reals
+  auto* delta_param_data_alias = (RealType*)delta_param.data();
+  for (int i = 0; i < myVars.size(); i++)
+  {
+    int loc                   = myVars.where(i);
+    delta_param_data_alias[i] = active[loc] - myVars[i];
+    myVars[i]                 = active[loc];
+  }
+
+  if (use_global_rot_)
+  {
+    std::vector<ValueType> old_param(m_full_rot_inds_.size());
+    std::copy_n(myVarsFull_.data(), myVarsFull_.size(), old_param.data());
+
+    applyDeltaRotation(delta_param, old_param, myVarsFull_);
+  }
+  else
+  {
+    apply_rotation(delta_param, false);
+
+    // Save the parameters in the history list
+    history_params_.push_back(delta_param);
+  }
+}
+
+void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
+{
+  hout.push("RotatedSPOs");
+  if (use_global_rot_)
+  {
+    hout.push("rotation_global");
+    const std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
+
+    hout.write(myVarsFull_, rot_global_name);
+    hout.pop();
+  }
+  else
+  {
+    hout.push("rotation_history");
+    size_t rows = history_params_.size();
+    size_t cols = 0;
+    if (rows > 0)
+      cols = history_params_[0].size();
+
+    Matrix<ValueType> tmp(rows, cols);
+    for (size_t i = 0; i < rows; i++)
+      for (size_t j = 0; j < cols; j++)
+        tmp[i][j] = history_params_[i][j];
+    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
+    hout.write(tmp, rot_hist_name);
+    hout.pop();
+  }
+
+  // Save myVars in order to restore object state exactly
+  //  The values aren't meaningful, but they need to match those saved in VariableSet
+  hout.push("rotation_params");
+  std::string rot_params_name = std::string("rotation_params_") + SPOSet::getName();
+
+  std::vector<ValueType> params(m_act_rot_inds_.size());
+  auto* params_data_alias = (RealType*)params.data();
+  for (int i = 0; i < myVars.size(); i++)
+    params_data_alias[i] = myVars[i];
+
+  hout.write(params, rot_params_name);
+  hout.pop();
+
+  hout.pop();
+}
+
+void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
+{
+  hin.push("RotatedSPOs", false);
+
+  bool grp_hist_exists   = hin.is_group("rotation_history");
+  bool grp_global_exists = hin.is_group("rotation_global");
+  if (!grp_hist_exists && !grp_global_exists)
+    app_warning() << "Rotation parameters not found in VP file";
+
+
+  if (grp_global_exists)
+  {
+    hin.push("rotation_global", false);
+    const std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
+
+    std::vector<int> sizes(1);
+    if (!hin.getShape<ValueType>(rot_global_name, sizes))
+      throw std::runtime_error("Failed to read rotation_global in VP file");
+
+    if (myVarsFull_.size() != sizes[0])
+    {
+      std::ostringstream tmp_err;
+      tmp_err << "Expected number of full rotation parameters (" << myVarsFull_.size()
+              << ") does not match number in file (" << sizes[0] << ")";
+      throw std::runtime_error(tmp_err.str());
+    }
+    hin.read(myVarsFull_, rot_global_name);
+
+    hin.pop();
+
+    applyFullRotation(myVarsFull_, true);
+  }
+  else if (grp_hist_exists)
+  {
+    hin.push("rotation_history", false);
+    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
+    std::vector<int> sizes(2);
+    if (!hin.getShape<ValueType>(rot_hist_name, sizes))
+      throw std::runtime_error("Failed to read rotation history in VP file");
+
+    int rows = sizes[0];
+    int cols = sizes[1];
+    history_params_.resize(rows);
+    Matrix<ValueType> tmp(rows, cols);
+    hin.read(tmp, rot_hist_name);
+    for (size_t i = 0; i < rows; i++)
+    {
+      history_params_[i].resize(cols);
+      for (size_t j = 0; j < cols; j++)
+        history_params_[i][j] = tmp(i, j);
+    }
+
+    hin.pop();
+
+    applyRotationHistory();
+  }
+
+  hin.push("rotation_params", false);
+  std::string rot_param_name = std::string("rotation_params_") + SPOSet::getName();
+
+  std::vector<int> sizes(1);
+  if (!hin.getShape<ValueType>(rot_param_name, sizes))
+    throw std::runtime_error("Failed to read rotation_params in VP file");
+
+  //values stored as ValueType. Now unpack into reals
+  int nparam_actual = IsComplex_t<ValueType>::value ? 2 * sizes[0] : sizes[0];
+  int nparam        = myVars.size();
+  if (nparam != nparam_actual)
+  {
+    std::ostringstream tmp_err;
+    tmp_err << "Expected number of rotation parameters (" << nparam << ") does not match number in file ("
+            << nparam_actual << ")";
+    throw std::runtime_error(tmp_err.str());
+  }
+
+  std::vector<ValueType> params(sizes[0]);
+  hin.read(params, rot_param_name);
+  auto* params_data_alias = (RealType*)params.data();
+  for (int i = 0; i < nparam; i++)
+    myVars[i] = params_data_alias[i];
+
+  hin.pop();
+
+  hin.pop();
+}
+
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
-#if !defined(QMC_COMPLEX)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
    * Consider ROHF, there is only one set of SPO for both spin up and down Nup > Ndown.
    * nel_major_ will be set Nup.
@@ -87,56 +284,77 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
   {
     nel_major_ = nel;
 
-    const size_t nmo = Phi->getOrbitalSetSize();
+    const size_t nmo = Phi_->getOrbitalSetSize();
 
     // create active rotation parameter indices
     RotationIndices created_m_act_rot_inds;
 
+    RotationIndices created_full_rot_inds;
+    if (use_global_rot_)
+      createRotationIndicesFull(nel, nmo, created_full_rot_inds);
+
     createRotationIndices(nel, nmo, created_m_act_rot_inds);
 
-    buildOptVariables(created_m_act_rot_inds);
+    buildOptVariables(created_m_act_rot_inds, created_full_rot_inds);
   }
-#endif
 }
 
-void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
+void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations)
 {
-#if !defined(QMC_COMPLEX)
-  const size_t nmo = Phi->getOrbitalSetSize();
+  const size_t nmo = Phi_->getOrbitalSetSize();
 
   // create active rotations
-  m_act_rot_inds = rotations;
+  m_act_rot_inds_ = rotations;
+
+  if (use_global_rot_)
+    m_full_rot_inds_ = full_rotations;
+
+  if (use_global_rot_)
+    app_log() << "Orbital rotation using global rotation" << std::endl;
+  else
+    app_log() << "Orbital rotation using history" << std::endl;
 
   // This will add the orbital rotation parameters to myVars
   // and will also read in initial parameter values supplied in input file
-  int p, q;
-  int nparams_active = m_act_rot_inds.size();
+  int nparams_active = m_act_rot_inds_.size();
 
-  app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
-  if (params_supplied)
-    if (nparams_active != params.size())
+  if (params_supplied_)
+    if (nparams_active != params_.size())
       throw std::runtime_error(
           "The number of supplied orbital rotation parameters does not match number prdouced by the slater "
           "expansion. \n");
 
+
+  auto registerParameter = [this](const int i, const int p, const int q, opt_variables_type& optvars,
+                                  std::vector<ValueType>& params, bool real_part) {
+    std::stringstream sstr;
+    std::string label = real_part ? "_r" : "_i";
+    sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
+         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q << label;
+
+    // If the user input parameters, use those. Otherwise, initialize the parameters to zero
+    if (params_supplied_)
+      optvars.insert(sstr.str(), real_part ? std::real(params[i]) : std::imag(params[i]));
+    else
+      optvars.insert(sstr.str(), 0.0);
+  };
+
   myVars.clear();
   for (int i = 0; i < nparams_active; i++)
   {
-    p = m_act_rot_inds[i].first;
-    q = m_act_rot_inds[i].second;
-    std::stringstream sstr;
-    sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
-         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
+    const int p = m_act_rot_inds_[i].first;
+    const int q = m_act_rot_inds_[i].second;
+    registerParameter(i, p, q, myVars, params_, true);
+    if constexpr (IsComplex_t<ValueType>::value)
+      registerParameter(i, p, q, myVars, params_, false);
+  }
 
-    // If the user input parameters, use those. Otherwise, initialize the parameters to zero
-    if (params_supplied)
-    {
-      myVars.insert(sstr.str(), params[i]);
-    }
-    else
-    {
-      myVars.insert(sstr.str(), 0.0);
-    }
+  if (use_global_rot_)
+  {
+    const size_t nfull_rot = m_full_rot_inds_.size();
+    myVarsFull_.resize(nfull_rot);
+    for (int i = 0; i < nfull_rot; i++)
+      myVarsFull_[i] = (params_supplied_ && i < m_act_rot_inds_.size()) ? params_[i] : 0.0;
   }
 
   //Printing the parameters
@@ -146,22 +364,27 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
     myVars.print(app_log());
   }
 
-  std::vector<RealType> param(m_act_rot_inds.size());
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-    param[i] = myVars[i];
-  apply_rotation(param, false);
-#endif
+  if (params_supplied_)
+  {
+    const size_t N = m_act_rot_inds_.size();
+    std::vector<ValueType> param(N);
+    //cast as RealType to copy from myVars into real or complex param vector
+    auto* param_data_alias = (RealType*)param.data();
+    //couldn't easily use std::copy since myVars is vector of pairs
+    for (size_t i = 0; i < myVars.size(); i++)
+      param_data_alias[i] = myVars[i];
+    apply_rotation(param, false);
+  }
 }
 
-void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
+void RotatedSPOs::apply_rotation(const std::vector<ValueType>& param, bool use_stored_copy)
 {
-  assert(param.size() == m_act_rot_inds.size());
+  assert(param.size() == m_act_rot_inds_.size());
 
-  const size_t nmo = Phi->getOrbitalSetSize();
+  const size_t nmo = Phi_->getOrbitalSetSize();
   ValueMatrix rot_mat(nmo, nmo);
-  rot_mat = ValueType(0);
 
-  constructAntiSymmetricMatrix(m_act_rot_inds, param, rot_mat);
+  constructAntiSymmetricMatrix(m_act_rot_inds_, param, rot_mat);
 
   /*
     rot_mat is now an anti-hermitian matrix. Now we convert
@@ -169,9 +392,85 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     Finally, apply unitary matrix to orbs.
   */
   exponentiate_antisym_matrix(rot_mat);
-  Phi->applyRotation(rot_mat, use_stored_copy);
+  {
+    ScopedTimer local(apply_rotation_timer_);
+    Phi_->applyRotation(rot_mat, use_stored_copy);
+  }
 }
 
+void RotatedSPOs::applyDeltaRotation(const std::vector<ValueType>& delta_param,
+                                     const std::vector<ValueType>& old_param,
+                                     std::vector<ValueType>& new_param)
+{
+  const size_t nmo = Phi_->getOrbitalSetSize();
+  ValueMatrix new_rot_mat(nmo, nmo);
+  constructDeltaRotation(delta_param, old_param, m_act_rot_inds_, m_full_rot_inds_, new_param, new_rot_mat);
+
+  {
+    ScopedTimer local(apply_rotation_timer_);
+    Phi_->applyRotation(new_rot_mat, true);
+  }
+}
+
+void RotatedSPOs::constructDeltaRotation(const std::vector<ValueType>& delta_param,
+                                         const std::vector<ValueType>& old_param,
+                                         const RotationIndices& act_rot_inds,
+                                         const RotationIndices& full_rot_inds,
+                                         std::vector<ValueType>& new_param,
+                                         ValueMatrix& new_rot_mat)
+{
+  assert(delta_param.size() == act_rot_inds.size());
+  assert(old_param.size() == full_rot_inds.size());
+  assert(new_param.size() == full_rot_inds.size());
+
+  const size_t nmo = new_rot_mat.rows();
+  assert(new_rot_mat.rows() == new_rot_mat.cols());
+
+  ValueMatrix old_rot_mat(nmo, nmo);
+
+  constructAntiSymmetricMatrix(full_rot_inds, old_param, old_rot_mat);
+  exponentiate_antisym_matrix(old_rot_mat);
+
+  ValueMatrix delta_rot_mat(nmo, nmo);
+
+  constructAntiSymmetricMatrix(act_rot_inds, delta_param, delta_rot_mat);
+  exponentiate_antisym_matrix(delta_rot_mat);
+
+  // Apply delta rotation to old rotation.
+  BLAS::gemm('N', 'N', nmo, nmo, nmo, 1.0, delta_rot_mat.data(), nmo, old_rot_mat.data(), nmo, 0.0, new_rot_mat.data(),
+             nmo);
+
+  ValueMatrix log_rot_mat(nmo, nmo);
+  log_antisym_matrix(new_rot_mat, log_rot_mat);
+  extractParamsFromAntiSymmetricMatrix(full_rot_inds, log_rot_mat, new_param);
+}
+
+void RotatedSPOs::applyFullRotation(const std::vector<ValueType>& full_param, bool use_stored_copy)
+{
+  assert(full_param.size() == m_full_rot_inds_.size());
+
+  const size_t nmo = Phi_->getOrbitalSetSize();
+  ValueMatrix rot_mat(nmo, nmo);
+  rot_mat = ValueType(0);
+
+  constructAntiSymmetricMatrix(m_full_rot_inds_, full_param, rot_mat);
+
+  /*
+    rot_mat is now an anti-hermitian matrix. Now we convert
+    it into a unitary matrix via rot_mat = exp(-rot_mat).
+    Finally, apply unitary matrix to orbs.
+  */
+  exponentiate_antisym_matrix(rot_mat);
+  Phi_->applyRotation(rot_mat, use_stored_copy);
+}
+
+void RotatedSPOs::applyRotationHistory()
+{
+  for (auto delta_param : history_params_)
+  {
+    apply_rotation(delta_param, false);
+  }
+}
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
 void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
@@ -191,17 +490,23 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
   {
     for (int j = i; j < n; ++j)
     {
-      mat_h[i + n * j] = std::complex<RealType>(0, -1.0 * mat[j][i]);
-      mat_h[j + n * i] = std::complex<RealType>(0, 1.0 * mat[j][i]);
+      //This two liner does several things.  The first is it unpacks row-major mat into column major format.
+      //Second, it builds the hermitian matrix -i*mat.  Third, it relies on the hermiticity of -i*mat to
+      //fill the entire -i*mat matrix (in column major form) by iterating over the upper diagonal only.
+      mat_h[i + n * j] = std::complex<RealType>(std::imag(mat[i][j]), -1.0 * std::real(mat[i][j]));
+      mat_h[j + n * i] = std::complex<RealType>(-std::imag(mat[i][j]), 1.0 * std::real(mat[i][j]));
     }
   }
   // diagonalize the matrix
-  char JOBZ('V');
-  char UPLO('U');
+  char JOBZ('V'); //compute eigenvalues and eigenvectors.
+  char UPLO('U'); //store upper triangle of A.
   int N(n);
   int LDA(n);
   int LWORK(2 * n);
   int info = 0;
+  //Ax=lamda x.  For given A=mat_h, returns the list of *real* eigenvalues lamda=eval, and
+  //the matrix of eigenvectors V=mat_h (overwritten).  Eigenvectors are columns of this matrix.
+  //The eigendecomposition of this matrix is thus V*LAMBDA*V^dagger.
   LAPACK::heev(JOBZ, UPLO, N, &mat_h.at(0), LDA, &eval.at(0), &work.at(0), LWORK, &rwork.at(0), info);
   if (info != 0)
   {
@@ -218,49 +523,57 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
     }
   }
   // perform matrix multiplication
-  // assume row major
+  // Everything here is column major, so normal BLAS ordering and conventions apply.
+
+  // e^{LAMBDA} * V^dagger
   BLAS::gemm('N', 'C', n, n, n, std::complex<RealType>(1.0, 0), &mat_d.at(0), n, &mat_h.at(0), n,
              std::complex<RealType>(0.0, 0.0), &mat_t.at(0), n);
+  // V * [ e^{LAMBDA} * V^dagger ] = exp(K)
   BLAS::gemm('N', 'N', n, n, n, std::complex<RealType>(1.0, 0), &mat_h.at(0), n, &mat_t.at(0), n,
              std::complex<RealType>(0.0, 0.0), &mat_d.at(0), n);
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
-    {
-      if (mat_d[i + n * j].imag() > 1e-12)
-      {
-        app_log() << "warning: large imaginary value in orbital rotation matrix: (i,j) = (" << i << "," << j
-                  << "), im = " << mat_d[i + n * j].imag() << std::endl;
-      }
-      mat[j][i] = mat_d[i + n * j].real();
-    }
+      //Copy [exp(K)]_ij in column major form to mat in row major form.
+      //For real build, the imaginary part is discarded.  For complex build,
+      //the entire complex entry is copied.
+      copy_with_complex_cast(mat_d[i + n * j], mat[i][j]);
 }
 
-void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
+void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output)
 {
   const int n = mat.rows();
-  std::vector<RealType> mat_h(n * n, 0);
-  std::vector<RealType> eval_r(n, 0);
-  std::vector<RealType> eval_i(n, 0);
+  std::vector<ValueType> mat_h(n * n, 0);
   std::vector<RealType> mat_l(n * n, 0);
-  std::vector<RealType> work(4 * n, 0);
-
   std::vector<std::complex<RealType>> mat_cd(n * n, 0);
   std::vector<std::complex<RealType>> mat_cl(n * n, 0);
   std::vector<std::complex<RealType>> mat_ch(n * n, 0);
 
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
+      //we copy input mat in row major form to column major array for LAPACK consumption.
       mat_h[i + n * j] = mat[i][j];
 
   // diagonalize the matrix
-  char JOBL('V');
-  char JOBR('N');
+  char JOBL('V'); //Compute left eigenvectors.
+  char JOBR('N'); //Don't compute right eigenvectors.
   int N(n);
   int LDA(n);
   int LWORK(4 * n);
   int info = 0;
+
+#ifndef QMC_COMPLEX
+  std::vector<RealType> eval_r(n, 0);
+  std::vector<RealType> eval_i(n, 0);
+  std::vector<RealType> work(4 * n, 0);
   LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval_r.at(0), &eval_i.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
                &work.at(0), &LWORK, &info);
+#else
+  std::vector<ValueType> eval(n, 0);
+  std::vector<ValueType> work(2 * n, 0);
+  std::vector<RealType> rwork(2 * n, 0);
+  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_cl.at(0), &LDA, nullptr, &LDA, &work.at(0),
+               &LWORK, &rwork.at(0), &info);
+#endif
   if (info != 0)
   {
     std::ostringstream msg;
@@ -273,9 +586,8 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
   {
     for (int j = 0; j < n; ++j)
     {
+#ifndef QMC_COMPLEX
       auto tmp = (i == j) ? std::log(std::complex<RealType>(eval_r[i], eval_i[i])) : std::complex<RealType>(0.0, 0.0);
-      mat_cd[i + j * n] = tmp;
-
       if (eval_i[j] > 0.0)
       {
         mat_cl[i + j * n]       = std::complex<RealType>(mat_l[i + j * n], mat_l[i + (j + 1) * n]);
@@ -285,6 +597,10 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
       {
         mat_cl[i + j * n] = std::complex<RealType>(mat_l[i + j * n], 0.0);
       }
+#else
+      auto tmp     = (i == j) ? std::log(eval[i]) : ValueType(0.0);
+#endif
+      mat_cd[i + j * n] = tmp;
     }
   }
 
@@ -297,13 +613,158 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
     {
+#ifndef QMC_COMPLEX
       if (mat_cd[i + n * j].imag() > 1e-12)
       {
         app_log() << "warning: large imaginary value in antisymmetric matrix: (i,j) = (" << i << "," << j
                   << "), im = " << mat_cd[i + n * j].imag() << std::endl;
       }
-      mat[i][j] = mat_cd[i + n * j].real();
+      output[i][j] = mat_cd[i + n * j].real();
+#else
+      output[i][j] = mat_cd[i + n * j];
+#endif
     }
+}
+
+void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                      const opt_variables_type& optvars,
+                                      ValueVector& psi,
+                                      const ValueVector& psiinv,
+                                      std::vector<ValueType>& ratios,
+                                      Matrix<ValueType>& dratios,
+                                      int FirstIndex,
+                                      int LastIndex)
+{
+  Phi_->evaluateDetRatios(VP, psi, psiinv, ratios);
+
+  const size_t nel = LastIndex - FirstIndex;
+  const size_t nmo = Phi_->getOrbitalSetSize();
+
+  psiM_inv.resize(nel, nel);
+  psiM_all.resize(nel, nmo);
+  dpsiM_all.resize(nel, nmo);
+  d2psiM_all.resize(nel, nmo);
+
+  psiM_inv   = 0;
+  psiM_all   = 0;
+  dpsiM_all  = 0;
+  d2psiM_all = 0;
+
+  const ParticleSet& P = VP.getRefPS();
+  int iel              = VP.refPtcl;
+
+  Phi_->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nel; j++)
+      psiM_inv(i, j) = psiM_all(i, j);
+
+  Invert(psiM_inv.data(), nel, nel);
+
+  const ValueType* const A(psiM_all.data());
+  const ValueType* const Ainv(psiM_inv.data());
+  SPOSet::ValueMatrix T_orig;
+  T_orig.resize(nel, nmo);
+
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T_orig.data(), nmo);
+
+  SPOSet::ValueMatrix T;
+  T.resize(nel, nmo);
+
+  ValueVector tmp_psi;
+  tmp_psi.resize(nmo);
+
+  for (int iat = 0; iat < VP.getTotalNum(); iat++)
+  {
+    Phi_->evaluateValue(VP, iat, tmp_psi);
+
+    for (int j = 0; j < nmo; j++)
+      psiM_all(iel - FirstIndex, j) = tmp_psi[j];
+
+    for (int i = 0; i < nel; i++)
+      for (int j = 0; j < nel; j++)
+        psiM_inv(i, j) = psiM_all(i, j);
+
+    Invert(psiM_inv.data(), nel, nel);
+
+    const ValueType* const A(psiM_all.data());
+    const ValueType* const Ainv(psiM_inv.data());
+
+    // The matrix A is rectangular.  Ainv is the inverse of the square part of the matrix.
+    // The multiply of Ainv and the square part of A is just the identity.
+    // This multiply could be reduced to Ainv and the non-square part of A.
+    BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
+
+    for (int i = 0; i < myVars.size(); i++)
+    {
+      int kk = myVars.where(i);
+      if (kk >= 0)
+      {
+        int j            = IsComplex_t<ValueType>::value ? i / 2 : i;
+        const int p      = m_act_rot_inds_.at(j).first;
+        const int q      = m_act_rot_inds_.at(j).second;
+        dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
+#ifdef QMC_COMPLEX
+        if (i % 2 == 1)
+          dratios(iat, kk) *= ComplexType(0, 1);
+#endif
+      }
+    }
+  }
+}
+
+void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
+                                        const opt_variables_type& optvars,
+                                        Vector<ValueType>& dlogpsi,
+                                        int FirstIndex,
+                                        int LastIndex)
+{
+  const size_t nel = LastIndex - FirstIndex;
+  const size_t nmo = Phi_->getOrbitalSetSize();
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
+
+  psiM_inv.resize(nel, nel);
+  psiM_all.resize(nel, nmo);
+  dpsiM_all.resize(nel, nmo);
+  d2psiM_all.resize(nel, nmo);
+
+  psiM_inv   = 0;
+  psiM_all   = 0;
+  dpsiM_all  = 0;
+  d2psiM_all = 0;
+
+  Phi_->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nel; j++)
+      psiM_inv(i, j) = psiM_all(i, j);
+
+  Invert(psiM_inv.data(), nel, nel);
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
+  const ValueType* const A(psiM_all.data());
+  const ValueType* const Ainv(psiM_inv.data());
+  SPOSet::ValueMatrix T;
+  T.resize(nel, nmo);
+
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
+
+  for (int i = 0; i < myVars.size(); i++)
+  {
+    int kk = myVars.where(i);
+    if (kk >= 0)
+    {
+      int j       = IsComplex_t<ValueType>::value ? i / 2 : i;
+      const int p = m_act_rot_inds_.at(j).first;
+      const int q = m_act_rot_inds_.at(j).second;
+      dlogpsi[kk] = T(p, q);
+#ifdef QMC_COMPLEX
+      if (i % 2 == 1)
+        dlogpsi[kk] *= ComplexType(0, 1);
+#endif
+    }
+  }
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
@@ -314,7 +775,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const int& LastIndex)
 {
   const size_t nel = LastIndex - FirstIndex;
-  const size_t nmo = Phi->getOrbitalSetSize();
+  const size_t nmo = Phi_->getOrbitalSetSize();
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
   myG_temp.resize(nel);
@@ -340,7 +801,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   d2psiM_all = 0;
 
 
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+  Phi_->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
 
   for (int i = 0; i < nel; i++)
     for (int j = 0; j < nel; j++)
@@ -372,7 +833,8 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   //possibly replace wit BLAS calls
   for (int i = 0; i < nel; i++)
     for (int j = 0; j < nmo; j++)
-      Bbar(i, j) = d2psiM_all(i, j) + 2 * dot(myG_J[i], dpsiM_all(i, j)) + myL_J[i] * psiM_all(i, j);
+      Bbar(i, j) = d2psiM_all(i, j) + ValueType(2.0) * ValueType(dot(myG_J[i], dpsiM_all(i, j))) +
+          ValueType(myL_J[i]) * psiM_all(i, j);
 
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
@@ -399,13 +861,27 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   //possibly replace with BLAS call
   Y4 = Y3 - Y2;
 
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
+  for (int i = 0; i < myVars.size(); i++)
   {
-    int kk              = myVars.where(i);
-    const int p         = m_act_rot_inds.at(i).first;
-    const int q         = m_act_rot_inds.at(i).second;
-    dlogpsi[kk]      = T(p, q);
-    dhpsioverpsi[kk] = ValueType(-0.5) * Y4(p, q);
+    int kk = myVars.where(i);
+    if (kk >= 0)
+    {
+      int j       = IsComplex_t<ValueType>::value ? i / 2 : i;
+      const int p = m_act_rot_inds_.at(j).first;
+      const int q = m_act_rot_inds_.at(j).second;
+
+      ValueType pref1 = ValueType(1.0);
+      ValueType pref2 = ValueType(-0.5);
+#ifdef QMC_COMPLEX
+      if (i % 2 == 1)
+      {
+        pref1 *= ComplexType(0, 1);
+        pref2 *= ComplexType(0, 1);
+      }
+#endif
+      dlogpsi[kk] += pref1 * T(p, q);
+      dhpsioverpsi[kk] += pref2 * Y4(p, q);
+    }
   }
 }
 
@@ -436,6 +912,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const size_t NP2,
                                       const std::vector<std::vector<int>>& lookup_tbl)
 {
+#ifndef QMC_COMPLEX
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
   {
@@ -458,7 +935,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     myG_J = 0.0;
     myL_J.resize(NP);
     myL_J            = 0.0;
-    const size_t nmo = Phi->getOrbitalSetSize();
+    const size_t nmo = Phi_->getOrbitalSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     const RealType* restrict C_p = Coeff.data();
@@ -497,6 +974,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                       detValues_up, detValues_dn, grads_up, grads_dn, lapls_up, lapls_dn, M_up, M_dn, Minv_up, Minv_dn,
                       B_grad, B_lapl, detData_up, N1, N2, NP1, NP2, lookup_tbl);
   }
+#endif
 }
 
 
@@ -516,6 +994,7 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
                                         const std::vector<int>& detData_up,
                                         const std::vector<std::vector<int>>& lookup_tbl)
 {
+#ifndef QMC_COMPLEX
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
   {
@@ -527,12 +1006,13 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
   }
   if (recalculate)
   {
-    const size_t nmo = Phi->getOrbitalSetSize();
+    const size_t nmo = Phi_->getOrbitalSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     table_method_evalWF(dlogpsi, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn, M_up,
                         M_dn, Minv_up, Minv_dn, detData_up, lookup_tbl);
   }
+#endif
 }
 
 void RotatedSPOs::table_method_eval(Vector<ValueType>& dlogpsi,
@@ -675,6 +1155,7 @@ $
 $
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 {
+#ifndef QMC_COMPLEX
   ValueMatrix Table;
   ValueMatrix Bbar;
   ValueMatrix Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y11, Y23, Y24, Y25, Y26;
@@ -710,7 +1191,7 @@ $
   K5T.resize(nmo, nmo);
   TK5T.resize(nel, nmo);
 
-  const int parameters_size(m_act_rot_inds.size());
+  const int parameters_size(m_act_rot_inds_.size());
   const int parameter_start_index(0);
 
   const size_t num_unique_up_dets(detValues_up.size());
@@ -932,37 +1413,41 @@ $
   for (int mu = 0, k = parameter_start_index; k < (parameter_start_index + parameters_size); k++, mu++)
   {
     int kk = myVars.where(k);
-    const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
-    if (i <= nel - 1 && j > nel - 1)
+    if (kk >= 0)
     {
-      dhpsioverpsi[kk] +=
-          ValueType(-0.5 * Y4(i, j) -
-                    0.5 *
-                        (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
-                         K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
-                         const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
-                         K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
-    }
-    else if (i <= nel - 1 && j <= nel - 1)
-    {
-      dhpsioverpsi[kk] += ValueType(
-          -0.5 * (Y4(i, j) - Y4(j, i)) -
-          0.5 *
-              (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
-               TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
-               K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
-               const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
-               K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
-    }
-    else
-    {
-      dhpsioverpsi[kk] += ValueType(-0.5 *
-                                    (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
+      const int i(m_act_rot_inds_[mu].first), j(m_act_rot_inds_[mu].second);
+      if (i <= nel - 1 && j > nel - 1)
+      {
+        dhpsioverpsi[kk] +=
+            ValueType(-0.5 * Y4(i, j) -
+                      0.5 *
+                          (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
+                           K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
+                           const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
+                           K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
+      }
+      else if (i <= nel - 1 && j <= nel - 1)
+      {
+        dhpsioverpsi[kk] += ValueType(
+            -0.5 * (Y4(i, j) - Y4(j, i)) -
+            0.5 *
+                (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
+                 TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
+                 K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
+                 const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
+                 K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
+      }
+      else
+      {
+        dhpsioverpsi[kk] += ValueType(-0.5 *
+                                      (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
 
-                                     + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) +
-                                     const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) - K2T(i, j) + K2T(j, i)));
+                                       + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) +
+                                       const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) - K2T(i, j) + K2T(j, i)));
+      }
     }
   }
+#endif
 }
 
 void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
@@ -981,6 +1466,7 @@ void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
                                       const std::vector<int>& detData_up,
                                       const std::vector<std::vector<int>>& lookup_tbl)
 {
+#ifndef QMC_COMPLEX
   ValueMatrix Table;
   ValueMatrix Y5, Y6, Y7;
   ValueMatrix pK4, K4T, TK4T;
@@ -993,7 +1479,7 @@ void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
   K4T.resize(nmo, nmo);
   TK4T.resize(nel, nmo);
 
-  const int parameters_size(m_act_rot_inds.size());
+  const int parameters_size(m_act_rot_inds_.size());
   const int parameter_start_index(0);
 
   const size_t num_unique_up_dets(detValues_up.size());
@@ -1113,35 +1599,159 @@ void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
   for (int mu = 0, k = parameter_start_index; k < (parameter_start_index + parameters_size); k++, mu++)
   {
     int kk = myVars.where(k);
-    const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
-    if (i <= nel - 1 && j > nel - 1)
+    if (kk >= 0)
     {
-      dlogpsi[kk] +=
-          ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
-    }
-    else if (i <= nel - 1 && j <= nel - 1)
-    {
-      dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
-                               (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
-    }
-    else
-    {
-      dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
+      const int i(m_act_rot_inds_[mu].first), j(m_act_rot_inds_[mu].second);
+      if (i <= nel - 1 && j > nel - 1)
+      {
+        dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) +
+                                 (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
+      }
+      else if (i <= nel - 1 && j <= nel - 1)
+      {
+        dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
+                                 (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
+      }
+      else
+      {
+        dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
+      }
     }
   }
+#endif
 }
 
 
 std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
 {
-  auto myclone = std::make_unique<RotatedSPOs>(my_name_, std::unique_ptr<SPOSet>(Phi->makeClone()));
+  auto myclone = std::make_unique<RotatedSPOs>(my_name_, std::unique_ptr<SPOSet>(Phi_->makeClone()));
 
-  myclone->params          = this->params;
-  myclone->params_supplied = this->params_supplied;
-  myclone->m_act_rot_inds  = this->m_act_rot_inds;
-  myclone->myVars          = this->myVars;
+  myclone->params_          = this->params_;
+  myclone->params_supplied_ = this->params_supplied_;
+  myclone->m_act_rot_inds_  = this->m_act_rot_inds_;
+  myclone->m_full_rot_inds_ = this->m_full_rot_inds_;
+  myclone->myVars           = this->myVars;
+  myclone->myVarsFull_      = this->myVarsFull_;
+  myclone->history_params_  = this->history_params_;
+  myclone->use_global_rot_  = this->use_global_rot_;
   return myclone;
 }
 
+void RotatedSPOs::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                       const RefVector<ValueVector>& psi_list,
+                                       const std::vector<const ValueType*>& invRow_ptr_list,
+                                       std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateDetRatios(phi_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+}
+
+void RotatedSPOs::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   const RefVector<ValueVector>& psi_v_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateValue(phi_list, P_list, iat, psi_v_list);
+}
+
+void RotatedSPOs::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                 int iat,
+                                 const RefVector<ValueVector>& psi_v_list,
+                                 const RefVector<GradVector>& dpsi_v_list,
+                                 const RefVector<ValueVector>& d2psi_v_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+}
+
+void RotatedSPOs::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                         int iat,
+                                         const RefVector<ValueVector>& psi_v_list,
+                                         const RefVector<GradVector>& dpsi_v_list,
+                                         const RefVector<ValueVector>& d2psi_v_list,
+                                         OffloadMatrix<ComplexType>& mw_dspin) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateVGLWithSpin(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
+}
+
+void RotatedSPOs::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                                 int iat,
+                                                 const std::vector<const ValueType*>& invRow_ptr_list,
+                                                 OffloadMWVGLArray& phi_vgl_v,
+                                                 std::vector<ValueType>& ratios,
+                                                 std::vector<GradType>& grads) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
+}
+
+void RotatedSPOs::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                                         int iat,
+                                                         const std::vector<const ValueType*>& invRow_ptr_list,
+                                                         OffloadMWVGLArray& phi_vgl_v,
+                                                         std::vector<ValueType>& ratios,
+                                                         std::vector<GradType>& grads,
+                                                         std::vector<ValueType>& spingrads) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluateVGLandDetRatioGradsWithSpin(phi_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads,
+                                                spingrads);
+}
+
+void RotatedSPOs::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                                          const RefVectorWithLeader<ParticleSet>& P_list,
+                                          int first,
+                                          int last,
+                                          const RefVector<ValueMatrix>& logdet_list,
+                                          const RefVector<GradMatrix>& dlogdet_list,
+                                          const RefVector<ValueMatrix>& d2logdet_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.mw_evaluate_notranspose(phi_list, P_list, first, last, logdet_list, dlogdet_list, d2logdet_list);
+}
+
+void RotatedSPOs::createResource(ResourceCollection& collection) const { Phi_->createResource(collection); }
+
+void RotatedSPOs::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.acquireResource(collection, phi_list);
+}
+
+void RotatedSPOs::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  auto phi_list = extractPhiRefList(spo_list);
+  auto& leader  = phi_list.getLeader();
+  leader.releaseResource(collection, phi_list);
+}
+
+RefVectorWithLeader<SPOSet> RotatedSPOs::extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list)
+{
+  auto& spo_leader = spo_list.getCastedLeader<RotatedSPOs>();
+  const auto nw    = spo_list.size();
+  RefVectorWithLeader<SPOSet> phi_list(*spo_leader.Phi_);
+  phi_list.reserve(nw);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    RotatedSPOs& rot = spo_list.getCastedElement<RotatedSPOs>(iw);
+    phi_list.emplace_back(*rot.Phi_);
+  }
+  return phi_list;
+}
 
 } // namespace qmcplusplus

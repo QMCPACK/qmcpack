@@ -13,6 +13,7 @@
 #include "catch.hpp"
 
 
+#include "Utilities/ProjectData.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -40,6 +41,7 @@ namespace qmcplusplus
 {
 TEST_CASE("DMC", "[drivers][dmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
@@ -48,20 +50,13 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 1.0;
+  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.0, 1.0};
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -76,12 +71,15 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   CloneManager::clearClones();
 
-  TrialWaveFunction psi;
+  TrialWaveFunction psi(project_data.getRuntimeOptions());
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
-  FakeRandom rg;
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
   std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
@@ -90,14 +88,14 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(elec, psi, h, c, false);
+  DMC dmc_omp(project_data, elec, psi, h, rngs, c, false);
 
-  const char* dmc_input = "<qmc method=\"dmc\"> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-  </qmc> \
-  ";
+  const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+  </qmc>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(dmc_input);
   REQUIRE(okay);
@@ -109,23 +107,24 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   // With the constant wavefunction, no moves should be rejected
   double ar = dmc_omp.acceptRatio();
-  REQUIRE(ar == Approx(1.0));
+  CHECK(ar == Approx(1.0));
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
   //  Values from diffuse.py for moving one step
 
-  REQUIRE(elec[0]->R[0][0] == Approx(0.627670258894097));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+  CHECK(elec[0]->R[0][0] == Approx(0.627670258894097));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.372329741105903));
 
-  REQUIRE(elec.R[1][0] == Approx(0.0));
-  REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
-  REQUIRE(elec.R[1][2] == Approx(1.0));
+  CHECK(elec.R[1][0] == Approx(0.0));
+  CHECK(elec.R[1][1] == Approx(-0.372329741105903));
+  CHECK(elec.R[1][2] == Approx(1.0));
 }
 
 TEST_CASE("SODMC", "[drivers][dmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
@@ -134,17 +133,12 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
-  elec.R[0][0]  = 1.0;
-  elec.R[0][1]  = 0.0;
-  elec.R[0][2]  = 0.0;
+  elec.R[0]     = {1.0, 0.0, 0.0};
   elec.spins[0] = 0.0;
   elec.setSpinor(true);
   elec.createWalkers(1);
@@ -161,12 +155,15 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   CloneManager::clearClones();
 
-  TrialWaveFunction psi;
+  TrialWaveFunction psi(project_data.getRuntimeOptions());
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
-  FakeRandom rg;
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
   std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
@@ -175,15 +172,15 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(elec, psi, h, c, false);
+  DMC dmc_omp(project_data, elec, psi, h, rngs, c, false);
 
-  const char* dmc_input = "<qmc method=\"dmc\"> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-   <parameter name=\"SpinMass\">0.25</parameter> \
-  </qmc> \
-  ";
+  const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+   <parameter name="SpinMass">0.25</parameter>
+  </qmc>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(dmc_input);
   REQUIRE(okay);
@@ -195,16 +192,16 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   // With the constant wavefunction, no moves should be rejected
   double ar = dmc_omp.acceptRatio();
-  REQUIRE(ar == Approx(1.0));
+  CHECK(ar == Approx(1.0));
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
   //  Values from diffuse.py for moving one step
 
-  REQUIRE(elec[0]->R[0][0] == Approx(0.627670258894097));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+  CHECK(elec[0]->R[0][0] == Approx(0.627670258894097));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.372329741105903));
 
-  REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
+  CHECK(elec.spins[0] == Approx(-0.74465948215809097));
 }
 } // namespace qmcplusplus

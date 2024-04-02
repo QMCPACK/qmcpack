@@ -62,6 +62,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   int MemberAttribIndx;
   int NumCenters;
   Return_t myConst;
+  ///cutoff radius of the short-range part
   RealType myRcut;
   std::string PtclRefName;
 
@@ -131,8 +132,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
-  /** Call to inform objects associated with this operator of per particle listeners.
-   *  should be called before createResources
+  /** Inform objects associated with this operator of per particle listeners.
+   *  i.e. turnOnPerParticleSK of particleset qp.
    */
   void informOfPerParticleListener() override;
 
@@ -197,23 +198,9 @@ private:
   /// Timer for offload part
   NewTimer& offload_timer_;
 
-  struct CoulombPBCAAMultiWalkerResource : public Resource
-  {
-    CoulombPBCAAMultiWalkerResource() : Resource("CoulombPBCAA") {}
-
-    Resource* makeClone() const override { return new CoulombPBCAAMultiWalkerResource(*this); }
-
-    Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
-
-    /// a walkers worth of per particle coulomb AA potential values
-    Vector<RealType> v_sample;
-
-    /// constant values per particle for coulomb AA potential
-    Vector<RealType> pp_consts;
-  };
-
   /// multiwalker shared resource
-  ResourceHandle<CoulombPBCAAMultiWalkerResource> mw_res_;
+  struct CoulombPBCAAMultiWalkerResource;
+  ResourceHandle<CoulombPBCAAMultiWalkerResource> mw_res_handle_;
 
   /** constructor code factored out
    */

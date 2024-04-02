@@ -217,8 +217,10 @@ def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,b
     d1 = obj(diff1)
     d2 = obj(diff2)
     print(hline.format('left diff'))
+    print(list(sorted(d1.keys())))
     print(d1)
     print(hline.format('right diff'))
+    print(list(sorted(d2.keys())))
     print(d2)
 #end def print_diff
 

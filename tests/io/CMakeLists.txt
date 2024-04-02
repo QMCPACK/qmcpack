@@ -98,24 +98,64 @@ run_restart_and_check(
   check.sh
   true)
 
-if(NOT QMC_CUDA)
-  run_restart_and_check(
-    deterministic-restart_batch
-    "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
-    qmc_short_batch
-    8
-    2
-    check.sh
-    false)
-  run_restart_and_check(
-    deterministic-restart_batch
-    "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
-    qmc_short_batch
-    1
-    16
-    check.sh
-    true)
-endif()
+run_restart_and_check(
+  deterministic-restart_batch
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
+  qmc_short_batch
+  8
+  2
+  check.sh
+  false)
+
+add_test_check_file_existence(deterministic-restart_batch-8-2 qmc_short_batch.s000.config.h5 TRUE)
+add_test_check_file_existence(deterministic-restart_batch-8-2 qmc_short_batch.s000.random.h5 TRUE)
+add_test_check_file_existence(deterministic-restart_batch-8-2 qmc_short_batch.s001.config.h5 FALSE)
+add_test_check_file_existence(deterministic-restart_batch-8-2 qmc_short_batch.s001.random.h5 FALSE)
+
+run_restart_and_check(
+  deterministic-restart_batch
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
+  qmc_short_batch
+  1
+  16
+  check.sh
+  true)
+
+run_restart_and_check(
+  deterministic-restart_dmc
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc"
+  det_qmc_vmcbatch_dmcbatch_tm
+  8
+  2
+  check.sh
+  false)
+
+run_restart_and_check(
+  deterministic-restart_dmc
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc"
+  det_qmc_vmcbatch_dmcbatch_tm
+  1
+  16
+  check.sh
+  true)
+
+run_restart_and_check(
+  deterministic-restart_dmc_disable_branching
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc_disable_branching"
+  det_qmc_vmcbatch_dmcbatch_tm
+  8
+  2
+  check.sh
+  false)
+
+run_restart_and_check(
+  deterministic-restart_dmc_disable_branching
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc_disable_branching"
+  det_qmc_vmcbatch_dmcbatch_tm
+  1
+  16
+  check.sh
+  true)
 
 run_restart_and_check(
   deterministic-save_spline_coefs

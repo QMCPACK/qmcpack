@@ -257,9 +257,9 @@ public:
     if (k > 0)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
     // G[nel][nmo]
-    assert(E.size(0) == G.size(0));
-    assert(E.size(1) == 3);
-    int nwalk = G.size(0);
+    assert(std::get<0>(E.sizes()) == std::get<0>(G.sizes()));
+    assert(std::get<1>(E.sizes()) == 3);
+    int nwalk = G.size();
     int getKr = Kr != nullptr;
     int getKl = Kl != nullptr;
 
@@ -274,17 +274,17 @@ public:
     if (not(addEJ || addEXX))
       return;
 
-    int nmo_  = rotPiu.size(0);
-    int nu    = rotMuv.size(0);
+    int nmo_  = rotPiu.size();
+    int nu    = rotMuv.size();
     int nu0   = rotnmu0;
-    int nv    = rotMuv.size(1);
-    int nel_  = rotcPua[0].size(1);
+    int nv    = std::get<1>(rotMuv.sizes());
+    int nel_  = std::get<1>(rotcPua[0].sizes());
     int nspin = (walker_type == COLLINEAR) ? 2 : 1;
-    assert(G.size(1) == nel_ * nmo_);
+    assert(std::get<1>(G.sizes()) == nel_ * nmo_);
     if (addEJ and getKl)
-      assert(Kl->size(0) == nwalk && Kl->size(1) == nu);
+      assert(std::get<0>(Kl->sizes()) == nwalk && std::get<1>(Kl->sizes()) == nu);
     if (addEJ and getKr)
-      assert(Kr->size(0) == nwalk && Kr->size(1) == nu);
+      assert(std::get<0>(Kr->sizes()) == nwalk && std::get<1>(Kr->sizes()) == nu);
     using ma::T;
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
@@ -751,8 +751,8 @@ public:
 #if defined(QMC_COMPLEX)
     // reinterpret as RealType matrices with 2x the columns
     Array_ref<SPRealType, 2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
-                                   {Luv.size(0), 2 * Luv.size(1)});
-    Array_cref<SPRealType, 2> X_R(pointer_cast<SPRealType const>(Xsp.origin()), {Xsp.size(0), 2 * Xsp.size(1)});
+                                   {std::get<0>(Luv.sizes()), 2 * std::get<1>(Luv.sizes())});
+    Array_cref<SPRealType, 2> X_R(pointer_cast<SPRealType const>(Xsp.origin()), {std::get<0>(Xsp.sizes()), 2 * std::get<1>(Xsp.sizes())});
     Array_ref<SPRealType, 2> Tuw_R(pointer_cast<SPRealType>(Tuw.origin()), {nu, 2 * nwalk});
     ma::product(Luv_R.sliced(u0, uN), X_R, Tuw_R.sliced(u0, uN));
 #else
@@ -824,8 +824,8 @@ public:
   {
     using GType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    boost::multi::array_ref<GType const, 2, decltype(G.origin())> G_(G.origin(), {1, G.size(0)});
+    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {std::get<0>(v.sizes()), 1});
+    boost::multi::array_ref<GType const, 2, decltype(G.origin())> G_(G.origin(), {1, std::get<0>(G.sizes())});
     vbias(G_, v_, a, c, k);
   }
 
@@ -839,14 +839,14 @@ public:
     using vType = typename std::decay<MatB>::type::element;
     if (k > 0)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
-    int nwalk = G.size(0);
-    int nmo_  = Piu.size(0);
-    int nu    = Piu.size(1);
-    int nel_  = cPua[0].size(1);
+    int nwalk = std::get<0>(G.sizes());
+    int nmo_  = std::get<0>(Piu.sizes());
+    int nu    = std::get<1>(Piu.sizes());
+    int nel_  = std::get<1>(cPua[0].sizes());
 #if defined(QMC_COMPLEX)
-    int nchol = 2 * Luv.size(1);
+    int nchol = 2 * std::get<1>(Luv.sizes());
 #else
-    int nchol = Luv.size(1);
+    int nchol = std::get<1>(Luv.sizes());
 #endif
     assert(std::get<1>(v.sizes()) == nwalk);
     assert(std::get<0>(v.sizes()) == nchol);
@@ -917,7 +917,7 @@ public:
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
       Array_ref<SPRealType, 2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
-                                     {Luv.size(0), 2 * Luv.size(1)});
+                                     {std::get<0>(Luv.sizes()), 2 * std::get<1>(Luv.sizes())});
       Array_ref<SPRealType, 2> Guu_R(pointer_cast<SPRealType>(Guu.origin()), {nu, 2 * nwalk});
       Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {std::get<0>(vsp.sizes()), 2 * std::get<1>(vsp.sizes())});
       ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(0), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
@@ -964,16 +964,16 @@ protected:
   template<class MatA, class MatB>
   void Guu_from_compact(MatA const& G, MatB&& Guu)
   {
-    int nmo_ = int(Piu.size(0));
-    int nu   = int(Piu.size(1));
-    int nel_ = cPua[0].size(1);
+    int nmo_ = int(std::get<0>(Piu.sizes()));
+    int nu   = int(std::get<1>(Piu.sizes()));
+    int nel_ = std::get<1>(cPua[0].sizes());
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
-    int nw           = G.size(0);
+    int nw           = std::get<0>(G.sizes());
 
-    assert(G.size(0) == Guu.size(1));
-    assert(G.size(1) == nel_ * nmo_);
-    assert(Guu.size(0) == nu);
+    assert(std::get<0>(G.sizes()) == std::get<1>(Guu.sizes()));
+    assert(std::get<1>(G.sizes()) == nel_ * nmo_);
+    assert(std::get<0>(Guu.sizes()) == nu);
 
     ComplexType a = (walker_type == CLOSED) ? ComplexType(2.0) : ComplexType(1.0);
     Array<SPComplexType, 2> T1({(uN - u0), nw * nel_},
@@ -1007,15 +1007,15 @@ protected:
   void Guu_from_full(MatA const& G, MatB&& Guu)
   {
     using std::fill_n;
-    int nmo_ = int(Piu.size(0));
-    int nu   = int(Piu.size(1));
+    int nmo_ = int(std::get<0>(Piu.sizes()));
+    int nu   = int(std::get<1>(Piu.sizes()));
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
-    int nwalk        = G.size(0);
+    int nwalk        = G.size();
 
-    assert(G.size(0) == Guu.size(1));
-    assert(Guu.size(0) == nu);
-    assert(G.size(1) == nmo_ * nmo_);
+    assert(std::get<0>(G.sizes()) == std::get<1>(Guu.sizes()));
+    assert(std::get<0>(Guu.sizes()) == nu);
+    assert(std::get<1>(G.sizes()) == nmo_ * nmo_);
 
     // calculate how many walkers can be done concurrently
     long Bytes = default_buffer_size_in_MB * 1024L * 1024L;
@@ -1058,11 +1058,11 @@ protected:
     static_assert(std::decay<MatB>::type::dimensionality == 3, "Wrong dimensionality");
     static_assert(std::decay<MatC>::type::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<MatD>::type::dimensionality == 3, "Wrong dimensionality");
-    int nmo_ = int(rotPiu.size(0));
-    int nu   = int(rotMuv.size(0)); // potentially distributed over nodes
-    int nv   = int(rotMuv.size(1)); // not distributed over nodes
-    int nw   = int(G.size(0));
-    assert(rotPiu.size(1) == nv);
+    int nmo_ = int(std::get<0>(rotPiu.sizes()));
+    int nu   = int(std::get<0>(rotMuv.sizes())); // potentially distributed over nodes
+    int nv   = int(std::get<1>(rotMuv.sizes())); // not distributed over nodes
+    int nw   = int(G.size());
+    assert(std::get<1>(rotPiu.sizes()) == nv);
     int v0, vN;
     std::tie(v0, vN) = FairDivideBoundary(comm->rank(), nv, comm->size());
     int k0, kN;

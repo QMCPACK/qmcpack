@@ -16,6 +16,7 @@
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -45,22 +46,23 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 
   WaveFunctionFactory wff(*particle_set_map["e"], particle_set_map, c);
 
-  const char* wavefunction_xml = "<wavefunction> \
-         <jastrow type=\"Two-Body\" name=\"J2\" function=\"bspline\" print=\"yes\" gpu=\"no\"> \
-            <correlation speciesA=\"u\" speciesB=\"d\" size=\"8\" cutoff=\"10.0\"> \
-               <coefficients id=\"ud\" type=\"Array\"> \
-0.5954603818 0.5062051797 0.3746940461 0.2521010502 0.1440163317 0.07796688253 \
-0.03804420551 0.01449320872 \
-               </coefficients> \
-            </correlation> \
-         </jastrow> \
-</wavefunction>";
+  const char* wavefunction_xml = R"(<wavefunction>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes" gpu="no">
+            <correlation speciesA="u" speciesB="d" size="8" cutoff="10.0">
+               <coefficients id="ud" type="Array">
+0.5954603818 0.5062051797 0.3746940461 0.2521010502 0.1440163317 0.07796688253
+0.03804420551 0.01449320872
+               </coefficients>
+            </correlation>
+         </jastrow>
+</wavefunction>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(wavefunction_xml);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  auto twf_ptr = wff.buildTWF(root);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wff.buildTWF(root, runtime_options);
 
   REQUIRE(twf_ptr != nullptr);
   REQUIRE(twf_ptr->size() == 1);

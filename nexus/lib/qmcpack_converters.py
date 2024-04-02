@@ -202,9 +202,13 @@ def read_eshdf_eig_data(filename, Ef_list):
     kaxes    = 2*pi*inv(axes).T
     nk       = h5int(h.electrons.number_of_kpoints)
     ns       = h5int(h.electrons.number_of_spins)
-    if len(Ef_list) != ns:
-      msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
-      error(msg)
+    if (len(Ef_list) == 1 and ns == 2):
+        # Using the same E_fermi for up and down electrons
+        E_fermi = Ef_list[0]
+        Ef_list = np.array([E_fermi, E_fermi])
+    elif len(Ef_list) != ns:
+        msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
+        error(msg)
     data     = obj()
     for k in range(nk):
         kp = h.electrons['kpoint_'+str(k)]
@@ -742,7 +746,6 @@ class Convert4qmc(Simulation):
         self.input_code = None
     #end def __init__
 
-
     def set_app_name(self,app_name):
         self.app_name = app_name
         self.input.set_app_name(app_name)
@@ -864,6 +867,25 @@ class Convert4qmc(Simulation):
         output = open(os.path.join(self.locdir,self.outfile),'r').read()
         #errors = open(os.path.join(self.locdir,self.errfile),'r').read()
 
+        # Recent versions of convert4qmc no longer produce the orbs.h5 file.
+        # Instead, the file produced directly by e.g. Pyscf is used instead.
+        # Therefore, make a symlink to the previously produced file in 
+        # place of the orbs.h5 file.
+        orbs     = self.input.orbitals
+        finished = self.job.finished
+        h5_orbs  = orbs is not None and orbs.endswith('.h5')
+        if finished and h5_orbs:
+            orbfile     = self.get_prefix()+'.orbs.h5'
+            orbfilepath = os.path.join(self.locdir,orbfile)
+            h5_orbs_missing = not os.path.exists(orbfilepath)
+            if h5_orbs_missing:
+                cwd = os.getcwd()
+                os.chdir(self.locdir)
+                os.system('ln -s {} {}'.format(orbs,orbfile))
+                os.chdir(cwd)
+            #end if
+        #end if
+
         success = 'QMCGaussianParserBase::dump' in output
         for filename in self.list_output_files():
             success &= os.path.exists(os.path.join(self.locdir,filename))
@@ -903,6 +925,170 @@ def generate_convert4qmc(**kwargs):
 
 
 
+
+class Convertpw4qmcInput(SimulationInput):
+    def __init__(self,data_file=None):
+        self.data_file=data_file
+    #end def __init__
+
+    def read(self, filepath):
+        None
+    #end def read
+
+    def write(self, filepath):
+        None
+
+#end class Convertpw4qmcInput
+
+def generate_convertpw4qmc_input(**kwargs):
+    return Convertpw4qmcInput(**kwargs)
+#end def genreate_convertpw4qmc_input
+
+class Convertpw4qmcAnalyzer(SimulationAnalyzer):
+    def __init__(self,arg0):
+        if isinstance(arg0,Simulation):
+            self.infile = arg0.infile
+        else:
+            self.infile = arg0
+        #end if
+    #end def __init__
+
+    def analyze(self):
+        None
+    #end def analyze
+#end class Convertpw4qmcAnalyzer
+
+
+class Convertpw4qmc(Simulation):
+    input_type             = Convertpw4qmcInput
+    analyzer_type          = Convertpw4qmcAnalyzer
+    generic_identifier     = 'convertpw4qmc'
+    application            = 'convertpw4qmc'
+    application_properties = set(['serial'])
+    application_results    = set(['orbitals'])
+    renew_app_command      = True
+
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+    #end def set_app_name
+
+    def propagate_identifier(self):
+        None
+    #end def propagate_identifier
+
+    def set_files(self):
+        # no input file
+        self.infile = None
+        if self.outfile is None:
+            self.outfile = self.identifier + self.outfile_extension
+        #end if
+        if self.errfile is None:
+            self.errfile = self.identifier + self.errfile_extension
+        #end if
+    #end def set_files
+
+    def check_result(self,result_name,sim):
+        return result_name=='orbitals'
+    #end def check_result
+
+    def get_result(self,result_name,sim):
+        result = obj()
+        input = self.input
+        if result_name=='orbitals':
+            wfn_file = 'eshdf.h5'
+            orbfile = os.path.join(self.locdir,wfn_file)
+            result.location = orbfile
+            result.h5file = orbfile
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if        
+        return result
+    #end def get_result
+
+    def get_output_files(self):
+        output_files = []
+        return output_files
+    #end def get_output_files
+
+    def app_command(self):
+        app_name  = self.app_name
+        data_file = self.input.data_file 
+        command = '{} {}'.format(app_name,data_file)
+        return command
+    #end def app_command
+
+    def incorporate_result(self,result_name,result,sim):
+        implemented = True
+        if result_name=='orbitals':
+            if isinstance(sim,Pwscf):
+                pwin = sim.input.control
+                pwprefix = 'pwscf'
+                p2prefix = 'pwscf'
+                pwoutdir = './'
+                p2outdir = './'
+                if 'prefix' in pwin:
+                    pwprefix = pwin.prefix
+                #end if
+                if 'outdir' in pwin:
+                    pwoutdir = pwin.outdir
+                #end if
+                if pwoutdir.startswith('./'):
+                    pwoutdir = pwoutdir[2:]
+                #end if
+                pwsdir = os.path.abspath(os.path.join(sim.locdir ,pwoutdir, pwprefix+'.save'))
+                charge_density_h5 = os.path.join(pwsdir, 'charge-density.hdf5')
+                data_file_schema  = os.path.join(pwsdir, 'data-file-schema.xml')
+                errors = False
+                if not os.path.exists(data_file_schema):
+                    self.error('to use orbitals, '+self.generic_identifier+' must have data-file-schema.xml file', exit=False)
+                    errors = True
+                #end if
+                if not os.path.exists(charge_density_h5):
+                    self.error('to use orbitals, '+self.generic_identifier+' must have charge-density.h5 file.\nNeed to rebuild QE with hdf5 support', exit=False)
+                    errors = True
+                #end if
+                if errors:
+                    self.error(self.generic_identifier+' cannot use orbitals from pwscf')
+                #end if
+                if self.input.data_file is None:
+                    self.input.data_file = data_file_schema
+            else:
+                implemented = False
+            #end if
+        else:
+            implemented = False
+        #end if
+        if not implemented:
+            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+        #end if                
+    #end def incorporate_result
+
+    def check_sim_status(self):
+        h5file   = os.path.join(self.locdir,'eshdf.h5')
+        must_exist = [h5file]
+
+        files_exist = True
+        for file in must_exist:
+            files_exist = files_exist and os.path.exists(file)
+        #end for
+        success = files_exist
+
+        self.finished = files_exist and self.job.finished
+    #end def check_sim_status
+#end class Convertpw4qmc
+
+
+
+def generate_convertpw4qmc(**kwargs):
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
+
+    if not 'input' in sim_args:
+        sim_args.input = generate_convertpw4qmc_input(**inp_args)
+    #end if
+    sim = Convertpw4qmc(**sim_args)
+
+    return sim
+#end def generate_convertpw4qmc
 
 
 

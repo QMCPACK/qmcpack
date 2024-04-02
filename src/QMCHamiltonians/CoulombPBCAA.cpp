@@ -21,10 +21,29 @@
 #include "Particle/DistanceTable.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <ResourceCollection.h>
+#include <Message/UniformCommunicateError.h>
 #include "Numerics/OneDimCubicSplineLinearGrid.h"
 
 namespace qmcplusplus
 {
+struct CoulombPBCAA::CoulombPBCAAMultiWalkerResource : public Resource
+{
+  CoulombPBCAAMultiWalkerResource() : Resource("CoulombPBCAA") {}
+
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<CoulombPBCAAMultiWalkerResource>(*this);
+  }
+
+  Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
+
+  /// a walkers worth of per particle coulomb AA potential values
+  Vector<RealType> v_sample;
+
+  /// constant values per particle for coulomb AA potential
+  Vector<RealType> pp_consts;
+};
+
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload)
     : ForceBase(ref, ref),
       is_active(active),
@@ -35,9 +54,9 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       Ps(ref),
       use_offload_(active && !computeForces && use_offload),
       d_aa_ID(ref.addTable(ref, use_offload_ ? DTModes::ALL_OFF : DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
-      evalLR_timer_(*timer_manager.createTimer("CoulombPBCAA::LongRange", timer_level_fine)),
-      evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine)),
-      offload_timer_(*timer_manager.createTimer("CoulombPBCAA::offload", timer_level_fine))
+      evalLR_timer_(createGlobalTimer("CoulombPBCAA::LongRange", timer_level_fine)),
+      evalSR_timer_(createGlobalTimer("CoulombPBCAA::ShortRange", timer_level_fine)),
+      offload_timer_(createGlobalTimer("CoulombPBCAA::offload", timer_level_fine))
 {
   if (use_offload_)
     assert(ref.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD);
@@ -98,14 +117,14 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       msg << "differences to ensure this error is controlled for your application." << std::endl;
       msg << std::endl;
 
-      throw std::runtime_error(msg.str());
+      throw UniformCommunicateError(msg.str());
     }
     else
     {
       app_log() << "  Check passed." << std::endl;
     }
   }
-  prefix = "F_AA";
+  prefix_ = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
@@ -127,9 +146,9 @@ void CoulombPBCAA::updateSource(ParticleSet& s)
   mRealType eL(0.0), eS(0.0);
   if (ComputeForces)
   {
-    forces = 0.0;
-    eS     = evalSRwithForces(s);
-    eL     = evalLRwithForces(s);
+    forces_ = 0.0;
+    eS      = evalSRwithForces(s);
+    eL      = evalLRwithForces(s);
   }
   else
   {
@@ -236,8 +255,8 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
   auto num_centers = p_leader.getTotalNum();
   auto name(o_leader.getName());
-  Vector<RealType>& v_sample = o_leader.mw_res_->v_sample;
-  const auto& pp_consts      = o_leader.mw_res_->pp_consts;
+  Vector<RealType>& v_sample = o_leader.mw_res_handle_.getResource().v_sample;
+  const auto& pp_consts      = o_leader.mw_res_handle_.getResource().pp_consts;
   auto num_species           = p_leader.getSpeciesSet().getTotalNum();
   v_sample.resize(num_centers);
   // This lambda is mostly about getting a handle on what is being touched by the per particle evaluation.
@@ -315,7 +334,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet::ParticlePos& pulay_terms)
 {
   if (ComputeForces and !is_active)
-    hf_terms -= forces;
+    hf_terms -= forces_;
   //No pulay term.
   return value_;
 }
@@ -439,8 +458,14 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   myConst = evalConsts();
   myRcut  = AA->get_rc(); //Basis.get_rc();
 
+  auto myGrid = LinearGrid<RealType>();
+  int ng = P.getLattice().num_ewald_grid_points;
+  app_log() << "    CoulombPBCAA::initBreakup\n  Setting a linear grid=[0,"
+            << myRcut << ") number of grid points =" << ng << std::endl;
+  myGrid.set(0, myRcut, ng);
+
   if (rVs == nullptr)
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut);
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
 
   rVs_offload = std::make_shared<const OffloadSpline>(*rVs);
 
@@ -449,7 +474,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
     dAA = LRCoulombSingleton::getDerivHandler(P);
     if (rVsforce == nullptr)
     {
-      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut);
+      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut, myGrid);
     }
   }
 }
@@ -467,7 +492,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLRwithForces(ParticleSet& P)
     //AA->evaluateGrad(P, P, spec2, Zat, grad);
     dAA->evaluateGrad(P, P, spec2, Zat, grad);
     for (int iat = 0; iat < grad.size(); iat++)
-      forces[iat] += Z2 * grad[iat];
+      forces_[iat] += Z2 * grad[iat];
   } //spec2
   return evalLR(P);
 }
@@ -491,8 +516,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
       esum += Zat[j] * rVs->splint(dist[j]) * rinv;
 
       PosType grad = Zat[j] * Zat[ipart] * (d_rV_dr - V) * rinv * rinv * dr[j];
-      forces[ipart] += grad;
-      forces[j] -= grad;
+      forces_[ipart] += grad;
+      forces_[j] -= grad;
     }
     SR += Zat[ipart] * esum;
 
@@ -512,8 +537,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
       esum += Zat[j] * rVs->splint(dist2[j]) * rinv;
 
       PosType grad = Zat[j] * Zat[ipart_reverse] * (d_rV_dr - V) * rinv * rinv * dr2[j];
-      forces[ipart_reverse] += grad;
-      forces[j] -= grad;
+      forces_[ipart_reverse] += grad;
+      forces_[j] -= grad;
     }
     SR += Zat[ipart_reverse] * esum;
   }
@@ -653,7 +678,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   if (chunk_size == 0)
     throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
 
-  auto& values_offload        = caa_leader.mw_res_->values_offload;
+  auto& values_offload        = caa_leader.mw_res_handle_.getResource().values_offload;
   const size_t total_num      = p_leader.getTotalNum();
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
@@ -685,12 +710,12 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
       ScopedTimer offload_scope(caa_leader.offload_timer_);
 
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw)")
-      for (size_t iw = 0; iw < nw; iw++)
+      for (uint32_t iw = 0; iw < nw; iw++)
       {
         mRealType SR = 0.0;
         PRAGMA_OFFLOAD("omp parallel for reduction(+ : SR)")
-        for (size_t jcol = 0; jcol < total_num; jcol++)
-          for (size_t irow = first; irow < last; irow++)
+        for (uint32_t jcol = 0; jcol < total_num; jcol++)
+          for (uint32_t irow = first; irow < last; irow++)
           {
             const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
             if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
@@ -795,18 +820,15 @@ void CoulombPBCAA::createResource(ResourceCollection& collection) const
 void CoulombPBCAA::acquireResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
-  auto res_ptr   = dynamic_cast<CoulombPBCAAMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("CoulombPBCAA::acquireResource dynamic_cast failed");
-  o_leader.mw_res_.reset(res_ptr);
+  auto& o_leader          = o_list.getCastedLeader<CoulombPBCAA>();
+  o_leader.mw_res_handle_ = collection.lendResource<CoulombPBCAAMultiWalkerResource>();
 }
 
 void CoulombPBCAA::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
-  collection.takebackResource(std::move(o_leader.mw_res_));
+  collection.takebackResource(o_leader.mw_res_handle_);
 }
 
 std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

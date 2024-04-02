@@ -12,6 +12,8 @@
 
 #include "SpinDensityNew.h"
 
+#include "hdf5.h"
+
 #include <iostream>
 #include <numeric>
 #include <SpeciesSet.h>
@@ -115,7 +117,8 @@ void SpinDensityNew::startBlock(int steps)
 void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
                                 const RefVector<ParticleSet>& psets,
                                 const RefVector<TrialWaveFunction>& wfns,
-                                RandomGenerator& rng)
+                                const RefVector<QMCHamiltonian>& hams,
+                                RandomBase<FullPrecRealType>& rng)
 {
   auto& dp_ = derived_parameters_;
   for (int iw = 0; iw < walkers.size(); ++iw)
@@ -214,25 +217,18 @@ void SpinDensityNew::report(const std::string& pad)
   app_log() << pad << "end SpinDensity report" << std::endl;
 }
 
-void SpinDensityNew::registerOperatorEstimator(hid_t gid)
+void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
-  hid_t sgid = H5Gcreate2(gid, my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-  //vector<int> ng(DIM);
-  //for(int d=0;d<DIM;++d)
-  //  ng[d] = grid[d];
+  std::vector<int> ng(1, derived_parameters_.npoints);
 
-  std::vector<int> ng(1);
-  ng[0] = derived_parameters_.npoints;
-
+  hdf_path hdf_name{my_name_};
   for (int s = 0; s < species_.size(); ++s)
   {
-    h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
+    h5desc_.emplace_back(hdf_name / species_.speciesName[s]);
     auto& oh = h5desc_.back();
-    oh->set_dimensions(ng, 0);
-    oh->open(sgid);
-    // bad smell
+    oh.set_dimensions(ng, s * derived_parameters_.npoints);
   }
 }
 

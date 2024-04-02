@@ -24,7 +24,6 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/ExampleHeBuilder.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if OHMMS_DIM == 3 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
@@ -34,19 +33,15 @@
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus
 {
-WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp,
-                                         const PSetMap& pset,
-                                         Communicate* c)
-    : MPIObjectBase(c),
-      targetPtcl(qp),
-      ptclPool(pset)
+WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c)
+    : MPIObjectBase(c), targetPtcl(qp), ptclPool(pset)
 {
   ClassName = "WaveFunctionFactory";
 }
 
 WaveFunctionFactory::~WaveFunctionFactory() = default;
 
-std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
+std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur, const RuntimeOptions& runtime_options)
 {
   // YL: how can this happen?
   if (cur == NULL)
@@ -67,14 +62,14 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
   app_summary() << "  Name: " << psiName << "   Tasking: " << (tasking == "yes" ? "yes" : "no") << std::endl;
   app_summary() << std::endl;
 
-  auto targetPsi = std::make_unique<TrialWaveFunction>(psiName, tasking == "yes");
+  auto targetPsi = std::make_unique<TrialWaveFunction>(runtime_options, psiName, tasking == "yes");
   targetPsi->setMassTerm(targetPtcl);
   targetPsi->storeXMLNode(cur);
 
   SPOSetBuilderFactory sposet_builder_factory(myComm, targetPtcl, ptclPool);
 
   std::string vp_file_to_load;
-  cur          = cur->children;
+  cur = cur->children;
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
@@ -95,9 +90,9 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
           attribs.add(hdfName, "name");
           if (hdfName == "twistAngle")
           {
-            std::vector<ParticleSet::RealType> tsts(3, 0);
-            putContent(tsts, kcur);
-            targetPsi->setTwist(tsts);
+            std::vector<ParticleSet::RealType> twists(3, 0);
+            putContent(twists, kcur);
+            targetPsi->setTwist(std::move(twists));
             foundtwist = true;
           }
         }
@@ -106,8 +101,7 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
       if (!foundtwist)
       {
         //default twist is [0 0 0]
-        std::vector<ParticleSet::RealType> tsts(3, 0);
-        targetPsi->setTwist(tsts);
+        targetPsi->setTwist(std::vector<ParticleSet::RealType>(3, 0));
       }
     }
     else if (cname == WaveFunctionComponentBuilder::jastrow_tag)
@@ -162,7 +156,12 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
   if (!vp_file_to_load.empty())
   {
     app_log() << "  Reading variational parameters from " << vp_file_to_load << std::endl;
-    dummy.readFromHDF(vp_file_to_load);
+    hdf_archive hin;
+    dummy.readFromHDF(vp_file_to_load, hin);
+
+    UniqueOptObjRefs opt_obj_refs = targetPsi->extractOptimizableObjectRefs();
+    for (auto opt_obj : opt_obj_refs)
+      opt_obj.get().readVariationalParameters(hin);
   }
 
   targetPsi->resetParameters(dummy);
@@ -186,10 +185,6 @@ bool WaveFunctionFactory::addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFa
     msg << "electron-gas in determinantset is deprecated";
     msg << " please use \"free\" orbitals in sposet_builder" << std::endl;
     throw std::runtime_error(msg.str());
-  }
-  else if (orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw")
-  {
-    detbuilder = std::make_unique<PWOrbitalBuilder>(myComm, targetPtcl, ptclPool);
   }
   else
     detbuilder = std::make_unique<SlaterDetBuilder>(myComm, spo_factory, targetPtcl, psi, ptclPool);

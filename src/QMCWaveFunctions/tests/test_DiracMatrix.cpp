@@ -17,7 +17,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 #include "checkMatrix.hpp"
 #include "createTestMatrix.h"
 
@@ -28,24 +28,24 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType     = QMCTraits::RealType;
-using ValueType    = QMCTraits::ValueType;
-using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+using RealType         = QMCTraits::RealType;
+using ValueType        = QMCTraits::ValueType;
+using LogValue         = std::complex<QMCTraits::QTFull::RealType>;
 using LogComplexApprox = Catch::Detail::LogComplexApprox;
-  
+
 TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> m, m_invT;
-  LogValueType log_value;
+  LogValue log_value;
   m.resize(3, 3);
   m_invT.resize(3, 3);
 
   fillIdentityMatrix(m);
 
   dm.invert_transpose(m, m_invT, log_value);
-  REQUIRE(log_value == LogComplexApprox(0.0));
+  CHECK(log_value == LogComplexApprox(0.0));
 
   Matrix<ValueType> eye;
   eye.resize(3, 3);
@@ -60,7 +60,7 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> a, a_T, a_inv;
-  LogValueType log_value;
+  LogValue log_value;
   a.resize(3, 3);
   a_T.resize(3, 3);
   a_inv.resize(3, 3);
@@ -69,7 +69,7 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
   dm.invert_transpose(a_T, a_inv, log_value);
-  REQUIRE(log_value == LogComplexApprox(TestMatrix1::logDet()));
+  CHECK(log_value == LogComplexApprox(TestMatrix1::logDet()));
 
   Matrix<ValueType> b;
   b.resize(3, 3);
@@ -85,7 +85,7 @@ TEST_CASE("DiracMatrix_inverse_matching", "[wavefunction][fermion]")
   DiracMatrix<double> dm;
 
   Matrix<double> a, a_T, a_inv;
-  LogValueType log_value;
+  LogValue log_value;
   a.resize(4, 4);
   a_T.resize(4, 4);
   a_inv.resize(4, 4);
@@ -139,7 +139,7 @@ TEST_CASE("DiracMatrix_inverse_matching_2", "[wavefunction][fermion]")
   DiracMatrix<double> dm;
 
   Matrix<double> a, a_T, a_inv;
-  LogValueType log_value;
+  LogValue log_value;
   a.resize(4, 4);
   a_T.resize(4, 4);
   a_inv.resize(4, 4);
@@ -222,7 +222,7 @@ TEST_CASE("DiracMatrix_inverse_complex", "[wavefunction][fermion]")
   DiracMatrix<std::complex<double>> dm;
 
   Matrix<std::complex<double>> a, a_T, a_inv;
-  LogValueType log_value;
+  LogValue log_value;
   a.resize(4, 4);
   a_T.resize(4, 4);
   a_inv.resize(4, 4);
@@ -319,7 +319,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   updateEng.resize(3, 1);
 
   Matrix<ValueType> a, a_T, a_inv;
-  LogValueType log_value;
+  LogValue log_value;
   a.resize(3, 3);
   a_T.resize(3, 3);
   a_inv.resize(3, 3);
@@ -347,7 +347,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   ValueType det_ratio1 = simd::dot(v.data(), invRow.data(), invRow.size());
 
   ValueType det_ratio = 0.178276269185;
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+  CHECK(det_ratio1 == ValueApprox(det_ratio));
   updateEng.acceptRow(a_inv, 0, v, det_ratio1);
 
   Matrix<ValueType> b;

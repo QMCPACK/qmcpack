@@ -52,29 +52,12 @@ public:
   template<typename DT>
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
-  using DualMatrix    = Matrix<DT, PinnedDualAllocator<DT>>;
+  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
 
   using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
-
-  struct DiracDeterminantBatchedMultiWalkerResource : public Resource
-  {
-    DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
-    DiracDeterminantBatchedMultiWalkerResource(const DiracDeterminantBatchedMultiWalkerResource&)
-        : DiracDeterminantBatchedMultiWalkerResource()
-    {}
-
-    Resource* makeClone() const override { return new DiracDeterminantBatchedMultiWalkerResource(*this); }
-    DualVector<LogValue> log_values;
-    /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw][norb]
-    OffloadMWVGLArray phi_vgl_v;
-    // multi walker of ratio
-    std::vector<Value> ratios_local;
-    // multi walker of grads
-    std::vector<Grad> grad_new_local;
-    // multi walker of spingrads
-    std::vector<Value> spingrad_new_local;
-  };
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -98,6 +81,8 @@ public:
                            const opt_variables_type& active,
                            Vector<Value>& dlogpsi,
                            Vector<Value>& dhpsioverpsi) override;
+
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -124,6 +109,11 @@ public:
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<Value>>& ratios) const override;
 
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
+
   PsiValue ratioGrad(ParticleSet& P, int iat, Grad& grad_iat) override;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -149,6 +139,12 @@ public:
                    std::vector<Grad>& grad_now) const override;
 
   Grad evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
+
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<Grad>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override;
 
   /** \todo would be great to have docs.
    *  Note: Can result in substantial CPU memory allocation on first call.
@@ -287,7 +283,8 @@ public:
   PsiValue curRatio;
   /**@}*/
 
-  std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource> mw_res_;
+  struct DiracDeterminantBatchedMultiWalkerResource;
+  ResourceHandle<DiracDeterminantBatchedMultiWalkerResource> mw_res_handle_;
 
 private:
   ///reset the size: with the number of particles and number of orbtials
@@ -300,7 +297,7 @@ private:
   DiracMatrix<FullPrecValue> host_inverter_;
 
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  std::unique_ptr<typename DET_ENGINE::DetInverter> accel_inverter_;
+  ResourceHandle<typename DET_ENGINE::DetInverter> accel_inverter_;
 
   /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
@@ -322,19 +319,6 @@ private:
   static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                             const RefVector<const DualMatrix<Value>>& logdetT_list,
                             const RefVector<DualMatrix<Value>>& a_inv_lis);
-
-  // make this class unit tests friendly without the need of setup resources.
-  void guardMultiWalkerRes()
-  {
-    if (!mw_res_)
-    {
-      std::cerr
-          << "WARNING DiracDeterminantBatched : This message should not be seen in production (performance bug) runs "
-             "but only unit tests (expected)."
-          << std::endl;
-      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource>();
-    }
-  }
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

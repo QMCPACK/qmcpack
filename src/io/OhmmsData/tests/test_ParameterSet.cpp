@@ -15,18 +15,15 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsData/ParameterSet.h"
-#include <string>
-
-using std::string;
 
 TEST_CASE("ParameterSet", "[xml]")
 {
-  const char* content = " \
-<simulation> \
-   <parameter name=\"p1\">1</parameter> \
-   <parameter name=\"p4\"> -2 -3 </parameter> \
-   <p2>2</p2> \
-</simulation>";
+  const char* content = R"(
+<simulation>
+   <parameter name="p1">1</parameter>
+   <parameter name="p4"> -2 -3 </parameter>
+   <p2>2</p2>
+</simulation>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(content);
   REQUIRE(okay == true);
@@ -56,11 +53,11 @@ TEST_CASE("ParameterSet", "[xml]")
 TEST_CASE("ParameterSet_bool", "[xml]")
 {
   {
-    const char* content = " \
-<simulation> \
-   <parameter name=\"p1\"> yes </parameter> \
-   <parameter name=\"p2\"> no </parameter> \
-</simulation>";
+    const char* content = R"(
+      <simulation>
+       <parameter name="p1"> yes </parameter>
+       <parameter name="p2"> no </parameter>
+      </simulation>)";
     Libxml2Document doc;
     bool okay = doc.parseFromString(content);
     REQUIRE(okay == true);
@@ -81,10 +78,10 @@ TEST_CASE("ParameterSet_bool", "[xml]")
   }
 
   {
-    const char* content = " \
-<simulation> \
-   <parameter name=\"p1\">  </parameter> \
-</simulation>";
+    const char* content = R"(
+      <simulation>
+        <parameter name="p1">  </parameter>
+      </simulation>)";
     Libxml2Document doc;
     bool okay = doc.parseFromString(content);
     REQUIRE(okay == true);
@@ -97,10 +94,10 @@ TEST_CASE("ParameterSet_bool", "[xml]")
   }
 
   {
-    const char* content = " \
-<simulation> \
-   <parameter name=\"p1\"> yes no </parameter> \
-</simulation>";
+    const char* content = R"(
+      <simulation>
+        <parameter name="p1"> yes no </parameter>
+      </simulation>)";
     Libxml2Document doc;
     bool okay = doc.parseFromString(content);
     REQUIRE(okay == true);
@@ -113,10 +110,10 @@ TEST_CASE("ParameterSet_bool", "[xml]")
   }
 
   {
-    const char* content = " \
-<simulation> \
-   <parameter name=\"p1\"> here </parameter> \
-</simulation>";
+    const char* content = R"(
+      <simulation>
+        <parameter name="p1"> here </parameter>
+      </simulation>)";
     Libxml2Document doc;
     bool okay = doc.parseFromString(content);
     REQUIRE(okay == true);

@@ -24,61 +24,55 @@ namespace qmcplusplus
 /** class to add cusp correction to LCAOrbitalSet.
    *
    */
-class LCAOrbitalSetWithCorrection : public LCAOrbitalSet
+class LCAOrbitalSetWithCorrection : public SPOSet
 {
 public:
+  using basis_type = LCAOrbitalSet::basis_type;
   /** constructor
+     * @param my_name name of the SPOSet object
+     * @param bs pointer to the BasisSet
+     * @param norb number of orbitals
+     * @param identity if true, the MO coefficients matrix is identity
      * @param ions
      * @param els
-     * @param bs pointer to the BasisSet
      * @param rl report level
      */
   LCAOrbitalSetWithCorrection(const std::string& my_name,
+                              std::unique_ptr<basis_type>&& bs,
+                              size_t norbs,
+                              bool identity,
                               ParticleSet& ions,
-                              ParticleSet& els,
-                              std::unique_ptr<basis_type>&& bs);
+                              ParticleSet& els);
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
 
-  std::string getClassName() const override { return "LCAOrbitalSetWithCorrection"; }
+  std::string getClassName() const final { return "LCAOrbitalSetWithCorrection"; }
 
-  std::unique_ptr<SPOSet> makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const final;
 
-  void setOrbitalSetSize(int norbs) override;
+  void setOrbitalSetSize(int norbs) final;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) final;
 
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
-
-  void evaluateVGH(const ParticleSet& P,
-                   int iat,
-                   ValueVector& psi,
-                   GradVector& dpsi,
-                   HessVector& grad_grad_psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) final;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
-                            ValueMatrix& d2logdet) override;
+                            ValueMatrix& d2logdet) final;
+  /** update C on device
+   */
+  void finalizeConstruction() override
+  {
+    lcao.finalizeConstruction();
+  }
 
-  void evaluate_notranspose(const ParticleSet& P,
-                            int first,
-                            int last,
-                            ValueMatrix& logdet,
-                            GradMatrix& dlogdet,
-                            HessMatrix& grad_grad_logdet) override;
+  friend class LCAOrbitalBuilder;
 
-  void evaluate_notranspose(const ParticleSet& P,
-                            int first,
-                            int last,
-                            ValueMatrix& logdet,
-                            GradMatrix& dlogdet,
-                            HessMatrix& grad_grad_logdet,
-                            GGGMatrix& grad_grad_grad_logdet) override;
-
-  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet) override;
+private:
+  LCAOrbitalSet lcao;
 
   SoaCuspCorrection cusp;
 };

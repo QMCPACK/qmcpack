@@ -29,11 +29,11 @@ set(DRIVER_TEST_SRC
     test_DescentEngine.cpp
     test_HybridEngine.cpp
     test_EngineHandle.cpp
-    test_LMYEngine.cpp)
-
-if(NOT QMC_CUDA)
-  set(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_driver.cpp test_dmc_driver.cpp)
-endif()
+    test_LMYEngine.cpp
+    test_vmc_driver.cpp
+    test_dmc_driver.cpp
+    test_SimpleFixedNodeBranch.cpp
+    test_QMCDriverFactory.cpp)
 
 # legacy driver mpi, not tested in a meaningful way since the standard unit test is
 # just one rank with mpi.
@@ -42,19 +42,12 @@ if(HAVE_MPI)
 endif()
 add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
 
-if(QMC_CUDA)
-  target_sources(${UTEST_EXE} PRIVATE test_QMCDriverFactory_CUDA.cpp)
-else(QMC_CUDA)
-  target_sources(${UTEST_EXE} PRIVATE test_QMCDriverFactory.cpp)
-endif(QMC_CUDA)
-
-use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
+target_link_libraries(${UTEST_EXE} catch_main qmcdriver)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
-    qmcestimators_unit
-    qmcham_unit
+    qmcestimators
+    qmcham
     qmcwfs
     qmcparticle
     qmcwfs_omptarget
@@ -66,39 +59,58 @@ endif()
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
-if(NOT QMC_CUDA)
-  # New Driver Only test program
-  # to avoid dealing with the build dependencies
-  # and memory leaks brought in by the old driver tests
+# New Driver Only test program
+# to avoid dealing with the build dependencies
+# and memory leaks brought in by the old driver tests
 
-  set(UTEST_EXE test_new_${SRC_DIR})
-  set(UTEST_NAME deterministic-unit_test_new_${SRC_DIR})
+set(UTEST_EXE test_new_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_new_${SRC_DIR})
+#this is dependent on the directory creation and sym linking of earlier driver tests
+
+set(DRIVER_TEST_SRC
+    SetupPools.cpp
+    test_Crowd.cpp
+    test_MCPopulation.cpp
+    test_ContextForSteps.cpp
+    test_QMCDriverInput.cpp
+    test_QMCDriverNew.cpp
+    test_VMCDriverInput.cpp
+    test_VMCFactoryNew.cpp
+    test_VMCBatched.cpp
+    test_DMCBatched.cpp
+    test_SFNBranch.cpp
+    test_QMCCostFunctionBatched.cpp
+    test_QMCCostFunctionBase.cpp
+    test_WFOptDriverInput.cpp)
+add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
+target_link_libraries(${UTEST_EXE} catch_main qmcdriver)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(
+    ${UTEST_EXE}
+    qmcestimators
+    qmcham
+    qmcwfs
+    qmcparticle
+    qmcwfs_omptarget
+    qmcparticle_omptarget
+    qmcutil
+    platform_omptarget_LA)
+endif()
+
+add_unit_test(${UTEST_NAME} 1 8 $<TARGET_FILE:${UTEST_EXE}>)
+set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+
+if(HAVE_MPI)
+  set(UTEST_EXE test_new_${SRC_DIR}_mpi)
   #this is dependent on the directory creation and sym linking of earlier driver tests
-
-  set(DRIVER_TEST_SRC
-      SetupPools.cpp
-      test_Crowd.cpp
-      test_MCPopulation.cpp
-      test_ContextForSteps.cpp
-      test_QMCDriverInput.cpp
-      test_QMCDriverNew.cpp
-      test_VMCDriverInput.cpp
-      test_VMCFactoryNew.cpp
-      test_VMCBatched.cpp
-      test_DMCBatched.cpp
-      test_SimpleFixedNodeBranch.cpp
-      test_SFNBranch.cpp
-      test_QMCCostFunctionBatched.cpp
-      test_QMCCostFunctionBase.cpp
-      test_WFOptDriverInput.cpp)
+  set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
-  use_fake_rng(${UTEST_EXE})
-  target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
+  target_link_libraries(${UTEST_EXE} catch_main qmcdriver)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
-      qmcestimators_unit
-      qmcham_unit
+      qmcestimators
+      qmcham
       qmcwfs
       qmcparticle
       qmcwfs_omptarget
@@ -106,32 +118,9 @@ if(NOT QMC_CUDA)
       qmcutil
       platform_omptarget_LA)
   endif()
-
-  add_unit_test(${UTEST_NAME} 1 8 $<TARGET_FILE:${UTEST_EXE}>)
-  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-
-  if(HAVE_MPI)
-    set(UTEST_EXE test_${SRC_DIR}_mpi)
-    set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
-    #this is dependent on the directory creation and sym linking of earlier driver tests
-    set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
-    add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
-    use_fake_rng(${UTEST_EXE})
-    target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
-    if(USE_OBJECT_TARGET)
-      target_link_libraries(
-        ${UTEST_EXE}
-        qmcestimators_unit
-        qmcham_unit
-        qmcwfs
-        qmcparticle
-	qmcwfs_omptarget
-	qmcparticle_omptarget
-        qmcutil
-        platform_omptarget_LA)
-    endif()
-    # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-    add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
+  foreach(NUM_RANKS 1 2 3 4 16)
+    set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS})
+    add_unit_test(${UTEST_NAME} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
     set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  endif(HAVE_MPI)
-endif(NOT QMC_CUDA)
+  endforeach()
+endif(HAVE_MPI)

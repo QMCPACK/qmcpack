@@ -1,0 +1,135 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="NiO-fcc-S4-dmc" series="1">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      DMC for NiO-fcc-S4-tw0
+    </application>
+  </project>
+
+  <random seed="49154"/>
+  <qmcsystem>
+  <simulationcell>
+    <parameter name="lattice">
+      3.94055   3.94055   7.8811
+      3.94055   3.94055   -7.8811
+      -7.8811   7.8811   0
+    </parameter>
+    <parameter name="bconds">p p p </parameter>
+    <parameter name="LR_dim_cutoff">15</parameter>
+  </simulationcell>
+  </qmcsystem>
+  <particleset name="i" size="16">
+    <group name="O">
+      <parameter name="charge">6.000000</parameter>
+      <parameter name="valence">6.000000</parameter>
+      <parameter name="atomicnumber">8.000000</parameter>
+    </group>
+    <group name="Ni">
+      <parameter name="charge">18</parameter>
+      <parameter name="valence">18</parameter>
+      <parameter name="atomicnumber">28</parameter>
+    </group>
+    <attrib name="position" datatype="posArray" condition="1">
+    0.75   0.25   0
+    0.75   0.25   0.5
+    0.75   0.75   0.25
+    0.75   0.75   0.75
+    0.25   0.75   0
+    0.25   0.25   0.25
+    0.25   0.75   0.5
+    0.25   0.25   0.75
+    0   0   0
+    0   0   0.5
+    0   0.5   0.25
+    0   0.5   0.75
+    0.5   0.5   0
+    0.5   0   0.25
+    0.5   0.5   0.5
+    0.5   0   0.75
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      O  O  O  O  O  O  O  O  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="i">
+    <group name="u" size="96">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="96">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="einspline" href="${H5_DIR}/NiO-fcc-supertwist111-supershift000-S4.h5" source="i" tilematrix="1 0 0 0 1 1 0 2 -2" twistnum="-1" gpu="yes" meshfactor="0.9" precision="float" twist="0  0  0">
+      <slaterdeterminant>
+        <determinant id="updet" size="96" ref="updet">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+        <determinant id="downdet" size="96" ref="downdet">
+          <occupation mode="ground" spindataset="1">
+          </occupation>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="10" rcut="4.826168">
+        <coefficients id="uu" type="Array"> 0.278468991 0.1973071379 0.1380196483 0.0962411734 0.06455567978 0.0411447342 0.02520627957 0.01492962408 0.007679632861 0.003367267561</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="10" rcut="4.826168">
+        <coefficients id="ud" type="Array"> 0.3670788611 0.228875539 0.1561073024 0.1058799901 0.0682570676 0.04200771079 0.02558389981 0.0150999537 0.007766475127 0.003437354669</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+      <correlation elementType="O" cusp="0.0" size="10" rcut="4.826168">
+        <coefficients id="O" type="Array"> -0.420884981 -0.3805894633 -0.3092981021 -0.2303498704 -0.1581983456 -0.08976738723 -0.04211966871 -0.02078446667 -0.01056448804 -0.00267208059</coefficients>
+      </correlation>
+      <correlation elementType="Ni" cusp="0.0" size="10" rcut="4.826168">
+        <coefficients id="Ni" type="Array"> -1.997105887 -1.80449859 -1.364638625 -0.9144116493 -0.5579529558 -0.3111785972 -0.1609580353 -0.07449336172 -0.02960155758 -0.007495931486</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">
+      <pseudo elementType="Ni" href="${PP_DIR}/Ni.opt.xml"/>
+      <pseudo elementType="O" href="${PP_DIR}/O.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+  </hamiltonian>
+
+
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+  </qmc>
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">             yes </parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
+    <!--parameter name="targetwalkers">  32000 </parameter-->
+    <!--parameter name="max_walkers">   0    </parameter-->
+    <parameter name="debug_disable_branching">      yes </parameter>
+    <parameter name="warmupSteps">          250 </parameter>
+    <parameter name="timestep">           0.001 </parameter>
+    <parameter name="steps">                  5 </parameter>
+    <parameter name="blocks">                 5 </parameter>
+    <parameter name="nonlocalmoves">        yes </parameter>
+  </qmc>
+</simulation>

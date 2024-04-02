@@ -46,6 +46,7 @@ struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
   std::vector<std::unique_ptr<L2RadialPotential>> L2Pot;
 
   ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, Communicate* c);
+  ~ECPotentialBuilder();
 
   bool put(xmlNodePtr cur);
 

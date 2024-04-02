@@ -34,7 +34,7 @@ TEST_CASE("makeRefVector", "[type_traits]")
   for (int i = 0; i < 3; ++i)
     ddvec.push_back(DerivedDummy());
 
-  RefVector<Dummy> bdum(makeRefVector<Dummy>(ddvec));
+  auto bdum  = makeRefVector<Dummy>(ddvec);
   auto bdum2 = makeRefVector<Dummy>(ddvec);
   CHECK(std::is_same<RefVector<Dummy>, decltype(bdum2)>::value);
 
@@ -49,12 +49,36 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
     std::string s;
   };
 
+  struct DerivedDummy : public Dummy
+  {
+    DerivedDummy() : e(0) {}
+    double e;
+  };
+
+  struct OtherDummy
+  {
+    double f;
+  };
+
   UPtrVector<Dummy> uvec;
   for (int i = 0; i < 3; ++i)
     uvec.emplace_back(std::make_unique<Dummy>());
 
   RefVector<Dummy> rdum(convertUPtrToRefVector(uvec));
   auto rdum2 = convertUPtrToRefVector(uvec);
+  CHECK(std::is_same_v<decltype(rdum), decltype(rdum2)>);
+  // Testing to make sure meta programming stops potential ambiguous template resolution.
+  UPtrVector<DerivedDummy> ddv;
+  ddv.emplace_back(std::make_unique<DerivedDummy>());
+  ddv.emplace_back(std::make_unique<DerivedDummy>());
+
+  auto dummy_ref_vec = convertUPtrToRefVector(ddv);
+  auto d_ref_vec     = convertUPtrToRefVector<Dummy>(ddv);
+  auto dd_ref_vec    = convertUPtrToRefVector(ddv);
+  CHECK(!std::is_same_v<decltype(d_ref_vec), decltype(dd_ref_vec)>);
+
+  // This should cause a compilation error. a DerivedDummy cannot be converted to an OtherDummy.
+  // RefVector<OtherDummy> od_ref_vec = convertUPtrToRefVector<OtherDummy>(ddv);
 }
 
 TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")
@@ -69,7 +93,7 @@ TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")
   for (int i = 0; i < 5; ++i)
     pvec.push_back(new Dummy2(i));
 
-  RefVector<Dummy2> rdum(convertPtrToRefVectorSubset(pvec, 1, 4));
+  auto rdum = convertPtrToRefVectorSubset(pvec, 1, 4);
 
   CHECK(rdum.size() == 4);
   CHECK(rdum[0].get().i == 1);

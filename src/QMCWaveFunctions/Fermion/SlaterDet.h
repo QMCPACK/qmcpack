@@ -23,12 +23,6 @@
 
 namespace qmcplusplus
 {
-// NOTE NOTE NOTE
-// template<bool backflow>
-//  class SlaterDet: public WaveFunctionComponent {}
-//     then change SlaterDet to SlaterDet<false>
-//     and SlaterDeterminantWithBackflow to SlaterDet<true>
-//     and remove all virtuals and inline them
 class TWFFastDerivWrapper;
 
 class SlaterDet : public WaveFunctionComponent
@@ -59,19 +53,19 @@ public:
 
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
                       const RefVector<ParticleSet::ParticleGradient>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override;
 
-  LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient& G,
-                          ParticleSet::ParticleLaplacian& L,
-                          bool fromscratch) override;
+  LogValue evaluateGL(const ParticleSet& P,
+                      ParticleSet::ParticleGradient& G,
+                      ParticleSet::ParticleLaplacian& L,
+                      bool fromscratch) override;
 
   void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVectorWithLeader<ParticleSet>& p_list,
@@ -92,7 +86,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -109,6 +103,11 @@ public:
     return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
   }
 
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
+
   inline void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                 std::vector<std::vector<ValueType>>& ratios) const override
@@ -121,15 +120,22 @@ public:
     }
   }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios,
+                    std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_now) const override;
+
+  void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            std::vector<PsiValue>& ratios,
+                            std::vector<GradType>& grad_now,
+                            std::vector<ComplexType>& spingrad_now) const override;
 
   GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
@@ -146,6 +152,12 @@ public:
     const int det_id = getDetID(iat);
     Dets[det_id]->mw_evalGrad(extract_DetRef_list(wfc_list, det_id), p_list, iat, grad_now);
   }
+
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<GradType>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat) override
   {
@@ -184,7 +196,7 @@ public:
                             const std::vector<bool>& isAccepted,
                             bool safe_to_delay = false) const override
   {
-    constexpr LogValueType czero(0);
+    constexpr LogValue czero(0);
 
     // This log_value_ is in the slater determinant, it's still around but not consistent anymore with the
     // sum of the log_values in its determinants.  Caching the state seems like a bad call, but the wfc base class
@@ -218,12 +230,12 @@ public:
       Dets[i]->mw_completeUpdates(extract_DetRef_list(wfc_list, i));
   }
 
-  inline PsiValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
+  inline PsiValue ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios) const override
+                    std::vector<PsiValue>& ratios) const override
   {
     const int det_id = getDetID(iat);
     Dets[det_id]->mw_calcRatio(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios);
@@ -231,7 +243,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  virtual SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
+  SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
@@ -275,111 +287,6 @@ public:
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
-
-#ifdef QMC_CUDA
-  /////////////////////////////////////////////////////
-  // Functions for vectorized evaluation and updates //
-  /////////////////////////////////////////////////////
-  void recompute(MCWalkerConfiguration& W, bool firstTime) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->recompute(W, firstTime);
-  }
-
-  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, int kblocksize = 1) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->reserve(pool, kblocksize);
-  }
-
-  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->addLog(W, logPsi);
-  }
-
-  void ratio(MCWalkerConfiguration& W,
-             int iat,
-             std::vector<ValueType>& psi_ratios,
-             std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl) override
-  {
-    Dets[getDetID(iat)]->ratio(W, iat, psi_ratios, grad, lapl);
-  }
-
-  void det_lookahead(MCWalkerConfiguration& W,
-                     std::vector<ValueType>& psi_ratios,
-                     std::vector<GradType>& grad,
-                     std::vector<ValueType>& lapl,
-                     int iat,
-                     int k,
-                     int kd,
-                     int nw) override
-  {
-    Dets[getDetID(iat)]->det_lookahead(W, psi_ratios, grad, lapl, iat, k, kd, nw);
-  }
-  void calcRatio(MCWalkerConfiguration& W,
-                 int iat,
-                 std::vector<ValueType>& psi_ratios,
-                 std::vector<GradType>& grad,
-                 std::vector<ValueType>& lapl) override
-  {
-    Dets[getDetID(iat)]->calcRatio(W, iat, psi_ratios, grad, lapl);
-  }
-
-  void addRatio(MCWalkerConfiguration& W,
-                int iat,
-                int k,
-                std::vector<ValueType>& psi_ratios,
-                std::vector<GradType>& grad,
-                std::vector<ValueType>& lapl) override
-  {
-    Dets[getDetID(iat)]->addRatio(W, iat, k, psi_ratios, grad, lapl);
-  }
-
-  void ratio(std::vector<Walker_t*>& walkers,
-             std::vector<int>& iatList,
-             std::vector<PosType>& rNew,
-             std::vector<ValueType>& psi_ratios,
-             std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl) override;
-
-  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override
-  {
-    Dets[getDetID(iat)]->calcGradient(W, iat, k, grad);
-  }
-
-  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override
-  {
-    Dets[getDetID(iat)]->addGradient(W, iat, grad);
-  }
-
-  void update(MCWalkerConfiguration* W,
-              std::vector<Walker_t*>& walkers,
-              int iat,
-              std::vector<bool>* acc,
-              int k) override
-  {
-    Dets[getDetID(iat)]->update(W, walkers, iat, acc, k);
-  }
-
-  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList) override;
-
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->gradLapl(W, grads, lapl);
-  }
-
-  void NLratios(MCWalkerConfiguration& W,
-                std::vector<NLjob>& jobList,
-                std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios) override
-  {
-    for (int id = 0; id < Dets.size(); id++)
-      Dets[id]->NLratios(W, jobList, quadPoints, psi_ratios);
-  }
-#endif
 
 private:
   //get Det ID

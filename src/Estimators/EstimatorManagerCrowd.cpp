@@ -25,7 +25,8 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
 void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers,
                                        const RefVector<ParticleSet>& psets,
                                        const RefVector<TrialWaveFunction>& wfns,
-                                       RandomGenerator& rng)
+                                       const RefVector<QMCHamiltonian>& hams,
+                                       RandomBase<FullPrecRealType>& rng)
 {
   block_num_samples_ += walkers.size();
   for (MCPWalker& awalker : walkers)
@@ -35,9 +36,15 @@ void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers,
   for (int i = 0; i < num_scalar_estimators; ++i)
     scalar_estimators_[i]->accumulate(walkers);
   for (int i = 0; i < operator_ests_.size(); ++i)
-    operator_ests_[i]->accumulate(walkers, psets, wfns, rng);
+    operator_ests_[i]->accumulate(walkers, psets, wfns, hams, rng);
 }
 
+void EstimatorManagerCrowd::registerListeners(const RefVectorWithLeader<QMCHamiltonian>& ham_list)
+{
+  for (auto& estimator : operator_ests_)
+    if (estimator->isListenerRequired())
+      estimator->registerListeners(ham_list.getLeader());
+}
 
 void EstimatorManagerCrowd::startBlock(int steps)
 {

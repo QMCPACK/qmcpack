@@ -22,7 +22,6 @@
 #include "Estimators/EstimatorManagerNew.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "OhmmsData/HDFAttribIO.h"
 
 namespace qmcplusplus
 {
@@ -39,12 +38,11 @@ class QMCHamiltonian;
 class EstimatorManagerCrowd
 {
 public:
-  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using RealType      = EstimatorManagerNew::RealType;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using RealType  = EstimatorManagerNew::RealType;
+  using FullPrecRealType = EstimatorManagerNew::FullPrecRealType;
 
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
-   *
-   *  This coupling should be removed.
    */
   EstimatorManagerCrowd(EstimatorManagerNew& em);
 
@@ -66,12 +64,23 @@ public:
    *  \param[in]     walkers         walkers in crowd
    *  \param[in]     psets           walker particle sets
    *  \param[in]     wfns            walker wavefunctions
+   *  \param[in]     hams            walker Hamiltonians
    *  \param[inout]  rng             crowd scope RandomGenerator
-   */ 
+   *
+   *  walkers is especially questionable since its really just hiding the full sweep hamiltonian values from
+   *  the most recent (maybe) QMCHamiltonian evaluate which are written into it by the QMCHamiltonians
+   *  previous to the accumulate.
+   *  walkers might additionally be useful because they hold another copy of the dynamic (electron) particle sets coords
+   *  that could be inconsistent with psets.
+   *
+   *  As soon as the legacy Estimators are dropped this API should be reviewed with an eye to disentangling
+   *  ParticleSet, Walker, and QMCHamiltonian.
+   */
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng);
+                  const RefVector<QMCHamiltonian>& hams,
+                  RandomBase<FullPrecRealType>& rng);
 
   ScalarEstimatorBase& get_main_estimator() { return *main_estimator_; }
   RefVector<ScalarEstimatorBase> get_scalar_estimators() { return convertUPtrToRefVector(scalar_estimators_); }
@@ -79,6 +88,11 @@ public:
 
   RealType get_block_num_samples() const { return block_num_samples_; }
   RealType get_block_weight() const { return block_weight_; }
+
+  /** This registers the crowd lever estimators that require listeners into the QMCHamiltonianMultiWalkerResources
+   *  We really only need a QMCHamiltonian leader but resource acquisition and release works better this way.
+   */
+  void registerListeners(const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
 private:
   ///number of samples accumulated in a block
@@ -88,9 +102,9 @@ private:
 
   UPtr<ScalarEstimatorBase> main_estimator_;
   ///estimators of simple scalars
-  std::vector<std::unique_ptr<ScalarEstimatorBase>> scalar_estimators_;
+  UPtrVector<ScalarEstimatorBase> scalar_estimators_;
 
-  std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
+  UPtrVector<OperatorEstBase> operator_ests_;
 };
 
 } // namespace qmcplusplus

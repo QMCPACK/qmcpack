@@ -1,26 +1,42 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-// © Alfredo Correa 2018-2021
+// Copyright 2018-2023 Alfredo A. Correa
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi flattened operation"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(array_flatted_3d) {
-	multi::array<double, 3>	A3({13, 4, 5});
+	multi::array<double, 3> arr({13, 4, 5});
 
-	BOOST_REQUIRE( A3.rotated().is_flattable() );
+	BOOST_REQUIRE( arr.size() == 13 );
+	// BOOST_REQUIRE( arr.rotated().is_flattable() );
 
 	{
-		auto&& B = A3.rotated().flatted().unrotated();
-		BOOST_REQUIRE( &B[11][7] == &A3[11][1][2] );
+		auto&& arrRFU = arr.rotated().flatted().unrotated();  // TODO(correaa) remove flatted?
+		BOOST_REQUIRE( &arrRFU[11][7] == &arr[11][1][2] );
 	}
-	 {
-		auto&& B = (A3<<1).flatted()>>1;
-		BOOST_REQUIRE( &B[11][7] == &A3[11][7/5][7%5] );
+	{
+		auto&& arrRFU = (arr.rotated()).flatted().unrotated();
+		BOOST_REQUIRE( &arrRFU[11][7] == &arr[11][7/5][7%5] );
 	}
 }
 
+BOOST_AUTO_TEST_CASE(array_flatted_3d_bis) {
+	multi::array<double, 3> const arr({13, 4, 5});
+	BOOST_REQUIRE( arr.size() == 13 );
+	// BOOST_REQUIRE( arr.is_flattable() );
+	BOOST_REQUIRE( arr.flatted().size() == 52 );
+}
+
+BOOST_AUTO_TEST_CASE(empty_array_3D_flatted) {
+	multi::array<double, 3> const arr;
+	// BOOST_REQUIRE( arr.is_flattable() );
+	BOOST_REQUIRE( arr.flatted().size() == 0 );
+}
+
+BOOST_AUTO_TEST_CASE(empty_array_2D_flatted) {
+	multi::array<double, 2> const arr;
+	// BOOST_REQUIRE( arr.is_flattable() );
+	BOOST_REQUIRE( arr.flatted().size() == 0 );
+}

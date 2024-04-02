@@ -35,8 +35,17 @@ using TraceManager = int;
 namespace qmcplusplus
 {
 /// Constructor.
-RMC::RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "RMC"), prestepsVMC(-1), rescaleDrift("no"), beta(-1), beads(-1), fromScratch(true)
+RMC::RMC(const ProjectData& project_data,
+         MCWalkerConfiguration& w,
+         TrialWaveFunction& psi,
+         QMCHamiltonian& h,
+         Communicate* comm)
+    : QMCDriver(project_data, w, psi, h, comm, "RMC"),
+      prestepsVMC(-1),
+      rescaleDrift("no"),
+      beta(-1),
+      beads(-1),
+      fromScratch(true)
 {
   RootName = "rmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -105,9 +114,7 @@ bool RMC::run()
     } //end-of-parallel for
     CurrentStep += nSteps;
     Estimators->stopBlock(estimatorClones);
-    //why was this commented out? Are checkpoints stored some other way?
-    if (storeConfigs)
-      recordBlock(block);
+    recordBlock(block);
     rmc_loop.stop();
 
     bool stop_requested = false;
@@ -127,7 +134,7 @@ bool RMC::run()
   Estimators->stop(estimatorClones);
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
-    *RandomNumberControl::Children[ip] = *Rng[ip];
+    RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
   //return nbeads and stuff to its original unset state;
   resetVars();
   return finalize(nBlocks);
@@ -200,19 +207,23 @@ void RMC::resetRun()
 
   if (Movers.empty())
   {
-    Movers.resize(NumThreads, 0);
-    estimatorClones.resize(NumThreads, 0);
-    traceClones.resize(NumThreads, 0);
+    Movers.resize(NumThreads, nullptr);
+    estimatorClones.resize(NumThreads, nullptr);
+    traceClones.resize(NumThreads, nullptr);
     Rng.resize(NumThreads);
     branchEngine->initReptile(W);
+
+    // hdf_archive::hdf_archive() is not thread-safe
+    for (int ip = 0; ip < NumThreads; ++ip)
+      estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
+
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
-      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
+      Rng[ip] = RandomNumberControl::Children[ip]->makeClone();
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif

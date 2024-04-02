@@ -35,7 +35,7 @@ TEST_CASE("LRBreakupParameters", "[lattice]")
 
   myLR.SetLRCutoffs(R);
 
-  REQUIRE(myLR.LR_kc == Approx(30.0));
+  CHECK(myLR.LR_kc == Approx(30.0));
 
   R[0][0] = 2.0;
   R[1][1] = 2.0;
@@ -43,7 +43,7 @@ TEST_CASE("LRBreakupParameters", "[lattice]")
 
   myLR.SetLRCutoffs(R);
 
-  REQUIRE(myLR.LR_kc == Approx(15.0));
+  CHECK(myLR.LR_kc == Approx(15.0));
 }
 
 } // namespace qmcplusplus

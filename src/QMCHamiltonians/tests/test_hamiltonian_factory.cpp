@@ -17,6 +17,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -57,16 +58,17 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
+  RuntimeOptions runtime_options;
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting("psi0"));
+  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
-         <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot type=\"coulomb\" name=\"ElecIon\" source=\"ion0\" target=\"e\"/> \
-</hamiltonian>";
+  const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+</hamiltonian>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(hamiltonian_xml);
@@ -109,16 +111,17 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
+  RuntimeOptions runtime_options;
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting("psi0"));
+  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  const char* hamilonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-    <pairpot type=\"pseudo\" name=\"PseudoPot\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\"> \
-        <pseudo elementType=\"C\" href=\"C.BFD.xml\"/> \
-     </pairpot> \
-</hamiltonian>";
+  const char* hamilonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+        <pseudo elementType="C" href="C.BFD.xml"/>
+     </pairpot>
+</hamiltonian>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(hamilonian_xml);

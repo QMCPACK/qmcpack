@@ -33,19 +33,19 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // initialize simulationcell for kvectors
-  const char* xmltext = "<tmp> \
-  <simulationcell>\
-     <parameter name=\"lattice\" units=\"bohr\">\
-              6.00000000        0.00000000        0.00000000\
-              0.00000000        6.00000000        0.00000000\
-              0.00000000        0.00000000        6.00000000\
-     </parameter>\
-     <parameter name=\"bconds\">\
-        p p p\
-     </parameter>\
-     <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
-  </simulationcell>\
-</tmp> ";
+  const char* xmltext = R"(<tmp>
+  <simulationcell>
+     <parameter name="lattice" units="bohr">
+              6.00000000        0.00000000        0.00000000
+              0.00000000        6.00000000        0.00000000
+              0.00000000        0.00000000        6.00000000
+     </parameter>
+     <parameter name="bconds">
+        p p p
+     </parameter>
+     <parameter name="LR_dim_cutoff"> 15 </parameter>
+  </simulationcell>
+</tmp>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xmltext);
   REQUIRE(okay);
@@ -65,19 +65,11 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
 
   ions_.setName("ion");
   ions_.create({1});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-
+  ions_.R[0] = {0.0, 0.0, 0.0};
   elec_.setName("elec");
-  elec_.create({2,0});
-  elec_.R[0][0] = -0.28;
-  elec_.R[0][1] = 0.0225;
-  elec_.R[0][2] = -2.709;
-  elec_.R[1][0] = -1.08389;
-  elec_.R[1][1] = 1.9679;
-  elec_.R[1][2] = -0.0128914;
-
+  elec_.create({2, 0});
+  elec_.R[0]                   = {-0.28, 0.0225, -2.709};
+  elec_.R[1]                   = {-1.08389, 1.9679, -0.0128914};
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -87,16 +79,16 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  const char* particles = "<tmp> \
-<jastrow name=\"Jk\" type=\"kSpace\" source=\"ion\"> \
-  <correlation kc=\"1.5\" type=\"Two-Body\" symmetry=\"isotropic\"> \
-    <coefficients id=\"cG2\" type=\"Array\"> \
-      -100. -50. \
-    </coefficients> \
-  </correlation> \
-</jastrow> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<jastrow name="Jk" type="kSpace" source="ion">
+  <correlation kc="1.5" type="Two-Body" symmetry="isotropic">
+    <coefficients id="cG2" type="Array">
+      -100. -50.
+    </coefficients>
+  </correlation>
+</jastrow>
+</tmp>
+)";
   okay                  = doc.parseFromString(particles);
   REQUIRE(okay);
 
@@ -110,6 +102,6 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   elec_.update();
 
   double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(-4.4088303951)); // !!!! value not checked
+  CHECK(logpsi_real == Approx(-4.4088303951)); // !!!! value not checked
 }
 } // namespace qmcplusplus
