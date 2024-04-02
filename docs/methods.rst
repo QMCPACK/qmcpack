@@ -391,7 +391,7 @@ Additional information:
   acceptance ratio should be close to 50% for an efficient
   simulation.
 
-- ``samples`` If ``samples`` and ``steps`` are both provided, ``samples`` requires to be smaller than the product of ``total_walkers``, ``steps`` and ``blocks``. If ``steps`` is not provided, ``steps`` is set to the smallest integer that makes ``samples`` smaller than the product of ``total_walkers``, ``steps`` and ``blocks``.
+- ``samples`` If ``samples`` and ``steps`` are both provided, ``samples`` requires to be equal or smaller than the product of ``total_walkers``, ``steps`` and ``blocks``. If ``steps`` is not provided, ``steps`` is set to the smallest integer that makes ``samples`` equal or smaller than the product of ``total_walkers``, ``steps`` and ``blocks``.
 
 - ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
   default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
