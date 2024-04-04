@@ -448,8 +448,9 @@ void VMCBatched::enable_sample_collection()
   collect_samples_ = true;
 
   int total_samples = samples * population_.get_num_ranks();
-  app_log() << "VMCBatched Driver collecting samples, samples per rank = " << samples << '\n';
-  app_log() << "                                      total samples    = " << total_samples << '\n';
+  app_log() << "VMCBatched Driver collecting samples, samples per rank = " << samples << std::endl
+            << "                                      total samples    = " << total_samples << std::endl
+            << std::endl;
 }
 
 } // namespace qmcplusplus

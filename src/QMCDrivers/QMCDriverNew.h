@@ -299,6 +299,14 @@ protected:
                                                                     const RealType reserve_walkers,
                                                                     int num_crowds);
 
+  /** pure function calculating the actual number of steps per block
+   *
+   * @param global_walkers the total number of walkers over all the MPI ranks
+   * @param requested_samples the number of samples from user input "samples". <=0 treated as no input
+   * @param requested_steps the number steps per block from user input "steps". <=0 treated as no input
+   * @param blocks the number of blocks. Must be positive.
+   * @return calculated optimal number of steps per block
+   */
   static size_t determineStepsPerBlock(IndexType global_walkers,
                                        IndexType requested_samples,
                                        IndexType requested_steps,

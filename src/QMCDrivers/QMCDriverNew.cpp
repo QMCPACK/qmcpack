@@ -136,6 +136,13 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
                 << "             walkers_per_rank  = " << awc.walkers_per_rank << std::endl
                 << "             num_crowds        = " << awc.walkers_per_crowd.size() << std::endl
                 << "  on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
+                << std::endl
+                << "                         steps = " << steps_per_block_
+                << (steps_per_block_ == qmcdriver_input_.get_requested_steps()
+                        ? ""
+                        : " (different from input value " + std::to_string(qmcdriver_input_.get_requested_steps()) + ")")
+                << std::endl
+                << "                        blocks = " << qmcdriver_input_.get_max_blocks() << std::endl
                 << std::endl;
 
   // set num_global_walkers explicitly and then make local walkers.
@@ -456,6 +463,10 @@ size_t QMCDriverNew::determineStepsPerBlock(IndexType global_walkers,
                                             IndexType blocks)
 {
   assert(global_walkers > 0 && "QMCDriverNew::determineStepsPerBlock global_walkers must be positive!");
+
+  if (blocks <= 0)
+    throw UniformCommunicateError("QMCDriverNew::determineStepsPerBlock blocks must be positive!");
+
   if (requested_samples > 0 && requested_steps > 0)
   {
     if (requested_samples <= global_walkers * requested_steps * blocks)

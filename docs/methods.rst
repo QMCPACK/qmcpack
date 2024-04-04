@@ -395,7 +395,7 @@ Additional information:
 
 - ``samples`` The intended total number of samples that will be made in the QMC section. This is primarily intended for VMC
   wavefunction optimization. The implementation always obtains at least the requested number but may obtain slightly more samples
-  than requested so as to map efficiently on to the MPI task and thread count efficiently. If ``samples`` and ``steps`` are both
+  than requested so as to map efficiently on to the MPI tasks and OpenMP threads. If ``samples`` and ``steps`` are both
   provided, ``samples`` must be equal or smaller than the product of ``total_walkers``, ``steps`` and ``blocks``. If ``samples`` is
   provided but ``steps`` is not, ``steps`` is automatically set to be the smallest integer that makes ``samples`` equal or smaller
   than the product of ``total_walkers``, ``steps`` and ``blocks``.
