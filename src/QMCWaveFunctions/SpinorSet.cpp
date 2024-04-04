@@ -11,8 +11,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "SpinorSet.h"
+#include "QMCHamiltonians/PairCorrEstimator.h"
 #include "Utilities/ResourceCollection.h"
 #include "Platforms/OMPTarget/OMPTargetMath.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 
 namespace qmcplusplus
 {
@@ -85,34 +87,34 @@ void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
   psi = eis * psi_work_up + emis * psi_work_down;
 }
 
-void SpinorSet::evaluateValueSpinDecomposed(const ParticleSet& P,
-                                            int iat,
-                                            ValueVector& up_components,
-                                            ValueVector& dn_components)
+void SpinorSet::evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                                        ValueVector& psi,
+                                        const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                        const ValueVector& psiinv,
+                                        std::vector<ValueType>& ratios)
 {
-  const size_t norb_requested = up_components.size();
-  assert(norb_requested == dn_components.size());
+  assert(psi.size() == psiinv.size());
+  const size_t norb_requested = psi.size();
   psi_work_up.resize(norb_requested);
   psi_work_down.resize(norb_requested);
-  psi_work_up   = 0.0;
-  psi_work_down = 0.0;
 
-  spo_up->evaluateValue(P, iat, psi_work_up);
-  spo_dn->evaluateValue(P, iat, psi_work_down);
+  for (size_t iat = 0.0; iat < VP.getTotalNum(); iat++)
+  {
+    psi_work_up   = 0.0;
+    psi_work_down = 0.0;
+    spo_up->evaluateValue(VP, iat, psi_work_up);
+    spo_dn->evaluateValue(VP, iat, psi_work_down);
 
-  ParticleSet::Scalar_t s = P.activeSpin(iat);
+    ParticleSet::Scalar_t s = VP.activeSpin(iat);
+    RealType coss           = std::cos(s);
+    RealType sins           = std::sin(s);
 
-  RealType coss(0.0), sins(0.0);
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
 
-  coss = std::cos(s);
-  sins = std::sin(s);
-
-  //This is only supported in the complex build, so ValueType is some complex number depending on the precision.
-  ValueType eis(coss, sins);
-  ValueType emis(coss, -sins);
-
-  up_components = eis * psi_work_up;
-  dn_components = emis * psi_work_down;
+    psi = spinor_multiplier.first[iat] * eis * psi_work_up + spinor_multiplier.second[iat] * emis * psi_work_down;
+    ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
+  }
 }
 
 void SpinorSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)

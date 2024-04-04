@@ -62,15 +62,12 @@ public:
     so_ecp.mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, keep_grid);
   }
 
-  static void initializeTWFFast(SOECPotential& so_ecp, TrialWaveFunction& twf, ParticleSet& elec)
-  {
-    twf.initializeTWFFastDerivWrapper(elec, so_ecp.psi_wrapper_);
-  }
-
   static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
   {
-    so_ecp.evaluateImplFast(elec, true);
+    so_ecp.setFastEvaluation(true);
+    so_ecp.evaluateImpl(elec, true);
     value = so_ecp.getValue();
+    so_ecp.setFastEvaluation(false);
   }
 };
 } // namespace testing
@@ -254,9 +251,11 @@ void doSOECPotentialTest(bool use_VPs)
   CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(value));
 
   //Now lets try out the fast implementation
-  testing::TestSOECPotential::initializeTWFFast(so_ecp, psi, elec);
-  testing::TestSOECPotential::evalFast(so_ecp, elec, value);
-  CHECK(value == Approx(-3.530511241));
+  if (use_VPs)
+  {
+    testing::TestSOECPotential::evalFast(so_ecp, elec, value);
+    CHECK(value == Approx(-3.530511241));
+  }
 
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp));
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp2));

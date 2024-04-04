@@ -213,68 +213,63 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
   return std::real(pairpot);
 }
 
-void SOECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
+SOECPComponent::RealType SOECPComponent::evaluateOneFast(ParticleSet& W,
                                                          const int iat,
-                                                         const TWFFastDerivWrapper& psi,
+                                                         const TrialWaveFunction& psi,
                                                          const int iel,
                                                          const RealType r,
-                                                         const PosType& dr,
-                                                         std::vector<ValueMatrix>& mats_b)
+                                                         const PosType& dr)
 {
   if constexpr (!IsComplex_t<ValueType>::value)
     throw std::runtime_error("SOECPComponent::evaluateOneBodyOpMatrixContribution only implemented in complex build");
-  else
+  RealType sold              = W.spins[iel];
+
+  using ValueVector          = SPOSet::ValueVector;
+  std::pair<ValueVector, ValueVector> spinor_multiplier;
+  auto& up_row = spinor_multiplier.first;
+  auto& dn_row = spinor_multiplier.second;
+  up_row.resize(nknot_);
+  dn_row.resize(nknot_);
+
+  //buildQuadraturePointDeltaPositions
+  for (int j = 0; j < nknot_; j++)
+    deltaV_[j] = r * rrotsgrid_m_[j] - dr;
+  vp_->makeMoves(W, iel, deltaV_, true, iat);
+
+  //calculate radial potentials
+  for (int ip = 0; ip < nchannel_; ip++)
+    vrad_[ip] = sopp_m_[ip]->splint(r);
+
+  for (int iq = 0; iq < nknot_; iq++)
   {
-    RealType sold              = W.spins[iel];
-    using ValueVector          = SPOSet::ValueVector;
-    const IndexType gid        = W.getGroupID(iel);
-    const IndexType sid        = psi.getTWFGroupIndex(gid);
-    const IndexType firstIndex = W.first(gid);
-    const IndexType thisIndex  = iel - firstIndex;
-    const IndexType numOrbs    = psi.numOrbitals(sid);
-
-    ValueVector temp_row, up_row, dn_row;
-    up_row.resize(numOrbs);
-    dn_row.resize(numOrbs);
-    temp_row.resize(numOrbs);
-
-    //buildQuadraturePointDeltaPositions
-    for (int j = 0; j < nknot_; j++)
-      deltaV_[j] = r * rrotsgrid_m_[j] - dr;
-
-    //calculate radial potentials
-    for (int ip = 0; ip < nchannel_; ip++)
-      vrad_[ip] = sopp_m_[ip]->splint(r);
-
-    for (int iq = 0; iq < nknot_; iq++)
+    up_row[iq] = 0.0;
+    dn_row[iq] = 0.0;
+    for (int il = 0; il < nchannel_; il++)
     {
-      W.makeMove(iel, deltaV_[iq]);
-      psi.getRowMSpinDecomposed(W, iel, up_row, dn_row);
-      RealType jratio = psi.evaluateJastrowRatio(W, iel);
-      W.rejectMove(iel);
-
-      for (int il = 0; il < nchannel_; il++)
+      int l = il + 1;
+      for (int m1 = -l; m1 <= l; m1++)
       {
-        int l = il + 1;
-        for (int m1 = -l; m1 <= l; m1++)
+        ComplexType Y = sphericalHarmonic(l, m1, dr);
+        for (int m2 = -l; m2 <= l; m2++)
         {
-          ComplexType Y = sphericalHarmonic(l, m1, dr);
-          for (int m2 = -l; m2 <= l; m2++)
-          {
-            ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq]));
-            ComplexType so_up = matrixElementDecomposed(l, m1, m2, sold, true);
-            ComplexType so_dn = matrixElementDecomposed(l, m1, m2, sold, false);
-            RealType fourpi   = 4.0 * M_PI;
-            //Note: Need 4pi weight. In Normal NonLocalECP, 1/4Pi generated from transformation to legendre polynomials and gets absorbed into the
-            // quadrature integration. We don't get the 1/4Pi from legendre here, so we need to scale by 4Pi.
-            temp_row = fourpi * sgridweight_m_[iq] * vrad_[il] * Y * cY * jratio * (up_row * so_up + dn_row * so_dn);
-            for (int iorb = 0; iorb < numOrbs; iorb++)
-              mats_b[sid][thisIndex][iorb] += temp_row[iorb];
-          }
+          ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq]));
+          ComplexType so_up = matrixElementDecomposed(l, m1, m2, sold, true);
+          ComplexType so_dn = matrixElementDecomposed(l, m1, m2, sold, false);
+          RealType fourpi   = 4.0 * M_PI;
+          //Note: Need 4pi weight. In Normal NonLocalECP, 1/4Pi generated from transformation to legendre polynomials and gets absorbed into the
+          // quadrature integration. We don't get the 1/4Pi from legendre here, so we need to scale by 4Pi.
+          up_row[iq] += fourpi * vrad_[il] * Y * cY * so_up;
+          dn_row[iq] += fourpi * vrad_[il] * Y * cY * so_dn;
         }
       }
     }
   }
+
+  psi.evaluateSpinorRatios(*vp_, spinor_multiplier, psiratio_);
+  ComplexType pairpot;
+  for (size_t iq = 0; iq < nknot_; iq++)
+    pairpot += psiratio_[iq] * sgridweight_m_[iq];
+  return std::real(pairpot);
 }
 
 void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,

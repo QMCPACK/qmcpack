@@ -196,8 +196,6 @@ public:
    */
   virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) = 0;
 
-  virtual void evaluateValueSpinDecomposed(const ParticleSet& P, int iat, ValueVector& up_component, ValueVector& dn_component);
-
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psi values of the SPO, used as a scratch space if needed
@@ -208,6 +206,12 @@ public:
                                  ValueVector& psi,
                                  const ValueVector& psiinv,
                                  std::vector<ValueType>& ratios);
+
+  virtual void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                                       ValueVector& psi,
+                                       const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                       const ValueVector& invrow,
+                                       std::vector<ValueType>& ratios);
 
 
   /// Determinant ratios and parameter derivatives of the wavefunction for virtual moves

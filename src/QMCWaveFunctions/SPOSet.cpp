@@ -44,16 +44,6 @@ void SPOSet::checkOutVariables(const opt_variables_type& active)
                            "must be overloaded when the SPOSet is optimizable.");
 }
 
-void SPOSet::evaluateValueSpinDecomposed(const ParticleSet& P,
-                                         int iat,
-                                         ValueVector& up_component,
-                                         ValueVector& dn_component)
-{
-  throw std::logic_error(getClassName() +
-                         "::evaluateValueSpinDecomposed"
-                         "should only be implemented for SpinorSet.");
-}
-
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                ValueVector& psi,
                                const ValueVector& psiinv,
@@ -65,6 +55,15 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
     evaluateValue(VP, iat, psi);
     ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
   }
+}
+
+void SPOSet::evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                             ValueVector& psi,
+                             const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                             const ValueVector& invrow,
+                             std::vector<ValueType>& ratios)
+{
+  throw std::runtime_error("Need specialization of SPOSet::evaluateDetSpinorRatios");
 }
 
 void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,

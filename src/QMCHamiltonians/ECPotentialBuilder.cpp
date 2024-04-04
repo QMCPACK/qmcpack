@@ -171,7 +171,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     if (spin_integrator == "exact")
     {
       app_log() << "    Using fast SOECP evaluation. Spin integration is exact" << std::endl;
-      apot->useFastEvaluation();
+      apot->setFastEvaluation(true);
       targetPsi.initializeTWFFastDerivWrapper(targetPtcl, apot->psi_wrapper_);
     }
     else

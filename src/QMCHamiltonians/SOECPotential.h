@@ -14,7 +14,6 @@
 
 #include "QMCHamiltonians/SOECPComponent.h"
 #include "Particle/NeighborLists.h"
-#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -81,7 +80,7 @@ public:
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
   //triggers using fast evaluation using TWFFastDerivWrapper for normal evalualations and derivatives.
-  void useFastEvaluation() { use_fast_evaluation_ = true; }
+  void setFastEvaluation(bool fast) { use_fast_evaluation_ = fast; }
   TWFFastDerivWrapper psi_wrapper_;
 
 protected:
@@ -116,7 +115,6 @@ private:
   bool use_fast_evaluation_;
 
   void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
-  void evaluateImplFast(ParticleSet& P, bool keep_grid = false);
 
   //for testing
   friend class testing::TestSOECPotential;

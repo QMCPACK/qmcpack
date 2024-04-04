@@ -21,7 +21,6 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -119,7 +118,7 @@ public:
 
   RealType calculateProjector(RealType r, const PosType& dr, RealType sold);
 
-  void evaluateOneBodyOpMatrixContribution(ParticleSet& W, const int iat, const TWFFastDerivWrapper& psi, const int iel, const RealType r, const PosType& dr, std::vector<ValueMatrix>& mats_b);
+  RealType evaluateOneFast(ParticleSet& W, const int iat, const TrialWaveFunction& psi, const int iel, const RealType r, const PosType& dr);
 
   static void mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,

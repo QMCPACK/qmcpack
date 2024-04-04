@@ -15,6 +15,7 @@
 
 #include "QMCWaveFunctions/SPOSet.h"
 #include <ResourceHandle.h>
+#include <sys/wait.h>
 
 namespace qmcplusplus
 {
@@ -54,13 +55,11 @@ public:
    */
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  /** evaluate values, depcomposed by spin components
-   * @param P current ParticleSet
-   * @param iat active particle
-   * @param up components of spinors
-   * @param dn components of spinors
-   */
-  void evaluateValueSpinDecomposed(const ParticleSet& P, int iat, ValueVector& up_components, ValueVector& dn_components) override;
+  void evaluateDetSpinorRatios(const VirtualParticleSet& VP, 
+                               ValueVector& psi, 
+                               const std::pair<ValueVector, ValueVector>& spinor_multipler, 
+                               const ValueVector& invrow, 
+                               std::vector<ValueType>& ratios) override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet

@@ -108,17 +108,6 @@ public:
    */
   IndexType getRowM(const ParticleSet& P, const IndexType iel, ValueVector& val) const;
 
-  /** @brief Returns value of all orbitals (relevant to given species/group) at a particular particle coordinate, split by spin components. 
-   *
-   *  @param[in] P particle set.
-   *  @param[in] iel particle ID.
-   *  @param[in,out] val Vector of phi^up_i(r_iel)*exp(I*s_iel) for all i=0,Norbs.
-   *  @param[in,out] val Vector of phi_dn_i(r_iel)*exp(-I*s_iel) for all i=0,Norbs.
-   *  @return Void
-   */
-  IndexType getRowMSpinDecomposed(const ParticleSet& P, const IndexType iel, ValueVector& up_components, ValueVector& dn_components) const;
-
-
   /** @brief Returns value, gradient, and laplacian matrices for all orbitals and all particles, species by species. 
    *
    *  @param[in] P particle set.

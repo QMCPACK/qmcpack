@@ -43,7 +43,13 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
  *\param psi Trial wave function
 */
 SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
-    : my_rng_(nullptr), ion_config_(ions), psi_(psi), peln_(els), elec_neighbor_ions_(els), ion_neighbor_elecs_(ions), use_fast_evaluation_(false)
+    : my_rng_(nullptr),
+      ion_config_(ions),
+      psi_(psi),
+      peln_(els),
+      elec_neighbor_ions_(els),
+      ion_neighbor_elecs_(ions),
+      use_fast_evaluation_(false)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
@@ -62,19 +68,13 @@ void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
 SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
 {
-  if (use_fast_evaluation_)
-    evaluateImplFast(P, false);
-  else
-    evaluateImpl(P, false);
+  evaluateImpl(P, false);
   return value_;
 }
 
 SOECPotential::Return_t SOECPotential::evaluateDeterministic(ParticleSet& P)
 {
-  if (use_fast_evaluation_)
-    evaluateImplFast(P, true);
-  else
-    evaluateImpl(P, true);
+  evaluateImpl(P, true);
   return value_;
 }
 
@@ -100,87 +100,16 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
     for (int iat = 0; iat < num_ions_; iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
       {
-        RealType pairpot = pp_[iat]->evaluateOne(P, iat, psi_, jel, dist[iat], -displ[iat]);
+        RealType pairpot = 0;
+        if (use_fast_evaluation_)
+          pairpot = pp_[iat]->evaluateOneFast(P, iat, psi_, jel, dist[iat], -displ[iat]);
+        else
+          pairpot = pp_[iat]->evaluateOne(P, iat, psi_, jel, dist[iat], -displ[iat]);
         value_ += pairpot;
         NeighborIons.push_back(iat);
         ion_neighbor_elecs_.getNeighborList(iat).push_back(jel);
       }
   }
-}
-
-void SOECPotential::evaluateImplFast(ParticleSet& P, bool keep_grid)
-{
-  value_ = 0.0;
-  if (!keep_grid)
-    for (int ipp = 0; ipp < ppset_.size(); ipp++)
-      if (ppset_[ipp])
-        ppset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*my_rng_));
-
-  std::vector<ValueMatrix> mats_minv;
-  std::vector<ValueMatrix> mats_b;
-  std::vector<ValueMatrix> mats_b_gs;
-  std::vector<ValueMatrix> mats_m;
-  std::vector<ValueMatrix> mats_m_gs;
-
-  //SOECP used with spinors, need 1 electron group
-  const size_t ngroups = psi_wrapper_.numGroups();
-  assert(ngroups == 1);
-  {
-    mats_minv.resize(ngroups);
-    mats_b.resize(ngroups);
-    mats_b_gs.resize(ngroups);
-    mats_m.resize(ngroups);
-    mats_m_gs.resize(ngroups);
-
-    for (int gid = 0; gid < ngroups; gid++)
-    {
-      const size_t sid    = psi_wrapper_.getTWFGroupIndex(gid);
-      const size_t norbs  = psi_wrapper_.numOrbitals(sid);
-      const size_t first  = P.first(gid);
-      const size_t last   = P.last(gid);
-      const size_t nptcls = last - first;
-      mats_m[sid].resize(nptcls, norbs);
-      mats_b[sid].resize(nptcls, norbs);
-      mats_m_gs[sid].resize(nptcls, nptcls);
-      mats_minv[sid].resize(nptcls, nptcls);
-      mats_b_gs[sid].resize(nptcls, nptcls);
-    }
-  }
-
-  psi_wrapper_.wipeMatrices(mats_m);
-  psi_wrapper_.wipeMatrices(mats_m_gs);
-  psi_wrapper_.wipeMatrices(mats_b);
-  psi_wrapper_.wipeMatrices(mats_b_gs);
-  psi_wrapper_.wipeMatrices(mats_minv);
-
-  psi_wrapper_.getM(P, mats_m);
-  psi_wrapper_.getGSMatrices(mats_m, mats_m_gs);
-  psi_wrapper_.invertMatrices(mats_m_gs, mats_minv);
-
-  //loop over all the ions
-  const auto& myTable = P.getDistTableAB(my_table_index_);
-  // clear all the electron and ion neighbor lists
-  for (int iat = 0; iat < num_ions_; iat++)
-    ion_neighbor_elecs_.getNeighborList(iat).clear();
-  for (int jel = 0; jel < P.getTotalNum(); jel++)
-    elec_neighbor_ions_.getNeighborList(jel).clear();
-  for (int jel = 0; jel < P.getTotalNum(); jel++)
-  {
-    const auto& dist               = myTable.getDistRow(jel);
-    const auto& displ              = myTable.getDisplRow(jel);
-    std::vector<int>& NeighborIons = elec_neighbor_ions_.getNeighborList(jel);
-    for (int iat = 0; iat < num_ions_; iat++)
-      if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
-      {
-        pp_[iat]->evaluateOneBodyOpMatrixContribution(P, iat, psi_wrapper_, jel, dist[iat], -displ[iat], mats_b);
-        NeighborIons.push_back(iat);
-        ion_neighbor_elecs_.getNeighborList(iat).push_back(jel);
-      }
-  }
-
-  psi_wrapper_.getGSMatrices(mats_b, mats_b_gs);
-  ValueType trace = psi_wrapper_.trAB(mats_minv, mats_b_gs);
-  convertToReal(trace, value_);
 }
 
 SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P,

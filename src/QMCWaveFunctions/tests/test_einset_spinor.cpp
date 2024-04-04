@@ -11,6 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "QMCTools/QMCFiniteSize/FSUtilities.h"
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -22,6 +23,7 @@
 #include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
+#include "Particle/VirtualParticleSet.h"
 
 #include <stdio.h>
 #include <string>
@@ -355,8 +357,13 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.update();
 
   //Now we test evaluateValue()
+  VirtualParticleSet vp(elec_, 1);
   for (unsigned int iat = 0; iat < 3; iat++)
   {
+    std::vector<PosType> delta_v(1);
+    delta_v[0] = -dR[iat];
+    vp.makeMoves(elec_, iat, delta_v);
+
     psi_work = 0.0;
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluateValue(elec_, iat, psi_work);
@@ -365,7 +372,20 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
     CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
 
-    spo->evaluateValueSpinDecomposed(elec_, iat, psi_work_up, psi_work_down);
+
+    std::vector<ValueType> ratios(1);
+    SPOSet::ValueVector psi(OrbitalSetSize);
+    SPOSet::ValueVector psiinv(OrbitalSetSize);
+    psiinv = 2.1;
+    std::pair<SPOSet::ValueVector, SPOSet::ValueVector> multiplier;
+    auto& up_factor = multiplier.first;
+    auto& dn_factor = multiplier.second;
+    up_factor.resize(OrbitalSetSize);
+    dn_factor.resize(OrbitalSetSize);
+    up_factor = 5.2;
+    dn_factor = -0.3;
+    spo->evaluateDetSpinorRatios(vp, psi, multiplier, psiinv, ratios);
+    //create reference value
     RealType s = elec_.spins[iat];
     RealType coss(0.0), sins(0.0);
     coss = std::cos(s);
@@ -373,12 +393,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     ValueType eis(coss, sins);
     ValueType emis(coss, -sins);
 
-    CHECK(psi_work_up[0] == ComplexApprox(psiM_up[iat][0] * eis).epsilon(h));
-    CHECK(psi_work_up[1] == ComplexApprox(psiM_up[iat][1] * eis).epsilon(h));
-    CHECK(psi_work_up[2] == ComplexApprox(psiM_up[iat][2] * eis).epsilon(h));
-    CHECK(psi_work_down[0] == ComplexApprox(psiM_down[iat][0] * emis).epsilon(h));
-    CHECK(psi_work_down[1] == ComplexApprox(psiM_down[iat][1] * emis).epsilon(h));
-    CHECK(psi_work_down[2] == ComplexApprox(psiM_down[iat][2] * emis).epsilon(h));
+    ValueType refVal;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+      refVal += 2.1 * (eis * 5.2 * psiM_up[iat][iorb] + emis * (-0.3) * psiM_down[iat][iorb]);
+    CHECK(ratios[0] == ComplexApprox(refVal));
     elec_.rejectMove(iat);
   }
 

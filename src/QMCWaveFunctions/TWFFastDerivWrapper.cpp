@@ -341,22 +341,4 @@ TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P
   return sid;
 }
 
-TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowMSpinDecomposed(const ParticleSet& P,
-                                                                          const IndexType iel,
-                                                                          ValueVector& up_components,
-                                                                          ValueVector& dn_components) const
-{
-  IndexType gid = P.getGroupID(iel);
-  IndexType sid = getTWFGroupIndex(gid);
-
-  IndexType norbs = spos_[sid]->getOrbitalSetSize();
-  assert(up_components.size() == norbs);
-  assert(dn_components.size() == norbs);
-
-  spos_[sid]->evaluateValueSpinDecomposed(P, iel, up_components, dn_components);
-
-  return sid;
-}
-
-
 } // namespace qmcplusplus
