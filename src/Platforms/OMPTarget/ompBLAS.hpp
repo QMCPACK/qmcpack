@@ -389,6 +389,34 @@ ompBLAS_status copy_batched_offset(ompBLAS_handle& handle,
                                    const int incy,
                                    const int batch_count);
 
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const float* const x,
+                    const int incx,
+                    float* const y,
+                    const int incy);
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const double* const x,
+                    const int incx,
+                    double* const y,
+                    const int incy);
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const std::complex<float>* const x,
+                    const int incx,
+                    std::complex<float>* const y,
+                    const int incy);
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const std::complex<double>* const x,
+                    const int incx,
+                    std::complex<double>* const y,
+                    const int incy);
+
 } // namespace ompBLAS
 
 } // namespace qmcplusplus
