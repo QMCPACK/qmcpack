@@ -136,6 +136,13 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
                 << "             walkers_per_rank  = " << awc.walkers_per_rank << std::endl
                 << "             num_crowds        = " << awc.walkers_per_crowd.size() << std::endl
                 << "  on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
+                << std::endl
+                << "                         steps = " << steps_per_block_
+                << (steps_per_block_ == qmcdriver_input_.get_requested_steps()
+                        ? ""
+                        : " (different from input value " + std::to_string(qmcdriver_input_.get_requested_steps()) + ")")
+                << std::endl
+                << "                        blocks = " << qmcdriver_input_.get_max_blocks() << std::endl
                 << std::endl;
 
   // set num_global_walkers explicitly and then make local walkers.
@@ -374,12 +381,11 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 {
   o_stream << "  time step      = " << qmcd.qmcdriver_input_.get_tau() << '\n';
   o_stream << "  blocks         = " << qmcd.qmcdriver_input_.get_max_blocks() << '\n';
-  o_stream << "  steps          = " << qmcd.qmcdriver_input_.get_max_steps() << '\n';
+  o_stream << "  steps          = " << qmcd.steps_per_block_ << '\n';
   o_stream << "  substeps       = " << qmcd.qmcdriver_input_.get_sub_steps() << '\n';
   o_stream << "  current        = " << qmcd.current_step_ << '\n';
   o_stream << "  target samples = " << qmcd.target_samples_ << '\n';
-  o_stream << "  walkers/mpi    = " << qmcd.population_.get_num_local_walkers() << '\n' << '\n';
-  o_stream << "  stepsbetweensamples = " << qmcd.qmcdriver_input_.get_steps_between_samples() << std::endl;
+  o_stream << "  walkers/mpi    = " << qmcd.population_.get_num_local_walkers() << std::endl;
   app_log().flush();
 
   return o_stream;
@@ -449,6 +455,35 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
   // \todo some warning if unreasonable number of threads are being used.
 
   return awc;
+}
+
+size_t QMCDriverNew::determineStepsPerBlock(IndexType global_walkers,
+                                            IndexType requested_samples,
+                                            IndexType requested_steps,
+                                            IndexType blocks)
+{
+  assert(global_walkers > 0 && "QMCDriverNew::determineStepsPerBlock global_walkers must be positive!");
+
+  if (blocks <= 0)
+    throw UniformCommunicateError("QMCDriverNew::determineStepsPerBlock blocks must be positive!");
+
+  if (requested_samples > 0 && requested_steps > 0)
+  {
+    if (requested_samples <= global_walkers * requested_steps * blocks)
+      return requested_steps;
+    else
+      throw UniformCommunicateError("The requested number of samples is more than the total number of walkers "
+                                    "multiplies the requested number of steps and blocks");
+  }
+  else if (requested_samples > 0)
+  {
+    IndexType one_step_minimal_samples = global_walkers * blocks;
+    return (requested_samples + one_step_minimal_samples - 1) / one_step_minimal_samples;
+  }
+  else if (requested_steps > 0)
+    return requested_steps;
+  else // neither requested_samples nor requested_steps is positive
+    return 1;
 }
 
 /** The scalar estimator collection is quite strange

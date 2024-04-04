@@ -51,14 +51,20 @@ public:
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     IndexType recalculate_properties_period;
+    const size_t steps_per_block;
     IndexType step            = -1;
     bool is_recomputing_block = false;
 
     StateForThread(const QMCDriverInput& qmci,
                    const VMCDriverInput& vmci,
                    DriftModifierBase& drift_mod,
-                   MCPopulation& pop)
-        : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
+                   MCPopulation& pop,
+                   const size_t steps_per_block)
+        : qmcdrv_input(qmci),
+          vmcdrv_input(vmci),
+          drift_modifier(drift_mod),
+          population(pop),
+          steps_per_block(steps_per_block)
     {}
   };
 
@@ -128,7 +134,9 @@ private:
   bool collect_samples_;
   /** function to calculate samples per MPI rank
    */
-  static int compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
+  static size_t compute_samples_per_rank(const size_t num_blocks,
+                                         const size_t samples_per_block,
+                                         const size_t local_walkers);
 
   friend class qmcplusplus::testing::VMCBatchedTest;
 };
