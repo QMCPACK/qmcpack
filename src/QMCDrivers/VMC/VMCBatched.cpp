@@ -442,12 +442,12 @@ bool VMCBatched::run()
 void VMCBatched::enable_sample_collection()
 {
   assert(steps_per_block_ > 0 && "VMCBatched::enable_sample_collection steps_per_block_ must be positive!");
-  int samples = compute_samples_per_rank(qmcdriver_input_.get_max_blocks(), steps_per_block_,
+  auto samples = compute_samples_per_rank(qmcdriver_input_.get_max_blocks(), steps_per_block_,
                                          population_.get_num_local_walkers());
   samples_.setMaxSamples(samples, population_.get_num_ranks());
   collect_samples_ = true;
 
-  int total_samples = samples * population_.get_num_ranks();
+  auto total_samples = samples * population_.get_num_ranks();
   app_log() << "VMCBatched Driver collecting samples, samples per rank = " << samples << std::endl
             << "                                      total samples    = " << total_samples << std::endl
             << std::endl;
