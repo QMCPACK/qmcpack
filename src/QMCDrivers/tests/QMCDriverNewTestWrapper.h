@@ -176,6 +176,20 @@ public:
   };
 
   void testMeasureImbalance() { measureImbalance("Test"); }
+  void testDetermineStepsPerBlock()
+  {
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 36, 2, 3) == 2);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 36, 1, 6) == 1);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 33, 3, 2) == 3);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 33, 0, 2) == 3);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 25, 0, 2) == 3);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 24, 0, 2) == 2);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 0, 2, 2) == 2);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 0, 0, 2) == 1);
+
+    CHECK_THROWS_WITH(QMCDriverNew::determineStepsPerBlock(6, 13, 1, 2),
+                      Catch::Contains("more than the total number of walkers"));
+  }
 };
 
 template<class CONCURRENCY>
