@@ -118,7 +118,7 @@ public:
 
   RealType calculateProjector(RealType r, const PosType& dr, RealType sold);
 
-  RealType evaluateOneFast(ParticleSet& W, const int iat, const TrialWaveFunction& psi, const int iel, const RealType r, const PosType& dr);
+  RealType evaluateOneExactSpinIntegration(ParticleSet& W, const int iat, const TrialWaveFunction& psi, const int iel, const RealType r, const PosType& dr);
 
   static void mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,

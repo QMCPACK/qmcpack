@@ -16,7 +16,6 @@
 #include "Numerics/Ylm.h"
 #include "CPU/BLAS.hpp"
 #include "NLPPJob.h"
-#include "TWFFastDerivWrapper.h"
 #include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
@@ -213,18 +212,17 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
   return std::real(pairpot);
 }
 
-SOECPComponent::RealType SOECPComponent::evaluateOneFast(ParticleSet& W,
-                                                         const int iat,
-                                                         const TrialWaveFunction& psi,
-                                                         const int iel,
-                                                         const RealType r,
-                                                         const PosType& dr)
+SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(ParticleSet& W,
+                                                                         const int iat,
+                                                                         const TrialWaveFunction& psi,
+                                                                         const int iel,
+                                                                         const RealType r,
+                                                                         const PosType& dr)
 {
-  if constexpr (!IsComplex_t<ValueType>::value)
-    throw std::runtime_error("SOECPComponent::evaluateOneBodyOpMatrixContribution only implemented in complex build");
-  RealType sold              = W.spins[iel];
+#ifdef QMC_COMPLEX
+  RealType sold = W.spins[iel];
 
-  using ValueVector          = SPOSet::ValueVector;
+  using ValueVector = SPOSet::ValueVector;
   std::pair<ValueVector, ValueVector> spinor_multiplier;
   auto& up_row = spinor_multiplier.first;
   auto& dn_row = spinor_multiplier.second;
@@ -270,6 +268,9 @@ SOECPComponent::RealType SOECPComponent::evaluateOneFast(ParticleSet& W,
   for (size_t iq = 0; iq < nknot_; iq++)
     pairpot += psiratio_[iq] * sgridweight_m_[iq];
   return std::real(pairpot);
+#else
+  throw std::runtime_error("SOECPComponent::evaluateOneBodyOpMatrixContribution only implemented in complex build");
+#endif
 }
 
 void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,

@@ -15,7 +15,6 @@
 #include "NLPPJob.h"
 #include <ResourceCollection.h>
 #include <optional>
-#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -102,7 +101,7 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
       {
         RealType pairpot = 0;
         if (use_fast_evaluation_)
-          pairpot = pp_[iat]->evaluateOneFast(P, iat, psi_, jel, dist[iat], -displ[iat]);
+          pairpot = pp_[iat]->evaluateOneExactSpinIntegration(P, iat, psi_, jel, dist[iat], -displ[iat]);
         else
           pairpot = pp_[iat]->evaluateOne(P, iat, psi_, jel, dist[iat], -displ[iat]);
         value_ += pairpot;

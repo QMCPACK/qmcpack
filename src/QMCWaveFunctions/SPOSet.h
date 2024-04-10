@@ -207,6 +207,13 @@ public:
                                  const ValueVector& psiinv,
                                  std::vector<ValueType>& ratios);
 
+  /** evaluate determinant ratios for virtual moves, specifically for Spinor SPOSets
+   * @param VP virtual particle set
+   * @param psi values of the SPO, used as a scratch space if needed
+   * @param spinor_multiplier factor to apply to the up and down components independently
+   * @param invrow the row of inverse slater matrix corresponding to the particle moved virtually
+   * @param ratios return determinant ratios
+   */
   virtual void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
                                        ValueVector& psi,
                                        const std::pair<ValueVector, ValueVector>& spinor_multiplier,

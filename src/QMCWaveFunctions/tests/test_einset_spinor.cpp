@@ -10,8 +10,6 @@
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-#include "QMCTools/QMCFiniteSize/FSUtilities.h"
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"

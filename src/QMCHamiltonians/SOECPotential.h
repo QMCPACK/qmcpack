@@ -81,7 +81,6 @@ public:
 
   //triggers using fast evaluation using TWFFastDerivWrapper for normal evalualations and derivatives.
   void setFastEvaluation(bool fast) { use_fast_evaluation_ = fast; }
-  TWFFastDerivWrapper psi_wrapper_;
 
 protected:
   RandomBase<FullPrecRealType>* my_rng_;

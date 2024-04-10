@@ -15,7 +15,6 @@
 
 #include "QMCWaveFunctions/SPOSet.h"
 #include <ResourceHandle.h>
-#include <sys/wait.h>
 
 namespace qmcplusplus
 {
