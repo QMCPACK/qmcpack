@@ -393,7 +393,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     ValueType refVal;
     for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
-      refVal += 2.1 * (eis * 5.2 * psiM_up[iat][iorb] + emis * (-0.3) * psiM_down[iat][iorb]);
+      refVal += static_cast<ValueType>(2.1) *
+          (eis * static_cast<ValueType>(5.2) * psiM_up[iat][iorb] +
+           emis * static_cast<ValueType>(-0.3) * psiM_down[iat][iorb]);
     CHECK(ratios[0] == ComplexApprox(refVal));
     elec_.rejectMove(iat);
   }
@@ -680,7 +682,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
       for (int k = 0; k < spo->size(); k++)
         psiM_rot_manual[i][j] += psiM_ref[i][k] * rot_mat[k][j];
     }
- 
+
   spo->storeParamsBeforeRotation();
   spo->applyRotation(rot_mat, false);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
