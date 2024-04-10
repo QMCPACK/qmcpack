@@ -16,7 +16,6 @@
 #include "Numerics/Ylm.h"
 #include "CPU/BLAS.hpp"
 #include "NLPPJob.h"
-#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
