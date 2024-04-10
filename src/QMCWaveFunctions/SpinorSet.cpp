@@ -11,7 +11,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "SpinorSet.h"
-#include "QMCHamiltonians/PairCorrEstimator.h"
 #include "Utilities/ResourceCollection.h"
 #include "Platforms/OMPTarget/OMPTargetMath.hpp"
 #include "CPU/SIMD/inner_product.hpp"
