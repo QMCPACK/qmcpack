@@ -54,10 +54,10 @@ public:
    */
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateDetSpinorRatios(const VirtualParticleSet& VP, 
-                               ValueVector& psi, 
-                               const std::pair<ValueVector, ValueVector>& spinor_multipler, 
-                               const ValueVector& invrow, 
+  void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                               ValueVector& psi,
+                               const std::pair<ValueVector, ValueVector>& spinor_multipler,
+                               const ValueVector& invrow,
                                std::vector<ValueType>& ratios) override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set

@@ -9,7 +9,6 @@
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia Nationaln Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "SOECPComponent.h"
 #include "catch.hpp"
 
 #include "Configuration.h"
@@ -271,7 +270,6 @@ void doSOECPotentialTest(bool use_VPs)
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
   // check the second walker which will be unchanged.
   CHECK(std::accumulate(local_pots2[1], local_pots2[1] + local_pots2.cols(), 0.0) == Approx(value));
-
 }
 
 TEST_CASE("SOECPotential", "[hamiltonian]")
