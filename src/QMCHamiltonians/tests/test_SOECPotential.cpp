@@ -63,10 +63,11 @@ public:
 
   static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
   {
-    so_ecp.setFastEvaluation(true);
+    copyGridUnrotatedForTest(so_ecp);
+    for (auto& uptr_comp : so_ecp.ppset_)
+        uptr_comp.get()->initVirtualParticle(elec);
     so_ecp.evaluateImpl(elec, true);
     value = so_ecp.getValue();
-    so_ecp.setFastEvaluation(false);
   }
 };
 } // namespace testing
@@ -189,7 +190,7 @@ void doSOECPotentialTest(bool use_VPs)
   ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, twf_list);
 
   //Now we set up the SO ECP component.
-  SOECPotential so_ecp(ions, elec, psi);
+  SOECPotential so_ecp(ions, elec, psi, false);
   ECPComponentBuilder ecp_comp_builder("test_read_soecp", c);
   okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
   REQUIRE(okay);
@@ -252,7 +253,15 @@ void doSOECPotentialTest(bool use_VPs)
   //Now lets try out the fast implementation
   if (use_VPs)
   {
-    testing::TestSOECPotential::evalFast(so_ecp, elec, value);
+    value = 0.0;
+    SOECPotential so_ecp_exact(ions, elec, psi, true);
+    //srule is 0 for exact evaluation
+    ECPComponentBuilder ecp_comp_builder("test_read_soecp", c, -1, -1, 0);
+    okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
+    REQUIRE(okay);
+    UPtr<SOECPComponent> so_ecp_comp = std::move(ecp_comp_builder.pp_so);
+    so_ecp_exact.addComponent(0, std::move(so_ecp_comp));
+    testing::TestSOECPotential::evalFast(so_ecp_exact, elec, value);
     CHECK(value == Approx(-3.530511241));
   }
 

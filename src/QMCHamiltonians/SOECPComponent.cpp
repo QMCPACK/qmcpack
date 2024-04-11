@@ -71,10 +71,8 @@ void SOECPComponent::resize_warrays(int n, int m, int s)
   nchannel_ = sopp_m_.size();
   nknot_    = sgridxyz_m_.size();
   sknot_    = s;
-  if (sknot_ < 2)
-    throw std::runtime_error("Spin knots must be >= 2\n");
-  if (sknot_ % 2 != 0)
-    throw std::runtime_error("Spin knots uses Simpson's rule. Must have even number of knots");
+  if (sknot_ % 2 != 0 && sknot_ > 0)
+    throw std::runtime_error("Spin integration uses Simpson's rule. Must have even number of knots in this case");
 
   //Need +1 for Simpsons rule to include both end points.
   //sknot here refers to the number of subintervals for integration

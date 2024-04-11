@@ -358,7 +358,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   VirtualParticleSet vp(elec_, 1);
   for (unsigned int iat = 0; iat < 3; iat++)
   {
-    std::vector<PosType> delta_v(1);
+    std::vector<ParticleSet::PosType> delta_v(1);
     delta_v[0] = -dR[iat];
     vp.makeMoves(elec_, iat, delta_v);
 

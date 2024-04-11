@@ -41,14 +41,14 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
  *\param els electronic poitions
  *\param psi Trial wave function
 */
-SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
+SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin)
     : my_rng_(nullptr),
       ion_config_(ions),
       psi_(psi),
       peln_(els),
       elec_neighbor_ions_(els),
       ion_neighbor_elecs_(ions),
-      use_fast_evaluation_(false)
+      use_exact_spin_(use_exact_spin)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
@@ -100,7 +100,7 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
       {
         RealType pairpot = 0;
-        if (use_fast_evaluation_)
+        if (use_exact_spin_)
           pairpot = pp_[iat]->evaluateOneExactSpinIntegration(P, iat, psi_, jel, dist[iat], -displ[iat]);
         else
           pairpot = pp_[iat]->evaluateOne(P, iat, psi_, jel, dist[iat], -displ[iat]);
@@ -301,7 +301,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
 std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(ion_config_, qp, psi);
+  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(ion_config_, qp, psi, use_exact_spin_);
   for (int ig = 0; ig < ppset_.size(); ++ig)
     if (ppset_[ig])
       myclone->addComponent(ig, std::unique_ptr<SOECPComponent>(ppset_[ig]->makeClone(qp)));

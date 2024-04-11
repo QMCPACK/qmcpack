@@ -31,7 +31,7 @@ class SOECPotential : public OperatorBase
   using Real = QMCTraits::RealType;
 
 public:
-  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
+  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin);
   ~SOECPotential() override;
 
   bool dependsOnWaveFunction() const override { return true; }
@@ -79,9 +79,6 @@ public:
   //return a shared resource to a collection
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
-  //triggers using fast evaluation using TWFFastDerivWrapper for normal evalualations and derivatives.
-  void setFastEvaluation(bool fast) { use_fast_evaluation_ = fast; }
-
 protected:
   RandomBase<FullPrecRealType>* my_rng_;
   std::vector<SOECPComponent*> pp_;
@@ -111,7 +108,7 @@ private:
   ResourceHandle<SOECPotentialMultiWalkerResource> mw_res_handle_;
 
   //flag to use fast evaluation
-  bool use_fast_evaluation_;
+  const bool use_exact_spin_;
 
   void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
 
