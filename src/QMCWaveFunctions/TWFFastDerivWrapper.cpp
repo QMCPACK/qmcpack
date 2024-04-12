@@ -341,5 +341,4 @@ TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P
   return sid;
 }
 
-
 } // namespace qmcplusplus

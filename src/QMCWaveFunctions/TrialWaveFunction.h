@@ -69,6 +69,7 @@ public:
 #endif
 
   using ValueType    = WaveFunctionComponent::ValueType;
+  using ValueVector  = WaveFunctionComponent::ValueVector;
   using GradType     = WaveFunctionComponent::GradType;
   using BufferType   = WaveFunctionComponent::BufferType;
   using WFBufferType = WaveFunctionComponent::WFBufferType;
@@ -298,6 +299,11 @@ public:
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
+
+  /** Used by SOECPComponent to do faster SOC evaluation
+   */
+  void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios) const;
+
   /** batched version of evaluateRatios
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */

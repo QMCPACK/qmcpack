@@ -71,10 +71,8 @@ void SOECPComponent::resize_warrays(int n, int m, int s)
   nchannel_ = sopp_m_.size();
   nknot_    = sgridxyz_m_.size();
   sknot_    = s;
-  if (sknot_ < 2)
-    throw std::runtime_error("Spin knots must be >= 2\n");
-  if (sknot_ % 2 != 0)
-    throw std::runtime_error("Spin knots uses Simpson's rule. Must have even number of knots");
+  if (sknot_ % 2 != 0 && sknot_ > 0)
+    throw std::runtime_error("Spin integration uses Simpson's rule. Must have even number of knots in this case");
 
   //Need +1 for Simpsons rule to include both end points.
   //sknot here refers to the number of subintervals for integration
@@ -135,6 +133,25 @@ SOECPComponent::ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int 
   }
 }
 
+SOECPComponent::ComplexType SOECPComponent::matrixElementDecomposed(int l, int m1, int m2, RealType spin, bool plus)
+{
+  RealType pm = plus ? RealType(1) : RealType(-1);
+  RealType mp = -1 * pm;
+
+
+  ComplexType lx = lmMatrixElements(l, m1, m2, 0);
+  ComplexType ly = lmMatrixElements(l, m1, m2, 1);
+  ComplexType lz = lmMatrixElements(l, m1, m2, 2);
+
+  RealType cos2s = std::cos(2 * spin);
+  RealType sin2s = std::sin(2 * spin);
+  ComplexType phase(cos2s, mp * sin2s);
+  ComplexType eye(0, 1);
+  RealType onehalf = 0.5;
+  ComplexType val  = onehalf * (pm * lz + phase * (lx + pm * eye * ly));
+  return val;
+}
+
 SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
                                                      int iat,
                                                      TrialWaveFunction& Psi,
@@ -190,6 +207,67 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
     pairpot += psiratio_[iq] * lsum * spin_quad_weights_[iq];
   }
   return std::real(pairpot);
+}
+
+SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(ParticleSet& W,
+                                                                         const int iat,
+                                                                         const TrialWaveFunction& psi,
+                                                                         const int iel,
+                                                                         const RealType r,
+                                                                         const PosType& dr)
+{
+#ifdef QMC_COMPLEX
+  RealType sold = W.spins[iel];
+
+  using ValueVector = SPOSet::ValueVector;
+  std::pair<ValueVector, ValueVector> spinor_multiplier;
+  auto& up_row = spinor_multiplier.first;
+  auto& dn_row = spinor_multiplier.second;
+  up_row.resize(nknot_);
+  dn_row.resize(nknot_);
+
+  //buildQuadraturePointDeltaPositions
+  for (int j = 0; j < nknot_; j++)
+    deltaV_[j] = r * rrotsgrid_m_[j] - dr;
+  vp_->makeMoves(W, iel, deltaV_, true, iat);
+
+  //calculate radial potentials
+  for (int ip = 0; ip < nchannel_; ip++)
+    vrad_[ip] = sopp_m_[ip]->splint(r);
+
+  for (int iq = 0; iq < nknot_; iq++)
+  {
+    up_row[iq] = 0.0;
+    dn_row[iq] = 0.0;
+    for (int il = 0; il < nchannel_; il++)
+    {
+      int l = il + 1;
+      for (int m1 = -l; m1 <= l; m1++)
+      {
+        ComplexType Y = sphericalHarmonic(l, m1, dr);
+        for (int m2 = -l; m2 <= l; m2++)
+        {
+          ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq]));
+          ComplexType so_up = matrixElementDecomposed(l, m1, m2, sold, true);
+          ComplexType so_dn = matrixElementDecomposed(l, m1, m2, sold, false);
+          RealType fourpi   = 4.0 * M_PI;
+          //Note: Need 4pi weight. In Normal NonLocalECP, 1/4Pi generated from transformation to legendre polynomials and gets absorbed into the
+          // quadrature integration. We don't get the 1/4Pi from legendre here, so we need to scale by 4Pi.
+          up_row[iq] += fourpi * vrad_[il] * Y * cY * so_up;
+          dn_row[iq] += fourpi * vrad_[il] * Y * cY * so_dn;
+        }
+      }
+    }
+  }
+
+  psi.evaluateSpinorRatios(*vp_, spinor_multiplier, psiratio_);
+  ComplexType pairpot;
+  for (size_t iq = 0; iq < nknot_; iq++)
+    pairpot += psiratio_[iq] * sgridweight_m_[iq];
+  return std::real(pairpot);
+#else
+  throw std::runtime_error("SOECPComponent::evaluateOneBodyOpMatrixContribution only implemented in complex build");
+#endif
 }
 
 void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,

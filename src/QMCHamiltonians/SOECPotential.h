@@ -31,7 +31,7 @@ class SOECPotential : public OperatorBase
   using Real = QMCTraits::RealType;
 
 public:
-  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
+  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin);
   ~SOECPotential() override;
 
   bool dependsOnWaveFunction() const override { return true; }
@@ -106,6 +106,9 @@ private:
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
   //multi walker resource
   ResourceHandle<SOECPotentialMultiWalkerResource> mw_res_handle_;
+
+  //flag to use fast evaluation
+  const bool use_exact_spin_;
 
   void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
 
