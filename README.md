@@ -66,7 +66,7 @@ Nightly testing currently includes at least the following software versions:
 
 * Compilers
   * GCC 13.2.0, 11.4.0
-  * Clang/LLVM 17.0.4
+  * Clang/LLVM 18.1.2
 * Boost 1.83.0, 1.77.0
 * HDF5 1.14.3
 * FFTW 3.3.10, 3.3.8
