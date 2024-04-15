@@ -193,11 +193,6 @@ int main(int argc, char** argv)
       infoError.redirectToSameStream(infoSummary);
     }
 
-    //#if defined(MPIRUN_EXTRA_ARGUMENTS)
-    //  //broadcast the input file name to other nodes
-    //  MPI_Bcast(fname.c_str(),fname.size(),MPI_CHAR,0,OHMMS::Controller->getID());
-    //#endif
-
     bool validInput = false;
     app_log() << "  Input file(s): ";
     for (int k = 0; k < inputs.size(); ++k)
