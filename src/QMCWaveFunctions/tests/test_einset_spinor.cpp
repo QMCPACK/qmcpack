@@ -10,7 +10,6 @@
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -22,6 +21,7 @@
 #include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
+#include "Particle/VirtualParticleSet.h"
 
 #include <stdio.h>
 #include <string>
@@ -306,6 +306,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   int OrbitalSetSize = spo->getOrbitalSetSize();
   //temporary arrays for holding the values of the up and down channels respectively.
   SPOSet::ValueVector psi_work;
+  SPOSet::ValueVector psi_work_up;
+  SPOSet::ValueVector psi_work_down;
 
   //temporary arrays for holding the gradients of the up and down channels respectively.
   SPOSet::GradVector dpsi_work;
@@ -318,6 +320,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   psi_work.resize(OrbitalSetSize);
+  psi_work_up.resize(OrbitalSetSize);
+  psi_work_down.resize(OrbitalSetSize);
 
   dpsi_work.resize(OrbitalSetSize);
 
@@ -351,8 +355,13 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.update();
 
   //Now we test evaluateValue()
+  VirtualParticleSet vp(elec_, 1);
   for (unsigned int iat = 0; iat < 3; iat++)
   {
+    std::vector<ParticleSet::PosType> delta_v(1);
+    delta_v[0] = -dR[iat];
+    vp.makeMoves(elec_, iat, delta_v);
+
     psi_work = 0.0;
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluateValue(elec_, iat, psi_work);
@@ -360,6 +369,34 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
     CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
     CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+
+
+    std::vector<ValueType> ratios(1);
+    SPOSet::ValueVector psi(OrbitalSetSize);
+    SPOSet::ValueVector psiinv(OrbitalSetSize);
+    psiinv = 2.1;
+    std::pair<SPOSet::ValueVector, SPOSet::ValueVector> multiplier;
+    auto& up_factor = multiplier.first;
+    auto& dn_factor = multiplier.second;
+    up_factor.resize(OrbitalSetSize);
+    dn_factor.resize(OrbitalSetSize);
+    up_factor = 5.2;
+    dn_factor = -0.3;
+    spo->evaluateDetSpinorRatios(vp, psi, multiplier, psiinv, ratios);
+    //create reference value
+    RealType s = elec_.spins[iat];
+    RealType coss(0.0), sins(0.0);
+    coss = std::cos(s);
+    sins = std::sin(s);
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+
+    ValueType refVal;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+      refVal += static_cast<ValueType>(2.1) *
+          (eis * static_cast<ValueType>(5.2) * psiM_up[iat][iorb] +
+           emis * static_cast<ValueType>(-0.3) * psiM_down[iat][iorb]);
+    CHECK(ratios[0] == ComplexApprox(refVal));
     elec_.rejectMove(iat);
   }
 
@@ -645,7 +682,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
       for (int k = 0; k < spo->size(); k++)
         psiM_rot_manual[i][j] += psiM_ref[i][k] * rot_mat[k][j];
     }
- 
+
   spo->storeParamsBeforeRotation();
   spo->applyRotation(rot_mat, false);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);

@@ -126,6 +126,7 @@ public:
   using WaveFunctionComponent::evalGradSource;
   using WaveFunctionComponent::evaluateHessian;
   using WaveFunctionComponent::evaluateRatios;
+  using WaveFunctionComponent::evaluateSpinorRatios;
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
   using WaveFunctionComponent::mw_evaluateRatios;
 

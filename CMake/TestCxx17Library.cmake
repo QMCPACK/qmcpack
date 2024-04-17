@@ -41,7 +41,7 @@ if(NOT CXX17_LIBRARY_OKAY)
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
     message(
       "Compiler detected is <Clang> namely clang++ or a vendor variant (icpx, amdclang++, armclang++).\n  If not using libcxx, ensure a GCC toolchain version equal or greater "
-      "than 9.0 gets picked up. Check with '<Clang> -v'. Or use the --gcc-toolchain compiler option "
+      "than 9.0 gets picked up. Check with '<Clang> -v'. Or use the --gcc-install-dir (--gcc-toolchain deprecated) compiler option "
       "(added to both CMAKE_C_FLAGS and CMAKE_CXX_FLAGS) to point to a newer GCC installation."
     )
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
