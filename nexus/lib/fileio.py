@@ -796,6 +796,7 @@ class XsfFile(StandardFile):
         s.recenter()
         elem = []
         for e in s.elem:
+            e = e.lower().title()
             ne = len(e)
             if ne>1:
                 if ne==2 and not e[1].isalpha():
