@@ -280,7 +280,6 @@ private:
   NewTimer& involvmat_timer_;
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
-  Timer t1;
 
   ///xml node to be dumped
   xmlNodePtr wfNode;
