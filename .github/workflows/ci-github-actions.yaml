@@ -139,7 +139,8 @@ jobs:
           flags: tests-deterministic # optional
           name: codecov-QMCPACK # optional
           fail_ci_if_error: true # optional (default = false)
-          token: ${{ secrets.CODECOV_TOKEN }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   macos:
     runs-on: macos-13
