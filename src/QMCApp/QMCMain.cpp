@@ -639,7 +639,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
       infoLog.flush();
 
       qmc_driver->run();
-      app_log() << "  " << qmc_driver->getEngineName() << " Execution time = " << std::setprecision(4) << process_and_run.elapsed() << " secs" << std::endl;
+      app_log() << "  " << qmc_driver->getEngineName() << " Execution time = " << std::setprecision(4)
+                << process_and_run.elapsed() << " secs" << std::endl;
     }
     // transfer the states of a driver before its destruction
     last_branch_engine_legacy_driver_ = qmc_driver->getBranchEngine();
