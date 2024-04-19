@@ -33,7 +33,7 @@ namespace qmcplusplus
 void LinearMethod::solveGeneralizedEigenvalues(Matrix<Real>& A,
                                                Matrix<Real>& B,
                                                std::vector<Real>& eigenvals,
-                                               Matrix<Real>& eigenvectors) const
+                                               Matrix<Real>& eigenvectors)
 {
   int Nl = A.rows();
   assert(A.rows() == A.cols());
@@ -83,7 +83,7 @@ void LinearMethod::solveGeneralizedEigenvalues(Matrix<Real>& A,
 void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
                                                    Matrix<Real>& B,
                                                    std::vector<Real>& eigenvals,
-                                                   Matrix<Real>& eigenvectors) const
+                                                   Matrix<Real>& eigenvectors)
 {
   int Nl = A.rows();
   assert(A.rows() == A.cols());

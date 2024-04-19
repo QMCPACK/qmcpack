@@ -37,16 +37,16 @@ class LinearMethod
 
 public:
   // Use generalized eigenvalue solver
-  void solveGeneralizedEigenvalues(Matrix<Real>& A,
+  static void solveGeneralizedEigenvalues(Matrix<Real>& A,
                                    Matrix<Real>& B,
                                    std::vector<Real>& eigenvals,
-                                   Matrix<Real>& eigenvectors) const;
+                                   Matrix<Real>& eigenvectors);
 
   // Solve by explicitly inverting the overlap matrix
-  void solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
+  static void solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
                                        Matrix<Real>& B,
                                        std::vector<Real>& eigenvals,
-                                       Matrix<Real>& eigenvectors) const;
+                                       Matrix<Real>& eigenvectors);
 
   //asymmetric generalized EV
   Real getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const;
