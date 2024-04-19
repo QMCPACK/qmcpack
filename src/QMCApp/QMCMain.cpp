@@ -631,12 +631,16 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml_);
 #endif
-    qmc_driver->process(cur);
-    infoSummary.flush();
-    infoLog.flush();
-    Timer qmcTimer;
-    qmc_driver->run();
-    app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
+    {
+      ScopedTimer qmc_run_timer(createGlobalTimer(qmc_driver->getEngineName(), timer_level_coarse));
+      Timer process_and_run;
+      qmc_driver->process(cur);
+      infoSummary.flush();
+      infoLog.flush();
+
+      qmc_driver->run();
+      app_log() << "  " << qmc_driver->getEngineName() << " Execution time = " << std::setprecision(4) << process_and_run.elapsed() << " secs" << std::endl;
+    }
     // transfer the states of a driver before its destruction
     last_branch_engine_legacy_driver_ = qmc_driver->getBranchEngine();
     // save the driver in a driver loop
