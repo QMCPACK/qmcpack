@@ -1593,6 +1593,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
             << "Building overlap and Hamiltonian matrices" << std::endl
             << "*****************************************" << std::endl;
 
+  Timer t_build_matrices;
   // allocate the matrices we will need
   Matrix<RealType> ovlMat(N, N);
   ovlMat = 0.0;
@@ -1622,12 +1623,14 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     hout.write(bestShift_i, "bestShift_i");
     hout.write(bestShift_s, "bestShift_s");
   }
+  app_log() << "  Execution time (building matrices) = " << std::setprecision(4) << t_build_matrices.elapsed() << std::endl;
 
   app_log() << std::endl
             << "**************************" << std::endl
             << "Solving eigenvalue problem" << std::endl
             << "**************************" << std::endl;
 
+  Timer t_eigen;
   invMat.copy(ovlMat);
   // apply the identity shift
   for (int i = 1; i < N; i++)
@@ -1673,6 +1676,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     hout.write(objFuncWrapper_.Lambda, "non_linear_rescale");
     hout.close();
   }
+  app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)
