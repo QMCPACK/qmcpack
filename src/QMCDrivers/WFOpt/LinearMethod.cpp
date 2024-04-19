@@ -28,7 +28,7 @@ namespace qmcplusplus
 {
 
 
-// A - Ham
+// A - Hamiltonian
 // B - Overlap
 void LinearMethod::solveGeneralizedEigenvalues(Matrix<Real>& A,
                                                Matrix<Real>& B,
@@ -78,7 +78,7 @@ void LinearMethod::solveGeneralizedEigenvalues(Matrix<Real>& A,
 }
 
 
-// A - Ham
+// A - Hamiltonian
 // B - Overlap
 void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
                                                    Matrix<Real>& B,
