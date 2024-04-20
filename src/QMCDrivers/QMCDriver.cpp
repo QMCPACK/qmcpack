@@ -55,7 +55,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       Psi(psi),
       H(h),
       checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
-      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;

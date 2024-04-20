@@ -460,8 +460,6 @@ protected:
 
   DriverTimers timers_;
 
-  ///time the driver lifetime
-  ScopedTimer driver_scope_timer_;
   ///profile the driver lifetime
   ScopedProfiler driver_scope_profiler_;
 
