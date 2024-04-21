@@ -92,7 +92,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
       Max_iterations(1),
       wfNode(NULL),
       param_tol(1e-4),
-      generate_samples_timer_(createGlobalTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
+      generate_samples_timer_(createGlobalTimer("QMCLinearOptimize::generateSamples", timer_level_medium)),
       initialize_timer_(createGlobalTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
       eigenvalue_timer_(createGlobalTimer("QMCLinearOptimize::EigenvalueSolve", timer_level_medium)),
       involvmat_timer_(createGlobalTimer("QMCLinearOptimize::invertOverlapMat", timer_level_medium)),
