@@ -15,12 +15,8 @@
 #include "config.h"
 #include "PinnedAllocator.h"
 #include "OMPTarget/OMPallocator.hpp"
-#if defined(ENABLE_CUDA)
-#include "DualAllocator.hpp"
-#include "CUDA/CUDAallocator.hpp"
-#elif defined(ENABLE_SYCL)
-#include "DualAllocator.hpp"
-#include "SYCL/SYCLallocator.hpp"
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
+#include <DualAllocatorAliases.hpp>
 #endif
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsArray.h"
@@ -35,12 +31,9 @@ namespace qmcplusplus
 // its defined locally all over the place.
 template<typename T>
 using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
 template<typename T>
-using VendorDualPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
-#elif defined(ENABLE_SYCL)
-template<typename T>
-using VendorDualPinnedAllocator = DualAllocator<T, SYCLAllocator<T>, PinnedAlignedAllocator<T>>;
+using VendorDualPinnedAllocator = PinnedDualAllocator<T>;
 #endif
 
 template<class OPA>
