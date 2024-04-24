@@ -67,9 +67,7 @@ void LinearMethod::solveGeneralizedEigenvalues(Matrix<Real>& A,
   LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
                eigenvectors.data(), &Nl, &work[0], &lwork, &info);
   if (info != 0)
-  {
-    APP_ABORT("Invalid Matrix Diagonalization Function!");
-  }
+    throw std::runtime_error("Invalid Matrix Diagonalization Function, ggev info = " + std::to_string(info));
 
   for (int i = 0; i < Nl; i++)
   {
@@ -119,9 +117,7 @@ void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
   LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
                &work[0], &lwork, &info);
   if (info != 0)
-  {
-    APP_ABORT("Invalid Matrix Diagonalization Function!");
-  }
+    throw std::runtime_error("Invalid Matrix Diagonalization Function, geev info = " + std::to_string(info));
 
   for (int i = 0; i < Nl; i++)
   {
