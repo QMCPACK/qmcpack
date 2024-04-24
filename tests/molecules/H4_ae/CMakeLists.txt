@@ -314,6 +314,42 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS # OPT step 5
   )
 
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly
+    optm-batch-OneShiftOnly.xml
+    1
+    16
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly
+    optm-batch-OneShiftOnly.xml
+    2
+    4
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly
+    optm-batch-OneShiftOnly.xml
+    3
+    2
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
   list(APPEND H4_OPT_SCALARS_ONLY_JAS "totenergy" "-2.066504 0.0009") # total energy
   qmc_run_and_check(
     short-H4-opt-OneShiftOnly-onlyjas

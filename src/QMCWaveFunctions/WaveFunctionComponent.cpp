@@ -241,6 +241,11 @@ void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vec
   APP_ABORT(o.str());
 }
 
+void WaveFunctionComponent::evaluateSpinorRatios(const VirtualParticleSet& P, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios)
+{
+  evaluateRatios(P, ratios);
+}
+
 void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                               const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                               std::vector<std::vector<ValueType>>& ratios) const

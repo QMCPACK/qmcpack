@@ -257,6 +257,7 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
     qmcdriver.testMeasureImbalance();
     outputManager.pause();
   }
-}
 
+  qmcdriver.testDetermineStepsPerBlock();
+}
 } // namespace qmcplusplus

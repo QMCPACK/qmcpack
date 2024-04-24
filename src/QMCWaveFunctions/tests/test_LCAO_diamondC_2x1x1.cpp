@@ -31,7 +31,10 @@ using std::string;
 namespace qmcplusplus
 {
 
-void test_LCAO_DiamondC_2x1x1_real()
+template<typename DT>
+using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
+void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 {
   using VT       = SPOSet::ValueType;
   Communicate* c = OHMMS::Controller;
@@ -90,8 +93,19 @@ void test_LCAO_DiamondC_2x1x1_real()
 
   // diamondC_2x1x1
   // from tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond-Twist0.wfj.xml
-  const std::string wf_xml_str = R"(
-    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond_2x1x1-Gaussian.h5" PBCimages="5  5  5">
+  const std::string wf_xml_str     = R"(
+    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond_2x1x1-Gaussian.h5" PBCimages="5  5  5" gpu="no">
+      <basisset name="LCAOBSet" key="GTO" transform="yes">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+      </basisset>
+      <sposet name="spoud" size="8">
+        <occupation mode="ground"/>
+        <coefficient size="116" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+  )";
+  const std::string wf_omp_xml_str = R"(
+    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0  0  0" href="C_Diamond_2x1x1-Gaussian.h5" PBCimages="5  5  5" gpu="omptarget">
       <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
       </basisset>
@@ -102,7 +116,7 @@ void test_LCAO_DiamondC_2x1x1_real()
     </sposet_collection>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_xml_str);
+  bool okay = doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str);
   REQUIRE(okay);
 
   xmlNodePtr root       = doc.getRoot();
@@ -276,7 +290,44 @@ void test_LCAO_DiamondC_2x1x1_real()
     //   for (int idim = 0; idim < 3; idim++)
     //     app_log() << "CHECK(Approx(std::real(dpsiref_1[" << iorb << "][" << idim << "])) == " << dpsiref_1[iorb][idim] << ");\n";
     // }
+
+    // fill invrow with dummy data for each walker
+    OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+    LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
+    for (int i = 0; i < norb; i++)
+    {
+      psiMinv_data_0[i] = 0.1 * i;
+      psiMinv_data_1[i] = 0.2 * i;
+    }
+    psiMinv_data_0.updateTo();
+    psiMinv_data_1.updateTo();
+
+    std::vector<const SPOSet::ValueType*> invRow_ptr_list;
+    if (spo->isOMPoffload())
+      invRow_ptr_list = {psiMinv_data_0.device_data(), psiMinv_data_1.device_data()};
+    else
+      invRow_ptr_list = {psiMinv_data_0.data(), psiMinv_data_1.data()};
+
+    SPOSet::OffloadMWVGLArray phi_vgl_v;
+    std::vector<SPOSet::ValueType> ratios(nw);
+    std::vector<SPOSet::GradType> grads(nw);
+    phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, norb);
+
+    spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, invRow_ptr_list, phi_vgl_v, ratios, grads);
+
+    SECTION("multi-walker VGLandDetRatioGrads")
+    {
+      CHECK(Approx(std::real(ratios[0])) == 0.193096895);
+      CHECK(Approx(std::real(grads[0][0])) == 0.5969699486);
+      CHECK(Approx(std::real(grads[0][1])) == -0.776008772);
+      CHECK(Approx(std::real(grads[0][2])) == 0.7457653703);
+      CHECK(Approx(std::real(ratios[1])) == 0.3558058932);
+      CHECK(Approx(std::real(grads[1][0])) == 0.5857037763);
+      CHECK(Approx(std::real(grads[1][1])) == -0.8617132632);
+      CHECK(Approx(std::real(grads[1][2])) == 0.7299292825);
+    }
   }
+
   SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
   {
     // make VPs
@@ -318,18 +369,21 @@ void test_LCAO_DiamondC_2x1x1_real()
     VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
 
     // fill invrow with dummy data for each walker
-    std::vector<SPOSet::ValueType> psiMinv_data_(norb);
-    std::vector<SPOSet::ValueType> psiMinv_data_2(norb);
-    SPOSet::ValueVector psiMinv_ref_0(norb);
-    SPOSet::ValueVector psiMinv_ref_1(norb);
+    OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+    LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
     for (int i = 0; i < norb; i++)
     {
-      psiMinv_data_[i]  = 0.1 * i;
-      psiMinv_data_2[i] = 0.2 * i;
-      psiMinv_ref_0[i]  = psiMinv_data_[i];
-      psiMinv_ref_1[i]  = psiMinv_data_2[i];
+      psiMinv_data_0[i] = 0.1 * i;
+      psiMinv_data_1[i] = 0.2 * i;
     }
-    std::vector<const SPOSet::ValueType*> invRow_ptr_list{psiMinv_data_.data(), psiMinv_data_2.data()};
+    psiMinv_data_0.updateTo();
+    psiMinv_data_1.updateTo();
+
+    std::vector<const SPOSet::ValueType*> invRow_ptr_list;
+    if (spo->isOMPoffload())
+      invRow_ptr_list = {psiMinv_data_0.device_data(), psiMinv_data_1.device_data()};
+    else
+      invRow_ptr_list = {psiMinv_data_0.data(), psiMinv_data_1.data()};
 
     // ratios_list
     std::vector<std::vector<SPOSet::ValueType>> ratios_list(nw);
@@ -337,15 +391,16 @@ void test_LCAO_DiamondC_2x1x1_real()
       ratios_list[iw].resize(nvp_list[iw]);
 
     // just need dummy refvec with correct size
-    SPOSet::ValueVector tmp_psi_list(norb);
-    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
-                              RefVector<SPOSet::ValueVector>{tmp_psi_list}, invRow_ptr_list, ratios_list);
+    SPOSet::ValueVector tmp_psi0(norb), tmp_psi1(norb);
+    RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi0, tmp_psi1};
+    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}), tmp_psi_list,
+                              invRow_ptr_list, ratios_list);
 
     std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
     std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);
     // single-walker functions for reference
-    spo->evaluateDetRatios(VP_, tmp_psi_list, psiMinv_ref_0, ratios_ref_0);
-    spo_2->evaluateDetRatios(VP_2, tmp_psi_list, psiMinv_ref_1, ratios_ref_1);
+    spo->evaluateDetRatios(VP_, tmp_psi0, psiMinv_ref_0, ratios_ref_0);
+    spo_2->evaluateDetRatios(VP_2, tmp_psi1, psiMinv_ref_1, ratios_ref_1);
 
     for (int ivp = 0; ivp < nvp_; ivp++)
       CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));
@@ -396,7 +451,7 @@ void test_LCAO_DiamondC_2x1x1_real()
   }
 }
 
-void test_LCAO_DiamondC_2x1x1_cplx()
+void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
 {
   using VT       = SPOSet::ValueType;
   Communicate* c = OHMMS::Controller;
@@ -455,8 +510,19 @@ void test_LCAO_DiamondC_2x1x1_cplx()
 
   // diamondC_2x1x1
   // from tests/solids/diamondC_2x1x1-Gaussian_pp_cplx/C_Diamond-tiled-cplx.wfj.xml
-  const std::string wf_xml_str = R"(
-    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.07761248  0.07761248  -0.07761248" href="C_Diamond_2x1x1-Gaussian-tiled-cplx.h5" PBCimages="5  5  5">
+  const std::string wf_xml_str     = R"(
+    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.07761248  0.07761248  -0.07761248" href="C_Diamond_2x1x1-Gaussian-tiled-cplx.h5" PBCimages="5  5  5" gpu="no">
+      <basisset name="LCAOBSet" key="GTO" transform="yes">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+      </basisset>
+      <sposet name="spoud" size="8" >
+        <occupation mode="ground"/>
+        <coefficient size="52" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+  )";
+  const std::string wf_omp_xml_str = R"(
+    <sposet_collection type="molecularorbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.07761248  0.07761248  -0.07761248" href="C_Diamond_2x1x1-Gaussian-tiled-cplx.h5" PBCimages="5  5  5" gpu="omptarget">
       <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
       </basisset>
@@ -467,7 +533,7 @@ void test_LCAO_DiamondC_2x1x1_cplx()
     </sposet_collection>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_xml_str);
+  bool okay = doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str);
   REQUIRE(okay);
 
   xmlNodePtr root       = doc.getRoot();
@@ -710,6 +776,7 @@ void test_LCAO_DiamondC_2x1x1_cplx()
     //               << "])) == " << std::imag(dpsiref_1[iorb][idim]) << ");" << std::endl;
     // }
   }
+
   SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
   {
     // make VPs
@@ -751,18 +818,21 @@ void test_LCAO_DiamondC_2x1x1_cplx()
     VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
 
     // fill invrow with dummy data for each walker
-    std::vector<SPOSet::ValueType> psiMinv_data_(norb);
-    std::vector<SPOSet::ValueType> psiMinv_data_2(norb);
-    SPOSet::ValueVector psiMinv_ref_0(norb);
-    SPOSet::ValueVector psiMinv_ref_1(norb);
+    OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+    LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
     for (int i = 0; i < norb; i++)
     {
-      psiMinv_data_[i]  = 0.1 * i;
-      psiMinv_data_2[i] = 0.2 * i;
-      psiMinv_ref_0[i]  = psiMinv_data_[i];
-      psiMinv_ref_1[i]  = psiMinv_data_2[i];
+      psiMinv_data_0[i] = 0.1 * i;
+      psiMinv_data_1[i] = 0.2 * i;
     }
-    std::vector<const SPOSet::ValueType*> invRow_ptr_list{psiMinv_data_.data(), psiMinv_data_2.data()};
+    psiMinv_data_0.updateTo();
+    psiMinv_data_1.updateTo();
+
+    std::vector<const SPOSet::ValueType*> invRow_ptr_list;
+    if (spo->isOMPoffload())
+      invRow_ptr_list = {psiMinv_data_0.device_data(), psiMinv_data_1.device_data()};
+    else
+      invRow_ptr_list = {psiMinv_data_0.data(), psiMinv_data_1.data()};
 
     // ratios_list
     std::vector<std::vector<SPOSet::ValueType>> ratios_list(nw);
@@ -770,15 +840,16 @@ void test_LCAO_DiamondC_2x1x1_cplx()
       ratios_list[iw].resize(nvp_list[iw]);
 
     // just need dummy refvec with correct size
-    SPOSet::ValueVector tmp_psi_list(norb);
-    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
-                              RefVector<SPOSet::ValueVector>{tmp_psi_list}, invRow_ptr_list, ratios_list);
+    SPOSet::ValueVector tmp_psi0(norb), tmp_psi1(norb);
+    RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi0, tmp_psi1};
+    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}), tmp_psi_list,
+                              invRow_ptr_list, ratios_list);
 
     std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
     std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);
     // single-walker functions for reference
-    spo->evaluateDetRatios(VP_, tmp_psi_list, psiMinv_ref_0, ratios_ref_0);
-    spo_2->evaluateDetRatios(VP_2, tmp_psi_list, psiMinv_ref_1, ratios_ref_1);
+    spo->evaluateDetRatios(VP_, tmp_psi0, psiMinv_ref_0, ratios_ref_0);
+    spo_2->evaluateDetRatios(VP_2, tmp_psi1, psiMinv_ref_1, ratios_ref_1);
 
     for (int ivp = 0; ivp < nvp_; ivp++)
       CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));
@@ -839,12 +910,19 @@ void test_LCAO_DiamondC_2x1x1_cplx()
   }
 }
 
-
 TEST_CASE("LCAOrbitalSet batched PBC DiamondC", "[wavefunction]")
 {
-  SECTION("2x1x1 real") { test_LCAO_DiamondC_2x1x1_real(); }
+  SECTION("2x1x1 real") { test_LCAO_DiamondC_2x1x1_real(false); }
 #ifdef QMC_COMPLEX
-  SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(); }
+  SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(false); }
+#endif
+}
+
+TEST_CASE("LCAOrbitalSet batched PBC DiamondC offload", "[wavefunction]")
+{
+  SECTION("2x1x1 real offload") { test_LCAO_DiamondC_2x1x1_real(true); }
+#ifdef QMC_COMPLEX
+  SECTION("2x1x1 cplx offload") { test_LCAO_DiamondC_2x1x1_cplx(true); }
 #endif
 }
 } // namespace qmcplusplus

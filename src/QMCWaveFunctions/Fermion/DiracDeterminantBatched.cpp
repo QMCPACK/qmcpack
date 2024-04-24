@@ -818,6 +818,20 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSe
 }
 
 template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multipler, std::vector<Value>& ratios)
+{
+  {
+    ScopedTimer local_timer(RatioTimer);
+    const int WorkingIndex = VP.refPtcl - FirstIndex;
+    std::copy_n(det_engine_.get_psiMinv()[WorkingIndex], d2psiV.size(), d2psiV.data());
+  }
+  {
+    ScopedTimer local_timer(SPOVTimer);
+    Phi->evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multipler, d2psiV_host_view, ratios);
+  }
+}
+
+template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateRatios(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
     const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
