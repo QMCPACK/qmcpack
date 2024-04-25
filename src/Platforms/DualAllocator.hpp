@@ -52,15 +52,14 @@ struct DualAllocator : public HostAllocator
   using Pointer      = typename HostAllocator::pointer;
   using ConstPointer = typename HostAllocator::const_pointer;
 
-  DualAllocator() : host_ptr_(nullptr), device_ptr_(nullptr){};
-  DualAllocator(const DualAllocator&) : host_ptr_(nullptr), device_ptr_(nullptr) {}
+  DualAllocator() : device_ptr_(nullptr){};
+  DualAllocator(const DualAllocator&) : device_ptr_(nullptr) {}
   DualAllocator& operator=(const DualAllocator&)
   {
-    host_ptr_   = nullptr;
     device_ptr_ = nullptr;
   }
   template<class U, class V>
-  DualAllocator(const DualAllocator<U, V>&) : host_ptr_(nullptr), device_ptr_(nullptr)
+  DualAllocator(const DualAllocator<U, V>&) : device_ptr_(nullptr)
   {}
 
   template<class U, class V>
@@ -74,25 +73,22 @@ struct DualAllocator : public HostAllocator
     static_assert(std::is_same<T, Value>::value, "DualAllocator and HostAllocator data types must agree!");
     if (device_ptr_ != nullptr)
       throw std::runtime_error("DualAllocator does not support device reallocation");
-    host_ptr_   = std::allocator_traits<HostAllocator>::allocate(allocator_, n);
+    Value* host_ptr   = std::allocator_traits<HostAllocator>::allocate(allocator_, n);
     device_ptr_ = std::allocator_traits<DeviceAllocator>::allocate(device_allocator_, n);
     dual_device_mem_allocated += n * sizeof(T);
-    return host_ptr_;
+    return host_ptr;
   }
 
   void deallocate(Value* pt, std::size_t n)
   {
-    assert(pt = host_ptr_);
     dual_device_mem_allocated -= n * sizeof(T);
     std::allocator_traits<DeviceAllocator>::deallocate(device_allocator_, device_ptr_, n);
     std::allocator_traits<HostAllocator>::deallocate(allocator_, pt, n);
     device_ptr_ = nullptr;
-    host_ptr_   = nullptr;
   }
 
   void attachReference(const DualAllocator& from, std::ptrdiff_t ptr_offset, T* ref)
   {
-    host_ptr_                 = ref;
     device_ptr_               = const_cast<Pointer>(from.get_device_ptr()) + ptr_offset;
   }
 
@@ -102,12 +98,9 @@ struct DualAllocator : public HostAllocator
   DeviceAllocator& get_device_allocator() { return device_allocator_; }
   const DeviceAllocator& get_device_allocator() const { return device_allocator_; }
 
-  T* get_host_ptr() { return host_ptr_; }
-
 private:
   HostAllocator allocator_;
   DeviceAllocator device_allocator_;
-  T* host_ptr_;
   T* device_ptr_;
 };
 
@@ -138,7 +131,6 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
    */
   static void updateTo(DualAlloc& alloc, T* host_ptr, size_t n)
   {
-    assert(host_ptr = alloc.get_host_ptr());
     alloc.get_device_allocator().copyToDevice(alloc.get_device_ptr(), host_ptr, n);
   }
 
@@ -146,7 +138,6 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
    */
   static void updateFrom(DualAlloc& alloc, T* host_ptr, size_t n)
   {
-    assert(host_ptr = alloc.get_host_ptr());
     alloc.get_device_allocator().copyFromDevice(host_ptr, alloc.get_device_ptr(), n);
   }
 
