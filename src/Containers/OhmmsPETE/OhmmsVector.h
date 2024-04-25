@@ -71,7 +71,7 @@ public:
    *  realspace dualspace allocator "interface"
    */
   template<typename CONTAINER>
-  Vector(CONTAINER& from, T* ref, size_t n) : nLocal(n), X(ref)
+  Vector(const CONTAINER& from, T* ref, size_t n) : nLocal(n), X(ref)
   {
     qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, from.data(), ref);
   }

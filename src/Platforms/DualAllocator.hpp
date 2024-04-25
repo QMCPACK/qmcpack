@@ -90,11 +90,10 @@ struct DualAllocator : public HostAllocator
     host_ptr_   = nullptr;
   }
 
-  void attachReference(const DualAllocator& from, T* from_data, T* ref)
+  void attachReference(const DualAllocator& from, std::ptrdiff_t ptr_offset, T* ref)
   {
-    std::ptrdiff_t ptr_offset = ref - from_data;
     host_ptr_                 = ref;
-    device_ptr_               = from.get_device_ptr() + ptr_offset;
+    device_ptr_               = const_cast<Pointer>(from.get_device_ptr()) + ptr_offset;
   }
 
   T* get_device_ptr() { return device_ptr_; }
@@ -121,9 +120,9 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
 
   static void fill_n(T* ptr, size_t n, const T& value) { qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value); }
 
-  static void attachReference(const DualAlloc& from, DualAlloc& to, T* from_data, T* ref)
+  static void attachReference(const DualAlloc& from, DualAlloc& to, const T* from_data, T* ref)
   {
-    to.attachReference(from, from_data, ref);
+    to.attachReference(from, ref - from_data, ref);
   }
 
   /** update to the device, assumes you are copying starting with the implicit host_ptr.
