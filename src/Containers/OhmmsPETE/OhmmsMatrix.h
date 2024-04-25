@@ -155,8 +155,8 @@ public:
   void assignUpperLeft(const Matrix<T_FROM, ALLOC_FROM>& from)
   {
     auto& this_ref    = *this;
-    const size_t cols = std::min(this_ref.cols(), from.cols());
-    const size_t rows = std::min(this_ref.rows(), from.rows());
+    const size_type cols = std::min(this_ref.cols(), from.cols());
+    const size_type rows = std::min(this_ref.rows(), from.rows());
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
         this_ref(i, j) = from(i, j);
