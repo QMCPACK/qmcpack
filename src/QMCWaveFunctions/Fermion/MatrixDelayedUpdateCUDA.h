@@ -182,18 +182,15 @@ private:
       // cone
       mw_mem.cone_vec.resize(nw);
       std::fill_n(mw_mem.cone_vec.data(), nw, Value(1));
-      Value* cone_ptr = mw_mem.cone_vec.data();
-      PRAGMA_OFFLOAD("omp target update to(cone_ptr[:nw])")
+      mw_mem.cone_vec.updateTo();
       // cminusone
       mw_mem.cminusone_vec.resize(nw);
       std::fill_n(mw_mem_handle_.getResource().cminusone_vec.data(), nw, Value(-1));
-      Value* cminusone_ptr = mw_mem.cminusone_vec.data();
-      PRAGMA_OFFLOAD("omp target update to(cminusone_ptr[:nw])")
+      mw_mem.cminusone_vec.updateTo();
       // czero
       mw_mem.czero_vec.resize(nw);
       std::fill_n(mw_mem.czero_vec.data(), nw, Value(0));
-      Value* czero_ptr = mw_mem.czero_vec.data();
-      PRAGMA_OFFLOAD("omp target update to(czero_ptr[:nw])")
+      mw_mem.czero_vec.updateTo();
     }
   }
 
@@ -824,13 +821,13 @@ public:
         if (engine_leader.isSM1())
         {
           auto* ptr = engine.get_ref_psiMinv().data();
-          PRAGMA_OFFLOAD("omp target update from(ptr[row_id * ncols : ncols])")
+          engine.get_ref_psiMinv().updateFrom(ncols, row_id * ncols);
           row_ptr_list.push_back(ptr + row_id * ncols);
         }
         else
         {
           auto* ptr = engine.invRow.data();
-          PRAGMA_OFFLOAD("omp target update from(ptr[:engine.invRow.size()])")
+          engine.invRow.updateFrom();
           row_ptr_list.push_back(ptr);
         }
     }

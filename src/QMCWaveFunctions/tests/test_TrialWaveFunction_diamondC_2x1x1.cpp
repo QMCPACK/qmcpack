@@ -566,7 +566,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   using VT   = QMCTraits::ValueType;
   using FPVT = QMCTraits::QTFull::ValueType;
 
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA)
   SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>")
   {
     using Det = DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>;

@@ -1243,7 +1243,7 @@ void DiracDeterminantBatched<DET_ENGINE>::releaseResource(
 }
 
 template class DiracDeterminantBatched<>;
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA)
 template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
