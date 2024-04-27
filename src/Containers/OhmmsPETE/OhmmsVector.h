@@ -73,7 +73,7 @@ public:
   template<typename CONTAINER>
   Vector(const CONTAINER& from, T* ref, size_type n) : nLocal(n), X(ref)
   {
-    qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, from.data(), ref);
+    qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, ref - from.data());
   }
 
   /** Initializer list constructor that can deal with both POD
@@ -155,7 +155,7 @@ public:
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
-    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, other.data(), ref);
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref - other.data());
   }
 
   //! return the current size
@@ -260,14 +260,21 @@ public:
 
   // Abstract Dual Space Transfers
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateTo()
+  void updateTo(size_type size = 0, std::ptrdiff_t offset = 0)
   {
-    qmc_allocator_traits<Alloc>::updateTo(mAllocator, X, nLocal);
+    if (size == 0)
+      qmc_allocator_traits<Alloc>::updateTo(mAllocator, X, nLocal);
+    else
+      qmc_allocator_traits<Alloc>::updateTo(mAllocator, X, size, offset);
   }
+
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateFrom()
+  void updateFrom(size_type size = 0, std::ptrdiff_t offset = 0)
   {
-    qmc_allocator_traits<Alloc>::updateFrom(mAllocator, X, nLocal);
+    if (size == 0)
+      qmc_allocator_traits<Alloc>::updateFrom(mAllocator, X, nLocal);
+    else
+      qmc_allocator_traits<Alloc>::updateFrom(mAllocator, X, size, offset);
   }
 
 private:

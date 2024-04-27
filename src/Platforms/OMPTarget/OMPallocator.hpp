@@ -141,21 +141,19 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 
   static void attachReference(const OMPallocator<T, HostAllocator>& from,
                               OMPallocator<T, HostAllocator>& to,
-                              const T* from_data,
-                              T* ref)
+                              std::ptrdiff_t ptr_offset)
   {
-    std::ptrdiff_t ptr_offset = ref - from_data;
     to.attachReference(from, ptr_offset);
   }
 
-  static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
+  static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n, size_t offset = 0)
   {
-    PRAGMA_OFFLOAD("omp target update to(host_ptr[:n])");
+    PRAGMA_OFFLOAD("omp target update to(host_ptr[offset:n])");
   }
 
-  static void updateFrom(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
+  static void updateFrom(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n, size_t offset = 0)
   {
-    PRAGMA_OFFLOAD("omp target update from(host_ptr[:n])");
+    PRAGMA_OFFLOAD("omp target update from(host_ptr[offset:n])");
   }
 
   // Not very optimized device side copy.  Only used for testing.

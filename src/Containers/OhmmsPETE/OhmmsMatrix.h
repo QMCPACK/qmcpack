@@ -368,14 +368,14 @@ public:
 
   // Abstract Dual Space Transfers
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateTo()
+  void updateTo(size_type size = 0, std::ptrdiff_t offset = 0)
   {
-    X.updateTo();
+    X.updateTo(size, offset);
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateFrom()
+  void updateFrom(size_type size = 0, std::ptrdiff_t offset = 0)
   {
-    X.updateFrom();
+    X.updateFrom(size, offset);
   }
 
 protected:

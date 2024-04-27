@@ -87,7 +87,7 @@ struct DualAllocator : public HostAllocator
     device_ptr_ = nullptr;
   }
 
-  void attachReference(const DualAllocator& from, std::ptrdiff_t ptr_offset, T* ref)
+  void attachReference(const DualAllocator& from, std::ptrdiff_t ptr_offset)
   {
     device_ptr_               = const_cast<Pointer>(from.get_device_ptr()) + ptr_offset;
   }
@@ -113,9 +113,9 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
 
   static void fill_n(T* ptr, size_t n, const T& value) { qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value); }
 
-  static void attachReference(const DualAlloc& from, DualAlloc& to, const T* from_data, T* ref)
+  static void attachReference(const DualAlloc& from, DualAlloc& to, std::ptrdiff_t ptr_offset)
   {
-    to.attachReference(from, ref - from_data, ref);
+    to.attachReference(from, ptr_offset);
   }
 
   /** update to the device, assumes you are copying starting with the implicit host_ptr.
@@ -129,16 +129,16 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
    *  but if you have to use it or ifdef at a level above a xxxCUDA.cu or xxxOMPTarget.hpp file
    *  thats an issue. 
    */
-  static void updateTo(DualAlloc& alloc, T* host_ptr, size_t n)
+  static void updateTo(DualAlloc& alloc, T* host_ptr, size_t n, size_t offset = 0)
   {
-    alloc.get_device_allocator().copyToDevice(alloc.get_device_ptr(), host_ptr, n);
+    alloc.get_device_allocator().copyToDevice(alloc.get_device_ptr() + offset, host_ptr + offset, n);
   }
 
   /** update from the device, assumes you are copying starting with the device_ptr to the implicit host_ptr.
    */
-  static void updateFrom(DualAlloc& alloc, T* host_ptr, size_t n)
+  static void updateFrom(DualAlloc& alloc, T* host_ptr, size_t n, size_t offset = 0)
   {
-    alloc.get_device_allocator().copyFromDevice(host_ptr, alloc.get_device_ptr(), n);
+    alloc.get_device_allocator().copyFromDevice(host_ptr + offset, alloc.get_device_ptr() + offset, n);
   }
 
   static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from)

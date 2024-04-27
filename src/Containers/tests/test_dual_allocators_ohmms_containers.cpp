@@ -95,12 +95,15 @@ void testDualAllocator()
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
   matrix_view2(0, 0) = 0.0;
-  matrix_view2(1, 0) = 1, 0;
+  matrix_view2(1, 0) = 1.0;
 
   matrix_view2.updateTo();
   vcsoa.copyDeviceDataByIndex(0, 1);
+  matrix_view(0, 1) = 3.0;
+  matrix_view.updateTo(1, 1);
   matrix_view.updateFrom();
   CHECK(matrix_view(0, 0) == 0.0);
+  CHECK(matrix_view(0, 1) == 3.0);
   CHECK(matrix_view(1, 0) == 1.0);
 
   Array<Value, 3, OPA> aa;
