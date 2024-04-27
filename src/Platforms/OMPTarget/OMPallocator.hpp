@@ -130,8 +130,8 @@ private:
 template<typename T, class HostAllocator>
 struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 {
-  static const bool is_host_accessible = true;
-  static const bool is_dual_space      = true;
+  static constexpr bool is_host_accessible = true;
+  static constexpr bool is_dual_space      = true;
 
   static void fill_n(T* ptr, size_t n, const T& value)
   {

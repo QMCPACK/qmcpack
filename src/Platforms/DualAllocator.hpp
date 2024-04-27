@@ -108,8 +108,8 @@ template<typename T, class DeviceAllocator, class HostAllocator>
 struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
 {
   using DualAlloc                      = DualAllocator<T, DeviceAllocator, HostAllocator>;
-  static const bool is_host_accessible = true;
-  static const bool is_dual_space      = true;
+  static constexpr bool is_host_accessible = true;
+  static constexpr bool is_dual_space      = true;
 
   static void fill_n(T* ptr, size_t n, const T& value) { qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value); }
 

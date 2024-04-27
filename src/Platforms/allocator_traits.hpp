@@ -27,8 +27,8 @@ struct qmc_allocator_traits
 {
   using value_type = typename Allocator::value_type;
 
-  static const bool is_host_accessible = true;
-  static const bool is_dual_space      = false;
+  static constexpr bool is_host_accessible = true;
+  static constexpr bool is_dual_space      = false;
 
   static void fill_n(value_type* ptr, size_t n, const value_type& value) { std::fill_n(ptr, n, value); };
 
