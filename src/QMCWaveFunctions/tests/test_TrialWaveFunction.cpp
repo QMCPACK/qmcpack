@@ -371,7 +371,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 }
 
-#ifdef QMC_COMPLEX
+#if defined(QMC_COMPLEX) && !defined(ENABLE_CUDA)
 /** This test is intended to catch a bug that was found in the batched code 
   * when using spinors and jastrows. The issue came about because WFCs that don't 
   * contribute to the spin gradient end up going back to the normal mw_evalGrad

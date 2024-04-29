@@ -73,6 +73,7 @@ public:
   using WFBufferType = Walker_t::WFBuffer_t;
   using BufferType   = Walker_t::Buffer_t;
   using RealMatrix_t = OrbitalSetTraits<RealType>::ValueMatrix;
+  using ValueVector  = OrbitalSetTraits<ValueType>::ValueVector;
   using ValueMatrix  = OrbitalSetTraits<ValueType>::ValueMatrix;
   using GradMatrix   = OrbitalSetTraits<ValueType>::GradMatrix;
   using HessType     = OrbitalSetTraits<ValueType>::HessType;
@@ -508,6 +509,10 @@ public:
    */
   virtual void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
+  /** Used by SOECPComponent for faster SOC evaluation
+   */
+  virtual void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios);
+
   /** evaluate ratios to evaluate the non-local PP multiple walkers
    * @param wfc_list the list of WaveFunctionComponent references of the same component in a walker batch
    * @param vp_list the list of VirtualParticleSet references in a walker batch
@@ -527,7 +532,6 @@ public:
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
 
-private:
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param p_list the list of ParticleSet pointers in a walker batch

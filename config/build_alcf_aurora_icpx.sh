@@ -1,16 +1,24 @@
 #!/bin/bash
 # This recipe is intended for ALCF Sunspot https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Mar 29th 2024
+# last revision: Feb 20th 2024
 #
 # How to invoke this script?
 # build_alcf_sunspot_icpx.sh # build all the variants assuming the current directory is the source directory.
 # build_alcf_sunspot_icpx.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_alcf_sunspot_icpx.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
-module load cmake hdf5/1.14.3 boost/1.83.0
-module load oneapi/eng-compiler/2023.12.15.002
+for module_name in oneapi/release oneapi/eng-compiler
+do
+  if module is-loaded $module_name ; then module unload $module_name; fi
+done
 
+module load spack-pe-gcc cmake
+module load cray-hdf5
+module load oneapi/eng-compiler/2023.12.15.002
 module list >& module_list.txt
+
+# edit this line for your own boost header files.
+export BOOST_ROOT=/home/yeluo/opt/boost_1_80_0
 
 echo "**********************************"
 echo '$ icpx -v'
@@ -18,7 +26,7 @@ icpx -v
 echo "**********************************"
 
 TYPE=Release
-Machine=sunspot
+Machine=aurora
 Compiler=icpx20231130
 
 if [[ $# -eq 0 ]]; then

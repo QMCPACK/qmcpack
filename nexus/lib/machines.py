@@ -54,10 +54,23 @@ from developer import DevBase,to_str
 from nexus_base import NexusCore,nexus_core
 from execute import execute
 from debug import *
-from imp import load_source
-
 
 import re,subprocess
+
+import importlib.util
+import importlib.machinery
+
+def our_load_source(modname, filename):
+    """" Replacement for the deprecated imp.load_source function"""
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
+
 def cpu_count():
     """ Number of virtual or physical CPUs on this system, i.e.
     user/real as output by time(1) when called with an optimally scaling
@@ -1932,13 +1945,12 @@ class Clustername(Supercomputer):
 Clustername(      4,   1,    16,   24,    4, 'mpirun',     'qsub',   'qstat',    'qdel')
 '''
 try:
-    load_source('*',os.path.expanduser('~/.nexus/local_machines.py'))
+    our_load_source('*',os.path.expanduser('~/.nexus/local_machines.py'))
 except IOError:
     pass
 except:
     raise
 #end try
-
 
 class Kraken(Supercomputer):
 

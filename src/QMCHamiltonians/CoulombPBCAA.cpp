@@ -458,8 +458,14 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   myConst = evalConsts();
   myRcut  = AA->get_rc(); //Basis.get_rc();
 
+  auto myGrid = LinearGrid<RealType>();
+  int ng = P.getLattice().num_ewald_grid_points;
+  app_log() << "    CoulombPBCAA::initBreakup\n  Setting a linear grid=[0,"
+            << myRcut << ") number of grid points =" << ng << std::endl;
+  myGrid.set(0, myRcut, ng);
+
   if (rVs == nullptr)
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut);
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
 
   rVs_offload = std::make_shared<const OffloadSpline>(*rVs);
 
@@ -468,7 +474,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
     dAA = LRCoulombSingleton::getDerivHandler(P);
     if (rVsforce == nullptr)
     {
-      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut);
+      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut, myGrid);
     }
   }
 }

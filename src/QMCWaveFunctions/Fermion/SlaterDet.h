@@ -23,12 +23,6 @@
 
 namespace qmcplusplus
 {
-// NOTE NOTE NOTE
-// template<bool backflow>
-//  class SlaterDet: public WaveFunctionComponent {}
-//     then change SlaterDet to SlaterDet<false>
-//     and SlaterDeterminantWithBackflow to SlaterDet<true>
-//     and remove all virtuals and inline them
 class TWFFastDerivWrapper;
 
 class SlaterDet : public WaveFunctionComponent
@@ -109,6 +103,11 @@ public:
     return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
   }
 
+  inline void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios) override
+  {
+    return Dets[getDetID(VP.refPtcl)]->evaluateSpinorRatios(VP, spinor_multiplier, ratios);
+  }
+
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
@@ -136,6 +135,13 @@ public:
                     std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_now) const override;
 
+  void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            std::vector<PsiValue>& ratios,
+                            std::vector<GradType>& grad_now,
+                            std::vector<ComplexType>& spingrad_now) const override;
+
   GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
@@ -151,6 +157,12 @@ public:
     const int det_id = getDetID(iat);
     Dets[det_id]->mw_evalGrad(extract_DetRef_list(wfc_list, det_id), p_list, iat, grad_now);
   }
+
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<GradType>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat) override
   {
@@ -236,7 +248,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  virtual SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
+  SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 

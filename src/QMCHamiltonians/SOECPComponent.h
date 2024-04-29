@@ -43,6 +43,7 @@ private:
   using SpherGridType       = std::vector<PosType>;
   using GridType            = OneDimGridBase<RealType>;
   using RadialPotentialType = OneDimCubicSpline<RealType>;
+  using ValueMatrix         = SPOSet::ValueMatrix;
 
   ///Non Local part: angular momentum, potential and grid
   int lmax_;
@@ -58,9 +59,10 @@ private:
   ///Non-Local part of the pseudo-potential
   std::vector<RadialPotentialType*> sopp_m_;
 
-  ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
-  ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
-  int kroneckerDelta(int x, int y);
+  static ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
+  static ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
+  static ComplexType matrixElementDecomposed(int l, int m1, int m2, RealType spin, bool plus = true);
+  static int kroneckerDelta(int x, int y);
 
   std::vector<PosType> deltaV_;
   std::vector<RealType> deltaS_;
@@ -116,6 +118,7 @@ public:
 
   RealType calculateProjector(RealType r, const PosType& dr, RealType sold);
 
+  RealType evaluateOneExactSpinIntegration(ParticleSet& W, const int iat, const TrialWaveFunction& psi, const int iel, const RealType r, const PosType& dr);
 
   static void mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
