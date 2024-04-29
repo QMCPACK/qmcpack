@@ -96,7 +96,7 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
   // Filter and sort to find desired eigenvalue.
   // Filter accepts eigenvalues between E_0 and E_0 - 100.0,
   // where E_0 is H(0,0), the current estimate for the VMC energy.
-  // Sort searches for eigevalue closest to E_0 - 2.0
+  // Sort searches for eigenvalue closest to E_0 - 2.0
 
   bool found_any_eigenvalue = false;
   std::vector<std::pair<Real, int>> mappedEigenvalues(Nl);
@@ -122,7 +122,7 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
   // finds the eigenvalue closest to E_0.
   if (!found_any_eigenvalue)
   {
-    app_log() << "No eigenvalues passed initial filter. Trying broader filter" << std::endl;
+    app_log() << "No eigenvalues passed initial filter. Trying broader 100 a.u. filter" << std::endl;
 
     bool found_higher_eigenvalue;
     for (int i = 0; i < Nl; i++)
