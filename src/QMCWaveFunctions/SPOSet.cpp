@@ -57,6 +57,15 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
   }
 }
 
+void SPOSet::evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                                     ValueVector& psi,
+                                     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                     const ValueVector& invrow,
+                                     std::vector<ValueType>& ratios)
+{
+  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluateDetSpinorRatios");
+}
+
 void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                   const RefVector<ValueVector>& psi_list,
