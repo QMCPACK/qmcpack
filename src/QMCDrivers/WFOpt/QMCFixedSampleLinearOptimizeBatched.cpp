@@ -693,7 +693,8 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   // if this is the first time this function has been called, set the initial shifts
   if (bestShift_i < 0.0 && (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE || options_LMY_.doHybrid))
     bestShift_i = shift_i_input;
-  if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY || options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION)
+  if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY ||
+      options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION)
     bestShift_i = shift_i_input;
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
@@ -1880,75 +1881,48 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
     //lowestEV          = getLowestEigenvector(prdMat, parameterDirections);
     for (int i = 0; i < numParams; i++)
     {
-      parameterDirections.at(i + 1) = -prdMat(i+1, 0);
+      parameterDirections.at(i + 1) = -prdMat(i + 1, 0);
     };
 
     // compute the scaling constant to apply to the update
-    //objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
     app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
   }
 
-  // scale the update by the scaling constant
-  //for (int i = 0; i < numParams; i++)
-  //  parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
-
-  // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
 
-  // prepare to use the middle shift's update as the guiding function for a new sample
-  //if (!freeze_parameters_)
-  //{
-  //  for (int i = 0; i < numParams; i++)
-  //    optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
-  //}
+  optdir.resize(numParams, 0);
+  optparam.resize(numParams, 0);
 
-  //RealType largestChange(0);
-  //int max_element = 0;
-  //for (int i = 0; i < numParams; i++)
-  //  if (std::abs(parameterDirections.at(i + 1)) > largestChange)
-  //  {
-  //    largestChange = std::abs(parameterDirections.at(i + 1));
-  //    max_element   = i;
-  //  }
-  //app_log() << std::endl
-  //          << "Among totally " << numParams << " optimized parameters, "
-  //          << "largest LM parameter change : " << largestChange << " at parameter " << max_element << std::endl;
+  //set up line search stuff
+  for (int i = 0; i < numParams; i++)
+    optparam[i] = currentParameters[i];
+  for (int i = 0; i < numParams; i++)
+    optdir[i] = parameterDirections[i + 1];
 
-  RealType newCost = initCost;
-  std::vector<RealType> shift_ps{-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0};
-  std::vector<RealType> costs(shift_ps.size());
-  int imin = shift_ps.size();
-  for (int ip = 0; ip < shift_ps.size(); ip++)
-  {
-    optTarget->IsValid     = true;
-    for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currentParameters.at(i) + shift_ps[ip] * parameterDirections.at(i + 1);
-    costs[ip] = optTarget->Cost(false);
-    std::cout <<  ip << " " << costs[ip] << std::endl;
-    if (costs[ip]  < newCost)
-    {
-      newCost = costs[ip];
-      imin = ip;
-    }
-  }
+  RealType bigVec(0);
+  for (int i = 0; i < numParams; i++)
+    bigVec = std::max(bigVec, std::abs(parameterDirections[i + 1]));
 
-  app_log() << std::endl
-            << "******************************************************************************" << std::endl
-            << "Init Cost = " << std::scientific << std::right << std::setw(12) << std::setprecision(4) << initCost
-            << "    New Cost = " << std::scientific << std::right << std::setw(12) << std::setprecision(4) << newCost
-            << "  Delta Cost = " << std::scientific << std::right << std::setw(12) << std::setprecision(4)
-            << newCost - initCost << std::endl
-            << "******************************************************************************" << std::endl;
+  //Settings for line search, taken from previous_linear_methods_run
+  objFuncWrapper_.TOL              = param_tol / bigVec;
+  objFuncWrapper_.AbsFuncTol       = true;
+  objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
+  objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
+  line_min_timer_.start();
+  bool Valid = objFuncWrapper_.lineoptimization2();
+  line_min_timer_.stop();
 
-    for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currentParameters.at(i) + shift_ps[imin] * parameterDirections.at(i + 1);
-    if (bestShift_s > 1.0e-2)
-      bestShift_s = bestShift_s / shift_s_base;
-    // say what we are doing
-    app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
-    accept_history <<= 1;
-    accept_history.set(0, true);
+  for (int i = 0; i < numParams; i++)
+    optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+
+  if (bestShift_s > 1.0e-2)
+    bestShift_s = bestShift_s / shift_s_base;
+  // say what we are doing
+  app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
+  accept_history <<= 1;
+  accept_history.set(0, true);
 
   app_log() << std::endl
             << "*****************************************************************************" << std::endl
