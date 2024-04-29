@@ -316,6 +316,9 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
+  if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION)
+    return stochastic_reconfiguration();
+
   return previous_linear_methods_run();
 }
 
@@ -690,7 +693,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   // if this is the first time this function has been called, set the initial shifts
   if (bestShift_i < 0.0 && (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE || options_LMY_.doHybrid))
     bestShift_i = shift_i_input;
-  if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
+  if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY || options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION)
     bestShift_i = shift_i_input;
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
@@ -1745,6 +1748,207 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     accept_history <<= 1;
     accept_history.set(0, true);
   }
+
+  app_log() << std::endl
+            << "*****************************************************************************" << std::endl
+            << "Applying the update for shift_i = " << std::scientific << std::right << std::setw(12)
+            << std::setprecision(4) << bestShift_i << "     and shift_s = " << std::scientific << std::right
+            << std::setw(12) << std::setprecision(4) << bestShift_s << std::endl
+            << "*****************************************************************************" << std::endl;
+
+  // perform some finishing touches for this linear method iteration
+  finish();
+
+  // return whether the cost function's report counter is positive
+  return (optTarget->getReportCounter() > 0);
+}
+
+bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
+{
+  app_log() << std::endl
+            << "*****************************************************************************" << std::endl
+            << "                   Running DUMB Stochastic Reconfiguration                   " << std::endl
+            << "*****************************************************************************" << std::endl;
+  // ensure the cost function is set to compute derivative vectors
+  optTarget->setneedGrads(true);
+
+  // generate samples and compute weights, local energies, and derivative vectors
+  start();
+
+  // get number of optimizable parameters
+  const int numParams = optTarget->getNumParams();
+
+  // get dimension of the linear method matrices
+  const int N = numParams + 1;
+
+  // prepare vectors to hold the initial and current parameters
+  std::vector<RealType> currentParameters(numParams, 0.0);
+
+  // initialize the initial and current parameter vectors
+  for (int i = 0; i < numParams; i++)
+    currentParameters.at(i) = std::real(optTarget->Params(i));
+
+  // prepare vectors to hold the parameter update directions for each shift
+  std::vector<RealType> parameterDirections;
+  parameterDirections.assign(N, 0.0);
+
+  // compute the initial cost
+  const RealType initCost = optTarget->computedCost();
+
+  // allocate the matrices we will need
+  Matrix<RealType> ovlMat(N, N);
+  ovlMat = 0.0;
+  Matrix<RealType> hamMat(N, N);
+  hamMat = 0.0;
+  Matrix<RealType> invMat(N, N);
+  invMat = 0.0;
+  Matrix<RealType> prdMat(N, N);
+  prdMat = 0.0;
+
+  // for outputing matrices and eigenvalue/vectors to disk
+  hdf_archive hout;
+
+  {
+    ScopedTimer local(build_olv_ham_timer_);
+    Timer t_build_matrices;
+    // say what we are doing
+    app_log() << std::endl
+              << "*****************************************" << std::endl
+              << "Building overlap and Hamiltonian matrices" << std::endl
+              << "*****************************************" << std::endl;
+
+    // build the overlap and hamiltonian matrices
+    optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
+
+    if (do_output_matrices_csv_)
+    {
+      output_overlap_.output(ovlMat);
+      output_hamiltonian_.output(hamMat);
+    }
+
+    if (do_output_matrices_hdf_)
+    {
+      std::string newh5 = get_root_name() + ".linear_matrices.h5";
+      hout.create(newh5, H5F_ACC_TRUNC);
+      hout.write(ovlMat, "overlap");
+      hout.write(hamMat, "Hamiltonian");
+      hout.write(bestShift_i, "bestShift_i");
+      hout.write(bestShift_s, "bestShift_s");
+    }
+    app_log() << "  Execution time (building matrices) = " << std::setprecision(4) << t_build_matrices.elapsed()
+              << std::endl;
+  }
+
+  {
+    ScopedTimer local(eigenvalue_timer_);
+    Timer t_eigen;
+    app_log() << std::endl
+              << "**************************" << std::endl
+              << "Solving eigenvalue problem" << std::endl
+              << "**************************" << std::endl;
+
+    invMat.copy(ovlMat);
+    // apply the identity shift
+    for (int i = 1; i < N; i++)
+    {
+      hamMat(i, i) += bestShift_i;
+      if (invMat(i, i) == 0)
+        invMat(i, i) = bestShift_i * bestShift_s;
+    }
+
+    // compute the inverse of the overlap matrix
+    {
+      ScopedTimer local(invert_olvmat_timer_);
+      invert_matrix(invMat, false);
+    }
+
+    // apply the overlap shift
+    for (int i = 1; i < N; i++)
+      for (int j = 1; j < N; j++)
+        hamMat(i, j) += bestShift_s * ovlMat(i, j);
+
+    // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
+    qmcplusplus::MatrixOperators::product(invMat, hamMat, prdMat);
+
+    // transpose the result (why?)
+    for (int i = 0; i < N; i++)
+      for (int j = i + 1; j < N; j++)
+        std::swap(prdMat(i, j), prdMat(j, i));
+
+    // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
+    //RealType lowestEV = 0.;
+    //lowestEV          = getLowestEigenvector(prdMat, parameterDirections);
+    for (int i = 0; i < numParams; i++)
+    {
+      parameterDirections.at(i + 1) = -prdMat(i+1, 0);
+    };
+
+    // compute the scaling constant to apply to the update
+    //objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+
+    app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
+  }
+
+  // scale the update by the scaling constant
+  //for (int i = 0; i < numParams; i++)
+  //  parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
+
+  // now that we are done building the matrices, prevent further computation of derivative vectors
+  optTarget->setneedGrads(false);
+
+  // prepare to use the middle shift's update as the guiding function for a new sample
+  //if (!freeze_parameters_)
+  //{
+  //  for (int i = 0; i < numParams; i++)
+  //    optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
+  //}
+
+  //RealType largestChange(0);
+  //int max_element = 0;
+  //for (int i = 0; i < numParams; i++)
+  //  if (std::abs(parameterDirections.at(i + 1)) > largestChange)
+  //  {
+  //    largestChange = std::abs(parameterDirections.at(i + 1));
+  //    max_element   = i;
+  //  }
+  //app_log() << std::endl
+  //          << "Among totally " << numParams << " optimized parameters, "
+  //          << "largest LM parameter change : " << largestChange << " at parameter " << max_element << std::endl;
+
+  RealType newCost = initCost;
+  std::vector<RealType> shift_ps{-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0};
+  std::vector<RealType> costs(shift_ps.size());
+  int imin = shift_ps.size();
+  for (int ip = 0; ip < shift_ps.size(); ip++)
+  {
+    optTarget->IsValid     = true;
+    for (int i = 0; i < numParams; i++)
+      optTarget->Params(i) = currentParameters.at(i) + shift_ps[ip] * parameterDirections.at(i + 1);
+    costs[ip] = optTarget->Cost(false);
+    std::cout <<  ip << " " << costs[ip] << std::endl;
+    if (costs[ip]  < newCost)
+    {
+      newCost = costs[ip];
+      imin = ip;
+    }
+  }
+
+  app_log() << std::endl
+            << "******************************************************************************" << std::endl
+            << "Init Cost = " << std::scientific << std::right << std::setw(12) << std::setprecision(4) << initCost
+            << "    New Cost = " << std::scientific << std::right << std::setw(12) << std::setprecision(4) << newCost
+            << "  Delta Cost = " << std::scientific << std::right << std::setw(12) << std::setprecision(4)
+            << newCost - initCost << std::endl
+            << "******************************************************************************" << std::endl;
+
+    for (int i = 0; i < numParams; i++)
+      optTarget->Params(i) = currentParameters.at(i) + shift_ps[imin] * parameterDirections.at(i + 1);
+    if (bestShift_s > 1.0e-2)
+      bestShift_s = bestShift_s / shift_s_base;
+    // say what we are doing
+    app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
+    accept_history <<= 1;
+    accept_history.set(0, true);
 
   app_log() << std::endl
             << "*****************************************************************************" << std::endl

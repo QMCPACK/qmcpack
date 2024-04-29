@@ -119,6 +119,9 @@ private:
   // perform the single-shift update, no sample regeneration
   bool one_shift_run();
 
+  // simple stochastic reconfig
+  bool stochastic_reconfiguration();
+
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
