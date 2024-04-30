@@ -1830,6 +1830,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
                 << "**************************" << std::endl;
 
       invMat.copy(ovlMat);
+
       //apply stabilization to Sij
       for (int i = 1; i < N; i++)
         invMat(i, i) += bestShift_s;
@@ -1841,7 +1842,6 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       }
 
       // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
-      qmcplusplus::MatrixOperators::product(invMat2, hamMat2, prdMat2);
       for (int i = 0; i < N; i++)
         for (int j = 0; j < N; j++)
           prdVec[i] += invMat(i, j) * hamVec[j];
