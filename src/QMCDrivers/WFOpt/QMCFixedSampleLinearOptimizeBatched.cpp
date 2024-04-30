@@ -1841,28 +1841,17 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       }
 
       // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
+      prdVec = 0.0;
       for (int i = 0; i < N; i++)
         for (int j = 0; j < N; j++)
           prdVec[i] = invMat(i, j) * hamVec[j];
     }
 
-
-    // transpose the result (why?)
-    //for (int i = 0; i < N; i++)
-    //  for (int j = i + 1; j < N; j++)
-    //    std::swap(prdMat(i, j), prdMat(j, i));
-
-    // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    //RealType lowestEV = 0.;
-    //lowestEV          = getLowestEigenvector(prdMat, parameterDirections);
     for (int i = 0; i < numParams; i++)
-    {
       parameterDirections.at(i + 1) = -prdVec[i + 1];
-    };
 
     // compute the scaling constant to apply to the update
     objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
-
   }
 
   optTarget->setneedGrads(false);

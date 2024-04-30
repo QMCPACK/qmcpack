@@ -833,7 +833,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
       for (int pm = local_pm_start; pm < local_pm_end; pm++)
       {
         Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
-        ham_grad[pm + 1] += std::real(std::conj(wfd) * eloc_new); //maybe?
+        ham_grad[pm + 1] += std::real(wfd) * eloc_new;
         for (int pm2 = 0; pm2 < numParams; pm2++)
         {
           RealType ovlij = std::real(std::conj(wfd) * (Dsaved[pm2] - D_avg[pm2]));
@@ -848,7 +848,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   }
   myComm->allreduce(ham_grad);
   myComm->allreduce(overlap);
-  ham_grad[0]   = (1 - w_beta) * curAvg_w + w_beta * V_avg;
+  ham_grad[0]   = curAvg_w;
   overlap(0, 0) = 1.0;
 
   return 1.0;
