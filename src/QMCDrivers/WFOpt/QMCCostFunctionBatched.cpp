@@ -792,8 +792,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   ham_grad = 0.0;
 
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
-  Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
-  RealType V_avg      = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_t> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
 
@@ -816,7 +814,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     Return_rt weight                = saved[REWEIGHT] * wgtinv;
     Return_rt eloc_new              = saved[ENERGY_NEW];
     const Return_t* Dsaved          = DerivRecords_[iw];
-    const Return_rt* HDsaved        = HDerivRecords_[iw];
 
     size_t opt_num_crowds = walkers_per_crowd_.size();
     std::vector<int> params_per_crowd(opt_num_crowds + 1);
@@ -824,9 +821,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
 
     auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_t* Dsaved,
-                                Return_rt weight, Return_rt eloc_new, RealType V_avg, std::vector<Return_t>& D_avg,
-                                RealType b2, RealType curAvg_w, Matrix<Return_rt>& overlap,
-                                Vector<Return_rt>& ham_grad) {
+                                Return_rt weight, Return_rt eloc_new, std::vector<Return_t>& D_avg, RealType curAvg_w,
+                                Matrix<Return_rt>& overlap, Vector<Return_rt>& ham_grad) {
       int local_pm_start = crowd_ranges[crowd_id];
       int local_pm_end   = crowd_ranges[crowd_id + 1];
 
@@ -843,8 +839,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     };
 
     ParallelExecutor<> crowd_tasks;
-    crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, eloc_new, V_avg,
-                D_avg, w_beta, curAvg_w, overlap, ham_grad);
+    crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, eloc_new, D_avg,
+                curAvg_w, overlap, ham_grad);
   }
   myComm->allreduce(ham_grad);
   myComm->allreduce(overlap);
