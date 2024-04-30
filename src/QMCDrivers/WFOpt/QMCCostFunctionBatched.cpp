@@ -833,7 +833,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
       for (int pm = local_pm_start; pm < local_pm_end; pm++)
       {
         Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
-        ham_grad[pm] += std::real(std::conj(wfd) * (eloc_new - curAvg_w)); //maybe?
+        ham_grad[pm + 1] += std::real(std::conj(wfd) * eloc_new); //maybe?
         for (int pm2 = 0; pm2 < numParams; pm2++)
         {
           RealType ovlij = std::real(std::conj(wfd) * (Dsaved[pm2] - D_avg[pm2]));
