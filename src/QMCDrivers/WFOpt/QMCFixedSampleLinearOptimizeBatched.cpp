@@ -1841,10 +1841,10 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       }
 
       // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
-      prdVec = 0.0;
+      qmcplusplus::MatrixOperators::product(invMat2, hamMat2, prdMat2);
       for (int i = 0; i < N; i++)
         for (int j = 0; j < N; j++)
-          prdVec[i] = invMat(i, j) * hamVec[j];
+          prdVec[i] += invMat(i, j) * hamVec[j];
     }
 
     for (int i = 0; i < numParams; i++)
