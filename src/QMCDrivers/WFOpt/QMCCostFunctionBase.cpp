@@ -16,6 +16,7 @@
 
 
 #include "QMCCostFunctionBase.h"
+#include "OhmmsPETE/OhmmsVectorOperators.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -133,6 +134,11 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillOverlapHamiltonianSR(Matrix<Return_rt>& overlap, Vector<Return_rt>& ham_grad) 
 {
   throw std::runtime_error("Need to implement fillOverlapHamiltonianSR");
+}
+
+void QMCCostFunctionBase::checkConfigurationsSR(EngineHandle& handle)
+{
+  throw std::runtime_error("Need to implement checkConfigurationsSR");
 }
 
 void QMCCostFunctionBase::printEstimates()

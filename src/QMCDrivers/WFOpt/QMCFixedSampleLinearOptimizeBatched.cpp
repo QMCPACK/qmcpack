@@ -205,7 +205,10 @@ void QMCFixedSampleLinearOptimizeBatched::start()
     optTarget->getConfigurations("");
     optTarget->setRng(vmcEngine->getRngRefs());
     NullEngineHandle handle;
-    optTarget->checkConfigurations(handle);
+    if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION)
+      optTarget->checkConfigurationsSR(handle);
+    else
+      optTarget->checkConfigurations(handle);
     app_log() << "  Execution time (derivatives) = " << std::setprecision(4) << t_deriv.elapsed() << std::endl;
   }
 }

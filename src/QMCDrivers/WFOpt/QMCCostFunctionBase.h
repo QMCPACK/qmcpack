@@ -149,6 +149,8 @@ public:
   //Legacy drivers currently use both checkConfigurations and engine_checkConfigurations with duplicated code
   //Providing an EngineHandle object to the batched drivers allows both cases to be handled in one function
   virtual void checkConfigurations(EngineHandle& handle) = 0;
+  //for SR method
+  virtual void checkConfigurationsSR(EngineHandle& handle);
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                           DescentEngine& descentEngineObj,
