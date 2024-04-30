@@ -132,7 +132,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillOverlapHamiltonianSR(Matrix<Return_rt>& overlap, Vector<Return_rt>& ham_grad) 
 {
-  throw std::runtime_error("Need specialization of fillOverlapHamiltonianSR");
+  throw std::runtime_error("Need to implement fillOverlapHamiltonianSR");
 }
 
 void QMCCostFunctionBase::printEstimates()

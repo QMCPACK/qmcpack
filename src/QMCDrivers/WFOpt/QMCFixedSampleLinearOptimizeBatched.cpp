@@ -1799,12 +1799,12 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
   // allocate the matrices we will need
   Matrix<RealType> ovlMat(N, N);
   ovlMat = 0.0;
-  Matrix<RealType> hamMat(N, N);
-  hamMat = 0.0;
+  Vector<RealType> hamVec(N);
+  hamVec = 0.0;
   Matrix<RealType> invMat(N, N);
   invMat = 0.0;
-  Matrix<RealType> prdMat(N, N);
-  prdMat = 0.0;
+  Vector<RealType> prdVec(N);
+  prdVec = 0.0;
 
   // for outputing matrices and eigenvalue/vectors to disk
   hdf_archive hout;
@@ -1819,75 +1819,50 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
               << "*****************************************" << std::endl;
 
     // build the overlap and hamiltonian matrices
-    optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
+    optTarget->fillOverlapHamiltonianSR(ovlMat, hamVec);
 
-    if (do_output_matrices_csv_)
     {
-      output_overlap_.output(ovlMat);
-      output_hamiltonian_.output(hamMat);
+      ScopedTimer local(eigenvalue_timer_);
+      Timer t_eigen;
+      app_log() << std::endl
+                << "**************************" << std::endl
+                << "Solving eigenvalue problem" << std::endl
+                << "**************************" << std::endl;
+
+      invMat.copy(ovlMat);
+      //apply stabilization to Sij
+      for (int i = 1; i < N; i++)
+        invMat(i, i) += bestShift_s;
+
+      // compute the inverse of the overlap matrix
+      {
+        ScopedTimer local(invert_olvmat_timer_);
+        invert_matrix(invMat, false);
+      }
+
+      // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
+      for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
+          prdVec[i] = invMat(i, j) * hamVec[j];
     }
 
-    if (do_output_matrices_hdf_)
-    {
-      std::string newh5 = get_root_name() + ".linear_matrices.h5";
-      hout.create(newh5, H5F_ACC_TRUNC);
-      hout.write(ovlMat, "overlap");
-      hout.write(hamMat, "Hamiltonian");
-      hout.write(bestShift_i, "bestShift_i");
-      hout.write(bestShift_s, "bestShift_s");
-    }
-    app_log() << "  Execution time (building matrices) = " << std::setprecision(4) << t_build_matrices.elapsed()
-              << std::endl;
-  }
-
-  {
-    ScopedTimer local(eigenvalue_timer_);
-    Timer t_eigen;
-    app_log() << std::endl
-              << "**************************" << std::endl
-              << "Solving eigenvalue problem" << std::endl
-              << "**************************" << std::endl;
-
-    invMat.copy(ovlMat);
-    // apply the identity shift
-    for (int i = 1; i < N; i++)
-    {
-      hamMat(i, i) += bestShift_i;
-      if (invMat(i, i) == 0)
-        invMat(i, i) = bestShift_i * bestShift_s;
-    }
-
-    // compute the inverse of the overlap matrix
-    {
-      ScopedTimer local(invert_olvmat_timer_);
-      invert_matrix(invMat, false);
-    }
-
-    // apply the overlap shift
-    for (int i = 1; i < N; i++)
-      for (int j = 1; j < N; j++)
-        hamMat(i, j) += bestShift_s * ovlMat(i, j);
-
-    // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
-    qmcplusplus::MatrixOperators::product(invMat, hamMat, prdMat);
 
     // transpose the result (why?)
-    for (int i = 0; i < N; i++)
-      for (int j = i + 1; j < N; j++)
-        std::swap(prdMat(i, j), prdMat(j, i));
+    //for (int i = 0; i < N; i++)
+    //  for (int j = i + 1; j < N; j++)
+    //    std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
     //RealType lowestEV = 0.;
     //lowestEV          = getLowestEigenvector(prdMat, parameterDirections);
     for (int i = 0; i < numParams; i++)
     {
-      parameterDirections.at(i + 1) = -prdMat(i + 1, 0);
+      parameterDirections.at(i + 1) = -prdVec[i + 1];
     };
 
     // compute the scaling constant to apply to the update
     objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
-    app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
   }
 
   optTarget->setneedGrads(false);
