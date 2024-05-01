@@ -429,6 +429,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
 void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 {
+  std::cout << "checkConfigurationsSR" << std::endl;
   ScopedTimer tmp_timer(check_config_timer_);
 
   RealType et_tot = 0.0;
@@ -441,19 +442,13 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   {
     RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
     if (needGrads)
-    {
       DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
-      HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
-    }
   }
   else if (RecordsOnNode_.size1() != rank_local_num_samples_)
   {
     RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
     if (needGrads)
-    {
       DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
-      HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
-    }
   }
   //    synchronize the random number generator with the node
   (*MoverRng[0]) = (*RngSaved[0]);
@@ -481,9 +476,8 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
                           const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
-                          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_t>& DerivRecords,
-                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
-                          bool needGrads, EngineHandle& handle) {
+                          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_t>& DerivRecords, const SampleStack& samples,
+                          opt_variables_type& optVars, bool needGrads, EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
@@ -550,8 +544,10 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
         RecordArray<Return_t> dlogpsi_array(current_batch_size, nparams);
         RecordArray<Return_t> dhpsioverpsi_array(current_batch_size, nparams);
 
-        energy_list = QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
-                                                                     dhpsioverpsi_array);
+        // get energy_list
+        energy_list = QMCHamiltonian::mw_evaluate(h_list, wf_list, p_list);
+        // get dlogpsi from TWF
+        TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
 
         handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array, base_sample_index);
 
@@ -559,12 +555,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
         {
           const int is = base_sample_index + ib;
           for (int j = 0; j < nparams; j++)
-          {
-            //dlogpsi is in general complex if psi is complex.
             DerivRecords[is][j] = dlogpsi_array[ib][j];
-            //but E_L and d E_L/dc are real if c is real.
-            HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
-          }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
         }
@@ -594,7 +585,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads, handle);
+              RecordsOnNode_, DerivRecords_, samples_, OptVariablesForPsi, needGrads, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval.size(); i++)
   {
@@ -998,7 +989,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   overlap  = 0.0;
   ham_grad = 0.0;
 
-  curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
+  curAvg_w = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   std::vector<Return_t> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
 
