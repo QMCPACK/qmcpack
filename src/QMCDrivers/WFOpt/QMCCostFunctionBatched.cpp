@@ -982,12 +982,12 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 }
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianSR(Matrix<Return_rt>& overlap,
-                                                                                   Vector<Return_rt>& ham_grad)
+                                                                                   Matrix<Return_rt>& ham)
 {
   ScopedTimer tmp_timer(fill_timer_);
 
   overlap  = 0.0;
-  ham_grad = 0.0;
+  ham = 0.0;
 
   curAvg_w = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   std::vector<Return_t> D_avg(getNumParams(), 0.0);
@@ -1020,14 +1020,14 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
     auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_t* Dsaved,
                                 Return_rt weight, Return_rt eloc_new, std::vector<Return_t>& D_avg, RealType curAvg_w,
-                                Matrix<Return_rt>& overlap, Vector<Return_rt>& ham_grad) {
+                                Matrix<Return_rt>& overlap, Matrix<Return_rt>& ham) {
       int local_pm_start = crowd_ranges[crowd_id];
       int local_pm_end   = crowd_ranges[crowd_id + 1];
 
       for (int pm = local_pm_start; pm < local_pm_end; pm++)
       {
         Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
-        ham_grad[pm + 1] += std::real(wfd) * eloc_new;
+        ham(pm + 1, 0) += std::real(wfd) * eloc_new;
         for (int pm2 = 0; pm2 < numParams; pm2++)
         {
           RealType ovlij = std::real(std::conj(wfd) * (Dsaved[pm2] - D_avg[pm2]));
@@ -1038,11 +1038,11 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
     ParallelExecutor<> crowd_tasks;
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, eloc_new, D_avg,
-                curAvg_w, overlap, ham_grad);
+                curAvg_w, overlap, ham);
   }
-  myComm->allreduce(ham_grad);
+  myComm->allreduce(ham);
   myComm->allreduce(overlap);
-  ham_grad[0]   = curAvg_w;
+  ham(0, 0)   = curAvg_w;
   overlap(0, 0) = 1.0;
 
   return 1.0;

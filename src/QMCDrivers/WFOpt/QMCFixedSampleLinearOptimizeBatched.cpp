@@ -1802,12 +1802,12 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
   // allocate the matrices we will need
   Matrix<RealType> ovlMat(N, N);
   ovlMat = 0.0;
-  Vector<RealType> hamVec(N);
-  hamVec = 0.0;
+  Matrix<RealType> hamMat(N, 1);
+  hamMat = 0.0;
   Matrix<RealType> invMat(N, N);
   invMat = 0.0;
-  Vector<RealType> prdVec(N);
-  prdVec = 0.0;
+  Matrix<RealType> prdMat(N, 1);
+  prdMat = 0.0;
 
   // for outputing matrices and eigenvalue/vectors to disk
   hdf_archive hout;
@@ -1822,7 +1822,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
               << "*****************************************" << std::endl;
 
     // build the overlap and hamiltonian matrices
-    optTarget->fillOverlapHamiltonianSR(ovlMat, hamVec);
+    optTarget->fillOverlapHamiltonianSR(ovlMat, hamMat);
 
     {
       ScopedTimer local(eigenvalue_timer_);
@@ -1845,13 +1845,11 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       }
 
       // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
-      for (int i = 0; i < N; i++)
-        for (int j = 0; j < N; j++)
-          prdVec[i] += invMat(i, j) * hamVec[j];
+      qmcplusplus::MatrixOperators::product(invMat, hamMat, prdMat);
     }
 
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(i + 1) = -prdVec[i + 1];
+      parameterDirections.at(i + 1) = -prdMat(i + 1, 0);
 
     // compute the scaling constant to apply to the update
     objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
