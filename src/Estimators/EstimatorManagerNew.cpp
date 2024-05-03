@@ -17,6 +17,7 @@
 #include <cstdint>
 
 #include "EstimatorManagerNew.h"
+#include "EstimatorInputDelegates.h"
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
@@ -447,7 +448,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
   std::vector<std::string> extra_types;
   std::vector<std::string> extra_names;
   cur = cur->children;
-  std::string MainEstimatorName("LocalEnergy");
+  std::string MainEstimatorName("localenergy");
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));

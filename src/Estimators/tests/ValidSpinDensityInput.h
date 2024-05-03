@@ -18,9 +18,11 @@ namespace qmcplusplus
 {
 namespace testing
 {
-// clang-format: off
-  constexpr std::array<std::string_view, 3> valid_spin_density_input_sections{
-    R"XML(
+
+struct ValidSpinDensityInput
+{
+  static constexpr std::array<std::string_view, 3> xml{
+      R"XML(
 <estimator name="spindensity_new" type="spindensity" report="yes">
   <parameter name="grid">
     10 10 10
@@ -35,7 +37,7 @@ namespace testing
   </parameter>
 </estimator>
 )XML",
-    R"XML(
+      R"XML(
 <estimator name="spindensity_new" type="spindensity" report="yes">
   <parameter name="dr">
     .4777 .4777 .4777
@@ -50,7 +52,7 @@ namespace testing
   </parameter>
 </estimator>
 )XML",
-    R"XML(
+      R"XML(
 <estimator name="spindensity_new" type="spindensity" report="yes">
   <parameter name="dr">
     .4777 .4777 .4777
@@ -61,10 +63,13 @@ namespace testing
 </estimator>
 )XML"};
 
-// clang-format: on
-constexpr int valid_spindensity_input_grid    = 0;
-constexpr int valid_spindensity_input_dr      = 1;
-constexpr int valid_spindensity_input_no_cell = 2;
+  enum valid
+  {
+    GRID = 0,
+    DR,
+    NOCELL
+  };
+};
 
 } // namespace testing
 } // namespace qmcplusplus

@@ -10,13 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "EstimatorManagerInput.h"
+#include "EstimatorInputDelegates.h"
 #include <algorithm>
-#include "ScalarEstimatorInputs.h"
-#include "MomentumDistributionInput.h"
-#include "OneBodyDensityMatricesInput.h"
-#include "SpinDensityInput.h"
-#include "MagnetizationDensityInput.h"
-#include "PerParticleHamiltonianLoggerInput.h"
 #include "ModernStringUtils.hpp"
 
 namespace qmcplusplus

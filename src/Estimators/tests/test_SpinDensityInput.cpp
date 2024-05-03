@@ -27,8 +27,8 @@ TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 {
   using POLT    = PtclOnLatticeTraits;
   using Lattice = POLT::ParticleLayout;
-
-  for (auto input_xml : testing::valid_spin_density_input_sections)
+  using input = testing::ValidSpinDensityInput;
+  for (auto input_xml : input::xml)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);

@@ -21,6 +21,7 @@ namespace qmcplusplus
 {
 namespace testing
 {
+using scalar_input = testing::ValidScalarEstimatorInput;
 
 Libxml2Document createEstimatorManagerNewGlobalInputXML()
 {
@@ -29,7 +30,7 @@ Libxml2Document createEstimatorManagerNewGlobalInputXML()
   estimators_doc.newDoc("Estimators");
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
+    bool okay = doc.parseFromString(scalar_input::xml[scalar_input::LOCAL_ENERGY]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
@@ -44,9 +45,9 @@ Libxml2Document createEstimatorManagerNewInputXML()
   Libxml2Document estimators_doc;
   estimators_doc.newDoc("Estimators");
   {
-    using namespace testing::onebodydensitymatrices;
+    using Input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
+    bool okay = doc.parseFromString(Input::xml[0]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
@@ -58,7 +59,7 @@ Libxml2Document createEstimatorManagerNewInputXML()
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
-  for (auto& input_xml : valid_scalar_estimator_input_sections)
+  for (auto& input_xml : scalar_input::xml)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);
@@ -76,9 +77,9 @@ Libxml2Document createEstimatorManagerNewVMCInputXML()
   Libxml2Document estimators_doc;
   estimators_doc.newDoc("Estimators");
   {
-    using namespace testing::onebodydensitymatrices;
+    using Input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
+    bool okay = doc.parseFromString(Input::xml[0]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
@@ -92,7 +93,7 @@ Libxml2Document createEstimatorManagerNewVMCInputXML()
   }
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_scalar_estimator_input_sections[local_energy_input]);
+    bool okay = doc.parseFromString(scalar_input::xml[scalar_input::LOCAL_ENERGY]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
