@@ -507,7 +507,6 @@ public:
 
   /** Update the "local" psiMinv_ on the device.
    *  Side Effect Transfers:
-   *  * phiV is left on host side in the single methods so it must be transferred to device
    *  * psiMinv_ is transferred back to host since single calls from QMCHamitonian and others
    *  * expect it to be.
    *
@@ -533,8 +532,7 @@ public:
     Value* rcopy_ptr      = rcopy.data();
     // This must be Ainv must be tofrom due to NonlocalEcpComponent and possibly
     // other modules assumptions about the state of psiMinv.
-    PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, tofrom: Ainv_ptr[:Ainv.size()]) \
+    PRAGMA_OFFLOAD("omp target data map(always, tofrom: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
       int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
