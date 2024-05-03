@@ -59,7 +59,7 @@ public:
    *  realspace dualspace allocator "interface"
    */
   template<typename CONTAINER>
-  Matrix(CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(other, ref, n * m)
+  Matrix(const CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(other, ref, n * m)
   {}
 
   // Copy Constructor
@@ -155,8 +155,8 @@ public:
   void assignUpperLeft(const Matrix<T_FROM, ALLOC_FROM>& from)
   {
     auto& this_ref    = *this;
-    const size_t cols = std::min(this_ref.cols(), from.cols());
-    const size_t rows = std::min(this_ref.rows(), from.rows());
+    const size_type cols = std::min(this_ref.cols(), from.cols());
+    const size_type rows = std::min(this_ref.rows(), from.rows());
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
         this_ref(i, j) = from(i, j);
@@ -368,14 +368,14 @@ public:
 
   // Abstract Dual Space Transfers
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateTo()
+  void updateTo(size_type size = 0, std::ptrdiff_t offset = 0)
   {
-    X.updateTo();
+    X.updateTo(size, offset);
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateFrom()
+  void updateFrom(size_type size = 0, std::ptrdiff_t offset = 0)
   {
-    X.updateFrom();
+    X.updateFrom(size, offset);
   }
 
 protected:

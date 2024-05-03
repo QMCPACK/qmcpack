@@ -160,12 +160,13 @@ jobs:
       - name: Set Python Version
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
       - name: Setup Dependencies
         run: |
+          brew upgrade || brew link --overwrite python@3.12
           brew install ninja hdf5 fftw boost
-          pip3 install numpy h5py pandas
+          python3 -m pip install numpy h5py pandas
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
