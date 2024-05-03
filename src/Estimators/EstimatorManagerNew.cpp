@@ -406,6 +406,11 @@ void EstimatorManagerNew::reduceOperatorEstimators()
 #else
       operator_recv_buffer = operator_send_buffer;
 #endif
+      // This is a crucial step where summed over weighted observable is normalized by the total weight.  For correctness this should be done
+      // only after the full weighted sum is done.
+      // i.e.  (1 / Sum(w_1 + ... + w_n)) * (w_1 * S_1 + ... + w_n * S_n) != (1/w_1) * w_1 * S_1 + ... + (1/w_n) * w_n * S_n
+      // for a general case where w's are not strictly ==
+      // Assumptions lead rank is 0, true for Ensembles?
       if (my_comm_->rank() == 0)
       {
         std::copy_n(operator_recv_buffer.begin(), data.size(), data.begin());

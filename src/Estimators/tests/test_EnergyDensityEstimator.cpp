@@ -225,6 +225,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   auto spacegrids = e_den_est.getSpaceGrids();
 
   NESpaceGrid<decltype(e_den_est)::Real> grid   = spacegrids[0];
+
   double summed_grid = 0;
   // grid memory layout is (W)eight (T) Kinetic (V) potential
   for (int i = 0; i < 16000; i++)
@@ -237,6 +238,6 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   e_den_est.write(hd);
 }
 
-TEST_CASE("NEEnergyDensityEstimator::write", "[estimators]") {}
+TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]") {}
 
 } // namespace qmcplusplus
