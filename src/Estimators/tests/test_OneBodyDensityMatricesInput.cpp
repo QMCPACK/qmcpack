@@ -26,8 +26,8 @@ namespace qmcplusplus
 {
 TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
 {
-  using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout;
+  using POLT        = PtclOnLatticeTraits;
+  using Lattice     = POLT::ParticleLayout;
   using valid_input = testing::ValidOneBodyDensityMatricesInput;
   for (auto input_xml : valid_input::xml)
   {
@@ -52,16 +52,12 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
 
 TEST_CASE("OneBodyDensityMatricesInput::copy_construction", "[estimators]")
 {
-  using Input     = testing::ValidOneBodyDensityMatricesInput;
+  using Input = testing::ValidOneBodyDensityMatricesInput;
   Libxml2Document doc;
   bool okay       = doc.parseFromString(Input::xml[Input::valid::SCALE]);
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
-
-  
   static_assert(std::is_copy_constructible_v<OneBodyDensityMatricesInput>);
-  
-
 }
-  
+
 } // namespace qmcplusplus

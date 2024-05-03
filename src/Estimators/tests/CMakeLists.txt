@@ -31,7 +31,6 @@ set(SRCS
     test_trace_manager.cpp
     EstimatorTesting.cpp
     GenerateRandomParticleSets.cpp
-    MockGoldWalkerElements.cpp
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp

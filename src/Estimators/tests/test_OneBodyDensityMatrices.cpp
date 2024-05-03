@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -304,10 +304,49 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
     obdmt.testGenerateSamples(test_case, obDenMat, pset_target, rng);
   };
 
-  samplingCaseRunner(Input::valid::VANILLA);
-  samplingCaseRunner(Input::valid::SCALE);
-  samplingCaseRunner(Input::valid::GRID);
+  samplingCaseRunner(input::valid::VANILLA);
+  samplingCaseRunner(input::valid::SCALE);
+  samplingCaseRunner(input::valid::GRID);
 }
+
+#ifdef QMC_COMPLEX
+TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
+{
+  using Input = testing::ValidOneBodyDensityMatricesInput;
+  using MCPWalker = OperatorEstBase::MCPWalker;
+
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  Communicate* comm = OHMMS::Controller;
+
+  auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_O2_spinor(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset_target = *(particle_pool.getParticleSet("e"));
+  auto& species_set = pset_target.getSpeciesSet();
+  auto& spo_map     = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+
+  auto samplingCaseRunner = [&pset_target, &species_set, &spo_map](Input::valid test_case) {
+    Libxml2Document doc;
+
+    bool okay = doc.parseFromString(Input::xml[test_case]);
+    if (!okay)
+      throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+    xmlNodePtr node = doc.getRoot();
+    OneBodyDensityMatricesInput obdmi(node);
+
+    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
+
+    OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
+    //Get control over which rng is used.
+    //we don't want FakeRandom.
+    StdRandom<OneBodyDensityMatrices::FullPrecRealType> rng;
+    obdmt.testGenerateSamplesForSpinor(test_case, obDenMat, pset_target, rng);
+  };
+
+  //Spin sampling only added for density sampling
+  samplingCaseRunner(Input::valid::VANILLA);
+}
+#endif
 
 TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
 {

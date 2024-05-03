@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -448,7 +448,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
   std::vector<std::string> extra_types;
   std::vector<std::string> extra_names;
   cur = cur->children;
-  std::string MainEstimatorName("localenergy");
+  std::string MainEstimatorName("LocalEnergy");
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
