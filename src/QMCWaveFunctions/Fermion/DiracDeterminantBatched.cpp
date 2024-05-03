@@ -454,6 +454,7 @@ void DiracDeterminantBatched<DET_ENGINE>::acceptMove(ParticleSet& P, int iat, bo
   log_value_ += convertValueToLog(curRatio);
   {
     ScopedTimer local_timer(UpdateTimer);
+    psiV.updateTo();
     det_engine_.updateRow(WorkingIndex, psiV, curRatio);
     if (UpdateMode == ORB_PBYP_PARTIAL)
     {
