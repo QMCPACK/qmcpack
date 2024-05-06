@@ -1834,7 +1834,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
         ovlMat(i, i) += bestShift_s;
 
       RealType eps = 1e-5;
-      int kmax     = 10000;
+      int kmax     = 200;
       int k        = 0;
       Vector<RealType> rk(numParams, 0);
       Vector<RealType> rkp1(numParams, 0);
