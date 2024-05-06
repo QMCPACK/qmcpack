@@ -32,7 +32,7 @@ namespace qmcplusplus
 //forward declaration
 class TWFFastDerivWrapper;
 
-template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<typename DET_ENGINE>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
@@ -335,10 +335,13 @@ private:
   NewTimer &D2HTimer, &H2DTimer;
 };
 
-extern template class DiracDeterminantBatched<>;
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA)
+#if defined(ENABLE_OFFLOAD)
 extern template class DiracDeterminantBatched<
     MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
+#else
+extern template class DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

@@ -296,7 +296,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #else
   sdAttrib.add(use_batch, "batch", {"no", "yes"});
 #endif
-#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_OFFLOAD)
   sdAttrib.add(useGPU, "gpu", {"yes", "no"});
 #endif
   sdAttrib.put(cur->parent);
@@ -386,7 +386,8 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     {
       app_summary() << "      Using walker batching." << std::endl;
 
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA)
+#if defined(ENABLE_OFFLOAD)
       if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
@@ -398,7 +399,8 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       }
       else
 #endif
-      {
+        throw std::runtime_error("Neither pure CPU nor pure OpenMP offload implementation of walker-batched Slater determinant.");
+#else
 #if defined(ENABLE_OFFLOAD)
         if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
           throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
@@ -407,9 +409,9 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
         app_summary() << "      Running OpenMP offload code path on CPU. "
 #endif
                       << "Only SM1 update is supported. delay_rank is ignored." << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
+        adet = std::make_unique<DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
                                                            matrix_inverter_kind);
-      }
+#endif
     }
     else
     {

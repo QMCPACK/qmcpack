@@ -566,7 +566,8 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   using VT   = QMCTraits::ValueType;
   using FPVT = QMCTraits::QTFull::ValueType;
 
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA)
+#if defined(ENABLE_OFFLOAD)
   SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>")
   {
     using Det = DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>;
@@ -600,6 +601,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{true, true});
   }
 #endif
+#else
 
   // DiracDeterminantBatched<MatrixUpdateOMPTarget>
   SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>")
@@ -634,6 +636,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{true, true});
   }
+#endif
 
   // DiracDeterminant<DelayedUpdate>
   SECTION("DiracDeterminant<DelayedUpdate>")

@@ -129,10 +129,13 @@ void test_DiracDeterminantBatched_first()
 
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
-#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA)
+#if defined(ENABLE_OFFLOAD)
   test_DiracDeterminantBatched_first<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>();
 #endif
+#else
   test_DiracDeterminantBatched_first<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
+#endif
 }
 
 //#define DUMP_INFO
@@ -267,10 +270,13 @@ void test_DiracDeterminantBatched_second()
 
 TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
-#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA)
+#if defined(ENABLE_OFFLOAD)
   test_DiracDeterminantBatched_second<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>();
 #endif
+#else
   test_DiracDeterminantBatched_second<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
+#endif
 }
 
 template<class DET_ENGINE>
@@ -483,16 +489,19 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 {
   // maximum delay 2
-#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA)
+#if defined(ENABLE_OFFLOAD)
   test_DiracDeterminantBatched_delayed_update<
       MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_delayed_update<
       MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
 #endif
+#else
   test_DiracDeterminantBatched_delayed_update<
       MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_delayed_update<
       MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
+#endif
 }
 
 
@@ -829,10 +838,12 @@ TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")
       MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::HOST);
 #endif
 */
+#if !defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_spinor_update<
       MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_spinor_update<
       MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::HOST);
+#endif
 }
 #endif
 } // namespace qmcplusplus
