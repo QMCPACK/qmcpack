@@ -277,6 +277,8 @@ private:
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
 
+  bool use_line_search_;
+
   NewTimer& initialize_timer_;
   NewTimer& generate_samples_timer_;
   NewTimer& build_olv_ham_timer_;

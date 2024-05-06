@@ -86,6 +86,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
       freeze_parameters_(false),
+      use_line_search_(false),
       initialize_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
       generate_samples_timer_(createGlobalTimer("QMCLinearOptimizeBatched::generateSamples", timer_level_medium)),
       build_olv_ham_timer_(createGlobalTimer("QMCLinearOptimizedBatched::build_ovl_ham_matrix", timer_level_medium)),
@@ -574,6 +575,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   std::string OutputMatrices("no");
   std::string OutputMatricesHDF("no");
   std::string FreezeParameters("no");
+  std::string UseLineSearch("no");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
@@ -582,6 +584,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   m_param.add(OutputMatrices, "output_matrices_csv", {"no", "yes"});
   m_param.add(OutputMatricesHDF, "output_matrices_hdf", {"no", "yes"});
   m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
+  m_param.add(UseLineSearch, "line_search", {"no", "yes"});
 
   oAttrib.put(q);
   m_param.put(q);
@@ -589,6 +592,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   do_output_matrices_csv_ = (OutputMatrices == "yes");
   do_output_matrices_hdf_ = (OutputMatricesHDF == "yes");
   freeze_parameters_      = (FreezeParameters == "yes");
+  use_line_search_        = (UseLineSearch == "yes");
 
   // Use freeze_parameters with output_matrices to generate multiple lines in the output with
   // the same parameters so statistics can be computed in post-processing.
@@ -1909,34 +1913,43 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
     objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
   }
 
-  optTarget->setneedGrads(false);
-
-  optdir.resize(numParams, 0);
-  optparam.resize(numParams, 0);
-
-  //set up line search stuff
-  for (int i = 0; i < numParams; i++)
-    optparam[i] = currentParameters[i];
-  for (int i = 0; i < numParams; i++)
-    optdir[i] = parameterDirections[i + 1];
-
-  RealType bigVec(0);
-  for (int i = 0; i < numParams; i++)
-    bigVec = std::max(bigVec, std::abs(parameterDirections[i + 1]));
-
-  //Settings for line search, taken from previous_linear_methods_run
-  objFuncWrapper_.TOL              = param_tol / bigVec;
-  objFuncWrapper_.AbsFuncTol       = true;
-  objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
-  objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
-  bool Valid                       = true;
+  if (use_line_search_)
   {
-    ScopedTimer local(line_min_timer_);
-    Valid = objFuncWrapper_.lineoptimization2();
-  }
+    optTarget->setneedGrads(false);
 
-  for (int i = 0; i < numParams; i++)
-    optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+    optdir.resize(numParams, 0);
+    optparam.resize(numParams, 0);
+
+    //set up line search stuff
+    for (int i = 0; i < numParams; i++)
+      optparam[i] = currentParameters[i];
+    for (int i = 0; i < numParams; i++)
+      optdir[i] = parameterDirections[i + 1];
+
+    RealType bigVec(0);
+    for (int i = 0; i < numParams; i++)
+      bigVec = std::max(bigVec, std::abs(parameterDirections[i + 1]));
+
+    //Settings for line search, taken from previous_linear_methods_run
+    objFuncWrapper_.TOL              = param_tol / bigVec;
+    objFuncWrapper_.AbsFuncTol       = true;
+    objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
+    objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
+    bool Valid                       = true;
+    {
+      ScopedTimer local(line_min_timer_);
+      Valid = objFuncWrapper_.lineoptimization2();
+    }
+
+    for (int i = 0; i < numParams; i++)
+      optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+  }
+  else
+  {
+    for (int i = 0; i < numParams; i++)
+      optTarget->Params(i) =
+          currentParameters.at(i) + bestShift_i * objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+  }
 
   if (bestShift_s > 1.0e-2)
     bestShift_s = bestShift_s / shift_s_base;
