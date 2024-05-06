@@ -33,7 +33,9 @@ set(HAM_SRCS
 if(NOT QMC_COMPLEX)
   set(HAM_SRCS ${HAM_SRCS} test_RotatedSPOs_NLPP.cpp)
 else()
-  set(HAM_SRCS ${HAM_SRCS} test_SOECPotential.cpp)
+  if(NOT ENABLE_CUDA)
+    set(HAM_SRCS ${HAM_SRCS} test_SOECPotential.cpp)
+  endif()
 endif()
 
 set(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)

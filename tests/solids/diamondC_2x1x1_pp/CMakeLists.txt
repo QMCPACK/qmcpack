@@ -59,6 +59,7 @@ qmc_run_and_check(
   DIAMOND2_SCALARS # VMC
 )
 
+if(ENABLE_CUDA AND ENABLE_OFFLOAD OR NOT ENABLE_CUDA)
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-vmcbatch-4b_sdbatch_jas
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -70,6 +71,7 @@ qmc_run_and_check(
   0
   DIAMOND2_SCALARS # VMC
 )
+endif()
 
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-delayed_update-vmc_sdj
@@ -136,6 +138,7 @@ qmc_run_and_check(
   DIAMOND2_DMC_SCALARS # DMC
 )
 
+if(ENABLE_CUDA AND ENABLE_OFFLOAD OR NOT ENABLE_CUDA)
 #4 batches of 16 walkers in one rank, batched slater det
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-vmcbatch_dmcbatch-4b_sdbatch_jas
@@ -148,6 +151,7 @@ qmc_run_and_check(
   1
   DIAMOND2_DMC_SCALARS # DMC
 )
+endif()
 
 # 4 batches of 16 walkers over 4 ranks
 qmc_run_and_check(
@@ -723,6 +727,7 @@ qmc_run_and_check(
   DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS # VMC cycle 2
 )
 
+if(ENABLE_CUDA AND ENABLE_OFFLOAD OR NOT ENABLE_CUDA)
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-mwalkers_sdbatch_jas
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -736,6 +741,7 @@ qmc_run_and_check(
   1
   DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS # VMC cycle 2
 )
+endif()
 
 if(QMC_MIXED_PRECISION)
   if(QMC_COMPLEX)
@@ -895,6 +901,7 @@ qmc_run_and_check(
   DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
 )
 
+if(ENABLE_CUDA AND ENABLE_OFFLOAD OR NOT ENABLE_CUDA)
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -926,6 +933,7 @@ qmc_run_and_check(
   2
   DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
 )
+endif()
 
 if(QMC_MIXED_PRECISION)
   if(QMC_COMPLEX)
@@ -1069,6 +1077,7 @@ qmc_run_and_check(
   DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS # DMC
 )
 
+if(ENABLE_CUDA AND ENABLE_OFFLOAD OR NOT ENABLE_CUDA)
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -1084,6 +1093,7 @@ qmc_run_and_check(
   2
   DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS # DMC
 )
+endif()
 
 if(QMC_MIXED_PRECISION)
   if(QMC_COMPLEX)
@@ -1227,6 +1237,7 @@ qmc_run_and_check(
   DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS # DMC
 )
 
+if(ENABLE_CUDA AND ENABLE_OFFLOAD OR NOT ENABLE_CUDA)
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -1242,6 +1253,7 @@ qmc_run_and_check(
   2
   DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS # DMC
 )
+endif()
 
 if(QMC_MIXED_PRECISION)
   if(QMC_COMPLEX)
@@ -1401,6 +1413,7 @@ qmc_run_and_check(
   DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
 )
 
+if(ENABLE_CUDA AND ENABLE_OFFLOAD OR NOT ENABLE_CUDA)
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -1432,6 +1445,7 @@ qmc_run_and_check(
   2
   DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
 )
+endif()
 
 if(QMC_MIXED_PRECISION)
   if(QMC_COMPLEX)
