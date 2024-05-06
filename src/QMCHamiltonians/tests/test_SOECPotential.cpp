@@ -65,7 +65,7 @@ public:
   {
     copyGridUnrotatedForTest(so_ecp);
     for (auto& uptr_comp : so_ecp.ppset_)
-        uptr_comp.get()->initVirtualParticle(elec);
+      uptr_comp.get()->initVirtualParticle(elec);
     so_ecp.evaluateImpl(elec, true);
     value = so_ecp.getValue();
   }
@@ -158,7 +158,8 @@ void doSOECPotentialTest(bool use_VPs)
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 2);
 
-  auto dd = std::make_unique<DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>(std::move(spinor_set), 0, nelec);
+  auto dd = std::make_unique<DiracDeterminantBatched<
+      MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>(std::move(spinor_set), 0, nelec);
   std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets;
   dirac_dets.push_back(std::move(dd));
   auto sd = std::make_unique<SlaterDet>(elec, std::move(dirac_dets));

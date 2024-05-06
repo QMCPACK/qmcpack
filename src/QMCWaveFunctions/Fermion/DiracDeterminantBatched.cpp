@@ -818,7 +818,10 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSe
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multipler, std::vector<Value>& ratios)
+void DiracDeterminantBatched<DET_ENGINE>::evaluateSpinorRatios(
+    const VirtualParticleSet& VP,
+    const std::pair<ValueVector, ValueVector>& spinor_multipler,
+    std::vector<Value>& ratios)
 {
   {
     ScopedTimer local_timer(RatioTimer);

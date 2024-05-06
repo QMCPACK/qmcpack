@@ -399,18 +399,21 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       }
       else
 #endif
-        throw std::runtime_error("Neither pure CPU nor pure OpenMP offload implementation of walker-batched Slater determinant.");
+        throw std::runtime_error(
+            "Neither pure CPU nor pure OpenMP offload implementation of walker-batched Slater determinant.");
 #else
 #if defined(ENABLE_OFFLOAD)
-        if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
-          throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
-        app_summary() << "      Running OpenMP offload code path on GPU. "
+      if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
+        throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
+      app_summary() << "      Running OpenMP offload code path on GPU. "
 #else
-        app_summary() << "      Running OpenMP offload code path on CPU. "
+      app_summary() << "      Running OpenMP offload code path on CPU. "
 #endif
-                      << "Only SM1 update is supported. delay_rank is ignored." << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
-                                                           matrix_inverter_kind);
+                    << "Only SM1 update is supported. delay_rank is ignored." << std::endl;
+      adet = std::make_unique<DiracDeterminantBatched<
+          MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone), firstIndex,
+                                                                                      lastIndex, delay_rank,
+                                                                                      matrix_inverter_kind);
 #endif
     }
     else
