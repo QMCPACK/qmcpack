@@ -284,6 +284,7 @@ private:
   NewTimer& eigenvalue_timer_;
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
+  NewTimer& sr_solver_timer_;
 
   ///xml node to be dumped
   xmlNodePtr wfNode;

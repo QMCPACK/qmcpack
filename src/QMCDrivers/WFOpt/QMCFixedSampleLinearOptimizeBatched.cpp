@@ -93,6 +93,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       eigenvalue_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
       line_min_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
       cost_function_timer_(createGlobalTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
+      sr_solver_timer_(createGlobalTimer("QMCLinearOptimizeBatched::StochasticReconfiguration", timer_level_medium)),
       wfNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
@@ -1813,20 +1814,20 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
     Timer t_build_matrices;
     // say what we are doing
     app_log() << std::endl
-              << "*****************************************" << std::endl
-              << "Building overlap and Hamiltonian matrices" << std::endl
-              << "*****************************************" << std::endl;
+              << "********************************************************" << std::endl
+              << "Building <Psi_i/Psi_0 Psi_j/Psi_0> and <Psi_i/Psi_0 E_L>" << std::endl
+              << "********************************************************" << std::endl;
 
     // build the overlap and hamiltonian matrices
     optTarget->fillOverlapHamiltonianSR(ovlMat, hamMat);
 
     {
-      ScopedTimer local(eigenvalue_timer_);
+      ScopedTimer local(sr_solver_timer_);
       Timer t_eigen;
       app_log() << std::endl
-                << "**************************" << std::endl
-                << "Solving eigenvalue problem" << std::endl
-                << "**************************" << std::endl;
+                << "*********************" << std::endl
+                << "Solving linear system" << std::endl
+                << "*********************" << std::endl;
 
       //apply stabilization to Sij
       for (int i = 1; i < N; i++)
@@ -1928,9 +1929,11 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
   objFuncWrapper_.AbsFuncTol       = true;
   objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
   objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
-  line_min_timer_.start();
-  bool Valid = objFuncWrapper_.lineoptimization2();
-  line_min_timer_.stop();
+  bool Valid                       = true;
+  {
+    ScopedTimer local(line_min_timer_);
+    Valid = objFuncWrapper_.lineoptimization2();
+  }
 
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
