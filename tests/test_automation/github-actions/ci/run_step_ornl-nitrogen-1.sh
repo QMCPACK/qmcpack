@@ -77,6 +77,7 @@ case "$1" in
     if [ -f ./bin/qmcpack ] ; then ldd ./bin/qmcpack ; fi
     if [ -f ./bin/qmcpack_complex ] ; then ldd ./bin/qmcpack_complex ; fi
     export HSA_USE_SVM=0
+    export HSA_ENABLE_SDMA=0
     ctest --output-on-failure -L unit -j 32 --timeout 120 --repeat after-timeout:4
     ;;
     
