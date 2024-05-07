@@ -47,7 +47,7 @@ using cuBLAS_MFs_handle = cudaStream_t;
  * @param incy increment for the elements of y. It cannot be zero.
  * @param batch_count batch size
  */
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle handle,
                                const char trans,
                                const int m,
                                const int n,
@@ -61,7 +61,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
                                const int incy,
                                const int batch_count);
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle handle,
                                const char trans,
                                const int m,
                                const int n,
@@ -75,7 +75,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
                                const int incy,
                                const int batch_count);
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle handle,
                                const char trans,
                                const int m,
                                const int n,
@@ -89,7 +89,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
                                const int incy,
                                const int batch_count);
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle handle,
                                const char trans,
                                const int m,
                                const int n,
@@ -116,7 +116,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
  * @param lda leading dimension of A
  * @param batch_count batch size
  */
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle handle,
                               const int m,
                               const int n,
                               const float* alpha,
@@ -128,7 +128,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
                               const int lda,
                               const int batch_count);
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle handle,
                               const int m,
                               const int n,
                               const double* alpha,
@@ -140,7 +140,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
                               const int lda,
                               const int batch_count);
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle handle,
                               const int m,
                               const int n,
                               const std::complex<float>* alpha,
@@ -152,7 +152,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
                               const int lda,
                               const int batch_count);
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle handle,
                               const int m,
                               const int n,
                               const std::complex<double>* alpha,
@@ -174,7 +174,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
  * @param incy increment for the elements of out. It cannot be zero.
  * @param batch_count batch size
  */
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched(cudaStream_t hstream,
                                const int n,
                                const float* const in[],
                                const int incx,
@@ -182,7 +182,7 @@ cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
                                const int incy,
                                const int batch_count);
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched(cudaStream_t hstream,
                                const int n,
                                const double* const in[],
                                const int incx,
@@ -190,7 +190,7 @@ cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
                                const int incy,
                                const int batch_count);
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched(cudaStream_t hstream,
                                const int n,
                                const std::complex<float>* const in[],
                                const int incx,
@@ -198,7 +198,7 @@ cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
                                const int incy,
                                const int batch_count);
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched(cudaStream_t hstream,
                                const int n,
                                const std::complex<double>* const in[],
                                const int incx,

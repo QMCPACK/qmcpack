@@ -126,7 +126,7 @@ __global__ void gemvN_batched_kernel(const int m, // number of columns in row ma
 }
 
 template<typename T>
-cuBLAS_MFs_status gemv_batched_impl(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched_impl(cuBLAS_MFs_handle handle,
                                     const char trans,
                                     const int m,
                                     const int n,
@@ -164,7 +164,7 @@ cuBLAS_MFs_status gemv_batched_impl(cuBLAS_MFs_handle& handle,
   return cudaPeekAtLastError();
 }
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle handle,
                                const char trans,
                                const int m,
                                const int n,
@@ -181,7 +181,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
   return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
 }
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle handle,
                                const char trans,
                                const int m,
                                const int n,
@@ -198,7 +198,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
   return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
 }
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle handle,
                                const char trans,
                                const int m,
                                const int n,
@@ -215,7 +215,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
   return gemv_batched_impl(handle, trans, m, n, (const thrust::complex<float>*)alpha, (const thrust::complex<float>**)A, lda, (const thrust::complex<float>**)x, incx, (const thrust::complex<float>*)beta, (thrust::complex<float>**)y, incy, batch_count);
 }
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle handle,
                                const char trans,
                                const int m,
                                const int n,
@@ -264,7 +264,7 @@ __global__ void ger_batched_kernel(const int m, // number of columns in row majo
 }
 
 template<typename T>
-cuBLAS_MFs_status ger_batched_impl(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched_impl(cuBLAS_MFs_handle handle,
                                    const int m,
                                    const int n,
                                    const T* alpha,
@@ -289,7 +289,7 @@ cuBLAS_MFs_status ger_batched_impl(cuBLAS_MFs_handle& handle,
   return cudaPeekAtLastError();
 }
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle handle,
                               const int m,
                               const int n,
                               const float* alpha,
@@ -304,7 +304,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
   return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
 }
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle handle,
                               const int m,
                               const int n,
                               const double* alpha,
@@ -319,7 +319,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
   return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
 }
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle handle,
                               const int m,
                               const int n,
                               const std::complex<float>* alpha,
@@ -334,7 +334,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
   return ger_batched_impl(handle, m, n, (const thrust::complex<float>*)alpha, (const thrust::complex<float>**)x, incx, (const thrust::complex<float>**)y, incy, (thrust::complex<float>**)A, lda, batch_count);
 }
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
+cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle handle,
                               const int m,
                               const int n,
                               const std::complex<double>* alpha,
@@ -370,7 +370,7 @@ __global__ void copy_batched_kernel(const int n, const T* const in[], const int 
 }
 
 template<typename T>
-cuBLAS_MFs_status copy_batched_impl(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched_impl(cudaStream_t hstream,
                                     const int n,
                                     const T* const in[],
                                     const int incx,
@@ -389,7 +389,7 @@ cuBLAS_MFs_status copy_batched_impl(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched(cudaStream_t hstream,
                                const int n,
                                const float* const in[],
                                const int incx,
@@ -400,7 +400,7 @@ cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
   return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
 }
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched(cudaStream_t hstream,
                                const int n,
                                const double* const in[],
                                const int incx,
@@ -411,7 +411,7 @@ cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
   return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
 }
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched(cudaStream_t hstream,
                                const int n,
                                const std::complex<float>* const in[],
                                const int incx,
@@ -422,7 +422,7 @@ cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
   return copy_batched_impl(hstream, n, (const cuComplex**)in, incx, (cuComplex**)out, incy, batch_count);
 }
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
+cuBLAS_MFs_status copy_batched(cudaStream_t hstream,
                                const int n,
                                const std::complex<double>* const in[],
                                const int incx,
