@@ -1834,8 +1834,8 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
                 << "*********************" << std::endl;
 
       //apply stabilization to Sij
-      //for (int i = 1; i < N; i++)
-      //  ovlMat(i, i) += bestShift_s;
+      for (int i = 1; i < N; i++)
+        ovlMat(i, i) += bestShift_s;
 
       RealType thr = 1e-3;
       RealType eps = 1;
@@ -1864,9 +1864,6 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
         for (int i = 0; i < numParams; i++)
           for (int j = 0; j < numParams; j++)
             Apk[i] += ovlMat(i + 1, j + 1) * pk[j];
-        for (int i = 0; i < numParams; i++)
-          std::cout << Apk[i] << " ";
-        std::cout << std::endl;
         RealType denom = 0;
         for (int i = 0; i < numParams; i++)
           denom += pk[i] * Apk[i];
