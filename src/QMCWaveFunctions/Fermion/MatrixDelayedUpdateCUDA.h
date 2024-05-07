@@ -129,9 +129,9 @@ private:
   UnpinnedDualVector<Value> rcopy;
 
   template<typename DT>
-  using DeviceMatrix = Matrix<DT, CUDAAllocator<DT>>;
+  using DeviceMatrix = Matrix<DT, DeviceAllocator<DT>>;
   template<typename DT>
-  using DeviceVector = Vector<DT, CUDAAllocator<DT>>;
+  using DeviceVector = Vector<DT, DeviceAllocator<DT>>;
   /// orbital values of delayed electrons
   DeviceMatrix<Value> U_gpu;
   /// rows of Ainv corresponding to delayed electrons
@@ -143,7 +143,7 @@ private:
   /// new column of B
   DeviceVector<Value> p_gpu;
   /// list of delayed electrons
-  Vector<int, CUDAAllocator<int>> delay_list_gpu;
+  DeviceVector<int> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
