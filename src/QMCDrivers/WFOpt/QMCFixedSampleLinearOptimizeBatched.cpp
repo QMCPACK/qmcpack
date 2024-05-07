@@ -1837,8 +1837,9 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       for (int i = 1; i < N; i++)
         ovlMat(i, i) += bestShift_s;
 
-      RealType eps = 1e-5;
-      int kmax     = 200;
+      RealType thr = 1e-3;
+      RealType eps = 1;
+      int kmax     = numParams;
       int k        = 0;
       Vector<RealType> rk(numParams, 0);
       Vector<RealType> rkp1(numParams, 0);
@@ -1851,62 +1852,54 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       RealType dk = 0;
       for (int i = 0; i < numParams; i++)
       {
-        rk[i] = -hamMat(i + 1, 0) - Apk[i];
+        rk[i] = -bestShift_i * hamMat(i + 1, 0) - Apk[i];
         dk += rk[i] * rk[i];
       }
-      if (dk / numParams < eps)
+      eps = dk / numParams * thr;
+      pk  = rk;
+      for (int i = 0; i < numParams; i++)
+        for (int j = 0; j < numParams; j++)
+          Apk[i] += ovlMat(i + 1, j + 1) * pk[j];
+      bool converged = false;
+      while (!converged)
       {
-        app_log() << "initial guess good enough" << std::endl;
+        RealType denom = 0;
         for (int i = 0; i < numParams; i++)
-          parameterDirections[i + 1] = xk[i];
-      }
-      else
-      {
-        pk = rk;
-        for (int i = 0; i < numParams; i++)
-          for (int j = 0; j < numParams; j++)
-            Apk[i] += ovlMat(i + 1, j + 1) * pk[j];
-        bool converged = false;
-        while (!converged)
-        {
-          RealType denom = 0;
-          for (int i = 0; i < numParams; i++)
-            denom += pk[i] * Apk[i];
-          RealType ak = dk / denom;
+          denom += pk[i] * Apk[i];
+        RealType ak = dk / denom;
 
-          RealType dkp1 = 0;
+        RealType dkp1 = 0;
+        for (int i = 0; i < numParams; i++)
+        {
+          xkp1[i] = xk[i] + ak * pk[i];
+          rkp1[i] = rk[i] - ak * Apk[i];
+          dkp1 += rkp1[i] * rkp1[i];
+        }
+        if (dkp1 / numParams < eps || k == kmax)
+        {
+          converged = true;
+          break;
+        }
+        else
+        {
+          RealType bk = dkp1 / dk;
           for (int i = 0; i < numParams; i++)
           {
-            xkp1[i] = xk[i] + ak * pk[i];
-            rkp1[i] = rk[i] - ak * Apk[i];
-            dkp1 += rkp1[i] * rkp1[i];
+            pkp1[i] = rkp1[i] + bk * pk[i];
+            pk[i]   = pkp1[i];
+            rk[i]   = rkp1[i];
+            xk[i]   = xkp1[i];
+            Apk[i]  = 0;
+            dk      = dkp1;
+            for (int j = 0; j < numParams; j++)
+              Apk[i] += ovlMat(i + 1, j + 1) * pk[j];
           }
-          if (dkp1 / numParams < eps || k == kmax)
-          {
-            converged = true;
-            break;
-          }
-          else
-          {
-            RealType bk = dkp1 / dk;
-            for (int i = 0; i < numParams; i++)
-            {
-              pkp1[i] = rkp1[i] + bk * pk[i];
-              pk[i]   = pkp1[i];
-              rk[i]   = rkp1[i];
-              xk[i]   = xkp1[i];
-              Apk[i]  = 0;
-              dk      = dkp1;
-              for (int j = 0; j < numParams; j++)
-                Apk[i] += ovlMat(i + 1, j + 1) * pk[j];
-            }
-            k++;
-          }
+          k++;
         }
-        app_log() << "Solved iterative krylov in " << k << " iterations" << std::endl;
-        for (int i = 0; i < numParams; i++)
-          parameterDirections[i + 1] = xkp1[i];
       }
+      app_log() << "Solved iterative krylov in " << k << " iterations" << std::endl;
+      for (int i = 0; i < numParams; i++)
+        parameterDirections[i + 1] = xkp1[i];
     }
 
     // compute the scaling constant to apply to the update
@@ -1947,8 +1940,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
   else
   {
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) =
-          currentParameters.at(i) + bestShift_i * objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+      optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
   }
 
   if (bestShift_s > 1.0e-2)
