@@ -15,20 +15,20 @@
 #include "ResourceCollection.h"
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
+#include "CUDA/QueueCUDA.hpp"
 
 namespace qmcplusplus
 {
 struct CUDALinearAlgebraHandles : public Resource
 {
   // CUDA specific variables
-  cudaStream_t hstream;
+  compute::Queue<PlatformKind::CUDA> queue;
   cublasHandle_t h_cublas;
 
   CUDALinearAlgebraHandles() : Resource("CUDALinearAlgebraHandles")
   {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
+    cublasErrorCheck(cublasSetStream(h_cublas, queue.getNative()), "cublasSetStream failed!");
   }
 
   CUDALinearAlgebraHandles(const CUDALinearAlgebraHandles&) : CUDALinearAlgebraHandles() {}
@@ -36,7 +36,6 @@ struct CUDALinearAlgebraHandles : public Resource
   ~CUDALinearAlgebraHandles()
   {
     cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
   }
 
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<CUDALinearAlgebraHandles>(*this); }

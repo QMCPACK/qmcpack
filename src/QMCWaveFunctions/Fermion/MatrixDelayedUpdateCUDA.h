@@ -108,7 +108,6 @@ public:
   DualMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
 
 private:
-  compute::Queue<PlatformKind::CUDA> queue_;
   /// legacy single walker matrix inversion engine
   DiracMatrix<FullPrecValue> detEng;
   /* inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
@@ -159,7 +158,7 @@ private:
 
   inline void waitStream()
   {
-    cudaErrorCheck(cudaStreamSynchronize(cuda_handles_.getResource().hstream), "cudaStreamSynchronize failed!");
+    cudaErrorCheck(cudaStreamSynchronize(cuda_handles_.getResource().queue.getNative()), "cudaStreamSynchronize failed!");
   }
 
   /** ensure no previous delay left.
@@ -207,7 +206,7 @@ private:
   {
     auto& engine_leader              = engines.getLeader();
     auto& cuda_handles               = engine_leader.cuda_handles_.getResource();
-    auto& hstream                    = cuda_handles.hstream;
+    auto hstream                    = cuda_handles.queue.getNative();
     auto& h_cublas                   = cuda_handles.h_cublas;
     auto& mw_mem                     = engine_leader.mw_mem_handle_.getResource();
     auto& cminusone_vec              = mw_mem.cminusone_vec;
@@ -306,7 +305,7 @@ private:
     if (n_accepted == 0)
       return;
 
-    auto& hstream               = engine_leader.cuda_handles_.getResource().hstream;
+    auto hstream               = engine_leader.cuda_handles_.getResource().queue.getNative();
     auto& mw_mem                = engine_leader.mw_mem_handle_.getResource();
     auto& updateRow_buffer_H2D  = mw_mem.updateRow_buffer_H2D;
     auto& mw_temp               = mw_mem.mw_temp;
@@ -454,7 +453,7 @@ public:
     if (!engine_leader.isSM1())
       mw_prepareInvRow(engines, rowchanged);
 
-    auto& hstream             = engine_leader.cuda_handles_.getResource().hstream;
+    auto hstream             = engine_leader.cuda_handles_.getResource().queue.getNative();
     auto& evalGrad_buffer_H2D = engine_leader.mw_mem_handle_.getResource().evalGrad_buffer_H2D;
     auto& grads_value_v       = engine_leader.mw_mem_handle_.getResource().grads_value_v;
 
@@ -583,7 +582,7 @@ public:
       return;
     }
 
-    auto& hstream                     = engine_leader.cuda_handles_.getResource().hstream;
+    auto hstream                     = engine_leader.cuda_handles_.getResource().queue.getNative();
     auto& mw_mem                      = engine_leader.mw_mem_handle_.getResource();
     auto& cminusone_vec               = mw_mem.cminusone_vec;
     auto& cone_vec                    = mw_mem.cone_vec;
@@ -711,7 +710,7 @@ public:
     if (delay_count == 0)
       return;
     // update the inverse matrix
-    auto& hstream              = engine_leader.cuda_handles_.getResource().hstream;
+    auto hstream              = engine_leader.cuda_handles_.getResource().queue.getNative();
     auto& h_cublas             = engine_leader.cuda_handles_.getResource().h_cublas;
     auto& updateInv_buffer_H2D = engine_leader.mw_mem_handle_.getResource().updateInv_buffer_H2D;
     const int norb             = engine_leader.get_psiMinv().rows();
@@ -848,7 +847,7 @@ public:
   static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines)
   {
     auto& engine_leader = engines.getLeader();
-    auto& hstream       = engine_leader.cuda_handles_.getResource().hstream;
+    auto hstream       = engine_leader.cuda_handles_.getResource().queue.getNative();
     engine_leader.guard_no_delay();
 
     for (This_t& engine : engines)
@@ -869,7 +868,7 @@ public:
                                  size_t row_begin,
                                  size_t row_size)
   {
-    auto& hstream = engine_leader.cuda_handles_.getResource().hstream;
+    auto hstream = engine_leader.cuda_handles_.getResource().queue.getNative();
     for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
     {
       const size_t stride = psiM_vgl.capacity();
@@ -891,7 +890,7 @@ public:
                                  size_t row_begin,
                                  size_t row_size)
   {
-    auto& hstream = engine_leader.cuda_handles_.getResource().hstream;
+    auto hstream = engine_leader.cuda_handles_.getResource().queue.getNative();
     for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
     {
       const size_t stride = psiM_vgl.capacity();
