@@ -1804,11 +1804,8 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
   // compute the initial cost
   const RealType initCost = optTarget->computedCost();
 
-  // allocate the matrices we will need
-  Matrix<RealType> ovlMat(N, N);
-  ovlMat = 0.0;
-  Matrix<RealType> hamMat(N, 1);
-  hamMat = 0.0;
+  Matrix<RealType> hamVec(N, 1);
+  hamVec = 0.0;
 
   // for outputing matrices and eigenvalue/vectors to disk
   hdf_archive hout;
@@ -1822,8 +1819,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
               << "Building <Psi_i/Psi_0 Psi_j/Psi_0> and <Psi_i/Psi_0 E_L>" << std::endl
               << "********************************************************" << std::endl;
 
-    // build the overlap and hamiltonian matrices
-    optTarget->fillOverlapHamiltonianSR(ovlMat, hamMat);
+    optTarget->fillHamVec(hamVec);
 
     {
       ScopedTimer local(sr_solver_timer_);
@@ -1833,12 +1829,9 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
                 << "Solving linear system" << std::endl
                 << "*********************" << std::endl;
 
-      //apply stabilization to Sij
-      for (int i = 1; i < N; i++)
-        ovlMat(i, i) += bestShift_s;
 
       RealType thr = 1e-3;
-      RealType eps = 1;
+      RealType eps = 1.0;
       int kmax     = numParams;
       int k        = 0;
       Vector<RealType> rk(numParams, 0);
@@ -1847,12 +1840,14 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       Vector<RealType> pkp1(numParams, 0);
       Vector<RealType> xk(numParams, 0);
       Vector<RealType> xkp1(numParams, 0);
-      Vector<RealType> Apk(numParams, 0);
+      //only using as matrix because of MPI all reduce
+      Matrix<RealType> Apk(numParams, 1);
 
       RealType dk = 0;
+      //initial guess is zero, so S*x_0 = 0
       for (int i = 0; i < numParams; i++)
       {
-        rk[i] = -bestShift_i * hamMat(i + 1, 0);
+        rk[i] = -bestShift_i * hamVec(i + 1, 0);
         dk += rk[i] * rk[i];
       }
       eps            = dk / numParams * thr;
@@ -1860,20 +1855,17 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       bool converged = false;
       while (!converged)
       {
-        Apk = 0;
-        for (int i = 0; i < numParams; i++)
-          for (int j = 0; j < numParams; j++)
-            Apk[i] += ovlMat(i + 1, j + 1) * pk[j];
+        optTarget->calcOvlParmVec(pk, bestShift_s, Apk);
         RealType denom = 0;
         for (int i = 0; i < numParams; i++)
-          denom += pk[i] * Apk[i];
+          denom += pk[i] * Apk(i, 0);
         RealType ak = dk / denom;
 
         RealType dkp1 = 0;
         for (int i = 0; i < numParams; i++)
         {
           xkp1[i] = xk[i] + ak * pk[i];
-          rkp1[i] = rk[i] - ak * Apk[i];
+          rkp1[i] = rk[i] - ak * Apk(i, 0);
           dkp1 += rkp1[i] * rkp1[i];
         }
         if (dkp1 / numParams < eps || k == kmax)
@@ -1901,7 +1893,8 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
     }
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+    //objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+    objFuncWrapper_.Lambda = 1.0;
   }
 
   if (use_line_search_)
@@ -1941,8 +1934,8 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
   }
 
-  if (bestShift_s > 1.0e-2)
-    bestShift_s = bestShift_s / shift_s_base;
+  //if (bestShift_s > 1.0e-2)
+  //  bestShift_s = bestShift_s / shift_s_base;
   // say what we are doing
   app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
   accept_history <<= 1;

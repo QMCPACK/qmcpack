@@ -981,12 +981,10 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   return 1.0;
 }
 
-QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianSR(Matrix<Return_rt>& overlap,
-                                                                                   Matrix<Return_rt>& ham)
+QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(Matrix<Return_rt>& ham)
 {
   ScopedTimer tmp_timer(fill_timer_);
 
-  overlap  = 0.0;
   ham = 0.0;
 
   curAvg_w = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
@@ -1020,7 +1018,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
     auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_t* Dsaved,
                                 Return_rt weight, Return_rt eloc_new, std::vector<Return_t>& D_avg, RealType curAvg_w,
-                                Matrix<Return_rt>& overlap, Matrix<Return_rt>& ham) {
+                                Matrix<Return_rt>& ham) {
       int local_pm_start = crowd_ranges[crowd_id];
       int local_pm_end   = crowd_ranges[crowd_id + 1];
 
@@ -1028,23 +1026,81 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
       {
         Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
         ham(pm + 1, 0) += std::real(wfd) * eloc_new;
-        for (int pm2 = 0; pm2 < numParams; pm2++)
-        {
-          RealType ovlij = std::real(std::conj(wfd) * (Dsaved[pm2] - D_avg[pm2]));
-          overlap(pm + 1, pm2 + 1) += ovlij;
-        }
       }
     };
 
     ParallelExecutor<> crowd_tasks;
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, eloc_new, D_avg,
-                curAvg_w, overlap, ham);
+                curAvg_w, ham);
   }
   myComm->allreduce(ham);
-  myComm->allreduce(overlap);
-  ham(0, 0)   = curAvg_w;
-  overlap(0, 0) = 1.0;
+  ham(0, 0) = curAvg_w;
 
   return 1.0;
+}
+
+void QMCCostFunctionBatched::calcOvlParmVec(const Vector<Return_rt>& parm,
+                                            const Return_rt& shift,
+                                            Matrix<Return_rt>& ovlParmVec)
+{
+  ScopedTimer tmp_timer(fill_timer_);
+
+  ovlParmVec = 0.0;
+
+  std::vector<Return_t> D_avg(getNumParams(), 0.0);
+  Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
+
+  for (int iw = 0; iw < rank_local_num_samples_; iw++)
+  {
+    const Return_rt* restrict saved = RecordsOnNode_[iw];
+    Return_rt weight                = saved[REWEIGHT] * wgtinv;
+    const Return_t* Dsaved          = DerivRecords_[iw];
+    for (int pm = 0; pm < getNumParams(); pm++)
+      D_avg[pm] += Dsaved[pm] * weight;
+  }
+
+  myComm->allreduce(D_avg);
+
+  std::vector<Return_t> prod(rank_local_num_samples_, 0.0);
+  for (int iw = 0; iw < rank_local_num_samples_; iw++)
+  {
+    const Return_rt* restrict saved = RecordsOnNode_[iw];
+    Return_rt weight                = saved[REWEIGHT] * wgtinv;
+    const Return_t* Dsaved          = DerivRecords_[iw];
+    for (int pm = 0; pm < getNumParams(); pm++)
+      prod[iw] += (Dsaved[pm] - D_avg[pm])  * parm[pm];
+  }
+
+
+  for (int iw = 0; iw < rank_local_num_samples_; iw++)
+  {
+    const Return_rt* restrict saved = RecordsOnNode_[iw];
+    Return_rt weight                = saved[REWEIGHT] * wgtinv;
+    const Return_t* Dsaved          = DerivRecords_[iw];
+
+    size_t opt_num_crowds = walkers_per_crowd_.size();
+    std::vector<int> params_per_crowd(opt_num_crowds + 1);
+    FairDivide(getNumParams(), opt_num_crowds, params_per_crowd);
+
+    auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_t* Dsaved,
+                                Return_rt weight, std::vector<Return_t>& D_avg, const Return_t prod,
+                                Matrix<Return_rt>& ovlParmVec) {
+      int local_pm_start = crowd_ranges[crowd_id];
+      int local_pm_end   = crowd_ranges[crowd_id + 1];
+
+      for (int pm = local_pm_start; pm < local_pm_end; pm++)
+      {
+        Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
+        ovlParmVec(pm, 0) += std::real(std::conj(wfd) * prod);
+      }
+    };
+
+    ParallelExecutor<> crowd_tasks;
+    crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, D_avg, prod[iw],
+                ovlParmVec);
+  }
+  myComm->allreduce(ovlParmVec);
+  for (int pm = 0; pm < getNumParams(); pm++)
+    ovlParmVec(pm, 0) += shift * parm[pm];
 }
 } // namespace qmcplusplus

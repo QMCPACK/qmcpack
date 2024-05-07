@@ -138,7 +138,8 @@ public:
 
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
-  virtual Return_rt fillOverlapHamiltonianSR(Matrix<Return_rt>& overlap, Matrix<Return_rt>& ham);
+  virtual Return_rt fillHamVec(Matrix<Return_rt>& ham);
+  virtual void calcOvlParmVec(const Vector<Return_rt>& parm, const Return_rt& shift, Matrix<Return_rt>& ovlParmVec);
 
 #ifdef HAVE_LMY_ENGINE
   Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>* EngineObj);
