@@ -27,6 +27,7 @@
 #include "DiracMatrixComputeCUDA.hpp"
 #include "ResourceCollection.h"
 #include "WaveFunctionTypes.hpp"
+#include "QueueAliases.hpp"
 
 namespace qmcplusplus
 {
@@ -107,6 +108,7 @@ public:
   DualMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
 
 private:
+  compute::Queue<PlatformKind::CUDA> queue_;
   /// legacy single walker matrix inversion engine
   DiracMatrix<FullPrecValue> detEng;
   /* inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
