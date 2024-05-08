@@ -128,8 +128,8 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
       // Mocking walker ids
       using Walker = typename decltype(ref_walkers)::value_type::type;
       for(Walker& walker : ref_walkers)
-	walker.ID = walker_id++;
-      crowd_oeb->accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+	walker.setWalkerID(walker_id++);
+      crowd_oeb->accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
     }
 
     RefVector<OperatorEstBase> crowd_loggers_refs = convertUPtrToRefVector(crowd_loggers);

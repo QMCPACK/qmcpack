@@ -85,10 +85,10 @@ void WalkerControlBase::setWalkerID(MCWalkerConfiguration& walkers)
   start(); //do the normal start
   for (const auto& walker : walkers)
   {
-    if (walker.getWalkerID() == 0)
+    if (walker->getWalkerID() == 0)
     {
-      walker.setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);
-      walker.setParentID((*wit)->getWalkerID());
+      walker->setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);
+      walker->setParentID(walker->getWalkerID());
     }
   }
 }

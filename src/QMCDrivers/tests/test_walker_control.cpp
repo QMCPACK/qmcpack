@@ -257,9 +257,8 @@ struct WalkerControlMPITest
       wc.NumPerRank[i] = 1;
     }
     // One walker on every node, should be no swapping
-    // we are violating the convention that MCPopulation generates walker ids
-    wc.good_w.push_back(std::make_unique<Walker_t>(c->rank(), c->rank()));
-
+    wc.good_w.push_back(std::make_unique<Walker_t>());
+    wc.good_w[0]->setWalkerID(c->rank());
     wc.ncopy_w.push_back(0);
 
     wc.swapWalkersSimple(W);
@@ -274,10 +273,12 @@ struct WalkerControlMPITest
     {
       if (c->rank() == 0)
       {
-        wc.good_w.push_back(std::make_unique<Walker_t>(c->size(), c->size()));
-        wc.good_w.push_back(std::make_unique<Walker_t>(c->size() * 2, c->size() * 2));
+        wc.good_w.push_back(std::make_unique<Walker_t>());
+        wc.good_w.push_back(std::make_unique<Walker_t>());
 
         // Use the ID variable to check that the walker content was transmitted
+        wc.good_w[1]->setWalkerID(c->size());
+        wc.good_w[2]->setWalkerID(c->size() + 1);
 
         wc.ncopy_w.push_back(0);
         wc.ncopy_w.push_back(0);
@@ -290,20 +291,25 @@ struct WalkerControlMPITest
       //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
       //          " ID = " << wc.good_w[0]->ID << std::endl;
 
-      if (c->rank() >= c->size() - 2)
+      if (c->rank() == c->size() - 2)
       {
         REQUIRE(wc.good_w.size() == 2);
-        bool okay = wc.good_w[1]->getWalkerID() == c->size() || wc.good_w[1]->getWalkerID() == c->size() * 2;
-        REQUIRE(okay);
+        // This check is a bit too restrictive - no guarantee the last walker was the
+        //  one transmitted
+        bool okay1 = wc.good_w[1]->getWalkerID() == c->size() || wc.good_w[1]->getWalkerID() == c->size() + 1;
+        REQUIRE(okay1);
+      }
+      else if (c->rank() == c->size() - 1)
+      {
+        REQUIRE(wc.good_w.size() == 2);
+        bool okay2 = wc.good_w[1]->getWalkerID() == c->size() || wc.good_w[1]->getWalkerID() == c->size() + 1;
+        REQUIRE(okay2);
       }
       else
       {
         REQUIRE(wc.good_w.size() == 1);
         REQUIRE(wc.good_w[0]->getWalkerID() == c->rank());
       }
-
-      // \todo this state change can't be in swap (even though it probably should be) so we can coexist with legacy.
-      //       after legacy is dropped consider update that in swapWalkersSimple
       wc.NumPerRank[0]             = 1;
       wc.NumPerRank[c->size() - 1] = 2;
       wc.NumPerRank[c->size() - 2] = 2;
@@ -320,11 +326,11 @@ struct WalkerControlMPITest
         wc.good_w.push_back(std::make_unique<Walker_t>());
         // wc.good_w.push_back(new Walker_t());
         // wc.good_w.push_back(new Walker_t());
-        int nwalkers_rank = wc.good_w.size();
+        int nwalkers_rank                = wc.good_w.size();
         wc.good_w[nwalkers_rank - 1]->setWalkerID(c->size() + 5);
         wc.good_w[nwalkers_rank - 2]->setWalkerID(c->size() + 4);
-        // wc.good_w[nwalkers_rank - 3]->ID = c->size() + 3;
-        // wc.good_w[nwalkers_rank - 4]->ID = c->size() + 2;
+        // wc.good_w[nwalkers_rank - 3]->setWalkerID(c->size() + 3);
+        // wc.good_w[nwalkers_rank - 4]->setWalkerID(c->size() + 2);
 
         wc.ncopy_w.push_back(2);
         wc.ncopy_w.push_back(1);
@@ -446,7 +452,7 @@ TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
 
   if (c->rank() == 0)
   {
-    W[0]->setWalkerID(100);;
+    W[0]->setWalkerID(100);
   }
   else
   {

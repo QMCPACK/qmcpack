@@ -101,6 +101,7 @@ private:
    *  PD: but likely incorrect and/or unused.
    */
   long parent_id_ = 0;
+
 public:
   /** allegedly DMCgeneration
    *  PD: I can find no evidence it is ever updated anywhere in the code.
@@ -163,17 +164,19 @@ public:
    */
   void setWalkerID(long walker_id) { walker_id_ = walker_id; }
   void setParentID(long parent_id) { parent_id_ = parent_id; }
-  
-  inline explicit Walker(int nptcl = 0)
-      : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+
+  /// create a walker for n-particles
+  inline explicit Walker(int nptcl = 0) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
   {
     if (nptcl > 0)
       resize(nptcl);
-    //static_cast<Matrix<FullPrecRealType>>(Properties) = 0.0;
   }
 
   Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
-  Walker(const Walker& a, long walker_id, long parent_id) : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a);
+  Walker(const Walker& a, long walker_id, long parent_id)
+      : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
+    makeCopy(a);
   }
 
   /** create a valid walker for n-particles (batched version)
@@ -181,16 +184,15 @@ public:
    *  without the need for more initialization functions to be called.
    */
   inline explicit Walker(long walker_id, long parent_id, int nptcl = 0)
-    : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+      : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
   {
     if (nptcl > 0)
       resize(nptcl);
   }
 
-  
   inline int addPropertyHistory(int leng)
   {
-    int newL                            = PropertyHistory.size();
+    int newL = PropertyHistory.size();
     PropertyHistory.push_back(std::vector<RealType>(leng, 0.0));
     PHindex.push_back(0);
     return newL;
@@ -256,12 +258,12 @@ public:
   ///copy the content of a walker
   inline void makeCopy(const Walker& a)
   {
-    walker_id_                 = a.walker_id_;
-    parent_id_           = a.parent_id_;
-    Generation         = a.Generation;
-    Age                = a.Age;
-    Weight             = a.Weight;
-    Multiplicity       = a.Multiplicity;
+    walker_id_   = a.walker_id_;
+    parent_id_   = a.parent_id_;
+    Generation   = a.Generation;
+    Age          = a.Age;
+    Weight       = a.Weight;
+    Multiplicity = a.Multiplicity;
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
@@ -413,7 +415,7 @@ public:
   {
     assert(DataSet.size() != 0);
     DataSet.rewind();
-    DataSet >> walker_id_ >> parenter_id_ >> Generation >> Age;
+    DataSet >> walker_id_ >> parent_id_ >> Generation >> Age;
     // vectors
     assert(R.size() != 0);
     DataSet.get(R.first_address(), R.last_address());
@@ -438,7 +440,7 @@ public:
   void updateBuffer()
   {
     DataSet.rewind();
-    DataSet >> walker_id_ >> parenter_id_ >> Generation >> Age;
+    DataSet << walker_id_ << parent_id_ << Generation << Age;
     // vectors
     DataSet.put(R.first_address(), R.last_address());
     DataSet.put(spins.first_address(), spins.last_address());

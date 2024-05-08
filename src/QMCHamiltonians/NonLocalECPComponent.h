@@ -150,8 +150,6 @@ public:
   template<typename T>
   void rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat);
 
-  void random_rotation(std::vector<PosType>& grid_points, RandomGenerator& myRNG);
-
   /** contribute local non-local move data
    * @param iel reference electron id.
    * @param Txy nonlocal move data.
