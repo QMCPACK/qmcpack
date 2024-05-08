@@ -302,8 +302,7 @@ public:
     Value* Ainv_ptr       = Ainv.data();
     Value* temp_ptr       = temp.data();
     Value* rcopy_ptr      = rcopy.data();
-    PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.size()]) \
+    PRAGMA_OFFLOAD("omp target data map(always, from: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
       success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);

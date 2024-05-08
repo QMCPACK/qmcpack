@@ -94,12 +94,12 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
   {
-    if (walker_ptr->ID == 0)
+    if (walker_ptr->getWalkerID() == 0)
     {
       // And so walker ID's start at one because 0 is magic.
       // \todo This is C++ all indexes start at 0, make uninitialized ID = -1
-      walker_ptr->ID       = (num_walkers_created++) * num_ranks_ + rank_ + 1;
-      walker_ptr->ParentID = walker_ptr->ID;
+      walker_ptr->setWalkerID((num_walkers_created++) * num_ranks_ + rank_ + 1);
+      walker_ptr->setParentID(walker_ptr->getWalkerID());
     }
   }
 
@@ -174,7 +174,7 @@ WalkerElementsRef MCPopulation::spawnWalker()
         hamiltonian_->makeClone(*walker_elec_particle_sets_.back(), *walker_trial_wavefunctions_.back()));
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight       = 1.0;
-    walkers_.back()->ID           = (walkers_.size() + 1) * num_ranks_ + rank_ + 1;
+    walkers_.back()->setWalkerID((walkers_.size() + 1) * num_ranks_ + rank_ + 1);
   }
 
   outputManager.resume();
