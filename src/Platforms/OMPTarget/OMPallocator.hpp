@@ -204,7 +204,7 @@ public:
   T* allocate(std::size_t n)
   {
     void* pt = omp_target_alloc(n * sizeof(T), omp_get_default_device());
-    if(!pt)
+    if (!pt)
       throw std::runtime_error("Allocation failed in OMPTargetAllocator!");
     OMPallocator_device_mem_allocated += n * sizeof(T);
     return static_cast<T*>(pt);
@@ -246,19 +246,21 @@ public:
 
   void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
   {
-    if(omp_target_memcpy(device_ptr, host_ptr, n, 0, 0, omp_get_default_device(), omp_get_initial_device()))
+    const auto host_id = omp_get_initial_device();
+    if (omp_target_memcpy(device_ptr, host_ptr, n, 0, 0, omp_get_default_device(), host_id))
       throw std::runtime_error("omp_target_memcpy failed in copyToDevice");
   }
 
   void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
   {
-    if(omp_target_memcpy(host_ptr, device_ptr, n, 0, 0, omp_get_initial_device(), omp_get_default_device()))
+    const auto host_id = omp_get_initial_device();
+    if (omp_target_memcpy(host_ptr, device_ptr, n, 0, 0, host_id, omp_get_default_device()))
       throw std::runtime_error("omp_target_memcpy failed in copyToDevice");
   }
 
   void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
   {
-    if(omp_target_memcpy(to_ptr, from_ptr, n, 0, 0, omp_get_default_device(), omp_get_default_device()))
+    if (omp_target_memcpy(to_ptr, from_ptr, n, 0, 0, omp_get_default_device(), omp_get_default_device()))
       throw std::runtime_error("omp_target_memcpy failed in copyToDevice");
   }
 };
@@ -279,7 +281,7 @@ struct qmc_allocator_traits<qmcplusplus::OMPTargetAllocator<T>>
 {
   static const bool is_host_accessible = false;
   static const bool is_dual_space      = false;
-  static void fill_n(T* ptr, size_t n, const T& value) { }
+  static void fill_n(T* ptr, size_t n, const T& value) {}
 };
 #endif
 
