@@ -1934,8 +1934,8 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
   }
 
-  //if (bestShift_s > 1.0e-2)
-  //  bestShift_s = bestShift_s / shift_s_base;
+  if (bestShift_s > 1.0e-2)
+    bestShift_s = bestShift_s / shift_s_base;
   // say what we are doing
   app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
   accept_history <<= 1;
