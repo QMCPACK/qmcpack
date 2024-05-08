@@ -129,9 +129,9 @@ private:
   UnpinnedDualVector<Value> rcopy;
 
   template<typename DT>
-  using DeviceMatrix = Matrix<DT, CUDAAllocator<DT>>;
+  using DeviceMatrix = Matrix<DT, DeviceAllocator<DT>>;
   template<typename DT>
-  using DeviceVector = Vector<DT, CUDAAllocator<DT>>;
+  using DeviceVector = Vector<DT, DeviceAllocator<DT>>;
   /// orbital values of delayed electrons
   DeviceMatrix<Value> U_gpu;
   /// rows of Ainv corresponding to delayed electrons
@@ -143,7 +143,7 @@ private:
   /// new column of B
   DeviceVector<Value> p_gpu;
   /// list of delayed electrons
-  Vector<int, CUDAAllocator<int>> delay_list_gpu;
+  DeviceVector<int> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
@@ -507,7 +507,6 @@ public:
 
   /** Update the "local" psiMinv_ on the device.
    *  Side Effect Transfers:
-   *  * phiV is left on host side in the single methods so it must be transferred to device
    *  * psiMinv_ is transferred back to host since single calls from QMCHamitonian and others
    *  * expect it to be.
    *
@@ -518,23 +517,20 @@ public:
   void updateRow(int rowchanged, const VVT& phiV, FullPrecValue c_ratio_in)
   {
     guard_no_delay();
-    auto& Ainv = psiMinv_;
     // update the inverse matrix
     constexpr Value cone(1), czero(0);
-    const int norb = Ainv.rows();
-    const int lda  = Ainv.cols();
+    const int norb = psiMinv_.rows();
+    const int lda  = psiMinv_.cols();
     temp.resize(norb);
     rcopy.resize(norb);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle      = 0;
     const Value* phiV_ptr = phiV.data();
-    Value* Ainv_ptr       = Ainv.data();
+    Value* Ainv_ptr       = psiMinv_.data();
     Value* temp_ptr       = temp.data();
     Value* rcopy_ptr      = rcopy.data();
-    // This must be Ainv must be tofrom due to NonlocalEcpComponent and possibly
-    // other modules assumptions about the state of psiMinv.
-    PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, tofrom: Ainv_ptr[:Ainv.size()]) \
+    // psiMinv_ must be update-to-date on both host and device
+    PRAGMA_OFFLOAD("omp target data map(always, tofrom: Ainv_ptr[:psiMinv_.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
       int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
