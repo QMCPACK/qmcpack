@@ -336,7 +336,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
 
     OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
 
-    OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
+    testing::OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
     //Get control over which rng is used.
     //we don't want FakeRandom.
     StdRandom<OneBodyDensityMatrices::FullPrecRealType> rng;
