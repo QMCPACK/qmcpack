@@ -304,9 +304,9 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
     obdmt.testGenerateSamples(test_case, obDenMat, pset_target, rng);
   };
 
-  samplingCaseRunner(input::valid::VANILLA);
-  samplingCaseRunner(input::valid::SCALE);
-  samplingCaseRunner(input::valid::GRID);
+  samplingCaseRunner(Input::valid::VANILLA);
+  samplingCaseRunner(Input::valid::SCALE);
+  samplingCaseRunner(Input::valid::GRID);
 }
 
 #ifdef QMC_COMPLEX
