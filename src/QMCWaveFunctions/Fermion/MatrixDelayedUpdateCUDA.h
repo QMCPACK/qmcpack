@@ -517,22 +517,20 @@ public:
   void updateRow(int rowchanged, const VVT& phiV, FullPrecValue c_ratio_in)
   {
     guard_no_delay();
-    auto& Ainv = psiMinv_;
     // update the inverse matrix
     constexpr Value cone(1), czero(0);
-    const int norb = Ainv.rows();
-    const int lda  = Ainv.cols();
+    const int norb = psiMinv_.rows();
+    const int lda  = psiMinv_.cols();
     temp.resize(norb);
     rcopy.resize(norb);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle      = 0;
     const Value* phiV_ptr = phiV.data();
-    Value* Ainv_ptr       = Ainv.data();
+    Value* Ainv_ptr       = psiMinv_.data();
     Value* temp_ptr       = temp.data();
     Value* rcopy_ptr      = rcopy.data();
-    // This must be Ainv must be tofrom due to NonlocalEcpComponent and possibly
-    // other modules assumptions about the state of psiMinv.
-    PRAGMA_OFFLOAD("omp target data map(always, tofrom: Ainv_ptr[:Ainv.size()]) \
+    // psiMinv_ must be update-to-date on both host and device
+    PRAGMA_OFFLOAD("omp target data map(always, tofrom: Ainv_ptr[:psiMinv_.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
       int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
