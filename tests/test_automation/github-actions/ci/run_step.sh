@@ -152,6 +152,7 @@ case "$1" in
               -DMPI_CXX_COMPILER=mpicxx \
               -DENABLE_GCOV=TRUE \
               -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;

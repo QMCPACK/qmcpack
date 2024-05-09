@@ -27,7 +27,9 @@ jobs:
             GCC9-NoMPI-NoOMP-Complex,
             GCC9-NoMPI-Sandbox-Real,
             GCC9-MPI-Gcov-Real,
-            GCC9-MPI-Gcov-Complex,
+            GCC9-MPI-Gcov-Complex-Mixed,
+            GCC9-MPI-Gcov-Real,
+            GCC9-MPI-Gcov-Complex-Mixed,
             GCC12-NoMPI-Werror-Real,
             GCC12-NoMPI-Werror-Complex,
             GCC12-NoMPI-Werror-Real-Mixed,
@@ -65,6 +67,16 @@ jobs:
               options: -u 1001
 
           - jobname: GCC9-MPI-Gcov-Complex
+            container:
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
+              options: -u 1001
+
+          - jobname: GCC9-MPI-Gcov-Real-Mixed
+            container:
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
+              options: -u 1001
+
+          - jobname: GCC9-MPI-Gcov-Complex-Mixed
             container:
               image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
