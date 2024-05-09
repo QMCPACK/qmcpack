@@ -26,10 +26,10 @@ namespace qmcplusplus
 {
 TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
 {
-  using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout;
-  using namespace testing::onebodydensitymatrices;
-  for (auto input_xml : valid_one_body_density_matrices_input_sections)
+  using POLT        = PtclOnLatticeTraits;
+  using Lattice     = POLT::ParticleLayout;
+  using valid_input = testing::ValidOneBodyDensityMatricesInput;
+  for (auto input_xml : valid_input::xml)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);
@@ -38,7 +38,8 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
     OneBodyDensityMatricesInput obdmi(node);
   }
 
-  for (auto input_xml : testing::invalid_one_body_density_matrices_input_sections)
+  using invalid_input = testing::InvalidOneBodyDensityMatricesInput;
+  for (auto input_xml : invalid_input::xml)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);
@@ -47,6 +48,16 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
 
     CHECK_THROWS_AS(OneBodyDensityMatricesInput(node), UniformCommunicateError);
   }
+}
+
+TEST_CASE("OneBodyDensityMatricesInput::copy_construction", "[estimators]")
+{
+  using Input = testing::ValidOneBodyDensityMatricesInput;
+  Libxml2Document doc;
+  bool okay       = doc.parseFromString(Input::xml[Input::valid::SCALE]);
+  xmlNodePtr node = doc.getRoot();
+  OneBodyDensityMatricesInput obdmi(node);
+  static_assert(std::is_copy_constructible_v<OneBodyDensityMatricesInput>);
 }
 
 } // namespace qmcplusplus
