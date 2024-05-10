@@ -218,10 +218,10 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
         // \todo revisit Walker assignment operator after legacy drivers removed.
         // but in the modern scheme walker IDs are permanent after creation, what walker they
         // were copied from is in ParentID.
-        long save_id                    = walker_elements.walker.ID;
+        long save_id                    = walker_elements.walker.getWalkerID();
         walker_elements.walker          = *walkers[iw];
-        walker_elements.walker.ParentID = walker_elements.walker.ID;
-        walker_elements.walker.ID       = save_id;
+        walker_elements.walker.setParentID(walker_elements.walker.getWalkerID());
+        walker_elements.walker.setWalkerID(save_id);
         num_copies--;
       }
     }

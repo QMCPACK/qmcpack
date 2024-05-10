@@ -79,7 +79,7 @@ __global__ void copyAinvRow_saveGL_kernel(const int rowchanged,
   }
 }
 
-cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
+cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
                                     const int rowchanged,
                                     const int n,
                                     const float* const Ainv[],
@@ -104,7 +104,7 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
+cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
                                     const int rowchanged,
                                     const int n,
                                     const double* const Ainv[],
@@ -129,7 +129,7 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
+cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
                                     const int rowchanged,
                                     const int n,
                                     const std::complex<float>* const Ainv[],
@@ -155,7 +155,7 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
+cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
                                     const int rowchanged,
                                     const int n,
                                     const std::complex<double>* const Ainv[],
@@ -219,7 +219,7 @@ __global__ void calcGradients_kernel(const int n,
       grads_now[iw * DIM + idim] = sum[idim * COLBS];
 }
 
-cudaError_t calcGradients_cuda(cudaStream_t& hstream,
+cudaError_t calcGradients_cuda(cudaStream_t hstream,
                                const int n,
                                const float* const Ainvrow[],
                                const float* const dpsiMrow[],
@@ -236,7 +236,7 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t calcGradients_cuda(cudaStream_t& hstream,
+cudaError_t calcGradients_cuda(cudaStream_t hstream,
                                const int n,
                                const double* const Ainvrow[],
                                const double* const dpsiMrow[],
@@ -253,7 +253,7 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t calcGradients_cuda(cudaStream_t& hstream,
+cudaError_t calcGradients_cuda(cudaStream_t hstream,
                                const int n,
                                const std::complex<float>* const Ainvrow[],
                                const std::complex<float>* const dpsiMrow[],
@@ -272,7 +272,7 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t calcGradients_cuda(cudaStream_t& hstream,
+cudaError_t calcGradients_cuda(cudaStream_t hstream,
                                const int n,
                                const std::complex<double>* const Ainvrow[],
                                const std::complex<double>* const dpsiMrow[],
@@ -379,7 +379,7 @@ __global__ void add_delay_list_save_sigma_VGL_kernel(int* const delay_list[],
   }
 }
 
-cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
+cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
                                                   int* const delay_list[],
                                                   const int rowchanged,
                                                   const int delay_count,
@@ -407,7 +407,7 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
+cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
                                                   int* const delay_list[],
                                                   const int rowchanged,
                                                   const int delay_count,
@@ -435,7 +435,7 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
+cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
                                                   int* const delay_list[],
                                                   const int rowchanged,
                                                   const int delay_count,
@@ -466,7 +466,7 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
+cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
                                                   int* const delay_list[],
                                                   const int rowchanged,
                                                   const int delay_count,
@@ -518,7 +518,7 @@ __global__ void applyW_kernel(const int* const delay_list[], const int delay_cou
   }
 }
 
-cudaError_t applyW_batched(cudaStream_t& hstream,
+cudaError_t applyW_batched(cudaStream_t hstream,
                            const int* const delay_list[],
                            const int delay_count,
                            float* const tempMat[],
@@ -535,7 +535,7 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t applyW_batched(cudaStream_t& hstream,
+cudaError_t applyW_batched(cudaStream_t hstream,
                            const int* const delay_list[],
                            const int delay_count,
                            double* const tempMat[],
@@ -552,7 +552,7 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t applyW_batched(cudaStream_t& hstream,
+cudaError_t applyW_batched(cudaStream_t hstream,
                            const int* const delay_list[],
                            const int delay_count,
                            std::complex<float>* const tempMat[],
@@ -570,7 +570,7 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t applyW_batched(cudaStream_t& hstream,
+cudaError_t applyW_batched(cudaStream_t hstream,
                            const int* const delay_list[],
                            const int delay_count,
                            std::complex<double>* const tempMat[],
@@ -599,7 +599,7 @@ __global__ void print_delay_list_kernel(int* const delay_list[], const int delay
            delay_list_iw[(delay_count - 1 < 0) ? 0 : (delay_count - 1)]);
 }
 
-cudaError_t print_delay_list_batched(cudaStream_t& hstream,
+cudaError_t print_delay_list_batched(cudaStream_t hstream,
                                      int* const delay_list[],
                                      const int delay_count,
                                      const int batch_count)

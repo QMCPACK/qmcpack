@@ -34,7 +34,8 @@ template<typename T, unsigned D, typename Alloc = aligned_allocator<T>>
 struct VectorSoaContainer
 {
   using AoSElement_t = TinyVector<T, D>;
-  using Element_t    = T;
+  using size_type    = size_t;
+  using value_type   = T;
 
   ///default constructor
   VectorSoaContainer() : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) {}
@@ -44,7 +45,7 @@ struct VectorSoaContainer
    * @param n new nLocal
    * @param n_padded new nGhosts
    */
-  VectorSoaContainer(T* ptr, size_t n, size_t n_padded) : nLocal(n), nGhosts(n_padded), nAllocated(0), myData(ptr) {}
+  VectorSoaContainer(T* ptr, size_type n, size_type n_padded) : nLocal(n), nGhosts(n_padded), nAllocated(0), myData(ptr) {}
 
   ///destructor
   ~VectorSoaContainer() { free(); }
@@ -79,7 +80,7 @@ struct VectorSoaContainer
   }
 
   /// constructor with size n without initialization
-  explicit VectorSoaContainer(size_t n) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) { resize(n); }
+  explicit VectorSoaContainer(size_type n) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) { resize(n); }
 
   /** constructor with Vector<T1,D> */
   template<typename T1>
@@ -111,14 +112,14 @@ struct VectorSoaContainer
    *
    * nAllocated is used to ensure no memory leak
    */
-  inline void resize(size_t n)
+  inline void resize(size_type n)
   {
-    static_assert(std::is_same<Element_t, typename Alloc::value_type>::value,
+    static_assert(std::is_same<T, typename Alloc::value_type>::value,
                   "VectorSoaContainer and Alloc data types must agree!");
     if (isRefAttached())
       throw std::runtime_error("Resize not allowed on VectorSoaContainer constructed by initialized memory.");
 
-    size_t n_padded = getAlignedSize<T, Alloc::alignment>(n);
+    size_type n_padded = getAlignedSize<T, Alloc::alignment>(n);
 
     if (n_padded * D > nAllocated)
     {
@@ -161,7 +162,7 @@ struct VectorSoaContainer
    *
    * To attach to existing memory, currently owned memory must be freed before calling attachReference
    */
-  inline void attachReference(size_t n, size_t n_padded, T* ptr)
+  inline void attachReference(size_type n, size_type n_padded, T* ptr)
   {
     if (nAllocated)
     {
@@ -184,7 +185,7 @@ struct VectorSoaContainer
    * To attach to existing memory, currently owned memory must be freed before calling attachReference
    */
   template<typename CONTAINER>
-  void attachReference(size_t n, size_t n_padded, const CONTAINER& other, T* ptr)
+  void attachReference(size_type n, size_type n_padded, const CONTAINER& other, T* ptr)
   {
     if (nAllocated)
     {
@@ -200,9 +201,9 @@ struct VectorSoaContainer
   }
 
   ///return the physical size
-  inline size_t size() const { return nLocal; }
+  inline size_type size() const { return nLocal; }
   ///return the physical size
-  inline size_t capacity() const { return nGhosts; }
+  inline size_type capacity() const { return nGhosts; }
 
   /** AoS to SoA : copy from Vector<TinyVector<>>
        *
@@ -224,19 +225,19 @@ struct VectorSoaContainer
 
   /** return TinyVector<T,D>
        */
-  inline const AoSElement_t operator[](size_t i) const { return AoSElement_t(myData + i, nGhosts); }
+  inline const AoSElement_t operator[](size_type i) const { return AoSElement_t(myData + i, nGhosts); }
 
-  ///helper class for operator ()(size_t i) to assign a value
+  ///helper class for operator ()(size_type i) to assign a value
   struct Accessor
   {
     T* _base;
-    size_t M;
-    inline Accessor(T* a, size_t ng) : _base(a), M(ng) {}
+    size_type M;
+    inline Accessor(T* a, size_type ng) : _base(a), M(ng) {}
     template<typename T1>
     inline Accessor& operator=(const TinyVector<T1, D>& rhs)
     {
 #pragma unroll
-      for (size_t i = 0; i < D; ++i)
+      for (size_type i = 0; i < D; ++i)
         *(_base + M * i) = rhs[i];
       return *this;
     }
@@ -246,7 +247,7 @@ struct VectorSoaContainer
     inline Accessor& operator=(const T1 rhs)
     {
 #pragma unroll
-      for (size_t i = 0; i < D; ++i)
+      for (size_type i = 0; i < D; ++i)
         *(_base + M * i) = rhs;
       return *this;
     }
@@ -256,7 +257,7 @@ struct VectorSoaContainer
        *
        * Use for (*this)[i]=TinyVector<T,D>;
        */
-  inline Accessor operator()(size_t i) { return Accessor(myData + i, nGhosts); }
+  inline Accessor operator()(size_type i) { return Accessor(myData + i, nGhosts); }
   ///return the base
   inline T* data() { return myData; }
   ///return the base
@@ -264,9 +265,9 @@ struct VectorSoaContainer
   /// return non_const data
   T* getNonConstData() const { return myData; }
   ///return the pointer of the i-th components
-  inline T* restrict data(size_t i) { return myData + i * nGhosts; }
+  inline T* restrict data(size_type i) { return myData + i * nGhosts; }
   ///return the const pointer of the i-th components
-  inline const T* restrict data(size_t i) const { return myData + i * nGhosts; }
+  inline const T* restrict data(size_type i) const { return myData + i * nGhosts; }
   ///return the end
   inline T* end() { return myData + D * nGhosts; }
   ///return the end
@@ -287,13 +288,13 @@ struct VectorSoaContainer
   }
   ///return the pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline T* restrict device_data(size_t i)
+  inline T* restrict device_data(size_type i)
   {
     return mAllocator.get_device_ptr() + i * nGhosts;
   }
   ///return the const pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline const T* restrict device_data(size_t i) const
+  inline const T* restrict device_data(size_type i) const
   {
     return mAllocator.get_device_ptr() + i * nGhosts;
   }
@@ -323,11 +324,11 @@ struct VectorSoaContainer
 
 private:
   /// number of elements
-  size_t nLocal;
+  size_type nLocal;
   /// number of elements + padded
-  size_t nGhosts;
+  size_type nGhosts;
   /// number of elements allocated by myAlloc
-  size_t nAllocated;
+  size_type nAllocated;
   /// pointer: what type????
   T* myData;
   /// allocator

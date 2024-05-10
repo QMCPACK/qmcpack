@@ -57,7 +57,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
       timers_(timer_prefix),
-      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
       walker_configs_ref_(wc)

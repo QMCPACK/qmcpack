@@ -35,7 +35,7 @@ namespace qmcplusplus
  * RealTypehe template (P)articleSet(A)ttribute is a generic container  of position types.
  * RealTypehe template (G)radient(A)ttribute is a generic container of gradients types.
  * Data members for each walker
- * - ID : identity for a walker. default is 0.
+ * - walker_id_ : identity for a walker. default is 0.
  * - Age : generation after a move is accepted.
  * - Weight : weight to take the ensemble averages
  * - Multiplicity : multiplicity for branching. Probably can be removed.
@@ -81,21 +81,29 @@ public:
   using Buffer_t   = PooledData<RealType>;
   /** }@ */
 
-  ///id reserved for forward walking
-  long ID;
-  ///id reserved for forward walking
-  long ParentID;
-  ///DMCgeneration
-  int Generation;
+private:
+  /** in legacy the ancients have said only:
+   *  id reserved for forward walking
+   */
+  long walker_id_ = 0;
+  /** in legacy the ancients have said only:
+   *  id reserved for forward walking
+   */
+  long parent_id_ = 0;
+
+public:
+  /** allegedly DMCgeneration
+   *  PD: I can find no evidence it is ever updated anywhere in the code.
+   */
+  int Generation = 0;
   ///Age of this walker age is incremented when a walker is not moved after a sweep
-  int Age;
+  int Age = 0;
   ///Weight of the walker
-  FullPrecRealType Weight;
+  FullPrecRealType Weight = 1.0;
   /** Number of copies for branching
-   *
    * When Multiplicity = 0, this walker will be destroyed.
    */
-  FullPrecRealType Multiplicity;
+  FullPrecRealType Multiplicity = 1.0;
   /// mark true if this walker is being sent.
   bool SendInProgress;
   /// if true, this walker is either copied or tranferred from another MPI rank.
@@ -137,27 +145,42 @@ public:
   void set_has_been_on_wire(bool tf) { has_been_on_wire_ = tf; }
 #endif
 
-  ///create a walker for n-particles
-  inline explicit Walker(int nptcl = 0)
-      : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
-  {
-    ID                 = 0;
-    ParentID           = 0;
-    Generation         = 0;
-    Age                = 0;
-    Weight             = 1.0;
-    Multiplicity       = 1.0;
+  long getWalkerID() const { return walker_id_; }
+  long getParentID() const { return parent_id_; }
+  /** set function for walker walker_id_
+   *  only necessary because as an optimization we reuse walkers.
+   */
+  void setWalkerID(long walker_id) { walker_id_ = walker_id; }
+  void setParentID(long parent_id) { parent_id_ = parent_id; }
 
+  /// create a walker for n-particles
+  inline explicit Walker(int nptcl = 0) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
     if (nptcl > 0)
       resize(nptcl);
-    //static_cast<Matrix<FullPrecRealType>>(Properties) = 0.0;
   }
 
   Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
+  Walker(const Walker& a, long walker_id, long parent_id)
+      : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
+    makeCopy(a);
+  }
+
+  /** create a valid walker for n-particles (batched version)
+   *  the goal is for this walker is valid after construction
+   *  without the need for more initialization functions to be called.
+   */
+  inline explicit Walker(long walker_id, long parent_id, int nptcl = 0)
+      : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
+    if (nptcl > 0)
+      resize(nptcl);
+  }
 
   inline int addPropertyHistory(int leng)
   {
-    int newL                            = PropertyHistory.size();
+    int newL = PropertyHistory.size();
     PropertyHistory.push_back(std::vector<RealType>(leng, 0.0));
     PHindex.push_back(0);
     return newL;
@@ -223,12 +246,12 @@ public:
   ///copy the content of a walker
   inline void makeCopy(const Walker& a)
   {
-    ID                 = a.ID;
-    ParentID           = a.ParentID;
-    Generation         = a.Generation;
-    Age                = a.Age;
-    Weight             = a.Weight;
-    Multiplicity       = a.Multiplicity;
+    walker_id_   = a.walker_id_;
+    parent_id_   = a.parent_id_;
+    Generation   = a.Generation;
+    Age          = a.Age;
+    Weight       = a.Weight;
+    Multiplicity = a.Multiplicity;
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
@@ -329,7 +352,7 @@ public:
 
   /** byte size for a packed message
    *
-   * ID, Age, Properties, R, Drift, DataSet is packed
+   * walker_id_, Age, Properties, R, Drift, DataSet is packed
    */
   inline size_t byteSize()
   {
@@ -348,8 +371,8 @@ public:
     // walker data must be placed at the beginning
     assert(DataSet.size() == 0);
     // scalars
-    DataSet.add(ID);
-    DataSet.add(ParentID);
+    DataSet.add(walker_id_);
+    DataSet.add(parent_id_);
     DataSet.add(Generation);
     DataSet.add(Age);
     // vectors
@@ -380,7 +403,7 @@ public:
   {
     assert(DataSet.size() != 0);
     DataSet.rewind();
-    DataSet >> ID >> ParentID >> Generation >> Age;
+    DataSet >> walker_id_ >> parent_id_ >> Generation >> Age;
     // vectors
     assert(R.size() != 0);
     DataSet.get(R.first_address(), R.last_address());
@@ -405,7 +428,7 @@ public:
   void updateBuffer()
   {
     DataSet.rewind();
-    DataSet << ID << ParentID << Generation << Age;
+    DataSet << walker_id_ << parent_id_ << Generation << Age;
     // vectors
     DataSet.put(R.first_address(), R.last_address());
     DataSet.put(spins.first_address(), spins.last_address());
