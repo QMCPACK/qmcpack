@@ -214,14 +214,17 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       while (num_copies > 1)
       {
         auto walker_elements = pop.spawnWalker();
-        // save this walkers ID
-        // \todo revisit Walker assignment operator after legacy drivers removed.
-        // but in the modern scheme walker IDs are permanent after creation, what walker they
-        // were copied from is in ParentID.
-        long save_id                    = walker_elements.walker.getWalkerID();
-        walker_elements.walker          = *walkers[iw];
+        // In the batched version walker IDs are set when walkers are born,
+        // what walker they were created from if any is the ParentID.
+        // In this case we set this to the sibling from walkers they are assigned from
+        // if this copy gets transferred this will result in a walker with a walker_id % num_ranks
+        // equal to a rank != pop.rank_. This is not invalid and provides the birth rank of the walker.
+        auto walker_id         = walker_elements.walker.getWalkerID();
+        walker_elements.walker = *walkers[iw];
         walker_elements.walker.setParentID(walker_elements.walker.getWalkerID());
-        walker_elements.walker.setWalkerID(save_id);
+        walker_elements.walker.setWalkerID(walker_id);
+        // fix the multiplicity of the new walker
+        walker_elements.walker.Multiplicity = 1.0;
         num_copies--;
       }
     }
@@ -344,17 +347,25 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 
   auto& good_walkers = pop.get_walkers();
   const int nswap    = plus.size();
-  // sort good walkers by the number of copies
+  // first --> multiplicity
+  // second -->  walker index in good_walkers
   std::vector<std::pair<int, int>> ncopy_pairs;
   for (int iw = 0; iw < good_walkers.size(); iw++)
+  {
+    // Multiplicities of 0 should already be dead.
+    // Multiplicities > 1 should have resulted in copies until Multiplicity == 1
+    assert(static_cast<int>(good_walkers[iw]->Multiplicity) == 1);
     ncopy_pairs.push_back(std::make_pair(static_cast<int>(good_walkers[iw]->Multiplicity), iw));
+  }
+  // sort good walkers by the number of copies
   std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
 
   struct job
   {
-    const int walkerID;
+    // Walker_index is just its index not its "walker_id"
+    const int walker_index;
     const int target;
-    job(int wid, int target_in) : walkerID(wid), target(target_in){};
+    job(int wid, int target_in) : walker_index(wid), target(target_in){};
   };
 
   int nsend = 0;
@@ -430,11 +441,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
     std::vector<mpi3::request> requests;
     // mark all walkers not in send
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
-      good_walkers[jobit->walkerID]->SendInProgress = false;
+      good_walkers[jobit->walker_index]->SendInProgress = false;
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // pack data and send
-      auto& awalker   = good_walkers[jobit->walkerID];
+      auto& awalker   = good_walkers[jobit->walker_index];
       size_t byteSize = awalker->byteSize();
       if (!awalker->SendInProgress)
       {
@@ -462,11 +473,14 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   }
   else
   {
+    // Walker::copyFromBuffer copies the walkerID the sent walker this is a new walker ID that was made when walker
+    // was copied by the sender.
+
     std::vector<mpi3::request> requests;
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // recv and unpack data
-      auto& walker_elements = newW[jobit->walkerID];
+      auto& walker_elements = newW[jobit->walker_index];
       auto& awalker         = walker_elements.walker;
       size_t byteSize       = awalker.byteSize();
       if (use_nonblocking_)
@@ -490,7 +504,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
           {
             if (requests[im].completed())
             {
-              auto& walker_elements = newW[job_list[im].walkerID];
+              auto& walker_elements = newW[job_list[im].walker_index];
               walker_elements.walker.copyFromBuffer();
               not_completed[im] = false;
             }
@@ -505,7 +519,8 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   //save the number of walkers sent
   saved_num_walkers_sent_ = nsend;
 
-  // rebuild Multiplicity
+  // update Multiplicity
+  // fairly simple since we copy then send if it was sent ncopy_pairs[iw] will be 0
   for (int iw = 0; iw < ncopy_pairs.size(); iw++)
     good_walkers[ncopy_pairs[iw].second]->Multiplicity = ncopy_pairs[iw].first;
 
