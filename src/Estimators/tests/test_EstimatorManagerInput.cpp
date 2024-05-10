@@ -46,9 +46,9 @@ TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
   EstimatorManagerInput emi;
 
   {
-    using input = testing::ValidOneBodyDensityMatricesInput;
+    using Input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input::xml[input::VANILLA]);
+    bool okay = doc.parseFromString(Input::xml[Input::VANILLA]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
@@ -69,7 +69,7 @@ TEST_CASE("EstimatorManagerInput::readXML", "[estimators]")
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-  CHECK(emi.get_estimator_inputs().size() == 2);
+  CHECK(emi.get_estimator_inputs().size() == 3);
   CHECK(emi.get_scalar_estimator_inputs().size() == 5);
 
   // CHECK EMI throws if unparsable estimators are in input.
@@ -102,9 +102,9 @@ TEST_CASE("EstimatorManagerInput::moveFromEstimatorInputs", "[estimators]")
   EstimatorManagerInput emi;
 
   {
-    using input = testing::ValidOneBodyDensityMatricesInput;
+    using Input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input::xml[input::VANILLA]);
+    bool okay = doc.parseFromString(Input::xml[Input::VANILLA]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
@@ -131,12 +131,12 @@ TEST_CASE("EstimatorManagerInput::moveConstructor", "[estimators]")
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-  CHECK(emi.get_estimator_inputs().size() == 2);
+  CHECK(emi.get_estimator_inputs().size() == 3);
   CHECK(emi.get_scalar_estimator_inputs().size() == 5);
 
   EstimatorManagerInput emi_moved_to(std::move(emi));
 
-  CHECK(emi_moved_to.get_estimator_inputs().size() == 2);
+  CHECK(emi_moved_to.get_estimator_inputs().size() == 3);
   CHECK(emi_moved_to.get_scalar_estimator_inputs().size() == 5);
 }
 
@@ -149,8 +149,21 @@ TEST_CASE("EstimatorManagerInput::MergeConstructor", "[estimators]")
   EstimatorManagerInput emi_local(estimators_doc.getRoot());
   EstimatorManagerInput emi_merged{emi_global, emi_local};
 
-  CHECK(emi_merged.get_estimator_inputs().size() == 2);
-  CHECK(emi_merged.get_scalar_estimator_inputs().size() == 6);
+  CHECK(emi_merged.get_estimator_inputs().size() == 4);
+  CHECK(emi_merged.get_scalar_estimator_inputs().size() == 5);
+}
+
+TEST_CASE("EstimatorManagerInput::AddAnInputDirectly", "[estimators]")
+{
+  using namespace testing;
+  Libxml2Document estimators_doc        = createEstimatorManagerNewInputXML();
+  Libxml2Document global_estimators_doc = createEstimatorManagerNewGlobalInputXML();
+  EstimatorManagerInput emi_global(global_estimators_doc.getRoot());
+  EstimatorManagerInput emi_local(estimators_doc.getRoot());
+  EstimatorManagerInput emi_merged{emi_global, emi_local};
+
+  CHECK(emi_merged.get_estimator_inputs().size() == 4);
+  CHECK(emi_merged.get_scalar_estimator_inputs().size() == 5);
 }
 
 } // namespace qmcplusplus

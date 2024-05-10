@@ -88,6 +88,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
       else if (atype == "magnetizationdensity")
         appendEstimatorInput<MagnetizationDensityInput>(child);
+      else if (atype == "energydensity")
+        appendEstimatorInput<EnergyDensityInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");

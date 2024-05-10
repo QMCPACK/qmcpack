@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2021 QMCPACK developers.
+#// Copyright (c) 2023 QMCPACK developers.
 #//
 #// File developed by: Peter Doak, , doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -23,6 +23,7 @@ set(QMCEST_SRC
     ScalarEstimatorInputs.cpp
     SpinDensityInput.cpp
     MomentumDistributionInput.cpp
+    EnergyDensityInput.cpp
     EstimatorManagerBase.cpp
     EstimatorManagerNew.cpp
     EstimatorManagerCrowd.cpp
@@ -38,6 +39,7 @@ set(QMCEST_SRC
     PerParticleHamiltonianLoggerInput.cpp
     PerParticleHamiltonianLogger.cpp
     ReferencePointsInput.cpp
+    EnergyDensityEstimator.cpp
     NEReferencePoints.cpp
     NESpaceGrid.cpp)
 

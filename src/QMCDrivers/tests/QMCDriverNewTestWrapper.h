@@ -33,12 +33,14 @@ public:
                           QMCDriverInput&& input,
                           WalkerConfigurations& wc,
                           MCPopulation&& population,
+			  const PSPool& pset_pool,
                           Communicate* comm)
       : QMCDriverNew(test_project,
                      std::move(input),
                      std::nullopt,
                      wc,
                      std::move(population),
+		     pset_pool,
                      "QMCDriverTestWrapper::",
                      comm,
                      "QMCDriverNewTestWrapper")

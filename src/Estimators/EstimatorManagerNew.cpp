@@ -24,6 +24,7 @@
 #include "SelfHealingOverlap.h"
 #include "MagnetizationDensity.h"
 #include "PerParticleHamiltonianLogger.h"
+#include "EnergyDensityEstimator.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -92,12 +93,13 @@ bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Arg
 }
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
+EstimatorManagerNew::EstimatorManagerNew(Communicate* comm,
                                          EstimatorManagerInput&& emi,
                                          const QMCHamiltonian& H,
                                          const ParticleSet& pset,
+					 const PSPool& pset_pool,
                                          const TrialWaveFunction& twf)
-    : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
+    : RecordCount(0), my_comm_(comm), max4ascii(8), FieldWidth(20)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
@@ -107,7 +109,9 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
-          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank())))
+          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
+	  createEstimator<EnergyDensityInput>(est_input, pset_pool)
+	  ))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 
@@ -404,6 +408,11 @@ void EstimatorManagerNew::reduceOperatorEstimators()
 #else
       operator_recv_buffer = operator_send_buffer;
 #endif
+      // This is a crucial step where summed over weighted observable is normalized by the total weight.  For correctness this should be done
+      // only after the full weighted sum is done.
+      // i.e.  (1 / Sum(w_1 + ... + w_n)) * (w_1 * S_1 + ... + w_n * S_n) != (1/w_1) * w_1 * S_1 + ... + (1/w_n) * w_n * S_n
+      // for a general case where w's are not strictly ==
+      // Assumptions lead rank is 0, true for Ensembles?
       if (my_comm_->rank() == 0)
       {
         std::copy_n(operator_recv_buffer.begin(), data.size(), data.begin());

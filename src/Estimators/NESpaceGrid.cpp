@@ -420,12 +420,12 @@ void NESpaceGrid<REAL>::registerGrid(hdf_archive& file, int grid_index)
   oh.addProperty(const_cast<int&>(ndomains_), "ndomains", file);
   oh.addProperty(const_cast<int&>(nvalues_per_domain_), "nvalues_per_domain_", file);
   oh.addProperty(const_cast<Real&>(volume_), "volume", file);
-  oh.addProperty(const_cast<Matrix<Real>&>(domain_volumes_), "domain_volumes", file);
-  oh.addProperty(const_cast<Matrix<Real>&>(domain_centers_), "domain_centers", file);
+  oh.addProperty(const_cast<Matrix<FullPrecReal>&>(domain_volumes_), "domain_volumes", file);
+  oh.addProperty(const_cast<Matrix<FullPrecReal>&>(domain_centers_), "domain_centers", file);
   oh.addProperty(const_cast<Point&>(origin_), "origin", file);
-  oh.addProperty(const_cast<Tensor<Real, OHMMS_DIM>&>(axes_), "axes", file);
-  oh.addProperty(const_cast<Tensor<Real, OHMMS_DIM>&>(axinv_), "axinv", file);
-  oh.addProperty(const_cast<Matrix<Real>&>(domain_uwidths_), "domain_uwidths", file);
+  oh.addProperty(const_cast<Tensor<FullPrecReal, OHMMS_DIM>&>(axes_), "axes", file);
+  oh.addProperty(const_cast<Tensor<FullPrecReal, OHMMS_DIM>&>(axinv_), "axinv", file);
+  oh.addProperty(const_cast<Matrix<FullPrecReal>&>(domain_uwidths_), "domain_uwidths", file);
   //add dimensioned quantities
   std::map<std::string, int> axtmap;
   axtmap["x"]     = 0;
@@ -476,13 +476,13 @@ void NESpaceGrid<REAL>::registerGrid(hdf_archive& file, int grid_index)
       imat(d, 0) = ivar[i][d];
     oh.addProperty(const_cast<iMatrix&>(imat), iname[i], file);
   }
-  Matrix<Real> rmat;
+  Matrix<FullPrecReal> rmat;
   rmat.resize(OHMMS_DIM, 1);
   for (int i = 0; i < nr; i++)
   {
     for (int d = 0; d < OHMMS_DIM; d++)
       rmat(d, 0) = rvar[i][d];
-    oh.addProperty(const_cast<Matrix<Real>&>(rmat), rname[i], file);
+    oh.addProperty(const_cast<Matrix<FullPrecReal>&>(rmat), rname[i], file);
   }
   for (int d = 0; d < OHMMS_DIM; d++)
   {

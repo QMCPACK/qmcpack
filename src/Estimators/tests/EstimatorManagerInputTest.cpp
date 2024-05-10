@@ -12,6 +12,7 @@
 
 #include "catch.hpp"
 
+#include "ValidEnergyDensityInput.h"
 #include "ValidOneBodyDensityMatricesInput.h"
 #include "ValidSpinDensityInput.h"
 #include "ValidMomentumDistributionInput.h"
@@ -60,6 +61,16 @@ Libxml2Document createEstimatorManagerNewInputXML()
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
   for (auto& input_xml : scalar_input::xml)
+  {
+    Libxml2Document doc;
+    using Input = testing::ValidEnergyDensityInput;
+    bool okay = doc.parseFromString(Input::xml[Input::valid::CELL]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
+  for (auto& input_xml : valid_scalar_estimator_input_sections)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);

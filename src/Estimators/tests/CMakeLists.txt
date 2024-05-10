@@ -31,6 +31,7 @@ set(SRCS
     test_trace_manager.cpp
     EstimatorTesting.cpp
     GenerateRandomParticleSets.cpp
+    MockGoldWalkerElements.cpp
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
@@ -54,6 +55,8 @@ set(SRCS
     test_EstimatorManagerCrowd.cpp
     test_SpaceGridInput.cpp
     test_NESpaceGrid.cpp
+    test_EnergyDensityInput.cpp
+    test_EnergyDensityEstimator.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
