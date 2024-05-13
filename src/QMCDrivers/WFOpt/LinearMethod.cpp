@@ -195,6 +195,13 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
   {
     APP_ABORT("Invalid Matrix Diagonalization Function!");
   }
+
+  // Filter and sort to find desired eigenvalue.
+  // Filter accepts eigenvalues between E_0 and E_0 - 100.0,
+  // where E_0 is H(0,0), the current estimate for the VMC energy.
+  // Sort searches for eigenvalue closest to E_0 - 2.0
+
+  bool found_any_eigenvalue = false;
   std::vector<std::pair<Real, int>> mappedEigenvalues(Nl);
   for (int i = 0; i < Nl; i++)
   {
@@ -203,11 +210,42 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
     {
       mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
       mappedEigenvalues[i].second = i;
+      found_any_eigenvalue        = true;
     }
     else
     {
       mappedEigenvalues[i].first  = std::numeric_limits<Real>::max();
       mappedEigenvalues[i].second = i;
+    }
+  }
+
+  // Sometimes there is no eigenvalue less than E_0, but there is one slightly higher.
+  // Run filter and sort again, except this time accept eigenvalues between E_0 + 100.0 and E_0 - 100.0.
+  // Since it's already been determined there are no eigenvalues below E_0, the sort
+  // finds the eigenvalue closest to E_0.
+  if (!found_any_eigenvalue)
+  {
+    app_log() << "No eigenvalues passed initial filter. Trying broader 100 a.u. filter" << std::endl;
+
+    bool found_higher_eigenvalue;
+    for (int i = 0; i < Nl; i++)
+    {
+      Real evi(alphar[i]);
+      if ((evi < zerozero + 1e2) && (evi > (zerozero - 1e2)))
+      {
+        mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
+        mappedEigenvalues[i].second = i;
+        found_higher_eigenvalue     = true;
+      }
+      else
+      {
+        mappedEigenvalues[i].first  = std::numeric_limits<Real>::max();
+        mappedEigenvalues[i].second = i;
+      }
+    }
+    if (!found_higher_eigenvalue)
+    {
+      app_log() << "No eigenvalues passed second filter. Optimization is likely to fail." << std::endl;
     }
   }
   std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
