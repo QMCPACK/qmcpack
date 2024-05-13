@@ -108,8 +108,6 @@ public:
   DualMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
 
 private:
-  /// legacy single walker matrix inversion engine
-  DiracMatrix<FullPrecValue> detEng;
   /* inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
    * Only NumOrbitals x NumOrbitals subblock has meaningful data
    * The number of rows is equal to NumOrbitals
