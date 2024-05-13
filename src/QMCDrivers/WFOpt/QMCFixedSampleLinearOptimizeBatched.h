@@ -197,6 +197,8 @@ private:
   std::bitset<2> accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
+  /// SR projection timestep
+  RealType sr_tau;
 
   // ------------------------------------
   // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers

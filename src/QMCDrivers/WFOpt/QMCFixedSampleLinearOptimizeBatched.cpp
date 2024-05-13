@@ -81,6 +81,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       shift_s_input(1.00),
       accept_history(3),
       shift_s_base(4.0),
+      sr_tau(0.01),
       MinMethod("OneShiftOnly"),
       do_output_matrices_csv_(false),
       do_output_matrices_hdf_(false),
@@ -112,6 +113,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(param_tol, "alloweddifference");
   m_param.add(shift_i_input, "shift_i");
   m_param.add(shift_s_input, "shift_s");
+  m_param.add(sr_tau, "sr_tau");
   // options_LMY_
   m_param.add(options_LMY_.targetExcited, "options_LMY_.targetExcited");
   m_param.add(options_LMY_.block_lm, "options_LMY_.block_lm");
@@ -1847,7 +1849,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       //initial guess is zero, so S*x_0 = 0
       for (int i = 0; i < numParams; i++)
       {
-        rk[i] = -bestShift_i * hamVec(i + 1, 0);
+        rk[i] = -sr_tau * hamVec(i + 1, 0);
         dk += rk[i] * rk[i];
       }
       eps            = dk / numParams * thr;
