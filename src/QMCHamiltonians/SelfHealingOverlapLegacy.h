@@ -17,6 +17,9 @@
 
 namespace qmcplusplus
 {
+/** Class that collects MSD coefficient values via the Self-Healing overlap
+ *    (legacy driver version) 
+ */
 class SelfHealingOverlapLegacy : public OperatorBase
 {
 public:
