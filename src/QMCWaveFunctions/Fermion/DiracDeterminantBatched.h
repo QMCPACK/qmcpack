@@ -105,7 +105,9 @@ public:
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<Value>& ratios) override;
 
-  void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<Value>& ratios) override;
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                            std::vector<Value>& ratios) override;
 
   void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
@@ -239,7 +241,7 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios) override;
 
-  DET_ENGINE& get_det_engine() { return det_engine_; }
+  const auto& get_psiMinv() const { return psiMinv_; }
 
   /** @defgroup LegacySingleData
    *  @brief    Single Walker Data Members of Legacy OO design
@@ -250,6 +252,12 @@ public:
    *  @ingroup LegacySingleData
    *  @{
    */
+  /* inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
+   * Only NumOrbitals x NumOrbitals subblock has meaningful data
+   * The number of rows is equal to NumOrbitals
+   * The number of columns in each row is padded to a multiple of QMC_SIMD_ALIGNMENT
+   */
+  DualMatrix<Value> psiMinv_;
   /// fused memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   DualVGLVector psiM_vgl;
   /** psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
