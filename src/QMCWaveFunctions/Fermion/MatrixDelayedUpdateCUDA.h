@@ -25,7 +25,6 @@
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "DualAllocatorAliases.hpp"
 #include "DiracMatrixComputeCUDA.hpp"
-#include "ResourceCollection.h"
 #include "WaveFunctionTypes.hpp"
 #include "QueueAliases.hpp"
 
@@ -69,8 +68,8 @@ public:
 
   struct MultiWalkerResource
   {
-  // CUDA stream, cublas handle object
-  CUDALinearAlgebraHandles cuda_handles;
+    // CUDA stream, cublas handle object
+    CUDALinearAlgebraHandles cuda_handles;
 
     // constant array value VALUE(1)
     UnpinnedDualVector<Value> cone_vec;
@@ -95,28 +94,26 @@ public:
     // scratch space for keeping one row of Ainv
     UnpinnedDualVector<Value> mw_rcopy;
 
-  /** a bad smell */
-  void resize_fill_constant_arrays(size_t nw)
-  {
-    if (cone_vec.size() < nw)
+    void resize_fill_constant_arrays(size_t nw)
     {
-      // cone
-      cone_vec.resize(nw);
-      std::fill_n(cone_vec.data(), nw, Value(1));
-      cone_vec.updateTo();
-      // cminusone
-      cminusone_vec.resize(nw);
-      std::fill_n(cminusone_vec.data(), nw, Value(-1));
-      cminusone_vec.updateTo();
-      // czero
-      czero_vec.resize(nw);
-      std::fill_n(czero_vec.data(), nw, Value(0));
-      czero_vec.updateTo();
+      if (cone_vec.size() < nw)
+      {
+        // cone
+        cone_vec.resize(nw);
+        std::fill_n(cone_vec.data(), nw, Value(1));
+        cone_vec.updateTo();
+        // cminusone
+        cminusone_vec.resize(nw);
+        std::fill_n(cminusone_vec.data(), nw, Value(-1));
+        cminusone_vec.updateTo();
+        // czero
+        czero_vec.resize(nw);
+        std::fill_n(czero_vec.data(), nw, Value(0));
+        czero_vec.updateTo();
+      }
     }
-  }
 
-CUDALinearAlgebraHandles& getLAhandles() { return cuda_handles; }
-
+    CUDALinearAlgebraHandles& getLAhandles() { return cuda_handles; }
   };
 
 private:
@@ -169,7 +166,8 @@ private:
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron
    */
-  static void mw_prepareInvRow(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_prepareInvRow(const RefVectorWithLeader<This_t>& engines,
+                               MultiWalkerResource& mw_rsc,
                                const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                const int rowchanged)
   {
@@ -252,7 +250,8 @@ private:
    *  \param[in] phi_vgl_v          multiple walker orbital VGL
    *  \param[inout] ratios
    */
-  static void mw_updateRow(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
+                           MultiWalkerResource& mw_rsc,
                            const RefVector<DualMatrix<Value>>& psiMinv_refs,
                            const int rowchanged,
                            const std::vector<Value*>& psiM_g_list,
@@ -368,7 +367,8 @@ public:
 
   // prepare invRow and compute the old gradients.
   template<typename GT>
-  static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines,
+                          MultiWalkerResource& mw_rsc,
                           const RefVector<DualMatrix<Value>>& psiMinv_refs,
                           const std::vector<const Value*>& dpsiM_row_list,
                           const int rowchanged,
@@ -417,7 +417,8 @@ public:
   }
 
   template<typename GT>
-  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
                                   const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                   const std::vector<const Value*>& dpsiM_row_list,
                                   OffloadMatrix<Complex>& mw_dspin,
@@ -486,7 +487,8 @@ public:
    *  \param[in] phi_vgl_v          multiple walker orbital VGL
    *  \param[inout] ratios
    */
-  static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
                                   const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                   const int rowchanged,
                                   const std::vector<Value*>& psiM_g_list,
@@ -626,7 +628,8 @@ public:
   /** update the full Ainv and reset delay_count
    * @param Ainv inverse matrix
    */
-  static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines,
+                              MultiWalkerResource& mw_rsc,
                               const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {
     auto& engine_leader = engines.getLeader();
@@ -719,7 +722,8 @@ public:
   /** return invRow host or device pointers based on on_host request
    * prepare invRow if not already.
    */
-  static std::vector<const Value*> mw_getInvRow(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static std::vector<const Value*> mw_getInvRow(const RefVectorWithLeader<This_t>& engines,
+                                                MultiWalkerResource& mw_rsc,
                                                 const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                                 const int row_id,
                                                 bool on_host)
@@ -768,7 +772,8 @@ public:
   }
 
   /// transfer Ainv to the host
-  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
                                   const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {
     auto& engine_leader = engines.getLeader();
@@ -786,7 +791,8 @@ public:
    * @param row_begin first row to copy
    * @param row_size the number of rows to be copied
    */
-  static void mw_transferVGL_D2H(This_t& engine_leader, MultiWalkerResource& mw_rsc,
+  static void mw_transferVGL_D2H(This_t& engine_leader,
+                                 MultiWalkerResource& mw_rsc,
                                  const RefVector<DualVGLVector<Value>>& psiM_vgl_list,
                                  size_t row_begin,
                                  size_t row_size)
@@ -806,7 +812,8 @@ public:
    * @param row_begin first row to copy
    * @param row_size the number of rows to be copied
    */
-  static void mw_transferVGL_H2D(This_t& engine_leader, MultiWalkerResource& mw_rsc,
+  static void mw_transferVGL_H2D(This_t& engine_leader,
+                                 MultiWalkerResource& mw_rsc,
                                  const RefVector<DualVGLVector<Value>>& psiM_vgl_list,
                                  size_t row_begin,
                                  size_t row_size)

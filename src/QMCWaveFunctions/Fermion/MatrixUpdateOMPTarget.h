@@ -18,7 +18,6 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReductionComplex.hpp"
-#include "ResourceCollection.h"
 #include "DiracMatrixComputeOMPTarget.hpp"
 #include "WaveFunctionTypes.hpp"
 
@@ -77,34 +76,34 @@ public:
     // scratch space for keeping one row of Ainv
     UnpinnedOffloadVector<Value> mw_rcopy;
 
-  typename DetInverter::HandleResource dummy;
+    typename DetInverter::HandleResource dummy;
 
-  void resize_fill_constant_arrays(size_t nw)
-  {
-    if (cone_vec.size() < nw)
+    void resize_fill_constant_arrays(size_t nw)
     {
-      cone_vec.resize(nw);
-      czero_vec.resize(nw);
-      std::fill_n(cone_vec.data(), nw, Value(1));
-      std::fill_n(czero_vec.data(), nw, Value(0));
-      Value* cone_ptr = cone_vec.data();
-      PRAGMA_OFFLOAD("omp target update to(cone_ptr[:nw])")
-      Value* czero_ptr = czero_vec.data();
-      PRAGMA_OFFLOAD("omp target update to(czero_ptr[:nw])")
+      if (cone_vec.size() < nw)
+      {
+        cone_vec.resize(nw);
+        czero_vec.resize(nw);
+        std::fill_n(cone_vec.data(), nw, Value(1));
+        std::fill_n(czero_vec.data(), nw, Value(0));
+        Value* cone_ptr = cone_vec.data();
+        PRAGMA_OFFLOAD("omp target update to(cone_ptr[:nw])")
+        Value* czero_ptr = czero_vec.data();
+        PRAGMA_OFFLOAD("omp target update to(czero_ptr[:nw])")
+      }
     }
-  }
 
-  void resize_scratch_arrays(int norb, size_t nw)
-  {
-    size_t total_size = norb * nw;
-    if (mw_temp.size() < total_size)
+    void resize_scratch_arrays(int norb, size_t nw)
     {
-      mw_temp.resize(total_size);
-      mw_rcopy.resize(total_size);
+      size_t total_size = norb * nw;
+      if (mw_temp.size() < total_size)
+      {
+        mw_temp.resize(total_size);
+        mw_rcopy.resize(total_size);
+      }
     }
-  }
 
-  auto& getLAhandles() { return dummy; }
+    auto& getLAhandles() { return dummy; }
   };
 
   /// scratch space for rank-1 update
@@ -120,7 +119,8 @@ public:
   inline void resize(int norb, int delay) {}
 
   template<typename GT>
-  static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines,
+                          MultiWalkerResource& mw_rsc,
                           const RefVector<DualMatrix<Value>>& psiMinv_refs,
                           const std::vector<const Value*>& dpsiM_row_list,
                           int rowchanged,
@@ -172,7 +172,8 @@ public:
   }
 
   template<typename GT>
-  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
                                   const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                   const std::vector<const Value*>& dpsiM_row_list,
                                   OffloadMatrix<Complex>& mw_dspin,
@@ -293,7 +294,8 @@ public:
 
   /** The potential for mayhem here without a unit test is great.
    */
-  static void mw_updateRow(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
+                           MultiWalkerResource& mw_rsc,
                            const RefVector<DualMatrix<Value>>& psiMinv_refs,
                            int rowchanged,
                            const std::vector<Value*>& psiM_g_list,
@@ -399,7 +401,8 @@ public:
     }
   }
 
-  static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
                                   const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                   const int rowchanged,
                                   const std::vector<Value*>& psiM_g_list,
@@ -414,11 +417,13 @@ public:
   /** update the full Ainv and reset delay_count
    * @param Ainv inverse matrix
    */
-  inline static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  inline static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines,
+                                     MultiWalkerResource& mw_rsc,
                                      const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {}
 
-  std::vector<const Value*> static mw_getInvRow(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  std::vector<const Value*> static mw_getInvRow(const RefVectorWithLeader<This_t>& engines,
+                                                MultiWalkerResource& mw_rsc,
                                                 const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                                 const int row_id,
                                                 bool on_host)
@@ -441,7 +446,8 @@ public:
   }
 
   /// transfer Ainv to the host
-  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
+  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
                                   const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {
     for (DualMatrix<Value>& psiMinv : psiMinv_refs)
@@ -454,7 +460,8 @@ public:
    * @param row_begin first row to copy
    * @param row_size the number of rows to be copied
    */
-  static void mw_transferVGL_D2H(This_t& engine_leader, MultiWalkerResource& mw_rsc,
+  static void mw_transferVGL_D2H(This_t& engine_leader,
+                                 MultiWalkerResource& mw_rsc,
                                  const RefVector<OffloadVGLVector<Value>>& psiM_vgl_list,
                                  size_t row_begin,
                                  size_t row_size)
@@ -476,7 +483,8 @@ public:
    * @param row_begin first row to copy
    * @param row_size the number of rows to be copied
    */
-  static void mw_transferVGL_H2D(This_t& engine_leader, MultiWalkerResource& mw_rsc,
+  static void mw_transferVGL_H2D(This_t& engine_leader,
+                                 MultiWalkerResource& mw_rsc,
                                  const RefVector<OffloadVGLVector<Value>>& psiM_vgl_list,
                                  size_t row_begin,
                                  size_t row_size)
