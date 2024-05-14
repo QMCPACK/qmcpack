@@ -1117,6 +1117,12 @@ def test_job_run_command():
         ('ghost'          , 'n2_t2'         ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
         ('ghost'          , 'n2_t2_e'       ) : 'mpiexec --bind-to none -n 36 --npernode 18 test.x',
         ('ghost'          , 'n2_t2_p2'      ) : 'mpiexec --bind-to none -n 4 --npernode 2 test.x',
+        ('improv'         , 'n1'            ) : 'mpirun --bind-to socket --map-by ppr:64:package -np 128 test.x',
+        ('improv'         , 'n1_p1'         ) : 'mpirun --bind-to socket --map-by ppr:None:package -np 1 test.x',
+        ('improv'         , 'n2'            ) : 'mpirun --bind-to socket --map-by ppr:64:package -np 256 test.x',
+        ('improv'         , 'n2_t2'         ) : 'mpirun --bind-to socket --map-by ppr:32:package -np 128 test.x',
+        ('improv'         , 'n2_t2_e'       ) : 'mpirun --bind-to socket --map-by ppr:32:package -np 128 test.x',
+        ('improv'         , 'n2_t2_p2'      ) : 'mpirun --bind-to socket --map-by ppr:1:package -np 4 test.x',
         ('jaguar'         , 'n1'            ) : 'aprun -n 16 test.x',
         ('jaguar'         , 'n1_p1'         ) : 'aprun -n 1 test.x',
         ('jaguar'         , 'n2'            ) : 'aprun -n 32 test.x',
@@ -1622,6 +1628,21 @@ aprun -n 32 test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 mpiexec --bind-to none -n 72 --npernode 36 test.x''',
+        improv = '''#!/bin/bash -l
+#PBS -l select=2:ncpus=128:mpiprocs=256
+#PBS -l walltime=06:30:00
+#PBS -A ABC123
+#PBS -q compute
+#PBS -N jobname
+#PBS -k doe
+#PBS -o test.out
+#PBS -e test.err
+
+cd ${PBS_O_WORKDIR}
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpirun --bind-to socket --map-by ppr:64:package -np 256 test.x''',
         jaguar = '''#!/bin/bash
 #PBS -A ABC123
 #PBS -q batch

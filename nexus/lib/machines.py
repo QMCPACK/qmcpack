@@ -1836,7 +1836,7 @@ class Supercomputer(Machine):
 
     def setup_environment(self,job):
         env = ''
-        if job.env!=None:
+        if job.env is not None:
             for name,val in job.env.items():
                 env +='export {0}={1}\n'.format(name,val)
             #end for
@@ -2026,9 +2026,7 @@ export MPI_MSGS_PER_PROC=32768
 
 
 class Golub(Supercomputer):
-
     name = 'golub'
-
     def write_job_header(self,job):
         if job.queue is None:
             job.queue='secondary'
@@ -2049,8 +2047,7 @@ cd ${PBS_O_WORKDIR}
 '''
         return c
     #end def write_job_header
-
-#end class Taub
+#end class Golub
 
 
 
@@ -2875,6 +2872,8 @@ class Solo(SnlMachine):
     name = 'solo'
 #end class Solo
 
+
+
 # machines at LRZ  https://www.lrz.de/english/
 class SuperMUC(Supercomputer):
     name = 'supermuc'
@@ -3095,7 +3094,7 @@ class Stampede2(Supercomputer):
 #end class Stampede2
 
 
-
+# CADES at ORNL
 class CadesMoab(Supercomputer):
     name = 'cades_moab'
     requires_account = True
@@ -3173,6 +3172,7 @@ class CadesSlurm(Supercomputer):
 
 
 
+# Summit at ORNL
 class Summit(Supercomputer):
 
     name = 'summit'
@@ -3339,6 +3339,7 @@ class Rhea(Supercomputer):
 #end class Rhea
 
 
+# Andes at ORNL
 ## Added 19/03/2021 by A Zen
 class Andes(Supercomputer):
 
@@ -3537,6 +3538,7 @@ class Tomcat3(Supercomputer):
 
 
 
+# Polaris at ANL
 class Polaris(Supercomputer):
     name = 'polaris'
     requires_account = True
@@ -3598,6 +3600,57 @@ class Polaris(Supercomputer):
     #end def specialized_bundle_commands
 #end class Polaris
 
+
+
+# Improv at ANL (LCRC)
+class Improv(Supercomputer):
+    name = 'improv'
+    requires_account = True
+    batch_capable    = True
+
+    def post_process_job(self,job):
+        if len(job.run_options)==0: 
+            opt = obj(
+                mapby   = '--map-by ppr:{}:package'.format(job.processes_per_proc),
+                bindto = '--bind-to socket',
+                )
+            job.run_options.add(**opt)
+        #end if
+        if job.threads>1 and job.env is None:
+            job.set_environment(
+                OMP_PLACES    = 'cores',
+                OMP_PROC_BIND = 'close',
+                )
+        #end if
+
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'compute'
+        #end if
+        c= '#!/bin/bash -l\n'
+        if job.threads>1:
+            c+='#PBS -l select={}:ncpus=128:mpiprocs={}:ompthreads={}\n'.format(job.nodes,job.processes_per_node,job.threads)
+        else:
+            c+='#PBS -l select={}:ncpus=128:mpiprocs={}\n'.format(job.nodes,job.processes)
+        #end if
+        c+='#PBS -l walltime={}\n'.format(job.pbs_walltime())
+        c+='#PBS -A {}\n'.format(job.account)
+        c+='#PBS -q {}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -k doe\n'
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='\n'
+        c+='cd ${PBS_O_WORKDIR}\n'
+        return c
+    #end def write_job_header
+#end class Improv
+
+
+
+# Kagayaki at JAIST
 ## Added 05/04/2023 by Tom Ichibha
 class Kagayaki(Supercomputer):
     name = 'kagayaki'
@@ -3628,7 +3681,9 @@ class Kagayaki(Supercomputer):
         c+='export OMP_NUM_THREADS=' + str(job.threads) + '\n'
         return c
     #end def write_job_header                                                                       
-#end class CadesMoab
+#end class Kagayaki
+
+
 
 
 #Known machines
@@ -3638,7 +3693,6 @@ for cores in range(1,128+1):
 #end for
 #  supercomputers and clusters
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
-Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    'qdel')
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
@@ -3657,15 +3711,15 @@ Lonestar(    22656,   2,     6,   12,  128,  'ibrun',     'qsub',   'qstat',    
 Matisse(        20,   2,     8,   64,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Komodo(         24,   2,     6,   48,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Amos(         5120,   1,    16,   16,  128,   'srun',   'sbatch',   'sacct', 'scancel')
-Chama(        1232,   2,     8,   64, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Uno(           168,   2,     8,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Eclipse(      1488,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Attaway(      1488,   2,    18,  192, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Manzano(      1488,   2,    24,  192, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Ghost(         740,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Amber(        1496,   2,    56,  256, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Skybridge(    1848,   2,     8,   64, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Solo(          374,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
+Chama(        1232,   2,     8,   64, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Uno(           168,   2,     8,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Eclipse(      1488,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Attaway(      1488,   2,    18,  192, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Manzano(      1488,   2,    24,  192, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Ghost(         740,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Amber(        1496,   2,    56,  256, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Skybridge(    1848,   2,     8,   64, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Solo(          374,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
@@ -3677,7 +3731,9 @@ Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'sc
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    'qdel')
+Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    'qdel')
 Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
+Improv(        825,   2,    64,  256,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 
 
 #machine accessor functions
