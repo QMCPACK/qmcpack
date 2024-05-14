@@ -308,5 +308,24 @@ LinearMethod::Real LinearMethod::getNonLinearRescale(std::vector<Real>& dP,
   return rescale;
 }
 
+LinearMethod::Real LinearMethod::getNonLinearRescale(std::vector<Real>& dP,
+                                                     std::vector<Real>& SdP,
+                                                     const QMCCostFunctionBase& optTarget) const
+{
+  int first(0), last(0);
+  getNonLinearRange(first, last, optTarget);
+  if (first == last)
+    return 1.0;
+  Real rescale(1.0);
+  Real xi(0.5);
+  Real D(0.0);
+  for (int i = first; i < last; i++)
+    D += SdP[i + 1] * dP[i + 1];
+  rescale = (1 - xi) * D / ((1 - xi) + xi * std::sqrt(1 + D));
+  rescale = 1.0 / (1.0 - rescale);
+  //     app_log()<<"rescale: "<<rescale<< std::endl;
+  return rescale;
+}
+
 
 } // namespace qmcplusplus
