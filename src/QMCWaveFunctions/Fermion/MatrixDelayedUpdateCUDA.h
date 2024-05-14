@@ -69,6 +69,7 @@ public:
   struct MultiWalkerResource
   {
     // CUDA stream, cublas handle object
+    compute::Queue<PlatformKind::CUDA> queue;
     CUDALinearAlgebraHandles cuda_handles;
 
     // constant array value VALUE(1)
@@ -93,6 +94,8 @@ public:
     UnpinnedDualVector<Value> mw_temp;
     // scratch space for keeping one row of Ainv
     UnpinnedDualVector<Value> mw_rcopy;
+
+    MultiWalkerResource(): cuda_handles(queue.getNative()) {}
 
     void resize_fill_constant_arrays(size_t nw)
     {
@@ -173,8 +176,8 @@ private:
   {
     auto& engine_leader              = engines.getLeader();
     auto& cuda_handles               = mw_rsc.cuda_handles;
-    auto& queue                      = cuda_handles.queue;
     auto& h_cublas                   = cuda_handles.h_cublas;
+    auto& queue                      = mw_rsc.queue;
     auto& cminusone_vec              = mw_rsc.cminusone_vec;
     auto& cone_vec                   = mw_rsc.cone_vec;
     auto& czero_vec                  = mw_rsc.czero_vec;
@@ -271,7 +274,7 @@ private:
     if (n_accepted == 0)
       return;
 
-    auto& queue                 = mw_rsc.cuda_handles.queue;
+    auto& queue                 = mw_rsc.queue;
     auto& updateRow_buffer_H2D  = mw_rsc.updateRow_buffer_H2D;
     auto& mw_temp               = mw_rsc.mw_temp;
     auto& mw_rcopy              = mw_rsc.mw_rcopy;
@@ -378,7 +381,7 @@ public:
     if (!engine_leader.isSM1())
       mw_prepareInvRow(engines, mw_rsc, psiMinv_refs, rowchanged);
 
-    auto& queue               = mw_rsc.cuda_handles.queue;
+    auto& queue               = mw_rsc.queue;
     auto& evalGrad_buffer_H2D = mw_rsc.evalGrad_buffer_H2D;
     auto& grads_value_v       = mw_rsc.grads_value_v;
 
@@ -507,7 +510,7 @@ public:
       return;
     }
 
-    auto& queue                       = mw_rsc.cuda_handles.queue;
+    auto& queue                       = mw_rsc.queue;
     auto& cminusone_vec               = mw_rsc.cminusone_vec;
     auto& cone_vec                    = mw_rsc.cone_vec;
     auto& czero_vec                   = mw_rsc.czero_vec;
@@ -637,7 +640,7 @@ public:
     if (delay_count == 0)
       return;
     // update the inverse matrix
-    auto& queue                = mw_rsc.cuda_handles.queue;
+    auto& queue                = mw_rsc.queue;
     auto& h_cublas             = mw_rsc.cuda_handles.h_cublas;
     auto& updateInv_buffer_H2D = mw_rsc.updateInv_buffer_H2D;
     const int norb             = engine_leader.invRow.size();
@@ -729,7 +732,7 @@ public:
                                                 bool on_host)
   {
     auto& engine_leader = engines.getLeader();
-    auto& queue         = mw_rsc.cuda_handles.queue;
+    auto& queue         = mw_rsc.queue;
     if (engine_leader.isSM1())
       queue.sync();
     else if (engine_leader.invRow_id != row_id)
@@ -777,7 +780,7 @@ public:
                                   const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {
     auto& engine_leader = engines.getLeader();
-    auto& queue         = mw_rsc.cuda_handles.queue;
+    auto& queue         = mw_rsc.queue;
     engine_leader.guard_no_delay();
 
     for (DualMatrix<Value>& psiMinv : psiMinv_refs)
@@ -797,7 +800,7 @@ public:
                                  size_t row_begin,
                                  size_t row_size)
   {
-    auto& queue = mw_rsc.cuda_handles.queue;
+    auto& queue = mw_rsc.queue;
     for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
     {
       const size_t stride = psiM_vgl.capacity();
@@ -818,7 +821,7 @@ public:
                                  size_t row_begin,
                                  size_t row_size)
   {
-    auto& queue = mw_rsc.cuda_handles.queue;
+    auto& queue = mw_rsc.queue;
     for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
     {
       const size_t stride = psiM_vgl.capacity();

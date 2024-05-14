@@ -12,33 +12,28 @@
 #ifndef QMCPLUSPLUS_CUDA_LINEAR_ALGEBRA_HANDLES_H
 #define QMCPLUSPLUS_CUDA_LINEAR_ALGEBRA_HANDLES_H
 
-#include "ResourceCollection.h"
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
-#include "CUDA/QueueCUDA.hpp"
 
 namespace qmcplusplus
 {
-struct CUDALinearAlgebraHandles : public Resource
+struct CUDALinearAlgebraHandles
 {
-  // CUDA specific variables
-  compute::Queue<PlatformKind::CUDA> queue;
+  // cuda stream, not owned, reference-only
+  cudaStream_t h_stream;
+  // cublas handle
   cublasHandle_t h_cublas;
 
-  CUDALinearAlgebraHandles() : Resource("CUDALinearAlgebraHandles")
+  CUDALinearAlgebraHandles(cudaStream_t stream): h_stream(stream)
   {
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, queue.getNative()), "cublasSetStream failed!");
+    cublasErrorCheck(cublasSetStream(h_cublas, stream), "cublasSetStream failed!");
   }
-
-  CUDALinearAlgebraHandles(const CUDALinearAlgebraHandles&) : CUDALinearAlgebraHandles() {}
 
   ~CUDALinearAlgebraHandles()
   {
     cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
   }
-
-  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<CUDALinearAlgebraHandles>(*this); }
 };
 }
 #endif

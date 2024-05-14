@@ -29,6 +29,7 @@
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/DualAllocatorAliases.hpp"
+#include "Platforms/CUDA/QueueCUDA.hpp"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 
 // Legacy CPU inversion for temporary testing
@@ -72,7 +73,8 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
   params.n          = 1024;
   params.batch_size = 4;
 
-  CUDALinearAlgebraHandles cuda_handles;
+  compute::Queue<PlatformKind::CUDA> queue;
+  CUDALinearAlgebraHandles cuda_handles(queue.getNative());
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -124,7 +126,8 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   params.n          = 256;
   params.batch_size = 10;
 
-  CUDALinearAlgebraHandles cuda_handles;
+  compute::Queue<PlatformKind::CUDA> queue;
+  CUDALinearAlgebraHandles cuda_handles(queue.getNative());
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -177,7 +180,8 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
   params.n          = 256;
   params.batch_size = 10;
 
-  CUDALinearAlgebraHandles cuda_handles;
+  compute::Queue<PlatformKind::CUDA> queue;
+  CUDALinearAlgebraHandles cuda_handles(queue.getNative());
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -235,7 +239,8 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunct
   params.n          = 1024;
   params.batch_size = 4;
 
-  CUDALinearAlgebraHandles cuda_handles;
+  compute::Queue<PlatformKind::CUDA> queue;
+  CUDALinearAlgebraHandles cuda_handles(queue.getNative());
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
