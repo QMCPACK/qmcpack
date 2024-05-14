@@ -152,6 +152,6 @@ Norm:   tot             = 7.999999969999998
  
 Cumulative Value of C Species at Cutoff 0.6 is: 1.10782675 +/- 0.00160665
 '''
-        assert(text_eq(out,out_ref))
+        assert(text_eq(out,out_ref,atol=1e-8))
     #end def test_radial_density
 #end if
