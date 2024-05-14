@@ -21,7 +21,7 @@ namespace compute
 {
 
 template<PlatformKind PL>
-class BLAS;
+class BLASHandle;
 
 }
 

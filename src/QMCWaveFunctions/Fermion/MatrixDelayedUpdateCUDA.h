@@ -70,7 +70,7 @@ public:
   {
     // CUDA stream, cublas handle object
     compute::Queue<PlatformKind::CUDA> queue;
-    compute::BLAS<PlatformKind::CUDA> blas_handle;
+    compute::BLASHandle<PlatformKind::CUDA> blas_handle;
 
     // constant array value VALUE(1)
     UnpinnedDualVector<Value> cone_vec;

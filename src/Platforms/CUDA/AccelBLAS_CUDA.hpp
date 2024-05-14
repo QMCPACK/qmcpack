@@ -22,7 +22,7 @@ namespace qmcplusplus
 namespace compute
 {
 template<>
-class BLAS<PlatformKind::CUDA>
+class BLASHandle<PlatformKind::CUDA>
 {
   public:
   // cuda stream, not owned, reference-only
@@ -30,19 +30,19 @@ class BLAS<PlatformKind::CUDA>
   // cublas handle
   cublasHandle_t h_cublas;
 
-  BLAS(Queue<PlatformKind::CUDA>& queue): h_stream(queue.getNative())
+  BLASHandle(Queue<PlatformKind::CUDA>& queue): h_stream(queue.getNative())
   {
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
     cublasErrorCheck(cublasSetStream(h_cublas, h_stream), "cublasSetStream failed!");
   }
 
-  ~BLAS()
+  ~BLASHandle()
   {
     cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
   }
 };
 }
 
-using CUDALinearAlgebraHandles = compute::BLAS<PlatformKind::CUDA>;
+using CUDALinearAlgebraHandles = compute::BLASHandle<PlatformKind::CUDA>;
 }
 #endif
