@@ -77,6 +77,8 @@ public:
     // scratch space for keeping one row of Ainv
     UnpinnedOffloadVector<Value> mw_rcopy;
 
+  typename DetInverter::HandleResource dummy;
+
   void resize_fill_constant_arrays(size_t nw)
   {
     if (cone_vec.size() < nw)
@@ -102,14 +104,13 @@ public:
     }
   }
 
+  auto& getLAhandles() { return dummy; }
   };
 
   /// scratch space for rank-1 update
   UnpinnedOffloadVector<Value> temp;
   // scratch space for keeping one row of Ainv
   UnpinnedOffloadVector<Value> rcopy;
-
-  typename DetInverter::HandleResource dummy;
 
 public:
   /** resize the internal storage
@@ -490,8 +491,6 @@ public:
     // The only tasks being waited on here are the psiM_vgl updates
     PRAGMA_OFFLOAD("omp taskwait")
   }
-
-  auto& getLAhandles() { return dummy; }
 };
 } // namespace qmcplusplus
 

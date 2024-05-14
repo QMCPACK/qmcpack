@@ -69,6 +69,9 @@ public:
 
   struct MultiWalkerResource
   {
+  // CUDA stream, cublas handle object
+  CUDALinearAlgebraHandles cuda_handles;
+
     // constant array value VALUE(1)
     UnpinnedDualVector<Value> cone_vec;
     // constant array value VALUE(-1)
@@ -112,6 +115,8 @@ public:
     }
   }
 
+CUDALinearAlgebraHandles& getLAhandles() { return cuda_handles; }
+
   };
 
 private:
@@ -147,12 +152,6 @@ private:
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
-  /** @ingroup Resources
-   *  @{ */
-  // CUDA stream, cublas handle object
-  ResourceHandle<CUDALinearAlgebraHandles> cuda_handles_;
-  /**}@ */
-
   /** ensure no previous delay left.
    *  This looks like it should be an assert
    */
@@ -175,7 +174,7 @@ private:
                                const int rowchanged)
   {
     auto& engine_leader              = engines.getLeader();
-    auto& cuda_handles               = engine_leader.cuda_handles_.getResource();
+    auto& cuda_handles               = mw_rsc.cuda_handles;
     auto& queue                      = cuda_handles.queue;
     auto& h_cublas                   = cuda_handles.h_cublas;
     auto& cminusone_vec              = mw_rsc.cminusone_vec;
@@ -273,7 +272,7 @@ private:
     if (n_accepted == 0)
       return;
 
-    auto& queue                 = engine_leader.cuda_handles_.getResource().queue;
+    auto& queue                 = mw_rsc.cuda_handles.queue;
     auto& updateRow_buffer_H2D  = mw_rsc.updateRow_buffer_H2D;
     auto& mw_temp               = mw_rsc.mw_temp;
     auto& mw_rcopy              = mw_rsc.mw_rcopy;
@@ -367,24 +366,6 @@ public:
     invRow.resize(norb);
   }
 
-  /** The problem with this as well as the idea of putting psiMinv
-   *  in the DiracDeterminantBatched is details of psiMinv memory space
-   *  consistency that should be in the engine implemenation layer or lower
-   *  end up in DDB. So these details either need to be identical or
-   *  DDB must be specialized per implementation. I'd like to avoid the lockdown
-   *  and the specialization.
-   *
-   *  perhaps this should be getRefHostPsiMinv() and it should guarantee consistency.
-   */
-  inline void checkResourcesForTest()
-  {
-    if (!cuda_handles_)
-    {
-      throw std::logic_error(
-          "Null cuda_handles_, Even for testing proper resource creation and acquisition must be made.");
-    }
-  }
-
   // prepare invRow and compute the old gradients.
   template<typename GT>
   static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines, MultiWalkerResource& mw_rsc,
@@ -397,7 +378,7 @@ public:
     if (!engine_leader.isSM1())
       mw_prepareInvRow(engines, mw_rsc, psiMinv_refs, rowchanged);
 
-    auto& queue               = engine_leader.cuda_handles_.getResource().queue;
+    auto& queue               = mw_rsc.cuda_handles.queue;
     auto& evalGrad_buffer_H2D = mw_rsc.evalGrad_buffer_H2D;
     auto& grads_value_v       = mw_rsc.grads_value_v;
 
@@ -524,7 +505,7 @@ public:
       return;
     }
 
-    auto& queue                       = engine_leader.cuda_handles_.getResource().queue;
+    auto& queue                       = mw_rsc.cuda_handles.queue;
     auto& cminusone_vec               = mw_rsc.cminusone_vec;
     auto& cone_vec                    = mw_rsc.cone_vec;
     auto& czero_vec                   = mw_rsc.czero_vec;
@@ -653,8 +634,8 @@ public:
     if (delay_count == 0)
       return;
     // update the inverse matrix
-    auto& queue                = engine_leader.cuda_handles_.getResource().queue;
-    auto& h_cublas             = engine_leader.cuda_handles_.getResource().h_cublas;
+    auto& queue                = mw_rsc.cuda_handles.queue;
+    auto& h_cublas             = mw_rsc.cuda_handles.h_cublas;
     auto& updateInv_buffer_H2D = mw_rsc.updateInv_buffer_H2D;
     const int norb             = engine_leader.invRow.size();
     const int lda              = psiMinv_refs[0].get().cols();
@@ -744,7 +725,7 @@ public:
                                                 bool on_host)
   {
     auto& engine_leader = engines.getLeader();
-    auto& queue         = engine_leader.cuda_handles_.getResource().queue;
+    auto& queue         = mw_rsc.cuda_handles.queue;
     if (engine_leader.isSM1())
       queue.sync();
     else if (engine_leader.invRow_id != row_id)
@@ -791,7 +772,7 @@ public:
                                   const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {
     auto& engine_leader = engines.getLeader();
-    auto& queue         = engine_leader.cuda_handles_.getResource().queue;
+    auto& queue         = mw_rsc.cuda_handles.queue;
     engine_leader.guard_no_delay();
 
     for (DualMatrix<Value>& psiMinv : psiMinv_refs)
@@ -810,7 +791,7 @@ public:
                                  size_t row_begin,
                                  size_t row_size)
   {
-    auto& queue = engine_leader.cuda_handles_.getResource().queue;
+    auto& queue = mw_rsc.cuda_handles.queue;
     for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
     {
       const size_t stride = psiM_vgl.capacity();
@@ -830,7 +811,7 @@ public:
                                  size_t row_begin,
                                  size_t row_size)
   {
-    auto& queue = engine_leader.cuda_handles_.getResource().queue;
+    auto& queue = mw_rsc.cuda_handles.queue;
     for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
     {
       const size_t stride = psiM_vgl.capacity();
@@ -838,8 +819,6 @@ public:
     }
     queue.sync();
   }
-
-  CUDALinearAlgebraHandles& getLAhandles() { return cuda_handles_; }
 };
 } // namespace qmcplusplus
 
