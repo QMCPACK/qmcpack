@@ -9,31 +9,39 @@
 // File refactored from: MatrixDelayedUpdateCUDA.h
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_CUDA_LINEAR_ALGEBRA_HANDLES_H
-#define QMCPLUSPLUS_CUDA_LINEAR_ALGEBRA_HANDLES_H
+#ifndef QMCPLUSPLUS_CUDA_ACCELBLAS_CUDA_H
+#define QMCPLUSPLUS_CUDA_ACCELBLAS_CUDA_H
 
+#include "AccelBLAS.hpp"
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 
 namespace qmcplusplus
 {
-struct CUDALinearAlgebraHandles
+namespace compute
 {
+template<>
+class BLAS<PlatformKind::CUDA>
+{
+  public:
   // cuda stream, not owned, reference-only
   cudaStream_t h_stream;
   // cublas handle
   cublasHandle_t h_cublas;
 
-  CUDALinearAlgebraHandles(cudaStream_t stream): h_stream(stream)
+  BLAS(cudaStream_t stream): h_stream(stream)
   {
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
     cublasErrorCheck(cublasSetStream(h_cublas, stream), "cublasSetStream failed!");
   }
 
-  ~CUDALinearAlgebraHandles()
+  ~BLAS()
   {
     cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
   }
 };
+}
+
+using CUDALinearAlgebraHandles = compute::BLAS<PlatformKind::CUDA>;
 }
 #endif

@@ -30,7 +30,7 @@
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/DualAllocatorAliases.hpp"
 #include "Platforms/CUDA/QueueCUDA.hpp"
-#include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
+#include "Platforms/CUDA/AccelBLAS_CUDA.hpp"
 
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"

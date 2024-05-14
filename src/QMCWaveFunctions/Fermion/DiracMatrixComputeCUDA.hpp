@@ -16,7 +16,7 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "DualAllocatorAliases.hpp"
-#include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
+#include "Platforms/CUDA/AccelBLAS_CUDA.hpp"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
 #include "type_traits/complex_help.hpp"

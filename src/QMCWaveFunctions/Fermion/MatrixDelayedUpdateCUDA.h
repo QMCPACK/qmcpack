@@ -21,7 +21,7 @@
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
-#include "CUDA/CUDALinearAlgebraHandles.h"
+#include "CUDA/AccelBLAS_CUDA.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "DualAllocatorAliases.hpp"
 #include "DiracMatrixComputeCUDA.hpp"
