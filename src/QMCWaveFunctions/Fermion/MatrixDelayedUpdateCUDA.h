@@ -95,7 +95,7 @@ public:
     // scratch space for keeping one row of Ainv
     UnpinnedDualVector<Value> mw_rcopy;
 
-    MultiWalkerResource() : blas_handle(queue.getNative()) {}
+    MultiWalkerResource() : blas_handle(queue) {}
 
     void resize_fill_constant_arrays(size_t nw)
     {

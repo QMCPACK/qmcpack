@@ -14,6 +14,7 @@
 
 #include "AccelBLAS.hpp"
 #include "CUDA/CUDAruntime.hpp"
+#include "CUDA/QueueCUDA.hpp"
 #include "CUDA/cuBLAS.hpp"
 
 namespace qmcplusplus
@@ -29,10 +30,10 @@ class BLAS<PlatformKind::CUDA>
   // cublas handle
   cublasHandle_t h_cublas;
 
-  BLAS(cudaStream_t stream): h_stream(stream)
+  BLAS(Queue<PlatformKind::CUDA>& queue): h_stream(queue.getNative())
   {
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, stream), "cublasSetStream failed!");
+    cublasErrorCheck(cublasSetStream(h_cublas, h_stream), "cublasSetStream failed!");
   }
 
   ~BLAS()
