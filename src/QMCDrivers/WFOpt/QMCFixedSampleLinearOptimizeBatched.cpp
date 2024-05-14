@@ -1806,8 +1806,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
   // compute the initial cost
   const RealType initCost = optTarget->computedCost();
 
-  Matrix<RealType> hamVec(N, 1);
-  hamVec = 0.0;
+  std::vector<RealType> ham(N, 0);
 
   // for outputing matrices and eigenvalue/vectors to disk
   hdf_archive hout;
@@ -1821,7 +1820,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
               << "Building <Psi_i/Psi_0 Psi_j/Psi_0> and <Psi_i/Psi_0 E_L>" << std::endl
               << "********************************************************" << std::endl;
 
-    optTarget->fillHamVec(hamVec);
+    optTarget->fillHamVec(ham);
 
     {
       ScopedTimer local(sr_solver_timer_);
@@ -1836,20 +1835,19 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       RealType eps = 1.0;
       int kmax     = numParams;
       int k        = 0;
-      Vector<RealType> rk(numParams, 0);
-      Vector<RealType> rkp1(numParams, 0);
-      Vector<RealType> pk(numParams, 0);
-      Vector<RealType> pkp1(numParams, 0);
-      Vector<RealType> xk(numParams, 0);
-      Vector<RealType> xkp1(numParams, 0);
-      //only using as matrix because of MPI all reduce
-      Matrix<RealType> Apk(numParams, 1);
+      std::vector<RealType> rk(numParams, 0);
+      std::vector<RealType> rkp1(numParams, 0);
+      std::vector<RealType> pk(numParams, 0);
+      std::vector<RealType> pkp1(numParams, 0);
+      std::vector<RealType> xk(numParams, 0);
+      std::vector<RealType> xkp1(numParams, 0);
+      std::vector<RealType> Apk(numParams, 0);
 
       RealType dk = 0;
       //initial guess is zero, so S*x_0 = 0
       for (int i = 0; i < numParams; i++)
       {
-        rk[i] = -sr_tau * hamVec(i + 1, 0);
+        rk[i] = -sr_tau * ham[i + 1];
         dk += rk[i] * rk[i];
       }
       eps            = dk / numParams * thr;
@@ -1860,14 +1858,14 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
         optTarget->calcOvlParmVec(pk, bestShift_s, Apk);
         RealType denom = 0;
         for (int i = 0; i < numParams; i++)
-          denom += pk[i] * Apk(i, 0);
+          denom += pk[i] * Apk[i];
         RealType ak = dk / denom;
 
         RealType dkp1 = 0;
         for (int i = 0; i < numParams; i++)
         {
           xkp1[i] = xk[i] + ak * pk[i];
-          rkp1[i] = rk[i] - ak * Apk(i, 0);
+          rkp1[i] = rk[i] - ak * Apk[i];
           dkp1 += rkp1[i] * rkp1[i];
         }
         if (dkp1 / numParams < eps || k == kmax)

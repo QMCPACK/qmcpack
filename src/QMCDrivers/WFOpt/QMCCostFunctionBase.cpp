@@ -131,12 +131,12 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   return computedCost();
 }
 
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(Matrix<Return_rt>& ham) 
+QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham) 
 {
   throw std::runtime_error("Need to implement fillHamVec");
 }
 
-void QMCCostFunctionBase::calcOvlParmVec(const Vector<Return_rt>& parm, const Return_rt& shift, Matrix<Return_rt>& ovlParmVec)
+void QMCCostFunctionBase::calcOvlParmVec(const std::vector<Return_rt>& parm, const Return_rt& shift, std::vector<Return_rt>& ovlParmVec)
 {
   throw std::runtime_error("Need to implement calcOvlParmVec");
 }
