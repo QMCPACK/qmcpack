@@ -43,10 +43,6 @@ void test_DiracDeterminantBatched_first()
   DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
-  // occurs in call to registerData
-  ddb.dpsiV.resize(norb);
-  ddb.d2psiV.resize(norb);
-
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
 
@@ -146,10 +142,6 @@ void test_DiracDeterminantBatched_second()
   spo_init->setOrbitalSetSize(norb);
   DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  // occurs in call to registerData
-  ddb.dpsiV.resize(norb);
-  ddb.d2psiV.resize(norb);
 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
@@ -282,10 +274,6 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   spo_init->setOrbitalSetSize(norb);
   DetType ddc(std::move(spo_init), 0, norb, delay_rank, matrix_inverter_kind);
   auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
-
-  // occurs in call to registerData
-  ddc.dpsiV.resize(norb);
-  ddc.d2psiV.resize(norb);
 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);

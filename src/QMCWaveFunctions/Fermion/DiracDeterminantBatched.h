@@ -243,6 +243,7 @@ public:
 
   const auto& get_psiMinv() const { return psiMinv_; }
 
+private:
   /** @defgroup LegacySingleData
    *  @brief    Single Walker Data Members of Legacy OO design
    *            High and flexible throughput of walkers requires would ideally separate
@@ -296,7 +297,6 @@ public:
   struct DiracDeterminantBatchedMultiWalkerResource;
   ResourceHandle<DiracDeterminantBatchedMultiWalkerResource> mw_res_handle_;
 
-private:
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
 
