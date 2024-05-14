@@ -1096,7 +1096,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
                                                        const std::vector<bool>& recompute) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  auto& mw_res     = wfc_leader.mw_res_handle_.getResource();
   const auto nw    = wfc_list.size();
 
   RefVectorWithLeader<WaveFunctionComponent> wfc_filtered_list(wfc_list.getLeader());
@@ -1107,6 +1106,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   RefVector<Matrix<Value>> psiM_host_list;
   RefVector<Matrix<Grad>> dpsiM_list;
   RefVector<Matrix<Value>> d2psiM_list;
+  RefVector<DualMatrix<Value>> psiMinv_list;
 
   wfc_filtered_list.reserve(nw);
   p_filtered_list.reserve(nw);
@@ -1115,6 +1115,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   psiM_temp_list.reserve(nw);
   dpsiM_list.reserve(nw);
   d2psiM_list.reserve(nw);
+  psiMinv_list.reserve(nw);
 
   for (int iw = 0; iw < nw; iw++)
     if (recompute[iw])
@@ -1128,6 +1129,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       psiM_host_list.push_back(det.psiM_host);
       dpsiM_list.push_back(det.dpsiM);
       d2psiM_list.push_back(det.d2psiM);
+      psiMinv_list.push_back(det.psiMinv_);
     }
 
   if (!wfc_filtered_list.size())
@@ -1142,7 +1144,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
                                             psiM_host_list, dpsiM_list, d2psiM_list);
   }
 
-  mw_invertPsiM(wfc_filtered_list, psiM_temp_list, mw_res.psiMinv_refs);
+  mw_invertPsiM(wfc_filtered_list, psiM_temp_list, psiMinv_list);
 
   { // transfer dpsiM, d2psiM, psiMinv to device
     ScopedTimer d2h(H2DTimer);
