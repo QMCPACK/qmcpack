@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -22,12 +22,12 @@ namespace qmcplusplus
 
 TEST_CASE("Scalar Estimator Input", "[estimators]")
 {
-  using namespace testing;
+  using input = testing::ValidScalarEstimatorInput;
 
-  for (auto input : valid_scalar_estimator_input_sections)
+  for (auto input_xml : input::xml)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input);
+    bool okay = doc.parseFromString(input_xml);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     std::string atype(lowerCase(getXMLAttributeValue(node, "type")));

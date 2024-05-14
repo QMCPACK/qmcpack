@@ -1,12 +1,14 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2020-2022 Alfredo Correa
+// Copyright 2020-2023 Alfredo A. Correa
+
+// TODO(correaa) move this header to blas/numeric
 
 #ifndef MULTI_COMPLEX_HPP
 #define MULTI_COMPLEX_HPP
 
 #include "array_ref.hpp"
 
-#include "detail/fix_complex_traits.hpp"
+// #include "detail/fix_complex_traits.hpp"
 
 #include<complex>
 #include<utility>  // for forward
@@ -45,7 +47,7 @@ struct real_t;
 struct imag_t;
 
 template<class ValueType = double>
-struct complex {
+struct _complex {  // NOLINT(readability-identifier-naming) deprecating this
 	using value_type = ValueType;
 
  private:
@@ -53,13 +55,13 @@ struct complex {
 	value_type im;
 
  public:
-	complex() = default;
+	_complex() = default;
 
-	constexpr explicit complex(value_type real) : re{real}, im{value_type{0}} {}
-	constexpr complex(value_type real, value_type imag) // NOLINT(bugprone-easily-swappable-parameters)
+	constexpr explicit _complex(value_type real) : re{real}, im{value_type{0}} {}
+	constexpr _complex(value_type real, value_type imag) // NOLINT(bugprone-easily-swappable-parameters)
 	: re{real}, im{imag} {}
 
-	constexpr explicit complex(std::complex<ValueType> const& other) : re{other.real()}, im{other.imag()} {}
+	constexpr explicit _complex(std::complex<ValueType> const& other) : re{other.real()}, im{other.imag()} {}
 
 	template<
 		class T,
@@ -89,9 +91,9 @@ struct complex {
 		return reinterpret_cast<std::complex<value_type>      &>(*this);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	}
 
-	friend constexpr auto abs(complex const& self) {return abs(self.std());}
-	friend constexpr auto operator-(complex const& self, complex const& other)
-	-> complex{return self.std() - other.std();}
+	friend constexpr auto abs(_complex const& self) {return abs(self.std());}
+	friend constexpr auto operator-(_complex const& self, _complex const& other)
+	-> _complex{return self.std() - other.std();}
 
 	constexpr auto real()      & -> value_type      & {return re;}
 	constexpr auto real() const& -> value_type const& {return re;}
@@ -111,8 +113,8 @@ struct complex {
 struct real_t {
 	template<class Array, typename E = typename std::decay_t<Array>::element, typename ValueType = typename E::value_type>
 	constexpr auto operator()(Array&& array) const
-	->decltype(std::forward<Array>(array).template reinterpret_array_cast<complex<ValueType>>().template member_cast<ValueType>(&complex<ValueType>::real)) {
-		return std::forward<Array>(array).template reinterpret_array_cast<complex<ValueType>>().template member_cast<ValueType>(&complex<ValueType>::real); }
+	->decltype(std::forward<Array>(array).template reinterpret_array_cast<_complex<ValueType>>().template member_cast<ValueType>(&_complex<ValueType>::real)) {
+		return std::forward<Array>(array).template reinterpret_array_cast<_complex<ValueType>>().template member_cast<ValueType>(&_complex<ValueType>::real); }
 	template<class T, typename ValueType = typename std::decay_t<T>::value_type,
 		std::enable_if_t<
 			sizeof(T)==2*sizeof(ValueType) and
@@ -120,7 +122,7 @@ struct real_t {
 			std::is_assignable<ValueType&, decltype(imag(std::declval<T>()))>{}, int
 		> =0
 	>
-	constexpr auto operator()(T& value) const -> ValueType& {return reinterpret_cast<multi::complex<ValueType>&>(value).real;}  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) : t[0]
+	constexpr auto operator()(T& value) const -> ValueType& {return reinterpret_cast<multi::_complex<ValueType>&>(value).real;}  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) : t[0]
 	template<class T, typename ValueType = typename std::decay_t<T>::value_type,
 		std::enable_if_t<
 			sizeof(T)==2*sizeof(ValueType) and
@@ -129,15 +131,15 @@ struct real_t {
 		> =0
 	>
 	auto operator()(T const& value) const -> ValueType const& {
-		return reinterpret_cast<multi::complex<ValueType> const&>(value).real;  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) : t[0]
+		return reinterpret_cast<multi::_complex<ValueType> const&>(value).real;  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) : t[0]
 	}
 };
 
 struct imag_t {
 	template<class Array, typename E = typename std::decay_t<Array>::element, typename ValueType = typename E::value_type>
 	constexpr auto operator()(Array&& array) const
-	->decltype(std::forward<Array>(array).template reinterpret_array_cast<complex<ValueType>>().template member_cast<ValueType>(&complex<ValueType>::imag)) {
-		return std::forward<Array>(array).template reinterpret_array_cast<complex<ValueType>>().template member_cast<ValueType>(&complex<ValueType>::imag); }
+	->decltype(std::forward<Array>(array).template reinterpret_array_cast<_complex<ValueType>>().template member_cast<ValueType>(&_complex<ValueType>::imag)) {
+		return std::forward<Array>(array).template reinterpret_array_cast<_complex<ValueType>>().template member_cast<ValueType>(&_complex<ValueType>::imag); }
 	template<class T, typename ValueType = typename std::decay_t<T>::value_type,
 		std::enable_if_t<
 			sizeof(T) == 2*sizeof(ValueType) and
@@ -146,7 +148,7 @@ struct imag_t {
 		> =0
 	>
 	constexpr auto operator()(T& value) const -> ValueType& {
-		return reinterpret_cast<multi::complex<ValueType>&>(value).imag;  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) : t[1]
+		return reinterpret_cast<multi::_complex<ValueType>&>(value).imag;  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) : t[1]
 	}
 	template<class T, typename ValueType = typename std::decay_t<T>::value_type,
 		std::enable_if_t<
@@ -156,21 +158,21 @@ struct imag_t {
 		> =0
 	>
 	constexpr auto operator()(T const& value) const -> ValueType const&{
-		return reinterpret_cast<multi::complex<ValueType> const&>(value).imag;  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) : t[1]
+		return reinterpret_cast<multi::_complex<ValueType> const&>(value).imag;  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) : t[1]
 	}
 };
 
-[[maybe_unused]] static constexpr real_t real;
-[[maybe_unused]] static constexpr imag_t imag;
+//[[maybe_unused]] static constexpr real_t real;
+//[[maybe_unused]] static constexpr imag_t imag;
 
 }  // end namespace multi
 }  // end namespace boost
 
-static_assert( boost::multi::is_trivially_default_constructible<std::complex<double>>::value );
-static_assert( boost::multi::is_trivially_default_constructible<std::complex<float >>::value );
+// static_assert( boost::multi::is_trivially_default_constructible<std::complex<double>>::value );
+// static_assert( boost::multi::is_trivially_default_constructible<std::complex<float >>::value );
 
-static_assert( boost::multi::is_trivial<std::complex<double>>::value );
-static_assert( boost::multi::is_trivial<std::complex<float >>::value );
+// static_assert( boost::multi::is_trivial<std::complex<double>>::value );
+// static_assert( boost::multi::is_trivial<std::complex<float >>::value );
 
 
 #if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__

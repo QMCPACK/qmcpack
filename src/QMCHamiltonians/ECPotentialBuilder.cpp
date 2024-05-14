@@ -46,6 +46,8 @@ ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
       targetPsi(psi)
 {}
 
+ECPotentialBuilder::~ECPotentialBuilder() = default;
+
 bool ECPotentialBuilder::put(xmlNodePtr cur)
 {
   if (localPot.empty())
@@ -63,6 +65,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   std::string pbc;
   std::string forces;
   std::string physicalSO;
+  std::string spin_integrator;
 
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format", {"table", "xml"});
@@ -71,11 +74,14 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   pAttrib.add(pbc, "pbc", {"yes", "no"});
   pAttrib.add(forces, "forces", {"no", "yes"});
   pAttrib.add(physicalSO, "physicalSO", {"yes", "no"});
+  pAttrib.add(spin_integrator, "spin_integrator", {"exact", "simpson"});
   pAttrib.put(cur);
 
   bool doForces = (forces == "yes") || (forces == "true");
   if (use_DLA == "yes")
     app_log() << "    Using determinant localization approximation (DLA)" << std::endl;
+
+  use_exact_spin = (spin_integrator == "exact") ? true : false;
   if (ecpFormat == "xml")
   {
     useXmlFormat(cur);
@@ -148,7 +154,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     else
       APP_ABORT("physicalSO must be set to yes/no. Unknown option given\n");
 
-    std::unique_ptr<SOECPotential> apot = std::make_unique<SOECPotential>(IonConfig, targetPtcl, targetPsi);
+    std::unique_ptr<SOECPotential> apot = std::make_unique<SOECPotential>(IonConfig, targetPtcl, targetPsi, use_exact_spin);
     int nknot_max                       = 0;
     int sknot_max                       = 0;
     for (int i = 0; i < soPot.size(); i++)
@@ -164,10 +170,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     }
     app_log() << "\n  Using SOECP potential \n"
               << "    Maximum grid on a sphere for SOECPotential: " << nknot_max << std::endl;
-    app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
+    if (use_exact_spin)
+      app_log() << "    Using fast SOECP evaluation. Spin integration is exact" << std::endl;
+    else
+      app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
     if (NLPP_algo == "batched")
       app_log() << "    Using batched ratio computing in SOECP potential" << std::endl;
-
     if (physicalSO == "yes")
       targetH.addOperator(std::move(apot), "SOECP"); //default is physical operator
     else
@@ -223,7 +231,9 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
 
-        ECPComponentBuilder ecp(ionName, myComm, nrule, llocal);
+        //Use simpsons rule for spin integral if not using exact spin integration
+        int srule = use_exact_spin ? 0 : 8;
+        ECPComponentBuilder ecp(ionName, myComm, nrule, llocal, srule);
         if (format == "xml")
         {
           if (href == "none")

@@ -61,8 +61,6 @@ public:
   Return_t myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
-  ///radial grid
-  std::shared_ptr<GridType> myGrid;
   ///Always mave a radial functor for the bare coulomb
   std::shared_ptr<const RadFunctorType> V0;
   ///Radial functor for bare coulomb, optimized for forces
@@ -71,7 +69,6 @@ public:
   std::shared_ptr<const RadFunctorType> dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
-  int MaxGridPoints;
 
   ///number of particles per species of A
   std::vector<int> NofSpeciesA;

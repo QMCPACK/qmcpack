@@ -488,12 +488,11 @@ It2 uninitialized_copy_n(shm_ptr_with_raw_ptr_dispatch<T> f, Size n, It2 d)
   f.wSP_->fence();
   using std::uninitialized_copy_n;
   if (f.wSP_->get_group().root())
-    uninitialized_copy_n(f, n, to_address(d));
+    uninitialized_copy_n(to_address(f), n, to_address(d));
   f.wSP_->fence();
   mpi3::communicator(f.wSP_->get_group(), 0).barrier();
   return d + n;
 }
-
 
 template<class Alloc, class It1, class Size, typename T>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(Alloc& a, It1 f, Size n, shm_ptr_with_raw_ptr_dispatch<T> d)

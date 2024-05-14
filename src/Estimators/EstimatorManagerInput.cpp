@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -10,14 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "EstimatorManagerInput.h"
+#include "EstimatorInputDelegates.h"
 #include <algorithm>
-#include "ScalarEstimatorInputs.h"
-#include "MomentumDistributionInput.h"
-#include "OneBodyDensityMatricesInput.h"
-#include "SpinDensityInput.h"
-#include "SelfHealingOverlapInput.h"
-#include "MagnetizationDensityInput.h"
-#include "PerParticleHamiltonianLoggerInput.h"
 #include "ModernStringUtils.hpp"
 
 namespace qmcplusplus

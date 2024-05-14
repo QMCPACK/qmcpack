@@ -26,6 +26,11 @@ struct IsComplex_t<std::complex<T>> : public std::true_type
 
 template<typename T>
 using IsComplex = std::enable_if_t<IsComplex_t<T>::value, bool>;
+
+// for symmetry with IsComplex_t
+template<typename T>
+using IsReal_t = std::is_floating_point<T>;
+
 template<typename T>
 using IsReal = std::enable_if_t<std::is_floating_point<T>::value, bool>;
 
@@ -92,6 +97,11 @@ inline float conj(const float& c) { return c; }
 inline double conj(const double& c) { return c; }
 inline std::complex<float> conj(const std::complex<float>& c) { return std::conj(c); }
 inline std::complex<double> conj(const std::complex<double>& c) { return std::conj(c); }
+//These copy complex->complex, real->real as is.  In event of complex->real, the imaginary part is ignored.
+inline void copy_with_complex_cast(const std::complex<double>& source, std::complex<double>& dest) { dest = source; }
+inline void copy_with_complex_cast(const std::complex<double>& source, double& dest) { dest = source.real(); }
+inline void copy_with_complex_cast(const std::complex<float>& source, std::complex<float>& dest) { dest = source; }
+inline void copy_with_complex_cast(const std::complex<float>& source, float& dest) { dest = source.real(); }
 
 } // namespace qmcplusplus
 

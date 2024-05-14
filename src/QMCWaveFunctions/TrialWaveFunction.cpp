@@ -1043,6 +1043,21 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
     }
 }
 
+void TrialWaveFunction::evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios) const
+{
+  ScopedTimer local_timer(TWF_timers_[NL_TIMER]);
+  assert(VP.getTotalNum() == ratios.size());
+  std::vector<ValueType> t(ratios.size());
+  std::fill(ratios.begin(), ratios.end(), 1.0);
+  for (int i = 0; i < Z.size(); ++i)
+  {
+      ScopedTimer z_timer(WFC_timers_[NL_TIMER + TIMER_SKIP * i]);
+      Z[i]->evaluateSpinorRatios(VP, spinor_multiplier, t);
+      for (int j = 0; j < ratios.size(); ++j)
+        ratios[j] *= t[j];
+  }
+}
+
 void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                           const RefVector<std::vector<ValueType>>& ratios_list,

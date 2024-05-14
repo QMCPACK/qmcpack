@@ -1,13 +1,16 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.17.0)
+cmake_minimum_required(VERSION 3.21.0)
 # Note that cmake_minimum_required affects policy defaults.
 # All policies known to the running version of CMake and introduced in
 # cmake_minimum_required version or earlier will be set to use NEW behavior
 
 if(POLICY CMP0127)
   cmake_policy(SET CMP0127 NEW) # Condition evaluation v3.22+ https://cmake.org/cmake/help/latest/policy/CMP0127.html
+endif()
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW) # v3.27+ find_package() uses upper-case <PACKAGENAME>_ROOT variables.
 endif()
 
 ######################################################################
@@ -82,14 +85,8 @@ endif(ENABLE_CUDA AND ENABLE_SYCL)
 if(ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "ENABLE_CUDA enabled, QMC_CUDA2HIP enabled")
-    if(CMAKE_VERSION VERSION_LESS 3.21.0)
-      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.21.0 or later")
-    endif()
   else(QMC_CUDA2HIP)
     message(STATUS "ENABLE_CUDA enabled, QMC_CUDA2HIP disabled")
-    if(CMAKE_VERSION VERSION_LESS 3.18.0)
-      message(FATAL_ERROR "ENABLE_CUDA require CMake 3.18.0 or later")
-    endif()
   endif()
 else(ENABLE_CUDA)
   if(QMC_CUDA2HIP)
@@ -244,6 +241,8 @@ endif(QMC_OMP)
 #-------------------------------------------------------------------------------
 # Set vendor specific compiler options
 #-------------------------------------------------------------------------------
+include(TestCXXMainCompiles)
+TestCXXMainCompiles("Before_Customization")
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
@@ -284,7 +283,7 @@ else(CMAKE_TOOLCHAIN_FILE)
   endif()
 
   include(inspectCompiler)
-
+  TestCXXMainCompiles("After_Customization")
 endif(CMAKE_TOOLCHAIN_FILE)
 
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
@@ -332,7 +331,7 @@ if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
   endif()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
-
+  TestCXXMainCompiles("With_Sanitizers")
 endif()
 
 #-----------------------------------------------------------------------
@@ -409,6 +408,7 @@ if(QMC_OMP)
     option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
   endif()
   mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
+  TestCXXMainCompiles("With_OpenMP")
 endif()
 
 #-------------------------------------------------------------------------------------
@@ -423,17 +423,6 @@ if(QMC_EXP_THREADING)
   endif(HAVE_LIBATOMIC)
   add_definitions(-DQMC_EXP_THREADING)
 endif(QMC_EXP_THREADING)
-
-#--------------------------------------------------------------
-# final test for compile options before searching for libraries
-#--------------------------------------------------------------
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles("int main(){}" TEST_CXX_COMPILE_MAIN)
-if(NOT TEST_CXX_COMPILE_MAIN)
-  unset(TEST_CXX_COMPILE_MAIN CACHE)
-  message(FATAL_ERROR "Failed in compiling a main() function likely due to incorrect compile options. "
-                      "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
-endif()
 
 ######################################################################
 # Check external libraries.

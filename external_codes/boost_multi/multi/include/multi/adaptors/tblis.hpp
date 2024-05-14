@@ -1,7 +1,7 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
 $CXX -std=c++17 -O0 -I/home/correaa/include/tblis -I/home/correaa/tblis/src/external/tci -L/home/correaa/lib -Wl,-rpath=/home/correaa/lib -ltblis $0 -o $0x&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2021
+// Copyright 2021-2024 Alfredo A. Correa
 
 #include "tblis/tblis.h"
 
@@ -103,17 +103,17 @@ namespace μνσ{
 
 
 
-template<class T> auto init_matrix = std::enable_if_t<sizeof(T*)==0>{};
-template<> auto init_matrix<float               > = ::tblis::tblis_init_matrix_s;
-template<> auto init_matrix<double              > = ::tblis::tblis_init_matrix_d;
-template<> auto init_matrix<std::complex<float >> = ::tblis::tblis_init_matrix_c;
-template<> auto init_matrix<std::complex<double>> = ::tblis::tblis_init_matrix_z;
+template<class T> auto const init_matrix = std::enable_if_t<sizeof(T*)==0>{};
+template<> auto const init_matrix<float               > = ::tblis::tblis_init_matrix_s;
+template<> auto const init_matrix<double              > = ::tblis::tblis_init_matrix_d;
+template<> auto const init_matrix<std::complex<float >> = ::tblis::tblis_init_matrix_c;
+template<> auto const init_matrix<std::complex<double>> = ::tblis::tblis_init_matrix_z;
 
-template<class T> auto init_tensor = std::enable_if_t<sizeof(T*)==0>{};
-template<> auto init_tensor<float               > = ::tblis::tblis_init_tensor_s;
-template<> auto init_tensor<double              > = ::tblis::tblis_init_tensor_d;
-template<> auto init_tensor<std::complex<float >> = ::tblis::tblis_init_tensor_c;
-template<> auto init_tensor<std::complex<double>> = ::tblis::tblis_init_tensor_z;
+template<class T> auto const init_tensor = std::enable_if_t<sizeof(T*)==0>{};
+template<> auto const init_tensor<float               > = ::tblis::tblis_init_tensor_s;
+template<> auto const init_tensor<double              > = ::tblis::tblis_init_tensor_d;
+template<> auto const init_tensor<std::complex<float >> = ::tblis::tblis_init_tensor_c;
+template<> auto const init_tensor<std::complex<double>> = ::tblis::tblis_init_tensor_z;
 
 template<class Element, multi::dimensionality_type D>
 struct indexed_tensor;
@@ -124,13 +124,14 @@ struct tensor : ::tblis::tblis_tensor{
 	std::array<::tblis::len_type   , D> lens_;
 	std::array<::tblis::stride_type, D> strides_;
 	template<class A, std::enable_if_t<not std::is_base_of<tensor, std::decay_t<A>>{}, int> =0>
-	explicit tensor(A&& a) : 
+	explicit tensor(A&& a) :  // NOLINT(bugprone-forwarding-reference-overload) workaround for DeepSource
 		lens_   (std::apply([](auto... s){return std::array<::tblis::len_type   , D>{s...};}, sizes  (a))),
-		strides_(std::apply([](auto... s){return std::array<::tblis::stride_type, D>{s...};}, strides(a))){
+		strides_(std::apply([](auto... s){return std::array<::tblis::stride_type, D>{s...};}, strides(a)))
+	{
 		tblis::init_tensor<std::decay_t<Element>>(this, D, lens_.data(), const_cast<std::decay_t<Element>*>(base(a)), strides_.data());
 	}
 	tensor(tensor const&) = delete;
-	tensor(tensor&& other) : lens_{other.lens_}, strides_{other.strides_}{
+	tensor(tensor&& other) noexcept : lens_{other.lens_}, strides_{other.strides_}{
 		tblis::init_tensor<std::decay_t<Element>>(this, D, lens_.data(), const_cast<std::decay_t<Element>*>(other.data()), strides_.data());
 	}
 	using dimensionality_type = multi::dimensionality_type;
@@ -155,7 +156,7 @@ struct indexed_tensor{
 	tensor<Element, D> tensor_;
 	std::string indices_;
 	indexed_tensor(tensor<Element, D>&& t, std::string indices) : tensor_(std::move(t)), indices_{std::move(indices)}{}
-	indexed_tensor(indexed_tensor&& other) = default;
+	indexed_tensor(indexed_tensor&& other) noexcept = default;
 	tensor<Element, D>& tensor_part()&{return tensor_;}
 	std::string indices() const{return indices_;}
 };
@@ -188,16 +189,17 @@ auto mult(ITensorA&& aijk, ITensorB&& bijk, ITensorC&& cijk)
 template<class Element>
 struct matrix : ::tblis::tblis_matrix{
 public:
-	template<class A, std::enable_if_t<not std::is_base_of<matrix<Element>, std::decay_t<A>>{}, int> =0>
-	matrix(A&& a){
+	matrix(matrix const&) = delete;
+	matrix(matrix&&) noexcept = default;
+
+//	template<class EE> matrix(matrix<EE> const& other) : ::tblis::tblis_matrix
+	template<class A, class = std::enable_if_t<!std::is_same_v<matrix, std::remove_cv_t<std::remove_reference_t<A>>>> >
+	matrix(A&& a) {  // NOLINT(bugprone-forwarding-reference-overload) workaround for DeepSource
 		init_matrix<Element>(this, 
 			std::get<0>(a.sizes()), std::get<1>(a.sizes()), const_cast<double*>(a.base()), 
 			std::get<0>(a.strides()), std::get<1>(a.strides())
 		);
 	}
-//	template<class EE> matrix(matrix<EE> const& other) : ::tblis::tblis_matrix
-	matrix(matrix const&) = delete;
-	matrix(matrix&&) = default;
 };
 
 template<class A, class P = typename std::decay_t<A>::element_ptr> matrix(A&&)->matrix<typename std::pointer_traits<P>::element_type>;

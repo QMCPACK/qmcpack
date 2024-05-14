@@ -29,6 +29,66 @@ namespace ompBLAS
 using ompBLAS_status = int;
 using ompBLAS_handle = int;
 
+ompBLAS_status gemm(ompBLAS_handle& handle,
+                    const char transa,
+                    const char transb,
+                    const int M,
+                    const int N,
+                    const int K,
+                    const float alpha,
+                    const float* const A,
+                    const int lda,
+                    const float* const B,
+                    const int ldb,
+                    const float beta,
+                    float* const C,
+                    const int ldc);
+
+ompBLAS_status gemm(ompBLAS_handle& handle,
+                    const char transa,
+                    const char transb,
+                    const int M,
+                    const int N,
+                    const int K,
+                    const double alpha,
+                    const double* const A,
+                    const int lda,
+                    const double* const B,
+                    const int ldb,
+                    const double beta,
+                    double* const C,
+                    const int ldc);
+
+ompBLAS_status gemm(ompBLAS_handle& handle,
+                    const char transa,
+                    const char transb,
+                    const int M,
+                    const int N,
+                    const int K,
+                    const std::complex<float> alpha,
+                    const std::complex<float>* const A,
+                    const int lda,
+                    const std::complex<float>* const B,
+                    const int ldb,
+                    const std::complex<float> beta,
+                    std::complex<float>* const C,
+                    const int ldc);
+
+ompBLAS_status gemm(ompBLAS_handle& handle,
+                    const char transa,
+                    const char transb,
+                    const int M,
+                    const int N,
+                    const int K,
+                    const std::complex<double> alpha,
+                    const std::complex<double>* const A,
+                    const int lda,
+                    const std::complex<double>* const B,
+                    const int ldb,
+                    const std::complex<double> beta,
+                    std::complex<double>* const C,
+                    const int ldc);
+
 ompBLAS_status gemv(ompBLAS_handle& handle,
                     const char trans,
                     const int m,
@@ -328,6 +388,34 @@ ompBLAS_status copy_batched_offset(ompBLAS_handle& handle,
                                    const int y_offset,
                                    const int incy,
                                    const int batch_count);
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const float* const x,
+                    const int incx,
+                    float* const y,
+                    const int incy);
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const double* const x,
+                    const int incx,
+                    double* const y,
+                    const int incy);
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const std::complex<float>* const x,
+                    const int incx,
+                    std::complex<float>* const y,
+                    const int incy);
+
+ompBLAS_status copy(ompBLAS_handle& handle,
+                    const int n,
+                    const std::complex<double>* const x,
+                    const int incx,
+                    std::complex<double>* const y,
+                    const int incy);
 
 } // namespace ompBLAS
 

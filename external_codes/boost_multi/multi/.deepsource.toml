@@ -1,9 +1,9 @@
 version = 1
 
-[[analyzers]]
-name = "shell"
-enabled = true
+test_patterns = ["test/**"]
 
 [[analyzers]]
 name = "test-coverage"
-enabled = true
+
+[[analyzers]]
+name = "cxx"

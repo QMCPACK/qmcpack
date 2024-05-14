@@ -38,6 +38,7 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   TrialWaveFunction twf(runtime_options);
   WalkerConfigurations walker_confs;
 
+  // Test is intended to be run on one rank
   MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
 
   population.createWalkers(8, walker_confs, 2.0);
@@ -98,7 +99,7 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
     auto walker_elems = pops[i].get_walker_elements();
     for (WalkerElementsRef& wer : walker_elems)
     {
-      walker_ids.push_back(wer.walker.ID);
+      walker_ids.push_back(wer.walker.getWalkerID());
     }
   }
   std::sort(walker_ids.begin(), walker_ids.end());
@@ -112,7 +113,7 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
     for (int iw = 0; iw < new_walkers; ++iw)
     {
       auto wer = pops[i].spawnWalker();
-      walker_ids.push_back(wer.walker.ID);
+      walker_ids.push_back(wer.walker.getWalkerID());
     }
 
   std::sort(walker_ids.begin(), walker_ids.end());

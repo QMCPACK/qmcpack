@@ -20,8 +20,10 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "TestListenerFunction.h"
 #include "Utilities/RuntimeOptions.h"
+
 namespace qmcplusplus
 {
 namespace testing
@@ -57,6 +59,15 @@ public:
                               bool keep_grid)
   {
     so_ecp.mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, keep_grid);
+  }
+
+  static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
+  {
+    copyGridUnrotatedForTest(so_ecp);
+    for (auto& uptr_comp : so_ecp.ppset_)
+        uptr_comp.get()->initVirtualParticle(elec);
+    so_ecp.evaluateImpl(elec, true);
+    value = so_ecp.getValue();
   }
 };
 } // namespace testing
@@ -179,7 +190,7 @@ void doSOECPotentialTest(bool use_VPs)
   ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, twf_list);
 
   //Now we set up the SO ECP component.
-  SOECPotential so_ecp(ions, elec, psi);
+  SOECPotential so_ecp(ions, elec, psi, false);
   ECPComponentBuilder ecp_comp_builder("test_read_soecp", c);
   okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
   REQUIRE(okay);
@@ -229,10 +240,30 @@ void doSOECPotentialTest(bool use_VPs)
 
   //use single walker API to get reference value
   auto value = o_list[0].evaluateDeterministic(p_list[0]);
+
+  //also check whether or not reference value from single_walker API is actually correct
+  //this value comes directly from the reference code soecp_eval_reference.cpp
+  CHECK(value == Approx(-3.530511241));
+
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(value));
+
+  //Now lets try out the fast implementation
+  if (use_VPs)
+  {
+    value = 0.0;
+    SOECPotential so_ecp_exact(ions, elec, psi, true);
+    //srule is 0 for exact evaluation
+    ECPComponentBuilder ecp_comp_builder("test_read_soecp", c, -1, -1, 0);
+    okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
+    REQUIRE(okay);
+    UPtr<SOECPComponent> so_ecp_comp = std::move(ecp_comp_builder.pp_so);
+    so_ecp_exact.addComponent(0, std::move(so_ecp_comp));
+    testing::TestSOECPotential::evalFast(so_ecp_exact, elec, value);
+    CHECK(value == Approx(-3.530511241));
+  }
 
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp));
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp2));
@@ -248,10 +279,6 @@ void doSOECPotentialTest(bool use_VPs)
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
   // check the second walker which will be unchanged.
   CHECK(std::accumulate(local_pots2[1], local_pots2[1] + local_pots2.cols(), 0.0) == Approx(value));
-
-  //also check whether or not reference value from single_walker API is actually correct
-  //this value comes directly from the reference code soecp_eval_reference.cpp
-  CHECK(value == Approx(-3.530511241));
 }
 
 TEST_CASE("SOECPotential", "[hamiltonian]")

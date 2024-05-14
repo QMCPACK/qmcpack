@@ -1,5 +1,4 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2021 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi allocators"
 #include<boost/test/unit_test.hpp>
@@ -68,7 +67,7 @@ struct array {
 	}
 };
 
-BOOST_AUTO_TEST_CASE(json) {
+BOOST_AUTO_TEST_CASE(const json) {
 	namespace multi = boost::multi;
 	multi::array<std::string, 2> A = {{"00", "01"}, {"10", "11"}};
 	array::save(std::ofstream{"file"}, A);
@@ -77,7 +76,7 @@ BOOST_AUTO_TEST_CASE(json) {
 	BOOST_REQUIRE(A == B);
 }
 
-BOOST_AUTO_TEST_CASE(extensions_serialization) {
+BOOST_AUTO_TEST_CASE(const extensions_serialization) {
 	multi::array<double, 2> arr({10, 10});
 	auto const x = arr.extensions();
 	std::stringstream ss;
@@ -102,8 +101,8 @@ BOOST_AUTO_TEST_CASE(extensions_serialization) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(carray_serialization) {
-	double const A[3][3] = {{0., 1., 2.}, {3., 4., 5.}, {6., 7., 8.}};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test legacy types
+BOOST_AUTO_TEST_CASE(const carray_serialization) {
+	double const A[3][3] = {{0.0, 1.0, 2.0}, {3.0, 4.0, 5.0}, {6.0, 7.0, 8.0}};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test legacy types
 	std::stringstream ss;
 	{
 		{
@@ -124,17 +123,17 @@ BOOST_AUTO_TEST_CASE(carray_serialization) {
 	//	xia>>                           cereal::make_nvp("A", B);
 	//	xia>>                                                 B ;
 	//	xia>> multi::archive_traits<XIArchive>::make_nvp("A", B);
-		BOOST_REQUIRE( B[1][2] == 5. );  // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult) is it?
+		BOOST_REQUIRE( B[1][2] == 5.0 );  // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult) is it?
 		BOOST_REQUIRE( A[1][2] == B[1][2] );  // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult) is it?
 	}
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization) {
-	multi::array<double, 2> arr({10, 10}, 0.);
+BOOST_AUTO_TEST_CASE(const array_serialization) {
+	multi::array<double, 2> arr({10, 10}, 0.0);
 
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
-	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.0);
 
 	std::stringstream ss{};
 	{
@@ -160,7 +159,7 @@ BOOST_AUTO_TEST_CASE(array_serialization) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization_string) {
+BOOST_AUTO_TEST_CASE(const array_serialization_string) {
 	multi::array<std::string, 2> arr({10, 10});
 	auto const x = extensions(arr);
 	for(auto i : std::get<0>(x) ) {
@@ -194,11 +193,11 @@ BOOST_AUTO_TEST_CASE(array_serialization_string) {
 }
 
 //#if not defined(__NVCC__)  // some code contained here doesn't compile with nvcc 11.0,11.1 and 11.2
-BOOST_AUTO_TEST_CASE(array_serialization_binary) {
-	multi::array<double, 2> arr({10, 10}, 0.);
+BOOST_AUTO_TEST_CASE(const array_serialization_binary) {
+	multi::array<double, 2> arr({10, 10}, 0.0);
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
-	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.0);
 
 	std::stringstream ss{};
 	{
@@ -216,7 +215,7 @@ BOOST_AUTO_TEST_CASE(array_serialization_binary) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization_string_binary) {
+BOOST_AUTO_TEST_CASE(const array_serialization_string_binary) {
 	multi::array<std::string, 2> arr({10, 10});
 	auto const x = extensions(arr);
 	for(auto i : std::get<0>(x) ) {
@@ -244,8 +243,8 @@ BOOST_AUTO_TEST_CASE(array_serialization_string_binary) {
 }
 
 //#if not defined(__NVCC__)  // some code contained here doesn't compile with nvcc 11.0,11.1 and 11.2
-BOOST_AUTO_TEST_CASE(vector) {
-	std::vector<double> v(100); std::iota(begin(v), end(v), 10.);
+BOOST_AUTO_TEST_CASE(const vector) {
+	std::vector<double> v(100); std::iota(begin(v), end(v), 10.0);
 
 	std::stringstream ss;
 	{
@@ -264,8 +263,8 @@ BOOST_AUTO_TEST_CASE(vector) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(vector_binary) {
-	std::vector<double> v(100); std::iota(begin(v), end(v), 10.);
+BOOST_AUTO_TEST_CASE(const vector_binary) {
+	std::vector<double> v(100); std::iota(begin(v), end(v), 10.0);
 
 	std::stringstream ss{};
 	{
@@ -284,12 +283,12 @@ BOOST_AUTO_TEST_CASE(vector_binary) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization_3D) {
-	multi::array<double, 3> arr({10, 10, 10}, 0.);
+BOOST_AUTO_TEST_CASE(const array_serialization_3D) {
+	multi::array<double, 3> arr({10, 10, 10}, 0.0);
 
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
-	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.0);
 
 	std::stringstream ss{};
 	{
@@ -314,12 +313,12 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization_3D_inplace) {
-	multi::array<double, 3> arr({10, 10, 10}, 0.);
+BOOST_AUTO_TEST_CASE(const array_serialization_3D_inplace) {
+	multi::array<double, 3> arr({10, 10, 10}, 0.0);
 
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
-	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.0);
 
 	std::stringstream ss{};
 	XOArchive{ss}<< make_nvp("arr", arr);
@@ -331,8 +330,8 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_inplace) {
 	BOOST_REQUIRE( arr2 == arr );
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization_2D_inplace_file) {
-	multi::array<double, 2> arr({2, 2}, 99.);
+BOOST_AUTO_TEST_CASE(const array_serialization_2D_inplace_file) {
+	multi::array<double, 2> arr({2, 2}, 99.0);
 
 	{
 		std::ofstream ofs{"file.xml"};
@@ -347,13 +346,13 @@ BOOST_AUTO_TEST_CASE(array_serialization_2D_inplace_file) {
 	BOOST_REQUIRE( arr2 == arr );
 }
 
-#if not defined(__NVCC__)  // some code contained here doesn't compile with nvcc 11.0,11.1 and 11.2
-BOOST_AUTO_TEST_CASE(array_serialization_3D_part_binary_lvalue) {
-	multi::array<double, 3> arr({10, 10, 10}, 0.);
+// #if not defined(__NVCC__)  // some code contained here doesn't compile with nvcc 11.0,11.1 and 11.2
+BOOST_AUTO_TEST_CASE(const array_serialization_3D_part_binary_lvalue) {
+	multi::array<double, 3> arr({10, 10, 10}, 0.0);
 
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
-	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.0);
 
 	std::stringstream ss{};
 	{
@@ -372,12 +371,12 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_part_binary_lvalue) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization_3D_part_xml_lvalue) {
-	multi::array<double, 3> arr({10, 10, 10}, 0.);
+BOOST_AUTO_TEST_CASE(const array_serialization_3D_part_xml_lvalue) {
+	multi::array<double, 3> arr({10, 10, 10}, 0.0);
 
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
-	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.0);
 
 	std::stringstream ss{};
 	{
@@ -396,12 +395,12 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_part_xml_lvalue) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization_3D_part_binary) {
-	multi::array<double, 3> arr({10, 10, 10}, 0.);
+BOOST_AUTO_TEST_CASE(const array_serialization_3D_part_binary) {
+	multi::array<double, 3> arr({10, 10, 10}, 0.0);
 
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
-	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.0);
 
 	std::stringstream ss{};
 	{
@@ -418,12 +417,12 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_part_binary) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(array_serialization_3D_part_xml) {
-	multi::array<double, 3> arr({10, 10, 10}, 0.);
+BOOST_AUTO_TEST_CASE(const array_serialization_3D_part_xml) {
+	multi::array<double, 3> arr({10, 10, 10}, 0.0);
 
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
-	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.0);
 
 	std::stringstream ss{};
 	{
@@ -439,4 +438,4 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_part_xml) {
 		BOOST_REQUIRE( arr[3] == arr[2] );
 	}
 }
-#endif
+// #endif

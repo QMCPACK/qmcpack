@@ -1,10 +1,8 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX $0 -o $0x -lfftw3 -lboost_unit_test_framework -ftemplate-backtrace-limit=0&&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2020
+// © Alfredo A. Correa 2020-2024
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi FFTW adaptor (cpu) with thrust complex"
 #define BOOST_TEST_DYN_LINK
+
 #include<boost/test/unit_test.hpp>
 
 #include "../../fftw.hpp"
@@ -14,16 +12,15 @@ $CXX $0 -o $0x -lfftw3 -lboost_unit_test_framework -ftemplate-backtrace-limit=0&
 
 namespace multi = boost::multi;
 
-BOOST_AUTO_TEST_CASE(fftw_2D_identity){
-
-	using complex = thrust::complex<double>; complex const I{0, 1};
+BOOST_AUTO_TEST_CASE(const fftw_2D_identity){
+	using complex = thrust::complex<double>; complex const I{0.0, 1.0};
 
 	multi::array<complex, 2> const in = {
-		{  1. + 2.*I,  9. - 1.*I, 2. +  4.*I},
-		{  3. + 3.*I,  7. - 4.*I, 1. +  9.*I},
-		{  4. + 1.*I,  5. + 3.*I, 2. +  4.*I},
-		{  3. - 1.*I,  8. + 7.*I, 2. +  1.*I},
-		{ 31. - 1.*I, 18. + 7.*I, 2. + 10.*I}
+		{  1.0 + 2.0*I,  9.0 - 1.0*I, 2.0 +  4.0*I},
+		{  3.0 + 3.0*I,  7.0 - 4.0*I, 1.0 +  9.0*I},
+		{  4.0 + 1.0*I,  5.0 + 3.0*I, 2.0 +  4.0*I},
+		{  3.0 - 1.0*I,  8.0 + 7.0*I, 2.0 +  1.0*I},
+		{ 31.0 - 1.0*I, 18.0 + 7.0*I, 2.0 + 10.0*I}
 	};
 	auto fwd = multi::fftw::dft({true, true}, in, multi::fftw::forward);
 	
@@ -32,6 +29,4 @@ BOOST_AUTO_TEST_CASE(fftw_2D_identity){
 	auto fwd_t = multi::fftw::dft({true, true}, in_t, multi::fftw::forward);
 	
 	BOOST_REQUIRE( fwd == fwd_t );
-
 }
-

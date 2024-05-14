@@ -136,7 +136,7 @@ private:
 
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string GEVtype, StabilizerMethod, GEVSplit;
+  std::string StabilizerMethod;
   RealType w_beta;
   /// number of previous steps to orthogonalize to.
   int eigCG;

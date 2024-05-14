@@ -57,6 +57,8 @@ private:
   vContainer_type r_power_minus_l;
   ///1D spline of radial functions of all the orbitals
   std::shared_ptr<MultiBspline1D<ST>> SplineInst;
+  ///coef copy for orbital rotation
+  std::shared_ptr<std::vector<ST>> coef_copy_;
 
   vContainer_type localV, localG, localL;
 
@@ -398,6 +400,71 @@ public:
     //Needed to do tensor product here
     APP_ABORT("AtomicOrbitals::evaluate_vgh");
   }
+
+  void storeParamsBeforeRotation()
+  {
+    const auto spline_ptr     = SplineInst->getSplinePtr();
+    const auto coefs_tot_size = spline_ptr->coefs_size;
+    coef_copy_                = std::make_shared<std::vector<ST>>(coefs_tot_size);
+    std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+  }
+
+  template<typename VM>
+  void applyRotation(const VM& rot_mat, bool use_stored_copy)
+  {
+    // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
+    const auto spline_ptr = SplineInst->getSplinePtr();
+    assert(spline_ptr != nullptr);
+    const auto spl_coefs      = spline_ptr->coefs;
+    const auto Nsplines       = spline_ptr->num_splines; // May include padding
+    const auto coefs_tot_size = spline_ptr->coefs_size;
+    const auto BasisSetSize   = coefs_tot_size / Nsplines;
+    const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
+
+    if (!use_stored_copy)
+    {
+      assert(coef_copy_ != nullptr);
+      std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
+    }
+
+    // There are TrueNOrb splines for every l,m pair, and also padding
+#ifdef QMC_COMPLEX
+    for (size_t lidx = 0; lidx < lm_tot; lidx++)
+      for (size_t i = 0; i < BasisSetSize; i++)
+        for (size_t j = 0; j < TrueNOrbs; j++)
+        {
+          const auto cur_elem = i * Nsplines + lidx * Npad + 2 * j;
+          ST newval_r{0.};
+          ST newval_i{0.};
+          for (size_t k = 0; k < TrueNOrbs; k++)
+          {
+            const auto index = i * Nsplines + lidx * Npad + 2 * k;
+            ST zr            = (*coef_copy_)[index];
+            ST zi            = (*coef_copy_)[index + 1];
+            ST wr            = rot_mat[k][j].real();
+            ST wi            = rot_mat[k][j].imag();
+            newval_r += zr * wr - zi * wi;
+            newval_i += zr * wi + zi * wr;
+          }
+          spl_coefs[cur_elem]     = newval_r;
+          spl_coefs[cur_elem + 1] = newval_i;
+        }
+#else
+    for (size_t lidx = 0; lidx < lm_tot; lidx++)
+      for (size_t i = 0; i < BasisSetSize; i++)
+        for (size_t j = 0; j < TrueNOrbs; j++)
+        {
+          const auto cur_elem = i * Nsplines + lidx * Npad + j;
+          ST newval{0.};
+          for (size_t k = 0; k < TrueNOrbs; k++)
+          {
+            const auto index = i * Nsplines + lidx * Npad + k;
+            newval += (*coef_copy_)[index] * rot_mat[k][j];
+          }
+          spl_coefs[cur_elem] = newval;
+        }
+#endif
+  }
 };
 
 template<typename ST>
@@ -475,6 +542,19 @@ private:
 
 public:
   HybridRepCenterOrbitals() {}
+
+  void storeParamsBeforeRotation()
+  {
+    for (auto& atomic_center : AtomicCenters)
+      atomic_center.storeParamsBeforeRotation();
+  }
+
+  template<typename VM>
+  void applyRotation(const VM& rot_mat, bool use_stored_copy)
+  {
+    for (auto& atomic_center : AtomicCenters)
+      atomic_center.applyRotation(rot_mat, use_stored_copy);
+  }
 
   void set_info(const ParticleSet& ions, ParticleSet& els, const std::vector<int>& mapping)
   {
@@ -628,7 +708,7 @@ public:
    * The batched algorthm forces the evaluation on the reference center and introduce some error.
    * In this case, the non-batched algorithm should be used.
    */
-  bool is_batched_safe(const VirtualParticleSet& VP) const
+  bool is_VP_batching_safe(const VirtualParticleSet& VP) const
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];

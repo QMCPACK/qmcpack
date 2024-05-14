@@ -80,7 +80,7 @@ void OhmmsXPathObject::put(const char* expression, xmlXPathContextPtr context)
 
 Libxml2Document::Libxml2Document() : m_doc(NULL), m_root(NULL), m_context(NULL) {}
 
-Libxml2Document::Libxml2Document(const std::string& xmlfile) { parse(xmlfile); }
+Libxml2Document::Libxml2Document(const std::string& xmlfile) : m_doc(NULL), m_root(NULL), m_context(NULL) { parse(xmlfile); }
 
 Libxml2Document::~Libxml2Document()
 {

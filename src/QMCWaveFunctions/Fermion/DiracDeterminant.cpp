@@ -21,9 +21,7 @@
 #include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/MatrixOperators.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
-#ifndef QMC_COMPLEX
 #include "QMCWaveFunctions/RotatedSPOs.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -44,11 +42,9 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
 {
   resize(NumPtcls, NumPtcls);
 
-#ifndef QMC_COMPLEX
   RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
   if (rot_spo)
     rot_spo->buildOptVariables(NumPtcls);
-#endif
 
   if (Phi->getOrbitalSetSize() < NumPtcls)
   {
@@ -457,6 +453,21 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
   {
     ScopedTimer local_timer(SPOVTimer);
     Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
+  }
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios)
+{
+  {
+    ScopedTimer local_timer(RatioTimer);
+    const int WorkingIndex = VP.refPtcl - FirstIndex;
+    assert(WorkingIndex >= 0);
+    std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
+  }
+  {
+    ScopedTimer local_timer(SPOVTimer);
+    Phi->evaluateDetSpinorRatios(VP, psiV, spinor_multiplier, invRow, ratios);
   }
 }
 

@@ -20,9 +20,112 @@
 #include <vector>
 #include "QMCCostFunctionBase.h"
 #include <CPU/BLAS.hpp>
+#include "Numerics/MatrixOperators.h"
+#include "Numerics/DeterminantOperators.h"
+
 
 namespace qmcplusplus
 {
+
+
+// A - Hamiltonian
+// B - Overlap
+void LinearMethod::solveGeneralizedEigenvalues(Matrix<Real>& A,
+                                               Matrix<Real>& B,
+                                               std::vector<Real>& eigenvals,
+                                               Matrix<Real>& eigenvectors)
+{
+  int Nl = A.rows();
+  assert(A.rows() == A.cols());
+  assert(Nl == eigenvals.size());
+  assert(Nl == eigenvectors.rows());
+  assert(Nl == eigenvectors.cols());
+
+  // transpose the A and B (row-major vs. column-major)
+  for (int i = 0; i < Nl; i++)
+    for (int j = i + 1; j < Nl; j++)
+    {
+      std::swap(A(i, j), A(j, i));
+      std::swap(B(i, j), B(j, i));
+    }
+
+  //   Getting the optimal worksize
+  char jl('N');
+  char jr('V');
+  std::vector<Real> alphar(Nl), alphai(Nl), beta(Nl);
+  //Matrix<Real> eigenT(Nl, Nl);
+  int info;
+  int lwork(-1);
+  std::vector<Real> work(1);
+  Real tt(0);
+  int t(1);
+  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
+               eigenvectors.data(), &Nl, &work[0], &lwork, &info);
+  lwork = int(work[0]);
+  work.resize(lwork);
+
+  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
+               eigenvectors.data(), &Nl, &work[0], &lwork, &info);
+  if (info != 0)
+    throw std::runtime_error("Invalid Matrix Diagonalization Function, ggev info = " + std::to_string(info));
+
+  for (int i = 0; i < Nl; i++)
+  {
+    eigenvals[i] = alphar[i] / beta[i];
+  }
+}
+
+
+// A - Hamiltonian
+// B - Overlap
+void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
+                                                   Matrix<Real>& B,
+                                                   std::vector<Real>& eigenvals,
+                                                   Matrix<Real>& eigenvectors)
+{
+  int Nl = A.rows();
+  assert(A.rows() == A.cols());
+  assert(Nl == eigenvals.size());
+  assert(Nl == eigenvectors.rows());
+  assert(Nl == eigenvectors.cols());
+
+  invert_matrix(B, false);
+
+  Matrix<Real> prdMat(Nl, Nl);
+
+  MatrixOperators::product(B, A, prdMat);
+
+  // transpose the result (why?)
+  for (int i = 0; i < Nl; i++)
+    for (int j = i + 1; j < Nl; j++)
+      std::swap(prdMat(i, j), prdMat(j, i));
+
+  //   Getting the optimal worksize
+  char jl('N');
+  char jr('V');
+  std::vector<Real> alphar(Nl), alphai(Nl);
+  //Matrix<Real> eigenT(Nl, Nl);
+  Matrix<Real> eigenD(Nl, Nl);
+  int info;
+  int lwork(-1);
+  std::vector<Real> work(1);
+  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
+               &work[0], &lwork, &info);
+  lwork = int(work[0]);
+  work.resize(lwork);
+
+  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
+               &work[0], &lwork, &info);
+  if (info != 0)
+    throw std::runtime_error("Invalid Matrix Diagonalization Function, geev info = " + std::to_string(info));
+
+  for (int i = 0; i < Nl; i++)
+  {
+    eigenvals[i] = alphar[i];
+  }
+}
+
+
 LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const
 {
   int Nl(ev.size());
@@ -92,6 +195,13 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
   {
     APP_ABORT("Invalid Matrix Diagonalization Function!");
   }
+
+  // Filter and sort to find desired eigenvalue.
+  // Filter accepts eigenvalues between E_0 and E_0 - 100.0,
+  // where E_0 is H(0,0), the current estimate for the VMC energy.
+  // Sort searches for eigenvalue closest to E_0 - 2.0
+
+  bool found_any_eigenvalue = false;
   std::vector<std::pair<Real, int>> mappedEigenvalues(Nl);
   for (int i = 0; i < Nl; i++)
   {
@@ -100,11 +210,42 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
     {
       mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
       mappedEigenvalues[i].second = i;
+      found_any_eigenvalue        = true;
     }
     else
     {
       mappedEigenvalues[i].first  = std::numeric_limits<Real>::max();
       mappedEigenvalues[i].second = i;
+    }
+  }
+
+  // Sometimes there is no eigenvalue less than E_0, but there is one slightly higher.
+  // Run filter and sort again, except this time accept eigenvalues between E_0 + 100.0 and E_0 - 100.0.
+  // Since it's already been determined there are no eigenvalues below E_0, the sort
+  // finds the eigenvalue closest to E_0.
+  if (!found_any_eigenvalue)
+  {
+    app_log() << "No eigenvalues passed initial filter. Trying broader 100 a.u. filter" << std::endl;
+
+    bool found_higher_eigenvalue;
+    for (int i = 0; i < Nl; i++)
+    {
+      Real evi(alphar[i]);
+      if ((evi < zerozero + 1e2) && (evi > (zerozero - 1e2)))
+      {
+        mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
+        mappedEigenvalues[i].second = i;
+        found_higher_eigenvalue     = true;
+      }
+      else
+      {
+        mappedEigenvalues[i].first  = std::numeric_limits<Real>::max();
+        mappedEigenvalues[i].second = i;
+      }
+    }
+    if (!found_higher_eigenvalue)
+    {
+      app_log() << "No eigenvalues passed second filter. Optimization is likely to fail." << std::endl;
     }
   }
   std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());

@@ -1,63 +1,77 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 // Copyright 2018-2022 Alfredo A. Correa
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi comparisons"
-#define BOOST_TEST_DYN_LINK
-#include<boost/test/unit_test.hpp>
+// #define BOOST_TEST_MODULE "C++ Unit Tests for Multi comparisons"  // test title NOLINT(cppcoreguidelines-macro-usage) title
+#include <boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include <multi/array.hpp>
 
-#include<complex>
+#include <complex>
 
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(comparison_complex) {
-using complex = std::complex<double>;
-{
-	multi::array<double , 1> arr = {1., 2., 3.};
-	multi::array<complex, 1> arr2 = {1., 2., 3.};
-	BOOST_REQUIRE( arr[1] == arr2[1] );
-	BOOST_REQUIRE( arr == arr2 ); BOOST_REQUIRE( not (arr != arr2) );
-	BOOST_REQUIRE( arr2 == arr ); BOOST_REQUIRE( not (arr2 != arr) );
-}
-{
-	multi::array<double , 2> const arr  = {{1., 2., 3.}, {4., 5., 6.}};
-	multi::array<complex, 2> const arr2 = {{1., 2., 3.}, {4., 5., 6.}};
-	BOOST_REQUIRE( arr[1][1] == arr2[1][1] );
-	BOOST_REQUIRE( arr == arr2 ); BOOST_REQUIRE( not (arr != arr2) );
-	BOOST_REQUIRE( arr2 == arr ); BOOST_REQUIRE( not (arr2 != arr) );
-	BOOST_REQUIRE( std::equal(arr[1].begin(), arr[1].end(), begin(arr2[1]), end(arr2[1])) );
-}
+	using complex = std::complex<double>;
+	{
+		multi::array<double , 1> arr  = { 1.0,        2.0,        3.0      };
+		multi::array<complex, 1> arr2 = {{1.0, 0.0}, {2.0, 0.0}, {3.0, 0.0}};
+
+		BOOST_REQUIRE( arr[1] == arr2[1] );
+		BOOST_REQUIRE( arr == arr2 );
+		BOOST_REQUIRE( not (arr != arr2) );
+		BOOST_REQUIRE( arr2 == arr );
+		BOOST_REQUIRE( not (arr2 != arr) );
+	}
+	{
+		multi::array<double, 2> const arr = {
+			{1.0, 2.0, 3.0},
+			{4.0, 5.0, 6.0},
+		};
+		multi::array<complex, 2> const arr2 = {
+			{{1.0, 0.0}, {2.0, 0.0}, {3.0, 0.0}},
+			{{4.0, 0.0}, {5.0, 0.0}, {6.0, 0.0}},
+		};
+
+		BOOST_REQUIRE( arr[1][1] == arr2[1][1] );
+		BOOST_REQUIRE( arr == arr2 );
+		BOOST_REQUIRE( not (arr != arr2) );
+		BOOST_REQUIRE( arr2 == arr );
+		BOOST_REQUIRE( not (arr2 != arr) );
+		BOOST_REQUIRE( std::equal(arr[1].begin(), arr[1].end(), begin(arr2[1]), end(arr2[1])) );
+	}
 }
 
 BOOST_AUTO_TEST_CASE(multi_comparisons_swap) {
 	multi::array<double, 3> arr = {
-		{{ 1.2,  1.1}, { 2.4, 1.}},
-		{{11.2,  3.0}, {34.4, 4.}},
-		{{ 1.2,  1.1}, { 2.4, 1.}}
+		{ {1.2, 1.1},  {2.4, 1.}},
+		{{11.2, 3.0}, {34.4, 4.}},
+		{ {1.2, 1.1},  {2.4, 1.}},
 	};
 	BOOST_REQUIRE( arr[0] < arr[1] );
 
-	swap( arr[0], arr[1] );
+	swap(arr[0], arr[1]);
 	BOOST_REQUIRE( arr[1] < arr[0] );
 
-	swap( arr[0], arr[1] );
+	swap(arr[0], arr[1]);
 	BOOST_REQUIRE( arr[0] < arr[1] );
 }
 
 BOOST_AUTO_TEST_CASE(comparisons_equality) {
 	multi::array<double, 3> arr = {
-		{{ 1.2,  1.1}, { 2.4, 1.}},
-		{{11.2,  3.0}, {34.4, 4.}},
-		{{ 1.2,  1.1}, { 2.4, 1.}}
+		{ {1.2, 1.1},  {2.4, 1.0}},
+		{{11.2, 3.0}, {34.4, 4.0}},
+		{ {1.2, 1.1},  {2.4, 1.0}},
 	};
 
-	multi::array_ref <double, 3>  ref(arr.data_elements(), extensions(arr));
-	multi::array_cref<double, 3> cref(data_elements(arr) , extensions(arr));
+	multi::array_ref<double, 3> ref(arr.data_elements(), extensions(arr));
+	multi::array_cref<double, 3> cref(data_elements(arr), extensions(arr));
 
-	BOOST_REQUIRE( arr ==  arr ); BOOST_REQUIRE( not (arr !=  arr) );
-	BOOST_REQUIRE( ref ==  arr ); BOOST_REQUIRE( not (ref !=  arr) );
-	BOOST_REQUIRE( ref == cref ); BOOST_REQUIRE( not (ref != cref) );
+	BOOST_REQUIRE( arr ==  arr );
+	BOOST_REQUIRE( not (arr !=  arr) );
+	BOOST_REQUIRE( ref ==  arr );
+	BOOST_REQUIRE( not (ref !=  arr) );
+	BOOST_REQUIRE( ref == cref );
+	BOOST_REQUIRE( not (ref != cref) );
 
 	BOOST_REQUIRE( arr[0] ==  arr[2] );
 	BOOST_REQUIRE( ref[0] ==  arr[2] );
@@ -72,13 +86,13 @@ BOOST_AUTO_TEST_CASE(comparisons_equality) {
 
 BOOST_AUTO_TEST_CASE(comparisons_ordering) {
 	multi::array<double, 3> arr = {
-		{{ 1.2,  1.1}, { 2.4, 1.}},
-		{{11.2,  3.0}, {34.4, 4.}},
-		{{ 1.2,  1.1}, { 2.4, 1.}}
+		{ {1.2, 1.1},  {2.4, 1.}},
+		{{11.2, 3.0}, {34.4, 4.}},
+		{ {1.2, 1.1},  {2.4, 1.}},
 	};
 
-	multi::array_ref <double, 3>  ref(arr.data_elements(), extensions(arr));
-	multi::array_cref<double, 3> cref(data_elements(arr) , extensions(arr));
+	multi::array_ref<double, 3> ref(arr.data_elements(), extensions(arr));
+	multi::array_cref<double, 3> cref(data_elements(arr), extensions(arr));
 
 	BOOST_REQUIRE(  arr[0]    <=  arr[1] );
 	BOOST_REQUIRE(  ref[0]    <=  arr[1] );

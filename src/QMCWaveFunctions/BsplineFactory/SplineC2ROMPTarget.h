@@ -35,6 +35,7 @@ namespace qmcplusplus
  *
  * Requires temporage storage and multiplication of phase vectors
  * The internal storage of complex spline coefficients uses double sized real arrays of ST type, aligned and padded.
+ * Calling assign_v assign_vgl should be restricted to the actual number of complex splines (kPoints.size()).
  * The first nComplexBands complex splines produce 2 real orbitals.
  * The rest complex splines produce 1 real orbital.
  * All the output orbitals are real (C2R). The maximal number of output orbitals is OrbitalSetSize.
@@ -311,8 +312,8 @@ public:
                                     ValueMatrix& d2logdet) override;
 
   template<class BSPLINESPO>
-  friend struct SplineSetReader;
-  friend struct BsplineReaderBase;
+  friend class SplineSetReader;
+  friend struct BsplineReader;
 };
 
 extern template class SplineC2ROMPTarget<float>;

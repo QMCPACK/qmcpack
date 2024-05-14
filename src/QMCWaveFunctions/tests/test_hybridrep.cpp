@@ -25,6 +25,7 @@
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "BsplineFactory/EinsplineSpinorSetBuilder.h"
 #include <ResourceCollection.h>
+#include "Utilities/for_testing/checkMatrix.hpp"
 
 using std::string;
 
@@ -92,10 +93,15 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   ions_.update();
   elec_.update();
 
-  // for vgl
-  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  /* for vgl
+   * In DiracDeterminant, these psiM, dpsiM, and d2psiM 
+   * are always sized to elec_.R.size() x elec_.R.size()
+   * Using the same sizes for these. This tests the case 
+   * that spo->OrbitalSetSize > elec_.R.size()
+   */
+  SPOSet::ValueMatrix psiM(elec_.R.size(), elec_.R.size());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), elec_.R.size());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), elec_.R.size());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // due to the different ordering of bands skip the tests on CUDA+Real builds
@@ -142,8 +148,44 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[2][1][1]) == Approx(1.0020672904));
   CHECK(std::real(dpsiM[2][1][2]) == Approx(-1.9794520201));
   // lapl
-  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(5e-5));
+  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(1e-4));
   CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738).epsilon(3e-5));
+
+  //Let's also add test for orbital optimzation
+  if (spo->isRotationSupported())
+  {
+    SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+    SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+    SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+    spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+
+    SPOSet::ValueVector row0{0.56752158, -0.3152607, 0.03525207, -0.75979421};
+    SPOSet::ValueVector row1{0.21452916, 0.75299027, -0.59552084, -0.17982718};
+    SPOSet::ValueVector row2{0.24049122, 0.55674778, 0.79497536, -0.01449368};
+    SPOSet::ValueVector row3{0.75766778, -0.1537799, -0.11011992, 0.62463179};
+    SPOSet::ValueMatrix rot_mat(4, 4);
+    for (int iorb = 0; iorb < 4; iorb++)
+    {
+      rot_mat[0][iorb] = row0[iorb];
+      rot_mat[1][iorb] = row1[iorb];
+      rot_mat[2][iorb] = row2[iorb];
+      rot_mat[3][iorb] = row3[iorb];
+    }
+    SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), spo->size());
+    for (int i = 0; i < elec_.R.size(); i++)
+      for (int j = 0; j < spo->size(); j++)
+      {
+        psiM_rot_manual[i][j] = 0.0;
+        for (int k = 0; k < spo->size(); k++)
+          psiM_rot_manual[i][j] += psiM[i][k] * rot_mat[k][j];
+      }
+
+    spo->storeParamsBeforeRotation();
+    spo->applyRotation(rot_mat, false);
+    spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+    auto check = checkMatrix(psiM_rot_manual, psiM, true);
+    CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+  }
 }
 
 TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
@@ -223,10 +265,15 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
 #endif
 
-  // for vgl
-  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  /* for vgl
+   * In DiracDeterminant, these psiM, dpsiM, and d2psiM 
+   * are always sized to elec_.R.size() x elec_.R.size()
+   * Using the same sizes for these. This tests the case 
+   * that spo->OrbitalSetSize > elec_.R.size()
+   */
+  SPOSet::ValueMatrix psiM(elec_.R.size(), elec_.R.size());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), elec_.R.size());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), elec_.R.size());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if defined(QMC_COMPLEX)

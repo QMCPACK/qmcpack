@@ -15,10 +15,7 @@
 #include "SPOSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include <Message/UniformCommunicateError.h>
-
-#if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/RotatedSPOs.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -91,12 +88,8 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   if (optimize == "rotation" || optimize == "yes")
   {
-#ifdef QMC_COMPLEX
-    app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
-    abort();
-#else
     app_warning() << "Specifying orbital rotation via optimize tag is deprecated. Use the rotated_spo element instead"
-                  << std::endl;
+		  << std::endl;
 
     sposet->storeParamsBeforeRotation();
     // create sposet with rotation
@@ -119,7 +112,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
       tcur = tcur->next;
     }
     sposet = std::move(rot_spo);
-#endif
   }
 
   if (sposet->getName().empty())
@@ -141,11 +133,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
   attrib.add(method, "method", {"global", "history"});
   attrib.put(cur);
 
-
-#ifdef QMC_COMPLEX
-  myComm->barrier_and_abort("Orbital optimization via rotation doesn't support complex wavefunctions yet.");
-  return nullptr;
-#else
   std::unique_ptr<SPOSet> sposet;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
@@ -176,7 +163,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
     }
   });
   return rot_spo;
-#endif
 }
 
 } // namespace qmcplusplus

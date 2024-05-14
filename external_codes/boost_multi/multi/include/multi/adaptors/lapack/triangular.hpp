@@ -16,7 +16,8 @@ struct uhermitian : public multi::array<T, 2>{
 //	using multi::array<T, 2>::array;
 	template<
 		class MultiArray, 
-		typename = decltype(multi::array<T, 2>{std::forward<MultiArray>(std::declval<MultiArray&>())})
+		typename = decltype(multi::array<T, 2>{std::forward<MultiArray>(std::declval<MultiArray&>())}),
+		std::enable_if_t<! std::is_base_of_v<uhermitian, std::decay_t<MultiArray>, int> =0
 	>
 	explicit uhermitian(MultiArray&& ma) : multi::array<T, 2>{std::forward<MultiArray>(ma)}{}
 	template<class Index> decltype(auto) operator[](Index i) const{

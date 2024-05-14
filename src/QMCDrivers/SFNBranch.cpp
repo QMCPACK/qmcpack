@@ -179,7 +179,9 @@ void SFNBranch::updateParamAfterPopControl(const MCDataType<FullPrecRealType>& w
     if (WarmUpToDoSteps == 0)
       throw UniformCommunicateError("Bug: WarmUpToDoSteps should be larger than 0 during warmup.");
 
-    // update Etrial based on ENOW as ENOW is not yet converged in warmup stage
+    // Use Enow as the best estimate of ground state energy during warmup.
+    vParam[SBVP::EREF] = vParam[SBVP::ENOW];
+    // update Etrial based on Enow as Enow is not yet converged in warmup stage
     if (BranchMode[B_POPCONTROL])
     {
       if (BranchMode[B_KILLNODES])

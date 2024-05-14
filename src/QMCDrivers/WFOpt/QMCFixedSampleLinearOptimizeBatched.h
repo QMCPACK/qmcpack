@@ -274,13 +274,13 @@ private:
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
 
-  NewTimer& generate_samples_timer_;
   NewTimer& initialize_timer_;
+  NewTimer& generate_samples_timer_;
+  NewTimer& build_olv_ham_timer_;
+  NewTimer& invert_olvmat_timer_;
   NewTimer& eigenvalue_timer_;
-  NewTimer& involvmat_timer_;
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
-  Timer t1;
 
   ///xml node to be dumped
   xmlNodePtr wfNode;

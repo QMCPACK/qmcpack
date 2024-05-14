@@ -22,14 +22,14 @@
  * -
 */
 #include "EinsplineSetBuilder.h"
+#include <array>
+#include <string_view>
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include <Message/UniformCommunicateError.h>
-#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReader.h"
 #include "Particle/DistanceTable.h"
-
-#include <array>
-#include <string_view>
+#include "mpi/collectives.h"
 
 namespace qmcplusplus
 {
@@ -103,8 +103,7 @@ bool EinsplineSetBuilder::CheckLattice()
     std::ostringstream o;
     o.setf(std::ios::scientific, std::ios::floatfield);
     o.precision(6);
-    o << "EinsplineSetBuilder::ReadOrbitalInfo_ESHDF \n"
-      << "Mismatched supercell lattices.\n";
+    o << "EinsplineSetBuilder::ReadOrbitalInfo_ESHDF \n" << "Mismatched supercell lattices.\n";
     o << " Lattice in ESHDF5 " << std::endl;
     o << SuperLattice << std::endl;
     o << " Lattice in xml" << std::endl;
@@ -622,8 +621,7 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
   if (spin >= NumSpins && !skipChecks)
   {
     app_error() << "To developer: User is requesting for orbitals in an invalid spin group " << spin
-                << ". Current h5 file only contains spin groups "
-                << "[0.." << NumSpins - 1 << "]." << std::endl;
+                << ". Current h5 file only contains spin groups " << "[0.." << NumSpins - 1 << "]." << std::endl;
     app_error() << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized "
                    "calculations. "
                 << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file."

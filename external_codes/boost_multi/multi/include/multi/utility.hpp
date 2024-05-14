@@ -1,9 +1,10 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2023 Alfredo A. Correa
 
 #ifndef MULTI_UTILITY_HPP
 #define MULTI_UTILITY_HPP
+#pragma once
 
+#include "detail/implicit_cast.hpp"
 #include "detail/layout.hpp"
 
 #include <functional>    // for std::invoke
@@ -15,12 +16,6 @@
 #endif
 
 namespace boost::multi {
-
-template<class To, class From, std::enable_if_t<std::is_convertible<From, To>::value, int> =0>  // ::value (not _v) needed by intel's icpc 19
-constexpr auto implicit_cast(From&& r) -> To {return static_cast<To>(r);}  // NOLINT(readability-identifier-length) std naming
-
-template<class To, class From, std::enable_if_t<std::is_constructible<To, From>::value and not std::is_convertible<From, To>::value, int> =0>  // ::value (not _v) needed by intel's icpc 19
-constexpr auto explicit_cast(From&& r) -> To {return static_cast<To>(r);}  // NOLINT(readability-identifier-length) std naming
 
 template<class T, class Ptr = T*>
 struct move_ptr : private std::move_iterator<Ptr> {
@@ -38,20 +33,20 @@ struct move_ptr : private std::move_iterator<Ptr> {
 
 	using std::move_iterator<Ptr>::move_iterator;
 
-	constexpr /*implicit*/ operator Ptr() const {return std::move_iterator<Ptr>::base();}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) decay to lvalue should be easy
-	constexpr auto operator+=(difference_type n) -> move_ptr& {static_cast<std::move_iterator<Ptr>&>(*this) += n; return *this;}
-	constexpr auto operator-=(difference_type n) -> move_ptr& {static_cast<std::move_iterator<Ptr>&>(*this) -= n; return *this;}
+	HD constexpr /*implicit*/ operator Ptr() const {return std::move_iterator<Ptr>::base();}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) decay to lvalue should be easy
+	HD constexpr auto operator+=(difference_type n) -> move_ptr& {static_cast<std::move_iterator<Ptr>&>(*this) += n; return *this;}
+	HD constexpr auto operator-=(difference_type n) -> move_ptr& {static_cast<std::move_iterator<Ptr>&>(*this) -= n; return *this;}
 
-	constexpr auto operator+(difference_type n) const -> move_ptr {move_ptr ret{*this}; ret += n; return ret;}
-	constexpr auto operator-(difference_type n) const -> move_ptr {move_ptr ret{*this}; ret -= n; return ret;}
+	HD constexpr auto operator+(difference_type n) const -> move_ptr {move_ptr ret{*this}; ret += n; return ret;}
+	HD constexpr auto operator-(difference_type n) const -> move_ptr {move_ptr ret{*this}; ret -= n; return ret;}
 
-	constexpr auto operator-(move_ptr const& other) const -> difference_type {return static_cast<std::move_iterator<Ptr> const&>(*this) - static_cast<std::move_iterator<Ptr> const&>(other);}
+	HD constexpr auto operator-(move_ptr const& other) const -> difference_type {return static_cast<std::move_iterator<Ptr> const&>(*this) - static_cast<std::move_iterator<Ptr> const&>(other);}
 
-	constexpr auto operator*() const -> decltype(auto) {return *static_cast<std::move_iterator<Ptr> const&>(*this);}
-	constexpr auto operator[](difference_type n) const -> decltype(auto) {return *((*this) + n);}
+	   constexpr auto operator*() const -> decltype(auto) {return *static_cast<std::move_iterator<Ptr> const&>(*this);}
+	HD constexpr auto operator[](difference_type n) const -> decltype(auto) {return *((*this) + n);}
 
-	constexpr auto operator==(move_ptr const& other) const -> bool {return static_cast<std::move_iterator<Ptr> const&>(*this) == static_cast<std::move_iterator<Ptr> const&>(other);}
-	constexpr auto operator!=(move_ptr const& other) const -> bool {return static_cast<std::move_iterator<Ptr> const&>(*this) != static_cast<std::move_iterator<Ptr> const&>(other);}
+	HD constexpr auto operator==(move_ptr const& other) const -> bool {return static_cast<std::move_iterator<Ptr> const&>(*this) == static_cast<std::move_iterator<Ptr> const&>(other);}
+	HD constexpr auto operator!=(move_ptr const& other) const -> bool {return static_cast<std::move_iterator<Ptr> const&>(*this) != static_cast<std::move_iterator<Ptr> const&>(other);}
 };
 
 template<class T> struct ref_add_const {using type = T const;};  // this is not the same as std::add_const
@@ -63,7 +58,7 @@ template<class T> struct ref_add_const<T      &> {using type = T const&;};
 template<class T, class UF, class Ptr, class Ref = std::invoke_result_t<UF const&, typename std::iterator_traits<Ptr>::reference>>
 struct transform_ptr {
 	using difference_type   = typename std::iterator_traits<Ptr>::difference_type;
-	using value_type        = std::decay_t<Ref>;//typename std::iterator_traits<std::move_iterator<Ptr>>::value_type;
+	using value_type        = std::decay_t<Ref>;  // typename std::iterator_traits<std::move_iterator<Ptr>>::value_type;
 	using pointer           = Ptr;
 	using reference         = Ref;
 	using iterator_category = typename std::iterator_traits<Ptr>::iterator_category;
@@ -80,15 +75,23 @@ struct transform_ptr {
 		>
 	;
 
-	template<class... As>
+	#if defined(__GNUC__) and (__GNUC__ < 9)
+	constexpr explicit transform_ptr(std::nullptr_t nil) : p_{nil} /*, f_{}*/ {}  // seems to be necessary for gcc 7
+	#endif
+
 	constexpr transform_ptr(pointer ptr, UF fun) : p_{ptr}, f_(std::move(fun)) {}
 
-	template<class Other>
-	constexpr transform_ptr(Other const& other) : p_{other.p_}, f_{other.f_} {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) TODO(correaa) use conditional explicit idiom here
+	template<class Other, class P = typename Other::pointer, decltype(detail::implicit_cast<pointer>(std::declval<P>()))* =nullptr>
+	// cppcheck-suppress noExplicitConstructor
+	constexpr /*mplc*/ transform_ptr(Other const& other) : p_{other.p_}, f_{other.f_} {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) TODO(correaa) use conditional explicit idiom here
+
+	template<class Other, class P = typename Other::pointer, decltype(detail::explicit_cast<pointer>(std::declval<P>()))* =nullptr>
+	constexpr explicit transform_ptr(Other const& other) : p_{other.p_}, f_{other.f_} {}
 
 	constexpr auto functor() const -> UF {return f_;}
 	constexpr auto base() const -> Ptr const& {return p_;}
 	constexpr auto operator*() const -> reference {  // NOLINT(readability-const-return-type) in case synthesis reference is a `T const`
+		// invoke allows for example to use .transformed( &member) instead of .transformed( std::mem_fn(&member) )
 		return std::invoke(f_, *p_);  // NOLINT(readability-const-return-type) in case synthesis reference is a `T const`
 	//  return f_(*p_);  // NOLINT(readability-const-return-type) in case synthesis reference is a `T const`
 	}
@@ -101,18 +104,17 @@ struct transform_ptr {
 
 	constexpr auto operator-(transform_ptr const& other) const -> difference_type {return p_ - other.p_;}
 
-	constexpr auto operator[](difference_type n) const -> reference {return *((*this) + n);}
+	constexpr auto operator[](difference_type n) const -> reference {return *((*this) + n);}  // NOLINT(readability-const-return-type) transformed_view might return by const value.
 
 	constexpr auto operator==(transform_ptr const& other) const -> bool {return p_ == other.p_;}
 	constexpr auto operator!=(transform_ptr const& other) const -> bool {return p_ != other.p_;}
 
  private:
 	Ptr p_;
-	UF  f_;
+	UF  f_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members) technically this type can be const
 
 	template<class, class, class, class> friend struct transform_ptr;
 };
-
 
 template<class Array, typename Reference = void, typename Element = void>
 struct array_traits;
@@ -202,7 +204,7 @@ auto common(T1 const& val1, T2 const& val2) -> Ret {
 template<class T>
        auto has_num_elements_aux(T const& /*array*/)->decltype(std::declval<T const&>().num_elements() + 1, std::true_type {});
 inline auto has_num_elements_aux(...               )->decltype(                                             std::false_type{});
-template<class T> struct has_num_elements : decltype(has_num_elements_aux(std::declval<T>())) {};
+template<class T> struct has_num_elements : decltype(has_num_elements_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
 template<class A, typename = std::enable_if_t<has_num_elements<A>{}> >
 constexpr auto num_elements(A const& arr)
@@ -213,19 +215,24 @@ constexpr auto num_elements(A const& arr)
 template<class T>
        auto has_size_aux(T const& cont) -> decltype(cont.size(), std::true_type {});
 inline auto has_size_aux(...          ) -> decltype(             std::false_type{});
-template<class T> struct has_size : decltype(has_size_aux(std::declval<T>())) {};
+template<class T> struct has_size : decltype(has_size_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
 template<class T>
        auto has_data_elements_aux(T&& array)->decltype(array.data_elements() + 1, std::true_type {});  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) why +1?
 inline auto has_data_elements_aux(...      )->decltype(                           std::false_type{});
-template<class T> struct has_data_elements : decltype(has_data_elements_aux(std::declval<T>())) {};
+template<class T> struct has_data_elements : decltype(has_data_elements_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+
+template<class T>
+       auto has_base_aux(T&& array)->decltype(array.base() + 1, std::true_type {});  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) why +1?
+inline auto has_base_aux(...      )->decltype(                  std::false_type{});
+template<class T> struct has_base : decltype(has_base_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
 namespace detail {
 template<class T>
-       auto has_data_aux(T&& cont) -> decltype(cont.data() + 1, std::true_type {});  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) why +1?
-inline auto has_data_aux(...     ) -> decltype(                 std::false_type{});
+       auto has_data_aux(T&& cont) -> decltype(cont.data_elements() + 1, std::true_type {});  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) why +1?
+inline auto has_data_aux(...     ) -> decltype(                          std::false_type{});
 }  // end namespace detail
-template<class T> struct has_data : decltype(detail::has_data_aux(std::declval<T>())) {};
+template<class T> struct has_data : decltype(detail::has_data_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
 template<class Array, std::enable_if_t<has_data<std::decay_t<Array>>::value && !has_data_elements<std::decay_t<Array>>::value, int> =0>
 auto data_elements(Array& arr) {return arr.data();}
@@ -245,7 +252,7 @@ constexpr auto data_elements(A const& arr)
 	return arr.data_elements(); }
 
 template<class T, std::enable_if_t<!std::is_array_v<std::decay_t<T>> and not has_data_elements<std::decay_t<T>>::value && !has_data<std::decay_t<T>>::value, int> =0>
-constexpr auto data_elements(T& value) {return &value;}
+constexpr auto data_elements(T& value) -> decltype(&value) {return &value;}
 
 template<class A> struct num_elements_t: std::integral_constant<std::ptrdiff_t, 1> {};
 
@@ -256,7 +263,7 @@ template<class T, std::size_t N> struct num_elements_t<T(&)[N]> : num_elements_t
 template<class T, std::size_t N>
 constexpr auto num_elements(const T(&/*array*/)[N]) noexcept {return num_elements_t<T[N]>{};}  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : for backwards compatibility
 
-template<class Vector, typename = std::enable_if_t<std::is_same_v<typename Vector::pointer, decltype(std::declval<Vector>().data())>>>
+template<class Vector, typename = std::enable_if_t<std::is_same_v<typename Vector::pointer, decltype(std::declval<Vector>().data())>>, class = decltype(Vector{}.resize(1))>
 auto data_elements(Vector const& vec)
 ->decltype(vec.data()) {
 	return vec.data(); }
@@ -280,17 +287,17 @@ constexpr auto data_elements(T(&array)[N]) noexcept {return data_elements(array[
 template<class T>
        auto has_dimensionality_aux(T const& /*array*/)->decltype(T::rank_v, std::true_type {});
 inline auto has_dimensionality_aux(...               )->decltype(           std::false_type{});
-template<class T> struct has_dimensionality : decltype(has_dimensionality_aux(std::declval<T>())) {};
+template<class T> struct has_dimensionality : decltype(has_dimensionality_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
 template<class Container, std::enable_if_t<has_dimensionality<Container>{}, int> =0>
 constexpr auto dimensionality(Container const& /*container*/)
-->std::decay_t<decltype(Container::rank_v)> {
+->std::decay_t<decltype(typename Container::rank{}+0)> {
 	return Container::rank_v;}
 
 template<class T>
        auto has_dimensionaliy_member_aux(T const& /*array*/) -> decltype(static_cast<void>(static_cast<boost::multi::dimensionality_type>(T::rank_v)), std::true_type {});
 inline auto has_dimensionaliy_member_aux(...               ) -> decltype(                                                                              std::false_type{});
-template<class T> struct has_dimensionality_member : decltype(has_dimensionaliy_member_aux(std::declval<T>())){};
+template<class T> struct has_dimensionality_member : decltype(has_dimensionaliy_member_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
 template<class T, typename = std::enable_if_t<not has_dimensionality_member<T>{}>>
 constexpr auto dimensionality(T const&/*, void* = nullptr*/) {return 0;}
@@ -335,27 +342,27 @@ constexpr auto corigin(const T(&array)[N]) noexcept {return corigin(array[0]);} 
 template<class T, typename = decltype(std::declval<T>().extension())>
        auto has_extension_aux(T const&) -> std::true_type;
 inline auto has_extension_aux(...     ) -> std::false_type;
-template<class T> struct has_extension : decltype(has_extension_aux(std::declval<T>())){};
+template<class T> struct has_extension : decltype(has_extension_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
 template<class Container, class=std::enable_if_t<!has_extension<Container>::value>>
 auto extension(Container const& cont)  // TODO(correaa) consider "extent"
 ->decltype(multi::extension_t<std::make_signed_t<decltype(size(cont))>>(0, static_cast<std::make_signed_t<decltype(size(cont))>>(size(cont)))) {
 	return multi::extension_t<std::make_signed_t<decltype(size(cont))>>(0, static_cast<std::make_signed_t<decltype(size(cont))>>(size(cont))); }
 
-template<class T, typename = decltype(std::declval<T>().shape())>
-       auto has_shape_aux(T const&) -> std::true_type;
-inline auto has_shape_aux(...     ) -> std::false_type;
+// template<class T, typename = decltype(std::declval<T>().shape())>
+//        auto has_shape_aux(T const&) -> std::true_type;
+// inline auto has_shape_aux(...     ) -> std::false_type;
 
-template<class T> struct has_shape : decltype(has_shape_aux(std::declval<T>())) {};
+template<class T> struct has_shape : decltype(has_shape_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) trick
 
 template<class T, typename = decltype(std::declval<T const&>().extensions())>
        auto has_extensions_aux(T const&) -> std::true_type;
 inline auto has_extensions_aux(...     ) -> std::false_type;
 
-template<class T> struct has_extensions : decltype(has_extensions_aux(std::declval<T>())) {};
+template<class T> struct has_extensions : decltype(has_extensions_aux(std::declval<T>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) trick
 
 template<class T, std::enable_if_t<has_extensions<T>::value, int> =0>
-[[nodiscard]] auto extensions(T const& array) -> std::decay_\
+[[nodiscard]] constexpr auto extensions(T const& array) -> std::decay_\
 t<decltype(array.extensions())> {
 	return array.extensions();  }
 
@@ -366,12 +373,23 @@ constexpr auto extensions_aux2(BoostMultiArray const& arr, std::index_sequence<I
 	);
 }
 
-template<class BoostMultiArray, std::enable_if_t<has_shape<BoostMultiArray>::value && !has_extensions<BoostMultiArray>::value, int> =0>
-constexpr auto extensions(BoostMultiArray const& array) {
-	return extensions_aux2(array, std::make_index_sequence<BoostMultiArray::dimensionality>{});
+template<class Element, class T, std::enable_if_t<has_extensions<T>::value, int> =0>
+[[nodiscard]] auto extensions_of(T const& array) {
+	if constexpr(std::is_convertible<T const&, Element>::value) {
+		return boost::multi::extensions_t<0>{};
+	}
+	if constexpr(std::is_convertible<typename T::reference, Element>::value) {
+		return boost::multi::extensions_t<1>{array.extension()};
+	}
 }
 
-template<class T, std::enable_if_t<!has_extensions<T>::value && !has_shape<T>::value, int> =0>
+
+// template<class BoostMultiArray, std::enable_if_t<has_shape<BoostMultiArray>::value && !has_extensions<BoostMultiArray>::value, int> =0>
+// constexpr auto extensions(BoostMultiArray const& array) {
+// 	return extensions_aux2(array, std::make_index_sequence<BoostMultiArray::dimensionality>{});
+// }
+
+template<class T, std::enable_if_t<!has_extensions<T>::value /*&& !has_shape<T>::value*/, int> =0>
 constexpr auto extensions(T const& /*unused*/) -> multi::layout_t<0>::extensions_type {return {};}
 
 template<class T, std::size_t N>
@@ -413,7 +431,7 @@ template<class T, typename = decltype(std::declval<T const&>().layout())>
 inline auto has_layout_member_aux(...     ) -> std::false_type;
 
 template<class T>
-struct has_layout_member : decltype(has_layout_member_aux(std::declval<T const&>())){};
+struct has_layout_member : decltype(has_layout_member_aux(std::declval<T const&>())) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
 template<class T, typename = std::enable_if_t<has_layout_member<T const&>{}> >
 auto layout(T const& array)

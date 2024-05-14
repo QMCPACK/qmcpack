@@ -9,27 +9,25 @@
 #]=]
 cmake_minimum_required(VERSION 3.11)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
-#project(
-#	boost-multi-adaptors-blas-test
-#	VERSION 0.1
-#	LANGUAGES CXX
-#)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 if((NOT
 	CMAKE_CXX_COMPILER_ID
 	STREQUAL
 	"PGI"
    )
    AND (NOT
+	   CMAKE_CXX_COMPILER_ID
+		STREQUAL
+        "NVHPC"
+	)
+   AND (NOT
 		DART_COMPILER_NAME
 		STREQUAL
 		"nvcc"
+	   )
+   AND (NOT
+		DART_COMPILER_NAME
+		STREQUAL
+		"icpc"
 	   )
 )
 	find_package(Boost REQUIRED COMPONENTS unit_test_framework)
@@ -56,33 +54,38 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
 	add_definitions(-DRETURN_BY_STACK)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
+	add_definitions(-DRETURN_BY_STACK)
+endif()
+
+
 if(ENABLE_CUDA OR DEFINED CXXCUDA)
 	enable_language(CUDA)
 	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
-#	find_package(CUDA QUIET)
-#	if(CUDA_FOUND)
-#		message("CUDA found")
-#		include_directories(${CUDA_INCLUDE_DIRS})
-#	else()
-#		message("CUDA not found")
-#	endif()
+#   find_package(CUDA QUIET)
+#   if(CUDA_FOUND)
+#       message("CUDA found")
+#       include_directories(${CUDA_INCLUDE_DIRS})
+#   else()
+#       message("CUDA not found")
+#   endif()
 
-#	include(FindCUDA/select_compute_arch)
-#	cuda_detect_installed_gpus(INSTALLED_GPU_CCS_1)
-#	string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
-#	string(
-#		REPLACE " "
-#				";"
-#				INSTALLED_GPU_CCS_3
-#				"${INSTALLED_GPU_CCS_2}"
-#	)
-#	string(
-#		REPLACE "."
-#				""
-#				CUDA_ARCH_LIST
-#				"${INSTALLED_GPU_CCS_3}"
-#	)
-#	set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_LIST})
+#   include(FindCUDA/select_compute_arch)
+#   cuda_detect_installed_gpus(INSTALLED_GPU_CCS_1)
+#   string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
+#   string(
+#       REPLACE " "
+#               ";"
+#               INSTALLED_GPU_CCS_3
+#               "${INSTALLED_GPU_CCS_2}"
+#   )
+#   string(
+#       REPLACE "."
+#               ""
+#               CUDA_ARCH_LIST
+#               "${INSTALLED_GPU_CCS_3}"
+#   )
+#   set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_LIST})
 
 endif()
 
@@ -103,6 +106,7 @@ set(TEST_SRCS
 	gemv.cpp
 	gemm.cpp
 	numeric.cpp
+	nrm2.cpp
 	scal.cpp
 	traits.cpp
 	trsm.cpp
@@ -123,18 +127,22 @@ foreach(TEST_FILE ${TEST_SRCS})
 	target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_PP_VARIADICS")
 	target_compile_definitions(${TEST_EXE} PRIVATE ${Boost_DEFINITIONS})
 	target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
+	target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_TEST_DYN_LINK=1")
+
+	target_link_libraries(${TEST_EXE} PRIVATE ${BLAS_LIBRARIES})  # there is no BLAS_INCLUDE_DIRS
 
     target_link_libraries(${TEST_EXE} PRIVATE multi)
 	target_link_libraries(${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
 
 	target_link_directories(${TEST_EXE} PRIVATE ${Boost_LIBRARY_DIRS})
-	if(NOT ENABLE_CUDA
-	   AND (NOT
+	if(NOT ENABLE_CIRCLE)
+		if(NOT ENABLE_CUDA
+		AND (NOT
 			DART_COMPILER_NAME
 			STREQUAL
 			"nvcc"
-		   )
-	)
+			)
+		)
 		target_compile_options(
 			${TEST_EXE}
 			PRIVATE -Werror
@@ -147,7 +155,8 @@ foreach(TEST_FILE ${TEST_SRCS})
 					$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
 					-Wextra
 					-Wpedantic
-					-Wmove>
+					-Wmove
+					-Wno-error=\#warnings>
 					$<$<CXX_COMPILER_ID:Intel>:
 					-Wextra
 					-wd161
@@ -174,12 +183,13 @@ foreach(TEST_FILE ${TEST_SRCS})
 					-Wunused-variable
 					-Wwrite-strings
 					-diag-error:3846>
-                    $<$<OR:$<CXX_COMPILER_ID:PGI>,$<CXX_COMPILER_ID:NVHPC>>:  # EDG diagnostics list: http://www.ssl.berkeley.edu/~jimm/grizzly_docs/SSL/opt/intel/cc/9.0/lib/locale/en_US/mcpcom.msg
-                    --display_error_number --diag_error=incompatible_assignment_operands,returning_ptr_to_local_variable,subscript_out_of_range,used_before_set,undefined_preproc_id,implicit_func_decl,implicit_return_from_non_void_function,missing_type_specifier
-		            >
+						$<$<OR:$<CXX_COMPILER_ID:PGI>,$<CXX_COMPILER_ID:NVHPC>>:  # EDG diagnostics list: http://www.ssl.berkeley.edu/~jimm/grizzly_docs/SSL/opt/intel/cc/9.0/lib/locale/en_US/mcpcom.msg
+						--display_error_number --diag_error=incompatible_assignment_operands,returning_ptr_to_local_variable,subscript_out_of_range,used_before_set,undefined_preproc_id,implicit_func_decl,implicit_return_from_non_void_function,missing_type_specifier
+					>
 					$<$<CXX_COMPILER_ID:MSVC>:
 					/W4>
 		)
+		endif()
 	endif()
 	add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
 endforeach()

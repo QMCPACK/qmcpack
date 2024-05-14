@@ -35,8 +35,8 @@ public:
   void readXML(xmlNodePtr cur);
 
   // To allow compile check if move constructor is still implicit
-  QMCDriverInput()                      = default;
-  QMCDriverInput(const QMCDriverInput&) = default;
+  QMCDriverInput()                                 = default;
+  QMCDriverInput(const QMCDriverInput&)            = default;
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
   QMCDriverInput(QMCDriverInput&&) noexcept;
   QMCDriverInput& operator=(QMCDriverInput&&) noexcept;
@@ -70,13 +70,12 @@ protected:
   IndexType requested_samples_ = 0;
   IndexType sub_steps_         = 1;
   // max unnecessary in this context
-  IndexType max_blocks_            = 1;
-  IndexType max_steps_             = 1;
-  IndexType warmup_steps_          = 0;
-  IndexType steps_between_samples_ = 1;
-  IndexType samples_per_thread_    = 0;
-  RealType tau_                    = 0.1;
-  RealType spin_mass_              = 1.0;
+  IndexType max_blocks_ = 1;
+  // if 0, the actual value will be decided later by the driver
+  IndexType requested_steps_ = 0;
+  IndexType warmup_steps_    = 0;
+  RealType tau_              = 0.1;
+  RealType spin_mass_        = 1.0;
   // call recompute at the end of each block in the full/mixed precision case.
   IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 0 : 1;
   bool append_run_                    = false;
@@ -117,10 +116,8 @@ public:
   IndexType get_sub_steps() const { return sub_steps_; }
   RealType get_max_disp_sq() const { return max_disp_sq_; }
   IndexType get_max_blocks() const { return max_blocks_; }
-  IndexType get_max_steps() const { return max_steps_; }
+  IndexType get_requested_steps() const { return requested_steps_; }
   IndexType get_warmup_steps() const { return warmup_steps_; }
-  IndexType get_steps_between_samples() const { return steps_between_samples_; }
-  IndexType get_samples_per_thread() const { return samples_per_thread_; }
   RealType get_tau() const { return tau_; }
   RealType get_spin_mass() const { return spin_mass_; }
   IndexType get_blocks_between_recompute() const { return blocks_between_recompute_; }
@@ -145,7 +142,7 @@ public:
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken
-inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept = default;
+inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept            = default;
 inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) noexcept = default;
 
 } // namespace qmcplusplus

@@ -62,6 +62,12 @@ public:
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) final;
+  /** update C on device
+   */
+  void finalizeConstruction() override
+  {
+    lcao.finalizeConstruction();
+  }
 
   friend class LCAOrbitalBuilder;
 

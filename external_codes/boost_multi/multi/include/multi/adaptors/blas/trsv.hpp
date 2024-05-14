@@ -1,6 +1,6 @@
-#ifndef MULTI_ADAPTORS_BLAS_TRSV_HPP  // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+#ifndef MULTI_ADAPTORS_BLAS_TRSV_HPP
 #define MULTI_ADAPTORS_BLAS_TRSV_HPP
-// Copyright 2019-2021 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
 
 #include "../blas/core.hpp"
 
@@ -11,8 +11,6 @@
 #include "../../config/NODISCARD.hpp"
 
 namespace boost::multi::blas {
-
-//enum DIAG : char{U='U', N='N'};
 
 enum class diagonal : char {//typename std::underlying_type<char>::type{
 	unit = 'U',
@@ -35,14 +33,14 @@ auto trsv(filling a_nonzero_side, diagonal a_diag, A2D const& a, X1D&& x)
 	{
 		auto base_a = trsv_base(a);
 		auto base_x = trsv_base(x);
-		if(not is_conjugated<A2D>{}) {
-				 if(stride(        a )==1) {trsv(static_cast<char>(flip(a_nonzero_side)), 'N', static_cast<char>(a_diag), size(x), base_a, stride(rotated(a)), base_x, stride(x));}
+		if(! is_conjugated<A2D>{}) {
+			if     (stride(        a )==1) {trsv(static_cast<char>(flip(a_nonzero_side)), 'N', static_cast<char>(a_diag), size(x), base_a, stride(rotated(a)), base_x, stride(x));}
 			else if(stride(rotated(a))==1) {trsv(static_cast<char>(     a_nonzero_side ), 'T', static_cast<char>(a_diag), size(x), base_a, stride(        a ), base_x, stride(x));}
-			else                           {assert(0);}
+			else {assert(0);}
 		}else{
-				 if(stride(        a )==1) {assert(0);} //TODO fallback to trsm?
+			if     (stride(        a )==1) {assert(0);}  // TODO(correaa) fallback to trsm?
 			else if(stride(rotated(a))==1) {trsv(static_cast<char>(     a_nonzero_side ), 'C', static_cast<char>(a_diag), size(x), base_a, stride(        a ), base_x, stride(x));}
-			else                           {assert(0);}
+			else {assert(0);}
 		}
 	}
 	return std::forward<X1D>(x);

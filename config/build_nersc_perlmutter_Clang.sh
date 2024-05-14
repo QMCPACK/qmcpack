@@ -1,7 +1,7 @@
 #!/bin/bash
 # This recipe is intended for NERSC Perlmutter https://docs.nersc.gov/systems/perlmutter
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Aug 12th 2023
+# last revision: Mar 18th 2024
 #
 # How to invoke this script?
 # build_nersc_perlmutter_Clang.sh # build all the variants assuming the current directory is the source directory.
@@ -10,13 +10,17 @@
 
 module load PrgEnv-gnu
 module load cray-libsci
-CRAY_LIBSCI_LIB=$CRAY_LIBSCI_PREFIX_DIR/lib/libsci_gnu_mp.so
-
-module load PrgEnv-llvm/0.1 llvm/16
-module load cray-fftw/3.3.10.3
-module load cray-hdf5-parallel/1.12.2.3
+CRAY_LIBSCI_LIB=$CRAY_PE_LIBSCI_PREFIX_DIR/lib/libsci_gnu_mp.so
+module unload PrgEnv-gnu
+module load craype cray-mpich
+module load cray-fftw
+module load cray-hdf5-parallel
 module load cmake/3.24.3
 
+module use /global/common/software/nersc/n9/llvm/modules
+module load llvm/17.0.6-gpu
+export MPICH_CC=clang
+export MPICH_CXX=clang++
 
 echo "**********************************"
 echo '$ clang -v'
@@ -25,7 +29,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=perlmutter
-Compiler=Clang16
+Compiler=Clang17
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`

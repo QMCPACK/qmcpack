@@ -105,6 +105,8 @@ public:
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<Value>& ratios) override;
 
+  void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<Value>& ratios) override;
+
   void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<Value>>& ratios) const override;

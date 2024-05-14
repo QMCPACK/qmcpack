@@ -55,7 +55,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       Psi(psi),
       H(h),
       checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
-      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
@@ -113,6 +112,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
 
   SpinMass = 1.0;
   m_param.add(SpinMass, "SpinMass");
+  m_param.add(SpinMass, "spin_mass");
 
   Tau = 0.1;
   //m_param.add(Tau,"timeStep");
@@ -370,8 +370,8 @@ void QMCDriver::setWalkerOffsets()
   long id = nwoff[myComm->rank()];
   for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
   {
-    W[iw]->ID       = id;
-    W[iw]->ParentID = id;
+    W[iw]->setWalkerID(id);
+    W[iw]->setParentID(id);
   }
   app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
   app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;

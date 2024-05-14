@@ -133,8 +133,7 @@ public:
                MCPopulation&& population,
                const std::string timer_prefix,
                Communicate* comm,
-               const std::string& QMC_driver_type,
-               SetNonLocalMoveHandler = &QMCDriverNew::defaultSetNonLocalMoveHandler);
+               const std::string& QMC_driver_type);
 
   ///Move Constructor
   QMCDriverNew(QMCDriverNew&&) = default;
@@ -186,7 +185,7 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override {};
 
   void createRngsStepContexts(int num_crowds);
 
@@ -231,9 +230,7 @@ public:
    */
   void process(xmlNodePtr cur) override = 0;
 
-  static void initialLogEvaluation(int crowd_id,
-                                   UPtrVector<Crowd>& crowds,
-                                   UPtrVector<ContextForSteps>& step_context);
+  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
 
   /** should be set in input don't see a reason to set individually
@@ -301,6 +298,19 @@ protected:
                                                                     const IndexType requested_walkers_per_rank,
                                                                     const RealType reserve_walkers,
                                                                     int num_crowds);
+
+  /** pure function calculating the actual number of steps per block
+   *
+   * @param global_walkers the total number of walkers over all the MPI ranks
+   * @param requested_samples the number of samples from user input "samples". <=0 treated as no input
+   * @param requested_steps the number steps per block from user input "steps". <=0 treated as no input
+   * @param blocks the number of blocks. Must be positive.
+   * @return calculated optimal number of steps per block
+   */
+  static size_t determineStepsPerBlock(IndexType global_walkers,
+                                       IndexType requested_samples,
+                                       IndexType requested_steps,
+                                       IndexType blocks);
 
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
@@ -381,8 +391,9 @@ protected:
    */
   int walker_dump_period;
 
-
   IndexType current_step_;
+  /// actual number of steps per block
+  size_t steps_per_block_ = 0;
 
   ///counter for number of moves accepted
   IndexType nAccept;
@@ -449,8 +460,6 @@ protected:
 
   DriverTimers timers_;
 
-  ///time the driver lifetime
-  ScopedTimer driver_scope_timer_;
   ///profile the driver lifetime
   ScopedProfiler driver_scope_profiler_;
 
@@ -465,10 +474,6 @@ protected:
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);
-
-  SetNonLocalMoveHandler setNonLocalMoveHandler_;
-
-  static void defaultSetNonLocalMoveHandler(QMCHamiltonian& gold_ham);
 
   friend class qmcplusplus::testing::VMCBatchedTest;
   friend class qmcplusplus::testing::DMCBatchedTest;

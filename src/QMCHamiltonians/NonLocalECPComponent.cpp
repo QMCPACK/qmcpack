@@ -857,7 +857,9 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         //this is for diagonal case.
-        udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb], rrotsgrid_m[j]);
+        //The GradType is necessary here, since rrotsgrid_m is real.  This dot() will only return the real part in this case.  
+        //Does correct thing if both entries are complex.
+        udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb], GradType(rrotsgrid_m[j]));
         wfgradmat[j][iorb]      = gradphimat[j][iorb] - dr * (udotgradpsimat[j][iorb] * rinv);
         gpot[iorb] += dvdr_prefactor[j] * phimat[j][iorb];
         glpoly[iorb] += dlpoly_prefactor[j] * phimat[j][iorb];

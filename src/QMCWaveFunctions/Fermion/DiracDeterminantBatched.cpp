@@ -447,13 +447,14 @@ void DiracDeterminantBatched<DET_ENGINE>::acceptMove(ParticleSet& P, int iat, bo
   if (curRatio == PsiValue(0))
   {
     std::ostringstream msg;
-    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    msg << "DiracDeterminantBatched::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
     throw std::runtime_error(msg.str());
   }
   const int WorkingIndex = iat - FirstIndex;
   log_value_ += convertValueToLog(curRatio);
   {
     ScopedTimer local_timer(UpdateTimer);
+    psiV.updateTo();
     det_engine_.updateRow(WorkingIndex, psiV, curRatio);
     if (UpdateMode == ORB_PBYP_PARTIAL)
     {
@@ -506,7 +507,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
 
       {
         std::ostringstream msg;
-        msg << "DiracDeterminant::mw_accept_rejectMove det.curRatio is " << det.curRatio << "! Report a bug."
+        msg << "DiracDeterminantBatched::mw_accept_rejectMove det.curRatio is " << det.curRatio << "! Report a bug."
             << std::endl;
         throw std::runtime_error(msg.str());
       }
@@ -814,6 +815,20 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSe
   {
     ScopedTimer local_timer(SPOVTimer);
     Phi->evaluateDetRatios(VP, psiV_host_view, d2psiV_host_view, ratios);
+  }
+}
+
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multipler, std::vector<Value>& ratios)
+{
+  {
+    ScopedTimer local_timer(RatioTimer);
+    const int WorkingIndex = VP.refPtcl - FirstIndex;
+    std::copy_n(det_engine_.get_psiMinv()[WorkingIndex], d2psiV.size(), d2psiV.data());
+  }
+  {
+    ScopedTimer local_timer(SPOVTimer);
+    Phi->evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multipler, d2psiV_host_view, ratios);
   }
 }
 

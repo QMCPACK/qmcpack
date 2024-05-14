@@ -101,3 +101,6 @@ BOOST_AUTO_TEST_CASE(thrust_universal_speed_algo) {
 	}
 }
 
+BOOST_AUTO_TEST_CASE(thrust_run) {
+	multi::array<long, 1, thrust::cuda::allocator<long>> A(100);
+}

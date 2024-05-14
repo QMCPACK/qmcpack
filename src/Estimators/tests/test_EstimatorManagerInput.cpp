@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -46,16 +46,17 @@ TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
   EstimatorManagerInput emi;
 
   {
-    using namespace testing::onebodydensitymatrices;
+    using input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
+    bool okay = doc.parseFromString(input::xml[input::VANILLA]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
   }
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
+    using spin_input = testing::ValidSpinDensityInput;
+    bool okay = doc.parseFromString(spin_input::xml[spin_input::GRID]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);
@@ -101,16 +102,17 @@ TEST_CASE("EstimatorManagerInput::moveFromEstimatorInputs", "[estimators]")
   EstimatorManagerInput emi;
 
   {
-    using namespace testing::onebodydensitymatrices;
+    using input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
+    bool okay = doc.parseFromString(input::xml[input::VANILLA]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
   }
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
+    using spin_input = testing::ValidSpinDensityInput;
+    bool okay = doc.parseFromString(spin_input::xml[spin_input::GRID]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);
@@ -147,21 +149,8 @@ TEST_CASE("EstimatorManagerInput::MergeConstructor", "[estimators]")
   EstimatorManagerInput emi_local(estimators_doc.getRoot());
   EstimatorManagerInput emi_merged{emi_global, emi_local};
 
-  CHECK(emi_merged.get_estimator_inputs().size() == 3);
-  CHECK(emi_merged.get_scalar_estimator_inputs().size() == 5);
-}
-
-TEST_CASE("EstimatorManagerInput::AddAnInputDirectly", "[estimators]")
-{
-  using namespace testing;
-  Libxml2Document estimators_doc        = createEstimatorManagerNewInputXML();
-  Libxml2Document global_estimators_doc = createEstimatorManagerNewGlobalInputXML();
-  EstimatorManagerInput emi_global(global_estimators_doc.getRoot());
-  EstimatorManagerInput emi_local(estimators_doc.getRoot());
-  EstimatorManagerInput emi_merged{emi_global, emi_local};
-
-  CHECK(emi_merged.get_estimator_inputs().size() == 3);
-  CHECK(emi_merged.get_scalar_estimator_inputs().size() == 5);
+  CHECK(emi_merged.get_estimator_inputs().size() == 2);
+  CHECK(emi_merged.get_scalar_estimator_inputs().size() == 6);
 }
 
 } // namespace qmcplusplus
