@@ -6,17 +6,21 @@
   <random seed="17"/>
   <include href="LiH.structure.xml"/>
   <include href="LiH.wfj.xml"/>
-  <hamiltonian name="h0" type="generic" target="e">
-    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
-    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
-    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
-  </hamiltonian>
+  <qmcsystem>
+    <hamiltonian name="h0" type="generic" target="e">
+      <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+      <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+      <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+    </hamiltonian>
+    <estimators>
+      <estimator type="selfhealingoverlap" name="sh_overlap" />
+    </estimators>
+  </qmcsystem>
    <qmc method="vmc" move="pbyp">
       <parameter name="blocks"              >    3            </parameter>
       <parameter name="steps"               >    2            </parameter>
       <parameter name="subSteps"            >    2            </parameter>
       <parameter name="timestep"            >    0.4          </parameter>
       <parameter name="warmupSteps"         >    2            </parameter>
-      <estimator type="selfhealingoverlap" name="sh_overlap" />
    </qmc>
 </simulation>
