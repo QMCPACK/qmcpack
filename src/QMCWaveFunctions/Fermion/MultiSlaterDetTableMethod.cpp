@@ -1002,11 +1002,6 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
   evaluateMultiDiracDeterminantDerivativesWF(P, optvars, dlogpsi);
 }
 
-void MultiSlaterDetTableMethod::evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi)
-{
-  evaluateDerivativesMSD(psi_ratio_to_ref_det_, dlogpsi);
-}
-
 void MultiSlaterDetTableMethod::detRatios(Vector<ValueType>& ratios)
 {
   int det_id             = 0;

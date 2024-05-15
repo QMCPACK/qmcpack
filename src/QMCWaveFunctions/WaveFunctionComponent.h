@@ -486,11 +486,6 @@ public:
   */
   virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
-  /** Compute the derivatives of the log of the wavefunction component with respect to the optimizable parameters.
-   *  Unlike evaluateDerivativesWF, knowledge of mappings from component parameters to the full set of wavefunction parameters is not required.
-   */
-  virtual void evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi);
-
 
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
@@ -542,9 +537,14 @@ public:
                                    Matrix<ValueType>& dratios);
 
   
+
+  /** Compute ratios of the individual Slater determinants and the total MSD value.  
+   *  These are obtained via derivatives of the log of the wavefunction component with respect to the optimizable parameters.
+   *  Unlike evaluateDerivativesWF, knowledge of mappings from component parameters to the full set of wavefunction parameters is not required.
+   */
   virtual void detRatios(Vector<ValueType>& ratios)
   {
-    APP_ABORT("detRatios is not implemented. Perhaps wavefunctions is not a multideterminant?");
+    APP_ABORT("detRatios is not implemented. Perhaps wavefunction is not a multideterminant?");
   }
 
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers

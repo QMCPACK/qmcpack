@@ -187,8 +187,6 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
 
-  void evaluateDerivativesWF_local(Vector<ValueType>& dlogpsi) override;
-
   void detRatios(Vector<ValueType>& ratios) override;
 
   const std::vector<ValueType>& getLinearExpansionCoefs() const;
