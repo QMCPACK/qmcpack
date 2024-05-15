@@ -1199,8 +1199,7 @@ class HDFreader(DevBase):
                     elif vtype in HDFreader.groups:
                         self.add_group(hcur,cur,k,v)
                     else:
-                        print('hdfreader error: encountered invalid type: '+vtype)
-                        sys.exit()
+                        raise Exception('hdfreader error: encountered invalid type: '+vtype)
                     #end if
                 else:
                     print('hdfreader warning: attribute '+k+' is not a valid variable name and has been ignored')
@@ -1943,7 +1942,7 @@ def process_stat_file(options):
 
         # read data from the stat file
         vlog('opening stat.h5 file',n=1)
-        stat = read_hdf(os.path.join(options.path,output_files.stat),view=True)
+        stat = read_hdf(os.path.join(options.path,output_files.stat),verbose=options.verbose,view=True)
         vlog('file contents:\n'+repr(stat).rstrip(),n=2)
         vlog('extracting {0} data'.format(options.quantity),n=1)
         vlog('searching for {0} with label {1}'.format(options.quantity,options.qlabel),n=2)
