@@ -181,7 +181,7 @@ private:
   //-------------------------------------
 
   /// Choice of eigenvalue solver
-  std::string ev_solver_;
+  std::string eigensolver_;
 
   ///Number of iterations maximum before generating new configurations.
   int nstabilizers;

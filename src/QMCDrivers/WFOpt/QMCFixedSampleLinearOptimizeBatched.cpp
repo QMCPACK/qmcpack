@@ -576,7 +576,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   m_param.add(OutputMatricesHDF, "output_matrices_hdf", {"no", "yes"});
   m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
 
-  m_param.add(ev_solver_, "ev_solver",
+  m_param.add(eigensolver_, "eigensolver",
       {"inverse",  // Inverse + nonsymmetric eigenvalue solver
        "general"   // General eigenvalue problem solver
       });
@@ -1662,14 +1662,14 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 
     RealType lowestEV;
     // compute the lowest eigenvalue and the corresponding eigenvector
-    if (ev_solver_ == "general") {
+    if (eigensolver_ == "general") {
       app_log() << "  Using generalized eigenvalue solver (ggev)" << std::endl;
       lowestEV = getLowestEigenvector_Gen(hamMat, invMat, parameterDirections);
-    } else if (ev_solver_ == "inverse") {
+    } else if (eigensolver_ == "inverse") {
       app_log() << "  Using inverse + regular eigenvalue solver (geev)" << std::endl;
       lowestEV = getLowestEigenvector_Inv(hamMat, invMat, parameterDirections);
     } else {
-      throw std::runtime_error("Unknown eigenvalue solver: " + ev_solver_);
+      throw std::runtime_error("Unknown eigenvalue solver: " + eigensolver_);
     }
 
     app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
