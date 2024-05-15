@@ -1319,7 +1319,12 @@ class Supercomputer(Machine):
                                  S = 'suspended',
                                  T = 'transferring',
                                  W = 'waiting',
-                                 C = 'complete'
+                                 C = 'complete', 
+                                 F = 'complete',
+                                 B = 'has_subjob',
+                                 M = 'moved_to_another_server',
+                                 U = 'user_suspended',
+                                 X = 'subjob_completed',
                                  )
         elif self.queue_querier=='qstata':
             #already gives status as queued, running, etc.
