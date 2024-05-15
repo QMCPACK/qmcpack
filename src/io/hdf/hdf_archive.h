@@ -241,8 +241,8 @@ public:
   {
     if (Mode[NOIO])
       return true;
-    //if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-    //  throw std::runtime_error("Only write data in parallel or by master but not every rank!");
+    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
+      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<typename std::remove_const<T>::type> e(data);
     return e.write(data, p, aname, xfer_plist);
