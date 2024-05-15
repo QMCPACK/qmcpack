@@ -536,17 +536,6 @@ public:
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
 
-  
-
-  /** Compute ratios of the individual Slater determinants and the total MSD value.  
-   *  These are obtained via derivatives of the log of the wavefunction component with respect to the optimizable parameters.
-   *  Unlike evaluateDerivativesWF, knowledge of mappings from component parameters to the full set of wavefunction parameters is not required.
-   */
-  virtual void detRatios(Vector<ValueType>& ratios)
-  {
-    APP_ABORT("detRatios is not implemented. Perhaps wavefunction is not a multideterminant?");
-  }
-
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param p_list the list of ParticleSet pointers in a walker batch

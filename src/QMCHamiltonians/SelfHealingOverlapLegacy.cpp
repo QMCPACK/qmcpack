@@ -82,6 +82,8 @@ SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSe
       wcs_fermi.push_back(wc.get());
     else
       wcs_jastrow.push_back(wc.get());
+  auto msd_refvec = psi_ref.findMSD();
+  MultiSlaterDetTableMethod& msd = msd_refvec[0];
 
   // fermionic must have only one component, and must be multideterminant
   assert(wcs_fermi.size() == 1);
@@ -90,14 +92,14 @@ SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSe
     throw std::runtime_error("SelfHealingOverlap estimator requires use of multideterminant wavefunction");
 
   // collect parameter derivatives: (dpsi/dc_i)/psi
-  Vector<ValueType> det_ratios; // JTK: should be class variable?
-  wf.detRatios(det_ratios);
+  Vector<ValueType> det_ratios; // JTK: move to class variable due to performance hit from mem allocation
+  msd.detRatios(det_ratios);
 
   // collect jastrow prefactor
   WaveFunctionComponent::LogValue Jval = 0.0;
   for (auto& wc : wcs_jastrow)
     Jval += wc->get_log_value();
-  auto Jprefactor = std::real(std::exp(-2. * Jval)); // (integer * complex) fails to compile...
+  auto Jprefactor = std::real(std::exp(-2. * Jval));
 
   // accumulate data
   assert(det_ratios.size() == ncoef);

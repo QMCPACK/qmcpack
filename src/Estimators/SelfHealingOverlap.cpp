@@ -92,16 +92,18 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     WaveFunctionComponent& wf = *wcs_fermi[0];
     if (!wf.isMultiDet())
       throw std::runtime_error("SelfHealingOverlap estimator requires use of multideterminant wavefunction");
+    auto msd_refvec = psi.findMSD();
+    MultiSlaterDetTableMethod& msd = msd_refvec[0];
 
     // collect parameter derivatives: (dpsi/dc_i)/psi
-    Vector<ValueType> det_ratios; // JTK: should be class variable?
-    wf.detRatios(det_ratios);
+    Vector<ValueType> det_ratios; // JTK: move to class variable due to performance hit from mem allocation
+    msd.detRatios(det_ratios);
 
     // collect jastrow prefactor
     WaveFunctionComponent::LogValue Jval = 0.0;
     for (auto& wc : wcs_jastrow)
       Jval += wc->get_log_value();
-    auto Jprefactor = std::real(std::exp(-2. * Jval)); // (integer * complex) fails to compile...
+    auto Jprefactor = std::real(std::exp(-2. * Jval));
 
     // accumulate weight (required by all estimators, otherwise inf results)
     walkers_weight_ += weight;

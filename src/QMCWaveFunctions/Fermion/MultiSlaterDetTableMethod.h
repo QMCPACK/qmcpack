@@ -187,7 +187,11 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
 
-  void detRatios(Vector<ValueType>& ratios) override;
+  /** Compute ratios of the individual Slater determinants and the total MSD value.  
+   *  These are obtained via derivatives of the log of the wavefunction component with respect to the optimizable parameters.
+   *  Unlike evaluateDerivativesWF, knowledge of mappings from component parameters to the full set of wavefunction parameters is not required.
+   */
+  void detRatios(Vector<ValueType>& ratios);
 
   const std::vector<ValueType>& getLinearExpansionCoefs() const;
 
