@@ -42,7 +42,5 @@ class BLASHandle<PlatformKind::CUDA>
   }
 };
 }
-
-using CUDALinearAlgebraHandles = compute::BLASHandle<PlatformKind::CUDA>;
 }
 #endif

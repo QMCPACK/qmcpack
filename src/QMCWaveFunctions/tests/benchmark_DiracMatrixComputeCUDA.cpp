@@ -74,7 +74,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
   params.batch_size = 4;
 
   compute::Queue<PlatformKind::CUDA> queue;
-  CUDALinearAlgebraHandles cuda_handles(queue);
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -127,7 +127,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   params.batch_size = 10;
 
   compute::Queue<PlatformKind::CUDA> queue;
-  CUDALinearAlgebraHandles cuda_handles(queue);
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -181,7 +181,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
   params.batch_size = 10;
 
   compute::Queue<PlatformKind::CUDA> queue;
-  CUDALinearAlgebraHandles cuda_handles(queue);
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -240,7 +240,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunct
   params.batch_size = 4;
 
   compute::Queue<PlatformKind::CUDA> queue;
-  CUDALinearAlgebraHandles cuda_handles(queue);
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});

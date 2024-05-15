@@ -94,7 +94,7 @@ class DiracMatrixComputeCUDA : public Resource
    *  1. \todo try to do like mw_computeInvertAndLog_stride, copy and transpose to psiM_fp_ and fuse transfer.
    *  3. \todo Remove Transfer inv_a_mat to host and let the upper level code handle it.
    */
-  inline void mw_computeInvertAndLog(CUDALinearAlgebraHandles& cuda_handles,
+  inline void mw_computeInvertAndLog(compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
                                      const RefVector<const DualMatrix<VALUE_FP>>& a_mats,
                                      const RefVector<DualMatrix<VALUE_FP>>& inv_a_mats,
                                      const int n,
@@ -165,7 +165,7 @@ class DiracMatrixComputeCUDA : public Resource
    *  3. batched. Transfer inv_Ms to host
    *  \todo Remove 1 and 3. Handle transfer at upper level.
    */
-  inline void mw_computeInvertAndLog_stride(CUDALinearAlgebraHandles& cuda_handles,
+  inline void mw_computeInvertAndLog_stride(compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
                                             DualVector<VALUE_FP>& psi_Ms,
                                             DualVector<VALUE_FP>& inv_Ms,
                                             const int n,
@@ -227,7 +227,7 @@ public:
    *  There is no optimization (yet) for TMAT same type as TREAL
    */
   template<typename TMAT>
-  void invert_transpose(CUDALinearAlgebraHandles& cuda_handles,
+  void invert_transpose(compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
                         DualMatrix<TMAT>& a_mat,
                         DualMatrix<TMAT>& inv_a_mat,
                         DualVector<LogValue>& log_values)
@@ -273,7 +273,7 @@ public:
    */
   template<typename TMAT>
   inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
-      CUDALinearAlgebraHandles& cuda_handles,
+      compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
       const RefVector<const DualMatrix<TMAT>>& a_mats,
       const RefVector<DualMatrix<TMAT>>& inv_a_mats,
       DualVector<LogValue>& log_values)
@@ -314,7 +314,7 @@ public:
    */
   template<typename TMAT>
   inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
-      CUDALinearAlgebraHandles& cuda_handles,
+      compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
       const RefVector<const DualMatrix<TMAT>>& a_mats,
       const RefVector<DualMatrix<TMAT>>& inv_a_mats,
       DualVector<LogValue>& log_values)
