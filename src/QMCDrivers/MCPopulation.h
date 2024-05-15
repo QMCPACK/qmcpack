@@ -88,7 +88,7 @@ private:
    *  This immutable state is a tradoff, it violates the single source of truth "priniciple"
    *  but removes coupling that would otherwise exist between MCPopulation and Communicator.
    *  @{
-   */  
+   */
   const int num_ranks_;
   const int rank_;
   /// @}

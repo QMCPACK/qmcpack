@@ -74,7 +74,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
   std::vector<long> walker_ids(num_walkers_plus_reserve, -1);
   for (size_t iw = 0; iw < num_walkers; iw++)
     walker_ids[iw] = nextWalkerID();
-
+  // the dead reserve walkers still have -1 as their walker_id
 #pragma omp parallel for shared(walker_ids)
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
@@ -86,10 +86,10 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
     {
       // The walker config has walker ID's that I think may not match the scheme for this run.
       // Save the unique to this run walker id.
-      auto walker_id = walkers_[iw]->getWalkerId();
+      auto walker_id = walkers_[iw]->getWalkerID();
       *walkers_[iw] = *walker_configs[iw % num_existing_walkers];
-      walkers_[iw]->setParentID(walker_configs[iw % num_existing_walkers]->getWalkerId());
-      walkers_[iw]->setWalkerId(walker_id);
+      walkers_[iw]->setParentID(walker_configs[iw % num_existing_walkers]->getWalkerID());
+      walkers_[iw]->setWalkerID(walker_id);
     }
     else
     {
