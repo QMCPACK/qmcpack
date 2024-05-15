@@ -32,6 +32,7 @@ public:
   //data members
   size_t ncoef;
   TrialWaveFunction& psi_ref;
+  Vector<ValueType> det_ratios;
 
   //constructor/destructor
   SelfHealingOverlapLegacy(TrialWaveFunction& wfn);

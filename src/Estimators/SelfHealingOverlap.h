@@ -38,6 +38,7 @@ public:
 
   /** @ingroup SelfHealingOverlap mutable data members
    */
+  Vector<ValueType> det_ratios;
 
 public:
   /** Constructor for SelfHealingOverlapInput 

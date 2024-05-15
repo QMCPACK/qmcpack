@@ -96,7 +96,6 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     MultiSlaterDetTableMethod& msd = msd_refvec[0];
 
     // collect parameter derivatives: (dpsi/dc_i)/psi
-    Vector<ValueType> det_ratios; // JTK: move to class variable due to performance hit from mem allocation
     msd.detRatios(det_ratios);
 
     // collect jastrow prefactor
