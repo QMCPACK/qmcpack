@@ -1824,6 +1824,24 @@ if(add_traces_tests)
       'vmc,dmc'
       --dmc_steps_exclude=1
       --tol=2e-6)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_scalars
+      -n 
+      4
+      -s
+      '0,1'
+      -m
+      'vmc,dmc'
+      --dmc_steps_exclude=1
+      --tol=2e-6)
   else()
     simple_run_and_check(
       deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
@@ -1834,6 +1852,23 @@ if(add_traces_tests)
       check_traces.py
       -p
       qmc_trace_scalars
+      -s
+      '0,1'
+      -m
+      'vmc,dmc'
+      --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_scalars
+      -n
+      4
       -s
       '0,1'
       -m
@@ -1860,6 +1895,26 @@ if(add_traces_tests)
       'Kinetic,ElecElec'
       --dmc_steps_exclude=1
       --tol=1e-6)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars_selective.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_scalars_selective
+      -n 
+      4
+      -s
+      '0,1'
+      -m
+      'vmc,dmc'
+      -q
+      'Kinetic,ElecElec'
+      --dmc_steps_exclude=1
+      --tol=1e-6)
   else()
     simple_run_and_check(
       deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
@@ -1870,6 +1925,25 @@ if(add_traces_tests)
       check_traces.py
       -p
       qmc_trace_scalars_selective
+      -s
+      '0,1'
+      -m
+      'vmc,dmc'
+      -q
+      'Kinetic,ElecElec'
+      --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars_selective.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_scalars_selective
+      -n
+      4
       -s
       '0,1'
       -m

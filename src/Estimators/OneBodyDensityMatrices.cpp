@@ -390,8 +390,7 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
 
     //now do spin variables
     Real spinp;                         // trial spin
-    Real dspinp;                        // trial spindrifty
-    Real spin_ds;                       // spin drift sum
+    Real dspinp = 0;                    // trial spindrifty
     Real sdiff = diffuseSpin(sqt, rng); //spin diffusion
     if (input_.get_use_drift())
     {
@@ -400,7 +399,7 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
       calcDensityDriftWithSpin(rp, spinp, rhop, dp, dspinp, pset_target); //get trial drift and density
       ratio   = rhop / rho;                                               //density ratio
       ds      = dp + d;                                                   //drift sum
-      spin_ds = dspinp + dspcur_;                                         //spin drift sum
+      auto spin_ds = dspinp + dspcur_;                                    //spin drift sum
       Pacc    = ratio * std::exp(-ot * (dot(diff, ds) + .5 * dot(ds, ds))) *
           std::exp(-ot * (sdiff * spin_ds) + 0.5 * spin_ds * spin_ds); //acceptance probability
     }
