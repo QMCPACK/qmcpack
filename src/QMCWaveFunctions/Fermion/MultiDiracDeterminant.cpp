@@ -129,7 +129,7 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
   auto& refdet_occup_ref(*refdet_occup);
   refdet_occup_ref.resize(NumPtcls);
   for (size_t i = 0; i < NumPtcls; i++)
-    refdet_occup_ref[i] = configlist_unsorted[ReferenceDeterminant].occup[i];
+    refdet_occup_ref[i] = configlist_unsorted[ref_det_id].occup[i];
 
   {
     ScopedTimer local_timer(transferH2D_timer);
