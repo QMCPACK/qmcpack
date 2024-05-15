@@ -92,6 +92,19 @@ namespace qmcplusplus
  */
 namespace cuBLAS
 {
+
+inline cublasOperation_t convertOperation(const char trans)
+{
+  if (trans == 'N' || trans == 'n')
+    return CUBLAS_OP_N;
+  else if (trans == 'T' || trans == 't')
+    return CUBLAS_OP_T;
+  else if (trans == 'C' || trans == 'c')
+    return CUBLAS_OP_C;
+  else
+    throw std::runtime_error("cuBLAS::convertOperation trans can only be 'N', 'T', 'C', 'n', 't', 'c'. Input value is " + std::string(1, trans));
+}
+
 inline cublasStatus_t geam(cublasHandle_t& handle,
                            cublasOperation_t& transa,
                            cublasOperation_t& transb,
