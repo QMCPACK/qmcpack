@@ -43,7 +43,7 @@ struct CSFData
  *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
  *\f[
- *MS({\bf R}) = \sum_n c_n S_n({\bf R})
+ *MSD({\bf R}) = \sum_n c_n S_n({\bf R})
  *\f].
  *
  *The (S)ingle(P)article(O)rbitalSet template parameter is an
@@ -115,11 +115,15 @@ public:
                        ParticleSet::ParticleGradient& G,
                        ParticleSet::ParticleLaplacian& L) override;
 
-  /*  void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                      const RefVectorWithLeader<ParticleSet>& p_list,
-                      const RefVector<ParticleSet::ParticleGradient>& G_list,
-                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override ;
-*/
+  /** Compute ratios of the individual Slater determinants and the total MSD value.
+   *\f[
+   *ratio_n = Det_n / \frac{\sum_n c_n Det_n}
+   *\f].
+   */
+  void calcIndividualDetRatios(Vector<ValueType>& ratios);
+
+  const std::vector<ValueType>& getLinearExpansionCoefs() const;
+
   void prepareGroup(ParticleSet& P, int ig) override;
 
   void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -186,14 +190,6 @@ public:
                            Vector<ValueType>& dhpsioverpsi) override;
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
-
-  /** Compute ratios of the individual Slater determinants and the total MSD value.  
-   *  These are obtained via derivatives of the log of the wavefunction component with respect to the optimizable parameters.
-   *  Unlike evaluateDerivativesWF, knowledge of mappings from component parameters to the full set of wavefunction parameters is not required.
-   */
-  void detRatios(Vector<ValueType>& ratios);
-
-  const std::vector<ValueType>& getLinearExpansionCoefs() const;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,

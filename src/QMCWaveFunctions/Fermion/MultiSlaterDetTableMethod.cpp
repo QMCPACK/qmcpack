@@ -1002,7 +1002,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
   evaluateMultiDiracDeterminantDerivativesWF(P, optvars, dlogpsi);
 }
 
-void MultiSlaterDetTableMethod::detRatios(Vector<ValueType>& ratios)
+void MultiSlaterDetTableMethod::calcIndividualDetRatios(Vector<ValueType>& ratios)
 {
   int det_id             = 0;
   ValueType psiinv       = static_cast<ValueType>(PsiValue(1.0) / psi_ratio_to_ref_det_);
