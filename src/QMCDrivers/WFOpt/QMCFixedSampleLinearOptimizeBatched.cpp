@@ -1857,7 +1857,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       //initial guess is zero, so S*x_0 = 0
       for (int i = 0; i < numParams; i++)
       {
-        rk[i] = -ham[i + 1];
+        rk[i] = -sr_tau * ham[i + 1];
         dk += rk[i] * rk[i];
       }
       eps            = dk / numParams * thr;
@@ -1943,8 +1943,8 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       }
       else
       {
-        app_log() << "Stochastic Reconfigurationfrom line search failed, using lambda = " << sr_tau * nonlinear_rescale << std::endl;
-        optTarget->Params(i) = currentParameters.at(i) + sr_tau * nonlinear_rescale * parameterDirections.at(i + 1);
+        app_log() << "Stochastic Reconfigurationfrom line search failed, using lambda = " << nonlinear_rescale << std::endl;
+        optTarget->Params(i) = currentParameters.at(i) + nonlinear_rescale * parameterDirections.at(i + 1);
       }
     }
   }
@@ -1952,7 +1952,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
   {
     app_log() << "Stochastic Reconfiguration using lambda = " << sr_tau * objFuncWrapper_.Lambda << std::endl;
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currentParameters.at(i) + sr_tau * objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+      optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
   }
 
   if (bestShift_s > 1.0e-2)
