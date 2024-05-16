@@ -985,7 +985,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
     if (recalculate)
     {
       Vector<ValueType> dlogpsi_local;
-      evaluateDerivativesMSD(psi_ratio_to_ref_det_, dlogpsi_local);
+      evaluateDerivativesMSD(dlogpsi_local);
 
       const size_t nparams = csf_data_ ? csf_data_->coeffs.size() - 1 : C->size() - 1;
       assert(dlogpsi_local.size() == nparams);
@@ -1031,17 +1031,12 @@ const std::vector<WaveFunctionComponent::ValueType>& MultiSlaterDetTableMethod::
 }
 
 
-void MultiSlaterDetTableMethod::evaluateDerivativesMSD(const PsiValue& multi_det_to_ref,
-                                                       Vector<ValueType>& dlogpsi,
-                                                       int det_id) const
+void MultiSlaterDetTableMethod::evaluateDerivativesMSD(Vector<ValueType>& dlogpsi, std::optional<std::pair<unsigned, PsiValue>> move) const
 {
-  const bool newpos = det_id < 0 ? false : true;
   // when not using a new position, the result doesn't get affected by det_id, thus choose 0.
-  if (det_id < 0)
-    det_id = 0;
-
-  ValueType psiinv       = static_cast<ValueType>(PsiValue(1.0) / multi_det_to_ref);
-  const auto& detValues0 = newpos ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const unsigned det_id = move? move->first : 0;
+  const auto& detValues0 = move? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const ValueType psiinv = static_cast<ValueType>(PsiValue(1.0) / (move? move->second : psi_ratio_to_ref_det_));
 
   if (csf_data_) // CSF
   {
@@ -1084,7 +1079,7 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
                                                     std::vector<ValueType>& ratios,
                                                     Matrix<ValueType>& dratios)
 {
-  const int det_id = getDetID(VP.refPtcl);
+  const unsigned det_id = getDetID(VP.refPtcl);
 
   bool recalculate(false);
   if (CI_Optimizable)
@@ -1100,7 +1095,7 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
   // calculate derivatives based on the reference electron position
   Vector<ValueType> dlogpsi_ref, dlogpsi_vp;
   if (recalculate)
-    evaluateDerivativesMSD(psi_ratio_to_ref_det_, dlogpsi_ref);
+    evaluateDerivativesMSD(dlogpsi_ref);
 
   for (size_t iat = 0; iat < VP.getTotalNum(); ++iat)
   {
@@ -1116,7 +1111,7 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
     // calculate VP ratios derivatives
     if (recalculate)
     {
-      evaluateDerivativesMSD(psiNew, dlogpsi_vp, det_id);
+      evaluateDerivativesMSD(dlogpsi_vp, std::make_pair(det_id, psiNew));
 
       const size_t nparams = csf_data_ ? csf_data_->coeffs.size() - 1 : C->size() - 1;
       assert(dlogpsi_vp.size() == nparams);

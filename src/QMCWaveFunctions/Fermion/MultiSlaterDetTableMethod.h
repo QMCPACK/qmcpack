@@ -272,7 +272,7 @@ private:
    * @param dlogpsi saved derivatives
    * @param det_id provide this argument to affect determinant group id for virtual moves
    */
-  void evaluateDerivativesMSD(const PsiValue& multi_det_to_ref, Vector<ValueType>& dlogpsi, int det_id = -1) const;
+  void evaluateDerivativesMSD(Vector<ValueType>& dlogpsi, std::optional<std::pair<unsigned, PsiValue>> move = std::nullopt) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
