@@ -15,17 +15,10 @@
 
 #include <vector>
 #include <string>
+#include "PlatformKinds.hpp"
 
 namespace qmcplusplus
 {
-
-enum class PlatformKind
-{
-  CPU,
-  OMPTARGET,
-  CUDA,
-  SYCL
-};
 
 enum class SelectorKind
 {

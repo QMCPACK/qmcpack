@@ -18,7 +18,6 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReductionComplex.hpp"
-#include "ResourceCollection.h"
 #include "DiracMatrixComputeOMPTarget.hpp"
 #include "WaveFunctionTypes.hpp"
 
@@ -60,7 +59,7 @@ public:
   template<typename DT>
   using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
 
-  struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
+  struct MultiWalkerResource
   {
     // constant array value T(1)
     UnpinnedOffloadVector<Value> cone_vec;
@@ -77,102 +76,70 @@ public:
     // scratch space for keeping one row of Ainv
     UnpinnedOffloadVector<Value> mw_rcopy;
 
+    typename DetInverter::HandleResource dummy;
 
-    MatrixUpdateOMPTargetMultiWalkerMem() : Resource("MatrixUpdateOMPTargetMultiWalkerMem") {}
-
-    MatrixUpdateOMPTargetMultiWalkerMem(const MatrixUpdateOMPTargetMultiWalkerMem&)
-        : MatrixUpdateOMPTargetMultiWalkerMem()
-    {}
-
-    std::unique_ptr<Resource> makeClone() const override
+    void resize_fill_constant_arrays(size_t nw)
     {
-      return std::make_unique<MatrixUpdateOMPTargetMultiWalkerMem>(*this);
+      if (cone_vec.size() < nw)
+      {
+        cone_vec.resize(nw);
+        czero_vec.resize(nw);
+        std::fill_n(cone_vec.data(), nw, Value(1));
+        std::fill_n(czero_vec.data(), nw, Value(0));
+        Value* cone_ptr = cone_vec.data();
+        PRAGMA_OFFLOAD("omp target update to(cone_ptr[:nw])")
+        Value* czero_ptr = czero_vec.data();
+        PRAGMA_OFFLOAD("omp target update to(czero_ptr[:nw])")
+      }
     }
+
+    void resize_scratch_arrays(int norb, size_t nw)
+    {
+      size_t total_size = norb * nw;
+      if (mw_temp.size() < total_size)
+      {
+        mw_temp.resize(total_size);
+        mw_rcopy.resize(total_size);
+      }
+    }
+
+    auto& getLAhandles() { return dummy; }
   };
 
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  OffloadMatrix<Value> psiMinv_;
   /// scratch space for rank-1 update
   UnpinnedOffloadVector<Value> temp;
   // scratch space for keeping one row of Ainv
   UnpinnedOffloadVector<Value> rcopy;
-
-  // multi walker memory buffers
-  ResourceHandle<MatrixUpdateOMPTargetMultiWalkerMem> mw_mem_handle_;
-
-  typename DetInverter::HandleResource dummy;
-
-  void resize_fill_constant_arrays(size_t nw)
-  {
-    auto& mw_mem = mw_mem_handle_.getResource();
-    if (mw_mem.cone_vec.size() < nw)
-    {
-      mw_mem.cone_vec.resize(nw);
-      mw_mem.czero_vec.resize(nw);
-      std::fill_n(mw_mem.cone_vec.data(), nw, Value(1));
-      std::fill_n(mw_mem.czero_vec.data(), nw, Value(0));
-      Value* cone_ptr = mw_mem.cone_vec.data();
-      PRAGMA_OFFLOAD("omp target update to(cone_ptr[:nw])")
-      Value* czero_ptr = mw_mem.czero_vec.data();
-      PRAGMA_OFFLOAD("omp target update to(czero_ptr[:nw])")
-    }
-  }
-
-  void resize_scratch_arrays(int norb, size_t nw)
-  {
-    size_t total_size = norb * nw;
-    auto& mw_mem      = mw_mem_handle_.getResource();
-    if (mw_mem.mw_temp.size() < total_size)
-    {
-      mw_mem.mw_temp.resize(total_size);
-      mw_mem.mw_rcopy.resize(total_size);
-    }
-  }
 
 public:
   /** resize the internal storage
    * @param norb number of electrons/orbitals
    * @param delay, maximum delay 0<delay<=norb
    */
-  inline void resize(int norb, int delay) { psiMinv_.resize(norb, getAlignedSize<Value>(norb)); }
-
-  void createResource(ResourceCollection& collection) const
-  {
-    collection.addResource(std::make_unique<MatrixUpdateOMPTargetMultiWalkerMem>());
-  }
-
-  void acquireResource(ResourceCollection& collection)
-  {
-    mw_mem_handle_ = collection.lendResource<MatrixUpdateOMPTargetMultiWalkerMem>();
-  }
-
-  void releaseResource(ResourceCollection& collection) { collection.takebackResource(mw_mem_handle_); }
-
-  const OffloadMatrix<Value>& get_psiMinv() const { return psiMinv_; }
-  OffloadMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
-
-  inline Value* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
+  inline void resize(int norb, int delay) {}
 
   template<typename GT>
   static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines,
+                          MultiWalkerResource& mw_rsc,
+                          const RefVector<DualMatrix<Value>>& psiMinv_refs,
                           const std::vector<const Value*>& dpsiM_row_list,
                           int rowchanged,
                           std::vector<GT>& grad_now)
   {
     auto& engine_leader = engines.getLeader();
-    auto& mw_mem        = engine_leader.mw_mem_handle_.getResource();
-    auto& buffer_H2D    = mw_mem.buffer_H2D;
-    auto& grads_value_v = mw_mem.grads_value_v;
+    auto& buffer_H2D    = mw_rsc.buffer_H2D;
+    auto& grads_value_v = mw_rsc.grads_value_v;
 
-    const int norb                   = engine_leader.get_psiMinv().rows();
+    const int norb                   = psiMinv_refs[0].get().rows();
     const int nw                     = engines.size();
     constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
     buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      ptr_buffer[0][iw] = engines[iw].get_psiMinv().device_data() + rowchanged * engine_leader.get_psiMinv().cols();
-      ptr_buffer[1][iw] = dpsiM_row_list[iw];
+      DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
+      ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
+      ptr_buffer[1][iw]          = dpsiM_row_list[iw];
     }
 
     constexpr unsigned DIM = GT::Size;
@@ -206,6 +173,8 @@ public:
 
   template<typename GT>
   static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
+                                  const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                   const std::vector<const Value*>& dpsiM_row_list,
                                   OffloadMatrix<Complex>& mw_dspin,
                                   int rowchanged,
@@ -213,24 +182,24 @@ public:
                                   std::vector<Complex>& spingrad_now)
   {
     auto& engine_leader     = engines.getLeader();
-    auto& mw_mem            = engine_leader.mw_mem_handle_.getResource();
-    auto& buffer_H2D        = mw_mem.buffer_H2D;
-    auto& grads_value_v     = mw_mem.grads_value_v;
-    auto& spingrads_value_v = mw_mem.spingrads_value_v;
+    auto& buffer_H2D        = mw_rsc.buffer_H2D;
+    auto& grads_value_v     = mw_rsc.grads_value_v;
+    auto& spingrads_value_v = mw_rsc.spingrads_value_v;
 
     //Need to pack these into a transfer buffer since psiMinv and dpsiM_row_list are not multiwalker data
     //i.e. each engine has its own psiMinv which is an OffloadMatrix instead of the leader having the data for all the walkers in the crowd.
-    //Wouldn't have to do this if dpsiM and psiMinv were part of the mw_mem_handle_ with data across all walkers in the crowd and could just use use_device_ptr for the offload.
+    //Wouldn't have to do this if dpsiM and psiMinv were part of the mw_rsc_handle_ with data across all walkers in the crowd and could just use use_device_ptr for the offload.
     //That is how mw_dspin is handled below
-    const int norb                   = engine_leader.get_psiMinv().rows();
+    const int norb                   = psiMinv_refs[0].get().rows();
     const int nw                     = engines.size();
     constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
     buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      ptr_buffer[0][iw] = engines[iw].get_psiMinv().device_data() + rowchanged * engine_leader.get_psiMinv().cols();
-      ptr_buffer[1][iw] = dpsiM_row_list[iw];
+      DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
+      ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
+      ptr_buffer[1][iw]          = dpsiM_row_list[iw];
     }
 
     constexpr unsigned DIM = GT::Size;
@@ -285,9 +254,8 @@ public:
   }
 
   template<typename VVT>
-  inline void updateRow(int rowchanged, const VVT& phiV, FullPrecValue c_ratio_in)
+  inline void updateRow(DualMatrix<Value>& Ainv, int rowchanged, const VVT& phiV, FullPrecValue c_ratio_in)
   {
-    auto& Ainv = psiMinv_;
     // update the inverse matrix
     constexpr Value cone(1);
     constexpr Value czero(0);
@@ -302,8 +270,7 @@ public:
     Value* Ainv_ptr       = Ainv.data();
     Value* temp_ptr       = temp.data();
     Value* rcopy_ptr      = rcopy.data();
-    PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.size()]) \
+    PRAGMA_OFFLOAD("omp target data map(always, from: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
       success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
@@ -328,6 +295,8 @@ public:
   /** The potential for mayhem here without a unit test is great.
    */
   static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
+                           MultiWalkerResource& mw_rsc,
+                           const RefVector<DualMatrix<Value>>& psiMinv_refs,
                            int rowchanged,
                            const std::vector<Value*>& psiM_g_list,
                            const std::vector<Value*>& psiM_l_list,
@@ -340,19 +309,18 @@ public:
       return;
 
     auto& engine_leader         = engines.getLeader();
-    auto& mw_mem                = engine_leader.mw_mem_handle_.getResource();
-    auto& buffer_H2D            = mw_mem.buffer_H2D;
-    auto& grads_value_v         = mw_mem.grads_value_v;
-    auto& cone_vec              = mw_mem.cone_vec;
-    auto& czero_vec             = mw_mem.czero_vec;
-    auto& mw_temp               = mw_mem.mw_temp;
-    auto& mw_rcopy              = mw_mem.mw_rcopy;
-    const int norb              = engine_leader.get_psiMinv().rows();
-    const int lda               = engine_leader.get_psiMinv().cols();
+    auto& buffer_H2D            = mw_rsc.buffer_H2D;
+    auto& grads_value_v         = mw_rsc.grads_value_v;
+    auto& cone_vec              = mw_rsc.cone_vec;
+    auto& czero_vec             = mw_rsc.czero_vec;
+    auto& mw_temp               = mw_rsc.mw_temp;
+    auto& mw_rcopy              = mw_rsc.mw_rcopy;
+    const int norb              = psiMinv_refs[0].get().rows();
+    const int lda               = psiMinv_refs[0].get().cols();
     const size_t nw             = isAccepted.size();
     const size_t phi_vgl_stride = nw * norb;
 
-    engine_leader.resize_scratch_arrays(norb, n_accepted);
+    mw_rsc.resize_scratch_arrays(norb, n_accepted);
 
     // to handle Value** of Ainv, psi_v, temp, rcopy
     constexpr size_t num_ptrs_packed = 6; // it must match packing and unpacking
@@ -362,7 +330,7 @@ public:
     for (int iw = 0, count = 0; iw < nw; iw++)
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count] = engines[iw].get_ref_psiMinv().device_data();
+        ptr_buffer[0][count] = psiMinv_refs[iw].get().device_data();
         ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
         ptr_buffer[2][count] = mw_temp.device_data() + norb * count;
         ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
@@ -379,7 +347,7 @@ public:
     int dummy_handle     = 0;
     int success          = 0;
     auto* buffer_H2D_ptr = buffer_H2D.data();
-    engine_leader.resize_fill_constant_arrays(n_accepted);
+    mw_rsc.resize_fill_constant_arrays(n_accepted);
     Value* cone_ptr  = cone_vec.data();
     Value* czero_ptr = czero_vec.data();
     PRAGMA_OFFLOAD("omp target data \
@@ -434,6 +402,8 @@ public:
   }
 
   static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
+                                  const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                   const int rowchanged,
                                   const std::vector<Value*>& psiM_g_list,
                                   const std::vector<Value*>& psiM_l_list,
@@ -441,43 +411,47 @@ public:
                                   const OffloadMWVGLArray<Value>& phi_vgl_v,
                                   const std::vector<Value>& ratios)
   {
-    mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
+    mw_updateRow(engines, mw_rsc, psiMinv_refs, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
   }
 
   /** update the full Ainv and reset delay_count
    * @param Ainv inverse matrix
    */
-  inline static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines) {}
+  inline static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines,
+                                     MultiWalkerResource& mw_rsc,
+                                     const RefVector<DualMatrix<Value>>& psiMinv_refs)
+  {}
 
   std::vector<const Value*> static mw_getInvRow(const RefVectorWithLeader<This_t>& engines,
+                                                MultiWalkerResource& mw_rsc,
+                                                const RefVector<DualMatrix<Value>>& psiMinv_refs,
                                                 const int row_id,
                                                 bool on_host)
   {
-    const size_t nw    = engines.size();
-    const size_t ncols = engines.getLeader().get_psiMinv().cols();
+    const size_t nw = engines.size();
     std::vector<const Value*> row_ptr_list;
     row_ptr_list.reserve(nw);
     if (on_host)
-      for (This_t& engine : engines)
+      for (DualMatrix<Value>& psiMinv : psiMinv_refs)
       {
-        auto* ptr = engine.get_psiMinv().data();
+        const size_t ncols = psiMinv.cols();
+        auto* ptr          = psiMinv.data();
         PRAGMA_OFFLOAD("omp target update from(ptr[row_id * ncols : ncols])")
         row_ptr_list.push_back(ptr + row_id * ncols);
       }
     else
-      for (This_t& engine : engines)
-        row_ptr_list.push_back(engine.get_psiMinv().device_data() + row_id * ncols);
+      for (DualMatrix<Value>& psiMinv : psiMinv_refs)
+        row_ptr_list.push_back(psiMinv.device_data() + row_id * psiMinv.cols());
     return row_ptr_list;
   }
 
   /// transfer Ainv to the host
-  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines)
+  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines,
+                                  MultiWalkerResource& mw_rsc,
+                                  const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {
-    for (This_t& engine : engines)
-    {
-      auto* ptr = engine.get_psiMinv().data();
-      PRAGMA_OFFLOAD("omp target update from(ptr[:engine.get_psiMinv().size()])")
-    }
+    for (DualMatrix<Value>& psiMinv : psiMinv_refs)
+      psiMinv.updateFrom();
   }
 
   /** transfer psiM_vgl to the host. psiM_vgl has 5 rows, V(1) G(3) L(1)
@@ -487,6 +461,7 @@ public:
    * @param row_size the number of rows to be copied
    */
   static void mw_transferVGL_D2H(This_t& engine_leader,
+                                 MultiWalkerResource& mw_rsc,
                                  const RefVector<OffloadVGLVector<Value>>& psiM_vgl_list,
                                  size_t row_begin,
                                  size_t row_size)
@@ -509,6 +484,7 @@ public:
    * @param row_size the number of rows to be copied
    */
   static void mw_transferVGL_H2D(This_t& engine_leader,
+                                 MultiWalkerResource& mw_rsc,
                                  const RefVector<OffloadVGLVector<Value>>& psiM_vgl_list,
                                  size_t row_begin,
                                  size_t row_size)
@@ -523,8 +499,6 @@ public:
     // The only tasks being waited on here are the psiM_vgl updates
     PRAGMA_OFFLOAD("omp taskwait")
   }
-
-  auto& getLAhandles() { return dummy; }
 };
 } // namespace qmcplusplus
 

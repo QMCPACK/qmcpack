@@ -198,7 +198,7 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
     if (incx != 1 || incy != 1)
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
 
-    PRAGMA_OFFLOAD("omp target teams distribute num_teams(n) is_device_ptr(A, x, y)")
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(m) is_device_ptr(A, x, y)")
     for (uint32_t i = 0; i < m; i++)
     {
       T dot_sum(0);

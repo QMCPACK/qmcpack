@@ -31,6 +31,8 @@ namespace qmcplusplus
   using UnpinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, aligned_allocator<T>>;
   template<typename T>
   using PinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+  template<typename T>
+  using DeviceAllocator = CUDAAllocator<T>;
 }
 #elif defined(ENABLE_SYCL)
 namespace qmcplusplus
@@ -39,6 +41,8 @@ namespace qmcplusplus
   using UnpinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, aligned_allocator<T>>;
   template<typename T>
   using PinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, PinnedAlignedAllocator<T>>;
+  template<typename T>
+  using DeviceAllocator = SYCLAllocator<T>;
 }
 #else
 #error unhandled platform
@@ -52,6 +56,10 @@ namespace qmcplusplus
   using UnpinnedDualAllocator = OffloadAllocator<T>;
   template<typename T>
   using PinnedDualAllocator = OffloadPinnedAllocator<T>;
+#if defined(ENABLE_OFFLOAD)
+  template<typename T>
+  using DeviceAllocator = OMPTargetAllocator<T>;
+#endif
 }
 #endif
 
