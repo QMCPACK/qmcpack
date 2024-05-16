@@ -180,6 +180,8 @@ private:
   RealType param_tol;
   //-------------------------------------
 
+  /// Choice of eigenvalue solver
+  std::string eigensolver_;
 
   ///Number of iterations maximum before generating new configurations.
   int nstabilizers;

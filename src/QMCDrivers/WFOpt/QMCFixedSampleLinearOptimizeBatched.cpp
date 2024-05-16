@@ -576,6 +576,11 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   m_param.add(OutputMatricesHDF, "output_matrices_hdf", {"no", "yes"});
   m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
 
+  m_param.add(eigensolver_, "eigensolver",
+      {"inverse",  // Inverse + nonsymmetric eigenvalue solver
+       "general"   // General eigenvalue problem solver
+      });
+
   oAttrib.put(q);
   m_param.put(q);
 
@@ -1619,7 +1624,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
       output_hamiltonian_.output(hamMat);
     }
 
-    if (do_output_matrices_hdf_)
+    if (do_output_matrices_hdf_ && is_manager())
     {
       std::string newh5 = get_root_name() + ".linear_matrices.h5";
       hout.create(newh5, H5F_ACC_TRUNC);
@@ -1632,7 +1637,8 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
               << std::endl;
   }
 
-  {
+  // Solve eigenvalue problem on one rank.
+  if (is_manager()) {
     ScopedTimer local(eigenvalue_timer_);
     Timer t_eigen;
     app_log() << std::endl
@@ -1649,28 +1655,24 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
         invMat(i, i) = bestShift_i * bestShift_s;
     }
 
-    // compute the inverse of the overlap matrix
-    {
-      ScopedTimer local(invert_olvmat_timer_);
-      invert_matrix(invMat, false);
-    }
-
     // apply the overlap shift
     for (int i = 1; i < N; i++)
       for (int j = 1; j < N; j++)
         hamMat(i, j) += bestShift_s * ovlMat(i, j);
 
-    // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
-    qmcplusplus::MatrixOperators::product(invMat, hamMat, prdMat);
+    RealType lowestEV;
+    // compute the lowest eigenvalue and the corresponding eigenvector
+    if (eigensolver_ == "general") {
+      app_log() << "  Using generalized eigenvalue solver (ggev)" << std::endl;
+      lowestEV = getLowestEigenvector_Gen(hamMat, invMat, parameterDirections);
+    } else if (eigensolver_ == "inverse") {
+      app_log() << "  Using inverse + regular eigenvalue solver (geev)" << std::endl;
+      lowestEV = getLowestEigenvector_Inv(hamMat, invMat, parameterDirections);
+    } else {
+      throw std::runtime_error("Unknown eigenvalue solver: " + eigensolver_);
+    }
 
-    // transpose the result (why?)
-    for (int i = 0; i < N; i++)
-      for (int j = i + 1; j < N; j++)
-        std::swap(prdMat(i, j), prdMat(j, i));
-
-    // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    RealType lowestEV = 0.;
-    lowestEV          = getLowestEigenvector(prdMat, parameterDirections);
+    app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
 
     // compute the scaling constant to apply to the update
     objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
@@ -1682,12 +1684,13 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
       hout.write(objFuncWrapper_.Lambda, "non_linear_rescale");
       hout.close();
     }
-    app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
-  }
 
-  // scale the update by the scaling constant
-  for (int i = 0; i < numParams; i++)
-    parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
+    // scale the update by the scaling constant
+    for (int i = 0; i < numParams; i++)
+      parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
+
+  }
+  myComm->bcast(parameterDirections);
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
