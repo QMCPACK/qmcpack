@@ -589,9 +589,10 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   m_param.add(UseLineSearch, "line_search", {"no", "yes"});
 
   m_param.add(eigensolver_, "eigensolver",
-      {"inverse",  // Inverse + nonsymmetric eigenvalue solver
-       "general"   // General eigenvalue problem solver
-      });
+              {
+                  "inverse", // Inverse + nonsymmetric eigenvalue solver
+                  "general"  // General eigenvalue problem solver
+              });
 
   oAttrib.put(q);
   m_param.put(q);
@@ -1652,7 +1653,8 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   }
 
   // Solve eigenvalue problem on one rank.
-  if (is_manager()) {
+  if (is_manager())
+  {
     ScopedTimer local(eigenvalue_timer_);
     Timer t_eigen;
     app_log() << std::endl
@@ -1676,13 +1678,18 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 
     RealType lowestEV;
     // compute the lowest eigenvalue and the corresponding eigenvector
-    if (eigensolver_ == "general") {
+    if (eigensolver_ == "general")
+    {
       app_log() << "  Using generalized eigenvalue solver (ggev)" << std::endl;
       lowestEV = getLowestEigenvector_Gen(hamMat, invMat, parameterDirections);
-    } else if (eigensolver_ == "inverse") {
+    }
+    else if (eigensolver_ == "inverse")
+    {
       app_log() << "  Using inverse + regular eigenvalue solver (geev)" << std::endl;
       lowestEV = getLowestEigenvector_Inv(hamMat, invMat, parameterDirections);
-    } else {
+    }
+    else
+    {
       throw std::runtime_error("Unknown eigenvalue solver: " + eigensolver_);
     }
 
@@ -1702,7 +1709,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
       parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
-
   }
   myComm->bcast(parameterDirections);
 
@@ -1814,6 +1820,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
   // for outputing matrices and eigenvalue/vectors to disk
   hdf_archive hout;
 
+  RealType nonlinear_rescale(1.0);
   {
     ScopedTimer local(build_olv_ham_timer_);
     Timer t_build_matrices;
@@ -1893,9 +1900,9 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       app_log() << "Solved iterative krylov in " << k << " iterations" << std::endl;
       for (int i = 0; i < numParams; i++)
         parameterDirections[i + 1] = xkp1[i];
-
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, Apk, *optTarget);
+    nonlinear_rescale      = getNonLinearRescale(parameterDirections, Apk, *optTarget);
+    objFuncWrapper_.Lambda = nonlinear_rescale;
     }
   }
 
@@ -1928,7 +1935,10 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
     }
 
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+      if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))
+        optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+      else
+        optTarget->Params(i) = currentParameters.at(i) + nonlinear_rescale * parameterDirections.at(i + 1);
   }
   else
   {
