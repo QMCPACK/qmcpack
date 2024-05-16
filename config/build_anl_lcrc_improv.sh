@@ -26,7 +26,7 @@ SPACK_ROOT=/gpfs/fs1/soft/improv/software/spack-built/linux-rhel8-zen3/gcc-13.2.
 export CMAKE_PREFIX_PATH=$SPACK_ROOT/fftw-3.3.10-x5237xr:$CMAKE_PREFIX_PATH
 export CMAKE_PREFIX_PATH=$SPACK_ROOT/libxml2-2.10.3-xkoaaap:$CMAKE_PREFIX_PATH
 export CMAKE_PREFIX_PATH=$SPACK_ROOT/hdf5-1.14.3-6qo7t6e:$CMAKE_PREFIX_PATH
-export CMAKE_PREFIX_PATH=$SPACK_ROOT/openblas-0.3.26-blohgyt/lib:$CMAKE_PREFIX_PATH
+export CMAKE_PREFIX_PATH=$SPACK_ROOT/openblas-0.3.26-blohgyt:$CMAKE_PREFIX_PATH
 
 CMAKE_FLAGS="-DENABLE_PPCONVERT=0 \
 	     -DBOOST_ROOT=/gpfs/fs1/soft/improv/software/custom-built/boost/1.84.0 \
