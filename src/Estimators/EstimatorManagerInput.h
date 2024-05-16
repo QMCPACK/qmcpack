@@ -23,9 +23,6 @@
 #include <variant>
 #include <libxml/tree.h>
 
-// compilation fails with incomplete type errors w/o this
-#include "SelfHealingOverlapInput.h"
-
 namespace qmcplusplus
 {
 
