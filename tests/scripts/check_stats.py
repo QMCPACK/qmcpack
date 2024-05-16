@@ -1765,24 +1765,24 @@ stat_info = obj({
         ),
     'energydensity' : obj(
         default_label = 'EnergyDensity',
+        data_paths    = obj(W=('spacegrid1/value',0,3),
+                            T=('spacegrid1/value',1,3),
+                            V=('spacegrid1/value',2,3)),
+        ),
+    '1rdm'          : obj(
+        default_label = 'DensityMatrices',
         data_paths    = obj(u='number_matrix/u/value',
                             d='number_matrix/d/value'),
         ),
-    '1rdm'          : obj(
+    '1redm'         : obj(
         default_label = 'DensityMatrices',
         data_paths    = obj(u='energy_matrix/u/value',
                             d='energy_matrix/d/value'),
         ),
-    '1redm'         : obj(
-        default_label = 'DensityMatrices',
-        data_paths    = obj(u='number_matrix/u/value',
-                            d='number_matrix/d/value'),
-        ),
     'obdm'          : obj(
         default_label = 'OneBodyDensityMatrices',
-        data_paths    = obj(W=('spacegrid1/value',0,3),
-                            T=('spacegrid1/value',1,3),
-                            V=('spacegrid1/value',2,3)),
+        data_paths    = obj(u='number_matrix/u/value',
+                            d='number_matrix/d/value'),
         ),
     'momentum'      : obj(
         default_label = 'nofk',
