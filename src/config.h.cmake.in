@@ -120,9 +120,6 @@
 /* For AFQMC compilation  */
 #cmakedefine BUILD_AFQMC_WITH_NCCL @BUILD_AFQMC_WITH_NCCL@
 
-/* For FCIQMC compilation  */
-#cmakedefine BUILD_FCIQMC @BUILD_FCIQMC@
-
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 
 /* Disable trace manager and associated features */
