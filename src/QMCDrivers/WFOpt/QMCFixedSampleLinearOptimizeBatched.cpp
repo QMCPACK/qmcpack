@@ -1857,7 +1857,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       //initial guess is zero, so S*x_0 = 0
       for (int i = 0; i < numParams; i++)
       {
-        rk[i] = -sr_tau * ham[i + 1];
+        rk[i] = -ham[i + 1];
         dk += rk[i] * rk[i];
       }
       eps            = dk / numParams * thr;
@@ -1900,9 +1900,9 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       app_log() << "Solved iterative krylov in " << k << " iterations" << std::endl;
       for (int i = 0; i < numParams; i++)
         parameterDirections[i + 1] = xkp1[i];
-    // compute the scaling constant to apply to the update
-    nonlinear_rescale      = getNonLinearRescale(parameterDirections, Apk, *optTarget);
-    objFuncWrapper_.Lambda = nonlinear_rescale;
+      // compute the scaling constant to apply to the update
+      nonlinear_rescale      = getNonLinearRescale(parameterDirections, Apk, *optTarget);
+      objFuncWrapper_.Lambda = nonlinear_rescale;
     }
   }
 
@@ -1935,15 +1935,24 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
     }
 
     for (int i = 0; i < numParams; i++)
+    {
       if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))
+      {
+        app_log() << "Stochastic Reconfigurationfrom line search, lambda = " << objFuncWrapper_.Lambda << std::endl;
         optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+      }
       else
-        optTarget->Params(i) = currentParameters.at(i) + nonlinear_rescale * parameterDirections.at(i + 1);
+      {
+        app_log() << "Stochastic Reconfigurationfrom line search failed, using lambda = " << sr_tau * nonlinear_rescale << std::endl;
+        optTarget->Params(i) = currentParameters.at(i) + sr_tau * nonlinear_rescale * parameterDirections.at(i + 1);
+      }
+    }
   }
   else
   {
+    app_log() << "Stochastic Reconfiguration using lambda = " << sr_tau * objFuncWrapper_.Lambda << std::endl;
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+      optTarget->Params(i) = currentParameters.at(i) + sr_tau * objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
   }
 
   if (bestShift_s > 1.0e-2)
