@@ -49,9 +49,6 @@
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
-#ifdef BUILD_FCIQMC
-#include "FCIQMC/App/SQCFactory.h"
-#endif
 
 #define STR_VAL(arg) #arg
 #define GET_MACRO_VAL(arg) STR_VAL(arg)
