@@ -164,6 +164,98 @@ if(NOT QMC_COMPLEX)
     1
     TRUE)
 
+
+  # self-healing deterministic vmc tests
+  if(QMC_MIXED_PRECISION)
+    simple_run_and_check(
+      deterministic-LiH_ae_msdj_legacy-vmc-estimator-sh_coeff
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+      det_vmc_sh_legacy.in.xml
+      4
+      4
+      check_stats.py
+      -s
+      0
+      -q
+      sh_coeff
+      -a
+      2e-6
+      -e
+      0
+      -c
+      5
+      -p
+      det_vmc_sh_legacy
+      -r
+      qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
+  
+    simple_run_and_check(
+      deterministic-LiH_ae_msdj_batched-vmc-estimator-sh_coeff
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+      det_vmc_sh_batched.in.xml
+      4
+      4
+      check_stats.py
+      -s
+      0
+      -q
+      sh_coeff
+      -a
+      2e-6
+      -e
+      0
+      -c
+      5
+      -p
+      det_vmc_sh_batched
+      -r
+      qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
+  else()
+    simple_run_and_check(
+      deterministic-LiH_ae_msdj_legacy-vmc-estimator-sh_coeff
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+      det_vmc_sh_legacy.in.xml
+      4
+      4
+      check_stats.py
+      -s
+      0
+      -q
+      sh_coeff
+      -a
+      1e-8
+      -e
+      0
+      -c
+      5
+      -p
+      det_vmc_sh_legacy
+      -r
+      qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
+  
+    simple_run_and_check(
+      deterministic-LiH_ae_msdj_batched-vmc-estimator-sh_coeff
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+      det_vmc_sh_batched.in.xml
+      4
+      4
+      check_stats.py
+      -s
+      0
+      -q
+      sh_coeff
+      -a
+      1e-8
+      -e
+      0
+      -c
+      5
+      -p
+      det_vmc_sh_batched
+      -r
+      qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
+  endif()
+
 else()
   message(VERBOSE
           "Skipping LiH_ae_MSD tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
