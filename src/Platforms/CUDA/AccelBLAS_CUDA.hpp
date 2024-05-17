@@ -9,36 +9,38 @@
 // File refactored from: MatrixDelayedUpdateCUDA.h
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_CUDA_LINEAR_ALGEBRA_HANDLES_H
-#define QMCPLUSPLUS_CUDA_LINEAR_ALGEBRA_HANDLES_H
+#ifndef QMCPLUSPLUS_CUDA_ACCELBLAS_CUDA_H
+#define QMCPLUSPLUS_CUDA_ACCELBLAS_CUDA_H
 
-#include "ResourceCollection.h"
+#include "AccelBLAS.hpp"
 #include "CUDA/CUDAruntime.hpp"
-#include "CUDA/cuBLAS.hpp"
 #include "CUDA/QueueCUDA.hpp"
+#include "CUDA/cuBLAS.hpp"
 
 namespace qmcplusplus
 {
-struct CUDALinearAlgebraHandles : public Resource
+namespace compute
 {
-  // CUDA specific variables
-  compute::Queue<PlatformKind::CUDA> queue;
+template<>
+class BLASHandle<PlatformKind::CUDA>
+{
+  public:
+  // cuda stream, not owned, reference-only
+  cudaStream_t h_stream;
+  // cublas handle
   cublasHandle_t h_cublas;
 
-  CUDALinearAlgebraHandles() : Resource("CUDALinearAlgebraHandles")
+  BLASHandle(Queue<PlatformKind::CUDA>& queue): h_stream(queue.getNative())
   {
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, queue.getNative()), "cublasSetStream failed!");
+    cublasErrorCheck(cublasSetStream(h_cublas, h_stream), "cublasSetStream failed!");
   }
 
-  CUDALinearAlgebraHandles(const CUDALinearAlgebraHandles&) : CUDALinearAlgebraHandles() {}
-
-  ~CUDALinearAlgebraHandles()
+  ~BLASHandle()
   {
     cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
   }
-
-  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<CUDALinearAlgebraHandles>(*this); }
 };
+}
 }
 #endif

@@ -9,12 +9,22 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_QUEUE_ALIASES_H
-#define QMCPLUSPLUS_QUEUE_ALIASES_H
+#ifndef QMCPLUSPLUS_ACCELBLAS_H
+#define QMCPLUSPLUS_ACCELBLAS_H
 
-#include "config.h"
-#if defined(ENABLE_CUDA)
-#include "CUDA/QueueCUDA.hpp"
-#endif
+#include "PlatformKinds.hpp"
+
+namespace qmcplusplus
+{
+
+namespace compute
+{
+
+template<PlatformKind PL>
+class BLASHandle;
+
+}
+
+} // namespace qmcplusplus
 
 #endif
