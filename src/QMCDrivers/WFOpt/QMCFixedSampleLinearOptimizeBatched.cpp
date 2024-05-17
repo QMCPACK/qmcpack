@@ -1934,18 +1934,18 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       Valid = objFuncWrapper_.lineoptimization2();
     }
 
-    for (int i = 0; i < numParams; i++)
+    if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))
     {
-      if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))
-      {
-        app_log() << "Stochastic Reconfigurationfrom line search, lambda = " << objFuncWrapper_.Lambda << std::endl;
+      app_log() << "Stochastic Reconfigurationfrom line search, lambda = " << objFuncWrapper_.Lambda << std::endl;
+      for (int i = 0; i < numParams; i++)
         optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
-      }
-      else
-      {
-        app_log() << "Stochastic Reconfigurationfrom line search failed, using lambda = " << nonlinear_rescale << std::endl;
+    }
+    else
+    {
+      app_log() << "Stochastic Reconfigurationfrom line search failed, using lambda = " << nonlinear_rescale
+                << std::endl;
+      for (int i = 0; i < numParams; i++)
         optTarget->Params(i) = currentParameters.at(i) + nonlinear_rescale * parameterDirections.at(i + 1);
-      }
     }
   }
   else
