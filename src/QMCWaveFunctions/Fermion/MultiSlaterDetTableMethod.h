@@ -264,11 +264,12 @@ private:
                                                   Vector<ValueType>& dlogpsi);
 
   /** compute parameter derivatives of CI/CSF coefficients
-   * @param multi_det_to_ref multideterminant over the reference single determinant
    * @param dlogpsi saved derivatives
-   * @param det_id provide this argument to affect determinant group id for virtual moves
+   * @param move when one electron virtual move was proposed, pass the determinant group of the moved electron and
+   *             the ratio of multideterminant and the reference single determinant
    */
-  void evaluateDerivativesMSD(Vector<ValueType>& dlogpsi, std::optional<std::pair<unsigned, PsiValue>> move = std::nullopt) const;
+  void evaluateDerivativesMSD(Vector<ValueType>& dlogpsi,
+                              std::optional<std::pair<unsigned, PsiValue>> move = std::nullopt) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
