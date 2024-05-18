@@ -96,7 +96,7 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     MultiSlaterDetTableMethod& msd = msd_refvec[0];
 
     // collect parameter derivatives: (dpsi/dc_i)/psi
-    msd.detRatios(det_ratios);
+    msd.calcIndividualDetRatios(det_ratios);
 
     // collect jastrow prefactor
     WaveFunctionComponent::LogValue Jval = 0.0;

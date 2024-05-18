@@ -92,7 +92,7 @@ SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSe
     throw std::runtime_error("SelfHealingOverlap estimator requires use of multideterminant wavefunction");
 
   // collect parameter derivatives: (dpsi/dc_i)/psi
-  msd.detRatios(det_ratios);
+  msd.calcIndividualDetRatios(det_ratios);
 
   // collect jastrow prefactor
   WaveFunctionComponent::LogValue Jval = 0.0;
