@@ -75,6 +75,8 @@ protected:
   std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
+  ///trace managers
+  std::vector<TraceManagerNew*> traceClonesNew;
 
   //for correlated sampling.
   static std::vector<UPtrVector<MCWalkerConfiguration>> WPoolClones_uptr;

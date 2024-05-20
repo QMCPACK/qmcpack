@@ -51,6 +51,7 @@ namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
 class TraceManager;
+class TraceManagerNew;
 class EstimatorManagerNew;
 class TrialWaveFunction;
 class QMCHamiltonian;
@@ -240,6 +241,9 @@ public:
 
   void putTraces(xmlNodePtr txml) override {}
   void requestTraces(bool allow_traces) override {}
+
+  void putTracesNew(xmlNodePtr txml) override {}
+  void requestTracesNew(bool allow_traces) override {}
 
   // scales a MCCoords by sqrtTau. Chooses appropriate taus by CT
   template<typename RT, CoordsType CT>

@@ -24,8 +24,10 @@
 #include "Utilities/qmc_common.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
+#include "Estimators/TraceManagerNew.h"
 #else
 using TraceManager = int;
+using TraceManagerNew = int;
 #endif
 
 //comment this out to use only method to clone
@@ -85,6 +87,7 @@ CloneManager::~CloneManager()
 
 #if !defined(REMOVE_TRACEMANAGER)
   delete_iter(traceClones.begin(), traceClones.end());
+  delete_iter(traceClonesNew.begin(), traceClonesNew.end());
 #endif
 }
 

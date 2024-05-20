@@ -47,6 +47,7 @@ public:
     bool append_run         = false;
     bool enable_profiling   = false;
     std::string traces_tag  = "none";
+    std::string walkertraces_tag  = "none";
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };
 

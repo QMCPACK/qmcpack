@@ -33,6 +33,10 @@ OperatorBase::OperatorBase()
       streaming_particles_(false),
       have_required_traces_(false),
       streaming_scalars_(false),
+
+      streaming_particles_new_(false),
+      have_required_traces_new_(false),
+      streaming_scalars_new_(false),
 #endif
       quantum_domain_(NO_QUANTUM_DOMAIN),
       energy_domain_(NO_ENERGY_DOMAIN)
@@ -50,6 +54,7 @@ void OperatorBase::setName(const std::string name) noexcept { name_ = name; }
 
 #if !defined(REMOVE_TRACEMANAGER)
 TraceRequest& OperatorBase::getRequest() noexcept { return request_; }
+TraceRequestNew& OperatorBase::getRequestNew() noexcept { return request_new_; }
 #endif
 
 ////////  FUNCTIONS ////////////////
@@ -223,6 +228,7 @@ void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCH
 
 #if !defined(REMOVE_TRACEMANAGER)
 void OperatorBase::getRequiredTraces(TraceManager& tm){};
+void OperatorBase::getRequiredTracesNew(TraceManagerNew& tm){};
 #endif
 
 // END  FUNCTIONS //
@@ -269,6 +275,32 @@ void OperatorBase::deleteTraceQuantities()
   request_.reset();
 }
 
+
+
+void OperatorBase::contributeTraceQuantitiesNew()
+{
+  contributeScalarQuantitiesNew();
+  contributeParticleQuantitiesNew();
+}
+
+void OperatorBase::checkoutTraceQuantitiesNew(TraceManagerNew& tm)
+{
+  checkoutScalarQuantitiesNew(tm);
+  checkoutParticleQuantitiesNew(tm);
+}
+
+void OperatorBase::collectScalarTracesNew() { collectScalarQuantitiesNew(); }
+
+void OperatorBase::deleteTraceQuantitiesNew()
+{
+  deleteScalarQuantitiesNew();
+  deleteParticleQuantitiesNew();
+  streaming_scalars_new_    = false;
+  streaming_particles_new_  = false;
+  have_required_traces_new_ = false;
+  request_new_.reset();
+}
+
 #endif
 
 ////// PROTECTED FUNCTIONS
@@ -297,6 +329,33 @@ void OperatorBase::deleteScalarQuantities()
 void OperatorBase::contributeParticleQuantities(){};
 void OperatorBase::checkoutParticleQuantities(TraceManager& tm){};
 void OperatorBase::deleteParticleQuantities(){};
+
+
+
+void OperatorBase::contributeScalarQuantitiesNew() { request_new_.contribute_scalar(name_); }
+
+void OperatorBase::checkoutScalarQuantitiesNew(TraceManagerNew& tm)
+{
+  streaming_scalars_new_ = request_new_.streaming_scalar(name_);
+  if (streaming_scalars_new_)
+    value_sample_new_ = tm.checkout_real<1>(name_);
+}
+
+void OperatorBase::collectScalarQuantitiesNew()
+{
+  if (streaming_scalars_new_)
+    (*value_sample_new_)(0) = value_;
+}
+
+void OperatorBase::deleteScalarQuantitiesNew()
+{
+  if (streaming_scalars_new_)
+    delete value_sample_new_;
+}
+
+void OperatorBase::contributeParticleQuantitiesNew(){};
+void OperatorBase::checkoutParticleQuantitiesNew(TraceManagerNew& tm){};
+void OperatorBase::deleteParticleQuantitiesNew(){};
 #endif
 
 void OperatorBase::setComputeForces(bool compute) {}

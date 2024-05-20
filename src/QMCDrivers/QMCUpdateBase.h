@@ -31,6 +31,7 @@
 namespace qmcplusplus
 {
 class TraceManager;
+class TraceManagerNew;
 /** @ingroup QMC
  * @brief Base class for update methods for each step
  *
@@ -99,6 +100,12 @@ public:
   void resetRun(BranchEngineType* brancher,
                 EstimatorManagerBase* est,
                 TraceManager* traces,
+                const DriftModifierBase* driftmodifer);
+
+  void resetRunNew(BranchEngineType* brancher,
+                EstimatorManagerBase* est,
+                TraceManager* traces,
+                TraceManagerNew* traces_new,
                 const DriftModifierBase* driftmodifer);
 
   inline RealType getTau()
@@ -238,6 +245,7 @@ public:
 public:
   ///traces
   TraceManager* Traces;
+  TraceManagerNew* Traces_new;
 
 protected:
   ///update particle-by-particle

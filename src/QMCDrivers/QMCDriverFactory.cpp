@@ -76,6 +76,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   aAttrib.add(append_tag, "append");
   aAttrib.add(profiling_tag, "profiling");
   aAttrib.add(das.traces_tag, "trace");
+  aAttrib.add(das.walkertraces_tag, "walkertrace");
   aAttrib.put(cur);
   das.append_run                 = (append_tag == "yes");
   das.enable_profiling           = (profiling_tag == "yes");
@@ -293,6 +294,11 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   bool allow_traces = das.traces_tag == "yes" ||
       (das.traces_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC));
   new_driver->requestTraces(allow_traces);
+
+  //add trace information
+  bool allow_traces_new = das.walkertraces_tag == "yes" ||
+      (das.walkertraces_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC));
+  new_driver->requestTracesNew(allow_traces_new);
 
   return new_driver;
 }

@@ -82,6 +82,9 @@ private:
   ///traces xml
   xmlNodePtr traces_xml_;
 
+  ///traces xml
+  xmlNodePtr traces_xml_new_;
+
   ///qmc sections
   std::vector<std::pair<xmlNodePtr, bool>> qmc_action_;
 

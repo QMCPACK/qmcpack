@@ -33,8 +33,10 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
+#include "Estimators/TraceManagerNew.h"
 #else
 using TraceManager = int;
+using TraceManagerNew = int;
 #endif
 
 namespace qmcplusplus
@@ -62,6 +64,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   DumpConfig   = false;
   IsQMCDriver  = true;
   allow_traces = false;
+  allow_traces_new = false;
   MyCounter    = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
@@ -202,6 +205,13 @@ void QMCDriver::process(xmlNodePtr cur)
     Traces = std::make_unique<TraceManager>(myComm);
   }
   Traces->put(traces_xml, allow_traces, RootName);
+
+  //create and initialize traces
+  if (!Traces_new)
+  {
+    Traces_new = std::make_unique<TraceManagerNew>(myComm);
+  }
+  Traces_new->put(traces_xml_new, allow_traces_new, RootName);
 #endif
   branchEngine->put(cur);
   Estimators->put(H, cur);

@@ -62,6 +62,7 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
 class TraceManager;
+class TraceManagerNew;
 
 /** @ingroup QMCDrivers
  * @{
@@ -95,6 +96,11 @@ public:
   bool allow_traces;
   /// traces xml
   xmlNodePtr traces_xml;
+
+  /// whether to allow traces
+  bool allow_traces_new;
+  /// traces xml
+  xmlNodePtr traces_xml_new;
 
   /// Constructor.
   QMCDriver(const ProjectData& project_data,
@@ -149,6 +155,13 @@ public:
 
   inline void requestTraces(bool traces) override { allow_traces = traces; }
 
+  inline void putTracesNew(xmlNodePtr txml) override { 
+    app_log()<<"JTK: putTracesNew"<<std::endl;
+    traces_xml_new = txml; 
+  }
+
+  inline void requestTracesNew(bool traces) override { allow_traces_new = traces; }
+
   std::string getEngineName() override { return QMCType; }
 
   template<class PDT>
@@ -183,6 +196,9 @@ public:
 
   ///Traces manager
   std::unique_ptr<TraceManager> Traces;
+
+  ///Traces manager
+  std::unique_ptr<TraceManagerNew> Traces_new;
 
   ///return the random generators
   inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const

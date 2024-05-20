@@ -31,6 +31,7 @@
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
+#include "Estimators/TraceManagerNew.h"
 #endif
 #include "QMCHamiltonians/Listener.hpp"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
@@ -163,6 +164,7 @@ public:
    * @return TraceRequest& reference to request_
    */
   TraceRequest& getRequest() noexcept;
+  TraceRequestNew& getRequestNew() noexcept;
 #endif
 
   //////// PURELY VIRTUAL FUNCTIONS ////////////////
@@ -464,6 +466,7 @@ public:
    * @param tm 
    */
   virtual void getRequiredTraces(TraceManager& tm);
+  virtual void getRequiredTracesNew(TraceManagerNew& tm);
 #endif
 
   // TODO: add docs
@@ -514,6 +517,12 @@ public:
    * @brief delete trace arrays
    */
   void deleteTraceQuantities();
+
+
+  void contributeTraceQuantitiesNew();
+  void checkoutTraceQuantitiesNew(TraceManagerNew& tm);
+  void collectScalarTracesNew();
+  void deleteTraceQuantitiesNew();
 #endif
 
 protected:
@@ -529,6 +538,7 @@ protected:
 #if !defined(REMOVE_TRACEMANAGER)
   ///whether traces are being collected
   TraceRequest request_;
+  TraceRequestNew request_new_;
 #endif
 
   ///starting index of this object
@@ -543,6 +553,8 @@ protected:
 #if !defined(REMOVE_TRACEMANAGER)
   bool streaming_particles_;
   bool have_required_traces_;
+  bool streaming_particles_new_;
+  bool have_required_traces_new_;
 #endif
 
   /////PURELY VIRTUAL FUNCTIONS
@@ -567,6 +579,15 @@ protected:
   virtual void contributeParticleQuantities();
   virtual void checkoutParticleQuantities(TraceManager& tm);
   virtual void deleteParticleQuantities();
+
+
+  virtual void contributeScalarQuantitiesNew();
+  virtual void checkoutScalarQuantitiesNew(TraceManagerNew& tm);
+  virtual void collectScalarQuantitiesNew();
+  virtual void deleteScalarQuantitiesNew();
+  virtual void contributeParticleQuantitiesNew();
+  virtual void checkoutParticleQuantitiesNew(TraceManagerNew& tm);
+  virtual void deleteParticleQuantitiesNew();
 #endif
 
   virtual void setComputeForces(bool compute);
@@ -604,6 +625,12 @@ private:
 
   ///array to store sample value
   Array<RealType, 1>* value_sample_;
+
+
+  bool streaming_scalars_new_;
+
+  ///array to store sample value
+  Array<RealType, 1>* value_sample_new_;
 #endif
 
   /** Is there a per particle listener

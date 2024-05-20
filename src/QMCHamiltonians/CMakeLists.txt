@@ -70,7 +70,7 @@ if(OHMMS_DIM MATCHES 3)
       ECPComponentBuilder_L2.cpp)
 
   if(NOT REMOVE_TRACEMANAGER)
-    set(HAMSRCS ${HAMSRCS} ../Estimators/TraceManager.cpp ReferencePoints.cpp SpaceGrid.cpp EnergyDensityEstimator.cpp
+    set(HAMSRCS ${HAMSRCS} ../Estimators/TraceManager.cpp ../Estimators/TraceManagerNew.cpp ReferencePoints.cpp SpaceGrid.cpp EnergyDensityEstimator.cpp
                 DensityMatrices1B.cpp)
   endif()
 

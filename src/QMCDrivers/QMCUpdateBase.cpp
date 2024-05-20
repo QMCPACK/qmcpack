@@ -23,8 +23,10 @@
 #include "Concurrency/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
+#include "Estimators/TraceManagerNew.h"
 #else
 using TraceManager = int;
+using TraceManagerNew = int;
 #endif
 
 namespace qmcplusplus
@@ -37,6 +39,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
+      Traces_new(0),
       W(w),
       Psi(psi),
       Guide(guide),
@@ -57,6 +60,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
+      Traces_new(0),
       W(w),
       Psi(psi),
       Guide(psi),
@@ -114,6 +118,16 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
   return s;
 }
 
+void QMCUpdateBase::resetRunNew(BranchEngineType* brancher,
+                                EstimatorManagerBase* est,
+                                TraceManager* traces,
+                                TraceManagerNew* traces_new,
+                                const DriftModifierBase* driftmodifer)
+{
+  Traces_new    = traces_new;
+  resetRun(brancher,est,traces,driftmodifer);
+}
+
 void QMCUpdateBase::resetRun(BranchEngineType* brancher,
                              EstimatorManagerBase* est,
                              TraceManager* traces,
@@ -163,6 +177,16 @@ void QMCUpdateBase::startRun(int blocks, bool record)
   }
   H.initialize_traces(*Traces, W);
   Traces->initialize_traces();
+
+  if (!Traces_new)
+  {
+    APP_ABORT(
+        "QMCUpdateBase::startRun\n  derived QMCDriver class has not setup (new!) trace clones properly\n  null TraceManagerNew "
+        "pointer encountered in derived QMCUpdateBase class\n  see VMCLinearOptOMP.cpp for a correct minimal interface "
+        "(search on 'trace')\n  refer to changes made in SVN revision 6597 for further guidance");
+  }
+  H.initialize_traces_new(*Traces_new, W);
+  Traces_new->initialize_traces();
 #endif
 }
 
@@ -175,6 +199,9 @@ void QMCUpdateBase::stopRun2()
 #if !defined(REMOVE_TRACEMANAGER)
   H.finalize_traces();
   Traces->finalize_traces();
+
+  H.finalize_traces_new();
+  Traces_new->finalize_traces();
 #endif
 }
 
@@ -183,6 +210,7 @@ void QMCUpdateBase::startBlock(int steps)
   Estimators->startBlock(steps);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
+  Traces_new->startBlock(steps);
 #endif
   nAccept              = 0;
   nReject              = 0;
@@ -196,6 +224,7 @@ void QMCUpdateBase::stopBlock(bool collectall)
   Estimators->stopBlock(acceptRatio(), collectall);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopBlock();
+  Traces_new->stopBlock();
 #endif
 }
 
