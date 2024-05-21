@@ -1160,8 +1160,6 @@ struct TraceManagerState
   bool writing_traces;
   int throttle;
   bool verbose;
-  std::string format;
-  bool hdf_format;
   std::string default_domain;
 };
 
@@ -1182,8 +1180,6 @@ public:
   TraceBufferNew<TraceIntNew> int_buffer;
   TraceBufferNew<TraceRealNew> real_buffer;
 
-  static double trace_tol;
-
   TraceRequestNew request;
 
   std::string default_domain;
@@ -1192,17 +1188,11 @@ public:
   bool writing_traces;
   int throttle;
   bool verbose;
-  std::string format;
-  bool hdf_format;
-  std::string file_root;
-  Communicate* communicator;
 
-  TraceCollector(Communicate* comm = 0) : verbose(false)
+  TraceCollector() : verbose(false)
   {
     reset_permissions();
-    communicator   = comm;
     throttle       = 1;
-    format         = "hdf";
     default_domain = "scalars";
     request.set_scalar_domain(default_domain);
     int_buffer.set_type("int");
@@ -1221,8 +1211,6 @@ public:
     writing_traces       = tms.writing_traces;
     throttle             = tms.throttle;
     verbose              = tms.verbose;
-    format               = tms.format;
-    hdf_format           = tms.hdf_format;
     default_domain       = tms.default_domain;
   }
 
@@ -1245,7 +1233,6 @@ public:
     streaming_traces     = false;
     writing_traces       = false;
     verbose              = false;
-    hdf_format           = false;
     request.reset();
   }
 
@@ -1438,8 +1425,6 @@ public:
     app_log() << pad2 << "method_allows_traces    = " << method_allows_traces << std::endl;
     app_log() << pad2 << "streaming_traces        = " << streaming_traces << std::endl;
     app_log() << pad2 << "writing_traces          = " << writing_traces << std::endl;
-    app_log() << pad2 << "format                  = " << format << std::endl;
-    app_log() << pad2 << "hdf format              = " << hdf_format << std::endl;
     app_log() << pad2 << "default_domain          = " << default_domain << std::endl;
     int_buffer.write_summary(pad2);
     real_buffer.write_summary(pad2);
@@ -1471,7 +1456,7 @@ public:
 class TraceManagerNew
 {
 public:
-  static double trace_tol;
+  static double trace_tol;  // remove this
 
   TraceRequestNew request;
 
@@ -1507,8 +1492,6 @@ public:
     tms.writing_traces       = writing_traces;
     tms.throttle             = throttle;
     tms.verbose              = verbose;
-    tms.format               = format;
-    tms.hdf_format           = hdf_format;
     tms.default_domain       = default_domain;
     return tms;
   }
