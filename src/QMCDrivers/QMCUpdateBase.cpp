@@ -224,7 +224,6 @@ void QMCUpdateBase::stopBlock(bool collectall)
   Estimators->stopBlock(acceptRatio(), collectall);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopBlock();
-  Traces_new->stopBlock();
 #endif
 }
 
