@@ -554,38 +554,6 @@ void QMCHamiltonian::initialize_traces_new(TraceManagerNew& tm, ParticleSet& P)
   if (trace_log)
     app_log() << "\n  Hamiltonian is initializing traces" << std::endl;
 
-  //fill std::string vectors for combined trace quantities
-  std::vector<std::string> Eloc;
-  std::vector<std::string> Vloc;
-  std::vector<std::string> Vq, Vc, Vqq, Vqc, Vcc;
-  for (int i = 0; i < H.size(); ++i)
-    Eloc.push_back(H[i]->getName());
-  for (int i = 1; i < H.size(); ++i)
-    Vloc.push_back(H[i]->getName());
-
-  // These contributions are based on the potential energy components.
-  // Loop starts at one to skip the kinetic energy component.
-  for (int i = 1; i < H.size(); ++i)
-  {
-    OperatorBase& h = *H[i];
-    if (h.isQuantum())
-      Vq.push_back(h.getName());
-    else if (h.isClassical())
-      Vc.push_back(h.getName());
-    else if (h.isQuantumQuantum())
-      Vqq.push_back(h.getName());
-    else if (h.isQuantumClassical())
-      Vqc.push_back(h.getName());
-    else if (h.isClassicalClassical())
-      Vcc.push_back(h.getName());
-    else if (omp_get_thread_num() == 0)
-      app_log() << "  warning: potential named " << h.getName()
-                << " has not been classified according to its quantum domain (q,c,qq,qc,cc)\n    estimators depending "
-                   "on this classification may not function properly"
-                << std::endl;
-  }
-
-
   //make trace quantities available
   request_new.contribute_scalar("id", true);           //default trace quantity
   request_new.contribute_scalar("parent_id", true);    //default trace quantity
@@ -597,24 +565,6 @@ void QMCHamiltonian::initialize_traces_new(TraceManagerNew& tm, ParticleSet& P)
   request_new.contribute_array("position");
   for (int i = 0; i < H.size(); ++i)
     H[i]->contributeTraceQuantitiesNew();
-  //for (int i = 0; i < auxH.size(); ++i)
-  //  auxH[i]->contributeTraceQuantitiesNew();
-
-
-  //note availability of combined quantities
-  request_new.contribute_combined("LocalEnergy", Eloc, true);
-  request_new.contribute_combined("LocalPotential", Vloc, true, true);
-  if (Vq.size() > 0)
-    request_new.contribute_combined("Vq", Vq, true, true);
-  if (Vc.size() > 0)
-    request_new.contribute_combined("Vc", Vc, true, true);
-  if (Vqq.size() > 0)
-    request_new.contribute_combined("Vqq", Vqq, true, true);
-  if (Vqc.size() > 0)
-    request_new.contribute_combined("Vqc", Vqc, true, true);
-  if (Vcc.size() > 0)
-    request_new.contribute_combined("Vcc", Vcc, true, true);
-
 
   ////collect trace requests
   std::vector<TraceRequestNew*> requests;
@@ -623,10 +573,6 @@ void QMCHamiltonian::initialize_traces_new(TraceManagerNew& tm, ParticleSet& P)
   ////  requests from Hamiltonian components
   for (int i = 0; i < H.size(); ++i)
     requests.push_back(&H[i]->getRequestNew());
-  ////  requests from other observables
-  //for (int i = 0; i < auxH.size(); ++i)
-  //  requests.push_back(&auxH[i]->getRequest());
-  //
   //collect trace quantity availability/requests from contributors/requestors
   for (int i = 0; i < requests.size(); ++i)
     tm.request.incorporate(*requests[i]);
@@ -681,43 +627,10 @@ void QMCHamiltonian::initialize_traces_new(TraceManagerNew& tm, ParticleSet& P)
         app_log() << "    OperatorBase::checkoutTraceQuantitiesNew  " << H[i]->getName() << std::endl;
       H[i]->checkoutTraceQuantitiesNew(tm);
     }
-    //for (int i = 0; i < auxH.size(); ++i)
-    //{
-    //  if (trace_log)
-    //    app_log() << "    OperatorBase::checkoutTraceQuantities  " << auxH[i]->getName() << std::endl;
-    //  auxH[i]->checkoutTraceQuantities(tm);
-    //}
-    //setup combined traces that depend on H information
-    //  LocalEnergy, LocalPotential, Vq, Vc, Vqq, Vqc, Vcc
-    if (Vloc.size() > 0 && request.streaming("LocalPotential"))
-      tm.make_combined_trace("LocalPotential", Vloc);
-    if (Eloc.size() > 0 && request.streaming("LocalEnergy"))
-      tm.make_combined_trace("LocalEnergy", Eloc);
-    if (Vq.size() > 0 && request.streaming("Vq"))
-      tm.make_combined_trace("Vq", Eloc);
-    if (Vc.size() > 0 && request.streaming("Vc"))
-      tm.make_combined_trace("Vc", Eloc);
-    if (Vqq.size() > 0 && request.streaming("Vqq"))
-      tm.make_combined_trace("Vqq", Eloc);
-    if (Vqc.size() > 0 && request.streaming("Vqc"))
-      tm.make_combined_trace("Vqc", Eloc);
-    if (Vcc.size() > 0 && request.streaming("Vcc"))
-      tm.make_combined_trace("Vcc", Eloc);
 
     //all trace samples have been created ( streaming instances)
     //  mark the ones that will be writing also
     tm.screen_writes();
-
-    ////observables that depend on traces check them out
-    //if (trace_log)
-    //  app_log() << "\n  Hamiltonian is fulfilling trace requests from observables" << std::endl;
-    //for (int i = 0; i < auxH.size(); ++i)
-    //{
-    //  if (trace_log)
-    //    app_log() << "    OperatorBase::getRequiredTraces  " << auxH[i]->getName() << std::endl;
-    //  auxH[i]->getRequiredTraces(tm);
-    //}
-    //report
 
     //write traces status to the log
     if (trace_log)
@@ -765,8 +678,6 @@ void QMCHamiltonian::finalize_traces_new()
   {
     for (int i = 0; i < H.size(); ++i)
       H[i]->deleteTraceQuantitiesNew();
-    //for (int i = 0; i < auxH.size(); ++i)
-    //  auxH[i]->deleteTraceQuantities();
   }
   streaming_position_new = false;
   request_new.reset();
