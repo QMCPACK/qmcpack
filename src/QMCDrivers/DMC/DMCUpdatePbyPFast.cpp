@@ -21,8 +21,10 @@
 #include "QMCDrivers/DriftOperators.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
+#include "Estimators/TraceManagerNew.h"
 #else
 using TraceManager = int;
+using TraceManagerNew = int;
 #endif
 //#define TEST_INNERBRANCH
 
@@ -169,6 +171,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   }
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
+  Traces_new->buffer_sample(W.current_step);
 #endif
   {
     ScopedTimer local_timer(myTimers[DMC_tmoves]);

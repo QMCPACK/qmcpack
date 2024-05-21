@@ -1876,14 +1876,33 @@ if(add_traces_tests)
       --dmc_steps_exclude=1)
 
     simple_run_and_check(
-      deterministic-diamondC_1x1x1_pp-vmc-dmc-walkertrace_scalars
+      deterministic-diamondC_1x1x1_pp-vmc-walkertrace_scalars
       "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-      qmc_walkertrace_scalars.in.xml
+      qmc_walkertrace_vmc_scalars.in.xml
       1
       1
       check_traces.py
       -p
-      qmc_trace_scalars
+      qmc_trace_vmc_scalars
+      -s
+      0
+      -m
+      vmc
+      -q
+      'Kinetic,ElecElec,IonIon,LocalECP,NonLocalECP'
+      --dmc_steps_exclude=1)
+ 
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-walkertrace_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkertrace_vmc_scalars.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_vmc_scalars
+      -n
+      4
       -s
       0
       -m
@@ -1893,20 +1912,20 @@ if(add_traces_tests)
       --dmc_steps_exclude=1)
 
     simple_run_and_check(
-      deterministic-diamondC_1x1x1_pp-vmc-dmc-walkertrace_scalars
+      deterministic-diamondC_1x1x1_pp-dmc-walkertrace_scalars
       "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-      qmc_walkertrace_scalars.in.xml
+      qmc_walkertrace_dmc_scalars.in.xml
       4
       4
       check_traces.py
       -p
-      qmc_trace_scalars
+      qmc_trace_dmc_scalars
       -n
       4
       -s
-      0
+      1
       -m
-      vmc
+      dmc
       -q
       'Kinetic,ElecElec,IonIon,LocalECP,NonLocalECP'
       --dmc_steps_exclude=1)
