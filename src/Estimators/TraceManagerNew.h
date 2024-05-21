@@ -1169,7 +1169,7 @@ struct TraceManagerState
 
 class TraceCollector
 {
-private:
+public:
   //collections of samples for a single walker step
   //  the associated arrays will be updated following evaluate
   TraceSampleNews<TraceIntNew> int_samples;
@@ -1182,7 +1182,6 @@ private:
   TraceBufferNew<TraceIntNew> int_buffer;
   TraceBufferNew<TraceRealNew> real_buffer;
 
-public:
   static double trace_tol;
 
   TraceRequestNew request;
@@ -1637,6 +1636,35 @@ public:
   }
 
 
+  inline TraceManagerState getState()
+  {
+    TraceManagerState tms;
+    tms.method_allows_traces = method_allows_traces;
+    tms.request              = request;
+    tms.streaming_traces     = streaming_traces;
+    tms.writing_traces       = writing_traces;
+    tms.throttle             = throttle;
+    tms.verbose              = verbose;
+    tms.format               = format;
+    tms.hdf_format           = hdf_format;
+    tms.default_domain       = default_domain;
+    return tms;
+  }
+
+  inline TraceCollector* makeCollector()
+  {
+    app_log()<<"JTK: TraceManagernew::makeCollector"<<std::endl;
+    if (verbose)
+      app_log() << "TraceManagerNew::makeCollector " << master_copy << std::endl;
+    if (!master_copy)
+      APP_ABORT("TraceManagerNew::makeCollector  only the master copy should call this function");
+    TraceCollector* tc = new TraceCollector();
+    tc->transfer_state_from(getState());
+    tc->distribute();
+    return tc;
+  }
+
+
   inline TraceManagerNew* makeClone()
   {
     app_log()<<"JTK: TraceManagernew::makeClone"<<std::endl;
@@ -1954,7 +1982,7 @@ public:
   }
 
 
-  inline void check_clones(std::vector<TraceManagerNew*>& clones)
+  inline void check_clones(std::vector<TraceCollector*>& clones)
   {
     app_log() << "JTK: TraceManagerNew::check_clones "<<writing_traces<<" "<<clones.size() << std::endl;
     if (writing_traces && clones.size() > 0)
@@ -1964,10 +1992,10 @@ public:
       bool all_same = true;
       bool int_same;
       bool real_same;
-      TraceManagerNew& ref = *clones[0];
+      TraceCollector& ref = *clones[0];
       for (int i = 0; i < clones.size(); ++i)
       {
-        TraceManagerNew& tm = *clones[i];
+        TraceCollector& tm = *clones[i];
         int_same         = tm.int_buffer.same_as(ref.int_buffer);
         real_same        = tm.real_buffer.same_as(ref.real_buffer);
         all_same         = all_same && int_same && real_same;
@@ -2013,7 +2041,7 @@ public:
 
 
   //write buffered trace data to file
-  inline void write_buffers(std::vector<TraceManagerNew*>& clones, int block)
+  inline void write_buffers(std::vector<TraceCollector*>& clones, int block)
   {
     app_log() << "JTK: TraceManagerNew::write_buffers "<< writing_traces<<std::endl;
     if (master_copy)
@@ -2034,7 +2062,7 @@ public:
   }
 
 
-  inline void open_file(std::vector<TraceManagerNew*>& clones)
+  inline void open_file(std::vector<TraceCollector*>& clones)
   {
     app_log() << "JTK: TraceManagerNew::open_file "<< writing_traces<<std::endl;
     if (master_copy)
@@ -2076,7 +2104,7 @@ public:
   }
 
 
-  inline void startRun(int blocks, std::vector<TraceManagerNew*>& clones)
+  inline void startRun(int blocks, std::vector<TraceCollector*>& clones)
   {
     app_log() << "JTK: TraceManagerNew::startRun " << master_copy << std::endl;
     if (verbose)
@@ -2151,7 +2179,7 @@ public:
   }
 
   //hdf file operations
-  inline void open_hdf_file(std::vector<TraceManagerNew*>& clones)
+  inline void open_hdf_file(std::vector<TraceCollector*>& clones)
   {
     app_log() << "JTK: TraceManagerNew::open_hdf_file " << master_copy << std::endl;
     if (clones.size() == 0)
@@ -2181,21 +2209,21 @@ public:
     if (!successful)
       APP_ABORT("TraceManagerNew::open_hdf_file  failed to open hdf file " + file_name);
     // only clones have active buffers and associated data
-    TraceManagerNew& tm = *clones[0];
+    TraceCollector& tm = *clones[0];
     //tm.write_summary();
     tm.int_buffer.register_hdf_data(*hdf_file);
     tm.real_buffer.register_hdf_data(*hdf_file);
   }
 
 
-  inline void write_buffers_hdf(std::vector<TraceManagerNew*>& clones)
+  inline void write_buffers_hdf(std::vector<TraceCollector*>& clones)
   {
     app_log() << "JTK: TraceManagerNew::write_buffers_hdf " << master_copy << std::endl;
     if (verbose)
       app_log() << "TraceManagerNew::write_buffers_hdf " << master_copy << std::endl;
     for (int ip = 0; ip < clones.size(); ++ip)
     {
-      TraceManagerNew& tm = *clones[ip];
+      TraceCollector& tm = *clones[ip];
       tm.int_buffer.write_hdf(*hdf_file, int_buffer.hdf_file_pointer);
       tm.real_buffer.write_hdf(*hdf_file, real_buffer.hdf_file_pointer);
     }

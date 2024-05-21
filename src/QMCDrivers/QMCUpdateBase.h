@@ -105,7 +105,7 @@ public:
   void resetRunNew(BranchEngineType* brancher,
                 EstimatorManagerBase* est,
                 TraceManager* traces,
-                TraceManagerNew* traces_new,
+                TraceCollector* traces_new,
                 const DriftModifierBase* driftmodifer);
 
   inline RealType getTau()
@@ -245,7 +245,7 @@ public:
 public:
   ///traces
   TraceManager* Traces;
-  TraceManagerNew* Traces_new;
+  TraceCollector* Traces_new;
 
 protected:
   ///update particle-by-particle

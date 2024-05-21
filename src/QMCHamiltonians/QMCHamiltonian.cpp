@@ -547,7 +547,7 @@ void QMCHamiltonian::finalize_traces()
 
 
 
-void QMCHamiltonian::initialize_traces_new(TraceManagerNew& tm, ParticleSet& P)
+void QMCHamiltonian::initialize_traces_new(TraceCollector& tm, ParticleSet& P)
 {
   static bool first_init_new = true;
   bool trace_log         = first_init_new && tm.verbose && omp_get_thread_num() == 0;

@@ -466,7 +466,7 @@ public:
    * @param tm 
    */
   virtual void getRequiredTraces(TraceManager& tm);
-  virtual void getRequiredTracesNew(TraceManagerNew& tm);
+  virtual void getRequiredTracesNew(TraceCollector& tm);
 #endif
 
   // TODO: add docs
@@ -520,7 +520,7 @@ public:
 
 
   void contributeTraceQuantitiesNew();
-  void checkoutTraceQuantitiesNew(TraceManagerNew& tm);
+  void checkoutTraceQuantitiesNew(TraceCollector& tm);
   void collectScalarTracesNew();
   void deleteTraceQuantitiesNew();
 #endif
@@ -582,11 +582,11 @@ protected:
 
 
   virtual void contributeScalarQuantitiesNew();
-  virtual void checkoutScalarQuantitiesNew(TraceManagerNew& tm);
+  virtual void checkoutScalarQuantitiesNew(TraceCollector& tm);
   virtual void collectScalarQuantitiesNew();
   virtual void deleteScalarQuantitiesNew();
   virtual void contributeParticleQuantitiesNew();
-  virtual void checkoutParticleQuantitiesNew(TraceManagerNew& tm);
+  virtual void checkoutParticleQuantitiesNew(TraceCollector& tm);
   virtual void deleteParticleQuantitiesNew();
 #endif
 

@@ -121,7 +121,7 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
 void QMCUpdateBase::resetRunNew(BranchEngineType* brancher,
                                 EstimatorManagerBase* est,
                                 TraceManager* traces,
-                                TraceManagerNew* traces_new,
+                                TraceCollector* traces_new,
                                 const DriftModifierBase* driftmodifer)
 {
   Traces_new    = traces_new;

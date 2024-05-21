@@ -132,7 +132,7 @@ void DMC::resetUpdateEngines()
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
-      traceClonesNew[ip] = Traces_new->makeClone();
+      traceClonesNew[ip] = Traces_new->makeCollector();
 #endif
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
@@ -188,7 +188,7 @@ void DMC::resetUpdateEngines()
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);
-      traceClonesNew[ip]->transfer_state_from(*Traces_new);
+      traceClonesNew[ip]->transfer_state_from(Traces_new->getState());
     }
   }
 #endif

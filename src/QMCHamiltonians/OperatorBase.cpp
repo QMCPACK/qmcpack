@@ -228,7 +228,7 @@ void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCH
 
 #if !defined(REMOVE_TRACEMANAGER)
 void OperatorBase::getRequiredTraces(TraceManager& tm){};
-void OperatorBase::getRequiredTracesNew(TraceManagerNew& tm){};
+void OperatorBase::getRequiredTracesNew(TraceCollector& tm){};
 #endif
 
 // END  FUNCTIONS //
@@ -283,7 +283,7 @@ void OperatorBase::contributeTraceQuantitiesNew()
   contributeParticleQuantitiesNew();
 }
 
-void OperatorBase::checkoutTraceQuantitiesNew(TraceManagerNew& tm)
+void OperatorBase::checkoutTraceQuantitiesNew(TraceCollector& tm)
 {
   checkoutScalarQuantitiesNew(tm);
   checkoutParticleQuantitiesNew(tm);
@@ -334,7 +334,7 @@ void OperatorBase::deleteParticleQuantities(){};
 
 void OperatorBase::contributeScalarQuantitiesNew() { request_new_.contribute_scalar(name_); }
 
-void OperatorBase::checkoutScalarQuantitiesNew(TraceManagerNew& tm)
+void OperatorBase::checkoutScalarQuantitiesNew(TraceCollector& tm)
 {
   streaming_scalars_new_ = request_new_.streaming_scalar(name_);
   if (streaming_scalars_new_)
@@ -354,7 +354,7 @@ void OperatorBase::deleteScalarQuantitiesNew()
 }
 
 void OperatorBase::contributeParticleQuantitiesNew(){};
-void OperatorBase::checkoutParticleQuantitiesNew(TraceManagerNew& tm){};
+void OperatorBase::checkoutParticleQuantitiesNew(TraceCollector& tm){};
 void OperatorBase::deleteParticleQuantitiesNew(){};
 #endif
 

@@ -116,7 +116,7 @@ public:
   void finalize_traces();
 
   ///initialize trace data
-  void initialize_traces_new(TraceManagerNew& tm, ParticleSet& P);
+  void initialize_traces_new(TraceCollector& tm, ParticleSet& P);
 
   ///collect walker trace data
   void collect_walker_traces_new(Walker_t& walker, int step);
