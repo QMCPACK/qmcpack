@@ -1150,6 +1150,443 @@ struct TraceBufferNew
 };
 
 
+
+
+struct TraceManagerState 
+{
+  bool method_allows_traces;
+  TraceRequestNew request;
+  bool streaming_traces;
+  bool writing_traces;
+  int throttle;
+  bool verbose;
+  std::string format;
+  bool hdf_format;
+  std::string default_domain;
+};
+
+
+
+class TraceCollector
+{
+private:
+  //collections of samples for a single walker step
+  //  the associated arrays will be updated following evaluate
+  TraceSampleNews<TraceIntNew> int_samples;
+  TraceSampleNews<TraceRealNew> real_samples;
+  TraceSampleNews<TraceCompNew> comp_samples;
+
+  //buffers for storing samples
+  // single row of buffer is a single sample from one walker
+  // number of rows adjusts to accommodate walker samples
+  TraceBufferNew<TraceIntNew> int_buffer;
+  TraceBufferNew<TraceRealNew> real_buffer;
+
+public:
+  static double trace_tol;
+
+  TraceRequestNew request;
+
+  std::string default_domain;
+  bool method_allows_traces;
+  bool streaming_traces;
+  bool writing_traces;
+  int throttle;
+  bool verbose;
+  std::string format;
+  bool hdf_format;
+  std::string file_root;
+  Communicate* communicator;
+
+  TraceCollector(Communicate* comm = 0) : verbose(false)
+  {
+    reset_permissions();
+    communicator   = comm;
+    throttle       = 1;
+    format         = "hdf";
+    default_domain = "scalars";
+    request.set_scalar_domain(default_domain);
+    int_buffer.set_type("int");
+    real_buffer.set_type("real");
+    int_buffer.set_samples(int_samples);
+    real_buffer.set_samples(real_samples);
+    real_buffer.set_samples(comp_samples);
+  }
+
+
+  inline void transfer_state_from(const TraceManagerState& tms)
+  {
+    method_allows_traces = tms.method_allows_traces;
+    request              = tms.request;
+    streaming_traces     = tms.streaming_traces;
+    writing_traces       = tms.writing_traces;
+    throttle             = tms.throttle;
+    verbose              = tms.verbose;
+    format               = tms.format;
+    hdf_format           = tms.hdf_format;
+    default_domain       = tms.default_domain;
+  }
+
+
+  inline void distribute()
+  {
+    int_samples.set_verbose(verbose);
+    real_samples.set_verbose(verbose);
+    comp_samples.set_verbose(verbose);
+    int_buffer.set_verbose(verbose);
+    real_buffer.set_verbose(verbose);
+  }
+
+
+  inline void reset_permissions()
+  {
+    method_allows_traces = false;
+    streaming_traces     = false;
+    writing_traces       = false;
+    verbose              = false;
+    hdf_format           = false;
+    request.reset();
+  }
+
+
+  inline void put(xmlNodePtr cur, bool allow_traces, std::string series_root)
+  {
+    app_log()<<"JTK: TraceCollector::put"<<std::endl;
+    reset_permissions();
+    method_allows_traces  = allow_traces;
+    file_root             = series_root;
+    bool traces_requested = cur != NULL;
+    streaming_traces      = traces_requested && method_allows_traces;
+    app_log()<<"JTK:    method_allows_traces "<<method_allows_traces<<std::endl;
+    app_log()<<"JTK:    traces_requested "<<traces_requested<<std::endl;
+    app_log()<<"JTK:    streaming_traces "<<streaming_traces<<std::endl;
+    if (streaming_traces)
+    {
+      if (omp_get_thread_num() == 0)
+      {
+        app_log() << "\n  TraceCollector::put() " << std::endl;
+        app_log() << "    traces requested          : " << traces_requested << std::endl;
+        app_log() << "    method allows traces      : " << method_allows_traces << std::endl;
+        app_log() << "    streaming traces          : " << streaming_traces << std::endl;
+        app_log() << std::endl;
+      }
+      app_log()<<"JTK:    reading xml attributes "<<std::endl;
+      //read trace attributes
+      std::string writing         = "yes";
+      std::string scalar          = "yes";
+      std::string array           = "yes";
+      std::string scalar_defaults = "yes";
+      std::string array_defaults  = "yes";
+      std::string verbose_write   = "no";
+      OhmmsAttributeSet attrib;
+      attrib.add(writing, "write");
+      attrib.add(scalar, "scalar");
+      attrib.add(array, "array");
+      attrib.add(scalar_defaults, "scalar_defaults");
+      attrib.add(array_defaults, "array_defaults");
+      attrib.add(format, "format");
+      attrib.add(throttle, "throttle");
+      attrib.add(verbose_write, "verbose");
+      attrib.add(array, "particle");                   //legacy
+      attrib.add(array_defaults, "particle_defaults"); //legacy
+      attrib.put(cur);
+      writing_traces           = writing == "yes";
+      bool scalars_on          = scalar == "yes";
+      bool arrays_on           = array == "yes";
+      bool use_scalar_defaults = scalar_defaults == "yes";
+      bool use_array_defaults  = array_defaults == "yes";
+      verbose                  = verbose_write == "yes";
+      format                   = lowerCase(format);
+      if (format == "hdf")
+      {
+        hdf_format = true;
+      }
+      else
+      {
+        APP_ABORT("TraceCollector::put " + format + " is not a valid file format for traces\n  valid options is: hdf");
+      }
+
+      //read scalar and array elements
+      //  each requests that certain traces be computed
+      std::set<std::string> scalar_requests;
+      std::set<std::string> array_requests;
+      xmlNodePtr element = cur->children;
+      while (element != NULL)
+      {
+        std::string name((const char*)element->name);
+        if (name == "scalar_traces")
+        {
+          std::string defaults = "no";
+          OhmmsAttributeSet eattrib;
+          eattrib.add(defaults, "defaults");
+          eattrib.put(element);
+          use_scalar_defaults = use_scalar_defaults && defaults == "yes";
+          if (!use_scalar_defaults)
+          {
+            std::vector<std::string> scalar_list;
+            putContent(scalar_list, element);
+            scalar_requests.insert(scalar_list.begin(), scalar_list.end());
+          }
+        }
+        else if (name == "array_traces" || name == "particle_traces")
+        {
+          std::string defaults = "no";
+          OhmmsAttributeSet eattrib;
+          eattrib.add(defaults, "defaults");
+          eattrib.put(element);
+          use_array_defaults = use_array_defaults && defaults == "yes";
+          if (!use_array_defaults)
+          {
+            std::vector<std::string> array_list;
+            putContent(array_list, element);
+            array_requests.insert(array_list.begin(), array_list.end());
+          }
+        }
+        else if (name != "text")
+        {
+          APP_ABORT("TraceCollector::put " + name +
+                    " is not a valid sub-element of <trace/>\n  valid options are: scalar_traces, array_traces");
+        }
+        element = element->next;
+      }
+
+      writing_traces &= method_allows_traces;
+
+      //input user quantity requests into the traces request
+      request.allow_streams      = method_allows_traces;
+      request.allow_writes       = writing_traces;
+      request.scalars_on         = scalars_on;
+      request.arrays_on          = arrays_on;
+      request.stream_all_scalars = use_scalar_defaults;
+      request.stream_all_arrays  = use_array_defaults;
+      request.write_all_scalars  = request.stream_all_scalars && writing_traces;
+      request.write_all_arrays   = request.stream_all_arrays && writing_traces;
+      request.request_scalar(scalar_requests, writing_traces);
+      request.request_array(array_requests, writing_traces);
+
+      //distribute verbosity level to buffer and sample objects
+      distribute();
+
+    }
+  }
+
+
+  inline void update_status()
+  {
+    streaming_traces = request.streaming();
+    writing_traces   = request.writing();
+  }
+
+
+  inline void screen_writes()
+  {
+    int_samples.screen_writes(request);
+    real_samples.screen_writes(request);
+    comp_samples.screen_writes(request);
+  }
+
+  inline void initialize_traces()
+  {
+    app_log()<<"JTK: TraceCollector::initialize_traces "<<streaming_traces<<std::endl;
+    if (streaming_traces)
+    {
+      if (verbose)
+        app_log() << "TraceCollector::initialize_traces " << std::endl;
+      //organize trace samples and initialize buffers
+      if (writing_traces)
+      {
+        int_buffer.order_and_resize();
+        real_buffer.order_and_resize();
+      }
+    }
+  }
+
+
+  inline void finalize_traces()
+  {
+    app_log()<<"JTK: TraceCollector::finalize_traces "<<std::endl;
+    if (verbose)
+      app_log() << "TraceCollector::finalize_traces " << std::endl;
+    int_samples.finalize();
+    real_samples.finalize();
+    comp_samples.finalize();
+  }
+
+
+  //checkout functions to be used by any OperatorBase or Estimator
+  //  the array checked out should be updated during evaluate
+  //  object calling checkout is responsible for deleting the new array
+
+  // checkout integer arrays
+  template<int D>
+  inline Array<TraceIntNew, D>* checkout_int(const std::string& name, int n1 = 1, int n2 = 0, int n3 = 0, int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_int"<<std::endl;
+    return checkout_int<D>(default_domain, name, n1, n2, n3, n4);
+  }
+  template<int D>
+  inline Array<TraceIntNew, D>* checkout_int(const std::string& domain,
+                                          const std::string& name,
+                                          int n1 = 1,
+                                          int n2 = 0,
+                                          int n3 = 0,
+                                          int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_int"<<std::endl;
+    TinyVector<int, DMAXNEW> shape(n1, n2, n3, n4);
+    return int_samples.checkout_array<D>(domain, name, shape);
+  }
+  template<int D>
+  inline Array<TraceIntNew, D>* checkout_int(const std::string& name,
+                                          const ParticleSet& P,
+                                          int n2 = 0,
+                                          int n3 = 0,
+                                          int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_int"<<std::endl;
+    TinyVector<int, DMAXNEW> shape(P.getTotalNum(), n2, n3, n4);
+    return int_samples.checkout_array<D>(P, name, shape);
+  }
+
+
+  // checkout real arrays
+  template<int D>
+  inline Array<TraceRealNew, D>* checkout_real(const std::string& name, int n1 = 1, int n2 = 0, int n3 = 0, int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_real"<<std::endl;
+    return checkout_real<D>(default_domain, name, n1, n2, n3, n4);
+  }
+  template<int D>
+  inline Array<TraceRealNew, D>* checkout_real(const std::string& domain,
+                                            const std::string& name,
+                                            int n1 = 1,
+                                            int n2 = 0,
+                                            int n3 = 0,
+                                            int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_real"<<std::endl;
+    TinyVector<int, DMAXNEW> shape(n1, n2, n3, n4);
+    return real_samples.checkout_array<D>(domain, name, shape);
+  }
+  template<int D>
+  inline Array<TraceRealNew, D>* checkout_real(const std::string& name,
+                                            const ParticleSet& P,
+                                            int n2 = 0,
+                                            int n3 = 0,
+                                            int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_real"<<std::endl;
+    TinyVector<int, DMAXNEW> shape(P.getTotalNum(), n2, n3, n4);
+    return real_samples.checkout_array<D>(P, name, shape);
+  }
+
+
+  // checkout complex arrays
+  template<int D>
+  inline Array<TraceCompNew, D>* checkout_complex(const std::string& name, int n1 = 1, int n2 = 0, int n3 = 0, int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_complex"<<std::endl;
+    return checkout_complex<D>(default_domain, name, n1, n2, n3, n4);
+  }
+  template<int D>
+  inline Array<TraceCompNew, D>* checkout_complex(const std::string& domain,
+                                               const std::string& name,
+                                               int n1 = 1,
+                                               int n2 = 0,
+                                               int n3 = 0,
+                                               int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_complex"<<std::endl;
+    TinyVector<int, DMAXNEW> shape(n1, n2, n3, n4);
+    return comp_samples.checkout_array<D>(domain, name, shape);
+  }
+  template<int D>
+  inline Array<TraceCompNew, D>* checkout_complex(const std::string& name,
+                                               const ParticleSet& P,
+                                               int n2 = 0,
+                                               int n3 = 0,
+                                               int n4 = 0)
+  {
+    app_log()<<"JTK: TraceCollector::checkout_complex"<<std::endl;
+    TinyVector<int, DMAXNEW> shape(P.getTotalNum(), n2, n3, n4);
+    return comp_samples.checkout_array<D>(P, name, shape);
+  }
+
+
+  inline void reset_buffers()
+  {
+    app_log() << "JTK: TraceCollector::reset_buffers"<<std::endl;
+    if (writing_traces)
+    {
+      if (verbose)
+        app_log() << "TraceCollector::reset_buffers " << std::endl;
+      int_buffer.reset();
+      real_buffer.reset();
+    }
+  }
+
+
+  //store the full sample from a single walker step in buffers
+  inline void buffer_sample(int current_step)
+  {
+    app_log() << "JTK: TraceCollector::buffer_sample "<<writing_traces<<" "<<current_step<<std::endl;
+    if (writing_traces && current_step % throttle == 0)
+    {
+      if (verbose)
+        app_log() << " TraceCollector::buffer_sample() " << std::endl;
+      int_buffer.collect_sample();
+      real_buffer.collect_sample();
+    }
+  }
+
+
+  inline void startBlock(int nsteps)
+  {
+    app_log() << "JTK: TraceCollector::startBlock " << std::endl;
+    if (verbose)
+      app_log() << "TraceCollector::startBlock " << std::endl;
+    reset_buffers();
+  }
+
+
+  inline void write_summary(std::string pad = "  ")
+  {
+    std::string pad2 = pad + "  ";
+    app_log() << std::endl;
+    app_log() << pad << "TraceCollector (detailed summary)" << std::endl;
+    app_log() << pad2 << "method_allows_traces    = " << method_allows_traces << std::endl;
+    app_log() << pad2 << "streaming_traces        = " << streaming_traces << std::endl;
+    app_log() << pad2 << "writing_traces          = " << writing_traces << std::endl;
+    app_log() << pad2 << "format                  = " << format << std::endl;
+    app_log() << pad2 << "hdf format              = " << hdf_format << std::endl;
+    app_log() << pad2 << "default_domain          = " << default_domain << std::endl;
+    int_buffer.write_summary(pad2);
+    real_buffer.write_summary(pad2);
+    app_log() << pad << "end TraceCollector" << std::endl;
+  }
+
+
+  inline void user_report(std::string pad = "  ")
+  {
+    std::string pad2 = pad + "  ";
+    std::string pad3 = pad2 + "  ";
+    app_log() << std::endl;
+    app_log() << pad << "Traces report" << std::endl;
+    request.report();
+    app_log() << pad2 << "Type and domain breakdown of streaming quantities:" << std::endl;
+    std::set<std::string>::iterator req;
+    int_buffer.user_report(pad3);
+    real_buffer.user_report(pad3);
+    app_log() << std::endl;
+  }
+
+};
+
+
+
+
+
+
 class TraceManagerNew
 {
 private:
@@ -1769,6 +2206,8 @@ public:
     hdf_file.reset(); 
   }
 };
+
+
 
 
 } // namespace qmcplusplus
