@@ -970,9 +970,6 @@ struct TraceBufferNew
   }
 
 
-  inline void write() { APP_ABORT("TraceBufferNew::write has not yet been implemented"); }
-
-
   inline void write_summary(std::string pad = "  ")
   {
     std::string pad2 = pad + "  ";
@@ -1008,9 +1005,6 @@ struct TraceBufferNew
                 ">::register_hdf_data() some hdf groups are still open at the end of registration");
     hdf_file_pointer = 0;
   }
-
-
-  inline void write_hdf(hdf_archive& f) { write_hdf(f, hdf_file_pointer); }
 
 
   inline void write_hdf(hdf_archive& f, hsize_t& file_pointer)
@@ -1154,13 +1148,38 @@ struct TraceBufferNew
 
 struct TraceManagerState 
 {
-  bool method_allows_traces;
   TraceRequestNew request;
+  bool method_allows_traces;
   bool streaming_traces;
   bool writing_traces;
   int throttle;
   bool verbose;
   std::string default_domain;
+
+  TraceManagerState()
+  {
+    reset_permissions();
+    throttle       = 1;
+    verbose        = false;
+    default_domain = "scalars";
+    request.set_scalar_domain(default_domain);
+  }
+
+  inline void reset_permissions()
+  {
+    method_allows_traces = false;
+    streaming_traces     = false;
+    writing_traces       = false;
+    verbose              = false;
+    request.reset();
+  }
+
+  inline void update_status()
+  {
+    streaming_traces = request.streaming();
+    writing_traces   = request.writing();
+  }
+
 };
 
 
@@ -1180,21 +1199,12 @@ public:
   TraceBufferNew<TraceIntNew> int_buffer;
   TraceBufferNew<TraceRealNew> real_buffer;
 
-  TraceRequestNew request;
+  TraceManagerState state;
 
-  std::string default_domain;
-  bool method_allows_traces;
-  bool streaming_traces;
-  bool writing_traces;
-  int throttle;
-  bool verbose;
-
-  TraceCollector() : verbose(false)
+  TraceCollector()
   {
-    reset_permissions();
-    throttle       = 1;
-    default_domain = "scalars";
-    request.set_scalar_domain(default_domain);
+    state.reset_permissions();
+
     int_buffer.set_type("int");
     real_buffer.set_type("real");
     int_buffer.set_samples(int_samples);
@@ -1205,63 +1215,38 @@ public:
 
   inline void transfer_state_from(const TraceManagerState& tms)
   {
-    method_allows_traces = tms.method_allows_traces;
-    request              = tms.request;
-    streaming_traces     = tms.streaming_traces;
-    writing_traces       = tms.writing_traces;
-    throttle             = tms.throttle;
-    verbose              = tms.verbose;
-    default_domain       = tms.default_domain;
+    state = tms;
   }
 
 
   inline void distribute()
   {
     app_log()<<"JTK: TraceCollector::distribute"<<std::endl;
-    int_samples.set_verbose(verbose);
-    real_samples.set_verbose(verbose);
-    comp_samples.set_verbose(verbose);
-    int_buffer.set_verbose(verbose);
-    real_buffer.set_verbose(verbose);
-  }
-
-
-  inline void reset_permissions()
-  {
-    app_log()<<"JTK: TraceCollector::reset_permissions"<<std::endl;
-    method_allows_traces = false;
-    streaming_traces     = false;
-    writing_traces       = false;
-    verbose              = false;
-    request.reset();
-  }
-
-
-  inline void update_status()
-  {
-    app_log()<<"JTK: TraceCollector::update_status"<<std::endl;
-    streaming_traces = request.streaming();
-    writing_traces   = request.writing();
+    int_samples.set_verbose(state.verbose);
+    real_samples.set_verbose(state.verbose);
+    comp_samples.set_verbose(state.verbose);
+    int_buffer.set_verbose(state.verbose);
+    real_buffer.set_verbose(state.verbose);
   }
 
 
   inline void screen_writes()
   {
     app_log()<<"JTK: TraceCollector::screen_writes"<<std::endl;
-    int_samples.screen_writes(request);
-    real_samples.screen_writes(request);
-    comp_samples.screen_writes(request);
+    int_samples.screen_writes(state.request);
+    real_samples.screen_writes(state.request);
+    comp_samples.screen_writes(state.request);
   }
 
   inline void initialize_traces()
   {
-    app_log()<<"JTK: TraceCollector::initialize_traces "<<streaming_traces<<std::endl;
-    if (streaming_traces)
+    app_log()<<"JTK: TraceCollector::initialize_traces "<<state.streaming_traces<<std::endl;
+    if (state.streaming_traces)
     {
-      if (verbose)
+      if (state.verbose)
         app_log() << "TraceCollector::initialize_traces " << std::endl;
       //organize trace samples and initialize buffers
-      if (writing_traces)
+      if (state.writing_traces)
       {
         int_buffer.order_and_resize();
         real_buffer.order_and_resize();
@@ -1273,7 +1258,7 @@ public:
   inline void finalize_traces()
   {
     app_log()<<"JTK: TraceCollector::finalize_traces "<<std::endl;
-    if (verbose)
+    if (state.verbose)
       app_log() << "TraceCollector::finalize_traces " << std::endl;
     int_samples.finalize();
     real_samples.finalize();
@@ -1290,7 +1275,7 @@ public:
   inline Array<TraceIntNew, D>* checkout_int(const std::string& name, int n1 = 1, int n2 = 0, int n3 = 0, int n4 = 0)
   {
     app_log()<<"JTK: TraceCollector::checkout_int"<<std::endl;
-    return checkout_int<D>(default_domain, name, n1, n2, n3, n4);
+    return checkout_int<D>(state.default_domain, name, n1, n2, n3, n4);
   }
   template<int D>
   inline Array<TraceIntNew, D>* checkout_int(const std::string& domain,
@@ -1322,7 +1307,7 @@ public:
   inline Array<TraceRealNew, D>* checkout_real(const std::string& name, int n1 = 1, int n2 = 0, int n3 = 0, int n4 = 0)
   {
     app_log()<<"JTK: TraceCollector::checkout_real"<<std::endl;
-    return checkout_real<D>(default_domain, name, n1, n2, n3, n4);
+    return checkout_real<D>(state.default_domain, name, n1, n2, n3, n4);
   }
   template<int D>
   inline Array<TraceRealNew, D>* checkout_real(const std::string& domain,
@@ -1354,7 +1339,7 @@ public:
   inline Array<TraceCompNew, D>* checkout_complex(const std::string& name, int n1 = 1, int n2 = 0, int n3 = 0, int n4 = 0)
   {
     app_log()<<"JTK: TraceCollector::checkout_complex"<<std::endl;
-    return checkout_complex<D>(default_domain, name, n1, n2, n3, n4);
+    return checkout_complex<D>(state.default_domain, name, n1, n2, n3, n4);
   }
   template<int D>
   inline Array<TraceCompNew, D>* checkout_complex(const std::string& domain,
@@ -1384,9 +1369,9 @@ public:
   inline void reset_buffers()
   {
     app_log() << "JTK: TraceCollector::reset_buffers"<<std::endl;
-    if (writing_traces)
+    if (state.writing_traces)
     {
-      if (verbose)
+      if (state.verbose)
         app_log() << "TraceCollector::reset_buffers " << std::endl;
       int_buffer.reset();
       real_buffer.reset();
@@ -1397,10 +1382,10 @@ public:
   //store the full sample from a single walker step in buffers
   inline void buffer_sample(int current_step)
   {
-    app_log() << "JTK: TraceCollector::buffer_sample "<<writing_traces<<" "<<current_step<<std::endl;
-    if (writing_traces && current_step % throttle == 0)
+    app_log() << "JTK: TraceCollector::buffer_sample "<<state.writing_traces<<" "<<current_step<<std::endl;
+    if (state.writing_traces && current_step % state.throttle == 0)
     {
-      if (verbose)
+      if (state.verbose)
         app_log() << " TraceCollector::buffer_sample() " << std::endl;
       int_buffer.collect_sample();
       real_buffer.collect_sample();
@@ -1411,7 +1396,7 @@ public:
   inline void startBlock(int nsteps)
   {
     app_log() << "JTK: TraceCollector::startBlock " << std::endl;
-    if (verbose)
+    if (state.verbose)
       app_log() << "TraceCollector::startBlock " << std::endl;
     reset_buffers();
   }
@@ -1422,10 +1407,10 @@ public:
     std::string pad2 = pad + "  ";
     app_log() << std::endl;
     app_log() << pad << "TraceCollector (detailed summary)" << std::endl;
-    app_log() << pad2 << "method_allows_traces    = " << method_allows_traces << std::endl;
-    app_log() << pad2 << "streaming_traces        = " << streaming_traces << std::endl;
-    app_log() << pad2 << "writing_traces          = " << writing_traces << std::endl;
-    app_log() << pad2 << "default_domain          = " << default_domain << std::endl;
+    app_log() << pad2 << "method_allows_traces    = " << state.method_allows_traces << std::endl;
+    app_log() << pad2 << "streaming_traces        = " << state.streaming_traces << std::endl;
+    app_log() << pad2 << "writing_traces          = " << state.writing_traces << std::endl;
+    app_log() << pad2 << "default_domain          = " << state.default_domain << std::endl;
     int_buffer.write_summary(pad2);
     real_buffer.write_summary(pad2);
     app_log() << pad << "end TraceCollector" << std::endl;
@@ -1438,7 +1423,7 @@ public:
     std::string pad3 = pad2 + "  ";
     app_log() << std::endl;
     app_log() << pad << "TraceCollector report" << std::endl;
-    request.report();
+    state.request.report();
     app_log() << pad2 << "Type and domain breakdown of streaming quantities:" << std::endl;
     std::set<std::string>::iterator req;
     int_buffer.user_report(pad3);
@@ -1458,48 +1443,28 @@ class TraceManagerNew
 public:
   static double trace_tol;  // remove this
 
-  TraceRequestNew request;
-
-  std::string default_domain;
-  bool method_allows_traces;
-  bool streaming_traces;
-  bool writing_traces;
-  int throttle;
-  bool verbose;
-  std::string format;
-  bool hdf_format;
   std::string file_root;
   Communicate* communicator;
   std::unique_ptr<hdf_archive> hdf_file;
 
-  TraceManagerNew(Communicate* comm = 0) : verbose(false)
+  TraceManagerState state;
+
+  TraceManagerNew(Communicate* comm = 0)
   {
-    reset_permissions();
+    state.reset_permissions();
     communicator   = comm;
-    throttle       = 1;
-    format         = "hdf";
-    default_domain = "scalars";
-    request.set_scalar_domain(default_domain);
   }
 
 
   inline TraceManagerState getState()
   {
-    TraceManagerState tms;
-    tms.method_allows_traces = method_allows_traces;
-    tms.request              = request;
-    tms.streaming_traces     = streaming_traces;
-    tms.writing_traces       = writing_traces;
-    tms.throttle             = throttle;
-    tms.verbose              = verbose;
-    tms.default_domain       = default_domain;
-    return tms;
+    return state;
   }
 
   inline TraceCollector* makeCollector()
   {
     app_log()<<"JTK: TraceManagerNew::makeCollector"<<std::endl;
-    if (verbose)
+    if (state.verbose)
       app_log() << "TraceManagerNew::makeCollector " << std::endl;
     TraceCollector* tc = new TraceCollector();
     tc->transfer_state_from(getState());
@@ -1508,37 +1473,25 @@ public:
   }
 
 
-  inline void reset_permissions()
-  {
-    app_log()<<"JTK: TraceManagerNew::reset_permissions"<<std::endl;
-    method_allows_traces = false;
-    streaming_traces     = false;
-    writing_traces       = false;
-    verbose              = false;
-    hdf_format           = false;
-    request.reset();
-  }
-
-
   inline void put(xmlNodePtr cur, bool allow_traces, std::string series_root)
   {
     app_log()<<"JTK: TraceManagerNew::put"<<std::endl;
-    reset_permissions();
-    method_allows_traces  = allow_traces;
+    state.reset_permissions();
+    state.method_allows_traces  = allow_traces;
     file_root             = series_root;
     bool traces_requested = cur != NULL;
-    streaming_traces      = traces_requested && method_allows_traces;
-    app_log()<<"JTK:    method_allows_traces "<<method_allows_traces<<std::endl;
+    state.streaming_traces      = traces_requested && state.method_allows_traces;
+    app_log()<<"JTK:    method_allows_traces "<<state.method_allows_traces<<std::endl;
     app_log()<<"JTK:    traces_requested "<<traces_requested<<std::endl;
-    app_log()<<"JTK:    streaming_traces "<<streaming_traces<<std::endl;
-    if (streaming_traces)
+    app_log()<<"JTK:    streaming_traces "<<state.streaming_traces<<std::endl;
+    if (state.streaming_traces)
     {
       if (omp_get_thread_num() == 0)
       {
         app_log() << "\n  TraceManagerNew::put() " << std::endl;
         app_log() << "    traces requested          : " << traces_requested << std::endl;
-        app_log() << "    method allows traces      : " << method_allows_traces << std::endl;
-        app_log() << "    streaming traces          : " << streaming_traces << std::endl;
+        app_log() << "    method allows traces      : " << state.method_allows_traces << std::endl;
+        app_log() << "    streaming traces          : " << state.streaming_traces << std::endl;
         app_log() << std::endl;
       }
       app_log()<<"JTK:    reading xml attributes "<<std::endl;
@@ -1555,27 +1508,17 @@ public:
       attrib.add(array, "array");
       attrib.add(scalar_defaults, "scalar_defaults");
       attrib.add(array_defaults, "array_defaults");
-      attrib.add(format, "format");
-      attrib.add(throttle, "throttle");
+      attrib.add(state.throttle, "throttle");
       attrib.add(verbose_write, "verbose");
       attrib.add(array, "particle");                   //legacy
       attrib.add(array_defaults, "particle_defaults"); //legacy
       attrib.put(cur);
-      writing_traces           = writing == "yes";
+      state.writing_traces     = writing == "yes";
       bool scalars_on          = scalar == "yes";
       bool arrays_on           = array == "yes";
       bool use_scalar_defaults = scalar_defaults == "yes";
       bool use_array_defaults  = array_defaults == "yes";
-      verbose                  = verbose_write == "yes";
-      format                   = lowerCase(format);
-      if (format == "hdf")
-      {
-        hdf_format = true;
-      }
-      else
-      {
-        APP_ABORT("TraceManagerNew::put " + format + " is not a valid file format for traces\n  valid options is: hdf");
-      }
+      state.verbose            = verbose_write == "yes";
 
       //read scalar and array elements
       //  each requests that certain traces be computed
@@ -1621,19 +1564,20 @@ public:
         element = element->next;
       }
 
-      writing_traces &= method_allows_traces;
+      state.writing_traces &= state.method_allows_traces;
 
       //input user quantity requests into the traces request
-      request.allow_streams      = method_allows_traces;
-      request.allow_writes       = writing_traces;
+      TraceRequestNew& request = state.request;
+      request.allow_streams      = state.method_allows_traces;
+      request.allow_writes       = state.writing_traces;
       request.scalars_on         = scalars_on;
       request.arrays_on          = arrays_on;
       request.stream_all_scalars = use_scalar_defaults;
       request.stream_all_arrays  = use_array_defaults;
-      request.write_all_scalars  = request.stream_all_scalars && writing_traces;
-      request.write_all_arrays   = request.stream_all_arrays && writing_traces;
-      request.request_scalar(scalar_requests, writing_traces);
-      request.request_array(array_requests, writing_traces);
+      request.write_all_scalars  = request.stream_all_scalars && state.writing_traces;
+      request.write_all_arrays   = request.stream_all_arrays && state.writing_traces;
+      request.request_scalar(scalar_requests, state.writing_traces);
+      request.request_array(array_requests, state.writing_traces);
 
     }
   }
@@ -1641,10 +1585,10 @@ public:
 
   inline void check_clones(std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::check_clones "<<writing_traces<<" "<<clones.size() << std::endl;
-    if (writing_traces && clones.size() > 0)
+    app_log() << "JTK: TraceManagerNew::check_clones "<<state.writing_traces<<" "<<clones.size() << std::endl;
+    if (state.writing_traces && clones.size() > 0)
     {
-      if (verbose)
+      if (state.verbose)
         app_log() << "TraceManagerNew::check_clones" << std::endl;
       bool all_same = true;
       bool int_same;
@@ -1673,42 +1617,39 @@ public:
   //write buffered trace data to file
   inline void write_buffers(std::vector<TraceCollector*>& clones, int block)
   {
-    app_log() << "JTK: TraceManagerNew::write_buffers "<< writing_traces<<std::endl;
-    if (writing_traces)
+    app_log() << "JTK: TraceManagerNew::write_buffers "<< state.writing_traces<<std::endl;
+    if (state.writing_traces)
     {
       //double tstart = MPI_Wtime();
-      if (verbose)
+      if (state.verbose)
         app_log() << "TraceManagerNew::write_buffers " << std::endl;
-      if (hdf_format)
-        write_buffers_hdf(clones);
+      write_buffers_hdf(clones);
     }
   }
 
 
   inline void open_file(std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::open_file "<< writing_traces<<std::endl;
-    if (writing_traces)
+    app_log() << "JTK: TraceManagerNew::open_file "<< state.writing_traces<<std::endl;
+    if (state.writing_traces)
     {
-      if (verbose)
+      if (state.verbose)
         app_log() << "TraceManagerNew::open_file " << std::endl;
-      if (verbose)
+      if (state.verbose)
         clones[0]->write_summary();
-      if (hdf_format)
-        open_hdf_file(clones);
+      open_hdf_file(clones);
     }
   }
 
 
   inline void close_file()
   {
-    app_log() << "JTK: TraceManagerNew::close_file "<< writing_traces<<std::endl;
-    if (writing_traces)
+    app_log() << "JTK: TraceManagerNew::close_file "<< state.writing_traces<<std::endl;
+    if (state.writing_traces)
     {
-      if (verbose)
+      if (state.verbose)
         app_log() << "TraceManagerNew::close_file " << std::endl;
-      if (hdf_format)
-        close_hdf_file();
+      close_hdf_file();
     }
   }
 
@@ -1716,7 +1657,7 @@ public:
   inline void startRun(int blocks, std::vector<TraceCollector*>& clones)
   {
     app_log() << "JTK: TraceManagerNew::startRun " << std::endl;
-    if (verbose)
+    if (state.verbose)
       app_log() << "TraceManagerNew::startRun " << std::endl;
     check_clones(clones);
     open_file(clones);
@@ -1726,7 +1667,7 @@ public:
   inline void stopRun()
   {
     app_log() << "JTK: TraceManagerNew::stopRun " << std::endl;
-    if (verbose)
+    if (state.verbose)
       app_log() << "TraceManagerNew::stopRun " << std::endl;
     close_file();
   }
@@ -1755,7 +1696,7 @@ public:
       file_name.append(ptoken.data(), length);
     }
     file_name += ".traces.h5";
-    if (verbose)
+    if (state.verbose)
       app_log() << "TraceManagerNew::open_hdf_file  opening traces hdf file " << file_name << std::endl;
     hdf_file        = std::make_unique<hdf_archive>();
     bool successful = hdf_file->create(file_name);
@@ -1772,7 +1713,7 @@ public:
   inline void write_buffers_hdf(std::vector<TraceCollector*>& clones)
   {
     app_log() << "JTK: TraceManagerNew::write_buffers_hdf " << std::endl;
-    if (verbose)
+    if (state.verbose)
       app_log() << "TraceManagerNew::write_buffers_hdf " << std::endl;
     TraceCollector& tm_lead = *clones[0];
     for (int ip = 0; ip < clones.size(); ++ip)

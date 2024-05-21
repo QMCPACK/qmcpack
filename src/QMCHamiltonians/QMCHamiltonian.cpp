@@ -550,7 +550,10 @@ void QMCHamiltonian::finalize_traces()
 void QMCHamiltonian::initialize_traces_new(TraceCollector& tm, ParticleSet& P)
 {
   static bool first_init_new = true;
-  bool trace_log         = first_init_new && tm.verbose && omp_get_thread_num() == 0;
+
+  TraceRequestNew& tm_request = tm.state.request;
+  TraceManagerState& tms = tm.state;
+  bool trace_log         = first_init_new && tms.verbose && omp_get_thread_num() == 0;
   if (trace_log)
     app_log() << "\n  Hamiltonian is initializing traces" << std::endl;
 
@@ -575,23 +578,23 @@ void QMCHamiltonian::initialize_traces_new(TraceCollector& tm, ParticleSet& P)
     requests.push_back(&H[i]->getRequestNew());
   //collect trace quantity availability/requests from contributors/requestors
   for (int i = 0; i < requests.size(); ++i)
-    tm.request.incorporate(*requests[i]);
+    tm_request.incorporate(*requests[i]);
 
   //balance requests with availability, mark quantities as streaming/writing
-  tm.request.determine_stream_write();
+  tm_request.determine_stream_write();
 
   //relay updated streaming information to all contributors/requestors
   for (int i = 0; i < requests.size(); ++i)
-    tm.request.relay_stream_info(*requests[i]);
+    tm_request.relay_stream_info(*requests[i]);
 
   //set streaming/writing traces in general
-  tm.update_status();
+  tms.update_status();
 
   // setup traces, if any quantities should be streaming
 
   // tracing
   bool tracing = request_new.streaming();
-  if (tracing != tm.streaming_traces)
+  if (tracing != tms.streaming_traces)
     APP_ABORT("QMCHamiltonian::initialize_traces_new  trace request failed to initialize properly");
   if (!tracing)
   {
