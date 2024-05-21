@@ -48,7 +48,6 @@ struct TraceQuantityNew
 {
   std::string name;
   bool default_quantity;
-  bool combined_quantity;
   bool scalar_available;
   bool array_available;
   bool scalar_stream_requested;
@@ -63,7 +62,6 @@ struct TraceQuantityNew
   inline TraceQuantityNew()
   {
     default_quantity        = false;
-    combined_quantity       = false;
     scalar_available        = false;
     array_available         = false;
     scalar_stream_requested = false;
@@ -84,7 +82,6 @@ struct TraceQuantityNew
                 other.name);
     }
     default_quantity |= other.default_quantity;
-    combined_quantity |= other.combined_quantity;
     scalar_available |= other.scalar_available;
     array_available |= other.array_available;
     scalar_stream_requested |= other.scalar_stream_requested;
@@ -126,9 +123,6 @@ struct TraceRequestNew
   //quantities made available or requested for streaming or writing
   std::map<std::string, TraceQuantityNew> quantities;
 
-  //dependency lists for combined quantities
-  std::map<std::string, std::set<std::string>> combined_dependencies;
-
   //used to screen checked out quantities for writing
   std::string scalar_domain;
 
@@ -150,7 +144,6 @@ struct TraceRequestNew
     writing_default_arrays    = false;
 
     quantities.clear();
-    combined_dependencies.clear();
   }
 
   inline void set_scalar_domain(const std::string& domain) { scalar_domain = domain; }
@@ -198,24 +191,6 @@ struct TraceRequestNew
     quantities[name].array_available = true;
     if (default_quantity)
       quantities[name].default_quantity = true;
-  }
-
-  //declare that a combined quantity could be made available
-  inline void contribute_combined(const std::string& name,
-                                  std::vector<std::string>& deps,
-                                  bool scalar           = false,
-                                  bool array            = false,
-                                  bool default_quantity = false)
-  {
-    app_log()<<"JTK: TraceRequestNew::contribute_combined (op)"<<name<<std::endl;
-    guarantee_presence(name, true);
-    TraceQuantityNew& q    = quantities[name];
-    q.combined_quantity = true;
-    q.scalar_available  = scalar;
-    q.array_available   = array;
-    if (default_quantity)
-      q.default_quantity = true;
-    //combined_dependencies[name] = deps;
   }
 
   //declare that a scalar quantity is desired for streaming
@@ -292,16 +267,6 @@ struct TraceRequestNew
       else
         quantities[q.name] = q;
     }
-    std::map<std::string, std::set<std::string>>::iterator d;
-    for (d = other.combined_dependencies.begin(); d != other.combined_dependencies.end(); ++d)
-    {
-      const std::string& name     = d->first;
-      std::set<std::string>& deps = d->second;
-      if (combined_dependencies.find(name) != combined_dependencies.end())
-        combined_dependencies[name].insert(deps.begin(), deps.end());
-      else
-        combined_dependencies[name] = deps;
-    }
   }
 
   //balance requests with availability and turn streaming/writing on/off
@@ -346,27 +311,6 @@ struct TraceRequestNew
         q.write_array   = writing_default_arrays;
       }
     }
-    // if any combined quantities are streaming, their dependencies must also
-    for (it = quantities.begin(); it != quantities.end(); ++it)
-    {
-      TraceQuantityNew& q = it->second;
-      if (q.combined_quantity)
-      {
-        std::set<std::string>& deps = combined_dependencies[q.name];
-        std::set<std::string>::iterator name;
-        if (q.stream_scalar || q.stream_array)
-        {
-          for (name = deps.begin(); name != deps.end(); ++name)
-          {
-            check_presence(*name);
-            TraceQuantityNew& qd = quantities[*name];
-            qd.stream_scalar |= (qd.scalar_available && q.stream_scalar);
-            qd.stream_array |= (qd.array_available && q.stream_array);
-          }
-        }
-      }
-    }
-    combined_dependencies.clear();
   }
 
   //relay updated streaming information to contributor
@@ -391,7 +335,6 @@ struct TraceRequestNew
       check_presence(q.name);
       q = quantities[q.name];
     }
-    other.combined_dependencies.clear();
   }
 
   inline void report()
@@ -482,12 +425,6 @@ struct TraceRequestNew
       q.name           = name;
       quantities[name] = q;
     }
-    if (combined)
-      if (combined_dependencies.find(name) == combined_dependencies.end())
-      {
-        std::set<std::string> stmp;
-        combined_dependencies[name] = stmp;
-      }
   }
 
   //abort if a quantity is not present
@@ -604,8 +541,6 @@ struct TraceSampleNew
     return same;
   }
 
-  virtual bool is_combined() { return false; }
-
   inline void set_buffer_range(int& bstart)
   {
     set_data_size();
@@ -648,99 +583,6 @@ struct TraceSampleNew
 };
 
 
-template<typename T>
-struct CombinedTraceSampleNew : public TraceSampleNew<T>
-{
-  bool combined;
-  std::vector<TraceRealNew> weights;
-  std::vector<TraceSampleNew<T>*> components;
-
-
-  inline CombinedTraceSampleNew(const std::string& sdomain,
-                             const std::string& sname,
-                             int sindex,
-                             int sdim,
-                             Vector<T>& ssample)
-      : TraceSampleNew<T>(sdomain, sname, sindex, sdim, ssample)
-  {
-    reset();
-  }
-
-
-  inline CombinedTraceSampleNew(const std::string& sdomain,
-                             const std::string& sname,
-                             int sindex,
-                             int sdim,
-                             TinyVector<int, DMAXNEW> sshape,
-                             Vector<T>& ssample)
-      : TraceSampleNew<T>(sdomain, sname, sindex, sdim, sshape, ssample)
-  {
-    reset();
-  }
-
-  bool is_combined() override { return true; }
-
-  inline void reset() { combined = false; }
-
-
-  inline void add_component(TraceSampleNew<T>* component, TraceRealNew weight)
-  {
-    if (components.size() == 0)
-    {
-      this->dimension   = component->dimension;
-      this->size        = component->size;
-      this->shape       = component->shape;
-      this->data_size   = component->data_size;
-      this->array_trace = component->array_trace;
-      this->sample.resize(component->size);
-    }
-    else if (!this->same_shape(component))
-    {
-      APP_ABORT("CombinedTraceSampleNew::add_component  attempted to add a different shape component\n  my domain: " +
-                this->domain + "\n  my name: " + this->name + "\n  component domain: " + component->domain +
-                "\n  component name: " + component->name);
-    }
-    else if (this->domain != component->domain)
-      APP_ABORT("CombinedTraceSampleNew::add_component  attempted to add a different domain component\n  my domain: " +
-                this->domain + "\n  my name: " + this->name + "\n  component domain: " + component->domain +
-                "\n  component name: " + component->name);
-    weights.push_back(weight);
-    components.push_back(component);
-  }
-
-
-  inline void combine()
-  {
-    std::fill(this->sample.begin(), this->sample.end(), T(0));
-    for (int i = 0; i < components.size(); ++i)
-    {
-      T weight        = weights[i];
-      auto& component = components[i]->sample;
-      for (int j = 0; j < this->sample.size(); ++j)
-        this->sample[j] += weight * component[j];
-    }
-    combined = true;
-  }
-
-
-  inline void write_summary_combined(int ind, std::string pad = "  ")
-  {
-    std::string pad2 = pad + "  ";
-    std::string pad3 = pad2 + "  ";
-    app_log() << pad << ind << " CombinedTraceSampleNew " << this->name << std::endl;
-    app_log() << pad2 << "domain      = " << this->domain << std::endl;
-    app_log() << pad2 << "ncomponents = " << components.size() << std::endl;
-    app_log() << pad2 << "components" << std::endl;
-    for (int i = 0; i < components.size(); ++i)
-    {
-      TraceSampleNew<T>& c = *components[i];
-      app_log() << pad3 << c.name << " " << c.index << " " << weights[i] << std::endl;
-    }
-    app_log() << pad2 << "end components" << std::endl;
-    app_log() << pad2 << "vector address = " << (size_t) & this->sample << std::endl;
-  }
-};
-
 
 template<typename T>
 bool TraceSampleNew_comp(TraceSampleNew<T>* left, TraceSampleNew<T>* right)
@@ -755,8 +597,6 @@ struct TraceSampleNews
   std::vector<TraceSampleNew<T>*> samples;
   std::map<std::string, std::map<std::string, int>> sample_indices;
   std::vector<TraceSampleNew<T>*> ordered_samples;
-  std::vector<CombinedTraceSampleNew<T>*> combined_samples;
-  std::vector<Vector<T>*> combined_sample_vectors;
   bool verbose;
 
   inline TraceSampleNews() : verbose(false) {}
@@ -836,60 +676,6 @@ struct TraceSampleNews
   }
 
 
-  inline CombinedTraceSampleNew<T>* get_combined_trace(const std::string& domain, const std::string& name)
-  {
-    CombinedTraceSampleNew<T>* ts = NULL;
-    for (int i = 0; i < combined_samples.size(); ++i)
-    {
-      CombinedTraceSampleNew<T>& tsc = *combined_samples[i];
-      if (tsc.domain == domain && tsc.name == name)
-      {
-        ts = &tsc;
-        break;
-      }
-    }
-    return ts;
-  }
-
-
-  inline bool make_combined_trace(const std::string& name,
-                                  std::vector<std::string>& names,
-                                  std::vector<TraceRealNew>& weights)
-  {
-    bool created = false;
-    if (names.size() != weights.size())
-      APP_ABORT("TraceSampleNews::make_combined_trace  names and weights must be the same size");
-    std::map<std::string, std::map<std::string, int>>::iterator it;
-    for (it = sample_indices.begin(); it != sample_indices.end(); it++)
-    {
-      std::string domain                  = it->first;
-      std::map<std::string, int>& indices = it->second;
-      bool any_present                    = false;
-      for (int i = 0; i < names.size(); ++i)
-        any_present = any_present || indices.count(names[i]) > 0;
-      if (any_present)
-      {
-        int index                        = samples.size();
-        auto* sample                     = new Vector<T>;
-        CombinedTraceSampleNew<T>* combined = new CombinedTraceSampleNew<T>(domain, name, index, 0, *sample);
-        for (int i = 0; i < names.size(); ++i)
-        {
-          if (indices.count(names[i]) > 0)
-          {
-            TraceSampleNew<T>* component = samples[indices[names[i]]];
-            combined->add_component(component, weights[i]);
-          }
-        }
-        assign_sample_index(domain, name, index);
-        samples.push_back(combined);
-        combined_samples.push_back(combined);
-        combined_sample_vectors.push_back(sample);
-        created = true;
-      }
-    }
-    return created;
-  }
-
 
   inline void set_unit_size(int usize)
   {
@@ -907,7 +693,7 @@ struct TraceSampleNews
       if (verbose)
         app_log() << "TraceRequestNew screening " << s.name << " in domain " << s.domain << ". stream: " << stream
                   << " write: " << s.write << std::endl;
-      if (!stream && !s.is_combined())
+      if (!stream)
         app_log() << "warning: quantity " + s.name + " in domain " + s.domain +
                 " was not requested but is streaming anyway"
                   << std::endl;
@@ -962,30 +748,11 @@ struct TraceSampleNews
   }
 
 
-  inline void combine_samples()
-  {
-    for (int i = 0; i < combined_samples.size(); ++i)
-      combined_samples[i]->combine();
-  }
-
-
-  inline void reset_combined_samples()
-  {
-    for (int i = 0; i < combined_samples.size(); ++i)
-      combined_samples[i]->reset();
-  }
-
-
   inline void finalize()
   {
-    //note combined_samples pointers are a subset of those in samples
-    //  and so only samples needs to be deleted
     delete_iter(samples.begin(), samples.end());
-    delete_iter(combined_sample_vectors.begin(), combined_sample_vectors.end());
     samples.resize(0);
     ordered_samples.resize(0);
-    combined_samples.resize(0);
-    combined_sample_vectors.resize(0);
     sample_indices.clear();
   }
 
@@ -1027,7 +794,6 @@ struct TraceSampleNews
     std::string pad4 = pad3 + "  ";
     app_log() << pad << "TraceSampleNews<" << type << ">" << std::endl;
     app_log() << pad2 << "nsamples          = " << samples.size() << std::endl;
-    app_log() << pad2 << "ncombined_samples = " << combined_samples.size() << std::endl;
     app_log() << pad2 << "sample_indices" << std::endl;
     std::map<std::string, std::map<std::string, int>>::iterator it;
     std::map<std::string, int>::iterator it2;
@@ -1040,19 +806,9 @@ struct TraceSampleNews
         app_log() << pad4 << it2->first << " = " << it2->second << std::endl;
     }
     app_log() << pad2 << "end sample_indices" << std::endl;
-    app_log() << pad2 << "combined_sample_vectors = ";
-    for (int i = 0; i < combined_sample_vectors.size(); ++i)
-      app_log() << (size_t)combined_sample_vectors[i] << " ";
-    app_log() << std::endl;
-    app_log() << pad2 << "combined_samples" << std::endl;
-    for (int i = 0; i < combined_samples.size(); ++i)
-      combined_samples[i]->write_summary_combined(i, pad3);
-    app_log() << pad2 << "end combined_samples" << std::endl;
     app_log() << pad2 << "samples" << std::endl;
     for (int i = 0; i < ordered_samples.size(); ++i)
       ordered_samples[i]->write_summary(i, pad3);
-    //for(int i=0; i<samples.size(); ++i)
-    //  samples[i]->write_summary(i,pad3);
     app_log() << pad2 << "end samples" << std::endl;
     app_log() << pad << "end TraceSampleNews<" << type << ">" << std::endl;
   }
@@ -1131,23 +887,6 @@ struct TraceBufferNew
   }
 
 
-  inline void make_combined_trace(const std::string& name,
-                                  std::vector<std::string>& names,
-                                  std::vector<TraceRealNew>& weights)
-  {
-    bool created_real = samples->make_combined_trace(name, names, weights);
-    if (has_complex)
-    {
-      bool created_complex = complex_samples->make_combined_trace(name, names, weights);
-      if (created_real && created_complex)
-        APP_ABORT("TraceBufferNew<" + type +
-                  ">::make_combined_trace\n  cannot create real and complex combined traces for the same quantity\n  "
-                  "attempted for quantity " +
-                  name);
-    }
-  }
-
-
   inline void order_and_resize()
   {
     //put the sample data in size order
@@ -1193,10 +932,6 @@ struct TraceBufferNew
       std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
       if (verbose)
         app_log() << "  increasing # of rows to " << nrows << std::endl;
-      //combine samples
-      samples->combine_samples();
-      if (has_complex)
-        complex_samples->combine_samples();
       //collect data from all samples into the buffer row
       {
         std::vector<TraceSampleNew<T>*>& ordered_samples = samples->ordered_samples;
@@ -1228,10 +963,6 @@ struct TraceBufferNew
           }
         }
       }
-      //reset combined samples so they can be recombined on the next step
-      samples->reset_combined_samples();
-      if (has_complex)
-        complex_samples->reset_combined_samples();
 #if defined(TRACE_CHECK)
       test_buffer_collect(current_row);
 #endif
@@ -1783,29 +1514,6 @@ public:
     app_log()<<"JTK: TraceManagerNew::checkout_complex"<<std::endl;
     TinyVector<int, DMAXNEW> shape(P.getTotalNum(), n2, n3, n4);
     return comp_samples.checkout_array<D>(P, name, shape);
-  }
-
-
-
-  //create combined trace out of existing traces
-  inline void make_combined_trace(const std::string& name, std::vector<std::string>& names)
-  {
-    std::vector<TraceRealNew> weights;
-    weights.resize(names.size());
-    std::fill(weights.begin(), weights.end(), 1.0);
-    make_combined_trace(name, names, weights);
-  }
-
-  inline void make_combined_trace(const std::string& name,
-                                  std::vector<std::string>& names,
-                                  std::vector<TraceRealNew>& weights)
-  {
-    if (streaming_traces)
-    {
-      if (verbose)
-        app_log() << "TraceManagerNew::make_combined_trace " << master_copy << "  " << name << std::endl;
-      real_buffer.make_combined_trace(name, names, weights);
-    }
   }
 
 
