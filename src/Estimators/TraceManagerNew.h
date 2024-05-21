@@ -1470,25 +1470,11 @@ public:
 
 class TraceManagerNew
 {
-private:
-  //collections of samples for a single walker step
-  //  the associated arrays will be updated following evaluate
-  TraceSampleNews<TraceIntNew> int_samples;
-  TraceSampleNews<TraceRealNew> real_samples;
-  TraceSampleNews<TraceCompNew> comp_samples;
-
-  //buffers for storing samples
-  // single row of buffer is a single sample from one walker
-  // number of rows adjusts to accommodate walker samples
-  TraceBufferNew<TraceIntNew> int_buffer;
-  TraceBufferNew<TraceRealNew> real_buffer;
-
 public:
   static double trace_tol;
 
   TraceRequestNew request;
 
-  bool master_copy;
   std::string default_domain;
   bool method_allows_traces;
   bool streaming_traces;
@@ -1504,17 +1490,11 @@ public:
   TraceManagerNew(Communicate* comm = 0) : verbose(false)
   {
     reset_permissions();
-    master_copy    = true;
     communicator   = comm;
     throttle       = 1;
     format         = "hdf";
     default_domain = "scalars";
     request.set_scalar_domain(default_domain);
-    int_buffer.set_type("int");
-    real_buffer.set_type("real");
-    int_buffer.set_samples(int_samples);
-    real_buffer.set_samples(real_samples);
-    real_buffer.set_samples(comp_samples);
   }
 
 
@@ -1537,24 +1517,11 @@ public:
   {
     app_log()<<"JTK: TraceManagerNew::makeCollector"<<std::endl;
     if (verbose)
-      app_log() << "TraceManagerNew::makeCollector " << master_copy << std::endl;
-    if (!master_copy)
-      APP_ABORT("TraceManagerNew::makeCollector  only the master copy should call this function");
+      app_log() << "TraceManagerNew::makeCollector " << std::endl;
     TraceCollector* tc = new TraceCollector();
     tc->transfer_state_from(getState());
     tc->distribute();
     return tc;
-  }
-
-
-  inline void distribute()
-  {
-    app_log()<<"JTK: TraceManagerNew::distribute"<<std::endl;
-    int_samples.set_verbose(verbose);
-    real_samples.set_verbose(verbose);
-    comp_samples.set_verbose(verbose);
-    int_buffer.set_verbose(verbose);
-    real_buffer.set_verbose(verbose);
   }
 
 
@@ -1585,7 +1552,7 @@ public:
     {
       if (omp_get_thread_num() == 0)
       {
-        app_log() << "\n  TraceManagerNew::put() " << master_copy << std::endl;
+        app_log() << "\n  TraceManagerNew::put() " << std::endl;
         app_log() << "    traces requested          : " << traces_requested << std::endl;
         app_log() << "    method allows traces      : " << method_allows_traces << std::endl;
         app_log() << "    streaming traces          : " << streaming_traces << std::endl;
@@ -1685,21 +1652,7 @@ public:
       request.request_scalar(scalar_requests, writing_traces);
       request.request_array(array_requests, writing_traces);
 
-      //distribute verbosity level to buffer and sample objects
-      distribute();
-
     }
-  }
-
-  inline void initialize_traces()
-  {
-    app_log()<<"JTK: TraceManagerNew::initialize_traces (no-op) "<<streaming_traces<<std::endl;
-  }
-
-
-  inline void finalize_traces()
-  {
-    app_log()<<"JTK: TraceManagerNew::finalize_traces (no-op) "<<std::endl;
   }
 
 
@@ -1738,100 +1691,67 @@ public:
   inline void write_buffers(std::vector<TraceCollector*>& clones, int block)
   {
     app_log() << "JTK: TraceManagerNew::write_buffers "<< writing_traces<<std::endl;
-    if (master_copy)
+    if (writing_traces)
     {
-      if (writing_traces)
-      {
-        //double tstart = MPI_Wtime();
-        if (verbose)
-          app_log() << "TraceManagerNew::write_buffers " << master_copy << std::endl;
-        if (hdf_format)
-        {
-          write_buffers_hdf(clones);
-        }
-      }
+      //double tstart = MPI_Wtime();
+      if (verbose)
+        app_log() << "TraceManagerNew::write_buffers " << std::endl;
+      if (hdf_format)
+        write_buffers_hdf(clones);
     }
-    else
-      APP_ABORT("TraceManagerNew::write_buffers should not be called from non-master copy");
   }
 
 
   inline void open_file(std::vector<TraceCollector*>& clones)
   {
     app_log() << "JTK: TraceManagerNew::open_file "<< writing_traces<<std::endl;
-    if (master_copy)
+    if (writing_traces)
     {
-      if (writing_traces)
-      {
-        if (verbose)
-          app_log() << "TraceManagerNew::open_file " << master_copy << std::endl;
-        if (verbose)
-          clones[0]->write_summary();
-        if (hdf_format)
-        {
-          open_hdf_file(clones);
-        }
-      }
+      if (verbose)
+        app_log() << "TraceManagerNew::open_file " << std::endl;
+      if (verbose)
+        clones[0]->write_summary();
+      if (hdf_format)
+        open_hdf_file(clones);
     }
-    else
-      APP_ABORT("TraceManagerNew::open_file should not be called from non-master copy");
   }
 
 
   inline void close_file()
   {
     app_log() << "JTK: TraceManagerNew::close_file "<< writing_traces<<std::endl;
-    if (master_copy)
+    if (writing_traces)
     {
-      if (writing_traces)
-      {
-        if (verbose)
-          app_log() << "TraceManagerNew::close_file " << master_copy << std::endl;
-        if (hdf_format)
-        {
-          close_hdf_file();
-        }
-      }
+      if (verbose)
+        app_log() << "TraceManagerNew::close_file " << std::endl;
+      if (hdf_format)
+        close_hdf_file();
     }
-    else
-      APP_ABORT("TraceManagerNew::close_file should not be called from non-master copy");
   }
 
 
   inline void startRun(int blocks, std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::startRun " << master_copy << std::endl;
+    app_log() << "JTK: TraceManagerNew::startRun " << std::endl;
     if (verbose)
-      app_log() << "TraceManagerNew::startRun " << master_copy << std::endl;
-    if (master_copy)
-    {
-      initialize_traces();
-      check_clones(clones);
-      open_file(clones);
-    }
-    else
-      APP_ABORT("TraceManagerNew::startRun should not be called from non-master copy");
+      app_log() << "TraceManagerNew::startRun " << std::endl;
+    check_clones(clones);
+    open_file(clones);
   }
 
 
   inline void stopRun()
   {
-    app_log() << "JTK: TraceManagerNew::stopRun " << master_copy << std::endl;
+    app_log() << "JTK: TraceManagerNew::stopRun " << std::endl;
     if (verbose)
-      app_log() << "TraceManagerNew::stopRun " << master_copy << std::endl;
-    if (master_copy)
-    {
-      close_file();
-      finalize_traces();
-    }
-    else
-      APP_ABORT("TraceManagerNew::stopRun should not be called from non-master copy");
+      app_log() << "TraceManagerNew::stopRun " << std::endl;
+    close_file();
   }
 
   //hdf file operations
   inline void open_hdf_file(std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::open_hdf_file " << master_copy << std::endl;
+    app_log() << "JTK: TraceManagerNew::open_hdf_file " << std::endl;
     if (clones.size() == 0)
       APP_ABORT("TraceManagerNew::open_hdf_file  no trace clones exist, cannot open file");
     int nprocs = communicator->size();
@@ -1868,19 +1788,20 @@ public:
 
   inline void write_buffers_hdf(std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::write_buffers_hdf " << master_copy << std::endl;
+    app_log() << "JTK: TraceManagerNew::write_buffers_hdf " << std::endl;
     if (verbose)
-      app_log() << "TraceManagerNew::write_buffers_hdf " << master_copy << std::endl;
+      app_log() << "TraceManagerNew::write_buffers_hdf " << std::endl;
+    TraceCollector& tm_lead = *clones[0];
     for (int ip = 0; ip < clones.size(); ++ip)
     {
       TraceCollector& tm = *clones[ip];
-      tm.int_buffer.write_hdf(*hdf_file, int_buffer.hdf_file_pointer);
-      tm.real_buffer.write_hdf(*hdf_file, real_buffer.hdf_file_pointer);
+      tm.int_buffer.write_hdf(*hdf_file, tm_lead.int_buffer.hdf_file_pointer);
+      tm.real_buffer.write_hdf(*hdf_file, tm_lead.real_buffer.hdf_file_pointer);
     }
   }
 
   inline void close_hdf_file() { 
-    app_log() << "JTK: TraceManagerNew::close_hdf_file " << master_copy << std::endl;
+    app_log() << "JTK: TraceManagerNew::close_hdf_file " << std::endl;
     hdf_file.reset(); 
   }
 };
