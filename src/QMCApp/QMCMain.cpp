@@ -246,85 +246,79 @@ bool QMCMain::execute()
   if (qmc_common.dryrun)
   {
     app_log() << "  dryrun == 1 : Skipping all QMC and loop elements " << std::endl;
+    return true;
   }
-  else
+  Timer t1;
+  qmc_common.qmc_counter = 0;
+  for (int qa = 0; qa < qmc_action_.size(); qa++)
   {
-    Timer t1;
-    qmc_common.qmc_counter = 0;
-    for (int qa = 0; qa < qmc_action_.size(); qa++)
+    if (run_time_manager.isStopNeeded())
+      break;
+    xmlNodePtr cur = qmc_action_[qa].first;
+    std::string cname((const char*)cur->name);
+    if (cname == "qmc" || cname == "optimize")
     {
-      if (run_time_manager.isStopNeeded())
-        break;
-      xmlNodePtr cur = qmc_action_[qa].first;
-      std::string cname((const char*)cur->name);
-      if (cname == "qmc" || cname == "optimize")
-      {
-        executeQMCSection(cur);
-        qmc_common.qmc_counter++; // increase the counter
-      }
-      else if (cname == "loop")
-      {
-        qmc_common.qmc_counter = 0;
-        executeLoop(cur);
-        qmc_common.qmc_counter = 0;
-      }
-      else if (cname == "cmc")
-      {
-        executeCMCSection(cur);
-      }
-      else if (cname == "debug")
-      {
-        executeDebugSection(cur);
-        app_log() << "  Debug is done. Skip the rest of the input " << std::endl;
-        break;
-      }
+      executeQMCSection(cur);
+      qmc_common.qmc_counter++; // increase the counter
     }
-    // free if m_qmcation owns the memory of xmlNodePtr before clearing
-    for (auto& qmcactionPair : qmc_action_)
-      if (!qmcactionPair.second)
-        xmlFreeNode(qmcactionPair.first);
+    else if (cname == "loop")
+    {
+      qmc_common.qmc_counter = 0;
+      executeLoop(cur);
+      qmc_common.qmc_counter = 0;
+    }
+    else if (cname == "cmc")
+    {
+      executeCMCSection(cur);
+    }
+    else if (cname == "debug")
+    {
+      executeDebugSection(cur);
+      app_log() << "  Debug is done. Skip the rest of the input " << std::endl;
+      break;
+    }
+  }
+  // free if m_qmcation owns the memory of xmlNodePtr before clearing
+  for (auto& qmcactionPair : qmc_action_)
+    if (!qmcactionPair.second)
+      xmlFreeNode(qmcactionPair.first);
 
-    qmc_action_.clear();
-    t2.stop();
-    app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
-    if (is_manager())
+  qmc_action_.clear();
+  t2.stop();
+  app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
+  if (is_manager())
+  {
+    //generate multiple files
+    xmlNodePtr mcptr = NULL;
+    if (walker_set_.size())
+      mcptr = walker_set_[0];
+    //remove input mcwalkerset but one
+    for (int i = 1; i < walker_set_.size(); i++)
     {
-      //generate multiple files
-      xmlNodePtr mcptr = NULL;
-      if (walker_set_.size())
-        mcptr = walker_set_[0];
-      //remove input mcwalkerset but one
-      for (int i = 1; i < walker_set_.size(); i++)
-      {
-        xmlUnlinkNode(walker_set_[i]);
-        xmlFreeNode(walker_set_[i]);
-      }
-      walker_set_.clear(); //empty the container
-      std::ostringstream np_str, v_str;
-      np_str << myComm->size();
-      HDFVersion cur_version;
-      v_str << cur_version[0] << " " << cur_version[1];
-      xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
-      xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)my_project_.currentMainRoot().c_str());
-      xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
-      xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
-      xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
-      //#if defined(H5_HAVE_PARALLEL)
-      xmlNewProp(newmcptr, (const xmlChar*)"collected", (const xmlChar*)"yes");
-      //#else
-      //      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"no");
-      //#endif
-      if (mcptr == NULL)
-      {
-        xmlAddNextSibling(last_input_node_, newmcptr);
-      }
-      else
-      {
-        xmlReplaceNode(mcptr, newmcptr);
-        xmlFreeNode(mcptr);
-      }
-      saveXml();
+      xmlUnlinkNode(walker_set_[i]);
+      xmlFreeNode(walker_set_[i]);
     }
+    walker_set_.clear(); //empty the container
+    std::ostringstream np_str, v_str;
+    np_str << myComm->size();
+    HDFVersion cur_version;
+    v_str << cur_version[0] << " " << cur_version[1];
+    xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)my_project_.currentMainRoot().c_str());
+    xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
+    xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
+    xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
+    xmlNewProp(newmcptr, (const xmlChar*)"collected", (const xmlChar*)"yes");
+    if (mcptr == NULL)
+    {
+      xmlAddNextSibling(last_input_node_, newmcptr);
+    }
+    else
+    {
+      xmlReplaceNode(mcptr, newmcptr);
+      xmlFreeNode(mcptr);
+    }
+    saveXml();
   }
   return true;
 }
