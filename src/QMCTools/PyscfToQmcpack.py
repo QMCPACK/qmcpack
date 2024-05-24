@@ -567,7 +567,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   GroupParameter.create_dataset("numMO",(1,),dtype="i4",data=NbMO)
   GroupParameter.create_dataset("numAO",(1,),dtype="i4",data=NbAO)
   
-  make_multidet(cell,mf,title)
+  make_multidet(cell,mf,title, H5_qmcpack)
   H5_qmcpack.close()
 
   print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
@@ -575,7 +575,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   # Close the file before exiting
 
 
-def make_multidet(cell, mf, title):
+def make_multidet(cell, mf, title, h5_handle):
   from pyscf import mcscf
   import numpy
   import h5py, re, sys
@@ -599,7 +599,7 @@ def make_multidet(cell, mf, title):
         dets_b.append(chunks_b)
         coeffs.append(i[0])
     H5_qmcpack_multidet = h5py.File(title+'_multidet.h5','w')
-    groupApp=H5_qmcpack_multidet.create_group("MultiDet")
+    groupApp=h5_handle.create_group("MultiDet")
     dets_a = numpy.array(dets_a)
     dets_b = numpy.array(dets_b)
 
