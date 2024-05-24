@@ -14,9 +14,6 @@
 #define QMCPLUSPLUS_TRACEMANAGERNEW_H
 
 
-#if !defined(DISABLE_TRACEMANAGER)
-
-
 #include <Configuration.h>
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsData/AttributeSet.h"
@@ -33,15 +30,30 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <unordered_set>
+
+
 
 namespace qmcplusplus
 {
 //#define TRACE_CHECK
 
+
+
 const unsigned int DMAXNEW = 4;
 using TraceIntNew          = long;
 using TraceRealNew         = OHMMS_PRECISION;
 using TraceCompNew         = std::complex<TraceRealNew>;
+
+const unsigned int WDMAX = 4;
+using WTraceInt          = long;
+using WTraceReal         = OHMMS_PRECISION_FULL;
+using WTraceComp         = std::complex<WTraceReal>;
+#ifndef QMC_COMPLEX
+using WTracePsiVal = WTraceReal;
+#else
+using WTracePsiVal = WTraceComp;
+#endif
 
 
 struct TraceQuantityNew
@@ -1145,6 +1157,298 @@ struct TraceBufferNew
 
 
 
+struct WalkerQuantityInfo
+{
+  std::string name;
+  size_t dimension;
+  size_t size;
+  size_t unit_size;
+  TinyVector<size_t, WDMAX> shape;
+  size_t buffer_start;
+  size_t buffer_end;
+
+  WalkerQuantityInfo(const std::string& name_,size_t unit_size_,size_t buffer_start_,size_t n1=1,size_t n2=0,size_t n3=0,size_t n4=0)
+  {
+    name         = name_;
+    unit_size    = unit_size_;
+    buffer_start = buffer_start_;
+    shape[0]     = n1;
+    shape[1]     = n2;
+    shape[2]     = n3;
+    shape[3]     = n4;
+
+    dimension = 0;
+    size      = 1;
+    for (size_t d=0;d<WDMAX;++d)
+      if (shape[d]>0)
+      {
+        dimension++;
+        size *= shape[d];
+      }
+    buffer_end = buffer_start + size*unit_size;
+  }
+};
+
+
+
+template<typename T>
+struct WalkerTraceBuffer
+{
+  Array<T, 2> buffer;
+  bool verbose;
+
+  size_t walker_data_size;
+  std::vector<WalkerQuantityInfo> quantity_info;
+
+  bool first_collect;
+  size_t quantity_pointer;
+  size_t row_start_pointer;
+  size_t row_end_pointer;
+
+  //hdf variables
+  std::string label;
+  hsize_t dims[2];
+  hsize_t hdf_file_pointer;
+
+  WalkerTraceBuffer()
+  {
+    label             = "?";
+    verbose           = false;
+    first_collect     = true;
+    walker_data_size  = 0;
+    quantity_pointer  = 0;
+    reset_buffer();
+  }
+
+
+  inline void reset_buffer()
+  {
+    buffer.resize(0, buffer.size(1));
+    row_start_pointer = 0;
+    row_end_pointer   = 0;    
+  }
+
+
+  inline void reset_collect()
+  {
+    if(quantity_pointer!=quantity_info.size())
+      {/*throw exception*/}
+    first_collect = false;
+    quantity_pointer = 0;
+  }
+
+  inline void reset_step()
+  {
+    row_start_pointer = row_end_pointer;
+  }
+
+  inline void reset_block() 
+  { 
+    reset_buffer();
+  }
+
+
+  inline bool same_as(WalkerTraceBuffer<T>& ref) 
+  { 
+    return buffer.size(1) == ref.buffer.size(1); 
+  }
+
+
+  inline void reset_rowsize(size_t row_size)
+  {
+    auto nrows = buffer.size(0);
+    if(nrows==0)
+      nrows++;
+    if(nrows!=1)
+      {/*throw exception*/}
+    auto buffer_old(buffer);
+    buffer.resize(nrows,row_size);
+    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
+    if(buffer.size(0)!=1)
+      {/*throw exception*/}
+    if(buffer.size(1)!=row_size)
+      {/*throw exception*/}
+  }
+
+
+  inline void make_new_row()
+  {
+    size_t nrows    = buffer.size(0);
+    size_t row_size = buffer.size(1);
+    if (row_size==0)
+    {
+      // throw an exception
+    }
+    nrows++;
+    // resizing buffer(type Array) doesn't preserve data. Thus keep old data and copy over
+    auto buffer_old(buffer);
+    buffer.resize(nrows, row_size);
+    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
+  }
+
+
+  inline void collect(const std::string& name, const T& value)
+  {
+    if (verbose)
+      app_log() << "WalkerTraceBuffer(" << label << ")::collect_sample()" << std::endl;
+    size_t irow=0;
+    if( first_collect )
+    {
+      WalkerQuantityInfo wqi_(name,1,walker_data_size);
+      quantity_info.push_back(wqi_);
+      walker_data_size = wqi_.buffer_end;
+      reset_rowsize(walker_data_size);
+    }
+    else
+    {
+      if(quantity_pointer==0)
+        make_new_row();
+      irow = buffer.size(0)-1;
+    }
+    auto& wqi = quantity_info[quantity_pointer];
+    buffer(irow,wqi.buffer_start) = value;
+    quantity_pointer++;
+  }
+
+
+  template<unsigned D>
+  inline void collect(const std::string& name, Array<T,D> arr)
+  {
+    size_t n1 = arr.size(0);
+    size_t n2,n3,n4;
+    n2=n3=n4=0;
+    if (D>4)
+      {/*throw exception*/}
+    if (D>1) n2 = arr.size(1);
+    if (D>2) n3 = arr.size(2);
+    if (D>3) n4 = arr.size(3);
+    size_t irow=0;
+    if( first_collect )
+    {
+      WalkerQuantityInfo wqi_(name,1,walker_data_size,n1,n2,n3,n4);
+      quantity_info.push_back(wqi_);
+      walker_data_size = wqi_.buffer_end;
+      reset_rowsize(walker_data_size);
+    }
+    else
+    {
+      if(quantity_pointer==0)
+        make_new_row();
+      irow = buffer.size(0)-1;
+    }
+    auto& wqi = quantity_info[quantity_pointer];
+    auto& arr1d = arr.storage();
+    for (size_t n=0;n<arr1d.size();++n)
+      buffer(irow,wqi.buffer_start+n) = arr1d[n];
+    quantity_pointer++;
+  }
+
+
+  template<unsigned D>
+  inline void collect(const std::string& name, Array<std::complex<T>,D> arr)
+  {
+    size_t n1 = arr.size(0);
+    size_t n2,n3,n4;
+    n2=n3=n4=0;
+    if (D>4)
+      {/*throw exception*/}
+    if (D>1) n2 = arr.size(1);
+    if (D>2) n3 = arr.size(2);
+    if (D>3) n4 = arr.size(3);
+    size_t irow=0;
+    if( first_collect )
+    {
+      WalkerQuantityInfo wqi_(name,2,walker_data_size,n1,n2,n3,n4);
+      quantity_info.push_back(wqi_);
+      walker_data_size = wqi_.buffer_end;
+      reset_rowsize(walker_data_size);
+    }
+    else
+    {
+      if(quantity_pointer==0)
+        make_new_row();
+      irow = buffer.size(0)-1;
+    }
+    auto& wqi = quantity_info[quantity_pointer];
+    auto& arr1d = arr.storage();
+    size_t n = 0;
+    for (size_t i=0;i<arr1d.size();++i)
+    {
+      buffer(irow,wqi.buffer_start+n) = std::real(arr1d[n]); ++n;
+      buffer(irow,wqi.buffer_start+n) = std::imag(arr1d[n]); ++n;
+    }
+    quantity_pointer++;
+  }
+
+
+  inline void add_row(Array<T, 2> other_buffer, size_t i)
+  {
+    if(buffer.size(1)!=other_buffer.size(1))
+    {
+      // throw an exception
+    }
+    make_new_row();
+    size_t ib = buffer.size(0)-1;
+    for(size_t j=0;j<buffer.size(1);++j)
+      buffer(ib,j) = other_buffer(i,j);
+  }
+
+
+  inline void write_summary(std::string pad = "  ")
+  {
+    std::string pad2 = pad  + "  ";
+    std::string pad3 = pad2 + "  ";
+    app_log() << std::endl;
+    app_log() << pad << "WalkerTraceBuffer(" << label << ")" << std::endl;
+    app_log() << pad2 << "nrows       = " << buffer.size(0) << std::endl;
+    app_log() << pad2 << "row_size    = " << buffer.size(1) << std::endl;
+    for(size_t n=0;n<quantity_info.size();++n)
+    {
+      auto& wqi = quantity_info[n];
+      app_log()<<pad2<<"quantity "<< n <<":  "<<wqi.dimension<<"  "<<wqi.size<<"  "<<wqi.unit_size<<"  "<<wqi.buffer_start<<"  "<<wqi.buffer_end<<" ("<<wqi.name<<")"<<std::endl;
+    }
+    app_log() << pad << "end WalkerTraceBuffer(" << label << ")" << std::endl;
+  }
+
+  inline void register_hdf_data(hdf_archive& f)
+  {
+    f.push(label);
+    f.push("data_layout");
+    //samples->register_hdf_data(f);
+    //if (has_complex)
+    //  complex_samples->register_hdf_data(f);
+    f.pop();
+    f.pop();
+    if (!f.open_groups())
+      APP_ABORT("WalkerTraceBuffer(" + label +
+                ")::register_hdf_data() some hdf groups are still open at the end of registration");
+    hdf_file_pointer = 0;
+  }
+
+
+  inline void write_hdf(hdf_archive& f, hsize_t& file_pointer)
+  {
+    if (verbose)
+      app_log() << "WalkerTraceBuffer(" << label << ")::write_hdf() " << file_pointer << " " << buffer.size(0) << " "
+                << buffer.size(1) << std::endl;
+    dims[0] = buffer.size(0);
+    dims[1] = buffer.size(1);
+    if (dims[0] > 0)
+    {
+      f.push(label);
+      h5d_append(f.top(), "data", file_pointer, buffer.dim(), dims, buffer.data());
+      f.pop();
+    }
+    f.flush();
+  }
+};
+
+//template class WalkerTraceBuffer<TraceIntNew>;
+//template class WalkerTraceBuffer<TraceRealNew>;
+
+
+
+
 
 struct TraceManagerState 
 {
@@ -1184,6 +1488,14 @@ struct TraceManagerState
 
 
 
+template<class QT, class PT> class Walker;
+//class ParticleSet;
+class TrialWaveFunction;
+class QMCHamiltonian;
+using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+
+
+
 class TraceCollector
 {
 public:
@@ -1193,15 +1505,34 @@ public:
   TraceSampleNews<TraceRealNew> real_samples;
   TraceSampleNews<TraceCompNew> comp_samples;
 
+
+  TraceManagerState state;
+
   //buffers for storing samples
   // single row of buffer is a single sample from one walker
   // number of rows adjusts to accommodate walker samples
   TraceBufferNew<TraceIntNew> int_buffer;
   TraceBufferNew<TraceRealNew> real_buffer;
 
-  TraceManagerState state;
+  // new walker buffers
+  std::unordered_set<std::string> properties_include;
+  std::vector<size_t> property_indices;
+  int energy_index;
+
+  std::vector<TraceRealNew> energies;
+  WalkerTraceBuffer<TraceIntNew>  walker_property_int_buffer;
+  WalkerTraceBuffer<TraceRealNew> walker_property_real_buffer;
+  WalkerTraceBuffer<TraceRealNew> walker_particle_real_buffer;
+  
+  // temporary (contiguous) storage for awful ParticleAttrib<> quantities
+  Array<WTraceReal  , 2> Rtmp;
+  Array<WTraceReal  , 1> Stmp;
+  Array<WTracePsiVal, 2> Gtmp;
+  Array<WTracePsiVal, 1> Ltmp;
+
 
   TraceCollector()
+    : properties_include{"R2Accepted","R2Proposed","LocalEnergy","LocalPotential","Kinetic","ElecElec","ElecIon","LocalECP","NonLocalECP"}
   {
     state.reset_permissions();
 
@@ -1210,18 +1541,32 @@ public:
     int_buffer.set_samples(int_samples);
     real_buffer.set_samples(real_samples);
     real_buffer.set_samples(comp_samples);
+
+    // new walker buffers, etc
+    energy_index = -1;
+    energies.resize(0);
+    walker_property_int_buffer.label  = "walker_property_int";
+    walker_property_real_buffer.label = "walker_property_real";
+    walker_particle_real_buffer.label = "walker_particle_real";
   }
 
 
   inline void transfer_state_from(const TraceManagerState& tms)
   {
+    // JTK: rename this function as "setState"
     state = tms;
   }
 
 
+  inline void reset_step()
+  {
+    energies.resize(0);
+  }
+
   inline void distribute()
   {
-    app_log()<<"JTK: TraceCollector::distribute"<<std::endl;
+    if (state.verbose)
+      app_log()<<"TraceCollector::distribute"<<std::endl;
     int_samples.set_verbose(state.verbose);
     real_samples.set_verbose(state.verbose);
     comp_samples.set_verbose(state.verbose);
@@ -1232,7 +1577,8 @@ public:
 
   inline void screen_writes()
   {
-    app_log()<<"JTK: TraceCollector::screen_writes"<<std::endl;
+    if (state.verbose)
+      app_log()<<"TraceCollector::screen_writes"<<std::endl;
     int_samples.screen_writes(state.request);
     real_samples.screen_writes(state.request);
     comp_samples.screen_writes(state.request);
@@ -1240,11 +1586,10 @@ public:
 
   inline void initialize_traces()
   {
-    app_log()<<"JTK: TraceCollector::initialize_traces "<<state.streaming_traces<<std::endl;
+    if (state.verbose)
+      app_log() << "TraceCollector::initialize_traces " << std::endl;
     if (state.streaming_traces)
     {
-      if (state.verbose)
-        app_log() << "TraceCollector::initialize_traces " << std::endl;
       //organize trace samples and initialize buffers
       if (state.writing_traces)
       {
@@ -1257,7 +1602,6 @@ public:
 
   inline void finalize_traces()
   {
-    app_log()<<"JTK: TraceCollector::finalize_traces "<<std::endl;
     if (state.verbose)
       app_log() << "TraceCollector::finalize_traces " << std::endl;
     int_samples.finalize();
@@ -1382,7 +1726,8 @@ public:
   //store the full sample from a single walker step in buffers
   inline void buffer_sample(int current_step)
   {
-    app_log() << "JTK: TraceCollector::buffer_sample "<<state.writing_traces<<" "<<current_step<<std::endl;
+    if (state.verbose)
+      app_log() << "TraceCollector::buffer_sample "<<state.writing_traces<<" "<<current_step<<std::endl;
     if (state.writing_traces && current_step % state.throttle == 0)
     {
       if (state.verbose)
@@ -1395,7 +1740,6 @@ public:
 
   inline void startBlock(int nsteps)
   {
-    app_log() << "JTK: TraceCollector::startBlock " << std::endl;
     if (state.verbose)
       app_log() << "TraceCollector::startBlock " << std::endl;
     reset_buffers();
@@ -1431,8 +1775,17 @@ public:
     app_log() << std::endl;
   }
 
-};
 
+
+  //void collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn);
+  void collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham);
+
+  void stopStep()
+  {
+    // find min/max/median walker and collect in buffers
+  }
+
+};
 
 
 
@@ -1449,10 +1802,47 @@ public:
 
   TraceManagerState state;
 
+  // new walker buffers
+  bool write_particle_data;
+  bool write_min_data;
+  bool write_max_data;
+  bool write_med_data;
+
+  WalkerTraceBuffer<TraceIntNew>  wmin_property_int_buffer;
+  WalkerTraceBuffer<TraceRealNew> wmin_property_real_buffer;
+  WalkerTraceBuffer<TraceRealNew> wmin_particle_real_buffer;
+
+  WalkerTraceBuffer<TraceIntNew>  wmax_property_int_buffer;
+  WalkerTraceBuffer<TraceRealNew> wmax_property_real_buffer;
+  WalkerTraceBuffer<TraceRealNew> wmax_particle_real_buffer;
+
+  WalkerTraceBuffer<TraceIntNew>  wmed_property_int_buffer;
+  WalkerTraceBuffer<TraceRealNew> wmed_property_real_buffer;
+  WalkerTraceBuffer<TraceRealNew> wmed_particle_real_buffer;
+
+
   TraceManagerNew(Communicate* comm = 0)
   {
     state.reset_permissions();
     communicator   = comm;
+
+    // new walker buffers, etc
+    write_particle_data = false;
+    write_min_data      = true;
+    write_max_data      = true;
+    write_med_data      = true;
+
+    wmin_property_int_buffer.label  = "wmin_property_int";
+    wmin_property_real_buffer.label = "wmin_property_real";
+    wmin_particle_real_buffer.label = "wmin_particle_real";
+
+    wmax_property_int_buffer.label  = "wmax_property_int";
+    wmax_property_real_buffer.label = "wmax_property_real";
+    wmax_particle_real_buffer.label = "wmax_particle_real";
+
+    wmed_property_int_buffer.label  = "wmed_property_int";
+    wmed_property_real_buffer.label = "wmed_property_real";
+    wmed_particle_real_buffer.label = "wmed_particle_real";
   }
 
 
@@ -1463,7 +1853,6 @@ public:
 
   inline TraceCollector* makeCollector()
   {
-    app_log()<<"JTK: TraceManagerNew::makeCollector"<<std::endl;
     if (state.verbose)
       app_log() << "TraceManagerNew::makeCollector " << std::endl;
     TraceCollector* tc = new TraceCollector();
@@ -1475,15 +1864,13 @@ public:
 
   inline void put(xmlNodePtr cur, bool allow_traces, std::string series_root)
   {
-    app_log()<<"JTK: TraceManagerNew::put"<<std::endl;
+    if (state.verbose)
+      app_log()<<"TraceManagerNew::put"<<std::endl;
     state.reset_permissions();
     state.method_allows_traces  = allow_traces;
     file_root             = series_root;
     bool traces_requested = cur != NULL;
     state.streaming_traces      = traces_requested && state.method_allows_traces;
-    app_log()<<"JTK:    method_allows_traces "<<state.method_allows_traces<<std::endl;
-    app_log()<<"JTK:    traces_requested "<<traces_requested<<std::endl;
-    app_log()<<"JTK:    streaming_traces "<<state.streaming_traces<<std::endl;
     if (state.streaming_traces)
     {
       if (omp_get_thread_num() == 0)
@@ -1585,11 +1972,10 @@ public:
 
   inline void check_clones(std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::check_clones "<<state.writing_traces<<" "<<clones.size() << std::endl;
+    if (state.verbose)
+      app_log() << "TraceManagerNew::check_clones" << std::endl;
     if (state.writing_traces && clones.size() > 0)
     {
-      if (state.verbose)
-        app_log() << "TraceManagerNew::check_clones" << std::endl;
       bool all_same = true;
       bool int_same;
       bool real_same;
@@ -1617,7 +2003,8 @@ public:
   //write buffered trace data to file
   inline void write_buffers(std::vector<TraceCollector*>& clones, int block)
   {
-    app_log() << "JTK: TraceManagerNew::write_buffers "<< state.writing_traces<<std::endl;
+    if (state.verbose)
+      app_log() << "TraceManagerNew::write_buffers "<<std::endl;
     if (state.writing_traces)
     {
       //double tstart = MPI_Wtime();
@@ -1630,11 +2017,10 @@ public:
 
   inline void open_file(std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::open_file "<< state.writing_traces<<std::endl;
+    if (state.verbose)
+      app_log() << "TraceManagerNew::open_file "<<std::endl;
     if (state.writing_traces)
     {
-      if (state.verbose)
-        app_log() << "TraceManagerNew::open_file " << std::endl;
       if (state.verbose)
         clones[0]->write_summary();
       open_hdf_file(clones);
@@ -1644,19 +2030,15 @@ public:
 
   inline void close_file()
   {
-    app_log() << "JTK: TraceManagerNew::close_file "<< state.writing_traces<<std::endl;
+    if (state.verbose)
+      app_log() << "TraceManagerNew::close_file " << std::endl;
     if (state.writing_traces)
-    {
-      if (state.verbose)
-        app_log() << "TraceManagerNew::close_file " << std::endl;
       close_hdf_file();
-    }
   }
 
 
   inline void startRun(int blocks, std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::startRun " << std::endl;
     if (state.verbose)
       app_log() << "TraceManagerNew::startRun " << std::endl;
     check_clones(clones);
@@ -1666,7 +2048,6 @@ public:
 
   inline void stopRun()
   {
-    app_log() << "JTK: TraceManagerNew::stopRun " << std::endl;
     if (state.verbose)
       app_log() << "TraceManagerNew::stopRun " << std::endl;
     close_file();
@@ -1675,7 +2056,8 @@ public:
   //hdf file operations
   inline void open_hdf_file(std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::open_hdf_file " << std::endl;
+    if (state.verbose) 
+      app_log() << "TraceManagerNew::open_hdf_file " << std::endl;
     if (clones.size() == 0)
       APP_ABORT("TraceManagerNew::open_hdf_file  no trace clones exist, cannot open file");
     int nprocs = communicator->size();
@@ -1712,7 +2094,6 @@ public:
 
   inline void write_buffers_hdf(std::vector<TraceCollector*>& clones)
   {
-    app_log() << "JTK: TraceManagerNew::write_buffers_hdf " << std::endl;
     if (state.verbose)
       app_log() << "TraceManagerNew::write_buffers_hdf " << std::endl;
     TraceCollector& tm_lead = *clones[0];
@@ -1725,9 +2106,11 @@ public:
   }
 
   inline void close_hdf_file() { 
-    app_log() << "JTK: TraceManagerNew::close_hdf_file " << std::endl;
+    if (state.verbose)
+      app_log() << "TraceManagerNew::close_hdf_file " << std::endl;
     hdf_file.reset(); 
   }
+
 };
 
 
@@ -1735,12 +2118,6 @@ public:
 
 } // namespace qmcplusplus
 
-
-#else
-
-// no vacuous class: new tracemanager always supported
-
-#endif
 
 
 #endif

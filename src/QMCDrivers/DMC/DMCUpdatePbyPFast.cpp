@@ -172,6 +172,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
   Traces_new->buffer_sample(W.current_step);
+  Traces_new->collect(thisWalker,W,Psi,H);
 #endif
   {
     ScopedTimer local_timer(myTimers[DMC_tmoves]);
