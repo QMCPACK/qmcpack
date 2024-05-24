@@ -43,10 +43,27 @@ void report_row(T& b)
   }
 }
 
+template<typename T>
+void report_buffer(WalkerTraceBuffer<T>& wtb)
+{
+  auto& b = wtb.buffer;
+  for (size_t r=0;r<b.size(0);++r)
+  {
+    for (size_t c=0;c<b.size(1);++c)
+    {
+      app_log()<<"  "<<b(r,c);
+    }
+    app_log()<<"\n";
+  }
+}
+
+
+
 
 //void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn)
 void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham)
 {
+  app_log()<<"TraceCollector::collect (step "<<pset.current_step<<")"<<std::endl;
 
   auto& bsi = walker_property_int_buffer;
   auto& bsr = walker_property_real_buffer;
@@ -55,7 +72,7 @@ void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunc
   // collect integer walker properties
   bsi.collect("step"        , (WTraceInt)pset.current_step    );
   bsi.collect("id"          , (WTraceInt)walker.getWalkerID() );
-  bsi.collect("pid"         , (WTraceInt)walker.getParentID() );
+  bsi.collect("parent_id"   , (WTraceInt)walker.getParentID() );
   bsi.collect("age"         , (WTraceInt)walker.Age           );
   bsi.reset_collect();
 
@@ -89,9 +106,7 @@ void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunc
       bsr.collect(name, (WTraceReal)value );
     }
   bsr.reset_collect();
-
-  energies.push_back((WTraceReal)walker.Properties(0,energy_index));
-
+  
   // collect per particle walker quantities
   size_t nparticles = walker.R.size();
   size_t ndim       = walker.R[0].size();
@@ -122,103 +137,23 @@ void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunc
   bar.collect("L", Ltmp);
   bar.reset_collect();
 
-  app_log()<<"\ninteger walker buffer:\n";
-  report_row(bsi);
-  app_log()<<"\nreal walker buffer:\n";
-  report_row(bsr);
 
-  bsi.write_summary();
-  bsr.write_summary();
-  bar.write_summary();
-  //APP_ABORT("JTK");
-
-  //// collect per-particle walker data
-  //bar.collect("R", walker.R );
-  //if (pset.isSpinor())
-  //  bar.collect("S", walker.spins );
-  //bar.collect("G", wfn.G );
-  //bar.collect("L", wfn.L );
-  //bar.first_collect = false;
-
-  //ParticlePos R;
-  //ParticleScalar spins;
-
-  //Configuration.h: using ParticlePos       = ParticleAttrib<SingleParticlePos>;
-  //Configuration.h: using ParticleScalar    = ParticleAttrib<Scalar_t>;
-  //Configuration.h: using ParticleGradient  = ParticleAttrib<QTFull::GradType>;
-  //Configuration.h: using ParticleLaplacian = ParticleAttrib<QTFull::ValueType>;
-
-  app_log()<<"pset step: "<<pset.current_step<<std::endl;
-
-  app_log()<<"WalkerID     "<<walker.getWalkerID()<<std::endl;
-  app_log()<<"ParentID     "<<walker.getParentID()<<std::endl;
-  app_log()<<"Age          "<<walker.Age          <<std::endl;
-  app_log()<<"Weight       "<<walker.Weight       <<std::endl; 
-  app_log()<<"Multiplicity "<<walker.Multiplicity <<std::endl;
-  
-  app_log()<<"\nwalker.Properties"<<std::endl;
-  for(size_t n=0;n<pset.PropertyList.size();++n)
-  {
-    auto name = pset.PropertyList.Names[n];
-    auto value = walker.Properties(0,n);
-    app_log()<<"  "<<name<<"  "<<value<<std::endl;
-  }
-
-  app_log()<<"LogPsi   "<<wfn.getLogPsi()<<std::endl;
-  app_log()<<"PhasePsi "<<wfn.getPhase()<<std::endl;
+  // save the energy of this walker
+  energies.push_back((WTraceReal)walker.Properties(0,energy_index));
 
 
+  //app_log()<<"  walker_property_int buffer contents:\n";
+  //report_buffer(bsi);
 
-
-  //app_log()<<" R \n"<<walker.R<<std::endl;
-  //app_log()<<" S \n"<<walker.spins<<std::endl;
-  //app_log()<<" G \n"<<wfn.G<<std::endl;
-  //app_log()<<" L \n"<<wfn.L<<std::endl;
-
-
-  
-  //// empty
-  //app_log()<<"\npset.Properties"<<std::endl;
-  //for(size_t n=0;n<pset.PropertyList.size();++n)
-  //{
-  //  auto name = pset.PropertyList.Names[n];
-  //  auto value = pset.Properties(0,n);
-  //  app_log()<<"  "<<name<<"  "<<value<<std::endl;
-  //}
+  //app_log()<<"\ninteger walker buffer:\n";
+  //report_row(bsi);
+  //app_log()<<"\nreal walker buffer:\n";
+  //report_row(bsr);
   //
-  //// half-empty (energy data only)
-  //app_log()<<"\npset.PropertyList"<<std::endl;
-  //for(size_t n=0;n<pset.PropertyList.size();++n)
-  //{
-  //  auto name = pset.PropertyList.Names[n];
-  //  auto value = pset.PropertyList.Values[n];
-  //  app_log()<<"  "<<name<<"  "<<value<<std::endl;
-  //}
-
-
-  //app_log()<<" R \n"<<walker.R<<std::endl;
-  //app_log()<<" S \n"<<walker.spins<<std::endl;
-  //app_log()<<" R \n"<<pset.R<<std::endl;
-  //app_log()<<" S \n"<<pset.spins<<std::endl;
-
-  //app_log()<<" G \n"<<wfn.G<<std::endl;
-  //app_log()<<" L \n"<<wfn.L<<std::endl;
-  //app_log()<<" G \n"<<pset.G<<std::endl;
-  //app_log()<<" L \n"<<pset.L<<std::endl;
-
-  //app_log()<<" walker.Properties"<<std::endl;
-  //// ???????, then LocalEnergy to IonIon
-  //auto& P = walker.Properties;
-  //for(size_t i=0;i<P.rows();++i){
-  //  for(size_t j=0;j<P.cols();++j){
-  //    app_log()<<"  "<<P(i,j);
-  //  }
-  //  app_log()<<std::endl;
-  //}
-      
-  //APP_ABORT("JTK");
-
-
+  //bsi.write_summary();
+  //bsr.write_summary();
+  //bar.write_summary();
+  ////APP_ABORT("JTK");
 
 }
 

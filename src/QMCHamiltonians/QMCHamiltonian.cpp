@@ -636,8 +636,8 @@ void QMCHamiltonian::initialize_traces_new(TraceCollector& tm, ParticleSet& P)
     tm.screen_writes();
 
     //write traces status to the log
-    if (trace_log)
-      tm.user_report();
+    //if (trace_log)
+    //  tm.user_report();
 
     first_init_new = false;
   }

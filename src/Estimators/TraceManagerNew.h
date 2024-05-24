@@ -1026,6 +1026,7 @@ struct TraceBufferNew
                 << buffer.size(1) << std::endl;
     dims[0] = buffer.size(0);
     dims[1] = buffer.size(1);
+    app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
     if (dims[0] > 0)
     {
       f.push(top);
@@ -1033,6 +1034,7 @@ struct TraceBufferNew
       f.pop();
     }
     f.flush();
+    app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
   }
 
 
@@ -1223,6 +1225,7 @@ struct WalkerTraceBuffer
 
   inline void reset_buffer()
   {
+    app_log()<<"WalkerTraceBuffer("<<label<<")::reset_buffer"<<std::endl;
     buffer.resize(0, buffer.size(1));
     row_start_pointer = 0;
     row_end_pointer   = 0;    
@@ -1231,6 +1234,7 @@ struct WalkerTraceBuffer
 
   inline void reset_collect()
   {
+    //app_log()<<"WalkerTraceBuffer("<<label<<")::reset_collect"<<std::endl;
     if(quantity_pointer!=quantity_info.size())
       {/*throw exception*/}
     first_collect = false;
@@ -1239,11 +1243,13 @@ struct WalkerTraceBuffer
 
   inline void reset_step()
   {
+    app_log()<<"WalkerTraceBuffer("<<label<<")::reset_step"<<std::endl;
     row_start_pointer = row_end_pointer;
   }
 
   inline void reset_block() 
   { 
+    app_log()<<"WalkerTraceBuffer("<<label<<")::reset_block"<<std::endl;
     reset_buffer();
   }
 
@@ -1289,8 +1295,9 @@ struct WalkerTraceBuffer
 
   inline void collect(const std::string& name, const T& value)
   {
-    if (verbose)
-      app_log() << "WalkerTraceBuffer(" << label << ")::collect_sample()" << std::endl;
+    //app_log()<<"WalkerTraceBuffer("<<label<<")::collect"<<std::endl;
+    //if (verbose)
+    //  app_log() << "WalkerTraceBuffer(" << label << ")::collect_sample()" << std::endl;
     size_t irow=0;
     if( first_collect )
     {
@@ -1383,6 +1390,7 @@ struct WalkerTraceBuffer
 
   inline void add_row(Array<T, 2> other_buffer, size_t i)
   {
+    app_log()<<"WalkerTraceBuffer("<<label<<")::add_row"<<std::endl;
     if(buffer.size(1)!=other_buffer.size(1))
     {
       // throw an exception
@@ -1412,11 +1420,21 @@ struct WalkerTraceBuffer
 
   inline void register_hdf_data(hdf_archive& f)
   {
-    f.push(label);
+    app_log()<<"WalkerTraceBuffer("<<label<<")::register_hdf_data"<<std::endl;
+    auto& top = label;
+    f.push(top);
     f.push("data_layout");
-    //samples->register_hdf_data(f);
-    //if (has_complex)
-    //  complex_samples->register_hdf_data(f);
+    for(auto& wqi: quantity_info)
+    {
+      f.push(wqi.name);
+      f.write(wqi.dimension,    "dimension"  );
+      f.write(wqi.shape,        "shape"      );
+      f.write(wqi.size,         "size"       );
+      f.write(wqi.unit_size,    "unit_size"  );
+      f.write(wqi.buffer_start, "index_start");
+      f.write(wqi.buffer_end,   "index_end"  );
+      f.pop();
+    }
     f.pop();
     f.pop();
     if (!f.open_groups())
@@ -1428,18 +1446,22 @@ struct WalkerTraceBuffer
 
   inline void write_hdf(hdf_archive& f, hsize_t& file_pointer)
   {
-    if (verbose)
-      app_log() << "WalkerTraceBuffer(" << label << ")::write_hdf() " << file_pointer << " " << buffer.size(0) << " "
-                << buffer.size(1) << std::endl;
+    app_log()<<"WalkerTraceBuffer("<<label<<")::write_hdf "<<file_pointer<<"  "<<buffer.size(0)<<" "<<buffer.size(1)<<std::endl;
+    //if (verbose)
+    //  app_log() << "WalkerTraceBuffer(" << label << ")::write_hdf() " << file_pointer << " " << buffer.size(0) << " "
+    //            << buffer.size(1) << std::endl;
+    auto& top = label;
     dims[0] = buffer.size(0);
     dims[1] = buffer.size(1);
+    app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
     if (dims[0] > 0)
     {
-      f.push(label);
+      f.push(top);
       h5d_append(f.top(), "data", file_pointer, buffer.dim(), dims, buffer.data());
       f.pop();
     }
     f.flush();
+    app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
   }
 };
 
@@ -1501,7 +1523,7 @@ class TraceCollector
 public:
   //collections of samples for a single walker step
   //  the associated arrays will be updated following evaluate
-  TraceSampleNews<TraceIntNew> int_samples;
+  TraceSampleNews<TraceIntNew>  int_samples;
   TraceSampleNews<TraceRealNew> real_samples;
   TraceSampleNews<TraceCompNew> comp_samples;
 
@@ -1511,12 +1533,12 @@ public:
   //buffers for storing samples
   // single row of buffer is a single sample from one walker
   // number of rows adjusts to accommodate walker samples
-  TraceBufferNew<TraceIntNew> int_buffer;
+  TraceBufferNew<TraceIntNew>  int_buffer;
   TraceBufferNew<TraceRealNew> real_buffer;
 
   // new walker buffers
   std::unordered_set<std::string> properties_include;
-  std::vector<size_t> property_indices;
+  std::vector<size_t>             property_indices;
   int energy_index;
 
   std::vector<TraceRealNew> energies;
@@ -1712,14 +1734,17 @@ public:
 
   inline void reset_buffers()
   {
-    app_log() << "JTK: TraceCollector::reset_buffers"<<std::endl;
+    if (state.verbose)
+      app_log() << "TraceCollector::reset_buffers"<<std::endl;
     if (state.writing_traces)
     {
-      if (state.verbose)
-        app_log() << "TraceCollector::reset_buffers " << std::endl;
       int_buffer.reset();
       real_buffer.reset();
     }
+
+    walker_property_int_buffer.reset_buffer();
+    walker_property_real_buffer.reset_buffer();
+    walker_particle_real_buffer.reset_buffer();
   }
 
 
@@ -1727,11 +1752,9 @@ public:
   inline void buffer_sample(int current_step)
   {
     if (state.verbose)
-      app_log() << "TraceCollector::buffer_sample "<<state.writing_traces<<" "<<current_step<<std::endl;
+      app_log() << "TraceCollector::buffer_sample "<<current_step<<std::endl;
     if (state.writing_traces && current_step % state.throttle == 0)
     {
-      if (state.verbose)
-        app_log() << " TraceCollector::buffer_sample() " << std::endl;
       int_buffer.collect_sample();
       real_buffer.collect_sample();
     }
@@ -1761,21 +1784,6 @@ public:
   }
 
 
-  inline void user_report(std::string pad = "  ")
-  {
-    std::string pad2 = pad + "  ";
-    std::string pad3 = pad2 + "  ";
-    app_log() << std::endl;
-    app_log() << pad << "TraceCollector report" << std::endl;
-    state.request.report();
-    app_log() << pad2 << "Type and domain breakdown of streaming quantities:" << std::endl;
-    std::set<std::string>::iterator req;
-    int_buffer.user_report(pad3);
-    real_buffer.user_report(pad3);
-    app_log() << std::endl;
-  }
-
-
 
   //void collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn);
   void collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham);
@@ -1799,6 +1807,7 @@ public:
   std::string file_root;
   Communicate* communicator;
   std::unique_ptr<hdf_archive> hdf_file;
+  bool registered_hdf;
 
   TraceManagerState state;
 
@@ -1825,6 +1834,8 @@ public:
   {
     state.reset_permissions();
     communicator   = comm;
+
+    registered_hdf = false;
 
     // new walker buffers, etc
     write_particle_data = false;
@@ -2008,8 +2019,6 @@ public:
     if (state.writing_traces)
     {
       //double tstart = MPI_Wtime();
-      if (state.verbose)
-        app_log() << "TraceManagerNew::write_buffers " << std::endl;
       write_buffers_hdf(clones);
     }
   }
@@ -2077,7 +2086,7 @@ public:
         throw std::runtime_error("Error generating filename");
       file_name.append(ptoken.data(), length);
     }
-    file_name += ".traces.h5";
+    file_name += ".wtraces.h5";
     if (state.verbose)
       app_log() << "TraceManagerNew::open_hdf_file  opening traces hdf file " << file_name << std::endl;
     hdf_file        = std::make_unique<hdf_archive>();
@@ -2087,8 +2096,13 @@ public:
     // only clones have active buffers and associated data
     TraceCollector& tm = *clones[0];
     //tm.write_summary();
-    tm.int_buffer.register_hdf_data(*hdf_file);
-    tm.real_buffer.register_hdf_data(*hdf_file);
+
+    //tm.int_buffer.register_hdf_data(*hdf_file);
+    //tm.real_buffer.register_hdf_data(*hdf_file);
+    //
+    //tm.walker_property_int_buffer.register_hdf_data(*hdf_file);
+    //tm.walker_property_real_buffer.register_hdf_data(*hdf_file);
+    //tm.walker_particle_real_buffer.register_hdf_data(*hdf_file);
   }
 
 
@@ -2097,11 +2111,26 @@ public:
     if (state.verbose)
       app_log() << "TraceManagerNew::write_buffers_hdf " << std::endl;
     TraceCollector& tm_lead = *clones[0];
+    if(!registered_hdf)
+    {
+      //tm_lead.int_buffer.register_hdf_data(*hdf_file);
+      //tm_lead.real_buffer.register_hdf_data(*hdf_file);
+
+      tm_lead.walker_property_int_buffer.register_hdf_data(*hdf_file);
+      tm_lead.walker_property_real_buffer.register_hdf_data(*hdf_file);
+      tm_lead.walker_particle_real_buffer.register_hdf_data(*hdf_file);
+
+      registered_hdf = true;
+    }
     for (int ip = 0; ip < clones.size(); ++ip)
     {
       TraceCollector& tm = *clones[ip];
-      tm.int_buffer.write_hdf(*hdf_file, tm_lead.int_buffer.hdf_file_pointer);
-      tm.real_buffer.write_hdf(*hdf_file, tm_lead.real_buffer.hdf_file_pointer);
+      //tm.int_buffer.write_hdf(*hdf_file, tm_lead.int_buffer.hdf_file_pointer);
+      //tm.real_buffer.write_hdf(*hdf_file, tm_lead.real_buffer.hdf_file_pointer);
+
+      tm.walker_property_int_buffer.write_hdf(*hdf_file, tm_lead.walker_property_int_buffer.hdf_file_pointer);
+      tm.walker_property_real_buffer.write_hdf(*hdf_file, tm_lead.walker_property_real_buffer.hdf_file_pointer);
+      tm.walker_particle_real_buffer.write_hdf(*hdf_file, tm_lead.walker_particle_real_buffer.hdf_file_pointer);
     }
   }
 
