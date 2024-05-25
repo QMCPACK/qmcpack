@@ -18,15 +18,12 @@
 #include "DualAllocatorAliases.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
-#include "CUDA/CUDAruntime.hpp"
-#include "CUDA/cuBLAS.hpp"
-#include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "DualAllocatorAliases.hpp"
-#include "DiracMatrixComputeCUDA.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "QueueAliases.hpp"
 #include "AccelBLASAliases.hpp"
+#include "DiracMatrixComputeCUDA.hpp"
 
 namespace qmcplusplus
 {
@@ -176,7 +173,6 @@ private:
   {
     auto& engine_leader              = engines.getLeader();
     auto& blas_handle                = mw_rsc.blas_handle;
-    auto& h_cublas                   = blas_handle.h_cublas;
     auto& queue                      = mw_rsc.queue;
     auto& cminusone_vec              = mw_rsc.cminusone_vec;
     auto& cone_vec                   = mw_rsc.cone_vec;
@@ -628,7 +624,7 @@ public:
       return;
     // update the inverse matrix
     auto& queue                = mw_rsc.queue;
-    auto& h_cublas             = mw_rsc.blas_handle.h_cublas;
+    auto& blas_handle          = mw_rsc.blas_handle;
     auto& updateInv_buffer_H2D = mw_rsc.updateInv_buffer_H2D;
     const int norb             = engine_leader.invRow.size();
     const int lda              = psiMinv_refs[0].get().cols();
@@ -673,18 +669,15 @@ public:
     {
       const int lda_Binv = engine_leader.Binv_gpu.cols();
       constexpr Value cone(1), czero(0), cminusone(-1);
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone,
-                                            U_mw_ptr, norb, Ainv_mw_ptr, lda, &czero, tempMat_mw_ptr, lda_Binv, nw),
-                       "cuBLAS::gemm_batched failed!");
+      compute::BLAS::gemm_batched(blas_handle, 'T', 'N', delay_count, norb, norb, &cone, U_mw_ptr, norb, Ainv_mw_ptr,
+                                  lda, &czero, tempMat_mw_ptr, lda_Binv, nw);
       cudaErrorCheck(CUDA::applyW_batched(queue.getNative(), delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv,
                                           nw),
                      "CUDA::applyW_batched failed!");
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone,
-                                            V_mw_ptr, norb, Binv_mw_ptr, lda_Binv, &czero, U_mw_ptr, norb, nw),
-                       "cuBLAS::gemm_batched failed!");
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
-                                            U_mw_ptr, norb, tempMat_mw_ptr, lda_Binv, &cone, Ainv_mw_ptr, lda, nw),
-                       "cuBLAS::gemm_batched failed!");
+      compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, delay_count, delay_count, &cone, V_mw_ptr, norb,
+                                  Binv_mw_ptr, lda_Binv, &czero, U_mw_ptr, norb, nw);
+      compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, norb, delay_count, &cminusone, U_mw_ptr, norb,
+                                  tempMat_mw_ptr, lda_Binv, &cone, Ainv_mw_ptr, lda, nw);
     }
     delay_count = 0;
   }

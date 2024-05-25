@@ -27,22 +27,39 @@ class BLASHandle;
 namespace BLAS
 {
 template<PlatformKind PL, typename T>
-void gemm(BLASHandle<PL>& queue,
-const char transa,
-                           const char transb,
-                           int m,
-                           int n,
-                           int k,
-                           const T* alpha,
-                           const T* A,
-                           int lda,
-                           const T* B,
-                           int ldb,
-                           const T* beta,
-                           T* C,
-                           int ldc);
-}
-}
+void gemm(BLASHandle<PL>& handle,
+          const char transa,
+          const char transb,
+          int m,
+          int n,
+          int k,
+          const T* alpha,
+          const T* A,
+          int lda,
+          const T* B,
+          int ldb,
+          const T* beta,
+          T* C,
+          int ldc);
+
+template<PlatformKind PL, typename T>
+void gemm_batched(BLASHandle<PL>& handle,
+                  const char transa,
+                  const char transb,
+                  int m,
+                  int n,
+                  int k,
+                  const T* alpha,
+                  const T* const A[],
+                  int lda,
+                  const T* const B[],
+                  int ldb,
+                  const T* beta,
+                  T* const C[],
+                  int ldc,
+                  int batchCount);
+} // namespace BLAS
+} // namespace compute
 
 } // namespace qmcplusplus
 

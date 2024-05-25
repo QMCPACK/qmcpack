@@ -102,7 +102,9 @@ inline cublasOperation_t convertOperation(const char trans)
   else if (trans == 'C' || trans == 'c')
     return CUBLAS_OP_C;
   else
-    throw std::runtime_error("cuBLAS::convertOperation trans can only be 'N', 'T', 'C', 'n', 't', 'c'. Input value is " + std::string(1, trans));
+    throw std::runtime_error(
+        "cuBLAS::convertOperation trans can only be 'N', 'T', 'C', 'n', 't', 'c'. Input value is " +
+        std::string(1, trans));
 }
 
 inline cublasStatus_t geam(cublasHandle_t& handle,
@@ -153,7 +155,8 @@ inline cublasStatus_t geam(cublasHandle_t& handle,
                            std::complex<double>* C,
                            int ldc)
 {
-  return cublasZgeam(handle, transa, transb, m, n, castNativeType(alpha), castNativeType(A), lda, castNativeType(beta), castNativeType(B), ldb, castNativeType(C), ldc);
+  return cublasZgeam(handle, transa, transb, m, n, castNativeType(alpha), castNativeType(A), lda, castNativeType(beta),
+                     castNativeType(B), ldb, castNativeType(C), ldc);
 }
 
 inline cublasStatus_t geam(cublasHandle_t& handle,
@@ -170,99 +173,8 @@ inline cublasStatus_t geam(cublasHandle_t& handle,
                            std::complex<float>* C,
                            int ldc)
 {
-  return cublasCgeam(handle, transa, transb, m, n, castNativeType(alpha), castNativeType(A), lda, castNativeType(beta), castNativeType(B), ldb, castNativeType(C), ldc);
-}
-  
-inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
-                                   const cublasOperation_t& transa,
-                                   const cublasOperation_t& transb,
-                                   int m,
-                                   int n,
-                                   int k,
-                                   const float* alpha,
-                                   const float* const A[],
-                                   int lda,
-                                   const float* const B[],
-                                   int ldb,
-                                   const float* beta,
-                                   float* const C[],
-                                   int ldc,
-                                   int batchCount)
-{
-  return cublasSgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount);
-}
-
-inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
-                                   const cublasOperation_t& transa,
-                                   const cublasOperation_t& transb,
-                                   int m,
-                                   int n,
-                                   int k,
-                                   const std::complex<float>* alpha,
-                                   const std::complex<float>* const A[],
-                                   int lda,
-                                   const std::complex<float>* const B[],
-                                   int ldb,
-                                   const std::complex<float>* beta,
-                                   std::complex<float>* const C[],
-                                   int ldc,
-                                   int batchCount)
-{
-  // This is necessary to not break the complex CUDA type mapping semantics while
-  // dealing with the const cuComplex * A[] style API of cuBLAS
-  // C++ makes you jump through some hoops to remove the bottom const on a double pointer.
-  // see typetraits/type_manipulation.hpp
-  auto non_const_A = const_cast<BottomConstRemoved<decltype(A)>::type>(A);
-  auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
-  auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
-
-  return cublasCgemmBatched(handle, transa, transb, m, n, k, castNativeType(alpha), castNativeType(non_const_A), lda,
-                            castNativeType(non_const_B), ldb, castNativeType(beta), castNativeType(non_const_C), ldc,
-                            batchCount);
-}
-
-inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
-                                   const cublasOperation_t& transa,
-                                   const cublasOperation_t& transb,
-                                   int m,
-                                   int n,
-                                   int k,
-                                   const double* alpha,
-                                   const double* const A[],
-                                   int lda,
-                                   const double* const B[],
-                                   int ldb,
-                                   const double* beta,
-                                   double* const C[],
-                                   int ldc,
-                                   int batchCount)
-{
-  return cublasDgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount);
-}
-
-inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
-                                   const cublasOperation_t& transa,
-                                   const cublasOperation_t& transb,
-                                   int m,
-                                   int n,
-                                   int k,
-                                   const std::complex<double>* alpha,
-                                   const std::complex<double>* const A[],
-                                   int lda,
-                                   const std::complex<double>* const B[],
-                                   int ldb,
-                                   const std::complex<double>* beta,
-                                   std::complex<double>* const C[],
-                                   int ldc,
-                                   int batchCount)
-{
-  auto non_const_A = const_cast<BottomConstRemoved<decltype(A)>::type>(A);
-  auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
-  auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
-
-  return cublasZgemmBatched(handle, transa, transb, m, n, k, castNativeType(alpha), castNativeType(non_const_A), lda,
-                            castNativeType(non_const_B), ldb, castNativeType(beta), castNativeType(non_const_C), ldc,
-                            batchCount);
+  return cublasCgeam(handle, transa, transb, m, n, castNativeType(alpha), castNativeType(A), lda, castNativeType(beta),
+                     castNativeType(B), ldb, castNativeType(C), ldc);
 }
 
 inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
