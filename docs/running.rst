@@ -16,14 +16,16 @@ QMCPACK offers several command line options that affect how calculations
 are performed. If the flag is absent, then the corresponding
 option is disabled:
 
-- ``--dryrun`` Validate the input file without performing the simulation. This is a good way to ensure that QMCPACK will do what you think it will.
+- ``--dryrun`` Validate the input file without performing the simulation. All the QMC and loop sections are skipped.
+  Wavefunctions and pseudopotentials will be loaded and processed. This option can be used to verify all the required
+  files are available or to check memory usage.
 
 - ``--enable-timers=none|coarse|medium|fine`` Control the timer granularity when the build option ``ENABLE_TIMERS`` is enabled.
 
-- ``help`` Print version information as well as a list of optional
+- ``--help`` Print version information as well as a list of optional
   command-line arguments.
 
-- ``noprint`` Do not print extra information on Jastrow or pseudopotential.
+- ``--noprint`` Do not print extra information on Jastrow or pseudopotential.
   If this flag is not present, QMCPACK will create several ``.dat`` files
   that contain information about pseudopotentials (one file per PP) and Jastrow
   factors (one per Jastrow factor). These file might be useful for visual inspection

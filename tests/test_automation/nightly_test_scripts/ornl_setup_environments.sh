@@ -4,14 +4,20 @@ echo --- START environment setup `date`
 
 # serial   : single install
 # 8up      : 8 installs
+# par32    : install -j 32
 # makefile : make -j
-parallelmode=makefile
+#parallelmode=makefile
+parallelmode=par32
 
 install_environment () {
 case "$parallelmode" in
     serial )
 	echo --- Serial install
 	spack install
+	;;
+    par32 )
+	echo --- spack install -j 32
+	spack install -j 32
 	;;
     8up )
 	echo --- Running 8 installs simultaneously
@@ -88,9 +94,19 @@ spack add py-pandas
 spack add py-mpi4py
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
-spack add quantum-espresso +mpi +qmcpack
+spack add quantum-espresso@7.3.1 +mpi +qmcpack
 spack add py-pyscf
-spack add rmgdft
+#spack add rmgdft
+
+#Luxury options for actual science use:
+spack add py-requests # for pseudo helper
+spack add py-ase      # full Atomic Simulation Environment
+spack add py-pydot    # NEXUS optional
+spack add py-spglib   # NEXUS optional 
+spack add py-seekpath # NEXUS optional
+spack add py-pycifrw  # NEXUS optional
+#NOT IN SPACK spack add py-cif2cell # NEXUS optional
+
 install_environment
 spack env deactivate
 
@@ -121,6 +137,7 @@ spack add py-pandas
 #spack add py-mpi4py
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl ~mpi
+
 install_environment
 spack env deactivate
 
@@ -131,9 +148,7 @@ spack -e $theenv config add "concretizer:unify:when_possible"
 spack env activate $theenv
 
 spack add gcc@${gcc_vold}
-spack add git
-spack add ninja
-spack add cmake@${cmake_vold}
+spack add cmake@${cmake_vold}%gcc@${gcc_vold}
 spack add libxml2@${libxml2_v}%gcc@${gcc_vold}
 spack add boost@${boost_vold}%gcc@${gcc_vold}
 spack add util-linux-uuid%gcc@${gcc_vold}
@@ -144,6 +159,8 @@ spack add fftw@${fftw_vold}%gcc@${gcc_vold} -mpi #Avoid MPI for simplicity
 spack add openblas%gcc@${gcc_vold} threads=openmp
 #spack add blis%gcc@${gcc_vold} threads=openmp
 #spack add libflame%gcc@${gcc_vold} threads=openmp
+spack add git
+spack add ninja
 
 spack add py-lxml
 spack add py-matplotlib
@@ -161,9 +178,7 @@ spack -e $theenv config add "concretizer:unify:when_possible"
 spack env activate $theenv
 
 spack add gcc@${gcc_vold}
-spack add git
-spack add ninja
-spack add cmake@${cmake_vold}
+spack add cmake@${cmake_vold}%gcc@${gcc_vold}
 spack add libxml2@${libxml2_v}%gcc@${gcc_vold}
 spack add boost@${boost_vold}%gcc@${gcc_vold}
 spack add util-linux-uuid%gcc@${gcc_vold}
@@ -174,6 +189,8 @@ spack add fftw@${fftw_vold}%gcc@${gcc_vold} -mpi #Avoid MPI for simplicity
 spack add openblas%gcc@${gcc_vold} threads=openmp
 #spack add blis%gcc@${gcc_vold} threads=openmp
 #spack add libflame%gcc@${gcc_vold} threads=openmp
+spack add git
+spack add ninja
 
 spack add py-lxml
 spack add py-matplotlib
@@ -216,7 +233,7 @@ install_environment
 spack env deactivate
 
 
-# Build LLVM offload with old GCC since CUDA may not support new GCC
+# Build LLVM offload with preferred GCC since CUDA may not support new GCC
 # Build with new CMake
 # TO DO: Match chosen cuda with version installed on system
 theenv=envclangoffloadmpi
@@ -228,6 +245,7 @@ spack env activate $theenv
 spack add gcc@${gcc_vllvmoffload}
 spack add cuda@${cuda_voffload} +allow-unsupported-compilers
 spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
+#spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all cuda_arch=70
 
 spack add hwloc
 spack add git
@@ -316,8 +334,8 @@ spack add py-pandas
 spack add py-mpi4py
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
-spack add quantum-espresso +mpi +qmcpack
-spack add rmgdft
+spack add quantum-espresso@7.2 +mpi +qmcpack
+#spack add rmgdft
 install_environment
 spack env deactivate
 
