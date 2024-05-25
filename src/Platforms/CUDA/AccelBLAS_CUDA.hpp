@@ -33,7 +33,7 @@ class BLASHandle<PlatformKind::CUDA>
 {
 public:
   // cuda stream, not owned, reference-only
-  cudaStream_t h_stream;
+  const cudaStream_t h_stream;
   // cublas handle
   cublasHandle_t h_cublas;
 

@@ -13,7 +13,6 @@
 #define QMCPLUSPLUS_ACCELBLAS_H
 
 #include "PlatformKinds.hpp"
-#include "Queue.hpp"
 
 namespace qmcplusplus
 {
