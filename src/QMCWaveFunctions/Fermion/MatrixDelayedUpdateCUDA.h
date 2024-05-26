@@ -767,48 +767,6 @@ public:
       queue.enqueueD2H(psiMinv);
     queue.sync();
   }
-
-  /** transfer psiM_vgl to the host. psiM_vgl has 5 rows, V(1) G(3) L(1)
-   * @param engine_leader for accessing shared resource
-   * @param psiM_vgl_list list of psiM_vgl
-   * @param row_begin first row to copy
-   * @param row_size the number of rows to be copied
-   */
-  static void mw_transferVGL_D2H(This_t& engine_leader,
-                                 MultiWalkerResource& mw_rsc,
-                                 const RefVector<DualVGLVector<Value>>& psiM_vgl_list,
-                                 size_t row_begin,
-                                 size_t row_size)
-  {
-    auto& queue = mw_rsc.queue;
-    for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
-    {
-      const size_t stride = psiM_vgl.capacity();
-      queue.enqueueD2H(psiM_vgl, row_size * stride, row_begin * stride);
-    }
-    queue.sync();
-  }
-
-  /** transfer psiM_vgl to the device. psiM_vgl has 5 rows, V(1) G(3) L(1)
-   * @param engine_leader for accessing shared resource
-   * @param psiM_vgl_list list of psiM_vgl
-   * @param row_begin first row to copy
-   * @param row_size the number of rows to be copied
-   */
-  static void mw_transferVGL_H2D(This_t& engine_leader,
-                                 MultiWalkerResource& mw_rsc,
-                                 const RefVector<DualVGLVector<Value>>& psiM_vgl_list,
-                                 size_t row_begin,
-                                 size_t row_size)
-  {
-    auto& queue = mw_rsc.queue;
-    for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
-    {
-      const size_t stride = psiM_vgl.capacity();
-      queue.enqueueH2D(psiM_vgl, row_size * stride, row_begin * stride);
-    }
-    queue.sync();
-  }
 };
 } // namespace qmcplusplus
 
