@@ -16,5 +16,6 @@
 #if defined(ENABLE_CUDA)
 #include "CUDA/QueueCUDA.hpp"
 #endif
+#include "OMPTarget/QueueOMPTarget.hpp"
 
 #endif
