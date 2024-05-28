@@ -31,7 +31,7 @@
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
-#include "Estimators/TraceManagerNew.h"
+#include "Estimators/WalkerTraceManager.h"
 #include "QMCDrivers/DriverTraits.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
@@ -63,7 +63,7 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
 class TraceManager;
-class TraceManagerNew;
+class WalkerTraceManager;
 
 /** @ingroup QMCDrivers
  * @{
@@ -199,7 +199,7 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///Traces manager
-  std::unique_ptr<TraceManagerNew> Traces_new;
+  std::unique_ptr<WalkerTraceManager> Traces_new;
 
   ///return the random generators
   inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const

@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "Estimators/TraceManagerNew.h"
+#include "Estimators/WalkerTraceManager.h"
 #include "GreenFunctionModifiers/DriftModifierBase.h"
 #include "SimpleFixedNodeBranch.h"
 #include "DriverDebugChecks.h"
@@ -32,7 +32,7 @@
 namespace qmcplusplus
 {
 class TraceManager;
-class TraceManagerNew;
+class WalkerTraceManager;
 /** @ingroup QMC
  * @brief Base class for update methods for each step
  *

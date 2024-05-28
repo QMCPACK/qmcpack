@@ -29,10 +29,10 @@
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
-#include "Estimators/TraceManagerNew.h"
+#include "Estimators/WalkerTraceManager.h"
 #else
 using TraceManager = int;
-using TraceManagerNew = int;
+using WalkerTraceManager = int;
 #endif
 
 namespace qmcplusplus

@@ -51,7 +51,7 @@ namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
 class TraceManager;
-class TraceManagerNew;
+class WalkerTraceManager;
 class EstimatorManagerNew;
 class TrialWaveFunction;
 class QMCHamiltonian;

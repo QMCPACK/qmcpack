@@ -487,7 +487,7 @@ public:
 
 
 
-class TraceManagerNew
+class WalkerTraceManager
 {
 public:
 
@@ -517,7 +517,7 @@ public:
   WalkerTraceBuffer<WTraceReal> wmed_particle_real_buffer;
 
 
-  TraceManagerNew(Communicate* comm = 0)
+  WalkerTraceManager(Communicate* comm = 0)
   {
     state.reset_permissions();
     communicator   = comm;
@@ -552,7 +552,7 @@ public:
   inline WalkerTraceCollector* makeCollector()
   {
     if (state.verbose)
-      app_log() << "TraceManagerNew::makeCollector " << std::endl;
+      app_log() << "WalkerTraceManager::makeCollector " << std::endl;
     WalkerTraceCollector* tc = new WalkerTraceCollector();
     tc->transfer_state_from(getState());
     return tc;
@@ -562,7 +562,7 @@ public:
   inline void put(xmlNodePtr cur, bool allow_traces, std::string series_root)
   {
     if (state.verbose)
-      app_log()<<"TraceManagerNew::put"<<std::endl;
+      app_log()<<"WalkerTraceManager::put"<<std::endl;
     state.reset_permissions();
     state.method_allows_traces  = allow_traces;
     file_root             = series_root;
@@ -572,7 +572,7 @@ public:
     {
       if (omp_get_thread_num() == 0)
       {
-        app_log() << "\n  TraceManagerNew::put() " << std::endl;
+        app_log() << "\n  WalkerTraceManager::put() " << std::endl;
         app_log() << "    traces requested          : " << traces_requested << std::endl;
         app_log() << "    method allows traces      : " << state.method_allows_traces << std::endl;
         app_log() << "    streaming traces          : " << state.streaming_traces << std::endl;
@@ -592,7 +592,7 @@ public:
   inline void check_clones(std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose)
-      app_log() << "TraceManagerNew::check_clones" << std::endl;
+      app_log() << "WalkerTraceManager::check_clones" << std::endl;
     if (state.writing_traces && clones.size() > 0)
     {
       bool all_same = true;
@@ -608,9 +608,9 @@ public:
       {
         for (int i = 0; i < clones.size(); ++i)
           clones[i]->write_summary();
-        throw std::runtime_error("TraceManagerNew::check_clones  trace buffer widths of clones do not match\n  contiguous write is "
+        throw std::runtime_error("WalkerTraceManager::check_clones  trace buffer widths of clones do not match\n  contiguous write is "
                   "impossible\n  this was first caused by clones contributing array traces from identical, but "
-                  "differently named, particlesets such as e, e2, e3 ... (fixed)\n  please check the TraceManagerNew "
+                  "differently named, particlesets such as e, e2, e3 ... (fixed)\n  please check the WalkerTraceManager "
                   "summaries printed above");
       }
     }
@@ -621,7 +621,7 @@ public:
   inline void write_buffers(std::vector<WalkerTraceCollector*>& clones, int block)
   {
     if (state.verbose)
-      app_log() << "TraceManagerNew::write_buffers "<<std::endl;
+      app_log() << "WalkerTraceManager::write_buffers "<<std::endl;
     if (state.writing_traces)
     {
       write_buffers_hdf(clones);
@@ -632,7 +632,7 @@ public:
   inline void open_file(std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose)
-      app_log() << "TraceManagerNew::open_file "<<std::endl;
+      app_log() << "WalkerTraceManager::open_file "<<std::endl;
     if (state.writing_traces)
     {
       if (state.verbose)
@@ -645,7 +645,7 @@ public:
   inline void close_file()
   {
     if (state.verbose)
-      app_log() << "TraceManagerNew::close_file " << std::endl;
+      app_log() << "WalkerTraceManager::close_file " << std::endl;
     if (state.writing_traces)
       close_hdf_file();
   }
@@ -654,7 +654,7 @@ public:
   inline void startRun(int blocks, std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose)
-      app_log() << "TraceManagerNew::startRun " << std::endl;
+      app_log() << "WalkerTraceManager::startRun " << std::endl;
     check_clones(clones);
     open_file(clones);
   }
@@ -663,7 +663,7 @@ public:
   inline void stopRun()
   {
     if (state.verbose)
-      app_log() << "TraceManagerNew::stopRun " << std::endl;
+      app_log() << "WalkerTraceManager::stopRun " << std::endl;
     close_file();
   }
 
@@ -671,9 +671,9 @@ public:
   inline void open_hdf_file(std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose) 
-      app_log() << "TraceManagerNew::open_hdf_file " << std::endl;
+      app_log() << "WalkerTraceManager::open_hdf_file " << std::endl;
     if (clones.size() == 0)
-      throw std::runtime_error("TraceManagerNew::open_hdf_file  no trace clones exist, cannot open file");
+      throw std::runtime_error("WalkerTraceManager::open_hdf_file  no trace clones exist, cannot open file");
     int nprocs = communicator->size();
     int rank   = communicator->rank();
     std::array<char, 32> ptoken;
@@ -693,11 +693,11 @@ public:
     }
     file_name += ".wtraces.h5";
     if (state.verbose)
-      app_log() << "TraceManagerNew::open_hdf_file  opening traces hdf file " << file_name << std::endl;
+      app_log() << "WalkerTraceManager::open_hdf_file  opening traces hdf file " << file_name << std::endl;
     hdf_file        = std::make_unique<hdf_archive>();
     bool successful = hdf_file->create(file_name);
     if (!successful)
-      throw std::runtime_error("TraceManagerNew::open_hdf_file  failed to open hdf file " + file_name);
+      throw std::runtime_error("WalkerTraceManager::open_hdf_file  failed to open hdf file " + file_name);
     // only clones have active buffers and associated data
     WalkerTraceCollector& tm = *clones[0];
   }
@@ -706,7 +706,7 @@ public:
   inline void write_buffers_hdf(std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose)
-      app_log() << "TraceManagerNew::write_buffers_hdf " << std::endl;
+      app_log() << "WalkerTraceManager::write_buffers_hdf " << std::endl;
     WalkerTraceCollector& tm_lead = *clones[0];
     if(!registered_hdf)
     {
@@ -727,7 +727,7 @@ public:
 
   inline void close_hdf_file() { 
     if (state.verbose)
-      app_log() << "TraceManagerNew::close_hdf_file " << std::endl;
+      app_log() << "WalkerTraceManager::close_hdf_file " << std::endl;
     hdf_file.reset(); 
   }
 

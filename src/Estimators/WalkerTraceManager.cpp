@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "TraceManagerNew.h"
+#include "WalkerTraceManager.h"
 
 #include "Particle/Walker.h"
 //#include "Particle/ParticleSet.h"
