@@ -24,10 +24,10 @@
 #include "Utilities/qmc_common.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
-#include "Estimators/WalkerTraceManager.h"
 #else
 using TraceManager = int;
 #endif
+#include "Estimators/WalkerTraceManager.h"
 
 //comment this out to use only method to clone
 #define ENABLE_CLONE_PSI_AND_H
@@ -86,8 +86,8 @@ CloneManager::~CloneManager()
 
 #if !defined(REMOVE_TRACEMANAGER)
   delete_iter(traceClones.begin(), traceClones.end());
-  delete_iter(wtrace_collectors.begin(), wtrace_collectors.end());
 #endif
+  delete_iter(wtrace_collectors.begin(), wtrace_collectors.end());
 }
 
 void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham)

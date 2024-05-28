@@ -427,7 +427,7 @@ public:
   }
 
 
-  inline void transfer_state_from(const TraceManagerState& tms)
+  inline void set_state(const TraceManagerState& tms)
   {
     // JTK: rename this function as "setState"
     state = tms;
@@ -544,7 +544,7 @@ public:
   }
 
 
-  inline TraceManagerState getState()
+  inline TraceManagerState get_state()
   {
     return state;
   }
@@ -554,7 +554,7 @@ public:
     if (state.verbose)
       app_log() << "WalkerTraceManager::makeCollector " << std::endl;
     WalkerTraceCollector* tc = new WalkerTraceCollector();
-    tc->transfer_state_from(getState());
+    tc->set_state(get_state());
     return tc;
   }
 

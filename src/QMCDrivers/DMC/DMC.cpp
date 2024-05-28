@@ -33,10 +33,10 @@
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
-#include "Estimators/WalkerTraceManager.h"
 #else
 using TraceManager = int;
 #endif
+#include "Estimators/WalkerTraceManager.h"
 
 namespace qmcplusplus
 {
@@ -131,8 +131,8 @@ void DMC::resetUpdateEngines()
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
-      wtrace_collectors[ip] = wtrace_manager->makeCollector();
 #endif
+      wtrace_collectors[ip] = wtrace_manager->makeCollector();
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (W.isSpinor())
@@ -180,17 +180,17 @@ void DMC::resetUpdateEngines()
       }
     }
   }
-#if !defined(REMOVE_TRACEMANAGER)
   else
   {
+#if !defined(REMOVE_TRACEMANAGER)
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
-    {
       traceClones[ip]->transfer_state_from(*Traces);
-      wtrace_collectors[ip]->transfer_state_from(wtrace_manager->getState());
-    }
-  }
 #endif
+#pragma omp parallel for
+    for (int ip = 0; ip < NumThreads; ++ip)
+      wtrace_collectors[ip]->set_state(wtrace_manager->get_state());
+  }
 
   if (spinor)
     app_log() << "   Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;

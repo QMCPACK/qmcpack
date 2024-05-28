@@ -33,11 +33,10 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
-#include "Estimators/WalkerTraceManager.h"
 #else
 using TraceManager = int;
-using WalkerTraceManager = int;
 #endif
+#include "Estimators/WalkerTraceManager.h"
 
 namespace qmcplusplus
 {
@@ -205,14 +204,11 @@ void QMCDriver::process(xmlNodePtr cur)
     Traces = std::make_unique<TraceManager>(myComm);
   }
   Traces->put(traces_xml, allow_traces, RootName);
-
+#endif
   //create and initialize traces
   if (!wtrace_manager)
-  {
     wtrace_manager = std::make_unique<WalkerTraceManager>(myComm);
-  }
   wtrace_manager->put(walker_traces_xml, allow_walker_traces, RootName);
-#endif
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)

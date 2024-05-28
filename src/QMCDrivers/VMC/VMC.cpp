@@ -29,11 +29,10 @@
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
-#include "Estimators/WalkerTraceManager.h"
 #else
 using TraceManager = int;
-using WalkerTraceManager = int;
 #endif
+#include "Estimators/WalkerTraceManager.h"
 
 namespace qmcplusplus
 {
@@ -67,8 +66,8 @@ bool VMC::run()
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
-  wtrace_manager->startRun(nBlocks, wtrace_collectors);
 #endif
+  wtrace_manager->startRun(nBlocks, wtrace_collectors);
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
@@ -111,8 +110,8 @@ bool VMC::run()
     Estimators->stopBlock(estimatorClones);
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
-    wtrace_manager->write_buffers(wtrace_collectors, block);
 #endif
+    wtrace_manager->write_buffers(wtrace_collectors, block);
     recordBlock(block);
     vmc_loop.stop();
 
@@ -134,8 +133,8 @@ bool VMC::run()
     Movers[ip]->stopRun2();
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
-  wtrace_manager->stopRun();
 #endif
+  wtrace_manager->stopRun();
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
     rngs_[ip] = Rng[ip]->makeClone();
@@ -185,8 +184,8 @@ void VMC::resetRun()
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
-      wtrace_collectors[ip] = wtrace_manager->makeCollector();
 #endif
+      wtrace_collectors[ip] = wtrace_manager->makeCollector();
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (W.isSpinor())
@@ -217,17 +216,17 @@ void VMC::resetRun()
         app_log() << os.str() << std::endl;
     }
   }
-#if !defined(REMOVE_TRACEMANAGER)
   else
   {
+#if !defined(REMOVE_TRACEMANAGER)
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
-    {
       traceClones[ip]->transfer_state_from(*Traces);
-      wtrace_collectors[ip]->transfer_state_from(wtrace_manager->getState());
-    }
-  }
 #endif
+#pragma omp parallel for
+    for (int ip = 0; ip < NumThreads; ++ip)
+      wtrace_collectors[ip]->set_state(wtrace_manager->get_state());
+  }
   if (qmc_driver_mode[QMC_UPDATE_MODE])
   {
     app_log() << "  Using Particle by Particle moves" << std::endl;

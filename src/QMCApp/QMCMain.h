@@ -79,11 +79,11 @@ private:
   ///xml mcwalkerset read-in elements
   std::vector<xmlNodePtr> walker_set_in_;
 
-  ///traces xml
-  xmlNodePtr traces_xml_;
+  ///walkertraces xml
+  xmlNodePtr walker_traces_xml_;
 
   ///traces xml
-  xmlNodePtr walker_traces_xml_;
+  xmlNodePtr traces_xml_;
 
   ///qmc sections
   std::vector<std::pair<xmlNodePtr, bool>> qmc_action_;

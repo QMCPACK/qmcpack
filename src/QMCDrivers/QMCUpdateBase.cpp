@@ -23,10 +23,10 @@
 #include "Concurrency/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
-#include "Estimators/WalkerTraceManager.h"
 #else
 using TraceManager = int;
 #endif
+#include "Estimators/WalkerTraceManager.h"
 
 namespace qmcplusplus
 {

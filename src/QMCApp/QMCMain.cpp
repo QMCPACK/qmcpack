@@ -62,11 +62,11 @@ QMCMain::QMCMain(Communicate* c)
       psi_pool_(std::make_unique<WaveFunctionPool>(my_project_.getRuntimeOptions(), *particle_set_pool_, myComm)),
       ham_pool_(std::make_unique<HamiltonianPool>(*particle_set_pool_, *psi_pool_, myComm)),
       qmc_system_(nullptr),
-      first_qmc_(true)
+      first_qmc_(true),
+      walker_traces_xml_(NULL)
 #if !defined(REMOVE_TRACEMANAGER)
       ,
-      traces_xml_(NULL),
-      walker_traces_xml_(NULL)
+      traces_xml_(NULL)
 #endif
 {
   Communicate node_comm{OHMMS::Controller->NodeComm()};
@@ -483,11 +483,11 @@ bool QMCMain::validateXML()
     {
       traces_xml_ = cur;
     }
+#endif
     else if (cname == "walkertraces")
     {
       walker_traces_xml_ = cur;
     }
-#endif
     else
     {
       //everything else goes to m_qmcaction
@@ -632,8 +632,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->putWalkers(walker_set_in_);
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml_);
-    qmc_driver->putWalkerTraces(walker_traces_xml_);
 #endif
+    qmc_driver->putWalkerTraces(walker_traces_xml_);
     {
       ScopedTimer qmc_run_timer(createGlobalTimer(qmc_driver->getEngineName(), timer_level_coarse));
       Timer process_and_run;
