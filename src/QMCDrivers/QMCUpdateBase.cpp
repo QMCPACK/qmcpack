@@ -38,7 +38,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
-      Traces_new(0),
+      wtrace_collector(0),
       W(w),
       Psi(psi),
       Guide(guide),
@@ -59,7 +59,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
-      Traces_new(0),
+      wtrace_collector(0),
       W(w),
       Psi(psi),
       Guide(psi),
@@ -117,13 +117,13 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
   return s;
 }
 
-void QMCUpdateBase::resetRunNew(BranchEngineType* brancher,
-                                EstimatorManagerBase* est,
-                                TraceManager* traces,
-                                TraceCollector* traces_new,
-                                const DriftModifierBase* driftmodifer)
+void QMCUpdateBase::resetRun2(BranchEngineType* brancher,
+                              EstimatorManagerBase* est,
+                              TraceManager* traces,
+                              WalkerTraceCollector* wtrace_collector_,
+                              const DriftModifierBase* driftmodifer)
 {
-  Traces_new    = traces_new;
+  wtrace_collector    = wtrace_collector_;
   resetRun(brancher,est,traces,driftmodifer);
 }
 
@@ -196,8 +196,8 @@ void QMCUpdateBase::startBlock(int steps)
   Estimators->startBlock(steps);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
-  Traces_new->startBlock(steps);
 #endif
+  wtrace_collector->startBlock(steps);
   nAccept              = 0;
   nReject              = 0;
   nAllRejected         = 0;

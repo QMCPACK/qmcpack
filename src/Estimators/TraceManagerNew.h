@@ -390,7 +390,7 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 
 
-class TraceCollector
+class WalkerTraceCollector
 {
 public:
 
@@ -413,7 +413,7 @@ public:
   Array<WTracePsiVal, 1> Ltmp;
 
 
-  TraceCollector()
+  WalkerTraceCollector()
     : properties_include{"R2Accepted","R2Proposed","LocalEnergy","LocalPotential","Kinetic","ElecElec","ElecIon","LocalECP","NonLocalECP"}
   {
     state.reset_permissions();
@@ -446,7 +446,7 @@ public:
   inline void reset_buffers()
   {
     if (state.verbose)
-      app_log() << "TraceCollector::reset_buffers"<<std::endl;
+      app_log() << "WalkerTraceCollector::reset_buffers"<<std::endl;
     walker_property_int_buffer.reset_buffer();
     walker_property_real_buffer.reset_buffer();
     walker_particle_real_buffer.reset_buffer();
@@ -456,7 +456,7 @@ public:
   inline void startBlock(int nsteps)
   {
     if (state.verbose)
-      app_log() << "TraceCollector::startBlock " << std::endl;
+      app_log() << "WalkerTraceCollector::startBlock " << std::endl;
     reset_buffers();
   }
 
@@ -549,11 +549,11 @@ public:
     return state;
   }
 
-  inline TraceCollector* makeCollector()
+  inline WalkerTraceCollector* makeCollector()
   {
     if (state.verbose)
       app_log() << "TraceManagerNew::makeCollector " << std::endl;
-    TraceCollector* tc = new TraceCollector();
+    WalkerTraceCollector* tc = new WalkerTraceCollector();
     tc->transfer_state_from(getState());
     return tc;
   }
@@ -589,17 +589,17 @@ public:
   }
 
 
-  inline void check_clones(std::vector<TraceCollector*>& clones)
+  inline void check_clones(std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose)
       app_log() << "TraceManagerNew::check_clones" << std::endl;
     if (state.writing_traces && clones.size() > 0)
     {
       bool all_same = true;
-      TraceCollector& ref = *clones[0];
+      WalkerTraceCollector& ref = *clones[0];
       for (int i = 0; i < clones.size(); ++i)
       {
-        TraceCollector& tm = *clones[i];
+        WalkerTraceCollector& tm = *clones[i];
         all_same &= tm.walker_property_int_buffer.same_as(ref.walker_property_int_buffer);
         all_same &= tm.walker_property_real_buffer.same_as(ref.walker_property_real_buffer);
         all_same &= tm.walker_particle_real_buffer.same_as(ref.walker_particle_real_buffer);
@@ -618,7 +618,7 @@ public:
 
 
   //write buffered trace data to file
-  inline void write_buffers(std::vector<TraceCollector*>& clones, int block)
+  inline void write_buffers(std::vector<WalkerTraceCollector*>& clones, int block)
   {
     if (state.verbose)
       app_log() << "TraceManagerNew::write_buffers "<<std::endl;
@@ -629,7 +629,7 @@ public:
   }
 
 
-  inline void open_file(std::vector<TraceCollector*>& clones)
+  inline void open_file(std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose)
       app_log() << "TraceManagerNew::open_file "<<std::endl;
@@ -651,7 +651,7 @@ public:
   }
 
 
-  inline void startRun(int blocks, std::vector<TraceCollector*>& clones)
+  inline void startRun(int blocks, std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose)
       app_log() << "TraceManagerNew::startRun " << std::endl;
@@ -668,7 +668,7 @@ public:
   }
 
   //hdf file operations
-  inline void open_hdf_file(std::vector<TraceCollector*>& clones)
+  inline void open_hdf_file(std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose) 
       app_log() << "TraceManagerNew::open_hdf_file " << std::endl;
@@ -699,15 +699,15 @@ public:
     if (!successful)
       throw std::runtime_error("TraceManagerNew::open_hdf_file  failed to open hdf file " + file_name);
     // only clones have active buffers and associated data
-    TraceCollector& tm = *clones[0];
+    WalkerTraceCollector& tm = *clones[0];
   }
 
 
-  inline void write_buffers_hdf(std::vector<TraceCollector*>& clones)
+  inline void write_buffers_hdf(std::vector<WalkerTraceCollector*>& clones)
   {
     if (state.verbose)
       app_log() << "TraceManagerNew::write_buffers_hdf " << std::endl;
-    TraceCollector& tm_lead = *clones[0];
+    WalkerTraceCollector& tm_lead = *clones[0];
     if(!registered_hdf)
     {
       tm_lead.walker_property_int_buffer.register_hdf_data(*hdf_file);
@@ -718,7 +718,7 @@ public:
     }
     for (int ip = 0; ip < clones.size(); ++ip)
     {
-      TraceCollector& tm = *clones[ip];
+      WalkerTraceCollector& tm = *clones[ip];
       tm.walker_property_int_buffer.write_hdf(*hdf_file, tm_lead.walker_property_int_buffer.hdf_file_pointer);
       tm.walker_property_real_buffer.write_hdf(*hdf_file, tm_lead.walker_property_real_buffer.hdf_file_pointer);
       tm.walker_particle_real_buffer.write_hdf(*hdf_file, tm_lead.walker_particle_real_buffer.hdf_file_pointer);

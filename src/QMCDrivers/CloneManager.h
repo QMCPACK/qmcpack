@@ -76,7 +76,7 @@ protected:
   ///trace managers
   std::vector<TraceManager*> traceClones;
   ///trace collectors
-  std::vector<TraceCollector*> traceClonesNew;
+  std::vector<WalkerTraceCollector*> wtrace_collectors;
 
   //for correlated sampling.
   static std::vector<UPtrVector<MCWalkerConfiguration>> WPoolClones_uptr;

@@ -57,7 +57,7 @@ void report_buffer(WalkerTraceBuffer<T>& wtb)
 
 
 
-void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham)
+void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham)
 {
   //app_log()<<"TraceCollector::collect (step "<<pset.current_step<<")"<<std::endl;
 

@@ -36,7 +36,6 @@
 #include "Estimators/TraceManagerNew.h"
 #else
 using TraceManager = int;
-using TraceManagerNew = int;
 #endif
 
 namespace qmcplusplus
@@ -95,7 +94,7 @@ void DMC::resetUpdateEngines()
     Rng.resize(NumThreads);
     estimatorClones.resize(NumThreads, nullptr);
     traceClones.resize(NumThreads, nullptr);
-    traceClonesNew.resize(NumThreads, nullptr);
+    wtrace_collectors.resize(NumThreads, nullptr);
     FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
 
     {
@@ -132,7 +131,7 @@ void DMC::resetUpdateEngines()
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
-      traceClonesNew[ip] = Traces_new->makeCollector();
+      wtrace_collectors[ip] = Traces_new->makeCollector();
 #endif
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
@@ -145,7 +144,7 @@ void DMC::resetUpdateEngines()
           Movers[ip]->setSpinMass(SpinMass);
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->resetRunNew(branchEngine.get(), estimatorClones[ip], traceClones[ip], traceClonesNew[ip], DriftModifier);
+          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip], wtrace_collectors[ip], DriftModifier);
           Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
         else
@@ -164,7 +163,7 @@ void DMC::resetUpdateEngines()
 
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->resetRunNew(branchEngine.get(), estimatorClones[ip], traceClones[ip], traceClonesNew[ip], DriftModifier);
+          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip], wtrace_collectors[ip], DriftModifier);
           Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
         else
@@ -175,7 +174,7 @@ void DMC::resetUpdateEngines()
             Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->resetRunNew(branchEngine.get(), estimatorClones[ip], traceClones[ip],  traceClonesNew[ip], DriftModifier);
+          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wtrace_collectors[ip], DriftModifier);
           Movers[ip]->initWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
       }
@@ -188,7 +187,7 @@ void DMC::resetUpdateEngines()
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);
-      traceClonesNew[ip]->transfer_state_from(Traces_new->getState());
+      wtrace_collectors[ip]->transfer_state_from(Traces_new->getState());
     }
   }
 #endif
@@ -243,7 +242,7 @@ bool DMC::run()
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
-  Traces_new->startRun(nBlocks, traceClonesNew);
+  Traces_new->startRun(nBlocks, wtrace_collectors);
 #endif
   IndexType block        = 0;
   IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
@@ -301,7 +300,7 @@ bool DMC::run()
     Estimators->stopBlock(acceptRatio());
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
-    Traces_new->write_buffers(traceClonesNew, block);
+    Traces_new->write_buffers(wtrace_collectors, block);
 #endif
     block++;
     if (DumpConfig && block % Period4CheckPoint == 0)

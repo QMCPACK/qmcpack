@@ -133,8 +133,8 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   collectables_timer_.stop();
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
-  Traces_new->collect(thisWalker,W,Psi,H);
 #endif
+  wtrace_collector->collect(thisWalker,W,Psi,H);
   if (!moved)
     ++nAllRejected;
 }

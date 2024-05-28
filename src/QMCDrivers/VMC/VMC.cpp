@@ -67,7 +67,7 @@ bool VMC::run()
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
-  Traces_new->startRun(nBlocks, traceClonesNew);
+  Traces_new->startRun(nBlocks, wtrace_collectors);
 #endif
 
   LoopTimer<> vmc_loop;
@@ -111,7 +111,7 @@ bool VMC::run()
     Estimators->stopBlock(estimatorClones);
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
-    Traces_new->write_buffers(traceClonesNew, block);
+    Traces_new->write_buffers(wtrace_collectors, block);
 #endif
     recordBlock(block);
     vmc_loop.stop();
@@ -170,7 +170,7 @@ void VMC::resetRun()
     Movers.resize(NumThreads, nullptr);
     estimatorClones.resize(NumThreads, nullptr);
     traceClones.resize(NumThreads, nullptr);
-    traceClonesNew.resize(NumThreads, nullptr);
+    wtrace_collectors.resize(NumThreads, nullptr);
     Rng.resize(NumThreads);
 
     // hdf_archive::hdf_archive() is not thread-safe
@@ -185,7 +185,7 @@ void VMC::resetRun()
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
-      traceClonesNew[ip] = Traces_new->makeCollector();
+      wtrace_collectors[ip] = Traces_new->makeCollector();
 #endif
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
@@ -224,7 +224,7 @@ void VMC::resetRun()
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);
-      traceClonesNew[ip]->transfer_state_from(Traces_new->getState());
+      wtrace_collectors[ip]->transfer_state_from(Traces_new->getState());
     }
   }
 #endif
@@ -271,7 +271,7 @@ void VMC::resetRun()
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
     //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-    Movers[ip]->resetRunNew(branchEngine.get(), estimatorClones[ip], traceClones[ip],  traceClonesNew[ip], DriftModifier);
+    Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wtrace_collectors[ip], DriftModifier);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     else

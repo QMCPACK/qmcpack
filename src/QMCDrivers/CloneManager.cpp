@@ -27,7 +27,6 @@
 #include "Estimators/TraceManagerNew.h"
 #else
 using TraceManager = int;
-using TraceManagerNew = int;
 #endif
 
 //comment this out to use only method to clone
@@ -87,7 +86,7 @@ CloneManager::~CloneManager()
 
 #if !defined(REMOVE_TRACEMANAGER)
   delete_iter(traceClones.begin(), traceClones.end());
-  delete_iter(traceClonesNew.begin(), traceClonesNew.end());
+  delete_iter(wtrace_collectors.begin(), wtrace_collectors.end());
 #endif
 }
 
