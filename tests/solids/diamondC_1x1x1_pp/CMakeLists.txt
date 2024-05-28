@@ -1881,15 +1881,13 @@ if(add_traces_tests)
       qmc_walkertrace_vmc_scalars.in.xml
       1
       1
-      check_traces.py
+      check_wtraces.py
       -p
       qmc_trace_vmc_scalars
       -s
       0
       -m
       vmc
-      -q
-      'Kinetic,ElecElec,IonIon,LocalECP,NonLocalECP'
       --dmc_steps_exclude=1)
  
     simple_run_and_check(
@@ -1898,7 +1896,7 @@ if(add_traces_tests)
       qmc_walkertrace_vmc_scalars.in.xml
       4
       4
-      check_traces.py
+      check_wtraces.py
       -p
       qmc_trace_vmc_scalars
       -n
@@ -1907,8 +1905,6 @@ if(add_traces_tests)
       0
       -m
       vmc
-      -q
-      'Kinetic,ElecElec,IonIon,LocalECP,NonLocalECP'
       --dmc_steps_exclude=1)
 
     simple_run_and_check(
@@ -1917,7 +1913,7 @@ if(add_traces_tests)
       qmc_walkertrace_dmc_scalars.in.xml
       4
       4
-      check_traces.py
+      check_wtraces.py
       -p
       qmc_trace_dmc_scalars
       -n
@@ -1926,8 +1922,6 @@ if(add_traces_tests)
       1
       -m
       dmc
-      -q
-      'Kinetic,ElecElec,IonIon,LocalECP,NonLocalECP'
       --dmc_steps_exclude=1)
 
   endif()
