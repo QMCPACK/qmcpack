@@ -64,17 +64,16 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
 
   outputManager.pause();
 
-  // this part is time consuming, it must be threaded and calls should be thread-safe.
-  // It would make more sense if it was over crowd threads as the thread locality of the walkers
-  // memory would at least initially be "optimal" Depending on the number of OMP threads this may be
-  // equivalent.
-
   // nextWalkerID is not thread safe so we need to get our walker id's here
   // before we enter a parallel section.
   std::vector<long> walker_ids(num_walkers_plus_reserve, -1);
   for (size_t iw = 0; iw < num_walkers; iw++)
     walker_ids[iw] = nextWalkerID();
-  // the dead reserve walkers still have -1 as their walker_id
+
+  // this part is time consuming, it must be threaded and calls should be thread-safe.
+  // It would make more sense if it was over crowd threads as the thread locality of the walkers
+  // memory would at least initially be "optimal" Depending on the number of OMP threads this may be
+  // equivalent.
 #pragma omp parallel for shared(walker_ids)
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
@@ -85,14 +84,16 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
     if (const auto num_existing_walkers = walker_configs.getActiveWalkers())
     {
       // The walker config has walker ID's that I think may not match the scheme for this run.
+      // but the parent id's will make sense compared to the run the walkerconfig came from.
       // Save the unique to this run walker id.
-      auto walker_id = walkers_[iw]->getWalkerID();
       *walkers_[iw] = *walker_configs[iw % num_existing_walkers];
       walkers_[iw]->setParentID(walker_configs[iw % num_existing_walkers]->getWalkerID());
-      walkers_[iw]->setWalkerID(walker_id);
+      walkers_[iw]->setWalkerID(walker_ids[iw]);
     }
     else
     {
+      // These walkers are children of the golden walker so initial value of 0 is correct for parent ID
+      walkers_[iw]->setWalkerID(walker_ids[iw]);
       walkers_[iw]->R          = elec_particle_set_->R;
       walkers_[iw]->spins      = elec_particle_set_->spins;
     }
@@ -118,7 +119,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
     killLastWalker();
 }
 
-long MCPopulation::nextWalkerID() { return (num_walkers_created_++) * num_ranks_ + rank_; }
+long MCPopulation::nextWalkerID() { return num_walkers_created_++ * num_ranks_ + rank_ + 1; }
 
 WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
 {
@@ -144,6 +145,8 @@ std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
  *  and walker elements being expensive so this supposedly an essential optimization.
  *  I think its entirely possible that the walker elements are bloated and if they only included
  *  necessary per walker mutable elements that this entire complication could be removed.
+ *
+ *  Walker ID's are handed out per life not per allocation.
  */
 WalkerElementsRef MCPopulation::spawnWalker()
 {

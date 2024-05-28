@@ -245,7 +245,8 @@ public:
    *  This should be the single source for `walker_id`'s on this rank.
    *  These are unique across MCPopulations with rank.
    *  Defined as
-   *  \f$ walker_id = num_walkers_created_++ * num_ranks_ + rank_ \f$
+   *  \f$ walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1\f$
+   *  So starting from 1, 0 belongs to the golden walker.
    */
   long nextWalkerID();
 };

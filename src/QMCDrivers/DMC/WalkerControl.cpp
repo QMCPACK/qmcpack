@@ -215,13 +215,18 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       {
         auto walker_elements = pop.spawnWalker();
         // In the batched version walker IDs are set when walkers are born,
-        // what walker they were created from if any is the ParentID.
-        // In this case we set this to the sibling from walkers they are assigned from
+        // ParentID is set to the copied from walker.
+        // In this case we set this to the sibling (i.e. walker from the same rank) they are assigned from
         // if this copy gets transferred this will result in a walker with a walker_id % num_ranks
         // equal to a rank != pop.rank_. This is not invalid and provides the birth rank of the walker.
-        auto walker_id         = walker_elements.walker.getWalkerID();
+
+	// preserve the walkers id.  Ideally this wouldn't get overwritten but I don't think a custom assignment operator
+	// is worth it just for this.
+	auto walker_id         = walker_elements.walker.getWalkerID();
         walker_elements.walker = *walkers[iw];
-        walker_elements.walker.setParentID(walker_elements.walker.getWalkerID());
+	// copy the copied from walkers id to parent id.
+	walker_elements.walker.setParentID(walker_elements.walker.getWalkerID());
+	// put the walkers actual id back.
         walker_elements.walker.setWalkerID(walker_id);
         // fix the multiplicity of the new walker
         walker_elements.walker.Multiplicity = 1.0;
@@ -473,8 +478,8 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   }
   else
   {
-    // Walker::copyFromBuffer copies the walkerID the sent walker this is a new walker ID that was made when walker
-    // was copied by the sender.
+    // Walker::copyFromBuffer copies the walker_index_ of the sent walker over the walker ID generated for
+    // the walker on this rank.  But this replacement allows tracking this walker across the ranks.
 
     std::vector<mpi3::request> requests;
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
@@ -505,6 +510,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
             if (requests[im].completed())
             {
               auto& walker_elements = newW[job_list[im].walker_index];
+	      // Here the walker ID from the spawn is overwritten with the copy.
               walker_elements.walker.copyFromBuffer();
               not_completed[im] = false;
             }

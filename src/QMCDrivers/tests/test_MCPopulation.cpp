@@ -21,7 +21,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
-#include "Utilities/RuntimeOptions.h"
+#include "Utilities/for_testing/NativeInitializerPrint.hpp"
 
 namespace qmcplusplus
 {
@@ -90,6 +90,7 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
     pops.emplace_back(num_ranks, i, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
 
   std::vector<long> walker_ids;
+  std::array<std::vector<long>,3> per_rank_walker_ids;
   for (int i = 0; i < num_ranks; ++i)
   {
     pops[i].createWalkers(8, walker_confs, 2.0);
@@ -100,13 +101,15 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
     for (WalkerElementsRef& wer : walker_elems)
     {
       walker_ids.push_back(wer.walker.getWalkerID());
+      per_rank_walker_ids[i].push_back(wer.walker.getWalkerID());
     }
   }
   std::sort(walker_ids.begin(), walker_ids.end());
-  // Walker IDs cannot collide
-  for (int i = 1; i < walker_ids.size(); ++i)
+  // Walker IDs cannot collide unless they are -1
+  for (int i = 1; i < walker_ids.size(); ++i) {
+    INFO(" i = " << i );
     CHECK(walker_ids[i - 1] != walker_ids[i]);
-
+  }
   int new_walkers = 3;
 
   for (int i = 0; i < num_ranks; ++i)
@@ -114,12 +117,28 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
     {
       auto wer = pops[i].spawnWalker();
       walker_ids.push_back(wer.walker.getWalkerID());
+      per_rank_walker_ids[i].push_back(wer.walker.getWalkerID());
     }
 
   std::sort(walker_ids.begin(), walker_ids.end());
   // Walker IDs cannot collide
   for (int i = 1; i < walker_ids.size(); ++i)
+  {
+    INFO(" i = " << i);
     CHECK(walker_ids[i - 1] != walker_ids[i]);
+  }
+
+  std::vector<long> expected_walker_ids(33);
+  std::iota(expected_walker_ids.begin(), expected_walker_ids.end(), 1);
+  CHECK(expected_walker_ids == walker_ids);
+
+  for (int rank = 0; rank < num_ranks; ++rank)
+  {
+    std::vector<long> rank_expected_ids(11);
+    std::generate(rank_expected_ids.begin(), rank_expected_ids.end(),  [n = 0, rank, num_ranks] () mutable { return (n++) * num_ranks + rank + 1;});
+    CHECK(per_rank_walker_ids[rank] == rank_expected_ids);
+    std::cout << NativePrint(rank_expected_ids) << '\n';
+  }
 }
 
 
