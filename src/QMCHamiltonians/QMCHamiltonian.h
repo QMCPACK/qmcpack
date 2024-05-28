@@ -33,7 +33,6 @@
 #include "Utilities/Resource.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
-#include "Estimators/TraceManagerNew.h"
 #endif
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
@@ -114,15 +113,6 @@ public:
 
   ///finalize trace data
   void finalize_traces();
-
-  ///initialize trace data
-  void initialize_traces_new(TraceCollector& tm, ParticleSet& P);
-
-  ///collect walker trace data
-  void collect_walker_traces_new(Walker_t& walker, int step);
-
-  ///finalize trace data
-  void finalize_traces_new();
 #endif
 
   /**
@@ -496,18 +486,6 @@ private:
   Array<TraceInt, 1>* mult_sample;
   Array<TraceReal, 1>* weight_sample;
   Array<TraceReal, 2>* position_sample;
-
-  ///traces variables
-  TraceRequestNew request_new;
-  bool streaming_position_new;
-  Array<TraceIntNew, 1>* id_sample_new;
-  Array<TraceIntNew, 1>* pid_sample_new;
-  Array<TraceIntNew, 1>* step_sample_new;
-  Array<TraceIntNew, 1>* gen_sample_new;
-  Array<TraceIntNew, 1>* age_sample_new;
-  Array<TraceIntNew, 1>* mult_sample_new;
-  Array<TraceRealNew, 1>* weight_sample_new;
-  Array<TraceRealNew, 2>* position_sample_new;
 #endif
 
   /// multiwalker shared resource

@@ -26,7 +26,6 @@
 #include "Estimators/TraceManagerNew.h"
 #else
 using TraceManager = int;
-using TraceManagerNew = int;
 #endif
 
 namespace qmcplusplus
@@ -177,16 +176,6 @@ void QMCUpdateBase::startRun(int blocks, bool record)
   }
   H.initialize_traces(*Traces, W);
   Traces->initialize_traces();
-
-  if (!Traces_new)
-  {
-    APP_ABORT(
-        "QMCUpdateBase::startRun\n  derived QMCDriver class has not setup (new!) trace clones properly\n  null TraceManagerNew "
-        "pointer encountered in derived QMCUpdateBase class\n  see VMCLinearOptOMP.cpp for a correct minimal interface "
-        "(search on 'trace')\n  refer to changes made in SVN revision 6597 for further guidance");
-  }
-  H.initialize_traces_new(*Traces_new, W);
-  Traces_new->initialize_traces();
 #endif
 }
 
@@ -199,9 +188,6 @@ void QMCUpdateBase::stopRun2()
 #if !defined(REMOVE_TRACEMANAGER)
   H.finalize_traces();
   Traces->finalize_traces();
-
-  H.finalize_traces_new();
-  Traces_new->finalize_traces();
 #endif
 }
 

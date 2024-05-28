@@ -65,17 +65,7 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       age_sample(nullptr),
       mult_sample(nullptr),
       weight_sample(nullptr),
-      position_sample(nullptr),
-
-      streaming_position_new(false),
-      id_sample_new(nullptr),
-      pid_sample_new(nullptr),
-      step_sample_new(nullptr),
-      gen_sample_new(nullptr),
-      age_sample_new(nullptr),
-      mult_sample_new(nullptr),
-      weight_sample_new(nullptr),
-      position_sample_new(nullptr)
+      position_sample(nullptr)
 #endif
 {}
 
@@ -540,154 +530,6 @@ void QMCHamiltonian::finalize_traces()
   streaming_position = false;
   request.reset();
 }
-
-
-
-
-
-
-
-void QMCHamiltonian::initialize_traces_new(TraceCollector& tm, ParticleSet& P)
-{
-  static bool first_init_new = true;
-
-  TraceRequestNew& tm_request = tm.state.request;
-  TraceManagerState& tms = tm.state;
-  bool trace_log         = first_init_new && tms.verbose && omp_get_thread_num() == 0;
-  if (trace_log)
-    app_log() << "\n  Hamiltonian is initializing traces" << std::endl;
-
-  //make trace quantities available
-  request_new.contribute_scalar("id", true);           //default trace quantity
-  request_new.contribute_scalar("parent_id", true);    //default trace quantity
-  request_new.contribute_scalar("step", true);         //default trace quantity
-  request_new.contribute_scalar("generation", true);   //default trace quantity
-  request_new.contribute_scalar("age", true);          //default trace quantity
-  request_new.contribute_scalar("multiplicity", true); //default trace quantity
-  request_new.contribute_scalar("weight", true);       //default trace quantity
-  request_new.contribute_array("position");
-  for (int i = 0; i < H.size(); ++i)
-    H[i]->contributeTraceQuantitiesNew();
-
-  ////collect trace requests
-  std::vector<TraceRequestNew*> requests;
-  //  Hamiltonian request (id, step, weight, positions)
-  requests.push_back(&request_new);
-  ////  requests from Hamiltonian components
-  for (int i = 0; i < H.size(); ++i)
-    requests.push_back(&H[i]->getRequestNew());
-  //collect trace quantity availability/requests from contributors/requestors
-  for (int i = 0; i < requests.size(); ++i)
-    tm_request.incorporate(*requests[i]);
-
-  //balance requests with availability, mark quantities as streaming/writing
-  tm_request.determine_stream_write();
-
-  //relay updated streaming information to all contributors/requestors
-  for (int i = 0; i < requests.size(); ++i)
-    tm_request.relay_stream_info(*requests[i]);
-
-  //set streaming/writing traces in general
-  tms.update_status();
-
-  // setup traces, if any quantities should be streaming
-
-  // tracing
-  bool tracing = request_new.streaming();
-  if (tracing != tms.streaming_traces)
-    APP_ABORT("QMCHamiltonian::initialize_traces_new  trace request failed to initialize properly");
-  if (!tracing)
-  {
-    // Empty. Do not log if nothing will be done
-
-    if (trace_log)
-      app_log() << "    no walker traces streaming" << std::endl;
-  }
-  else
-  {
-    if (trace_log)
-      app_log() << "    walker traces streaming" << std::endl;
-    //checkout trace quantities
-    //(requested sources checkout arrays to place samples in for streaming)
-    //  checkout walker trace quantities
-    streaming_position_new = request_new.streaming_array("position");
-    if (request_new.streaming_default_scalars)
-    {
-      id_sample_new     = tm.checkout_int<1>("id");
-      pid_sample_new    = tm.checkout_int<1>("parent_id");
-      step_sample_new   = tm.checkout_int<1>("step");
-      gen_sample_new    = tm.checkout_int<1>("generation");
-      age_sample_new    = tm.checkout_int<1>("age");
-      mult_sample_new   = tm.checkout_int<1>("multiplicity");
-      weight_sample_new = tm.checkout_real<1>("weight");
-    }
-    if (streaming_position_new)
-      position_sample_new = tm.checkout_real<2>("position", P, DIM);
-    //  checkout observable trace quantities
-    for (int i = 0; i < H.size(); ++i)
-    {
-      if (trace_log)
-        app_log() << "    OperatorBase::checkoutTraceQuantitiesNew  " << H[i]->getName() << std::endl;
-      H[i]->checkoutTraceQuantitiesNew(tm);
-    }
-
-    //all trace samples have been created ( streaming instances)
-    //  mark the ones that will be writing also
-    tm.screen_writes();
-
-    //write traces status to the log
-    //if (trace_log)
-    //  tm.user_report();
-
-    first_init_new = false;
-  }
-}
-
-
-void QMCHamiltonian::collect_walker_traces_new(Walker_t& walker, int step)
-{
-  if (request_new.streaming_default_scalars)
-  {
-    (*id_sample_new)(0)     = walker.getWalkerID();
-    (*pid_sample_new)(0)    = walker.getParentID();
-    (*step_sample_new)(0)   = step;
-    (*gen_sample_new)(0)    = walker.Generation;
-    (*age_sample_new)(0)    = walker.Age;
-    (*mult_sample_new)(0)   = walker.Multiplicity;
-    (*weight_sample_new)(0) = walker.Weight;
-  }
-  if (streaming_position_new)
-    for (int i = 0; i < walker.R.size(); ++i)
-      for (int d = 0; d < DIM; ++d)
-        (*position_sample_new)(i, d) = walker.R[i][d];
-}
-
-
-void QMCHamiltonian::finalize_traces_new()
-{
-  if (request_new.streaming_default_scalars)
-  {
-    delete id_sample_new;
-    delete pid_sample_new;
-    delete step_sample_new;
-    delete gen_sample_new;
-    delete age_sample_new;
-    delete mult_sample_new;
-    delete weight_sample_new;
-  }
-  if (streaming_position_new)
-    delete position_sample_new;
-  if (request_new.streaming())
-  {
-    for (int i = 0; i < H.size(); ++i)
-      H[i]->deleteTraceQuantitiesNew();
-  }
-  streaming_position_new = false;
-  request_new.reset();
-}
-
-
-
 #endif
 
 /** Evaluate all the Hamiltonians for the N-particle  configuration
@@ -705,7 +547,6 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
     updateComponent(*H[i], *this, P);
 #if !defined(REMOVE_TRACEMANAGER)
     H[i]->collectScalarTraces();
-    H[i]->collectScalarTracesNew();
 #endif
   }
   updateKinetic(*this, P);
@@ -723,7 +564,6 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
     updateComponent(*H[i], *this, P);
 #if !defined(REMOVE_TRACEMANAGER)
     H[i]->collectScalarTraces();
-    H[i]->collectScalarTracesNew();
 #endif
   }
   updateKinetic(*this, P);
@@ -887,7 +727,6 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P)
     auxH[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
     auxH[i]->collectScalarTraces();
-    auxH[i]->collectScalarTracesNew();
 #endif
     auxH[i]->setParticlePropertyList(P.PropertyList, myIndex);
     //H[i]->setParticlePropertyList(P.PropertyList,myIndex);
@@ -899,7 +738,6 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   collect_walker_traces(ThisWalker, P.current_step);
-  collect_walker_traces_new(ThisWalker, P.current_step);
 #endif
   for (int i = 0; i < auxH.size(); ++i)
   {
@@ -908,7 +746,6 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
     auxH[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
     auxH[i]->collectScalarTraces();
-    auxH[i]->collectScalarTracesNew();
 #endif
     auxH[i]->setParticlePropertyList(P.PropertyList, myIndex);
   }
@@ -918,7 +755,6 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_
 {
 #if !defined(REMOVE_TRACEMANAGER)
   collect_walker_traces(ThisWalker, P.current_step);
-  collect_walker_traces_new(ThisWalker, P.current_step);
 #endif
   for (int i = 0; i < auxH.size(); ++i)
   {
@@ -931,7 +767,6 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_
       auxH[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
       auxH[i]->collectScalarTraces();
-      auxH[i]->collectScalarTracesNew();
 #endif
       auxH[i]->setParticlePropertyList(P.PropertyList, myIndex);
     }
@@ -948,7 +783,6 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker)
   //   (they will be from the walker moved before this one)
 #if !defined(REMOVE_TRACEMANAGER)
   collect_walker_traces(ThisWalker, P.current_step);
-  collect_walker_traces_new(ThisWalker, P.current_step);
 #endif
   //   ThisWalker.rejectedMove();
   for (int i = 0; i < auxH.size(); ++i)
@@ -969,7 +803,6 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleS
     updateComponent(*H[i], *this, P);
 #if !defined(REMOVE_TRACEMANAGER)
     H[i]->collectScalarTraces();
-    H[i]->collectScalarTracesNew();
 #endif
   }
   updateKinetic(*this, P);
