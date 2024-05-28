@@ -544,7 +544,7 @@ Supported codes
   and CCSD, and for both isolated systems and periodic boundary
   conditions. PySCF can be downloaded from https://github.com/sunqm/pyscf.
   Many examples and tutorials can be found on the PySCF website, and all
-  types of single determinants calculations are compatible with QMCPack, 
+  types of single determinants calculations are compatible with QMCPACK, 
   thanks to active support from the authors of PySCF. Additionally, support 
   for multideterminant trial wave functions generated through the CASSCF or 
   CASCI modules are also supported. A few additional steps are necessary to 
