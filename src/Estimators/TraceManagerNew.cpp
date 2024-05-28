@@ -26,9 +26,6 @@ namespace qmcplusplus
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 
-double TraceManagerNew::trace_tol = 1e-8;
-
-
   
 template<typename T>
 void report_row(T& b)
@@ -60,10 +57,9 @@ void report_buffer(WalkerTraceBuffer<T>& wtb)
 
 
 
-//void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn)
 void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham)
 {
-  app_log()<<"TraceCollector::collect (step "<<pset.current_step<<")"<<std::endl;
+  //app_log()<<"TraceCollector::collect (step "<<pset.current_step<<")"<<std::endl;
 
   auto& bsi = walker_property_int_buffer;
   auto& bsr = walker_property_real_buffer;
@@ -96,7 +92,7 @@ void TraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunc
         energy_index = n;
     }
     if(energy_index<0)
-      {/* throw an exception */}
+      throw std::runtime_error("TraceCollector::collect  energy_index must not be negative");
   }
   else
     for(auto n: property_indices)

@@ -126,20 +126,22 @@ struct WalkerTraceBuffer
   inline void reset_collect()
   {
     if(quantity_pointer!=quantity_info.size())
-      {/*throw exception*/}
+      throw std::runtime_error("WalkerTraceBuffer quantity_pointer has not been moved through all quantities prior during collect() call.");
     first_collect = false;
     quantity_pointer = 0;
   }
 
   inline void reset_step()
   {
-    app_log()<<"WalkerTraceBuffer("<<label<<")::reset_step"<<std::endl;
+    if (verbose)
+      app_log()<<"WalkerTraceBuffer("<<label<<")::reset_step"<<std::endl;
     row_start_pointer = row_end_pointer;
   }
 
   inline void reset_block() 
   { 
-    app_log()<<"WalkerTraceBuffer("<<label<<")::reset_block"<<std::endl;
+    if (verbose)
+      app_log()<<"WalkerTraceBuffer("<<label<<")::reset_block"<<std::endl;
     reset_buffer();
   }
 
@@ -156,14 +158,14 @@ struct WalkerTraceBuffer
     if(nrows==0)
       nrows++;
     if(nrows!=1)
-      {/*throw exception*/}
+      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  row_size (number of columns) should only be changed during growth of the first row.");
     auto buffer_old(buffer);
     buffer.resize(nrows,row_size);
     std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
     if(buffer.size(0)!=1)
-      {/*throw exception*/}
+      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  buffer should contain only a single row upon completion.");
     if(buffer.size(1)!=row_size)
-      {/*throw exception*/}
+      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  length of buffer row should match the requested row_size following the reset/udpate.");
   }
 
 
@@ -172,9 +174,7 @@ struct WalkerTraceBuffer
     size_t nrows    = buffer.size(0);
     size_t row_size = buffer.size(1);
     if (row_size==0)
-    {
-      // throw an exception
-    }
+      throw std::runtime_error("WalkerTraceBuffer::make_new_row  Cannot make a new row of size zero.");
     nrows++;
     // resizing buffer(type Array) doesn't preserve data. Thus keep old data and copy over
     auto buffer_old(buffer);
@@ -210,11 +210,13 @@ struct WalkerTraceBuffer
   template<unsigned D>
   inline void collect(const std::string& name, Array<T,D> arr)
   {
+    //if (verbose)
+    //  app_log()<<"WalkerTraceBuffer("<<label<<")::collect"<<std::endl;
     size_t n1 = arr.size(0);
     size_t n2,n3,n4;
     n2=n3=n4=0;
     if (D>4)
-      {/*throw exception*/}
+      throw std::runtime_error("WalkerTraceBuffer::collect  Only arrays up to dimension 4 are currently supported.");
     if (D>1) n2 = arr.size(1);
     if (D>2) n3 = arr.size(2);
     if (D>3) n4 = arr.size(3);
@@ -247,7 +249,7 @@ struct WalkerTraceBuffer
     size_t n2,n3,n4;
     n2=n3=n4=0;
     if (D>4)
-      {/*throw exception*/}
+      throw std::runtime_error("WalkerTraceBuffer::collect  Only arrays up to dimension 4 are currently supported.");
     if (D>1) n2 = arr.size(1);
     if (D>2) n3 = arr.size(2);
     if (D>3) n4 = arr.size(3);
@@ -281,9 +283,7 @@ struct WalkerTraceBuffer
   {
     app_log()<<"WalkerTraceBuffer("<<label<<")::add_row"<<std::endl;
     if(buffer.size(1)!=other_buffer.size(1))
-    {
-      // throw an exception
-    }
+      throw std::runtime_error("WalkerTraceBuffer::add_row  Row sizes must match.");
     make_new_row();
     size_t ib = buffer.size(0)-1;
     for(size_t j=0;j<buffer.size(1);++j)
@@ -309,7 +309,8 @@ struct WalkerTraceBuffer
 
   inline void register_hdf_data(hdf_archive& f)
   {
-    app_log()<<"WalkerTraceBuffer("<<label<<")::register_hdf_data"<<std::endl;
+    if (verbose)
+      app_log()<<"WalkerTraceBuffer("<<label<<")::register_hdf_data"<<std::endl;
     auto& top = label;
     f.push(top);
     f.push("data_layout");
@@ -327,7 +328,7 @@ struct WalkerTraceBuffer
     f.pop();
     f.pop();
     if (!f.open_groups())
-      APP_ABORT("WalkerTraceBuffer(" + label +
+      throw std::runtime_error("WalkerTraceBuffer(" + label +
                 ")::register_hdf_data() some hdf groups are still open at the end of registration");
     hdf_file_pointer = 0;
   }
@@ -335,8 +336,8 @@ struct WalkerTraceBuffer
 
   inline void write_hdf(hdf_archive& f, hsize_t& file_pointer)
   {
-    //if (verbose)
-    app_log()<<"WalkerTraceBuffer("<<label<<")::write_hdf "<<file_pointer<<"  "<<buffer.size(0)<<" "<<buffer.size(1)<<std::endl;
+    if (verbose)
+      app_log()<<"WalkerTraceBuffer("<<label<<")::write_hdf "<<file_pointer<<"  "<<buffer.size(0)<<" "<<buffer.size(1)<<std::endl;
     auto& top = label;
     dims[0] = buffer.size(0);
     dims[1] = buffer.size(1);
@@ -363,14 +364,12 @@ struct TraceManagerState
   bool writing_traces;
   int throttle;
   bool verbose;
-  std::string default_domain;
 
   TraceManagerState()
   {
     reset_permissions();
     throttle       = 1;
     verbose        = false;
-    default_domain = "scalars";
   }
 
   inline void reset_permissions()
@@ -432,18 +431,15 @@ public:
   {
     // JTK: rename this function as "setState"
     state = tms;
+    walker_property_int_buffer.verbose  = state.verbose;
+    walker_property_real_buffer.verbose = state.verbose;
+    walker_particle_real_buffer.verbose = state.verbose;
   }
 
 
   inline void reset_step()
   {
     energies.resize(0);
-  }
-
-  inline void distribute()
-  {
-    if (state.verbose)
-      app_log()<<"TraceCollector::distribute"<<std::endl;
   }
 
 
@@ -473,7 +469,6 @@ public:
     app_log() << pad2 << "method_allows_traces    = " << state.method_allows_traces << std::endl;
     app_log() << pad2 << "streaming_traces        = " << state.streaming_traces << std::endl;
     app_log() << pad2 << "writing_traces          = " << state.writing_traces << std::endl;
-    app_log() << pad2 << "default_domain          = " << state.default_domain << std::endl;
     app_log() << pad << "end TraceCollector" << std::endl;
   }
 
@@ -495,7 +490,6 @@ public:
 class TraceManagerNew
 {
 public:
-  static double trace_tol;  // remove this
 
   std::string file_root;
   Communicate* communicator;
@@ -561,7 +555,6 @@ public:
       app_log() << "TraceManagerNew::makeCollector " << std::endl;
     TraceCollector* tc = new TraceCollector();
     tc->transfer_state_from(getState());
-    tc->distribute();
     return tc;
   }
 
@@ -586,12 +579,12 @@ public:
         app_log() << std::endl;
       }
       //read trace attributes
-      std::string verbose_write   = "no";
+      std::string verbose_write = "no";
       OhmmsAttributeSet attrib;
       attrib.add(state.throttle, "throttle");
       attrib.add(verbose_write, "verbose");
       attrib.put(cur);
-      state.verbose            = verbose_write == "yes";
+      state.verbose = verbose_write == "yes";
     }
   }
 
@@ -603,8 +596,6 @@ public:
     if (state.writing_traces && clones.size() > 0)
     {
       bool all_same = true;
-      bool int_same;
-      bool real_same;
       TraceCollector& ref = *clones[0];
       for (int i = 0; i < clones.size(); ++i)
       {
@@ -617,7 +608,7 @@ public:
       {
         for (int i = 0; i < clones.size(); ++i)
           clones[i]->write_summary();
-        APP_ABORT("TraceManagerNew::check_clones  trace buffer widths of clones do not match\n  contiguous write is "
+        throw std::runtime_error("TraceManagerNew::check_clones  trace buffer widths of clones do not match\n  contiguous write is "
                   "impossible\n  this was first caused by clones contributing array traces from identical, but "
                   "differently named, particlesets such as e, e2, e3 ... (fixed)\n  please check the TraceManagerNew "
                   "summaries printed above");
@@ -633,7 +624,6 @@ public:
       app_log() << "TraceManagerNew::write_buffers "<<std::endl;
     if (state.writing_traces)
     {
-      //double tstart = MPI_Wtime();
       write_buffers_hdf(clones);
     }
   }
@@ -683,7 +673,7 @@ public:
     if (state.verbose) 
       app_log() << "TraceManagerNew::open_hdf_file " << std::endl;
     if (clones.size() == 0)
-      APP_ABORT("TraceManagerNew::open_hdf_file  no trace clones exist, cannot open file");
+      throw std::runtime_error("TraceManagerNew::open_hdf_file  no trace clones exist, cannot open file");
     int nprocs = communicator->size();
     int rank   = communicator->rank();
     std::array<char, 32> ptoken;
@@ -707,7 +697,7 @@ public:
     hdf_file        = std::make_unique<hdf_archive>();
     bool successful = hdf_file->create(file_name);
     if (!successful)
-      APP_ABORT("TraceManagerNew::open_hdf_file  failed to open hdf file " + file_name);
+      throw std::runtime_error("TraceManagerNew::open_hdf_file  failed to open hdf file " + file_name);
     // only clones have active buffers and associated data
     TraceCollector& tm = *clones[0];
   }
