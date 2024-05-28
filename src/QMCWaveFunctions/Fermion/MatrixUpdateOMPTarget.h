@@ -16,6 +16,7 @@
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "QueueAliases.hpp"
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReductionComplex.hpp"
 #include "DiracMatrixComputeOMPTarget.hpp"
@@ -61,6 +62,7 @@ public:
 
   struct MultiWalkerResource
   {
+    compute::Queue<PlatformKind::OMPTARGET> queue;
     // constant array value T(1)
     UnpinnedOffloadVector<Value> cone_vec;
     // constant array value T(0)
@@ -452,52 +454,6 @@ public:
   {
     for (DualMatrix<Value>& psiMinv : psiMinv_refs)
       psiMinv.updateFrom();
-  }
-
-  /** transfer psiM_vgl to the host. psiM_vgl has 5 rows, V(1) G(3) L(1)
-   * @param engine_leader for accessing shared resource
-   * @param psiM_vgl_list list of psiM_vgl
-   * @param row_begin first row to copy
-   * @param row_size the number of rows to be copied
-   */
-  static void mw_transferVGL_D2H(This_t& engine_leader,
-                                 MultiWalkerResource& mw_rsc,
-                                 const RefVector<OffloadVGLVector<Value>>& psiM_vgl_list,
-                                 size_t row_begin,
-                                 size_t row_size)
-  {
-    for (OffloadVGLVector<Value>& psiM_vgl : psiM_vgl_list)
-    {
-      auto* psiM_vgl_ptr  = psiM_vgl.data();
-      const size_t stride = psiM_vgl.capacity();
-      PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[row_begin * stride: row_size * stride]) nowait")
-    }
-
-    // The only tasks being waited on here are the psiM_vgl updates
-    PRAGMA_OFFLOAD("omp taskwait")
-  }
-
-  /** transfer psiM_vgl to the device. psiM_vgl has 5 rows, V(1) G(3) L(1)
-   * @param engine_leader for accessing shared resource
-   * @param psiM_vgl_list list of psiM_vgl
-   * @param row_begin first row to copy
-   * @param row_size the number of rows to be copied
-   */
-  static void mw_transferVGL_H2D(This_t& engine_leader,
-                                 MultiWalkerResource& mw_rsc,
-                                 const RefVector<OffloadVGLVector<Value>>& psiM_vgl_list,
-                                 size_t row_begin,
-                                 size_t row_size)
-  {
-    for (OffloadVGLVector<Value>& psiM_vgl : psiM_vgl_list)
-    {
-      auto* psiM_vgl_ptr  = psiM_vgl.data();
-      const size_t stride = psiM_vgl.capacity();
-      PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[row_begin * stride: row_size * stride]) nowait")
-    }
-
-    // The only tasks being waited on here are the psiM_vgl updates
-    PRAGMA_OFFLOAD("omp taskwait")
   }
 };
 } // namespace qmcplusplus
