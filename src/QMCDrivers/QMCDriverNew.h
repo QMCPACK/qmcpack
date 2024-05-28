@@ -242,8 +242,8 @@ public:
   void putTraces(xmlNodePtr txml) override {}
   void requestTraces(bool allow_traces) override {}
 
-  void putTracesNew(xmlNodePtr txml) override {}
-  void requestTracesNew(bool allow_traces) override {}
+  void putWalkerTraces(xmlNodePtr txml) override {}
+  void requestWalkerTraces(bool allow_traces) override {}
 
   // scales a MCCoords by sqrtTau. Chooses appropriate taus by CT
   template<typename RT, CoordsType CT>

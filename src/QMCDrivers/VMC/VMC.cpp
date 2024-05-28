@@ -67,7 +67,7 @@ bool VMC::run()
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
-  Traces_new->startRun(nBlocks, wtrace_collectors);
+  wtrace_manager->startRun(nBlocks, wtrace_collectors);
 #endif
 
   LoopTimer<> vmc_loop;
@@ -111,7 +111,7 @@ bool VMC::run()
     Estimators->stopBlock(estimatorClones);
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
-    Traces_new->write_buffers(wtrace_collectors, block);
+    wtrace_manager->write_buffers(wtrace_collectors, block);
 #endif
     recordBlock(block);
     vmc_loop.stop();
@@ -134,7 +134,7 @@ bool VMC::run()
     Movers[ip]->stopRun2();
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
-  Traces_new->stopRun();
+  wtrace_manager->stopRun();
 #endif
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
@@ -185,7 +185,7 @@ void VMC::resetRun()
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
-      wtrace_collectors[ip] = Traces_new->makeCollector();
+      wtrace_collectors[ip] = wtrace_manager->makeCollector();
 #endif
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
@@ -224,7 +224,7 @@ void VMC::resetRun()
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);
-      wtrace_collectors[ip]->transfer_state_from(Traces_new->getState());
+      wtrace_collectors[ip]->transfer_state_from(wtrace_manager->getState());
     }
   }
 #endif

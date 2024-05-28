@@ -99,9 +99,9 @@ public:
   xmlNodePtr traces_xml;
 
   /// whether to allow traces
-  bool allow_traces_new;
+  bool allow_walker_traces;
   /// traces xml
-  xmlNodePtr traces_xml_new;
+  xmlNodePtr walker_traces_xml;
 
   /// Constructor.
   QMCDriver(const ProjectData& project_data,
@@ -156,12 +156,9 @@ public:
 
   inline void requestTraces(bool traces) override { allow_traces = traces; }
 
-  inline void putTracesNew(xmlNodePtr txml) override { 
-    app_log()<<"JTK: putTracesNew"<<std::endl;
-    traces_xml_new = txml; 
-  }
+  inline void putWalkerTraces(xmlNodePtr txml) override { walker_traces_xml = txml; }
 
-  inline void requestTracesNew(bool traces) override { allow_traces_new = traces; }
+  inline void requestWalkerTraces(bool traces) override { allow_walker_traces = traces; }
 
   std::string getEngineName() override { return QMCType; }
 
@@ -199,7 +196,7 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///Traces manager
-  std::unique_ptr<WalkerTraceManager> Traces_new;
+  std::unique_ptr<WalkerTraceManager> wtrace_manager;
 
   ///return the random generators
   inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const

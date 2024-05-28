@@ -64,7 +64,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   DumpConfig   = false;
   IsQMCDriver  = true;
   allow_traces = false;
-  allow_traces_new = false;
+  allow_walker_traces = false;
   MyCounter    = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
@@ -207,11 +207,11 @@ void QMCDriver::process(xmlNodePtr cur)
   Traces->put(traces_xml, allow_traces, RootName);
 
   //create and initialize traces
-  if (!Traces_new)
+  if (!wtrace_manager)
   {
-    Traces_new = std::make_unique<WalkerTraceManager>(myComm);
+    wtrace_manager = std::make_unique<WalkerTraceManager>(myComm);
   }
-  Traces_new->put(traces_xml_new, allow_traces_new, RootName);
+  wtrace_manager->put(walker_traces_xml, allow_walker_traces, RootName);
 #endif
   branchEngine->put(cur);
   Estimators->put(H, cur);

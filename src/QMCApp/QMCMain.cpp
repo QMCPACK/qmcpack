@@ -66,7 +66,7 @@ QMCMain::QMCMain(Communicate* c)
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       traces_xml_(NULL),
-      traces_xml_new_(NULL)
+      walker_traces_xml_(NULL)
 #endif
 {
   Communicate node_comm{OHMMS::Controller->NodeComm()};
@@ -485,8 +485,7 @@ bool QMCMain::validateXML()
     }
     else if (cname == "walkertraces")
     {
-      app_log()<<"JTK: got walkertraces xml input"<<std::endl;
-      traces_xml_new_ = cur;
+      walker_traces_xml_ = cur;
     }
 #endif
     else
@@ -633,7 +632,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->putWalkers(walker_set_in_);
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml_);
-    qmc_driver->putTracesNew(traces_xml_new_);
+    qmc_driver->putWalkerTraces(walker_traces_xml_);
 #endif
     {
       ScopedTimer qmc_run_timer(createGlobalTimer(qmc_driver->getEngineName(), timer_level_coarse));
