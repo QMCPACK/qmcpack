@@ -16,8 +16,8 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "DualAllocatorAliases.hpp"
-#include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
+#include "Platforms/CUDA/AccelBLAS_CUDA.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
 #include "type_traits/complex_help.hpp"
 #include "Concurrency/OpenMP.h"
@@ -94,7 +94,7 @@ class DiracMatrixComputeCUDA : public Resource
    *  1. \todo try to do like mw_computeInvertAndLog_stride, copy and transpose to psiM_fp_ and fuse transfer.
    *  3. \todo Remove Transfer inv_a_mat to host and let the upper level code handle it.
    */
-  inline void mw_computeInvertAndLog(CUDALinearAlgebraHandles& cuda_handles,
+  inline void mw_computeInvertAndLog(compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
                                      const RefVector<const DualMatrix<VALUE_FP>>& a_mats,
                                      const RefVector<DualMatrix<VALUE_FP>>& inv_a_mats,
                                      const int n,
@@ -106,7 +106,7 @@ class DiracMatrixComputeCUDA : public Resource
     psiM_invM_ptrs_.resize(nw * 2);
     const int lda           = a_mats[0].get().cols();
     const int ldinv         = inv_a_mats[0].get().cols();
-    cudaStream_t hstream    = cuda_handles.queue.getNative();
+    cudaStream_t hstream    = cuda_handles.h_stream;
     cublasHandle_t h_cublas = cuda_handles.h_cublas;
     psiM_fp_.resize(n * ldinv * nw);
 
@@ -165,7 +165,7 @@ class DiracMatrixComputeCUDA : public Resource
    *  3. batched. Transfer inv_Ms to host
    *  \todo Remove 1 and 3. Handle transfer at upper level.
    */
-  inline void mw_computeInvertAndLog_stride(CUDALinearAlgebraHandles& cuda_handles,
+  inline void mw_computeInvertAndLog_stride(compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
                                             DualVector<VALUE_FP>& psi_Ms,
                                             DualVector<VALUE_FP>& inv_Ms,
                                             const int n,
@@ -184,7 +184,7 @@ class DiracMatrixComputeCUDA : public Resource
     infos_.resize(nw);
     LU_diags_fp_.resize(n * nw);
 
-    cudaStream_t hstream    = cuda_handles.queue.getNative();
+    cudaStream_t hstream    = cuda_handles.h_stream;
     cublasHandle_t h_cublas = cuda_handles.h_cublas;
     cudaErrorCheck(cudaMemcpyAsync(psi_Ms.device_data(), psi_Ms.data(), psi_Ms.size() * sizeof(VALUE_FP),
                                    cudaMemcpyHostToDevice, hstream),
@@ -227,7 +227,7 @@ public:
    *  There is no optimization (yet) for TMAT same type as TREAL
    */
   template<typename TMAT>
-  void invert_transpose(CUDALinearAlgebraHandles& cuda_handles,
+  void invert_transpose(compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
                         DualMatrix<TMAT>& a_mat,
                         DualMatrix<TMAT>& inv_a_mat,
                         DualVector<LogValue>& log_values)
@@ -239,11 +239,11 @@ public:
     std::fill(log_values.begin(), log_values.end(), LogValue{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(LogValue),
-                                   cudaMemcpyHostToDevice, cuda_handles.queue.getNative()),
+                                   cudaMemcpyHostToDevice, cuda_handles.h_stream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
     cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(VALUE_FP),
-                                   cudaMemcpyHostToDevice, cuda_handles.queue.getNative()),
+                                   cudaMemcpyHostToDevice, cuda_handles.h_stream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     mw_computeInvertAndLog_stride(cuda_handles, psiM_fp_, invM_fp_, n, lda, log_values);
     DualMatrix<VALUE_FP> data_ref_matrix;
@@ -254,7 +254,7 @@ public:
     // smaller of the two's dimensions
     inv_a_mat.assignUpperLeft(data_ref_matrix);
     cudaErrorCheck(cudaMemcpyAsync(inv_a_mat.device_data(), inv_a_mat.data(), inv_a_mat.size() * sizeof(TMAT),
-                                   cudaMemcpyHostToDevice, cuda_handles.queue.getNative()),
+                                   cudaMemcpyHostToDevice, cuda_handles.h_stream),
                    "cudaMemcpyAsync of inv_a_mat to device failed!");
   }
 
@@ -273,7 +273,7 @@ public:
    */
   template<typename TMAT>
   inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
-      CUDALinearAlgebraHandles& cuda_handles,
+      compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
       const RefVector<const DualMatrix<TMAT>>& a_mats,
       const RefVector<DualMatrix<TMAT>>& inv_a_mats,
       DualVector<LogValue>& log_values)
@@ -288,7 +288,7 @@ public:
     std::fill(log_values.begin(), log_values.end(), LogValue{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(LogValue),
-                                   cudaMemcpyHostToDevice, cuda_handles.queue.getNative()),
+                                   cudaMemcpyHostToDevice, cuda_handles.h_stream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
@@ -302,7 +302,7 @@ public:
       inv_a_mats[iw].get().assignUpperLeft(data_ref_matrix);
       cudaErrorCheck(cudaMemcpyAsync(inv_a_mats[iw].get().device_data(), inv_a_mats[iw].get().data(),
                                      inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice,
-                                     cuda_handles.queue.getNative()),
+                                     cuda_handles.h_stream),
                      "cudaMemcpyAsync of inv_a_mat to device failed!");
     }
   }
@@ -314,7 +314,7 @@ public:
    */
   template<typename TMAT>
   inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
-      CUDALinearAlgebraHandles& cuda_handles,
+      compute::BLASHandle<PlatformKind::CUDA>& cuda_handles,
       const RefVector<const DualMatrix<TMAT>>& a_mats,
       const RefVector<DualMatrix<TMAT>>& inv_a_mats,
       DualVector<LogValue>& log_values)

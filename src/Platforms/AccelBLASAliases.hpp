@@ -9,13 +9,12 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_QUEUE_ALIASES_H
-#define QMCPLUSPLUS_QUEUE_ALIASES_H
+#ifndef QMCPLUSPLUS_ACCELBLAS_ALIAS_H
+#define QMCPLUSPLUS_ACCELBLAS_ALIAS_H
 
 #include "config.h"
 #if defined(ENABLE_CUDA)
-#include "CUDA/QueueCUDA.hpp"
+#include "CUDA/AccelBLAS_CUDA.hpp"
 #endif
-#include "OMPTarget/QueueOMPTarget.hpp"
 
 #endif
