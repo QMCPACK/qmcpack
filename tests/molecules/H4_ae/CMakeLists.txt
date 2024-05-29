@@ -408,6 +408,19 @@ if(NOT QMC_COMPLEX)
     2
     1
     FALSE)
+
+  run_qmc_app(
+    deterministic-check-eigenvalue-choice
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    1
+    1
+    TEST_ADDED_EIGENVALUE_CHOICE
+    ""
+    det-check-eigenvalue-choice.xml
+    )
+  # Check that the general eigenvalue solver was chosen. Overwrite the usual passing regular expression.
+  set_property(TEST deterministic-check-eigenvalue-choice PROPERTY PASS_REGULAR_EXPRESSION "Using generalized eigenvalue solver")
+
 else()
   message(VERBOSE "Skipping H4_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
 endif()
