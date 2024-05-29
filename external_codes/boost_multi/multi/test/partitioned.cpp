@@ -1,10 +1,34 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2024 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
-
-#include <multi/array.hpp>
+#include <boost/multi/array.hpp>
 
 #include <array>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
 
 namespace multi = boost::multi;
 
@@ -122,14 +146,14 @@ template<class T> class propagate_const<T const&> {
 
 BOOST_AUTO_TEST_CASE(array_encoded_subarray) {
 	// arr[walker][encoded_property]  // 7 walkers
-	multi::array<double, 2> arr = {
-		{99., 99., 0.00, 0.01, 0.10, 0.11, 0.20, 0.21, 99.},
-		{99., 99., 1.00, 1.01, 1.10, 1.11, 1.20, 1.21, 99.},
-		{99., 99., 2.00, 2.01, 2.10, 2.11, 2.20, 2.21, 99.},
-		{99., 99., 3.00, 3.01, 3.10, 3.11, 3.20, 3.21, 99.},
-		{99., 99., 4.00, 4.01, 4.10, 4.11, 4.20, 4.21, 99.},
-		{99., 99., 5.00, 5.01, 5.10, 5.11, 5.20, 5.21, 99.},
-		{99., 99., 6.00, 6.01, 6.10, 6.11, 6.20, 6.21, 99.},
+	multi::array<int, 2> arr = {
+		{990, 990, 1000, 001,  10,  11,  20,  21, 990},
+		{990, 990,  100, 101, 110, 111, 120, 121, 990},
+		{990, 990,  200, 201, 210, 211, 220, 221, 990},
+		{990, 990,  300, 301, 310, 311, 320, 321, 990},
+		{990, 990,  400, 401, 410, 411, 420, 421, 990},
+		{990, 990,  500, 501, 510, 511, 520, 521, 990},
+		{990, 990,  600, 601, 610, 611, 620, 621, 990},
 	};
 
 	multi::iextension const encoded_3x2_range = {2, 8};
@@ -144,39 +168,39 @@ BOOST_AUTO_TEST_CASE(array_encoded_subarray) {
 	BOOST_REQUIRE( arrRPU[4].num_elements() == 3*2L );
 
 	BOOST_REQUIRE( &arrRPU[4][1][0] == &arr[4][4] );
-	BOOST_REQUIRE( arrRPU[4][1][0] == 4.10 );
+	BOOST_REQUIRE( arrRPU[4][1][0] == 410 );
 
 	BOOST_REQUIRE((
 		arrRPU[4] == multi::array<double, 2>{
-			{4.00, 4.01},
-			{4.10, 4.11},
-			{4.20, 4.21},
+			{400, 401},
+			{410, 411},
+			{420, 421},
 		}
 	));
 
-	arrRPU[4][1][0] = 1111.0;
-	BOOST_REQUIRE( arr[4][4] == 1111.0 );
+	arrRPU[4][1][0] = 11110;
+	BOOST_REQUIRE( arr[4][4] == 11110 );
 
 	class walker_ref {
-		using raw_source_reference = decltype(std::declval<multi::array<double, 2>&>()[0]);
+		using raw_source_reference = decltype(std::declval<multi::array<int, 2>&>()[0]);
 		using internal_array_type  = decltype(std::declval<raw_source_reference>()({2, 8}).partitioned(3));
 
 	 public:  // NOLINT(whitespace/indent) bug in cpplint
-		propagate_const<double&> prop1;  // NOLINT(misc-non-private-member-variables-in-classes)
-		propagate_const<double&> prop2;  // NOLINT(misc-non-private-member-variables-in-classes)
+		propagate_const<int&> prop1;  // NOLINT(misc-non-private-member-variables-in-classes)
+		propagate_const<int&> prop2;  // NOLINT(misc-non-private-member-variables-in-classes)
 		internal_array_type slater_array;  // NOLINT(misc-non-private-member-variables-in-classes)
-		propagate_const<double&> prop3;  // NOLINT(misc-non-private-member-variables-in-classes)
+		propagate_const<int&> prop3;  // NOLINT(misc-non-private-member-variables-in-classes)
 
-		explicit walker_ref(raw_source_reference&& row) : prop1{row[0]}, prop2{row[1]}, slater_array{row({2, 8}).partitioned(3)}, prop3{row[8]} {}
+		explicit walker_ref(raw_source_reference&& row) : prop1{row[0]}, prop2{row[1]}, slater_array{row({2, 8}).partitioned(3)}, prop3{std::move(row)[8]} {}
 	};
 
 	auto&& wr = walker_ref(arr[5]);
 
 	wr.prop1 = 88;
 
-	BOOST_REQUIRE( wr.slater_array[2][1] == 5.21 );
+	BOOST_REQUIRE( wr.slater_array[2][1] == 521 );
 
-	wr.slater_array[2][1] = 9999.0;
+	wr.slater_array[2][1] = 99990;
 }
 
 BOOST_AUTO_TEST_CASE(array_partitioned_add_to_last) {
@@ -198,8 +222,9 @@ BOOST_AUTO_TEST_CASE(array_partitioned_add_to_last) {
 	auto strides = std::apply([](auto... strds) { return std::array<std::ptrdiff_t, sizeof...(strds)>{{strds...}}; }, arr.layout().strides());
 	// auto strides = std::apply([](auto... strds) { return std::array<std::ptrdiff_t, sizeof...(strds)>{{strds...}}; }, arr.strides());
 
-	BOOST_REQUIRE( std::is_sorted(strides.rbegin(), strides.rend()) and arr.num_elements() == arr.nelems() );  // contiguous c-ordering
+	BOOST_REQUIRE( std::is_sorted(strides.rbegin(), strides.rend()) && arr.num_elements() == arr.nelems() );  // contiguous c-ordering
 
+#ifndef _MSC_VER  // problem with MSVC 14.3 c++17
 	auto&& A4 = arr.reinterpret_array_cast<double>(1);
 
 	BOOST_REQUIRE(( arr.extensions() == decltype(arr.extensions()){2, 4, 6} ));
@@ -209,6 +234,7 @@ BOOST_AUTO_TEST_CASE(array_partitioned_add_to_last) {
 //  BOOST_REQUIRE( A4.flatted().is_flattable() );
 
 	BOOST_REQUIRE( &A4[1][2][3][0] == &arr[1][2][3] );
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(array_partitioned_vs_chunked_1D) {

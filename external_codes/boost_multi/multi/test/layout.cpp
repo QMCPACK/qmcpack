@@ -1,14 +1,44 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2024 Alfredo A. Correa
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
+// See: https://github.com/llvm/llvm-project/issues/61415
+// Should be fixed in 18, but we know 16 and 17 are broken
+#if !(defined(__clang__) && (__clang_major__ == 16 || __clang_major__ == 17) && __cplusplus > 202002L)
 
-#include <multi/array.hpp>
-#include <multi/utility.hpp>
+#include <boost/multi/array.hpp>
+#include <boost/multi/utility.hpp>
 
-#include <multi/detail/tuple_zip.hpp>
+#include <boost/multi/detail/tuple_zip.hpp>
 
 #include <array>
 #include <tuple>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+// #  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+// #  pragma GCC diagnostic ignored "-Wfloat-equal"
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4244)  // 'conversion' conversion from 'type1' to 'type2', possible loss of data
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
 
 namespace multi = boost::multi;
 
@@ -53,8 +83,14 @@ BOOST_AUTO_TEST_CASE(extensions_to_linear) {
 }
 
 BOOST_AUTO_TEST_CASE(extensions_layout_to_linear) {
-	multi::array<double, 3> arr({40, 50, 80});
-	auto&&                  sub = arr({10, 30}, {20, 32}, {60, 75});
+	multi::array<double, 3> arr(
+	#ifdef _MSC_VER  // problem with MSVC 14.3 c++17
+		multi::extensions_t<3>
+	#endif
+		{40, 50, 80}
+	);
+
+	auto&& sub = arr({10, 30}, {20, 32}, {60, 75});
 
 	for(int i = 0; i != 10; ++i) {
 		for(int j = 0; j != 12; ++j) {
@@ -67,15 +103,27 @@ BOOST_AUTO_TEST_CASE(extensions_layout_to_linear) {
 }
 
 BOOST_AUTO_TEST_CASE(extensions_layout_to_linear_2) {
-	multi::array<double, 3> arr({40, 50, 80});
-	auto&&                  sub = arr({10, 30}, {20, 32}, {60, 75});
+	multi::array<double, 3> arr(
+	#ifdef _MSC_VER  // problem with MSVC 14.3 c++17
+		multi::extensions_t<3>
+	#endif
+		{40, 50, 80}
+	);
+
+	auto&& sub = arr({10, 30}, {20, 32}, {60, 75});
 
 	auto const& rot = sub.rotated();
 
+#ifndef _MSC_VER
 	auto const [is, js, ks] = rot.extensions();
-	for(auto i : is) {
-		for(auto j : js) {
-			for(auto k : ks) {
+#else
+	auto const is = std::get<0>(rot.extensions());
+	auto const js = std::get<0>(rot.extensions());
+	auto const ks = std::get<0>(rot.extensions());
+#endif
+	for(auto const i : is) {
+		for(auto const j : js) {
+			for(auto const k : ks) {
 				BOOST_REQUIRE( &  rot.base()  [rot.layout()(i, j, k)] == &rot(i, j, k) );
 				BOOST_REQUIRE( &*(rot.base() + rot.layout()(i, j, k)) == &rot(i, j, k) );
 			}
@@ -84,7 +132,12 @@ BOOST_AUTO_TEST_CASE(extensions_layout_to_linear_2) {
 }
 
 BOOST_AUTO_TEST_CASE(linearize) {
-	multi::array<double, 3> const arr({10, 20, 30});
+	multi::array<double, 3> const arr(
+	#ifdef _MSC_VER  // problem with MSVC 14.3 c++17
+		multi::extensions_t<3>
+	#endif
+		{10, 20, 30}
+	);
 
 	BOOST_REQUIRE((  25 % extensions(arr) == decltype(  25 % extensions(arr)){0, 0, 25} ));
 	BOOST_REQUIRE((  55 % extensions(arr) == decltype(  55 % extensions(arr))(0, 1, 25) ));
@@ -154,7 +207,12 @@ BOOST_AUTO_TEST_CASE(layout_tuple_3d) {
 }
 
 BOOST_AUTO_TEST_CASE(layout_0) {
-	multi::array<double, 3> arr({51, 52, 53});
+	multi::array<double, 3> arr(
+	#ifdef _MSC_VER  // problem with MSVC 14.3 c++17
+		multi::extensions_t<3>
+	#endif
+		{51, 52, 53}
+	);
 
 	BOOST_REQUIRE( size(arr)  == 51       );
 	BOOST_REQUIRE( arr.size() == 51       );
@@ -189,7 +247,12 @@ BOOST_AUTO_TEST_CASE(layout_2) {
 }
 
 BOOST_AUTO_TEST_CASE(layout_3) {
-	multi::array<double, 2> arr({50, 50});
+	multi::array<double, 2> arr(
+	#ifdef _MSC_VER  // problem with MSVC 14.3 c++17
+		multi::extensions_t<2>
+	#endif
+		{50, 50}
+	);
 	BOOST_REQUIRE( size(arr)  == 50 );
 	BOOST_REQUIRE( arr.size() == 50 );
 
@@ -201,7 +264,7 @@ BOOST_AUTO_TEST_CASE(layout_3) {
 	BOOST_REQUIRE( size(arr(0, {10, 20})) == 10 );
 
 	BOOST_REQUIRE(      arr.layout() == arr.layout()  );
-	BOOST_REQUIRE( not (arr.layout() <  arr.layout()) );
+	BOOST_REQUIRE( ! (arr.layout() <  arr.layout()) );
 }
 
 BOOST_AUTO_TEST_CASE(layout) {
@@ -215,9 +278,9 @@ BOOST_AUTO_TEST_CASE(layout) {
 		BOOST_REQUIRE( size(A2) == 3 );
 
 		multi::array<int, 2> B2(
-#if defined(__INTEL_COMPILER) or (defined(__GNUC__) and (__GNUC__ < 6))
-			multi::extensions_t<2>
-#endif
+	#ifdef _MSC_VER  // problem with MSVC 14.3 c++17
+		multi::extensions_t<2>
+	#endif
 			{4, 4}
 		);
 		BOOST_REQUIRE( size(B2) == 4 );
@@ -227,16 +290,14 @@ BOOST_AUTO_TEST_CASE(layout) {
 
 		BOOST_REQUIRE( &B2copy[1][1] != &B2({0, 2}, {0, 2})[1][1] );
 
-		std::array<std::array<decltype(B2({
-			                                  0, 2
-                                                                                                                                                                                                      },
-		                                  {0, 2})),
-		                      2>,
-		           2>
+		// clang-format off
+		std::array<std::array<decltype(B2({0, 2}, {0, 2})), 2>, 2>
 			B2blk = {{
 				{{B2({0, 2}, {0, 2}), B2({0, 2}, {2, 4})}},
 				{{B2({2, 4}, {0, 2}), B2({2, 4}, {2, 4})}},
-			}};
+			}}
+		;
+		// clang-format on
 
 		BOOST_REQUIRE( &B2blk[1][1][1][1] == &B2[3][3] );
 	}
@@ -244,7 +305,7 @@ BOOST_AUTO_TEST_CASE(layout) {
 		// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test legacy type
 		double arr[3][4][5] = {};
 		using multi::dimensionality;
-		static_assert(dimensionality(arr) == 3, "!");
+		static_assert( dimensionality(arr) == 3 );
 		using multi::extensions;
 		auto xA = extensions(arr);
 
@@ -261,7 +322,7 @@ BOOST_AUTO_TEST_CASE(layout) {
 		using multi::layout;
 		BOOST_REQUIRE( layout(AA) == layout(arr) );
 
-		BOOST_REQUIRE( AA     .stride() == 20 );
+		BOOST_REQUIRE( AA.stride() == 20 );
 	}
 	{
 		std::array<std::array<std::array<double, 5>, 4>, 3> arr = {};
@@ -348,7 +409,7 @@ BOOST_AUTO_TEST_CASE(multi_layout_part1) {
 		BOOST_REQUIRE( size(lyt) == 2 );
 		BOOST_REQUIRE( size(extension(lyt))==2 );
 		BOOST_REQUIRE( stride(lyt)==10 );
-		BOOST_REQUIRE( not is_empty(lyt) );
+		BOOST_REQUIRE( ! is_empty(lyt) );
 	}
 	{
 		multi::layout_t<1> const lyt(multi::iextensions<1>{20});
@@ -372,7 +433,7 @@ BOOST_AUTO_TEST_CASE(multi_layout_part2) {
 		static_assert(decltype(lyt)::rank_v == 2);
 		BOOST_REQUIRE( num_elements(lyt) == 10 );
 		BOOST_REQUIRE( size(lyt) == 1);
-		BOOST_REQUIRE( not is_empty(lyt) );
+		BOOST_REQUIRE( ! is_empty(lyt) );
 		BOOST_REQUIRE( size(extension(lyt))==1 );
 		BOOST_REQUIRE( stride(lyt)== 10 );  // std::numeric_limits<std::ptrdiff_t>::max() );
 
@@ -547,7 +608,7 @@ BOOST_AUTO_TEST_CASE(continued_part2) {
 		{0, 30},
 	});
 
-	BOOST_REQUIRE( not lyt.empty() );
+	BOOST_REQUIRE( ! lyt.empty() );
 
 	BOOST_REQUIRE( stride(lyt) == lyt.stride() );
 	BOOST_REQUIRE( offset(lyt) == lyt.offset() );
@@ -984,3 +1045,12 @@ BOOST_AUTO_TEST_CASE(layout_2D_iteration) {
 	//  BOOST_TEST_REQUIRE(std::get<0>(exts[0]) == 0);
 	//  BOOST_TEST_REQUIRE(std::get<0>(exts[1]) == 1);
 }
+
+#else
+
+int main()
+{
+    return 0;
+}
+
+#endif

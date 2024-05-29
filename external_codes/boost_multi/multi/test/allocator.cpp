@@ -1,11 +1,36 @@
-// Copyright 2019-2023 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
+#include <boost/multi/array.hpp>
 
-#include <multi/array.hpp>
-#include <multi/detail/static_allocator.hpp>
+#include <boost/multi/detail/static_allocator.hpp>
 
 #include <vector>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
 
 namespace multi = boost::multi;
 
@@ -18,7 +43,9 @@ BOOST_AUTO_TEST_CASE(empty_stride) {
 	multi::array<double, 2> ma0({0, 0}, 0.0);
 	BOOST_REQUIRE(ma0.size() == 0);
 	BOOST_REQUIRE(ma0.stride() != 0);
+#ifndef _MSC_VER  // doesn't work with msvc 14.3 c++17 permissive mode
 	BOOST_REQUIRE(size(ma0) == 0);
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(std_vector_of_arrays) {
@@ -29,18 +56,32 @@ BOOST_AUTO_TEST_CASE(std_vector_of_arrays) {
 		[](auto idx){return multi::array<double, 2>({idx, idx}, static_cast<double>(idx));}
 	);
 
+#ifndef _MSC_VER  // doesn't work with msvc 14.3 c++17 permissive mode
 	BOOST_REQUIRE( size(va[0]) == 0 );
 	BOOST_REQUIRE( size(va[1]) == 1 );
 	BOOST_REQUIRE( size(va[2]) == 2 );
+#endif
+
 	BOOST_REQUIRE( va[1] [0][0] == 1 );
 	BOOST_REQUIRE( va[2] [0][0] == 2 );
 
+#ifndef _MSC_VER   // doesn't work with msvc 14.3 c++17 permissive mode
 	std::vector<multi::array<double, 2>> const wa = {  // testing std::vector of multi:array NOLINT(fuchsia-default-arguments-calls,-warnings-as-errors)
 		multi::array<double, 2>({0, 0}, 0.0),
 		multi::array<double, 2>({1, 1}, 1.0),
 		multi::array<double, 2>({2, 2}, 2.0),
 	};
+#else
+	std::vector<multi::array<double, 2>> const wa = {  // testing std::vector of multi:array NOLINT(fuchsia-default-arguments-calls,-warnings-as-errors)
+		multi::array<double, 2>(multi::extensions_t<2>(0, 0), 0.0),
+		multi::array<double, 2>(multi::extensions_t<2>(1, 1), 1.0),
+		multi::array<double, 2>(multi::extensions_t<2>(2, 2), 2.0),
+	};
+#endif
+
+#ifndef _MSC_VER  // doesn't work with msvc 14.3 c++17 permissive mode
 	BOOST_REQUIRE( size(va) == size(wa) );
+#endif
 	BOOST_REQUIRE( va == wa );
 
 	std::vector<multi::array<double, 2>> ua(3, std::allocator<multi::array<double, 2>>{});
@@ -106,7 +147,7 @@ BOOST_AUTO_TEST_CASE(const_elements) {
 //  BOOST_REQUIRE( arr[1][2] == 99.0 );
 }
 
-#if defined(__cpp_lib_memory_resource) and (__cpp_lib_memory_resource >= 201603)
+#ifdef BOOST_MULTI_HAS_MEMORY_RESOURCE
 BOOST_AUTO_TEST_CASE(pmr) {
 	std::array<char, 13> buffer = {{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C'}};
 	std::pmr::monotonic_buffer_resource pool{std::data(buffer), std::size(buffer)};
@@ -134,8 +175,13 @@ BOOST_AUTO_TEST_CASE(pmr2) {
 	std::array<char, 13> buffer = {{'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'}};
 	std::pmr::monotonic_buffer_resource pool{std::data(buffer), std::size(buffer)};
 
+#ifndef _MSC_VER
 	multi::pmr::array<char, 2> Aarr({2, 2}, 'a', &pool);
 	multi::pmr::array<char, 2> Barr({3, 2}, 'b', &pool);
+#else
+	multi::pmr::array<char, 2> Aarr(multi::extensions_t<2>{2, 2}, 'a', &pool);
+	multi::pmr::array<char, 2> Barr(multi::extensions_t<2>{3, 2}, 'b', &pool);
+#endif
 
 #if defined(__GLIBCXX__)
 	BOOST_REQUIRE(( buffer == std::array<char, 13>{{'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b', 'b', 'X', 'X', 'X'}} ));
@@ -164,12 +210,14 @@ BOOST_AUTO_TEST_CASE(pmr_double_uninitialized) {
 	BOOST_REQUIRE(Aarr[0][0] == 996.0);
 #endif
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(static_allocator) {
-	multi::detail::static_allocator<double, 32> sa{};
+	using T = int;
+	multi::detail::static_allocator<T, 32> sa{};
 	auto* pp = sa.allocate(10);
-	new(std::next(pp, 8)) double{4.2};
-	BOOST_REQUIRE( *std::next(pp, 8) == 4.2 );
+	new(std::next(pp, 8)) T{42};
+	BOOST_REQUIRE( *std::next(pp, 8) == 42 );
 	// (pp + 8)->~double();
 	sa.deallocate(pp, 10);
 }
@@ -202,28 +250,29 @@ BOOST_AUTO_TEST_CASE(constexpr_allocator) {
 }
 #endif
 
-BOOST_AUTO_TEST_CASE(static_allocator_on_vector_double) {
-	std::vector<double, multi::detail::static_allocator<double, 32>> vv(10, 4.2);  // NOLINT(fuchsia-default-arguments-calls)
-	BOOST_REQUIRE( vv[3] == 4.2 );
+#if !defined(_MSC_VER)  // static allocator does not work with MSVC implementation pf vector
+BOOST_AUTO_TEST_CASE(static_allocator_on_vector_int) {
+	std::vector<int, multi::detail::static_allocator<int, 32>> vv(10, 42);  // NOLINT(fuchsia-default-arguments-calls)
+	BOOST_REQUIRE( vv[3] == 42 );
 
 	auto ww = vv;
-	BOOST_REQUIRE( ww[3] == 4.2 );
+	BOOST_REQUIRE( ww[3] == 42 );
 
-	ww[3] = 5.1;
-	BOOST_REQUIRE( ww[3] == 5.1 );
-	BOOST_REQUIRE( vv[3] == 4.2 );
+	ww[3] = 51;
+	BOOST_REQUIRE( ww[3] == 51 );
+	BOOST_REQUIRE( vv[3] == 42 );
 
 	auto xx = std::move(ww);
 	BOOST_REQUIRE( ww.empty() );  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved)
-	BOOST_REQUIRE( vv[3] == 4.2 );
-	BOOST_REQUIRE( xx[3] == 5.1 );
+	BOOST_REQUIRE( vv[3] == 42 );
+	BOOST_REQUIRE( xx[3] == 51 );
 
 	// swap(xx, vv);
-	// BOOST_REQUIRE( vv[3] == 5.1 );
-	// BOOST_REQUIRE( xx[3] == 4.2 );
+	// BOOST_REQUIRE( vv[3] == 51 );
+	// BOOST_REQUIRE( xx[3] == 42 );
 
 	{
-		std::vector< std::vector<double, multi::detail::static_allocator<double, 32>> > const VV = {vv, xx, vv};  // NOLINT(fuchsia-default-arguments-calls)
+		std::vector< std::vector<int, multi::detail::static_allocator<int, 32>> > const VV = {vv, xx, vv};  // NOLINT(fuchsia-default-arguments-calls)
 		BOOST_REQUIRE( VV.size() == 3 );
 		// swap(VV[0], VV[1]);
 		// std::sort(VV.begin(), VV.end());
@@ -270,48 +319,54 @@ BOOST_AUTO_TEST_CASE(static_allocator_on_vector_string) {
 		// BOOST_REQUIRE( std::is_sorted(VV.begin(), VV.end()) );
 	}
 }
+#endif
 
 template<class T, multi::dimensionality_type D, std::size_t Capacity = 4UL*4UL>
 using small_array = multi::static_array<T, D, multi::detail::static_allocator<T, Capacity>>;
 // https://godbolt.org/z/d8ozWahna
 
-BOOST_AUTO_TEST_CASE(small_array_double) {
-	small_array<double, 2, 4UL*4UL> vv({4, 4}, 4.2);
+#if !defined(_MSC_VER) || (_MSC_VER > 193030706)  // TODO(correaa) doesn't work on MSVC 14.3 in c++17 mode
+BOOST_AUTO_TEST_CASE(small_array_int) {
+	small_array<int, 2, 4UL*4UL> vv({4, 4}, 42);
 
-	BOOST_REQUIRE( vv[3][3] == 4.2 );
+	BOOST_REQUIRE( vv[3][3] == 42 );
 
 	auto ww = vv;
-	BOOST_REQUIRE( ww[3][3] == 4.2 );
+	BOOST_REQUIRE( ww[3][3] == 42 );
 	BOOST_REQUIRE( ww.base() != vv.base() );
 	auto* wwb = ww.base();
 	auto* vvb = vv.base();
 
-	ww[3][3] = 5.1;
-	BOOST_REQUIRE( ww[3][3] == 5.1 );
-	BOOST_REQUIRE( vv[3][3] == 4.2 );
+	ww[3][3] = 51;
+	BOOST_REQUIRE( ww[3][3] == 51 );
+	BOOST_REQUIRE( vv[3][3] == 42 );
 
 	swap(ww, vv);
-	BOOST_REQUIRE( vv[3][3] == 5.1 );
-	BOOST_REQUIRE( ww[3][3] == 4.2 );
+	BOOST_REQUIRE( vv[3][3] == 51 );
+	BOOST_REQUIRE( ww[3][3] == 42 );
 
 	BOOST_REQUIRE( ww.base() == wwb );
 	BOOST_REQUIRE( vv.base() == vvb );
 
 	auto xx = std::move(ww);
-	BOOST_REQUIRE( vv[3][3] == 5.1 );
-	BOOST_REQUIRE( xx[3][3] == 4.2 );
-	// BOOST_REQUIRE( ww[3][3] == 4.2 );
+
+	BOOST_REQUIRE( vv[3][3] == 51 );
+	BOOST_REQUIRE( xx[3][3] == 42 );
+	// BOOST_REQUIRE( ww[3][3] == 42 );
 	BOOST_REQUIRE( xx.base() != vv.base() );
 	// BOOST_REQUIRE( ww.empty() );
 
-	small_array<double, 2, 4UL*4UL> yy({4, 4});
+	small_array<int, 2, 4UL*4UL> yy({4, 4});
 	yy = vv;
 	BOOST_REQUIRE( yy == vv );
+
+// #ifndef _MSC_VER  // TODO(correaa) does not compile in MSVC 1.43 in c++17 mode
 	yy = std::move(vv);
 	BOOST_REQUIRE( vv.size() == 4 );  // NOLINT(clang-analyzer-cplusplus.Move,bugprone-use-after-move,hicpp-invalid-access-moved)
+// #endif
 
 	{
-		std::vector< small_array<double, 2, 4UL*4UL> > VV = {vv, xx, vv};  // NOLINT(fuchsia-default-arguments-calls)
+		std::vector< small_array<int, 2, 4UL*4UL> > VV = {vv, xx, vv};  // NOLINT(fuchsia-default-arguments-calls)
 		BOOST_REQUIRE( VV.size() == 3 );
 		swap(VV[0], VV[1]);
 		std::sort(VV.begin(), VV.end());
@@ -321,11 +376,12 @@ BOOST_AUTO_TEST_CASE(small_array_double) {
 		BOOST_REQUIRE( std::is_sorted(VV.begin(), VV.end()) );
 	}
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(props_of_static_allocator) {
 	{
-        std::vector<double> vv(20, 0.1);  // NOLINT(fuchsia-default-arguments-calls)
-        std::vector<double> ww = vv;
+        std::vector<int> vv(20, 11);  // NOLINT(fuchsia-default-arguments-calls)
+        std::vector<int> ww = vv;
         BOOST_REQUIRE( ww == vv );
 
         ww = vv;
@@ -334,24 +390,25 @@ BOOST_AUTO_TEST_CASE(props_of_static_allocator) {
         ww = std::move(vv);
         BOOST_REQUIRE( vv.size() == 0 );  // NOLINT(readability-container-size-empty,bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move)
 
-        std::vector<double> xx(20, 0.2);  // NOLINT(fuchsia-default-arguments-calls)
+        std::vector<int> xx(20, 22);  // NOLINT(fuchsia-default-arguments-calls)
 		swap( ww, xx );
-		BOOST_REQUIRE( ww == std::vector<double>(20, 0.2) );  // NOLINT(fuchsia-default-arguments-calls)
+		BOOST_REQUIRE( ww == std::vector<int>(20, 22) );  // NOLINT(fuchsia-default-arguments-calls)
     }
-    {
-        std::vector<double, multi::detail::static_allocator<double, 32>> vv(20, 0.1);  // NOLINT(fuchsia-default-arguments-calls)
-        std::vector<double, multi::detail::static_allocator<double, 32>> ww = vv;
-        BOOST_REQUIRE( ww == vv );
+#if !defined(_MSC_VER)  // static_allocator doesn't work with MSVC implementation of vector
+	{
+		std::vector<int, multi::detail::static_allocator<int, 32>> vv(20, 11);  // NOLINT(fuchsia-default-arguments-calls)
+		std::vector<int, multi::detail::static_allocator<int, 32>> ww = vv;
+		BOOST_REQUIRE( ww == vv );
 
-        ww = vv;
-        BOOST_REQUIRE( ww == vv );
+		ww = vv;
+		BOOST_REQUIRE( ww == vv );
 
-        ww = std::move(vv);
-        BOOST_REQUIRE( vv.size() == 0 );  // NOLINT(readability-container-size-empty,bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move)
+		ww = std::move(vv);
+		BOOST_REQUIRE( vv.size() == 0 );  // NOLINT(readability-container-size-empty,bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move)
 
-		std::vector<double, multi::detail::static_allocator<double, 32>> xx(20, 0.2);  // NOLINT(fuchsia-default-arguments-calls)
+		std::vector<int, multi::detail::static_allocator<int, 32>> xx(20, 22);  // NOLINT(fuchsia-default-arguments-calls)
 		swap( ww, xx );
-		BOOST_REQUIRE(( ww == std::vector<double, multi::detail::static_allocator<double, 32>>(20, 0.2) ));  // NOLINT(fuchsia-default-arguments-calls)
-    }
-}
+		BOOST_REQUIRE(( ww == std::vector<int, multi::detail::static_allocator<int, 32>>(20, 22) ));  // NOLINT(fuchsia-default-arguments-calls)
+	}
 #endif
+}
