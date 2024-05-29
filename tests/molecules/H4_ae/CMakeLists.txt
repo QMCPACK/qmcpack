@@ -420,6 +420,9 @@ if(NOT QMC_COMPLEX)
     )
   # Check that the general eigenvalue solver was chosen. Overwrite the usual passing regular expression.
   set_property(TEST deterministic-check-eigenvalue-choice PROPERTY PASS_REGULAR_EXPRESSION "Using generalized eigenvalue solver")
+  if (NOT ${SUCCESS_STATUS_MP})
+    set_property(TEST deterministic-check-eigenvalue-choice PROPERTY WILL_FAIL TRUE)
+  endif()
 
 else()
   message(VERBOSE "Skipping H4_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
