@@ -967,21 +967,18 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     }
 
     app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
+
+    if (coeff.size() == 0)
+      throw std::runtime_error(
+          "MSD expansion is empty with either zero determinants input or remaining after cutoff applied.");
+
     app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
     app_log() << "Norm of qchem ci vector (sum of qchem_ci^2): " << sumsq_qc << std::endl;
 
   } //usingCSF
 
-  auto empty = false;
   for (auto grp = 0; grp < nGroups; grp++)
-  {
     app_log() << "Found " << uniqueConfgs[grp].size() << " unique group " << grp << " determinants.\n";
-    if (uniqueConfgs[grp].size() == 0)
-      empty = true;
-  }
-  if (empty)
-    throw std::runtime_error(
-        "At least one group is empty with either zero determinants input or remaining after cutoff applied.");
 
   return success;
 }
@@ -1227,18 +1224,14 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
 
   app_log() << " Done Sorting unique CIs" << std::endl;
   app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
+  if (coeff.size() == 0)
+    throw std::runtime_error(
+        "MSD expansion is empty with either zero determinants input or remaining after cutoff applied.");
+
   app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
 
-  auto empty = false;
   for (auto grp = 0; grp < nGroups; grp++)
-  {
     app_log() << "Found " << uniqueConfgs[grp].size() << " unique group " << grp << " determinants.\n";
-    if (uniqueConfgs[grp].size() == 0)
-      empty = true;
-  }
-  if (empty)
-    throw std::runtime_error(
-        "At least one group is empty with either zero determinants input or remaining after cutoff applied.");
 
   return success;
 }
