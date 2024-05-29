@@ -574,15 +574,14 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_completeUpdates(
 
   {
     ScopedTimer update(UpdateTimer);
-    DET_ENGINE::mw_updateInvMat(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs);
+    DET_ENGINE::mw_updateInvMat(engine_list, mw_res.engine_rsc, mw_res.psiMinv_refs);
   }
 
   { // transfer dpsiM, d2psiM, psiMinv to host
     ScopedTimer d2h(D2HTimer);
 
     // this call also completes all the device copying of dpsiM, d2psiM before the target update
-    DET_ENGINE::mw_transferAinv_D2H(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc,
-                                    mw_res.psiMinv_refs);
+    DET_ENGINE::mw_transferAinv_D2H(engine_list, mw_res.engine_rsc, mw_res.psiMinv_refs);
 
     if (UpdateMode == ORB_PBYP_PARTIAL)
     {
@@ -594,9 +593,14 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_completeUpdates(
         psiM_vgl_list.push_back(det.psiM_vgl);
       }
 
-      // transfer device to host, total size 4, g(3) + l(1), skipping v
-      DET_ENGINE::mw_transferVGL_D2H(wfc_leader.det_engine_, wfc_leader.mw_res_handle_.getResource().engine_rsc,
-                                     psiM_vgl_list, 1, 4);
+      auto& queue = mw_res.engine_rsc.queue;
+      for (DualVGLVector& psiM_vgl : psiM_vgl_list)
+      {
+        const size_t stride = psiM_vgl.capacity();
+        // transfer device to host, total size 4, g(3) + l(1), skipping v
+        queue.enqueueD2H(psiM_vgl, stride * 4, stride);
+      }
+      queue.sync();
     }
   }
 }
@@ -1167,9 +1171,14 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       det.UpdateMode = ORB_WALKER;
     }
 
-    // transfer host to device, total size 4, g(3) + l(1), skipping v
-    DET_ENGINE::mw_transferVGL_H2D(wfc_leader.det_engine_, wfc_leader.mw_res_handle_.getResource().engine_rsc,
-                                   psiM_vgl_list, 1, 4);
+    auto& queue = wfc_leader.mw_res_handle_.getResource().engine_rsc.queue;
+    for (DualVGLVector& psiM_vgl : psiM_vgl_list)
+    {
+      const size_t stride = psiM_vgl.capacity();
+      // transfer host to device, total size 4, g(3) + l(1), skipping v
+      queue.enqueueH2D(psiM_vgl, stride * 4, stride);
+    }
+    queue.sync();
   }
 }
 
