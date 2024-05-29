@@ -1,19 +1,20 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2023 Alfredo A. Correa
+// Copyright 2023-2024 Alfredo A. Correa
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <multi/array.hpp>
+#include <boost/multi/array.hpp>
 
 namespace multi = boost::multi;
 
 auto main() -> int {
-	multi::array<double, 2> arr = {
-		{ 0.0,  1.0,  2.0,  3.0,  4.0},
-		{ 5.0,  6.0,  7.0,  8.0,  9.0},
-		{10.0, 11.0, 12.0, 13.0, 14.0},
-		{15.0, 16.0, 17.0, 18.0, 19.0},
+	multi::array<int, 2> arr = {
+		{ 0,  1,  2,  3,  4},
+		{ 5,  6,  7,  8,  9},
+		{10, 11, 12, 13, 14},
+		{15, 16, 17, 18, 19},
 	};
 
-	if(arr[2][3] != 13.0) {
+	if(arr[2][3] != 13) {
 		return 1;
 	}
 	return 0;

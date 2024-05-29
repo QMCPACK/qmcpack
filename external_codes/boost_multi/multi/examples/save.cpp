@@ -1,7 +1,3 @@
-#ifdef COMPILATION_INSTRUCTIONS
-$CXX $0 - o $0x - lboost_serialization - lstdc++ fs&& $0x&& rm $0x;
-exit
-#endif
 // Copyright 2020-2024 Alfredo A. Correa
 
 #include <fstream>
@@ -19,23 +15,26 @@ exit
 #include "../../multi/array.hpp"
 #include <experimental/filesystem>
 
-	enum format { xml,
-	              txt,
-	              bin };
+enum format { xml,
+              txt,
+              bin };
 
 namespace barch = boost::archive;
 namespace bs11n = boost::serialization;
 
-#define UNSWITCH __builtin_unreachable();
+#define BOOST_MULTI_UNSWITCH __builtin_unreachable
 
 template<class Array>
 void save(Array const& a, std::string const& name, format f) {
 	std::ofstream ofs(name);
-	*[&]() -> std::unique_ptr<barch::polymorphic_oarchive> {switch(f){
-		case xml: return std::make_unique<barch::polymorphic_xml_oarchive   >(ofs);
-		case txt: return std::make_unique<barch::polymorphic_text_oarchive  >(ofs);
+	*[&]() -> std::unique_ptr<barch::polymorphic_oarchive> {
+		switch(f) {
+		case xml: return std::make_unique<barch::polymorphic_xml_oarchive>(ofs);
+		case txt: return std::make_unique<barch::polymorphic_text_oarchive>(ofs);
 		case bin: return std::make_unique<barch::polymorphic_binary_oarchive>(ofs);
-	}UNSWITCH; }() << bs11n::make_nvp("root", a);
+		}
+		BOOST_MULTI_UNSWITCH();
+	}() << bs11n::make_nvp("root", a);
 	assert(ofs);
 }
 
@@ -56,7 +55,7 @@ void load(Array& a, std::string const& name, format f) {
 		case xml: return std::make_unique<barch::polymorphic_xml_iarchive   >(ifs);
 		case txt: return std::make_unique<barch::polymorphic_text_iarchive  >(ifs);
 		case bin: return std::make_unique<barch::polymorphic_binary_iarchive>(ifs);
-	}UNSWITCH; }() >> bs11n::make_nvp("root", a);
+	}BOOST_MULTI_UNSWITCH(); }() >> bs11n::make_nvp("root", a);
 	assert(ifs);
 }
 
@@ -80,3 +79,5 @@ int main() {
 	load(arrD2d_copy, "arrD2d.xml", format::xml);
 	assert(arrD2d_copy == arrD2d);
 }
+
+#undef BOOST_MULTO_SWITCH

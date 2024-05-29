@@ -1,17 +1,47 @@
-// Copyright 2019-2023 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
-
-#include <multi/array.hpp>
+#include <boost/multi/array.hpp>
 
 #include <array>
 #include <complex>
 
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wundef"
+#pragma clang diagnostic ignored "-Wconversion"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wundef"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
+
+#define BOOST_MULTI_DECLRETURN(ExpR) \
+	->decltype(ExpR) { return ExpR; }  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing
+
 namespace test {
-constexpr struct neg_t {
+
+struct neg_t {
 	template<class T>
 	constexpr auto operator()(T const& value) const -> decltype(-value) { return -value; }
-} neg;
+};
+constexpr inline neg_t neg;
+
 }  // end namespace test
 
 namespace test {
@@ -22,23 +52,23 @@ template<class Involution, class Ref>
 class involuted {
 	Ref         r_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 	friend auto underlying(involuted& self) -> decltype(auto) { return self.r_; }
-	friend auto underlying(involuted&& self) -> decltype(auto) { return self.r_; }
+	friend auto underlying(involuted&& self) -> decltype(auto) { return std::move(self).r_; }
 	friend auto underlying(involuted const& self) -> decltype(auto) { return self.r_; }
 
  public:
 	using decay_type = std::decay_t<decltype(std::declval<Involution>()(std::declval<Ref>()))>;
-	constexpr involuted(Involution /*stateless*/, Ref ref) : r_{std::forward<Ref>(ref)} {}
+	constexpr involuted(Involution /*stateless*/, Ref ref) : r_{ref} {}
 	auto operator=(decay_type const& other) -> involuted& {  // NOLINT(fuchsia-trailing-return) simulate reference
 		r_ = Involution{}(other);
 		return *this;
 	}
 	constexpr explicit operator decay_type() const { return Involution{}(r_); }
 	// NOLINTNEXTLINE(google-runtime-operator): simulated reference
-	constexpr auto operator&() && { return involuter<Involution, decltype(&std::declval<Ref>())>{Involution{}, &r_}; }  // NOLINT(runtime/operator)
+	// constexpr auto operator&() && { return involuter<Involution, decltype(&std::declval<Ref>())>{Involution{}, &r_}; }  // NOLINT(runtime/operator)
 	// NOLINTNEXTLINE(google-runtime-operator): simulated reference
-	constexpr auto operator&() & { return involuter<Involution, decltype(&std::declval<Ref>())>{Involution{}, &r_}; }  // NOLINT(runtime/operator)
+	// constexpr auto operator&() & { return involuter<Involution, decltype(&std::declval<Ref>())>{Involution{}, &r_}; }  // NOLINT(runtime/operator)
 	// NOLINTNEXTLINE(google-runtime-operator): simulated reference
-	constexpr auto operator&() const& { return involuter<Involution, decltype(&std::declval<decay_type const&>())>{Involution{}, &r_}; }  // NOLINT(runtime/operator)
+	// constexpr auto operator&() const& { return involuter<Involution, decltype(&std::declval<decay_type const&>())>{Involution{}, &r_}; }  // NOLINT(runtime/operator)
 
 	auto operator==(involuted const& other) const { return r_ == other.r_; }
 	auto operator!=(involuted const& other) const { return r_ == other.r_; }
@@ -93,26 +123,26 @@ class basic_conjugate_t {
 	// clang-format off
 	template<int N> struct prio : std::conditional_t<N != 0, prio<N - 1>, std::true_type> {};
 
-	template<class T> static auto _(prio<0> /**/, T const& value) DECLRETURN( std::conj(value))
-	template<class T> static auto _(prio<1> /**/, T const& value) DECLRETURN(      conj(value))
-	template<class T> static auto _(prio<2> /**/, T const& value) DECLRETURN(   T::conj(value))
-	template<class T> static auto _(prio<3> /**/, T const& value) DECLRETURN(value.conj()     )
+	template<class T> static auto _(prio<0> /**/, T const& value) BOOST_MULTI_DECLRETURN( std::conj(value))
+	template<class T> static auto _(prio<1> /**/, T const& value) BOOST_MULTI_DECLRETURN(      conj(value))
+	template<class T> static auto _(prio<2> /**/, T const& value) BOOST_MULTI_DECLRETURN(   T::conj(value))
+	template<class T> static auto _(prio<3> /**/, T const& value) BOOST_MULTI_DECLRETURN(value.conj()     )
 
  public:
 	template<class T>
-	static auto _(T const& value) DECLRETURN(_(prio<3>{}, value))
+	static auto _(T const& value) BOOST_MULTI_DECLRETURN(_(prio<3>{}, value))
 	// clang-format on
 };
 
 template<class T = void>
 struct conjugate : private basic_conjugate_t {
-	constexpr auto operator()(T const& arg) const DECLRETURN(_(arg))
+	constexpr auto operator()(T const& arg) const BOOST_MULTI_DECLRETURN(_(arg))
 };
 
 template<>
 struct conjugate<> : private basic_conjugate_t {
 	template<class T>
-	constexpr auto operator()(T const& arg) const DECLRETURN(_(arg))
+	constexpr auto operator()(T const& arg) const BOOST_MULTI_DECLRETURN(_(arg))
 };
 
 #if defined(__NVCC__)
@@ -267,9 +297,10 @@ BOOST_AUTO_TEST_CASE(transformed_array) {
 	}
 }
 
-#if not defined(__NVCC__) and (__GNUC_MINOR__ > 7)
+#if !defined(__NVCC__) && (__GNUC_MINOR__ > 7)
 BOOST_AUTO_TEST_CASE(transformed_to_string) {
-	namespace multi               = boost::multi;
+	namespace multi = boost::multi;
+
 	multi::array<int, 2> const AA = {
 		{1, 2},
 		{3, 4},
@@ -279,3 +310,5 @@ BOOST_AUTO_TEST_CASE(transformed_to_string) {
 	BOOST_REQUIRE( BB[1][1] == "4" );
 }
 #endif
+
+#undef BOOST_MULTI_DECLRETURN

@@ -1,10 +1,34 @@
 // Copyright 2019-2024 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
-
-#include <multi/array.hpp>
+#include <boost/multi/array.hpp>
 
 #include <array>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
 
 namespace multi = boost::multi;
 
@@ -75,12 +99,12 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr) {
 
 		multi::array_ptr<double, 2> const arrP2{&arr};
 		BOOST_REQUIRE( arrP == arrP2 );
-		BOOST_REQUIRE( not (arrP != arrP2) );
+		BOOST_REQUIRE( ! (arrP != arrP2) );
 
 		std::array<std::array<double, 5>, 4> arr2{};
 		multi::array_ptr<double, 2>          arr2P{&arr2};
 		BOOST_REQUIRE( arr2P != arrP );
-		BOOST_REQUIRE( not (arr2P == arrP) );
+		BOOST_REQUIRE( ! (arr2P == arrP) );
 
 		arr2P = arrP;
 		BOOST_REQUIRE(  arrP ==  arr2P );
@@ -159,20 +183,20 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr_assignment) {
 		rowP2      = rowP;  // self assigment
 
 		BOOST_REQUIRE( rowP == rowP2 );
-		BOOST_REQUIRE( not(rowP != rowP2) );
+		BOOST_REQUIRE( ! (rowP != rowP2) );
 
 		auto rowP0 = &arr[0];
 
 		BOOST_REQUIRE( rowP0 != rowP2 );
-		BOOST_REQUIRE( not(rowP0 == rowP2) );
+		BOOST_REQUIRE( ! (rowP0 == rowP2) );
 
 		rowP2 = decltype(rowP2){nullptr};
-		BOOST_REQUIRE( not rowP2 );
+		BOOST_REQUIRE( ! rowP2 );
 
 		auto rowP3 = std::exchange(rowP, nullptr);
 		BOOST_REQUIRE( rowP3 == &arr[2] );
 		BOOST_REQUIRE( rowP == nullptr );
-		BOOST_REQUIRE( not rowP );
+		BOOST_REQUIRE( ! rowP );
 	}
 	{
 		auto rowP = &arr();
@@ -185,11 +209,11 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr_assignment) {
 		BOOST_REQUIRE( rowP == rowP2 );
 
 		rowP2 = decltype(rowP2){nullptr};
-		BOOST_REQUIRE( not rowP2 );
+		BOOST_REQUIRE( ! rowP2 );
 
 		auto rowP3 = std::exchange(rowP, nullptr);
 		BOOST_REQUIRE( rowP3 == &arr() );
 		BOOST_REQUIRE( rowP == nullptr );
-		BOOST_REQUIRE( not rowP );
+		BOOST_REQUIRE( ! rowP );
 	}
 }

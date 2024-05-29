@@ -1,23 +1,50 @@
 // Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
-
-#include <multi/array.hpp>
+#include <boost/multi/array.hpp>
 
 #include <array>
 #include <complex>
 #include <numeric>
 
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wundef"
+#pragma clang diagnostic ignored "-Wconversion"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wundef"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
+
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_struct_to_dimension) {
 	struct vec3 {
-		double x, y, z;
+		double x;
+		double y;
+		double z;
 	};
 	multi::array<vec3, 1> arr(multi::extensions_t<1>{multi::iextension{100}});
 	arr[8] = {1.0, 2.0, 3.0};
 	BOOST_REQUIRE( arr[8].y == 2.0 );
 
+#ifndef _MSC_VER  // problems with MSVC 14.3 c++17
 	BOOST_REQUIRE( arr.reinterpret_array_cast<double>(3)[8][1] == arr[8].y );
 
 	multi::array<double, 2> A2D = arr.reinterpret_array_cast<double>(3);
@@ -32,13 +59,16 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_struct_to_dimension) {
 	BOOST_REQUIRE( & arr[8].x == & arr.reinterpret_array_cast<double>(3)[8][0] );
 	BOOST_REQUIRE( & arr[8].y == & arr.reinterpret_array_cast<double>(3)[8][1] );
 	BOOST_REQUIRE( & arr[8].z == & arr.reinterpret_array_cast<double>(3)[8][2] );
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(multi_lower_dimension) {
 	struct vec3 {
-		double x, y, z;  // NOLINT(misc-non-private-member-variables-in-classes)
+		double x;
+		double y;
+		double z;
 
-		[[maybe_unused]] auto operator==(vec3 const& other) const -> bool { return x == other.x && y == other.y && z == other.z; }
+		// [[maybe_unused]] auto operator==(vec3 const& other) const -> bool { return x == other.x && y == other.y && z == other.z; }
 	};
 
 	multi::array<double, 2> arr = {
@@ -47,23 +77,6 @@ BOOST_AUTO_TEST_CASE(multi_lower_dimension) {
 		{2.0, 2.1, 2.2},
 		{3.0, 3.1, 3.2},
 	};
-
-	// #if defined(__cpp_lib_ranges) and (__cpp_lib_ranges >=  201911L)
-	//  {
-	//      auto const& arrvec3 = arr | std::ranges::views::transform([](auto const& e) {return vec3{e[0], e[1], e[2]};});
-	//      BOOST_TEST(( arrvec3[2] == vec3{2.0, 2.1, 2.2} ));
-	//  }
-	//  {
-	//      auto const& arrvec3 = arr | std::ranges::views::transform([](auto const& e) noexcept -> vec3 const& {return reinterpret_cast<vec3 const&>(e[0]);});
-	//      BOOST_TEST( arrvec3[2].x == 2.0 );
-	//  }
-	//  {
-	//      auto&& arrvec3 = arr | std::ranges::views::transform([](auto&& e) noexcept -> vec3& {return reinterpret_cast<vec3&>(e[0]);});
-	//      arrvec3[2].x = 20.0;
-	//      BOOST_TEST( arrvec3[2].x == 20.0 );
-	//      arrvec3[2].x =  2.0;
-	//  }
-	// #endif
 	{
 		BOOST_TEST( arr.size() == 4 );
 		BOOST_TEST( arr.flatted().size() == 12 );
@@ -75,16 +88,13 @@ BOOST_AUTO_TEST_CASE(multi_lower_dimension) {
 		BOOST_TEST( arr.flatted().size() == arrvec3.size()*3 );
 		BOOST_TEST( &arrvec3[2].x == &arr[2][0] );
 	}
-	// {
-	//  auto&& arrvec3 = arr.reinterpret_array_cast<vec3>(3);
-	//  arrvec3[2].x = 20.0;
-	//  BOOST_TEST( arrvec3[2].x == 20.0 );
-	// }
 }
 
 BOOST_AUTO_TEST_CASE(multi_lower_dimension_2d) {
 	struct vec3 {
-		double x, y, z;  // NOLINT(misc-non-private-member-variables-in-classes)
+		double x;
+		double y;
+		double z;
 	};
 
 	multi::array<double, 2> d2 = {
@@ -110,7 +120,9 @@ BOOST_AUTO_TEST_CASE(multi_lower_dimension_2d) {
 
 BOOST_AUTO_TEST_CASE(multi_lower_dimension_3d) {
 	struct vec3 {
-		double x, y, z;  // NOLINT(misc-non-private-member-variables-in-classes)
+		double x;
+		double y;
+		double z;
 	};
 
 	multi::array<double, 3> d3({4, 15, 9}, 0.0);
@@ -153,24 +165,28 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_complex_to_real_extra_dimensio
 
 	BOOST_REQUIRE(( arr[0] == complex{1.0, 2.0} ));
 
+#ifndef _MSC_VER  // problem with MVSC 14.3 c++17
 	multi::array<double, 1> arr2 = arr.reinterpret_array_cast<double>();
 	BOOST_REQUIRE( dimensionality(arr2) == dimensionality(arr) );
-	BOOST_REQUIRE( arr2[0] == 1 and arr2[1] == 1 );
+	BOOST_REQUIRE( arr2[0] == 1 && arr2[1] == 1 );
 
 	multi::array<double, 2> arr3 = arr.reinterpret_array_cast<double>(2);
 
 	BOOST_REQUIRE(( sizes(arr3)==decltype(sizes(arr3)){100, 2} ));
 	BOOST_REQUIRE( arr3[5][0] == real(arr[5]) );
 	BOOST_REQUIRE( arr3[5][1] == imag(arr[5]) );
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_tuple_as_extra_dimension) {
 	using vector3 = std::array<double, 3>;
-	//  using vector3 = std::tuple<double, double, double>; // for tuples reinterpret_array_cast is implementation dependent!!
 
 	vector3 v3d;
+
 	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast, cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays): test
 	BOOST_REQUIRE( &reinterpret_cast<double(&)[3]>(v3d)[1] == &std::get<1>(v3d) );
+
+#ifndef _MSC_VER  // problem with MVSC 14.3 c++17
 	{
 		multi::array<vector3, 1> arr(multi::extensions_t<1>{multi::iextension{10}});
 		BOOST_REQUIRE( &arr.reinterpret_array_cast<double>(3)[2][1] == &std::get<1>(arr[2]) );
@@ -180,7 +196,10 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_tuple_as_extra_dimension) {
 		BOOST_REQUIRE( &arr.reinterpret_array_cast<double>(3)[5][7][2] == &std::get<2>(arr[5][7]) );
 	}
 	{
-		multi::array<vector3, 2> const arr({4, 5}, vector3{{1.0, 2.0, 3.0}});
+		multi::array<vector3, 2> const arr({
+			                                   4, 5
+                                                                                                                                                                                                      },
+		                                   vector3{{1.0, 2.0, 3.0}});
 
 		BOOST_REQUIRE( arr.reinterpret_array_cast<double>(3).dimensionality == 3 );
 		BOOST_REQUIRE( decltype(arr.reinterpret_array_cast<double>(3))::dimensionality == 3 );
@@ -202,6 +221,7 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_tuple_as_extra_dimension) {
 		auto arr3 = +arr.reinterpret_array_cast<double>(3);
 		BOOST_REQUIRE( arr3 == arr2 );
 	}
+#endif
 }
 
 template<class T> struct complex_dummy {
@@ -211,7 +231,7 @@ template<class T> struct complex_dummy {
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast) {
 	{
-		std::complex<double> cee{1, 2};
+		std::complex<double> cee{1.0, 2.0};
 
 		auto* ptr = reinterpret_cast<complex_dummy<double>*>(&cee);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 		ptr->real = 11;
@@ -230,11 +250,11 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast) {
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_realcomplex) {
 	using complex = std::complex<double>;
 	{
-		complex cee{1, 2};
+		complex cee{1.0, 2.0};
 		auto*   conjd_cee = reinterpret_cast<std::array<double, 2>*>(&cee);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 		(*conjd_cee)[0]   = 11;
 		BOOST_REQUIRE( conjd_cee );
-		BOOST_REQUIRE(real(cee)==11);
+		BOOST_REQUIRE( real(cee)==11 );
 	}
 	{
 		complex cee{1, 2};
@@ -242,15 +262,20 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_realcomplex) {
 		auto* ceePC = reinterpret_cast<double(*)[2]>(&cee);
 		(*ceePC)[0] = 11;
 		BOOST_REQUIRE( ceePC );
-		BOOST_REQUIRE(real(cee)==11);
+		BOOST_REQUIRE( real(cee)==11 );
 	}
+#ifndef _MSC_VER  // problem with MSVC 14.3 c++17
 	{
 		multi::array<complex, 1> arr(multi::extensions_t<1>{multi::iextension{10}});
-		auto&&                   arr2 = arr.reinterpret_array_cast<double>(2);
-		arr2[8][0]                    = 1000.0;
-		arr2[8][1]                    = 2000.0;
+
+		auto&& arr2 = arr.reinterpret_array_cast<double>(2);
+
+		arr2[8][0] = 1000.0;
+		arr2[8][1] = 2000.0;
+
 		BOOST_REQUIRE(( arr[8] == std::complex<double>{1000.0, 2000.0} ));
 	}
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_pair_to_complex) {
@@ -264,8 +289,10 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_pair_to_complex) {
 	auto const& Apair_block = A_block.template reinterpret_array_cast<pair const>();  // const is important // cppcheck 1.90 needs `template` to avoid internal bug
 	BOOST_REQUIRE( &Apair_block[1][2] == static_cast<void*>(&arr[1][2]) );
 
+#ifndef _MSC_VER  // problems with MSVC 14.3 c++17
 	auto&& Adoubles_block = A_block.reinterpret_array_cast<double const>(2);
 	BOOST_REQUIRE( &Adoubles_block[1][2][0] == static_cast<void*>(&arr[1][2]) );
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_pointer) {
@@ -280,8 +307,6 @@ BOOST_AUTO_TEST_CASE(const_array_cast) {
 	multi::array<double, 2> arr({10, 10}, 5.0);  // NOLINT(misc-const-correctness) test const cast
 
 	multi::array<double, 2> const& carr = arr;
-
-	// carr[1][1] = 6.0;
 
 	auto&& marr = carr.const_array_cast<double>();
 
