@@ -57,21 +57,21 @@ void report_buffer(WalkerTraceBuffer<T>& wtb)
 
 
 
-///////////////////////////////////
-// WalkerTraceCollector methods  //
-///////////////////////////////////
+//////////////////////////////////
+// WalkerTraceCollector methods //
+//////////////////////////////////
 
 WalkerTraceCollector::WalkerTraceCollector()
   : properties_include{"R2Accepted","R2Proposed","LocalEnergy","LocalPotential","Kinetic","ElecElec","ElecIon","LocalECP","NonLocalECP"}
 {
   state.reset_permissions();
   energy_index = -1;
+  steps.resize(0);
   energies.resize(0);
   walker_property_int_buffer.label  = "walker_property_int";
   walker_property_real_buffer.label = "walker_property_real";
   walker_particle_real_buffer.label = "walker_particle_real";
 }
-
 
 
 void WalkerTraceCollector::set_state(const WalkerTraceState& tms)
@@ -170,6 +170,7 @@ void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWa
   bar.reset_collect();
 
   // save the energy of this walker
+  steps.push_back((size_t)pset.current_step);
   energies.push_back((WTraceReal)walker.Properties(0,energy_index));
 
   //app_log()<<"  walker_property_int buffer contents:\n";
@@ -188,26 +189,41 @@ void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWa
 }
 
 
-void WalkerTraceCollector::reset_step() 
-{ 
-  energies.resize(0);
-}
-
-
 void WalkerTraceCollector::reset_buffers()
 {
   if (state.verbose) app_log() << "WalkerTraceCollector::reset_buffers"<<std::endl;
   walker_property_int_buffer.reset_buffer();
   walker_property_real_buffer.reset_buffer();
   walker_particle_real_buffer.reset_buffer();
+  steps.resize(0);
+  energies.resize(0);
+}
+
+
+void WalkerTraceCollector::check_buffers()
+{
+  if (state.verbose) app_log() << "WalkerTraceCollector::check_buffers"<<std::endl;
+  size_t nrows = walker_property_int_buffer.buffer.size(0);
+  auto prop_real_bad = walker_property_real_buffer.buffer.size(0)!=nrows;
+  auto part_real_bad = walker_particle_real_buffer.buffer.size(0)!=nrows;
+  auto steps_bad     = steps.size()!=nrows;
+  auto energies_bad  = energies.size()!=nrows;
+  auto any_bad = prop_real_bad || part_real_bad || steps_bad || energies_bad;
+
+  if(prop_real_bad) app_log()<<"WalkerTraceCollector::check_buffers  walker_property_real_buffer row count does not match\n";
+  if(part_real_bad) app_log()<<"WalkerTraceCollector::check_buffers  walker_particle_real_buffer row count does not match\n";
+  if(steps_bad) app_log()<<"WalkerTraceCollector::check_buffers  steps entry count does not match\n";
+  if(energies_bad) app_log()<<"WalkerTraceCollector::check_buffers  energies entry count does not match\n";
+  if(any_bad)
+    throw std::runtime_error("WalkerTraceCollector::check_buffers  buffer lengths do not match");
 }
 
 
 
 
-/////////////////////////////////
-// WalkerTraceManager methods  //
-/////////////////////////////////
+////////////////////////////////
+// WalkerTraceManager methods //
+////////////////////////////////
 
 WalkerTraceManager::WalkerTraceManager(Communicate* comm)
 {
@@ -302,6 +318,82 @@ void WalkerTraceManager::write_buffers(std::vector<WalkerTraceCollector*>& colle
 {
   if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::write_buffers "<<std::endl;
+
+  wmin_property_int_buffer.reset_buffer();
+  wmin_property_real_buffer.reset_buffer();
+  wmin_particle_real_buffer.reset_buffer();
+  wmax_property_int_buffer.reset_buffer();
+  wmax_property_real_buffer.reset_buffer();
+  wmax_particle_real_buffer.reset_buffer();
+  wmed_property_int_buffer.reset_buffer();
+  wmed_property_real_buffer.reset_buffer();
+  wmed_particle_real_buffer.reset_buffer();
+
+  // collect energy information and extract info from min/max/median energy walkers
+  for (size_t c=0; c<collectors.size(); ++c)
+  {
+    auto& tc = *collectors[c];
+    tc.check_buffers();
+    for (size_t r=0; r<tc.energies.size(); ++r)
+      energy_order.push_back(std::make_tuple(tc.steps[r],tc.energies[r],c,r));
+  }
+  std::sort(energy_order.begin(), energy_order.end());
+  size_t n=0;
+  size_t n1,n2;
+  size_t prev_step;
+  for (auto& v: energy_order)
+  {
+    auto step = std::get<0>(v);
+    if (n==0)
+    {
+      n1 = n;
+      prev_step = step;
+    }
+    if (step!=prev_step || n==energy_order.size()-1)
+    {
+      // for a given step, find data for min/max/median energy walkers
+      //   n1/n2 are indices of the first/last data in energy_order for this step
+      if (step!=prev_step) n2 = n-1;
+      if (n==energy_order.size()-1) n2 = n;
+      auto nmin = n1;        // index of minimum energy walker for this step
+      auto nmax = n2;        // index of maximum energy walker for this step
+      auto nmed = (n1+n2)/2; // index of median  energy walker for this step
+      //app_log()<<"  "<<prev_step<<"  "<<nmin<<"  "<<nmed<<"  "<<nmax<<std::endl;
+      size_t c,r;
+      //  cache data for minimum energy walker
+      c = std::get<2>(energy_order[nmin]);
+      r = std::get<3>(energy_order[nmin]);
+      wmin_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
+      wmin_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
+      wmin_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
+      //  cache data for maximum energy walker
+      c = std::get<2>(energy_order[nmax]);
+      r = std::get<3>(energy_order[nmax]);
+      wmax_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
+      wmax_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
+      wmax_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
+      //  cache data for median energy walker
+      c = std::get<2>(energy_order[nmed]);
+      r = std::get<3>(energy_order[nmed]);
+      wmed_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
+      wmed_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
+      wmed_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
+      // reset pointers
+      n1 = n;
+      prev_step = step;
+    }
+    n++;
+  }
+  //app_log()<<std::endl;
+  //n=0;
+  //for (auto& v: energy_order)
+  //{
+  //  app_log() <<n<<"  "<< std::get<0>(v) << "  " << std::get<1>(v) << "  " << std::get<2>(v) << "  " << std::get<3>(v) << std::endl;
+  //  n++;
+  //}
+  energy_order.resize(0);
+
+  // write buffer data to file
   write_buffers_hdf(collectors);
 }
 
@@ -316,10 +408,10 @@ void WalkerTraceManager::check_collectors(std::vector<WalkerTraceCollector*>& co
     WalkerTraceCollector& ref = *collectors[0];
     for (int i = 0; i < collectors.size(); ++i)
     {
-      WalkerTraceCollector& tm = *collectors[i];
-      all_same &= tm.walker_property_int_buffer.same_as(ref.walker_property_int_buffer);
-      all_same &= tm.walker_property_real_buffer.same_as(ref.walker_property_real_buffer);
-      all_same &= tm.walker_particle_real_buffer.same_as(ref.walker_particle_real_buffer);
+      WalkerTraceCollector& tc = *collectors[i];
+      all_same &= tc.walker_property_int_buffer.same_as(ref.walker_property_int_buffer);
+      all_same &= tc.walker_property_real_buffer.same_as(ref.walker_property_real_buffer);
+      all_same &= tc.walker_particle_real_buffer.same_as(ref.walker_particle_real_buffer);
     }
     if (!all_same)
     {
@@ -390,6 +482,15 @@ void WalkerTraceManager::write_buffers_hdf(std::vector<WalkerTraceCollector*>& c
     tc_lead.walker_property_int_buffer.register_hdf_data(*hdf_file);
     tc_lead.walker_property_real_buffer.register_hdf_data(*hdf_file);
     tc_lead.walker_particle_real_buffer.register_hdf_data(*hdf_file);
+    wmin_property_int_buffer.register_hdf_data(*hdf_file);
+    wmin_property_real_buffer.register_hdf_data(*hdf_file);
+    wmin_particle_real_buffer.register_hdf_data(*hdf_file);
+    wmax_property_int_buffer.register_hdf_data(*hdf_file);
+    wmax_property_real_buffer.register_hdf_data(*hdf_file);
+    wmax_particle_real_buffer.register_hdf_data(*hdf_file);
+    wmed_property_int_buffer.register_hdf_data(*hdf_file);
+    wmed_property_real_buffer.register_hdf_data(*hdf_file);
+    wmed_particle_real_buffer.register_hdf_data(*hdf_file);
     registered_hdf = true;
   }
   for (int ip = 0; ip < collectors.size(); ++ip)
@@ -399,6 +500,15 @@ void WalkerTraceManager::write_buffers_hdf(std::vector<WalkerTraceCollector*>& c
     tc.walker_property_real_buffer.write_hdf(*hdf_file, tc_lead.walker_property_real_buffer.hdf_file_pointer);
     tc.walker_particle_real_buffer.write_hdf(*hdf_file, tc_lead.walker_particle_real_buffer.hdf_file_pointer);
   }
+  wmin_property_int_buffer.write_hdf(*hdf_file);
+  wmin_property_real_buffer.write_hdf(*hdf_file);
+  wmin_particle_real_buffer.write_hdf(*hdf_file);
+  wmax_property_int_buffer.write_hdf(*hdf_file);
+  wmax_property_real_buffer.write_hdf(*hdf_file);
+  wmax_particle_real_buffer.write_hdf(*hdf_file);
+  wmed_property_int_buffer.write_hdf(*hdf_file);
+  wmed_property_real_buffer.write_hdf(*hdf_file);
+  wmed_particle_real_buffer.write_hdf(*hdf_file);
 }
 
 

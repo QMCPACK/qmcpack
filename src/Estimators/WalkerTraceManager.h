@@ -71,6 +71,7 @@ struct WalkerQuantityInfo
 
 
 
+
 template<typename T>
 struct WalkerTraceBuffer
 {
@@ -82,8 +83,6 @@ struct WalkerTraceBuffer
 
   bool first_collect;
   size_t quantity_pointer;
-  size_t row_start_pointer;
-  size_t row_end_pointer;
 
   //hdf variables
   std::string label;
@@ -105,8 +104,6 @@ struct WalkerTraceBuffer
   {
     app_log()<<"WalkerTraceBuffer("<<label<<")::reset_buffer"<<std::endl;
     buffer.resize(0, buffer.size(1));
-    row_start_pointer = 0;
-    row_end_pointer   = 0;    
   }
 
 
@@ -116,20 +113,6 @@ struct WalkerTraceBuffer
       throw std::runtime_error("WalkerTraceBuffer quantity_pointer has not been moved through all quantities prior during collect() call.");
     first_collect = false;
     quantity_pointer = 0;
-  }
-
-  inline void reset_step()
-  {
-    if (verbose)
-      app_log()<<"WalkerTraceBuffer("<<label<<")::reset_step"<<std::endl;
-    row_start_pointer = row_end_pointer;
-  }
-
-  inline void reset_block() 
-  { 
-    if (verbose)
-      app_log()<<"WalkerTraceBuffer("<<label<<")::reset_block"<<std::endl;
-    reset_buffer();
   }
 
 
@@ -266,15 +249,24 @@ struct WalkerTraceBuffer
   }
 
 
-  inline void add_row(Array<T, 2> other_buffer, size_t i)
+  inline void add_row(WalkerTraceBuffer<T> other, size_t i)
   {
-    app_log()<<"WalkerTraceBuffer("<<label<<")::add_row"<<std::endl;
-    if(buffer.size(1)!=other_buffer.size(1))
-      throw std::runtime_error("WalkerTraceBuffer::add_row  Row sizes must match.");
-    make_new_row();
-    size_t ib = buffer.size(0)-1;
-    for(size_t j=0;j<buffer.size(1);++j)
-      buffer(ib,j) = other_buffer(i,j);
+    //app_log()<<"WalkerTraceBuffer("<<label<<")::add_row"<<std::endl;
+    auto& other_buffer = other.buffer;
+    if (first_collect)
+    {
+      reset_rowsize(other_buffer.size(1));
+      first_collect = false;
+    }
+    else
+    {
+      if(buffer.size(1)!=other_buffer.size(1))
+        throw std::runtime_error("WalkerTraceBuffer::add_row  Row sizes must match.");
+      make_new_row();
+      size_t ib = buffer.size(0)-1;
+      for(size_t j=0;j<buffer.size(1);++j)
+        buffer(ib,j) = other_buffer(i,j);
+    }
   }
 
 
@@ -315,20 +307,24 @@ struct WalkerTraceBuffer
     f.pop();
     f.pop();
     if (!f.open_groups())
-      throw std::runtime_error("WalkerTraceBuffer(" + label +
-                ")::register_hdf_data() some hdf groups are still open at the end of registration");
+      throw std::runtime_error("WalkerTraceBuffer(" + label + ")::register_hdf_data() some hdf groups are still open at the end of registration");
     hdf_file_pointer = 0;
+  }
+
+
+  inline void write_hdf(hdf_archive& f)
+  {
+    write_hdf(f,hdf_file_pointer);
   }
 
 
   inline void write_hdf(hdf_archive& f, hsize_t& file_pointer)
   {
-    if (verbose)
-      app_log()<<"WalkerTraceBuffer("<<label<<")::write_hdf "<<file_pointer<<"  "<<buffer.size(0)<<" "<<buffer.size(1)<<std::endl;
+    if (verbose) app_log()<<"WalkerTraceBuffer("<<label<<")::write_hdf "<<file_pointer<<"  "<<buffer.size(0)<<" "<<buffer.size(1)<<std::endl;
     auto& top = label;
     dims[0] = buffer.size(0);
     dims[1] = buffer.size(1);
-    app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
+    //app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
     if (dims[0] > 0)
     {
       f.push(top);
@@ -336,7 +332,7 @@ struct WalkerTraceBuffer
       f.pop();
     }
     f.flush();
-    app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
+    //app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
   }
 };
 
@@ -375,6 +371,7 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 class WalkerTraceCollector
 {
 public:
+  std::vector<size_t>     steps;
   std::vector<WTraceReal> energies;
   WalkerTraceBuffer<WTraceInt>  walker_property_int_buffer;
   WalkerTraceBuffer<WTraceReal> walker_property_real_buffer;
@@ -402,7 +399,7 @@ public:
 
   void collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham);
 
-  void reset_step();
+  void check_buffers();
 
 private:
   void reset_buffers();
@@ -425,6 +422,8 @@ private:
   bool write_min_data;
   bool write_max_data;
   bool write_med_data;
+
+  std::vector<std::tuple<size_t,WTraceReal,size_t,size_t>> energy_order;
 
   WalkerTraceBuffer<WTraceInt>  wmin_property_int_buffer;
   WalkerTraceBuffer<WTraceReal> wmin_property_real_buffer;
