@@ -256,6 +256,7 @@ struct WalkerTraceBuffer
     if (first_collect)
     {
       reset_rowsize(other_buffer.size(1));
+      quantity_info = other.quantity_info;
       first_collect = false;
     }
     else
@@ -263,10 +264,10 @@ struct WalkerTraceBuffer
       if(buffer.size(1)!=other_buffer.size(1))
         throw std::runtime_error("WalkerTraceBuffer::add_row  Row sizes must match.");
       make_new_row();
-      size_t ib = buffer.size(0)-1;
-      for(size_t j=0;j<buffer.size(1);++j)
-        buffer(ib,j) = other_buffer(i,j);
     }
+    size_t ib = buffer.size(0)-1;
+    for(size_t j=0;j<buffer.size(1);++j)
+      buffer(ib,j) = other_buffer(i,j);
   }
 
 
