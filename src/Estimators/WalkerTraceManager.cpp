@@ -290,7 +290,7 @@ WalkerTraceCollector* WalkerTraceManager::makeCollector()
 }
 
 
-void WalkerTraceManager::startRun(int blocks, std::vector<WalkerTraceCollector*>& collectors)
+void WalkerTraceManager::startRun(std::vector<WalkerTraceCollector*>& collectors)
 {
   if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::startRun " << std::endl;
@@ -307,14 +307,7 @@ void WalkerTraceManager::stopRun()
 }
 
 
-void WalkerTraceManager::stopStep()
-{
-  if(!state.traces_active) return;
-  // find min/max/median walker and collect in buffers
-}
-
-
-void WalkerTraceManager::write_buffers(std::vector<WalkerTraceCollector*>& collectors, int block)
+void WalkerTraceManager::write_buffers(std::vector<WalkerTraceCollector*>& collectors)
 {
   if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::write_buffers "<<std::endl;
@@ -400,7 +393,6 @@ void WalkerTraceManager::write_buffers(std::vector<WalkerTraceCollector*>& colle
 
 void WalkerTraceManager::check_collectors(std::vector<WalkerTraceCollector*>& collectors)
 {
-  if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::check_collectors" << std::endl;
   if (collectors.size() > 0)
   {
@@ -426,7 +418,6 @@ void WalkerTraceManager::check_collectors(std::vector<WalkerTraceCollector*>& co
 
 void WalkerTraceManager::open_file(std::vector<WalkerTraceCollector*>& collectors)
 {
-  if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::open_file "<<std::endl;
   open_hdf_file(collectors);
 }
@@ -434,7 +425,6 @@ void WalkerTraceManager::open_file(std::vector<WalkerTraceCollector*>& collector
 
 void WalkerTraceManager::close_file()
 {
-  if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::close_file " << std::endl;
   close_hdf_file();
 }
@@ -442,7 +432,6 @@ void WalkerTraceManager::close_file()
 
 void WalkerTraceManager::open_hdf_file(std::vector<WalkerTraceCollector*>& collectors)
 {
-  if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::open_hdf_file " << std::endl;
   if (collectors.size() == 0) 
     throw std::runtime_error("WalkerTraceManager::open_hdf_file  no trace collectors exist, cannot open file");
@@ -474,7 +463,6 @@ void WalkerTraceManager::open_hdf_file(std::vector<WalkerTraceCollector*>& colle
 
 void WalkerTraceManager::write_buffers_hdf(std::vector<WalkerTraceCollector*>& collectors)
 {
-  if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::write_buffers_hdf " << std::endl;
   WalkerTraceCollector& tc_lead = *collectors[0];
   if(!registered_hdf)
@@ -514,7 +502,6 @@ void WalkerTraceManager::write_buffers_hdf(std::vector<WalkerTraceCollector*>& c
 
 void WalkerTraceManager::close_hdf_file()
 { 
-  if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::close_hdf_file " << std::endl;
   hdf_file.reset(); 
 }

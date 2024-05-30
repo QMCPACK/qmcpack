@@ -67,7 +67,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
 #endif
-  wtrace_manager->startRun(nBlocks, wtrace_collectors);
+  wtrace_manager->startRun(wtrace_collectors);
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
@@ -111,7 +111,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    wtrace_manager->write_buffers(wtrace_collectors, block);
+    wtrace_manager->write_buffers(wtrace_collectors);
     recordBlock(block);
     vmc_loop.stop();
 

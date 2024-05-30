@@ -102,7 +102,6 @@ struct WalkerTraceBuffer
 
   inline void reset_buffer()
   {
-    app_log()<<"WalkerTraceBuffer("<<label<<")::reset_buffer"<<std::endl;
     buffer.resize(0, buffer.size(1));
   }
 
@@ -155,8 +154,6 @@ struct WalkerTraceBuffer
 
   inline void collect(const std::string& name, const T& value)
   {
-    //if (verbose)
-    //  app_log()<<"WalkerTraceBuffer("<<label<<")::collect"<<std::endl;
     size_t irow=0;
     if( first_collect )
     {
@@ -180,8 +177,6 @@ struct WalkerTraceBuffer
   template<unsigned D>
   inline void collect(const std::string& name, Array<T,D> arr)
   {
-    //if (verbose)
-    //  app_log()<<"WalkerTraceBuffer("<<label<<")::collect"<<std::endl;
     size_t n1 = arr.size(0);
     size_t n2,n3,n4;
     n2=n3=n4=0;
@@ -289,8 +284,6 @@ struct WalkerTraceBuffer
 
   inline void register_hdf_data(hdf_archive& f)
   {
-    if (verbose)
-      app_log()<<"WalkerTraceBuffer("<<label<<")::register_hdf_data"<<std::endl;
     auto& top = label;
     f.push(top);
     f.push("data_layout");
@@ -321,11 +314,10 @@ struct WalkerTraceBuffer
 
   inline void write_hdf(hdf_archive& f, hsize_t& file_pointer)
   {
-    if (verbose) app_log()<<"WalkerTraceBuffer("<<label<<")::write_hdf "<<file_pointer<<"  "<<buffer.size(0)<<" "<<buffer.size(1)<<std::endl;
+    //if (verbose) app_log()<<"WalkerTraceBuffer("<<label<<")::write_hdf "<<file_pointer<<"  "<<buffer.size(0)<<" "<<buffer.size(1)<<std::endl;
     auto& top = label;
     dims[0] = buffer.size(0);
     dims[1] = buffer.size(1);
-    //app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
     if (dims[0] > 0)
     {
       f.push(top);
@@ -333,7 +325,6 @@ struct WalkerTraceBuffer
       f.pop();
     }
     f.flush();
-    //app_log()<<"    "<<buffer.dim()<<"  "<<dims[0]<<"  "<<dims[1]<<"  "<<buffer.size()<<"  "<<file_pointer<<std::endl;
   }
 };
 
@@ -447,14 +438,12 @@ public:
 
   WalkerTraceCollector* makeCollector();
 
-  void startRun(int blocks, std::vector<WalkerTraceCollector*>& collectors);
+  void startRun(std::vector<WalkerTraceCollector*>& collectors);
 
   void stopRun();
 
-  void stopStep();
-
   //write buffered trace data to file
-  void write_buffers(std::vector<WalkerTraceCollector*>& collectors, int block);
+  void write_buffers(std::vector<WalkerTraceCollector*>& collectors);
 
 private:
   void check_collectors(std::vector<WalkerTraceCollector*>& collectors);

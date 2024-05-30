@@ -242,8 +242,8 @@ bool DMC::run()
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
-  wtrace_manager->startRun(nBlocks, wtrace_collectors);
 #endif
+  wtrace_manager->startRun(wtrace_collectors);
   IndexType block        = 0;
   IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int sample             = 0;
@@ -300,8 +300,8 @@ bool DMC::run()
     Estimators->stopBlock(acceptRatio());
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
-    wtrace_manager->write_buffers(wtrace_collectors, block);
 #endif
+    wtrace_manager->write_buffers(wtrace_collectors);
     block++;
     if (DumpConfig && block % Period4CheckPoint == 0)
     {
@@ -334,8 +334,8 @@ bool DMC::run()
     Movers[ip]->stopRun2();
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
-  wtrace_manager->stopRun();
 #endif
+  wtrace_manager->stopRun();
   return finalize(nBlocks);
 }
 
