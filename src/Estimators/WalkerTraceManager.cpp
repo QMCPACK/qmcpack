@@ -271,12 +271,26 @@ void WalkerTraceManager::put(xmlNodePtr cur, bool allow_traces, std::string seri
       app_log() << std::endl;
     }
     //read trace attributes
-    std::string verbose_write = "no";
+    std::string particle_write = "no";
+    std::string min_write      = "yes";
+    std::string max_write      = "yes";
+    std::string med_write      = "yes";
+    std::string qtile_write    = "yes";
+    std::string verbose_log    = "no";
     OhmmsAttributeSet attrib;
     attrib.add(state.step_period, "step_period");
-    attrib.add(verbose_write, "verbose");
+    attrib.add(particle_write   , "particle"   );
+    attrib.add(min_write        , "min"        );
+    attrib.add(max_write        , "max"        );
+    attrib.add(med_write        , "median"     );
+    attrib.add(qtile_write      , "qtiles"     );
+    attrib.add(verbose_log      , "verbose"    );
     attrib.put(cur);
-    state.verbose = verbose_write == "yes";
+    write_particle_data = particle_write == "yes";
+    write_min_data      = min_write      == "yes" && qtile_write == "yes";
+    write_max_data      = max_write      == "yes" && qtile_write == "yes";
+    write_med_data      = med_write      == "yes" && qtile_write == "yes";
+    state.verbose       = verbose_log    == "yes";
   }
 }
 
@@ -312,79 +326,97 @@ void WalkerTraceManager::write_buffers(std::vector<WalkerTraceCollector*>& colle
   if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::write_buffers "<<std::endl;
 
-  wmin_property_int_buffer.reset_buffer();
-  wmin_property_real_buffer.reset_buffer();
-  wmin_particle_real_buffer.reset_buffer();
-  wmax_property_int_buffer.reset_buffer();
-  wmax_property_real_buffer.reset_buffer();
-  wmax_particle_real_buffer.reset_buffer();
-  wmed_property_int_buffer.reset_buffer();
-  wmed_property_real_buffer.reset_buffer();
-  wmed_particle_real_buffer.reset_buffer();
+  if(write_min_data)
+  {
+    wmin_property_int_buffer.reset_buffer();
+    wmin_property_real_buffer.reset_buffer();
+    wmin_particle_real_buffer.reset_buffer();
+  }
+  if(write_max_data)
+  {
+    wmax_property_int_buffer.reset_buffer();
+    wmax_property_real_buffer.reset_buffer();
+    wmax_particle_real_buffer.reset_buffer();
+  }
+  if(write_med_data)
+  {
+    wmed_property_int_buffer.reset_buffer();
+    wmed_property_real_buffer.reset_buffer();
+    wmed_particle_real_buffer.reset_buffer();
+  }
 
   // collect energy information and extract info from min/max/median energy walkers
-  for (size_t c=0; c<collectors.size(); ++c)
+  if(write_min_data || write_max_data || write_med_data)
   {
-    auto& tc = *collectors[c];
-    tc.check_buffers();
-    for (size_t r=0; r<tc.energies.size(); ++r)
-      energy_order.push_back(std::make_tuple(tc.steps[r],tc.energies[r],c,r));
-  }
-  std::sort(energy_order.begin(), energy_order.end());
-  size_t n=0;
-  size_t n1,n2;
-  size_t prev_step;
-  for (auto& v: energy_order)
-  {
-    auto step = std::get<0>(v);
-    if (n==0)
+    for (size_t c=0; c<collectors.size(); ++c)
     {
-      n1 = n;
-      prev_step = step;
+      auto& tc = *collectors[c];
+      tc.check_buffers();
+      for (size_t r=0; r<tc.energies.size(); ++r)
+        energy_order.push_back(std::make_tuple(tc.steps[r],tc.energies[r],c,r));
     }
-    if (step!=prev_step || n==energy_order.size()-1)
+    std::sort(energy_order.begin(), energy_order.end());
+    size_t n=0;
+    size_t n1,n2;
+    size_t prev_step;
+    for (auto& v: energy_order)
     {
-      // for a given step, find data for min/max/median energy walkers
-      //   n1/n2 are indices of the first/last data in energy_order for this step
-      if (step!=prev_step) n2 = n-1;
-      if (n==energy_order.size()-1) n2 = n;
-      auto nmin = n1;        // index of minimum energy walker for this step
-      auto nmax = n2;        // index of maximum energy walker for this step
-      auto nmed = (n1+n2)/2; // index of median  energy walker for this step
-      //app_log()<<"  "<<prev_step<<"  "<<nmin<<"  "<<nmed<<"  "<<nmax<<std::endl;
-      size_t c,r;
-      //  cache data for minimum energy walker
-      c = std::get<2>(energy_order[nmin]);
-      r = std::get<3>(energy_order[nmin]);
-      wmin_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
-      wmin_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
-      wmin_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
-      //  cache data for maximum energy walker
-      c = std::get<2>(energy_order[nmax]);
-      r = std::get<3>(energy_order[nmax]);
-      wmax_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
-      wmax_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
-      wmax_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
-      //  cache data for median energy walker
-      c = std::get<2>(energy_order[nmed]);
-      r = std::get<3>(energy_order[nmed]);
-      wmed_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
-      wmed_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
-      wmed_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
-      // reset pointers
-      n1 = n;
-      prev_step = step;
+      auto step = std::get<0>(v);
+      if (n==0)
+      {
+        n1 = n;
+        prev_step = step;
+      }
+      if (step!=prev_step || n==energy_order.size()-1)
+      {
+        // for a given step, find data for min/max/median energy walkers
+        //   n1/n2 are indices of the first/last data in energy_order for this step
+        if (step!=prev_step) n2 = n-1;
+        if (n==energy_order.size()-1) n2 = n;
+        auto nmin = n1;        // index of minimum energy walker for this step
+        auto nmax = n2;        // index of maximum energy walker for this step
+        auto nmed = (n1+n2)/2; // index of median  energy walker for this step
+        //app_log()<<"  "<<prev_step<<"  "<<nmin<<"  "<<nmed<<"  "<<nmax<<std::endl;
+        size_t c,r;
+        if(write_min_data)
+        {//  cache data for minimum energy walker
+          c = std::get<2>(energy_order[nmin]);
+          r = std::get<3>(energy_order[nmin]);
+          wmin_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
+          wmin_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
+          wmin_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
+        }
+        if(write_max_data)
+        {//  cache data for maximum energy walker
+          c = std::get<2>(energy_order[nmax]);
+          r = std::get<3>(energy_order[nmax]);
+          wmax_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
+          wmax_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
+          wmax_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
+        }
+        if(write_med_data)
+        {//  cache data for median energy walker
+          c = std::get<2>(energy_order[nmed]);
+          r = std::get<3>(energy_order[nmed]);
+          wmed_property_int_buffer.add_row(collectors[c]->walker_property_int_buffer,r);
+          wmed_property_real_buffer.add_row(collectors[c]->walker_property_real_buffer,r);
+          wmed_particle_real_buffer.add_row(collectors[c]->walker_particle_real_buffer,r);
+        }
+        // reset pointers
+        n1 = n;
+        prev_step = step;
+      }
+      n++;
     }
-    n++;
+    //app_log()<<std::endl;
+    //n=0;
+    //for (auto& v: energy_order)
+    //{
+    //  app_log() <<n<<"  "<< std::get<0>(v) << "  " << std::get<1>(v) << "  " << std::get<2>(v) << "  " << std::get<3>(v) << std::endl;
+    //  n++;
+    //}
+    energy_order.resize(0);
   }
-  //app_log()<<std::endl;
-  //n=0;
-  //for (auto& v: energy_order)
-  //{
-  //  app_log() <<n<<"  "<< std::get<0>(v) << "  " << std::get<1>(v) << "  " << std::get<2>(v) << "  " << std::get<3>(v) << std::endl;
-  //  n++;
-  //}
-  energy_order.resize(0);
 
   // write buffer data to file
   write_buffers_hdf(collectors);
@@ -469,16 +501,26 @@ void WalkerTraceManager::write_buffers_hdf(std::vector<WalkerTraceCollector*>& c
   {
     tc_lead.walker_property_int_buffer.register_hdf_data(*hdf_file);
     tc_lead.walker_property_real_buffer.register_hdf_data(*hdf_file);
-    tc_lead.walker_particle_real_buffer.register_hdf_data(*hdf_file);
-    wmin_property_int_buffer.register_hdf_data(*hdf_file);
-    wmin_property_real_buffer.register_hdf_data(*hdf_file);
-    wmin_particle_real_buffer.register_hdf_data(*hdf_file);
-    wmax_property_int_buffer.register_hdf_data(*hdf_file);
-    wmax_property_real_buffer.register_hdf_data(*hdf_file);
-    wmax_particle_real_buffer.register_hdf_data(*hdf_file);
-    wmed_property_int_buffer.register_hdf_data(*hdf_file);
-    wmed_property_real_buffer.register_hdf_data(*hdf_file);
-    wmed_particle_real_buffer.register_hdf_data(*hdf_file);
+    if(write_particle_data)
+      tc_lead.walker_particle_real_buffer.register_hdf_data(*hdf_file);
+    if(write_min_data)
+    {
+      wmin_property_int_buffer.register_hdf_data(*hdf_file);
+      wmin_property_real_buffer.register_hdf_data(*hdf_file);
+      wmin_particle_real_buffer.register_hdf_data(*hdf_file);
+    }
+    if(write_max_data)
+    {
+      wmax_property_int_buffer.register_hdf_data(*hdf_file);
+      wmax_property_real_buffer.register_hdf_data(*hdf_file);
+      wmax_particle_real_buffer.register_hdf_data(*hdf_file);
+    }
+    if(write_med_data)
+    {
+      wmed_property_int_buffer.register_hdf_data(*hdf_file);
+      wmed_property_real_buffer.register_hdf_data(*hdf_file);
+      wmed_particle_real_buffer.register_hdf_data(*hdf_file);
+    }
     registered_hdf = true;
   }
   for (int ip = 0; ip < collectors.size(); ++ip)
@@ -486,17 +528,27 @@ void WalkerTraceManager::write_buffers_hdf(std::vector<WalkerTraceCollector*>& c
     WalkerTraceCollector& tc = *collectors[ip];
     tc.walker_property_int_buffer.write_hdf(*hdf_file, tc_lead.walker_property_int_buffer.hdf_file_pointer);
     tc.walker_property_real_buffer.write_hdf(*hdf_file, tc_lead.walker_property_real_buffer.hdf_file_pointer);
-    tc.walker_particle_real_buffer.write_hdf(*hdf_file, tc_lead.walker_particle_real_buffer.hdf_file_pointer);
+    if(write_particle_data)
+      tc.walker_particle_real_buffer.write_hdf(*hdf_file, tc_lead.walker_particle_real_buffer.hdf_file_pointer);
   }
-  wmin_property_int_buffer.write_hdf(*hdf_file);
-  wmin_property_real_buffer.write_hdf(*hdf_file);
-  wmin_particle_real_buffer.write_hdf(*hdf_file);
-  wmax_property_int_buffer.write_hdf(*hdf_file);
-  wmax_property_real_buffer.write_hdf(*hdf_file);
-  wmax_particle_real_buffer.write_hdf(*hdf_file);
-  wmed_property_int_buffer.write_hdf(*hdf_file);
-  wmed_property_real_buffer.write_hdf(*hdf_file);
-  wmed_particle_real_buffer.write_hdf(*hdf_file);
+  if(write_min_data)
+  {
+    wmin_property_int_buffer.write_hdf(*hdf_file);
+    wmin_property_real_buffer.write_hdf(*hdf_file);
+    wmin_particle_real_buffer.write_hdf(*hdf_file);
+  }
+  if(write_max_data)
+  {
+    wmax_property_int_buffer.write_hdf(*hdf_file);
+    wmax_property_real_buffer.write_hdf(*hdf_file);
+    wmax_particle_real_buffer.write_hdf(*hdf_file);
+  }
+  if(write_med_data)
+  {
+    wmed_property_int_buffer.write_hdf(*hdf_file);
+    wmed_property_real_buffer.write_hdf(*hdf_file);
+    wmed_particle_real_buffer.write_hdf(*hdf_file);
+  }
 }
 
 
