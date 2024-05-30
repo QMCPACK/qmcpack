@@ -1,12 +1,42 @@
-// Copyright 2019-2023 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
-
-#include <multi/array.hpp>
+#include <boost/multi/array.hpp>
 
 #include <array>
 #include <complex>
 #include <iostream>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
 
 namespace multi = boost::multi;
 
@@ -48,7 +78,7 @@ BOOST_AUTO_TEST_CASE(array_legacy_c) {
 		decltype(in)::dimensionality,
 		std::apply([](auto... sizes) { return std::array<int, 2>{{static_cast<int>(sizes)...}}; }, in.sizes()).data(),
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-type-const-cast) testing legacy code
-		reinterpret_cast<fake::fftw_complex*>(const_cast<complex*>(in.data_elements())),
+		reinterpret_cast<fake::fftw_complex*>(const_cast<complex*>(in.data_elements())),  // NOSONAR
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): testing legacy code
 		reinterpret_cast<fake::fftw_complex*>(out.data_elements()),
 		1, 0
@@ -68,20 +98,22 @@ BOOST_AUTO_TEST_CASE(array_legacy_c) {
 		BOOST_REQUIRE( d2D.is_compact() );
 		BOOST_REQUIRE( rotated(d2D).is_compact() );
 		BOOST_REQUIRE( d2D[3].is_compact() );
-		BOOST_REQUIRE( not rotated(d2D)[2].is_compact() );
+		BOOST_REQUIRE( ! rotated(d2D)[2].is_compact() );
 	}
 	{
 		multi::array<complex, 2> d2D({5, 3});
 		BOOST_REQUIRE( d2D.is_compact() );
 		BOOST_REQUIRE( rotated(d2D).is_compact() );
 		BOOST_REQUIRE( d2D[3].is_compact() );
-		BOOST_REQUIRE( not rotated(d2D)[2].is_compact() );
+		BOOST_REQUIRE( ! rotated(d2D)[2].is_compact() );
 	}
 }
 
-inline constexpr auto f2(multi::array_ref<double, 1>&& array) -> double& { return array[2]; }
+#ifndef _MSC_VER  // TODO(correaa) not supported by MSVC 14.3 in c++17 mode
+constexpr auto f2(multi::array_ref<double, 1>&& array) -> double& { return std::move(array)[2]; }
 
 BOOST_AUTO_TEST_CASE(array_legacy_c_2) {
 	double arr[5] = {150.0, 16.0, 17.0, 18.0, 19.0};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 	BOOST_REQUIRE( &f2(arr) == &arr[2] );
 }
+#endif

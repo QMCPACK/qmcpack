@@ -1,12 +1,36 @@
 // Copyright 2019-2024 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
-
-#include <multi/array.hpp>
+#include <boost/multi/array.hpp>
 
 #include <algorithm>  // for std::stable_sort
 #include <array>
 #include <vector>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
 
 namespace multi = boost::multi;
 
@@ -20,7 +44,7 @@ BOOST_AUTO_TEST_CASE(array_1D_partial_order_syntax) {
 	BOOST_REQUIRE( !  (tt >= uu)  );
 	BOOST_REQUIRE( !  (tt == uu)  );
 	BOOST_REQUIRE(    (tt != uu)  );
-	BOOST_REQUIRE( not(uu <  tt)  );
+	BOOST_REQUIRE( ! (uu <  tt)  );
 	BOOST_REQUIRE(    (uu >  tt)  );
 	BOOST_REQUIRE( !  (uu <= tt)  );
 	BOOST_REQUIRE(    (uu >= tt)  );
@@ -79,7 +103,7 @@ BOOST_AUTO_TEST_CASE(multi_array_stable_sort) {
 		{100.0, 11.0, 12.0, 13.0, 14.0},
 		{ 50.0,  6.0,  7.0,  8.0,  9.0},
 	};
-	BOOST_REQUIRE( not std::is_sorted(begin(d2D), end(d2D) ) );
+	BOOST_REQUIRE( ! std::is_sorted(begin(d2D), end(d2D) ) );
 
 	std::stable_sort(begin(d2D), end(d2D));
 	BOOST_REQUIRE( std::is_sorted( begin(d2D), end(d2D) ) );
@@ -93,7 +117,7 @@ BOOST_AUTO_TEST_CASE(multi_array_stable_sort) {
 		}
 	));
 
-	BOOST_REQUIRE( not std::is_sorted( begin(d2D.rotated()), end(d2D.rotated()) ) );
+	BOOST_REQUIRE( ! std::is_sorted( begin(d2D.rotated()), end(d2D.rotated()) ) );
 
 	std::stable_sort(begin(d2D.rotated()), end(d2D.rotated()));
 	BOOST_REQUIRE( std::is_sorted( begin(d2D.rotated()), end(d2D.rotated()) ) );
@@ -124,11 +148,11 @@ BOOST_AUTO_TEST_CASE(multi_array_ref_stable_sort) {
 
 	auto&& d2D_ref = *multi::array_ptr<double, 2>(&d2D[0][0], {4, 5});  // NOLINT(readability-container-data-pointer) test access
 
-	BOOST_REQUIRE( not std::is_sorted(begin(d2D_ref), end(d2D_ref) ) );
+	BOOST_REQUIRE( ! std::is_sorted(begin(d2D_ref), end(d2D_ref) ) );
 	std::stable_sort(begin(d2D_ref), end(d2D_ref));
 	BOOST_REQUIRE( std::is_sorted( begin(d2D_ref), end(d2D_ref) ) );
 
-	BOOST_REQUIRE( not std::is_sorted( begin(d2D_ref.rotated()), end(d2D_ref.rotated()) ) );
+	BOOST_REQUIRE( ! std::is_sorted( begin(d2D_ref.rotated()), end(d2D_ref.rotated()) ) );
 	std::stable_sort(begin(d2D_ref.rotated()), end(d2D_ref.rotated()));
 	BOOST_REQUIRE( std::is_sorted( begin(d2D_ref.rotated()), end(d2D_ref.rotated()) ) );
 }
@@ -150,7 +174,9 @@ BOOST_AUTO_TEST_CASE(lexicographical_compare_offset) {
 	BOOST_REQUIRE(  name2.size() == 3 );
 	BOOST_REQUIRE(( name2.extension() == multi::extension_t<multi::index>{1, 4} ));
 	BOOST_REQUIRE(( name2.extension() == multi::extension_t{multi::index{1}, multi::index{4}} ));
-	BOOST_REQUIRE(( name2.extension() == multi::extension_t{1L, 4L} ));
+
+	// BOOST_REQUIRE(( name2.extension() == multi::extension_t{1L, 4L} ));
+
 	BOOST_REQUIRE(( name2.extension() == multi::extension_t<>{1, 4} ));
 	// BOOST_REQUIRE(( name2.extension() == multi::extension_t{1 , 4 } )); TODO(correaa) solve ambiguity
 

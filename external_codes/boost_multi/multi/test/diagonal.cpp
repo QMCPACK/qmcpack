@@ -1,12 +1,34 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2023 Alfredo A. Correa
+// Copyright 2023-2024 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-// #define BOOST_TEST_MODULE "C++ Unit Tests for Multi array diagonal"  // test title NOLINT(cppcoreguidelines-macro-usage)
-#include <boost/test/unit_test.hpp>
-
-#include <multi/array.hpp>
+#include <boost/multi/array.hpp>
 
 #include <numeric>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
 
 namespace multi = boost::multi;
 
@@ -30,22 +52,17 @@ auto trace_with_diagonal(Array2D const& arr) {
 
 template<class Array2D>
 auto trace_with_accumulate(Array2D const& arr) {
-	return std::accumulate(arr.diagonal().begin(), arr.diagonal().end(), 0);
+	return std::accumulate(arr.diagonal().begin(), arr.diagonal().end(), static_cast<typename Array2D::element_type>(0));
 }
 
-// g++ 7 defect
-// template<class Array2D>
-// auto trace_with_reduce(Array2D const& arr) {
-//  return std::reduce(arr.diagonal().begin(), arr.diagonal().end(), 0);
-// }
-
 BOOST_AUTO_TEST_CASE(trace_test) {
-	multi::array<int, 2> arr({5, 5}, 0);
+	using int_element = multi::index;
+	multi::array<int_element, 2> arr({5, 5}, 0);
 
 	auto [is, js] = extensions(arr);
 	for(auto i : is) {  // NOLINT(altera-unroll-loops) testing loops
 		for(auto j : js) {  // NOLINT(altera-unroll-loops) testing loops
-			arr[i][j] = static_cast<int>(10 * i + j);
+			arr[i][j] = 10 * i + j;
 		}
 	}
 
