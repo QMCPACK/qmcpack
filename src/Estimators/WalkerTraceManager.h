@@ -387,7 +387,7 @@ public:
 
   void set_state(const WalkerTraceState& tms);
 
-  void startBlock(int nsteps);
+  void startBlock();
 
   void collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham);
 

@@ -197,7 +197,7 @@ void QMCUpdateBase::startBlock(int steps)
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
 #endif
-  wtrace_collector->startBlock(steps);
+  wtrace_collector->startBlock();
   nAccept              = 0;
   nReject              = 0;
   nAllRejected         = 0;

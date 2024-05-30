@@ -55,7 +55,7 @@ void WalkerTraceCollector::set_state(const WalkerTraceState& tms)
 }
 
 
-void WalkerTraceCollector::startBlock(int nsteps)
+void WalkerTraceCollector::startBlock()
 {
   if(!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceCollector::startBlock " << std::endl;
