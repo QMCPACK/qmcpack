@@ -216,17 +216,14 @@ void VMC::resetRun()
         app_log() << os.str() << std::endl;
     }
   }
+#if !defined(REMOVE_TRACEMANAGER)
   else
   {
-#if !defined(REMOVE_TRACEMANAGER)
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
       traceClones[ip]->transfer_state_from(*Traces);
-#endif
-#pragma omp parallel for
-    for (int ip = 0; ip < NumThreads; ++ip)
-      wtrace_collectors[ip]->set_state(wtrace_manager->get_state());
   }
+#endif
   if (qmc_driver_mode[QMC_UPDATE_MODE])
   {
     app_log() << "  Using Particle by Particle moves" << std::endl;

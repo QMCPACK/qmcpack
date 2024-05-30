@@ -180,18 +180,14 @@ void DMC::resetUpdateEngines()
       }
     }
   }
+#if !defined(REMOVE_TRACEMANAGER)
   else
   {
-#if !defined(REMOVE_TRACEMANAGER)
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
       traceClones[ip]->transfer_state_from(*Traces);
-#endif
-#pragma omp parallel for
-    for (int ip = 0; ip < NumThreads; ++ip)
-      wtrace_collectors[ip]->set_state(wtrace_manager->get_state());
   }
-
+#endif
   if (spinor)
     app_log() << "   Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;
 

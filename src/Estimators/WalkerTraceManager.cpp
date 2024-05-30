@@ -12,6 +12,7 @@
 
 
 #include "WalkerTraceManager.h"
+#include "WalkerTraceManagerInput.h"
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsData/AttributeSet.h"
@@ -27,34 +28,6 @@ namespace qmcplusplus
 {
 
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-
-
-  
-template<typename T>
-void report_row(T& b)
-{
-  auto& buf = b.buffer;
-  auto irow = buf.size(0)-1;
-  for(size_t n=0;n<b.quantity_info.size();++n)
-  {
-    auto& q = b.quantity_info[n];
-    auto  v = buf(irow,q.buffer_start);
-    app_log()<<"  "<<q.name<<" = "<<v<<std::endl;
-  }
-}
-
-template<typename T>
-void report_buffer(WalkerTraceBuffer<T>& wtb)
-{
-  auto& b = wtb.buffer;
-  for (size_t r=0;r<b.size(0);++r)
-  {
-    for (size_t c=0;c<b.size(1);++c)
-      app_log()<<"  "<<b(r,c);
-    app_log()<<"\n";
-  }
-}
-
 
 
 //////////////////////////////////
@@ -225,18 +198,36 @@ void WalkerTraceCollector::check_buffers()
 // WalkerTraceManager methods //
 ////////////////////////////////
 
-WalkerTraceManager::WalkerTraceManager(Communicate* comm)
+WalkerTraceManager::WalkerTraceManager(xmlNodePtr cur, bool allow_traces, std::string series_root, Communicate* comm)
 {
   state.reset_permissions();
-  communicator   = comm;
-  
-  registered_hdf = false;
-  
-  // new walker buffers, etc
-  write_particle_data = false;
-  write_min_data      = true;
-  write_max_data      = true;
-  write_med_data      = true;
+  communicator              = comm;
+  file_root                 = series_root;
+  bool method_allows_traces = allow_traces;
+
+  WalkerTraceInput inp(cur);
+
+  bool traces_requested     = inp.present;
+  state.traces_active       = traces_requested && method_allows_traces;
+
+  if (state.traces_active)
+  {
+    if (omp_get_thread_num() == 0)
+    {
+      app_log() << "\n  WalkerTraceManager::put() " << std::endl;
+      app_log() << "    traces requested      : " << traces_requested << std::endl;
+      app_log() << "    method allows traces  : " << method_allows_traces << std::endl;
+      app_log() << "    traces active         : " << state.traces_active << std::endl;
+      app_log() << std::endl;
+    }
+    state.step_period   = inp.get<int>("step_period");
+    state.verbose       = inp.get<bool>("verbose");
+    bool qtiles         = inp.get<bool>("qtiles");
+    write_particle_data = inp.get<bool>("particle");
+    write_min_data      = inp.get<bool>("min")    && qtiles;
+    write_max_data      = inp.get<bool>("max")    && qtiles;
+    write_med_data      = inp.get<bool>("median") && qtiles;
+  }
   
   wmin_property_int_buffer.label  = "wmin_property_int";
   wmin_property_real_buffer.label = "wmin_property_real";
@@ -249,49 +240,8 @@ WalkerTraceManager::WalkerTraceManager(Communicate* comm)
   wmed_property_int_buffer.label  = "wmed_property_int";
   wmed_property_real_buffer.label = "wmed_property_real";
   wmed_particle_real_buffer.label = "wmed_particle_real";
-}
 
-
-void WalkerTraceManager::put(xmlNodePtr cur, bool allow_traces, std::string series_root)
-{
-  if (state.verbose) app_log()<<"WalkerTraceManager::put"<<std::endl;
-  state.reset_permissions();
-  bool traces_requested     = cur != NULL;
-  bool method_allows_traces = allow_traces;
-  file_root                 = series_root;
-  state.traces_active       = traces_requested && method_allows_traces;
-  if (state.traces_active)
-  {
-    if (omp_get_thread_num() == 0)
-    {
-      app_log() << "\n  WalkerTraceManager::put() " << std::endl;
-      app_log() << "    traces requested      : " << traces_requested << std::endl;
-      app_log() << "    method allows traces  : " << method_allows_traces << std::endl;
-      app_log() << "    traces active         : " << state.traces_active << std::endl;
-      app_log() << std::endl;
-    }
-    //read trace attributes
-    std::string particle_write = "no";
-    std::string min_write      = "yes";
-    std::string max_write      = "yes";
-    std::string med_write      = "yes";
-    std::string qtile_write    = "yes";
-    std::string verbose_log    = "no";
-    OhmmsAttributeSet attrib;
-    attrib.add(state.step_period, "step_period");
-    attrib.add(particle_write   , "particle"   );
-    attrib.add(min_write        , "min"        );
-    attrib.add(max_write        , "max"        );
-    attrib.add(med_write        , "median"     );
-    attrib.add(qtile_write      , "qtiles"     );
-    attrib.add(verbose_log      , "verbose"    );
-    attrib.put(cur);
-    write_particle_data = particle_write == "yes";
-    write_min_data      = min_write      == "yes" && qtile_write == "yes";
-    write_max_data      = max_write      == "yes" && qtile_write == "yes";
-    write_med_data      = med_write      == "yes" && qtile_write == "yes";
-    state.verbose       = verbose_log    == "yes";
-  }
+  registered_hdf = false;
 }
 
 

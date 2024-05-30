@@ -18,6 +18,7 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Message/Communicate.h"
 #include "hdf/hdf_archive.h"
+
 #include <unordered_set>
 
 
@@ -430,9 +431,7 @@ private:
   WalkerTraceBuffer<WTraceReal> wmed_particle_real_buffer;
 
 public:
-  WalkerTraceManager(Communicate* comm = 0);
-
-  void put(xmlNodePtr cur, bool allow_traces, std::string series_root);
+  WalkerTraceManager(xmlNodePtr cur, bool allow_traces, std::string series_root, Communicate* comm = 0);
 
   inline WalkerTraceState get_state() { return state; }
 

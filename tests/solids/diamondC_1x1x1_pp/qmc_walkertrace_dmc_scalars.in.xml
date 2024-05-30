@@ -79,7 +79,7 @@
          </pairpot>
       </hamiltonian>
    </qmcsystem>
-   <walkertraces array="no"/>
+   <walkertraces/>
    <qmc method="vmc" move="pbyp">
       <estimator name="LocalEnergy" hdf5="yes"/>
       <parameter name="walkers"             >    2            </parameter>
