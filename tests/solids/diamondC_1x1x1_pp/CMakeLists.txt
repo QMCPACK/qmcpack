@@ -1924,6 +1924,55 @@ if(add_traces_tests)
       dmc
       --dmc_steps_exclude=1)
 
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmcbatch-walkertrace_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkertrace_vmcbatch_scalars.in.xml
+      1
+      1
+      check_wtraces.py
+      -p
+      qmc_trace_vmcbatch_scalars
+      -s
+      0
+      -m
+      vmc
+      --dmc_steps_exclude=1)
+ 
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmcbatch-walkertrace_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkertrace_vmcbatch_scalars.in.xml
+      4
+      4
+      check_wtraces.py
+      -p
+      qmc_trace_vmcbatch_scalars
+      -n
+      4
+      -s
+      0
+      -m
+      vmc
+      --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-dmcbatch-walkertrace_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkertrace_dmcbatch_scalars.in.xml
+      4
+      4
+      check_wtraces.py
+      -p
+      qmc_trace_dmcbatch_scalars
+      -n
+      4
+      -s
+      1
+      -m
+      dmc
+      --dmc_steps_exclude=1)
+
   endif()
 
   if(QMC_MIXED_PRECISION)
