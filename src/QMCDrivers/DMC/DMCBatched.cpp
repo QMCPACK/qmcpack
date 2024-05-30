@@ -288,6 +288,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     crowd.accumulate(step_context.get_random_gen());
   }
 
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    crowd.wtrace_collector.collect(walkers[iw], walker_elecs[iw], walker_twfs[iw], walker_hamiltonians[iw], sft.current_step);
+
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
 
@@ -429,6 +432,14 @@ bool DMCBatched::run()
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->startDriverRun();
+
+  //start walker trace manager
+  wtrace_manager = std::make_unique<WalkerTraceManager>(walker_traces_xml, allow_walker_traces, get_root_name(), myComm);
+  std::vector<WalkerTraceCollector*> wtrace_collectors;
+  for (auto& c: crowds_)
+    wtrace_collectors.push_back(&c->wtrace_collector);
+  wtrace_manager->startRun(wtrace_collectors);
+
   StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_);
 
   LoopTimer<> dmc_loop;
@@ -457,6 +468,7 @@ bool DMCBatched::run()
   ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
+  int current_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
     {
@@ -471,9 +483,12 @@ bool DMCBatched::run()
                    : false;
 
       for (UPtr<Crowd>& crowd : crowds_)
+      {
         crowd->startBlock(steps_per_block_);
+        crowd->wtrace_collector.startBlock();
+      }
 
-      for (int step = 0; step < steps_per_block_; ++step)
+      for (int step = 0; step < steps_per_block_; ++step, ++current_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
 
@@ -483,6 +498,7 @@ bool DMCBatched::run()
           setNonLocalMoveHandler(*ham);
 
         dmc_state.step = step;
+        dmc_state.current_step = current_step;
         crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                    std::ref(crowds_));
 
@@ -500,6 +516,7 @@ bool DMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
+      wtrace_manager->write_buffers(wtrace_collectors);
       recordBlock(block);
     }
 
@@ -523,6 +540,7 @@ bool DMCBatched::run()
   print_mem("DMCBatched ends", app_log());
 
   estimator_manager_->stopDriverRun();
+  wtrace_manager->stopRun();
 
   return finalize(num_blocks, true);
 }

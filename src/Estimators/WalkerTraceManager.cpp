@@ -63,9 +63,15 @@ void WalkerTraceCollector::startBlock()
 }
 
 
-void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham)
+void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham, int step)
 {
-  if(!state.traces_active || pset.current_step%state.step_period!=0) return;
+  int current_step;
+  if (step==-1)
+    current_step = pset.current_step;
+  else
+    current_step = step;
+
+  if(!state.traces_active || current_step%state.step_period!=0) return;
 
   //app_log()<<"TraceCollector::collect (step "<<pset.current_step<<")"<<std::endl;
 
@@ -74,7 +80,7 @@ void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWa
   auto& bar = walker_particle_real_buffer;
 
   // collect integer walker properties
-  bsi.collect("step"        , (WTraceInt)pset.current_step    );
+  bsi.collect("step"        , (WTraceInt)current_step    );
   bsi.collect("id"          , (WTraceInt)walker.getWalkerID() );
   bsi.collect("parent_id"   , (WTraceInt)walker.getParentID() );
   bsi.collect("age"         , (WTraceInt)walker.Age           );
@@ -142,7 +148,7 @@ void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWa
   bar.reset_collect();
 
   // save the energy of this walker
-  steps.push_back((size_t)pset.current_step);
+  steps.push_back((size_t)current_step);
   energies.push_back((WTraceReal)walker.Properties(0,energy_index));
 
 }
@@ -244,6 +250,8 @@ void WalkerTraceManager::startRun(std::vector<WalkerTraceCollector*>& collectors
 {
   if (!state.traces_active) return;
   if (state.verbose) app_log() << "WalkerTraceManager::startRun " << std::endl;
+  for (auto& tc: collectors)
+    tc->set_state(state);
   check_collectors(collectors);
   open_file(collectors);
 }

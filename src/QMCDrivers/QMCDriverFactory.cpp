@@ -297,7 +297,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
 
   //add trace information
   bool allow_walker_traces = das.walkertraces_tag == "yes" ||
-      (das.walkertraces_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC));
+      (das.walkertraces_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC || das.new_run_type == QMCRunType::VMC_BATCH || das.new_run_type == QMCRunType::DMC_BATCH));
   new_driver->requestWalkerTraces(allow_walker_traces);
 
   return new_driver;

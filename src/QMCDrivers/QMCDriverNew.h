@@ -102,6 +102,11 @@ public:
    */
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
+  /// whether to allow walker traces
+  bool allow_walker_traces;
+  /// walker traces xml
+  xmlNodePtr walker_traces_xml;
+
 protected:
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
@@ -242,8 +247,9 @@ public:
   void putTraces(xmlNodePtr txml) override {}
   void requestTraces(bool allow_traces) override {}
 
-  void putWalkerTraces(xmlNodePtr txml) override {}
-  void requestWalkerTraces(bool allow_traces) override {}
+  void putWalkerTraces(xmlNodePtr txml) override { walker_traces_xml = txml; }
+
+  void requestWalkerTraces(bool allow_traces_) override { allow_walker_traces = allow_traces_; }
 
   // scales a MCCoords by sqrtTau. Chooses appropriate taus by CT
   template<typename RT, CoordsType CT>
@@ -434,6 +440,9 @@ protected:
    *  TODO:  Modify Branch manager and others to clear this up.
    */
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
+
+  /// walker trace manager
+  std::unique_ptr<WalkerTraceManager> wtrace_manager;
 
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;

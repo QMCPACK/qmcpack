@@ -10,6 +10,7 @@
 #include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
+
 namespace qmcplusplus
 {
 Crowd::Crowd(EstimatorManagerNew& emb,

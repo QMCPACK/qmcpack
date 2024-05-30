@@ -16,12 +16,14 @@
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "Estimators/EstimatorManagerCrowd.h"
+#include "Estimators/WalkerTraceManager.h"
 
 namespace qmcplusplus
 {
 // forward declaration
 class ResourceCollection;
 class EstimatorManagerNew;
+class WalkerTraceCollector;
 
 /** Driver synchronized step context
  * 
@@ -139,6 +141,8 @@ private:
   unsigned long n_accept_          = 0;
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
+public:
+  WalkerTraceCollector wtrace_collector;
 };
 
 } // namespace qmcplusplus
