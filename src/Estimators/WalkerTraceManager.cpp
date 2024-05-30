@@ -146,19 +146,6 @@ void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWa
   steps.push_back((size_t)pset.current_step);
   energies.push_back((WTraceReal)walker.Properties(0,energy_index));
 
-  //app_log()<<"  walker_property_int buffer contents:\n";
-  //report_buffer(bsi);
-
-  //app_log()<<"\ninteger walker buffer:\n";
-  //report_row(bsi);
-  //app_log()<<"\nreal walker buffer:\n";
-  //report_row(bsr);
-  //
-  //bsi.write_summary();
-  //bsr.write_summary();
-  //bar.write_summary();
-  ////APP_ABORT("JTK");
-
 }
 
 

@@ -341,7 +341,6 @@ struct WalkerTraceState
   {
     reset_permissions();
     step_period = 1;
-    verbose     = false;
   }
 
   inline void reset_permissions()
