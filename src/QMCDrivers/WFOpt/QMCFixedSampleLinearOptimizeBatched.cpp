@@ -1787,12 +1787,14 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
 {
   app_log() << std::endl
             << "*****************************************************************************" << std::endl
-            << "                   Running DUMB Stochastic Reconfiguration                   " << std::endl
+            << "                   Running Stochastic Reconfiguration                   " << std::endl
             << "*****************************************************************************" << std::endl;
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
 
   // generate samples and compute weights, local energies, and derivative vectors
+  // Note: this has a switch for checkConfigurations or checkConfigurationsSR to do stochastic reconfiguration
+  // The SR version avoids calculating the dhpsioverpsi terms and only does dlogpsi
   start();
 
   // get number of optimizable parameters
@@ -1830,6 +1832,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
               << "Building <Psi_i/Psi_0 Psi_j/Psi_0> and <Psi_i/Psi_0 E_L>" << std::endl
               << "********************************************************" << std::endl;
 
+    //This constructs \langle \psi_i/\Psi_0 * E_L \rangle
     optTarget->fillHamVec(ham);
 
     {
@@ -1841,10 +1844,12 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
                 << "*********************" << std::endl;
 
 
+      //Just chose an arbitrary convergence threshold for the conjugate gradient algorithm
       RealType thr = 1e-3;
       RealType eps = 1.0;
       int kmax     = numParams;
       int k        = 0;
+
       std::vector<RealType> rk(numParams, 0);
       std::vector<RealType> rkp1(numParams, 0);
       std::vector<RealType> pk(numParams, 0);
@@ -1853,6 +1858,8 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       std::vector<RealType> xkp1(numParams, 0);
       std::vector<RealType> Apk(numParams, 0);
 
+
+      //Basic implementation of conjugate gradient algorithm...coming directly from wikipedia
       RealType dk = 0;
       //initial guess is zero, so S*x_0 = 0
       for (int i = 0; i < numParams; i++)
@@ -1865,6 +1872,10 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
       bool converged = false;
       while (!converged)
       {
+        //This function avoids building the full Sij matrix by calculating the matrix vector 
+        //product of the overlap matrix * the current parameter vector. 
+        //This is the "accelerated stochastic reconfiguration" from https://doi.org/10.1103/PhysRevB.85.045103
+        //Basically doing Eqn. (7)
         optTarget->calcOvlParmVec(pk, bestShift_s, Apk);
         RealType denom = 0;
         for (int i = 0; i < numParams; i++)
@@ -1906,6 +1917,13 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
     }
   }
 
+  //We get the parameter direction from the SR solve above using CG algorithm
+  //Then, we can either use a line search with correlated sampling to find the best update along that direction, 
+  //or we can use a simple approach where we just accept the move based on the size of the step...sr_tau in this case. 
+  //The line search with correlated sampling converges faster, but can have issues if the weight from correlated 
+  //sampling gets small and stays small. Otherwise, just taking a small sr_tau will work, but can take a lot of iterations
+  //
+  //im sure there are better ways to do this
   if (use_line_search_)
   {
     optTarget->setneedGrads(false);
@@ -1936,21 +1954,17 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
 
     if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))
     {
-      app_log() << "Stochastic Reconfigurationfrom line search, lambda = " << objFuncWrapper_.Lambda << std::endl;
       for (int i = 0; i < numParams; i++)
         optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
     }
     else
     {
-      app_log() << "Stochastic Reconfigurationfrom line search failed, using lambda = " << nonlinear_rescale
-                << std::endl;
       for (int i = 0; i < numParams; i++)
         optTarget->Params(i) = currentParameters.at(i) + nonlinear_rescale * parameterDirections.at(i + 1);
     }
   }
   else
   {
-    app_log() << "Stochastic Reconfiguration using lambda = " << sr_tau * objFuncWrapper_.Lambda << std::endl;
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
   }
