@@ -55,17 +55,17 @@ inline void gemm<PlatformKind::CUDA, float>(BLASHandle<PlatformKind::CUDA>& hand
                                             int m,
                                             int n,
                                             int k,
-                                            const float* alpha,
+                                            const float alpha,
                                             const float* A,
                                             int lda,
                                             const float* B,
                                             int ldb,
-                                            const float* beta,
+                                            const float beta,
                                             float* C,
                                             int ldc)
 {
   cublasErrorCheck(cublasSgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
-                               n, k, alpha, A, lda, B, ldb, beta, C, ldc),
+                               n, k, &alpha, A, lda, B, ldb, &beta, C, ldc),
                    "cublasSgemm failed!");
 }
 
@@ -76,17 +76,17 @@ inline void gemm<PlatformKind::CUDA, double>(BLASHandle<PlatformKind::CUDA>& han
                                              int m,
                                              int n,
                                              int k,
-                                             const double* alpha,
+                                             const double alpha,
                                              const double* A,
                                              int lda,
                                              const double* B,
                                              int ldb,
-                                             const double* beta,
+                                             const double beta,
                                              double* C,
                                              int ldc)
 {
   cublasErrorCheck(cublasDgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
-                               n, k, alpha, A, lda, B, ldb, beta, C, ldc),
+                               n, k, &alpha, A, lda, B, ldb, &beta, C, ldc),
                    "cublasDgemm failed!");
 }
 
@@ -97,18 +97,18 @@ inline void gemm<PlatformKind::CUDA, std::complex<float>>(BLASHandle<PlatformKin
                                                           int m,
                                                           int n,
                                                           int k,
-                                                          const std::complex<float>* alpha,
+                                                          const std::complex<float> alpha,
                                                           const std::complex<float>* A,
                                                           int lda,
                                                           const std::complex<float>* B,
                                                           int ldb,
-                                                          const std::complex<float>* beta,
+                                                          const std::complex<float> beta,
                                                           std::complex<float>* C,
                                                           int ldc)
 {
   cublasErrorCheck(cublasCgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
-                               n, k, castNativeType(alpha), castNativeType(A), lda, castNativeType(B), ldb,
-                               castNativeType(beta), castNativeType(C), ldc),
+                               n, k, castNativeType(&alpha), castNativeType(A), lda, castNativeType(B), ldb,
+                               castNativeType(&beta), castNativeType(C), ldc),
                    "cublasCgemm failed!");
 }
 
@@ -119,18 +119,18 @@ inline void gemm<PlatformKind::CUDA, std::complex<double>>(BLASHandle<PlatformKi
                                                            int m,
                                                            int n,
                                                            int k,
-                                                           const std::complex<double>* alpha,
+                                                           const std::complex<double> alpha,
                                                            const std::complex<double>* A,
                                                            int lda,
                                                            const std::complex<double>* B,
                                                            int ldb,
-                                                           const std::complex<double>* beta,
+                                                           const std::complex<double> beta,
                                                            std::complex<double>* C,
                                                            int ldc)
 {
   cublasErrorCheck(cublasZgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
-                               n, k, castNativeType(alpha), castNativeType(A), lda, castNativeType(B), ldb,
-                               castNativeType(beta), castNativeType(C), ldc),
+                               n, k, castNativeType(&alpha), castNativeType(A), lda, castNativeType(B), ldb,
+                               castNativeType(&beta), castNativeType(C), ldc),
                    "cublasZgemm failed!");
 }
 

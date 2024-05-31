@@ -208,16 +208,13 @@ public:
     // update the inverse matrix
     if (delay_count > 0)
     {
-      constexpr T cone(1);
-      constexpr T czero(0);
-      constexpr T cminusone(-1);
       const int norb     = Ainv.rows();
       const int lda_Binv = Binv.cols();
       cudaErrorCheck(cudaMemcpyAsync(U_gpu.data(), U.data(), norb * delay_count * sizeof(T), cudaMemcpyHostToDevice,
                                      queue_.getNative()),
                      "cudaMemcpyAsync failed!");
-      compute::BLAS::gemm(blas_handle_, 'T', 'N', delay_count, norb, norb, &cone, U_gpu.data(), norb, Ainv_gpu.data(),
-                          norb, &czero, temp_gpu.data(), lda_Binv);
+      compute::BLAS::gemm(blas_handle_, 'T', 'N', delay_count, norb, norb, T(1), U_gpu.data(), norb, Ainv_gpu.data(),
+                          norb, T(0), temp_gpu.data(), lda_Binv);
       cudaErrorCheck(cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int),
                                      cudaMemcpyHostToDevice, queue_.getNative()),
                      "cudaMemcpyAsync failed!");
@@ -226,10 +223,10 @@ public:
       cudaErrorCheck(cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T),
                                      cudaMemcpyHostToDevice, queue_.getNative()),
                      "cudaMemcpyAsync failed!");
-      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, delay_count, delay_count, &cone, V_gpu.data(), norb,
-                          Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
-      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, norb, delay_count, &cminusone, U_gpu.data(), norb,
-                          temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
+      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, delay_count, delay_count, T(1), V_gpu.data(), norb,
+                          Binv_gpu.data(), lda_Binv, T(0), U_gpu.data(), norb);
+      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, norb, delay_count, T(-1), U_gpu.data(), norb, temp_gpu.data(),
+                          lda_Binv, T(1), Ainv_gpu.data(), norb);
       clearDelayCount();
     }
 
