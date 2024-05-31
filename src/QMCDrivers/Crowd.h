@@ -142,7 +142,7 @@ private:
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
 public:
-  WalkerTraceCollector wtrace_collector;
+  WalkerTraceCollector wtrace_collector_;
 };
 
 } // namespace qmcplusplus

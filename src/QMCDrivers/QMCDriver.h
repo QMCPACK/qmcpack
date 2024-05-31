@@ -196,7 +196,7 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///Traces manager
-  std::unique_ptr<WalkerTraceManager> wtrace_manager;
+  std::unique_ptr<WalkerTraceManager> wtrace_manager_;
 
   ///return the random generators
   inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const

@@ -442,7 +442,7 @@ protected:
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
 
   /// walker trace manager
-  std::unique_ptr<WalkerTraceManager> wtrace_manager;
+  std::unique_ptr<WalkerTraceManager> wtrace_manager_;
 
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;

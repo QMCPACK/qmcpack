@@ -67,7 +67,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
 #endif
-  wtrace_manager->startRun(wtrace_collectors);
+  wtrace_manager_->startRun(wtrace_collectors);
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
@@ -111,7 +111,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    wtrace_manager->write_buffers(wtrace_collectors);
+    wtrace_manager_->write_buffers(wtrace_collectors);
     recordBlock(block);
     vmc_loop.stop();
 
@@ -134,7 +134,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
 #endif
-  wtrace_manager->stopRun();
+  wtrace_manager_->stopRun();
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
     rngs_[ip] = Rng[ip]->makeClone();
@@ -185,7 +185,7 @@ void VMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      wtrace_collectors[ip] = wtrace_manager->makeCollector();
+      wtrace_collectors[ip] = wtrace_manager_->makeCollector();
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (W.isSpinor())

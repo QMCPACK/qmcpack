@@ -204,8 +204,8 @@ void QMCDriver::process(xmlNodePtr cur)
   Traces->put(traces_xml, allow_traces, RootName);
 #endif
   //create and initialize traces
-  if (!wtrace_manager)
-    wtrace_manager = std::make_unique<WalkerTraceManager>(walker_traces_xml, allow_walker_traces, RootName, myComm);
+  if (!wtrace_manager_)
+    wtrace_manager_ = std::make_unique<WalkerTraceManager>(walker_traces_xml, allow_walker_traces, RootName, myComm);
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)

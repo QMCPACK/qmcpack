@@ -217,7 +217,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   for (int iw = 0; iw < crowd.size(); ++iw)
-    crowd.wtrace_collector.collect(walkers[iw], walker_elecs[iw], walker_twfs[iw], walker_hamiltonians[iw], sft.current_step);
+    crowd.wtrace_collector_.collect(walkers[iw], walker_elecs[iw], walker_twfs[iw], walker_hamiltonians[iw], sft.current_step);
 
   // TODO:
   //  check if all moves failed
@@ -310,11 +310,11 @@ bool VMCBatched::run()
   //start the main estimator
   estimator_manager_->startDriverRun();
   //start walker trace manager
-  wtrace_manager = std::make_unique<WalkerTraceManager>(walker_traces_xml, allow_walker_traces, get_root_name(), myComm);
+  wtrace_manager_ = std::make_unique<WalkerTraceManager>(walker_traces_xml, allow_walker_traces, get_root_name(), myComm);
   std::vector<WalkerTraceCollector*> wtrace_collectors;
   for (auto& c: crowds_)
-    wtrace_collectors.push_back(&c->wtrace_collector);
-  wtrace_manager->startRun(wtrace_collectors);
+    wtrace_collectors.push_back(&c->wtrace_collector_);
+  wtrace_manager_->startRun(wtrace_collectors);
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_, steps_per_block_);
 
@@ -383,7 +383,7 @@ bool VMCBatched::run()
       for (auto& crowd : crowds_)
       {
         crowd->startBlock(steps_per_block_);
-        crowd->wtrace_collector.startBlock();
+        crowd->wtrace_collector_.startBlock();
       }
       for (int step = 0; step < steps_per_block_; ++step, ++current_step)
       {
@@ -405,7 +405,7 @@ bool VMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
-      wtrace_manager->write_buffers(wtrace_collectors);
+      wtrace_manager_->write_buffers(wtrace_collectors);
       recordBlock(block);
     }
 
@@ -452,7 +452,7 @@ bool VMCBatched::run()
   print_mem("VMCBatched ends", app_log());
 
   estimator_manager_->stopDriverRun();
-  wtrace_manager->stopRun();
+  wtrace_manager_->stopRun();
 
   return finalize(num_blocks, true);
 }

@@ -132,7 +132,7 @@ void DMC::resetUpdateEngines()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      wtrace_collectors[ip] = wtrace_manager->makeCollector();
+      wtrace_collectors[ip] = wtrace_manager_->makeCollector();
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (W.isSpinor())
@@ -239,7 +239,7 @@ bool DMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
 #endif
-  wtrace_manager->startRun(wtrace_collectors);
+  wtrace_manager_->startRun(wtrace_collectors);
   IndexType block        = 0;
   IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int sample             = 0;
@@ -297,7 +297,7 @@ bool DMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    wtrace_manager->write_buffers(wtrace_collectors);
+    wtrace_manager_->write_buffers(wtrace_collectors);
     block++;
     if (DumpConfig && block % Period4CheckPoint == 0)
     {
@@ -331,7 +331,7 @@ bool DMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
 #endif
-  wtrace_manager->stopRun();
+  wtrace_manager_->stopRun();
   return finalize(nBlocks);
 }
 
