@@ -12,7 +12,10 @@
 #ifndef QMCPLUSPLUS_QUEUE_ALIASES_H
 #define QMCPLUSPLUS_QUEUE_ALIASES_H
 
-#include "Queue.hpp"
+#include "config.h"
+#if defined(ENABLE_CUDA)
 #include "CUDA/QueueCUDA.hpp"
+#endif
+#include "OMPTarget/QueueOMPTarget.hpp"
 
 #endif

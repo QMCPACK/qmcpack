@@ -40,12 +40,14 @@ class EstimatorManagerInputTests;
 class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
+class SelfHealingOverlapInput;
 class MagnetizationDensityInput;
 class PerParticleHamiltonianLoggerInput;
 using EstimatorInput  = std::variant<std::monostate,
                                     MomentumDistributionInput,
                                     SpinDensityInput,
                                     OneBodyDensityMatricesInput,
+                                    SelfHealingOverlapInput,
                                     MagnetizationDensityInput,
                                     PerParticleHamiltonianLoggerInput>;
 using EstimatorInputs = std::vector<EstimatorInput>;

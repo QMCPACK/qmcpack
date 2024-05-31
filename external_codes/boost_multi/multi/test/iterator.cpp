@@ -1,16 +1,42 @@
 // Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-// #define BOOST_TEST_MODULE "C++ Unit Tests for Multi iterators"  // title NOLINT(cppcoreguidelines-macro-usage)
-#include<boost/test/unit_test.hpp>
+#include <boost/multi/array.hpp>
 
-#include "multi/array.hpp"
+#include <numeric>
+#include <vector>
 
-#include<numeric>
-#include<vector>
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4244)
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
 
 namespace multi = boost::multi;
 
-template<class Array> auto take(Array&& array) -> decltype(array[0]) {return array[0];}
+template<class Array> auto take(Array&& array) -> auto& {return std::forward<Array>(array)[0];}
 
 BOOST_AUTO_TEST_CASE(iterator_1d) {
 	{
@@ -91,20 +117,22 @@ BOOST_AUTO_TEST_CASE(iterator_2d) {
 }
 
 BOOST_AUTO_TEST_CASE(iterator_interface ) {
-	multi::array<double, 3> arr = {
+	multi::array<int, 3> arr = {
 		{
-			{ 1.2,  1.1}, { 2.4, 1.0}
+			{ 12,  11}, { 24, 10}
 		},
 		{
-			{11.2,  3.0}, {34.4, 4.0}
+			{112,  30}, {344, 40}
 		},
 		{
-			{ 1.2,  1.1}, { 2.4, 1.0}
+			{ 12,  11}, { 24, 10}
 		}
 	};
 
-	BOOST_REQUIRE( size(arr)==3 and size(arr[0]) == 2 and size(arr[0][0]) == 2 );
-	BOOST_REQUIRE( arr[0][0][1] == 1.1 );
+	BOOST_REQUIRE( size(arr) == 3 );
+	BOOST_REQUIRE( size(arr[0]) == 2 );
+	BOOST_REQUIRE( size(arr[0][0]) == 2 );
+	BOOST_REQUIRE( arr[0][0][1] == 11 );
 
 	BOOST_REQUIRE( begin(arr) < end(arr) );
 	BOOST_REQUIRE( cbegin(arr) < cend(arr) );
@@ -118,8 +146,8 @@ BOOST_AUTO_TEST_CASE(iterator_interface ) {
 	BOOST_REQUIRE( end(arr) - begin(arr) == size(arr) );
 //  BOOST_REQUIRE( rend(A) - rbegin(A) == size(A) );
 
-	BOOST_REQUIRE( size(*begin(arr)) == 2 );
-	BOOST_REQUIRE( size(begin(arr)[1]) == 2 );
+	BOOST_REQUIRE( size(*begin(arr)   ) == 2 );
+	BOOST_REQUIRE( size( begin(arr)[1]) == 2 );
 
 	BOOST_REQUIRE( &(arr[1][1].begin()[0]) == &arr[1][1][0] );  // NOLINT(readability-container-data-pointer) test access
 	BOOST_REQUIRE( &arr[0][1][0] == &arr[0][1][0] );
@@ -154,7 +182,8 @@ BOOST_AUTO_TEST_CASE(iterator_semantics) {
 	BOOST_REQUIRE( &arrc[0][0][0] == &arr[0][0][0] );
 
 	auto const& arrc2 = arr();
-	BOOST_REQUIRE( &arrc == &arrc2 );
+
+	BOOST_REQUIRE( arrc.addressof() == arrc2.addressof() );  // BOOST_REQUIRE( &arrc == &arrc2 );
 
 	multi::array<double, 3>::iterator const it2 = begin(arr);
 	BOOST_REQUIRE(it == it2);
@@ -222,9 +251,9 @@ BOOST_AUTO_TEST_CASE(index_range_iteration) {
 	std::copy(begin(irng), end(irng), std::ostream_iterator<int>{out, ","});
 	BOOST_REQUIRE( out.str() == "0,1,2,3,4," );
 
-	BOOST_REQUIRE( std::accumulate(begin(irng), end(irng), 0) == irng.size()*(irng.size()-1)/2 );
+	BOOST_REQUIRE( std::accumulate(begin(irng), end(irng), static_cast<multi::index_range::value_type>(0U)) == irng.size()*(irng.size()-1)/2 );
 
-	BOOST_REQUIRE( std::accumulate(begin(irng), end(irng), 0, [](auto&& acc, auto const& elem) {return acc + elem*elem*elem;}) > 0 );  // sum of cubes
+	BOOST_REQUIRE( std::accumulate(begin(irng), end(irng), static_cast<multi::index_range::value_type>(0U), [](auto&& acc, auto const& elem) {return acc + elem*elem*elem;}) > 0 );  // sum of cubes
 }
 
 BOOST_AUTO_TEST_CASE(multi_reverse_iterator_1D) {

@@ -1,9 +1,35 @@
 // Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-// #define BOOST_TEST_MODULE "C++ Unit Tests for Multi reextent"  // test title NOLINT(cppcoreguidelines-macro-usage)
+#include <boost/multi/array.hpp>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4244)
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
 #include <boost/test/unit_test.hpp>
-
-#include "multi/array.hpp"
 
 namespace multi = boost::multi;
 
@@ -216,7 +242,7 @@ constexpr auto comp_equal(T left, U right) noexcept -> bool {
 	} else {
 		return right < 0 ? false : left == UU(right);
 	}
-#if not defined(__INTEL_COMPILER) and not defined(__NVCOMPILER)
+#if !defined(__INTEL_COMPILER) && !defined(__NVCOMPILER) && !defined(_MSC_VER)
 	__builtin_unreachable();
 #endif
 }
