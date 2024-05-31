@@ -85,6 +85,9 @@ public:
     estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, walker_hamiltonians_, rng);
   }
 
+  /// Collect walker trace data
+  void collect(int current_step);
+
   void setRNGForHamiltonian(RandomBase<FullPrecRealType>& rng);
 
   auto beginWalkers() { return mcp_walkers_.begin(); }

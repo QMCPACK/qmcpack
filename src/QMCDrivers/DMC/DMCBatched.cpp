@@ -288,8 +288,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     crowd.accumulate(step_context.get_random_gen());
   }
 
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    crowd.wtrace_collector_.collect(walkers[iw], walker_elecs[iw], walker_twfs[iw], walker_hamiltonians[iw], sft.current_step);
+  // collect walker traces
+  crowd.collect(sft.current_step);
+  //for (int iw = 0; iw < crowd.size(); ++iw)
+  //  crowd.wtrace_collector_.collect(walkers[iw], walker_elecs[iw], walker_twfs[iw], walker_hamiltonians[iw], sft.current_step);
 
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
