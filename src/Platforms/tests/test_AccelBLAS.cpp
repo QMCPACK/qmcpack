@@ -68,7 +68,7 @@ void test_one_gemm(const int M, const int N, const int K, const char transa, con
   // transa/transb == 'T'/'T':   C[N,M] = A[M,K] * B[K,N]; C = B^t * A^t
 
   compute::Queue<PL> queue;
-  compute::BLASHandle<PlatformKind::CUDA> h_blas(queue);
+  compute::BLASHandle<PL> h_blas(queue);
   compute::BLAS::gemm(h_blas, transa, transb, M, N, K, alpha, A.device_data(), a1, B.device_data(), b1, beta, C.device_data(),
                 M);
   queue.sync();
@@ -128,8 +128,11 @@ TEST_CASE("AccelBLAS", "[BLAS]")
   SECTION("gemm")
   {
 #if defined(ENABLE_CUDA)
+    std::cout << "Testing gemm<PlatformKind::CUDA>" << std::endl;
     test_gemm_cases<PlatformKind::CUDA>();
 #endif
+    std::cout << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
+    test_gemm_cases<PlatformKind::OMPTARGET>();
   }
 }
 } // namespace qmcplusplus

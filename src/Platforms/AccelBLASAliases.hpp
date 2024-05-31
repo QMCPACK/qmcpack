@@ -16,5 +16,6 @@
 #if defined(ENABLE_CUDA)
 #include "CUDA/AccelBLAS_CUDA.hpp"
 #endif
+#include "OMPTarget/AccelBLAS_OMPTarget.hpp"
 
 #endif
