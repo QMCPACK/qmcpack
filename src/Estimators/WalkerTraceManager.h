@@ -389,7 +389,7 @@ public:
 
   void startBlock();
 
-  void collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham, int step=-1);
+  void collect(const MCPWalker& walker, const ParticleSet& pset, const TrialWaveFunction& wfn, const QMCHamiltonian& ham, int step=-1);
 
   void check_buffers();
 

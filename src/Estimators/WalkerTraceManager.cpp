@@ -63,7 +63,7 @@ void WalkerTraceCollector::startBlock()
 }
 
 
-void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham, int step)
+void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& pset, const TrialWaveFunction& wfn, const QMCHamiltonian& ham, int step)
 {
   if(!state.traces_active) return;
 
