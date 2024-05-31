@@ -65,59 +65,16 @@ void WalkerTraceCollector::startBlock()
 
 void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& wfn, QMCHamiltonian& ham, int step)
 {
-  int current_step;
-  if (step==-1)
-    current_step = pset.current_step;
-  else
-    current_step = step;
+  if(!state.traces_active) return;
 
-  if(!state.traces_active || current_step%state.step_period!=0) return;
-
-  //app_log()<<"TraceCollector::collect (step "<<pset.current_step<<")"<<std::endl;
+  int current_step = (step==-1) ? pset.current_step : step;
+  if(current_step%state.step_period!=0) return;
 
   auto& bsi = walker_property_int_buffer;
   auto& bsr = walker_property_real_buffer;
   auto& bar = walker_particle_real_buffer;
-
-  // collect integer walker properties
-  bsi.collect("step"        , (WTraceInt)current_step    );
-  bsi.collect("id"          , (WTraceInt)walker.getWalkerID() );
-  bsi.collect("parent_id"   , (WTraceInt)walker.getParentID() );
-  bsi.collect("age"         , (WTraceInt)walker.Age           );
-  bsi.reset_collect();
-
-  // collect real walker properties
-  bsr.collect("weight"      , (WTraceReal)walker.Weight        );
-  bsr.collect("multiplicity", (WTraceReal)walker.Multiplicity  );
-  bsr.collect("logpsi"      , (WTraceReal)wfn.getLogPsi()      );
-  bsr.collect("phase"       , (WTraceReal)wfn.getPhase()       );
-  if (bsr.first_collect)
-  {
-    for(size_t n=0;n<pset.PropertyList.size();++n)
-    {
-      auto& name  = pset.PropertyList.Names[n];
-      auto& value = walker.Properties(0,n);
-      if(properties_include.find(name) != properties_include.end())
-      {
-        bsr.collect(name, (WTraceReal)value );
-        property_indices.push_back(n);
-      }
-      if(name=="LocalEnergy")
-        energy_index = n;
-    }
-    if(energy_index<0)
-      throw std::runtime_error("TraceCollector::collect  energy_index must not be negative");
-  }
-  else
-    for(auto n: property_indices)
-    {
-      auto& name  = pset.PropertyList.Names[n];
-      auto& value = walker.Properties(0,n);
-      bsr.collect(name, (WTraceReal)value );
-    }
-  bsr.reset_collect();
   
-  // collect per particle walker quantities
+  // collect per-particle walker quantities
   size_t nparticles = walker.R.size();
   size_t ndim       = walker.R[0].size();
   //   per-particle positions (walker.R)
@@ -146,6 +103,60 @@ void WalkerTraceCollector::collect(MCPWalker& walker, ParticleSet& pset, TrialWa
     Ltmp(p) = (WTracePsiVal)pset.L[p];
   bar.collect("L", Ltmp);
   bar.reset_collect();
+
+  // collect integer walker properties
+  bsi.collect("step"        , (WTraceInt)current_step         );
+  bsi.collect("id"          , (WTraceInt)walker.getWalkerID() );
+  bsi.collect("parent_id"   , (WTraceInt)walker.getParentID() );
+  bsi.collect("age"         , (WTraceInt)walker.Age           );
+  bsi.reset_collect();
+
+  // collect real walker properties
+  bsr.collect("weight"      , (WTraceReal)walker.Weight        );
+  bsr.collect("multiplicity", (WTraceReal)walker.Multiplicity  );
+  bsr.collect("logpsi"      , (WTraceReal)wfn.getLogPsi()      );
+  bsr.collect("phase"       , (WTraceReal)wfn.getPhase()       );
+  //    from PropertyList
+  if (bsr.first_collect)
+  {
+    for(size_t n=0;n<pset.PropertyList.size();++n)
+    {
+      auto& name  = pset.PropertyList.Names[n];
+      auto& value = walker.Properties(0,n);
+      if(properties_include.find(name) != properties_include.end())
+      {
+        bsr.collect(name, (WTraceReal)value );
+        property_indices.push_back(n);
+      }
+      if(name=="LocalEnergy")
+        energy_index = n;
+    }
+    if(energy_index<0)
+      throw std::runtime_error("TraceCollector::collect  energy_index must not be negative");
+  }
+  else
+    for(auto n: property_indices)
+    {
+      auto& name  = pset.PropertyList.Names[n];
+      auto& value = walker.Properties(0,n);
+      bsr.collect(name, (WTraceReal)value );
+    }
+  //    nodal proximity measures
+  auto& gv = Gtmp.storage();
+  WTraceReal dr = std::numeric_limits<WTraceReal>::max();
+  for(size_t n=0; n<gv.size(); ++n)
+    dr = std::min(dr,std::abs(1./std::real(gv[n])));
+  auto dr_node_min = dr;
+  WTraceReal dlogpsi2 = 0.;
+  for(size_t n=0; n<gv.size(); ++n)
+    dlogpsi2 += std::real(gv[n])*std::real(gv[n]);
+  WTraceReal dphase2 = 0.;
+  for(size_t n=0; n<gv.size(); ++n)
+    dphase2 += std::imag(gv[n])*std::imag(gv[n]);
+  bsr.collect("dr_node_min", dr_node_min);
+  bsr.collect("dlogpsi2"   , dlogpsi2   ); // dr_node = 1/sqrt(dlogpsi2)
+  bsr.collect("dphase2"    , dphase2    ); // dr_node = 1/sqrt(dphase2)  
+  bsr.reset_collect();
 
   // save the energy of this walker
   steps.push_back((size_t)current_step);
