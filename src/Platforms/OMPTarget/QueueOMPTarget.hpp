@@ -34,11 +34,11 @@ public:
     auto host_ptr = dataset.data();
     if (size == 0)
     {
-      PRAGMA_OFFLOAD("omp target update to(host_ptr[offset:dataset.size()]) nowait")
+      PRAGMA_OFFLOAD("omp target update to(host_ptr[offset:dataset.size()])")
     }
     else
     {
-      PRAGMA_OFFLOAD("omp target update to(host_ptr[offset:size]) nowait")
+      PRAGMA_OFFLOAD("omp target update to(host_ptr[offset:size])")
     }
   }
 
@@ -51,15 +51,15 @@ public:
     auto host_ptr = dataset.data();
     if (size == 0)
     {
-      PRAGMA_OFFLOAD("omp target update from(host_ptr[offset:dataset.size()]) nowait")
+      PRAGMA_OFFLOAD("omp target update from(host_ptr[offset:dataset.size()])")
     }
     else
     {
-      PRAGMA_OFFLOAD("omp target update from(host_ptr[offset:size]) nowait")
+      PRAGMA_OFFLOAD("omp target update from(host_ptr[offset:size])")
     }
   }
 
-  void sync() { PRAGMA_OFFLOAD("omp taskwait") }
+  void sync() {}
 };
 
 } // namespace compute
