@@ -15,6 +15,7 @@
 #include "CPU/BLAS.hpp"
 #include "OMPTarget/ompBLAS.hpp"
 #include <ResourceCollection.h>
+#include <AccelBLASAliases.hpp>
 
 namespace qmcplusplus
 {
@@ -24,7 +25,7 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
-  LCAOMultiWalkerMem() : Resource("LCAOrbitalSet") {}
+  LCAOMultiWalkerMem() : Resource("LCAOrbitalSet"), blas_handle(queue) {}
   LCAOMultiWalkerMem(const LCAOMultiWalkerMem&) : LCAOMultiWalkerMem() {}
 
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
@@ -38,6 +39,14 @@ struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
   OffloadVector<const ValueType*> invRow_deviceptr_list; // [NVPs]
   OffloadMatrix<ValueType> rg_buffer;                    // [4][NVPs]
   OffloadVector<size_t> nVP_index_list;                  // [NVPs]
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  compute::Queue<PlatformKind::CUDA> queue;
+  compute::BLASHandle<PlatformKind::CUDA> blas_handle;
+#else
+  compute::Queue<PlatformKind::OMPTARGET> queue;
+  compute::BLASHandle<PlatformKind::OMPTARGET> blas_handle;
+#endif
 };
 
 LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name,
@@ -473,7 +482,8 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
 {
   assert(this == &spo_list.getLeader());
   auto& spo_leader   = spo_list.getCastedLeader<LCAOrbitalSet>();
-  auto& basis_vgl_mw = spo_leader.mw_mem_handle_.getResource().basis_vgl_mw;
+  auto& mw_res       = spo_leader.mw_mem_handle_.getResource();
+  auto& basis_vgl_mw = mw_res.basis_vgl_mw;
   basis_vgl_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
 
   {
@@ -507,17 +517,14 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
     {
       if (useOMPoffload_)
       {
-        int dummy_handle = 0;
-        int success      = 0;
-        auto* c_devptr   = C->device_data();
-        success          = ompBLAS::gemm(dummy_handle, 'T', 'N',
-                                         requested_orb_size,        // MOs
-                                         spo_list.size() * DIM_VGL, // walkers * DIM_VGL
-                                         BasisSetSize,              // AOs
-                                         ValueType(1), c_devptr, BasisSetSize, basis_vgl_mw.device_data(), BasisSetSize,
-                                         ValueType(0), phi_vgl_v.device_data(), requested_orb_size);
-        if (success != 0)
-          throw std::runtime_error("In LCAOrbitalSet::mw_evaluateVGLImplGEMM ompBLAS::gemm failed.");
+        auto* c_devptr = C->device_data();
+        compute::BLAS::gemm(mw_res.blas_handle, 'T', 'N',
+                            requested_orb_size,        // MOs
+                            spo_list.size() * DIM_VGL, // walkers * DIM_VGL
+                            BasisSetSize,              // AOs
+                            ValueType(1), c_devptr, BasisSetSize, basis_vgl_mw.device_data(), BasisSetSize,
+                            ValueType(0), phi_vgl_v.device_data(), requested_orb_size);
+        mw_res.queue.sync();
       }
       else
       {
@@ -541,9 +548,9 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
                                                 OffloadMWVArray& vp_phi_v) const
 {
   assert(this == &spo_list.getLeader());
-  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
-  //const size_t nw  = spo_list.size();
-  auto& vp_basis_v_mw = spo_leader.mw_mem_handle_.getResource().vp_basis_v_mw;
+  auto& spo_leader    = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& mw_res        = spo_leader.mw_mem_handle_.getResource();
+  auto& vp_basis_v_mw = mw_res.vp_basis_v_mw;
   //Splatter basis_v
   const size_t nVPs = vp_phi_v.size(0);
   vp_basis_v_mw.resize(nVPs, BasisSetSize);
@@ -573,17 +580,14 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
 
     if (useOMPoffload_)
     {
-      int dummy_handle = 0;
-      int success      = 0;
-      auto* c_devptr   = C->device_data();
-      success          = ompBLAS::gemm(dummy_handle, 'T', 'N',
-                                       requested_orb_size, // MOs
-                                       nVPs,               // walkers * Virtual Particles
-                                       BasisSetSize,       // AOs
-                                       ValueType(1), c_devptr, BasisSetSize, vp_basis_v_mw.device_data(), BasisSetSize,
-                                       ValueType(0), vp_phi_v.device_data(), requested_orb_size);
-      if (success != 0)
-        throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueVPsImplGEMM ompBLAS::gemm failed.");
+      auto* c_devptr = C->device_data();
+      compute::BLAS::gemm(mw_res.blas_handle, 'T', 'N',
+                          requested_orb_size, // MOs
+                          nVPs,               // walkers * Virtual Particles
+                          BasisSetSize,       // AOs
+                          ValueType(1), c_devptr, BasisSetSize, vp_basis_v_mw.device_data(), BasisSetSize, ValueType(0),
+                          vp_phi_v.device_data(), requested_orb_size);
+      mw_res.queue.sync();
     }
     else
     {
@@ -631,7 +635,8 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
   assert(this == &spo_list.getLeader());
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
   const size_t nw  = spo_list.size();
-  auto& basis_v_mw = spo_leader.mw_mem_handle_.getResource().basis_v_mw;
+  auto& mw_res     = spo_leader.mw_mem_handle_.getResource();
+  auto& basis_v_mw = mw_res.basis_v_mw;
   basis_v_mw.resize(nw, BasisSetSize);
 
   auto basis_list = spo_leader.extractBasisRefList(spo_list);
@@ -658,17 +663,14 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
 
     if (useOMPoffload_)
     {
-      int dummy_handle = 0;
-      int success      = 0;
-      auto* c_devptr   = C->device_data();
-      success          = ompBLAS::gemm(dummy_handle, 'T', 'N',
-                                       requested_orb_size, // MOs
-                                       nw,                 // walkers
-                                       BasisSetSize,       // AOs
-                                       ValueType(1), c_devptr, BasisSetSize, basis_v_mw.device_data(), BasisSetSize,
-                                       ValueType(0), phi_v.device_data(), requested_orb_size);
-      if (success != 0)
-        throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueImplGEMM ompBLAS::gemm failed.");
+      auto* c_devptr = C->device_data();
+      compute::BLAS::gemm(mw_res.blas_handle, 'T', 'N',
+                          requested_orb_size, // MOs
+                          nw,                 // walkers
+                          BasisSetSize,       // AOs
+                          ValueType(1), c_devptr, BasisSetSize, basis_v_mw.device_data(), BasisSetSize, ValueType(0),
+                          phi_v.device_data(), requested_orb_size);
+      mw_res.queue.sync();
     }
     else
     {
