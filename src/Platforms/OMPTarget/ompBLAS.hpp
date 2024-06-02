@@ -36,14 +36,31 @@ ompBLAS_status gemm(ompBLAS_handle& handle,
                     const int M,
                     const int N,
                     const int K,
-                    const T alpha,
+                    const T& alpha,
                     const T* const A,
                     const int lda,
                     const T* const B,
                     const int ldb,
-                    const T beta,
+                    const T& beta,
                     T* const C,
                     const int ldc);
+
+template<typename T>
+ompBLAS_status gemm_batched(ompBLAS_handle& handle,
+                            const char transa,
+                            const char transb,
+                            const int M,
+                            const int N,
+                            const int K,
+                            const T& alpha,
+                            const T* const A[],
+                            const int lda,
+                            const T* const B[],
+                            const int ldb,
+                            const T& beta,
+                            T* const C[],
+                            const int ldc,
+                            const int batch_count);
 
 template<typename T>
 ompBLAS_status gemv(ompBLAS_handle& handle,

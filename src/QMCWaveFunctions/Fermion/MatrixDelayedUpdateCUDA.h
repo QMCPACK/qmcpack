@@ -668,16 +668,15 @@ public:
 */
     {
       const int lda_Binv = engine_leader.Binv_gpu.cols();
-      constexpr Value cone(1), czero(0), cminusone(-1);
-      compute::BLAS::gemm_batched(blas_handle, 'T', 'N', delay_count, norb, norb, &cone, U_mw_ptr, norb, Ainv_mw_ptr,
-                                  lda, &czero, tempMat_mw_ptr, lda_Binv, nw);
+      compute::BLAS::gemm_batched(blas_handle, 'T', 'N', delay_count, norb, norb, Value(1), U_mw_ptr, norb, Ainv_mw_ptr,
+                                  lda, Value(0), tempMat_mw_ptr, lda_Binv, nw);
       cudaErrorCheck(CUDA::applyW_batched(queue.getNative(), delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv,
                                           nw),
                      "CUDA::applyW_batched failed!");
-      compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, delay_count, delay_count, &cone, V_mw_ptr, norb,
-                                  Binv_mw_ptr, lda_Binv, &czero, U_mw_ptr, norb, nw);
-      compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, norb, delay_count, &cminusone, U_mw_ptr, norb,
-                                  tempMat_mw_ptr, lda_Binv, &cone, Ainv_mw_ptr, lda, nw);
+      compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, delay_count, delay_count,  Value(1), V_mw_ptr, norb,
+                                  Binv_mw_ptr, lda_Binv, Value(0), U_mw_ptr, norb, nw);
+      compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, norb, delay_count, Value(-1), U_mw_ptr, norb,
+                                  tempMat_mw_ptr, lda_Binv, Value(1), Ainv_mw_ptr, lda, nw);
     }
     delay_count = 0;
   }

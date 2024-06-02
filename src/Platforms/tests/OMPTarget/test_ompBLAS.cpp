@@ -50,14 +50,8 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
     for (int i = 0; i < b1; i++)
       B[j][i] = i * 4 + j * 5;
 
-  // Fill C and D with 0
-  for (int j = 0; j < N; j++)
-    for (int i = 0; i < M; i++)
-      C[j][i] = D[j][i] = T(0);
-
   A.updateTo();
   B.updateTo();
-  C.updateTo();
 
   T alpha(1);
   T beta(0);
@@ -83,6 +77,59 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
     {
       CHECK(std::real(C[j][i]) == Approx(std::real(D[j][i])));
       CHECK(std::imag(C[j][i]) == Approx(std::imag(D[j][i])));
+    }
+
+  mat_t A2(a0, a1); // Input matrix
+  mat_t B2(b0, b1); // Input matrix
+  mat_t C2(N, M);   // Result matrix ompBLAS
+  mat_t D2(N, M);   // Result matrix BLAS
+
+  // Fill data
+  for (int j = 0; j < a0; j++)
+    for (int i = 0; i < a1; i++)
+      A2[j][i] = j * 3 + i * 4;
+
+  for (int j = 0; j < b0; j++)
+    for (int i = 0; i < b1; i++)
+      B2[j][i] = j * 4 + i * 5;
+
+  A2.updateTo();
+  B2.updateTo();
+
+  Vector<const T*, OMPallocator<const T*>> Aarr(2), Barr(2);
+  Vector<T*, OMPallocator<T*>> Carr(2);
+
+  Aarr[0] = A2.device_data();
+  Aarr[1] = A.device_data();
+  Barr[0] = B2.device_data();
+  Barr[1] = B.device_data();
+
+  Carr[0] = C.device_data();
+  Carr[1] = C2.device_data();
+
+  Aarr.updateTo();
+  Barr.updateTo();
+  Carr.updateTo();
+
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha, Aarr.device_data(), a1, Barr.device_data(), b1, beta,
+                        Carr.device_data(), M, 2);
+  C.updateFrom();
+  C2.updateFrom();
+
+  BLAS::gemm(transa, transb, M, N, K, alpha, A2.data(), a1, B2.data(), b1, beta, D2.data(), M);
+
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+    {
+      CHECK(std::real(C2[j][i]) == Approx(std::real(D[j][i])));
+      CHECK(std::imag(C2[j][i]) == Approx(std::imag(D[j][i])));
+    }
+
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+    {
+      CHECK(std::real(C[j][i]) == Approx(std::real(D2[j][i])));
+      CHECK(std::imag(C[j][i]) == Approx(std::imag(D2[j][i])));
     }
 }
 
