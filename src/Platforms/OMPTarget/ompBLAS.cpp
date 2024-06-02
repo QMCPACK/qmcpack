@@ -178,26 +178,24 @@ ompBLAS_status gemm_batched_impl(ompBLAS_handle& handle,
                                  const int M,
                                  const int N,
                                  const int K,
-                                 const T* alpha_arr,
+                                 const T alpha,
                                  const T* const Aarray[],
                                  const int lda,
                                  const T* const Barray[],
                                  const int ldb,
-                                 const T* beta_arr,
+                                 const T beta,
                                  T* const Carray[],
                                  const int ldc,
                                  const int batch_count)
 {
   if (transa == 'T' && transb == 'N') //A(ji) * B(jk) -> C(ik)
   {
-    PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray, alpha_arr, beta_arr)")
+    PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray)")
     for (size_t iw = 0; iw < batch_count; iw++)
     {
-      auto alpha = alpha_arr[iw];
-      auto beta  = beta_arr[iw];
-      auto A     = Aarray[iw];
-      auto B     = Barray[iw];
-      auto C     = Carray[iw];
+      auto A = Aarray[iw];
+      auto B = Barray[iw];
+      auto C = Carray[iw];
       PRAGMA_OFFLOAD("omp parallel for collapse(2)")
       for (size_t m = 0; m < M; m++)
         for (size_t n = 0; n < N; n++)
@@ -211,14 +209,12 @@ ompBLAS_status gemm_batched_impl(ompBLAS_handle& handle,
   }
   else if (transa == 'T' && transb == 'T')
   {
-    PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray, alpha_arr, beta_arr)")
+    PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray)")
     for (size_t iw = 0; iw < batch_count; iw++)
     {
-      auto alpha = alpha_arr[iw];
-      auto beta  = beta_arr[iw];
-      auto A     = Aarray[iw];
-      auto B     = Barray[iw];
-      auto C     = Carray[iw];
+      auto A = Aarray[iw];
+      auto B = Barray[iw];
+      auto C = Carray[iw];
       PRAGMA_OFFLOAD("omp parallel for collapse(2)")
       for (size_t m = 0; m < M; m++)
         for (size_t n = 0; n < N; n++)
@@ -232,14 +228,12 @@ ompBLAS_status gemm_batched_impl(ompBLAS_handle& handle,
   }
   else if (transa == 'N' && transb == 'T')
   {
-    PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray, alpha_arr, beta_arr)")
+    PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray)")
     for (size_t iw = 0; iw < batch_count; iw++)
     {
-      auto alpha = alpha_arr[iw];
-      auto beta  = beta_arr[iw];
-      auto A     = Aarray[iw];
-      auto B     = Barray[iw];
-      auto C     = Carray[iw];
+      auto A = Aarray[iw];
+      auto B = Barray[iw];
+      auto C = Carray[iw];
       PRAGMA_OFFLOAD("omp parallel for collapse(2)")
       for (size_t m = 0; m < M; m++)
         for (size_t n = 0; n < N; n++)
@@ -253,14 +247,12 @@ ompBLAS_status gemm_batched_impl(ompBLAS_handle& handle,
   }
   else if (transa == 'N' && transb == 'N')
   {
-    PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray, alpha_arr, beta_arr)")
+    PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray)")
     for (size_t iw = 0; iw < batch_count; iw++)
     {
-      auto alpha = alpha_arr[iw];
-      auto beta  = beta_arr[iw];
-      auto A     = Aarray[iw];
-      auto B     = Barray[iw];
-      auto C     = Carray[iw];
+      auto A = Aarray[iw];
+      auto B = Barray[iw];
+      auto C = Carray[iw];
       PRAGMA_OFFLOAD("omp parallel for collapse(2)")
       for (size_t n = 0; n < N; n++)
         for (size_t m = 0; m < M; m++)
@@ -285,12 +277,12 @@ ompBLAS_status gemm_batched<float>(ompBLAS_handle& handle,
                                    const int M,
                                    const int N,
                                    const int K,
-                                   const float* alpha,
+                                   const float& alpha,
                                    const float* const A[],
                                    const int lda,
                                    const float* const B[],
                                    const int ldb,
-                                   const float* beta,
+                                   const float& beta,
                                    float* const C[],
                                    const int ldc,
                                    const int batch_count)
@@ -305,12 +297,12 @@ ompBLAS_status gemm_batched<double>(ompBLAS_handle& handle,
                                     const int M,
                                     const int N,
                                     const int K,
-                                    const double* alpha,
+                                    const double& alpha,
                                     const double* const A[],
                                     const int lda,
                                     const double* const B[],
                                     const int ldb,
-                                    const double* beta,
+                                    const double& beta,
                                     double* const C[],
                                     const int ldc,
                                     const int batch_count)
@@ -325,12 +317,12 @@ ompBLAS_status gemm_batched<std::complex<float>>(ompBLAS_handle& handle,
                                                  const int M,
                                                  const int N,
                                                  const int K,
-                                                 const std::complex<float>* alpha,
+                                                 const std::complex<float>& alpha,
                                                  const std::complex<float>* const A[],
                                                  const int lda,
                                                  const std::complex<float>* const B[],
                                                  const int ldb,
-                                                 const std::complex<float>* beta,
+                                                 const std::complex<float>& beta,
                                                  std::complex<float>* const C[],
                                                  const int ldc,
                                                  const int batch_count)
@@ -345,12 +337,12 @@ ompBLAS_status gemm_batched<std::complex<double>>(ompBLAS_handle& handle,
                                                   const int M,
                                                   const int N,
                                                   const int K,
-                                                  const std::complex<double>* alpha,
+                                                  const std::complex<double>& alpha,
                                                   const std::complex<double>* const A[],
                                                   const int lda,
                                                   const std::complex<double>* const B[],
                                                   const int ldb,
-                                                  const std::complex<double>* beta,
+                                                  const std::complex<double>& beta,
                                                   std::complex<double>* const C[],
                                                   const int ldc,
                                                   const int batch_count)
