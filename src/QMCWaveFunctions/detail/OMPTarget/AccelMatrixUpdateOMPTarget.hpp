@@ -89,8 +89,8 @@ void calcGradients_batched(Queue<PlatformKind::OMPTARGET>& queue,
     }
 
     grads_now[iw * 3]     = sum_x;
-    grads_now[iw * 3 + 1] = sum_x;
-    grads_now[iw * 3 + 2] = sum_x;
+    grads_now[iw * 3 + 1] = sum_y;
+    grads_now[iw * 3 + 2] = sum_z;
   }
 }
 
@@ -111,8 +111,8 @@ void add_delay_list_save_sigma_VGL_batched(Queue<PlatformKind::OMPTARGET>& queue
                                            const int n_accepted,
                                            const int batch_count)
 {
-  PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(delay_list, binv, ratio_inv, phi_vgl_in, phi_out, "
-                 "dphi_out, d2phi_out)")
+  PRAGMA_OFFLOAD("omp target teams distribute \
+                  is_device_ptr(delay_list, binv, ratio_inv, phi_vgl_in, phi_out, dphi_out, d2phi_out)")
   for (size_t iw = 0; iw < batch_count; iw++)
     if (iw < n_accepted)
     {
