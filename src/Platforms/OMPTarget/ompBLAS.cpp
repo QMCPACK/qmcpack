@@ -310,6 +310,7 @@ ompBLAS_status gemm_batched<double>(ompBLAS_handle& handle,
   return gemm_batched_impl(handle, transa, transb, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count);
 }
 
+#if !defined(OPENMP_NO_COMPLEX)
 template<>
 ompBLAS_status gemm_batched<std::complex<float>>(ompBLAS_handle& handle,
                                                  const char transa,
@@ -349,6 +350,7 @@ ompBLAS_status gemm_batched<std::complex<double>>(ompBLAS_handle& handle,
 {
   return gemm_batched_impl(handle, transa, transb, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, batch_count);
 }
+#endif
 
 template<typename T>
 ompBLAS_status gemv_impl(ompBLAS_handle& handle,
