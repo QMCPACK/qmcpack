@@ -22,7 +22,7 @@
 #include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "QueueAliases.hpp"
-#include "AccelBLASAliases.hpp"
+#include "AccelBLAS.hpp"
 #include "DiracMatrixComputeCUDA.hpp"
 
 namespace qmcplusplus
