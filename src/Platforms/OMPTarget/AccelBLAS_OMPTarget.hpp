@@ -109,6 +109,19 @@ inline void ger_batched(BLASHandle<PlatformKind::OMPTARGET>& handle,
     throw std::runtime_error("ompBLAS::ger_batched failed!");
 }
 
+template<typename T>
+inline void copy_batched(BLASHandle<PlatformKind::OMPTARGET>& handle,
+                         const int n,
+                         const T* const x[],
+                         const int incx,
+                         T* const y[],
+                         const int incy,
+                         const int batch_count)
+{
+  if (ompBLAS::copy_batched(handle.h_ompblas, n, x, incx, y, incy, batch_count) != 0)
+    throw std::runtime_error("ompBLAS::copy_batched failed!");
+}
+
 } // namespace BLAS
 } // namespace compute
 } // namespace qmcplusplus
