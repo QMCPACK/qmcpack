@@ -514,8 +514,8 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                                          requested_orb_size,        // MOs
                                          spo_list.size() * DIM_VGL, // walkers * DIM_VGL
                                          BasisSetSize,              // AOs
-                                         1, c_devptr, BasisSetSize, basis_vgl_mw.device_data(), BasisSetSize, 0,
-                                         phi_vgl_v.device_data(), requested_orb_size);
+                                         ValueType(1), c_devptr, BasisSetSize, basis_vgl_mw.device_data(), BasisSetSize,
+                                         ValueType(0), phi_vgl_v.device_data(), requested_orb_size);
         if (success != 0)
           throw std::runtime_error("In LCAOrbitalSet::mw_evaluateVGLImplGEMM ompBLAS::gemm failed.");
       }
@@ -580,8 +580,8 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
                                        requested_orb_size, // MOs
                                        nVPs,               // walkers * Virtual Particles
                                        BasisSetSize,       // AOs
-                                       1, c_devptr, BasisSetSize, vp_basis_v_mw.device_data(), BasisSetSize, 0,
-                                       vp_phi_v.device_data(), requested_orb_size);
+                                       ValueType(1), c_devptr, BasisSetSize, vp_basis_v_mw.device_data(), BasisSetSize,
+                                       ValueType(0), vp_phi_v.device_data(), requested_orb_size);
       if (success != 0)
         throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueVPsImplGEMM ompBLAS::gemm failed.");
     }
@@ -665,8 +665,8 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
                                        requested_orb_size, // MOs
                                        nw,                 // walkers
                                        BasisSetSize,       // AOs
-                                       1, c_devptr, BasisSetSize, basis_v_mw.device_data(), BasisSetSize, 0, phi_v.device_data(),
-                                       requested_orb_size);
+                                       ValueType(1), c_devptr, BasisSetSize, basis_v_mw.device_data(), BasisSetSize,
+                                       ValueType(0), phi_v.device_data(), requested_orb_size);
       if (success != 0)
         throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueImplGEMM ompBLAS::gemm failed.");
     }
