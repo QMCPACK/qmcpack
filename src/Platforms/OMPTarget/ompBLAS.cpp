@@ -369,7 +369,7 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
   if (trans == 'T')
   {
     if (incx != 1 || incy != 1)
-      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
+      throw std::runtime_error("incx!=1 or incy!=1 are not implemented in ompBLAS::gemv_impl trans='T'!");
 
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(n) is_device_ptr(A, x, y)")
     for (uint32_t i = 0; i < n; i++)
@@ -385,10 +385,10 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
     }
     return 0;
   }
-  else
+  else if (trans == 'N')
   {
     if (incx != 1 || incy != 1)
-      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
+      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl trans='N'!");
 
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(m) is_device_ptr(A, x, y)")
     for (uint32_t i = 0; i < m; i++)
@@ -404,6 +404,8 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
     }
     return 0;
   }
+  else
+    throw std::runtime_error("Error: trans=='C' not yet implemented for ompBLAS::gemv_impl.");
 }
 
 template<>
@@ -497,11 +499,11 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
 
   if (trans == 'T')
   {
-    if (incx != 1 || incy != 1)
-      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_batched_impl!");
+    if (incx != 1)
+      throw std::runtime_error("incx!=1 are not implemented in ompBLAS::gemv_batched_impl trans='T'!");
 
-    PRAGMA_OFFLOAD(
-        "omp target teams distribute collapse(2) num_teams(batch_count * n) is_device_ptr(A, x, y, alpha, beta)")
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(batch_count * n) \
+                               is_device_ptr(A, x, y, alpha, beta)")
     for (uint32_t ib = 0; ib < batch_count; ib++)
       for (uint32_t i = 0; i < n; i++)
       {
@@ -510,19 +512,19 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
         for (uint32_t j = 0; j < m; j++)
           dot_sum += x[ib][j] * A[ib][i * lda + j];
         if (beta[ib] == T(0))
-          y[ib][i] = alpha[ib] * dot_sum; // protecting NaN from y
+          y[ib][i * incy] = alpha[ib] * dot_sum; // protecting NaN from y
         else
-          y[ib][i] = alpha[ib] * dot_sum + beta[ib] * y[ib][i];
+          y[ib][i * incy] = alpha[ib] * dot_sum + beta[ib] * y[ib][i * incy];
       }
     return 0;
   }
-  else
+  else if (trans == 'N')
   {
-    if (incx != 1 || incy != 1)
-      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_batched_impl!");
+    if (incx != 1)
+      throw std::runtime_error("incx!=1 are not implemented in ompBLAS::gemv_batched_impl trans='N'!");
 
-    PRAGMA_OFFLOAD(
-        "omp target teams distribute collapse(2) num_teams(batch_count * n) is_device_ptr(A, x, y, alpha, beta)")
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(batch_count * n) \
+                               is_device_ptr(A, x, y, alpha, beta)")
     for (uint32_t ib = 0; ib < batch_count; ib++)
       for (uint32_t i = 0; i < m; i++)
       {
@@ -531,12 +533,14 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
         for (uint32_t j = 0; j < n; j++)
           dot_sum += x[ib][j] * A[ib][j * lda + i];
         if (beta[ib] == T(0))
-          y[ib][i] = alpha[ib] * dot_sum; // protecting NaN from y
+          y[ib][i * incy] = alpha[ib] * dot_sum; // protecting NaN from y
         else
-          y[ib][i] = alpha[ib] * dot_sum + beta[ib] * y[ib][i];
+          y[ib][i * incy] = alpha[ib] * dot_sum + beta[ib] * y[ib][i * incy];
       }
     return 0;
   }
+  else
+    throw std::runtime_error("Error: trans=='C' not yet implemented for ompBLAS::gemv_impl.");
 }
 
 template<>
@@ -716,14 +720,14 @@ ompBLAS_status ger_batched_impl(ompBLAS_handle& handle,
   if (batch_count == 0)
     return 0;
 
-  if (incx != 1 || incy != 1)
-    throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::ger_batched_impl!");
+  if (incx != 1)
+    throw std::runtime_error("incx!=1 are not implemented in ompBLAS::ger_batched_impl!");
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) is_device_ptr(A, x, y, alpha)")
   for (uint32_t ib = 0; ib < batch_count; ib++)
     for (uint32_t i = 0; i < n; i++)
       for (uint32_t j = 0; j < m; j++)
-        A[ib][i * lda + j] += alpha[ib] * x[ib][j] * y[ib][i];
+        A[ib][i * lda + j] += alpha[ib] * x[ib][j] * y[ib][i * incy];
   return 0;
 }
 
