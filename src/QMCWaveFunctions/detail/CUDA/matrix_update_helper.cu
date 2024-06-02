@@ -79,18 +79,19 @@ __global__ void copyAinvRow_saveGL_kernel(const int rowchanged,
   }
 }
 
-cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
-                                    const int rowchanged,
-                                    const int n,
-                                    const float* const Ainv[],
-                                    const int lda,
-                                    float* const temp[],
-                                    float* const rcopy[],
-                                    const float* const phi_vgl_in[],
-                                    const size_t phi_vgl_stride,
-                                    float* const dphi_out[],
-                                    float* const d2phi_out[],
-                                    const int batch_count)
+template<>
+cudaError_t copyAinvRow_saveGL_batched<float>(cudaStream_t hstream,
+                                              const int rowchanged,
+                                              const int n,
+                                              const float* const Ainv[],
+                                              const int lda,
+                                              float* const temp[],
+                                              float* const rcopy[],
+                                              const float* const phi_vgl_in[],
+                                              const size_t phi_vgl_stride,
+                                              float* const dphi_out[],
+                                              float* const d2phi_out[],
+                                              const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -104,18 +105,19 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
-                                    const int rowchanged,
-                                    const int n,
-                                    const double* const Ainv[],
-                                    const int lda,
-                                    double* const temp[],
-                                    double* const rcopy[],
-                                    const double* const phi_vgl_in[],
-                                    const size_t phi_vgl_stride,
-                                    double* const dphi_out[],
-                                    double* const d2phi_out[],
-                                    const int batch_count)
+template<>
+cudaError_t copyAinvRow_saveGL_batched<double>(cudaStream_t hstream,
+                                               const int rowchanged,
+                                               const int n,
+                                               const double* const Ainv[],
+                                               const int lda,
+                                               double* const temp[],
+                                               double* const rcopy[],
+                                               const double* const phi_vgl_in[],
+                                               const size_t phi_vgl_stride,
+                                               double* const dphi_out[],
+                                               double* const d2phi_out[],
+                                               const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -129,18 +131,19 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
-                                    const int rowchanged,
-                                    const int n,
-                                    const std::complex<float>* const Ainv[],
-                                    const int lda,
-                                    std::complex<float>* const temp[],
-                                    std::complex<float>* const rcopy[],
-                                    const std::complex<float>* const phi_vgl_in[],
-                                    const size_t phi_vgl_stride,
-                                    std::complex<float>* const dphi_out[],
-                                    std::complex<float>* const d2phi_out[],
-                                    const int batch_count)
+template<>
+cudaError_t copyAinvRow_saveGL_batched<std::complex<float>>(cudaStream_t hstream,
+                                                            const int rowchanged,
+                                                            const int n,
+                                                            const std::complex<float>* const Ainv[],
+                                                            const int lda,
+                                                            std::complex<float>* const temp[],
+                                                            std::complex<float>* const rcopy[],
+                                                            const std::complex<float>* const phi_vgl_in[],
+                                                            const size_t phi_vgl_stride,
+                                                            std::complex<float>* const dphi_out[],
+                                                            std::complex<float>* const d2phi_out[],
+                                                            const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -155,18 +158,19 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t hstream,
-                                    const int rowchanged,
-                                    const int n,
-                                    const std::complex<double>* const Ainv[],
-                                    const int lda,
-                                    std::complex<double>* const temp[],
-                                    std::complex<double>* const rcopy[],
-                                    const std::complex<double>* const phi_vgl_in[],
-                                    const size_t phi_vgl_stride,
-                                    std::complex<double>* const dphi_out[],
-                                    std::complex<double>* const d2phi_out[],
-                                    const int batch_count)
+template<>
+cudaError_t copyAinvRow_saveGL_batched<std::complex<double>>(cudaStream_t hstream,
+                                                             const int rowchanged,
+                                                             const int n,
+                                                             const std::complex<double>* const Ainv[],
+                                                             const int lda,
+                                                             std::complex<double>* const temp[],
+                                                             std::complex<double>* const rcopy[],
+                                                             const std::complex<double>* const phi_vgl_in[],
+                                                             const size_t phi_vgl_stride,
+                                                             std::complex<double>* const dphi_out[],
+                                                             std::complex<double>* const d2phi_out[],
+                                                             const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -219,12 +223,13 @@ __global__ void calcGradients_kernel(const int n,
       grads_now[iw * DIM + idim] = sum[idim * COLBS];
 }
 
-cudaError_t calcGradients_cuda(cudaStream_t hstream,
-                               const int n,
-                               const float* const Ainvrow[],
-                               const float* const dpsiMrow[],
-                               float* const grads_now,
-                               const int batch_count)
+template<>
+cudaError_t calcGradients_batched<float>(cudaStream_t hstream,
+                                         const int n,
+                                         const float* const Ainvrow[],
+                                         const float* const dpsiMrow[],
+                                         float* const grads_now,
+                                         const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -236,12 +241,13 @@ cudaError_t calcGradients_cuda(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t calcGradients_cuda(cudaStream_t hstream,
-                               const int n,
-                               const double* const Ainvrow[],
-                               const double* const dpsiMrow[],
-                               double* const grads_now,
-                               const int batch_count)
+template<>
+cudaError_t calcGradients_batched<double>(cudaStream_t hstream,
+                                          const int n,
+                                          const double* const Ainvrow[],
+                                          const double* const dpsiMrow[],
+                                          double* const grads_now,
+                                          const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -253,12 +259,13 @@ cudaError_t calcGradients_cuda(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t calcGradients_cuda(cudaStream_t hstream,
-                               const int n,
-                               const std::complex<float>* const Ainvrow[],
-                               const std::complex<float>* const dpsiMrow[],
-                               std::complex<float>* const grads_now,
-                               const int batch_count)
+template<>
+cudaError_t calcGradients_batched<std::complex<float>>(cudaStream_t hstream,
+                                                       const int n,
+                                                       const std::complex<float>* const Ainvrow[],
+                                                       const std::complex<float>* const dpsiMrow[],
+                                                       std::complex<float>* const grads_now,
+                                                       const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -272,12 +279,13 @@ cudaError_t calcGradients_cuda(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t calcGradients_cuda(cudaStream_t hstream,
-                               const int n,
-                               const std::complex<double>* const Ainvrow[],
-                               const std::complex<double>* const dpsiMrow[],
-                               std::complex<double>* const grads_now,
-                               const int batch_count)
+template<>
+cudaError_t calcGradients_batched<std::complex<double>>(cudaStream_t hstream,
+                                                        const int n,
+                                                        const std::complex<double>* const Ainvrow[],
+                                                        const std::complex<double>* const dpsiMrow[],
+                                                        std::complex<double>* const grads_now,
+                                                        const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -379,21 +387,22 @@ __global__ void add_delay_list_save_sigma_VGL_kernel(int* const delay_list[],
   }
 }
 
-cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
-                                                  int* const delay_list[],
-                                                  const int rowchanged,
-                                                  const int delay_count,
-                                                  float* const binv[],
-                                                  const int binv_lda,
-                                                  const float* const ratio_inv,
-                                                  const float* const phi_vgl_in[],
-                                                  const size_t phi_vgl_stride,
-                                                  float* const phi_out[],
-                                                  float* const dphi_out[],
-                                                  float* const d2phi_out[],
-                                                  const int norb,
-                                                  const int n_accepted,
-                                                  const int batch_count)
+template<>
+cudaError_t add_delay_list_save_sigma_VGL_batched<float>(cudaStream_t hstream,
+                                                         int* const delay_list[],
+                                                         const int rowchanged,
+                                                         const int delay_count,
+                                                         float* const binv[],
+                                                         const int binv_lda,
+                                                         const float* const ratio_inv,
+                                                         const float* const phi_vgl_in[],
+                                                         const size_t phi_vgl_stride,
+                                                         float* const phi_out[],
+                                                         float* const dphi_out[],
+                                                         float* const d2phi_out[],
+                                                         const int norb,
+                                                         const int n_accepted,
+                                                         const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -407,21 +416,22 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
-                                                  int* const delay_list[],
-                                                  const int rowchanged,
-                                                  const int delay_count,
-                                                  double* const binv[],
-                                                  const int binv_lda,
-                                                  const double* const ratio_inv,
-                                                  const double* const phi_vgl_in[],
-                                                  const size_t phi_vgl_stride,
-                                                  double* const phi_out[],
-                                                  double* const dphi_out[],
-                                                  double* const d2phi_out[],
-                                                  const int norb,
-                                                  const int n_accepted,
-                                                  const int batch_count)
+template<>
+cudaError_t add_delay_list_save_sigma_VGL_batched<double>(cudaStream_t hstream,
+                                                          int* const delay_list[],
+                                                          const int rowchanged,
+                                                          const int delay_count,
+                                                          double* const binv[],
+                                                          const int binv_lda,
+                                                          const double* const ratio_inv,
+                                                          const double* const phi_vgl_in[],
+                                                          const size_t phi_vgl_stride,
+                                                          double* const phi_out[],
+                                                          double* const dphi_out[],
+                                                          double* const d2phi_out[],
+                                                          const int norb,
+                                                          const int n_accepted,
+                                                          const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -435,21 +445,22 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
-                                                  int* const delay_list[],
-                                                  const int rowchanged,
-                                                  const int delay_count,
-                                                  std::complex<float>* const binv[],
-                                                  const int binv_lda,
-                                                  const std::complex<float>* const ratio_inv,
-                                                  const std::complex<float>* const phi_vgl_in[],
-                                                  const size_t phi_vgl_stride,
-                                                  std::complex<float>* const phi_out[],
-                                                  std::complex<float>* const dphi_out[],
-                                                  std::complex<float>* const d2phi_out[],
-                                                  const int norb,
-                                                  const int n_accepted,
-                                                  const int batch_count)
+template<>
+cudaError_t add_delay_list_save_sigma_VGL_batched<std::complex<float>>(cudaStream_t hstream,
+                                                                       int* const delay_list[],
+                                                                       const int rowchanged,
+                                                                       const int delay_count,
+                                                                       std::complex<float>* const binv[],
+                                                                       const int binv_lda,
+                                                                       const std::complex<float>* const ratio_inv,
+                                                                       const std::complex<float>* const phi_vgl_in[],
+                                                                       const size_t phi_vgl_stride,
+                                                                       std::complex<float>* const phi_out[],
+                                                                       std::complex<float>* const dphi_out[],
+                                                                       std::complex<float>* const d2phi_out[],
+                                                                       const int norb,
+                                                                       const int n_accepted,
+                                                                       const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -466,21 +477,22 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t hstream,
-                                                  int* const delay_list[],
-                                                  const int rowchanged,
-                                                  const int delay_count,
-                                                  std::complex<double>* const binv[],
-                                                  const int binv_lda,
-                                                  const std::complex<double>* const ratio_inv,
-                                                  const std::complex<double>* const phi_vgl_in[],
-                                                  const size_t phi_vgl_stride,
-                                                  std::complex<double>* const phi_out[],
-                                                  std::complex<double>* const dphi_out[],
-                                                  std::complex<double>* const d2phi_out[],
-                                                  const int norb,
-                                                  const int n_accepted,
-                                                  const int batch_count)
+template<>
+cudaError_t add_delay_list_save_sigma_VGL_batched<std::complex<double>>(cudaStream_t hstream,
+                                                                        int* const delay_list[],
+                                                                        const int rowchanged,
+                                                                        const int delay_count,
+                                                                        std::complex<double>* const binv[],
+                                                                        const int binv_lda,
+                                                                        const std::complex<double>* const ratio_inv,
+                                                                        const std::complex<double>* const phi_vgl_in[],
+                                                                        const size_t phi_vgl_stride,
+                                                                        std::complex<double>* const phi_out[],
+                                                                        std::complex<double>* const dphi_out[],
+                                                                        std::complex<double>* const d2phi_out[],
+                                                                        const int norb,
+                                                                        const int n_accepted,
+                                                                        const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -518,12 +530,13 @@ __global__ void applyW_kernel(const int* const delay_list[], const int delay_cou
   }
 }
 
-cudaError_t applyW_batched(cudaStream_t hstream,
-                           const int* const delay_list[],
-                           const int delay_count,
-                           float* const tempMat[],
-                           const int lda,
-                           const int batch_count)
+template<>
+cudaError_t applyW_batched<float>(cudaStream_t hstream,
+                                  const int* const delay_list[],
+                                  const int delay_count,
+                                  float* const tempMat[],
+                                  const int lda,
+                                  const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -535,12 +548,13 @@ cudaError_t applyW_batched(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t applyW_batched(cudaStream_t hstream,
-                           const int* const delay_list[],
-                           const int delay_count,
-                           double* const tempMat[],
-                           const int lda,
-                           const int batch_count)
+template<>
+cudaError_t applyW_batched<double>(cudaStream_t hstream,
+                                   const int* const delay_list[],
+                                   const int delay_count,
+                                   double* const tempMat[],
+                                   const int lda,
+                                   const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -552,12 +566,13 @@ cudaError_t applyW_batched(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t applyW_batched(cudaStream_t hstream,
-                           const int* const delay_list[],
-                           const int delay_count,
-                           std::complex<float>* const tempMat[],
-                           const int lda,
-                           const int batch_count)
+template<>
+cudaError_t applyW_batched<std::complex<float>>(cudaStream_t hstream,
+                                                const int* const delay_list[],
+                                                const int delay_count,
+                                                std::complex<float>* const tempMat[],
+                                                const int lda,
+                                                const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -570,12 +585,13 @@ cudaError_t applyW_batched(cudaStream_t hstream,
   return cudaPeekAtLastError();
 }
 
-cudaError_t applyW_batched(cudaStream_t hstream,
-                           const int* const delay_list[],
-                           const int delay_count,
-                           std::complex<double>* const tempMat[],
-                           const int lda,
-                           const int batch_count)
+template<>
+cudaError_t applyW_batched<std::complex<double>>(cudaStream_t hstream,
+                                                 const int* const delay_list[],
+                                                 const int delay_count,
+                                                 std::complex<double>* const tempMat[],
+                                                 const int lda,
+                                                 const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
