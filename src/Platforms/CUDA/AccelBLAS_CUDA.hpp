@@ -46,63 +46,60 @@ public:
 
 namespace BLAS
 {
-template<>
-inline void gemm<PlatformKind::CUDA, float>(BLASHandle<PlatformKind::CUDA>& handle,
-                                            const char transa,
-                                            const char transb,
-                                            int m,
-                                            int n,
-                                            int k,
-                                            const float alpha,
-                                            const float* A,
-                                            int lda,
-                                            const float* B,
-                                            int ldb,
-                                            const float beta,
-                                            float* C,
-                                            int ldc)
+inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
+                 const char transa,
+                 const char transb,
+                 int m,
+                 int n,
+                 int k,
+                 const float alpha,
+                 const float* A,
+                 int lda,
+                 const float* B,
+                 int ldb,
+                 const float beta,
+                 float* C,
+                 int ldc)
 {
   cublasErrorCheck(cublasSgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
                                n, k, &alpha, A, lda, B, ldb, &beta, C, ldc),
                    "cublasSgemm failed!");
 }
 
-template<>
-inline void gemm<PlatformKind::CUDA, double>(BLASHandle<PlatformKind::CUDA>& handle,
-                                             const char transa,
-                                             const char transb,
-                                             int m,
-                                             int n,
-                                             int k,
-                                             const double alpha,
-                                             const double* A,
-                                             int lda,
-                                             const double* B,
-                                             int ldb,
-                                             const double beta,
-                                             double* C,
-                                             int ldc)
+inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
+                 const char transa,
+                 const char transb,
+                 int m,
+                 int n,
+                 int k,
+                 const double alpha,
+                 const double* A,
+                 int lda,
+                 const double* B,
+                 int ldb,
+                 const double beta,
+                 double* C,
+                 int ldc)
 {
   cublasErrorCheck(cublasDgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
                                n, k, &alpha, A, lda, B, ldb, &beta, C, ldc),
                    "cublasDgemm failed!");
 }
 
-template<>
-inline void gemm<PlatformKind::CUDA, std::complex<float>>(BLASHandle<PlatformKind::CUDA>& handle,
-                                                          const char transa,
-                                                          const char transb,
-                                                          int m,
-                                                          int n,
-                                                          int k,
-                                                          const std::complex<float> alpha,
-                                                          const std::complex<float>* A,
-                                                          int lda,
-                                                          const std::complex<float>* B,
-                                                          int ldb,
-                                                          const std::complex<float> beta,
-                                                          std::complex<float>* C,
-                                                          int ldc)
+inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
+                 const char transa,
+                 const char transb,
+                 int m,
+                 int n,
+                 int k,
+                 const std::complex<float> alpha,
+                 const std::complex<float>* A,
+                 int lda,
+                 const std::complex<float>* B,
+                 int ldb,
+                 const std::complex<float> beta,
+                 std::complex<float>* C,
+                 int ldc)
 {
   cublasErrorCheck(cublasCgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
                                n, k, castNativeType(&alpha), castNativeType(A), lda, castNativeType(B), ldb,
@@ -110,21 +107,20 @@ inline void gemm<PlatformKind::CUDA, std::complex<float>>(BLASHandle<PlatformKin
                    "cublasCgemm failed!");
 }
 
-template<>
-inline void gemm<PlatformKind::CUDA, std::complex<double>>(BLASHandle<PlatformKind::CUDA>& handle,
-                                                           const char transa,
-                                                           const char transb,
-                                                           int m,
-                                                           int n,
-                                                           int k,
-                                                           const std::complex<double> alpha,
-                                                           const std::complex<double>* A,
-                                                           int lda,
-                                                           const std::complex<double>* B,
-                                                           int ldb,
-                                                           const std::complex<double> beta,
-                                                           std::complex<double>* C,
-                                                           int ldc)
+inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
+                 const char transa,
+                 const char transb,
+                 int m,
+                 int n,
+                 int k,
+                 const std::complex<double> alpha,
+                 const std::complex<double>* A,
+                 int lda,
+                 const std::complex<double>* B,
+                 int ldb,
+                 const std::complex<double> beta,
+                 std::complex<double>* C,
+                 int ldc)
 {
   cublasErrorCheck(cublasZgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
                                n, k, castNativeType(&alpha), castNativeType(A), lda, castNativeType(B), ldb,
@@ -182,22 +178,21 @@ inline void copy_batched(BLASHandle<PlatformKind::CUDA>& handle,
                  "cuBLAS_MFs::copy_batched failed!");
 }
 
-template<>
-inline void gemm_batched<PlatformKind::CUDA, float>(BLASHandle<PlatformKind::CUDA>& handle,
-                                                    const char transa,
-                                                    const char transb,
-                                                    int m,
-                                                    int n,
-                                                    int k,
-                                                    const float* alpha,
-                                                    const float* const A[],
-                                                    int lda,
-                                                    const float* const B[],
-                                                    int ldb,
-                                                    const float* beta,
-                                                    float* const C[],
-                                                    int ldc,
-                                                    int batchCount)
+inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
+                         const char transa,
+                         const char transb,
+                         int m,
+                         int n,
+                         int k,
+                         const float* alpha,
+                         const float* const A[],
+                         int lda,
+                         const float* const B[],
+                         int ldb,
+                         const float* beta,
+                         float* const C[],
+                         int ldc,
+                         int batchCount)
 {
   cublasErrorCheck(cublasSgemmBatched(handle.h_cublas, cuBLAS::convertOperation(transa),
                                       cuBLAS::convertOperation(transb), m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
@@ -205,22 +200,21 @@ inline void gemm_batched<PlatformKind::CUDA, float>(BLASHandle<PlatformKind::CUD
                    "cublasSgemmBatched failed!");
 }
 
-template<>
-inline void gemm_batched<PlatformKind::CUDA, std::complex<float>>(BLASHandle<PlatformKind::CUDA>& handle,
-                                                                  const char transa,
-                                                                  const char transb,
-                                                                  int m,
-                                                                  int n,
-                                                                  int k,
-                                                                  const std::complex<float>* alpha,
-                                                                  const std::complex<float>* const A[],
-                                                                  int lda,
-                                                                  const std::complex<float>* const B[],
-                                                                  int ldb,
-                                                                  const std::complex<float>* beta,
-                                                                  std::complex<float>* const C[],
-                                                                  int ldc,
-                                                                  int batchCount)
+inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
+                         const char transa,
+                         const char transb,
+                         int m,
+                         int n,
+                         int k,
+                         const std::complex<float>* alpha,
+                         const std::complex<float>* const A[],
+                         int lda,
+                         const std::complex<float>* const B[],
+                         int ldb,
+                         const std::complex<float>* beta,
+                         std::complex<float>* const C[],
+                         int ldc,
+                         int batchCount)
 {
   // This is necessary to not break the complex CUDA type mapping semantics while
   // dealing with the const cuComplex * A[] style API of cuBLAS
@@ -237,22 +231,21 @@ inline void gemm_batched<PlatformKind::CUDA, std::complex<float>>(BLASHandle<Pla
                    "cublasCgemmBatched failed!");
 }
 
-template<>
-inline void gemm_batched<PlatformKind::CUDA, double>(BLASHandle<PlatformKind::CUDA>& handle,
-                                                     const char transa,
-                                                     const char transb,
-                                                     int m,
-                                                     int n,
-                                                     int k,
-                                                     const double* alpha,
-                                                     const double* const A[],
-                                                     int lda,
-                                                     const double* const B[],
-                                                     int ldb,
-                                                     const double* beta,
-                                                     double* const C[],
-                                                     int ldc,
-                                                     int batchCount)
+inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
+                         const char transa,
+                         const char transb,
+                         int m,
+                         int n,
+                         int k,
+                         const double* alpha,
+                         const double* const A[],
+                         int lda,
+                         const double* const B[],
+                         int ldb,
+                         const double* beta,
+                         double* const C[],
+                         int ldc,
+                         int batchCount)
 {
   cublasErrorCheck(cublasDgemmBatched(handle.h_cublas, cuBLAS::convertOperation(transa),
                                       cuBLAS::convertOperation(transb), m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
@@ -260,22 +253,21 @@ inline void gemm_batched<PlatformKind::CUDA, double>(BLASHandle<PlatformKind::CU
                    "cublasDgemmBatched failed!");
 }
 
-template<>
-inline void gemm_batched<PlatformKind::CUDA, std::complex<double>>(BLASHandle<PlatformKind::CUDA>& handle,
-                                                                   const char transa,
-                                                                   const char transb,
-                                                                   int m,
-                                                                   int n,
-                                                                   int k,
-                                                                   const std::complex<double>* alpha,
-                                                                   const std::complex<double>* const A[],
-                                                                   int lda,
-                                                                   const std::complex<double>* const B[],
-                                                                   int ldb,
-                                                                   const std::complex<double>* beta,
-                                                                   std::complex<double>* const C[],
-                                                                   int ldc,
-                                                                   int batchCount)
+inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
+                         const char transa,
+                         const char transb,
+                         int m,
+                         int n,
+                         int k,
+                         const std::complex<double>* alpha,
+                         const std::complex<double>* const A[],
+                         int lda,
+                         const std::complex<double>* const B[],
+                         int ldb,
+                         const std::complex<double>* beta,
+                         std::complex<double>* const C[],
+                         int ldc,
+                         int batchCount)
 {
   auto non_const_A = const_cast<BottomConstRemoved<decltype(A)>::type>(A);
   auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
