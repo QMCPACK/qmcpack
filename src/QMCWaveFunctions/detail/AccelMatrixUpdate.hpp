@@ -16,6 +16,6 @@
 #if defined(ENABLE_CUDA)
 #include "CUDA/AccelMatrixUpdateCUDA.hpp"
 #endif
-//#include "OMPTarget/AccelBLAS_OMPTarget.hpp"
+#include "OMPTarget/AccelMatrixUpdateOMPTarget.hpp"
 
 #endif
