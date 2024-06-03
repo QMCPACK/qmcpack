@@ -126,7 +126,7 @@ void test_DiracDeterminantBatched_first()
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
-  test_DiracDeterminantBatched_first<DelayedUpdateBatched<ValueType, QMCTraits::QTFull::ValueType>>();
+  test_DiracDeterminantBatched_first<DelayedUpdateBatched<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>();
 #endif
   test_DiracDeterminantBatched_first<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
 }
@@ -260,7 +260,7 @@ void test_DiracDeterminantBatched_second()
 TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
-  test_DiracDeterminantBatched_second<DelayedUpdateBatched<ValueType, QMCTraits::QTFull::ValueType>>();
+  test_DiracDeterminantBatched_second<DelayedUpdateBatched<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>();
 #endif
   test_DiracDeterminantBatched_second<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
 }
@@ -473,9 +473,9 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // maximum delay 2
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_delayed_update<
-      DelayedUpdateBatched<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
+      DelayedUpdateBatched<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_delayed_update<
-      DelayedUpdateBatched<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
+      DelayedUpdateBatched<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
 #endif
   test_DiracDeterminantBatched_delayed_update<
       MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
@@ -812,9 +812,9 @@ TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")
   /* Uncomment when DelayedUpdateBatched::mw_evalGradWithSpin is implemented
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_spinor_update<
-      DelayedUpdateBatched<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
+      DelayedUpdateBatched<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_spinor_update<
-      DelayedUpdateBatched<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::HOST);
+      DelayedUpdateBatched<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::HOST);
 #endif
 */
   test_DiracDeterminantBatched_spinor_update<

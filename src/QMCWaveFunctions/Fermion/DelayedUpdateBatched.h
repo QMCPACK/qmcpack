@@ -35,7 +35,7 @@ namespace qmcplusplus
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
-template<typename VALUE, typename VALUE_FP>
+template<PlatformKind PL, typename VALUE, typename VALUE_FP>
 class DelayedUpdateBatched
 {
 public:
@@ -44,7 +44,7 @@ public:
   using Complex       = typename WFT::Complex;
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
-  using This_t        = DelayedUpdateBatched<VALUE, VALUE_FP>;
+  using This_t        = DelayedUpdateBatched<PL, VALUE, VALUE_FP>;
   using DetInverter   = DiracMatrixComputeCUDA<FullPrecValue>;
 
   template<typename DT>
@@ -66,8 +66,8 @@ public:
   struct MultiWalkerResource
   {
     // CUDA stream, cublas handle object
-    compute::Queue<PlatformKind::CUDA> queue;
-    compute::BLASHandle<PlatformKind::CUDA> blas_handle;
+    compute::Queue<PL> queue;
+    compute::BLASHandle<PL> blas_handle;
 
     // constant array value VALUE(1)
     UnpinnedDualVector<Value> cone_vec;
@@ -762,4 +762,4 @@ public:
 };
 } // namespace qmcplusplus
 
-#endif // QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
+#endif // QMCPLUSPLUS_DELAYED_UPDATE_BATCHED_H

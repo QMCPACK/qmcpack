@@ -346,7 +346,7 @@ private:
 extern template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 extern template class DiracDeterminantBatched<
-    DelayedUpdateBatched<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+    DelayedUpdateBatched<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus
