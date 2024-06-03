@@ -84,8 +84,11 @@ public:
     ensemble_property_ = ensemble_property;
   }
   IndexType get_num_contexts() const { return num_ranks_; }
-
+  const std::vector<int>& getNumPerRank() { return num_per_rank_; }
 private:
+  // Can't really unit test without this.
+  void setNumPerRank(const std::vector<int>& num_per_rank) { num_per_rank_ = num_per_rank; }
+
   /// kill dead walkers in the population
   static void killDeadWalkersOnRank(MCPopulation& pop);
 
@@ -152,7 +155,9 @@ private:
   IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
-  ///number of walkers on each MPI rank after branching before load balancing
+  /** number of walkers on each MPI rank after branching before load balancing
+   *  Why is this state? It hides very important inputs to particularly swapWalkers
+   */
   std::vector<int> num_per_rank_;
   ///offset of the particle index for a fair distribution
   std::vector<int> fair_offset_;

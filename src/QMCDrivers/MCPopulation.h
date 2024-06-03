@@ -116,7 +116,7 @@ public:
    *   * createWalkers must have been called
    *  @{
    */
-  WalkerElementsRef spawnWalker();
+  WalkerElementsRef spawnWalker(bool transfer_recipient = false);
   void killWalker(MCPWalker&);
   void killLastWalker();
   /** }@ */

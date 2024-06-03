@@ -27,6 +27,8 @@
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
+#include "Utilities/for_testing/NativeInitializerPrint.hpp"
+
 namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
@@ -220,13 +222,13 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
         // if this copy gets transferred this will result in a walker with a walker_id % num_ranks
         // equal to a rank != pop.rank_. This is not invalid and provides the birth rank of the walker.
 
-	// preserve the walkers id.  Ideally this wouldn't get overwritten but I don't think a custom assignment operator
-	// is worth it just for this.
-	auto walker_id         = walker_elements.walker.getWalkerID();
+        // preserve the walkers id.  Ideally this wouldn't get overwritten but I don't think a custom assignment operator
+        // is worth it just for this.
+        auto walker_id         = walker_elements.walker.getWalkerID();
         walker_elements.walker = *walkers[iw];
-	// copy the copied from walkers id to parent id.
-	walker_elements.walker.setParentID(walker_elements.walker.getWalkerID());
-	// put the walkers actual id back.
+        // copy the copied from walkers id to parent id.
+        walker_elements.walker.setParentID(walker_elements.walker.getWalkerID());
+        // put the walkers actual id back.
         walker_elements.walker.setWalkerID(walker_id);
         // fix the multiplicity of the new walker
         walker_elements.walker.Multiplicity = 1.0;
@@ -306,6 +308,8 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
 {
   const int num_contexts       = num_per_rank.size();
   const int current_population = std::accumulate(num_per_rank.begin(), num_per_rank.end(), 0);
+  std::cout << "num_per_rank: " << NativePrint(num_per_rank) << '\n';
+  std::cout << "current_populations: " << current_population << '\n';
   FairDivideLow(current_population, num_contexts, fair_offset);
   for (int ip = 0; ip < num_contexts; ip++)
   {
@@ -422,7 +426,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 
     if (minus[ic] == rank_num_)
     {
-      newW.push_back(pop.spawnWalker());
+      newW.push_back(pop.spawnWalker(true));
 
       // recv the number of copies from the target
       myComm->comm.receive_n(&nsentcopy, 1, plus[ic]);
@@ -510,7 +514,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
             if (requests[im].completed())
             {
               auto& walker_elements = newW[job_list[im].walker_index];
-	      // Here the walker ID from the spawn is overwritten with the copy.
+              // Here the walker ID from the spawn is overwritten with the copy.
               walker_elements.walker.copyFromBuffer();
               not_completed[im] = false;
             }
@@ -538,7 +542,14 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   for (int iw = 0; iw < good_walkers.size(); iw++)
     TotalMultiplicity += good_walkers[iw]->Multiplicity;
   if (static_cast<int>(TotalMultiplicity) != fair_offset_[rank_num_ + 1] - fair_offset_[rank_num_])
-    throw std::runtime_error("Multiplicity check failed in WalkerControl::swapWalkersSimple!");
+  {
+    std::ostringstream error_msg;
+    error_msg << "Multiplicity check failed in WalkerControl::swapWalkersSimple!\n"
+       << "for rank: " << rank_num_ << " total_multiplicity: " << TotalMultiplicity
+              << "  fair_offset_[rank_num_ + 1] - fair_offset_[rank_num_]: " << fair_offset_[rank_num_ + 1] << " - "
+              << fair_offset_[rank_num_] << '\n';
+    throw std::runtime_error(error_msg.str());
+  }
 #endif
 }
 #endif
