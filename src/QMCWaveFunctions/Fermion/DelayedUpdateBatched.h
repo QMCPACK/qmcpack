@@ -36,10 +36,10 @@ template<PlatformKind PL, typename VALUE>
 class DelayedUpdateBatched
 {
 public:
-  using This_t        = DelayedUpdateBatched<PL, VALUE>;
-  using Value         = VALUE;
-  using Real          = RealAlias<Value>;
-  using Complex       = std::complex<Real>;
+  using This_t  = DelayedUpdateBatched<PL, VALUE>;
+  using Value   = VALUE;
+  using Real    = RealAlias<Value>;
+  using Complex = std::complex<Real>;
 
   // containers
   template<typename DT>

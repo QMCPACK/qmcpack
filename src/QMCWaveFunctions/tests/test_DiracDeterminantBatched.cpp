@@ -472,15 +472,11 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 {
   // maximum delay 2
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
-  test_DiracDeterminantBatched_delayed_update<
-      PlatformKind::CUDA>(2, DetMatInvertor::ACCEL);
-  test_DiracDeterminantBatched_delayed_update<
-      PlatformKind::CUDA>(2, DetMatInvertor::HOST);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::CUDA>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::CUDA>(2, DetMatInvertor::HOST);
 #endif
-  test_DiracDeterminantBatched_delayed_update<
-      PlatformKind::OMPTARGET>(2, DetMatInvertor::ACCEL);
-  test_DiracDeterminantBatched_delayed_update<
-      PlatformKind::OMPTARGET>(2, DetMatInvertor::HOST);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::OMPTARGET>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::OMPTARGET>(2, DetMatInvertor::HOST);
 }
 
 
@@ -817,10 +813,8 @@ TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")
       PlatformKind::CUDA>(1, DetMatInvertor::HOST);
 #endif
 */
-  test_DiracDeterminantBatched_spinor_update<
-      PlatformKind::OMPTARGET>(1, DetMatInvertor::ACCEL);
-  test_DiracDeterminantBatched_spinor_update<
-      PlatformKind::OMPTARGET>(1, DetMatInvertor::HOST);
+  test_DiracDeterminantBatched_spinor_update<PlatformKind::OMPTARGET>(1, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_spinor_update<PlatformKind::OMPTARGET>(1, DetMatInvertor::HOST);
 }
 #endif
 } // namespace qmcplusplus

@@ -69,7 +69,6 @@ struct DetInverterSelector<PlatformKind::CUDA, FPVT>
 template<PlatformKind PL, typename VT, typename FPVT>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
-
 public:
   using UpdateEngine  = typename UpdateEngineSelector<PL, VT>::Engine;
   using DetInverter   = typename DetInverterSelector<PL, FPVT>::Inverter;
@@ -378,7 +377,9 @@ private:
   NewTimer &D2HTimer, &H2DTimer;
 };
 
-extern template class DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
+extern template class DiracDeterminantBatched<PlatformKind::OMPTARGET,
+                                              QMCTraits::ValueType,
+                                              QMCTraits::QTFull::ValueType>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 extern template class DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif

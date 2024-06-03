@@ -60,10 +60,10 @@ struct DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatchedMultiWalker
  */
 template<PlatformKind PL, typename VT, typename FPVT>
 DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatched(std::unique_ptr<SPOSet>&& spos,
-                                                             int first,
-                                                             int last,
-                                                             int ndelay,
-                                                             DetMatInvertor matrix_inverter_kind)
+                                                               int first,
+                                                               int last,
+                                                               int ndelay,
+                                                               DetMatInvertor matrix_inverter_kind)
     : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first, last),
       ndelay_(ndelay),
       matrix_inverter_kind_(matrix_inverter_kind),
@@ -96,8 +96,8 @@ void DiracDeterminantBatched<PL, VT, FPVT>::invertPsiM(const DualMatrix<Value>& 
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                        const RefVector<const DualMatrix<Value>>& logdetT_list,
-                                                        const RefVector<DualMatrix<Value>>& a_inv_list)
+                                                          const RefVector<const DualMatrix<Value>>& logdetT_list,
+                                                          const RefVector<DualMatrix<Value>>& a_inv_list)
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
   auto& mw_res     = wfc_leader.mw_res_handle_.getResource();
@@ -177,7 +177,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::resize(int nel, int morb)
 
 template<PlatformKind PL, typename VT, typename FPVT>
 typename DiracDeterminantBatched<PL, VT, FPVT>::Grad DiracDeterminantBatched<PL, VT, FPVT>::evalGrad(ParticleSet& P,
-                                                                                                 int iat)
+                                                                                                     int iat)
 {
   ScopedTimer local_timer(RatioTimer);
   const int WorkingIndex = iat - FirstIndex;
@@ -188,9 +188,9 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::Grad DiracDeterminantBatched<PL,
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                      const RefVectorWithLeader<ParticleSet>& p_list,
-                                                      int iat,
-                                                      std::vector<Grad>& grad_now) const
+                                                        const RefVectorWithLeader<ParticleSet>& p_list,
+                                                        int iat,
+                                                        std::vector<Grad>& grad_now) const
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
@@ -213,7 +213,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evalGrad(const RefVectorWithLeade
   }
 
   UpdateEngine::mw_evalGrad(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                          dpsiM_row_list, WorkingIndex, grad_now);
+                            dpsiM_row_list, WorkingIndex, grad_now);
 
 #ifndef NDEBUG
   for (int iw = 0; iw < nw; iw++)
@@ -288,8 +288,9 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evalGradWithSpin(
     engine_list.push_back(det.det_engine_);
   }
 
-  UpdateEngine::mw_evalGradWithSpin(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                                  dpsiM_row_list, mw_dspin, WorkingIndex, grad_now, spingrad_now);
+  UpdateEngine::mw_evalGradWithSpin(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc,
+                                    mw_res.psiMinv_refs, dpsiM_row_list, mw_dspin, WorkingIndex, grad_now,
+                                    spingrad_now);
 
 #ifndef NDEBUG
   for (int iw = 0; iw < nw; iw++)
@@ -298,9 +299,10 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evalGradWithSpin(
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
-typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched<PL, VT, FPVT>::ratioGrad(ParticleSet& P,
-                                                                                                      int iat,
-                                                                                                      Grad& grad_iat)
+typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched<PL, VT, FPVT>::ratioGrad(
+    ParticleSet& P,
+    int iat,
+    Grad& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -321,10 +323,10 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                       const RefVectorWithLeader<ParticleSet>& p_list,
-                                                       int iat,
-                                                       std::vector<PsiValue>& ratios,
-                                                       std::vector<Grad>& grad_new) const
+                                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                                         int iat,
+                                                         std::vector<PsiValue>& ratios,
+                                                         std::vector<Grad>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader     = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
@@ -348,7 +350,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGrad(const RefVectorWithLead
 
     auto psiMinv_row_dev_ptr_list =
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                                 WorkingIndex, !Phi->isOMPoffload());
+                                   WorkingIndex, !Phi->isOMPoffload());
 
     phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
@@ -400,7 +402,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGradWithSpin(
 
     auto psiMinv_row_dev_ptr_list =
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                                 WorkingIndex, !Phi->isOMPoffload());
+                                   WorkingIndex, !Phi->isOMPoffload());
 
     phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
@@ -527,9 +529,9 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_accept_rejectMove(
     det.curRatio = 1.0;
   }
 
-  UpdateEngine::mw_accept_rejectRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                                  WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, isAccepted, phi_vgl_v,
-                                  ratios_local);
+  UpdateEngine::mw_accept_rejectRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc,
+                                    mw_res.psiMinv_refs, WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list,
+                                    isAccepted, phi_vgl_v, ratios_local);
 
   if (!safe_to_delay)
     UpdateEngine::mw_updateInvMat(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs);
@@ -607,7 +609,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_completeUpdates(
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::computeGL(ParticleSet::ParticleGradient& G,
-                                                    ParticleSet::ParticleLaplacian& L) const
+                                                      ParticleSet::ParticleLaplacian& L) const
 {
   for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
   {
@@ -643,10 +645,10 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::LogValue DiracDeterminantBatched
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                        const RefVectorWithLeader<ParticleSet>& p_list,
-                                                        const RefVector<ParticleSet::ParticleGradient>& G_list,
-                                                        const RefVector<ParticleSet::ParticleLaplacian>& L_list,
-                                                        bool fromscratch) const
+                                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                                          const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                          const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                                          bool fromscratch) const
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
@@ -752,7 +754,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::copyFromBuffer(ParticleSet& P, WFBuf
  */
 template<PlatformKind PL, typename VT, typename FPVT>
 typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched<PL, VT, FPVT>::ratio(ParticleSet& P,
-                                                                                                  int iat)
+                                                                                                      int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
@@ -769,9 +771,9 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                       const RefVectorWithLeader<ParticleSet>& p_list,
-                                                       int iat,
-                                                       std::vector<PsiValue>& ratios) const
+                                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                                         int iat,
+                                                         std::vector<PsiValue>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader     = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
@@ -797,7 +799,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_calcRatio(const RefVectorWithLead
 
     auto psiMinv_row_dev_ptr_list =
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                                 WorkingIndex, !Phi->isOMPoffload());
+                                   WorkingIndex, !Phi->isOMPoffload());
 
     phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
@@ -890,9 +892,9 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateRatios(
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                                              const opt_variables_type& optvars,
-                                                              std::vector<ValueType>& ratios,
-                                                              Matrix<ValueType>& dratios)
+                                                                const opt_variables_type& optvars,
+                                                                std::vector<ValueType>& ratios,
+                                                                Matrix<ValueType>& dratios)
 {
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   assert(WorkingIndex >= 0);
@@ -1072,10 +1074,11 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::LogValue DiracDeterminantBatched
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
-void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                         const RefVectorWithLeader<ParticleSet>& p_list,
-                                                         const RefVector<ParticleSet::ParticleGradient>& G_list,
-                                                         const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
+void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateLog(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    const RefVector<ParticleSet::ParticleGradient>& G_list,
+    const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 {
   assert(this == &wfc_list.getLeader());
   const std::vector<bool> recompute_all(wfc_list.size(), true);
@@ -1105,8 +1108,8 @@ void DiracDeterminantBatched<PL, VT, FPVT>::recompute(const ParticleSet& P)
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                       const RefVectorWithLeader<ParticleSet>& p_list,
-                                                       const std::vector<bool>& recompute) const
+                                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                                         const std::vector<bool>& recompute) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
   const auto nw    = wfc_list.size();
@@ -1184,33 +1187,34 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_recompute(const RefVectorWithLead
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
-                                                              const opt_variables_type& active,
-                                                              Vector<Value>& dlogpsi,
-                                                              Vector<Value>& dhpsioverpsi)
+                                                                const opt_variables_type& active,
+                                                                Vector<Value>& dlogpsi,
+                                                                Vector<Value>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivativesWF(ParticleSet& P,
-                                                                const opt_variables_type& active,
-                                                                Vector<ValueType>& dlogpsi)
+                                                                  const opt_variables_type& active,
+                                                                  Vector<ValueType>& dlogpsi)
 {
   Phi->evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::registerTWFFastDerivWrapper(const ParticleSet& P,
-                                                                      TWFFastDerivWrapper& twf) const
+                                                                        TWFFastDerivWrapper& twf) const
 {
   twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
-std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<PL, VT, FPVT>::makeCopy(std::unique_ptr<SPOSet>&& spo) const
+std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<PL, VT, FPVT>::makeCopy(
+    std::unique_ptr<SPOSet>&& spo) const
 {
   return std::make_unique<DiracDeterminantBatched<PL, VT, FPVT>>(std::move(spo), FirstIndex, LastIndex, ndelay_,
-                                                               matrix_inverter_kind_);
+                                                                 matrix_inverter_kind_);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
