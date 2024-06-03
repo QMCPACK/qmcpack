@@ -54,7 +54,9 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
   B.updateTo();
 
   T alpha(1);
+  T alpha_half(0.5);
   T beta(0);
+  T beta1(1);
 
   // U[X,Y] denotes a row-major matrix U with X rows and Y cols
   // element U(i,j) is located at: U.data() + sizeof(U_type) * (i*ldU + j)
@@ -66,7 +68,11 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
   // transa/transb == 'T'/'N':   C[N,M] = A[M,K] * B[N,K]; C = B * A^t
   // transa/transb == 'T'/'T':   C[N,M] = A[M,K] * B[K,N]; C = B^t * A^t
 
-  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha, A.device_data(), a1, B.device_data(), b1, beta, C.device_data(),
+  // alpha 0.5, beta 0
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta, C.device_data(),
+                M);
+  // alpha 0.5, beta 1
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta1, C.device_data(),
                 M);
   C.updateFrom();
 
@@ -111,7 +117,11 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
   Barr.updateTo();
   Carr.updateTo();
 
-  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha, Aarr.device_data(), a1, Barr.device_data(), b1, beta,
+  // alpha 0.5, beta 0
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1, beta,
+                        Carr.device_data(), M, 2);
+  // alpha 0.5, beta 1
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1, beta1,
                         Carr.device_data(), M, 2);
   C.updateFrom();
   C2.updateFrom();
@@ -297,18 +307,25 @@ void test_gemv_batched(const int M_b, const int N_b, const char trans, const int
   // Run tests
   Vector<T, OMPallocator<T>> alpha(batch_count);
   Vector<T, OMPallocator<T>> beta(batch_count);
+  Vector<T, OMPallocator<T>> beta1(batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
   {
-    alpha[batch] = T(1);
+    alpha[batch] = T(0.5);
     beta[batch]  = T(0);
+    beta1[batch] = T(1);
   }
 
   alpha.updateTo();
   beta.updateTo();
+  beta1.updateTo();
 
+  // alpha 0.5, beta 0
   ompBLAS::gemv_batched(handle, trans, N_b, M_b, alpha.device_data(), Bptrs.device_data(), N_b, Aptrs.device_data(), 1,
                         beta.device_data(), Cptrs.device_data(), 1, batch_count);
+  // alpha 0.5, beta 1
+  ompBLAS::gemv_batched(handle, trans, N_b, M_b, alpha.device_data(), Bptrs.device_data(), N_b, Aptrs.device_data(), 1,
+                        beta1.device_data(), Cptrs.device_data(), 1, batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
   {
