@@ -33,7 +33,7 @@
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
-#include "Estimators/WalkerTraceManagerInput.h"
+#include "Estimators/WalkerTraceInput.h"
 #include "Estimators/WalkerTraceManager.h"
 
 

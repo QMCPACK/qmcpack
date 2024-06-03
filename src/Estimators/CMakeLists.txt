@@ -26,6 +26,8 @@ set(QMCEST_SRC
     EstimatorManagerBase.cpp
     EstimatorManagerNew.cpp
     EstimatorManagerCrowd.cpp
+    WalkerTraceCollector.cpp
+    WalkerTraceManager.cpp
     CollectablesEstimator.cpp
     OperatorEstBase.cpp
     SpinDensityNew.cpp

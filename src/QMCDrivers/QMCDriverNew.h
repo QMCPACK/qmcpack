@@ -43,7 +43,7 @@
 #include "DriverWalkerTypes.h"
 #include "TauParams.hpp"
 #include "Particle/MCCoords.hpp"
-#include "Estimators/WalkerTraceManagerInput.h"
+#include "Estimators/WalkerTraceInput.h"
 #include <algorithm>
 
 class Communicate;

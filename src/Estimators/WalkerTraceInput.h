@@ -7,15 +7,15 @@
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef QMCPLUSPLUS_WALKERTRACEMANAGERINPUT_H
-#define QMCPLUSPLUS_WALKERTRACEMANAGERINPUT_H
+#ifndef QMCPLUSPLUS_WALKERTRACEINPUT_H
+#define QMCPLUSPLUS_WALKERTRACEINPUT_H
 
 #include "InputSection.h"
 
 namespace qmcplusplus
 {
 
-/** Native representation for WalkerTraceManager input
+/** Native representation for walker traces input
  */
 struct WalkerTraceInput : public InputSection
 {
@@ -43,4 +43,4 @@ struct WalkerTraceInput : public InputSection
 };
 
 } // namespace qmcplusplus
-#endif /* WALKERTRACEMANAGERINPUT_H */
+#endif /* WALKERTRACEINPUT_H */
