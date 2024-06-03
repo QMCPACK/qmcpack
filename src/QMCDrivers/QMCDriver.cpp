@@ -36,6 +36,7 @@
 #else
 using TraceManager = int;
 #endif
+#include "Estimators/WalkerTraceManagerInput.h"
 #include "Estimators/WalkerTraceManager.h"
 
 namespace qmcplusplus
@@ -205,7 +206,10 @@ void QMCDriver::process(xmlNodePtr cur)
 #endif
   //create and initialize traces
   if (!wtrace_manager_)
-    wtrace_manager_ = std::make_unique<WalkerTraceManager>(walker_traces_xml, allow_walker_traces, RootName, myComm);
+  {
+    WalkerTraceInput walker_traces_input(walker_traces_xml);
+    wtrace_manager_ = std::make_unique<WalkerTraceManager>(walker_traces_input, allow_walker_traces, RootName, myComm);
+  }
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)

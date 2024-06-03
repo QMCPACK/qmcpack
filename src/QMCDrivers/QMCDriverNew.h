@@ -43,6 +43,7 @@
 #include "DriverWalkerTypes.h"
 #include "TauParams.hpp"
 #include "Particle/MCCoords.hpp"
+#include "Estimators/WalkerTraceManagerInput.h"
 #include <algorithm>
 
 class Communicate;
@@ -104,8 +105,9 @@ public:
 
   /// whether to allow walker traces
   bool allow_walker_traces;
-  /// walker traces xml
-  xmlNodePtr walker_traces_xml;
+  /// walker traces input
+  WalkerTraceInput walker_traces_input;
+  //xmlNodePtr walker_traces_xml;
 
 protected:
   /** This is a data structure strictly for QMCDriver and its derived classes
@@ -247,7 +249,7 @@ public:
   void putTraces(xmlNodePtr txml) override {}
   void requestTraces(bool allow_traces) override {}
 
-  void putWalkerTraces(xmlNodePtr txml) override { walker_traces_xml = txml; }
+  void putWalkerTraces(xmlNodePtr txml) override { walker_traces_input.readXML(txml); }
 
   void requestWalkerTraces(bool allow_traces_) override { allow_walker_traces = allow_traces_; }
 

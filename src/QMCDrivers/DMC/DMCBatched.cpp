@@ -290,8 +290,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   // collect walker traces
   crowd.collect(sft.current_step);
-  //for (int iw = 0; iw < crowd.size(); ++iw)
-  //  crowd.wtrace_collector_.collect(walkers[iw], walker_elecs[iw], walker_twfs[iw], walker_hamiltonians[iw], sft.current_step);
 
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
@@ -436,7 +434,7 @@ bool DMCBatched::run()
   estimator_manager_->startDriverRun();
 
   //start walker trace manager
-  wtrace_manager_ = std::make_unique<WalkerTraceManager>(walker_traces_xml, allow_walker_traces, get_root_name(), myComm);
+  wtrace_manager_ = std::make_unique<WalkerTraceManager>(walker_traces_input, allow_walker_traces, get_root_name(), myComm);
   std::vector<WalkerTraceCollector*> wtrace_collectors;
   for (auto& c: crowds_)
     wtrace_collectors.push_back(&c->wtrace_collector_);

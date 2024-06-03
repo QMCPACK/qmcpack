@@ -33,6 +33,7 @@
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
+#include "Estimators/WalkerTraceManagerInput.h"
 #include "Estimators/WalkerTraceManager.h"
 
 
@@ -205,6 +206,7 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
   if (h5name.size())
     h5_file_root_ = h5name;
 }
+
 
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset

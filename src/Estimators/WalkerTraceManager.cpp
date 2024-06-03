@@ -201,14 +201,12 @@ void WalkerTraceCollector::check_buffers()
 // WalkerTraceManager methods //
 ////////////////////////////////
 
-WalkerTraceManager::WalkerTraceManager(xmlNodePtr cur, bool allow_traces, std::string series_root, Communicate* comm)
+WalkerTraceManager::WalkerTraceManager(WalkerTraceInput& inp, bool allow_traces, std::string series_root, Communicate* comm)
 {
   state.reset_permissions();
   communicator              = comm;
   file_root                 = series_root;
   bool method_allows_traces = allow_traces;
-
-  WalkerTraceInput inp(cur);
 
   bool traces_requested     = inp.present;
   state.traces_active       = traces_requested && method_allows_traces;

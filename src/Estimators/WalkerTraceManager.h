@@ -399,6 +399,9 @@ private:
 
 
 
+class WalkerTraceInput;
+
+
 class WalkerTraceManager
 {
 private:
@@ -430,7 +433,7 @@ private:
   WalkerTraceBuffer<WTraceReal> wmed_particle_real_buffer;
 
 public:
-  WalkerTraceManager(xmlNodePtr cur, bool allow_traces, std::string series_root, Communicate* comm = 0);
+  WalkerTraceManager(WalkerTraceInput& inp, bool allow_traces, std::string series_root, Communicate* comm = 0);
 
   inline WalkerTraceState get_state() { return state; }
 
