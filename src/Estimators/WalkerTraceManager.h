@@ -13,7 +13,6 @@
 #ifndef QMCPLUSPLUS_WALKERTRACEMANAGER_H
 #define QMCPLUSPLUS_WALKERTRACEMANAGER_H
 
-#include <Configuration.h>
 #include "WalkerTraceCollector.h"
 
 
@@ -41,19 +40,19 @@ private:
   bool write_max_data;
   bool write_med_data;
 
-  std::vector<std::tuple<size_t,WTraceReal,size_t,size_t>> energy_order;
+  std::vector<std::tuple<size_t,WTrace::Real,size_t,size_t>> energy_order;
 
-  WalkerTraceBuffer<WTraceInt>  wmin_property_int_buffer;
-  WalkerTraceBuffer<WTraceReal> wmin_property_real_buffer;
-  WalkerTraceBuffer<WTraceReal> wmin_particle_real_buffer;
+  WalkerTraceBuffer<WTrace::Int>  wmin_property_int_buffer;
+  WalkerTraceBuffer<WTrace::Real> wmin_property_real_buffer;
+  WalkerTraceBuffer<WTrace::Real> wmin_particle_real_buffer;
 
-  WalkerTraceBuffer<WTraceInt>  wmax_property_int_buffer;
-  WalkerTraceBuffer<WTraceReal> wmax_property_real_buffer;
-  WalkerTraceBuffer<WTraceReal> wmax_particle_real_buffer;
+  WalkerTraceBuffer<WTrace::Int>  wmax_property_int_buffer;
+  WalkerTraceBuffer<WTrace::Real> wmax_property_real_buffer;
+  WalkerTraceBuffer<WTrace::Real> wmax_particle_real_buffer;
 
-  WalkerTraceBuffer<WTraceInt>  wmed_property_int_buffer;
-  WalkerTraceBuffer<WTraceReal> wmed_property_real_buffer;
-  WalkerTraceBuffer<WTraceReal> wmed_particle_real_buffer;
+  WalkerTraceBuffer<WTrace::Int>  wmed_property_int_buffer;
+  WalkerTraceBuffer<WTrace::Real> wmed_property_real_buffer;
+  WalkerTraceBuffer<WTrace::Real> wmed_particle_real_buffer;
 
 public:
   WalkerTraceManager(WalkerTraceInput& inp, bool allow_traces, std::string series_root, Communicate* comm = 0);

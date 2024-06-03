@@ -64,41 +64,41 @@ void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& p
   Rtmp.resize(nparticles,ndim);
   for(size_t p=0;p<nparticles;++p)
     for(size_t d=0;d<ndim;++d)
-      Rtmp(p,d) = (WTraceReal)walker.R[p][d];
+      Rtmp(p,d) = (WTrace::Real)walker.R[p][d];
   bar.collect("R", Rtmp);
   //   per-particle "spin" (walker.spins)
   if (pset.isSpinor())
   {
     Stmp.resize(nparticles);
     for(size_t p=0;p<nparticles;++p)
-      Stmp(p) = (WTraceReal)walker.spins[p];
+      Stmp(p) = (WTrace::Real)walker.spins[p];
     bar.collect("S", Stmp);
   }
   //   per-particle gradient(log(psi)) (pset.G)
   Gtmp.resize(nparticles,ndim);
   for(size_t p=0;p<nparticles;++p)
     for(size_t d=0;d<ndim;++d)
-      Gtmp(p,d) = (WTracePsiVal)pset.G[p][d];
+      Gtmp(p,d) = (WTrace::PsiVal)pset.G[p][d];
   bar.collect("G", Gtmp);
   //   per-particle laplacian(log(psi)) (pset.L)
   Ltmp.resize(nparticles);
   for(size_t p=0;p<nparticles;++p)
-    Ltmp(p) = (WTracePsiVal)pset.L[p];
+    Ltmp(p) = (WTrace::PsiVal)pset.L[p];
   bar.collect("L", Ltmp);
   bar.resetCollect();
 
   // collect integer walker properties
-  bsi.collect("step"        , (WTraceInt)current_step         );
-  bsi.collect("id"          , (WTraceInt)walker.getWalkerID() );
-  bsi.collect("parent_id"   , (WTraceInt)walker.getParentID() );
-  bsi.collect("age"         , (WTraceInt)walker.Age           );
+  bsi.collect("step"        , (WTrace::Int)current_step         );
+  bsi.collect("id"          , (WTrace::Int)walker.getWalkerID() );
+  bsi.collect("parent_id"   , (WTrace::Int)walker.getParentID() );
+  bsi.collect("age"         , (WTrace::Int)walker.Age           );
   bsi.resetCollect();
 
   // collect real walker properties
-  bsr.collect("weight"      , (WTraceReal)walker.Weight        );
-  bsr.collect("multiplicity", (WTraceReal)walker.Multiplicity  );
-  bsr.collect("logpsi"      , (WTraceReal)wfn.getLogPsi()      );
-  bsr.collect("phase"       , (WTraceReal)wfn.getPhase()       );
+  bsr.collect("weight"      , (WTrace::Real)walker.Weight        );
+  bsr.collect("multiplicity", (WTrace::Real)walker.Multiplicity  );
+  bsr.collect("logpsi"      , (WTrace::Real)wfn.getLogPsi()      );
+  bsr.collect("phase"       , (WTrace::Real)wfn.getPhase()       );
   //    from PropertyList
   if (bsr.first_collect)
   {
@@ -108,7 +108,7 @@ void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& p
       auto& value = walker.Properties(0,n);
       if(properties_include.find(name) != properties_include.end())
       {
-        bsr.collect(name, (WTraceReal)value );
+        bsr.collect(name, (WTrace::Real)value );
         property_indices.push_back(n);
       }
       if(name=="LocalEnergy")
@@ -122,18 +122,18 @@ void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& p
     {
       auto& name  = pset.PropertyList.Names[n];
       auto& value = walker.Properties(0,n);
-      bsr.collect(name, (WTraceReal)value );
+      bsr.collect(name, (WTrace::Real)value );
     }
   //    nodal proximity measures
   auto& gv = Gtmp.storage();
-  WTraceReal dr = std::numeric_limits<WTraceReal>::max();
+  WTrace::Real dr = std::numeric_limits<WTrace::Real>::max();
   for(size_t n=0; n<gv.size(); ++n)
     dr = std::min(dr,std::abs(1./std::real(gv[n])));
   auto dr_node_min = dr;
-  WTraceReal dlogpsi2 = 0.;
+  WTrace::Real dlogpsi2 = 0.;
   for(size_t n=0; n<gv.size(); ++n)
     dlogpsi2 += std::real(gv[n])*std::real(gv[n]);
-  WTraceReal dphase2 = 0.;
+  WTrace::Real dphase2 = 0.;
   for(size_t n=0; n<gv.size(); ++n)
     dphase2 += std::imag(gv[n])*std::imag(gv[n]);
   bsr.collect("dr_node_min", dr_node_min);
@@ -143,7 +143,7 @@ void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& p
 
   // save the energy of this walker
   steps.push_back((size_t)current_step);
-  energies.push_back((WTraceReal)walker.Properties(0,energy_index));
+  energies.push_back((WTrace::Real)walker.Properties(0,energy_index));
 
 }
 

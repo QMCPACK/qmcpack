@@ -51,10 +51,10 @@ class WalkerTraceCollector
 {
 public:
   std::vector<size_t>     steps;
-  std::vector<WTraceReal> energies;
-  WalkerTraceBuffer<WTraceInt>  walker_property_int_buffer;
-  WalkerTraceBuffer<WTraceReal> walker_property_real_buffer;
-  WalkerTraceBuffer<WTraceReal> walker_particle_real_buffer;
+  std::vector<WTrace::Real> energies;
+  WalkerTraceBuffer<WTrace::Int>  walker_property_int_buffer;
+  WalkerTraceBuffer<WTrace::Real> walker_property_real_buffer;
+  WalkerTraceBuffer<WTrace::Real> walker_particle_real_buffer;
 
   std::unordered_set<std::string> properties_include;
   std::vector<size_t>             property_indices;
@@ -64,10 +64,10 @@ public:
 
 private:
   // temporary (contiguous) storage for awful ParticleAttrib<> quantities
-  Array<WTraceReal  , 2> Rtmp;
-  Array<WTraceReal  , 1> Stmp;
-  Array<WTracePsiVal, 2> Gtmp;
-  Array<WTracePsiVal, 1> Ltmp;
+  Array<WTrace::Real  , 2> Rtmp;
+  Array<WTrace::Real  , 1> Stmp;
+  Array<WTrace::PsiVal, 2> Gtmp;
+  Array<WTrace::PsiVal, 1> Ltmp;
 
 public:
   WalkerTraceCollector();

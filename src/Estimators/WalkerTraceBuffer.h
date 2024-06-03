@@ -25,25 +25,28 @@
 namespace qmcplusplus
 {
 
-const unsigned int WDMAX = 4;
-using WTraceInt          = long;
-using WTraceReal         = OHMMS_PRECISION_FULL;
-using WTraceComp         = std::complex<WTraceReal>;
-#ifndef QMC_COMPLEX
-using WTracePsiVal = WTraceReal;
-#else
-using WTracePsiVal = WTraceComp;
-#endif
 
+struct WTrace
+{
+  using Int  = long;
+  using Real = OHMMS_PRECISION_FULL;
+  using Comp = std::complex<Real>;
+#ifndef QMC_COMPLEX
+  using PsiVal = Real;
+#else
+  using PsiVal = Comp;
+#endif
+};
 
 
 struct WalkerQuantityInfo
 {
+  enum{D0=0,D1,D2,D3,DMAX};
   std::string name;
   size_t dimension;
   size_t size;
   size_t unit_size;
-  TinyVector<size_t, WDMAX> shape;
+  TinyVector<size_t, DMAX> shape;
   size_t buffer_start;
   size_t buffer_end;
 
@@ -52,14 +55,14 @@ struct WalkerQuantityInfo
     name         = name_;
     unit_size    = unit_size_;
     buffer_start = buffer_start_;
-    shape[0]     = n1;
-    shape[1]     = n2;
-    shape[2]     = n3;
-    shape[3]     = n4;
+    shape[D0]     = n1;
+    shape[D1]     = n2;
+    shape[D2]     = n3;
+    shape[D3]     = n4;
 
     dimension = 0;
     size      = 1;
-    for (size_t d=0;d<WDMAX;++d)
+    for (size_t d=0;d<DMAX;++d)
       if (shape[d]>0)
       {
         dimension++;
