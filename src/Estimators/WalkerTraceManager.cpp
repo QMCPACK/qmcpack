@@ -179,9 +179,9 @@ void WalkerTraceCollector::reset_buffers()
 void WalkerTraceCollector::check_buffers()
 {
   if (state.verbose) app_log() << "WalkerTraceCollector::check_buffers"<<std::endl;
-  size_t nrows = walker_property_int_buffer.buffer.size(0);
-  auto prop_real_bad = walker_property_real_buffer.buffer.size(0)!=nrows;
-  auto part_real_bad = walker_particle_real_buffer.buffer.size(0)!=nrows;
+  size_t nrows = walker_property_int_buffer.nrows();
+  auto prop_real_bad = walker_property_real_buffer.nrows()!=nrows;
+  auto part_real_bad = walker_particle_real_buffer.nrows()!=nrows;
   auto steps_bad     = steps.size()!=nrows;
   auto energies_bad  = energies.size()!=nrows;
   auto any_bad = prop_real_bad || part_real_bad || steps_bad || energies_bad;

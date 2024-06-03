@@ -74,22 +74,25 @@ struct WalkerQuantityInfo
 
 
 template<typename T>
-struct WalkerTraceBuffer
+class WalkerTraceBuffer
 {
-  Array<T, 2> buffer;
+public:
   bool verbose;
 
-  size_t walker_data_size;
-  std::vector<WalkerQuantityInfo> quantity_info;
-
   bool first_collect;
-  size_t quantity_pointer;
 
   //hdf variables
   std::string label;
-  hsize_t dims[2];
   hsize_t hdf_file_pointer;
 
+private:
+  size_t quantity_pointer;
+  std::vector<WalkerQuantityInfo> quantity_info;
+  size_t walker_data_size;
+  Array<T, 2> buffer;
+  hsize_t dims[2];
+
+public:
   WalkerTraceBuffer()
   {
     label             = "?";
@@ -100,11 +103,11 @@ struct WalkerTraceBuffer
     reset_buffer();
   }
 
+  inline size_t nrows() { return buffer.size(0); }
 
-  inline void reset_buffer()
-  {
-    buffer.resize(0, buffer.size(1));
-  }
+  inline size_t ncols() { return buffer.size(1); }
+
+  inline void reset_buffer() { buffer.resize(0, buffer.size(1)); }
 
 
   inline void reset_collect()
@@ -116,41 +119,7 @@ struct WalkerTraceBuffer
   }
 
 
-  inline bool same_as(WalkerTraceBuffer<T>& ref) 
-  { 
-    return buffer.size(1) == ref.buffer.size(1); 
-  }
-
-
-  inline void reset_rowsize(size_t row_size)
-  {
-    auto nrows = buffer.size(0);
-    if(nrows==0)
-      nrows++;
-    if(nrows!=1)
-      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  row_size (number of columns) should only be changed during growth of the first row.");
-    auto buffer_old(buffer);
-    buffer.resize(nrows,row_size);
-    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
-    if(buffer.size(0)!=1)
-      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  buffer should contain only a single row upon completion.");
-    if(buffer.size(1)!=row_size)
-      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  length of buffer row should match the requested row_size following the reset/udpate.");
-  }
-
-
-  inline void make_new_row()
-  {
-    size_t nrows    = buffer.size(0);
-    size_t row_size = buffer.size(1);
-    if (row_size==0)
-      throw std::runtime_error("WalkerTraceBuffer::make_new_row  Cannot make a new row of size zero.");
-    nrows++;
-    // resizing buffer(type Array) doesn't preserve data. Thus keep old data and copy over
-    auto buffer_old(buffer);
-    buffer.resize(nrows, row_size);
-    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
-  }
+  inline bool same_as(const WalkerTraceBuffer<T>& ref) { return buffer.size(1) == ref.buffer.size(1); }
 
 
   inline void collect(const std::string& name, const T& value)
@@ -327,6 +296,37 @@ struct WalkerTraceBuffer
     }
     f.flush();
   }
+
+private:
+  inline void reset_rowsize(size_t row_size)
+  {
+    auto nrows = buffer.size(0);
+    if(nrows==0)
+      nrows++;
+    if(nrows!=1)
+      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  row_size (number of columns) should only be changed during growth of the first row.");
+    auto buffer_old(buffer);
+    buffer.resize(nrows,row_size);
+    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
+    if(buffer.size(0)!=1)
+      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  buffer should contain only a single row upon completion.");
+    if(buffer.size(1)!=row_size)
+      throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  length of buffer row should match the requested row_size following the reset/udpate.");
+  }
+
+  inline void make_new_row()
+  {
+    size_t nrows    = buffer.size(0);
+    size_t row_size = buffer.size(1);
+    if (row_size==0)
+      throw std::runtime_error("WalkerTraceBuffer::make_new_row  Cannot make a new row of size zero.");
+    nrows++;
+    // resizing buffer(type Array) doesn't preserve data. Thus keep old data and copy over
+    auto buffer_old(buffer);
+    buffer.resize(nrows, row_size);
+    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
+  }
+
 };
 
 
