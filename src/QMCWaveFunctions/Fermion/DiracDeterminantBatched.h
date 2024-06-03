@@ -33,20 +33,20 @@ namespace qmcplusplus
 //forward declaration
 class TWFFastDerivWrapper;
 
-template<PlatformKind PL, typename VT, typename FPVT>
+template<PlatformKind PL, typename VT>
 struct UpdateEngineSelector;
 
-template<typename VT, typename FPVT>
-struct UpdateEngineSelector<PlatformKind::OMPTARGET, VT, FPVT>
+template<typename VT>
+struct UpdateEngineSelector<PlatformKind::OMPTARGET, VT>
 {
-  using Engine = DelayedUpdateBatched<PlatformKind::OMPTARGET, VT, FPVT>;
+  using Engine = DelayedUpdateBatched<PlatformKind::OMPTARGET, VT>;
 };
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-template<typename VT, typename FPVT>
-struct UpdateEngineSelector<PlatformKind::CUDA, VT, FPVT>
+template<typename VT>
+struct UpdateEngineSelector<PlatformKind::CUDA, VT>
 {
-  using Engine = DelayedUpdateBatched<PlatformKind::CUDA, VT,FPVT>;
+  using Engine = DelayedUpdateBatched<PlatformKind::CUDA, VT>;
 };
 #endif
 
@@ -72,9 +72,9 @@ class DiracDeterminantBatched : public DiracDeterminantBase
 {
 
 public:
-  using UpdateEngine  = typename UpdateEngineSelector<PL, VT, FPVT>::Engine;
+  using UpdateEngine  = typename UpdateEngineSelector<PL, VT>::Engine;
   using DetInverter   = typename DetInverterSelector<PL, FPVT>::Inverter;
-  using WFT           = typename UpdateEngine::WFT;
+  using WFT           = WaveFunctionTypes<VT, FPVT>;
   using Value         = typename WFT::Value;
   using FullPrecValue = typename WFT::FullPrecValue;
   using PsiValue      = typename WFT::PsiValue;

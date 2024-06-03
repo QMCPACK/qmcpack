@@ -34,16 +34,14 @@ namespace qmcplusplus
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
-template<PlatformKind PL, typename VALUE, typename VALUE_FP>
+template<PlatformKind PL, typename VALUE>
 class DelayedUpdateBatched
 {
 public:
-  using WFT           = WaveFunctionTypes<VALUE, VALUE_FP>;
-  using Value         = typename WFT::Value;
-  using Complex       = typename WFT::Complex;
-  using FullPrecValue = typename WFT::FullPrecValue;
-  using LogValue      = typename WFT::LogValue;
-  using This_t        = DelayedUpdateBatched<PL, VALUE, VALUE_FP>;
+  using This_t        = DelayedUpdateBatched<PL, VALUE>;
+  using Value         = VALUE;
+  using Real          = RealAlias<Value>;
+  using Complex       = std::complex<Real>;
 
   // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
   template<typename DT>
@@ -422,8 +420,8 @@ public:
    *  Forced to use OpenMP target since resources are banned for single walker functions APIs
    *  and the acquireRelease pattern for a single DDB was removed by #3324
    */
-  template<typename VVT>
-  void updateRow(DualMatrix<Value>& Ainv, int rowchanged, const VVT& phiV, FullPrecValue c_ratio_in)
+  template<typename VVT, typename FPVT>
+  void updateRow(DualMatrix<Value>& Ainv, int rowchanged, const VVT& phiV, FPVT c_ratio_in)
   {
     guard_no_delay();
     // update the inverse matrix
@@ -454,7 +452,7 @@ public:
           temp_ptr[rowchanged] -= cone;
       }
 
-      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(FullPrecValue(-1) / c_ratio_in), rcopy_ptr, 1,
+      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(FPVT(-1) / c_ratio_in), rcopy_ptr, 1,
                              temp_ptr, 1, Ainv_ptr, lda);
       if (success != 0)
         throw std::runtime_error("ompBLAS::ger failed.");
