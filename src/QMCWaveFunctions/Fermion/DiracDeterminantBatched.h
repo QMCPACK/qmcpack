@@ -34,46 +34,46 @@ namespace qmcplusplus
 class TWFFastDerivWrapper;
 
 template<PlatformKind PL, typename VT, typename FPVT>
-class DiracDeterminantBatched : public DiracDeterminantBase
-{
-
-public:
-template<PlatformKind UEPL>
 struct UpdateEngineSelector;
 
-template<>
-struct UpdateEngineSelector<PlatformKind::OMPTARGET>
+template<typename VT, typename FPVT>
+struct UpdateEngineSelector<PlatformKind::OMPTARGET, VT, FPVT>
 {
   using Engine = DelayedUpdateBatched<PlatformKind::OMPTARGET, VT, FPVT>;
 };
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-template<>
-struct UpdateEngineSelector<PlatformKind::CUDA>
+template<typename VT, typename FPVT>
+struct UpdateEngineSelector<PlatformKind::CUDA, VT, FPVT>
 {
   using Engine = DelayedUpdateBatched<PlatformKind::CUDA, VT,FPVT>;
 };
 #endif
 
-template<PlatformKind UEPL>
+template<PlatformKind UEPL, typename FPVT>
 struct DetInverterSelector;
 
-template<>
-struct DetInverterSelector<PlatformKind::OMPTARGET>
+template<typename FPVT>
+struct DetInverterSelector<PlatformKind::OMPTARGET, FPVT>
 {
   using Inverter = DiracMatrixComputeOMPTarget<FPVT>;
 };
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-template<>
-struct DetInverterSelector<PlatformKind::CUDA>
+template<typename FPVT>
+struct DetInverterSelector<PlatformKind::CUDA, FPVT>
 {
   using Inverter = DiracMatrixComputeCUDA<FPVT>;
 };
 #endif
 
-  using UpdateEngine  = typename UpdateEngineSelector<PL>::Engine;
-  using DetInverter   = typename DetInverterSelector<PL>::Inverter;
+template<PlatformKind PL, typename VT, typename FPVT>
+class DiracDeterminantBatched : public DiracDeterminantBase
+{
+
+public:
+  using UpdateEngine  = typename UpdateEngineSelector<PL, VT, FPVT>::Engine;
+  using DetInverter   = typename DetInverterSelector<PL, FPVT>::Inverter;
   using WFT           = typename UpdateEngine::WFT;
   using Value         = typename WFT::Value;
   using FullPrecValue = typename WFT::FullPrecValue;
