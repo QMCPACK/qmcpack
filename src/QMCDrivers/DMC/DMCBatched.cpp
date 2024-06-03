@@ -516,7 +516,7 @@ bool DMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
-      wtrace_manager_->write_buffers(wtrace_collectors);
+      wtrace_manager_->writeBuffers(wtrace_collectors);
       recordBlock(block);
     }
 

@@ -77,11 +77,7 @@ template<typename T>
 class WalkerTraceBuffer
 {
 public:
-  bool verbose;
-
   bool first_collect;
-
-  //hdf variables
   std::string label;
   hsize_t hdf_file_pointer;
 
@@ -96,21 +92,19 @@ public:
   WalkerTraceBuffer()
   {
     label             = "?";
-    verbose           = false;
     first_collect     = true;
     walker_data_size  = 0;
     quantity_pointer  = 0;
-    reset_buffer();
+    resetBuffer();
   }
 
   inline size_t nrows() { return buffer.size(0); }
 
   inline size_t ncols() { return buffer.size(1); }
 
-  inline void reset_buffer() { buffer.resize(0, buffer.size(1)); }
+  inline void resetBuffer() { buffer.resize(0, buffer.size(1)); }
 
-
-  inline void reset_collect()
+  inline void resetCollect()
   {
     if(quantity_pointer!=quantity_info.size())
       throw std::runtime_error("WalkerTraceBuffer quantity_pointer has not been moved through all quantities prior during collect() call.");
@@ -119,7 +113,7 @@ public:
   }
 
 
-  inline bool same_as(const WalkerTraceBuffer<T>& ref) { return buffer.size(1) == ref.buffer.size(1); }
+  inline bool sameAs(const WalkerTraceBuffer<T>& ref) { return buffer.size(1) == ref.buffer.size(1); }
 
 
   inline void collect(const std::string& name, const T& value)
@@ -130,12 +124,12 @@ public:
       WalkerQuantityInfo wqi_(name,1,walker_data_size);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
-      reset_rowsize(walker_data_size);
+      resetRowSize(walker_data_size);
     }
     else
     {
       if(quantity_pointer==0)
-        make_new_row();
+        makeNewRow();
       irow = buffer.size(0)-1;
     }
     auto& wqi = quantity_info[quantity_pointer];
@@ -161,12 +155,12 @@ public:
       WalkerQuantityInfo wqi_(name,1,walker_data_size,n1,n2,n3,n4);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
-      reset_rowsize(walker_data_size);
+      resetRowSize(walker_data_size);
     }
     else
     {
       if(quantity_pointer==0)
-        make_new_row();
+        makeNewRow();
       irow = buffer.size(0)-1;
     }
     auto& wqi = quantity_info[quantity_pointer];
@@ -194,12 +188,12 @@ public:
       WalkerQuantityInfo wqi_(name,2,walker_data_size,n1,n2,n3,n4);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
-      reset_rowsize(walker_data_size);
+      resetRowSize(walker_data_size);
     }
     else
     {
       if(quantity_pointer==0)
-        make_new_row();
+        makeNewRow();
       irow = buffer.size(0)-1;
     }
     auto& wqi = quantity_info[quantity_pointer];
@@ -214,13 +208,12 @@ public:
   }
 
 
-  inline void add_row(WalkerTraceBuffer<T> other, size_t i)
+  inline void addRow(WalkerTraceBuffer<T> other, size_t i)
   {
-    //app_log()<<"WalkerTraceBuffer("<<label<<")::add_row"<<std::endl;
     auto& other_buffer = other.buffer;
     if (first_collect)
     {
-      reset_rowsize(other_buffer.size(1));
+      resetRowSize(other_buffer.size(1));
       quantity_info = other.quantity_info;
       first_collect = false;
     }
@@ -228,7 +221,7 @@ public:
     {
       if(buffer.size(1)!=other_buffer.size(1))
         throw std::runtime_error("WalkerTraceBuffer::add_row  Row sizes must match.");
-      make_new_row();
+      makeNewRow();
     }
     size_t ib = buffer.size(0)-1;
     for(size_t j=0;j<buffer.size(1);++j)
@@ -236,7 +229,7 @@ public:
   }
 
 
-  inline void write_summary(std::string pad = "  ")
+  inline void writeSummary(std::string pad = "  ")
   {
     std::string pad2 = pad  + "  ";
     std::string pad3 = pad2 + "  ";
@@ -252,7 +245,7 @@ public:
     app_log() << pad << "end WalkerTraceBuffer(" << label << ")" << std::endl;
   }
 
-  inline void register_hdf_data(hdf_archive& f)
+  inline void registerHDFData(hdf_archive& f)
   {
     auto& top = label;
     f.push(top);
@@ -276,15 +269,14 @@ public:
   }
 
 
-  inline void write_hdf(hdf_archive& f)
+  inline void writeHDF(hdf_archive& f)
   {
-    write_hdf(f,hdf_file_pointer);
+    writeHDF(f,hdf_file_pointer);
   }
 
 
-  inline void write_hdf(hdf_archive& f, hsize_t& file_pointer)
+  inline void writeHDF(hdf_archive& f, hsize_t& file_pointer)
   {
-    //if (verbose) app_log()<<"WalkerTraceBuffer("<<label<<")::write_hdf "<<file_pointer<<"  "<<buffer.size(0)<<" "<<buffer.size(1)<<std::endl;
     auto& top = label;
     dims[0] = buffer.size(0);
     dims[1] = buffer.size(1);
@@ -298,7 +290,7 @@ public:
   }
 
 private:
-  inline void reset_rowsize(size_t row_size)
+  inline void resetRowSize(size_t row_size)
   {
     auto nrows = buffer.size(0);
     if(nrows==0)
@@ -314,12 +306,12 @@ private:
       throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  length of buffer row should match the requested row_size following the reset/udpate.");
   }
 
-  inline void make_new_row()
+  inline void makeNewRow()
   {
     size_t nrows    = buffer.size(0);
     size_t row_size = buffer.size(1);
     if (row_size==0)
-      throw std::runtime_error("WalkerTraceBuffer::make_new_row  Cannot make a new row of size zero.");
+      throw std::runtime_error("WalkerTraceBuffer::makeNewRow  Cannot make a new row of size zero.");
     nrows++;
     // resizing buffer(type Array) doesn't preserve data. Thus keep old data and copy over
     auto buffer_old(buffer);
@@ -339,11 +331,11 @@ struct WalkerTraceState
 
   WalkerTraceState()
   {
-    reset_permissions();
+    reset();
     step_period = 1;
   }
 
-  inline void reset_permissions()
+  inline void reset()
   {
     traces_active = false;
     verbose       = false;
@@ -373,9 +365,9 @@ public:
   std::vector<size_t>             property_indices;
   int energy_index;
 
-private:
   WalkerTraceState state;
-  
+
+private:
   // temporary (contiguous) storage for awful ParticleAttrib<> quantities
   Array<WTraceReal  , 2> Rtmp;
   Array<WTraceReal  , 1> Stmp;
@@ -385,16 +377,14 @@ private:
 public:
   WalkerTraceCollector();
 
-  void set_state(const WalkerTraceState& tms);
-
   void startBlock();
 
   void collect(const MCPWalker& walker, const ParticleSet& pset, const TrialWaveFunction& wfn, const QMCHamiltonian& ham, int step=-1);
 
-  void check_buffers();
+  void checkBuffers();
 
 private:
-  void reset_buffers();
+  void resetBuffers();
 };
 
 
@@ -404,13 +394,14 @@ class WalkerTraceInput;
 
 class WalkerTraceManager
 {
+public:
+  WalkerTraceState state;
+
 private:
   std::string file_root;
   Communicate* communicator;
   std::unique_ptr<hdf_archive> hdf_file;
   bool registered_hdf;
-
-  WalkerTraceState state;
 
   // new walker buffers
   bool write_particle_data;
@@ -435,8 +426,6 @@ private:
 public:
   WalkerTraceManager(WalkerTraceInput& inp, bool allow_traces, std::string series_root, Communicate* comm = 0);
 
-  inline WalkerTraceState get_state() { return state; }
-
   WalkerTraceCollector* makeCollector();
 
   void startRun(std::vector<WalkerTraceCollector*>& collectors);
@@ -444,21 +433,21 @@ public:
   void stopRun();
 
   //write buffered trace data to file
-  void write_buffers(std::vector<WalkerTraceCollector*>& collectors);
+  void writeBuffers(std::vector<WalkerTraceCollector*>& collectors);
 
 private:
-  void check_collectors(std::vector<WalkerTraceCollector*>& collectors);
+  void checkCollectors(std::vector<WalkerTraceCollector*>& collectors);
 
-  void open_file(std::vector<WalkerTraceCollector*>& collectors);
+  void openFile(std::vector<WalkerTraceCollector*>& collectors);
 
-  void close_file();
+  void closeFile();
 
   //hdf file operations
-  void open_hdf_file(std::vector<WalkerTraceCollector*>& collectors);
+  void openHDFFile(std::vector<WalkerTraceCollector*>& collectors);
 
-  void write_buffers_hdf(std::vector<WalkerTraceCollector*>& collectors);
+  void writeBuffersHDF(std::vector<WalkerTraceCollector*>& collectors);
 
-  void close_hdf_file();
+  void closeHDFFile();
 };
 
 

@@ -297,7 +297,7 @@ bool DMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    wtrace_manager_->write_buffers(wtrace_collectors);
+    wtrace_manager_->writeBuffers(wtrace_collectors);
     block++;
     if (DumpConfig && block % Period4CheckPoint == 0)
     {
