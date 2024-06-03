@@ -23,6 +23,12 @@ template<typename T>
 using OffloadAllocator = OMPallocator<T, aligned_allocator<T>>;
 template<typename T>
 using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
+template<typename T>
+#if defined(ENABLE_OFFLOAD)
+using OffloadDeviceAllocator = OMPTargetAllocator<T>;
+#else
+using OffloadDeviceAllocator = aligned_allocator<T>;
+#endif
 } // namespace qmcplusplus
 
 #endif
