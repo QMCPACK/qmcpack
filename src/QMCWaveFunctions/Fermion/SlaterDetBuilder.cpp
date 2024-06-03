@@ -401,11 +401,10 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #if defined(ENABLE_OFFLOAD)
         if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
           throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
-        app_summary() << "      Running OpenMP offload code path on GPU. "
+        app_summary() << "      Running OpenMP offload code path on GPU. " << std::endl;
 #else
-        app_summary() << "      Running OpenMP offload code path on CPU. "
+        app_summary() << "      Running OpenMP offload code path on CPU. " << std::endl;
 #endif
-                      << "Only SM1 update is supported. delay_rank is ignored." << std::endl;
         adet = std::make_unique<DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
                                                            matrix_inverter_kind);
       }
