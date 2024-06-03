@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -10,20 +10,17 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
-#define QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
+#ifndef QMCPLUSPLUS_DELAYED_UPDATE_BATCHED_H
+#define QMCPLUSPLUS_DELAYED_UPDATE_BATCHED_H
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "DualAllocatorAliases.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
 #include "detail/AccelMatrixUpdate.hpp"
-#include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "QueueAliases.hpp"
 #include "AccelBLAS.hpp"
-#include "DiracMatrixComputeCUDA.hpp"
 
 namespace qmcplusplus
 {
@@ -35,29 +32,24 @@ namespace qmcplusplus
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
-template<typename VALUE, typename VALUE_FP>
-class MatrixDelayedUpdateCUDA
+template<PlatformKind PL, typename VALUE>
+class DelayedUpdateBatched
 {
 public:
-  using WFT           = WaveFunctionTypes<VALUE, VALUE_FP>;
-  using Value         = typename WFT::Value;
-  using Complex       = typename WFT::Complex;
-  using FullPrecValue = typename WFT::FullPrecValue;
-  using LogValue      = typename WFT::LogValue;
-  using This_t        = MatrixDelayedUpdateCUDA<VALUE, VALUE_FP>;
-  using DetInverter   = DiracMatrixComputeCUDA<FullPrecValue>;
+  using This_t  = DelayedUpdateBatched<PL, VALUE>;
+  using Value   = VALUE;
+  using Real    = RealAlias<Value>;
+  using Complex = std::complex<Real>;
 
+  // containers
   template<typename DT>
-  using PinnedDualAllocator = PinnedDualAllocator<DT>;
-  // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
+  using UnpinnedDualVector = Vector<DT, OffloadAllocator<DT>>;
   template<typename DT>
-  using UnpinnedDualVector = Vector<DT, UnpinnedDualAllocator<DT>>;
+  using DualVector = Vector<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
-  using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
+  using DualMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
-  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
-  template<typename DT>
-  using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
+  using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, OffloadPinnedAllocator<DT>>;
   template<typename DT>
   using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
   template<typename DT>
@@ -66,8 +58,8 @@ public:
   struct MultiWalkerResource
   {
     // CUDA stream, cublas handle object
-    compute::Queue<PlatformKind::CUDA> queue;
-    compute::BLASHandle<PlatformKind::CUDA> blas_handle;
+    compute::Queue<PL> queue;
+    compute::BLASHandle<PL> blas_handle;
 
     // constant array value VALUE(1)
     UnpinnedDualVector<Value> cone_vec;
@@ -77,16 +69,18 @@ public:
     UnpinnedDualVector<Value> czero_vec;
     // multi walker of grads for transfer needs.
     DualMatrix<Value> grads_value_v;
+    // multi walker of spingrads for transfer needs.
+    DualVector<Complex> spingrads_value_v;
     // mw_updateRow pointer buffer
-    Vector<char, PinnedDualAllocator<char>> updateRow_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> updateRow_buffer_H2D;
     // mw_prepareInvRow pointer buffer
-    Vector<char, PinnedDualAllocator<char>> prepare_inv_row_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> prepare_inv_row_buffer_H2D;
     // mw_accept_rejectRow pointer buffer
-    Vector<char, PinnedDualAllocator<char>> accept_rejectRow_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> accept_rejectRow_buffer_H2D;
     // mw_updateInv pointer buffer
-    Vector<char, PinnedDualAllocator<char>> updateInv_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> updateInv_buffer_H2D;
     // mw_evalGrad pointer buffer
-    Vector<char, PinnedDualAllocator<char>> evalGrad_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> evalGrad_buffer_H2D;
     /// scratch space for rank-1 update
     UnpinnedDualVector<Value> mw_temp;
     // scratch space for keeping one row of Ainv
@@ -131,9 +125,9 @@ private:
   UnpinnedDualVector<Value> rcopy;
 
   template<typename DT>
-  using DeviceMatrix = Matrix<DT, DeviceAllocator<DT>>;
+  using DeviceMatrix = Matrix<DT, OffloadDeviceAllocator<DT>>;
   template<typename DT>
-  using DeviceVector = Vector<DT, DeviceAllocator<DT>>;
+  using DeviceVector = Vector<DT, OffloadDeviceAllocator<DT>>;
   /// orbital values of delayed electrons
   DeviceMatrix<Value> U_gpu;
   /// rows of Ainv corresponding to delayed electrons
@@ -336,9 +330,9 @@ private:
 
 public:
   /// default constructor
-  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0) {}
+  DelayedUpdateBatched() : invRow_id(-1), delay_count(0) {}
 
-  MatrixDelayedUpdateCUDA(const MatrixDelayedUpdateCUDA&) = delete;
+  DelayedUpdateBatched(const DelayedUpdateBatched&) = delete;
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -415,7 +409,76 @@ public:
                                   std::vector<GT>& grad_now,
                                   std::vector<Complex>& spingrad_now)
   {
-    throw std::runtime_error("MatrixDelayedUpdateCUDA needs implementation of mw_evalGradWithSpin");
+    auto& engine_leader     = engines.getLeader();
+    auto& buffer_H2D        = mw_rsc.evalGrad_buffer_H2D;
+    auto& grads_value_v     = mw_rsc.grads_value_v;
+    auto& spingrads_value_v = mw_rsc.spingrads_value_v;
+
+    //Need to pack these into a transfer buffer since psiMinv and dpsiM_row_list are not multiwalker data
+    //i.e. each engine has its own psiMinv which is an OffloadMatrix instead of the leader having the data for all the walkers in the crowd.
+    //Wouldn't have to do this if dpsiM and psiMinv were part of the mw_rsc_handle_ with data across all walkers in the crowd and could just use use_device_ptr for the offload.
+    //That is how mw_dspin is handled below
+    const int norb                   = psiMinv_refs[0].get().rows();
+    const int nw                     = engines.size();
+    constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
+    buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
+    Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), num_ptrs_packed, nw);
+    for (int iw = 0; iw < nw; iw++)
+    {
+      DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
+      ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
+      ptr_buffer[1][iw]          = dpsiM_row_list[iw];
+    }
+
+    constexpr unsigned DIM = GT::Size;
+    grads_value_v.resize(nw, DIM);
+    spingrads_value_v.resize(nw);
+    auto* __restrict__ grads_value_v_ptr     = grads_value_v.data();
+    auto* __restrict__ spingrads_value_v_ptr = spingrads_value_v.data();
+    auto* buffer_H2D_ptr                     = buffer_H2D.data();
+    auto* mw_dspin_ptr                       = mw_dspin.data();
+
+    //Note that mw_dspin should already be in sync between device and host...updateTo was called in
+    //SPOSet::mw_evaluateVGLWithSpin to sync
+    //Also note that since mw_dspin is Dual, I can just use mw_dpsin.data() above and then use directly inside
+    //then offload region. OMP will figure out the correct translation to the device address, i.e. no
+    //need to include in the PRAGMA_OFFLOAD below
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
+                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
+                    map(always, from: grads_value_v_ptr[:grads_value_v.size()]) \
+                    map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()])")
+    for (int iw = 0; iw < nw; iw++)
+    {
+      const Value* __restrict__ invRow_ptr    = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
+      const Value* __restrict__ dpsiM_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[nw + iw];
+      Value grad_x(0), grad_y(0), grad_z(0);
+      Complex spingrad(0);
+#if defined(QMC_COMPLEX)
+      // COMPILER WORKAROUND
+      // This was causing a llvm-link error in icpx due to the lack of declare reduction on complex datatypes.
+      // Keep real builds free of any reduction on a complex datatype. Just serialize the reduction.
+      // Because mw_evalGradWithSpin is only being called in complex builds in simulations, the impact of this workaround is basically zero.
+      // It is still beneficial to keep it functional in real builds.
+      PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z, spingrad)")
+#endif
+      for (int iorb = 0; iorb < norb; iorb++)
+      {
+        grad_x += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM];
+        grad_y += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 1];
+        grad_z += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 2];
+        spingrad += invRow_ptr[iorb] * mw_dspin_ptr[iw * norb + iorb];
+      }
+      grads_value_v_ptr[iw * DIM]     = grad_x;
+      grads_value_v_ptr[iw * DIM + 1] = grad_y;
+      grads_value_v_ptr[iw * DIM + 2] = grad_z;
+      spingrads_value_v_ptr[iw]       = spingrad;
+    }
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      grad_now[iw]     = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
+      spingrad_now[iw] = spingrads_value_v[iw];
+    }
   }
 
   /** Update the "local" psiMinv_ on the device.
@@ -426,8 +489,8 @@ public:
    *  Forced to use OpenMP target since resources are banned for single walker functions APIs
    *  and the acquireRelease pattern for a single DDB was removed by #3324
    */
-  template<typename VVT>
-  void updateRow(DualMatrix<Value>& Ainv, int rowchanged, const VVT& phiV, FullPrecValue c_ratio_in)
+  template<typename VVT, typename FPVT>
+  void updateRow(DualMatrix<Value>& Ainv, int rowchanged, const VVT& phiV, FPVT c_ratio_in)
   {
     guard_no_delay();
     // update the inverse matrix
@@ -458,7 +521,7 @@ public:
           temp_ptr[rowchanged] -= cone;
       }
 
-      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(FullPrecValue(-1) / c_ratio_in), rcopy_ptr, 1,
+      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(FPVT(-1) / c_ratio_in), rcopy_ptr, 1,
                              temp_ptr, 1, Ainv_ptr, lda);
       if (success != 0)
         throw std::runtime_error("ompBLAS::ger failed.");
@@ -762,4 +825,4 @@ public:
 };
 } // namespace qmcplusplus
 
-#endif // QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
+#endif // QMCPLUSPLUS_DELAYED_UPDATE_BATCHED_H

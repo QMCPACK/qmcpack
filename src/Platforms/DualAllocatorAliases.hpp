@@ -56,10 +56,8 @@ namespace qmcplusplus
   using UnpinnedDualAllocator = OffloadAllocator<T>;
   template<typename T>
   using PinnedDualAllocator = OffloadPinnedAllocator<T>;
-#if defined(ENABLE_OFFLOAD)
   template<typename T>
-  using DeviceAllocator = OMPTargetAllocator<T>;
-#endif
+  using DeviceAllocator = OffloadDeviceAllocator<T>;
 }
 #endif
 
