@@ -1262,7 +1262,7 @@ void DiracDeterminantBatched<DET_ENGINE>::releaseResource(
 
 template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+template class DiracDeterminantBatched<DelayedUpdateBatched<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

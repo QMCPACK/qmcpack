@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -10,8 +10,8 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
-#define QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
+#ifndef QMCPLUSPLUS_DELAYED_UPDATE_BATCHED_H
+#define QMCPLUSPLUS_DELAYED_UPDATE_BATCHED_H
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -36,7 +36,7 @@ namespace qmcplusplus
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
 template<typename VALUE, typename VALUE_FP>
-class MatrixDelayedUpdateCUDA
+class DelayedUpdateBatched
 {
 public:
   using WFT           = WaveFunctionTypes<VALUE, VALUE_FP>;
@@ -44,7 +44,7 @@ public:
   using Complex       = typename WFT::Complex;
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
-  using This_t        = MatrixDelayedUpdateCUDA<VALUE, VALUE_FP>;
+  using This_t        = DelayedUpdateBatched<VALUE, VALUE_FP>;
   using DetInverter   = DiracMatrixComputeCUDA<FullPrecValue>;
 
   template<typename DT>
@@ -336,9 +336,9 @@ private:
 
 public:
   /// default constructor
-  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0) {}
+  DelayedUpdateBatched() : invRow_id(-1), delay_count(0) {}
 
-  MatrixDelayedUpdateCUDA(const MatrixDelayedUpdateCUDA&) = delete;
+  DelayedUpdateBatched(const DelayedUpdateBatched&) = delete;
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -415,7 +415,7 @@ public:
                                   std::vector<GT>& grad_now,
                                   std::vector<Complex>& spingrad_now)
   {
-    throw std::runtime_error("MatrixDelayedUpdateCUDA needs implementation of mw_evalGradWithSpin");
+    throw std::runtime_error("DelayedUpdateBatched needs implementation of mw_evalGradWithSpin");
   }
 
   /** Update the "local" psiMinv_ on the device.

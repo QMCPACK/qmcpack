@@ -43,7 +43,7 @@ public:
 
   // There is no expectation that this OMP only code can possibly work with anything but OMPallocator based
   // Allocators.  So this file should never include DualAllocatorAliases.hpp this violation of YAGNI isn't.
-  // I do this for symmetry with MatrixDelayedUpdateCUDA only.
+  // I do this for symmetry with DelayedUpdateBatched only.
   template<typename DT>
   using PinnedDualAllocator = OffloadPinnedAllocator<DT>;
 

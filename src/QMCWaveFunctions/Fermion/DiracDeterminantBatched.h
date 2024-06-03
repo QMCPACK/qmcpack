@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/MatrixUpdateOMPTarget.h"
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-#include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
+#include "QMCWaveFunctions/Fermion/DelayedUpdateBatched.h"
 #endif
 #include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
@@ -346,7 +346,7 @@ private:
 extern template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 extern template class DiracDeterminantBatched<
-    MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+    DelayedUpdateBatched<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus
