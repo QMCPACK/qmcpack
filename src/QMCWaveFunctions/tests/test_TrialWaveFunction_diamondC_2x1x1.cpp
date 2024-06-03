@@ -569,7 +569,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
   SECTION("DiracDeterminantBatched<DelayedUpdateBatched>")
   {
-    using Det = DiracDeterminantBatched<DelayedUpdateBatched<PlatformKind::CUDA, VT, FPVT>>;
+    using Det = DiracDeterminantBatched<PlatformKind::CUDA, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, false});
@@ -577,7 +577,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminantBatched<DelayedUpdateBatched>_offload_spo")
   {
-    using Det = DiracDeterminantBatched<DelayedUpdateBatched<PlatformKind::CUDA, VT, FPVT>>;
+    using Det = DiracDeterminantBatched<PlatformKind::CUDA, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, false});
@@ -585,7 +585,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminantBatched<DelayedUpdateBatched>_offload_jas")
   {
-    using Det = DiracDeterminantBatched<DelayedUpdateBatched<PlatformKind::CUDA, VT, FPVT>>;
+    using Det = DiracDeterminantBatched<PlatformKind::CUDA, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, true});
@@ -593,7 +593,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminantBatched<DelayedUpdateBatched>_offload_spo_jas")
   {
-    using Det = DiracDeterminantBatched<DelayedUpdateBatched<PlatformKind::CUDA, VT, FPVT>>;
+    using Det = DiracDeterminantBatched<PlatformKind::CUDA, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, true});
@@ -604,7 +604,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   // DiracDeterminantBatched<MatrixUpdateOMPTarget>
   SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>")
   {
-    using Det = DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>;
+    using Det = DiracDeterminantBatched<PlatformKind::OMPTARGET, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, false});
@@ -612,7 +612,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_spo")
   {
-    using Det = DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>;
+    using Det = DiracDeterminantBatched<PlatformKind::OMPTARGET, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, false});
@@ -620,7 +620,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_jas")
   {
-    using Det = DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>;
+    using Det = DiracDeterminantBatched<PlatformKind::OMPTARGET, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, true});
@@ -628,7 +628,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_spo_jas")
   {
-    using Det = DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>;
+    using Det = DiracDeterminantBatched<PlatformKind::OMPTARGET, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, true});

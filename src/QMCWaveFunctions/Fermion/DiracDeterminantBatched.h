@@ -32,11 +32,29 @@ namespace qmcplusplus
 //forward declaration
 class TWFFastDerivWrapper;
 
-template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<PlatformKind PL, typename VT, typename FPVT>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
-  using WFT           = typename DET_ENGINE::WFT;
+template<PlatformKind UEPL>
+struct UpdateEngineSelector;
+
+template<>
+struct UpdateEngineSelector<PlatformKind::OMPTARGET>
+{
+  using Engine = MatrixUpdateOMPTarget<VT, FPVT>;
+};
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+template<>
+struct UpdateEngineSelector<PlatformKind::CUDA>
+{
+  using Engine = DelayedUpdateBatched<PlatformKind::CUDA, VT,FPVT>;
+};
+#endif
+
+  using UpdateEngine  = typename UpdateEngineSelector<PL>::Engine;
+  using WFT           = typename UpdateEngine::WFT;
   using Value         = typename WFT::Value;
   using FullPrecValue = typename WFT::FullPrecValue;
   using PsiValue      = typename WFT::PsiValue;
@@ -46,9 +64,9 @@ public:
   using Real          = typename WFT::Real;
   using FullPrecGrad  = TinyVector<FullPrecValue, DIM>;
 
-  // the understanding of dual memory space needs to follow DET_ENGINE
+  // the understanding of dual memory space needs to follow UpdateEngine
   template<typename DT>
-  using PinnedDualAllocator = typename DET_ENGINE::template PinnedDualAllocator<DT>;
+  using PinnedDualAllocator = typename UpdateEngine::template PinnedDualAllocator<DT>;
   template<typename DT>
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
@@ -301,13 +319,13 @@ private:
   void resize(int nel, int morb);
 
   /// Delayed update engine 1 per walker.
-  DET_ENGINE det_engine_;
+  UpdateEngine det_engine_;
 
   /// slow but doesn't consume device memory
   DiracMatrix<FullPrecValue> host_inverter_;
 
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  ResourceHandle<typename DET_ENGINE::DetInverter> accel_inverter_;
+  ResourceHandle<typename UpdateEngine::DetInverter> accel_inverter_;
 
   /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
@@ -343,10 +361,9 @@ private:
   NewTimer &D2HTimer, &H2DTimer;
 };
 
-extern template class DiracDeterminantBatched<>;
+extern template class DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-extern template class DiracDeterminantBatched<
-    DelayedUpdateBatched<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
 
 } // namespace qmcplusplus
