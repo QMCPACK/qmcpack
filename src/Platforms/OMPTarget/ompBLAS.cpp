@@ -65,19 +65,19 @@ ompBLAS_status gemm_impl(ompBLAS_handle& handle,
   }
   else if (transa == 'N' && transb == 'T')
   {
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(M * N) is_device_ptr(A, B, C)")
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(A, B, C)")
     for (size_t m = 0; m < M; m++)
       for (size_t n = 0; n < N; n++)
       {
         T sum(0);
         for (size_t k = 0; k < K; k++)
-          sum += alpha * A[lda * k + m] * B[ldb * k + n];
+          sum += A[lda * k + m] * B[ldb * k + n];
         C[n * ldc + m] = alpha * sum + (beta == T(0) ? T(0) : C[n * ldc + m] * beta);
       }
   }
   else if (transa == 'N' && transb == 'N')
   {
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(M * N) is_device_ptr(A, B, C)")
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(A, B, C)")
     for (size_t n = 0; n < N; n++)
       for (size_t m = 0; m < M; m++)
       {
@@ -240,7 +240,7 @@ ompBLAS_status gemm_batched_impl(ompBLAS_handle& handle,
         {
           T sum(0);
           for (size_t k = 0; k < K; k++)
-            sum += alpha * A[lda * k + m] * B[ldb * k + n];
+            sum += A[lda * k + m] * B[ldb * k + n];
           C[n * ldc + m] = alpha * sum + (beta == T(0) ? T(0) : C[n * ldc + m] * beta);
         }
     }
