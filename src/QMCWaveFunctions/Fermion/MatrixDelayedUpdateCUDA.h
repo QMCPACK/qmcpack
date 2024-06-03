@@ -18,11 +18,11 @@
 #include "DualAllocatorAliases.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
-#include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
+#include "detail/AccelMatrixUpdate.hpp"
 #include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "QueueAliases.hpp"
-#include "AccelBLASAliases.hpp"
+#include "AccelBLAS.hpp"
 #include "DiracMatrixComputeCUDA.hpp"
 
 namespace qmcplusplus
@@ -325,10 +325,8 @@ private:
       compute::BLAS::gemv_batched(blas_handle, 'T', norb, norb, cone_vec.device_data(), Ainv_mw_ptr, lda, phiVGL_mw_ptr,
                                   1, czero_vec.device_data(), temp_mw_ptr, 1, n_accepted);
 
-      cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(queue.getNative(), rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
-                                                   rcopy_mw_ptr, phiVGL_mw_ptr, phi_vgl_stride, dpsiM_mw_out,
-                                                   d2psiM_mw_out, n_accepted),
-                     "CUDA::copyAinvRow_saveGL_cuda failed!");
+      compute::copyAinvRow_saveGL_batched(queue, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr, rcopy_mw_ptr,
+                                          phiVGL_mw_ptr, phi_vgl_stride, dpsiM_mw_out, d2psiM_mw_out, n_accepted);
 
 
       compute::BLAS::ger_batched(blas_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1, Ainv_mw_ptr,
@@ -398,9 +396,8 @@ public:
     const Value** invRow_ptr    = reinterpret_cast<const Value**>(evalGrad_buffer_H2D.device_data());
     const Value** dpsiM_row_ptr = reinterpret_cast<const Value**>(evalGrad_buffer_H2D.device_data()) + nw;
 
-    cudaErrorCheck(CUDA::calcGradients_cuda(queue.getNative(), engine_leader.invRow.size(), invRow_ptr, dpsiM_row_ptr,
-                                            grads_value_v.device_data(), nw),
-                   "CUDA::calcGradients_cuda failed!");
+    compute::calcGradients_batched(queue, engine_leader.invRow.size(), invRow_ptr, dpsiM_row_ptr,
+                                   grads_value_v.device_data(), nw);
     queue.enqueueD2H(grads_value_v);
     queue.sync();
 
@@ -600,11 +597,9 @@ public:
     compute::BLAS::ger_batched(blas_handle, delay_count, delay_count, cone_vec.device_data(), BinvRow_mw_ptr, 1,
                                BinvCol_mw_ptr, lda_Binv, Binv_mw_ptr, lda_Binv, n_accepted);
     // sigma and Z
-    cudaErrorCheck(CUDA::add_delay_list_save_sigma_VGL_batched(queue.getNative(), delay_list_mw_ptr, rowchanged,
-                                                               delay_count, Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr,
-                                                               phiVGL_mw_ptr, phi_vgl_stride, U_row_mw_ptr,
-                                                               dpsiM_mw_out, d2psiM_mw_out, norb, n_accepted, nw),
-                   "CUDA::add_delay_list_save_y_VGL_batched failed!");
+    compute::add_delay_list_save_sigma_VGL_batched(queue, delay_list_mw_ptr, rowchanged, delay_count, Binv_mw_ptr,
+                                                   lda_Binv, ratio_inv_mw_ptr, phiVGL_mw_ptr, phi_vgl_stride,
+                                                   U_row_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, norb, n_accepted, nw);
     delay_count++;
     // update Ainv when maximal delay is reached
     if (delay_count == lda_Binv)
@@ -670,10 +665,8 @@ public:
       const int lda_Binv = engine_leader.Binv_gpu.cols();
       compute::BLAS::gemm_batched(blas_handle, 'T', 'N', delay_count, norb, norb, Value(1), U_mw_ptr, norb, Ainv_mw_ptr,
                                   lda, Value(0), tempMat_mw_ptr, lda_Binv, nw);
-      cudaErrorCheck(CUDA::applyW_batched(queue.getNative(), delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv,
-                                          nw),
-                     "CUDA::applyW_batched failed!");
-      compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, delay_count, delay_count,  Value(1), V_mw_ptr, norb,
+      compute::applyW_batched(queue, delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv, nw);
+      compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, delay_count, delay_count, Value(1), V_mw_ptr, norb,
                                   Binv_mw_ptr, lda_Binv, Value(0), U_mw_ptr, norb, nw);
       compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, norb, delay_count, Value(-1), U_mw_ptr, norb,
                                   tempMat_mw_ptr, lda_Binv, Value(1), Ainv_mw_ptr, lda, nw);

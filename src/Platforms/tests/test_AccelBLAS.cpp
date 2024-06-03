@@ -12,7 +12,7 @@
 #include "catch.hpp"
 
 #include <DualAllocatorAliases.hpp>
-#include <AccelBLASAliases.hpp>
+#include <AccelBLAS.hpp>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <CPU/BLAS.hpp>

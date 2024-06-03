@@ -9,13 +9,13 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_ACCELBLAS_H
-#define QMCPLUSPLUS_ACCELBLAS_H
+#ifndef QMCPLUSPLUS_ACCELMATRIXUPDATE_H
+#define QMCPLUSPLUS_ACCELMATRIXUPDATE_H
 
 #include "config.h"
 #if defined(ENABLE_CUDA)
-#include "CUDA/AccelBLAS_CUDA.hpp"
+#include "CUDA/AccelMatrixUpdateCUDA.hpp"
 #endif
-#include "OMPTarget/AccelBLAS_OMPTarget.hpp"
+//#include "OMPTarget/AccelBLAS_OMPTarget.hpp"
 
 #endif

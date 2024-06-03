@@ -9,13 +9,22 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_ACCELBLAS_ALIAS_H
-#define QMCPLUSPLUS_ACCELBLAS_ALIAS_H
+#ifndef QMCPLUSPLUS_ACCELBLASHANDLE_H
+#define QMCPLUSPLUS_ACCELBLASHANDLE_H
 
-#include "config.h"
-#if defined(ENABLE_CUDA)
-#include "CUDA/AccelBLAS_CUDA.hpp"
-#endif
-#include "OMPTarget/AccelBLAS_OMPTarget.hpp"
+#include "PlatformKinds.hpp"
+
+namespace qmcplusplus
+{
+
+namespace compute
+{
+
+template<PlatformKind PL>
+class BLASHandle;
+
+} // namespace compute
+
+} // namespace qmcplusplus
 
 #endif

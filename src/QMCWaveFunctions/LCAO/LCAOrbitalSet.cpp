@@ -15,7 +15,7 @@
 #include "CPU/BLAS.hpp"
 #include "OMPTarget/ompBLAS.hpp"
 #include <ResourceCollection.h>
-#include <AccelBLASAliases.hpp>
+#include <AccelBLAS.hpp>
 
 namespace qmcplusplus
 {
