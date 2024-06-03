@@ -30,8 +30,10 @@ WalkerTraceCollector::WalkerTraceCollector()
 {
   state.reset();
   energy_index = -1;
+  // empty walker steps and energy vectors for the MC block
   steps.resize(0);
   energies.resize(0);
+  // label the buffers for HDF file write
   walker_property_int_buffer.label  = "walker_property_int";
   walker_property_real_buffer.label = "walker_property_real";
   walker_particle_real_buffer.label = "walker_particle_real";
@@ -40,16 +42,17 @@ WalkerTraceCollector::WalkerTraceCollector()
 
 void WalkerTraceCollector::startBlock()
 {
-  if(!state.traces_active) return;
+  if(!state.traces_active) return; // no-op for driver if traces are inactive
   if (state.verbose) app_log() << "WalkerTraceCollector::startBlock " << std::endl;
-  resetBuffers();
+  resetBuffers(); // resize buffers to zero rows
 }
 
 
 void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& pset, const TrialWaveFunction& wfn, const QMCHamiltonian& ham, int step)
 {
-  if(!state.traces_active) return;
+  if(!state.traces_active) return; // no-op for driver if traces are inactive
 
+  // only collect walker data at steps matching the period (default 1)
   int current_step = (step==-1) ? pset.current_step : step;
   if(current_step%state.step_period!=0) return;
 
@@ -151,9 +154,11 @@ void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& p
 void WalkerTraceCollector::resetBuffers()
 {
   if (state.verbose) app_log() << "WalkerTraceCollector::reset_buffers"<<std::endl;
+  // resize all buffers to zero rows
   walker_property_int_buffer.resetBuffer();
   walker_property_real_buffer.resetBuffer();
   walker_particle_real_buffer.resetBuffer();
+  // similar for step/energy vectors
   steps.resize(0);
   energies.resize(0);
 }

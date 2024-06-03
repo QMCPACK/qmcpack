@@ -26,39 +26,52 @@ namespace qmcplusplus
 {
 
 
+/// Basic data types for walker trace data
 struct WTrace
 {
-  using Int  = long;
-  using Real = OHMMS_PRECISION_FULL;
-  using Comp = std::complex<Real>;
+  using Int  = long;                  // integer type
+  using Real = OHMMS_PRECISION_FULL;  // real type
+  using Comp = std::complex<Real>;    // complex type
 #ifndef QMC_COMPLEX
-  using PsiVal = Real;
+  using PsiVal = Real;                // wavefunction type
 #else
-  using PsiVal = Comp;
+  using PsiVal = Comp;                // wavefunction type
 #endif
 };
 
 
+/** Record for an individual walker quantity being traced.
+ *
+ *    Helper struct for WalkerTraceBuffer.
+ */
 struct WalkerQuantityInfo
 {
-  enum{D0=0,D1,D2,D3,DMAX};
-  std::string name;
-  size_t dimension;
-  size_t size;
-  size_t unit_size;
-  TinyVector<size_t, DMAX> shape;
-  size_t buffer_start;
-  size_t buffer_end;
+  /// quantity name
+  std::string name;                
+  /// support up to 4D array quantity
+  enum{D0=0,D1,D2,D3,DMAX};        
+  /// array dimension
+  size_t dimension;                
+  /// total size
+  size_t size;                     
+  /// size of 1 unit of data
+  size_t unit_size;                
+  /// array shape
+  TinyVector<size_t, DMAX> shape;  
+  /// starting row index in buffer
+  size_t buffer_start;             
+  /// end range in buffer row
+  size_t buffer_end;               
 
   WalkerQuantityInfo(const std::string& name_,size_t unit_size_,size_t buffer_start_,size_t n1=1,size_t n2=0,size_t n3=0,size_t n4=0)
   {
     name         = name_;
     unit_size    = unit_size_;
     buffer_start = buffer_start_;
-    shape[D0]     = n1;
-    shape[D1]     = n2;
-    shape[D2]     = n3;
-    shape[D3]     = n4;
+    shape[D0]    = n1;
+    shape[D1]    = n2;
+    shape[D2]    = n3;
+    shape[D3]    = n4;
 
     dimension = 0;
     size      = 1;
@@ -74,20 +87,38 @@ struct WalkerQuantityInfo
 
 
 
-
+/** Data buffer for walker trace quantities.
+ *
+ *    Each row in the buffer contains all quantities for one walker from a single step.
+ *    Rows are added throughout an MC block.
+ *    See WalkerTraceCollector::collect()
+ *
+ *    Buffer data is written to HDF at the end of each MC block.
+ *    See WalkerTraceManager::writeBuffers()
+ */
 template<typename T>
 class WalkerTraceBuffer
 {
 public:
-  bool first_collect;
-  std::string label;
-  hsize_t hdf_file_pointer;
+  /// label for this data in HDF file
+  std::string label;         
+  /// marks first WalkerTraceCollector::collect() call
+  bool first_collect;        
+  /// HDF file pointer
+  hsize_t hdf_file_pointer;  
 
 private:
-  size_t quantity_pointer;
+  /// index of current quantity during WalkerTraceCollector::collect()
+  size_t quantity_pointer;   
+  /** buffer row location data for each walker quantity
+   *    used to populate "data_layout" field in HDF file
+   */
   std::vector<WalkerQuantityInfo> quantity_info;
+  /// total size of walker data stored in a buffer row
   size_t walker_data_size;
+  /// the walker data buffer itself
   Array<T, 2> buffer;
+  /// array dimensions used in HDF file write
   hsize_t dims[2];
 
 public:
@@ -100,12 +131,16 @@ public:
     resetBuffer();
   }
 
+  /// current number of rows in the data buffer
   inline size_t nrows() { return buffer.size(0); }
 
+  /// current number of columns in the data buffer (row size)
   inline size_t ncols() { return buffer.size(1); }
 
+  /// resize the buffer to zero
   inline void resetBuffer() { buffer.resize(0, buffer.size(1)); }
 
+  /// reset member variables at end of each WalkerTraceCollector::collect() call
   inline void resetCollect()
   {
     if(quantity_pointer!=quantity_info.size())
@@ -114,32 +149,34 @@ public:
     quantity_pointer = 0;
   }
 
-
+  /// compare row size of this buffer to another one
   inline bool sameAs(const WalkerTraceBuffer<T>& ref) { return buffer.size(1) == ref.buffer.size(1); }
 
-
+  /// collect data for a single walker quantity of scalar type into the current buffer row
   inline void collect(const std::string& name, const T& value)
   {
     size_t irow=0;
     if( first_collect )
-    {
+    {// cache walker quantity info on first collect
       WalkerQuantityInfo wqi_(name,1,walker_data_size);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
       resetRowSize(walker_data_size);
     }
     else
-    {
+    {// make a new buffer row if needed
       if(quantity_pointer==0)
         makeNewRow();
       irow = buffer.size(0)-1;
     }
+    // place the scalar walker quantity into the current buffer row
     auto& wqi = quantity_info[quantity_pointer];
     buffer(irow,wqi.buffer_start) = value;
     quantity_pointer++;
   }
 
 
+  /// collect data for a single walker quantity of array type into the current buffer row
   template<unsigned D>
   inline void collect(const std::string& name, Array<T,D> arr)
   {
@@ -153,18 +190,19 @@ public:
     if (D>3) n4 = arr.size(3);
     size_t irow=0;
     if( first_collect )
-    {
+    {// cache walker quantity info on first collect
       WalkerQuantityInfo wqi_(name,1,walker_data_size,n1,n2,n3,n4);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
       resetRowSize(walker_data_size);
     }
     else
-    {
+    {// make a new buffer row if needed
       if(quantity_pointer==0)
         makeNewRow();
       irow = buffer.size(0)-1;
     }
+    // place the array walker quantity into the current buffer row
     auto& wqi = quantity_info[quantity_pointer];
     auto& arr1d = arr.storage();
     for (size_t n=0;n<arr1d.size();++n)
@@ -173,6 +211,7 @@ public:
   }
 
 
+  /// collect data for a single walker quantity of complex array type into the current buffer row
   template<unsigned D>
   inline void collect(const std::string& name, Array<std::complex<T>,D> arr)
   {
@@ -186,18 +225,19 @@ public:
     if (D>3) n4 = arr.size(3);
     size_t irow=0;
     if( first_collect )
-    {
+    {// cache walker quantity info on first collect
       WalkerQuantityInfo wqi_(name,2,walker_data_size,n1,n2,n3,n4);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
       resetRowSize(walker_data_size);
     }
     else
-    {
+    {// make a new buffer row if needed
       if(quantity_pointer==0)
         makeNewRow();
       irow = buffer.size(0)-1;
     }
+    // place the complex array walker quantity into the current buffer row
     auto& wqi = quantity_info[quantity_pointer];
     auto& arr1d = arr.storage();
     size_t n = 0;
@@ -210,6 +250,7 @@ public:
   }
 
 
+  /// add a data row from another buffer to this one
   inline void addRow(WalkerTraceBuffer<T> other, size_t i)
   {
     auto& other_buffer = other.buffer;
@@ -231,6 +272,7 @@ public:
   }
 
 
+  /// write a summary of quantities in the buffer
   inline void writeSummary(std::string pad = "  ")
   {
     std::string pad2 = pad  + "  ";
@@ -247,6 +289,7 @@ public:
     app_log() << pad << "end WalkerTraceBuffer(" << label << ")" << std::endl;
   }
 
+  /// write the data_layout for all walker quantities in the HDF file
   inline void registerHDFData(hdf_archive& f)
   {
     auto& top = label;
@@ -271,12 +314,14 @@ public:
   }
 
 
+  /// write the buffer data into the HDF file
   inline void writeHDF(hdf_archive& f)
   {
     writeHDF(f,hdf_file_pointer);
   }
 
 
+  /// write the buffer data into the HDF file
   inline void writeHDF(hdf_archive& f, hsize_t& file_pointer)
   {
     auto& top = label;
@@ -292,6 +337,7 @@ public:
   }
 
 private:
+  /// make space as quantities are added to the buffer for the first time
   inline void resetRowSize(size_t row_size)
   {
     auto nrows = buffer.size(0);
@@ -308,6 +354,7 @@ private:
       throw std::runtime_error("WalkerTraceBuffer::reset_rowsize  length of buffer row should match the requested row_size following the reset/udpate.");
   }
 
+  /// allocate a full new row at the end of the buffer
   inline void makeNewRow()
   {
     size_t nrows    = buffer.size(0);

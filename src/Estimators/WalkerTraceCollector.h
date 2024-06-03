@@ -27,10 +27,14 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 
 
+/// Helper struct holding data transferred from WalkerTraceManager to WalkerTraceCollector following input read
 struct WalkerTraceState 
 {
+  /// whether traces are active in the current driver
   bool traces_active;
+  /// period between MC steps for data collection
   int step_period;
+  /// controls verbosity of log file writes
   bool verbose;
 
   WalkerTraceState()
@@ -47,38 +51,64 @@ struct WalkerTraceState
 };
 
 
+/** Crowd-level resource for walker trace collection.
+ *
+ *    Contains data buffers for walker properties and walker particle data.
+ *    Data buffers are resized to zero at the start of an MC block.
+ *    Data for all walkers is collected into the buffers each MC step in an MC block.
+ *    This class is not responsible for I/O.
+ */
 class WalkerTraceCollector
 {
 public:
-  std::vector<size_t>     steps;
+  /// MC step information for each walker throughout the MC block
+  std::vector<size_t>       steps;
+  /// LocalEnergy information for each walker throughout the MC block
   std::vector<WTrace::Real> energies;
+  /// buffer containing integer walker properties
   WalkerTraceBuffer<WTrace::Int>  walker_property_int_buffer;
+  /// buffer containing real-valued walker properties
   WalkerTraceBuffer<WTrace::Real> walker_property_real_buffer;
+  /// buffer containing per-particle walker data
   WalkerTraceBuffer<WTrace::Real> walker_particle_real_buffer;
 
+  /// ParticleSet::PropertyList quantities to include
   std::unordered_set<std::string> properties_include;
+  /// indices in ParticleSet::PropertyList for included quantities
   std::vector<size_t>             property_indices;
+  /// location of LocalEnergy in ParticleSet::PropertyList
   int energy_index;
 
+  /// state data set by WalkerTraceManager
   WalkerTraceState state;
 
 private:
   // temporary (contiguous) storage for awful ParticleAttrib<> quantities
+  /// tmp storage for walker positions
   Array<WTrace::Real  , 2> Rtmp;
+  /// tmp storage for walker spins
   Array<WTrace::Real  , 1> Stmp;
+  /// tmp storage for walker wavefunction gradients
   Array<WTrace::PsiVal, 2> Gtmp;
+  /// tmp storage for walker wavefunciton laplacians
   Array<WTrace::PsiVal, 1> Ltmp;
 
 public:
   WalkerTraceCollector();
 
+  /// resize buffers to zero rows at beginning of each MC block
   void startBlock();
 
+  /// collect all data for one walker into the data buffers
   void collect(const MCPWalker& walker, const ParticleSet& pset, const TrialWaveFunction& wfn, const QMCHamiltonian& ham, int step=-1);
 
+  /** Check that all buffers have the same number of rows.
+   *    This ensures that the full data for a given walker can be reconstructed due to enforced data alignment in the buffers.
+   */
   void checkBuffers();
 
 private:
+  /// resize buffers to zero rows
   void resetBuffers();
 };
 
