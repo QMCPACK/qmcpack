@@ -127,14 +127,14 @@ void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<
 
   int rank = dpools_.comm->rank();
 
-  for
+  //for (int iw = 0; iw < rank_counts_before
   pop_->get_walkers()[0]->Multiplicity = rank_counts_before[rank];
 
   std::vector<int> fair_offset;
   std::vector<int> minus;
   std::vector<int> plus;
 
-  wc_.setNumPerRank(rank_count_before);
+  wc_.setNumPerRank(rank_counts_before);
   wc_.swapWalkersSimple(*pop_);
   reportWalkersPerRank(dpools_.comm, *pop_);
   CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
@@ -190,12 +190,12 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
       test.testPopulationDiff(count_before, count_after);
     }
 
-    // SECTION("LoadBalance")
-    // {
-    //   std::vector<int> count_before{3, 1, 1};
-    //   std::vector<int> count_after{1, 2, 2};
-    //   test.testPopulationDiff(count_before, count_after);
-    // }
+    SECTION("LoadBalance")
+    {
+      std::vector<int> count_before{3, 1, 1};
+      std::vector<int> count_after{1, 2, 2};
+      test.testPopulationDiff(count_before, count_after);
+    }
   };
   MPIExceptionWrapper mew;
   mew(test_func);

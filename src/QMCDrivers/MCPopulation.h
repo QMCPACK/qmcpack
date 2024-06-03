@@ -154,6 +154,10 @@ public:
     }
   }
 
+  /** turn walkers with multiplicity n > 1 into n walkers of multiplicity 1
+   */
+  void copyHighMultiplicityWalkers();
+  
   void syncWalkersPerRank(Communicate* comm);
   void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
 

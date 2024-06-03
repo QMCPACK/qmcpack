@@ -44,6 +44,36 @@ MCPopulation::MCPopulation(int num_ranks,
 
 MCPopulation::~MCPopulation() = default;
 
+void MCPopulation::copyHighMultiplicityWalkers()
+{
+  const size_t good_walkers = walkers_.size();
+  for (auto& good_walker : good_walkers)
+  {
+    size_t num_copies = static_cast<int>(good_walker->Multiplicity);
+    while (num_copies > 1)
+    {
+      auto walker_elements = spawnWalker();
+      // In the batched version walker IDs are set when walkers are born,
+      // ParentID is set to the copied from walker.
+      // In this case we set this to the sibling (i.e. walker from the same rank) they are assigned from
+      // if this copy gets transferred this will result in a walker with a walker_id % num_ranks
+      // equal to a rank != pop.rank_. This is not invalid and provides the birth rank of the walker.
+
+      // preserve the walkers id.  Ideally this wouldn't get overwritten but I don't think a custom assignment operator
+      // is worth it just for this.
+      auto walker_id         = walker_elements.walker.getWalkerID();
+      walker_elements.walker = *good_walker;
+      // copy the copied from walkers id to parent id.
+      walker_elements.walker.setParentID(walker_elements.walker.getWalkerID());
+      // put the walkers actual id back.
+      walker_elements.walker.setWalkerID(walker_id);
+      // fix the multiplicity of the new walker
+      walker_elements.walker.Multiplicity = 1.0;
+      num_copies--;
+    }
+  }
+}
+
 void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfigurations& walker_configs, RealType reserve)
 {
   IndexType num_walkers_plus_reserve = static_cast<IndexType>(num_walkers * reserve);
