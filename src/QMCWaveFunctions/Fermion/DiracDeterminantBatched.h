@@ -35,6 +35,7 @@ class TWFFastDerivWrapper;
 template<PlatformKind PL, typename VT, typename FPVT>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
+
 public:
 template<PlatformKind UEPL>
 struct UpdateEngineSelector;
@@ -53,7 +54,25 @@ struct UpdateEngineSelector<PlatformKind::CUDA>
 };
 #endif
 
+template<PlatformKind UEPL>
+struct DetInverterSelector;
+
+template<>
+struct DetInverterSelector<PlatformKind::OMPTARGET>
+{
+  using Inverter = DiracMatrixComputeOMPTarget<FPVT>;
+};
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+template<>
+struct DetInverterSelector<PlatformKind::CUDA>
+{
+  using Inverter = DiracMatrixComputeCUDA<FPVT>;
+};
+#endif
+
   using UpdateEngine  = typename UpdateEngineSelector<PL>::Engine;
+  using DetInverter   = typename DetInverterSelector<PL>::Inverter;
   using WFT           = typename UpdateEngine::WFT;
   using Value         = typename WFT::Value;
   using FullPrecValue = typename WFT::FullPrecValue;
@@ -325,7 +344,7 @@ private:
   DiracMatrix<FullPrecValue> host_inverter_;
 
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  ResourceHandle<typename UpdateEngine::DetInverter> accel_inverter_;
+  ResourceHandle<DetInverter> accel_inverter_;
 
   /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;

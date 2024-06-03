@@ -1218,7 +1218,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::createResource(ResourceCollection& c
 {
   collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
   Phi->createResource(collection);
-  collection.addResource(std::make_unique<typename UpdateEngine::DetInverter>());
+  collection.addResource(std::make_unique<DetInverter>());
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -1239,7 +1239,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::acquireResource(
     mw_res.psiMinv_refs.push_back(det.psiMinv_);
   }
   wfc_leader.Phi->acquireResource(collection, phi_list);
-  wfc_leader.accel_inverter_ = collection.lendResource<typename UpdateEngine::DetInverter>();
+  wfc_leader.accel_inverter_ = collection.lendResource<DetInverter>();
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
