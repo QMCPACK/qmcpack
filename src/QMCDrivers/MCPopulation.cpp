@@ -46,10 +46,12 @@ MCPopulation::~MCPopulation() = default;
 
 void MCPopulation::copyHighMultiplicityWalkers()
 {
-  const size_t good_walkers = walkers_.size();
-  for (auto& good_walker : good_walkers)
+  // we need to do this because spawnWalker changes walkers_ so we
+  // can't just iterate on that collection.
+  auto good_walkers = convertUPtrToRefVector(walkers_);
+  for (MCPWalker& good_walker : good_walkers)
   {
-    size_t num_copies = static_cast<int>(good_walker->Multiplicity);
+    int num_copies = static_cast<int>(good_walker.Multiplicity);
     while (num_copies > 1)
     {
       auto walker_elements = spawnWalker();
@@ -62,13 +64,15 @@ void MCPopulation::copyHighMultiplicityWalkers()
       // preserve the walkers id.  Ideally this wouldn't get overwritten but I don't think a custom assignment operator
       // is worth it just for this.
       auto walker_id         = walker_elements.walker.getWalkerID();
-      walker_elements.walker = *good_walker;
+      walker_elements.walker = good_walker;
       // copy the copied from walkers id to parent id.
       walker_elements.walker.setParentID(walker_elements.walker.getWalkerID());
       // put the walkers actual id back.
       walker_elements.walker.setWalkerID(walker_id);
       // fix the multiplicity of the new walker
       walker_elements.walker.Multiplicity = 1.0;
+      // keep good walker valid.
+      good_walker.Multiplicity -= 1.0;
       num_copies--;
     }
   }
@@ -208,6 +212,7 @@ WalkerElementsRef MCPopulation::spawnWalker(bool transfer_recipient)
   }
   else
   {
+    outputManager.resume();
     if (!transfer_recipient) {
       auto walker_id = nextWalkerID();
       app_warning() << "Spawning walker ID " << walker_id << " this is living walker number " << walkers_.size()
@@ -220,10 +225,7 @@ WalkerElementsRef MCPopulation::spawnWalker(bool transfer_recipient)
                   << "which is beyond the allocated walker reserves, ideally this should never happen." << '\n';
       walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back())));
     }
-    // There is no value in doing this here because its going to be wiped out
-    // When we load from the receive buffer. It also won't necessarily be correct
-    // Because the buffer is changed by Hamiltonians and wavefunctions that
-    // Add to the dataSet.
+    outputManager.pause();
 
     walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
     walker_trial_wavefunctions_.emplace_back(trial_wf_->makeClone(*walker_elec_particle_sets_.back()));
@@ -232,7 +234,6 @@ WalkerElementsRef MCPopulation::spawnWalker(bool transfer_recipient)
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight       = 1.0;
   }
-
   outputManager.resume();
   return {*walkers_.back().get(), *walker_elec_particle_sets_.back().get(), *walker_trial_wavefunctions_.back().get()};
 }

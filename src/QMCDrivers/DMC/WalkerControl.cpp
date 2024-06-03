@@ -207,6 +207,7 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
   // ranks sending walkers from other ranks have the lowest walker count now.
   untouched_walkers = std::min(untouched_walkers, walkers.size());
 
+  // I really think this should be above the swap.
   {
     ScopedTimer copywalkers_timer(my_timers_[WC_copyWalkers]);
     pop.copyHighMultiplicityWalkers();
@@ -221,6 +222,7 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     throw std::runtime_error("Potential bug! Population num_global_walkers mismatched!");
 #endif
 
+  // This defensive code implies that previous code left population walkers in invalid state.
   if (!do_not_branch)
     for (UPtr<MCPWalker>& walker : pop.get_walkers())
     {
@@ -228,15 +230,12 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       walker->Multiplicity = 1.0;
     }
 
+  // This is debugging code, should be removed.
   for (int iw = 0; iw < untouched_walkers; iw++)
     pop.get_walkers()[iw]->wasTouched = false;
 
   for (int iw = untouched_walkers; iw < pop.get_num_local_walkers(); iw++)
     pop.get_walkers()[iw]->wasTouched = true;
-}
-
-void WalkerControl::copyHighMultiplicityWalkers(MCPopulation& pop)
-{
 }
 
 void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData)
@@ -287,8 +286,6 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
 {
   const int num_contexts       = num_per_rank.size();
   const int current_population = std::accumulate(num_per_rank.begin(), num_per_rank.end(), 0);
-  std::cout << "num_per_rank: " << NativePrint(num_per_rank) << '\n';
-  std::cout << "current_populations: " << current_population << '\n';
   FairDivideLow(current_population, num_contexts, fair_offset);
   for (int ip = 0; ip < num_contexts; ip++)
   {
@@ -341,7 +338,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   for (int iw = 0; iw < good_walkers.size(); iw++)
   {
     // Multiplicities of 0 should already be dead.
-    // Multiplicities > 1 should have resulted in copies until Multiplicity == 1
+    // Multiplicities > 1 should have resulted in copies until static_cast<int>(Multiplicity) == 1
     assert(static_cast<int>(good_walkers[iw]->Multiplicity) == 1);
     ncopy_pairs.push_back(std::make_pair(static_cast<int>(good_walkers[iw]->Multiplicity), iw));
   }

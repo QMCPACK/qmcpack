@@ -162,9 +162,11 @@ public:
 
   Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
   Walker(const Walker& a, long walker_id, long parent_id)
-      : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+      : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
   {
     makeCopy(a);
+    walker_id_ = walker_id;
+    parent_id_ = parent_id;
   }
 
   /** create a valid walker for n-particles (batched version)

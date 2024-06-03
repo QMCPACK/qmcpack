@@ -26,10 +26,11 @@ class UnifiedDriverWalkerControlMPITest
 public:
   UnifiedDriverWalkerControlMPITest();
   void testPopulationDiff(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after);
-  void testWalkerIDs(std::vector<int>& walker_ids_before, std::vector<int>& walker_ids_after);
+  void testWalkerIDs(std::vector<std::vector<int>> walker_ids_after);
   void makeValidWalkers();
   void testNewDistribution(std::vector<int>& minus, std::vector<int>& plus);
   int getRank() { return dpools_.comm->rank(); }
+  int getNumRanks() { return dpools_.comm->size(); }
 private:
   void reportWalkersPerRank(Communicate* c, MCPopulation& pop);
 

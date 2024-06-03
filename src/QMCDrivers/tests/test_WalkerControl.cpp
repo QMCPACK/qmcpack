@@ -94,8 +94,9 @@ void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& mi
   std::vector<int> num_per_rank(num_ranks, 1);
   num_per_rank[0] = num_ranks;
   std::cout << "num per rank:" << NativePrint(num_per_rank) << '\n';
-  if (dpools_.comm->rank() == 0) {
-    auto& walker = pop_->getWalkerElementsRef(0).walker;
+  if (dpools_.comm->rank() == 0)
+  {
+    auto& walker        = pop_->getWalkerElementsRef(0).walker;
     walker.Multiplicity = num_ranks;
   }
   std::vector<int> fair_offset;
@@ -121,7 +122,7 @@ TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_contr
 
 
 void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& rank_counts_before,
-                                                           std::vector<int>& rank_counts_after)
+                                                                    std::vector<int>& rank_counts_after)
 {
   using MCPWalker = MCPopulation::MCPWalker;
 
@@ -135,46 +136,31 @@ void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<
   std::vector<int> plus;
 
   wc_.setNumPerRank(rank_counts_before);
+  // note this ordering of calls is different from the main code which
+  // preserves the ordering to allow the "optimization" of sending multiple copies of the same walker to another rank.
+  // I think it should follow this ordering.
+  // I only avoids going wrong in the main coded by the fact that
+  pop_->copyHighMultiplicityWalkers();
   wc_.swapWalkersSimple(*pop_);
+  wc_.killDeadWalkersOnRank(*pop_);
   reportWalkersPerRank(dpools_.comm, *pop_);
   CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
 }
 
-/** Here we manipulate just the Multiplicity of a set of 1 walkers per rank
- */
-// Fails in debug after PR #2855 run unit tests in debug!
-// trips assert in ../src/Particle/Walker.h:514 !
+void testing::UnifiedDriverWalkerControlMPITest::testWalkerIDs(std::vector<std::vector<int>> walker_ids_after)
+{
+  int rank = dpools_.comm->rank();
+  std::vector<int> walker_ids;
+  for (int iw = 0; iw < pop_->get_walkers().size(); ++iw)
+    walker_ids.push_back(pop_->get_walkers()[iw]->getWalkerID());
+  std::cout << "rank: " << rank << "  walker ids: " << NativePrint(walker_ids) << '\n';
 
-// TEST_CASE("MPI WalkerControl multiplicity swap walkers", "[drivers][walker_control]")
-// {
-//   auto test_func = []() {
-//     outputManager.pause();
-//     testing::UnifiedDriverWalkerControlMPITest test;
-//     outputManager.resume();
-//     test.makeValidWalkers();
-//     SECTION("Simple")
-//     {
-//       std::vector<int> count_before{1, 1, 1};
-//       std::vector<int> count_after{1, 1, 1};
+  for (int iw = 0; iw < walker_ids_after[rank].size(); ++iw)
+  {
+    CHECK(pop_->get_walkers()[iw]->getWalkerID() == walker_ids_after[rank][iw]);
+  }
+}
 
-//       // One walker on every node, should be no swapping
-//       test.testMultiplicity(count_before, count_after);
-//     }
-
-//     SECTION("LoadBalance")
-//     {
-//       std::vector<int> count_before{3, 1, 1};
-//       std::vector<int> count_after{1, 2, 2};
-
-//       test.testMultiplicity(count_before, count_after);
-//     }
-//   };
-//   MPIExceptionWrapper mew;
-//   mew(test_func);
-// }
-
-// Fails in debug after PR #2855 run unit tests in debug!
-// trips assert at ../src/Particle/Walker.h:559 !
 TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control]")
 {
   auto test_func = []() {
@@ -184,22 +170,35 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
 
     SECTION("Simple")
     {
-      std::vector<int> count_before{1, 1, 1};
-      std::vector<int> count_after{1, 1, 1};
+      std::vector<int> count_before(test.getNumRanks(), 1);
+      std::vector<int> count_after(test.getNumRanks(), 1);
       // One walker on every node, should be no swapping
       test.testPopulationDiff(count_before, count_after);
     }
 
     SECTION("LoadBalance")
     {
-      std::vector<int> count_before{3, 1, 1};
-      std::vector<int> count_after{1, 2, 2};
+      auto num_ranks = test.getNumRanks();
+      std::vector<int> count_before(num_ranks, 1);
+      count_before[0] = num_ranks;
+      std::vector<int> count_after(num_ranks, 2);
+      count_after[0] = 1;
       test.testPopulationDiff(count_before, count_after);
+      std::vector<long> rank_0_ids(num_ranks);
+      std::generate(rank_0_ids.begin(), rank_0_ids.end(),
+                    [n = 0, num_ranks]() mutable { return (n++) * num_ranks + 1; });
+      std::vector<std::vector<int>> ar_wids;
+      for (int ir = 0; ir < num_ranks; ++ir)
+      {
+        ar_wids.push_back({ir + 1});
+        if (ir > 0)
+          ar_wids.back().push_back(rank_0_ids[num_ranks - ir]);
+      }
+      test.testWalkerIDs(ar_wids);
     }
   };
   MPIExceptionWrapper mew;
   mew(test_func);
 }
-
 
 } // namespace qmcplusplus
