@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "type_traits/complex_help.hpp"
 #include "DiracMatrixComputeOMPTarget.hpp"
@@ -86,12 +85,12 @@ public:
 
   // the understanding of dual memory space needs to follow UpdateEngine
   template<typename DT>
-  using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
+  using DualVector = Vector<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
-  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+  using DualMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
-  using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
+  using DualVGLVector = VectorSoaContainer<Value, DIM + 2, OffloadPinnedAllocator<Value>>;
 
   using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
 

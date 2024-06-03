@@ -15,11 +15,9 @@
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "DualAllocatorAliases.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
 #include "detail/AccelMatrixUpdate.hpp"
-#include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "QueueAliases.hpp"
 #include "AccelBLAS.hpp"
@@ -43,15 +41,15 @@ public:
   using Real          = RealAlias<Value>;
   using Complex       = std::complex<Real>;
 
-  // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
+  // containers
   template<typename DT>
-  using UnpinnedDualVector = Vector<DT, UnpinnedDualAllocator<DT>>;
+  using UnpinnedDualVector = Vector<DT, OffloadAllocator<DT>>;
   template<typename DT>
-  using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
+  using DualVector = Vector<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
-  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+  using DualMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
-  using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
+  using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, OffloadPinnedAllocator<DT>>;
   template<typename DT>
   using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
   template<typename DT>
@@ -74,15 +72,15 @@ public:
     // multi walker of spingrads for transfer needs.
     DualVector<Complex> spingrads_value_v;
     // mw_updateRow pointer buffer
-    Vector<char, PinnedDualAllocator<char>> updateRow_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> updateRow_buffer_H2D;
     // mw_prepareInvRow pointer buffer
-    Vector<char, PinnedDualAllocator<char>> prepare_inv_row_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> prepare_inv_row_buffer_H2D;
     // mw_accept_rejectRow pointer buffer
-    Vector<char, PinnedDualAllocator<char>> accept_rejectRow_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> accept_rejectRow_buffer_H2D;
     // mw_updateInv pointer buffer
-    Vector<char, PinnedDualAllocator<char>> updateInv_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> updateInv_buffer_H2D;
     // mw_evalGrad pointer buffer
-    Vector<char, PinnedDualAllocator<char>> evalGrad_buffer_H2D;
+    Vector<char, OffloadPinnedAllocator<char>> evalGrad_buffer_H2D;
     /// scratch space for rank-1 update
     UnpinnedDualVector<Value> mw_temp;
     // scratch space for keeping one row of Ainv
@@ -127,9 +125,9 @@ private:
   UnpinnedDualVector<Value> rcopy;
 
   template<typename DT>
-  using DeviceMatrix = Matrix<DT, DeviceAllocator<DT>>;
+  using DeviceMatrix = Matrix<DT, OffloadDeviceAllocator<DT>>;
   template<typename DT>
-  using DeviceVector = Vector<DT, DeviceAllocator<DT>>;
+  using DeviceVector = Vector<DT, OffloadDeviceAllocator<DT>>;
   /// orbital values of delayed electrons
   DeviceMatrix<Value> U_gpu;
   /// rows of Ainv corresponding to delayed electrons
