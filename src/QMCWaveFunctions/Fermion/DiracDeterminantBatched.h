@@ -18,14 +18,14 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "DiracMatrixComputeOMPTarget.hpp"
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-#include "DiracMatrixComputeCUDA.hpp"
-#include "QMCWaveFunctions/Fermion/DelayedUpdateBatched.h"
-#endif
 #include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "type_traits/complex_help.hpp"
+#include "DiracMatrixComputeOMPTarget.hpp"
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#include "DiracMatrixComputeCUDA.hpp"
+#endif
+#include "QMCWaveFunctions/Fermion/DelayedUpdateBatched.h"
 
 namespace qmcplusplus
 {
@@ -85,8 +85,6 @@ struct DetInverterSelector<PlatformKind::CUDA>
   using FullPrecGrad  = TinyVector<FullPrecValue, DIM>;
 
   // the understanding of dual memory space needs to follow UpdateEngine
-  template<typename DT>
-  using PinnedDualAllocator = typename UpdateEngine::template PinnedDualAllocator<DT>;
   template<typename DT>
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>

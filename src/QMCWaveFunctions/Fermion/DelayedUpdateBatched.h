@@ -44,10 +44,7 @@ public:
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
   using This_t        = DelayedUpdateBatched<PL, VALUE, VALUE_FP>;
-  using DetInverter   = DiracMatrixComputeCUDA<FullPrecValue>;
 
-  template<typename DT>
-  using PinnedDualAllocator = PinnedDualAllocator<DT>;
   // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
   template<typename DT>
   using UnpinnedDualVector = Vector<DT, UnpinnedDualAllocator<DT>>;
