@@ -71,6 +71,8 @@ public:
     UnpinnedDualVector<Value> czero_vec;
     // multi walker of grads for transfer needs.
     DualMatrix<Value> grads_value_v;
+    // multi walker of spingrads for transfer needs.
+    DualVector<Complex> spingrads_value_v;
     // mw_updateRow pointer buffer
     Vector<char, PinnedDualAllocator<char>> updateRow_buffer_H2D;
     // mw_prepareInvRow pointer buffer
@@ -409,7 +411,76 @@ public:
                                   std::vector<GT>& grad_now,
                                   std::vector<Complex>& spingrad_now)
   {
-    throw std::runtime_error("DelayedUpdateBatched needs implementation of mw_evalGradWithSpin");
+    auto& engine_leader     = engines.getLeader();
+    auto& buffer_H2D        = mw_rsc.evalGrad_buffer_H2D;
+    auto& grads_value_v     = mw_rsc.grads_value_v;
+    auto& spingrads_value_v = mw_rsc.spingrads_value_v;
+
+    //Need to pack these into a transfer buffer since psiMinv and dpsiM_row_list are not multiwalker data
+    //i.e. each engine has its own psiMinv which is an OffloadMatrix instead of the leader having the data for all the walkers in the crowd.
+    //Wouldn't have to do this if dpsiM and psiMinv were part of the mw_rsc_handle_ with data across all walkers in the crowd and could just use use_device_ptr for the offload.
+    //That is how mw_dspin is handled below
+    const int norb                   = psiMinv_refs[0].get().rows();
+    const int nw                     = engines.size();
+    constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
+    buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
+    Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), num_ptrs_packed, nw);
+    for (int iw = 0; iw < nw; iw++)
+    {
+      DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
+      ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
+      ptr_buffer[1][iw]          = dpsiM_row_list[iw];
+    }
+
+    constexpr unsigned DIM = GT::Size;
+    grads_value_v.resize(nw, DIM);
+    spingrads_value_v.resize(nw);
+    auto* __restrict__ grads_value_v_ptr     = grads_value_v.data();
+    auto* __restrict__ spingrads_value_v_ptr = spingrads_value_v.data();
+    auto* buffer_H2D_ptr                     = buffer_H2D.data();
+    auto* mw_dspin_ptr                       = mw_dspin.data();
+
+    //Note that mw_dspin should already be in sync between device and host...updateTo was called in
+    //SPOSet::mw_evaluateVGLWithSpin to sync
+    //Also note that since mw_dspin is Dual, I can just use mw_dpsin.data() above and then use directly inside
+    //then offload region. OMP will figure out the correct translation to the device address, i.e. no
+    //need to include in the PRAGMA_OFFLOAD below
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
+                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
+                    map(always, from: grads_value_v_ptr[:grads_value_v.size()]) \
+                    map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()])")
+    for (int iw = 0; iw < nw; iw++)
+    {
+      const Value* __restrict__ invRow_ptr    = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
+      const Value* __restrict__ dpsiM_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[nw + iw];
+      Value grad_x(0), grad_y(0), grad_z(0);
+      Complex spingrad(0);
+#if defined(QMC_COMPLEX)
+      // COMPILER WORKAROUND
+      // This was causing a llvm-link error in icpx due to the lack of declare reduction on complex datatypes.
+      // Keep real builds free of any reduction on a complex datatype. Just serialize the reduction.
+      // Because mw_evalGradWithSpin is only being called in complex builds in simulations, the impact of this workaround is basically zero.
+      // It is still beneficial to keep it functional in real builds.
+      PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z, spingrad)")
+#endif
+      for (int iorb = 0; iorb < norb; iorb++)
+      {
+        grad_x += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM];
+        grad_y += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 1];
+        grad_z += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 2];
+        spingrad += invRow_ptr[iorb] * mw_dspin_ptr[iw * norb + iorb];
+      }
+      grads_value_v_ptr[iw * DIM]     = grad_x;
+      grads_value_v_ptr[iw * DIM + 1] = grad_y;
+      grads_value_v_ptr[iw * DIM + 2] = grad_z;
+      spingrads_value_v_ptr[iw]       = spingrad;
+    }
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      grad_now[iw]     = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
+      spingrad_now[iw] = spingrads_value_v[iw];
+    }
   }
 
   /** Update the "local" psiMinv_ on the device.
