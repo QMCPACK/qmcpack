@@ -18,8 +18,9 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/MatrixUpdateOMPTarget.h"
+#include "DiracMatrixComputeOMPTarget.hpp"
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#include "DiracMatrixComputeCUDA.hpp"
 #include "QMCWaveFunctions/Fermion/DelayedUpdateBatched.h"
 #endif
 #include "DualAllocatorAliases.hpp"
@@ -43,7 +44,7 @@ struct UpdateEngineSelector;
 template<>
 struct UpdateEngineSelector<PlatformKind::OMPTARGET>
 {
-  using Engine = MatrixUpdateOMPTarget<VT, FPVT>;
+  using Engine = DelayedUpdateBatched<PlatformKind::OMPTARGET, VT, FPVT>;
 };
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)

@@ -23,7 +23,6 @@
 #include "WaveFunctionTypes.hpp"
 #include "QueueAliases.hpp"
 #include "AccelBLAS.hpp"
-#include "DiracMatrixComputeCUDA.hpp"
 
 namespace qmcplusplus
 {
