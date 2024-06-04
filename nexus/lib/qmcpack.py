@@ -96,7 +96,8 @@ class GCTA(DevBase):
             self.error('{} flavor of GCTA is only supported with pwscf at the moment.'.format(self.flavor))
         #end if
         twistnum_input = self.input.simulation.qmcsystem.wavefunction.sposet_builders.bspline.twistnum
-        if twistnum_input is not None:
+        supercell_nkpoints = len(self.system.structure.kpoints)
+        if (twistnum_input is not None) and (supercell_nkpoints != 1):
             self.error('The twistnum keyword is not compatible with gcta. Please remove twistnum.')
         #end if
     #end def check_implementation
@@ -233,7 +234,7 @@ class GCTA(DevBase):
             if not np.any(np.all(np.isclose(eig_kpoints, gcta_row, atol=tol), axis=1)):
                 self.error('''The GCTA k-point {} was not found in the converted data. This is not supposed to happen.
                             Please make sure that the k-points were written in unit coordinates.'''.format(gcta_row))
-            ##end if
+            #end if
         #end for
     #end def check_kpoint_consistency
 
