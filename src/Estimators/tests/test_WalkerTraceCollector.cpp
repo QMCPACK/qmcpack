@@ -91,6 +91,12 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
   CHECK(bsr.ncols() == 0);
   CHECK(bpr.ncols() == 0);
 
+#ifndef QMC_COMPLEX
+  const size_t npcols = 56;
+#else
+  const size_t npcols = 88;
+#endif
+
   int step=0;
   tc.collect(walkers[0], psets[0], *(twfs[0]), *(hams[0]), step);
 
@@ -99,7 +105,7 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
   CHECK(bpr.nrows() == 1);
   CHECK(bsi.ncols() == 4);
   CHECK(bsr.ncols() == 13);
-  CHECK(bpr.ncols() == 56);
+  CHECK(bpr.ncols() == npcols);
 
   for (size_t iw=1; iw<walkers.size(); ++iw)
     tc.collect(walkers[iw], psets[iw], *(twfs[iw]), *(hams[iw]), step);
@@ -109,7 +115,7 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
   CHECK(bpr.nrows() == 4);
   CHECK(bsi.ncols() == 4);
   CHECK(bsr.ncols() == 13);
-  CHECK(bpr.ncols() == 56);
+  CHECK(bpr.ncols() == npcols);
 
   for (step=1; step<3; ++step)
     for (size_t iw=0; iw<walkers.size(); ++iw)
@@ -120,7 +126,7 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
   CHECK(bpr.nrows() == 12);
   CHECK(bsi.ncols() == 4);
   CHECK(bsr.ncols() == 13);
-  CHECK(bpr.ncols() == 56);
+  CHECK(bpr.ncols() == npcols);
 
   std::cout <<"\nend test WalkerTraceCollector::collect\n";
   std::cout <<"=======================================================\n";
