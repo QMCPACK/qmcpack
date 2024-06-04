@@ -65,6 +65,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   IsQMCDriver  = true;
   allow_traces = false;
   allow_walker_traces = false;
+  walker_traces_xml   = NULL;
   MyCounter    = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value

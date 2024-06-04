@@ -379,6 +379,19 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
     doesDoinTheseLastMatter(walkers[iw]);
 }
 
+
+void QMCDriverNew::putWalkerTraces(xmlNodePtr txml)
+{
+  walker_traces_input.present = false;
+  if(txml)
+  {
+    walker_traces_input.readXML(txml); 
+    walker_traces_input.present = true;
+  }
+  app_log()<<"JTK  walker traces present: "<<walker_traces_input.present<<std::endl;
+}
+
+
 std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 {
   o_stream << "  time step      = " << qmcd.qmcdriver_input_.get_tau() << '\n';

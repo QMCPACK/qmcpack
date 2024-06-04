@@ -249,7 +249,7 @@ public:
   void putTraces(xmlNodePtr txml) override {}
   void requestTraces(bool allow_traces) override {}
 
-  void putWalkerTraces(xmlNodePtr txml) override { walker_traces_input.readXML(txml); }
+  void putWalkerTraces(xmlNodePtr txml) override;
 
   void requestWalkerTraces(bool allow_traces_) override { allow_walker_traces = allow_traces_; }
 

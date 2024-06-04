@@ -1905,7 +1905,7 @@ Walker Data Traces
 ==================
 
 Detailed per-walker information can be written to HDF5 files for VMC or DMC by 
-including the <walker_traces/> XML element. This includes the LocalEnergy and 
+including the <walkertraces/> XML element. This includes the LocalEnergy and 
 its components for each walker from each MC step.  By default, more detailed 
 particle-level information (e.g. electron coordinates) is also written for the 
 lowest, highest, and median energy walkers at each MC step (modest disk usage). 
@@ -1915,12 +1915,12 @@ potentially requiring a huge amount of disk space.
 **Input specification**
 
 The default walker data tracing functionality is enabled by including the 
-<walker_traces/> XML element (once) just before the QMC driver sections, 
+<walkertraces/> XML element (once) just before the QMC driver sections, 
 for example:
 
 ::
 
-  <walker_traces/>
+  <walkertraces/>
   <qmc method="vmc" move="pbyp">
     <parameter name="walkers_per_rank">  256  </parameter>
     <parameter name="warmupSteps">       100  </parameter>
