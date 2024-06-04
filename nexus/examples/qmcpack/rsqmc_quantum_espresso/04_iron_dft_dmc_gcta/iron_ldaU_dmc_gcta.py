@@ -148,7 +148,7 @@ qmc = generate_qmcpack(
     #skip_submit          = True,
     identifier           = 'qmc',
     path                 = basepath + 'qmc',
-    job                  = job(cores=12,threads=4,app='qmcpack'),
+    job                  = job(cores=12,threads=4,app='qmcpack_complex'),
     system               = system,
     gcta                 = 'safl', # This is the only keyword needed to activate the GCTA occupations
     estimators           = [sdens],
