@@ -97,8 +97,10 @@ class GCTA(DevBase):
         #end if
         twistnum_input = self.input.simulation.qmcsystem.wavefunction.sposet_builders.bspline.twistnum
         supercell_nkpoints = len(self.system.structure.kpoints)
-        if (twistnum_input is not None) and (supercell_nkpoints != 1):
-            self.error('The twistnum keyword is not compatible with gcta. Please remove twistnum.')
+        if (twistnum_input is not None) or (supercell_nkpoints == 1):
+            self.error('''
+                It appears that a single-twist QMC run was attempted using gcta keyword.
+                Currently, this is not supported. Please contact the developers if this is needed.''')
         #end if
     #end def check_implementation
 
