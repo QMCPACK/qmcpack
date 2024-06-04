@@ -95,6 +95,10 @@ class GCTA(DevBase):
         if (self.flavor.lower() != 'afl') and (not isinstance(dependency,Pw2qmcpack)):
             self.error('{} flavor of GCTA is only supported with pwscf at the moment.'.format(self.flavor))
         #end if
+        twistnum_input = self.input.simulation.qmcsystem.wavefunction.sposet_builders.bspline.twistnum
+        if twistnum_input is not None:
+            self.error('The twistnum keyword is not compatible with gcta. Please remove twistnum.')
+        #end if
     #end def check_implementation
 
     @staticmethod
