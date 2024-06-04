@@ -337,9 +337,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   std::vector<std::pair<int, int>> ncopy_pairs;
   for (int iw = 0; iw < good_walkers.size(); iw++)
   {
-    // Multiplicities of 0 should already be dead.
-    // Multiplicities > 1 should have resulted in copies until static_cast<int>(Multiplicity) == 1
-    assert(static_cast<int>(good_walkers[iw]->Multiplicity) == 1);
     ncopy_pairs.push_back(std::make_pair(static_cast<int>(good_walkers[iw]->Multiplicity), iw));
   }
   // sort good walkers by the number of copies
@@ -380,7 +377,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       myComm->comm.send_value(nsentcopy, minus[ic]);
       job_list.push_back(job(ncopy_pairs.back().second, minus[ic]));
 #ifdef MCWALKERSET_MPI_DEBUG
-      fout << "rank " << plus[ic] << " sends a walker with " << nsentcopy << " copies to rank " << minus[ic]
+      std::cout << "rank " << plus[ic] << " sends a walker with " << nsentcopy << " copies to rank " << minus[ic]
            << std::endl;
 #endif
 
@@ -402,15 +399,14 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 
     if (minus[ic] == rank_num_)
     {
-      newW.push_back(pop.spawnWalker(true));
-
+      newW.push_back(pop.spawnWalker(false));
       // recv the number of copies from the target
       myComm->comm.receive_n(&nsentcopy, 1, plus[ic]);
       job_list.push_back(job(newW.size() - 1, plus[ic]));
       if (plus[ic] != plus[ic + nsentcopy] || minus[ic] != minus[ic + nsentcopy])
         throw std::runtime_error("WalkerControl::swapWalkersSimple send/recv pair checking failed!");
 #ifdef MCWALKERSET_MPI_DEBUG
-      fout << "rank " << minus[ic] << " recvs a walker with " << nsentcopy << " copies from rank " << plus[ic]
+      std::cout << "rank " << minus[ic] << " recvs a walker with " << nsentcopy << " copies from rank " << plus[ic]
            << std::endl;
 #endif
 
@@ -458,7 +454,8 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   }
   else
   {
-    // Walker::copyFromBuffer copies the walker_index_ of the sent walker over the walker ID generated for
+    // Walker::copyFromBuffer copies the walker_index_ of the sent walker and the local walker does
+    // not have a local id created.
     // the walker on this rank.  But this replacement allows tracking this walker across the ranks.
 
     std::vector<mpi3::request> requests;
@@ -474,7 +471,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       {
         ScopedTimer local_timer(my_timers_[WC_recv]);
         myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
-        awalker.copyFromBuffer();
+	auto walker_id = awalker.getWalkerID();
+	awalker.copyFromBuffer();
+	auto parent_id = awalker.getWalkerID();
+	awalker.setWalkerID(walker_id);
+	awalker.setParentID(parent_id);
       }
     }
     if (use_nonblocking_)
@@ -491,7 +492,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
             {
               auto& walker_elements = newW[job_list[im].walker_index];
               // Here the walker ID from the spawn is overwritten with the copy.
-              walker_elements.walker.copyFromBuffer();
+	      auto walker_id = walker_elements.walker.getWalkerID();
+	      walker_elements.walker.copyFromBuffer();
+	      auto parent_id = walker_elements.walker.getWalkerID();
+	      walker_elements.walker.setWalkerID(walker_id);
+	      walker_elements.walker.setParentID(parent_id);
               not_completed[im] = false;
             }
             else

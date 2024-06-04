@@ -136,30 +136,43 @@ void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<
   std::vector<int> plus;
 
   wc_.setNumPerRank(rank_counts_before);
-  // note this ordering of calls is different from the main code which
-  // preserves the ordering to allow the "optimization" of sending multiple copies of the same walker to another rank.
-  // I think it should follow this ordering.
-  // I only avoids going wrong in the main coded by the fact that
-  pop_->copyHighMultiplicityWalkers();
+  // note this ordering of calls is from the main code
   wc_.swapWalkersSimple(*pop_);
   wc_.killDeadWalkersOnRank(*pop_);
+  pop_->copyHighMultiplicityWalkers();
   reportWalkersPerRank(dpools_.comm, *pop_);
   CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
 }
 
-void testing::UnifiedDriverWalkerControlMPITest::testWalkerIDs(std::vector<std::vector<int>> walker_ids_after)
+void testing::UnifiedDriverWalkerControlMPITest::testWalkerIDs(std::vector<std::vector<int>> walker_ids_after, std::vector<std::vector<int>> parent_ids_after)
 {
   int rank = dpools_.comm->rank();
   std::vector<int> walker_ids;
+  std::vector<int> parent_ids;
+#ifndef NDEBUG
   for (int iw = 0; iw < pop_->get_walkers().size(); ++iw)
+  {
     walker_ids.push_back(pop_->get_walkers()[iw]->getWalkerID());
-  std::cout << "rank: " << rank << "  walker ids: " << NativePrint(walker_ids) << '\n';
-
+    parent_ids.push_back(pop_->get_walkers()[iw]->getParentID());
+  }
+  std::cout << "rank: " << rank << "  walker ids: " << NativePrint(walker_ids)
+            << " parent ids: " << NativePrint(parent_ids) << '\n';
+#endif
   for (int iw = 0; iw < walker_ids_after[rank].size(); ++iw)
   {
     CHECK(pop_->get_walkers()[iw]->getWalkerID() == walker_ids_after[rank][iw]);
   }
+  for (int iw = 0; iw < parent_ids_after[rank].size(); ++iw)
+  {
+    CHECK(pop_->get_walkers()[iw]->getParentID() == parent_ids_after[rank][iw]);
+  }
+
 }
+
+#define CALC_ID_LAMBDA  [num_ranks](int rank, int index_walker_created) \
+  { \
+    return index_walker_created * num_ranks + rank + 1; \
+  }
 
 TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control]")
 {
@@ -168,7 +181,7 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
     testing::UnifiedDriverWalkerControlMPITest test;
     outputManager.resume();
 
-    SECTION("Simple")
+    SECTION("Balanced")
     {
       std::vector<int> count_before(test.getNumRanks(), 1);
       std::vector<int> count_after(test.getNumRanks(), 1);
@@ -188,13 +201,69 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
       std::generate(rank_0_ids.begin(), rank_0_ids.end(),
                     [n = 0, num_ranks]() mutable { return (n++) * num_ranks + 1; });
       std::vector<std::vector<int>> ar_wids;
+      std::vector<std::vector<int>> ar_pids;
+      auto calcID = CALC_ID_LAMBDA;
       for (int ir = 0; ir < num_ranks; ++ir)
       {
         ar_wids.push_back({ir + 1});
         if (ir > 0)
-          ar_wids.back().push_back(rank_0_ids[num_ranks - ir]);
+          ar_wids.back().push_back(calcID(ir,1));
+
+	ar_pids.push_back({0});
+	if (ir > 0)
+	{
+          ar_pids.back().push_back(1);
+	}
       }
-      test.testWalkerIDs(ar_wids);
+      test.testWalkerIDs(ar_wids, ar_pids);
+    }
+
+    SECTION("LoadBalance Multiple Copy Optimization")
+    {
+      int multiple   = 3;
+      auto num_ranks = test.getNumRanks();
+      std::vector<int> count_before(num_ranks, 1);
+      count_before[0] = num_ranks * multiple;
+      int total_walkers = std::accumulate(count_before.begin(), count_before.end(), 0);
+      std::vector<int> count_after = fairDivide(total_walkers, num_ranks);
+      std::reverse(count_after.begin(), count_after.end());
+      std::cout << "count_before: " << NativePrint(count_before) << "  count_after: " << NativePrint(count_after) << '\n';
+      test.testPopulationDiff(count_before, count_after);
+      std::vector<long> rank_0_ids(count_before[0]);
+      std::generate(rank_0_ids.begin(), rank_0_ids.end(),
+                    [n = 0, num_ranks]() mutable { return (n++) * num_ranks + 1; });
+      std::vector<std::vector<int>> ar_wids;
+      std::vector<std::vector<int>> ar_pids;
+      auto calcID = CALC_ID_LAMBDA;
+
+      for (int ir = 0; ir < num_ranks; ++ir) {
+	ar_wids.push_back({calcID(ir,0)});
+	for(int iw = 1; iw < count_after[ir]; ++iw)
+	  ar_wids.back().push_back(calcID(ir,iw));
+
+	ar_pids.push_back({0});
+	if (ir == 0) {
+	  for(int iw = 1; iw < count_after[ir]; ++iw)
+	    ar_pids.back().push_back(calcID(0,0));
+	}
+	else
+	{
+	  ar_pids.back().push_back(1);
+	  for(int iw = 2; iw < count_after[ir]; ++iw)
+	    ar_pids.back().push_back(calcID(ir,1));
+	}
+      }
+      
+      for(auto& walk_ids : ar_wids)
+      {
+	std::cout << NativePrint(walk_ids) << " ";
+      }
+      for(auto& par_ids : ar_pids)
+      {
+	std::cout << NativePrint(par_ids) << " ";
+      }
+      std::cout << '\n';
+      test.testWalkerIDs(ar_wids, ar_pids);
     }
   };
   MPIExceptionWrapper mew;
