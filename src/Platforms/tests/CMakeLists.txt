@@ -25,7 +25,7 @@ set(UTEST_EXE test_platforms)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
 add_executable(${UTEST_EXE} test_PlatformSelector.cpp test_AccelBLAS.cpp)
-target_link_libraries(${UTEST_EXE} platform_LA platform_runtime catch_main)
+target_link_libraries(${UTEST_EXE} platform_LA platform_runtime catch_main containers)
 
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} platform_omptarget_LA)
