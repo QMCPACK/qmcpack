@@ -16,6 +16,9 @@
 #if defined(ENABLE_CUDA)
 #include "CUDA/AccelBLAS_CUDA.hpp"
 #endif
+#if defined(ENABLE_SYCL)
+#include "SYCL/AccelBLAS_SYCL.hpp"
+#endif
 #include "OMPTarget/AccelBLAS_OMPTarget.hpp"
 
 #endif
