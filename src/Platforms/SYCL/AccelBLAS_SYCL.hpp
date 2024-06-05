@@ -45,8 +45,8 @@ inline void gemm(BLASHandle<PlatformKind::SYCL>& handle,
                  T* C,
                  int ldc)
 {
-  oneapi::mkl::blas::gemm(handle.queue_, syclBLAS::convertTransEnum(transa), syclBLAS::convertTransEnum(transb), m, n, k, alpha, A, lda, B, ldb,
-                                 beta, C, ldc);
+  oneapi::mkl::blas::gemm(handle.queue_, syclBLAS::convertTransEnum(transa), syclBLAS::convertTransEnum(transb), m, n,
+                          k, alpha, A, lda, B, ldb, beta, C, ldc);
 }
 
 template<typename T>
@@ -63,8 +63,7 @@ inline void gemv_batched(BLASHandle<PlatformKind::SYCL>& handle,
                          T* const y[],
                          const int incy,
                          const size_t batch_count)
-{
-}
+{}
 
 template<typename T>
 inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,
@@ -78,8 +77,7 @@ inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,
                         T* const A[],
                         const int lda,
                         const size_t batch_count)
-{
-}
+{}
 
 template<typename T>
 inline void copy_batched(BLASHandle<PlatformKind::SYCL>& handle,
@@ -89,8 +87,7 @@ inline void copy_batched(BLASHandle<PlatformKind::SYCL>& handle,
                          T* const out[],
                          const int incy,
                          const size_t batch_count)
-{
-}
+{}
 
 template<typename T>
 inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
@@ -111,11 +108,16 @@ inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
 {
   auto trans_a = syclBLAS::convertTransEnum(transa);
   auto trans_b = syclBLAS::convertTransEnum(transa);
-oneapi::mkl::blas::gemm_batch(handle.queue_, sycl::span{&trans_a, 1}, sycl::span{&trans_b, 1}, sycl::span{&m, 1}, sycl::span{&n, 1}, sycl::span{&k, 1},
-           sycl::span{const_cast<T*>(&alpha), 1}, sycl::span{const_cast<const T**>(A), batch_count}, sycl::span{&lda, 1}, sycl::span{const_cast<const T**>(B), batch_count},
-	sycl::span{&ldb, 1}, sycl::span{const_cast<T*>(&beta), 1}, sycl::span{const_cast<T**>(C), batch_count}, sycl::span{&ldc, 1}, 1, sycl::span{const_cast<size_t*>(&batch_count), 1});
+  oneapi::mkl::blas::gemm_batch(handle.queue_, sycl::span{&trans_a, 1}, sycl::span{&trans_b, 1}, sycl::span{&m, 1},
+                                sycl::span{&n, 1}, sycl::span{&k, 1}, sycl::span{const_cast<T*>(&alpha), 1},
+                                sycl::span{const_cast<const T**>(A), batch_count}, sycl::span{&lda, 1},
+                                sycl::span{const_cast<const T**>(B), batch_count}, sycl::span{&ldb, 1},
+                                sycl::span{const_cast<T*>(&beta), 1}, sycl::span{const_cast<T**>(C), batch_count},
+                                sycl::span{&ldc, 1}, 1, sycl::span{const_cast<size_t*>(&batch_count), 1});
   //syclBLAS::syclBLAS_int bc = batch_count;
-  //oneapi::mkl::blas::gemm_batch(handle.queue_, &trans_a, &trans_b, &m, &n, &k, const_cast<const T*>(&alpha), const_cast<const T**>(A), &lda, const_cast<const T**>(B), &ldb, const_cast<const T*>(&beta), const_cast<T**>(C), &ldc , 1, &bc);
+  //oneapi::mkl::blas::gemm_batch(handle.queue_, &trans_a, &trans_b, &m, &n, &k, const_cast<const T*>(&alpha),
+  //                              const_cast<const T**>(A), &lda, const_cast<const T**>(B), &ldb,
+  //                              const_cast<const T*>(&beta), const_cast<T**>(C), &ldc, 1, &bc);
 }
 
 } // namespace BLAS
