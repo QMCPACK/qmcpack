@@ -31,7 +31,6 @@ std::string UTEST_HAMIL, UTEST_WFN;
 
 int main(int argc, char* argv[])
 {
-  // Suppress HDF5 warning and error messages.
   Catch::Session session;
   using namespace Catch::clara;
   // Build command line parser.
