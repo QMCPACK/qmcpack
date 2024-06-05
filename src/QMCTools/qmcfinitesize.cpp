@@ -56,9 +56,6 @@ int main(int argc, char** argv)
   std::cout.setf(std::ios::right, std::ios::adjustfield);
   std::cout.precision(12);
 
-  // Suppress HDF5 warning and error messages.
-  qmcplusplus::hdf_error_suppression hide_hdf_errors;
-
   std::unique_ptr<SkParserBase> skparser(nullptr);
 
   bool show_usage = false;
