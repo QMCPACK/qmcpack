@@ -45,8 +45,15 @@ inline void gemm(BLASHandle<PlatformKind::SYCL>& handle,
                  T* C,
                  int ldc)
 {
-  oneapi::mkl::blas::gemm(handle.queue_, syclBLAS::convertTransEnum(transa), syclBLAS::convertTransEnum(transb), m, n,
-                          k, alpha, A, lda, B, ldb, beta, C, ldc);
+  try
+  {
+    oneapi::mkl::blas::gemm(handle.queue_, syclBLAS::convertTransEnum(transa), syclBLAS::convertTransEnum(transb), m, n,
+                            k, alpha, A, lda, B, ldb, beta, C, ldc);
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("oneapi::mkl exception: ") + e.what());
+  }
 }
 
 template<typename T>
@@ -107,17 +114,34 @@ inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
                          const size_t batch_count)
 {
   auto trans_a = syclBLAS::convertTransEnum(transa);
-  auto trans_b = syclBLAS::convertTransEnum(transa);
-  oneapi::mkl::blas::gemm_batch(handle.queue_, sycl::span{&trans_a, 1}, sycl::span{&trans_b, 1}, sycl::span{&m, 1},
-                                sycl::span{&n, 1}, sycl::span{&k, 1}, sycl::span{const_cast<T*>(&alpha), 1},
-                                sycl::span{const_cast<const T**>(A), batch_count}, sycl::span{&lda, 1},
-                                sycl::span{const_cast<const T**>(B), batch_count}, sycl::span{&ldb, 1},
-                                sycl::span{const_cast<T*>(&beta), 1}, sycl::span{const_cast<T**>(C), batch_count},
-                                sycl::span{&ldc, 1}, 1, sycl::span{const_cast<size_t*>(&batch_count), 1});
-  //syclBLAS::syclBLAS_int bc = batch_count;
-  //oneapi::mkl::blas::gemm_batch(handle.queue_, &trans_a, &trans_b, &m, &n, &k, const_cast<const T*>(&alpha),
-  //                              const_cast<const T**>(A), &lda, const_cast<const T**>(B), &ldb,
-  //                              const_cast<const T*>(&beta), const_cast<T**>(C), &ldc, 1, &bc);
+  auto trans_b = syclBLAS::convertTransEnum(transb);
+  try
+  {
+#if defined(GEMM_BATCH_SPAN)
+    sycl::span alpha_span(sycl::malloc_shared<T>(1, handle.queue_), 1);
+    alpha_span[0] = alpha;
+    sycl::span beta_span(sycl::malloc_shared<T>(1, handle.queue_), 1);
+    beta_span[0] = beta;
+
+    oneapi::mkl::blas::gemm_batch(handle.queue_, sycl::span{&trans_a, 1}, sycl::span{&trans_b, 1}, sycl::span{&m, 1},
+                                  sycl::span{&n, 1}, sycl::span{&k, 1}, alpha_span,
+                                  sycl::span{const_cast<const T**>(A), batch_count}, sycl::span{&lda, 1},
+                                  sycl::span{const_cast<const T**>(B), batch_count}, sycl::span{&ldb, 1},
+                                  beta_span, sycl::span{const_cast<T**>(C), batch_count},
+                                  sycl::span{&ldc, 1}, 1, sycl::span{const_cast<size_t*>(&batch_count), 1});
+    sycl::free(alpha_span.data(), handle.queue_);
+    sycl::free(beta_span.data(), handle.queue_);
+#else
+    syclBLAS::syclBLAS_int bc = batch_count;
+    oneapi::mkl::blas::gemm_batch(handle.queue_, &trans_a, &trans_b, &m, &n, &k, const_cast<const T*>(&alpha),
+                                  const_cast<const T**>(A), &lda, const_cast<const T**>(B), &ldb,
+                                  const_cast<const T*>(&beta), const_cast<T**>(C), &ldc, 1, &bc);
+#endif
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("oneapi::mkl exception: ") + e.what());
+  }
 }
 
 } // namespace BLAS
