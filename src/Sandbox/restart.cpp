@@ -49,8 +49,6 @@ int main(int argc, char** argv)
   mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
 #endif
-  // Suppress HDF5 warning and error messages.
-  qmcplusplus::hdf_error_suppression hide_hdf_errors;
 
   Communicate* myComm = OHMMS::Controller;
 

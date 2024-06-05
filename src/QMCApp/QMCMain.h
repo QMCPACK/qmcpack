@@ -23,7 +23,6 @@
 #include "QMCApp/QMCAppBase.h"
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-#include "hdf/hdf_error_suppression.h"
 
 namespace qmcplusplus
 {
@@ -69,9 +68,6 @@ private:
 
   /// last branch engine used by legacy drivers
   std::unique_ptr<SimpleFixedNodeBranch> last_branch_engine_legacy_driver_;
-
-  /// Suppress HDF5 warning and error messages.
-  hdf_error_suppression hide_hdf_errors;
 
   ///xml mcwalkerset elements for output
   std::vector<xmlNodePtr> walker_set_;
