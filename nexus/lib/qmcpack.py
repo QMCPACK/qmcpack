@@ -89,13 +89,16 @@ class GCTA(DevBase):
                     ''')
         #end if
         spinor_run = self.input.get('spinor')
+        if spinor_run is True:
+            self.error('Spinors are currently not supported with gcta. Please contact the developers.')
+        #end if
         if (self.flavor.lower() == 'safl') and (spinor_run is True):
             self.error('safl is not supported with spinors. Use afl instead.')
         #end if
         if (self.flavor.lower() != 'afl') and (not isinstance(dependency,Pw2qmcpack)):
             self.error('{} flavor of GCTA is only supported with pwscf at the moment.'.format(self.flavor))
         #end if
-        twistnum_input = self.input.simulation.qmcsystem.wavefunction.sposet_builders.bspline.twistnum
+        twistnum_input = self.input.get('twistnum')
         supercell_nkpoints = len(self.system.structure.kpoints)
         if (twistnum_input is not None) or (supercell_nkpoints == 1):
             self.error('''
