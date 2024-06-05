@@ -243,8 +243,8 @@ public:
     size_t n = 0;
     for (size_t i=0;i<arr1d.size();++i)
     {
-      buffer(irow,wqi.buffer_start+n) = std::real(arr1d[n]); ++n;
-      buffer(irow,wqi.buffer_start+n) = std::imag(arr1d[n]); ++n;
+      buffer(irow,wqi.buffer_start+n) = std::real(arr1d[i]); ++n;
+      buffer(irow,wqi.buffer_start+n) = std::imag(arr1d[i]); ++n;
     }
     quantity_pointer++;
   }

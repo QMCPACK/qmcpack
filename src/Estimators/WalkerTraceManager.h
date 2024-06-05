@@ -20,7 +20,7 @@ namespace qmcplusplus
 {
 
 
-class WalkerTraceInput;
+struct WalkerTraceInput;
 
 
 /** Driver-level resource for walker trace collection.
