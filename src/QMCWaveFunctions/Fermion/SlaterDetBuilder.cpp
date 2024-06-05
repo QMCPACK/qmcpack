@@ -296,8 +296,12 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #else
   sdAttrib.add(use_batch, "batch", {"no", "yes"});
 #endif
-#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
-  sdAttrib.add(useGPU, "gpu", {"yes", "no"});
+#if defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
+  sdAttrib.add(useGPU, "gpu", CPUOMPTargetVendorSelector::candidate_values);
+#else
+  sdAttrib.add(useGPU, "gpu", PlatformSelector<SelectorKind::CPU_OMPTARGET>::candidate_values);
+#endif
 #endif
   sdAttrib.put(cur->parent);
 
