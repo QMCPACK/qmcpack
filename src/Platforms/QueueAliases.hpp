@@ -16,6 +16,9 @@
 #if defined(ENABLE_CUDA)
 #include "CUDA/QueueCUDA.hpp"
 #endif
+#if defined(ENABLE_SYCL)
+#include "SYCL/QueueSYCL.hpp"
+#endif
 #include "OMPTarget/QueueOMPTarget.hpp"
 
 #endif
