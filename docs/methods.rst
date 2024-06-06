@@ -1899,10 +1899,10 @@ declaration to ensure correct sampling:
 
 
 
-.. _walker_logs
+.. _walker_logging
 
-Walker Data Logs
-==================
+Walker Data Logging
+===================
 
 Detailed per-walker information can be written to HDF5 files for VMC or DMC by 
 including the <walkerlogs/> XML element. This includes the LocalEnergy and 
@@ -1914,7 +1914,7 @@ potentially requiring a huge amount of disk space.
 
 **Input specification**
 
-The default walker data tracing functionality is enabled by including the 
+The default walker data logging functionality is enabled by including the 
 <walkerlogs/> XML element (once) just before the QMC driver sections, 
 for example:
 
