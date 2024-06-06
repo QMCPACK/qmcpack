@@ -116,7 +116,7 @@ public:
    *   * createWalkers must have been called
    *  @{
    */
-  WalkerElementsRef spawnWalker(bool transfer_recipient = false);
+  WalkerElementsRef spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
   /** }@ */
@@ -157,7 +157,7 @@ public:
   /** turn walkers with multiplicity n > 1 into n walkers of multiplicity 1
    */
   void copyHighMultiplicityWalkers();
-  
+
   void syncWalkersPerRank(Communicate* comm);
   void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
 
@@ -245,6 +245,7 @@ public:
    */
   void saveWalkerConfigurations(WalkerConfigurations& walker_configs);
 
+private:
   /** Generator for walker_ids for this MCPopulation
    *  This should be the single source for `walker_id`'s on this rank.
    *  These are unique across MCPopulations with rank.

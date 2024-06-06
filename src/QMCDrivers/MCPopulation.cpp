@@ -182,7 +182,7 @@ std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
  *
  *  Walker ID's are handed out per life not per allocation.
  */
-WalkerElementsRef MCPopulation::spawnWalker(bool transfer_recipient)
+WalkerElementsRef MCPopulation::spawnWalker()
 {
   ++num_local_walkers_;
   outputManager.pause();
@@ -204,27 +204,18 @@ WalkerElementsRef MCPopulation::spawnWalker(bool transfer_recipient)
     walkers_.back()->Multiplicity       = 1.0;
     walkers_.back()->Weight             = 1.0;
     // this does count as a walker creation so it gets a new walker id
-    if (!transfer_recipient) {
-      auto walker_id = nextWalkerID();
-      walkers_.back()->setWalkerID(walker_id);
-      walkers_.back()->setParentID(walker_id);
-    }
+    auto walker_id = nextWalkerID();
+    walkers_.back()->setWalkerID(walker_id);
+    walkers_.back()->setParentID(walker_id);
   }
   else
   {
     outputManager.resume();
-    if (!transfer_recipient) {
-      auto walker_id = nextWalkerID();
-      app_warning() << "Spawning walker ID " << walker_id << " this is living walker number " << walkers_.size()
+    auto walker_id = nextWalkerID();
+    app_warning() << "Spawning walker ID " << walker_id << " this is living walker number " << walkers_.size()
                   << "which is beyond the allocated walker reserves, ideally this should never happen." << '\n';
-      walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back()), walker_id, walker_id));
-    }
-    else
-    {
-      app_warning() << "Spawning walker to receive duplicate walker this is living walker number " << walkers_.size()
-                  << "which is beyond the allocated walker reserves, ideally this should never happen." << '\n';
-      walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back())));
-    }
+    walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back()), walker_id, walker_id));
+
     outputManager.pause();
 
     walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));

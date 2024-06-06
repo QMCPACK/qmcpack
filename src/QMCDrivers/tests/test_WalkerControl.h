@@ -24,11 +24,15 @@ namespace testing
 class UnifiedDriverWalkerControlMPITest
 {
 public:
+  /** Initially this test class creates a population with 1 walker so in a multirank test you have 1 walker per rank.
+   */
   UnifiedDriverWalkerControlMPITest();
   void testPopulationDiff(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after);
-  void testPopulationDiffNoMCopyOpt(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after);
+  /** This test function alters the population respecting what was there before the call
+   */
+  void testPopulationDiffAdditionalStage(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after);
   void testWalkerIDs(std::vector<std::vector<int>> walker_ids_after, std::vector<std::vector<int>> parent_ids_after);
-  void makeValidWalkers();
+//  void makeValidWalkers();
   void testNewDistribution(std::vector<int>& minus, std::vector<int>& plus);
   int getRank() { return dpools_.comm->rank(); }
   int getNumRanks() { return dpools_.comm->size(); }
