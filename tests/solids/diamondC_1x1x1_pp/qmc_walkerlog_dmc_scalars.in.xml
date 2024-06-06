@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_trace_dmc_scalars" series="0">
+   <project id="qmc_wlog_dmc_scalars" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="71"/>
@@ -79,7 +79,7 @@
          </pairpot>
       </hamiltonian>
    </qmcsystem>
-   <walkertraces/>
+   <walkerlogs/>
    <qmc method="vmc" move="pbyp">
       <estimator name="LocalEnergy" hdf5="yes"/>
       <parameter name="walkers"             >    2            </parameter>

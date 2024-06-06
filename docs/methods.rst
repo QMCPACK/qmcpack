@@ -1899,13 +1899,13 @@ declaration to ensure correct sampling:
 
 
 
-.. _walker_traces
+.. _walker_logs
 
-Walker Data Traces
+Walker Data Logs
 ==================
 
 Detailed per-walker information can be written to HDF5 files for VMC or DMC by 
-including the <walkertraces/> XML element. This includes the LocalEnergy and 
+including the <walkerlogs/> XML element. This includes the LocalEnergy and 
 its components for each walker from each MC step.  By default, more detailed 
 particle-level information (e.g. electron coordinates) is also written for the 
 lowest, highest, and median energy walkers at each MC step (modest disk usage). 
@@ -1915,12 +1915,12 @@ potentially requiring a huge amount of disk space.
 **Input specification**
 
 The default walker data tracing functionality is enabled by including the 
-<walkertraces/> XML element (once) just before the QMC driver sections, 
+<walkerlogs/> XML element (once) just before the QMC driver sections, 
 for example:
 
 ::
 
-  <walkertraces/>
+  <walkerlogs/>
   <qmc method="vmc" move="pbyp">
     <parameter name="walkers_per_rank">  256  </parameter>
     <parameter name="warmupSteps">       100  </parameter>
@@ -1951,7 +1951,7 @@ Optional XML attributes enable finer control over the behavior:
   +------------------+--------------+--------------+-------------+----------------------------------------------------+
   | ``particle``     | text         | yes,no       | no          | Write particle data for all walkers                |
   +------------------+--------------+--------------+-------------+----------------------------------------------------+
-  | ``qtiles``       | text         | yes,no       | yes         | Write full data for min/max/median energy walkers  |
+  | ``quantiles``    | text         | yes,no       | yes         | Write full data for min/max/median energy walkers  |
   +------------------+--------------+--------------+-------------+----------------------------------------------------+
   | ``min``          | text         | yes,no       | yes         | Enable/disable write for min energy walker data    |
   +------------------+--------------+--------------+-------------+----------------------------------------------------+
@@ -1971,12 +1971,12 @@ Additional information:
    with step_period=5, walker data is collected every 5th MC step.
 
 -  ``particle``: This controls whether per-particle data is written to 
-   the traces HDF files along with scalar walker properties.  These data 
+   the walker log HDF files along with scalar walker properties.  These data 
    comprise: electron coordinates, spin coordinates (spinor runs only), 
    per-particle wavefunction gradients, and per-particle wavefunction 
    laplacian values.
 
--  ``qtiles``: Write out full (scalar and per-particle) data for walkers 
+-  ``quantiles``: Write out full (scalar and per-particle) data for walkers 
    at specific quantiles of the local energy distribution.  Currently, 
    these quantiles are the minimum, maximum, and median. 
 
@@ -1990,13 +1990,13 @@ Additional information:
    walkers.  Active only if qtiles=yes.
 
 -  ``verbose``: If "yes", write function-call information related to 
-   the walker traces functionality.  This option is mainly intended 
+   the walker logging functionality.  This option is mainly intended 
    for developers, as it is of little use in practical runs.
 
 
 **Output files**
 
-The HDF5 files created by the walker traces functionality have the extension \*.wtraces.h5.
+The HDF5 files created by the walker logging functionality have the extension \*.wlogs.h5.
 For each VMC or DMC section, one of these files is written for every MPI rank in the run.
 
 For the example XML inputs shown above, QMCPACK run on 6 MPI ranks would produce (at least) 
@@ -2006,25 +2006,25 @@ the following output data files:
 
   qmc.s000.scalar.dat
   qmc.s000.stat.h5
-  qmc.s000.p000.wtraces.h5
-  qmc.s000.p001.wtraces.h5
-  qmc.s000.p002.wtraces.h5
-  qmc.s000.p003.wtraces.h5
-  qmc.s000.p004.wtraces.h5
-  qmc.s000.p005.wtraces.h5
+  qmc.s000.p000.wlogs.h5
+  qmc.s000.p001.wlogs.h5
+  qmc.s000.p002.wlogs.h5
+  qmc.s000.p003.wlogs.h5
+  qmc.s000.p004.wlogs.h5
+  qmc.s000.p005.wlogs.h5
   
   qmc.s001.scalar.dat
   qmc.s001.dmc.dat
   qmc.s001.stat.h5
-  qmc.s001.p000.wtraces.h5
-  qmc.s001.p001.wtraces.h5
-  qmc.s001.p002.wtraces.h5
-  qmc.s001.p003.wtraces.h5
-  qmc.s001.p004.wtraces.h5
-  qmc.s001.p005.wtraces.h5
+  qmc.s001.p000.wlogs.h5
+  qmc.s001.p001.wlogs.h5
+  qmc.s001.p002.wlogs.h5
+  qmc.s001.p003.wlogs.h5
+  qmc.s001.p004.wlogs.h5
+  qmc.s001.p005.wlogs.h5
 
 
-A single wtraces.h5 file has several walker data buffers (names with underscores below):
+A single wlogs.h5 file has several walker data buffers (names with underscores below):
 
 ::
 
@@ -2045,11 +2045,11 @@ Each data buffer contains packed walker data in the form of a large 2D array ("d
 
 ::
 
-  >h5ls qmc.s000.p000.wtraces.h5/walker_property_int
+  >h5ls qmc.s000.p000.wlogs.h5/walker_property_int
     data                Dataset {512000/Inf, 4}
     data_layout         Group
 
-  >h5ls qmc.s000.p000.wtraces.h5/walker_property_real
+  >h5ls qmc.s000.p000.wlogs.h5/walker_property_real
     data                Dataset {512000/Inf, 15}
     data_layout         Group
 
@@ -2061,13 +2061,13 @@ The location of each particular walker quantity in each row is listed in "data_l
 
 ::
 
-  >h5ls qmc.s000.p000.wtraces.h5/walker_property_int/data_layout
+  >h5ls qmc.s000.p000.wlogs.h5/walker_property_int/data_layout
     id                  Group    # unique walker id
     parent_id           Group    # id of parent (DMC branching)
     step                Group    # MC step number
     age                 Group    # walker "age"
 
-  >h5ls qmc.s000.p000.wtraces.h5/walker_property_real/data_layout
+  >h5ls qmc.s000.p000.wlogs.h5/walker_property_real/data_layout
     weight              Group    # statistical weight of the walker
     LocalEnergy         Group    # the local (total) energy
     Kinetic             Group    # kinetic energy
@@ -2090,12 +2090,12 @@ in walker_property_real/data:
 
 :: 
 
-  >h5ls -d qmc.s000.p000.wtraces.h5/walker_property_int/data_layout/step/index_start
+  >h5ls -d qmc.s000.p000.wlogs.h5/walker_property_int/data_layout/step/index_start
     index_start         Dataset {SCALAR}
         Data:
             (0) 0
     
-  >h5ls -d qmc.s000.p000.wtraces.h5/walker_property_real/data_layout/LocalEnergy/index_start
+  >h5ls -d qmc.s000.p000.wlogs.h5/walker_property_real/data_layout/LocalEnergy/index_start
     index_start         Dataset {SCALAR}
         Data:
             (0) 6
@@ -2105,7 +2105,7 @@ The per-particle data is arranged similarly:
 
 ::
 
-  >h5ls -d qmc_trace_dmc_legacy.s000.p000.wtraces.h5/wmin_particle_real/data_layout
+  >h5ls -d qmc_log_dmc_legacy.s000.p000.wlogs.h5/wmin_particle_real/data_layout
     R                   Group    # electron coordinates
     G                   Group    # wavefunction gradient
     L                   Group    # wavefunction laplacian (per-particle)
@@ -2117,7 +2117,7 @@ real-valued wavefunction):
 
 ::
 
-  >h5ls -d qmc.s000.p000.wtraces.h5/wmin_particle_real/data_layout/R
+  >h5ls -d qmc.s000.p000.wlogs.h5/wmin_particle_real/data_layout/R
     index_start         0           # data starts at column index 0
     index_end           24          # data ends at column index 24
     dimension           2           # array is 2-dimensional
@@ -2125,7 +2125,7 @@ real-valued wavefunction):
     shape               8, 3, 0, 0  # array has shape 8x3
     unit_size           1           # each unit of data stored as 1 real value
 
-  >h5ls -d qmc.s000.p000.wtraces.h5/wmin_particle_real/data_layout/G
+  >h5ls -d qmc.s000.p000.wlogs.h5/wmin_particle_real/data_layout/G
     index_start         24          # data starts at column index 24
     index_end           48          # data ends at column index 48
     dimension           2           # array is 2-dimensional
@@ -2133,7 +2133,7 @@ real-valued wavefunction):
     shape               8, 3, 0, 0  # array has shape 8x3
     unit_size           1           # data stored as single real values (2 if complex)
 
-  >h5ls -d qmc.s000.p000.wtraces.h5/wmin_particle_real/data_layout/L
+  >h5ls -d qmc.s000.p000.wlogs.h5/wmin_particle_real/data_layout/L
     index_start         48          # data starts at column index 48
     index_end           56          # data ends at column index 56
     dimension           1           # array is 1-dimensional

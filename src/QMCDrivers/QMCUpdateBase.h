@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "Estimators/WalkerTraceManager.h"
+#include "Estimators/WalkerLogManager.h"
 #include "GreenFunctionModifiers/DriftModifierBase.h"
 #include "SimpleFixedNodeBranch.h"
 #include "DriverDebugChecks.h"
@@ -32,7 +32,7 @@
 namespace qmcplusplus
 {
 class TraceManager;
-class WalkerTraceManager;
+class WalkerLogManager;
 /** @ingroup QMC
  * @brief Base class for update methods for each step
  *
@@ -106,7 +106,7 @@ public:
   void resetRun2(BranchEngineType* brancher,
                 EstimatorManagerBase* est,
                 TraceManager* traces,
-                WalkerTraceCollector* wtrace_collector_,
+                WalkerLogCollector* wlog_collector_,
                 const DriftModifierBase* driftmodifer);
 
   inline RealType getTau()
@@ -246,7 +246,7 @@ public:
 public:
   ///traces
   TraceManager* Traces;
-  WalkerTraceCollector* wtrace_collector;
+  WalkerLogCollector* wlog_collector;
 
 protected:
   ///update particle-by-particle

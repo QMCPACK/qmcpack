@@ -4,10 +4,10 @@
 # Jaron Krogel/ORNL
 
 # Type the following to view documentation for command line inputs:
-#   >check_wtraces.py -h
+#   >check_wlogs.py -h
 
 # For usage examples, type:
-#   >check_wtraces.py -x
+#   >check_wlogs.py -x
 
 # check_traces.py packages obj and HDFreader classes from Nexus.
 #   Note that h5py is required (which depends on numpy).
@@ -552,7 +552,7 @@ class TracesFileHDF(DataFile):
 
 
     def read(self,filepath=None):
-        # Open the wtraces.h5 file
+        # Open the wlogs.h5 file
         hr = HDFreader(filepath)
         if not hr._success:
             self.error('hdf file read failed\nfile path: '+filepath)
@@ -827,11 +827,11 @@ class TracesAnalyzer(DevBase):
 
         trace_files = []
         if mpi==1:
-            tf = os.path.join(path,prefix+'.wtraces.h5')
+            tf = os.path.join(path,prefix+'.wlogs.h5')
             trace_files.append(tf)
         else:
             for n in range(mpi):
-                tf = os.path.join(path,prefix+'.p'+str(n).zfill(3)+'.wtraces.h5')
+                tf = os.path.join(path,prefix+'.p'+str(n).zfill(3)+'.wlogs.h5')
                 trace_files.append(tf)
             #end for
         #end if
@@ -1058,182 +1058,6 @@ class TracesAnalyzer(DevBase):
 
 examples = '''
 
-===================================================================
-Example 1: QMCPACK VMC/DMC with scalar-only traces, single mpi task
-===================================================================
-
-Contents of QMCPACK input file (qmc.in.xml):
---------------------------------------------
-<simulation>
-   <project id="qmc" series="0">
-      ...
-   </project>
-
-   <qmcsystem>
-      ...
-   </qmcsystem>
-
-   # write traces files w/o array info (scalars only)
-   <traces array="no"/>  
-
-   # vmc run, scalars written to stat.h5 
-   <qmc method="vmc" move="pbyp">
-      <estimator name="LocalEnergy" hdf5="yes"/>
-      ...
-   </qmc>
-
-   # dmc run, scalars written to stat.h5 
-   <qmc method="dmc" move="pbyp" checkpoint="-1">
-     <estimator name="LocalEnergy" hdf5="yes"/>
-     ...
-   </qmc>
-
-</simulation>
-
-QMCPACK execution:
-------------------
-export OMP_NUM_THREADS=1
-mpirun -np qmcpack qmc.in.xml
-
-QMCPACK output files:
----------------------
-qmc.s000.qmc.xml
-qmc.s000.scalar.dat
-qmc.s000.stat.h5
-qmc.s000.traces.h5
-qmc.s001.cont.xml
-qmc.s001.dmc.dat
-qmc.s001.qmc.xml
-qmc.s001.scalar.dat
-qmc.s001.stat.h5
-qmc.s001.traces.h5
-
-check_traces.py usage:
-----------------------
-check_traces.py -p qmc -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1
-
-Either execute check_traces.py in /your/path/to/qmcpack/output as above, or do:
-
-check_traces.py -p qmc -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1 /your/path/to/qmcpack/output
-
-
-====================================================================
-Example 2: QMCPACK VMC/DMC, selective scalar traces, single mpi task
-====================================================================
-
-Contents of QMCPACK input file (qmc.in.xml):
---------------------------------------------
-<simulation>
-   <project id="qmc" series="0">
-      ...
-   </project>
-
-   <qmcsystem>
-      ...
-   </qmcsystem>
-
-   # write traces files w/o array info (scalars only)
-   <traces array="no">
-      <scalar_traces>
-         Kinetic ElecElec  # only write traces of Kinetic and ElecElec
-      </scalar_traces>
-   </traces>
-
-   # vmc run, scalars written to stat.h5 
-   <qmc method="vmc" move="pbyp">
-      <estimator name="LocalEnergy" hdf5="yes"/>
-      ...
-   </qmc>
-
-   # dmc run, scalars written to stat.h5 
-   <qmc method="dmc" move="pbyp" checkpoint="-1">
-     <estimator name="LocalEnergy" hdf5="yes"/>
-     ...
-   </qmc>
-
-</simulation>
-
-QMCPACK execution:
-------------------
-export OMP_NUM_THREADS=1
-mpirun -np qmcpack qmc.in.xml
-
-QMCPACK output files:
----------------------
-qmc.s000.qmc.xml
-qmc.s000.scalar.dat
-qmc.s000.stat.h5
-qmc.s000.traces.h5
-qmc.s001.cont.xml
-qmc.s001.dmc.dat
-qmc.s001.qmc.xml
-qmc.s001.scalar.dat
-qmc.s001.stat.h5
-qmc.s001.traces.h5
-
-check_traces.py usage:
-----------------------
-check_traces.py -p qmc -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1
-
-
-===================================================================
-Example 3: QMCPACK VMC/DMC, selective array traces, single mpi task
-===================================================================
-
-Contents of QMCPACK input file (qmc.in.xml):
---------------------------------------------
-<simulation>
-   <project id="qmc" series="0">
-      ...
-   </project>
-
-   <qmcsystem>
-      ...
-   </qmcsystem>
-
-   # write traces files w/ all scalar info and select array info
-   <traces>
-      <array_traces>
-         position Kinetic  # write per-electron positions and kinetic energies
-      </array_traces>
-   </traces>
-
-   # vmc run, scalars written to stat.h5 
-   <qmc method="vmc" move="pbyp">
-      <estimator name="LocalEnergy" hdf5="yes"/>
-      ...
-   </qmc>
-
-   # dmc run, scalars written to stat.h5 
-   <qmc method="dmc" move="pbyp" checkpoint="-1">
-     <estimator name="LocalEnergy" hdf5="yes"/>
-     ...
-   </qmc>
-
-</simulation>
-
-QMCPACK execution:
-------------------
-export OMP_NUM_THREADS=1
-mpirun -np qmcpack qmc.in.xml
-
-QMCPACK output files:
----------------------
-qmc.s000.qmc.xml
-qmc.s000.scalar.dat
-qmc.s000.stat.h5
-qmc.s000.traces.h5
-qmc.s001.cont.xml
-qmc.s001.dmc.dat
-qmc.s001.qmc.xml
-qmc.s001.scalar.dat
-qmc.s001.stat.h5
-qmc.s001.traces.h5
-
-check_traces.py usage:
-----------------------
-check_traces.py -p qmc -s '0,1' -m 'vmc,dmc' --psum --dmc_steps_exclude=1
-
 '''
 
 
@@ -1377,7 +1201,7 @@ if __name__=='__main__':
 
         log('\n\nChecking series {} method={}'.format(series,method))
 
-        # Read scalar.dat, stat.h5, dmc.dat, and *wtraces.h5 for the series
+        # Read scalar.dat, stat.h5, dmc.dat, and *wlogs.h5 for the series
         ta = TracesAnalyzer(options)
 
         # Check traces data against scalar/stat/dmc files

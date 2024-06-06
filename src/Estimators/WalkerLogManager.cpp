@@ -9,8 +9,8 @@
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "WalkerTraceManager.h"
-#include "WalkerTraceInput.h"
+#include "WalkerLogManager.h"
+#include "WalkerLogInput.h"
 #include "Concurrency/OpenMP.h"
 
 
@@ -18,35 +18,35 @@ namespace qmcplusplus
 {
 
 
-WalkerTraceManager::WalkerTraceManager(WalkerTraceInput& inp, bool allow_traces, std::string series_root, Communicate* comm)
+WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm)
 {
   state.reset();
-  communicator              = comm;
-  file_root                 = series_root;
-  bool driver_allows_traces = allow_traces; // driver allows traces or not
+  communicator            = comm;
+  file_root               = series_root;
+  bool driver_allows_logs = allow_logs; // driver allows logs or not
 
-  bool traces_requested     = inp.present;  // xml input present or not
-  // determine whether walker traces will be active
-  state.traces_active       = traces_requested && driver_allows_traces;
+  bool logs_requested     = inp.present;  // xml input present or not
+  // determine whether walker logs will be active
+  state.logs_active       = logs_requested && driver_allows_logs;
 
-  if (state.traces_active)
+  if (state.logs_active)
   {
     if (omp_get_thread_num() == 0)
     {
-      app_log() << "\n  WalkerTraceManager::put() " << std::endl;
-      app_log() << "    traces requested      : " << traces_requested << std::endl;
-      app_log() << "    driver allows traces  : " << driver_allows_traces << std::endl;
-      app_log() << "    traces active         : " << state.traces_active << std::endl;
+      app_log() << "\n  WalkerLogManager::put() " << std::endl;
+      app_log() << "    logs requested      : " << logs_requested << std::endl;
+      app_log() << "    driver allows logs  : " << driver_allows_logs << std::endl;
+      app_log() << "    logs active         : " << state.logs_active << std::endl;
       app_log() << std::endl;
     }
     // retrieve input data
     state.step_period   = inp.get<int>("step_period");
     state.verbose       = inp.get<bool>("verbose");
-    bool qtiles         = inp.get<bool>("qtiles");
+    bool quantiles      = inp.get<bool>("quantiles");
     write_particle_data = inp.get<bool>("particle");
-    write_min_data      = inp.get<bool>("min")    && qtiles;
-    write_max_data      = inp.get<bool>("max")    && qtiles;
-    write_med_data      = inp.get<bool>("median") && qtiles;
+    write_min_data      = inp.get<bool>("min")    && quantiles;
+    write_max_data      = inp.get<bool>("max")    && quantiles;
+    write_med_data      = inp.get<bool>("median") && quantiles;
   }
   
   // label min energy walker buffers for HDF file write
@@ -69,42 +69,42 @@ WalkerTraceManager::WalkerTraceManager(WalkerTraceInput& inp, bool allow_traces,
 }
 
 
-WalkerTraceCollector* WalkerTraceManager::makeCollector()
+WalkerLogCollector* WalkerLogManager::makeCollector()
 {
-  if (state.verbose) app_log() << "WalkerTraceManager::makeCollector " << std::endl;
-  WalkerTraceCollector* tc = new WalkerTraceCollector();
+  if (state.verbose) app_log() << "WalkerLogManager::makeCollector " << std::endl;
+  WalkerLogCollector* tc = new WalkerLogCollector();
   tc->state = state;
   return tc;
 }
 
 
-void WalkerTraceManager::startRun(std::vector<WalkerTraceCollector*>& collectors)
+void WalkerLogManager::startRun(std::vector<WalkerLogCollector*>& collectors)
 {
-  if (!state.traces_active) return; // no-op for driver if traces are inactive
-  if (state.verbose) app_log() << "WalkerTraceManager::startRun " << std::endl;
-  // transfer step_period, verbosity, etc settings to trace collectors
+  if (!state.logs_active) return; // no-op for driver if logs are inactive
+  if (state.verbose) app_log() << "WalkerLogManager::startRun " << std::endl;
+  // transfer step_period, verbosity, etc settings to log collectors
   for (auto& tc: collectors)
     tc->state = state;
-  // check data size consistency among the trace collector buffers
+  // check data size consistency among the log collector buffers
   checkCollectors(collectors);
-  // open the traces file
+  // open the logs file
   openFile(collectors);
 }
 
 
-void WalkerTraceManager::stopRun()
+void WalkerLogManager::stopRun()
 {
-  if (!state.traces_active) return; // no-op for driver if traces are inactive
-  if (state.verbose) app_log() << "WalkerTraceManager::stopRun " << std::endl;
-  // close the traces file
+  if (!state.logs_active) return; // no-op for driver if logs are inactive
+  if (state.verbose) app_log() << "WalkerLogManager::stopRun " << std::endl;
+  // close the logs file
   closeFile();
 }
 
 
-void WalkerTraceManager::writeBuffers(std::vector<WalkerTraceCollector*>& collectors)
+void WalkerLogManager::writeBuffers(std::vector<WalkerLogCollector*>& collectors)
 {
-  if (!state.traces_active) return; // no-op for driver if traces are inactive
-  if (state.verbose) app_log() << "WalkerTraceManager::writeBuffers "<<std::endl;
+  if (!state.logs_active) return; // no-op for driver if logs are inactive
+  if (state.verbose) app_log() << "WalkerLogManager::writeBuffers "<<std::endl;
 
   if(write_min_data)
   {// resize min energy walker buffers to zero rows
@@ -198,51 +198,51 @@ void WalkerTraceManager::writeBuffers(std::vector<WalkerTraceCollector*>& collec
 }
 
 
-void WalkerTraceManager::checkCollectors(std::vector<WalkerTraceCollector*>& collectors)
+void WalkerLogManager::checkCollectors(std::vector<WalkerLogCollector*>& collectors)
 {
-  if (state.verbose) app_log() << "WalkerTraceManager::checkCollectors" << std::endl;
+  if (state.verbose) app_log() << "WalkerLogManager::checkCollectors" << std::endl;
   if (collectors.size() > 0)
   {
     bool all_same = true;
-    WalkerTraceCollector& ref = *collectors[0];
+    WalkerLogCollector& ref = *collectors[0];
     for (int i = 0; i < collectors.size(); ++i)
     {
-      WalkerTraceCollector& tc = *collectors[i];
+      WalkerLogCollector& tc = *collectors[i];
       all_same &= tc.walker_property_int_buffer.sameAs(ref.walker_property_int_buffer);
       all_same &= tc.walker_property_real_buffer.sameAs(ref.walker_property_real_buffer);
       all_same &= tc.walker_particle_real_buffer.sameAs(ref.walker_particle_real_buffer);
     }
     if (!all_same)
     {
-      throw std::runtime_error("WalkerTraceManager::checkCollectors  trace buffer widths of collectors do not match\n  contiguous write is "
-                               "impossible\n  this was first caused by collectors contributing array traces from identical, but "
-                               "differently named, particlesets such as e, e2, e3 ... (fixed)\n  please check the WalkerTraceManager "
+      throw std::runtime_error("WalkerLogManager::checkCollectors  log buffer widths of collectors do not match\n  contiguous write is "
+                               "impossible\n  this was first caused by collectors contributing array logs from identical, but "
+                               "differently named, particlesets such as e, e2, e3 ... (fixed)\n  please check the WalkerLogManager "
                                "summaries printed above");
     }
   }
 }
 
 
-void WalkerTraceManager::openFile(std::vector<WalkerTraceCollector*>& collectors)
+void WalkerLogManager::openFile(std::vector<WalkerLogCollector*>& collectors)
 {
-  if (state.verbose) app_log() << "WalkerTraceManager::openFile "<<std::endl;
+  if (state.verbose) app_log() << "WalkerLogManager::openFile "<<std::endl;
   openHDFFile(collectors);
 }
 
 
-void WalkerTraceManager::closeFile()
+void WalkerLogManager::closeFile()
 {
-  if (state.verbose) app_log() << "WalkerTraceManager::closeFile " << std::endl;
+  if (state.verbose) app_log() << "WalkerLogManager::closeFile " << std::endl;
   closeHDFFile();
 }
 
 
-void WalkerTraceManager::openHDFFile(std::vector<WalkerTraceCollector*>& collectors)
+void WalkerLogManager::openHDFFile(std::vector<WalkerLogCollector*>& collectors)
 {
-  if (state.verbose) app_log() << "WalkerTraceManager::openHDFFile " << std::endl;
+  if (state.verbose) app_log() << "WalkerLogManager::openHDFFile " << std::endl;
   if (collectors.size() == 0) 
-    throw std::runtime_error("WalkerTraceManager::openHDFFile  no trace collectors exist, cannot open file");
-  // each rank opens a wtraces.h5 file
+    throw std::runtime_error("WalkerLogManager::openHDFFile  no log collectors exist, cannot open file");
+  // each rank opens a wlogs.h5 file
   int nprocs = communicator->size();
   int rank   = communicator->rank();
   std::array<char, 32> ptoken;
@@ -260,21 +260,21 @@ void WalkerTraceManager::openHDFFile(std::vector<WalkerTraceCollector*>& collect
       throw std::runtime_error("Error generating filename");
     file_name.append(ptoken.data(), length);
   }
-  file_name += ".wtraces.h5";
-  if (state.verbose) app_log() << "WalkerTraceManager::openHDFFile  opening traces hdf file " << file_name << std::endl;
+  file_name += ".wlogs.h5";
+  if (state.verbose) app_log() << "WalkerLogManager::openHDFFile  opening logs hdf file " << file_name << std::endl;
   // create the hdf archive
   hdf_file        = std::make_unique<hdf_archive>();
   // open the file
   bool successful = hdf_file->create(file_name);
   if (!successful)
-    throw std::runtime_error("WalkerTraceManager::openHDFFile  failed to open hdf file " + file_name);
+    throw std::runtime_error("WalkerLogManager::openHDFFile  failed to open hdf file " + file_name);
 }
 
 
-void WalkerTraceManager::writeBuffersHDF(std::vector<WalkerTraceCollector*>& collectors)
+void WalkerLogManager::writeBuffersHDF(std::vector<WalkerLogCollector*>& collectors)
 {
-  if (state.verbose) app_log() << "WalkerTraceManager::writeBuffersHDF " << std::endl;
-  WalkerTraceCollector& tc_lead = *collectors[0];
+  if (state.verbose) app_log() << "WalkerLogManager::writeBuffersHDF " << std::endl;
+  WalkerLogCollector& tc_lead = *collectors[0];
   if(!registered_hdf)
   {// write walker quantity information ("data_layout") for each buffer in the HDF file
     //  create data_layout for all-walker buffers
@@ -306,7 +306,7 @@ void WalkerTraceManager::writeBuffersHDF(std::vector<WalkerTraceCollector*>& col
   // write data for all-walker buffers to HDF
   for (int ip = 0; ip < collectors.size(); ++ip)
   {
-    WalkerTraceCollector& tc = *collectors[ip];
+    WalkerLogCollector& tc = *collectors[ip];
     tc.walker_property_int_buffer.writeHDF(*hdf_file, tc_lead.walker_property_int_buffer.hdf_file_pointer);
     tc.walker_property_real_buffer.writeHDF(*hdf_file, tc_lead.walker_property_real_buffer.hdf_file_pointer);
     if(write_particle_data)
@@ -333,9 +333,9 @@ void WalkerTraceManager::writeBuffersHDF(std::vector<WalkerTraceCollector*>& col
 }
 
 
-void WalkerTraceManager::closeHDFFile()
+void WalkerLogManager::closeHDFFile()
 { 
-  if (state.verbose) app_log() << "WalkerTraceManager::closeHDFFile " << std::endl;
+  if (state.verbose) app_log() << "WalkerLogManager::closeHDFFile " << std::endl;
   hdf_file.reset(); 
 }
 

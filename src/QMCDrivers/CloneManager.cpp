@@ -27,7 +27,7 @@
 #else
 using TraceManager = int;
 #endif
-#include "Estimators/WalkerTraceManager.h"
+#include "Estimators/WalkerLogManager.h"
 
 //comment this out to use only method to clone
 #define ENABLE_CLONE_PSI_AND_H
@@ -87,7 +87,7 @@ CloneManager::~CloneManager()
 #if !defined(REMOVE_TRACEMANAGER)
   delete_iter(traceClones.begin(), traceClones.end());
 #endif
-  delete_iter(wtrace_collectors.begin(), wtrace_collectors.end());
+  delete_iter(wlog_collectors.begin(), wlog_collectors.end());
 }
 
 void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham)

@@ -76,7 +76,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   aAttrib.add(append_tag, "append");
   aAttrib.add(profiling_tag, "profiling");
   aAttrib.add(das.traces_tag, "trace");
-  aAttrib.add(das.walkertraces_tag, "walkertrace");
+  aAttrib.add(das.walkerlogs_tag, "walkerlog");
   aAttrib.put(cur);
   das.append_run                 = (append_tag == "yes");
   das.enable_profiling           = (profiling_tag == "yes");
@@ -296,9 +296,9 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   new_driver->requestTraces(allow_traces);
 
   //add trace information
-  bool allow_walker_traces = das.walkertraces_tag == "yes" ||
-      (das.walkertraces_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC || das.new_run_type == QMCRunType::VMC_BATCH || das.new_run_type == QMCRunType::DMC_BATCH));
-  new_driver->requestWalkerTraces(allow_walker_traces);
+  bool allow_walker_logs = das.walkerlogs_tag == "yes" ||
+      (das.walkerlogs_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC || das.new_run_type == QMCRunType::VMC_BATCH || das.new_run_type == QMCRunType::DMC_BATCH));
+  new_driver->requestWalkerLogs(allow_walker_logs);
 
   return new_driver;
 }

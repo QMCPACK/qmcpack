@@ -10,23 +10,23 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_WALKERTRACEMANAGER_H
-#define QMCPLUSPLUS_WALKERTRACEMANAGER_H
+#ifndef QMCPLUSPLUS_WALKERLOGMANAGER_H
+#define QMCPLUSPLUS_WALKERLOGMANAGER_H
 
-#include "WalkerTraceCollector.h"
+#include "WalkerLogCollector.h"
 
 
 namespace qmcplusplus
 {
 
 
-struct WalkerTraceInput;
+struct WalkerLogInput;
 
 
-/** Driver-level resource for walker trace collection.
+/** Driver-level resource for walker log collection.
  *
  *    This class manages the HDF file (open/close/write).
- *    Walker buffer data from all crowd-level WalkerTraceCollectors are written
+ *    Walker buffer data from all crowd-level WalkerLogCollectors are written
  *    to the HDF file at the end of each MC block.
  *
  *    Just prior to the write, this class examines the distribution of walker
@@ -35,16 +35,16 @@ struct WalkerTraceInput;
  *    (including per-particle information) for the write.
  *    This data corresponds to walker information at specific quantiles of the 
  *    energy distribution.
- *    See WalkerTraceManager::writeBuffers()
+ *    See WalkerLogManager::writeBuffers()
  *
  *    Writing per-particle information for all walkers is optional, as is 
  *    writing data for the minimum/maximum/median energy walkers.
  *    Scalar "property" data for each walker is always written.
  */
-class WalkerTraceManager
+class WalkerLogManager
 {
 public:
-  WalkerTraceState state;
+  WalkerLogState state;
 
 private:
   /// file prefix for the current driver
@@ -65,61 +65,61 @@ private:
   bool write_med_data;
 
   /// used to sort energy information for identifying walkers by energy quantile
-  std::vector<std::tuple<size_t,WTrace::Real,size_t,size_t>> energy_order;
+  std::vector<std::tuple<size_t,WLog::Real,size_t,size_t>> energy_order;
 
   /// buffer containing integer properties for the minimum energy walkers
-  WalkerTraceBuffer<WTrace::Int>  wmin_property_int_buffer;
+  WalkerLogBuffer<WLog::Int>  wmin_property_int_buffer;
   /// buffer containing real-valued properties for the minimum energy walkers
-  WalkerTraceBuffer<WTrace::Real> wmin_property_real_buffer;
+  WalkerLogBuffer<WLog::Real> wmin_property_real_buffer;
   /// buffer containing per-particle properties for the minimum energy walkers
-  WalkerTraceBuffer<WTrace::Real> wmin_particle_real_buffer;
+  WalkerLogBuffer<WLog::Real> wmin_particle_real_buffer;
 
   /// buffer containing integer properties for the maximum energy walkers
-  WalkerTraceBuffer<WTrace::Int>  wmax_property_int_buffer;
+  WalkerLogBuffer<WLog::Int>  wmax_property_int_buffer;
   /// buffer containing real-valued properties for the maximum energy walkers
-  WalkerTraceBuffer<WTrace::Real> wmax_property_real_buffer;
+  WalkerLogBuffer<WLog::Real> wmax_property_real_buffer;
   /// buffer containing per-particle properties for the maximum energy walkers
-  WalkerTraceBuffer<WTrace::Real> wmax_particle_real_buffer;
+  WalkerLogBuffer<WLog::Real> wmax_particle_real_buffer;
 
   /// buffer containing integer properties for the median energy walkers
-  WalkerTraceBuffer<WTrace::Int>  wmed_property_int_buffer;
+  WalkerLogBuffer<WLog::Int>  wmed_property_int_buffer;
   /// buffer containing real-valued properties for the median energy walkers
-  WalkerTraceBuffer<WTrace::Real> wmed_property_real_buffer;
+  WalkerLogBuffer<WLog::Real> wmed_property_real_buffer;
   /// buffer containing per-particle properties for the median energy walkers
-  WalkerTraceBuffer<WTrace::Real> wmed_particle_real_buffer;
+  WalkerLogBuffer<WLog::Real> wmed_particle_real_buffer;
 
 public:
-  WalkerTraceManager(WalkerTraceInput& inp, bool allow_traces, std::string series_root, Communicate* comm = 0);
+  WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm = 0);
 
-  /// create a WalkerTraceCollector (legacy drivers only, "cloning" style)
-  WalkerTraceCollector* makeCollector();
+  /// create a WalkerLogCollector (legacy drivers only, "cloning" style)
+  WalkerLogCollector* makeCollector();
 
-  /// open the traces file and check consistency of the collectors at the start of a run
-  void startRun(std::vector<WalkerTraceCollector*>& collectors);
+  /// open the logs file and check consistency of the collectors at the start of a run
+  void startRun(std::vector<WalkerLogCollector*>& collectors);
 
-  /// close the traces file at the end of a run
+  /// close the logs file at the end of a run
   void stopRun();
 
-  /// collect min/max/median walker data and write buffered walker trace data to file
-  void writeBuffers(std::vector<WalkerTraceCollector*>& collectors);
+  /// collect min/max/median walker data and write buffered walker log data to file
+  void writeBuffers(std::vector<WalkerLogCollector*>& collectors);
 
 private:
   /// check consistency of walker buffer row sizes
-  void checkCollectors(std::vector<WalkerTraceCollector*>& collectors);
+  void checkCollectors(std::vector<WalkerLogCollector*>& collectors);
 
-  /// open the traces file
-  void openFile(std::vector<WalkerTraceCollector*>& collectors);
+  /// open the logs file
+  void openFile(std::vector<WalkerLogCollector*>& collectors);
 
-  /// close the traces file
+  /// close the logs file
   void closeFile();
 
-  /// open the traces file (HDF format)
-  void openHDFFile(std::vector<WalkerTraceCollector*>& collectors);
+  /// open the logs file (HDF format)
+  void openHDFFile(std::vector<WalkerLogCollector*>& collectors);
 
-  /// write data buffers to the traces file (HDF format)
-  void writeBuffersHDF(std::vector<WalkerTraceCollector*>& collectors);
+  /// write data buffers to the logs file (HDF format)
+  void writeBuffersHDF(std::vector<WalkerLogCollector*>& collectors);
 
-  /// close the traces file (HDF format)
+  /// close the logs file (HDF format)
   void closeHDFFile();
 };
 

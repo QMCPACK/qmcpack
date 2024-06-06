@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "WalkerTraceCollector.h"
+#include "WalkerLogCollector.h"
 
 #include "Particle/Walker.h"
 #include "Particle/ParticleSet.h"
@@ -25,7 +25,7 @@ namespace qmcplusplus
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 
-WalkerTraceCollector::WalkerTraceCollector()
+WalkerLogCollector::WalkerLogCollector()
   : properties_include{"R2Accepted","R2Proposed","LocalEnergy","LocalPotential","Kinetic","ElecElec","ElecIon","LocalECP","NonLocalECP"}
 {
   state.reset();
@@ -40,17 +40,17 @@ WalkerTraceCollector::WalkerTraceCollector()
 }
 
 
-void WalkerTraceCollector::startBlock()
+void WalkerLogCollector::startBlock()
 {
-  if(!state.traces_active) return; // no-op for driver if traces are inactive
-  if (state.verbose) app_log() << "WalkerTraceCollector::startBlock " << std::endl;
+  if(!state.logs_active) return; // no-op for driver if logs are inactive
+  if (state.verbose) app_log() << "WalkerLogCollector::startBlock " << std::endl;
   resetBuffers(); // resize buffers to zero rows
 }
 
 
-void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& pset, const TrialWaveFunction& wfn, const QMCHamiltonian& ham, int step)
+void WalkerLogCollector::collect(const MCPWalker& walker, const ParticleSet& pset, const TrialWaveFunction& wfn, const QMCHamiltonian& ham, int step)
 {
-  if(!state.traces_active) return; // no-op for driver if traces are inactive
+  if(!state.logs_active) return; // no-op for driver if logs are inactive
 
   // only collect walker data at steps matching the period (default 1)
   int current_step = (step==-1) ? pset.current_step : step;
@@ -67,41 +67,41 @@ void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& p
   Rtmp.resize(nparticles,ndim);
   for(size_t p=0;p<nparticles;++p)
     for(size_t d=0;d<ndim;++d)
-      Rtmp(p,d) = (WTrace::Real)walker.R[p][d];
+      Rtmp(p,d) = (WLog::Real)walker.R[p][d];
   bar.collect("R", Rtmp);
   //   per-particle "spin" (walker.spins)
   if (pset.isSpinor())
   {
     Stmp.resize(nparticles);
     for(size_t p=0;p<nparticles;++p)
-      Stmp(p) = (WTrace::Real)walker.spins[p];
+      Stmp(p) = (WLog::Real)walker.spins[p];
     bar.collect("S", Stmp);
   }
   //   per-particle gradient(log(psi)) (pset.G)
   Gtmp.resize(nparticles,ndim);
   for(size_t p=0;p<nparticles;++p)
     for(size_t d=0;d<ndim;++d)
-      Gtmp(p,d) = (WTrace::PsiVal)pset.G[p][d];
+      Gtmp(p,d) = (WLog::PsiVal)pset.G[p][d];
   bar.collect("G", Gtmp);
   //   per-particle laplacian(log(psi)) (pset.L)
   Ltmp.resize(nparticles);
   for(size_t p=0;p<nparticles;++p)
-    Ltmp(p) = (WTrace::PsiVal)pset.L[p];
+    Ltmp(p) = (WLog::PsiVal)pset.L[p];
   bar.collect("L", Ltmp);
   bar.resetCollect();
 
   // collect integer walker properties
-  bsi.collect("step"        , (WTrace::Int)current_step         );
-  bsi.collect("id"          , (WTrace::Int)walker.getWalkerID() );
-  bsi.collect("parent_id"   , (WTrace::Int)walker.getParentID() );
-  bsi.collect("age"         , (WTrace::Int)walker.Age           );
+  bsi.collect("step"        , (WLog::Int)current_step         );
+  bsi.collect("id"          , (WLog::Int)walker.getWalkerID() );
+  bsi.collect("parent_id"   , (WLog::Int)walker.getParentID() );
+  bsi.collect("age"         , (WLog::Int)walker.Age           );
   bsi.resetCollect();
 
   // collect real walker properties
-  bsr.collect("weight"      , (WTrace::Real)walker.Weight        );
-  bsr.collect("multiplicity", (WTrace::Real)walker.Multiplicity  );
-  bsr.collect("logpsi"      , (WTrace::Real)wfn.getLogPsi()      );
-  bsr.collect("phase"       , (WTrace::Real)wfn.getPhase()       );
+  bsr.collect("weight"      , (WLog::Real)walker.Weight        );
+  bsr.collect("multiplicity", (WLog::Real)walker.Multiplicity  );
+  bsr.collect("logpsi"      , (WLog::Real)wfn.getLogPsi()      );
+  bsr.collect("phase"       , (WLog::Real)wfn.getPhase()       );
   //    from PropertyList
   if (bsr.first_collect)
   {
@@ -111,32 +111,32 @@ void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& p
       auto& value = walker.Properties(0,n);
       if(properties_include.find(name) != properties_include.end())
       {
-        bsr.collect(name, (WTrace::Real)value );
+        bsr.collect(name, (WLog::Real)value );
         property_indices.push_back(n);
       }
       if(name=="LocalEnergy")
         energy_index = n;
     }
     if(energy_index<0)
-      throw std::runtime_error("TraceCollector::collect  energy_index must not be negative");
+      throw std::runtime_error("LogCollector::collect  energy_index must not be negative");
   }
   else
     for(auto n: property_indices)
     {
       auto& name  = pset.PropertyList.Names[n];
       auto& value = walker.Properties(0,n);
-      bsr.collect(name, (WTrace::Real)value );
+      bsr.collect(name, (WLog::Real)value );
     }
   //    nodal proximity measures
   auto& gv = Gtmp.storage();
-  WTrace::Real dr = std::numeric_limits<WTrace::Real>::max();
+  WLog::Real dr = std::numeric_limits<WLog::Real>::max();
   for(size_t n=0; n<gv.size(); ++n)
     dr = std::min(dr,std::abs(1./std::real(gv[n])));
   auto dr_node_min = dr;
-  WTrace::Real dlogpsi2 = 0.;
+  WLog::Real dlogpsi2 = 0.;
   for(size_t n=0; n<gv.size(); ++n)
     dlogpsi2 += std::real(gv[n])*std::real(gv[n]);
-  WTrace::Real dphase2 = 0.;
+  WLog::Real dphase2 = 0.;
   for(size_t n=0; n<gv.size(); ++n)
     dphase2 += std::imag(gv[n])*std::imag(gv[n]);
   bsr.collect("dr_node_min", dr_node_min);
@@ -146,14 +146,14 @@ void WalkerTraceCollector::collect(const MCPWalker& walker, const ParticleSet& p
 
   // save the energy of this walker
   steps.push_back((size_t)current_step);
-  energies.push_back((WTrace::Real)walker.Properties(0,energy_index));
+  energies.push_back((WLog::Real)walker.Properties(0,energy_index));
 
 }
 
 
-void WalkerTraceCollector::resetBuffers()
+void WalkerLogCollector::resetBuffers()
 {
-  if (state.verbose) app_log() << "WalkerTraceCollector::reset_buffers"<<std::endl;
+  if (state.verbose) app_log() << "WalkerLogCollector::reset_buffers"<<std::endl;
   // resize all buffers to zero rows
   walker_property_int_buffer.resetBuffer();
   walker_property_real_buffer.resetBuffer();
@@ -164,9 +164,9 @@ void WalkerTraceCollector::resetBuffers()
 }
 
 
-void WalkerTraceCollector::checkBuffers()
+void WalkerLogCollector::checkBuffers()
 {
-  if (state.verbose) app_log() << "WalkerTraceCollector::checkBuffers"<<std::endl;
+  if (state.verbose) app_log() << "WalkerLogCollector::checkBuffers"<<std::endl;
   size_t nrows = walker_property_int_buffer.nrows();
   auto prop_real_bad = walker_property_real_buffer.nrows()!=nrows;
   auto part_real_bad = walker_particle_real_buffer.nrows()!=nrows;
@@ -174,12 +174,12 @@ void WalkerTraceCollector::checkBuffers()
   auto energies_bad  = energies.size()!=nrows;
   auto any_bad = prop_real_bad || part_real_bad || steps_bad || energies_bad;
 
-  if(prop_real_bad) app_log()<<"WalkerTraceCollector::checkBuffers  walker_property_real_buffer row count does not match\n";
-  if(part_real_bad) app_log()<<"WalkerTraceCollector::checkBuffers  walker_particle_real_buffer row count does not match\n";
-  if(steps_bad) app_log()<<"WalkerTraceCollector::checkBuffers  steps entry count does not match\n";
-  if(energies_bad) app_log()<<"WalkerTraceCollector::checkBuffers  energies entry count does not match\n";
+  if(prop_real_bad) app_log()<<"WalkerLogCollector::checkBuffers  walker_property_real_buffer row count does not match\n";
+  if(part_real_bad) app_log()<<"WalkerLogCollector::checkBuffers  walker_particle_real_buffer row count does not match\n";
+  if(steps_bad) app_log()<<"WalkerLogCollector::checkBuffers  steps entry count does not match\n";
+  if(energies_bad) app_log()<<"WalkerLogCollector::checkBuffers  energies entry count does not match\n";
   if(any_bad)
-    throw std::runtime_error("WalkerTraceCollector::checkBuffers  buffer lengths do not match");
+    throw std::runtime_error("WalkerLogCollector::checkBuffers  buffer lengths do not match");
 }
 
 

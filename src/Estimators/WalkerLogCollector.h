@@ -10,10 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_WALKERTRACECOLLECTOR_H
-#define QMCPLUSPLUS_WALKERTRACECOLLECTOR_H
+#ifndef QMCPLUSPLUS_WALKERLOGCOLLECTOR_H
+#define QMCPLUSPLUS_WALKERLOGCOLLECTOR_H
 
-#include "WalkerTraceBuffer.h"
+#include "WalkerLogBuffer.h"
 
 
 namespace qmcplusplus
@@ -27,17 +27,17 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 
 
-/// Helper struct holding data transferred from WalkerTraceManager to WalkerTraceCollector following input read
-struct WalkerTraceState 
+/// Helper struct holding data transferred from WalkerLogManager to WalkerLogCollector following input read
+struct WalkerLogState 
 {
-  /// whether traces are active in the current driver
-  bool traces_active;
+  /// whether logs are active in the current driver
+  bool logs_active;
   /// period between MC steps for data collection
   int step_period;
   /// controls verbosity of log file writes
   bool verbose;
 
-  WalkerTraceState()
+  WalkerLogState()
   {
     reset();
     step_period = 1;
@@ -45,32 +45,32 @@ struct WalkerTraceState
 
   inline void reset()
   {
-    traces_active = false;
+    logs_active = false;
     verbose       = false;
   }
 };
 
 
-/** Crowd-level resource for walker trace collection.
+/** Crowd-level resource for walker log collection.
  *
  *    Contains data buffers for walker properties and walker particle data.
  *    Data buffers are resized to zero at the start of an MC block.
  *    Data for all walkers is collected into the buffers each MC step in an MC block.
  *    This class is not responsible for I/O.
  */
-class WalkerTraceCollector
+class WalkerLogCollector
 {
 public:
   /// MC step information for each walker throughout the MC block
   std::vector<size_t>       steps;
   /// LocalEnergy information for each walker throughout the MC block
-  std::vector<WTrace::Real> energies;
+  std::vector<WLog::Real> energies;
   /// buffer containing integer walker properties
-  WalkerTraceBuffer<WTrace::Int>  walker_property_int_buffer;
+  WalkerLogBuffer<WLog::Int>  walker_property_int_buffer;
   /// buffer containing real-valued walker properties
-  WalkerTraceBuffer<WTrace::Real> walker_property_real_buffer;
+  WalkerLogBuffer<WLog::Real> walker_property_real_buffer;
   /// buffer containing per-particle walker data
-  WalkerTraceBuffer<WTrace::Real> walker_particle_real_buffer;
+  WalkerLogBuffer<WLog::Real> walker_particle_real_buffer;
 
   /// ParticleSet::PropertyList quantities to include
   std::unordered_set<std::string> properties_include;
@@ -79,22 +79,22 @@ public:
   /// location of LocalEnergy in ParticleSet::PropertyList
   int energy_index;
 
-  /// state data set by WalkerTraceManager
-  WalkerTraceState state;
+  /// state data set by WalkerLogManager
+  WalkerLogState state;
 
 private:
   // temporary (contiguous) storage for awful ParticleAttrib<> quantities
   /// tmp storage for walker positions
-  Array<WTrace::Real  , 2> Rtmp;
+  Array<WLog::Real  , 2> Rtmp;
   /// tmp storage for walker spins
-  Array<WTrace::Real  , 1> Stmp;
+  Array<WLog::Real  , 1> Stmp;
   /// tmp storage for walker wavefunction gradients
-  Array<WTrace::PsiVal, 2> Gtmp;
+  Array<WLog::PsiVal, 2> Gtmp;
   /// tmp storage for walker wavefunciton laplacians
-  Array<WTrace::PsiVal, 1> Ltmp;
+  Array<WLog::PsiVal, 1> Ltmp;
 
 public:
-  WalkerTraceCollector();
+  WalkerLogCollector();
 
   /// resize buffers to zero rows at beginning of each MC block
   void startBlock();

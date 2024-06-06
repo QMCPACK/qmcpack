@@ -1876,14 +1876,14 @@ if(add_traces_tests)
       --dmc_steps_exclude=1)
 
     simple_run_and_check(
-      deterministic-diamondC_1x1x1_pp-vmc-walkertrace_scalars
+      deterministic-diamondC_1x1x1_pp-vmc-walkerlog_scalars
       "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-      qmc_walkertrace_vmc_scalars.in.xml
+      qmc_walkerlog_vmc_scalars.in.xml
       1
       1
-      check_wtraces.py
+      check_wlogs.py
       -p
-      qmc_trace_vmc_scalars
+      qmc_wlog_vmc_scalars
       -s
       0
       -m
@@ -1891,14 +1891,14 @@ if(add_traces_tests)
       --dmc_steps_exclude=1)
  
     simple_run_and_check(
-      deterministic-diamondC_1x1x1_pp-vmc-walkertrace_scalars
+      deterministic-diamondC_1x1x1_pp-vmc-walkerlog_scalars
       "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-      qmc_walkertrace_vmc_scalars.in.xml
+      qmc_walkerlog_vmc_scalars.in.xml
       4
       4
-      check_wtraces.py
+      check_wlogs.py
       -p
-      qmc_trace_vmc_scalars
+      qmc_wlog_vmc_scalars
       -n
       4
       -s
@@ -1908,14 +1908,14 @@ if(add_traces_tests)
       --dmc_steps_exclude=1)
 
     simple_run_and_check(
-      deterministic-diamondC_1x1x1_pp-dmc-walkertrace_scalars
+      deterministic-diamondC_1x1x1_pp-dmc-walkerlog_scalars
       "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-      qmc_walkertrace_dmc_scalars.in.xml
+      qmc_walkerlog_dmc_scalars.in.xml
       4
       4
-      check_wtraces.py
+      check_wlogs.py
       -p
-      qmc_trace_dmc_scalars
+      qmc_wlog_dmc_scalars
       -n
       4
       -s
@@ -1925,14 +1925,14 @@ if(add_traces_tests)
       --dmc_steps_exclude=1)
 
     simple_run_and_check(
-      deterministic-diamondC_1x1x1_pp-vmcbatch-walkertrace_scalars
+      deterministic-diamondC_1x1x1_pp-vmcbatch-walkerlog_scalars
       "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-      qmc_walkertrace_vmcbatch_scalars.in.xml
+      qmc_walkerlog_vmcbatch_scalars.in.xml
       1
       1
-      check_wtraces.py
+      check_wlogs.py
       -p
-      qmc_trace_vmcbatch_scalars
+      qmc_wlog_vmcbatch_scalars
       -s
       0
       -m
@@ -1940,14 +1940,14 @@ if(add_traces_tests)
       --dmc_steps_exclude=1)
  
     simple_run_and_check(
-      deterministic-diamondC_1x1x1_pp-vmcbatch-walkertrace_scalars
+      deterministic-diamondC_1x1x1_pp-vmcbatch-walkerlog_scalars
       "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-      qmc_walkertrace_vmcbatch_scalars.in.xml
+      qmc_walkerlog_vmcbatch_scalars.in.xml
       4
       4
-      check_wtraces.py
+      check_wlogs.py
       -p
-      qmc_trace_vmcbatch_scalars
+      qmc_wlog_vmcbatch_scalars
       -n
       4
       -s
@@ -1957,14 +1957,14 @@ if(add_traces_tests)
       --dmc_steps_exclude=1)
 
     simple_run_and_check(
-      deterministic-diamondC_1x1x1_pp-dmcbatch-walkertrace_scalars
+      deterministic-diamondC_1x1x1_pp-dmcbatch-walkerlog_scalars
       "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-      qmc_walkertrace_dmcbatch_scalars.in.xml
+      qmc_walkerlog_dmcbatch_scalars.in.xml
       4
       4
-      check_wtraces.py
+      check_wlogs.py
       -p
-      qmc_trace_dmcbatch_scalars
+      qmc_wlog_dmcbatch_scalars
       -n
       4
       -s

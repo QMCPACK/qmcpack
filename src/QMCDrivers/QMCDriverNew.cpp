@@ -33,8 +33,8 @@
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
-#include "Estimators/WalkerTraceInput.h"
-#include "Estimators/WalkerTraceManager.h"
+#include "Estimators/WalkerLogInput.h"
+#include "Estimators/WalkerLogManager.h"
 
 
 namespace qmcplusplus
@@ -380,15 +380,14 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 }
 
 
-void QMCDriverNew::putWalkerTraces(xmlNodePtr txml)
+void QMCDriverNew::putWalkerLogs(xmlNodePtr wlxml)
 {
-  walker_traces_input.present = false;
-  if(txml)
+  walker_logs_input.present = false;
+  if(wlxml)
   {
-    walker_traces_input.readXML(txml); 
-    walker_traces_input.present = true;
+    walker_logs_input.readXML(wlxml); 
+    walker_logs_input.present = true;
   }
-  app_log()<<"JTK  walker traces present: "<<walker_traces_input.present<<std::endl;
 }
 
 

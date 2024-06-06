@@ -49,8 +49,8 @@ public:
   virtual void putWalkers(std::vector<xmlNodePtr>& wset)                = 0;
   virtual void putTraces(xmlNodePtr txml)                               = 0;
   virtual void requestTraces(bool allow_traces)                         = 0;
-  virtual void putWalkerTraces(xmlNodePtr txml)                         = 0;
-  virtual void requestWalkerTraces(bool allow_traces_)                  = 0;
+  virtual void putWalkerLogs(xmlNodePtr wlxml)                          = 0;
+  virtual void requestWalkerLogs(bool allow_walker_logs_)               = 0;
   virtual void process(xmlNodePtr cur)                                  = 0;
   virtual QMCRunType getRunType()                                       = 0;
   virtual std::string getEngineName()                                   = 0;

@@ -21,7 +21,7 @@
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
-#include "WalkerTraceManager.h"
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -216,7 +216,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     crowd.accumulate(step_context.get_random_gen());
   }
 
-  // collect walker traces
+  // collect walker logs
   crowd.collect(sft.current_step);
 
   // TODO:
@@ -309,12 +309,12 @@ bool VMCBatched::run()
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
   estimator_manager_->startDriverRun();
-  //start walker trace manager
-  wtrace_manager_ = std::make_unique<WalkerTraceManager>(walker_traces_input, allow_walker_traces, get_root_name(), myComm);
-  std::vector<WalkerTraceCollector*> wtrace_collectors;
+  //start walker log manager
+  wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
+  std::vector<WalkerLogCollector*> wlog_collectors;
   for (auto& c: crowds_)
-    wtrace_collectors.push_back(&c->wtrace_collector_);
-  wtrace_manager_->startRun(wtrace_collectors);
+    wlog_collectors.push_back(&c->wlog_collector_);
+  wlog_manager_->startRun(wlog_collectors);
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_, steps_per_block_);
 
@@ -383,7 +383,7 @@ bool VMCBatched::run()
       for (auto& crowd : crowds_)
       {
         crowd->startBlock(steps_per_block_);
-        crowd->wtrace_collector_.startBlock();
+        crowd->wlog_collector_.startBlock();
       }
       for (int step = 0; step < steps_per_block_; ++step, ++current_step)
       {
@@ -405,7 +405,7 @@ bool VMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
-      wtrace_manager_->writeBuffers(wtrace_collectors);
+      wlog_manager_->writeBuffers(wlog_collectors);
       recordBlock(block);
     }
 
@@ -452,7 +452,7 @@ bool VMCBatched::run()
   print_mem("VMCBatched ends", app_log());
 
   estimator_manager_->stopDriverRun();
-  wtrace_manager_->stopRun();
+  wlog_manager_->stopRun();
 
   return finalize(num_blocks, true);
 }

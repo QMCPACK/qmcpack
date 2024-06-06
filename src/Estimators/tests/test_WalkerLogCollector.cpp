@@ -20,16 +20,16 @@
 #include "Utilities/ResourceCollection.h"
 #include "Utilities/ProjectData.h"
 
-#include "Estimators/WalkerTraceCollector.h"
+#include "Estimators/WalkerLogCollector.h"
 
 
 namespace qmcplusplus
 {
 
-TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
+TEST_CASE("WalkerLogCollector::collect", "[estimators]")
 {
   std::cout <<"\n\n=======================================================\n";
-  std::cout <<"test WalkerTraceCollector::collect\n";
+  std::cout <<"test WalkerLogCollector::collect\n";
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
@@ -76,13 +76,13 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
     walker.DataSet.allocate();
   }
 
-  WalkerTraceCollector tc;
-  tc.state.traces_active = true;
-  tc.state.step_period   = 1;
+  WalkerLogCollector wlc;
+  wlc.state.logs_active = true;
+  wlc.state.step_period   = 1;
 
-  auto& bsi = tc.walker_property_int_buffer;
-  auto& bsr = tc.walker_property_real_buffer;
-  auto& bpr = tc.walker_particle_real_buffer;
+  auto& bsi = wlc.walker_property_int_buffer;
+  auto& bsr = wlc.walker_property_real_buffer;
+  auto& bpr = wlc.walker_particle_real_buffer;
 
   CHECK(bsi.nrows() == 0);
   CHECK(bsr.nrows() == 0);
@@ -98,7 +98,7 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
 #endif
 
   int step=0;
-  tc.collect(walkers[0], psets[0], *(twfs[0]), *(hams[0]), step);
+  wlc.collect(walkers[0], psets[0], *(twfs[0]), *(hams[0]), step);
 
   CHECK(bsi.nrows() == 1);
   CHECK(bsr.nrows() == 1);
@@ -108,7 +108,7 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
   CHECK(bpr.ncols() == npcols);
 
   for (size_t iw=1; iw<walkers.size(); ++iw)
-    tc.collect(walkers[iw], psets[iw], *(twfs[iw]), *(hams[iw]), step);
+    wlc.collect(walkers[iw], psets[iw], *(twfs[iw]), *(hams[iw]), step);
 
   CHECK(bsi.nrows() == 4);
   CHECK(bsr.nrows() == 4);
@@ -119,7 +119,7 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
 
   for (step=1; step<3; ++step)
     for (size_t iw=0; iw<walkers.size(); ++iw)
-      tc.collect(walkers[iw], psets[iw], *(twfs[iw]), *(hams[iw]), step);
+      wlc.collect(walkers[iw], psets[iw], *(twfs[iw]), *(hams[iw]), step);
 
   CHECK(bsi.nrows() == 12);
   CHECK(bsr.nrows() == 12);
@@ -128,7 +128,7 @@ TEST_CASE("WalkerTraceCollector::collect", "[estimators]")
   CHECK(bsr.ncols() == 13);
   CHECK(bpr.ncols() == npcols);
 
-  std::cout <<"\nend test WalkerTraceCollector::collect\n";
+  std::cout <<"\nend test WalkerLogCollector::collect\n";
   std::cout <<"=======================================================\n";
 }
 

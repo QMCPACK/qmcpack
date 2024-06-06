@@ -89,7 +89,7 @@ void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }
 void Crowd::collect(int current_step)
 {
   for (int iw = 0; iw < size(); ++iw)
-    wtrace_collector_.collect(mcp_walkers_[iw], walker_elecs_[iw], walker_twfs_[iw], walker_hamiltonians_[iw], current_step);
+    wlog_collector_.collect(mcp_walkers_[iw], walker_elecs_[iw], walker_twfs_[iw], walker_hamiltonians_[iw], current_step);
 }
 
 

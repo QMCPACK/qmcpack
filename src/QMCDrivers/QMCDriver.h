@@ -31,7 +31,7 @@
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
-#include "Estimators/WalkerTraceManager.h"
+#include "Estimators/WalkerLogManager.h"
 #include "QMCDrivers/DriverTraits.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
@@ -63,7 +63,7 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
 class TraceManager;
-class WalkerTraceManager;
+class WalkerLogManager;
 
 /** @ingroup QMCDrivers
  * @{
@@ -99,9 +99,9 @@ public:
   xmlNodePtr traces_xml;
 
   /// whether to allow traces
-  bool allow_walker_traces;
+  bool allow_walker_logs;
   /// traces xml
-  xmlNodePtr walker_traces_xml;
+  xmlNodePtr walker_logs_xml;
 
   /// Constructor.
   QMCDriver(const ProjectData& project_data,
@@ -156,9 +156,9 @@ public:
 
   inline void requestTraces(bool traces) override { allow_traces = traces; }
 
-  inline void putWalkerTraces(xmlNodePtr txml) override { walker_traces_xml = txml; }
+  inline void putWalkerLogs(xmlNodePtr wlxml) override { walker_logs_xml = wlxml; }
 
-  inline void requestWalkerTraces(bool traces) override { allow_walker_traces = traces; }
+  inline void requestWalkerLogs(bool allow_walker_logs_) override { allow_walker_logs = allow_walker_logs_; }
 
   std::string getEngineName() override { return QMCType; }
 
@@ -196,7 +196,7 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///Traces manager
-  std::unique_ptr<WalkerTraceManager> wtrace_manager_;
+  std::unique_ptr<WalkerLogManager> wlog_manager_;
 
   ///return the random generators
   inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const

@@ -16,14 +16,14 @@
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "Estimators/EstimatorManagerCrowd.h"
-#include "Estimators/WalkerTraceManager.h"
+#include "Estimators/WalkerLogManager.h"
 
 namespace qmcplusplus
 {
 // forward declaration
 class ResourceCollection;
 class EstimatorManagerNew;
-class WalkerTraceCollector;
+class WalkerLogCollector;
 
 /** Driver synchronized step context
  * 
@@ -85,7 +85,7 @@ public:
     estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, walker_hamiltonians_, rng);
   }
 
-  /// Collect walker trace data
+  /// Collect walker log data
   void collect(int current_step);
 
   void setRNGForHamiltonian(RandomBase<FullPrecRealType>& rng);
@@ -145,7 +145,7 @@ private:
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
 public:
-  WalkerTraceCollector wtrace_collector_;
+  WalkerLogCollector wlog_collector_;
 };
 
 } // namespace qmcplusplus

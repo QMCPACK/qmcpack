@@ -43,7 +43,7 @@
 #include "DriverWalkerTypes.h"
 #include "TauParams.hpp"
 #include "Particle/MCCoords.hpp"
-#include "Estimators/WalkerTraceInput.h"
+#include "Estimators/WalkerLogInput.h"
 #include <algorithm>
 
 class Communicate;
@@ -52,7 +52,7 @@ namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
 class TraceManager;
-class WalkerTraceManager;
+class WalkerLogManager;
 class EstimatorManagerNew;
 class TrialWaveFunction;
 class QMCHamiltonian;
@@ -103,11 +103,11 @@ public:
    */
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
-  /// whether to allow walker traces
-  bool allow_walker_traces;
-  /// walker traces input
-  WalkerTraceInput walker_traces_input;
-  //xmlNodePtr walker_traces_xml;
+  /// whether to allow walker logs
+  bool allow_walker_logs;
+  /// walker logs input
+  WalkerLogInput walker_logs_input;
+  //xmlNodePtr walker_logs_xml;
 
 protected:
   /** This is a data structure strictly for QMCDriver and its derived classes
@@ -249,9 +249,9 @@ public:
   void putTraces(xmlNodePtr txml) override {}
   void requestTraces(bool allow_traces) override {}
 
-  void putWalkerTraces(xmlNodePtr txml) override;
+  void putWalkerLogs(xmlNodePtr wlxml) override;
 
-  void requestWalkerTraces(bool allow_traces_) override { allow_walker_traces = allow_traces_; }
+  void requestWalkerLogs(bool allow_walker_logs_) override { allow_walker_logs = allow_walker_logs_; }
 
   // scales a MCCoords by sqrtTau. Chooses appropriate taus by CT
   template<typename RT, CoordsType CT>
@@ -443,8 +443,8 @@ protected:
    */
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
 
-  /// walker trace manager
-  std::unique_ptr<WalkerTraceManager> wtrace_manager_;
+  /// walker log manager
+  std::unique_ptr<WalkerLogManager> wlog_manager_;
 
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;

@@ -29,7 +29,7 @@ set(SRCS
     test_manager.cpp
     test_EstimatorManagerNew.cpp
     test_trace_manager.cpp
-    test_WalkerTraceCollector.cpp
+    test_WalkerLogCollector.cpp
     EstimatorTesting.cpp
     GenerateRandomParticleSets.cpp
     test_SpinDensityInput.cpp

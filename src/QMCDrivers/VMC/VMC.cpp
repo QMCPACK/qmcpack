@@ -32,7 +32,7 @@
 #else
 using TraceManager = int;
 #endif
-#include "Estimators/WalkerTraceManager.h"
+#include "Estimators/WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -67,7 +67,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
 #endif
-  wtrace_manager_->startRun(wtrace_collectors);
+  wlog_manager_->startRun(wlog_collectors);
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
@@ -111,7 +111,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    wtrace_manager_->writeBuffers(wtrace_collectors);
+    wlog_manager_->writeBuffers(wlog_collectors);
     recordBlock(block);
     vmc_loop.stop();
 
@@ -134,7 +134,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
 #endif
-  wtrace_manager_->stopRun();
+  wlog_manager_->stopRun();
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
     rngs_[ip] = Rng[ip]->makeClone();
@@ -169,7 +169,7 @@ void VMC::resetRun()
     Movers.resize(NumThreads, nullptr);
     estimatorClones.resize(NumThreads, nullptr);
     traceClones.resize(NumThreads, nullptr);
-    wtrace_collectors.resize(NumThreads, nullptr);
+    wlog_collectors.resize(NumThreads, nullptr);
     Rng.resize(NumThreads);
 
     // hdf_archive::hdf_archive() is not thread-safe
@@ -185,7 +185,7 @@ void VMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      wtrace_collectors[ip] = wtrace_manager_->makeCollector();
+      wlog_collectors[ip] = wlog_manager_->makeCollector();
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (W.isSpinor())
@@ -267,7 +267,7 @@ void VMC::resetRun()
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
     //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-    Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wtrace_collectors[ip], DriftModifier);
+    Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wlog_collectors[ip], DriftModifier);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     else

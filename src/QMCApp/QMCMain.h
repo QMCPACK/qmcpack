@@ -79,8 +79,8 @@ private:
   ///xml mcwalkerset read-in elements
   std::vector<xmlNodePtr> walker_set_in_;
 
-  ///walkertraces xml
-  xmlNodePtr walker_traces_xml_;
+  ///walkerlogs xml
+  xmlNodePtr walker_logs_xml_;
 
   ///traces xml
   xmlNodePtr traces_xml_;

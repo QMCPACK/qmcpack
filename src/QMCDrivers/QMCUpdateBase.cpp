@@ -26,7 +26,7 @@
 #else
 using TraceManager = int;
 #endif
-#include "Estimators/WalkerTraceManager.h"
+#include "Estimators/WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -38,7 +38,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
-      wtrace_collector(0),
+      wlog_collector(0),
       W(w),
       Psi(psi),
       Guide(guide),
@@ -59,7 +59,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
-      wtrace_collector(0),
+      wlog_collector(0),
       W(w),
       Psi(psi),
       Guide(psi),
@@ -120,10 +120,10 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
 void QMCUpdateBase::resetRun2(BranchEngineType* brancher,
                               EstimatorManagerBase* est,
                               TraceManager* traces,
-                              WalkerTraceCollector* wtrace_collector_,
+                              WalkerLogCollector* wlog_collector_,
                               const DriftModifierBase* driftmodifer)
 {
-  wtrace_collector    = wtrace_collector_;
+  wlog_collector    = wlog_collector_;
   resetRun(brancher,est,traces,driftmodifer);
 }
 
@@ -197,8 +197,8 @@ void QMCUpdateBase::startBlock(int steps)
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
 #endif
-  if(wtrace_collector)
-    wtrace_collector->startBlock();
+  if(wlog_collector)
+    wlog_collector->startBlock();
   nAccept              = 0;
   nReject              = 0;
   nAllRejected         = 0;
