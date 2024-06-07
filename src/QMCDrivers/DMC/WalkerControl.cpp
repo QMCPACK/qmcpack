@@ -207,10 +207,6 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
   // ranks sending walkers from other ranks have the lowest walker count now.
   untouched_walkers = std::min(untouched_walkers, walkers.size());
 
-<<<<<<< Updated upstream
-  // I really think this should be above the swap.
-=======
->>>>>>> Stashed changes
   {
     ScopedTimer copywalkers_timer(my_timers_[WC_copyWalkers]);
     pop.copyHighMultiplicityWalkers();
