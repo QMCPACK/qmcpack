@@ -134,12 +134,11 @@ private:
    * The algorithm ensures that the load per node can differ only by one walker.
    * Each MPI rank can only send or receive or be silent.
 
-   Asserts below check that there is never more than one copy to send, and that seems true.
-   So these complications are unecessary.
    * If multiple copies of a walker need to be sent to the target rank, only send one.
    * The number of copies is communicated ahead via blocking send/recv.
 
-   * The communication is one-dimensional and very local.
+   * The communication is one-dimensional and depending on your node layout and network topology
+   * could be very local.
    * Then the walkers are transferred via blocking or non-blocking send/recv.
    * The blocking send/recv may become serialized and worsen load imbalance.
    * Non blocking send/recv algorithm avoids serialization completely.

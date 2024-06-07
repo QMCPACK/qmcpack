@@ -246,12 +246,16 @@ public:
   void saveWalkerConfigurations(WalkerConfigurations& walker_configs);
 
 private:
-  /** Generator for walker_ids for this MCPopulation
+  /** Generator for walker_ids of this MCPopulation
    *  This should be the single source for `walker_id`'s on this rank.
    *  These are unique across MCPopulations with rank.
    *  Defined as
-   *  \f$ walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1\f$
-   *  So starting from 1, 0 belongs to the golden walker.
+   *  \f$ walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1 \f$
+   *
+   *  So starting from 1, 0 is the value of a default constructed walker.
+   *  Any negative value must have been set by an outside entity and indicates
+   *  an invalid walker ID.
+   *  We do not use it since this is not an index and IDs are basically a count.
    */
   long nextWalkerID();
 };

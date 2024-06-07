@@ -55,11 +55,12 @@ void MCPopulation::copyHighMultiplicityWalkers()
     while (num_copies > 1)
     {
       auto walker_elements = spawnWalker();
-      // In the batched version walker IDs are set when walkers are born,
-      // ParentID is set to the copied from walker.
-      // In this case we set this to the sibling (i.e. walker from the same rank) they are assigned from
-      // if this copy gets transferred this will result in a walker with a walker_id % num_ranks
-      // equal to a rank != pop.rank_. This is not invalid and provides the birth rank of the walker.
+      // In the batched version walker IDs are set when walkers are born and are unique,
+      // ParentID is set to the walker that provided the initial configuration.
+      // If the amplified walker is was a transfer from another rank its copys get its ID as their parent.
+      // Not the transfered from ID that the received walker has.
+      // So the walker doesn't have to maintain state that it was a transfer and this code doesn't batch on it.
+      
 
       // preserve the walkers id.  Ideally this wouldn't get overwritten but I don't think a custom assignment operator
       // is worth it just for this.
@@ -100,18 +101,20 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
 
   // nextWalkerID is not thread safe so we need to get our walker id's here
   // before we enter a parallel section.
-  std::vector<long> walker_ids(num_walkers_plus_reserve, -1);
+  std::vector<long> walker_ids(num_walkers_plus_reserve, 0);
+  // notice we only get walker_ids for the number of walkers in the walker_configs
   for (size_t iw = 0; iw < num_walkers; iw++)
     walker_ids[iw] = nextWalkerID();
 
   // this part is time consuming, it must be threaded and calls should be thread-safe.
   // It would make more sense if it was over crowd threads as the thread locality of the walkers
-  // memory would at least initially be "optimal" Depending on the number of OMP threads this may be
+  // would at least initially be "optimal" Depending on the number of OMP threads this may be
   // equivalent.
 #pragma omp parallel for shared(walker_ids)
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
-    walkers_[iw]             = std::make_unique<MCPWalker>(elec_particle_set_->getTotalNum());
+    int parent_id = 0;
+    walkers_[iw]             = std::make_unique<MCPWalker>(walker_ids[iw], parent_id, elec_particle_set_->getTotalNum() );
     walkers_[iw]->Properties = elec_particle_set_->Properties;
 
     // initialize coord
@@ -120,14 +123,18 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
       // The walker config has walker ID's that I think may not match the scheme for this run.
       // but the parent id's will make sense compared to the run the walkerconfig came from.
       // Save the unique to this run walker id.
+      auto this_walkers_id = walkers_[iw]->getWalkerID();
+      // the walker assignment operator is basically a simple copy so walker_id is overwritten with
+      // something meaningful only in another QMC section.
       *walkers_[iw] = *walker_configs[iw % num_existing_walkers];
-      walkers_[iw]->setParentID(walker_configs[iw % num_existing_walkers]->getWalkerID());
-      walkers_[iw]->setWalkerID(walker_ids[iw]);
+      // An outside section context parent ID is multiplied by -1.
+      walkers_[iw]->setParentID(-1 * walker_configs[iw % num_existing_walkers]->getWalkerID());
+      walkers_[iw]->setWalkerID(this_walkers_id);
     }
     else
     {
-      // These walkers are children of the golden walker so initial value of 0 is correct for parent ID
-      walkers_[iw]->setWalkerID(walker_ids[iw]);
+      // These walkers are orphans they don't get there intial configuration from a walkerconfig
+      // but from the golden particle set.  They get an invalid walkerID of -1.
       walkers_[iw]->R          = elec_particle_set_->R;
       walkers_[iw]->spins      = elec_particle_set_->spins;
     }
@@ -151,6 +158,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
   // Now we kill the extra reserve walkers and elements that we made.
   for (int i = 0; i < extra_walkers; ++i)
     killLastWalker();
+  // And now num_local_walkers_ will be correct.
 }
 
 long MCPopulation::nextWalkerID() { return num_walkers_created_++ * num_ranks_ + rank_ + 1; }
@@ -206,7 +214,6 @@ WalkerElementsRef MCPopulation::spawnWalker()
     // this does count as a walker creation so it gets a new walker id
     auto walker_id = nextWalkerID();
     walkers_.back()->setWalkerID(walker_id);
-    walkers_.back()->setParentID(walker_id);
   }
   else
   {
@@ -214,7 +221,7 @@ WalkerElementsRef MCPopulation::spawnWalker()
     auto walker_id = nextWalkerID();
     app_warning() << "Spawning walker ID " << walker_id << " this is living walker number " << walkers_.size()
                   << "which is beyond the allocated walker reserves, ideally this should never happen." << '\n';
-    walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back()), walker_id, walker_id));
+    walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back()), walker_id, 0));
 
     outputManager.pause();
 

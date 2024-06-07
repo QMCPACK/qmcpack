@@ -84,10 +84,22 @@ public:
 private:
   /** in legacy the ancients have said only:
    *  id reserved for forward walking
+   *
+   *  In batched
+   *  Only MCPopulation should set A living walker will have a WalkerID > 0
+   *  0 is the value of a default constructed walker.
+   *  Any negative value must have been set by an outside entity and indicates
+   *  an invalid walker ID.
    */
   long walker_id_ = 0;
   /** in legacy the ancients have said only:
    *  id reserved for forward walking
+   *
+   *  In Batched
+   *  If a walker is initialized from the golden particle set it keeps the default constructed 0
+   *  If a walker has a parentID > 0 that is the walkerID it was branched from in this section.
+   *  If a walker has a negative parentID that is the walkerID from the WalkerConfiguration it was
+   *  constructed from.
    */
   long parent_id_ = 0;
 

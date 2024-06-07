@@ -88,11 +88,13 @@ void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCP
 #endif
 }
 
-void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& initial_num_per_rank, std::vector<int>& minus, std::vector<int>& plus)
+void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& initial_num_per_rank,
+                                                            std::vector<int>& minus,
+                                                            std::vector<int>& plus)
 {
   int num_ranks = dpools_.comm->size();
   assert(initial_num_per_rank.size() == num_ranks);
-  std::vector<int> num_per_rank= initial_num_per_rank;  
+  std::vector<int> num_per_rank = initial_num_per_rank;
   std::vector<int> fair_offset;
   wc_.determineNewWalkerPopulation(num_per_rank, fair_offset, minus, plus);
 }
@@ -108,40 +110,18 @@ TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_contr
   int num_ranks = test.getNumRanks();
   std::vector num_per_rank(num_ranks, 1);
   num_per_rank[0] = num_ranks;
-  test.testNewDistribution(num_per_rank,minus, plus);
+  test.testNewDistribution(num_per_rank, minus, plus);
   int rank = test.getRank();
   std::cout << "rank:" << rank << " minus: " << NativePrint(minus) << '\n';
 
   std::cout << "rank:" << rank << " plus: " << NativePrint(plus) << '\n';
-  CHECK(minus.size() == num_ranks-1);
-  CHECK(plus.size() == num_ranks-1);
+  CHECK(minus.size() == num_ranks - 1);
+  CHECK(plus.size() == num_ranks - 1);
   std::cout << "rank:" << rank << " plus: " << NativePrint(num_per_rank) << '\n';
 }
 
-void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& walker_one_multiplicity_before,
+void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& rank_counts_before,
                                                                     std::vector<int>& rank_counts_after)
-{
-  using MCPWalker = MCPopulation::MCPWalker;
-
-  int rank = dpools_.comm->rank();
-
-  pop_->get_walkers()[0]->Multiplicity = walker_one_multiplicity_before[rank];
-
-  std::vector<int> fair_offset;
-  std::vector<int> minus;
-  std::vector<int> plus;
-
-  wc_.setNumPerRank(walker_one_multiplicity_before);
-  // note this ordering of calls is from the main code
-  wc_.swapWalkersSimple(*pop_);
-  wc_.killDeadWalkersOnRank(*pop_);
-  pop_->copyHighMultiplicityWalkers();
-  reportWalkersPerRank(dpools_.comm, *pop_);
-  CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
-}
-
-void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiffAdditionalStage(std::vector<int>& rank_counts_before,
-                                                                                   std::vector<int>& rank_counts_after)
 {
   using MCPWalker = MCPopulation::MCPWalker;
 
@@ -209,7 +189,7 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
       std::vector<int> count_before(test.getNumRanks(), 1);
       std::vector<int> count_after(test.getNumRanks(), 1);
       // One walker on every node, should be no swapping
-      test.testPopulationDiffAdditionalStage(count_before, count_after);
+      test.testPopulationDiff(count_before, count_after);
     }
 
     SECTION("LoadBalance")
@@ -222,7 +202,7 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
       if (test.getRank() == 0)
         std::cout << "count_before: " << NativePrint(count_before) << "  count_after: " << NativePrint(count_after)
                   << '\n';
-      test.testPopulationDiffAdditionalStage(count_before, count_after);
+      test.testPopulationDiff(count_before, count_after);
       std::vector<std::vector<int>> ar_wids;
       std::vector<std::vector<int>> ar_pids;
       auto calcID = CALC_ID_LAMBDA;
@@ -246,14 +226,14 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
       int multiple   = 3;
       auto num_ranks = test.getNumRanks();
       std::vector<int> walker_multiplicity_total(num_ranks, 1);
-      walker_multiplicity_total[0]              = num_ranks * multiple;
-      int total_walkers            = std::accumulate(walker_multiplicity_total.begin(), walker_multiplicity_total.end(), 0);
+      walker_multiplicity_total[0] = num_ranks * multiple;
+      int total_walkers = std::accumulate(walker_multiplicity_total.begin(), walker_multiplicity_total.end(), 0);
       std::vector<int> count_after = fairDivide(total_walkers, num_ranks);
       std::reverse(count_after.begin(), count_after.end());
       if (test.getRank() == 0)
-        std::cout << "walker_multiplicity_before: " << NativePrint(walker_multiplicity_total) << "count_after: " << NativePrint(count_after)
-                  << '\n';
-      test.testPopulationDiffAdditionalStage(walker_multiplicity_total, count_after);
+        std::cout << "walker_multiplicity_before: " << NativePrint(walker_multiplicity_total)
+                  << "count_after: " << NativePrint(count_after) << '\n';
+      test.testPopulationDiff(walker_multiplicity_total, count_after);
       std::vector<std::vector<int>> ar_wids;
       std::vector<std::vector<int>> ar_pids;
       auto calcID = CALC_ID_LAMBDA;
@@ -289,7 +269,7 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
       walker_multiplicity_total[0] = num_ranks;
       std::vector<int> count_after(num_ranks, 2);
       count_after[0] = 1;
-      test.testPopulationDiffAdditionalStage(walker_multiplicity_total, count_after);
+      test.testPopulationDiff(walker_multiplicity_total, count_after);
       std::vector<std::vector<int>> ar_wids;
       std::vector<std::vector<int>> ar_pids;
       auto calcID = CALC_ID_LAMBDA;
@@ -306,8 +286,9 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
         }
       }
       test.testWalkerIDs(ar_wids, ar_pids);
-      if (num_ranks == 1) {
-	walker_multiplicity_total = count_after;
+      if (num_ranks == 1)
+      {
+        walker_multiplicity_total = count_after;
       }
       else
       {
@@ -317,9 +298,9 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
         count_after[0] += 1;
         count_after.back() += 1;
         if (test.getRank() == 0)
-          std::cout << "walker_multiplicity_total: " << NativePrint(walker_multiplicity_total) << "  count_after: " << NativePrint(count_after)
-                    << '\n';
-        test.testPopulationDiffAdditionalStage(walker_multiplicity_total, count_after);
+          std::cout << "walker_multiplicity_total: " << NativePrint(walker_multiplicity_total)
+                    << "  count_after: " << NativePrint(count_after) << '\n';
+        test.testPopulationDiff(walker_multiplicity_total, count_after);
         ar_wids.back().push_back(calcID(num_ranks - 1, 2));
         ar_wids[0].push_back(calcID(0, 1));
         ar_pids.back().push_back(calcID(num_ranks - 1, 1));
@@ -330,12 +311,12 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
         walker_multiplicity_total = count_after;
         walker_multiplicity_total[num_ranks - 1] -= 1;
         count_after[num_ranks - 1] -= 1;
-        test.testPopulationDiffAdditionalStage(walker_multiplicity_total, count_after);
+        test.testPopulationDiff(walker_multiplicity_total, count_after);
         ar_wids.back().pop_back();
         ar_pids.back().pop_back();
         if (test.getRank() == 0)
-          std::cout << "walker_multiplicity_total: " << NativePrint(walker_multiplicity_total) << "  count_after: " << NativePrint(count_after)
-                    << '\n';
+          std::cout << "walker_multiplicity_total: " << NativePrint(walker_multiplicity_total)
+                    << "  count_after: " << NativePrint(count_after) << '\n';
         test.testWalkerIDs(ar_wids, ar_pids);
 
         // Walkers added again
@@ -344,9 +325,9 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
         count_after[num_ranks - 2] += 1;
         count_after.back() += 1;
         if (test.getRank() == 0)
-          std::cout << "walker_multiplicity_total: " << NativePrint(walker_multiplicity_total) << "  count_after: " << NativePrint(count_after)
-                    << '\n';
-        test.testPopulationDiffAdditionalStage(walker_multiplicity_total, count_after);
+          std::cout << "walker_multiplicity_total: " << NativePrint(walker_multiplicity_total)
+                    << "  count_after: " << NativePrint(count_after) << '\n';
+        test.testPopulationDiff(walker_multiplicity_total, count_after);
         ar_wids.back().push_back(calcID(num_ranks - 1, 3));
         ar_wids[num_ranks - 2].push_back(calcID(num_ranks - 2, 2));
         ar_pids[num_ranks - 1].push_back(calcID(num_ranks - 1, 1));
