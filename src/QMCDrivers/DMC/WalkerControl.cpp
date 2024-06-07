@@ -140,20 +140,7 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   if (debug_disable_branching_)
     do_not_branch = true;
-  /* dynamic population
-    1. compute multiplicity. If iter 0, multiplicity = 1
-    2. compute curData, collect multiplicity on every rank
-
-     fix population
-    1. compute curData, collect weight on every rank
-    2. compute multiplicity by comb method
-
-    3. figure out final distribution, apply walker count ceiling
-    4. collect good, bad walkers
-    5. communicate walkers
-    6. unpack received walkers, apply walker count floor
-   */
-
+  
   ScopedTimer branch_timer(my_timers_[WC_branch]);
   auto& walkers = pop.get_walkers();
 

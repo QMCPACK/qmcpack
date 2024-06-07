@@ -68,7 +68,22 @@ public:
    */
   inline void setTrialEnergy(FullPrecRealType et) { trial_energy_ = et; }
 
-  /** unified: perform branch and swap walkers as required 
+  /** unified: perform branch and swap (balance) walkers as required
+   *  **This has many side effects**
+   *  ## For:
+   *  ### dynamic population
+   *  1. compute multiplicity. If iter 0 and all of warmup -> multiplicity = 1
+   *     Multiplicity in normal branching is walker->Weight + rng()
+   *  2. compute curData, collect multiplicity on every rank
+   *  ### fixed population
+   *  1. compute curData, collect weight on every rank
+   *  2. compute multiplicity by comb method
+   *  ---
+   *  3. figure out final distribution, apply walker count ceiling
+   *  4. collect good, bad walkers
+   *  5. communicate walkers
+   *  6. unpack received walkers, apply walker count floor
+   *  7. call MCPopulation to amplify walkers with Multiplicity > 1
    */
   void branch(int iter, MCPopulation& pop, bool do_not_branch);
 
@@ -94,14 +109,16 @@ private:
 
   static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
 
-  /// compute curData
+  /** update the curData state buffer.
+   *  weighted sum over walker properties then all reduce.  see discussion #curData
+   */
   void computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData);
 
   /** creates the distribution plan
    *
    *  populates the minus and plus vectors they contain 1 copy of a partition index 
    *  for each adjustment in population to the context.
-   *  \param[in] num_per_rank as if all walkers were copied out to multiplicity
+   *  \param[in] #num_per_rank
    *  \param[out] fair_offset running population count at each partition boundary
    *  \param[out] minus list of partition indexes one occurrence for each walker removed
    *  \param[out] plus list of partition indexes one occurrence for each walker added
@@ -130,9 +147,8 @@ private:
   void swapWalkersSimple(MCPopulation& pop);
 #endif
 
-  /** An enum to access curData for reduction
-   *
-   * curData is larger than this //LE_MAX + n_node * T
+  /** An enum to access/document curData's elements, this is just a subset of curData's indexes
+   * curData[LE_MAX:LE_MAX+num_ranks-1] are sums of walker multiplicty by rank
    */
   enum
   {
@@ -159,8 +175,11 @@ private:
   IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
-  /** number of walkers on each MPI rank after branching before load balancing
-   *  Why is this state? It hides very important inputs to particularly swapWalkers
+  /** number of walkers on each MPI wrt to the branching algorithm before load balancing
+   *  not the same as WalkerControl::branch.
+   *  For dynamic population: std::floor(sum over walkers of  std::floor(walker weight + rng))
+   *  For fixed population: std::floor(sum over walkers weight)
+
    */
   std::vector<int> num_per_rank_;
   ///offset of the particle index for a fair distribution
@@ -175,7 +194,15 @@ private:
   const IndexType num_ranks_;
   ///0 is default
   IndexType SwapMode;
-  ///any temporary data includes many ridiculous conversions of integral types to and from fp
+  /** large amount of state data MPI_AllReduce once per step size is LE_MAX + number of ranks.
+   *  partial enum to access elements is the enum above dumped into WalkerControl's namespace
+   *  includes many integral types converted to and from fp
+   *  \todo MPI in the 21st centure allows user defined data types that would allow all this to benefit from actual
+   *        C++ type safety and still can have performant collective operation efficiency.
+   *        The desired operation isn't actually an all reduce for potentially the largest number of elements.
+   *        From LE_MAX:LEMAX_+num_ranks-1 is an "integer" allgather for dynamic populations
+   *        and a floating point all gather for fixed population.  
+   */
   std::vector<FullPrecRealType> curData;
   ///Use non-blocking isend/irecv
   bool use_nonblocking_;
