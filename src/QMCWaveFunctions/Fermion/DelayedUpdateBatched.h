@@ -142,6 +142,8 @@ private:
   DeviceVector<int> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
+  /// if true, updates are not delayed.
+  const bool no_delayed_update_;
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -166,10 +168,6 @@ private:
     if (delay_count != 0)
       throw std::runtime_error("BUG: unexpected call sequence delay_count is not 0");
   }
-
-  // check if the number of maximal delay is 1 (SM-1)
-  // \todo rename this something containing delay.
-  inline bool isSM1() const { return Binv_gpu.rows() == 1; }
 
   /** compute the row of up-to-date Ainv
    * @param Ainv inverse matrix
@@ -345,7 +343,11 @@ private:
 
 public:
   /// default constructor
-  DelayedUpdateBatched(size_t norb, size_t max_delay) : invRow_id(-1), delay_count(0) { resize(norb, max_delay); }
+  DelayedUpdateBatched(size_t norb, size_t max_delay)
+      : invRow_id(-1), delay_count(0), no_delayed_update_(max_delay == 1)
+  {
+    resize(norb, max_delay);
+  }
 
   DelayedUpdateBatched(const DelayedUpdateBatched&) = delete;
 
@@ -359,7 +361,7 @@ public:
                           std::vector<GT>& grad_now)
   {
     auto& engine_leader = engines.getLeader();
-    if (!engine_leader.isSM1())
+    if (!engine_leader.no_delayed_update_)
       mw_prepareInvRow(engines, mw_rsc, psiMinv_refs, rowchanged);
 
     auto& queue               = mw_rsc.queue;
@@ -372,7 +374,7 @@ public:
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(evalGrad_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      if (engine_leader.isSM1())
+      if (engine_leader.no_delayed_update_)
       {
         DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
         ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
@@ -553,7 +555,7 @@ public:
     // invRow consumed, mark invRow_id unset
     engine_leader.invRow_id = -1;
 
-    if (engine_leader.isSM1())
+    if (engine_leader.no_delayed_update_)
     {
       mw_updateRow(engines, mw_rsc, psiMinv_refs, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
       return;
@@ -768,7 +770,7 @@ public:
   {
     auto& engine_leader = engines.getLeader();
     auto& queue         = mw_rsc.queue;
-    if (engine_leader.isSM1())
+    if (engine_leader.no_delayed_update_)
       queue.sync();
     else if (engine_leader.invRow_id != row_id)
     {
@@ -782,7 +784,7 @@ public:
     if (on_host)
     {
       // copy values to host and return host pointer
-      if (engine_leader.isSM1())
+      if (engine_leader.no_delayed_update_)
         for (DualMatrix<Value>& psiMinv : psiMinv_refs)
         {
           const size_t ncols = psiMinv.cols();
@@ -799,7 +801,7 @@ public:
     else
     {
       // return device pointer
-      if (engine_leader.isSM1())
+      if (engine_leader.no_delayed_update_)
         for (DualMatrix<Value>& psiMinv : psiMinv_refs)
           row_ptr_list.push_back(psiMinv.device_data() + row_id * psiMinv.cols());
       else
