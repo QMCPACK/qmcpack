@@ -143,6 +143,21 @@ private:
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
+  /** resize the internal storage
+   * @param norb number of electrons/orbitals
+   * @param delay, maximum delay 0<delay<=norb
+   */
+  inline void resize(int norb, int delay)
+  {
+    V_gpu.resize(delay, norb);
+    U_gpu.resize(delay, norb);
+    p_gpu.resize(delay);
+    tempMat_gpu.resize(norb, delay);
+    Binv_gpu.resize(delay, delay);
+    delay_list_gpu.resize(delay);
+    invRow.resize(norb);
+  }
+
   /** ensure no previous delay left.
    *  This looks like it should be an assert
    */
@@ -330,24 +345,9 @@ private:
 
 public:
   /// default constructor
-  DelayedUpdateBatched() : invRow_id(-1), delay_count(0) {}
+  DelayedUpdateBatched(size_t norb, size_t max_delay) : invRow_id(-1), delay_count(0) { resize(norb, max_delay); }
 
   DelayedUpdateBatched(const DelayedUpdateBatched&) = delete;
-
-  /** resize the internal storage
-   * @param norb number of electrons/orbitals
-   * @param delay, maximum delay 0<delay<=norb
-   */
-  inline void resize(int norb, int delay)
-  {
-    V_gpu.resize(delay, norb);
-    U_gpu.resize(delay, norb);
-    p_gpu.resize(delay);
-    tempMat_gpu.resize(norb, delay);
-    Binv_gpu.resize(delay, delay);
-    delay_list_gpu.resize(delay);
-    invRow.resize(norb);
-  }
 
   // prepare invRow and compute the old gradients.
   template<typename GT>
