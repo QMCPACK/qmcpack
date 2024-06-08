@@ -65,6 +65,7 @@ DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatched(std::unique_ptr<S
                                                                int ndelay,
                                                                DetMatInvertor matrix_inverter_kind)
     : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first, last),
+      det_engine_(NumOrbitals, ndelay),
       ndelay_(ndelay),
       matrix_inverter_kind_(matrix_inverter_kind),
       D2HTimer(createGlobalTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
@@ -162,8 +163,6 @@ void DiracDeterminantBatched<PL, VT, FPVT>::resize(int nel, int morb)
   psiM_host.attachReference(psiM_vgl.data(0), nel, norb);
   dpsiM.attachReference(reinterpret_cast<Grad*>(psiM_vgl.data(1)), nel, norb);
   d2psiM.attachReference(psiM_vgl.data(4), nel, norb);
-
-  det_engine_.resize(norb, ndelay_);
 
   psiV.resize(NumOrbitals);
   psiV_host_view.attachReference(psiV.data(), NumOrbitals);
