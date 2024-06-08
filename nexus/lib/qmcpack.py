@@ -169,7 +169,7 @@ class GCTA(DevBase):
         '''
         Returns the number of electrons in the primitive cell
         '''
-        if self.system.folded_system == None:
+        if self.system.folded_system is None:
             n_up = self.system.particles.up_electron.count
             n_dn = self.system.particles.down_electron.count
         else:
@@ -186,7 +186,7 @@ class GCTA(DevBase):
         '''
         kgrid = array(self.system.generation_info.kgrid)
         nkgrid = np.prod(kgrid)
-        if self.system.folded_system == None:
+        if self.system.folded_system is None:
             ntile = 1
         else:
             tmatrix = array(self.system.structure.tmatrix)
@@ -200,7 +200,7 @@ class GCTA(DevBase):
         '''
         Returns the k-points used to build the supercell in unit coordinates
         '''
-        if self.system.folded_system == None:
+        if self.system.folded_system is None:
             qmc_kpoints = self.system.structure.kpoints_unit()
         else:
             qmc_kpoints = self.system.folded_system.structure.kpoints_unit()
@@ -364,7 +364,7 @@ class GCTA(DevBase):
     #end def adapted_fermi_level
 
     def spin_adapted_fermi_level(self, scf_magnet):
-        if scf_magnet == None:
+        if scf_magnet is None:
             self.error('The reference magnetization in safl can not be None. Please check that the SCF is appropriate.')
         #end if
         combined_eigens = {}

@@ -21,7 +21,7 @@ The main difference in this example is the ``gcta`` keyword in ``generate_qmcpac
 
 This keyword activates the grand canonical twist averaging (GCTA) with varying twist occupations.
 The ``safl`` argument stands for "spin-adapted Fermi level", which guarantees charge neutrality in the system and closely reproduces the reference magnetization.
-This is achieved by appropriately determining the up and down Fermi levels to achieve the above criteria.
+This is achieved by appropriately determining the up and down Fermi levels to meet the above criteria.
 A summary of GCTA preprocessing is written in the ``gcta_report.txt`` file located in the same path as the QMC run.
 The top portion of this file shows the summary of the GCTA occupations:
 
