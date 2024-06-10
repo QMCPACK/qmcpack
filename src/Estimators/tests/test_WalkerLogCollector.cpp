@@ -28,8 +28,8 @@ namespace qmcplusplus
 
 TEST_CASE("WalkerLogCollector::collect", "[estimators]")
 {
-  std::cout <<"\n\n=======================================================\n";
-  std::cout <<"test WalkerLogCollector::collect\n";
+  app_log() <<"\n\n=======================================================\n";
+  app_log() <<"test WalkerLogCollector::collect\n";
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
@@ -128,8 +128,8 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   CHECK(bsr.ncols() == 13);
   CHECK(bpr.ncols() == npcols);
 
-  std::cout <<"\nend test WalkerLogCollector::collect\n";
-  std::cout <<"=======================================================\n";
+  app_log() <<"\nend test WalkerLogCollector::collect\n";
+  app_log() <<"=======================================================\n";
 }
 
 

@@ -109,7 +109,7 @@ public:
 
 private:
   /// index of current quantity during WalkerLogCollector::collect()
-  size_t quantity_pointer;   
+  size_t quantity_index;   
   /** buffer row location data for each walker quantity
    *    used to populate "data_layout" field in HDF file
    */
@@ -118,8 +118,6 @@ private:
   size_t walker_data_size;
   /// the walker data buffer itself
   Array<T, 2> buffer;
-  /// array dimensions used in HDF file write
-  hsize_t dims[2];
 
 public:
   WalkerLogBuffer()
@@ -127,7 +125,7 @@ public:
     label             = "?";
     first_collect     = true;
     walker_data_size  = 0;
-    quantity_pointer  = 0;
+    quantity_index  = 0;
     resetBuffer();
   }
 
@@ -143,10 +141,10 @@ public:
   /// reset member variables at end of each WalkerLogCollector::collect() call
   inline void resetCollect()
   {
-    if(quantity_pointer!=quantity_info.size())
-      throw std::runtime_error("WalkerLogBuffer quantity_pointer has not been moved through all quantities prior during collect() call.");
+    if(quantity_index!=quantity_info.size())
+      throw std::runtime_error("WalkerLogBuffer quantity_index has not been moved through all quantities prior during collect() call.");
     first_collect = false;
-    quantity_pointer = 0;
+    quantity_index = 0;
   }
 
   /// compare row size of this buffer to another one
@@ -165,14 +163,14 @@ public:
     }
     else
     {// make a new buffer row if needed
-      if(quantity_pointer==0)
+      if(quantity_index==0)
         makeNewRow();
       irow = buffer.size(0)-1;
     }
     // place the scalar walker quantity into the current buffer row
-    auto& wqi = quantity_info[quantity_pointer];
+    auto& wqi = quantity_info[quantity_index];
     buffer(irow,wqi.buffer_start) = value;
-    quantity_pointer++;
+    quantity_index++;
   }
 
 
@@ -198,16 +196,16 @@ public:
     }
     else
     {// make a new buffer row if needed
-      if(quantity_pointer==0)
+      if(quantity_index==0)
         makeNewRow();
       irow = buffer.size(0)-1;
     }
     // place the array walker quantity into the current buffer row
-    auto& wqi = quantity_info[quantity_pointer];
+    auto& wqi = quantity_info[quantity_index];
     auto& arr1d = arr.storage();
     for (size_t n=0;n<arr1d.size();++n)
       buffer(irow,wqi.buffer_start+n) = arr1d[n];
-    quantity_pointer++;
+    quantity_index++;
   }
 
 
@@ -233,12 +231,12 @@ public:
     }
     else
     {// make a new buffer row if needed
-      if(quantity_pointer==0)
+      if(quantity_index==0)
         makeNewRow();
       irow = buffer.size(0)-1;
     }
     // place the complex array walker quantity into the current buffer row
-    auto& wqi = quantity_info[quantity_pointer];
+    auto& wqi = quantity_info[quantity_index];
     auto& arr1d = arr.storage();
     size_t n = 0;
     for (size_t i=0;i<arr1d.size();++i)
@@ -246,7 +244,7 @@ public:
       buffer(irow,wqi.buffer_start+n) = std::real(arr1d[i]); ++n;
       buffer(irow,wqi.buffer_start+n) = std::imag(arr1d[i]); ++n;
     }
-    quantity_pointer++;
+    quantity_index++;
   }
 
 
@@ -325,6 +323,7 @@ public:
   inline void writeHDF(hdf_archive& f, hsize_t& file_pointer)
   {
     auto& top = label;
+    hsize_t dims[2];
     dims[0] = buffer.size(0);
     dims[1] = buffer.size(1);
     if (dims[0] > 0)
