@@ -377,22 +377,10 @@ if(QMC_OMP)
   #---------------------------------------------------------
   # Set up OpenMP offload compile options
   #---------------------------------------------------------
-  set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
   if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
-    if(${COMPILER} MATCHES "Clang"
-	AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "gfx"
-	AND QMC_CUDA2HIP)
-      # As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers
-      # when using OpenMP offload to AMD GPU together with HIP.
-      set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
-    endif()
   endif()
-  # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
-  # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-  cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
-    ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
 
   #--------------------------------------------------------------
   # Workaround for breakage of OMP Target kernels at -O0 by Clang
@@ -891,6 +879,23 @@ if(ENABLE_SYCL)
     target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
   endif()
 endif(ENABLE_SYCL)
+
+#--------------------------------------------------------------------
+#  Resolve Vendor(CUDA/HIP/SYCL) and OpenMP runtime incompatibilities
+#--------------------------------------------------------------------
+# Some OpenMP offload runtime libraries have composibility issue with vendor native ones.
+# A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
+set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
+if(ENABLE_OFFLOAD)
+  # Known issue HIP<5.5 https://github.com/ROCm/aomp/issues/253
+  message("check ${COMPILER} ${QMC_CUDA2HIP} ${hip_VERSION}")
+  if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND hip_VERSION VERSION_LESS "5.5")
+    set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
+  endif()
+endif()
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
+  ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
+
 
 #-------------------------------------------------------------------
 # set up VTune ittnotify library
