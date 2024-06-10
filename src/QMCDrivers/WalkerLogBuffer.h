@@ -390,6 +390,8 @@ private:
   }
 };
 
+extern template class WalkerLogBuffer<WLog::Int>;
+extern template class WalkerLogBuffer<WLog::Real>;
 
 } // namespace qmcplusplus
 
