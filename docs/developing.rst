@@ -914,6 +914,21 @@ An example of the second approach is
     }
   }
 
+Walker
+------
+Lightweight representation of a walker, used as the element in the WalkerConfigurations container class.  In the batched version of the code the ``Walker::walker_id_`` and ``Walker::parent_id_`` allow logging walker instance trajectories etc. The basic data relations involved in are shown in :numref:`fig1`. If limit ourselves to single section logging the each walkerID will be unique generated using the equation
+.. math::
+  :label: eq_walker_id
+  walker_id = walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1
+
+where ``num_walkers_created_`` is a member variable of the sole ```MCPopulation`` object on the rank and initially set to 0.  Each walkers ``parent_id`` is set at initiation of the walkers configuration to the walker from home the configuration is assigned.  If that assignment is from previous section's or run's ``WalkerConfigurations`` object then the value of the ``Walker::getWalkerID()`` is multiplied by -1. If the Walker's initial configuration comes from the golden particle set the parent_id will be 0.
+
+.. _fig1:
+.. figure:: /uml/WalkerID_chen.pdf
+    :width: 400
+    :align: center
+
+
 Wavefunction
 ------------
 

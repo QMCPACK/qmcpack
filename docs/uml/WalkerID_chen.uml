@@ -1,0 +1,33 @@
+@startchen
+entity WALKER <<weak>> {
+  walker_id <<key>>
+  step_created <<derived>>
+  }
+
+relationship PARENT_OF {
+parent_id
+}
+
+PARENT_OF -1- WALKER
+PARENT_OF -N- WALKER
+
+entity STEP <<weak>> {
+  step_number <<key>>
+}
+
+entity MOVE <<weak>> {
+  properties
+  coordinate
+}
+
+WALKER == MOVE
+
+relationship PART_OF {
+  Section
+}
+
+STEP == MOVE
+
+PART_OF =N= WALKER
+PART_OF =N= STEP
+@endchen
