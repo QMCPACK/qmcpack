@@ -11,7 +11,7 @@
 
 #include "WalkerLogManager.h"
 #include "WalkerLogInput.h"
-#include "Concurrency/OpenMP.h"
+#include "Concurrency/Info.hpp"
 
 
 namespace qmcplusplus
@@ -31,7 +31,7 @@ WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::st
 
   if (state.logs_active)
   {
-    if (omp_get_thread_num() == 0)
+    if (Concurrency::getWorkerId() == 0)
     {
       app_log() << "\n  WalkerLogManager::put() " << std::endl;
       app_log() << "    logs requested      : " << logs_requested << std::endl;
