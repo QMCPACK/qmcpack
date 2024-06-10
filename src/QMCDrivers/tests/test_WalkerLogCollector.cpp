@@ -20,7 +20,7 @@
 #include "Utilities/ResourceCollection.h"
 #include "Utilities/ProjectData.h"
 
-#include "Estimators/WalkerLogCollector.h"
+#include "QMCDrivers/WalkerLogCollector.h"
 
 
 namespace qmcplusplus

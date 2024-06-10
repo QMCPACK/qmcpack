@@ -20,6 +20,8 @@
 ####################################
 
 set(QMCDRIVERS
+    WalkerLogCollector.cpp
+    WalkerLogManager.cpp
     QMCDriverFactory.cpp
     SimpleFixedNodeBranch.cpp
     SFNBranch.cpp
