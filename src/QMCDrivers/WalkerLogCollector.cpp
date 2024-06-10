@@ -25,9 +25,22 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 
 WalkerLogCollector::WalkerLogCollector()
-    : properties_include{"R2Accepted", "R2Proposed", "LocalEnergy", "LocalPotential", "Kinetic",
-                         "ElecElec",   "ElecIon",    "LocalECP",    "NonLocalECP"}
 {
+  init();
+}
+
+
+WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state_)
+{
+  init();
+  state = state_;
+}
+
+
+void WalkerLogCollector::init()
+{
+  properties_include = {"R2Accepted", "R2Proposed", "LocalEnergy", "LocalPotential", "Kinetic",
+                         "ElecElec",   "ElecIon",    "LocalECP",    "NonLocalECP"};
   state.reset();
   energy_index = -1;
   // empty walker steps and energy vectors for the MC block

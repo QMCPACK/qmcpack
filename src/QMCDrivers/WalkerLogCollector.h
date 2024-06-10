@@ -96,6 +96,8 @@ private:
 public:
   WalkerLogCollector();
 
+  WalkerLogCollector(const WalkerLogState& state_);
+
   /// resize buffers to zero rows at beginning of each MC block
   void startBlock();
 
@@ -112,6 +114,9 @@ public:
   void checkBuffers();
 
 private:
+  /// shared variable setting in constructors
+  void init();
+
   /// resize buffers to zero rows
   void resetBuffers();
 };

@@ -73,8 +73,7 @@ WalkerLogCollector* WalkerLogManager::makeCollector()
 {
   if (state.verbose)
     app_log() << "WalkerLogManager::makeCollector " << std::endl;
-  WalkerLogCollector* tc = new WalkerLogCollector();
-  tc->state              = state;
+  WalkerLogCollector* tc = new WalkerLogCollector(state);
   return tc;
 }
 
