@@ -21,7 +21,6 @@
 #include <unordered_set>
 
 
-
 namespace qmcplusplus
 {
 
@@ -29,13 +28,13 @@ namespace qmcplusplus
 /// Basic data types for walker log data
 struct WLog
 {
-  using Int  = long;                  // integer type
-  using Real = OHMMS_PRECISION_FULL;  // real type
-  using Comp = std::complex<Real>;    // complex type
+  using Int  = long;                 // integer type
+  using Real = OHMMS_PRECISION_FULL; // real type
+  using Comp = std::complex<Real>;   // complex type
 #ifndef QMC_COMPLEX
-  using PsiVal = Real;                // wavefunction type
+  using PsiVal = Real; // wavefunction type
 #else
-  using PsiVal = Comp;                // wavefunction type
+  using PsiVal = Comp; // wavefunction type
 #endif
 };
 
@@ -47,23 +46,36 @@ struct WLog
 struct WalkerQuantityInfo
 {
   /// quantity name
-  std::string name;                
+  std::string name;
   /// support up to 4D array quantity
-  enum{D0=0,D1,D2,D3,DMAX};        
+  enum
+  {
+    D0 = 0,
+    D1,
+    D2,
+    D3,
+    DMAX
+  };
   /// array dimension
-  size_t dimension;                
+  size_t dimension;
   /// total size
-  size_t size;                     
+  size_t size;
   /// size of 1 unit of data
-  size_t unit_size;                
+  size_t unit_size;
   /// array shape
-  TinyVector<size_t, DMAX> shape;  
+  TinyVector<size_t, DMAX> shape;
   /// starting row index in buffer
-  size_t buffer_start;             
+  size_t buffer_start;
   /// end range in buffer row
-  size_t buffer_end;               
+  size_t buffer_end;
 
-  WalkerQuantityInfo(const std::string& name_,size_t unit_size_,size_t buffer_start_,size_t n1=1,size_t n2=0,size_t n3=0,size_t n4=0)
+  WalkerQuantityInfo(const std::string& name_,
+                     size_t unit_size_,
+                     size_t buffer_start_,
+                     size_t n1 = 1,
+                     size_t n2 = 0,
+                     size_t n3 = 0,
+                     size_t n4 = 0)
   {
     name         = name_;
     unit_size    = unit_size_;
@@ -75,16 +87,15 @@ struct WalkerQuantityInfo
 
     dimension = 0;
     size      = 1;
-    for (size_t d=0;d<DMAX;++d)
-      if (shape[d]>0)
+    for (size_t d = 0; d < DMAX; ++d)
+      if (shape[d] > 0)
       {
         dimension++;
         size *= shape[d];
       }
-    buffer_end = buffer_start + size*unit_size;
+    buffer_end = buffer_start + size * unit_size;
   }
 };
-
 
 
 /** Data buffer for walker log quantities.
@@ -101,15 +112,15 @@ class WalkerLogBuffer
 {
 public:
   /// label for this data in HDF file
-  std::string label;         
+  std::string label;
   /// marks first WalkerLogCollector::collect() call
-  bool first_collect;        
+  bool first_collect;
   /// HDF file pointer
-  hsize_t hdf_file_pointer;  
+  hsize_t hdf_file_pointer;
 
 private:
   /// index of current quantity during WalkerLogCollector::collect()
-  size_t quantity_index;   
+  size_t quantity_index;
   /** buffer row location data for each walker quantity
    *    used to populate "data_layout" field in HDF file
    */
@@ -122,10 +133,10 @@ private:
 public:
   WalkerLogBuffer()
   {
-    label             = "?";
-    first_collect     = true;
-    walker_data_size  = 0;
-    quantity_index  = 0;
+    label            = "?";
+    first_collect    = true;
+    walker_data_size = 0;
+    quantity_index   = 0;
     resetBuffer();
   }
 
@@ -141,9 +152,10 @@ public:
   /// reset member variables at end of each WalkerLogCollector::collect() call
   inline void resetCollect()
   {
-    if(quantity_index!=quantity_info.size())
-      throw std::runtime_error("WalkerLogBuffer quantity_index has not been moved through all quantities prior during collect() call.");
-    first_collect = false;
+    if (quantity_index != quantity_info.size())
+      throw std::runtime_error(
+          "WalkerLogBuffer quantity_index has not been moved through all quantities prior during collect() call.");
+    first_collect  = false;
     quantity_index = 0;
   }
 
@@ -153,96 +165,104 @@ public:
   /// collect data for a single walker quantity of scalar type into the current buffer row
   inline void collect(const std::string& name, const T& value)
   {
-    size_t irow=0;
-    if( first_collect )
-    {// cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name,1,walker_data_size);
+    size_t irow = 0;
+    if (first_collect)
+    { // cache walker quantity info on first collect
+      WalkerQuantityInfo wqi_(name, 1, walker_data_size);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
       resetRowSize(walker_data_size);
     }
     else
-    {// make a new buffer row if needed
-      if(quantity_index==0)
+    { // make a new buffer row if needed
+      if (quantity_index == 0)
         makeNewRow();
-      irow = buffer.size(0)-1;
+      irow = buffer.size(0) - 1;
     }
     // place the scalar walker quantity into the current buffer row
-    auto& wqi = quantity_info[quantity_index];
-    buffer(irow,wqi.buffer_start) = value;
+    auto& wqi                      = quantity_info[quantity_index];
+    buffer(irow, wqi.buffer_start) = value;
     quantity_index++;
   }
 
 
   /// collect data for a single walker quantity of array type into the current buffer row
   template<unsigned D>
-  inline void collect(const std::string& name, Array<T,D> arr)
+  inline void collect(const std::string& name, Array<T, D> arr)
   {
     size_t n1 = arr.size(0);
-    size_t n2,n3,n4;
-    n2=n3=n4=0;
-    if (D>4)
+    size_t n2, n3, n4;
+    n2 = n3 = n4 = 0;
+    if (D > 4)
       throw std::runtime_error("WalkerLogBuffer::collect  Only arrays up to dimension 4 are currently supported.");
-    if (D>1) n2 = arr.size(1);
-    if (D>2) n3 = arr.size(2);
-    if (D>3) n4 = arr.size(3);
-    size_t irow=0;
-    if( first_collect )
-    {// cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name,1,walker_data_size,n1,n2,n3,n4);
+    if (D > 1)
+      n2 = arr.size(1);
+    if (D > 2)
+      n3 = arr.size(2);
+    if (D > 3)
+      n4 = arr.size(3);
+    size_t irow = 0;
+    if (first_collect)
+    { // cache walker quantity info on first collect
+      WalkerQuantityInfo wqi_(name, 1, walker_data_size, n1, n2, n3, n4);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
       resetRowSize(walker_data_size);
     }
     else
-    {// make a new buffer row if needed
-      if(quantity_index==0)
+    { // make a new buffer row if needed
+      if (quantity_index == 0)
         makeNewRow();
-      irow = buffer.size(0)-1;
+      irow = buffer.size(0) - 1;
     }
     // place the array walker quantity into the current buffer row
-    auto& wqi = quantity_info[quantity_index];
+    auto& wqi   = quantity_info[quantity_index];
     auto& arr1d = arr.storage();
-    for (size_t n=0;n<arr1d.size();++n)
-      buffer(irow,wqi.buffer_start+n) = arr1d[n];
+    for (size_t n = 0; n < arr1d.size(); ++n)
+      buffer(irow, wqi.buffer_start + n) = arr1d[n];
     quantity_index++;
   }
 
 
   /// collect data for a single walker quantity of complex array type into the current buffer row
   template<unsigned D>
-  inline void collect(const std::string& name, Array<std::complex<T>,D> arr)
+  inline void collect(const std::string& name, Array<std::complex<T>, D> arr)
   {
     size_t n1 = arr.size(0);
-    size_t n2,n3,n4;
-    n2=n3=n4=0;
-    if (D>4)
+    size_t n2, n3, n4;
+    n2 = n3 = n4 = 0;
+    if (D > 4)
       throw std::runtime_error("WalkerLogBuffer::collect  Only arrays up to dimension 4 are currently supported.");
-    if (D>1) n2 = arr.size(1);
-    if (D>2) n3 = arr.size(2);
-    if (D>3) n4 = arr.size(3);
-    size_t irow=0;
-    if( first_collect )
-    {// cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name,2,walker_data_size,n1,n2,n3,n4);
+    if (D > 1)
+      n2 = arr.size(1);
+    if (D > 2)
+      n3 = arr.size(2);
+    if (D > 3)
+      n4 = arr.size(3);
+    size_t irow = 0;
+    if (first_collect)
+    { // cache walker quantity info on first collect
+      WalkerQuantityInfo wqi_(name, 2, walker_data_size, n1, n2, n3, n4);
       quantity_info.push_back(wqi_);
       walker_data_size = wqi_.buffer_end;
       resetRowSize(walker_data_size);
     }
     else
-    {// make a new buffer row if needed
-      if(quantity_index==0)
+    { // make a new buffer row if needed
+      if (quantity_index == 0)
         makeNewRow();
-      irow = buffer.size(0)-1;
+      irow = buffer.size(0) - 1;
     }
     // place the complex array walker quantity into the current buffer row
-    auto& wqi = quantity_info[quantity_index];
+    auto& wqi   = quantity_info[quantity_index];
     auto& arr1d = arr.storage();
-    size_t n = 0;
-    for (size_t i=0;i<arr1d.size();++i)
+    size_t n    = 0;
+    for (size_t i = 0; i < arr1d.size(); ++i)
     {
-      buffer(irow,wqi.buffer_start+n) = std::real(arr1d[i]); ++n;
-      buffer(irow,wqi.buffer_start+n) = std::imag(arr1d[i]); ++n;
+      buffer(irow, wqi.buffer_start + n) = std::real(arr1d[i]);
+      ++n;
+      buffer(irow, wqi.buffer_start + n) = std::imag(arr1d[i]);
+      ++n;
     }
     quantity_index++;
   }
@@ -260,29 +280,30 @@ public:
     }
     else
     {
-      if(buffer.size(1)!=other_buffer.size(1))
+      if (buffer.size(1) != other_buffer.size(1))
         throw std::runtime_error("WalkerLogBuffer::add_row  Row sizes must match.");
       makeNewRow();
     }
-    size_t ib = buffer.size(0)-1;
-    for(size_t j=0;j<buffer.size(1);++j)
-      buffer(ib,j) = other_buffer(i,j);
+    size_t ib = buffer.size(0) - 1;
+    for (size_t j = 0; j < buffer.size(1); ++j)
+      buffer(ib, j) = other_buffer(i, j);
   }
 
 
   /// write a summary of quantities in the buffer
   inline void writeSummary(std::string pad = "  ")
   {
-    std::string pad2 = pad  + "  ";
+    std::string pad2 = pad + "  ";
     std::string pad3 = pad2 + "  ";
     app_log() << std::endl;
     app_log() << pad << "WalkerLogBuffer(" << label << ")" << std::endl;
     app_log() << pad2 << "nrows       = " << buffer.size(0) << std::endl;
     app_log() << pad2 << "row_size    = " << buffer.size(1) << std::endl;
-    for(size_t n=0;n<quantity_info.size();++n)
+    for (size_t n = 0; n < quantity_info.size(); ++n)
     {
       auto& wqi = quantity_info[n];
-      app_log()<<pad2<<"quantity "<< n <<":  "<<wqi.dimension<<"  "<<wqi.size<<"  "<<wqi.unit_size<<"  "<<wqi.buffer_start<<"  "<<wqi.buffer_end<<" ("<<wqi.name<<")"<<std::endl;
+      app_log() << pad2 << "quantity " << n << ":  " << wqi.dimension << "  " << wqi.size << "  " << wqi.unit_size
+                << "  " << wqi.buffer_start << "  " << wqi.buffer_end << " (" << wqi.name << ")" << std::endl;
     }
     app_log() << pad << "end WalkerLogBuffer(" << label << ")" << std::endl;
   }
@@ -293,30 +314,28 @@ public:
     auto& top = label;
     f.push(top);
     f.push("data_layout");
-    for(auto& wqi: quantity_info)
+    for (auto& wqi : quantity_info)
     {
       f.push(wqi.name);
-      f.write(wqi.dimension,    "dimension"  );
-      f.write(wqi.shape,        "shape"      );
-      f.write(wqi.size,         "size"       );
-      f.write(wqi.unit_size,    "unit_size"  );
+      f.write(wqi.dimension, "dimension");
+      f.write(wqi.shape, "shape");
+      f.write(wqi.size, "size");
+      f.write(wqi.unit_size, "unit_size");
       f.write(wqi.buffer_start, "index_start");
-      f.write(wqi.buffer_end,   "index_end"  );
+      f.write(wqi.buffer_end, "index_end");
       f.pop();
     }
     f.pop();
     f.pop();
     if (!f.open_groups())
-      throw std::runtime_error("WalkerLogBuffer(" + label + ")::register_hdf_data() some hdf groups are still open at the end of registration");
+      throw std::runtime_error("WalkerLogBuffer(" + label +
+                               ")::register_hdf_data() some hdf groups are still open at the end of registration");
     hdf_file_pointer = 0;
   }
 
 
   /// write the buffer data into the HDF file
-  inline void writeHDF(hdf_archive& f)
-  {
-    writeHDF(f,hdf_file_pointer);
-  }
+  inline void writeHDF(hdf_archive& f) { writeHDF(f, hdf_file_pointer); }
 
 
   /// write the buffer data into the HDF file
@@ -340,17 +359,20 @@ private:
   inline void resetRowSize(size_t row_size)
   {
     auto nrows = buffer.size(0);
-    if(nrows==0)
+    if (nrows == 0)
       nrows++;
-    if(nrows!=1)
-      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  row_size (number of columns) should only be changed during growth of the first row.");
+    if (nrows != 1)
+      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  row_size (number of columns) should only be changed "
+                               "during growth of the first row.");
     auto buffer_old(buffer);
-    buffer.resize(nrows,row_size);
+    buffer.resize(nrows, row_size);
     std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
-    if(buffer.size(0)!=1)
-      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  buffer should contain only a single row upon completion.");
-    if(buffer.size(1)!=row_size)
-      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  length of buffer row should match the requested row_size following the reset/udpate.");
+    if (buffer.size(0) != 1)
+      throw std::runtime_error(
+          "WalkerLogBuffer::reset_rowsize  buffer should contain only a single row upon completion.");
+    if (buffer.size(1) != row_size)
+      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  length of buffer row should match the requested "
+                               "row_size following the reset/udpate.");
   }
 
   /// allocate a full new row at the end of the buffer
@@ -358,7 +380,7 @@ private:
   {
     size_t nrows    = buffer.size(0);
     size_t row_size = buffer.size(1);
-    if (row_size==0)
+    if (row_size == 0)
       throw std::runtime_error("WalkerLogBuffer::makeNewRow  Cannot make a new row of size zero.");
     nrows++;
     // resizing buffer(type Array) doesn't preserve data. Thus keep old data and copy over
@@ -366,7 +388,6 @@ private:
     buffer.resize(nrows, row_size);
     std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
   }
-
 };
 
 

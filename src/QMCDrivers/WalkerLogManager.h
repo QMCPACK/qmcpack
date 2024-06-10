@@ -52,7 +52,7 @@ private:
   Communicate* communicator;
   /// access to HDF file
   std::unique_ptr<hdf_archive> hdf_file;
-  /// whether walker quantity data ("data_layout") has been recorded in HDF 
+  /// whether walker quantity data ("data_layout") has been recorded in HDF
   bool registered_hdf;
 
   /// whether to write per-particle data for all walkers
@@ -65,24 +65,24 @@ private:
   bool write_med_data;
 
   /// used to sort energy information for identifying walkers by energy quantile
-  std::vector<std::tuple<size_t,WLog::Real,size_t,size_t>> energy_order;
+  std::vector<std::tuple<size_t, WLog::Real, size_t, size_t>> energy_order;
 
   /// buffer containing integer properties for the minimum energy walkers
-  WalkerLogBuffer<WLog::Int>  wmin_property_int_buffer;
+  WalkerLogBuffer<WLog::Int> wmin_property_int_buffer;
   /// buffer containing real-valued properties for the minimum energy walkers
   WalkerLogBuffer<WLog::Real> wmin_property_real_buffer;
   /// buffer containing per-particle properties for the minimum energy walkers
   WalkerLogBuffer<WLog::Real> wmin_particle_real_buffer;
 
   /// buffer containing integer properties for the maximum energy walkers
-  WalkerLogBuffer<WLog::Int>  wmax_property_int_buffer;
+  WalkerLogBuffer<WLog::Int> wmax_property_int_buffer;
   /// buffer containing real-valued properties for the maximum energy walkers
   WalkerLogBuffer<WLog::Real> wmax_property_real_buffer;
   /// buffer containing per-particle properties for the maximum energy walkers
   WalkerLogBuffer<WLog::Real> wmax_particle_real_buffer;
 
   /// buffer containing integer properties for the median energy walkers
-  WalkerLogBuffer<WLog::Int>  wmed_property_int_buffer;
+  WalkerLogBuffer<WLog::Int> wmed_property_int_buffer;
   /// buffer containing real-valued properties for the median energy walkers
   WalkerLogBuffer<WLog::Real> wmed_property_real_buffer;
   /// buffer containing per-particle properties for the median energy walkers
@@ -122,7 +122,6 @@ private:
   /// close the logs file (HDF format)
   void closeHDFFile();
 };
-
 
 
 } // namespace qmcplusplus
