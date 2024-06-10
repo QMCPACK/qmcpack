@@ -28,8 +28,8 @@ namespace qmcplusplus
 
 TEST_CASE("WalkerLogCollector::collect", "[estimators]")
 {
-  app_log() <<"\n\n=======================================================\n";
-  app_log() <<"test WalkerLogCollector::collect\n";
+  app_log() << "\n\n=======================================================\n";
+  app_log() << "test WalkerLogCollector::collect\n";
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
@@ -78,7 +78,7 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
 
   WalkerLogCollector wlc;
   wlc.state.logs_active = true;
-  wlc.state.step_period   = 1;
+  wlc.state.step_period = 1;
 
   auto& bsi = wlc.walker_property_int_buffer;
   auto& bsr = wlc.walker_property_real_buffer;
@@ -97,7 +97,7 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   const size_t npcols = 88;
 #endif
 
-  int step=0;
+  int step = 0;
   wlc.collect(walkers[0], psets[0], *(twfs[0]), *(hams[0]), step);
 
   CHECK(bsi.nrows() == 1);
@@ -107,7 +107,7 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   CHECK(bsr.ncols() == 13);
   CHECK(bpr.ncols() == npcols);
 
-  for (size_t iw=1; iw<walkers.size(); ++iw)
+  for (size_t iw = 1; iw < walkers.size(); ++iw)
     wlc.collect(walkers[iw], psets[iw], *(twfs[iw]), *(hams[iw]), step);
 
   CHECK(bsi.nrows() == 4);
@@ -117,8 +117,8 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   CHECK(bsr.ncols() == 13);
   CHECK(bpr.ncols() == npcols);
 
-  for (step=1; step<3; ++step)
-    for (size_t iw=0; iw<walkers.size(); ++iw)
+  for (step = 1; step < 3; ++step)
+    for (size_t iw = 0; iw < walkers.size(); ++iw)
       wlc.collect(walkers[iw], psets[iw], *(twfs[iw]), *(hams[iw]), step);
 
   CHECK(bsi.nrows() == 12);
@@ -128,8 +128,8 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   CHECK(bsr.ncols() == 13);
   CHECK(bpr.ncols() == npcols);
 
-  app_log() <<"\nend test WalkerLogCollector::collect\n";
-  app_log() <<"=======================================================\n";
+  app_log() << "\nend test WalkerLogCollector::collect\n";
+  app_log() << "=======================================================\n";
 }
 
 

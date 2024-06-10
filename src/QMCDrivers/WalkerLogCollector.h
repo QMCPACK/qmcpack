@@ -19,16 +19,16 @@
 namespace qmcplusplus
 {
 
-template<class QT, class PT> class Walker;
+template<class QT, class PT>
+class Walker;
 class ParticleSet;
 class TrialWaveFunction;
 class QMCHamiltonian;
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 
-
 /// Helper struct holding data transferred from WalkerLogManager to WalkerLogCollector following input read
-struct WalkerLogState 
+struct WalkerLogState
 {
   /// whether logs are active in the current driver
   bool logs_active;
@@ -46,7 +46,7 @@ struct WalkerLogState
   inline void reset()
   {
     logs_active = false;
-    verbose       = false;
+    verbose     = false;
   }
 };
 
@@ -62,11 +62,11 @@ class WalkerLogCollector
 {
 public:
   /// MC step information for each walker throughout the MC block
-  std::vector<size_t>       steps;
+  std::vector<size_t> steps;
   /// LocalEnergy information for each walker throughout the MC block
   std::vector<WLog::Real> energies;
   /// buffer containing integer walker properties
-  WalkerLogBuffer<WLog::Int>  walker_property_int_buffer;
+  WalkerLogBuffer<WLog::Int> walker_property_int_buffer;
   /// buffer containing real-valued walker properties
   WalkerLogBuffer<WLog::Real> walker_property_real_buffer;
   /// buffer containing per-particle walker data
@@ -75,7 +75,7 @@ public:
   /// ParticleSet::PropertyList quantities to include
   std::unordered_set<std::string> properties_include;
   /// indices in ParticleSet::PropertyList for included quantities
-  std::vector<size_t>             property_indices;
+  std::vector<size_t> property_indices;
   /// location of LocalEnergy in ParticleSet::PropertyList
   int energy_index;
 
@@ -85,9 +85,9 @@ public:
 private:
   // temporary (contiguous) storage for awful ParticleAttrib<> quantities
   /// tmp storage for walker positions
-  Array<WLog::Real  , 2> Rtmp;
+  Array<WLog::Real, 2> Rtmp;
   /// tmp storage for walker spins
-  Array<WLog::Real  , 1> Stmp;
+  Array<WLog::Real, 1> Stmp;
   /// tmp storage for walker wavefunction gradients
   Array<WLog::PsiVal, 2> Gtmp;
   /// tmp storage for walker wavefunciton laplacians
@@ -100,7 +100,11 @@ public:
   void startBlock();
 
   /// collect all data for one walker into the data buffers
-  void collect(const MCPWalker& walker, const ParticleSet& pset, const TrialWaveFunction& wfn, const QMCHamiltonian& ham, int step=-1);
+  void collect(const MCPWalker& walker,
+               const ParticleSet& pset,
+               const TrialWaveFunction& wfn,
+               const QMCHamiltonian& ham,
+               int step = -1);
 
   /** Check that all buffers have the same number of rows.
    *    This ensures that the full data for a given walker can be reconstructed due to enforced data alignment in the buffers.
@@ -111,9 +115,6 @@ private:
   /// resize buffers to zero rows
   void resetBuffers();
 };
-
-
-
 
 
 } // namespace qmcplusplus
