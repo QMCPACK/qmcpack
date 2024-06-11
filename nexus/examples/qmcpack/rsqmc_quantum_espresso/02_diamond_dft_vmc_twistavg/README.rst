@@ -1,4 +1,4 @@
-Nexus QE+QMCPACK Example 3: Diamond cubic cell (twist averaged VMC)
+Nexus QE+QMCPACK Example 2: Diamond cubic cell (twist averaged VMC)
 ===================================================================
 
 In this example, we expand on the previous example to include twist 
