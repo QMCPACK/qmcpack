@@ -313,7 +313,7 @@ bool VMCBatched::run()
   wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
   std::vector<WalkerLogCollector*> wlog_collectors;
   for (auto& c: crowds_)
-    wlog_collectors.push_back(&c->wlog_collector_);
+    wlog_collectors.push_back(&c->getWalkerLogCollector());
   wlog_manager_->startRun(wlog_collectors);
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_, steps_per_block_);
@@ -383,7 +383,8 @@ bool VMCBatched::run()
       for (auto& crowd : crowds_)
       {
         crowd->startBlock(steps_per_block_);
-        crowd->wlog_collector_.startBlock();
+        auto& wlc = crowd->getWalkerLogCollector();
+        wlc.startBlock();
       }
       for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {

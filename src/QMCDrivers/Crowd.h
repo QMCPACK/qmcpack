@@ -103,6 +103,7 @@ public:
   const RefVector<QMCHamiltonian>& get_walker_hamiltonians() const { return walker_hamiltonians_; }
 
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
+  WalkerLogCollector& getWalkerLogCollector() { return wlog_collector_; }
 
   DriverWalkerResourceCollection& getSharedResource() { return driverwalker_resource_collection_; }
 
