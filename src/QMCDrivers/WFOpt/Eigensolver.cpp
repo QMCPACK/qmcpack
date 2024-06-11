@@ -58,13 +58,13 @@ void Eigensolver::solveGeneralizedEigenvalues(Matrix<Real>& A,
   std::vector<Real> work(1);
   Real tt(0);
   int t(1);
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
-               eigenvectors.data(), &Nl, &work[0], &lwork, &info);
+  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, alphar.data(), alphai.data(), beta.data(), &tt, &t,
+               eigenvectors.data(), &Nl, work.data(), &lwork, &info);
   lwork = int(work[0]);
   work.resize(lwork);
 
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
-               eigenvectors.data(), &Nl, &work[0], &lwork, &info);
+  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, alphar.data(), alphai.data(), beta.data(), &tt, &t,
+               eigenvectors.data(), &Nl, work.data(), &lwork, &info);
   if (info != 0)
     throw std::runtime_error("Invalid Matrix Diagonalization Function, ggev info = " + std::to_string(info));
 
@@ -106,13 +106,13 @@ void Eigensolver::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
   int info;
   int lwork(-1);
   std::vector<Real> work(1);
-  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
-               &work[0], &lwork, &info);
+  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, alphar.data(), alphai.data(), eigenD.data(), &Nl, eigenvectors.data(), &Nl,
+               work.data(), &lwork, &info);
   lwork = int(work[0]);
   work.resize(lwork);
 
-  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
-               &work[0], &lwork, &info);
+  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, alphar.data(), alphai.data(), eigenD.data(), &Nl, eigenvectors.data(), &Nl,
+               work.data(), &lwork, &info);
   if (info != 0)
     throw std::runtime_error("Invalid Matrix Diagonalization Function, geev info = " + std::to_string(info));
 
