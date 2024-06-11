@@ -36,30 +36,6 @@ class LinearMethod
   void getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const;
 
 public:
-  /** Use generalized eigenvalue solver
-   *  @param[in]  A Hamiltonian matrix
-   *  @param[in]  B Overlap matrix
-   *  @param[out] eigenvals Eigenvalues
-   *  @param[out] eigenvectors Eigenvectors corresponding to the eigenvalues
-   *
-   */
-  static void solveGeneralizedEigenvalues(Matrix<Real>& A,
-                                          Matrix<Real>& B,
-                                          std::vector<Real>& eigenvals,
-                                          Matrix<Real>& eigenvectors);
-
-  /** Solve by explicitly inverting the overlap matrix
-   *  @param[in]  A Hamiltonian matrix
-   *  @param[in]  B Overlap matrix
-   *  @param[out] eigenvals Eigenvalues
-   *  @param[out] eigenvectors Eigenvectors corresponding to the eigenvalues
-   *
-   */
-  static void solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
-                                              Matrix<Real>& B,
-                                              std::vector<Real>& eigenvals,
-                                              Matrix<Real>& eigenvectors);
-
   /** Select eigenvalue and return corresponding scaled eigenvector
    *  @param[in] eigenvals Eigenvalues
    *  @param[in] eigenvectors Eigenvectors
