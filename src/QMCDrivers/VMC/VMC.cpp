@@ -185,7 +185,7 @@ void VMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      wlog_collectors[ip] = wlog_manager_->makeCollector();
+      wlog_collectors[ip] = wlog_manager_->makeCollector().release();
       Rng[ip] = rngs_[ip]->makeClone();
       hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (W.isSpinor())

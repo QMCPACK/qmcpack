@@ -85,6 +85,8 @@ public:
     estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, walker_hamiltonians_, rng);
   }
 
+  /// activate the collector
+  void setWalkerLogCollector(std::unique_ptr<WalkerLogCollector>&&);
   /// Collect walker log data
   void collectStepWalkerLog(int current_step);
 
@@ -103,7 +105,6 @@ public:
   const RefVector<QMCHamiltonian>& get_walker_hamiltonians() const { return walker_hamiltonians_; }
 
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
-  WalkerLogCollector& getWalkerLogCollector() { return wlog_collector_; }
 
   DriverWalkerResourceCollection& getSharedResource() { return driverwalker_resource_collection_; }
 
@@ -117,6 +118,8 @@ public:
   unsigned long get_reject() { return n_reject_; }
 
   const MultiWalkerDispatchers& dispatchers_;
+
+  static RefVector<WalkerLogCollector> getWalkerLogCollectorRefs(const UPtrVector<Crowd>& crowds);
 
 private:
   /** @name Walker Vectors
@@ -136,7 +139,7 @@ private:
   /// per crowd estimator manager
   EstimatorManagerCrowd estimator_manager_crowd_;
   // collector for walker logs
-  WalkerLogCollector wlog_collector_;
+  std::unique_ptr<WalkerLogCollector> wlog_collector_;
 
   /** @name Step State
    * 

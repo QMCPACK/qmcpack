@@ -68,12 +68,11 @@ WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::st
 }
 
 
-WalkerLogCollector* WalkerLogManager::makeCollector() const
+std::unique_ptr<WalkerLogCollector> WalkerLogManager::makeCollector() const
 {
   if (state.verbose)
     app_log() << "WalkerLogManager::makeCollector " << std::endl;
-  WalkerLogCollector* tc = new WalkerLogCollector(state);
-  return tc;
+  return std::make_unique<WalkerLogCollector>(state);
 }
 
 
