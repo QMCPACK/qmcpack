@@ -289,7 +289,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   // collect walker logs
-  crowd.collect(sft.global_step);
+  crowd.collectStepWalkerLog(sft.global_step);
 
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);

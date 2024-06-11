@@ -217,7 +217,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   // collect walker logs
-  crowd.collect(sft.global_step);
+  crowd.collectStepWalkerLog(sft.global_step);
 
   // TODO:
   //  check if all moves failed

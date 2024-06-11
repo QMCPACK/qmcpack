@@ -86,7 +86,7 @@ public:
   }
 
   /// Collect walker log data
-  void collect(int current_step);
+  void collectStepWalkerLog(int current_step);
 
   void setRNGForHamiltonian(RandomBase<FullPrecRealType>& rng);
 
