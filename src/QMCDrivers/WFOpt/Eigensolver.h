@@ -20,7 +20,6 @@
 #define QMCPLUSPLUS_EIGENSOLVER_H
 
 #include <Configuration.h>
-#include <NewTimer.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 
 namespace qmcplusplus
