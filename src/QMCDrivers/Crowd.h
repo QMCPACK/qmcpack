@@ -16,7 +16,7 @@
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "Estimators/EstimatorManagerCrowd.h"
-#include "Estimators/WalkerLogManager.h"
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {

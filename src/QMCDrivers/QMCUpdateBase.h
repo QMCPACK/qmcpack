@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "Estimators/WalkerLogManager.h"
+#include "WalkerLogManager.h"
 #include "GreenFunctionModifiers/DriftModifierBase.h"
 #include "SimpleFixedNodeBranch.h"
 #include "DriverDebugChecks.h"

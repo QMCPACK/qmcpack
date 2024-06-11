@@ -33,8 +33,8 @@
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
-#include "Estimators/WalkerLogInput.h"
-#include "Estimators/WalkerLogManager.h"
+#include "WalkerLogInput.h"
+#include "WalkerLogManager.h"
 
 
 namespace qmcplusplus

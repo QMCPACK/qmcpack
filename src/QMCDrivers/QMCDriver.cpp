@@ -36,8 +36,8 @@
 #else
 using TraceManager = int;
 #endif
-#include "Estimators/WalkerLogInput.h"
-#include "Estimators/WalkerLogManager.h"
+#include "WalkerLogInput.h"
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
