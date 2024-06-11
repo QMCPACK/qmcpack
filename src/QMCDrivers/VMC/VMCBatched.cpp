@@ -381,11 +381,8 @@ bool VMCBatched::run()
       estimator_manager_->startBlock(steps_per_block_);
 
       for (auto& crowd : crowds_)
-      {
         crowd->startBlock(steps_per_block_);
-        auto& wlc = crowd->getWalkerLogCollector();
-        wlc.startBlock();
-      }
+
       for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);

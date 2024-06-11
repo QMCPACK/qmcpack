@@ -82,6 +82,7 @@ void Crowd::startBlock(int num_steps)
   // VMCBatched does no nonlocal moves
   n_nonlocal_accept_ = 0;
   estimator_manager_crowd_.startBlock(num_steps);
+  wlog_collector_.startBlock();
 }
 
 void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }

@@ -483,10 +483,7 @@ bool DMCBatched::run()
                    : false;
 
       for (UPtr<Crowd>& crowd : crowds_)
-      {
         crowd->startBlock(steps_per_block_);
-        crowd->wlog_collector_.startBlock();
-      }
 
       for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
