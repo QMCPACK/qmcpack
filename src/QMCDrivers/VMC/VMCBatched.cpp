@@ -217,7 +217,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   // collect walker logs
-  crowd.collect(sft.current_step);
+  crowd.collect(sft.global_step);
 
   // TODO:
   //  check if all moves failed
@@ -367,7 +367,7 @@ bool VMCBatched::run()
   // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
   myComm->barrier();
 
-  int current_step = 0;
+  int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
     {
@@ -385,11 +385,11 @@ bool VMCBatched::run()
         crowd->startBlock(steps_per_block_);
         crowd->wlog_collector_.startBlock();
       }
-      for (int step = 0; step < steps_per_block_; ++step, ++current_step)
+      for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
         vmc_state.step = step;
-        vmc_state.current_step = current_step;
+        vmc_state.global_step = global_step;
         crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
         if (collect_samples_)

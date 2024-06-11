@@ -289,7 +289,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   // collect walker logs
-  crowd.collect(sft.current_step);
+  crowd.collect(sft.global_step);
 
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
@@ -468,7 +468,7 @@ bool DMCBatched::run()
   ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
-  int current_step = 0;
+  int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
     {
@@ -488,7 +488,7 @@ bool DMCBatched::run()
         crowd->wlog_collector_.startBlock();
       }
 
-      for (int step = 0; step < steps_per_block_; ++step, ++current_step)
+      for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
 
@@ -498,7 +498,7 @@ bool DMCBatched::run()
           setNonLocalMoveHandler(*ham);
 
         dmc_state.step = step;
-        dmc_state.current_step = current_step;
+        dmc_state.global_step = global_step;
         crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                    std::ref(crowds_));
 
