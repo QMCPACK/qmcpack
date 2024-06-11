@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_WALKERLOGMANAGER_H
 
 #include "WalkerLogCollector.h"
-
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -88,6 +88,8 @@ private:
   /// buffer containing per-particle properties for the median energy walkers
   WalkerLogBuffer<WLog::Real> wmed_particle_real_buffer;
 
+  RefVector<WalkerLogCollector> collectors_in_run_;
+
 public:
   WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm = 0);
 
@@ -95,29 +97,29 @@ public:
   WalkerLogCollector* makeCollector();
 
   /// open the logs file and check consistency of the collectors at the start of a run
-  void startRun(std::vector<WalkerLogCollector*>& collectors);
+  void startRun(RefVector<WalkerLogCollector>&& collectors);
 
   /// close the logs file at the end of a run
   void stopRun();
 
   /// collect min/max/median walker data and write buffered walker log data to file
-  void writeBuffers(std::vector<WalkerLogCollector*>& collectors);
+  void writeBuffers();
 
 private:
   /// check consistency of walker buffer row sizes
-  void checkCollectors(std::vector<WalkerLogCollector*>& collectors);
+  void checkCollectors(const RefVector<WalkerLogCollector>& collectors) const;
 
   /// open the logs file
-  void openFile(std::vector<WalkerLogCollector*>& collectors);
+  void openFile(const RefVector<WalkerLogCollector>& collectors);
 
   /// close the logs file
   void closeFile();
 
   /// open the logs file (HDF format)
-  void openHDFFile(std::vector<WalkerLogCollector*>& collectors);
+  void openHDFFile(const RefVector<WalkerLogCollector>& collectors);
 
   /// write data buffers to the logs file (HDF format)
-  void writeBuffersHDF(std::vector<WalkerLogCollector*>& collectors);
+  void writeBuffersHDF();
 
   /// close the logs file (HDF format)
   void closeHDFFile();

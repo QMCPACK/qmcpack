@@ -239,7 +239,7 @@ bool DMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
 #endif
-  wlog_manager_->startRun(wlog_collectors);
+  wlog_manager_->startRun(getWalkerLogCollectorRefs());
   IndexType block        = 0;
   IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int sample             = 0;
@@ -297,7 +297,7 @@ bool DMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    wlog_manager_->writeBuffers(wlog_collectors);
+    wlog_manager_->writeBuffers();
     block++;
     if (DumpConfig && block % Period4CheckPoint == 0)
     {

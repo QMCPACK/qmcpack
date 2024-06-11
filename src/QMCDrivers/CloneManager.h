@@ -89,6 +89,8 @@ protected:
 
   ///Walkers per MPI rank
   std::vector<int> wPerRank;
+
+  RefVector<WalkerLogCollector> getWalkerLogCollectorRefs();
 };
 } // namespace qmcplusplus
 #endif

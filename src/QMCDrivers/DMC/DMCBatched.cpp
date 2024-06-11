@@ -435,10 +435,10 @@ bool DMCBatched::run()
 
   //start walker log manager
   wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
-  std::vector<WalkerLogCollector*> wlog_collectors;
+  RefVector<WalkerLogCollector> wlog_collectors;
   for (auto& c: crowds_)
-    wlog_collectors.push_back(&c->getWalkerLogCollector());
-  wlog_manager_->startRun(wlog_collectors);
+    wlog_collectors.push_back(c->getWalkerLogCollector());
+  wlog_manager_->startRun(std::move(wlog_collectors));
 
   StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_);
 
@@ -513,7 +513,7 @@ bool DMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
-      wlog_manager_->writeBuffers(wlog_collectors);
+      wlog_manager_->writeBuffers();
       recordBlock(block);
     }
 
