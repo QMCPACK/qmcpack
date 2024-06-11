@@ -100,24 +100,20 @@ void Eigensolver::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
   //   Getting the optimal worksize
   char jl('N');
   char jr('V');
-  std::vector<Real> alphar(Nl), alphai(Nl);
-  //Matrix<Real> eigenT(Nl, Nl);
+  std::vector<Real> alphai(Nl);
   Matrix<Real> eigenD(Nl, Nl);
   int info;
   int lwork(-1);
   std::vector<Real> work(1);
-  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, alphar.data(), alphai.data(), eigenD.data(), &Nl, eigenvectors.data(), &Nl,
-               work.data(), &lwork, &info);
+  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, eigenvals.data(), alphai.data(), eigenD.data(), &Nl,
+               eigenvectors.data(), &Nl, work.data(), &lwork, &info);
   lwork = int(work[0]);
   work.resize(lwork);
 
-  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, alphar.data(), alphai.data(), eigenD.data(), &Nl, eigenvectors.data(), &Nl,
-               work.data(), &lwork, &info);
+  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, eigenvals.data(), alphai.data(), eigenD.data(), &Nl,
+               eigenvectors.data(), &Nl, work.data(), &lwork, &info);
   if (info != 0)
     throw std::runtime_error("Invalid Matrix Diagonalization Function, geev info = " + std::to_string(info));
-
-  for (int i = 0; i < Nl; i++)
-    eigenvals[i] = alphar[i];
 }
 
 } // namespace qmcplusplus
