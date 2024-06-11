@@ -19,7 +19,7 @@ Crowd::Crowd(EstimatorManagerNew& emb,
              const TrialWaveFunction& twf,
              const QMCHamiltonian& ham,
              const MultiWalkerDispatchers& dispatchers)
-  : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
+    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
 {
   if (emb.areThereListeners())
   {
@@ -82,27 +82,32 @@ void Crowd::startBlock(int num_steps)
   // VMCBatched does no nonlocal moves
   n_nonlocal_accept_ = 0;
   estimator_manager_crowd_.startBlock(num_steps);
-  if(wlog_collector_)
+  if (wlog_collector_)
     wlog_collector_->startBlock();
 }
 
 void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }
 
-void Crowd::setWalkerLogCollector(std::unique_ptr<WalkerLogCollector>&& collector) { wlog_collector_ = std::move(collector); }
+void Crowd::setWalkerLogCollector(std::unique_ptr<WalkerLogCollector>&& collector)
+{
+  wlog_collector_ = std::move(collector);
+}
 
 void Crowd::collectStepWalkerLog(int current_step)
 {
-  if(!wlog_collector_) return;
+  if (!wlog_collector_)
+    return;
 
   for (int iw = 0; iw < size(); ++iw)
-    wlog_collector_->collect(mcp_walkers_[iw], walker_elecs_[iw], walker_twfs_[iw], walker_hamiltonians_[iw], current_step);
+    wlog_collector_->collect(mcp_walkers_[iw], walker_elecs_[iw], walker_twfs_[iw], walker_hamiltonians_[iw],
+                             current_step);
 }
 
 RefVector<WalkerLogCollector> Crowd::getWalkerLogCollectorRefs(const UPtrVector<Crowd>& crowds)
 {
   RefVector<WalkerLogCollector> refs;
-  for(auto& crowd : crowds)
-    if(crowd && crowd->wlog_collector_)
+  for (auto& crowd : crowds)
+    if (crowd && crowd->wlog_collector_)
       refs.push_back(*crowd->wlog_collector_);
   return refs;
 }

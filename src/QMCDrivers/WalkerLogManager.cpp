@@ -168,8 +168,8 @@ void WalkerLogManager::writeBuffers()
         size_t c, r;
         if (write_min_data)
         { //  cache data for minimum energy walker
-          c = std::get<2>(energy_order[nmin]);
-          r = std::get<3>(energy_order[nmin]);
+          c                      = std::get<2>(energy_order[nmin]);
+          r                      = std::get<3>(energy_order[nmin]);
           WalkerLogCollector& tc = collectors[c];
           wmin_property_int_buffer.addRow(tc.walker_property_int_buffer, r);
           wmin_property_real_buffer.addRow(tc.walker_property_real_buffer, r);
@@ -177,8 +177,8 @@ void WalkerLogManager::writeBuffers()
         }
         if (write_max_data)
         { //  cache data for maximum energy walker
-          c = std::get<2>(energy_order[nmax]);
-          r = std::get<3>(energy_order[nmax]);
+          c                      = std::get<2>(energy_order[nmax]);
+          r                      = std::get<3>(energy_order[nmax]);
           WalkerLogCollector& tc = collectors[c];
           wmax_property_int_buffer.addRow(tc.walker_property_int_buffer, r);
           wmax_property_real_buffer.addRow(tc.walker_property_real_buffer, r);
@@ -186,8 +186,8 @@ void WalkerLogManager::writeBuffers()
         }
         if (write_med_data)
         { //  cache data for median energy walker
-          c = std::get<2>(energy_order[nmed]);
-          r = std::get<3>(energy_order[nmed]);
+          c                      = std::get<2>(energy_order[nmed]);
+          r                      = std::get<3>(energy_order[nmed]);
           WalkerLogCollector& tc = collectors[c];
           wmed_property_int_buffer.addRow(tc.walker_property_int_buffer, r);
           wmed_property_real_buffer.addRow(tc.walker_property_real_buffer, r);

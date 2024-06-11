@@ -52,9 +52,9 @@ public:
    */
   Crowd(EstimatorManagerNew& emb,
         const DriverWalkerResourceCollection& driverwalker_res,
-	const ParticleSet& pset,
+        const ParticleSet& pset,
         const TrialWaveFunction& twf,
-	const QMCHamiltonian& hamiltonian_temp,
+        const QMCHamiltonian& hamiltonian_temp,
         const MultiWalkerDispatchers& dispatchers);
   ~Crowd();
   /** Because so many vectors allocate them upfront.

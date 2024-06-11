@@ -389,7 +389,7 @@ bool VMCBatched::run()
       for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
-        vmc_state.step = step;
+        vmc_state.step        = step;
         vmc_state.global_step = global_step;
         crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
@@ -407,7 +407,7 @@ bool VMCBatched::run()
         measureImbalance("Block " + std::to_string(block));
       endBlock();
       if (wlog_manager_)
-      wlog_manager_->writeBuffers();
+        wlog_manager_->writeBuffers();
       recordBlock(block);
     }
 
@@ -463,7 +463,7 @@ void VMCBatched::enable_sample_collection()
 {
   assert(steps_per_block_ > 0 && "VMCBatched::enable_sample_collection steps_per_block_ must be positive!");
   auto samples = compute_samples_per_rank(qmcdriver_input_.get_max_blocks(), steps_per_block_,
-                                         population_.get_num_local_walkers());
+                                          population_.get_num_local_walkers());
   samples_.setMaxSamples(samples, population_.get_num_ranks());
   collect_samples_ = true;
 

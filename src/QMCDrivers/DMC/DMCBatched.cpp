@@ -442,7 +442,7 @@ bool DMCBatched::run()
 
   //register walker log collectors into the manager
   if (wlog_manager_)
-  wlog_manager_->startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
+    wlog_manager_->startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
 
   StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_);
 
@@ -498,7 +498,7 @@ bool DMCBatched::run()
         for (UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
           setNonLocalMoveHandler(*ham);
 
-        dmc_state.step = step;
+        dmc_state.step        = step;
         dmc_state.global_step = global_step;
         crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                    std::ref(crowds_));
@@ -518,7 +518,7 @@ bool DMCBatched::run()
         measureImbalance("Block " + std::to_string(block));
       endBlock();
       if (wlog_manager_)
-      wlog_manager_->writeBuffers();
+        wlog_manager_->writeBuffers();
       recordBlock(block);
     }
 

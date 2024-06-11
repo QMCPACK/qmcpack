@@ -23,17 +23,14 @@ namespace qmcplusplus
 
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state): state_(state)
-{
-  init();
-}
+WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state) : state_(state) { init(); }
 
 
 void WalkerLogCollector::init()
 {
   properties_include = {"R2Accepted", "R2Proposed", "LocalEnergy", "LocalPotential", "Kinetic",
-                         "ElecElec",   "ElecIon",    "LocalECP",    "NonLocalECP"};
-  energy_index = -1;
+                        "ElecElec",   "ElecIon",    "LocalECP",    "NonLocalECP"};
+  energy_index       = -1;
   // empty walker steps and energy vectors for the MC block
   steps.resize(0);
   energies.resize(0);

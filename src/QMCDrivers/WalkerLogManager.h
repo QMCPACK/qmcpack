@@ -43,13 +43,12 @@ struct WalkerLogInput;
  */
 class WalkerLogManager
 {
-public:
-  WalkerLogState state;
-
 private:
   /// file prefix for the current driver
   std::string file_root;
   Communicate* communicator;
+  /// output state
+  WalkerLogState state;
   /// access to HDF file
   std::unique_ptr<hdf_archive> hdf_file;
   /// whether walker quantity data ("data_layout") has been recorded in HDF
