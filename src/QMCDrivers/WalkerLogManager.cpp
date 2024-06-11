@@ -83,9 +83,6 @@ void WalkerLogManager::startRun(RefVector<WalkerLogCollector>&& collectors)
     return; // no-op for driver if logs are inactive
   if (state.verbose)
     app_log() << "WalkerLogManager::startRun " << std::endl;
-  // transfer step_period, verbosity, etc settings to log collectors
-  for (WalkerLogCollector& tc : collectors_in_run_)
-    tc.state = state;
   // check data size consistency among the log collector buffers
   checkCollectors(collectors_in_run_);
   // open the logs file

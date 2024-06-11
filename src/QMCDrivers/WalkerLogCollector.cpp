@@ -23,17 +23,9 @@ namespace qmcplusplus
 
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-
-WalkerLogCollector::WalkerLogCollector()
+WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state): state_(state)
 {
   init();
-}
-
-
-WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state_)
-{
-  init();
-  state = state_;
 }
 
 
@@ -54,9 +46,9 @@ void WalkerLogCollector::init()
 
 void WalkerLogCollector::startBlock()
 {
-  if (!state.logs_active)
+  if (!state_.logs_active)
     return; // no-op for driver if logs are inactive
-  if (state.verbose)
+  if (state_.verbose)
     app_log() << "WalkerLogCollector::startBlock " << std::endl;
   resetBuffers(); // resize buffers to zero rows
 }
@@ -68,12 +60,12 @@ void WalkerLogCollector::collect(const MCPWalker& walker,
                                  const QMCHamiltonian& ham,
                                  int step)
 {
-  if (!state.logs_active)
+  if (!state_.logs_active)
     return; // no-op for driver if logs are inactive
 
   // only collect walker data at steps matching the period (default 1)
   int current_step = (step == -1) ? pset.current_step : step;
-  if (current_step % state.step_period != 0)
+  if (current_step % state_.step_period != 0)
     return;
 
   auto& bsi = walker_property_int_buffer;
@@ -172,7 +164,7 @@ void WalkerLogCollector::collect(const MCPWalker& walker,
 
 void WalkerLogCollector::resetBuffers()
 {
-  if (state.verbose)
+  if (state_.verbose)
     app_log() << "WalkerLogCollector::reset_buffers" << std::endl;
   // resize all buffers to zero rows
   walker_property_int_buffer.resetBuffer();
@@ -186,7 +178,7 @@ void WalkerLogCollector::resetBuffers()
 
 void WalkerLogCollector::checkBuffers()
 {
-  if (state.verbose)
+  if (state_.verbose)
     app_log() << "WalkerLogCollector::checkBuffers" << std::endl;
   size_t nrows       = walker_property_int_buffer.nrows();
   auto prop_real_bad = walker_property_real_buffer.nrows() != nrows;

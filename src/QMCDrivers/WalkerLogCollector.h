@@ -67,9 +67,6 @@ public:
   /// location of LocalEnergy in ParticleSet::PropertyList
   int energy_index;
 
-  /// state data set by WalkerLogManager
-  WalkerLogState state;
-
 private:
   // temporary (contiguous) storage for awful ParticleAttrib<> quantities
   /// tmp storage for walker positions
@@ -80,11 +77,12 @@ private:
   Array<WLog::PsiVal, 2> Gtmp;
   /// tmp storage for walker wavefunciton laplacians
   Array<WLog::PsiVal, 1> Ltmp;
+  /// state data set by WalkerLogManager
+  const WalkerLogState& state_;
 
 public:
-  WalkerLogCollector();
-
-  WalkerLogCollector(const WalkerLogState& state_);
+  /// constructor. The state should be given by the manager.
+  WalkerLogCollector(const WalkerLogState& state);
 
   /// resize buffers to zero rows at beginning of each MC block
   void startBlock();
