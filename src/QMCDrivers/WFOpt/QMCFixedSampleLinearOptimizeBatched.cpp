@@ -577,9 +577,10 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
 
   m_param.add(eigensolver_, "eigensolver",
-      {"inverse",  // Inverse + nonsymmetric eigenvalue solver
-       "general"   // General eigenvalue problem solver
-      });
+              {
+                  "inverse", // Inverse + nonsymmetric eigenvalue solver
+                  "general"  // General eigenvalue problem solver
+              });
 
   oAttrib.put(q);
   m_param.put(q);
@@ -1638,7 +1639,8 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   }
 
   // Solve eigenvalue problem on one rank.
-  if (is_manager()) {
+  if (is_manager())
+  {
     ScopedTimer local(eigenvalue_timer_);
     Timer t_eigen;
     app_log() << std::endl
@@ -1662,13 +1664,23 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 
     RealType lowestEV;
     // compute the lowest eigenvalue and the corresponding eigenvector
-    if (eigensolver_ == "general") {
+    if (eigensolver_ == "general")
+    {
       app_log() << "  Using generalized eigenvalue solver (ggev)" << std::endl;
       lowestEV = getLowestEigenvector_Gen(hamMat, invMat, parameterDirections);
-    } else if (eigensolver_ == "inverse") {
+    }
+    else if (eigensolver_ == "inverse")
+    {
       app_log() << "  Using inverse + regular eigenvalue solver (geev)" << std::endl;
       lowestEV = getLowestEigenvector_Inv(hamMat, invMat, parameterDirections);
-    } else {
+    }
+    else if (eigensolver_ == "arpack")
+    {
+      app_log() << "ARPACK not compiled into this QMCPACK executable" << std::endl;
+      throw std::runtime_error("ARPACK not present (QMC_USE_ARPACK not set)");
+    }
+    else
+    {
       throw std::runtime_error("Unknown eigenvalue solver: " + eigensolver_);
     }
 
@@ -1688,7 +1700,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
       parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
-
   }
   myComm->bcast(parameterDirections);
 
