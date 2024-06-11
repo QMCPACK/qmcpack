@@ -437,7 +437,7 @@ bool DMCBatched::run()
   wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
   std::vector<WalkerLogCollector*> wlog_collectors;
   for (auto& c: crowds_)
-    wlog_collectors.push_back(&c->wlog_collector_);
+    wlog_collectors.push_back(&c->getWalkerLogCollector());
   wlog_manager_->startRun(wlog_collectors);
 
   StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_);

@@ -135,6 +135,8 @@ private:
   DriverWalkerResourceCollection driverwalker_resource_collection_;
   /// per crowd estimator manager
   EstimatorManagerCrowd estimator_manager_crowd_;
+  // collector for walker logs
+  WalkerLogCollector wlog_collector_;
 
   /** @name Step State
    * 
@@ -145,8 +147,6 @@ private:
   unsigned long n_accept_          = 0;
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
-public:
-  WalkerLogCollector wlog_collector_;
 };
 
 } // namespace qmcplusplus
