@@ -26,7 +26,6 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "OptimizableObject.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
-#include "DualAllocatorAliases.hpp"
 
 namespace qmcplusplus
 {

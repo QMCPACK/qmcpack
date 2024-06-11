@@ -296,8 +296,12 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #else
   sdAttrib.add(use_batch, "batch", {"no", "yes"});
 #endif
-#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
-  sdAttrib.add(useGPU, "gpu", {"yes", "no"});
+#if defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
+  sdAttrib.add(useGPU, "gpu", CPUOMPTargetVendorSelector::candidate_values);
+#else
+  sdAttrib.add(useGPU, "gpu", PlatformSelector<SelectorKind::CPU_OMPTARGET>::candidate_values);
+#endif
 #endif
   sdAttrib.put(cur->parent);
 
@@ -390,8 +394,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<
-            MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
+        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
                                                                                           delay_rank,
                                                                                           matrix_inverter_kind);
@@ -402,12 +405,11 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #if defined(ENABLE_OFFLOAD)
         if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
           throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
-        app_summary() << "      Running OpenMP offload code path on GPU. "
+        app_summary() << "      Running OpenMP offload code path on GPU. " << std::endl;
 #else
-        app_summary() << "      Running OpenMP offload code path on CPU. "
+        app_summary() << "      Running OpenMP offload code path on CPU. " << std::endl;
 #endif
-                      << "Only SM1 update is supported. delay_rank is ignored." << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
+        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
                                                            matrix_inverter_kind);
       }
     }
@@ -967,13 +969,18 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     }
 
     app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
+
+    if (coeff.size() == 0)
+      throw std::runtime_error(
+          "MSD expansion is empty with either zero determinants input or remaining after cutoff applied.");
+
     app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
     app_log() << "Norm of qchem ci vector (sum of qchem_ci^2): " << sumsq_qc << std::endl;
 
   } //usingCSF
 
-  for (int grp = 0; grp < nGroups; grp++)
-    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group" << grp << " determinants.\n";
+  for (auto grp = 0; grp < nGroups; grp++)
+    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group " << grp << " determinants.\n";
 
   return success;
 }
@@ -1219,10 +1226,14 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
 
   app_log() << " Done Sorting unique CIs" << std::endl;
   app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
+  if (coeff.size() == 0)
+    throw std::runtime_error(
+        "MSD expansion is empty with either zero determinants input or remaining after cutoff applied.");
+
   app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
 
-  for (int grp = 0; grp < nGroups; grp++)
-    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group" << grp << " determinants.\n";
+  for (auto grp = 0; grp < nGroups; grp++)
+    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group " << grp << " determinants.\n";
 
   return success;
 }

@@ -1,10 +1,10 @@
-Nexus QE+QMCPACK Example 4: Diamond cubic cell (DMC timestep extrapolation)
+Nexus QE+QMCPACK Example 3: Diamond cubic cell (DMC timestep extrapolation)
 ===========================================================================
 
-In this example, we expand on Example 2 to include DMC timestep extrapolation.
+In this example, we expand on Example 1 to include DMC timestep extrapolation.
 
 The Nexus script used for this example is ``diamond_lda_dmc_extrap.py``.
-Important differences between this script and the VMC only one from Example 2
+Important differences between this script and the VMC only one from Example 1
  are shown below:
 
 .. parsed-literal::

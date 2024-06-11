@@ -798,7 +798,7 @@ Additional information:
   The best ``delay_rank`` depends on the processor microarchitecture.
   GPU support is under development.
 
-- ``gpu`` This option is only effective when GPU features are built. Use the implementation with GPU acceleration if ``yes``.
+- ``gpu`` This option is only effective when GPU features are built. Default to using GPU. "omptarget", "cuda", "sycl", "cpu" can be set to target a specific implementation, "yes", "no" can be used to toggle on or off GPU acceleration.
 
 - ``batch`` The default value is ``yes`` if ``gpu=yes`` and ``no`` otherwise.
 

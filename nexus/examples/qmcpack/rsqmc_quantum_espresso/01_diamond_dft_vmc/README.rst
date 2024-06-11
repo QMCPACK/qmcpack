@@ -1,4 +1,4 @@
-Nexus QE+QMCPACK Example 2: Diamond cubic cell (DFT+VMC)
+Nexus QE+QMCPACK Example 1: Diamond cubic cell (DFT+VMC)
 ========================================================
 
 In this example, we expand on the simple SCF run of the diamond primitive 

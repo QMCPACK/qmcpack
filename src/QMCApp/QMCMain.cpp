@@ -243,12 +243,12 @@ bool QMCMain::execute()
   particle_set_pool_->get(app_log());
   ham_pool_->get(app_log());
   OHMMS::Controller->barrier();
+  t3.stop();
   if (qmc_common.dryrun)
   {
-    app_log() << "  dryrun == 1 Ignore qmc/loop elements " << std::endl;
-    myComm->barrier_and_abort("QMCMain::execute");
+    app_log() << "  dryrun == 1 : Skipping all QMC and loop elements " << std::endl;
+    return true;
   }
-  t3.stop();
   Timer t1;
   qmc_common.qmc_counter = 0;
   for (int qa = 0; qa < qmc_action_.size(); qa++)
@@ -309,11 +309,7 @@ bool QMCMain::execute()
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
-    //#if defined(H5_HAVE_PARALLEL)
     xmlNewProp(newmcptr, (const xmlChar*)"collected", (const xmlChar*)"yes");
-    //#else
-    //      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"no");
-    //#endif
     if (mcptr == NULL)
     {
       xmlAddNextSibling(last_input_node_, newmcptr);

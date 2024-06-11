@@ -15,6 +15,7 @@
 
 #include <vector>
 #include <string>
+#include <config.h>
 #include "PlatformKinds.hpp"
 
 namespace qmcplusplus

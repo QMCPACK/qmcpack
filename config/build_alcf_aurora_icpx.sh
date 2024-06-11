@@ -13,12 +13,9 @@ do
 done
 
 module load spack-pe-gcc cmake
-module load cray-hdf5
-module load oneapi/eng-compiler/2023.12.15.002
+module load oneapi/eng-compiler/2024.04.15.002
+module load hdf5/1.14.3 boost/1.84.0
 module list >& module_list.txt
-
-# edit this line for your own boost header files.
-export BOOST_ROOT=/home/yeluo/opt/boost_1_80_0
 
 echo "**********************************"
 echo '$ icpx -v'
@@ -27,7 +24,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=aurora
-Compiler=icpx20231130
+Compiler=icpx20240227
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`

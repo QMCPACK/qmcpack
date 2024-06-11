@@ -50,17 +50,13 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
     for (int i = 0; i < b1; i++)
       B[j][i] = i * 4 + j * 5;
 
-  // Fill C and D with 0
-  for (int j = 0; j < N; j++)
-    for (int i = 0; i < M; i++)
-      C[j][i] = D[j][i] = T(0);
-
   A.updateTo();
   B.updateTo();
-  C.updateTo();
 
   T alpha(1);
+  T alpha_half(0.5);
   T beta(0);
+  T beta1(1);
 
   // U[X,Y] denotes a row-major matrix U with X rows and Y cols
   // element U(i,j) is located at: U.data() + sizeof(U_type) * (i*ldU + j)
@@ -72,7 +68,11 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
   // transa/transb == 'T'/'N':   C[N,M] = A[M,K] * B[N,K]; C = B * A^t
   // transa/transb == 'T'/'T':   C[N,M] = A[M,K] * B[K,N]; C = B^t * A^t
 
-  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha, A.device_data(), a1, B.device_data(), b1, beta, C.device_data(),
+  // alpha 0.5, beta 0
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta, C.device_data(),
+                M);
+  // alpha 0.5, beta 1
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta1, C.device_data(),
                 M);
   C.updateFrom();
 
@@ -83,6 +83,63 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
     {
       CHECK(std::real(C[j][i]) == Approx(std::real(D[j][i])));
       CHECK(std::imag(C[j][i]) == Approx(std::imag(D[j][i])));
+    }
+
+  mat_t A2(a0, a1); // Input matrix
+  mat_t B2(b0, b1); // Input matrix
+  mat_t C2(N, M);   // Result matrix ompBLAS
+  mat_t D2(N, M);   // Result matrix BLAS
+
+  // Fill data
+  for (int j = 0; j < a0; j++)
+    for (int i = 0; i < a1; i++)
+      A2[j][i] = j * 3 + i * 4;
+
+  for (int j = 0; j < b0; j++)
+    for (int i = 0; i < b1; i++)
+      B2[j][i] = j * 4 + i * 5;
+
+  A2.updateTo();
+  B2.updateTo();
+
+  Vector<const T*, OMPallocator<const T*>> Aarr(2), Barr(2);
+  Vector<T*, OMPallocator<T*>> Carr(2);
+
+  Aarr[0] = A2.device_data();
+  Aarr[1] = A.device_data();
+  Barr[0] = B2.device_data();
+  Barr[1] = B.device_data();
+
+  Carr[0] = C.device_data();
+  Carr[1] = C2.device_data();
+
+  Aarr.updateTo();
+  Barr.updateTo();
+  Carr.updateTo();
+
+  // alpha 0.5, beta 0
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1, beta,
+                        Carr.device_data(), M, 2);
+  // alpha 0.5, beta 1
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1, beta1,
+                        Carr.device_data(), M, 2);
+  C.updateFrom();
+  C2.updateFrom();
+
+  BLAS::gemm(transa, transb, M, N, K, alpha, A2.data(), a1, B2.data(), b1, beta, D2.data(), M);
+
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+    {
+      CHECK(std::real(C2[j][i]) == Approx(std::real(D[j][i])));
+      CHECK(std::imag(C2[j][i]) == Approx(std::imag(D[j][i])));
+    }
+
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+    {
+      CHECK(std::real(C[j][i]) == Approx(std::real(D2[j][i])));
+      CHECK(std::imag(C[j][i]) == Approx(std::imag(D2[j][i])));
     }
 }
 
@@ -250,18 +307,25 @@ void test_gemv_batched(const int M_b, const int N_b, const char trans, const int
   // Run tests
   Vector<T, OMPallocator<T>> alpha(batch_count);
   Vector<T, OMPallocator<T>> beta(batch_count);
+  Vector<T, OMPallocator<T>> beta1(batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
   {
-    alpha[batch] = T(1);
+    alpha[batch] = T(0.5);
     beta[batch]  = T(0);
+    beta1[batch] = T(1);
   }
 
   alpha.updateTo();
   beta.updateTo();
+  beta1.updateTo();
 
+  // alpha 0.5, beta 0
   ompBLAS::gemv_batched(handle, trans, N_b, M_b, alpha.device_data(), Bptrs.device_data(), N_b, Aptrs.device_data(), 1,
                         beta.device_data(), Cptrs.device_data(), 1, batch_count);
+  // alpha 0.5, beta 1
+  ompBLAS::gemv_batched(handle, trans, N_b, M_b, alpha.device_data(), Bptrs.device_data(), N_b, Aptrs.device_data(), 1,
+                        beta1.device_data(), Cptrs.device_data(), 1, batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
   {

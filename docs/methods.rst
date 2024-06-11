@@ -618,13 +618,15 @@ and adjustment on ``minwalkers`` can be made if needed.
 
   parameters:
 
-  +--------------+--------------+-------------+-------------+---------------------------------------------------+
-  | **Name**     | **Datatype** | **Values**  | **Default** | **Description**                                   |
-  +==============+==============+=============+=============+===================================================+
-  | ``shift_i``  | real         | :math:`> 0` | 0.01        | Direct stabilizer added to the Hamiltonian matrix |
-  +--------------+--------------+-------------+-------------+---------------------------------------------------+
-  | ``shift_s``  | real         | :math:`> 0` | 1.00        | Initial stabilizer based on the overlap matrix    |
-  +--------------+--------------+-------------+-------------+---------------------------------------------------+
+  +------------------+--------------+------------------+-------------+---------------------------------------------------+
+  | **Name**         | **Datatype** | **Values**       | **Default** | **Description**                                   |
+  +==================+==============+==================+=============+===================================================+
+  | ``shift_i``      | real         | :math:`> 0`      | 0.01        | Direct stabilizer added to the Hamiltonian matrix |
+  +------------------+--------------+------------------+-------------+---------------------------------------------------+
+  | ``shift_s``      | real         | :math:`> 0`      | 1.00        | Initial stabilizer based on the overlap matrix    |
+  +------------------+--------------+------------------+-------------+---------------------------------------------------+
+  | ``eigensolver``  | string       | inverse, general | inverse     | Eigensolver for linear method                     |
+  +------------------+--------------+------------------+-------------+---------------------------------------------------+
 
 Additional information:
 
@@ -636,6 +638,11 @@ Additional information:
    matrix added to the Hamiltonian matrix. It provides more stable but
    slower optimization with a large value. The used value is
    auto-adjusted by the optimizer.
+
+-  ``eigensolver`` Choice of eigensolver for the linear method.  Option only implemented for the batched optimizer driver.
+
+   - ``general`` Use solver specific to the generalized eigenvalue problem (LAPACK dggev).
+   - ``inverse`` Compute :math:`S^{-1} H` and use regular eigenvalue solver (LAPACK dgeev). This is faster than the general eigensolver option.
 
 Recommendations:
 

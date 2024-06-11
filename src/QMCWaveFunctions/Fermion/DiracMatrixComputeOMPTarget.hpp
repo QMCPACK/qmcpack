@@ -16,6 +16,7 @@
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OMPTarget/OMPallocator.hpp"
+#include "OMPTarget/AccelBLAS_OMPTarget.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "DiracMatrix.h"
 #include "type_traits/complex_help.hpp"
@@ -57,7 +58,7 @@ public:
   using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
   // maybe you'll want a resource someday, then change here.
-  using HandleResource = DummyResource;
+  using HandleResource = compute::BLASHandle<PlatformKind::OMPTARGET>;
 
 private:
   aligned_vector<VALUE_FP> m_work_;

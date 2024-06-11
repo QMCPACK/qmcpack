@@ -4306,7 +4306,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         for value in values:
             inp = input.copy()
             qhost = inp.get_host(quantity)                               
-            print(qhost)
+            #print(qhost)
             if qhost!=None:
                 qhost[quantity] = value
             else:
@@ -7315,6 +7315,7 @@ gen_basic_input_defaults = obj(
     precision      = 'float',          
     twistnum       = None,             
     twist          = None,             
+    gcta           = None,
     spin_polarized = None,             
     partition      = None,             
     partition_mf   = None,             

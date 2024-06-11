@@ -45,12 +45,6 @@ public:
     buff.reserve(std::max(sz, std::size_t(0)));
   }
 
-  // not sure this makes sense, but needed for TTI
-  matrix_emplace_wrapper(matrix_emplace_wrapper const& other) : M(other.M), m(nullptr)
-  {
-    m = std::move(std::make_unique<shm_mutex>(other.m->scomm_));
-    buff.reserve(other.buff.size());
-  }
   matrix_emplace_wrapper operator=(matrix_emplace_wrapper const& other) = delete;
   matrix_emplace_wrapper(matrix_emplace_wrapper&& other)
   {

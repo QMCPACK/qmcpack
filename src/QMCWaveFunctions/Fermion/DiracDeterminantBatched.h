@@ -18,13 +18,13 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/MatrixUpdateOMPTarget.h"
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-#include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
-#endif
-#include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "type_traits/complex_help.hpp"
+#include "DiracMatrixComputeOMPTarget.hpp"
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#include "DiracMatrixComputeCUDA.hpp"
+#endif
+#include "QMCWaveFunctions/Fermion/DelayedUpdateBatched.h"
 
 namespace qmcplusplus
 {
@@ -32,11 +32,47 @@ namespace qmcplusplus
 //forward declaration
 class TWFFastDerivWrapper;
 
-template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<PlatformKind PL, typename VT>
+struct UpdateEngineSelector;
+
+template<typename VT>
+struct UpdateEngineSelector<PlatformKind::OMPTARGET, VT>
+{
+  using Engine = DelayedUpdateBatched<PlatformKind::OMPTARGET, VT>;
+};
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+template<typename VT>
+struct UpdateEngineSelector<PlatformKind::CUDA, VT>
+{
+  using Engine = DelayedUpdateBatched<PlatformKind::CUDA, VT>;
+};
+#endif
+
+template<PlatformKind UEPL, typename FPVT>
+struct DetInverterSelector;
+
+template<typename FPVT>
+struct DetInverterSelector<PlatformKind::OMPTARGET, FPVT>
+{
+  using Inverter = DiracMatrixComputeOMPTarget<FPVT>;
+};
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+template<typename FPVT>
+struct DetInverterSelector<PlatformKind::CUDA, FPVT>
+{
+  using Inverter = DiracMatrixComputeCUDA<FPVT>;
+};
+#endif
+
+template<PlatformKind PL, typename VT, typename FPVT>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
-  using WFT           = typename DET_ENGINE::WFT;
+  using UpdateEngine  = typename UpdateEngineSelector<PL, VT>::Engine;
+  using DetInverter   = typename DetInverterSelector<PL, FPVT>::Inverter;
+  using WFT           = WaveFunctionTypes<VT, FPVT>;
   using Value         = typename WFT::Value;
   using FullPrecValue = typename WFT::FullPrecValue;
   using PsiValue      = typename WFT::PsiValue;
@@ -46,16 +82,14 @@ public:
   using Real          = typename WFT::Real;
   using FullPrecGrad  = TinyVector<FullPrecValue, DIM>;
 
-  // the understanding of dual memory space needs to follow DET_ENGINE
+  // the understanding of dual memory space needs to follow UpdateEngine
   template<typename DT>
-  using PinnedDualAllocator = typename DET_ENGINE::template PinnedDualAllocator<DT>;
+  using DualVector = Vector<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
-  using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
-  template<typename DT>
-  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+  using DualMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
-  using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
+  using DualVGLVector = VectorSoaContainer<Value, DIM + 2, OffloadPinnedAllocator<Value>>;
 
   using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
 
@@ -301,13 +335,13 @@ private:
   void resize(int nel, int morb);
 
   /// Delayed update engine 1 per walker.
-  DET_ENGINE det_engine_;
+  UpdateEngine det_engine_;
 
   /// slow but doesn't consume device memory
   DiracMatrix<FullPrecValue> host_inverter_;
 
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  ResourceHandle<typename DET_ENGINE::DetInverter> accel_inverter_;
+  ResourceHandle<DetInverter> accel_inverter_;
 
   /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
@@ -343,10 +377,11 @@ private:
   NewTimer &D2HTimer, &H2DTimer;
 };
 
-extern template class DiracDeterminantBatched<>;
+extern template class DiracDeterminantBatched<PlatformKind::OMPTARGET,
+                                              QMCTraits::ValueType,
+                                              QMCTraits::QTFull::ValueType>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-extern template class DiracDeterminantBatched<
-    MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
 
 } // namespace qmcplusplus
