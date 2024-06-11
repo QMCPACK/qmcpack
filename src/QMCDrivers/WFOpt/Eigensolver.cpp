@@ -69,9 +69,7 @@ void Eigensolver::solveGeneralizedEigenvalues(Matrix<Real>& A,
     throw std::runtime_error("Invalid Matrix Diagonalization Function, ggev info = " + std::to_string(info));
 
   for (int i = 0; i < Nl; i++)
-  {
     eigenvals[i] = alphar[i] / beta[i];
-  }
 }
 
 
@@ -119,9 +117,7 @@ void Eigensolver::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
     throw std::runtime_error("Invalid Matrix Diagonalization Function, geev info = " + std::to_string(info));
 
   for (int i = 0; i < Nl; i++)
-  {
     eigenvals[i] = alphar[i];
-  }
 }
 
 } // namespace qmcplusplus
