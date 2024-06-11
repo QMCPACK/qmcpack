@@ -31,23 +31,11 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 struct WalkerLogState
 {
   /// whether logs are active in the current driver
-  bool logs_active;
+  bool logs_active = false;
   /// period between MC steps for data collection
-  int step_period;
+  int step_period = 1;
   /// controls verbosity of log file writes
-  bool verbose;
-
-  WalkerLogState()
-  {
-    reset();
-    step_period = 1;
-  }
-
-  inline void reset()
-  {
-    logs_active = false;
-    verbose     = false;
-  }
+  bool verbose = false;
 };
 
 
