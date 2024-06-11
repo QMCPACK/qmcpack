@@ -94,7 +94,7 @@ public:
   WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm = 0);
 
   /// create a WalkerLogCollector (legacy drivers only, "cloning" style)
-  WalkerLogCollector* makeCollector();
+  WalkerLogCollector* makeCollector() const;
 
   /// open the logs file and check consistency of the collectors at the start of a run
   void startRun(RefVector<WalkerLogCollector>&& collectors);

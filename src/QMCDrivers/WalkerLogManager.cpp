@@ -68,7 +68,7 @@ WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::st
 }
 
 
-WalkerLogCollector* WalkerLogManager::makeCollector()
+WalkerLogCollector* WalkerLogManager::makeCollector() const
 {
   if (state.verbose)
     app_log() << "WalkerLogManager::makeCollector " << std::endl;

@@ -33,7 +33,6 @@
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
-#include "WalkerLogInput.h"
 #include "WalkerLogManager.h"
 
 

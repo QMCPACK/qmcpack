@@ -24,7 +24,7 @@
 #else
 using TraceManager = int;
 #endif
-#include "WalkerLogManager.h"
+#include "WalkerLogCollector.h"
 //#define TEST_INNERBRANCH
 
 

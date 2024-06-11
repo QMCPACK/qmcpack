@@ -27,7 +27,6 @@
 #else
 using TraceManager = int;
 #endif
-#include "WalkerLogManager.h"
 
 //comment this out to use only method to clone
 #define ENABLE_CLONE_PSI_AND_H
