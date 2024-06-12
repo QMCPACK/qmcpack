@@ -17,6 +17,7 @@
 
 
 #include "LinearMethod.h"
+#include "Eigensolver.h"
 #include <vector>
 #include "QMCCostFunctionBase.h"
 #include <CPU/BLAS.hpp>
@@ -33,7 +34,7 @@ LinearMethod::Real LinearMethod::getLowestEigenvector_Inv(Matrix<Real>& A, Matri
   std::vector<Real> alphar(Nl);
   Matrix<Real> eigenT(Nl, Nl);
   Real zerozero = A(0, 0);
-  solveGeneralizedEigenvalues_Inv(A, B, alphar, eigenT);
+  Eigensolver::solveGeneralizedEigenvalues_Inv(A, B, alphar, eigenT);
   return selectEigenvalue(alphar, eigenT, zerozero, ev);
 }
 
@@ -43,7 +44,7 @@ LinearMethod::Real LinearMethod::getLowestEigenvector_Gen(Matrix<Real>& A, Matri
   std::vector<Real> alphar(Nl);
   Matrix<Real> eigenT(Nl, Nl);
   Real zerozero = A(0, 0);
-  solveGeneralizedEigenvalues(A, B, alphar, eigenT);
+  Eigensolver::solveGeneralizedEigenvalues(A, B, alphar, eigenT);
   return selectEigenvalue(alphar, eigenT, zerozero, ev);
 }
 
@@ -116,103 +117,6 @@ LinearMethod::Real LinearMethod::selectEigenvalue(std::vector<Real>& eigenvals,
   for (int i = 0; i < Nl; i++)
     ev[i] = eigenvectors(mappedEigenvalues[0].second, i) / eigenvectors(mappedEigenvalues[0].second, 0);
   return eigenvals[mappedEigenvalues[0].second];
-}
-
-// A - Hamiltonian
-// B - Overlap
-void LinearMethod::solveGeneralizedEigenvalues(Matrix<Real>& A,
-                                               Matrix<Real>& B,
-                                               std::vector<Real>& eigenvals,
-                                               Matrix<Real>& eigenvectors)
-{
-  int Nl = A.rows();
-  assert(A.rows() == A.cols());
-  assert(Nl == eigenvals.size());
-  assert(Nl == eigenvectors.rows());
-  assert(Nl == eigenvectors.cols());
-
-  // transpose the A and B (row-major vs. column-major)
-  for (int i = 0; i < Nl; i++)
-    for (int j = i + 1; j < Nl; j++)
-    {
-      std::swap(A(i, j), A(j, i));
-      std::swap(B(i, j), B(j, i));
-    }
-
-  //   Getting the optimal worksize
-  char jl('N');
-  char jr('V');
-  std::vector<Real> alphar(Nl), alphai(Nl), beta(Nl);
-  //Matrix<Real> eigenT(Nl, Nl);
-  int info;
-  int lwork(-1);
-  std::vector<Real> work(1);
-  Real tt(0);
-  int t(1);
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
-               eigenvectors.data(), &Nl, &work[0], &lwork, &info);
-  lwork = int(work[0]);
-  work.resize(lwork);
-
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t,
-               eigenvectors.data(), &Nl, &work[0], &lwork, &info);
-  if (info != 0)
-    throw std::runtime_error("Invalid Matrix Diagonalization Function, ggev info = " + std::to_string(info));
-
-  for (int i = 0; i < Nl; i++)
-  {
-    eigenvals[i] = alphar[i] / beta[i];
-  }
-}
-
-
-// A - Hamiltonian
-// B - Overlap
-void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
-                                                   Matrix<Real>& B,
-                                                   std::vector<Real>& eigenvals,
-                                                   Matrix<Real>& eigenvectors)
-{
-  int Nl = A.rows();
-  assert(A.rows() == A.cols());
-  assert(Nl == eigenvals.size());
-  assert(Nl == eigenvectors.rows());
-  assert(Nl == eigenvectors.cols());
-
-  invert_matrix(B, false);
-
-  Matrix<Real> prdMat(Nl, Nl);
-
-  MatrixOperators::product(B, A, prdMat);
-
-  // transpose the result (why?)
-  for (int i = 0; i < Nl; i++)
-    for (int j = i + 1; j < Nl; j++)
-      std::swap(prdMat(i, j), prdMat(j, i));
-
-  //   Getting the optimal worksize
-  char jl('N');
-  char jr('V');
-  std::vector<Real> alphar(Nl), alphai(Nl);
-  //Matrix<Real> eigenT(Nl, Nl);
-  Matrix<Real> eigenD(Nl, Nl);
-  int info;
-  int lwork(-1);
-  std::vector<Real> work(1);
-  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
-               &work[0], &lwork, &info);
-  lwork = int(work[0]);
-  work.resize(lwork);
-
-  LAPACK::geev(&jl, &jr, &Nl, prdMat.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenvectors.data(), &Nl,
-               &work[0], &lwork, &info);
-  if (info != 0)
-    throw std::runtime_error("Invalid Matrix Diagonalization Function, geev info = " + std::to_string(info));
-
-  for (int i = 0; i < Nl; i++)
-  {
-    eigenvals[i] = alphar[i];
-  }
 }
 
 
