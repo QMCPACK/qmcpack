@@ -136,6 +136,23 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   }
 }
 
+/** unified: perform branch and swap (balance) walkers as required
+   *  **This has many side effects**
+   *  ## For:
+   *  ### dynamic population
+   *  1. compute multiplicity. If iter 0 and all of warmup -> multiplicity = 1
+   *     Multiplicity in normal branching is walker->Weight + rng()
+   *  2. compute curData, collect multiplicity on every rank
+   *  ### fixed population
+   *  1. compute curData, collect weight on every rank
+   *  2. compute multiplicity by comb method
+   *  ---
+   *  3. figure out final distribution, apply walker count ceiling
+   *  4. collect good, bad walkers
+   *  5. communicate walkers
+   *  6. unpack received walkers, apply walker count floor
+   *  7. call MCPopulation to amplify walkers with Multiplicity > 1
+   */
 void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   if (debug_disable_branching_)
@@ -367,8 +384,8 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       myComm->comm.send_value(nsentcopy, minus[ic]);
       job_list.push_back(job(ncopy_pairs.back().second, minus[ic]));
 #ifdef MCWALKERSET_MPI_DEBUG
-      std::cout << "rank " << plus[ic] << " sends a walker with " << nsentcopy << " copies to rank " << minus[ic]
-                << std::endl;
+      fout << "rank " << plus[ic] << " sends a walker with " << nsentcopy << " copies to rank " << minus[ic]
+           << std::endl;
 #endif
 
       // update counter and cursor
@@ -396,8 +413,8 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       if (plus[ic] != plus[ic + nsentcopy] || minus[ic] != minus[ic + nsentcopy])
         throw std::runtime_error("WalkerControl::swapWalkersSimple send/recv pair checking failed!");
 #ifdef MCWALKERSET_MPI_DEBUG
-      std::cout << "rank " << minus[ic] << " recvs a walker with " << nsentcopy << " copies from rank " << plus[ic]
-                << std::endl;
+      fout << "rank " << minus[ic] << " recvs a walker with " << nsentcopy << " copies from rank " << plus[ic]
+           << std::endl;
 #endif
 
       ncopy_newW.push_back(nsentcopy);
@@ -446,14 +463,12 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   {
     auto unpackWalker = [](auto& awalker) {
       auto walker_id = awalker.getWalkerID();
-      // Walker::copyFromBuffer takes the walker_index_ of the sent walker and writes it over
-      // the local walker_index_ it simiplifies dealing with walker serialization not to make an exception
-      // for walker_index_ deserialization.
+      // Walker::copyFromBuffer overwrites the walker_id
       awalker.copyFromBuffer();
       auto parent_id = awalker.getWalkerID();
       // The logic of walker_id's is that they do not change once a walker becomes living so we write it back
       awalker.setWalkerID(walker_id);
-      // And set the parent_id
+      // And set the parent_id to this walkers parent.
       awalker.setParentID(parent_id);
     };
 
@@ -502,11 +517,10 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   //save the number of walkers sent
   saved_num_walkers_sent_ = nsend;
 
-  // update Multiplicity
+  // rebuild Multiplicity
   for (int iw = 0; iw < ncopy_pairs.size(); iw++)
     good_walkers[ncopy_pairs[iw].second]->Multiplicity = ncopy_pairs[iw].first;
 
-  // ncopy_newW counts from 0
   for (int iw = 0; iw < newW.size(); iw++)
     newW[iw].walker.Multiplicity = ncopy_newW[iw] + 1;
 
