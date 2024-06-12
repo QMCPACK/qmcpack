@@ -42,6 +42,10 @@ public:
   ~LCAOrbitalBuilder() override;
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 
+  // For testing
+  using BasissetMap = std::map<std::string, std::unique_ptr<BasisSet_t>>;
+  const BasissetMap& getBasissetMap() const { return basisset_map_; }
+
 protected:
   ///target ParticleSet
   ParticleSet& targetPtcl;
@@ -65,6 +69,8 @@ protected:
 
   /// Enable cusp correction
   bool doCuspCorrection;
+  /// Captured gpu input string
+  std::string useGPU;
 
   /** create basis set
      *

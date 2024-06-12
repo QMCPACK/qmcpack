@@ -314,6 +314,54 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS # OPT step 5
   )
 
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly
+    optm-batch-OneShiftOnly.xml
+    1
+    16
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly
+    optm-batch-OneShiftOnly.xml
+    2
+    4
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly
+    optm-batch-OneShiftOnly.xml
+    3
+    2
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly-general
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly-general
+    optm-batch-OneShiftOnly-general.xml
+    1
+    16
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
   list(APPEND H4_OPT_SCALARS_ONLY_JAS "totenergy" "-2.066504 0.0009") # total energy
   qmc_run_and_check(
     short-H4-opt-OneShiftOnly-onlyjas
@@ -360,6 +408,22 @@ if(NOT QMC_COMPLEX)
     2
     1
     FALSE)
+
+  run_qmc_app(
+    deterministic-check-eigenvalue-choice
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    1
+    1
+    TEST_ADDED_EIGENVALUE_CHOICE
+    ""
+    det-check-eigenvalue-choice.xml
+    )
+  # Check that the general eigenvalue solver was chosen. Overwrite the usual passing regular expression.
+  set_property(TEST deterministic-check-eigenvalue-choice PROPERTY PASS_REGULAR_EXPRESSION "Using generalized eigenvalue solver")
+  if (NOT ${SUCCESS_STATUS_MP})
+    set_property(TEST deterministic-check-eigenvalue-choice PROPERTY WILL_FAIL TRUE)
+  endif()
+
 else()
   message(VERBOSE "Skipping H4_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
 endif()

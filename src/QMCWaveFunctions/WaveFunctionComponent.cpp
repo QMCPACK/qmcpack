@@ -95,7 +95,10 @@ void WaveFunctionComponent::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFu
 {
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    grad_now[iw] = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  {
+    spingrad_now[iw] = 0;
+    grad_now[iw]     = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  }
 }
 
 void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -214,6 +217,7 @@ void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
   throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + getClassName());
 }
 
+
 /*@todo makeClone should be a pure virtual function
  */
 std::unique_ptr<WaveFunctionComponent> WaveFunctionComponent::makeClone(ParticleSet& tpq) const
@@ -236,6 +240,11 @@ void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vec
   std::ostringstream o;
   o << "WaveFunctionComponent::evaluateRatios is not implemented by " << getClassName();
   APP_ABORT(o.str());
+}
+
+void WaveFunctionComponent::evaluateSpinorRatios(const VirtualParticleSet& P, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios)
+{
+  evaluateRatios(P, ratios);
 }
 
 void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,

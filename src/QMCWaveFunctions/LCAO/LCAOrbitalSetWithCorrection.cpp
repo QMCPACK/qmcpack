@@ -20,7 +20,7 @@ LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(const std::string& my_n
                                                          bool identity,
                                                          ParticleSet& ions,
                                                          ParticleSet& els)
-    : SPOSet(my_name), lcao(my_name + "_modified", std::move(bs), norbs, identity), cusp(ions, els, norbs)
+    : SPOSet(my_name), lcao(my_name + "_modified", std::move(bs), norbs, identity, false), cusp(ions, els, norbs)
 {
   OrbitalSetSize = norbs;
 }

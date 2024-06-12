@@ -73,6 +73,7 @@ public:
   using WFBufferType = Walker_t::WFBuffer_t;
   using BufferType   = Walker_t::Buffer_t;
   using RealMatrix_t = OrbitalSetTraits<RealType>::ValueMatrix;
+  using ValueVector  = OrbitalSetTraits<ValueType>::ValueVector;
   using ValueMatrix  = OrbitalSetTraits<ValueType>::ValueMatrix;
   using GradMatrix   = OrbitalSetTraits<ValueType>::GradMatrix;
   using HessType     = OrbitalSetTraits<ValueType>::HessType;
@@ -126,6 +127,9 @@ public:
 
   /** true, if this component is fermionic */
   virtual bool isFermionic() const { return false; }
+
+  /** true, if this component is multi-determinant */
+  virtual bool isMultiDet() const { return false; }
 
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
@@ -482,6 +486,7 @@ public:
   */
   virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
+
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
       performed with the passed-in G_in gradient vector. This object is then
@@ -508,6 +513,10 @@ public:
    */
   virtual void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
+  /** Used by SOECPComponent for faster SOC evaluation
+   */
+  virtual void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios);
+
   /** evaluate ratios to evaluate the non-local PP multiple walkers
    * @param wfc_list the list of WaveFunctionComponent references of the same component in a walker batch
    * @param vp_list the list of VirtualParticleSet references in a walker batch
@@ -527,7 +536,6 @@ public:
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
 
-private:
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param p_list the list of ParticleSet pointers in a walker batch
@@ -555,6 +563,7 @@ private:
                                     std::vector<PsiValue>& ratios,
                                     std::vector<GradType>& grad_new,
                                     std::vector<ComplexType>& spingrad_new) const;
+
 };
 } // namespace qmcplusplus
 #endif

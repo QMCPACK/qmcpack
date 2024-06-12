@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2021 QMCPACK developers.
+#// Copyright (c) 2024 QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -14,8 +14,10 @@ set(SRC_DIR estimators)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+set(UTEST_HDF_INPUT_SPINOR ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear_1x1x1_pp/o2_45deg_spins.pwscf.h5)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT_SPINOR} ${UTEST_DIR}/o2_45deg_spins.pwscf.h5)
 
 set(SRCS
     test_accumulator.cpp
@@ -28,6 +30,7 @@ set(SRCS
     test_EstimatorManagerNew.cpp
     test_trace_manager.cpp
     EstimatorTesting.cpp
+    GenerateRandomParticleSets.cpp
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
@@ -40,6 +43,7 @@ set(SRCS
     test_EstimatorManagerCrowd.cpp
     test_MagnetizationDensityInput.cpp
     test_MagnetizationDensity.cpp
+    test_ParseGridInput.cpp
     test_PerParticleHamiltonianLogger.cpp
     test_ReferencePointsInput.cpp
     test_ReferencePoints.cpp
@@ -48,6 +52,8 @@ set(SRCS
     test_OneBodyDensityMatrices.cpp
     test_PerParticleHamiltonianLogger.cpp
     test_EstimatorManagerCrowd.cpp
+    test_SpaceGridInput.cpp
+    test_NESpaceGrid.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})

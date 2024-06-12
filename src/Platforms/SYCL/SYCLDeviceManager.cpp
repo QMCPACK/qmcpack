@@ -144,10 +144,4 @@ sycl::queue& SYCLDeviceManager::getDefaultDeviceDefaultQueue()
   return *default_device_queue;
 }
 
-sycl::queue SYCLDeviceManager::createQueueDefaultDevice() const
-{
-  return sycl::queue(visible_devices[sycl_default_device_num].get_context(),
-                     visible_devices[sycl_default_device_num].get_device(), sycl::property::queue::in_order());
-}
-
 } // namespace qmcplusplus

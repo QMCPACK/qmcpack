@@ -16,6 +16,7 @@
 
 
 #include "LCAOrbitalBuilder.h"
+#include <PlatformSelector.hpp>
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "MultiQuinticSpline1D.h"
@@ -101,6 +102,16 @@ struct ao_traits<T, ORBT, 2, 1>
   using basis_type   = SoaLocalizedBasisSet<ao_type, ORBT>;
 };
 
+/** specialization for STO-cartesian AO */
+template<typename T, typename ORBT>
+struct ao_traits<T, ORBT, 2, 0>
+{
+  using radial_type  = MultiFunctorAdapter<SlaterCombo<T>>;
+  using angular_type = SoaCartesianTensor<T>;
+  using ao_type      = SoaAtomicBasisSet<radial_type, angular_type>;
+  using basis_type   = SoaLocalizedBasisSet<ao_type, ORBT>;
+};
+
 
 inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const char*)a, b); }
 
@@ -123,6 +134,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   aAttrib.add(h5_path, "href");
   aAttrib.add(PBCImages, "PBCimages");
   aAttrib.add(SuperTwist, "twist");
+  aAttrib.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   aAttrib.put(cur);
 
   if (cuspC == "yes")
@@ -244,7 +256,10 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
     break;
   case (2): //sto
     app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO," << ylm << ">" << std::endl;
-    myBasisSet = createBasisSet<2, 1>(cur);
+    if (ylm)
+      myBasisSet = createBasisSet<2, 1>(cur);
+    else
+      myBasisSet = createBasisSet<2, 0>(cur);
     break;
   default:
     PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.", true);
@@ -468,6 +483,8 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spoAttrib.add(norbs, "orbitals", {}, TagStatus::DELETED);
   spoAttrib.put(cur);
 
+  const bool useOffload = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
+
   // look for coefficients element. If found the MO coefficients matrix is not identity
   bool identity = true;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
@@ -492,6 +509,8 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
+    if (useOffload)
+      app_warning() << "    LCAO with cusp correction doesn't support OpenMP offload. Running on CPU." << std::endl;
     auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, std::move(myBasisSet), norbs, identity,
                                                               sourcePtcl, targetPtcl);
     if (!identity)
@@ -501,7 +520,11 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
   {
-    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet), norbs, identity);
+    if (useOffload)
+      app_summary() << "    Running OpenMP offload code path." << std::endl;
+    else
+      app_summary() << "    Running on CPU." << std::endl;
+    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet), norbs, identity, useOffload);
     if (!identity)
       loadMO(*lcos, cur);
     sposet = std::move(lcos);
@@ -559,6 +582,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
 
+  sposet->finalizeConstruction();
   return sposet;
 }
 

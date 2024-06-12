@@ -19,6 +19,9 @@
 
 namespace qmcplusplus
 {
+
+hdf_error_suppression hide_hdf_errors;
+
 hdf_archive::~hdf_archive()
 {
 #if defined(ENABLE_PHDF5)

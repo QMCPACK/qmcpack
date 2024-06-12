@@ -20,17 +20,10 @@ namespace qmcplusplus
 namespace testing
 {
 
-namespace onebodydensitymatrices
+struct ValidOneBodyDensityMatricesInput
 {
-  enum Inputs
-  {
-    valid_obdm_input = 0,
-    valid_obdm_input_scale,
-    valid_obdm_input_grid
-  };
-
   // clang-format: off
-  constexpr std::array<std::string_view, 3> valid_one_body_density_matrices_input_sections{
+  static constexpr std::array<std::string_view, 3> xml{
       R"XML(
 <estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
   <parameter name="basis"        >  spo_ud spo_dm </parameter>
@@ -66,7 +59,13 @@ namespace onebodydensitymatrices
 )XML"
   // clang-format: on
   };
-}
+    enum valid
+  {
+    VANILLA = 0,
+    SCALE,
+    GRID
+  };
+};
 
 } // namespace testing
 } // namespace qmcplusplus

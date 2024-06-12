@@ -13,6 +13,7 @@
 
 #include "type_traits/template_types.hpp"
 #include "type_traits/ConvertToReal.h"
+#include "type_traits/complex_help.hpp"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
@@ -639,8 +640,9 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   rot_spo->resetParametersExclusive(opt_vars);
 
   using ValueType = QMCTraits::ValueType;
-  Vector<ValueType> dlogpsi(1);
-  Vector<ValueType> dhpsioverpsi(1);
+  size_t dim      = IsComplex_t<ValueType>::value ? 2 : 1;
+  Vector<ValueType> dlogpsi(dim);
+  Vector<ValueType> dhpsioverpsi(dim);
   rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
 
   CHECK(std::real(dlogpsi[0]) == Approx(-1.41961753e-05));
@@ -728,27 +730,28 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 namespace testing
 {
 opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
-opt_variables_type& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
+std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
 std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
 // Test using global rotation
 TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 {
-//There is an issue with the real<->complex parameter parsing to h5 in QMC_COMPLEX.
-//This needs to be fixed in a future PR.
+  //There is an issue with the real<->complex parameter parsing to h5 in QMC_COMPLEX.
+  //This needs to be fixed in a future PR.
   auto fake_spo = std::make_unique<FakeSPO>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
   int nel = 2;
   rot.buildOptVariables(nel);
 
+  std::vector<SPOSet::ValueType> vs_values{0.1, 0.15, 0.2, 0.25};
+
   optimize::VariableSet vs;
   rot.checkInVariablesExclusive(vs);
-  vs[0] = 0.1;
-  vs[1] = 0.15;
-  vs[2] = 0.2;
-  vs[3] = 0.25;
+  auto* vs_values_data_real = (SPOSet::RealType*)vs_values.data();
+  for (size_t i = 0; i < vs.size(); i++)
+    vs[i] = vs_values_data_real[i];
   rot.resetParametersExclusive(vs);
 
   {
@@ -772,24 +775,21 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   rot2.readVariationalParameters(hin);
 
   opt_variables_type& var = testing::getMyVars(rot2);
-  CHECK(var[0] == Approx(vs[0]));
-  CHECK(var[1] == Approx(vs[1]));
-  CHECK(var[2] == Approx(vs[2]));
-  CHECK(var[3] == Approx(vs[3]));
+  for (size_t i = 0; i < vs.size(); i++)
+    CHECK(var[i] == Approx(vs[i]));
 
-  opt_variables_type& full_var = testing::getMyVarsFull(rot2);
-  CHECK(full_var[0] == Approx(vs[0]));
-  CHECK(full_var[1] == Approx(vs[1]));
-  CHECK(full_var[2] == Approx(vs[2]));
-  CHECK(full_var[3] == Approx(vs[3]));
-  CHECK(full_var[4] == Approx(0.0));
-  CHECK(full_var[5] == Approx(0.0));
+  //add extra parameters for full set
+  vs_values.push_back(0.0);
+  vs_values.push_back(0.0);
+  std::vector<SPOSet::ValueType>& full_var = testing::getMyVarsFull(rot2);
+  for (size_t i = 0; i < full_var.size(); i++)
+    CHECK(full_var[i] == ValueApprox(vs_values[i]));
 }
 
 // Test using history list.
 TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
 {
-//Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
+  //Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
   auto fake_spo = std::make_unique<FakeSPO>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
@@ -797,12 +797,13 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   int nel = 2;
   rot.buildOptVariables(nel);
 
+  std::vector<SPOSet::ValueType> vs_values{0.1, 0.15, 0.2, 0.25};
+
   optimize::VariableSet vs;
   rot.checkInVariablesExclusive(vs);
-  vs[0] = 0.1;
-  vs[1] = 0.15;
-  vs[2] = 0.2;
-  vs[3] = 0.25;
+  auto* vs_values_data_real = (SPOSet::RealType*)vs_values.data();
+  for (size_t i = 0; i < vs.size(); i++)
+    vs[i] = vs_values_data_real[i];
   rot.resetParametersExclusive(vs);
 
   {
@@ -826,10 +827,8 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   rot2.readVariationalParameters(hin);
 
   opt_variables_type& var = testing::getMyVars(rot2);
-  CHECK(var[0] == Approx(vs[0]));
-  CHECK(var[1] == Approx(vs[1]));
-  CHECK(var[2] == Approx(vs[2]));
-  CHECK(var[3] == Approx(vs[3]));
+  for (size_t i = 0; i < var.size(); i++)
+    CHECK(var[i] == Approx(vs[i]));
 
   auto hist = testing::getHistoryParams(rot2);
   REQUIRE(hist.size() == 1);
@@ -849,6 +848,46 @@ public:
     psi[2] = 789;
   }
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override {}
+#ifdef QMC_COMPLEX
+  void evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dspin_psi) override
+  {
+    for (auto& sg : dspin_psi)
+      sg = ComplexType(0.9, 0.8);
+  }
+  void evaluateVGL_spin(const ParticleSet& P,
+                        int iat,
+                        ValueVector& psi,
+                        GradVector& dpsi,
+                        ValueVector& d2psi,
+                        ValueVector& dspin_psi) override
+  {
+    for (auto& g : dpsi)
+    {
+      g[0] = 0.123;
+      g[1] = 0.456;
+      g[2] = 0.789;
+    }
+    for (auto& sg : dspin_psi)
+      sg = ComplexType(0.1, 0.2);
+  }
+
+  void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              const RefVector<ValueVector>& psi_v_list,
+                              const RefVector<GradVector>& dpsi_v_list,
+                              const RefVector<ValueVector>& d2psi_v_list,
+                              OffloadMatrix<ComplexType>& mw_dspin) const override
+  {
+    assert(this == &spo_list.getLeader());
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
+      auto* sg_row = mw_dspin[iw];
+      ValueVector sg(sg_row, mw_dspin.cols());
+      spo_list[iw].evaluateVGL_spin(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw], sg);
+    }
+  }
+#endif
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -876,12 +915,31 @@ public:
       psi.get()[2] = 987;
     }
   }
+
+#ifdef QMC_COMPLEX
+  void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              const RefVector<ValueVector>& psi_v_list,
+                              const RefVector<GradVector>& dpsi_v_list,
+                              const RefVector<ValueVector>& d2psi_v_list,
+                              OffloadMatrix<ComplexType>& mw_dspin) const override
+  {
+    for (auto& dpsi : dpsi_v_list)
+    {
+      assert(dpsi.get().size() == 3);
+      dpsi.get()[0][0] = 0.321;
+      dpsi.get()[0][1] = 0.654;
+      dpsi.get()[0][2] = 0.987;
+    }
+    for (auto& m : mw_dspin)
+      m = ComplexType(0.2, 0.1);
+  }
+#endif
 };
 
 TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
 {
-  //checking that mw_ API works in RotatedSPOs and is not defaulting to
-  //SPOSet default implementation
   {
     //First check calling the mw_ APIs for RotatedSPOs, for which the
     //underlying implementation just calls the underlying SPOSet mw_ API
@@ -912,6 +970,29 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
       CHECK(psi_v_list[iw].get()[1] == ValueApprox(456.));
       CHECK(psi_v_list[iw].get()[2] == ValueApprox(789.));
     }
+#ifdef QMC_COMPLEX
+    SPOSet::GradVector dpsi0(3);
+    SPOSet::GradVector dpsi1(3);
+    RefVector<SPOSet::GradVector> dpsi_v_list{dpsi0, dpsi1};
+    SPOSet::ValueVector d2psi0(3);
+    SPOSet::ValueVector d2psi1(3);
+    SPOSet::ValueVector dspin(3);
+    RefVector<SPOSet::ValueVector> d2psi_v_list{d2psi0, d2psi1};
+    SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin(2, 3);
+    // check evaluate_spin, gets used by SlaterDet in evaluateVGL_spin. So checking to make sure RotatedSPO has it
+    rot_spo0.evaluate_spin(elec0, 0, psi0, dspin);
+    for (auto& m : dspin)
+      CHECK(m == ComplexApprox(SPOSet::ComplexType(0.9, 0.8)));
+    rot_spo0.mw_evaluateVGLWithSpin(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
+      CHECK(dpsi_v_list[iw].get()[0][0] == ValueApprox(0.123));
+      CHECK(dpsi_v_list[iw].get()[0][1] == ValueApprox(0.456));
+      CHECK(dpsi_v_list[iw].get()[0][2] == ValueApprox(0.789));
+    }
+    for (auto& m : mw_dspin)
+      CHECK(m == ComplexApprox(SPOSet::ComplexType(0.1, 0.2)));
+#endif
   }
   {
     //In the case that the underlying SPOSet DOES have mw_ specializations,
@@ -948,6 +1029,24 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
       CHECK(psi_v_list[iw].get()[1] == ValueApprox(654.));
       CHECK(psi_v_list[iw].get()[2] == ValueApprox(987.));
     }
+#ifdef QMC_COMPLEX
+    SPOSet::GradVector dpsi0(3);
+    SPOSet::GradVector dpsi1(3);
+    RefVector<SPOSet::GradVector> dpsi_v_list{dpsi0, dpsi1};
+    SPOSet::ValueVector d2psi0(3);
+    SPOSet::ValueVector d2psi1(3);
+    RefVector<SPOSet::ValueVector> d2psi_v_list{d2psi0, d2psi1};
+    SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin(2, 3);
+    rot_spo0.mw_evaluateVGLWithSpin(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
+      CHECK(dpsi_v_list[iw].get()[0][0] == ValueApprox(0.321));
+      CHECK(dpsi_v_list[iw].get()[0][1] == ValueApprox(0.654));
+      CHECK(dpsi_v_list[iw].get()[0][2] == ValueApprox(0.987));
+    }
+    for (auto& m : mw_dspin)
+      CHECK(m == ComplexApprox(SPOSet::ComplexType(0.2, 0.1)));
+#endif
   }
 }
 

@@ -1,0 +1,237 @@
+#INFO: **** input file is /home/shiv/Documents/qmcpack/tests/converter/test_LiH_MSD_pyscf/LiH.py ****
+#! /usr/bin/env python3
+
+
+# Note import path which is different to molecule code
+#from pyscf.pbc import gto, scf, df, dft
+from pyscf import gto, scf, df, dft, mcscf
+import  numpy
+
+
+cell = gto.M(
+   atom ='''Li  0.0 0.0 0.0
+            H   0.0 0.0 3.0139239778''',
+   basis ='cc-pvdz',
+   unit="bohr",
+   spin=0,
+   verbose = 5,
+   cart=False,
+)
+
+
+
+mf = scf.RHF(cell).run()
+mycas = mcscf.CASCI(mf, 4, 2).run()
+
+title='LiH'
+
+
+from PyscfToQmcpack import savetoqmcpack
+savetoqmcpack(cell,mycas,title)
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='positron', release='6.6.10-arch1-1', version='#1 SMP PREEMPT_DYNAMIC Fri, 05 Jan 2024 16:20:41 +0000', machine='x86_64')  Threads 24
+Python 3.11.6 (main, Nov 14 2023, 09:36:21) [GCC 13.2.1 20230801]
+numpy 1.26.3  scipy 1.11.4
+Date: Mon Jan 15 20:09:10 2024
+PySCF version 2.3.0
+PySCF path  /home/shiv/Documents/pyscf
+GIT ORIG_HEAD 4c0998dcf22d0079b5906191e85a28f2568b15fd
+GIT HEAD (branch master) 4c0998dcf22d0079b5906191e85a28f2568b15fd
+
+[CONFIG] conf_file None
+[INPUT] verbose = 5
+[INPUT] max_memory = 4000 
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 4
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = bohr
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 Li     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 H      0.000000000000   0.000000000000   1.594899884497 AA    0.000000000000   0.000000000000   3.013923977800 Bohr   0.0
+[INPUT] ---------------- BASIS SET ---------------- 
+[INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
+[INPUT] Li
+[INPUT] 0    0    [8    /2   ]  1469              0.000766 -0.00012
+                                220.5             0.005892 -0.000923
+                                50.26             0.029671 -0.004689
+                                14.24             0.10918 -0.017682
+                                4.581             0.282789 -0.048902
+                                1.58              0.453123 -0.096009
+                                0.564             0.274774 -0.13638
+                                0.07345           0.009751 0.575102
+[INPUT] 0    0    [1    /1   ]  0.02805              1
+[INPUT] 1    0    [3    /1   ]  1.534             0.022784
+                                0.2749            0.139107
+                                0.07362           0.500375
+[INPUT] 1    0    [1    /1   ]  0.02403              1
+[INPUT] 2    0    [1    /1   ]  0.1239               1
+[INPUT] H
+[INPUT] 0    0    [3    /1   ]  13.01             0.019685
+                                1.962             0.137977
+                                0.4446            0.478148
+[INPUT] 0    0    [1    /1   ]  0.122                1
+[INPUT] 1    0    [1    /1   ]  0.727                1
+
+nuclear repulsion = 0.995380116451987
+number of shells = 8
+number of NR pGTOs = 33
+number of NR cGTOs = 19
+basis = cc-pvdz
+ecp = {}
+CPU time:         0.42
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /tmp/tmpygrbkgys
+max_memory 4000 MB (current use 85 MB)
+Set gradient conv threshold to 3.16228e-05
+Initial guess from minao.
+E1 = -12.128609833386186  E_coul = 3.378204997882481
+init E= -7.75502471905172
+cond(S) = 118.50705206043233
+    CPU time for initialize scf      0.42 sec, wall time      0.05 sec
+  HOMO = -0.300807960654685  LUMO = -0.0276506949678947
+  mo_energy =
+[-2.48202372 -0.30080796 -0.02765069  0.03680297  0.03680297  0.0691927
+  0.15892555  0.16736481  0.16736481  0.26267624  0.34579279  0.34579279
+  0.35997456  0.35997456  0.54789854  0.78368192  1.62094582  1.62094582
+  1.79474698]
+E1 = -12.46386548108412  E_coul = 3.491964510652498
+cycle= 1 E= -7.97652085397964  delta_E= -0.221  |g|= 0.106  |ddm|= 0.669
+    CPU time for cycle= 1      0.16 sec, wall time      0.01 sec
+  HOMO = -0.28782886727681  LUMO = 0.000613109633283686
+  mo_energy =
+[-2.45491334e+00 -2.87828867e-01  6.13109633e-04  4.21289344e-02
+  4.21289344e-02  1.01358275e-01  1.50559066e-01  1.76839275e-01
+  1.76839275e-01  2.88058698e-01  3.64720930e-01  3.64720930e-01
+  3.66591488e-01  3.66591488e-01  5.97792547e-01  9.38560526e-01
+  1.81399901e+00  1.81399901e+00  1.97786058e+00]
+E1 = -12.451724839480052  E_coul = 3.4732755243123807
+cycle= 2 E= -7.98306919871568  delta_E= -0.00655  |g|= 0.0186  |ddm|= 0.204
+    CPU time for cycle= 2      0.22 sec, wall time      0.01 sec
+  HOMO = -0.302972595085352  LUMO = 0.00186252854047769
+  mo_energy =
+[-2.45131833e+00 -3.02972595e-01  1.86252854e-03  4.25349400e-02
+  4.25349400e-02  1.00038484e-01  1.52429697e-01  1.78048774e-01
+  1.78048774e-01  2.86360143e-01  3.62845969e-01  3.62845969e-01
+  3.66654439e-01  3.66654439e-01  5.89697858e-01  9.17708217e-01
+  1.78012574e+00  1.78012574e+00  1.94442599e+00]
+E1 = -12.454047892601245  E_coul = 3.4751354918304678
+cycle= 3 E= -7.98353228431879  delta_E= -0.000463  |g|= 0.00556  |ddm|= 0.0598
+    CPU time for cycle= 3      0.22 sec, wall time      0.01 sec
+  HOMO = -0.300703368155511  LUMO = 0.0019114748306168
+  mo_energy =
+[-2.44996354e+00 -3.00703368e-01  1.91147483e-03  4.28172727e-02
+  4.28172727e-02  1.00387016e-01  1.52685088e-01  1.78702087e-01
+  1.78702087e-01  2.86795300e-01  3.63523089e-01  3.63523089e-01
+  3.67144644e-01  3.67144644e-01  5.90749397e-01  9.21067750e-01
+  1.78482309e+00  1.78482309e+00  1.94884908e+00]
+E1 = -12.455969536019268  E_coul = 3.4769764089296817
+cycle= 4 E= -7.9836130106376  delta_E= -8.07e-05  |g|= 0.000951  |ddm|= 0.0255
+    CPU time for cycle= 4      0.20 sec, wall time      0.01 sec
+  HOMO = -0.300528851028372  LUMO = 0.00169483904760595
+  mo_energy =
+[-2.45051115e+00 -3.00528851e-01  1.69483905e-03  4.27593940e-02
+  4.27593940e-02  1.00430983e-01  1.52535954e-01  1.78529354e-01
+  1.78529354e-01  2.86662487e-01  3.63397650e-01  3.63397650e-01
+  3.66913980e-01  3.66913980e-01  5.90833901e-01  9.21579759e-01
+  1.78541770e+00  1.78541770e+00  1.94945601e+00]
+E1 = -12.455940626539437  E_coul = 3.476945247174557
+cycle= 5 E= -7.98361526291289  delta_E= -2.25e-06  |g|= 0.000103  |ddm|= 0.00454
+    CPU time for cycle= 5      0.07 sec, wall time      0.00 sec
+  HOMO = -0.300473466135466  LUMO = 0.00167802103039635
+  mo_energy =
+[-2.45056661e+00 -3.00473466e-01  1.67802103e-03  4.27513238e-02
+  4.27513238e-02  1.00442317e-01  1.52510224e-01  1.78507426e-01
+  1.78507426e-01  2.86643946e-01  3.63391942e-01  3.63391942e-01
+  3.66889795e-01  3.66889795e-01  5.90847028e-01  9.21638117e-01
+  1.78551278e+00  1.78551278e+00  1.94954640e+00]
+E1 = -12.455887570674856  E_coul = 3.4768921802615123
+cycle= 6 E= -7.98361527396136  delta_E= -1.1e-08  |g|= 1.04e-05  |ddm|= 0.000435
+    CPU time for cycle= 6      0.23 sec, wall time      0.01 sec
+  HOMO = -0.300481607031369  LUMO = 0.00167590413449268
+  mo_energy =
+[-2.45057137e+00 -3.00481607e-01  1.67590413e-03  4.27504242e-02
+  4.27504242e-02  1.00440810e-01  1.52509739e-01  1.78505961e-01
+  1.78505961e-01  2.86642531e-01  3.63388393e-01  3.63388393e-01
+  3.66887449e-01  3.66887449e-01  5.90842346e-01  9.21630809e-01
+  1.78549967e+00  1.78549967e+00  1.94953395e+00]
+E1 = -12.45588651591723  E_coul = 3.476891125362909
+cycle= 7 E= -7.98361527410233  delta_E= -1.41e-10  |g|= 1.37e-06  |ddm|= 4.87e-05
+    CPU time for cycle= 7      0.28 sec, wall time      0.01 sec
+  HOMO = -0.300480576408287  LUMO = 0.00167599794999069
+  mo_energy =
+[-2.45057156e+00 -3.00480576e-01  1.67599795e-03  4.27503978e-02
+  4.27503978e-02  1.00441027e-01  1.52509516e-01  1.78505848e-01
+  1.78505848e-01  2.86642414e-01  3.63388552e-01  3.63388552e-01
+  3.66887429e-01  3.66887429e-01  5.90842724e-01  9.21631627e-01
+  1.78550140e+00  1.78550140e+00  1.94953556e+00]
+E1 = -12.455885624171843  E_coul = 3.476890233614878
+Extra cycle  E= -7.98361527410498  delta_E= -2.64e-12  |g|= 4.29e-07  |ddm|= 3.45e-06
+    CPU time for scf_cycle      1.82 sec, wall time      0.12 sec
+    CPU time for SCF      1.83 sec, wall time      0.12 sec
+converged SCF energy = -7.98361527410498
+
+******** CASCI flags ********
+CAS (1e+1e, 4o), ncore = 1, nvir = 14
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+max_memory 4000 (MB)
+******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
+max. cycles = 200
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 1
+pspace_size = 400
+spin = None
+Start CASCI
+    CPU time for integral transformation to CAS space      0.04 sec, wall time      0.00 sec
+core energy = -6.90377858829882
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+    CPU time for FCI solver      0.03 sec, wall time      0.00 sec
+Density matrix diagonal elements [1.99949133e+00 2.70956713e-04 1.18854315e-04 1.18854315e-04]
+i = 1  <i|F|i> =  -2.45061236
+i = 2  <i|F|i> =  -0.30082738
+i = 3  <i|F|i> =   0.00170391
+i = 4  <i|F|i> =   0.04271268
+i = 5  <i|F|i> =   0.04271268
+i = 6  <i|F|i> =   0.10034593
+i = 7  <i|F|i> =   0.15254096
+i = 8  <i|F|i> =   0.17847597
+i = 9  <i|F|i> =   0.17847597
+i = 10  <i|F|i> =   0.28657474
+i = 11  <i|F|i> =   0.36328022
+i = 12  <i|F|i> =   0.36328022
+i = 13  <i|F|i> =   0.36687304
+i = 14  <i|F|i> =   0.36687304
+i = 15  <i|F|i> =   0.59059757
+i = 16  <i|F|i> =   0.92095500
+i = 17  <i|F|i> =   1.78460947
+i = 18  <i|F|i> =   1.78460947
+i = 19  <i|F|i> =   1.94866888
+CASCI converged
+CASCI E = -7.98378359954454  E(CI) = -1.08000501124573  S^2 = 0.0000000
+Using Python 3.x
+Wavefunction successfully saved to QMCPACK HDF5 Format
+Use: "convert4qmc -orbitals  LiH.h5" to generate QMCPACK input files

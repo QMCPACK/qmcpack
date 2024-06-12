@@ -20,6 +20,9 @@
 ####################################
 
 set(QMCDRIVERS
+    WalkerLogBuffer.cpp
+    WalkerLogCollector.cpp
+    WalkerLogManager.cpp
     QMCDriverFactory.cpp
     SimpleFixedNodeBranch.cpp
     SFNBranch.cpp
@@ -30,6 +33,7 @@ set(QMCDRIVERS
     QMCDriverNew.cpp
     WFOpt/QMCWFOptFactoryNew.cpp
     WFOpt/LinearMethod.cpp
+    WFOpt/Eigensolver.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
     WFOpt/OutputMatrix.cpp

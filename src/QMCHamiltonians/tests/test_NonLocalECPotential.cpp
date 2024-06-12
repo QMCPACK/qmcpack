@@ -16,6 +16,7 @@
 #include "Particle/ParticleSet.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "TestListenerFunction.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/RuntimeOptions.h"

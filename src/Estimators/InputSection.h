@@ -28,15 +28,21 @@
 namespace qmcplusplus
 {
 
+/** Input section provides basic parsing and a uniform method of access to the raw parsed input.
+   *  It is still expected to be a composed part of the actual input class for a simulation class.
+   *  It does not operate at reduced precision, i.e. numerical input is always parsed and retrieved
+   *  at full precision. Gettting values from input section is strongly typed so you will get errors
+   *  if you try to get numeric types at reduced precision.
+   */
 class InputSection
 {
 public:
-  using FullPrecReal = QMCTraits::FullPrecRealType;
-  using Real         = QMCTraits::RealType;
-  using Position     = QMCTraits::PosType;
+  using Real     = QMCTraits::FullPrecRealType;
+  using Position = typename QMCTypes<Real, OHMMS_DIM>::PosType;
 
-  InputSection()                          = default;
-  InputSection(const InputSection& other) = default;
+  InputSection()                                     = default;
+  InputSection(const InputSection& other)            = default;
+  InputSection& operator=(const InputSection& other) = default;
 
 protected:
   // Internal data below comprise the input specification.
@@ -47,7 +53,7 @@ protected:
   // Becuase it hurts to read all the trailing _ in the constructors of input section subtypes
   // NOLINTBEGIN(readability-indentifier-naming)
 
-  /// "Name" of the input section, you must define this in the subtype and the ename, name, type, or method must match. 
+  /// "Name" of the input section, you must define this in the subtype and the ename, name, type, or method must match.
   std::string section_name;
 
   /// For historical reasons some sections must recognize several different names. Assign them to this variable in your subtype.
@@ -201,10 +207,7 @@ protected:
    *
    *  can't be bothered then just define your enum option as a string.
    */
-  [[noreturn]] virtual std::any assignAnyEnum(const std::string& tag) const
-  {
-    throw std::runtime_error("derived class must provide assignAnyEnum method if enum parameters are used");
-  }
+  [[noreturn]] virtual std::any assignAnyEnum(const std::string& tag) const;
 
   /** Derived class can overrides this to do custom parsing of the element values for Custom elements
    *  These can have a name attribute only.
@@ -216,10 +219,7 @@ protected:
    */
   [[noreturn]] virtual void setFromStreamCustom(const std::string& ename,
                                                 const std::string& name,
-                                                std::istringstream& svalue)
-  {
-    throw std::runtime_error("derived class must provide handleCustom method if custom parameters are used");
-  }
+                                                std::istringstream& svalue);
 
   /** Assign any enum helper for InputSection derived class
    *  assumes enum lookup table of this form:
@@ -238,6 +238,7 @@ protected:
   // Simple dump of contents. Useful for developing and as
   // debugging function useful when input sections local error reports
   // may be insufficient.
+  void report() const;
   void report(std::ostream& out) const;
 
 private:

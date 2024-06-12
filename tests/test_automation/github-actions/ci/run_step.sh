@@ -155,7 +155,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC11-NoMPI-Werror-"*)
+      *"GCC12-NoMPI-Werror-"*)
         echo 'Configure for building with gcc -Werror flag enabled'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -177,12 +177,13 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang16-NoMPI-Offload-Real"*)
+      *"Clang16-NoMPI-Offload"*)
         echo 'Configure for building OpenMP offload with clang16 on x86_64 target'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=clang-16 \
               -DCMAKE_CXX_COMPILER=clang++-16 \
               -DQMC_MPI=0 \
+              -DQMC_COMPLEX=$IS_COMPLEX \
               -DENABLE_OFFLOAD=ON \
               -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
               -DUSE_OBJECT_TARGET=ON \
@@ -280,11 +281,12 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"macOS-GCC11-NoMPI-Real"*)
-        echo 'Configure for building on macOS using gcc11'
+      *"macOS-GCC12-NoMPI-Real"*)
+        echo 'Configure for building on macOS using gcc12'
         cmake -GNinja \
-              -DCMAKE_C_COMPILER=gcc-11 \
-              -DCMAKE_CXX_COMPILER=g++-11 \
+              -DCMAKE_C_COMPILER=gcc-12 \
+              -DCMAKE_CXX_COMPILER=g++-12 \
+              -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" \
               -DQMC_MPI=0 \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -374,20 +376,8 @@ case "$1" in
     fi
 
     # Add ctest concurrent parallel jobs 
-    # Default for Linux GitHub Action runners
-    CTEST_JOBS="2"
-    # Default for macOS GitHub Action runners
-    if [[ "${GH_OS}" =~ (macOS) ]]
-    then
-      CTEST_JOBS="3"
-    fi
-
-    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
-    then
-      CTEST_JOBS="32"
-    fi
-    
-    ctest --output-on-failure $TEST_LABEL -j $CTEST_JOBS
+    # 4 for Linux and macOS GitHub Actions free runners
+    ctest --output-on-failure $TEST_LABEL -j 4
     ;;
   
   # Generate coverage reports

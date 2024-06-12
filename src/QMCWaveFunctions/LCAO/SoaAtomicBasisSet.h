@@ -250,14 +250,28 @@ public:
   }
 
   template<typename LAT, typename T, typename PosType, typename VGH>
-  inline void evaluateVGH(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGH& vgh)
+  inline void evaluateVGH(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGH& vgh, PosType Tv)
   {
     int TransX, TransY, TransZ;
 
     PosType dr_new;
     T r_new;
 
-    constexpr T cone(1);
+    //This is needed because of mixed precision builds.  Putting 1.0 and 2.0 directly into final
+    //dpsi and dhpsi assignments at the end of this function can occasionally cause whole RHS
+    //to be typed as double, which is bad.   
+    constexpr T cone(1.);
+    constexpr T ctwo(2.);
+
+#if not defined(QMC_COMPLEX)
+    const ValueType correctphase = 1;
+#else
+
+    RealType phasearg = SuperTwist[0] * Tv[0] + SuperTwist[1] * Tv[1] + SuperTwist[2] * Tv[2];
+    RealType s, c;
+    qmcplusplus::sincos(-phasearg, &s, &c);
+    const ValueType correctphase(c, s);
+#endif
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -302,6 +316,8 @@ public:
       //      d2psi[ib]  = 0;
     }
 
+    //Phase_idx (iter) needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax)
+    int iter = -1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -320,6 +336,7 @@ public:
           r_new     = std::sqrt(dot(dr_new, dr_new));
 
           //const size_t ib_max=NL.size();
+          iter++;
           if (r_new >= Rmax)
             continue;
 
@@ -331,6 +348,8 @@ public:
 
           const T rinv = cone / r_new;
 
+          ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
+          const ValueType Phase = periodic_image_phase_factors_[iter] * correctphase;
 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
@@ -366,20 +385,20 @@ public:
 
             const T vr = phi[nl];
 
-            psi[ib] += ang * vr;
-            dpsi_x[ib] += ang * gr_x + vr * ang_x;
-            dpsi_y[ib] += ang * gr_y + vr * ang_y;
-            dpsi_z[ib] += ang * gr_z + vr * ang_z;
+            psi[ib] += ang * vr * Phase;
+            dpsi_x[ib] += (ang * gr_x + vr * ang_x) * Phase;
+            dpsi_y[ib] += (ang * gr_y + vr * ang_y) * Phase;
+            dpsi_z[ib] += (ang * gr_z + vr * ang_z) * Phase;
 
 
             // \partial_i \partial_j (R*Y) = Y \partial_i \partial_j R + R \partial_i \partial_j Y
             //                             + (\partial_i R) (\partial_j Y) + (\partial_j R)(\partial_i Y)
-            dhpsi_xx[ib] += gr_xx * ang + ang_xx * vr + 2.0 * gr_x * ang_x;
-            dhpsi_xy[ib] += gr_xy * ang + ang_xy * vr + gr_x * ang_y + gr_y * ang_x;
-            dhpsi_xz[ib] += gr_xz * ang + ang_xz * vr + gr_x * ang_z + gr_z * ang_x;
-            dhpsi_yy[ib] += gr_yy * ang + ang_yy * vr + 2.0 * gr_y * ang_y;
-            dhpsi_yz[ib] += gr_yz * ang + ang_yz * vr + gr_y * ang_z + gr_z * ang_y;
-            dhpsi_zz[ib] += gr_zz * ang + ang_zz * vr + 2.0 * gr_z * ang_z;
+            dhpsi_xx[ib] += (gr_xx * ang + ang_xx * vr + ctwo * gr_x * ang_x) * Phase;
+            dhpsi_xy[ib] += (gr_xy * ang + ang_xy * vr + gr_x * ang_y + gr_y * ang_x) * Phase;
+            dhpsi_xz[ib] += (gr_xz * ang + ang_xz * vr + gr_x * ang_z + gr_z * ang_x) * Phase;
+            dhpsi_yy[ib] += (gr_yy * ang + ang_yy * vr + ctwo * gr_y * ang_y) * Phase;
+            dhpsi_yz[ib] += (gr_yz * ang + ang_yz * vr + gr_y * ang_z + gr_z * ang_y) * Phase;
+            dhpsi_zz[ib] += (gr_zz * ang + ang_zz * vr + ctwo * gr_z * ang_z) * Phase;
           }
         }
       }
@@ -387,14 +406,34 @@ public:
   }
 
   template<typename LAT, typename T, typename PosType, typename VGHGH>
-  inline void evaluateVGHGH(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGHGH& vghgh)
+  inline void evaluateVGHGH(const LAT& lattice,
+                            const T r,
+                            const PosType& dr,
+                            const size_t offset,
+                            VGHGH& vghgh,
+                            PosType Tv)
   {
     int TransX, TransY, TransZ;
 
     PosType dr_new;
     T r_new;
 
-    constexpr T cone(1);
+    //This is needed because of mixed precision builds.  Putting 1.0, 2.0, and 3.0 directly into final
+    //dpsi, dhpsi, and dghpsi assignments at the end of this function can occasionally cause whole RHS
+    //to be typed as double, which is bad.   
+    constexpr T cone(1.0);
+    constexpr T ctwo(2.0);
+    constexpr T cthree(3.0);
+
+#if not defined(QMC_COMPLEX)
+    const ValueType correctphase = 1.0;
+#else
+
+    RealType phasearg = SuperTwist[0] * Tv[0] + SuperTwist[1] * Tv[1] + SuperTwist[2] * Tv[2];
+    RealType s, c;
+    qmcplusplus::sincos(-phasearg, &s, &c);
+    const ValueType correctphase(c, s);
+#endif
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -473,6 +512,8 @@ public:
       dghpsi_zzz[ib] = 0;
     }
 
+    //Phase_idx (iter) needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax)
+    int iter = -1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -491,6 +532,7 @@ public:
           r_new     = std::sqrt(dot(dr_new, dr_new));
 
           //const size_t ib_max=NL.size();
+          iter++;
           if (r_new >= Rmax)
             continue;
 
@@ -502,6 +544,10 @@ public:
 
           const T rinv = cone / r_new;
           const T xu = x * rinv, yu = y * rinv, zu = z * rinv;
+
+          ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
+          const ValueType Phase = periodic_image_phase_factors_[iter] * correctphase;
+
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
             const int nl(NL[ib]);
@@ -526,7 +572,7 @@ public:
             const T gr_zz = z * zu * gr2_tmp + drnloverr;
 
             //This is q(r) in the notes.
-            const T gr3_tmp = d3phi[nl] - 3.0 * gr2_tmp;
+            const T gr3_tmp = d3phi[nl] - cthree * gr2_tmp;
 
             const T gr_xxx = xu * xu * xu * gr3_tmp + gr2_tmp * (3. * xu);
             const T gr_xxy = xu * xu * yu * gr3_tmp + gr2_tmp * yu;
@@ -565,38 +611,45 @@ public:
 
             const T vr = phi[nl];
 
-            psi[ib] += ang * vr;
-            dpsi_x[ib] += ang * gr_x + vr * ang_x;
-            dpsi_y[ib] += ang * gr_y + vr * ang_y;
-            dpsi_z[ib] += ang * gr_z + vr * ang_z;
+            psi[ib] += ang * vr * Phase;
+            dpsi_x[ib] += (ang * gr_x + vr * ang_x) * Phase;
+            dpsi_y[ib] += (ang * gr_y + vr * ang_y) * Phase;
+            dpsi_z[ib] += (ang * gr_z + vr * ang_z) * Phase;
 
 
             // \partial_i \partial_j (R*Y) = Y \partial_i \partial_j R + R \partial_i \partial_j Y
             //                             + (\partial_i R) (\partial_j Y) + (\partial_j R)(\partial_i Y)
-            dhpsi_xx[ib] += gr_xx * ang + ang_xx * vr + 2.0 * gr_x * ang_x;
-            dhpsi_xy[ib] += gr_xy * ang + ang_xy * vr + gr_x * ang_y + gr_y * ang_x;
-            dhpsi_xz[ib] += gr_xz * ang + ang_xz * vr + gr_x * ang_z + gr_z * ang_x;
-            dhpsi_yy[ib] += gr_yy * ang + ang_yy * vr + 2.0 * gr_y * ang_y;
-            dhpsi_yz[ib] += gr_yz * ang + ang_yz * vr + gr_y * ang_z + gr_z * ang_y;
-            dhpsi_zz[ib] += gr_zz * ang + ang_zz * vr + 2.0 * gr_z * ang_z;
+            dhpsi_xx[ib] += (gr_xx * ang + ang_xx * vr + ctwo * gr_x * ang_x) * Phase;
+            dhpsi_xy[ib] += (gr_xy * ang + ang_xy * vr + gr_x * ang_y + gr_y * ang_x) * Phase;
+            dhpsi_xz[ib] += (gr_xz * ang + ang_xz * vr + gr_x * ang_z + gr_z * ang_x) * Phase;
+            dhpsi_yy[ib] += (gr_yy * ang + ang_yy * vr + ctwo * gr_y * ang_y) * Phase;
+            dhpsi_yz[ib] += (gr_yz * ang + ang_yz * vr + gr_y * ang_z + gr_z * ang_y) * Phase;
+            dhpsi_zz[ib] += (gr_zz * ang + ang_zz * vr + ctwo * gr_z * ang_z) * Phase;
 
-            dghpsi_xxx[ib] += gr_xxx * ang + vr * ang_xxx + 3.0 * gr_xx * ang_x + 3.0 * gr_x * ang_xx;
-            dghpsi_xxy[ib] +=
-                gr_xxy * ang + vr * ang_xxy + gr_xx * ang_y + ang_xx * gr_y + 2.0 * gr_xy * ang_x + 2.0 * ang_xy * gr_x;
-            dghpsi_xxz[ib] +=
-                gr_xxz * ang + vr * ang_xxz + gr_xx * ang_z + ang_xx * gr_z + 2.0 * gr_xz * ang_x + 2.0 * ang_xz * gr_x;
-            dghpsi_xyy[ib] +=
-                gr_xyy * ang + vr * ang_xyy + gr_yy * ang_x + ang_yy * gr_x + 2.0 * gr_xy * ang_y + 2.0 * ang_xy * gr_y;
-            dghpsi_xyz[ib] += gr_xyz * ang + vr * ang_xyz + gr_xy * ang_z + ang_xy * gr_z + gr_yz * ang_x +
-                ang_yz * gr_x + gr_xz * ang_y + ang_xz * gr_y;
-            dghpsi_xzz[ib] +=
-                gr_xzz * ang + vr * ang_xzz + gr_zz * ang_x + ang_zz * gr_x + 2.0 * gr_xz * ang_z + 2.0 * ang_xz * gr_z;
-            dghpsi_yyy[ib] += gr_yyy * ang + vr * ang_yyy + 3.0 * gr_yy * ang_y + 3.0 * gr_y * ang_yy;
-            dghpsi_yyz[ib] +=
-                gr_yyz * ang + vr * ang_yyz + gr_yy * ang_z + ang_yy * gr_z + 2.0 * gr_yz * ang_y + 2.0 * ang_yz * gr_y;
-            dghpsi_yzz[ib] +=
-                gr_yzz * ang + vr * ang_yzz + gr_zz * ang_y + ang_zz * gr_y + 2.0 * gr_yz * ang_z + 2.0 * ang_yz * gr_z;
-            dghpsi_zzz[ib] += gr_zzz * ang + vr * ang_zzz + 3.0 * gr_zz * ang_z + 3.0 * gr_z * ang_zz;
+            dghpsi_xxx[ib] += (gr_xxx * ang + vr * ang_xxx + cthree * gr_xx * ang_x + cthree * gr_x * ang_xx) * Phase;
+            dghpsi_xxy[ib] += (gr_xxy * ang + vr * ang_xxy + gr_xx * ang_y + ang_xx * gr_y + ctwo * gr_xy * ang_x +
+                               ctwo * ang_xy * gr_x) *
+                Phase;
+            dghpsi_xxz[ib] += (gr_xxz * ang + vr * ang_xxz + gr_xx * ang_z + ang_xx * gr_z + ctwo * gr_xz * ang_x +
+                               ctwo * ang_xz * gr_x) *
+                Phase;
+            dghpsi_xyy[ib] += (gr_xyy * ang + vr * ang_xyy + gr_yy * ang_x + ang_yy * gr_x + ctwo * gr_xy * ang_y +
+                               ctwo * ang_xy * gr_y) *
+                Phase;
+            dghpsi_xyz[ib] += (gr_xyz * ang + vr * ang_xyz + gr_xy * ang_z + ang_xy * gr_z + gr_yz * ang_x +
+                               ang_yz * gr_x + gr_xz * ang_y + ang_xz * gr_y) *
+                Phase;
+            dghpsi_xzz[ib] += (gr_xzz * ang + vr * ang_xzz + gr_zz * ang_x + ang_zz * gr_x + ctwo * gr_xz * ang_z +
+                               ctwo * ang_xz * gr_z) *
+                Phase;
+            dghpsi_yyy[ib] += (gr_yyy * ang + vr * ang_yyy + cthree * gr_yy * ang_y + cthree * gr_y * ang_yy) * Phase;
+            dghpsi_yyz[ib] += (gr_yyz * ang + vr * ang_yyz + gr_yy * ang_z + ang_yy * gr_z + ctwo * gr_yz * ang_y +
+                               ctwo * ang_yz * gr_y) *
+                Phase;
+            dghpsi_yzz[ib] += (gr_yzz * ang + vr * ang_yzz + gr_zz * ang_y + ang_zz * gr_y + ctwo * gr_yz * ang_z +
+                               ctwo * ang_yz * gr_z) *
+                Phase;
+            dghpsi_zzz[ib] += (gr_zzz * ang + vr * ang_zzz + cthree * gr_zz * ang_z + cthree * gr_z * ang_zz) * Phase;
           }
         }
       }

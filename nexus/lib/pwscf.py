@@ -231,7 +231,9 @@ class Pwscf(Simulation):
                 #end if
                 sync_record = os.path.join(outdir,'nexus_sync_record')
                 if not os.path.exists(sync_record):
+                    print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
                     execute(command)
+                    print('    Completed rsync for the {} directory.'.format(outdir))
                     f = open(sync_record,'w')
                     f.write('\n')
                     f.close()
@@ -287,7 +289,9 @@ class Pwscf(Simulation):
                 #end if
                 sync_record = os.path.join(outdir,'nexus_sync_record')
                 if not os.path.exists(sync_record):
+                    print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
                     execute(command)
+                    print('    Completed rsync for the {} directory.'.format(outdir))
                     f = open(sync_record,'w')
                     f.write('\n')
                     f.close()

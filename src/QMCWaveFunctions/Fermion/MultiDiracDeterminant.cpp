@@ -129,7 +129,7 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
   auto& refdet_occup_ref(*refdet_occup);
   refdet_occup_ref.resize(NumPtcls);
   for (size_t i = 0; i < NumPtcls; i++)
-    refdet_occup_ref[i] = configlist_unsorted[ReferenceDeterminant].occup[i];
+    refdet_occup_ref[i] = configlist_unsorted[ref_det_id].occup[i];
 
   {
     ScopedTimer local_timer(transferH2D_timer);
@@ -416,7 +416,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
   if (curRatio == ValueType(0))
   {
     std::ostringstream msg;
-    msg << "DiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
+    msg << "MultiDiracDeterminant::acceptMove curRatio is " << curRatio << "! Report a bug." << std::endl;
     throw std::runtime_error(msg.str());
   }
   log_value_ref_det_ += convertValueToLog(curRatio);

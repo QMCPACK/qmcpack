@@ -50,6 +50,7 @@ from rmg import Rmg, RmgInput, RmgAnalyzer, generate_rmg_input, generate_rmg
 
 from qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
 from qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
+from qmcpack_converters import Convertpw4qmc, Convertpw4qmcInput, Convertpw4qmcAnalyzer, generate_convertpw4qmc_input, generate_convertpw4qmc
 from qmcpack_converters import PyscfToAfqmc, PyscfToAfqmcInput, PyscfToAfqmcAnalyzer, generate_pyscf_to_afqmc_input, generate_pyscf_to_afqmc
 
 from pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp

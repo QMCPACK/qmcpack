@@ -18,11 +18,11 @@ docutils==0.17.1
     #   sphinx
     #   sphinx-rtd-theme
     #   sphinxcontrib-bibtex
-idna==3.4
+idna==3.7
     # via requests
 imagesize==1.4.1
     # via sphinx
-jinja2==3.1.2
+jinja2==3.1.4
     # via sphinx
 latexcodec==2.0.1
     # via pybtex
@@ -40,7 +40,7 @@ pygments==2.16.1
     # via sphinx
 pyyaml==6.0.1
     # via pybtex
-requests==2.31.0
+requests==2.32.0
     # via sphinx
 six==1.16.0
     # via

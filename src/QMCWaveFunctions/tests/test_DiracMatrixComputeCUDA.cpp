@@ -20,7 +20,8 @@
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/DualAllocatorAliases.hpp"
-#include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
+#include "Platforms/CUDA/QueueCUDA.hpp"
+#include "Platforms/CUDA/AccelBLAS_CUDA.hpp"
 
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
@@ -48,10 +49,11 @@ TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
 
   std::vector<double> A{2, 5, 8, 7, 5, 2, 2, 8, 7, 5, 6, 6, 5, 4, 4, 8};
   std::copy_n(A.begin(), 16, mat_a.data());
-  CUDALinearAlgebraHandles cuda_handles;
+  compute::Queue<PlatformKind::CUDA> queue;
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   int lda = n;
   cudaCheck(cudaMemcpyAsync((void*)(temp_mat.device_data()), (void*)(mat_a.data()), mat_a.size() * sizeof(double),
-                            cudaMemcpyHostToDevice, cuda_handles.hstream));
+                            cudaMemcpyHostToDevice, queue.getNative()));
   cublasErrorCheck(cuBLAS::geam(cuda_handles.h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
                                 temp_mat.device_data(), lda, &host_zero, mat_c.device_data(), lda, mat_a.device_data(),
                                 lda),
@@ -68,7 +70,8 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
   log_values.resize(1);
   OffloadPinnedMatrix<double> inv_mat_a;
   inv_mat_a.resize(4, 4);
-  CUDALinearAlgebraHandles cuda_handles;
+  compute::Queue<PlatformKind::CUDA> queue;
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   dmcc.invert_transpose(cuda_handles, mat_a, inv_mat_a, log_values);
@@ -132,7 +135,8 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
 TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefunction][fermion]")
 {
   int n = 64;
-  CUDALinearAlgebraHandles cuda_handles;
+  compute::Queue<PlatformKind::CUDA> queue;
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
 
   DiracMatrixComputeCUDA<std::complex<double>> dmcc;
 
@@ -187,7 +191,8 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
 TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunction][fermion]")
 {
   int n = 64;
-  CUDALinearAlgebraHandles cuda_handles;
+  compute::Queue<PlatformKind::CUDA> queue;
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   Matrix<double> mat_spd;

@@ -221,7 +221,6 @@ protected:
   Return_rt curVar_abs;
 
   Return_rt w_beta;
-  std::string GEVType;
   Return_rt vmc_or_dmc;
   bool needGrads;
   ///whether we are targeting an excited state

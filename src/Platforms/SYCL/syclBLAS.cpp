@@ -17,11 +17,6 @@ namespace qmcplusplus
 {
 namespace syclBLAS
 {
-inline oneapi::mkl::transpose convertTransEnum(char trans)
-{
-  return trans == 'T' ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::nontrans;
-}
-
 template<typename T>
 sycl::event gemv(sycl::queue& handle,
                  const char trans,

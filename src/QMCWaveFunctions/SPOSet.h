@@ -26,7 +26,6 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "OptimizableObject.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
-#include "DualAllocatorAliases.hpp"
 
 namespace qmcplusplus
 {
@@ -206,6 +205,19 @@ public:
                                  ValueVector& psi,
                                  const ValueVector& psiinv,
                                  std::vector<ValueType>& ratios);
+
+  /** evaluate determinant ratios for virtual moves, specifically for Spinor SPOSets
+   * @param VP virtual particle set
+   * @param psi values of the SPO, used as a scratch space if needed
+   * @param spinor_multiplier factor to apply to the up and down components independently
+   * @param invrow the row of inverse slater matrix corresponding to the particle moved virtually
+   * @param ratios return determinant ratios
+   */
+  virtual void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                                       ValueVector& psi,
+                                       const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                       const ValueVector& invrow,
+                                       std::vector<ValueType>& ratios);
 
 
   /// Determinant ratios and parameter derivatives of the wavefunction for virtual moves

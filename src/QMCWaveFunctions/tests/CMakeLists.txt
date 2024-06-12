@@ -115,6 +115,7 @@ set(SPOSET_SRC
     test_hybridrep.cpp
     test_pw.cpp
     test_ConstantSPOSet.cpp
+    test_LCAOrbitalBuilder.cpp
     test_LCAO_diamondC_2x1x1.cpp
     test_RotatedSPOs.cpp
     ${MO_SRCS})
@@ -143,7 +144,8 @@ set(DETERMINANT_SRC
     test_multi_dirac_determinant.cpp
     test_DiracMatrix.cpp
     test_ci_configuration.cpp
-    test_multi_slater_determinant.cpp)
+    test_multi_slater_determinant.cpp
+    test_SlaterDet.cpp)
 
 add_library(sposets_for_testing FakeSPO.cpp ConstantSPOSet.cpp)
 target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

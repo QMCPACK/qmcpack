@@ -24,6 +24,9 @@
 #include "TWFGrads.hpp"
 #include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -368,5 +371,62 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 }
 
+#if defined(QMC_COMPLEX) && !defined(ENABLE_CUDA)
+/** This test is intended to catch a bug that was found in the batched code 
+  * when using spinors and jastrows. The issue came about because WFCs that don't 
+  * contribute to the spin gradient end up going back to the normal mw_evalGrad
+  * In the TWF::mw_evalGrad, it uses TWFGrads to accumulate the spin gradient and normal gradients
+  * using a returned variable grads. The individual components are stored in grads_z and the update over the 
+  * component loop is grads += grads_z. Internally to the WFCs, the position gradients get zeroed and computed. 
+  * However, for the spins, if they weren't being touched then the spin part is left untouched. But that means that if 
+  * grads += grads_z didn't account for zeroing out the spin part for that component, then it acctually accumulates the previous ones. 
+  * This test fails with the buggy code, and now makes sure TWF has the right behavior. 
+  }
+  */
+TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
+{
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  Communicate* comm = OHMMS::Controller;
+
+  auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_O2_spinor(test_project.getRuntimeOptions(), comm, particle_pool);
+
+  auto& elec    = *(particle_pool).getParticleSet("e");
+  auto& psi_noJ = *(wavefunction_pool).getWaveFunction("wavefunction");
+
+  elec.update();
+  auto logpsi = psi_noJ.evaluateLog(elec);
+  WaveFunctionComponent::ComplexType spingrad_ref(0);
+  WaveFunctionComponent::GradType grad = psi_noJ.evalGradWithSpin(elec, 0, spingrad_ref);
+
+  // Now tack on a jastrow to make sure it is still the same since jastrows don't contribute
+  auto wavefunction_pool2 =
+      MinimalWaveFunctionPool::make_O2_spinor_J12(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& psi = *(wavefunction_pool2).getWaveFunction("wavefunction");
+
+  // make clones
+  ParticleSet elec_clone(elec);
+  std::unique_ptr<TrialWaveFunction> psi_clone(psi.makeClone(elec_clone));
+
+  ResourceCollection elec_res("test_elec_res");
+  ResourceCollection psi_res("test_psi_res");
+  elec.createResource(elec_res);
+  psi.createResource(psi_res);
+
+  RefVectorWithLeader<ParticleSet> elec_ref_list(elec, {elec, elec_clone});
+  RefVectorWithLeader<TrialWaveFunction> psi_ref_list(psi, {psi, *psi_clone});
+
+  ResourceCollectionTeamLock<ParticleSet> mw_elec_lock(elec_res, elec_ref_list);
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_psi_lock(psi_res, psi_ref_list);
+
+  ParticleSet::mw_update(elec_ref_list);
+  TrialWaveFunction::mw_evaluateLog(psi_ref_list, elec_ref_list);
+  TWFGrads<CoordsType::POS_SPIN> grads(2);
+  TrialWaveFunction::mw_evalGrad(psi_ref_list, elec_ref_list, 0, grads);
+  for (size_t iw = 0; iw < 2; iw++)
+    CHECK(grads.grads_spins[iw] == ComplexApprox(spingrad_ref));
+}
+#endif
 
 } // namespace qmcplusplus
