@@ -181,6 +181,10 @@ TEST_CASE("AccelBLAS", "[BLAS]")
     std::cout << "Testing gemm<PlatformKind::CUDA>" << std::endl;
     test_gemm_cases<PlatformKind::CUDA>();
 #endif
+#if defined(ENABLE_SYCL)
+    std::cout << "Testing gemm<PlatformKind::SYCL>" << std::endl;
+    test_gemm_cases<PlatformKind::SYCL>();
+#endif
 #if defined(ENABLE_OFFLOAD)
     std::cout << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
     test_gemm_cases<PlatformKind::OMPTARGET>();

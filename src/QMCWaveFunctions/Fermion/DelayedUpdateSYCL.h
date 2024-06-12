@@ -70,7 +70,7 @@ class DelayedUpdateSYCL
 
 public:
   /// default constructor
-  DelayedUpdateSYCL() : delay_count(0) { m_queue_ = createSYCLQueueOnDefaultDevice(); }
+  DelayedUpdateSYCL() : delay_count(0) { m_queue_ = createSYCLInOrderQueueOnDefaultDevice(); }
 
   ~DelayedUpdateSYCL() { syclSolver::freeBuffer(); }
 

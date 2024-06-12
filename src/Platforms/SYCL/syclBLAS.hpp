@@ -15,6 +15,7 @@
 
 #include <complex>
 #include <sycl/sycl.hpp>
+#include <oneapi/mkl/blas.hpp>
 
 namespace qmcplusplus
 {
@@ -23,6 +24,20 @@ namespace syclBLAS
 using syclBLAS_int    = std::int64_t;
 using syclBLAS_status = sycl::event;
 using syclBLAS_handle = sycl::queue;
+
+inline oneapi::mkl::transpose convertTransEnum(char trans)
+{
+  if (trans == 'N' || trans == 'n')
+    return oneapi::mkl::transpose::nontrans;
+  else if (trans == 'T' || trans == 't')
+    return oneapi::mkl::transpose::trans;
+  else if (trans == 'C' || trans == 'c')
+    return oneapi::mkl::transpose::conjtrans;
+  else
+    throw std::runtime_error(
+        "syclBLAS::convertTransEnum trans can only be 'N', 'T', 'C', 'n', 't', 'c'. Input value is " +
+        std::string(1, trans));
+}
 
 template<typename T>
 sycl::event gemv(sycl::queue& handle,
