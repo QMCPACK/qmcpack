@@ -50,15 +50,18 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
 
   MCPopulation population2(1, comm->rank(), particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
   // keep 3 only configurations.
-  walker_confs.resize(3, 0);
-  CHECK(walker_confs.getActiveWalkers() == 3);
+  WalkerConfigurations walker_confs2;
+  walker_confs2.resize(3, 0);
+  for(int iw = 0; iw < walker_confs2.getActiveWalkers(); ++iw)
+    *walker_confs2[iw] = *walker_confs[iw];
+  CHECK(walker_confs2.getActiveWalkers() == 3);
   auto old_R00 = walker_confs[0]->R[0][0];
   // first and second configurations are both copied from the gold particle set.
   // must be identical.
   CHECK(walker_confs[1]->R[0][0] == old_R00);
   // modify the first configuration
-  auto new_R00 = walker_confs[1]->R[0][0] = 0.3;
-  population2.createWalkers(8, walker_confs, 1.0);
+  auto new_R00 = walker_confs2[1]->R[0][0] = 0.3;
+  population2.createWalkers(8, walker_confs2, 1.0);
   CHECK(population2.get_walkers()[0]->R[0][0] == old_R00);
   CHECK(population2.get_walkers()[1]->R[0][0] == new_R00);
   CHECK(population2.get_walkers()[2]->R[0][0] == old_R00);
@@ -67,6 +70,10 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   CHECK(population2.get_walkers()[5]->R[0][0] == old_R00);
   CHECK(population2.get_walkers()[6]->R[0][0] == old_R00);
   CHECK(population2.get_walkers()[7]->R[0][0] == new_R00);
+
+  CHECK(population2.get_walkers()[0]->getParentID() == -1);
+  CHECK(population2.get_walkers()[1]->getParentID() == -2);
+  CHECK(population2.get_walkers()[2]->getParentID() == -3);
 }
 
 

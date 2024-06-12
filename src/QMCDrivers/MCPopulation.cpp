@@ -348,8 +348,15 @@ void MCPopulation::saveWalkerConfigurations(WalkerConfigurations& walker_configs
   walker_configs.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
   {
+    // The semantics of this call are not what would be expected.
+    // you are not serializing walkers but particle sets
+    // related to walkers to the walkerconfigs...
+    // So if you would like them to cary information between sections be careful you need to copy it in explicitly.
+    // Are walkers's R's invalid here?
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs[iw]);
     walker_configs[iw]->Weight = walkers_[iw]->Weight;
+    walker_configs[iw]->setWalkerID(walkers_[iw]->getWalkerID());
+    walker_configs[iw]->setParentID(walkers_[iw]->getParentID());
   }
 }
 } // namespace qmcplusplus
