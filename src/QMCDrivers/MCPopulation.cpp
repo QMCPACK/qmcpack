@@ -133,8 +133,8 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
     }
     else
     {
-      // These walkers are orphans they don't get there intial configuration from a walkerconfig
-      // but from the golden particle set.  They get an invalid walkerID of -1.
+      // These walkers are orphans they don't get their intial configuration from a walkerconfig
+      // but from the golden particle set.  They get an walker ID of 0;
       walkers_[iw]->R          = elec_particle_set_->R;
       walkers_[iw]->spins      = elec_particle_set_->spins;
     }

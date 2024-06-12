@@ -916,18 +916,25 @@ An example of the second approach is
 
 Walker
 ------
-Lightweight representation of a walker, used as the element in the WalkerConfigurations container class.  In the batched version of the code the ``Walker::walker_id_`` and ``Walker::parent_id_`` allow logging walker instance trajectories etc. The basic data relations involved in are shown in :numref:`fig1`. If limit ourselves to single section logging the each walkerID will be unique generated using the equation
+Lightweight representation of a walker, used as the element in the WalkerConfigurations container class.  In the batched version of the code the ``Walker::walker_id_`` and ``Walker::parent_id_`` allow logging walker instance trajectories etc. The basic data relations involved in are shown in :numref:`fig1`. If limit ourselves to single section logging then each walkerID will be unique generated using the equation
 .. math::
   :label: eq_walker_id
   walker_id = walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1
 
-where ``num_walkers_created_`` is a member variable of the sole ```MCPopulation`` object on the rank and initially set to 0.  Each walkers ``parent_id`` is set at initiation of the walkers configuration to the walker from home the configuration is assigned.  If that assignment is from previous section's or run's ``WalkerConfigurations`` object then the value of the ``Walker::getWalkerID()`` is multiplied by -1. If the Walker's initial configuration comes from the golden particle set the parent_id will be 0.
+where ``num_walkers_created_`` is a member variable of the sole ```MCPopulation`` object on the rank and initially set to 0. Each walkers ``parent_id`` is set when it is constructed to 0 and is assigned to ``walker_id`` of the Walker it is assigned from or the walker_id of the serialized walker it is copied from. If that assignment is from previous section's or run's ``WalkerConfigurations`` object then the value of the ``Walker::getWalkerID()`` is multiplied by -1. If the Walker's initial configuration comes from the golden particle set the parent_id will be 0.
 
 .. _fig1:
 .. figure:: /uml/WalkerID_chen.pdf
     :width: 400
     :align: center
 
+For fixed population methods this is all that is needed to understand ``walker_id``'s for DMC using dynamic population control the situation is a bit more involved.
+
+During DMC branching there are two distinct ways new walkers appear in a population.  One is when transfered, the other is when walkers of multiplicity > 2 are amplified. They happen as two stages in order, transfer first than amplification. During the population balancing stage walker weight is converted to multiplicity which summed over will be the population of walkers for the next step. Based on the multiplicity of each rank, the highest multiplicity walkers on overpopulated ranks are sent to underpopulated ranks. When possible rank multiplicities are balanced by transfering fewer walkers with more than one unit of multiplicity.  This is unit is unfortunately called a copy in the source code but it is simply the multiplicity that configuration will have after it is unpacked on the receiving rank. That multiplicity is removed from the walker on the sending rank. When a walker is received by a rank it spawns a new walker with a new walker ID. It saves that walker ID then copies from the walker from receive buffer. This operation overwrites the spawned walker member variables including ``walker_id`` and ``parent_id``. The walker_id is then copied over the ``parent_id`` and the retained ``walker_id`` from the spawned state is copied over the ``walker_id``. The walker multiplicity is set the multiplicity that walker lost on the sending rank. Each rank can still have walkers with multiplicity >= 2 at this point.  Some of these maybe walkers that existed on the rank before the population balancing and some may have been received. Walkers with multiplicity < 1 are removed at the end of the population control stage.
+
+Now for purposes of making the next set of Monty Carlo moves all walkers need to be reduced to multiplicity 1 in the next step high multiplicity walkers will follow 1 trajectory for each unit of multiplicity which means they need to become independent configurations. For each unit of multiplicity >= 2 walker is spawned. These spawned walkers are assigned to from the high multiplicity walker.  When a walker is amplified it sent walkers_id as a parent_id and the sent number of copies as its multiplicity. Then amplification of walkers with multiplicity 2 or greater occurs and the new multiplicity 1 walkers created get the ``walker_id`` of the amplified walker as their ``parent_id``. They keep there ``walker_id``'s from spawn time.
+
+The overarching premise of parent id is when a newly active walker is assigned to from an older walker the older walker's ``walker_id`` becomes the new walkers ``parent_id`` and the new walkers ``walker_id`` is a global unique ID.
 
 Wavefunction
 ------------
@@ -935,7 +942,7 @@ Wavefunction
 A full ``TrialWaveFunction`` is formulated as a product
 of all the components. Each component derives from ``WaveFunctionComponent``.
 
-.. math::
+... math::
      \psi = \prod_c {\tilde \psi_c}
 
 QMCPACK doesn't directly use the product form but mostly uses the log of the wavefunction.

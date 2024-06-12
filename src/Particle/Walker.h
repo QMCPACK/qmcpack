@@ -118,7 +118,12 @@ public:
   FullPrecRealType Multiplicity = 1.0;
   /// mark true if this walker is being sent.
   bool SendInProgress;
-  /// if true, this walker is either copied or tranferred from another MPI rank.
+
+  /** if true, this walker is either copied or tranferred from another MPI rank.
+   *  significant because this walker will need a distance table recompute since we don't transfer them.
+   *  So this is really a variable tracking the state of the ParticleSet associated with this walker.
+   *  \todo this is a smell to be addressing in ParticleSet refactoring.
+   */
   bool wasTouched = true;
 
   /** The configuration vector (3N-dimensional vector to store

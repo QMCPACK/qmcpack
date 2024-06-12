@@ -140,7 +140,7 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   if (debug_disable_branching_)
     do_not_branch = true;
-  
+
   ScopedTimer branch_timer(my_timers_[WC_branch]);
   auto& walkers = pop.get_walkers();
 
@@ -208,15 +208,19 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     throw std::runtime_error("Potential bug! Population num_global_walkers mismatched!");
 #endif
 
-  // This defensive code implies that previous code left population walkers in invalid state.
+  // If we are in warmup it think it should be a fatal error is walker->Multiplicity != 1.0
   if (!do_not_branch)
     for (UPtr<MCPWalker>& walker : pop.get_walkers())
     {
-      walker->Weight       = 1.0;
+      // This may be the correct location for walker Weight to be set to 1 for the next step but... its also
+      // set to 1.00 or zero many other locations.
+      walker->Weight = 1.0;
+      // This code implies that previous code left population walkers in invalid state however most
+      // walkers will have Multiplicity = 1.0
+      // the only walkers who won't are those that have
       walker->Multiplicity = 1.0;
     }
 
-  // This is debugging code, should be removed.
   for (int iw = 0; iw < untouched_walkers; iw++)
     pop.get_walkers()[iw]->wasTouched = false;
 
@@ -333,7 +337,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
     // Walker_index is just its index not its "walker_id"
     const int walker_index;
     const int target;
-    job(int wid, int target_in) : walker_index(wid), target(target_in){};
+    job(int wid, int target_in) : walker_index(wid), target(target_in) {};
   };
 
   int nsend = 0;
@@ -364,7 +368,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       job_list.push_back(job(ncopy_pairs.back().second, minus[ic]));
 #ifdef MCWALKERSET_MPI_DEBUG
       std::cout << "rank " << plus[ic] << " sends a walker with " << nsentcopy << " copies to rank " << minus[ic]
-           << std::endl;
+                << std::endl;
 #endif
 
       // update counter and cursor
@@ -393,7 +397,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         throw std::runtime_error("WalkerControl::swapWalkersSimple send/recv pair checking failed!");
 #ifdef MCWALKERSET_MPI_DEBUG
       std::cout << "rank " << minus[ic] << " recvs a walker with " << nsentcopy << " copies from rank " << plus[ic]
-           << std::endl;
+                << std::endl;
 #endif
 
       ncopy_newW.push_back(nsentcopy);
@@ -440,9 +444,18 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   }
   else
   {
-    // Walker::copyFromBuffer copies the walker_index_ of the sent walker and the local walker does
-    // not have a local id created.
-    // the walker on this rank.  But this replacement allows tracking this walker across the ranks.
+    auto unpackWalker = [](auto& awalker) {
+      auto walker_id = awalker.getWalkerID();
+      // Walker::copyFromBuffer takes the walker_index_ of the sent walker and writes it over
+      // the local walker_index_ it simiplifies dealing with walker serialization not to make an exception
+      // for walker_index_ deserialization.
+      awalker.copyFromBuffer();
+      auto parent_id = awalker.getWalkerID();
+      // The logic of walker_id's is that they do not change once a walker becomes living so we write it back
+      awalker.setWalkerID(walker_id);
+      // And set the parent_id
+      awalker.setParentID(parent_id);
+    };
 
     std::vector<mpi3::request> requests;
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
@@ -457,11 +470,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       {
         ScopedTimer local_timer(my_timers_[WC_recv]);
         myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
-	auto walker_id = awalker.getWalkerID();
-	awalker.copyFromBuffer();
-	auto parent_id = awalker.getWalkerID();
-	awalker.setWalkerID(walker_id);
-	awalker.setParentID(parent_id);
+        unpackWalker(awalker);
       }
     }
     if (use_nonblocking_)
@@ -478,11 +487,8 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
             {
               auto& walker_elements = newW[job_list[im].walker_index];
               // Here the walker ID from the spawn is overwritten with the copy.
-	      auto walker_id = walker_elements.walker.getWalkerID();
-	      walker_elements.walker.copyFromBuffer();
-	      auto parent_id = walker_elements.walker.getWalkerID();
-	      walker_elements.walker.setWalkerID(walker_id);
-	      walker_elements.walker.setParentID(parent_id);
+              auto& awalker = walker_elements.walker;
+              unpackWalker(walker_elements.walker);
               not_completed[im] = false;
             }
             else
@@ -497,10 +503,10 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   saved_num_walkers_sent_ = nsend;
 
   // update Multiplicity
-  // fairly simple since we copy then send if it was sent ncopy_pairs[iw] will be 0
   for (int iw = 0; iw < ncopy_pairs.size(); iw++)
     good_walkers[ncopy_pairs[iw].second]->Multiplicity = ncopy_pairs[iw].first;
 
+  // ncopy_newW counts from 0
   for (int iw = 0; iw < newW.size(); iw++)
     newW[iw].walker.Multiplicity = ncopy_newW[iw] + 1;
 
