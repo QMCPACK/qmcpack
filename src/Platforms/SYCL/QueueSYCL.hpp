@@ -25,7 +25,7 @@ template<>
 class Queue<PlatformKind::SYCL>
 {
 public:
-  Queue() : queue_(createSYCLQueueOnDefaultDevice()) {}
+  Queue() : queue_(createSYCLInOrderQueueOnDefaultDevice()) {}
 
   // dualspace container
   template<class DSC>

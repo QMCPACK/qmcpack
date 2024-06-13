@@ -16,10 +16,16 @@
 namespace qmcplusplus
 {
 sycl::queue& getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceDefaultQueue(); }
-sycl::queue createSYCLQueueOnDefaultDevice()
+
+sycl::queue createSYCLInOrderQueueOnDefaultDevice()
 {
   return sycl::queue(getSYCLDefaultDeviceDefaultQueue().get_context(), getSYCLDefaultDeviceDefaultQueue().get_device(),
                      sycl::property::queue::in_order());
+}
+
+sycl::queue createSYCLQueueOnDefaultDevice()
+{
+  return sycl::queue(getSYCLDefaultDeviceDefaultQueue().get_context(), getSYCLDefaultDeviceDefaultQueue().get_device());
 }
 
 size_t getSYCLdeviceFreeMem()
