@@ -54,6 +54,7 @@ sycl::event gemv(sycl::queue& handle,
                  const int incy,
                  const std::vector<sycl::event>& events = {});
 
+/// in-house version of gemv_batch implemented in SYCL. Can be dropped if we have vendor optimized versions
 template<typename T>
 sycl::event gemv_batched(sycl::queue& handle,
                          const char trans,
@@ -87,6 +88,7 @@ sycl::event gemm(sycl::queue& handle,
                  const int ldc,
                  const std::vector<sycl::event>& events = {});
 
+/// in-house version of ger_batch implemented in SYCL. Can be dropped if we have vendor optimized versions
 template<typename T>
 sycl::event ger_batched(sycl::queue& handle,
                         const int m,

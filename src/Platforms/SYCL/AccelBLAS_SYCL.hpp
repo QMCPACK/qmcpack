@@ -72,7 +72,7 @@ inline void gemv_batched(BLASHandle<PlatformKind::SYCL>& handle,
                          const size_t batch_count)
 {
   try
-  {
+  { // calling makeshift version for now due to the lack of vendor optimized versions
     syclBLAS::gemv_batched(handle.queue_, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
   }
   catch (sycl::exception& e)
@@ -95,7 +95,7 @@ inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,
                         const size_t batch_count)
 {
   try
-  {
+  { // calling makeshift version for now due to the lack of vendor optimized versions
     syclBLAS::ger_batched(handle.queue_, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
   }
   catch (sycl::exception& e)
