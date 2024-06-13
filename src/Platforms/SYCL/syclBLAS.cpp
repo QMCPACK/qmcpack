@@ -177,6 +177,116 @@ template sycl::event gemm(sycl::queue& handle,
                           const int ldc,
                           const std::vector<sycl::event>& events);
 
+template<typename T, int TILE_SIZE, int ROWBS>
+sycl::event ger_batched_impl(sycl::queue& handle,
+                             const int m,
+                             const int n,
+                             const T* alpha,
+                             const T* const x[],
+                             const int incx,
+                             const T* const y[],
+                             const int incy,
+                             T* const A[],
+                             const int lda,
+                             const size_t batch_count,
+                             const std::vector<sycl::event>& events)
+{
+  static_assert(ROWBS <= TILE_SIZE, "ROWBS cannot be larger than TILE_SIZE!");
+  // A is m x n in Fortran, n x m in C.
+  constexpr size_t tile_size  = TILE_SIZE;
+  constexpr size_t block_rows = ROWBS;
+  // the computation is tiled and distributed.
+  const size_t row_tiles = (n + tile_size - 1) / tile_size;
+  const size_t col_tiles = (m + tile_size - 1) / tile_size;
+
+  return handle.parallel_for(sycl::nd_range<3>{{batch_count, row_tiles * block_rows, col_tiles * tile_size},
+                                               {1, block_rows, tile_size}},
+                             [=](sycl::nd_item<3> item) {
+                               const unsigned batch      = item.get_group(0);
+                               const unsigned thX        = item.get_local_id(2);
+                               const unsigned thY        = item.get_local_id(1);
+                               const unsigned column     = item.get_group(2) * tile_size + thX;
+                               const unsigned row_offset = item.get_group(1) * tile_size + thY;
+                               if (column < m)
+                               {
+                                 const T alphaX = alpha[batch] * x[batch][column];
+                                 for (unsigned j = 0; j < tile_size; j += block_rows)
+                                   if (const unsigned row = row_offset + j; row < n)
+                                     A[batch][row * lda + column] += alphaX * y[batch][row];
+                               }
+                             });
+}
+
+template<>
+sycl::event ger_batched<float>(sycl::queue& handle,
+                               const int m,
+                               const int n,
+                               const float* alpha,
+                               const float* const x[],
+                               const int incx,
+                               const float* const y[],
+                               const int incy,
+                               float* const A[],
+                               const int lda,
+                               const size_t batch_count,
+                               const std::vector<sycl::event>& events)
+{
+  return ger_batched_impl<float, 32, 8>(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count, events);
+}
+
+template<>
+sycl::event ger_batched<double>(sycl::queue& handle,
+                                const int m,
+                                const int n,
+                                const double* alpha,
+                                const double* const x[],
+                                const int incx,
+                                const double* const y[],
+                                const int incy,
+                                double* const A[],
+                                const int lda,
+                                const size_t batch_count,
+                                const std::vector<sycl::event>& events)
+{
+  return ger_batched_impl<double, 32, 8>(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count, events);
+}
+
+template<>
+sycl::event ger_batched<std::complex<float>>(sycl::queue& handle,
+                                             const int m,
+                                             const int n,
+                                             const std::complex<float>* alpha,
+                                             const std::complex<float>* const x[],
+                                             const int incx,
+                                             const std::complex<float>* const y[],
+                                             const int incy,
+                                             std::complex<float>* const A[],
+                                             const int lda,
+                                             const size_t batch_count,
+                                             const std::vector<sycl::event>& events)
+{
+  return ger_batched_impl<std::complex<float>, 32, 8>(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count,
+                                                      events);
+}
+
+template<>
+sycl::event ger_batched<std::complex<double>>(sycl::queue& handle,
+                                              const int m,
+                                              const int n,
+                                              const std::complex<double>* alpha,
+                                              const std::complex<double>* const x[],
+                                              const int incx,
+                                              const std::complex<double>* const y[],
+                                              const int incy,
+                                              std::complex<double>* const A[],
+                                              const int lda,
+                                              const size_t batch_count,
+                                              const std::vector<sycl::event>& events)
+{
+  return ger_batched_impl<std::complex<double>, 32, 8>(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count,
+                                                       events);
+}
+
 //transpose
 template<typename T1, typename T2>
 sycl::event transpose(sycl::queue& q,

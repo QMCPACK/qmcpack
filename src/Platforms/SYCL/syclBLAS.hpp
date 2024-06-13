@@ -71,6 +71,20 @@ sycl::event gemm(sycl::queue& handle,
                  const int ldc,
                  const std::vector<sycl::event>& events = {});
 
+template<typename T>
+sycl::event ger_batched(sycl::queue& handle,
+                        const int m,
+                        const int n,
+                        const T* alpha,
+                        const T* const x[],
+                        const int incx,
+                        const T* const y[],
+                        const int incy,
+                        T* const A[],
+                        const int lda,
+                        const size_t batch_count,
+                        const std::vector<sycl::event>& events = {});
+
 template<typename T1, typename T2>
 sycl::event transpose(sycl::queue& q,
                       const T1* in,

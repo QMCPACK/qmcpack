@@ -52,7 +52,7 @@ inline void gemm(BLASHandle<PlatformKind::SYCL>& handle,
   }
   catch (oneapi::mkl::exception& e)
   {
-    throw std::runtime_error(std::string("oneapi::mkl exception: ") + e.what());
+    throw std::runtime_error(std::string("AccelBLAS::gemm exception: ") + e.what());
   }
 }
 
@@ -84,7 +84,16 @@ inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,
                         T* const A[],
                         const int lda,
                         const size_t batch_count)
-{}
+{
+  try
+  {
+    syclBLAS::ger_batched(handle.queue_, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+  }
+  catch (sycl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::ger_batched exception: ") + e.what());
+  }
+}
 
 template<typename T>
 inline void copy_batched(BLASHandle<PlatformKind::SYCL>& handle,
@@ -140,7 +149,7 @@ inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
   }
   catch (oneapi::mkl::exception& e)
   {
-    throw std::runtime_error(std::string("oneapi::mkl exception: ") + e.what());
+    throw std::runtime_error(std::string("AccelBLAS::gemm_batched  exception: ") + e.what());
   }
 }
 
