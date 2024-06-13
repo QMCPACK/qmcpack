@@ -70,7 +70,16 @@ inline void gemv_batched(BLASHandle<PlatformKind::SYCL>& handle,
                          T* const y[],
                          const int incy,
                          const size_t batch_count)
-{}
+{
+  try
+  {
+    syclBLAS::gemv_batched(handle.queue_, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  }
+  catch (sycl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::gemv_batch exception: ") + e.what());
+  }
+}
 
 template<typename T>
 inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,

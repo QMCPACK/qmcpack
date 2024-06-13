@@ -92,6 +92,159 @@ template sycl::event gemv(sycl::queue& handle,
                           const std::vector<sycl::event>& events);
 
 template<typename T>
+sycl::event gemvT_batched_impl(sycl::queue& handle,
+                               const int m,
+                               const int n,
+                               const T* alpha,
+                               const T* const A[],
+                               const int lda,
+                               const T* const x[],
+                               const int incx,
+                               const T* beta,
+                               T* const y[],
+                               const int incy,
+                               const size_t batch_count,
+                               const std::vector<sycl::event>& events = {})
+{}
+
+template<typename T, unsigned ROWBS>
+sycl::event gemvN_batched_impl(sycl::queue& handle,
+                               const int m,
+                               const int n,
+                               const T* alpha,
+                               const T* const A[],
+                               const int lda,
+                               const T* const x[],
+                               const int incx,
+                               const T* beta,
+                               T* const y[],
+                               const int incy,
+                               const size_t batch_count,
+                               const std::vector<sycl::event>& events = {})
+{
+  const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
+
+  return handle.parallel_for(sycl::nd_range<2>{{batch_count, num_row_blocks * ROWBS}, {1, ROWBS}},
+                             [=](sycl::nd_item<2> item) {
+                               const unsigned batch = item.get_group(0);
+                               const int row        = item.get_global_id(1);
+
+                               if (row < m)
+                               {
+                                 T sum(0);
+                                 for (int col = 0; col < n; col++)
+                                   sum += A[batch][col * lda + row] * x[batch][col * incx];
+                                 if (beta[batch] == T(0))
+                                   y[batch][row * incy] = alpha[batch] * sum; // protecting NaN from y_iw
+                                 else
+                                   y[batch][row * incy] = alpha[batch] * sum + beta[batch] * y[batch][row * incy];
+                               }
+                             });
+}
+
+template<>
+sycl::event gemv_batched<float>(sycl::queue& handle,
+                                const char trans,
+                                const int m,
+                                const int n,
+                                const float* alpha,
+                                const float* const A[],
+                                const int lda,
+                                const float* const x[],
+                                const int incx,
+                                const float* beta,
+                                float* const y[],
+                                const int incy,
+                                const size_t batch_count,
+                                const std::vector<sycl::event>& events)
+{
+  if (trans == 'N' || trans == 'n')
+    return gemvN_batched_impl<float, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  else if (trans == 'T' || trans == 't')
+    return gemvT_batched_impl<float>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  else
+    throw std::runtime_error("syclBLAS::gemv_batched only supports 'N', 'T', 'C', 'n'. Input value is " +
+                             std::string(1, trans));
+}
+
+template<>
+sycl::event gemv_batched<double>(sycl::queue& handle,
+                                 const char trans,
+                                 const int m,
+                                 const int n,
+                                 const double* alpha,
+                                 const double* const A[],
+                                 const int lda,
+                                 const double* const x[],
+                                 const int incx,
+                                 const double* beta,
+                                 double* const y[],
+                                 const int incy,
+                                 const size_t batch_count,
+                                 const std::vector<sycl::event>& events)
+{
+  if (trans == 'N' || trans == 'n')
+    return gemvN_batched_impl<double, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  else if (trans == 'T' || trans == 't')
+    return gemvT_batched_impl<double>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  else
+    throw std::runtime_error("syclBLAS::gemv_batched only supports 'N', 'T', 'C', 'n'. Input value is " +
+                             std::string(1, trans));
+}
+
+template<>
+sycl::event gemv_batched<std::complex<float>>(sycl::queue& handle,
+                                              const char trans,
+                                              const int m,
+                                              const int n,
+                                              const std::complex<float>* alpha,
+                                              const std::complex<float>* const A[],
+                                              const int lda,
+                                              const std::complex<float>* const x[],
+                                              const int incx,
+                                              const std::complex<float>* beta,
+                                              std::complex<float>* const y[],
+                                              const int incy,
+                                              const size_t batch_count,
+                                              const std::vector<sycl::event>& events)
+{
+  if (trans == 'N' || trans == 'n')
+    return gemvN_batched_impl<std::complex<float>, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy,
+                                                       batch_count);
+  else if (trans == 'T' || trans == 't')
+    return gemvT_batched_impl<std::complex<float>>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  else
+    throw std::runtime_error("syclBLAS::gemv_batched only supports 'N', 'T', 'C', 'n'. Input value is " +
+                             std::string(1, trans));
+}
+
+template<>
+sycl::event gemv_batched<std::complex<double>>(sycl::queue& handle,
+                                               const char trans,
+                                               const int m,
+                                               const int n,
+                                               const std::complex<double>* alpha,
+                                               const std::complex<double>* const A[],
+                                               const int lda,
+                                               const std::complex<double>* const x[],
+                                               const int incx,
+                                               const std::complex<double>* beta,
+                                               std::complex<double>* const y[],
+                                               const int incy,
+                                               const size_t batch_count,
+                                               const std::vector<sycl::event>& events)
+{
+  if (trans == 'N' || trans == 'n')
+    return gemvN_batched_impl<std::complex<double>, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy,
+                                                        batch_count);
+  else if (trans == 'T' || trans == 't')
+    return gemvT_batched_impl<std::complex<double>>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  else
+    throw std::runtime_error("syclBLAS::gemv_batched only supports 'N', 'T', 'C', 'n'. Input value is " +
+                             std::string(1, trans));
+}
+
+template<typename T>
 sycl::event gemm(sycl::queue& handle,
                  const char tA,
                  const char tB,

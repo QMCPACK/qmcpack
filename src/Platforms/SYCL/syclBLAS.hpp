@@ -55,6 +55,22 @@ sycl::event gemv(sycl::queue& handle,
                  const std::vector<sycl::event>& events = {});
 
 template<typename T>
+sycl::event gemv_batched(sycl::queue& handle,
+                         const char trans,
+                         const int m,
+                         const int n,
+                         const T* alpha,
+                         const T* const A[],
+                         const int lda,
+                         const T* const x[],
+                         const int incx,
+                         const T* beta,
+                         T* const y[],
+                         const int incy,
+                         const size_t batch_count,
+                         const std::vector<sycl::event>& events = {});
+
+template<typename T>
 sycl::event gemm(sycl::queue& handle,
                  const char tA,
                  const char tB,
