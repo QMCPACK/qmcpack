@@ -20,7 +20,6 @@ namespace qmcplusplus
 
 WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm)
 {
-  state.reset();
   communicator            = comm;
   file_root               = series_root;
   bool driver_allows_logs = allow_logs; // driver allows logs or not

@@ -16,12 +16,14 @@
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "Estimators/EstimatorManagerCrowd.h"
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
 // forward declaration
 class ResourceCollection;
 class EstimatorManagerNew;
+class WalkerLogCollector;
 
 /** Driver synchronized step context
  * 
@@ -83,6 +85,9 @@ public:
     estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, walker_hamiltonians_, rng);
   }
 
+  /// Collect walker log data
+  void collectStepWalkerLog(int current_step);
+
   void setRNGForHamiltonian(RandomBase<FullPrecRealType>& rng);
 
   auto beginWalkers() { return mcp_walkers_.begin(); }
@@ -98,6 +103,7 @@ public:
   const RefVector<QMCHamiltonian>& get_walker_hamiltonians() const { return walker_hamiltonians_; }
 
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
+  WalkerLogCollector& getWalkerLogCollector() { return wlog_collector_; }
 
   DriverWalkerResourceCollection& getSharedResource() { return driverwalker_resource_collection_; }
 
@@ -129,6 +135,8 @@ private:
   DriverWalkerResourceCollection driverwalker_resource_collection_;
   /// per crowd estimator manager
   EstimatorManagerCrowd estimator_manager_crowd_;
+  // collector for walker logs
+  WalkerLogCollector wlog_collector_;
 
   /** @name Step State
    * 

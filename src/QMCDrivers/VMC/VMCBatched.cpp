@@ -21,6 +21,7 @@
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -214,6 +215,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer est_timer(timers.estimators_timer);
     crowd.accumulate(step_context.get_random_gen());
   }
+
+  // collect walker logs
+  crowd.collectStepWalkerLog(sft.global_step);
+
   // TODO:
   //  check if all moves failed
 }
@@ -304,6 +309,12 @@ bool VMCBatched::run()
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
   estimator_manager_->startDriverRun();
+  //start walker log manager
+  wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
+  std::vector<WalkerLogCollector*> wlog_collectors;
+  for (auto& c: crowds_)
+    wlog_collectors.push_back(&c->getWalkerLogCollector());
+  wlog_manager_->startRun(wlog_collectors);
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_, steps_per_block_);
 
@@ -356,6 +367,7 @@ bool VMCBatched::run()
   // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
   myComm->barrier();
 
+  int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
     {
@@ -370,10 +382,12 @@ bool VMCBatched::run()
 
       for (auto& crowd : crowds_)
         crowd->startBlock(steps_per_block_);
-      for (int step = 0; step < steps_per_block_; ++step)
+
+      for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
         vmc_state.step = step;
+        vmc_state.global_step = global_step;
         crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
         if (collect_samples_)
@@ -389,6 +403,7 @@ bool VMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
+      wlog_manager_->writeBuffers(wlog_collectors);
       recordBlock(block);
     }
 
@@ -435,6 +450,7 @@ bool VMCBatched::run()
   print_mem("VMCBatched ends", app_log());
 
   estimator_manager_->stopDriverRun();
+  wlog_manager_->stopRun();
 
   return finalize(num_blocks, true);
 }

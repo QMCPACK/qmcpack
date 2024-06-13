@@ -41,7 +41,6 @@ void WalkerLogCollector::init()
 {
   properties_include = {"R2Accepted", "R2Proposed", "LocalEnergy", "LocalPotential", "Kinetic",
                          "ElecElec",   "ElecIon",    "LocalECP",    "NonLocalECP"};
-  state.reset();
   energy_index = -1;
   // empty walker steps and energy vectors for the MC block
   steps.resize(0);

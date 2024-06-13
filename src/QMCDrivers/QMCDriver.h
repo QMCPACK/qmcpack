@@ -31,6 +31,7 @@
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
+#include "WalkerLogManager.h"
 #include "QMCDrivers/DriverTraits.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
@@ -62,6 +63,7 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
 class TraceManager;
+class WalkerLogManager;
 
 /** @ingroup QMCDrivers
  * @{
@@ -95,6 +97,11 @@ public:
   bool allow_traces;
   /// traces xml
   xmlNodePtr traces_xml;
+
+  /// whether to allow traces
+  bool allow_walker_logs;
+  /// traces xml
+  xmlNodePtr walker_logs_xml;
 
   /// Constructor.
   QMCDriver(const ProjectData& project_data,
@@ -149,6 +156,10 @@ public:
 
   inline void requestTraces(bool traces) override { allow_traces = traces; }
 
+  inline void putWalkerLogs(xmlNodePtr wlxml) override { walker_logs_xml = wlxml; }
+
+  inline void requestWalkerLogs(bool allow_walker_logs_) override { allow_walker_logs = allow_walker_logs_; }
+
   std::string getEngineName() override { return QMCType; }
 
   template<class PDT>
@@ -183,6 +194,9 @@ public:
 
   ///Traces manager
   std::unique_ptr<TraceManager> Traces;
+
+  ///Traces manager
+  std::unique_ptr<WalkerLogManager> wlog_manager_;
 
   ///return the random generators
   inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const

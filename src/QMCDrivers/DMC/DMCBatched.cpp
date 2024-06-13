@@ -288,6 +288,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     crowd.accumulate(step_context.get_random_gen());
   }
 
+  // collect walker logs
+  crowd.collectStepWalkerLog(sft.global_step);
+
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
 
@@ -429,6 +432,14 @@ bool DMCBatched::run()
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->startDriverRun();
+
+  //start walker log manager
+  wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
+  std::vector<WalkerLogCollector*> wlog_collectors;
+  for (auto& c: crowds_)
+    wlog_collectors.push_back(&c->getWalkerLogCollector());
+  wlog_manager_->startRun(wlog_collectors);
+
   StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_);
 
   LoopTimer<> dmc_loop;
@@ -457,6 +468,7 @@ bool DMCBatched::run()
   ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
+  int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
     {
@@ -473,7 +485,7 @@ bool DMCBatched::run()
       for (UPtr<Crowd>& crowd : crowds_)
         crowd->startBlock(steps_per_block_);
 
-      for (int step = 0; step < steps_per_block_; ++step)
+      for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
 
@@ -483,6 +495,7 @@ bool DMCBatched::run()
           setNonLocalMoveHandler(*ham);
 
         dmc_state.step = step;
+        dmc_state.global_step = global_step;
         crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                    std::ref(crowds_));
 
@@ -500,6 +513,7 @@ bool DMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
+      wlog_manager_->writeBuffers(wlog_collectors);
       recordBlock(block);
     }
 
@@ -523,6 +537,7 @@ bool DMCBatched::run()
   print_mem("DMCBatched ends", app_log());
 
   estimator_manager_->stopDriverRun();
+  wlog_manager_->stopRun();
 
   return finalize(num_blocks, true);
 }

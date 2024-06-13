@@ -268,7 +268,6 @@ void OperatorBase::deleteTraceQuantities()
   have_required_traces_ = false;
   request_.reset();
 }
-
 #endif
 
 ////// PROTECTED FUNCTIONS

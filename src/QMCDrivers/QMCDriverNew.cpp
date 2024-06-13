@@ -33,6 +33,8 @@
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
+#include "WalkerLogInput.h"
+#include "WalkerLogManager.h"
 
 
 namespace qmcplusplus
@@ -205,6 +207,7 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
     h5_file_root_ = h5name;
 }
 
+
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
  *
@@ -375,6 +378,18 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (int iw = 0; iw < crowd.size(); ++iw)
     doesDoinTheseLastMatter(walkers[iw]);
 }
+
+
+void QMCDriverNew::putWalkerLogs(xmlNodePtr wlxml)
+{
+  walker_logs_input.present = false;
+  if(wlxml)
+  {
+    walker_logs_input.readXML(wlxml); 
+    walker_logs_input.present = true;
+  }
+}
+
 
 std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 {
