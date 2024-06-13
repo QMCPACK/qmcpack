@@ -184,14 +184,14 @@ private:
   const IndexType num_ranks_;
   ///0 is default
   IndexType SwapMode;
-  /** large amount of state data MPI_AllReduce once per step size is LE_MAX + number of ranks.
-   *  partial enum to access elements is the enum above dumped into WalkerControl's namespace
-   *  includes many integral types converted to and from fp
-   *  \todo MPI in the 21st centure allows user defined data types that would allow all this to benefit from actual
-   *        C++ type safety and still can have performant collective operation efficiency.
-   *        The desired operation isn't actually an all reduce for potentially the largest number of elements.
+  /** large amount of state data MPI_AllReduce'd once per step. Size is LE_MAX + number of ranks.
+   *  partial enum to access elements is above is in WalkerControl's namespace
+   *  Some elements are integral types converted to and from fp
+   *  \todo The desired operation isn't actually an all reduce for what is potentially the largest number of elements.
    *        From LE_MAX:LEMAX_+num_ranks-1 is an "integer" allgather for dynamic populations
-   *        and a floating point all gather for fixed population.  
+   *        and a floating point all gather for fixed population.
+   *        Coercing many values to float and packing all these values into one buffer is a bad smell
+   *        considering the collective pattern is actually different anyway.
    */
   std::vector<FullPrecRealType> curData;
   ///Use non-blocking isend/irecv
