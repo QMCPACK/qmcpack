@@ -392,12 +392,6 @@ void DMCBatched::process(xmlNodePtr node)
     myComm->barrier_and_abort(ue.what());
   }
 
-  { //initialize WalkerLogManager and collectors
-    wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
-    for (auto& crowd : crowds_)
-      crowd->setWalkerLogCollector(wlog_manager_->makeCollector());
-  }
-
   {
     ReportEngine PRE("DMC", "resetUpdateEngines");
     Timer init_timer;
@@ -440,9 +434,12 @@ bool DMCBatched::run()
 
   estimator_manager_->startDriverRun();
 
+  //initialize WalkerLogManager and collectors
+  WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
+  for (auto& crowd : crowds_)
+    crowd->setWalkerLogCollector(wlog_manager.makeCollector());
   //register walker log collectors into the manager
-  if (wlog_manager_)
-    wlog_manager_->startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
+  wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
 
   StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_);
 
@@ -517,8 +514,7 @@ bool DMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
-      if (wlog_manager_)
-        wlog_manager_->writeBuffers();
+      wlog_manager.writeBuffers();
       recordBlock(block);
     }
 
@@ -541,8 +537,8 @@ bool DMCBatched::run()
 
   print_mem("DMCBatched ends", app_log());
 
+  wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
-  wlog_manager_->stopRun();
 
   return finalize(num_blocks, true);
 }
