@@ -106,13 +106,23 @@ inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,
 
 template<typename T>
 inline void copy_batched(BLASHandle<PlatformKind::SYCL>& handle,
-                         const int n,
+                         syclBLAS::syclBLAS_int n,
                          const T* const in[],
-                         const int incx,
+                         syclBLAS::syclBLAS_int incx,
                          T* const out[],
-                         const int incy,
+                         syclBLAS::syclBLAS_int incy,
                          const size_t batch_count)
-{}
+{
+  try
+  {
+    syclBLAS::syclBLAS_int bc = batch_count;
+    oneapi::mkl::blas::copy_batch(handle.queue_, &n, const_cast<const T**>(in), &incx, const_cast<T**>(out), &incy, 1, &bc);
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::copy_batch exception: ") + e.what());
+  }
+}
 
 template<typename T>
 inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
