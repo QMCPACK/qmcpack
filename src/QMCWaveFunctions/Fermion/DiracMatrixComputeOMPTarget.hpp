@@ -220,12 +220,14 @@ public:
    *  
    *  \todo measure if using the a_mats without a copy to contiguous vector is better.
    */
-  template<typename TMAT>
-  inline void mw_invertTranspose(HandleResource& resource,
+  template<typename TMAT, PlatformKind PL>
+  inline void mw_invertTranspose(compute::BLASHandle<PL>& resource_ignored,
                                  const RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
                                  const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<LogValue>& log_values)
   {
+    compute::Queue<PlatformKind::OMPTARGET> queue;
+    HandleResource resource(queue);
     for (int iw = 0; iw < a_mats.size(); iw++)
     {
       auto& Ainv = inv_a_mats[iw].get();
