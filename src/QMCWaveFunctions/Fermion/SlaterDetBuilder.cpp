@@ -401,6 +401,17 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       }
       else
 #endif
+#if defined(ENABLE_SYCL) && defined(ENABLE_OFFLOAD)
+      if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
+      {
+        app_summary() << "      Running on an Intel GPU via SYCL acceleration and OpenMP offload." << std::endl;
+        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                          firstIndex, lastIndex,
+                                                                                          delay_rank,
+                                                                                          matrix_inverter_kind);
+      }
+      else
+#endif
       {
 #if defined(ENABLE_OFFLOAD)
         if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
