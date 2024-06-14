@@ -180,8 +180,8 @@ void test_gemv(const int M_b, const int N_b, const char trans)
   const int M = trans == 'T' ? M_b : N_b;
   const int N = trans == 'T' ? N_b : M_b;
 
-  using vec_t = Vector<T, OMPallocator<T>>;
-  using mat_t = Matrix<T, OMPallocator<T>>;
+  using vec_t = Vector<T, PinnedDualAllocator<T>>;
+  using mat_t = Matrix<T, PinnedDualAllocator<T>>;
 
   ompBLAS::ompBLAS_handle handle;
 
@@ -236,19 +236,19 @@ void test_one_gemv(const int M_b, const int N_b, const char trans, const int bat
 
   // Create input vector
   std::vector<vec_t> As;
-  Vector<const T*, OMPallocator<const T*>> Aptrs;
+  Vector<const T*, PinnedDualAllocator<const T*>> Aptrs;
 
   // Create input matrix
   std::vector<mat_t> Bs;
-  Vector<const T*, OMPallocator<const T*>> Bptrs;
+  Vector<const T*, PinnedDualAllocator<const T*>> Bptrs;
 
   // Create output vector (ompBLAS)
   std::vector<vec_t> Cs;
-  Vector<T*, OMPallocator<T*>> Cptrs;
+  Vector<T*, PinnedDualAllocator<T*>> Cptrs;
 
   // Create output vector (BLAS)
   std::vector<vec_t> Ds;
-  Vector<T*, OMPallocator<T*>> Dptrs;
+  Vector<T*, PinnedDualAllocator<T*>> Dptrs;
 
   // Resize pointer vectors
   Aptrs.resize(batch_count);
@@ -296,9 +296,9 @@ void test_one_gemv(const int M_b, const int N_b, const char trans, const int bat
   Cptrs.updateTo();
 
   // Run tests
-  Vector<T, OMPallocator<T>> alpha(batch_count);
-  Vector<T, OMPallocator<T>> beta(batch_count);
-  Vector<T, OMPallocator<T>> beta1(batch_count);
+  Vector<T, PinnedDualAllocator<T>> alpha(batch_count);
+  Vector<T, PinnedDualAllocator<T>> beta(batch_count);
+  Vector<T, PinnedDualAllocator<T>> beta1(batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
   {
@@ -363,8 +363,8 @@ void test_gemv_cases()
 template<typename T>
 void test_ger(const int M, const int N)
 {
-  using vec_t = Vector<T, OMPallocator<T>>;
-  using mat_t = Matrix<T, OMPallocator<T>>;
+  using vec_t = Vector<T, PinnedDualAllocator<T>>;
+  using mat_t = Matrix<T, PinnedDualAllocator<T>>;
 
   ompBLAS::ompBLAS_handle handle;
 
@@ -412,15 +412,15 @@ void test_one_ger(const int M, const int N, const int batch_count)
 
   // Create input vector
   std::vector<vec_t> Xs;
-  Vector<const T*, OMPallocator<const T*>> Xptrs;
+  Vector<const T*, PinnedDualAllocator<const T*>> Xptrs;
   std::vector<vec_t> Ys;
-  Vector<const T*, OMPallocator<const T*>> Yptrs;
+  Vector<const T*, PinnedDualAllocator<const T*>> Yptrs;
 
   // Create input matrix
   std::vector<mat_t> Ahs;
-  Vector<T*, OMPallocator<T*>> Ahptrs;
+  Vector<T*, PinnedDualAllocator<T*>> Ahptrs;
   std::vector<mat_t> Ads;
-  Vector<T*, OMPallocator<T*>> Adptrs;
+  Vector<T*, PinnedDualAllocator<T*>> Adptrs;
 
   // Resize pointer vectors
   Xptrs.resize(batch_count);
@@ -472,7 +472,7 @@ void test_one_ger(const int M, const int N, const int batch_count)
   Yptrs.updateTo();
 
   // Run tests
-  Vector<T, OMPallocator<T>> alpha(batch_count);
+  Vector<T, PinnedDualAllocator<T>> alpha(batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
     alpha[batch] = T(0.5);
