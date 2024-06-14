@@ -104,10 +104,9 @@ public:
 
   void write(hdf_archive& file);
 
-  size_t getFullDataSize();
-
   RefVector<NESpaceGrid<Real>> getSpaceGrids();
 
+  RefVector<std::vector<QMCT::RealType>>& getExtraData();
 private:
   auto extractIonPositionsAndCharge(const ParticleSet& pset);
 
@@ -151,6 +150,8 @@ private:
   /** in legacy the starting index into the collectibles buffer.
    *  Maintained to use more legacy code without modificaiton in the short term.
    *  In the long term its possible the entire way the grid data is structured in memory should be redesigned.
+   *
+   *  Right now we put the ed_values and ed_ion_values_ into the base class data_.
    */
   int outside_buffer_offset{0};
   std::vector<bool> particles_outside_;

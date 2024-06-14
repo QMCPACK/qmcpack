@@ -225,7 +225,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver = fac.create(project_data_, emi, qmc_system,
                             MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
-                            qmc_system.getSampleStack(), comm);
+                            particle_pool.getPool(), qmc_system.getSampleStack(), comm);
   }
   else if (das.new_run_type == QMCRunType::DMC)
   {
@@ -236,7 +236,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver = fac.create(project_data_, emi, qmc_system,
-                            MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH), comm);
+                            MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH), particle_pool.getPool(), comm);
   }
   else if (das.new_run_type == QMCRunType::RMC)
   {
@@ -262,7 +262,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
               "Please use full precision build instead.");
 #endif
     auto opt = QMCWFOptLinearFactoryNew(cur, project_data_, emi, qmc_system,
-                                        MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
+                                        MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH), particle_pool.getPool(), 
                                         qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
     new_driver = std::move(opt);

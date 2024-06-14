@@ -69,16 +69,6 @@ Libxml2Document createEstimatorManagerNewInputXML()
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
-
-  for (auto& input_xml : valid_scalar_estimator_input_sections)
-  {
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-
   return estimators_doc;
 }
 

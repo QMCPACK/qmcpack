@@ -178,6 +178,24 @@ const ParticleSet& NEEnergyDensityEstimator::getParticleSet(const PSPool& psetpo
   return *(pset_iter->second.get());
 }
 
+// std::size_t NEEnergyDensityEstimator::getFullDataSize()
+// {
+// }
+
+// void NEEnergyDensityEstimator::packData(std::vector<Real>& operator_send_buffer)
+// {
+//   std::size_t full_size = OperatorEstBase::getFullDataSize();
+//   for (auto& spacegrid:  spacegrids_) {
+//     full_size += spacegrid->getDataVector.size();
+//   }
+//   full_size += 1; // for sample  
+// }
+
+// void NEEnergyDensityEstimator::unpackData(std::vector<Real>& operator_receive_buffer)
+// {
+  
+// }
+
 void NEEnergyDensityEstimator::accumulate(const RefVector<MCPWalker>& walkers,
                                           const RefVector<ParticleSet>& psets,
                                           const RefVector<TrialWaveFunction>& wfns,
@@ -312,8 +330,10 @@ void NEEnergyDensityEstimator::collect(const RefVector<OperatorEstBase>& type_er
       NEEnergyDensityEstimator& crowd_ede = dynamic_cast<NEEnergyDensityEstimator&>(crowd_oeb);
       NESpaceGrid<Real>& grid_ref               = *(crowd_ede.spacegrids_[ig]);
       crowd_grids.push_back(grid_ref);
+      //nsamples += grid_ref.samples;
     }
     NESpaceGrid<Real>::collect(*(spacegrids_[ig]), crowd_grids);
+    
   }
   OperatorEstBase::collect(type_erased_operator_estimators);
 }
@@ -375,5 +395,13 @@ std::unique_ptr<OperatorEstBase> NEEnergyDensityEstimator::spawnCrowdClone() con
 RefVector<NESpaceGrid<NEEnergyDensityEstimator::Real>> NEEnergyDensityEstimator::getSpaceGrids() { return convertUPtrToRefVector(spacegrids_); }
 
 void NEEnergyDensityEstimator::startBlock(int steps) {}
+
+// RefVector<std::vector<QMCT::RealType>>& NEEnergyDensityEstimator::getExtraData() {
+//   RefVector<std::vector<QMCT::RealType>> refs;
+//   for(auto& space_grid : space_grids_) {
+//     refs.push_back(getDataVector());
+//   }
+//   return refs;
+// }
 
 } // namespace qmcplusplus

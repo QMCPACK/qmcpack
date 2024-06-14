@@ -64,7 +64,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       timers_(timer_prefix),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
-      walker_configs_ref_(wc))
+      walker_configs_ref_(wc)
 {
   // This is done so that the application level input structures reflect the actual input to the code.
   // While the actual simulation objects still take singular input structures at construction.

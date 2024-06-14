@@ -92,7 +92,8 @@ public:
   virtual void startBlock(int steps) = 0;
 
   std::vector<QMCT::RealType>& get_data() { return data_; }
-
+  // virtual std::size_t getFullDataSize() { return data_.size(); }
+  // virtual RefVector<std::vector<QMCT::RealType>>& getExtraData() {} 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong
    *
