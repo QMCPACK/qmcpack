@@ -35,6 +35,7 @@ set(SRCS
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
+    test_EstimatorBuffer.cpp
     test_EstimatorManagerInput.cpp
     test_ScalarEstimatorInputs.cpp
     test_SizeLimitedDataQueue.cpp
