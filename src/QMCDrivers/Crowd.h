@@ -119,6 +119,7 @@ public:
 
   const MultiWalkerDispatchers& dispatchers_;
 
+  /// get refereces of active walker log collectors. If walker logging is disabled, the RefVector size can be zero.
   static RefVector<WalkerLogCollector> getWalkerLogCollectorRefs(const UPtrVector<Crowd>& crowds);
 
 private:
