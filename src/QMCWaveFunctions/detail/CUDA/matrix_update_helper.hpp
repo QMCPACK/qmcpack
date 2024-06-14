@@ -13,7 +13,6 @@
 #ifndef CUDA_MATRIX_UPDATE_HELPER_H
 #define CUDA_MATRIX_UPDATE_HELPER_H
 
-#include <complex>
 #include "config.h"
 #ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
