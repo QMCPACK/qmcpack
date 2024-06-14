@@ -86,7 +86,6 @@ CloneManager::~CloneManager()
 #if !defined(REMOVE_TRACEMANAGER)
   delete_iter(traceClones.begin(), traceClones.end());
 #endif
-  delete_iter(wlog_collectors.begin(), wlog_collectors.end());
 }
 
 void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham)
