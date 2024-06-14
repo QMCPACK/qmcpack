@@ -81,6 +81,7 @@ void MCPopulation::copyHighMultiplicityWalkers()
 
 void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfigurations& walker_configs, RealType reserve)
 {
+  assert(reserve >= 1.0);
   IndexType num_walkers_plus_reserve = static_cast<IndexType>(num_walkers * reserve);
 
   // Hack to hopefully insure no truly new walkers will be made by spawn, since I suspect that
@@ -120,9 +121,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
     // initialize coord
     if (const auto num_existing_walkers = walker_configs.getActiveWalkers())
     {
-      // The walker config has walker ID's that I think may not match the scheme for this run.
-      // but the parent id's will make sense compared to the run the walkerconfig came from.
-      // Save the unique to this run walker id.
+      // Save this walkers id.
       auto this_walkers_id = walkers_[iw]->getWalkerID();
       // the walker assignment operator is basically a simple copy so walker_id is overwritten with
       // something meaningful only in another QMC section.
@@ -348,11 +347,12 @@ void MCPopulation::saveWalkerConfigurations(WalkerConfigurations& walker_configs
   walker_configs.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
   {
-    // The semantics of this call are not what would be expected.
-    // you are not serializing walkers but particle sets
-    // related to walkers to the walkerconfigs...
-    // So if you would like them to cary information between sections be careful you need to copy it in explicitly.
+    // The semantics of this call are not what would I would expecte.
     // Are walkers's R's invalid here?
+    // you are not serializing the population walkers but the particle sets
+    // to the walker_configs walkers...
+    // So if you would like them to carry information between sections be careful
+    // you need to copy it in explicitly.
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs[iw]);
     walker_configs[iw]->Weight = walkers_[iw]->Weight;
     walker_configs[iw]->setWalkerID(walkers_[iw]->getWalkerID());

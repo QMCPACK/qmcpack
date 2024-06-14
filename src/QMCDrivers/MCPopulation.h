@@ -123,8 +123,10 @@ public:
 
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
    *
-   *  \param[in] num_walkers number of living walkers in initial population
-   *  \param[in] reserve multiple above that to reserve >=1.0
+   *  \param[in] num_walkers       number of living walkers in initial population
+   *  \param[in] walker_configs    0 or more walker configurations will be assigned
+   *                               cyclically if num_walkers > walker_configs.getActiveWalkers()
+   *  \param[in] reserve           multiple above num_walker to reserve >=1.0
    */
   void createWalkers(IndexType num_walkers, const WalkerConfigurations& walker_configs, RealType reserve = 1.0);
 
@@ -247,15 +249,15 @@ public:
 
 private:
   /** Generator for walker_ids of this MCPopulation
-   *  This should be the single source for `walker_id`'s on this rank.
-   *  These are unique across MCPopulations with rank.
+   *  The single source for `walker_id`'s on this rank.
+   *  These are unique across MCPopulations as long as each MCPopulation is on its own rank.
    *  Defined as
    *  \f$ walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1 \f$
    *
    *  So starting from 1, 0 is the value of a default constructed walker.
-   *  Any negative value must have been set by an outside entity and indicates
+   *  A negative value must have been set by an outside entity and indicates
    *  an invalid walker ID.
-   *  We do not use it since this is not an index and IDs are basically a count.
+   *  These are not indexes.
    */
   long nextWalkerID();
 };

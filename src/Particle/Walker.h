@@ -82,40 +82,39 @@ public:
   /** }@ */
 
 private:
-  /** in legacy the ancients have said only:
-   *  id reserved for forward walking
+  /** walker identifier during a QMCSection
    *
-   *  In batched
+   *  batched:
    *  Only MCPopulation should set A living walker will have a WalkerID > 0
    *  0 is the value of a default constructed walker.
    *  Any negative value must have been set by an outside entity and indicates
    *  an invalid walker ID.
    */
   long walker_id_ = 0;
-  /** in legacy the ancients have said only:
-   *  id reserved for forward walking
+  /** walker identifier that provided the initial state of walker
    *
-   *  In Batched
-   *  If a walker is initialized from the golden particle set it keeps the default constructed 0
-   *  If a walker has a parentID > 0 that is the walkerID it was branched from in this section.
-   *  If a walker has a negative parentID that is the walkerID from the WalkerConfiguration it was
-   *  constructed from.
+   *  batched:
+   *  default constructed = 0;
+   *  parentID > 0 it is the walkerID in this section it was assigned from
+   *  parentID < 0 it is the  walkerID of a walker in a WalkerConfiguration
+   *  used to construct an initial population of walkers.
    */
   long parent_id_ = 0;
 
 public:
-  /** allegedly DMCgeneration
+  /** allegedly DMC generation
    *  PD: I can find no evidence it is ever updated anywhere in the code.
    */
   int Generation = 0;
-  ///Age of this walker age is incremented when a walker is not moved after a sweep
+  ///Age is incremented when a walker is not moved after a sweep
   int Age = 0;
   ///Weight of the walker
   FullPrecRealType Weight = 1.0;
-  /** Number of copies for branching
+  /** Number of replicas of this walker after branching
    * When Multiplicity = 0, this walker will be destroyed.
+   * PD: It seems to me that this should be an integer.
    */
-  FullPrecRealType Multiplicity = 1.0;
+  int Multiplicity = 1.0;
   /// mark true if this walker is being sent.
   bool SendInProgress;
 
@@ -130,7 +129,8 @@ public:
      the positions of all the particles for a single walker)*/
   ParticlePos R;
 
-  //Dynamical spin variable.
+  /** Spin configuration vector (size N)
+   *  i.e. Dynamical spin variable. */
   ParticleScalar spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
@@ -178,8 +178,7 @@ public:
   }
 
   Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
-  Walker(const Walker& a, long walker_id, long parent_id)
-      : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  Walker(const Walker& a, long walker_id, long parent_id) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
   {
     makeCopy(a);
     walker_id_ = walker_id;
