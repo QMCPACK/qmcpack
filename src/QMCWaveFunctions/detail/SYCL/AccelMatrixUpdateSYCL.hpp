@@ -38,8 +38,8 @@ void copyAinvRow_saveGL_batched(Queue<PlatformKind::SYCL>& queue,
 {
   try
   {
-SYCL::copyAinvRow_saveGL_batched(queue.getNative(), rowchanged, n, Ainv, lda, temp, rcopy, phi_vgl_in,
-                                                  phi_vgl_stride, dphi_out, d2phi_out, batch_count);
+    SYCL::copyAinvRow_saveGL_batched(queue.getNative(), rowchanged, n, Ainv, lda, temp, rcopy, phi_vgl_in,
+                                     phi_vgl_stride, dphi_out, d2phi_out, batch_count);
   }
   catch (sycl::exception& e)
   {
@@ -84,10 +84,9 @@ void add_delay_list_save_sigma_VGL_batched(Queue<PlatformKind::SYCL>& queue,
 {
   try
   {
-SYCL::add_delay_list_save_sigma_VGL_batched(queue.getNative(), delay_list, rowchanged, delay_count,
-                                                             binv, binv_lda, ratio_inv, phi_vgl_in, phi_vgl_stride,
-                                                             phi_out, dphi_out, d2phi_out, norb, n_accepted,
-                                                             batch_count);
+    SYCL::add_delay_list_save_sigma_VGL_batched(queue.getNative(), delay_list, rowchanged, delay_count, binv, binv_lda,
+                                                ratio_inv, phi_vgl_in, phi_vgl_stride, phi_out, dphi_out, d2phi_out,
+                                                norb, n_accepted, batch_count);
   }
   catch (sycl::exception& e)
   {
