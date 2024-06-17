@@ -13,32 +13,34 @@
 #define QMCPLUSPLUS_VALIDSCALARESTIMATORINPUT_H
 
 #include <array>
+#include <string_view>
+#include "ValidInputHelp.h"
 
 namespace qmcplusplus
 {
 namespace testing
 {
 
-struct ValidScalarEstimatorInput
+class ScalarEstimatorInputs
 {
-  enum
+public:
+  enum class valid : std::size_t
   {
     LOCAL_ENERGY = 0,
     CS_LOCAL_ENERGY,
-    CS_LOCAL_ENERGY_LEGACY,
     LOCAL_ENERGY_LEGACY,
-    RMC_LOCAL_ENERGY_LEGACY
+    RMC_LOCAL_ENERGY
   };
 
-  static constexpr std::array<std::string_view, 5> xml{
+  TEST_INPUT_ACCESSORS(valid)
+
+private:
+  static constexpr std::array<std::string_view, 4> xml{
       R"XML(
    <estimator type="LocalEnergy" hdf5="no"/>
 	  )XML",
       R"XML(
    <estimator type="CSLocalEnergy" npsi="2"/>
-	  )XML",
-      R"XML(
-   <estimator name="CSLocalEnergy" npsi="2"/>
 	  )XML",
       R"XML(
    <estimator name="eLocal" hdf5="yes"/>

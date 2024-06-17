@@ -182,6 +182,9 @@ private:
    */
   int addScalarEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator);
 
+  /** add an Scalar Estimator marked main.
+   *  this drops the previous main estimator if any.
+   */
   void addMainEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator);
 
   // ///return a pointer to the estimator aname

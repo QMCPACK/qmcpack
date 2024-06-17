@@ -31,7 +31,7 @@ public:
     GRID
   };
 
-  VALIDINPUT_ACCESSORS(valid)
+  TEST_INPUT_ACCESSORS(valid)
 
 private:
   static constexpr std::array<std::string_view, 3> xml{

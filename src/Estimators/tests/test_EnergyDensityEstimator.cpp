@@ -35,7 +35,6 @@ namespace qmcplusplus
 
 TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 {
-  using Input = testing::ValidEnergyDensityInput;
   Communicate* comm;
   comm = OHMMS::Controller;
 
@@ -51,7 +50,9 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
 
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[Input::valid::CELL]);
+  using Input = testing::EnergyDensityInputs;
+  Input input;
+  bool okay       = doc.parseFromString(input[Input::valid::CELL]);
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
   {
@@ -61,7 +62,6 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 
 TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 {
-  using Input = testing::ValidEnergyDensityInput;
   Communicate* comm;
   comm = OHMMS::Controller;
 
@@ -77,7 +77,9 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
 
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[Input::valid::CELL]);
+  using Input = testing::EnergyDensityInputs;
+  Input input;
+  bool okay       = doc.parseFromString(input[Input::valid::CELL]);
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
   {
@@ -92,7 +94,6 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 
 TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 {
-  using Input = testing::ValidEnergyDensityInput;
   Communicate* comm;
   comm = OHMMS::Controller;
 
@@ -158,7 +159,9 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   auto& trial_wavefunction = gold_elem.twf;
 
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[Input::valid::CELL]);
+  using Input = testing::EnergyDensityInputs;
+  Input input;
+  bool okay       = doc.parseFromString(input[Input::valid::CELL]);
   xmlNodePtr node = doc.getRoot();
   UPtr<EnergyDensityInput> edein;
   edein = std::make_unique<EnergyDensityInput>(node);
@@ -224,7 +227,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   e_den_est.accumulate(walker_refs, p_list, twf_list, ham_list, rng);
   auto spacegrids = e_den_est.getSpaceGrids();
 
-  NESpaceGrid<decltype(e_den_est)::Real> grid   = spacegrids[0];
+  NESpaceGrid<decltype(e_den_est)::Real> grid = spacegrids[0];
 
   double summed_grid = 0;
   // grid memory layout is (W)eight (T) Kinetic (V) potential

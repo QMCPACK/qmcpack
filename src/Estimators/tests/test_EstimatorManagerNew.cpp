@@ -78,7 +78,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   EstimatorManagerInput emi2(estimators_doc2.getRoot());
 
   CHECK(emi2.get_estimator_inputs().size() == 3);
-  CHECK(emi2.get_scalar_estimator_inputs().size() == 5);
+  CHECK(emi2.get_scalar_estimator_inputs().size() == 4);
 
   EstimatorManagerNew emn2(comm, std::move(emi2), ham, pset, particle_pool.getPool(), twf);
 

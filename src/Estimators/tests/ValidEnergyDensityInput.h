@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -14,14 +14,25 @@
 
 #include <array>
 #include <string_view>
+#include "ValidInputHelp.h"
 
 namespace qmcplusplus
 {
 namespace testing
 {
 
-struct ValidEnergyDensityInput
+class EnergyDensityInputs
 {
+public:
+  enum class valid
+  {
+    CELL = 0,
+    ION
+  };
+
+  TEST_INPUT_ACCESSORS(valid)
+
+private:
   static constexpr std::array<std::string_view, 2> xml{
       R"XML(
 <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion">
@@ -54,22 +65,24 @@ struct ValidEnergyDensityInput
   </spacegrid>
 </estimator>
 )XML"};
-
-enum valid
-{
-  CELL = 0,
-  ION
-};
 };
 
-struct InvalidEnergyDensityInput
+class InvalidEnergyDensityInput
 {
+public:
+  enum class invalid
+  {
+    BADNAME = 0,
+  };
+
+  TEST_INPUT_ACCESSORS(invalid)
+
+private:
   static constexpr std::array<std::string_view, 1> xml{
       R"XML(
 <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
 </estimator>
-      )XML"
-      };
+      )XML"};
 };
 
 } // namespace testing

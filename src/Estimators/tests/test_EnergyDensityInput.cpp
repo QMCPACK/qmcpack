@@ -19,12 +19,13 @@
 
 namespace qmcplusplus
 {
+using Input = testing::EnergyDensityInputs;
 
 TEST_CASE("EnergyDensityInput::parseXML::valid", "[estimators]")
 {
-  using input = qmcplusplus::testing::ValidEnergyDensityInput;
+  Input input;
   int test_num = 0;
-  for (auto input_xml : input::xml)
+  for (auto input_xml : input)
   {
     std::cout << "input number: " << test_num++ << '\n'; 
     Libxml2Document doc;
@@ -36,8 +37,9 @@ TEST_CASE("EnergyDensityInput::parseXML::valid", "[estimators]")
 
 TEST_CASE("EnergyDensityInput::parseXML::invalid", "[estimators]")
 {
-  using input = qmcplusplus::testing::InvalidEnergyDensityInput;
-  for (auto input_xml : input::xml)
+  using InvalidInput = qmcplusplus::testing::InvalidEnergyDensityInput;
+  InvalidInput input;
+  for (auto input_xml : input)
   {
     Libxml2Document doc;
     bool okay                           = doc.parseFromString(input_xml);
@@ -49,10 +51,9 @@ TEST_CASE("EnergyDensityInput::parseXML::invalid", "[estimators]")
 
 TEST_CASE("EnergyDensityInput::parseXML::axes", "[estimators]")
 {
-  using input     = qmcplusplus::testing::ValidEnergyDensityInput;
-  auto& input_xml = input::xml[input::valid::ION];
+  Input input;
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(input_xml);
+  bool okay       = doc.parseFromString(input[Input::valid::ION]);
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edi(node);
   auto sgis = edi.get_space_grid_inputs();
@@ -62,10 +63,9 @@ TEST_CASE("EnergyDensityInput::parseXML::axes", "[estimators]")
 
 TEST_CASE("EnergyDensityInput::default_reference_points", "[estimators]")
 {
-  using input     = qmcplusplus::testing::ValidEnergyDensityInput;
-  auto& input_xml = input::xml[input::valid::CELL];
+  Input input;
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(input_xml);
+  bool okay       = doc.parseFromString(input[Input::valid::CELL]);
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edi(node);
   auto sgis = edi.get_space_grid_inputs();
@@ -76,10 +76,9 @@ TEST_CASE("EnergyDensityInput::default_reference_points", "[estimators]")
 
 TEST_CASE("EnergyDensityInput::copy_construction", "[estimators]")
 {
-  using input     = qmcplusplus::testing::ValidEnergyDensityInput;
-  auto& input_xml = input::xml[input::valid::CELL];
+  Input input;
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(input_xml);
+  bool okay       = doc.parseFromString(input[Input::valid::CELL]);
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edi(node);
 
