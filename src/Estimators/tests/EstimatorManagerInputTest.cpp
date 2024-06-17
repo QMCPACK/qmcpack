@@ -47,8 +47,9 @@ Libxml2Document createEstimatorManagerNewInputXML()
   estimators_doc.newDoc("Estimators");
   {
     using Input = testing::ValidOneBodyDensityMatricesInput;
+    Input input;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::xml[0]);
+    bool okay = doc.parseFromString(input[Input::valid::VANILLA]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
@@ -79,8 +80,9 @@ Libxml2Document createEstimatorManagerNewVMCInputXML()
   estimators_doc.newDoc("Estimators");
   {
     using Input = testing::ValidOneBodyDensityMatricesInput;
+    Input input;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::xml[0]);
+    bool okay = doc.parseFromString(input[Input::valid::VANILLA]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));

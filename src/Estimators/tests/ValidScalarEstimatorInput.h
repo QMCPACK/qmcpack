@@ -27,7 +27,7 @@ struct ValidScalarEstimatorInput
     CS_LOCAL_ENERGY,
     CS_LOCAL_ENERGY_LEGACY,
     LOCAL_ENERGY_LEGACY,
-    RMC_LOCAL_ENERGY
+    RMC_LOCAL_ENERGY_LEGACY
   };
 
   static constexpr std::array<std::string_view, 5> xml{

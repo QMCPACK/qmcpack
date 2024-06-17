@@ -28,8 +28,9 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
 {
   using POLT        = PtclOnLatticeTraits;
   using Lattice     = POLT::ParticleLayout;
-  using valid_input = testing::ValidOneBodyDensityMatricesInput;
-  for (auto input_xml : valid_input::xml)
+  using Input = testing::ValidOneBodyDensityMatricesInput;
+  Input valid_input;
+  for (auto input_xml : valid_input)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);
@@ -53,8 +54,9 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
 TEST_CASE("OneBodyDensityMatricesInput::copy_construction", "[estimators]")
 {
   using Input = testing::ValidOneBodyDensityMatricesInput;
+  Input input;
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[Input::valid::SCALE]);
+  bool okay       = doc.parseFromString(input[Input::valid::SCALE]);
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
   static_assert(std::is_copy_constructible_v<OneBodyDensityMatricesInput>);
