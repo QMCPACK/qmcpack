@@ -84,6 +84,12 @@ public:
    *  estimators don't have a copy of the density grid.
    */
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
+
+  std::size_t getFullDataSize() override;
+
+  void packData(PooledData<Real>& buffer) override;
+  void unpackData(PooledData<Real>& buffer) override;
+
   UPtr<OperatorEstBase> spawnCrowdClone() const override;
 
   /** start block entry point
@@ -181,7 +187,7 @@ private:
   /// @}
 
   //number of samples accumulated
-  int nsamples;
+  int nsamples_;
 
   DataLocality data_locality_{DataLocality::crowd};
 

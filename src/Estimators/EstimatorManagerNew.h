@@ -47,12 +47,10 @@ class EstimatorManagerNew
 {
 public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
-  using RealType         = QMCTraits::FullPrecRealType;
-  using FullPrecRealType = QMCTraits::FullPrecRealType;
-
   using QMCT      = QMCTraits;
-  using FPRBuffer = std::vector<FullPrecRealType>;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using RealType         = QMCTraits::FullPrecRealType;
+  using FullPrecRealType         = QMCTraits::FullPrecRealType;
+  using MCPWalker = Walker<QMCT, PtclOnLatticeTraits>;
   using PSPool = typename ParticleSetPool::PoolType;
   /// default constructor
   EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);

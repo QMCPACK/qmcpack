@@ -16,6 +16,8 @@
 #ifndef QMCPLUSPLUS_ESTIMATOR_BUFFER_HPP
 #define QMCPLUSPLUS_ESTIMATOR_BUFFER_HPP
 
+#include "PooledData.h"
+
 namespace qmcplusplus
 {
 
@@ -24,23 +26,8 @@ class EstimatorBuffer
 {
 public:
   EstimatorBuffer() = default;
-
-  template<class... ARGS>
-  std::size_t copyIn(T weight, ARGS&... args)
-  {
-    return totalSize(std::forward<ARGS>(args)...);
-  }
-
-
+  void reserve(std::size_t);
 private:
-  
-  std::size_t totalSize(const std::vector<T>& vec) { return vec.size(); }
-  template<typename... ARGS>
-  std::size_t totalSize(const std::vector<T>& vec, ARGS... vecs)
-  {
-    return vec.size() + totalSize(std::forward<ARGS>(vecs)...);
-  }
-
 
   std::vector<T> data_;
 };

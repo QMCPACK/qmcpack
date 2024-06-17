@@ -91,6 +91,12 @@ struct PooledData
     myData.push_back(x);
   }
 
+  inline void add(T&& x)
+  {
+    Current++;
+    myData.push_back(x);
+  }
+
   inline void add(std::complex<T>& x)
   {
     Current += 2;
@@ -105,6 +111,13 @@ struct PooledData
     myData.push_back(static_cast<T>(x));
   }
 
+  template<class T1>
+  inline void add(T1&& x)
+  {
+    Current++;
+    myData.push_back(static_cast<T>(x));
+  }
+  
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last)
   {

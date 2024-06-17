@@ -29,6 +29,7 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/CommUtilities.h"
+#include <Pools/PooledData.h>
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
@@ -384,23 +385,25 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     RefVector<OperatorEstBase> ref_op_ests = convertUPtrToRefVector(operator_ests_);
     for (int iop = 0; iop < operator_data_sizes.size(); ++iop)
     {
-      operator_data_sizes[iop] = operator_ests_[iop]->get_data().size();
+      operator_data_sizes[iop] = operator_ests_[iop]->getFullDataSize();
     }
-    // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced first.
+
+    // Allocate buffer to hold largest Operator est data size
+    // +1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced first.
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
-    std::vector<RealType> operator_send_buffer;
-    std::vector<RealType> operator_recv_buffer;
+    PooledData<RealType> operator_send_buffer;
+    PooledData<RealType> operator_recv_buffer;
     operator_send_buffer.reserve(nops);
     operator_recv_buffer.reserve(nops);
     for (int iop = 0; iop < operator_ests_.size(); ++iop)
     {
       auto& estimator      = *operator_ests_[iop];
-      auto& data           = estimator.get_data();
-      size_t adjusted_size = data.size() + 1;
-      operator_send_buffer.resize(adjusted_size, 0.0);
-      operator_recv_buffer.resize(adjusted_size, 0.0);
-      std::copy_n(data.begin(), data.size(), operator_send_buffer.begin());
-      operator_send_buffer[data.size()] = estimator.get_walkers_weight();
+      size_t adjusted_size = estimator.getFullDataSize() + 1;
+      operator_send_buffer.clear(); //(adjusted_size, 0.0);
+      estimator.packData(operator_send_buffer);
+      operator_send_buffer.add(estimator.get_walkers_weight());
+      assert(operator_send_buffer.size() == adjusted_size);
+      operator_recv_buffer.resize(adjusted_size);
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
       my_comm_->comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(), std::plus<>{},
@@ -408,6 +411,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
 #else
       operator_recv_buffer = operator_send_buffer;
 #endif
+      
       // This is a crucial step where summed over weighted observable is normalized by the total weight.  For correctness this should be done
       // only after the full weighted sum is done.
       // i.e.  (1 / Sum(w_1 + ... + w_n)) * (w_1 * S_1 + ... + w_n * S_n) != (1/w_1) * w_1 * S_1 + ... + (1/w_n) * w_n * S_n
@@ -415,10 +419,11 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       // Assumptions lead rank is 0, true for Ensembles?
       if (my_comm_->rank() == 0)
       {
-        std::copy_n(operator_recv_buffer.begin(), data.size(), data.begin());
-        size_t reduced_walker_weights = operator_recv_buffer[data.size()];
-        RealType invTotWgt            = 1.0 / static_cast<QMCT::RealType>(reduced_walker_weights);
-        operator_ests_[iop]->normalize(invTotWgt);
+	estimator.unpackData(operator_recv_buffer);
+	RealType reduced_walker_weights = 0.0;
+        operator_recv_buffer.get(reduced_walker_weights);
+        RealType invTotWgt            = 1.0 / static_cast<RealType>(reduced_walker_weights);
+        estimator.normalize(invTotWgt);
       }
     }
   }

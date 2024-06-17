@@ -178,18 +178,30 @@ const ParticleSet& NEEnergyDensityEstimator::getParticleSet(const PSPool& psetpo
   return *(pset_iter->second.get());
 }
 
-// std::size_t NEEnergyDensityEstimator::getFullDataSize()
-// {
-// }
+std::size_t NEEnergyDensityEstimator::getFullDataSize()
+{
+  std::size_t size = OperatorEstBase::get_data().size();
+  for (UPtr<NESpaceGrid<Real>>& grid : spacegrids_)
+    size += grid->getDataVector().size();
+  size += 1; // for nsamples;
+  return size;
+}
 
-// void NEEnergyDensityEstimator::packData(std::vector<Real>& operator_send_buffer)
-// {
-//   std::size_t full_size = OperatorEstBase::getFullDataSize();
-//   for (auto& spacegrid:  spacegrids_) {
-//     full_size += spacegrid->getDataVector.size();
-//   }
-//   full_size += 1; // for sample  
-// }
+void NEEnergyDensityEstimator::packData(PooledData<Real>& buffer)
+{
+  OperatorEstBase::packData(buffer);
+  for(auto& grid: spacegrids_)
+    buffer.add(grid->getDataVector().begin(),grid->getDataVector().end());
+  buffer.add(nsamples_);  
+}
+
+void NEEnergyDensityEstimator::unpackData(PooledData<Real>& buffer)
+{
+  OperatorEstBase::unpackData(buffer);
+  for(auto& grid: spacegrids_)
+    buffer.get(grid->getDataVector().begin(),grid->getDataVector().end());
+  buffer.get(nsamples_);
+}
 
 // void NEEnergyDensityEstimator::unpackData(std::vector<Real>& operator_receive_buffer)
 // {
@@ -315,7 +327,7 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
         data_[bi] += ed_ion_values_(i, v);
       }
   }
-  nsamples++;
+  nsamples_++;
 }
 
 void NEEnergyDensityEstimator::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
@@ -347,7 +359,7 @@ void NEEnergyDensityEstimator::registerOperatorEstimator(hdf_archive& file)
   file.write(const_cast<int&>(n_particles_), "nparticles");
   auto nspacegrids = input_.get_space_grid_inputs().size();
   file.write(nspacegrids, "nspacegrids");
-  file.write(const_cast<int&>(nsamples), "nsamples");
+  file.write(const_cast<int&>(nsamples_), "nsamples");
 
   if (input_.get_ion_points())
   {

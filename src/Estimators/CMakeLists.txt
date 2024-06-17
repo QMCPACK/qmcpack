@@ -18,7 +18,6 @@ set(QMCEST_SRC
     RMCLocalEnergyEstimator.cpp
     EstimatorInput.cpp
     EstimatorManagerInput.cpp
-    EstimatorBuffer.cpp
     ParseGridInput.cpp
     SpaceGridInput.cpp
     ScalarEstimatorInputs.cpp

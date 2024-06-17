@@ -117,7 +117,7 @@ private:
   static std::vector<int> getSpeciesSize(const SpeciesSet& species);
   /** derived_parameters_ must be valid i.e. initialized with call to input_.calculateDerivedParameters
    */
-  size_t getFullDataSize();
+  size_t getFullDataSize() override;
   void accumulateToData(size_t point, QMCT::RealType weight);
   void reset();
   void report(const std::string& pad);
