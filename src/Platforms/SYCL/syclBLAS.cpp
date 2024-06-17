@@ -384,10 +384,10 @@ sycl::event ger_batched_impl(sycl::queue& handle,
                                const unsigned row_offset = item.get_group(1) * tile_size + thY;
                                if (column < m)
                                {
-                                 const T alphaX = alpha[batch] * x[batch][column];
+                                 const T alphaX = alpha[batch] * x[batch][column * incx];
                                  for (unsigned j = 0; j < tile_size; j += block_rows)
                                    if (const unsigned row = row_offset + j; row < n)
-                                     A[batch][row * lda + column] += alphaX * y[batch][row];
+                                     A[batch][row * lda + column] += alphaX * y[batch][row * incy];
                                }
                              });
 }
