@@ -37,7 +37,7 @@ void test_gemv(const int M_b, const int N_b, const char trans)
 
   vec_t A(N);        // Input vector
   mat_t B(M_b, N_b); // Input matrix
-  vec_t C(M);        // Result vector ompBLAS
+  vec_t C(M);        // Result vector syclBLAS
   vec_t D(M);        // Result vector BLAS
 
   // Fill data
@@ -62,7 +62,8 @@ void test_gemv(const int M_b, const int N_b, const char trans)
   // in Fortran, B[M][N] is viewed as B^T
   // when trans == 'T', the actual calculation is B * A[N] = C[M]
   // when trans == 'N', the actual calculation is B^T * A[M] = C[N]
-  syclBLAS::gemv(handle, trans, N_b, M_b, alpha, B.device_data(), N_b, A.device_data(), 1, beta, C.device_data(), 1).wait();
+  syclBLAS::gemv(handle, trans, N_b, M_b, alpha, B.device_data(), N_b, A.device_data(), 1, beta, C.device_data(), 1)
+      .wait();
   C.updateFrom();
 
   if (trans == 'T')
@@ -93,7 +94,7 @@ void test_gemv_batched(const int M_b, const int N_b, const char trans, const int
   std::vector<mat_t> Bs;
   Vector<const T*, PinnedDualAllocator<const T*>> Bptrs;
 
-  // Create output vector (ompBLAS)
+  // Create output vector (syclBLAS)
   std::vector<vec_t> Cs;
   Vector<T*, PinnedDualAllocator<T*>> Cptrs;
 
@@ -164,10 +165,12 @@ void test_gemv_batched(const int M_b, const int N_b, const char trans, const int
 
   // alpha 0.5, beta 0
   syclBLAS::gemv_batched(handle, trans, N_b, M_b, alpha.device_data(), Bptrs.device_data(), N_b, Aptrs.device_data(), 1,
-                        beta.device_data(), Cptrs.device_data(), 1, batch_count).wait();
+                         beta.device_data(), Cptrs.device_data(), 1, batch_count)
+      .wait();
   // alpha 0.5, beta 1
   syclBLAS::gemv_batched(handle, trans, N_b, M_b, alpha.device_data(), Bptrs.device_data(), N_b, Aptrs.device_data(), 1,
-                        beta1.device_data(), Cptrs.device_data(), 1, batch_count).wait();
+                         beta1.device_data(), Cptrs.device_data(), 1, batch_count)
+      .wait();
 
   for (int batch = 0; batch < batch_count; batch++)
   {
@@ -311,7 +314,8 @@ void test_ger_batched(const int M, const int N, const int batch_count)
   alpha.updateTo();
 
   syclBLAS::ger_batched(handle, M, N, alpha.device_data(), Xptrs.device_data(), 1, Yptrs.device_data(), 1,
-                       Adptrs.device_data(), M, batch_count).wait();
+                        Adptrs.device_data(), M, batch_count)
+      .wait();
 
   for (int batch = 0; batch < batch_count; batch++)
   {

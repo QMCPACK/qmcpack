@@ -69,11 +69,11 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
   // transa/transb == 'T'/'T':   C[N,M] = A[M,K] * B[K,N]; C = B^t * A^t
 
   // alpha 0.5, beta 0
-  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta, C.device_data(),
-                M);
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta,
+                C.device_data(), M);
   // alpha 0.5, beta 1
-  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta1, C.device_data(),
-                M);
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta1,
+                C.device_data(), M);
   C.updateFrom();
 
   BLAS::gemm(transa, transb, M, N, K, alpha, A.data(), a1, B.data(), b1, beta, D.data(), M);
@@ -118,11 +118,11 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
   Carr.updateTo();
 
   // alpha 0.5, beta 0
-  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1, beta,
-                        Carr.device_data(), M, 2);
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1,
+                        beta, Carr.device_data(), M, 2);
   // alpha 0.5, beta 1
-  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1, beta1,
-                        Carr.device_data(), M, 2);
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1,
+                        beta1, Carr.device_data(), M, 2);
   C.updateFrom();
   C2.updateFrom();
 

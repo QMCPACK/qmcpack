@@ -58,21 +58,22 @@ inline void gemm(BLASHandle<PlatformKind::SYCL>& handle,
 
 template<typename T>
 inline void gemv(BLASHandle<PlatformKind::SYCL>& handle,
-                         const char trans,
-                         const int m,
-                         const int n,
-                         const T& alpha,
-                         const T* const A,
-                         const int lda,
-                         const T* const x,
-                         const int incx,
-                         const T& beta,
-                         T* const y,
-                         const int incy)
+                 const char trans,
+                 const int m,
+                 const int n,
+                 const T& alpha,
+                 const T* const A,
+                 const int lda,
+                 const T* const x,
+                 const int incx,
+                 const T& beta,
+                 T* const y,
+                 const int incy)
 {
   try
   {
-    oneapi::mkl::blas::gemv(handle.queue_, syclBLAS::convertTransEnum(trans), m, n, alpha, A, lda, x, incx, beta, y, incy);
+    oneapi::mkl::blas::gemv(handle.queue_, syclBLAS::convertTransEnum(trans), m, n, alpha, A, lda, x, incx, beta, y,
+                            incy);
   }
   catch (oneapi::mkl::exception& e)
   {
@@ -107,15 +108,15 @@ inline void gemv_batched(BLASHandle<PlatformKind::SYCL>& handle,
 
 template<typename T>
 inline void ger(BLASHandle<PlatformKind::SYCL>& handle,
-                        const int m,
-                        const int n,
-                        const T& alpha,
-                        const T* const x,
-                        const int incx,
-                        const T* const y,
-                        const int incy,
-                        T* const A,
-                        const int lda)
+                const int m,
+                const int n,
+                const T& alpha,
+                const T* const x,
+                const int incx,
+                const T* const y,
+                const int incy,
+                T* const A,
+                const int lda)
 {
   try
   {
@@ -162,7 +163,8 @@ inline void copy_batched(BLASHandle<PlatformKind::SYCL>& handle,
   try
   {
     syclBLAS::syclBLAS_int bc = batch_count;
-    oneapi::mkl::blas::copy_batch(handle.queue_, &n, const_cast<const T**>(in), &incx, const_cast<T**>(out), &incy, 1, &bc);
+    oneapi::mkl::blas::copy_batch(handle.queue_, &n, const_cast<const T**>(in), &incx, const_cast<T**>(out), &incy, 1,
+                                  &bc);
   }
   catch (oneapi::mkl::exception& e)
   {
@@ -200,9 +202,9 @@ inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
     oneapi::mkl::blas::gemm_batch(handle.queue_, sycl::span{&trans_a, 1}, sycl::span{&trans_b, 1}, sycl::span{&m, 1},
                                   sycl::span{&n, 1}, sycl::span{&k, 1}, alpha_span,
                                   sycl::span{const_cast<const T**>(A), batch_count}, sycl::span{&lda, 1},
-                                  sycl::span{const_cast<const T**>(B), batch_count}, sycl::span{&ldb, 1},
-                                  beta_span, sycl::span{const_cast<T**>(C), batch_count},
-                                  sycl::span{&ldc, 1}, 1, sycl::span{const_cast<size_t*>(&batch_count), 1});
+                                  sycl::span{const_cast<const T**>(B), batch_count}, sycl::span{&ldb, 1}, beta_span,
+                                  sycl::span{const_cast<T**>(C), batch_count}, sycl::span{&ldc, 1}, 1,
+                                  sycl::span{const_cast<size_t*>(&batch_count), 1});
     sycl::free(alpha_span.data(), handle.queue_);
     sycl::free(beta_span.data(), handle.queue_);
 #else
