@@ -57,6 +57,30 @@ inline void gemm(BLASHandle<PlatformKind::SYCL>& handle,
 }
 
 template<typename T>
+inline void gemv(BLASHandle<PlatformKind::SYCL>& handle,
+                         const char trans,
+                         const int m,
+                         const int n,
+                         const T& alpha,
+                         const T* const A,
+                         const int lda,
+                         const T* const x,
+                         const int incx,
+                         const T& beta,
+                         T* const y,
+                         const int incy)
+{
+  try
+  {
+    oneapi::mkl::blas::gemv(handle.queue_, syclBLAS::convertTransEnum(trans), m, n, alpha, A, lda, x, incx, beta, y, incy);
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::gemv exception: ") + e.what());
+  }
+}
+
+template<typename T>
 inline void gemv_batched(BLASHandle<PlatformKind::SYCL>& handle,
                          const char trans,
                          const int m,
@@ -78,6 +102,28 @@ inline void gemv_batched(BLASHandle<PlatformKind::SYCL>& handle,
   catch (sycl::exception& e)
   {
     throw std::runtime_error(std::string("AccelBLAS::gemv_batch exception: ") + e.what());
+  }
+}
+
+template<typename T>
+inline void ger(BLASHandle<PlatformKind::SYCL>& handle,
+                        const int m,
+                        const int n,
+                        const T& alpha,
+                        const T* const x,
+                        const int incx,
+                        const T* const y,
+                        const int incy,
+                        T* const A,
+                        const int lda)
+{
+  try
+  {
+    oneapi::mkl::blas::ger(handle.queue_, m, n, alpha, x, incx, y, incy, A, lda);
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::ger exception: ") + e.what());
   }
 }
 
