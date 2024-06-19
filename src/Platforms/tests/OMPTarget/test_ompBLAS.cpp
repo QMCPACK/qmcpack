@@ -143,7 +143,7 @@ void test_gemm(const int M, const int N, const int K, const char transa, const c
     }
 }
 
-TEST_CASE("OmpBLAS gemm", "[OMP]")
+TEST_CASE("ompBLAS gemm", "[OMP]")
 {
   const int M = 37;
   const int N = 71;
@@ -341,7 +341,7 @@ void test_gemv_batched(const int M_b, const int N_b, const char trans, const int
   }
 }
 
-TEST_CASE("OmpBLAS gemv", "[OMP]")
+TEST_CASE("ompBLAS gemv", "[OMP]")
 {
   const int M           = 137;
   const int N           = 79;
@@ -365,7 +365,7 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
 #endif
 }
 
-TEST_CASE("OmpBLAS gemv notrans", "[OMP]")
+TEST_CASE("ompBLAS gemv notrans", "[OMP]")
 {
   const int M           = 137;
   const int N           = 79;
@@ -528,7 +528,7 @@ void test_ger_batched(const int M, const int N, const int batch_count)
   }
 }
 
-TEST_CASE("OmpBLAS ger", "[OMP]")
+TEST_CASE("ompBLAS ger", "[OMP]")
 {
   const int M           = 137;
   const int N           = 79;
