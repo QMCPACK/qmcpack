@@ -529,12 +529,27 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
                                                  int iat,
                                                  const std::vector<bool>& isAccepted)
 {
-  // TODO to be expanded to serve offload needs without relying on calling acceptMove and restore
+  // separate accepted/rejected walker indices
+  int n_accepted = std::count(isAccepted.begin(), isAccepted.begin() + wfc_list.size(), true);
+  int n_rejected = wfc_list.size() - n_accepted;
+
+  //TODO: can put these in some preallocated work space (reserve up to n_walkers)
+  std::vector<int> idx_accepted(n_accepted);
+  std::vector<int> idx_rejected(n_rejected);
+
+  int iacc = 0;
+  int irej = 0;
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (isAccepted[iw])
-      wfc_list[iw].acceptMove(p_list[iw], iat, false);
+      idx_accepted[iacc++] = iw;
     else
-      wfc_list[iw].restore(iat);
+      idx_rejected[irej++] = iw;
+
+  // TODO to be expanded to serve offload needs without relying on calling acceptMove and restore
+  for (auto& i : idx_accepted)
+    wfc_list[i].acceptMove(p_list[i], iat, false);
+  for (auto& i : idx_rejected)
+    wfc_list[i].restore(iat);
 }
 
 // this has been fixed
