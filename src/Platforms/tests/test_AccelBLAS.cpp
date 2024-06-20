@@ -260,8 +260,8 @@ void test_one_gemv(const int M_b, const int N_b, const char trans)
 
   alpha_arr[0] = 2;
   alpha_arr[1] = 0.5;
-  beta_arr[0] = 0;
-  beta_arr[1] = 1;
+  beta_arr[0]  = 0;
+  beta_arr[1]  = 1;
 
   Aarr.updateTo();
   Barr.updateTo();
@@ -272,10 +272,11 @@ void test_one_gemv(const int M_b, const int N_b, const char trans)
   // in Fortran, B[M][N] is viewed as B^T
   // when trans == 'T', the actual calculation is B * A[N] = C[M]
   // when trans == 'N', the actual calculation is B^T * A[M] = C[N]
-  compute::BLAS::gemv_batched(h_blas, trans, N_b, M_b, alpha_arr.device_data(), Barr.device_data(), N_b, Aarr.device_data(), 1, beta_arr.device_data(), Carr.device_data(),
-                      1, 2);
+  compute::BLAS::gemv_batched(h_blas, trans, N_b, M_b, alpha_arr.device_data(), Barr.device_data(), N_b,
+                              Aarr.device_data(), 1, beta_arr.device_data(), Carr.device_data(), 1, 2);
   queue.sync();
 
+  C.updateFrom();
   C2.updateFrom();
 
   if (trans == 'T')
@@ -340,7 +341,7 @@ void test_one_ger(const int M, const int N)
   x.updateTo();
   y.updateTo();
 
-  T alpha(1);
+  T alpha(0.5);
 
   compute::Queue<PL> queue;
   compute::BLASHandle<PL> h_blas(queue);
@@ -354,6 +355,64 @@ void test_one_ger(const int M, const int N)
   for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
       CHECK(Ah[j][i] == Ad[j][i]);
+
+  mat_t Ah2(M, N); // Input matrix
+  mat_t Ad2(M, N); // Input matrix
+  vec_t x2(M);     // Input vector
+  vec_t y2(N);     // Input vector
+
+  // Fill data
+  for (int i = 0; i < M; i++)
+    x2[i] = i - 1;
+  for (int i = 0; i < N; i++)
+    y2[i] = N + i;
+
+  for (int j = 0; j < M; j++)
+    for (int i = 0; i < N; i++)
+    {
+      Ah2[j][i] = j + i * 2;
+      Ad2[j][i] = j + i * 2;
+    }
+
+  Ad2.updateTo();
+  x2.updateTo();
+  y2.updateTo();
+
+  Vector<T*, PinnedDualAllocator<T*>> Aarr(2);
+  Vector<const T*, PinnedDualAllocator<const T*>> Xarr(2), Yarr(2);
+  Vector<T, PinnedDualAllocator<T>> alpha_arr(2);
+
+  Aarr[0] = Ad2.device_data();
+  Aarr[1] = Ad.device_data();
+  Xarr[0] = x2.device_data();
+  Xarr[1] = x.device_data();
+  Yarr[0] = y2.device_data();
+  Yarr[1] = y.device_data();
+
+  alpha_arr[0] = 2;
+  alpha_arr[1] = 0.5;
+
+  Aarr.updateTo();
+  Xarr.updateTo();
+  Yarr.updateTo();
+  alpha_arr.updateTo();
+
+  // in Fortran, B[M][N] is viewed as B^T
+  compute::BLAS::ger_batched(h_blas, M, N, alpha_arr.device_data(), Xarr.device_data(), 1, Yarr.device_data(), 1,
+                             Aarr.device_data(), M, 2);
+  queue.sync();
+  Ad.updateFrom();
+  Ad2.updateFrom();
+
+  BLAS::ger(M, N, alpha_arr[1], x.data(), 1, y.data(), 1, Ah.data(), M);
+  BLAS::ger(M, N, alpha_arr[0], x2.data(), 1, y2.data(), 1, Ah2.data(), M);
+
+  for (int j = 0; j < M; j++)
+    for (int i = 0; i < N; i++)
+    {
+      CHECK(Ah[j][i] == Ad[j][i]);
+      CHECK(Ah2[j][i] == Ad2[j][i]);
+    }
 }
 
 template<PlatformKind PL>
