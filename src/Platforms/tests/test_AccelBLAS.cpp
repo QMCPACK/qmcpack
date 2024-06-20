@@ -33,7 +33,7 @@ void test_one_gemm(const int M, const int N, const int K, const char transa, con
 
   mat_t A(a0, a1); // Input matrix
   mat_t B(b0, b1); // Input matrix
-  mat_t C(N, M);   // Result matrix ompBLAS
+  mat_t C(N, M);   // Result matrix AccelBLAS
   mat_t D(N, M);   // Result matrix BLAS
 
   // Fill data
@@ -56,7 +56,7 @@ void test_one_gemm(const int M, const int N, const int K, const char transa, con
   // element U(i,j) is located at: U.data() + sizeof(U_type) * (i*ldU + j)
   //
   // A,B,C,D are treated as row-major matrices, but the arguments to gemm are treated as col-major
-  // so the call below to ompBLAS::gemm is equivalent to one of the following (with row-major matrices)
+  // so the call below to AccelBLAS::gemm is equivalent to one of the following (with row-major matrices)
   // transa/transb == 'N'/'N':   C[N,M] = A[K,M] * B[N,K]; C = B * A
   // transa/transb == 'N'/'T':   C[N,M] = A[K,M] * B[K,N]; C = B^t * A
   // transa/transb == 'T'/'N':   C[N,M] = A[M,K] * B[N,K]; C = B * A^t
@@ -81,7 +81,7 @@ void test_one_gemm(const int M, const int N, const int K, const char transa, con
 
   mat_t A2(a0, a1); // Input matrix
   mat_t B2(b0, b1); // Input matrix
-  mat_t C2(N, M);   // Result matrix ompBLAS
+  mat_t C2(N, M);   // Result matrix AccelBLAS
   mat_t D2(N, M);   // Result matrix BLAS
 
   // Fill data
@@ -184,7 +184,7 @@ void test_one_gemv(const int M_b, const int N_b, const char trans)
 
   vec_t A(N);        // Input vector
   mat_t B(M_b, N_b); // Input matrix
-  vec_t C(M);        // Result vector ompBLAS
+  vec_t C(M);        // Result vector AccelBLAS
   vec_t D(M);        // Result vector BLAS
 
   // Fill data
@@ -203,7 +203,7 @@ void test_one_gemv(const int M_b, const int N_b, const char trans)
   B.updateTo();
   C.updateTo();
 
-  T alpha(1);
+  T alpha(0.5);
   T beta(0);
 
   compute::Queue<PL> queue;
@@ -223,7 +223,71 @@ void test_one_gemv(const int M_b, const int N_b, const char trans)
     BLAS::gemv(M_b, N_b, B.data(), A.data(), D.data());
 
   for (int index = 0; index < M; index++)
+    CHECK(C[index] == D[index] * alpha);
+
+  vec_t A2(N);        // Input vector
+  mat_t B2(M_b, N_b); // Input matrix
+  vec_t C2(M);        // Result vector AccelBLAS
+  vec_t D2(M);        // Result vector BLAS
+
+  // Fill data
+  for (int i = 0; i < N; i++)
+    A2[i] = i + 1;
+
+  for (int j = 0; j < M_b; j++)
+    for (int i = 0; i < N_b; i++)
+      B2[j][i] = i * 2 + j;
+
+  // Fill C and D with 0
+  for (int i = 0; i < M; i++)
+    C2[i] = D2[i] = T(0);
+
+  A2.updateTo();
+  B2.updateTo();
+  C2.updateTo();
+
+  Vector<const T*, PinnedDualAllocator<const T*>> Aarr(2), Barr(2);
+  Vector<T*, PinnedDualAllocator<T*>> Carr(2);
+  Vector<T, PinnedDualAllocator<T>> alpha_arr(2), beta_arr(2);
+
+  Aarr[0] = A2.device_data();
+  Aarr[1] = A.device_data();
+  Barr[0] = B2.device_data();
+  Barr[1] = B.device_data();
+
+  Carr[0] = C2.device_data();
+  Carr[1] = C.device_data();
+
+  alpha_arr[0] = 2;
+  alpha_arr[1] = 0.5;
+  beta_arr[0] = 0;
+  beta_arr[1] = 1;
+
+  Aarr.updateTo();
+  Barr.updateTo();
+  Carr.updateTo();
+  alpha_arr.updateTo();
+  beta_arr.updateTo();
+
+  // in Fortran, B[M][N] is viewed as B^T
+  // when trans == 'T', the actual calculation is B * A[N] = C[M]
+  // when trans == 'N', the actual calculation is B^T * A[M] = C[N]
+  compute::BLAS::gemv_batched(h_blas, trans, N_b, M_b, alpha_arr.device_data(), Barr.device_data(), N_b, Aarr.device_data(), 1, beta_arr.device_data(), Carr.device_data(),
+                      1, 2);
+  queue.sync();
+
+  C2.updateFrom();
+
+  if (trans == 'T')
+    BLAS::gemv_trans(M_b, N_b, B2.data(), A2.data(), D2.data());
+  else
+    BLAS::gemv(M_b, N_b, B2.data(), A2.data(), D2.data());
+
+  for (int index = 0; index < M; index++)
+  {
     CHECK(C[index] == D[index]);
+    CHECK(C2[index] == D2[index] * alpha_arr[0]);
+  }
 }
 
 template<PlatformKind PL>
