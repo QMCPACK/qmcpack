@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -28,55 +28,41 @@ namespace qmcplusplus
 /// sincos function wrapper
 #if defined(__APPLE__)
 
-inline void sincos(double a, double* restrict s, double* restrict c)
-{
-  ::__sincos(a,s,c);
-}
+inline void sincos(double a, double* restrict s, double* restrict c) { ::__sincos(a, s, c); }
 
-inline void sincos(float a, float* restrict s, float* restrict c)
-{
-  ::__sincosf(a,s,c);
-}
+inline void sincos(float a, float* restrict s, float* restrict c) { ::__sincosf(a, s, c); }
 
 #elif defined(HAVE_AMD_LIBM)
 
-inline void sincos(double a, double* restrict s, double* restrict c)
-{
-  ::amd_sincos(a,s,c);
-}
+inline void sincos(double a, double* restrict s, double* restrict c) { ::amd_sincos(a, s, c); }
 
-inline void sincos(float a, float* restrict s, float* restrict c)
-{
-  ::amd_sincosf(a,s,c);
-}
+inline void sincos(float a, float* restrict s, float* restrict c) { ::amd_sincosf(a, s, c); }
 
 #elif defined(HAVE_SINCOS)
 
-inline void sincos(double a, double* restrict s, double* restrict c)
-{
-  ::sincos(a,s,c);
-}
+inline void sincos(double a, double* restrict s, double* restrict c) { ::sincos(a, s, c); }
 
 inline void sincos(float a, float* restrict s, float* restrict c)
 {
 #if defined(HAVE_MASS)
   // there is no sincosf in libmass
   // libmass sincos is faster than libm sincosf
-  double ds,dc;
-  ::sincos((double)a,&ds,&dc);
-  *s=ds; *c=dc;
+  double ds, dc;
+  ::sincos((double)a, &ds, &dc);
+  *s = ds;
+  *c = dc;
 #else
-  ::sincosf(a,s,c);
+  ::sincosf(a, s, c);
 #endif
 }
 
 #else // fallback
 
 template<typename T>
-inline void sincos(T a, T* restrict s, T*  restrict c)
+inline void sincos(T a, T* restrict s, T* restrict c)
 {
-  *s=std::sin(a);
-  *c=std::cos(a);
+  *s = std::sin(a);
+  *c = std::cos(a);
 }
 
 #endif
@@ -85,13 +71,9 @@ inline void sincos(T a, T* restrict s, T*  restrict c)
  *
  * std::pow(int,int) is not standard
  */
-inline int pow(int i, int n)
-{
-  return static_cast<int>(std::pow(static_cast<double>(i),n));
-}
+inline int pow(int i, int n) { return static_cast<int>(std::pow(static_cast<double>(i), n)); }
 
-template<typename T,
-  typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
+template<typename T, typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
 inline bool iszero(T a)
 {
   return std::fpclassify(a) == FP_ZERO;
@@ -121,6 +103,6 @@ bool isfinite(double);
 bool isinf(float);
 bool isinf(double);
 
-}
+} // namespace qmcplusplus
 
 #endif
