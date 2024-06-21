@@ -105,6 +105,22 @@ inline bool iszero(T a)
 bool isnan(float);
 bool isnan(double);
 
+/** return true if the value is finite.
+ * std::isfinite can be affected by compiler the -ffast-math option and return true constantly.
+ * The customized qmcplusplus::isnan should be always effective.
+ * This requires its definition compiled without -ffast-math.
+ */
+bool isfinite(float);
+bool isfinite(double);
+
+/** return true if the value is Inf.
+ * std::isinf can be affected by compiler the -ffast-math option and return true constantly.
+ * The customized qmcplusplus::isnan should be always effective.
+ * This requires its definition compiled without -ffast-math.
+ */
+bool isinf(float);
+bool isinf(double);
+
 }
 
 #endif

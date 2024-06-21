@@ -1826,16 +1826,16 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet&
       }
       overlap *= ma::conj(ci[0]);
 
-      //        if( not ( std::isfinite(real(Ovlp[iw][0])) && std::isfinite(imag(Ovlp[iw][0])) &&
-      //                  std::isfinite(real(Ovlp[iw][1])) && std::isfinite(imag(Ovlp[iw][1])) &&
-      if (not(std::isfinite(real(DMsum[iw][0])) && std::isfinite(imag(DMsum[iw][0])) &&
-              std::isfinite(real(DMsum[iw][1])) && std::isfinite(imag(DMsum[iw][1]))))
+      //        if( not ( qmcplusplus::isfinite(real(Ovlp[iw][0])) && qmcplusplus::isfinite(imag(Ovlp[iw][0])) &&
+      //                  qmcplusplus::isfinite(real(Ovlp[iw][1])) && qmcplusplus::isfinite(imag(Ovlp[iw][1])) &&
+      if (not(qmcplusplus::isfinite(real(DMsum[iw][0])) && qmcplusplus::isfinite(imag(DMsum[iw][0])) &&
+              qmcplusplus::isfinite(real(DMsum[iw][1])) && qmcplusplus::isfinite(imag(DMsum[iw][1]))))
         continue;
       if (qmcplusplus::isnan(std::real(DMsum[iw][0])) || qmcplusplus::isnan(std::imag(DMsum[iw][0])) ||
           qmcplusplus::isnan(std::real(DMsum[iw][1])) || qmcplusplus::isnan(std::imag(DMsum[iw][1])))
         continue;
-      if (std::isinf(real(DMsum[iw][0])) || std::isinf(imag(DMsum[iw][0])) || std::isinf(real(DMsum[iw][1])) ||
-          std::isinf(imag(DMsum[iw][1])))
+      if (qmcplusplus::isinf(real(DMsum[iw][0])) || qmcplusplus::isinf(imag(DMsum[iw][0])) || qmcplusplus::isinf(real(DMsum[iw][1])) ||
+          qmcplusplus::isinf(imag(DMsum[iw][1])))
         continue;
 
       ComplexType ov_denom;
