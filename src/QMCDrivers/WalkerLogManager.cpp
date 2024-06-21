@@ -81,6 +81,8 @@ void WalkerLogManager::startRun(RefVector<WalkerLogCollector>&& collectors)
   collectors_in_run_ = std::move(collectors);
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
+  if (collectors_in_run_.empty())
+    throw std::runtime_error("BUG collectors are empty but walker logs are active");
   if (state.verbose)
     app_log() << "WalkerLogManager::startRun " << std::endl;
   // check data size consistency among the log collector buffers
