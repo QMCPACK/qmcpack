@@ -128,6 +128,80 @@ inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
                    "cublasZgemm failed!");
 }
 
+inline void gemv(BLASHandle<PlatformKind::CUDA>& handle,
+                 const char trans,
+                 const int m,
+                 const int n,
+                 const float& alpha,
+                 const float* const A,
+                 const int lda,
+                 const float* const x,
+                 const int incx,
+                 const float& beta,
+                 float* const y,
+                 const int incy)
+{
+  cublasErrorCheck(cublasSgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, &alpha, A, lda, x, incx, &beta,
+                               y, incy),
+                   "cublasSgemv failed!");
+}
+
+inline void gemv(BLASHandle<PlatformKind::CUDA>& handle,
+                 const char trans,
+                 const int m,
+                 const int n,
+                 const double& alpha,
+                 const double* const A,
+                 const int lda,
+                 const double* const x,
+                 const int incx,
+                 const double& beta,
+                 double* const y,
+                 const int incy)
+{
+  cublasErrorCheck(cublasDgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, &alpha, A, lda, x, incx, &beta,
+                               y, incy),
+                   "cublasDgemv failed!");
+}
+
+inline void gemv(BLASHandle<PlatformKind::CUDA>& handle,
+                 const char trans,
+                 const int m,
+                 const int n,
+                 const std::complex<float>& alpha,
+                 const std::complex<float>* A,
+                 const int lda,
+                 const std::complex<float>* x,
+                 const int incx,
+                 const std::complex<float>& beta,
+                 std::complex<float>* y,
+                 const int incy)
+{
+  cublasErrorCheck(cublasCgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, castNativeType(&alpha),
+                               castNativeType(A), lda, castNativeType(x), incx, castNativeType(&beta),
+                               castNativeType(y), incy),
+                   "cublasCgemv failed!");
+}
+
+inline void gemv(BLASHandle<PlatformKind::CUDA>& handle,
+                 const char trans,
+                 const int m,
+                 const int n,
+                 const std::complex<double>& alpha,
+                 const std::complex<double>* A,
+                 const int lda,
+                 const std::complex<double>* x,
+                 const int incx,
+                 const std::complex<double>& beta,
+                 std::complex<double>* y,
+                 const int incy)
+{
+  cublasErrorCheck(cublasZgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, castNativeType(&alpha),
+                               castNativeType(A), lda, castNativeType(x), incx, castNativeType(&beta),
+                               castNativeType(y), incy),
+                   "cublasZgemv failed!");
+}
+
 template<typename T>
 inline void gemv_batched(BLASHandle<PlatformKind::CUDA>& handle,
                          const char trans,
@@ -146,6 +220,66 @@ inline void gemv_batched(BLASHandle<PlatformKind::CUDA>& handle,
   cudaErrorCheck(cuBLAS_MFs::gemv_batched(handle.h_stream, trans, m, n, alpha, A, lda, x, incx, beta, y, incy,
                                           batch_count),
                  "cuBLAS_MFs::gemv_batched failed!");
+}
+
+inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
+                const int m,
+                const int n,
+                const float& alpha,
+                const float* const x,
+                const int incx,
+                const float* const y,
+                const int incy,
+                float* const A,
+                const int lda)
+{
+  cublasErrorCheck(cublasSger(handle.h_cublas, m, n, &alpha, x, incx, y, incy, A, lda), "cublasSger failed!");
+}
+
+inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
+                const int m,
+                const int n,
+                const double& alpha,
+                const double* const x,
+                const int incx,
+                const double* const y,
+                const int incy,
+                double* const A,
+                const int lda)
+{
+  cublasErrorCheck(cublasDger(handle.h_cublas, m, n, &alpha, x, incx, y, incy, A, lda), "cublasDger failed!");
+}
+
+inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
+                const int m,
+                const int n,
+                const std::complex<float>& alpha,
+                const std::complex<float>* x,
+                const int incx,
+                const std::complex<float>* y,
+                const int incy,
+                std::complex<float>* A,
+                const int lda)
+{
+  cublasErrorCheck(cublasCgeru(handle.h_cublas, m, n, castNativeType(&alpha), castNativeType(x), incx,
+                               castNativeType(y), incy, castNativeType(A), lda),
+                   "cublasCger failed!");
+}
+
+inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
+                const int m,
+                const int n,
+                const std::complex<double>& alpha,
+                const std::complex<double>* x,
+                const int incx,
+                const std::complex<double>* y,
+                const int incy,
+                std::complex<double>* A,
+                const int lda)
+{
+  cublasErrorCheck(cublasZgeru(handle.h_cublas, m, n, castNativeType(&alpha), castNativeType(x), incx,
+                               castNativeType(y), incy, castNativeType(A), lda),
+                   "cublasZger failed!");
 }
 
 template<typename T>
