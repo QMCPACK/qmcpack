@@ -23,7 +23,7 @@
 #define OHMMS_CRYSTALLATTICE_H
 #include <limits>
 #include <iostream>
-#include "CPU/math.hpp"
+#include "config/stdlib/Constants.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "LRBreakupParameters.h"

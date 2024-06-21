@@ -15,7 +15,6 @@
 #include <config.h>
 #include <cmath>
 #include <type_traits>
-#include "config/stdlib/Constants.h"
 #if defined(HAVE_AMD_LIBM)
 #include <amdlibm.h>
 #endif
