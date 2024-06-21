@@ -52,7 +52,6 @@ namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
 class TraceManager;
-class WalkerLogManager;
 class EstimatorManagerNew;
 class TrialWaveFunction;
 class QMCHamiltonian;
@@ -442,9 +441,6 @@ protected:
    *  TODO:  Modify Branch manager and others to clear this up.
    */
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
-
-  /// walker log manager
-  std::unique_ptr<WalkerLogManager> wlog_manager_;
 
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;

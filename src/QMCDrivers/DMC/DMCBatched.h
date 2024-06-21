@@ -52,8 +52,8 @@ public:
     SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
     const size_t steps_per_block;
-    IndexType step = -1;
-    IndexType global_step = -1;
+    IndexType step            = -1;
+    IndexType global_step     = -1;
     bool is_recomputing_block = false;
 
     StateForThread(const QMCDriverInput& qmci,

@@ -76,9 +76,8 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
     walker.DataSet.allocate();
   }
 
-  WalkerLogCollector wlc;
-  wlc.state.logs_active = true;
-  wlc.state.step_period = 1;
+  WalkerLogState state{true, 1, false};
+  WalkerLogCollector wlc(state);
 
   auto& bsi = wlc.walker_property_int_buffer;
   auto& bsr = wlc.walker_property_real_buffer;

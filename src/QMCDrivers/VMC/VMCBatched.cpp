@@ -309,12 +309,13 @@ bool VMCBatched::run()
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
   estimator_manager_->startDriverRun();
-  //start walker log manager
-  wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
-  std::vector<WalkerLogCollector*> wlog_collectors;
-  for (auto& c: crowds_)
-    wlog_collectors.push_back(&c->getWalkerLogCollector());
-  wlog_manager_->startRun(wlog_collectors);
+
+  //initialize WalkerLogManager and collectors
+  WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
+  for (auto& crowd : crowds_)
+    crowd->setWalkerLogCollector(wlog_manager.makeCollector());
+  //register walker log collectors into the manager
+  wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_, steps_per_block_);
 
@@ -386,7 +387,7 @@ bool VMCBatched::run()
       for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
-        vmc_state.step = step;
+        vmc_state.step        = step;
         vmc_state.global_step = global_step;
         crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
@@ -403,7 +404,7 @@ bool VMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
-      wlog_manager_->writeBuffers(wlog_collectors);
+      wlog_manager.writeBuffers();
       recordBlock(block);
     }
 
@@ -449,8 +450,8 @@ bool VMCBatched::run()
 
   print_mem("VMCBatched ends", app_log());
 
+  wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
-  wlog_manager_->stopRun();
 
   return finalize(num_blocks, true);
 }
@@ -459,7 +460,7 @@ void VMCBatched::enable_sample_collection()
 {
   assert(steps_per_block_ > 0 && "VMCBatched::enable_sample_collection steps_per_block_ must be positive!");
   auto samples = compute_samples_per_rank(qmcdriver_input_.get_max_blocks(), steps_per_block_,
-                                         population_.get_num_local_walkers());
+                                          population_.get_num_local_walkers());
   samples_.setMaxSamples(samples, population_.get_num_ranks());
   collect_samples_ = true;
 
