@@ -52,7 +52,32 @@ inline void gemm(BLASHandle<PlatformKind::SYCL>& handle,
   }
   catch (oneapi::mkl::exception& e)
   {
-    throw std::runtime_error(std::string("oneapi::mkl exception: ") + e.what());
+    throw std::runtime_error(std::string("AccelBLAS::gemm exception: ") + e.what());
+  }
+}
+
+template<typename T>
+inline void gemv(BLASHandle<PlatformKind::SYCL>& handle,
+                 const char trans,
+                 const int m,
+                 const int n,
+                 const T& alpha,
+                 const T* const A,
+                 const int lda,
+                 const T* const x,
+                 const int incx,
+                 const T& beta,
+                 T* const y,
+                 const int incy)
+{
+  try
+  {
+    oneapi::mkl::blas::gemv(handle.queue_, syclBLAS::convertTransEnum(trans), m, n, alpha, A, lda, x, incx, beta, y,
+                            incy);
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::gemv exception: ") + e.what());
   }
 }
 
@@ -70,7 +95,38 @@ inline void gemv_batched(BLASHandle<PlatformKind::SYCL>& handle,
                          T* const y[],
                          const int incy,
                          const size_t batch_count)
-{}
+{
+  try
+  { // calling makeshift version for now due to the lack of vendor optimized versions
+    syclBLAS::gemv_batched(handle.queue_, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  }
+  catch (sycl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::gemv_batch exception: ") + e.what());
+  }
+}
+
+template<typename T>
+inline void ger(BLASHandle<PlatformKind::SYCL>& handle,
+                const int m,
+                const int n,
+                const T& alpha,
+                const T* const x,
+                const int incx,
+                const T* const y,
+                const int incy,
+                T* const A,
+                const int lda)
+{
+  try
+  {
+    oneapi::mkl::blas::ger(handle.queue_, m, n, alpha, x, incx, y, incy, A, lda);
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::ger exception: ") + e.what());
+  }
+}
 
 template<typename T>
 inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,
@@ -84,17 +140,37 @@ inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,
                         T* const A[],
                         const int lda,
                         const size_t batch_count)
-{}
+{
+  try
+  { // calling makeshift version for now due to the lack of vendor optimized versions
+    syclBLAS::ger_batched(handle.queue_, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+  }
+  catch (sycl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::ger_batched exception: ") + e.what());
+  }
+}
 
 template<typename T>
 inline void copy_batched(BLASHandle<PlatformKind::SYCL>& handle,
-                         const int n,
+                         syclBLAS::syclBLAS_int n,
                          const T* const in[],
-                         const int incx,
+                         syclBLAS::syclBLAS_int incx,
                          T* const out[],
-                         const int incy,
+                         syclBLAS::syclBLAS_int incy,
                          const size_t batch_count)
-{}
+{
+  try
+  {
+    syclBLAS::syclBLAS_int bc = batch_count;
+    oneapi::mkl::blas::copy_batch(handle.queue_, &n, const_cast<const T**>(in), &incx, const_cast<T**>(out), &incy, 1,
+                                  &bc);
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::copy_batch exception: ") + e.what());
+  }
+}
 
 template<typename T>
 inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
@@ -126,9 +202,9 @@ inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
     oneapi::mkl::blas::gemm_batch(handle.queue_, sycl::span{&trans_a, 1}, sycl::span{&trans_b, 1}, sycl::span{&m, 1},
                                   sycl::span{&n, 1}, sycl::span{&k, 1}, alpha_span,
                                   sycl::span{const_cast<const T**>(A), batch_count}, sycl::span{&lda, 1},
-                                  sycl::span{const_cast<const T**>(B), batch_count}, sycl::span{&ldb, 1},
-                                  beta_span, sycl::span{const_cast<T**>(C), batch_count},
-                                  sycl::span{&ldc, 1}, 1, sycl::span{const_cast<size_t*>(&batch_count), 1});
+                                  sycl::span{const_cast<const T**>(B), batch_count}, sycl::span{&ldb, 1}, beta_span,
+                                  sycl::span{const_cast<T**>(C), batch_count}, sycl::span{&ldc, 1}, 1,
+                                  sycl::span{const_cast<size_t*>(&batch_count), 1});
     sycl::free(alpha_span.data(), handle.queue_);
     sycl::free(beta_span.data(), handle.queue_);
 #else
@@ -140,7 +216,7 @@ inline void gemm_batched(BLASHandle<PlatformKind::SYCL>& handle,
   }
   catch (oneapi::mkl::exception& e)
   {
-    throw std::runtime_error(std::string("oneapi::mkl exception: ") + e.what());
+    throw std::runtime_error(std::string("AccelBLAS::gemm_batched  exception: ") + e.what());
   }
 }
 

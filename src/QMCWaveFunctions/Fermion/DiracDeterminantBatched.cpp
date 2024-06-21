@@ -1267,5 +1267,8 @@ template class DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::Value
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 template class DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
+#if defined(ENABLE_SYCL) && defined(ENABLE_OFFLOAD)
+template class DiracDeterminantBatched<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
+#endif
 
 } // namespace qmcplusplus

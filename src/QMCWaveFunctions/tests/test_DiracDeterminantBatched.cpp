@@ -128,6 +128,9 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_first<PlatformKind::CUDA>();
 #endif
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_SYCL)
+  test_DiracDeterminantBatched_first<PlatformKind::SYCL>();
+#endif
   test_DiracDeterminantBatched_first<PlatformKind::OMPTARGET>();
 }
 
@@ -261,6 +264,9 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_second<PlatformKind::CUDA>();
+#endif
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_SYCL)
+  test_DiracDeterminantBatched_second<PlatformKind::SYCL>();
 #endif
   test_DiracDeterminantBatched_second<PlatformKind::OMPTARGET>();
 }
@@ -474,6 +480,10 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_delayed_update<PlatformKind::CUDA>(2, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_delayed_update<PlatformKind::CUDA>(2, DetMatInvertor::HOST);
+#endif
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_SYCL)
+  //test_DiracDeterminantBatched_delayed_update<PlatformKind::SYCL>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::SYCL>(2, DetMatInvertor::HOST);
 #endif
   test_DiracDeterminantBatched_delayed_update<PlatformKind::OMPTARGET>(2, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_delayed_update<PlatformKind::OMPTARGET>(2, DetMatInvertor::HOST);

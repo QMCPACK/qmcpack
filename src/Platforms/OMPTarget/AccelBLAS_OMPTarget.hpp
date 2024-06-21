@@ -74,6 +74,24 @@ inline void gemm_batched(BLASHandle<PlatformKind::OMPTARGET>& handle,
 
 
 template<typename T>
+inline void gemv(BLASHandle<PlatformKind::OMPTARGET>& handle,
+                         const char trans,
+                         const int m,
+                         const int n,
+                         const T& alpha,
+                         const T* const A,
+                         const int lda,
+                         const T* const x,
+                         const int incx,
+                         const T& beta,
+                         T* const y,
+                         const int incy)
+{
+  if (ompBLAS::gemv(handle.h_ompblas, trans, m, n, alpha, A, lda, x, incx, beta, y, incy) != 0)
+    throw std::runtime_error("ompBLAS::gemv_batched failed!");
+}
+
+template<typename T>
 inline void gemv_batched(BLASHandle<PlatformKind::OMPTARGET>& handle,
                          const char trans,
                          const int m,
@@ -90,6 +108,22 @@ inline void gemv_batched(BLASHandle<PlatformKind::OMPTARGET>& handle,
 {
   if (ompBLAS::gemv_batched(handle.h_ompblas, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count) != 0)
     throw std::runtime_error("ompBLAS::gemv_batched failed!");
+}
+
+template<typename T>
+inline void ger(BLASHandle<PlatformKind::OMPTARGET>& handle,
+                        const int m,
+                        const int n,
+                        const T& alpha,
+                        const T* const x,
+                        const int incx,
+                        const T* const y,
+                        const int incy,
+                        T* const A,
+                        const int lda)
+{
+  if (ompBLAS::ger(handle.h_ompblas, m, n, alpha, x, incx, y, incy, A, lda) != 0)
+    throw std::runtime_error("ompBLAS::ger_batched failed!");
 }
 
 template<typename T>

@@ -49,11 +49,16 @@ struct UpdateEngineSelector<PlatformKind::CUDA, VT>
 };
 #endif
 
-template<PlatformKind UEPL, typename FPVT>
-struct DetInverterSelector;
+#if defined(ENABLE_SYCL) && defined(ENABLE_OFFLOAD)
+template<typename VT>
+struct UpdateEngineSelector<PlatformKind::SYCL, VT>
+{
+  using Engine = DelayedUpdateBatched<PlatformKind::SYCL, VT>;
+};
+#endif
 
-template<typename FPVT>
-struct DetInverterSelector<PlatformKind::OMPTARGET, FPVT>
+template<PlatformKind UEPL, typename FPVT>
+struct DetInverterSelector
 {
   using Inverter = DiracMatrixComputeOMPTarget<FPVT>;
 };
@@ -383,6 +388,10 @@ extern template class DiracDeterminantBatched<PlatformKind::OMPTARGET,
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 extern template class DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
+#if defined(ENABLE_SYCL) && defined(ENABLE_OFFLOAD)
+extern template class DiracDeterminantBatched<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
+#endif
+
 
 } // namespace qmcplusplus
 #endif
