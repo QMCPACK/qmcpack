@@ -108,6 +108,9 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
                                const size_t batch_count,
                                const std::vector<sycl::event>& events = {})
 {
+  if (m == 0 || n == 0 || batch_count == 0)
+    return sycl::event();
+
   const int num_col_blocks = (n + COLBS - 1) / COLBS;
   return handle.parallel_for(sycl::nd_range<2>{{batch_count, num_col_blocks * COLBS}, {1, COLBS}},
                              [=](sycl::nd_item<2> item) {
@@ -143,8 +146,10 @@ sycl::event gemvN_batched_impl(sycl::queue& handle,
                                const size_t batch_count,
                                const std::vector<sycl::event>& events = {})
 {
-  const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
+  if (m == 0 || n == 0 || batch_count == 0)
+    return sycl::event();
 
+  const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
   return handle.parallel_for(sycl::nd_range<2>{{batch_count, num_row_blocks * ROWBS}, {1, ROWBS}},
                              [=](sycl::nd_item<2> item) {
                                const unsigned batch = item.get_group(0);
@@ -367,6 +372,9 @@ sycl::event ger_batched_impl(sycl::queue& handle,
                              const std::vector<sycl::event>& events)
 {
   static_assert(ROWBS <= TILE_SIZE, "ROWBS cannot be larger than TILE_SIZE!");
+  if (m == 0 || n == 0 || batch_count == 0)
+    return sycl::event();
+
   // A is m x n in Fortran, n x m in C.
   constexpr size_t tile_size  = TILE_SIZE;
   constexpr size_t block_rows = ROWBS;
@@ -543,6 +551,8 @@ sycl::event copy_n(sycl::queue& aq,
                    T2* restrict VC,
                    const std::vector<sycl::event>& events)
 {
+  if (array_size == 0)
+    return sycl::event();
   constexpr size_t tile_size = 64;
   const size_t a_max         = ((array_size + tile_size - 1) / tile_size) * tile_size;
   return aq.parallel_for(sycl::range<1>{a_max}, events, [=](sycl::id<1> id) {
