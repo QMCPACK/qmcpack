@@ -127,8 +127,8 @@ public:
   using WaveFunctionComponent::evalGradSource;
   using WaveFunctionComponent::evaluateHessian;
   using WaveFunctionComponent::evaluateRatios;
-  using WaveFunctionComponent::evaluateSpinorRatios;
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
+  using WaveFunctionComponent::evaluateSpinorRatios;
   using WaveFunctionComponent::mw_evaluateRatios;
 
   // used by DiracDeterminantWithBackflow
@@ -195,7 +195,7 @@ protected:
     auto g_mag = std::abs(dot(g, g));
     if (qmcplusplus::isnan(g_mag))
       throw std::runtime_error("gradient of NaN");
-    if (std::isinf(g_mag))
+    if (qmcplusplus::isinf(g_mag))
       throw std::runtime_error("gradient of inf");
     if (g_mag < std::abs(std::numeric_limits<RealType>::epsilon()))
     {

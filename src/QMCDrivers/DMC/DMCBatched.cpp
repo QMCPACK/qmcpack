@@ -29,6 +29,7 @@
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
 #include "WalkerLogManager.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -180,7 +181,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 // }
 #ifndef NDEBUG
         for (int i = 0; i < rr.size(); ++i)
-          assert(std::isfinite(rr[i]));
+          assert(qmcplusplus::isfinite(rr[i]));
 #endif
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
