@@ -39,6 +39,9 @@ ompBLAS_status gemm_impl(ompBLAS_handle& handle,
                          T* const C,
                          const int ldc)
 {
+  if (M == 0 || N == 0 || K == 0)
+    return 0;
+
   if (transa == 'T' && transb == 'N') //A(ji) * B(jk) -> C(ik)
   {
     PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(A, B, C)")
@@ -188,6 +191,9 @@ ompBLAS_status gemm_batched_impl(ompBLAS_handle& handle,
                                  const int ldc,
                                  const int batch_count)
 {
+  if (M == 0 || N == 0 || K == 0 || batch_count == 0)
+    return 0;
+
   if (transa == 'T' && transb == 'N') //A(ji) * B(jk) -> C(ik)
   {
     PRAGMA_OFFLOAD("omp target teams distribute is_device_ptr(Aarray, Barray, Carray)")
@@ -366,6 +372,9 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
                          T* const y,
                          const int incy)
 {
+  if (m == 0 || n == 0)
+    return 0;
+
   if (trans == 'T')
   {
     if (incx != 1 || incy != 1)
@@ -494,7 +503,7 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
                                  const int incy,
                                  const int batch_count)
 {
-  if (batch_count == 0)
+  if (m == 0 || n == 0 || batch_count == 0)
     return 0;
 
   if (trans == 'T')
@@ -630,6 +639,9 @@ ompBLAS_status ger_impl(ompBLAS_handle& handle,
                         T* const A,
                         const int lda)
 {
+  if (m == 0 || n == 0)
+    return 0;
+
   if (incx != 1 || incy != 1)
     throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::ger_impl!");
 
@@ -717,8 +729,9 @@ ompBLAS_status ger_batched_impl(ompBLAS_handle& handle,
                                 const int lda,
                                 const int batch_count)
 {
-  if (batch_count == 0)
+  if (m == 0 || n == 0 || batch_count == 0)
     return 0;
+
 
   if (incx != 1)
     throw std::runtime_error("incx!=1 are not implemented in ompBLAS::ger_batched_impl!");
@@ -807,7 +820,7 @@ ompBLAS_status copy_batched_impl(ompBLAS_handle& handle,
                                  const int incy,
                                  const int batch_count)
 {
-  if (batch_count == 0)
+  if (n == 0 || batch_count == 0)
     return 0;
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(x, y)")
@@ -878,7 +891,7 @@ ompBLAS_status copy_batched_offset_impl(ompBLAS_handle& handle,
                                         const int incy,
                                         const int batch_count)
 {
-  if (batch_count == 0)
+  if (n == 0 || batch_count == 0)
     return 0;
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(x, y)")
@@ -954,6 +967,8 @@ ompBLAS_status copy_impl(ompBLAS_handle& handle,
                          T* const y,
                          const int incy)
 {
+  if (n == 0)
+    return 0;
   PRAGMA_OFFLOAD("omp target teams distribute parallel for is_device_ptr(x, y)")
   for (size_t i = 0; i < n; i++)
     y[i * incy] = x[i * incx];
