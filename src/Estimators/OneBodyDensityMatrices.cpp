@@ -19,6 +19,7 @@
 #include "Utilities/string_utils.h"
 #include "type_traits/complex_help.hpp"
 #include "Concurrency/OpenMP.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

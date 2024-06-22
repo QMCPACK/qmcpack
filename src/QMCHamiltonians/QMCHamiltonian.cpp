@@ -25,6 +25,7 @@
 #include "BareKineticEnergy.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #include "type_traits/ConvertToReal.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
