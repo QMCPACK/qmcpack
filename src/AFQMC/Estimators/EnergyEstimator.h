@@ -12,6 +12,7 @@
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
+#include "CPU/math.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"

@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/TimerManager.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

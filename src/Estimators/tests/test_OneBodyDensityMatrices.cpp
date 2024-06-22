@@ -21,6 +21,7 @@
 
 #include "catch.hpp"
 
+#include <iostream>
 #include "OneBodyDensityMatrices.h"
 #include "ValidOneBodyDensityMatricesInput.h"
 #include "InvalidOneBodyDensityMatricesInput.h"
@@ -37,7 +38,7 @@
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/ProjectData.h"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
-#include <iostream>
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

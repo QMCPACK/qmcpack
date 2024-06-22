@@ -22,6 +22,7 @@
 #include <numeric>
 #include "Message/CommOperators.h"
 #include "OhmmsData/ParameterSet.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
