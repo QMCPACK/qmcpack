@@ -532,6 +532,9 @@ bool DMCBatched::run()
       run_time_manager.markStop();
       break;
     }
+    // Progress messages if not aborting
+    if (!myComm->rank())
+      app_log() << runtimeControl.generateProgressMessage("DMCBatched", block, num_blocks);
   }
 
   branch_engine_->printStatus();

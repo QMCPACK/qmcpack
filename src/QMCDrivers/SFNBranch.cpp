@@ -235,7 +235,7 @@ void SFNBranch::printStatus() const
   if (BranchMode[B_RMC])
   {
     o << "====================================================";
-    o << "\n  End of a RMC block";
+    o << "\n  End of a RMC section";
     o << "\n    QMC counter                   = " << iParam[B_COUNTER];
     o << "\n    time step                     = " << vParam[SBVP::TAU];
     o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
@@ -248,7 +248,7 @@ void SFNBranch::printStatus() const
   else // running DMC
   {
     o << "====================================================";
-    o << "\n  End of a DMC block";
+    o << "\n  End of a DMC section";
     o << "\n    QMC counter                   = " << iParam[B_COUNTER];
     o << "\n    time step                     = " << vParam[SBVP::TAU];
     o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
