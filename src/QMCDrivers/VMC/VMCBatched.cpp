@@ -415,7 +415,9 @@ bool VMCBatched::run()
     if (!myComm->rank())
       stop_requested = runtimeControl.checkStop(vmc_loop);
     myComm->bcast(stop_requested);
-
+    // Progress messages before possibly stopping
+    if (!myComm->rank())
+      app_log() << runtimeControl.generateProgressMessage("VMCBatched", block, num_blocks);
     if (stop_requested)
     {
       if (!myComm->rank())
@@ -423,9 +425,6 @@ bool VMCBatched::run()
       run_time_manager.markStop();
       break;
     }
-    // Progress messages if not aborting
-    if (!myComm->rank())
-      app_log() << runtimeControl.generateProgressMessage("VMCBatched", block, num_blocks);
   }
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
   // and clean it up

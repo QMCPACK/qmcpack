@@ -136,11 +136,12 @@ std::string RunTimeControl<CLOCK>::generateProgressMessage(const std::string& dr
                                                            int num_blocks) const
 {
   std::stringstream log;
-  if (block == 0 || block == num_blocks / 4 || block == num_blocks / 2 || block == (num_blocks * 3) / 4 ||
+  if (block == 0 || block + 1 == num_blocks / 4 || block + 1 == num_blocks / 2 || block + 1 == (num_blocks * 3) / 4 ||
       block + 1 == num_blocks)
   {
     log << "Completed block " << std::setw(4) << block + 1 << " of " << num_blocks << " average "
-        << std::setprecision(4) << m_loop_time << " secs/block after " << m_elapsed << " secs" << std::endl;
+        << std::setprecision(4) << m_loop_time << " secs/block after " << std::setprecision(4) << m_elapsed << " secs"
+        << std::endl;
   }
   return log.str();
 }
