@@ -36,7 +36,7 @@ std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
     std::vector<ParticleSet> psets;
     for (int iw = 0; iw < nwalkers; ++iw)
     {
-      //psets.emplace_back(pset_target);
+      psets.emplace_back(pset_target);
       psets.back().randomizeFromSource(pset_source);
       std::cout << "{";
       for (auto r : psets.back().R)

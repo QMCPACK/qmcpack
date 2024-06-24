@@ -117,6 +117,33 @@ Libxml2Document createEstimatorManagerNewVMCInputXML()
   return estimators_doc;
 }
 
+Libxml2Document createEstimatorManagerEnergyDenistyInputXML()
+{
+  const int max_node_recurse = 3;
+  Libxml2Document estimators_doc;
+  estimators_doc.newDoc("Estimators");
+  {
+    using Input = testing::EnergyDensityInputs;
+    Input input;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(input[Input::valid::CELL]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    Libxml2Document doc;
+    ScalarInput scalar_input;
+    bool okay = doc.parseFromString(scalar_input[ScalarInput::valid::LOCAL_ENERGY]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
+  return estimators_doc;
+}
+
+
   
 } // namespace testing
 } // namespace qmcplusplus
