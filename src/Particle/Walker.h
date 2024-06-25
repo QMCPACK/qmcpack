@@ -114,7 +114,7 @@ public:
    * When Multiplicity = 0, this walker will be destroyed.
    * PD: It seems to me that this should be an integer.
    */
-  int Multiplicity = 1.0;
+  FullPrecRealType Multiplicity = 1.0;
   /// mark true if this walker is being sent.
   bool SendInProgress;
 
