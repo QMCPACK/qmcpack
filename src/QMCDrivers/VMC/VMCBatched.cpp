@@ -338,6 +338,7 @@ bool VMCBatched::run()
   if (qmcdriver_input_.get_warmup_steps() > 0)
   {
     // Run warm-up steps
+    Timer warmup_timer;
     auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                             UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
       Crowd& crowd                    = *(crowds[crowd_id]);
@@ -359,7 +360,7 @@ bool VMCBatched::run()
                  std::ref(crowds_));
     }
 
-    app_log() << "Warm-up is completed!" << std::endl;
+    app_log() << "VMC Warmup completed in " << std::setprecision(4) << warmup_timer.elapsed() << " secs" << std::endl;
     print_mem("VMCBatched after Warmup", app_log());
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("Warmup");
@@ -400,6 +401,7 @@ bool VMCBatched::run()
           }
         }
       }
+
       print_mem("VMCBatched after a block", app_debug_stream());
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
@@ -413,7 +415,9 @@ bool VMCBatched::run()
     if (!myComm->rank())
       stop_requested = runtimeControl.checkStop(vmc_loop);
     myComm->bcast(stop_requested);
-
+    // Progress messages before possibly stopping
+    if (!myComm->rank())
+      app_log() << runtimeControl.generateProgressMessage("VMCBatched", block, num_blocks);
     if (stop_requested)
     {
       if (!myComm->rank())
@@ -439,7 +443,7 @@ bool VMCBatched::run()
     FullPrecRealType ene, var;
     estimator_manager_->getApproximateEnergyVariance(ene, var);
     o << "====================================================";
-    o << "\n  End of a VMC block";
+    o << "\n  End of a VMC section";
     o << "\n    QMC counter        = " << project_data_.getSeriesIndex();
     o << "\n    time step          = " << qmcdriver_input_.get_tau();
     o << "\n    reference energy   = " << ene;

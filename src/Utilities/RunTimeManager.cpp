@@ -17,6 +17,7 @@
 #include "RunTimeManager.h"
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 #include <cstdio>
 
 namespace qmcplusplus
@@ -127,6 +128,22 @@ bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
   need_to_stop |= !enough_time_for_next_iteration(loop_timer);
   need_to_stop |= stop_file_requested();
   return need_to_stop;
+}
+
+template<class CLOCK>
+std::string RunTimeControl<CLOCK>::generateProgressMessage(const std::string& driverName,
+                                                           int block,
+                                                           int num_blocks) const
+{
+  std::stringstream log;
+  if (block == 0 || block + 1 == num_blocks / 4 || block + 1 == num_blocks / 2 || block + 1 == (num_blocks * 3) / 4 ||
+      block + 1 == num_blocks)
+  {
+    log << "Completed block " << std::setw(4) << block + 1 << " of " << num_blocks << " average "
+        << std::setprecision(4) << m_loop_time << " secs/block after " << std::setprecision(4) << m_elapsed << " secs"
+        << std::endl;
+  }
+  return log.str();
 }
 
 template<class CLOCK>

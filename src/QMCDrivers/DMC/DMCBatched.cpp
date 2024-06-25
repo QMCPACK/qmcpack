@@ -524,7 +524,9 @@ bool DMCBatched::run()
     if (!myComm->rank())
       stop_requested = runtimeControl.checkStop(dmc_loop);
     myComm->bcast(stop_requested);
-
+    // Progress messages before possibly stopping
+    if (!myComm->rank())
+      app_log() << runtimeControl.generateProgressMessage("DMCBatched", block, num_blocks);
     if (stop_requested)
     {
       if (!myComm->rank())
