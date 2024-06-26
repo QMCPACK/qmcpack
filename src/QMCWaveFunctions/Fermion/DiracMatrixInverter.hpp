@@ -12,9 +12,10 @@
 #ifndef QMCPLUSPLUS_DIRAC_MATRIX_INVERTER_H
 #define QMCPLUSPLUS_DIRAC_MATRIX_INVERTER_H
 
+#include "type_traits/template_types.hpp"
+#include "type_traits/complex_help.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "type_traits/complex_help.hpp"
 #include "Queue.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "ResourceCollection.h"

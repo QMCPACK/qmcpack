@@ -12,6 +12,7 @@
 #ifndef QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H
 #define QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H
 
+#include "Configuration.h"
 #include "CPU/Blasf.h"
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -67,28 +68,6 @@ private:
   OffloadPinnedVector<int> pivots_;
   OffloadPinnedVector<int> infos_;
 
-  /** reset internal work space.
-   *  My understanding might be off.
-   *
-   *  it smells that this is so complex.
-   */
-  inline void reset(OffloadPinnedVector<VALUE_FP>& psi_Ms, const int n, const int lda, const int batch_size)
-  {
-    const int nw = batch_size;
-    pivots_.resize(lda * nw);
-    for (int iw = 0; iw < nw; ++iw)
-    {
-      lwork_ = -1;
-      VALUE_FP tmp;
-      FullPrecReal lw;
-      auto psi_M_ptr = psi_Ms.data() + iw * n * n;
-      Xgetri(lda, psi_M_ptr, lda, pivots_.data() + iw * n, &tmp, lwork_);
-      convert(tmp, lw);
-      lwork_ = static_cast<int>(lw);
-      m_work_.resize(lwork_);
-    }
-  }
-
   /** reset internal work space for single walker case
    *  My understanding might be off.
    *
@@ -126,31 +105,6 @@ private:
     log_value = {0.0, 0.0};
     computeLogDet(LU_diags_fp_.data(), n, pivots_.data(), log_value);
     Xgetri(n, a_mat.data(), lda, pivots_.data(), m_work_.data(), lwork_);
-  }
-
-  template<typename TMAT>
-  inline void computeInvertAndLog(OffloadPinnedVector<TMAT>& psi_Ms,
-                                  const int n,
-                                  const int lda,
-                                  OffloadPinnedVector<LogValue>& log_values)
-  {
-    const int nw = log_values.size();
-    BlasThreadingEnv knob(getNextLevelNumThreads());
-    if (lwork_ < lda)
-      reset(psi_Ms, n, lda, nw);
-    pivots_.resize(n * nw);
-    LU_diags_fp_.resize(n * nw);
-    for (int iw = 0; iw < nw; ++iw)
-    {
-      VALUE_FP* LU_M = psi_Ms.data() + iw * n * n;
-      Xgetrf(n, n, LU_M, lda, pivots_.data() + iw * n);
-      for (int i = 0; i < n; i++)
-        *(LU_diags_fp_.data() + iw * n + i) = LU_M[i * lda + i];
-      LogValue log_value{0.0, 0.0};
-      computeLogDet(LU_diags_fp_.data() + iw * n, n, pivots_.data() + iw * n, log_value);
-      log_values[iw] = log_value;
-      Xgetri(n, LU_M, lda, pivots_.data() + iw * n, m_work_.data(), lwork_);
-    }
   }
 
   /// matrix inversion engine
@@ -229,24 +183,6 @@ public:
       detEng_.invert_transpose(a_mats[iw].get(), Ainv, log_values[iw]);
       Ainv.updateTo();
     }
-
-    /* FIXME
-    const int nw     = a_mats.size();
-    const size_t n   = a_mats[0].get().rows();
-    const size_t lda = a_mats[0].get().cols();
-    const size_t ldb = inv_a_mats[0].get().cols();
-
-    size_t nsqr{n * n};
-    psiM_fp_.resize(n * lda * nw);
-    for (int iw = 0; iw < nw; ++iw)
-      simd::transpose(a_mats[iw].get().data(), n, lda, psiM_fp_.data() + nsqr * iw, n, lda);
-
-    computeInvertAndLog(psiM_fp_, n, lda, log_values);
-    for (int iw = 0; iw < nw; ++iw)
-    {
-      simd::remapCopy(n, n, psiM_fp_.data() + nsqr * iw, lda, inv_a_mats[iw].get().data(), ldb);
-    }
-    */
   }
 
   void mw_invert_transpose(compute::QueueBase& queue_ignored,
@@ -258,6 +194,8 @@ public:
     mw_invertTranspose(resource, a_mats, inv_a_mats, log_values);
   }
 };
+
+extern template class DiracMatrixComputeOMPTarget<QMCTraits::QTFull::ValueType, QMCTraits::ValueType>;
 } // namespace qmcplusplus
 
 #endif // QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H
