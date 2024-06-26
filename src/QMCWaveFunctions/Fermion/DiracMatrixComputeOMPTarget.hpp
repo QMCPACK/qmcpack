@@ -12,6 +12,7 @@
 #ifndef QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H
 #define QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H
 
+#include "Configuration.h"
 #include "CPU/Blasf.h"
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -97,24 +98,6 @@ public:
       detEng_.invert_transpose(a_mats[iw].get(), Ainv, log_values[iw]);
       Ainv.updateTo();
     }
-
-    /* FIXME
-    const int nw     = a_mats.size();
-    const size_t n   = a_mats[0].get().rows();
-    const size_t lda = a_mats[0].get().cols();
-    const size_t ldb = inv_a_mats[0].get().cols();
-
-    size_t nsqr{n * n};
-    psiM_fp_.resize(n * lda * nw);
-    for (int iw = 0; iw < nw; ++iw)
-      simd::transpose(a_mats[iw].get().data(), n, lda, psiM_fp_.data() + nsqr * iw, n, lda);
-
-    computeInvertAndLog(psiM_fp_, n, lda, log_values);
-    for (int iw = 0; iw < nw; ++iw)
-    {
-      simd::remapCopy(n, n, psiM_fp_.data() + nsqr * iw, lda, inv_a_mats[iw].get().data(), ldb);
-    }
-    */
   }
 
   void mw_invert_transpose(compute::QueueBase& queue_ignored,
@@ -125,6 +108,8 @@ public:
     mw_invertTranspose(a_mats, inv_a_mats, log_values);
   }
 };
+
+extern template class DiracMatrixComputeOMPTarget<QMCTraits::QTFull::ValueType, QMCTraits::ValueType>;
 } // namespace qmcplusplus
 
 #endif // QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H
