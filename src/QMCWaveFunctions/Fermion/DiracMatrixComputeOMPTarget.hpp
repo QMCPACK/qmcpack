@@ -59,59 +59,11 @@ public:
   using HandleResource = compute::Queue<PlatformKind::OMPTARGET>;
 
 private:
-  aligned_vector<VALUE_FP> m_work_;
-  int lwork_;
-
-  /// Matrices held in memory matrices n^2 * nw  elements
-  OffloadPinnedVector<VALUE_FP> psiM_fp_;
-  OffloadPinnedVector<VALUE_FP> LU_diags_fp_;
-  OffloadPinnedVector<int> pivots_;
-  OffloadPinnedVector<int> infos_;
-
-  /** reset internal work space for single walker case
-   *  My understanding might be off.
-   *
-   *  it smells that this is so complex.
-   */
-  inline void reset(OffloadPinnedMatrix<VALUE_FP>& psi_M, const int n, const int lda)
-  {
-    pivots_.resize(lda);
-    LU_diags_fp_.resize(lda);
-    lwork_ = -1;
-    VALUE_FP tmp;
-    FullPrecReal lw;
-    Xgetri(lda, psi_M.data(), lda, pivots_.data(), &tmp, lwork_);
-    lw     = std::real(tmp);
-    lwork_ = static_cast<int>(lw);
-    m_work_.resize(lwork_);
-  }
-
-  /** compute the inverse of invMat (in place) and the log value of determinant
-   * \tparam TMAT value type of matrix
-   * \param[inout] a_mat      the matrix
-   * \param[in]    n          actual dimension of square matrix (no guarantee it really has full column rank)
-   * \param[in]    lda        leading dimension of Matrix container
-   * \param[out]   log_value  log a_mat before inversion
-   */
-  template<typename TMAT>
-  inline void computeInvertAndLog(OffloadPinnedMatrix<TMAT>& a_mat, const int n, const int lda, LogValue& log_value)
-  {
-    BlasThreadingEnv knob(getNextLevelNumThreads());
-    if (lwork_ < lda)
-      reset(a_mat, n, lda);
-    Xgetrf(n, n, a_mat.data(), lda, pivots_.data());
-    for (int i = 0; i < n; i++)
-      LU_diags_fp_[i] = a_mat.data()[i * lda + i];
-    log_value = {0.0, 0.0};
-    computeLogDet(LU_diags_fp_.data(), n, pivots_.data(), log_value);
-    Xgetri(n, a_mat.data(), lda, pivots_.data(), m_work_.data(), lwork_);
-  }
-
   /// matrix inversion engine
   DiracMatrix<VALUE_FP> detEng_;
 
 public:
-  DiracMatrixComputeOMPTarget() : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixComputeOMPTarget"), lwork_(0) {}
+  DiracMatrixComputeOMPTarget() : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixComputeOMPTarget") {}
 
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixComputeOMPTarget>(*this); }
 
@@ -126,45 +78,13 @@ public:
    *                                  DiracMatrixComputeCUDA but is fine for OMPTarget        
    */
   template<typename TMAT>
-  inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> invert_transpose(HandleResource& resource,
-                                                                                const OffloadPinnedMatrix<TMAT>& a_mat,
-                                                                                OffloadPinnedMatrix<TMAT>& inv_a_mat,
-                                                                                LogValue& log_value)
+  inline void invert_transpose(HandleResource& resource,
+                               const OffloadPinnedMatrix<TMAT>& a_mat,
+                               OffloadPinnedMatrix<TMAT>& inv_a_mat,
+                               LogValue& log_value)
   {
-    const int n   = a_mat.rows();
-    const int lda = a_mat.cols();
-    const int ldb = inv_a_mat.cols();
-    simd::transpose(a_mat.data(), n, lda, inv_a_mat.data(), n, ldb);
-    // In this case we just pass the value since
-    // that makes sense for a single walker API
-    computeInvertAndLog(inv_a_mat, n, ldb, log_value);
-  }
-
-  /** compute the inverse of the transpose of matrix A and its determinant value in log
-   * when VALUE_FP and TMAT are the different
-   * @tparam TMAT matrix value type
-   * @tparam TREAL real type
-   */
-  template<typename TMAT>
-  inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> invert_transpose(HandleResource& resource,
-                                                                                 const OffloadPinnedMatrix<TMAT>& a_mat,
-                                                                                 OffloadPinnedMatrix<TMAT>& inv_a_mat,
-                                                                                 LogValue& log_value)
-  {
-    const int n   = a_mat.rows();
-    const int lda = a_mat.cols();
-    const int ldb = inv_a_mat.cols();
-
-    psiM_fp_.resize(n * lda);
-    simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
-    OffloadPinnedMatrix<VALUE_FP> psiM_fp_view(psiM_fp_, psiM_fp_.data(), n, lda);
-    computeInvertAndLog(psiM_fp_view, n, lda, log_value);
-
-    //Matrix<TMAT> data_ref_matrix;
-    //maybe n, lda
-    //data_ref_matrix.attachReference(psiM_fp_.data(), n, n);
-    //Because inv_a_mat is "aligned" this is unlikely to work.
-    simd::remapCopy(n, n, psiM_fp_.data(), lda, inv_a_mat.data(), ldb);
+    detEng_.invert_transpose(a_mat, inv_a_mat, log_value);
+    inv_a_mat.updateTo();
   }
 
   /** This covers both mixed and Full precision case.
