@@ -39,6 +39,11 @@ namespace qmcplusplus
  *  to the per walker DiracDeterminantBatched.
  *  Resources used by this object but owned by the
  *  surrounding scope are passed as arguments.
+ *
+ *  All the public APIs are synchronous. The asynchronous queue argument gets synchronized before return.
+ *  rocBLAS, indirectly used via hipBLAS, requires synchronizing the old stream before setting a new one.
+ *  We don't need to actively synchronize the old stream because it gets synchronized right after each use.
+ *
  */
 template<typename VALUE_FP>
 class DiracMatrixComputeCUDA : public Resource
