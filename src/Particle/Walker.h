@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: D. Das, University of Illinois at Urbana-Champaign
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -11,6 +11,7 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp
 //
@@ -82,38 +83,55 @@ public:
   /** }@ */
 
 private:
-  /** in legacy the ancients have said only:
-   *  id reserved for forward walking
+  /** walker identifier during a QMCSection
+   *
+   *  batched:
+   *  Only MCPopulation should set A living walker will have a WalkerID > 0
+   *  0 is the value of a default constructed walker.
+   *  Any negative value must have been set by an outside entity and indicates
+   *  an invalid walker ID.
    */
   long walker_id_ = 0;
-  /** in legacy the ancients have said only:
-   *  id reserved for forward walking
+  /** walker identifier that provided the initial state of walker
+   *
+   *  batched:
+   *  default constructed = 0;
+   *  parentID > 0 it is the walkerID in this section it was assigned from
+   *  parentID < 0 it is the  walkerID of a walker in a WalkerConfiguration
+   *  used to construct an initial population of walkers.
    */
   long parent_id_ = 0;
 
 public:
-  /** allegedly DMCgeneration
+  /** allegedly DMC generation
    *  PD: I can find no evidence it is ever updated anywhere in the code.
    */
   int Generation = 0;
-  ///Age of this walker age is incremented when a walker is not moved after a sweep
+  ///Age is incremented when a walker is not moved after a sweep
   int Age = 0;
   ///Weight of the walker
   FullPrecRealType Weight = 1.0;
-  /** Number of copies for branching
+  /** Number of replicas of this walker after branching
    * When Multiplicity = 0, this walker will be destroyed.
+   * PD: It seems to me that this should be an integer.
    */
   FullPrecRealType Multiplicity = 1.0;
   /// mark true if this walker is being sent.
   bool SendInProgress;
-  /// if true, this walker is either copied or tranferred from another MPI rank.
+
+  /** if true, this walker is either a copy to lower multiplicity or tranferred from another MPI rank.
+   *  This walker will need distance table, jastrow factors, etc recomputed.
+   *  So this is really a variable tracking the "cache" of the ParticleSet, etc.
+   *  \todo this is a smell and would be nice to address in ParticleSet refactoring.
+   */
   bool wasTouched = true;
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos R;
 
-  //Dynamical spin variable.
+  /** Spin configuration vector (size N)
+   *  i.e. Dynamical spin variable. */
   ParticleScalar spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
@@ -161,10 +179,13 @@ public:
   }
 
   Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
-  Walker(const Walker& a, long walker_id, long parent_id)
-      : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  Walker(const Walker& a, long walker_id, long parent_id) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
   {
     makeCopy(a);
+    // makeCopy replaces walker_id_ and parent_id with a.walker_id_  ...
+    // so these can not be set in the contructor initializer list
+    walker_id_ = walker_id;
+    parent_id_ = parent_id;
   }
 
   /** create a valid walker for n-particles (batched version)
@@ -243,7 +264,18 @@ public:
     L.resize(nptcl);
   }
 
-  ///copy the content of a walker
+  /** assign the content of a walker
+   *  except:
+   *  SendInProgress
+   *  wasTouched
+   *  has_been_on_wire
+   *
+   *  Special Behavior:
+   *  R & spins
+   *  Properties.copy instead of operator= ConstantSizeMatrix has strict size semantics for assignment.
+   *                                       but they seem like they should be fine.
+   *  PropertyHistory
+   */
   inline void makeCopy(const Walker& a)
   {
     walker_id_   = a.walker_id_;
@@ -252,6 +284,7 @@ public:
     Age          = a.Age;
     Weight       = a.Weight;
     Multiplicity = a.Multiplicity;
+    // PD. \todo Why this strange idiom, something wrong with ParticleAttrib assignment operator
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
