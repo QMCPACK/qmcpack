@@ -15,15 +15,14 @@
 #include "CPU/Blasf.h"
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "OMPTarget/OMPallocator.hpp"
 #include "OMPTarget/AccelBLAS_OMPTarget.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "DiracMatrix.h"
 #include "type_traits/complex_help.hpp"
 #include "type_traits/template_types.hpp"
 #include "Concurrency/OpenMP.h"
 #include "CPU/SIMD/algorithm.hpp"
-#include "ResourceCollection.h"
+#include "DiracMatrixInverter.hpp"
 
 namespace qmcplusplus
 {
@@ -41,8 +40,8 @@ namespace qmcplusplus
  *  mapped region if target is used with it. This makes this API incompatible to
  *  that used by MatrixDelayedUpdateCuda and DiracMatrixComputeCUDA.
  */
-template<typename VALUE_FP>
-class DiracMatrixComputeOMPTarget : public Resource
+template<typename VALUE_FP, typename VALUE = VALUE_FP>
+class DiracMatrixComputeOMPTarget : public DiracMatrixInverter<VALUE_FP, VALUE>
 {
 public:
   using FullPrecReal = RealAlias<VALUE_FP>;
@@ -50,8 +49,6 @@ public:
 
   // This class only works with OMPallocator so explicitly call OffloadAllocator what it
   // is and not DUAL
-  template<typename T>
-  using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
   template<typename T>
   using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
   template<typename T>
@@ -160,7 +157,7 @@ private:
   DiracMatrix<VALUE_FP> detEng_;
 
 public:
-  DiracMatrixComputeOMPTarget() : Resource("DiracMatrixComputeOMPTarget"), lwork_(0) {}
+  DiracMatrixComputeOMPTarget() : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixComputeOMPTarget"), lwork_(0) {}
 
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixComputeOMPTarget>(*this); }
 
@@ -220,8 +217,8 @@ public:
    *  
    *  \todo measure if using the a_mats without a copy to contiguous vector is better.
    */
-  template<typename TMAT, PlatformKind PL>
-  inline void mw_invertTranspose(compute::Queue<PL>& resource_ignored,
+  template<typename TMAT>
+  inline void mw_invertTranspose(HandleResource& resource,
                                  const RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
                                  const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<LogValue>& log_values)
@@ -250,6 +247,15 @@ public:
       simd::remapCopy(n, n, psiM_fp_.data() + nsqr * iw, lda, inv_a_mats[iw].get().data(), ldb);
     }
     */
+  }
+
+  void mw_invert_transpose(compute::QueueBase& queue_ignored,
+                           const RefVector<const OffloadPinnedMatrix<VALUE>>& a_mats,
+                           const RefVector<OffloadPinnedMatrix<VALUE>>& inv_a_mats,
+                           OffloadPinnedVector<LogValue>& log_values) override
+  {
+    HandleResource resource;
+    mw_invertTranspose(resource, a_mats, inv_a_mats, log_values);
   }
 };
 } // namespace qmcplusplus
