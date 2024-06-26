@@ -380,6 +380,9 @@ if(QMC_OMP)
   if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
+    if(DEFINED OpenMP_OFFLOAD_LINKER_FLAGS)
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_OFFLOAD_LINKER_FLAGS}")
+    endif()
   endif()
 
   #--------------------------------------------------------------
