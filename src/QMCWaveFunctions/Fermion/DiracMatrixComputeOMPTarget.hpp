@@ -58,7 +58,7 @@ public:
   using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
   // maybe you'll want a resource someday, then change here.
-  using HandleResource = compute::BLASHandle<PlatformKind::OMPTARGET>;
+  using HandleResource = compute::Queue<PlatformKind::OMPTARGET>;
 
 private:
   aligned_vector<VALUE_FP> m_work_;
@@ -221,13 +221,11 @@ public:
    *  \todo measure if using the a_mats without a copy to contiguous vector is better.
    */
   template<typename TMAT, PlatformKind PL>
-  inline void mw_invertTranspose(compute::BLASHandle<PL>& resource_ignored,
+  inline void mw_invertTranspose(compute::Queue<PL>& resource_ignored,
                                  const RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
                                  const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<LogValue>& log_values)
   {
-    compute::Queue<PlatformKind::OMPTARGET> queue;
-    HandleResource resource(queue);
     for (int iw = 0; iw < a_mats.size(); iw++)
     {
       auto& Ainv = inv_a_mats[iw].get();
