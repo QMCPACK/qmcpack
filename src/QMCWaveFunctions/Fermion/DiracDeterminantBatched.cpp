@@ -119,8 +119,8 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_invertPsiM(const RefVectorWithLea
       mw_res.log_values[iw] = {0.0, 0.0};
     }
 
-    wfc_leader.accel_inverter_.getResource().mw_invertTranspose(mw_res.engine_rsc.getLAhandles(), logdetT_list,
-                                                                a_inv_list, mw_res.log_values);
+    wfc_leader.accel_inverter_.getResource().mw_invertTranspose(mw_res.engine_rsc.queue, logdetT_list, a_inv_list,
+                                                                mw_res.log_values);
 
     for (int iw = 0; iw < nw; ++iw)
     {

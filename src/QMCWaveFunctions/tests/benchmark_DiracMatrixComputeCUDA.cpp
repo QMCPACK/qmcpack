@@ -30,7 +30,6 @@
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/DualAllocatorAliases.hpp"
 #include "Platforms/CUDA/QueueCUDA.hpp"
-#include "Platforms/CUDA/AccelBLAS_CUDA.hpp"
 
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
@@ -74,7 +73,6 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
   params.batch_size = 4;
 
   compute::Queue<PlatformKind::CUDA> queue;
-  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -99,7 +97,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
   std::vector<bool> compute_mask(params.batch_size, true);
   BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
-    meter.measure([&] { dmcc.mw_invertTranspose(cuda_handles, a_mats, inv_a_mats, log_values); });
+    meter.measure([&] { dmcc.mw_invertTranspose(queue, a_mats, inv_a_mats, log_values); });
   };
 
   DiracMatrix<double> dmat;
@@ -127,7 +125,6 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   params.batch_size = 10;
 
   compute::Queue<PlatformKind::CUDA> queue;
-  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -152,7 +149,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   std::vector<bool> compute_mask(params.batch_size, true);
   BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
-    meter.measure([&] { dmcc.mw_invertTranspose(cuda_handles, a_mats, inv_a_mats, log_values); });
+    meter.measure([&] { dmcc.mw_invertTranspose(queue, a_mats, inv_a_mats, log_values); });
   };
 
 
@@ -181,7 +178,6 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
   params.batch_size = 10;
 
   compute::Queue<PlatformKind::CUDA> queue;
-  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -210,14 +206,13 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
   {
     meter.measure([&] {
       for (int im = 0; im < params.batch_size; ++im)
-        dmcc.invert_transpose(cuda_handles, pinned_spd_mats[im], pinned_inv_mats[im], log_values[im]);
+        dmcc.invert_transpose(queue, pinned_spd_mats[im], pinned_inv_mats[im], log_values[im]);
     });
   };
 
 
   DiracMatrix<double> dmat;
   std::vector<Matrix<double>> inv_mats_test(params.batch_size, {params.n, params.n});
-  ;
   std::vector<std::complex<double>> log_values_test(params.batch_size);
 
   params.name = "legacy CPU";
@@ -240,7 +235,6 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunct
   params.batch_size = 4;
 
   compute::Queue<PlatformKind::CUDA> queue;
-  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
   DiracMatrixComputeCUDA<double> dmcc;
 
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
@@ -270,7 +264,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunct
   {
     meter.measure([&] {
       for (int im = 0; im < params.batch_size; ++im)
-        dmcc.invert_transpose(cuda_handles, pinned_spd_mats[im], pinned_inv_mats[im], log_values[im]);
+        dmcc.invert_transpose(queue, pinned_spd_mats[im], pinned_inv_mats[im], log_values[im]);
     });
   };
 

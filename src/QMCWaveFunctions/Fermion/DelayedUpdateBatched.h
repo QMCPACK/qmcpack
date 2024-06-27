@@ -106,8 +106,6 @@ public:
         czero_vec.updateTo();
       }
     }
-
-    auto& getLAhandles() { return blas_handle; }
   };
 
 private:
