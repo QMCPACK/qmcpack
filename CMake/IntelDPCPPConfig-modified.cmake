@@ -239,7 +239,7 @@ if(WIN32)
   list(APPEND SYCL_FLAGS "/EHsc")
 endif()
 
-set(SYCL_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SYCL_FLAGS}")
+set(SYCL_CXX_FLAGS "${SYCL_FLAGS}")
 
 # And now test the assumptions.
 
