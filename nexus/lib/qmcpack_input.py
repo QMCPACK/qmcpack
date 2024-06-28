@@ -5482,6 +5482,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
     basis = []
     builder = None
     maxed = False
+    wf = wf_elem
     if reuse and 'basis' in dm and isinstance(dm.basis,sposet):
         spo = dm.basis
         # get sposet size
@@ -5496,7 +5497,6 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         #end if
         try:
             # get sposet from wavefunction
-            wf = wf_elem
             dets = wf.get('determinant')
             det  = dets.get_single()
             if 'sposet' in det:
