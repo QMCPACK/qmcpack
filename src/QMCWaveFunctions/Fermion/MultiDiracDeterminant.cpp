@@ -585,21 +585,20 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
   OffloadVector<ValueType*> new_ratios_to_ref_acc_deviceptr_list;
   OffloadVector<ValueType*> ratios_to_ref_acc_deviceptr_list;
 
-  OffloadVector<GradType*> dpsiV_acc_deviceptr_list;
-  OffloadVector<GradType*> dpsiM_row_acc_deviceptr_list;
+  OffloadVector<ValueType*> dpsiV_acc_deviceptr_list;
+  OffloadVector<ValueType*> dpsiM_row_acc_deviceptr_list;
   OffloadVector<ValueType*> d2psiV_acc_deviceptr_list;
   OffloadVector<ValueType*> d2psiM_row_acc_deviceptr_list;
 
   Vector<ValueType*> dspin_psiV_acc_ptr_list;
   Vector<ValueType*> dspin_psiM_row_acc_ptr_list;
 
-  Vector<GradType*> new_grads_acc_ptr_list;
-  Vector<GradType*> grads_acc_ptr_list;
+  Vector<ValueType*> new_grads_acc_ptr_list;
+  Vector<ValueType*> grads_acc_ptr_list;
   Vector<ValueType*> new_lapls_acc_ptr_list;
   Vector<ValueType*> lapls_acc_ptr_list;
   Vector<ValueType*> new_spingrads_acc_ptr_list;
   Vector<ValueType*> spingrads_acc_ptr_list;
-  // cleaner to initialize with correct size, but
 
   /**
    * some of these are in the mw_resource, and some are not
@@ -612,8 +611,6 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
   switch (wfc_leader.UpdateMode)
   {
   default:
-
-
     new_grads_acc_ptr_list.resize(n_accepted);
     grads_acc_ptr_list.resize(n_accepted);
     new_lapls_acc_ptr_list.resize(n_accepted);
@@ -627,8 +624,8 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
     {
       auto iacc                 = idx_Accepted[i];
       auto& wfc                 = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
-      new_grads_acc_ptr_list[i] = wfc.new_grads.data();
-      grads_acc_ptr_list[i]     = wfc.grads.data();
+      new_grads_acc_ptr_list[i] = wfc.new_grads.data()->data();
+      grads_acc_ptr_list[i]     = wfc.grads.data()->data();
       new_lapls_acc_ptr_list[i] = wfc.new_lapls.data();
       lapls_acc_ptr_list[i]     = wfc.lapls.data();
       if (wfc_leader.is_spinor_)
@@ -648,8 +645,8 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
     {
       auto iacc                        = idx_Accepted[i];
       auto& wfc                        = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
-      dpsiV_acc_deviceptr_list[i]      = mw_res.dpsiV_deviceptr_list[iacc];
-      dpsiM_row_acc_deviceptr_list[i]  = mw_res.dpsiM_deviceptr_list[iacc] + WorkingIndex * norb;
+      dpsiV_acc_deviceptr_list[i]      = mw_res.dpsiV_deviceptr_list[iacc]->data();
+      dpsiM_row_acc_deviceptr_list[i]  = mw_res.dpsiM_deviceptr_list[iacc]->data() + WorkingIndex * norb * DIM;
       d2psiV_acc_deviceptr_list[i]     = wfc.d2psiV.device_data();
       d2psiM_row_acc_deviceptr_list[i] = wfc.d2psiM.device_data() + WorkingIndex * norb;
       if (wfc_leader.is_spinor_)
@@ -718,7 +715,8 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
                           n_accepted);
     ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, psiM_row_acc_deviceptr_list.data(), 1,
                           n_accepted);
-    // ompBLAS::copy_batched(handle, norb * DIM, dpsiV_acc_deviceptr_list.data(), 1, dpsiM_row_acc_deviceptr_list.data(), 1, n_accepted);
+    ompBLAS::copy_batched(handle, norb * DIM, dpsiV_acc_deviceptr_list.data(), 1, dpsiM_row_acc_deviceptr_list.data(),
+                          1, n_accepted);
     ompBLAS::copy_batched(handle, norb, d2psiV_acc_deviceptr_list.data(), 1, d2psiM_row_acc_deviceptr_list.data(), 1,
                           n_accepted);
     ompBLAS::copy_batched(handle, ndet, new_ratios_to_ref_acc_deviceptr_list.data(), 1,
@@ -751,7 +749,8 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
                           n_accepted);
     ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, psiM_row_acc_deviceptr_list.data(), 1,
                           n_accepted);
-    // ompBLAS::copy_batched(handle, norb * DIM, dpsiV_acc_deviceptr_list.data(), 1, dpsiM_row_acc_deviceptr_list.data(), 1, n_accepted);
+    ompBLAS::copy_batched(handle, norb * DIM, dpsiV_acc_deviceptr_list.data(), 1, dpsiM_row_acc_deviceptr_list.data(),
+                          1, n_accepted);
     ompBLAS::copy_batched(handle, norb, d2psiV_acc_deviceptr_list.data(), 1, d2psiM_row_acc_deviceptr_list.data(), 1,
                           n_accepted);
     ompBLAS::copy_batched(handle, ndet, new_ratios_to_ref_acc_deviceptr_list.data(), 1,
@@ -761,7 +760,10 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
     // ompBLAS::copy_batched(handle, ndet * nel * DIM, new_grads_acc_ptr_list.data(), 1, grads_acc_ptr_list.data(), 1, n_accepted);
     // ompBLAS::copy_batched(handle, ndet * nel, new_lapls_acc_ptr_list.data(), 1, lapls_acc_ptr_list.data(), 1, n_accepted);
     for (int i = 0; i < n_accepted; i++)
+    {
+      BLAS::copy(ndet * nel * DIM, new_grads_acc_ptr_list[i], 1, grads_acc_ptr_list[i], 1);
       BLAS::copy(ndet * nel, new_lapls_acc_ptr_list[i], 1, lapls_acc_ptr_list[i], 1);
+    }
 
     if (wfc_leader.is_spinor_)
     {
@@ -777,9 +779,7 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
     break;
   }
 
-
   // restore:
-
   // setup pointer lists
   OffloadVector<ValueType*> psiMinv_temp_rej_deviceptr_list(n_rejected);
   OffloadVector<ValueType*> psiMinv_rej_deviceptr_list(n_rejected);
