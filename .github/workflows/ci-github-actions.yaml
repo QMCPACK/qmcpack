@@ -143,7 +143,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   macos:
-    runs-on: macos-13
+    runs-on: macos-14
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: macOS
