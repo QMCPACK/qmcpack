@@ -20,11 +20,8 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "WaveFunctionTypes.hpp"
 #include "type_traits/complex_help.hpp"
-#include "DiracMatrixComputeOMPTarget.hpp"
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-#include "DiracMatrixComputeCUDA.hpp"
-#endif
 #include "QMCWaveFunctions/Fermion/DelayedUpdateBatched.h"
+#include "DiracMatrixInverter.hpp"
 
 namespace qmcplusplus
 {
@@ -57,26 +54,11 @@ struct UpdateEngineSelector<PlatformKind::SYCL, VT>
 };
 #endif
 
-template<PlatformKind UEPL, typename FPVT>
-struct DetInverterSelector
-{
-  using Inverter = DiracMatrixComputeOMPTarget<FPVT>;
-};
-
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-template<typename FPVT>
-struct DetInverterSelector<PlatformKind::CUDA, FPVT>
-{
-  using Inverter = DiracMatrixComputeCUDA<FPVT>;
-};
-#endif
-
 template<PlatformKind PL, typename VT, typename FPVT>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
   using UpdateEngine  = typename UpdateEngineSelector<PL, VT>::Engine;
-  using DetInverter   = typename DetInverterSelector<PL, FPVT>::Inverter;
   using WFT           = WaveFunctionTypes<VT, FPVT>;
   using Value         = typename WFT::Value;
   using FullPrecValue = typename WFT::FullPrecValue;
@@ -346,7 +328,7 @@ private:
   DiracMatrix<FullPrecValue> host_inverter_;
 
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  ResourceHandle<DetInverter> accel_inverter_;
+  ResourceHandle<DiracMatrixInverter<FPVT, VT>> accel_inverter_;
 
   /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
