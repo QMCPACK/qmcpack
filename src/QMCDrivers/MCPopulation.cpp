@@ -114,30 +114,28 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
 #pragma omp parallel for shared(walker_ids)
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
-    int parent_id = 0;
-    walkers_[iw]             = std::make_unique<MCPWalker>(walker_ids[iw], parent_id, elec_particle_set_->getTotalNum() );
-    walkers_[iw]->Properties = elec_particle_set_->Properties;
 
-    // initialize coord
+    // initialize walkers from existing walker_configs
     if (const auto num_existing_walkers = walker_configs.getActiveWalkers())
     {
-      // Save this walkers id.
-      auto this_walkers_id = walkers_[iw]->getWalkerID();
-      // the walker assignment operator is basically a simple copy so walker_id is overwritten with
-      // something meaningful only in another QMC section.
-      *walkers_[iw] = *walker_configs[iw % num_existing_walkers];
+      walkers_[iw] = std::make_unique<MCPWalker>(*walker_configs[iw % num_existing_walkers]);
       // An outside section context parent ID is multiplied by -1.
       walkers_[iw]->setParentID(-1 * walker_configs[iw % num_existing_walkers]->getWalkerID());
-      walkers_[iw]->setWalkerID(this_walkers_id);
+      walkers_[iw]->setWalkerID(walker_ids[iw]);
     }
-    else
+    else // these are fresh walkers no incoming walkers
     {
       // These walkers are orphans they don't get their intial configuration from a walkerconfig
       // but from the golden particle set.  They get an walker ID of 0;
+      walkers_[iw]             = std::make_unique<MCPWalker>(walker_ids[iw], 0 /* parent_id */, elec_particle_set_->getTotalNum() );
+      // Should these get a randomize from source?
+      // This seems to be what happens in legacy but its surprisingly opaque there
+      // How is it not undesirable to have all these walkers start from the same positions
       walkers_[iw]->R          = elec_particle_set_->R;
       walkers_[iw]->spins      = elec_particle_set_->spins;
     }
 
+    walkers_[iw]->Properties = elec_particle_set_->Properties;
     walkers_[iw]->registerData();
     walkers_[iw]->DataSet.allocate();
 
@@ -211,8 +209,7 @@ WalkerElementsRef MCPopulation::spawnWalker()
     walkers_.back()->Multiplicity       = 1.0;
     walkers_.back()->Weight             = 1.0;
     // this does count as a walker creation so it gets a new walker id
-    auto walker_id = nextWalkerID();
-    walkers_.back()->setWalkerID(walker_id);
+    walkers_.back()->setWalkerID(nextWalkerID());
   }
   else
   {
@@ -347,7 +344,7 @@ void MCPopulation::saveWalkerConfigurations(WalkerConfigurations& walker_configs
   walker_configs.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
   {
-    // The semantics of this call are not what would I would expecte.
+    // The semantics of this call are not what would I would expect.
     // Are walkers's R's invalid here?
     // you are not serializing the population walkers but the particle sets
     // to the walker_configs walkers...
