@@ -694,7 +694,7 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
 
     ompBLAS::copy_batched(handle, nel * nel, psiMinv_temp_acc_deviceptr_list.data(), 1,
                           psiMinv_acc_deviceptr_list.data(), 1, n_accepted);
-    ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, TpsiM_col_acc_deviceptr_list.data(), norb,
+    ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, TpsiM_col_acc_deviceptr_list.data(), nel,
                           n_accepted);
     ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, psiM_row_acc_deviceptr_list.data(), 1,
                           n_accepted);
@@ -714,7 +714,7 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
      */
     ompBLAS::copy_batched(handle, nel * nel, psiMinv_temp_acc_deviceptr_list.data(), 1,
                           psiMinv_acc_deviceptr_list.data(), 1, n_accepted);
-    ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, TpsiM_col_acc_deviceptr_list.data(), norb,
+    ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, TpsiM_col_acc_deviceptr_list.data(), nel,
                           n_accepted);
     ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, psiM_row_acc_deviceptr_list.data(), 1,
                           n_accepted);
@@ -800,7 +800,7 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
      */
   ompBLAS::copy_batched(handle, nel * nel, psiMinv_rej_deviceptr_list.data(), 1, psiMinv_temp_rej_deviceptr_list.data(),
                         1, n_rejected);
-  ompBLAS::copy_batched(handle, norb, psiM_row_rej_deviceptr_list.data(), 1, TpsiM_col_rej_deviceptr_list.data(), norb,
+  ompBLAS::copy_batched(handle, norb, psiM_row_rej_deviceptr_list.data(), 1, TpsiM_col_rej_deviceptr_list.data(), nel,
                         n_rejected);
 
   for (auto& irej : idx_Rejected)
