@@ -54,9 +54,6 @@ public:
   template<typename T>
   using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
-  // maybe you'll want a resource someday, then change here.
-  using HandleResource = compute::Queue<PlatformKind::OMPTARGET>;
-
 private:
   aligned_vector<VALUE_FP> m_work_;
   int lwork_;
@@ -172,8 +169,7 @@ public:
    *                                  DiracMatrixComputeCUDA but is fine for OMPTarget        
    */
   template<typename TMAT>
-  inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> invert_transpose(HandleResource& resource,
-                                                                                const OffloadPinnedMatrix<TMAT>& a_mat,
+  inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> invert_transpose(const OffloadPinnedMatrix<TMAT>& a_mat,
                                                                                 OffloadPinnedMatrix<TMAT>& inv_a_mat,
                                                                                 LogValue& log_value)
   {
@@ -192,8 +188,7 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT>
-  inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> invert_transpose(HandleResource& resource,
-                                                                                 const OffloadPinnedMatrix<TMAT>& a_mat,
+  inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> invert_transpose(const OffloadPinnedMatrix<TMAT>& a_mat,
                                                                                  OffloadPinnedMatrix<TMAT>& inv_a_mat,
                                                                                  LogValue& log_value)
   {
@@ -218,8 +213,7 @@ public:
    *  \todo measure if using the a_mats without a copy to contiguous vector is better.
    */
   template<typename TMAT>
-  inline void mw_invertTranspose(HandleResource& resource,
-                                 const RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
+  inline void mw_invertTranspose(const RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
                                  const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<LogValue>& log_values)
   {
@@ -254,8 +248,7 @@ public:
                            const RefVector<OffloadPinnedMatrix<VALUE>>& inv_a_mats,
                            OffloadPinnedVector<LogValue>& log_values) override
   {
-    HandleResource resource;
-    mw_invertTranspose(resource, a_mats, inv_a_mats, log_values);
+    mw_invertTranspose(a_mats, inv_a_mats, log_values);
   }
 };
 } // namespace qmcplusplus
