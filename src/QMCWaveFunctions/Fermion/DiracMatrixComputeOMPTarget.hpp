@@ -109,7 +109,10 @@ public:
   }
 };
 
-extern template class DiracMatrixComputeOMPTarget<QMCTraits::QTFull::ValueType, QMCTraits::ValueType>;
+extern template class DiracMatrixComputeOMPTarget<double, float>;
+extern template class DiracMatrixComputeOMPTarget<double, double>;
+extern template class DiracMatrixComputeOMPTarget<std::complex<double>, std::complex<float>>;
+extern template class DiracMatrixComputeOMPTarget<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus
 
 #endif // QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H

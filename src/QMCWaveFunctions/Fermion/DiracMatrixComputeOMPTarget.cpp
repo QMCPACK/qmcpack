@@ -13,7 +13,8 @@
 
 namespace qmcplusplus
 {
-
-template class DiracMatrixComputeOMPTarget<QMCTraits::QTFull::ValueType, QMCTraits::ValueType>;
-
+template class DiracMatrixComputeOMPTarget<double, float>;
+template class DiracMatrixComputeOMPTarget<double, double>;
+template class DiracMatrixComputeOMPTarget<std::complex<double>, std::complex<float>>;
+template class DiracMatrixComputeOMPTarget<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus

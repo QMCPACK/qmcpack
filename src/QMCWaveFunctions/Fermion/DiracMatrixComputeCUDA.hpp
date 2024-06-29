@@ -370,7 +370,10 @@ public:
 #endif
 };
 
-extern template class DiracMatrixComputeCUDA<QMCTraits::QTFull::ValueType, QMCTraits::ValueType>;
+extern template class DiracMatrixComputeCUDA<double, float>;
+extern template class DiracMatrixComputeCUDA<double, double>;
+extern template class DiracMatrixComputeCUDA<std::complex<double>, std::complex<float>>;
+extern template class DiracMatrixComputeCUDA<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus
 
 #endif //QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H
