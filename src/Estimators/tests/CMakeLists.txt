@@ -16,6 +16,7 @@ set(TEST_ESTIMATORS_HELP
     EstimatorManagerNewTest.cpp
     EstimatorManagerInputTest.cpp
     GenerateRandomParticleSets.cpp
+    EnergyDensityTest.cpp
     MockGoldWalkerElements.cpp
     EstimatorTesting.cpp)
 
@@ -95,7 +96,7 @@ if(HAVE_MPI)
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
 
   #this is dependent on the directory creation and sym linking of earlier driver tests
-  set(SRCS FakeOperatorEstimator.cpp EstimatorManagerNewTest.cpp test_manager_mpi.cpp test_EnergyDensityEstimatorIntegration.cpp)
+  set(SRCS FakeOperatorEstimator.cpp test_manager_mpi.cpp test_EnergyDensityEstimatorIntegration.cpp)
   add_executable(${UTEST_EXE} ${SRCS})
   if(USE_OBJECT_TARGET)
     target_link_libraries(
