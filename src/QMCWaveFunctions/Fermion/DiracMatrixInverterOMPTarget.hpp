@@ -39,10 +39,10 @@ namespace qmcplusplus
  *  enforce the passing Dual data objects as arguments.  Except for the single
  *  particle API log_value which is not Dual type but had better have an address in a OMPtarget
  *  mapped region if target is used with it. This makes this API incompatible to
- *  that used by MatrixDelayedUpdateCuda and DiracMatrixComputeCUDA.
+ *  that used by MatrixDelayedUpdateCuda and DiracMatrixInverterCUDA.
  */
 template<typename VALUE_FP, typename VALUE = VALUE_FP>
-class DiracMatrixComputeOMPTarget : public DiracMatrixInverter<VALUE_FP, VALUE>
+class DiracMatrixInverterOMPTarget : public DiracMatrixInverter<VALUE_FP, VALUE>
 {
 public:
   using FullPrecReal = RealAlias<VALUE_FP>;
@@ -60,9 +60,9 @@ private:
   DiracMatrix<VALUE_FP> detEng_;
 
 public:
-  DiracMatrixComputeOMPTarget() : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixComputeOMPTarget") {}
+  DiracMatrixInverterOMPTarget() : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixInverterOMPTarget") {}
 
-  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixComputeOMPTarget>(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixInverterOMPTarget>(*this); }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
    * when VALUE_FP and TMAT are the same
@@ -72,7 +72,7 @@ public:
    * \param [in]    a_mat             matrix to be inverted
    * \param [out]   inv_a_mat         the inverted matrix
    * \param [out]   log_value         breaks compatibility of MatrixUpdateOmpTarget with
-   *                                  DiracMatrixComputeCUDA but is fine for OMPTarget        
+   *                                  DiracMatrixInverterCUDA but is fine for OMPTarget        
    */
   template<typename TMAT>
   inline void invert_transpose(const OffloadPinnedMatrix<TMAT>& a_mat,
@@ -109,10 +109,10 @@ public:
   }
 };
 
-extern template class DiracMatrixComputeOMPTarget<double, float>;
-extern template class DiracMatrixComputeOMPTarget<double, double>;
-extern template class DiracMatrixComputeOMPTarget<std::complex<double>, std::complex<float>>;
-extern template class DiracMatrixComputeOMPTarget<std::complex<double>, std::complex<double>>;
+extern template class DiracMatrixInverterOMPTarget<double, float>;
+extern template class DiracMatrixInverterOMPTarget<double, double>;
+extern template class DiracMatrixInverterOMPTarget<std::complex<double>, std::complex<float>>;
+extern template class DiracMatrixInverterOMPTarget<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus
 
 #endif // QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H

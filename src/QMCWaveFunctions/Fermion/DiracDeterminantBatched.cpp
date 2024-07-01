@@ -22,9 +22,9 @@
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #endif
 #include "CPU/SIMD/inner_product.hpp"
-#include "DiracMatrixComputeOMPTarget.hpp"
+#include "DiracMatrixInverterOMPTarget.hpp"
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-#include "DiracMatrixComputeCUDA.hpp"
+#include "DiracMatrixInverterCUDA.hpp"
 #endif
 
 namespace qmcplusplus
@@ -33,14 +33,14 @@ namespace qmcplusplus
 template<PlatformKind UEPL, typename FPVT, typename VT>
 struct DetInverterSelector
 {
-  using Inverter = DiracMatrixComputeOMPTarget<FPVT, VT>;
+  using Inverter = DiracMatrixInverterOMPTarget<FPVT, VT>;
 };
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 template<typename FPVT, typename VT>
 struct DetInverterSelector<PlatformKind::CUDA, FPVT, VT>
 {
-  using Inverter = DiracMatrixComputeCUDA<FPVT, VT>;
+  using Inverter = DiracMatrixInverterCUDA<FPVT, VT>;
 };
 #endif
 
@@ -1220,7 +1220,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::createResource(ResourceCollection& c
   if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
     collection.addResource(std::make_unique<typename DetInverterSelector<PL, FPVT, VT>::Inverter>());
   else
-    collection.addResource(std::make_unique<DiracMatrixComputeOMPTarget<FPVT, VT>>());
+    collection.addResource(std::make_unique<DiracMatrixInverterOMPTarget<FPVT, VT>>());
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>

@@ -9,12 +9,12 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "DiracMatrixComputeCUDA.hpp"
+#include "DiracMatrixInverterOMPTarget.hpp"
 
 namespace qmcplusplus
 {
-template class DiracMatrixComputeCUDA<double, float>;
-template class DiracMatrixComputeCUDA<double, double>;
-template class DiracMatrixComputeCUDA<std::complex<double>, std::complex<float>>;
-template class DiracMatrixComputeCUDA<std::complex<double>, std::complex<double>>;
+template class DiracMatrixInverterOMPTarget<double, float>;
+template class DiracMatrixInverterOMPTarget<double, double>;
+template class DiracMatrixInverterOMPTarget<std::complex<double>, std::complex<float>>;
+template class DiracMatrixInverterOMPTarget<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus
