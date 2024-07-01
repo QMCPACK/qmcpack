@@ -14,12 +14,14 @@
 
 #include <type_traits>
 
+#include "Configuration.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "DualAllocatorAliases.hpp"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "Platforms/CUDA/QueueCUDA.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
 #include "type_traits/complex_help.hpp"
+#include "type_traits/template_types.hpp"
 #include "Concurrency/OpenMP.h"
 #include "CPU/SIMD/algorithm.hpp"
 #if defined(ENABLE_OFFLOAD)
@@ -368,6 +370,10 @@ public:
 #endif
 };
 
+extern template class DiracMatrixComputeCUDA<double, float>;
+extern template class DiracMatrixComputeCUDA<double, double>;
+extern template class DiracMatrixComputeCUDA<std::complex<double>, std::complex<float>>;
+extern template class DiracMatrixComputeCUDA<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus
 
 #endif //QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H
