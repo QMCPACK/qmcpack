@@ -439,7 +439,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
                                                                 {2.535993099, 1.637133598, 3.689830303},
                                                             }};
   std::vector<ParticleSet> psets =
-      testing::generateRandomParticleSets<generate_test_data>(pset_target, pset_source, deterministic_rs, nwalkers);
+      testing::generateRandomParticleSets(pset_target, pset_source, deterministic_rs, nwalkers, generate_test_data);
 
   auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
   std::vector<UPtr<TrialWaveFunction>> twfcs(nwalkers);

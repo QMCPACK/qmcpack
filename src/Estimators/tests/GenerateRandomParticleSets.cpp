@@ -22,15 +22,15 @@ namespace qmcplusplus
 {
 namespace testing
 {
-template<bool GEN_TEST_DATA>
 std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
                                                     ParticleSet& pset_source,
                                                     std::vector<ParticleSet::ParticlePos>& deterministic_rs,
-                                                    int num_psets)
+                                                    int num_psets,
+                                                    bool generate_test_data)
 {
   int nwalkers = num_psets;
   std::vector<ParticleSet> psets(num_psets, pset_target);
-  if constexpr (GEN_TEST_DATA)
+  if (generate_test_data)
   {
     std::cout << "Initialize OneBodyDensityMatrices::accumulate psets with:\n{";
     std::vector<ParticleSet> psets;
@@ -52,19 +52,6 @@ std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
   }
   return psets;
 }
-
-template
-std::vector<ParticleSet> generateRandomParticleSets<false>(ParticleSet& pset_target,
-                                                           ParticleSet& pset_source,
-                                                           std::vector<ParticleSet::ParticlePos>& deterministic_rs,
-                                                           int num_psets);
-
-template
-std::vector<ParticleSet> generateRandomParticleSets<true>(ParticleSet& pset_target,
-                                                          ParticleSet& pset_source,
-                                                          std::vector<ParticleSet::ParticlePos>& deterministic_rs,
-                                                          int num_psets);
-
 
 } // namespace testing
 } // namespace qmcplusplus
