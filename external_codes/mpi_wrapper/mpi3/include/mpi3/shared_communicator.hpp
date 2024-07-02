@@ -79,12 +79,15 @@ struct shared_communicator : communicator {
 
 	~shared_communicator() = default;
 
-	shared_communicator      * operator&()      & {return this;}  // NOLINT(google-runtime-operator)
-	shared_communicator const* operator&() const& {return this;}  // NOLINT(google-runtime-operator)
-	shared_communicator      * operator&()     && {return this;}  // NOLINT(google-runtime-operator)
+	// NOLINTNEXTLINE(google-runtime-operator)
+	shared_communicator      * operator&()      & {return this;}  // cppcheck-suppress duplInheritedMember ;
+	// NOLINTNEXTLINE(google-runtime-operator)
+	shared_communicator const* operator&() const& {return this;}  // cppcheck-suppress duplInheritedMember ;
+	// NOLINTNEXTLINE(google-runtime-operator)
+	shared_communicator      * operator&()     && {return this;}  // cppcheck-suppress duplInheritedMember ;
 
-	inline shared_communicator split(int key) {return split_shared(key);}
-	auto split(int color, int key) {
+	inline shared_communicator split(int key) {return split_shared(key);}  // cppcheck-suppress duplInheritedMember ; changed return type from base
+	auto split(int color, int key) {  // cppcheck-suppress duplInheritedMember ; overwrite return type
 		return shared_communicator{communicator::split(color, key)};
 	}
 

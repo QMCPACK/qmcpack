@@ -1,4 +1,4 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2024 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_ALLOCATOR_HPP
 #define BOOST_MPI3_ALLOCATOR_HPP
@@ -45,14 +45,14 @@ struct /*__attribute__((aligned(0)))*/ allocator{
 	// cppcheck-suppress noExplicitConstructor
 	template<class U> allocator(allocator<U> const&/*other*/) {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : allocator convention
 
-	auto allocate(size_type n) {
+	inline auto allocate(size_type n) {
 		if(void* ptr = mpi3::malloc(n * static_cast<size_type>(sizeof(T)))) {
 			return static_cast<pointer>(ptr);
 		}
 		throw bad_alloc();
 	}
 	void             deallocate(pointer p, std::size_t /*size*/) { mpi3::free(p); }
-	static size_type max_size() { return std::numeric_limits<size_type>::max(); }
+	static inline size_type max_size() { return std::numeric_limits<size_type>::max(); }
 };
 
 template<typename T>
