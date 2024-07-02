@@ -47,8 +47,6 @@ c4q = generate_convert4qmc(
     identifier   = 'c4q',
     path         = 'diamond_ta_prim/scf',
     job          = job(cores=1),
-    no_jastrow   = True,
-    hdf5         = True,              # use hdf5 format
     dependencies = (scf,'orbitals'),
     )
 
