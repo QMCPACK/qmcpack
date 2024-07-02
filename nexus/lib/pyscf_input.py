@@ -407,7 +407,7 @@ $calculation
                     self.error('inconsistency in written and saved k-points')
                 #end if
                 if tiled_structure is None:
-                    tiling = array([1,1,1],dtype=int)
+                    tiling  = array([1,1,1],dtype=int)
                     ntwists = nkpoints
                 else:
                     if nkpoints==0:
@@ -438,8 +438,8 @@ $calculation
                     if not tiled_structure.has_tmatrix():
                         self.error('tiling matrix is missing')
                     #end if
-                    tmatrix = tiled_structure.tmatrix.copy()
-                    tiling = np.diag(tmatrix)
+                    tmatrix  = tiled_structure.tmatrix.copy()
+                    tiling   = np.diag(tmatrix)
                     diagonal = np.abs(tmatrix-np.diag(tiling)).sum()==0
                     if not diagonal:
                         self.error('non-diagonal tilings are not yet supported by save2qmcpack')
@@ -448,20 +448,27 @@ $calculation
             #end if
             s = '### generated conversion text ###\n'
             s += 'from PyscfToQmcpack import savetoqmcpack\n'
+            self.kpoints       = None
+            self.tiled_kpoints = None
+            self.tiled_kmap    = None
             if sys_kpoints is None:
                 s += "savetoqmcpack({0},{1},'{2}')\n".format(sys_var,mf_var,prefix)
             elif tiled_structure is None:
                 s += 'tiling = [{},{},{}]\n'.format(*tiling)
                 s += 'for n,kp in enumerate({}):\n'.format(kpts_var)
-                s += "    savetoqmcpack({0},{1},'{2}_twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts=[kp],sp_twist=kp)\n".format(sys_var,mf_var,prefix)
-                s += "#end for\n"                    
+                s += "    savetoqmcpack({0},{1},'{2}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts=[kp],sp_twist=kp)\n".format(sys_var,mf_var,prefix)
+                s += "#end for\n"
+                self.kpoints = sys_kpoints.copy()
             else:
                 s += 'tiling = [{},{},{}]\n'.format(*tiling)
                 s += "sp_kpoints = {}\n".format(render_array(tiled_kpoints,4))
                 s += "sp_kmap    = {}\n".format(render_array(kmap_array,4))
                 s += 'for n,kp in enumerate(sp_kpoints):\n'
-                s += "    savetoqmcpack({0},{1},'{2}_twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts={3}[sp_kmap[n]],sp_twist=kp)\n".format(sys_var,mf_var,prefix,kpts_var)
-                s += "#end for\n"                    
+                s += "    savetoqmcpack({0},{1},'{2}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts={3}[sp_kmap[n]],sp_twist=kp)\n".format(sys_var,mf_var,prefix,kpts_var)
+                s += "#end for\n"
+                self.kpoints       = sys_kpoints.copy()
+                self.tiled_kpoints = tiled_kpoints.copy()
+                self.tiled_kmap    = kmap_array.copy()
             #end if
             s += '### end generated conversion text ###\n'
             self.addendum = '\n'+s+'\n'
