@@ -106,7 +106,7 @@ struct ostream : public std::ostream {  // NOLINT(fuchsia-multiple-inheritance) 
 					}
 				}
 				output << /*"\e[1;32m"<<*/ std::setw(16) << std::left << range;
-				output << "→ " << /*"\e[0m"<<*/ m.second;
+				output << "→" << /*"\e[0m"<<*/ (m.second.find('\n')==std::string::npos?' ':'\n') << m.second;  // NOLINT(abseil-string-find-str-contains) TODO(correaa) find a better idiom for "contains"
 			}
 			if(messages.iterative_size() > 1) {
 				output << '\n';
