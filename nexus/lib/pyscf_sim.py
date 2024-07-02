@@ -53,7 +53,7 @@ class Pyscf(Simulation):
         result = obj()
         if result_name=='orbitals':
             inp = self.input
-            if inp.kpoints is None:
+            if 'kpoints' not in self or inp.kpoints is None:
                 h5_file = inp.prefix+'.h5'
             else:
                 h5_file = inp.prefix+'.twistnum_000.h5'

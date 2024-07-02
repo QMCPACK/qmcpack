@@ -554,9 +554,22 @@ def test_write():
         
         ### generated conversion text ###
         from PyscfToQmcpack import savetoqmcpack
-        savetoqmcpack(cell,mf,'scf',kpts)
+        tiling = [2,1,1]
+        sp_kpoints = array([
+            [0.0, 0.0, 0.0]])
+        sp_kmap    = array([
+            [0, 1]])
+        for n,kp in enumerate(sp_kpoints):
+            savetoqmcpack(cell,mf,'scf.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts=kpts[sp_kmap[n]],sp_twist=kp)
+        #end for
         ### end generated conversion text ###
         '''.format("'''")
+
+# old generated conversion text
+#       ### generated conversion text ###
+#       from PyscfToQmcpack import savetoqmcpack
+#       savetoqmcpack(cell,mf,'scf',kpts)
+#       ### end generated conversion text ###
 
     text = text.replace('[',' [ ').replace(']',' ] ')
     ref_text = ref_text.replace('[',' [ ').replace(']',' ] ')
