@@ -133,10 +133,10 @@ set(FERMION_SRCS
     TWFGrads.cpp
     WaveFunctionFactory.cpp)
 
-set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTableMethod.cpp Fermion/DiracMatrixComputeOMPTarget.cpp)
+set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTableMethod.cpp Fermion/DiracMatrixInverterOMPTarget.cpp)
 
 if(ENABLE_CUDA)
-  set(FERMION_SRCS ${FERMION_SRCS} Fermion/DiracMatrixComputeCUDA.cpp)
+  set(FERMION_SRCS ${FERMION_SRCS} Fermion/DiracMatrixInverterCUDA.cpp)
 endif()
 
 ####################################

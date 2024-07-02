@@ -50,7 +50,7 @@ namespace qmcplusplus
  *
  */
 template<typename VALUE_FP, typename VALUE = VALUE_FP>
-class DiracMatrixComputeCUDA
+class DiracMatrixInverterCUDA
 #if defined(ENABLE_OFFLOAD)
     : public DiracMatrixInverter<VALUE_FP, VALUE>
 #endif
@@ -224,15 +224,15 @@ class DiracMatrixComputeCUDA
   }
 
 public:
-  DiracMatrixComputeCUDA()
+  DiracMatrixInverterCUDA()
 #if defined(ENABLE_OFFLOAD)
-      : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixComputeCUDA")
+      : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixInverterCUDA")
 #endif
   {
     cublasErrorCheck(cublasCreate(&h_cublas_), "cublasCreate failed!");
   }
 
-  DiracMatrixComputeCUDA(const DiracMatrixComputeCUDA& other)
+  DiracMatrixInverterCUDA(const DiracMatrixInverterCUDA& other)
 #if defined(ENABLE_OFFLOAD)
       : DiracMatrixInverter<VALUE_FP, VALUE>(other.getName())
 #endif
@@ -240,10 +240,10 @@ public:
     cublasErrorCheck(cublasCreate(&h_cublas_), "cublasCreate failed!");
   }
 
-  ~DiracMatrixComputeCUDA() { cublasErrorCheck(cublasDestroy(h_cublas_), "cublasDestroy failed!"); }
+  ~DiracMatrixInverterCUDA() { cublasErrorCheck(cublasDestroy(h_cublas_), "cublasDestroy failed!"); }
 
 #if defined(ENABLE_OFFLOAD)
-  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixComputeCUDA>(*this); }
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixInverterCUDA>(*this); }
 #endif
 
   /** Given a_mat returns inverted amit and log determinant of a_matches.
@@ -370,10 +370,10 @@ public:
 #endif
 };
 
-extern template class DiracMatrixComputeCUDA<double, float>;
-extern template class DiracMatrixComputeCUDA<double, double>;
-extern template class DiracMatrixComputeCUDA<std::complex<double>, std::complex<float>>;
-extern template class DiracMatrixComputeCUDA<std::complex<double>, std::complex<double>>;
+extern template class DiracMatrixInverterCUDA<double, float>;
+extern template class DiracMatrixInverterCUDA<double, double>;
+extern template class DiracMatrixInverterCUDA<std::complex<double>, std::complex<float>>;
+extern template class DiracMatrixInverterCUDA<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus
 
 #endif //QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H
