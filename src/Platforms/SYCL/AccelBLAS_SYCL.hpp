@@ -129,6 +129,28 @@ inline void ger(BLASHandle<PlatformKind::SYCL>& handle,
 }
 
 template<typename T>
+inline void ger(BLASHandle<PlatformKind::SYCL>& handle,
+                const int m,
+                const int n,
+                const std::complex<T>& alpha,
+                const std::complex<T>* const x,
+                const int incx,
+                const std::complex<T>* const y,
+                const int incy,
+                std::complex<T>* const A,
+                const int lda)
+{
+  try
+  {
+    oneapi::mkl::blas::geru(handle.queue_, m, n, alpha, x, incx, y, incy, A, lda);
+  }
+  catch (oneapi::mkl::exception& e)
+  {
+    throw std::runtime_error(std::string("AccelBLAS::ger exception: ") + e.what());
+  }
+}
+
+template<typename T>
 inline void ger_batched(BLASHandle<PlatformKind::SYCL>& handle,
                         const int m,
                         const int n,
