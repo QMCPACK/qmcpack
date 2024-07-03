@@ -125,7 +125,7 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
   PooledData<double> abuffer;
   PooledData<int> aibuffer;
-  aibuffer.add(Version.begin(), Version.end()); //myComm->bcast(Version);
+  aibuffer.add(Version.begin(), Version.end());          //myComm->bcast(Version);
   abuffer.add(Lattice.begin(), Lattice.end());           //myComm->bcast(Lattice);
   abuffer.add(RecipLattice.begin(), RecipLattice.end()); //myComm->bcast(RecipLattice);
   abuffer.add(SuperLattice.begin(), SuperLattice.end()); //myComm->bcast(SuperLattice);
@@ -617,23 +617,24 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
   {
     std::ostringstream msg;
     msg << "To developer: User is requesting for orbitals in an invalid spin group " << spin
-                << ". Current h5 file only contains spin groups " << "[0.." << NumSpins - 1 << "]." << std::endl;
+        << ". Current h5 file only contains spin groups " << "[0.." << NumSpins - 1 << "]." << std::endl;
     msg << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized "
-                   "calculations. "
-                << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file."
-                << std::endl;
+           "calculations. "
+        << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file."
+        << std::endl;
     myComm->barrier_and_abort(msg.str());
   }
 
   std::string exception_msg;
-  try {
+  try
+  {
     if (myComm->rank() == 0)
       NumDistinctOrbitals = OccupyBands_ESHDF(H5File, spin, sortBands, numOrbs, *FullBands[spin]);
   }
   catch (std::exception& e)
   {
     NumDistinctOrbitals = 0;
-    exception_msg = e.what();
+    exception_msg       = e.what();
   }
 
   myComm->bcast(NumDistinctOrbitals);
@@ -644,7 +645,7 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
 void EinsplineSetBuilder::bcastSortedBands(std::vector<BandInfo>& sorted_bands) const
 {
   const bool root = myComm->rank() == 0;
-  int nbands = sorted_bands.size();
+  int nbands      = sorted_bands.size();
   myComm->bcast(nbands);
 
   //buffer to serialize BandInfo

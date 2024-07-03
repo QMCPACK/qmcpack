@@ -43,14 +43,17 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
 void EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
   if (!H5File.open(H5FileName, H5F_ACC_RDONLY))
-    throw std::runtime_error("Could not open HDF5 file \"" + std::string(H5FileName) + "\" in EinsplineSetBuilder::ReadOrbitalInfo.\n");
+    throw std::runtime_error("Could not open HDF5 file \"" + std::string(H5FileName) +
+                             "\" in EinsplineSetBuilder::ReadOrbitalInfo.\n");
 
   {
     // Read format
     std::string format;
     H5File.read(format, "/format");
     if (format.find("ES") == std::string::npos)
-      throw std::runtime_error("Format string input \"" + format + "\" doesn't contain \"ES\" keyword. h5 file format is too old or it is not a bspline orbital file!");
+      throw std::runtime_error(
+          "Format string input \"" + format +
+          "\" doesn't contain \"ES\" keyword. h5 file format is too old or it is not a bspline orbital file!");
     H5File.read(Version, "/version");
     app_log() << "  HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << std::endl;
   }
@@ -473,7 +476,11 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
   return hasPsig;
 }
 
-int EinsplineSetBuilder::OccupyBands_ESHDF(hdf_archive& h5, int spin, int sortBands, int numOrbs, std::vector<BandInfo>& bandinfo_set) const
+int EinsplineSetBuilder::OccupyBands_ESHDF(hdf_archive& h5,
+                                           int spin,
+                                           int sortBands,
+                                           int numOrbs,
+                                           std::vector<BandInfo>& bandinfo_set) const
 {
   std::vector<BandInfo>& SortBands(bandinfo_set);
   SortBands.clear(); //??? can exit if SortBands is already made?

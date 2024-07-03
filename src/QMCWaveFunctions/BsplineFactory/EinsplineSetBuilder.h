@@ -220,7 +220,7 @@ public:
     std::vector<TinyVector<double, OHMMS_DIM>> ion_pos;
     int Ncenters;
 
-    CenterInfo() : Ncenters(0){};
+    CenterInfo() : Ncenters(0) {};
 
     void resize(int ncenters)
     {
@@ -251,11 +251,6 @@ public:
   bool makeRotations;
 
 protected:
-  /** broadcast sorted bands
-   * @param sorted_bands intended set
-   */
-  void bcastSortedBands(std::vector<BandInfo>& sorted_bands) const;
-
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
    */
@@ -283,7 +278,16 @@ private:
    * @param[out] bandinfo_set sorted and stored bandinfo
    * @return the number disinct bands
    */
-  int OccupyBands_ESHDF(hdf_archive& h5, int spin, int sortBands, int numOrbs, std::vector<BandInfo>& bandinfo_set) const;
+  int OccupyBands_ESHDF(hdf_archive& h5,
+                        int spin,
+                        int sortBands,
+                        int numOrbs,
+                        std::vector<BandInfo>& bandinfo_set) const;
+
+  /** broadcast sorted bands
+   * @param sorted_bands intended set
+   */
+  void bcastSortedBands(std::vector<BandInfo>& sorted_bands) const;
 };
 
 } // namespace qmcplusplus
