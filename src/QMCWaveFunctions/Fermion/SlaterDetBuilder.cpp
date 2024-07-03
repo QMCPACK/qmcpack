@@ -346,11 +346,11 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   std::unique_ptr<SPOSet> psi_clone(psi->makeClone());
   psi_clone->checkObject();
 
-  if (const auto group_size = targetPtcl.groupsize(spin_group); psi_clone->getOrbitalSetSize() < group_size)
+  if (const auto nptcl_group = targetPtcl.groupsize(spin_group); psi_clone->getOrbitalSetSize() < nptcl_group)
   {
     std::ostringstream err_msg;
     err_msg << "The SPOSet " << psi_clone->getName() << " only has " << psi_clone->getOrbitalSetSize() << " orbitals "
-            << "but this determinant needs at least " << group_size << std::endl;
+            << "but this determinant needs at least " << nptcl_group << std::endl;
     myComm->barrier_and_abort(err_msg.str());
   }
 
@@ -539,23 +539,35 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    const auto group_size = targetPtcl.groupsize(grp);
-    dets.emplace_back(
-        std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor, targetPtcl.first(grp), group_size));
+    const auto nptcl_group = targetPtcl.groupsize(grp);
+    // convert ci_configuration to ci_configuration2
     std::vector<ci_configuration2> list(uniqueConfgs[grp].size());
     for (int i = 0; i < list.size(); i++)
     {
-      list[i].occup.resize(group_size);
-      int cnt = 0;
-      for (int k = 0; k < uniqueConfgs[grp][i].occup.size(); k++)
-        if (uniqueConfgs[grp][i].occup[k])
-          list[i].occup[cnt++] = k;
-      if (cnt != group_size)
+      std::ostringstream err_msg;
+      if (const auto orb_space_size = uniqueConfgs[grp][i].occup.size();
+          orb_space_size > spo_clones[grp]->getOrbitalSetSize())
+        err_msg << "The unique determinant " << i << " needs at least " << orb_space_size
+                << " occupied and unoccupied single particle orbitals but SPOSet '" << spo_clones[grp]->getName()
+                << "' only contains " << spo_clones[grp]->getOrbitalSetSize() << "." << std::endl;
+      else
       {
-        APP_ABORT("Error in SlaterDetBuilder::createMSDFast for ptcl group "
-                  << grp << ", problems with ci configuration list. \n");
+        list[i].occup.resize(nptcl_group);
+        int cnt = 0;
+        for (int k = 0; k < orb_space_size; k++)
+          if (uniqueConfgs[grp][i].occup[k])
+            list[i].occup[cnt++] = k;
+        if (cnt != nptcl_group)
+          err_msg << "The unique determinant configuration " << i << " contains " << cnt
+                  << " occupied orbitals not matching " << nptcl_group << " particles." << std::endl;
       }
+      if (const std::string msg = err_msg.str(); msg.length())
+        myComm->barrier_and_abort("SlaterDetBuilder::createMSDFast Issues found in the particle group " + std::to_string(grp) + " :\n" + msg);
     }
+
+    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor, targetPtcl.first(grp),
+                                                              nptcl_group));
+
     // reorder unique determinants for a given spin based on the selected reference determinant
     dets[grp]->createDetData(C2nodes[grp][refdet_id], list, C2nodes[grp], C2nodes_sorted[grp]);
   }
