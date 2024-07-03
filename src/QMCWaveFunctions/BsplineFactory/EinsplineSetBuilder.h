@@ -167,8 +167,8 @@ public:
   TinyVector<int, 3> Version;
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;
-  bool ReadOrbitalInfo(bool skipChecks = false);
-  bool ReadOrbitalInfo_ESHDF(bool skipChecks = false);
+  void ReadOrbitalInfo(bool skipChecks = false);
+  void ReadOrbitalInfo_ESHDF(bool skipChecks = false);
   void BroadcastOrbitalInfo();
   bool CheckLattice();
 

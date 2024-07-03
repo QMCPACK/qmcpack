@@ -84,8 +84,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
   /////////////////////////////////////////////////////////////////
   orb_info_timer.restart();
   if (myComm->rank() == 0)
-    if (!ReadOrbitalInfo(skipChecks))
-      throw std::runtime_error("EinsplineSetBuilder::set_metadata Error reading orbital info from HDF5 file.");
+    ReadOrbitalInfo(skipChecks);
   app_log() << "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << orb_info_timer.elapsed() << std::endl;
   myComm->barrier();
 

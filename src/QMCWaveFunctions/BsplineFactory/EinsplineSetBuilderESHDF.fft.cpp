@@ -40,37 +40,26 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
     return (leftB.BandIndex < rightB.BandIndex);
 };
 
-bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
+void EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
   if (!H5File.open(H5FileName, H5F_ACC_RDONLY))
-  {
-    app_error() << "Could not open HDF5 file \"" << H5FileName << "\" in EinsplineSetBuilder::ReadOrbitalInfo.\n";
-    return false;
-  }
+    throw std::runtime_error("Could not open HDF5 file \"" + std::string(H5FileName) + "\" in EinsplineSetBuilder::ReadOrbitalInfo.\n");
 
-  try
   {
     // Read format
     std::string format;
     H5File.read(format, "/format");
     if (format.find("ES") == std::string::npos)
-      throw std::runtime_error("Format string input \"" + format + "\" doesn't contain \"ES\" keyword.");
+      throw std::runtime_error("Format string input \"" + format + "\" doesn't contain \"ES\" keyword. h5 file format is too old or it is not a bspline orbital file!");
     Format = ESHDF;
     H5File.read(Version, "/version");
     app_log() << "  HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << std::endl;
   }
-  catch (const std::exception& e)
-  {
-    app_error() << e.what() << std::endl
-                << "EinsplineSetBuilder::ReadOrbitalInfo h5 file format is too old or it is not a bspline orbital file!"
-                << std::endl;
-    return false;
-  }
 
-  return ReadOrbitalInfo_ESHDF(skipChecks);
+  ReadOrbitalInfo_ESHDF(skipChecks);
 }
 
-bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
+void EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 {
   app_log() << "  Reading orbital file in ESHDF format.\n";
   H5File.read(Version, "/version");
@@ -360,10 +349,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     }
   }
   else
-  {
     app_log() << "   Skip initialization of the density" << std::endl;
-  }
-  return true;
 }
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
