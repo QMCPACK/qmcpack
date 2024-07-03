@@ -102,6 +102,5 @@ auto main(int /*argc*/, char** /*argv*/) -> int try { // NOLINT(bugprone-excepti
 	}
 	static_assert(boost::mpi3::has_datatype<vec3>{});
 } catch(...) {
-	throw;
 	return 1;
 }
