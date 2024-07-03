@@ -613,20 +613,32 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
 
 void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks)
 {
-  if (myComm->rank() != 0)
-    return;
   if (spin >= NumSpins && !skipChecks)
   {
-    app_error() << "To developer: User is requesting for orbitals in an invalid spin group " << spin
+    std::ostringstream msg;
+    msg << "To developer: User is requesting for orbitals in an invalid spin group " << spin
                 << ". Current h5 file only contains spin groups " << "[0.." << NumSpins - 1 << "]." << std::endl;
-    app_error() << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized "
+    msg << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized "
                    "calculations. "
                 << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file."
                 << std::endl;
-    abort();
+    myComm->barrier_and_abort(msg.str());
   }
 
-  OccupyBands_ESHDF(spin, sortBands, numOrbs);
+  std::string exception_msg;
+  try {
+    if (myComm->rank() == 0)
+      NumDistinctOrbitals = OccupyBands_ESHDF(H5File, spin, sortBands, numOrbs, *FullBands[spin]);
+  }
+  catch (std::exception& e)
+  {
+    NumDistinctOrbitals = 0;
+    exception_msg = e.what();
+  }
+
+  myComm->bcast(NumDistinctOrbitals);
+  if (NumDistinctOrbitals == 0)
+    myComm->barrier_and_abort(exception_msg);
 }
 
 void EinsplineSetBuilder::bcastSortedBands(std::vector<BandInfo>& sorted_bands) const

@@ -473,12 +473,9 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
   return hasPsig;
 }
 
-void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs)
+int EinsplineSetBuilder::OccupyBands_ESHDF(hdf_archive& h5, int spin, int sortBands, int numOrbs, std::vector<BandInfo>& bandinfo_set) const
 {
-  if (myComm->rank() != 0)
-    return;
-
-  std::vector<BandInfo>& SortBands(*FullBands[spin]);
+  std::vector<BandInfo>& SortBands(bandinfo_set);
   SortBands.clear(); //??? can exit if SortBands is already made?
   int maxOrbs(0);
   for (int ti = 0; ti < DistinctTwists.size(); ti++)
@@ -488,7 +485,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     std::ostringstream ePath;
     ePath << "/electrons/kpoint_" << tindex << "/spin_" << spin << "/eigenvalues";
     std::vector<double> eigvals;
-    H5File.read(eigvals, ePath.str());
+    h5.read(eigvals, ePath.str());
     for (int bi = 0; bi < NumBands; bi++)
     {
       BandInfo band;
@@ -507,9 +504,10 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 
   app_log() << SortBands.size() << " complex-valued orbitals supplied by h5 can be expanded up to " << maxOrbs
             << " SPOs." << std::endl;
+
   if (maxOrbs < numOrbs)
-    myComm->barrier_and_abort("EinsplineSetBuilder::OccupyBands_ESHDF user input requests "
-                              "more orbitals than what the h5 file supplies.");
+    throw std::runtime_error("EinsplineSetBuilder::OccupyBands_ESHDF user input requests "
+                             "more orbitals than what the h5 file supplies.\n");
 
   // Now sort the bands by energy
   if (sortBands == 2)
@@ -680,8 +678,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       numOrbs_counter++;
     orbIndex++;
   }
-  NumDistinctOrbitals = orbIndex;
   app_log() << "We will read " << NumDistinctOrbitals << " distinct complex-valued orbitals from h5.\n";
+  return orbIndex;
 }
 
 } // namespace qmcplusplus

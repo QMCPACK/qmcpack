@@ -162,7 +162,6 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   Timer mytimer;
   mytimer.restart();
   OccupyBands(spinSet, sortBands, numOrbs, skipChecks);
-  myComm->bcast(NumDistinctOrbitals);
   if (spinSet == 0)
     TileIons();
 
@@ -200,7 +199,6 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   //Make the down spin set.
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
-  myComm->bcast(NumDistinctOrbitals);
   bcastSortedBands(*FullBands[spinSet2]);
   auto bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
   bspline_zd_d->finalizeConstruction();

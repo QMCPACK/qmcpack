@@ -239,7 +239,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   Timer mytimer;
   mytimer.restart();
   OccupyBands(spinSet, sortBands, numOrbs, skipChecks);
-  myComm->bcast(NumDistinctOrbitals);
   if (spinSet == 0)
     TileIons();
 
