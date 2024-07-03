@@ -256,7 +256,7 @@ protected:
    * @param N number of state
    * @param root true if it is the i/o node
    */
-  void bcastSortBands(int splin, int N, bool root);
+  void bcastSortedBands(std::vector<BandInfo>& sorted_bands) const;
 
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node

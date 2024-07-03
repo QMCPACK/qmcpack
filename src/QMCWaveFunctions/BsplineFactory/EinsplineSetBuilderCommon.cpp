@@ -629,55 +629,39 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
   OccupyBands_ESHDF(spin, sortBands, numOrbs);
 }
 
-void EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
+void EinsplineSetBuilder::bcastSortedBands(std::vector<BandInfo>& sorted_bands) const
 {
-  std::vector<BandInfo>& SortBands(*FullBands[spin]);
-
-  TinyVector<int, 2> nbands(int(SortBands.size()), n);
-  mpi::bcast(*myComm, nbands);
+  const bool root = myComm->rank() == 0;
+  int nbands = sorted_bands.size();
+  myComm->bcast(nbands);
 
   //buffer to serialize BandInfo
-  PooledData<OHMMS_PRECISION_FULL> misc(nbands[0] * 4);
-  n = NumDistinctOrbitals = nbands[1];
+  PooledData<OHMMS_PRECISION_FULL> misc(nbands * 4);
 
   if (root)
   {
     misc.rewind();
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < sorted_bands.size(); ++i)
     {
-      misc.put(SortBands[i].TwistIndex);
-      misc.put(SortBands[i].BandIndex);
-      misc.put(SortBands[i].Energy);
-      misc.put(SortBands[i].MakeTwoCopies);
-    }
-
-    for (int i = n; i < SortBands.size(); ++i)
-    {
-      misc.put(SortBands[i].TwistIndex);
-      misc.put(SortBands[i].BandIndex);
-      misc.put(SortBands[i].Energy);
-      misc.put(SortBands[i].MakeTwoCopies);
+      misc.put(sorted_bands[i].TwistIndex);
+      misc.put(sorted_bands[i].BandIndex);
+      misc.put(sorted_bands[i].Energy);
+      misc.put(sorted_bands[i].MakeTwoCopies);
     }
   }
+
   myComm->bcast(misc);
 
   if (!root)
   {
-    SortBands.resize(nbands[0]);
+    sorted_bands.resize(nbands);
     misc.rewind();
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < sorted_bands.size(); ++i)
     {
-      misc.get(SortBands[i].TwistIndex);
-      misc.get(SortBands[i].BandIndex);
-      misc.get(SortBands[i].Energy);
-      misc.get(SortBands[i].MakeTwoCopies);
-    }
-    for (int i = n; i < SortBands.size(); ++i)
-    {
-      misc.get(SortBands[i].TwistIndex);
-      misc.get(SortBands[i].BandIndex);
-      misc.get(SortBands[i].Energy);
-      misc.get(SortBands[i].MakeTwoCopies);
+      misc.get(sorted_bands[i].TwistIndex);
+      misc.get(sorted_bands[i].BandIndex);
+      misc.get(sorted_bands[i].Energy);
+      misc.get(sorted_bands[i].MakeTwoCopies);
     }
   }
 }

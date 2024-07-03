@@ -239,6 +239,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   Timer mytimer;
   mytimer.restart();
   OccupyBands(spinSet, sortBands, numOrbs, skipChecks);
+  myComm->bcast(NumDistinctOrbitals);
   if (spinSet == 0)
     TileIons();
 
@@ -266,7 +267,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   MixedSplineReader->setCommon(XMLRoot);
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
-  bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
+  bcastSortedBands(*FullBands[spinSet]);
   auto OrbitalSet = MixedSplineReader->create_spline_set(spinSet, spo_cur);
   if (!OrbitalSet)
     myComm->barrier_and_abort("Failed to create SPOSet*");
