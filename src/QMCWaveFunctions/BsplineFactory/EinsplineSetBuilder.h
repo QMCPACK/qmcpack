@@ -287,7 +287,7 @@ private:
   /** broadcast sorted bands
    * @param sorted_bands intended set
    */
-  void bcastSortedBands(std::vector<BandInfo>& sorted_bands) const;
+  void bcastBandInfoSet(std::vector<BandInfo>& sorted_bands) const;
 };
 
 } // namespace qmcplusplus

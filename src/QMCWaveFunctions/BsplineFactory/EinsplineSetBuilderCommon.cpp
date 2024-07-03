@@ -640,9 +640,11 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
   myComm->bcast(NumDistinctOrbitals);
   if (NumDistinctOrbitals == 0)
     myComm->barrier_and_abort(exception_msg);
+
+  bcastBandInfoSet(*FullBands[spin]);
 }
 
-void EinsplineSetBuilder::bcastSortedBands(std::vector<BandInfo>& sorted_bands) const
+void EinsplineSetBuilder::bcastBandInfoSet(std::vector<BandInfo>& sorted_bands) const
 {
   const bool root = myComm->rank() == 0;
   int nbands      = sorted_bands.size();
