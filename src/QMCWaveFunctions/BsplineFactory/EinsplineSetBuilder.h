@@ -157,13 +157,6 @@ public:
   //////////////////////////////////////
   hdf_archive H5File;
   std::filesystem::path H5FileName;
-  // HDF5 orbital file version
-  typedef enum
-  {
-    QMCPACK,
-    ESHDF
-  } FormatType;
-  FormatType Format;
   TinyVector<int, 3> Version;
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;

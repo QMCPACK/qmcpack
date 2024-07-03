@@ -51,7 +51,6 @@ void EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
     H5File.read(format, "/format");
     if (format.find("ES") == std::string::npos)
       throw std::runtime_error("Format string input \"" + format + "\" doesn't contain \"ES\" keyword. h5 file format is too old or it is not a bspline orbital file!");
-    Format = ESHDF;
     H5File.read(Version, "/version");
     app_log() << "  HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << std::endl;
   }

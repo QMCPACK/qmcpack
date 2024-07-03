@@ -43,7 +43,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, C
       ParticleSets(psets),
       TargetPtcl(p),
       XMLRoot(cur),
-      Format(QMCPACK),
       NumBands(0),
       NumElectrons(0),
       NumSpins(0),
@@ -127,7 +126,6 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   PooledData<double> abuffer;
   PooledData<int> aibuffer;
   aibuffer.add(Version.begin(), Version.end()); //myComm->bcast(Version);
-  aibuffer.add(Format);
   abuffer.add(Lattice.begin(), Lattice.end());           //myComm->bcast(Lattice);
   abuffer.add(RecipLattice.begin(), RecipLattice.end()); //myComm->bcast(RecipLattice);
   abuffer.add(SuperLattice.begin(), SuperLattice.end()); //myComm->bcast(SuperLattice);
@@ -146,7 +144,6 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
     abuffer.rewind();
     aibuffer.rewind();
     aibuffer.get(Version.begin(), Version.end());
-    aibuffer.get(Format);
     abuffer.get(Lattice.begin(), Lattice.end());
     abuffer.get(RecipLattice.begin(), RecipLattice.end());
     abuffer.get(SuperLattice.begin(), SuperLattice.end());
@@ -628,75 +625,8 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
                 << std::endl;
     abort();
   }
-  if (Format == ESHDF)
-  {
-    OccupyBands_ESHDF(spin, sortBands, numOrbs);
-    return;
-  }
-  std::string eigenstatesGroup;
-  if (Version[0] == 0 && Version[1] == 11)
-    eigenstatesGroup = "/eigenstates_3";
-  else if (Version[0] == 0 && Version[1] == 20)
-    eigenstatesGroup = "/eigenstates";
 
-  if (FullBands[spin]->size())
-  {
-    app_log() << "  FullBand[" << spin << "] exists. Reuse it. " << std::endl;
-    return;
-  }
-
-  std::vector<BandInfo>& SortBands(*FullBands[spin]);
-
-  SortBands.clear();
-  for (int ti = 0; ti < DistinctTwists.size(); ti++)
-  {
-    int tindex = DistinctTwists[ti];
-    // First, read valence states
-    for (int bi = 0; bi < NumBands; bi++)
-    {
-      BandInfo band;
-      band.TwistIndex    = tindex;
-      band.BandIndex     = bi;
-      band.MakeTwoCopies = MakeTwoCopies[ti];
-      // Read eigenenergy from file
-      std::ostringstream ePath, sPath;
-      if ((Version[0] == 0 && Version[1] == 11) || NumTwists > 1)
-      {
-        ePath << eigenstatesGroup << "/twist_" << tindex << "/band_" << bi << "/eigenvalue";
-        sPath << eigenstatesGroup << "/twist_" << tindex << "/band_" << bi << "/spin";
-      }
-      else if (NumBands > 1)
-      {
-        ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
-        sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
-      }
-      else
-      {
-        ePath << eigenstatesGroup << "/twist/band/eigenvalue";
-        sPath << eigenstatesGroup << "/twist/band/spin";
-      }
-      band.Energy = -1.01e100;
-      H5File.read(band.Energy, ePath.str());
-      if (band.Energy > -1.0e100)
-      {
-        H5File.read(band.Spin, sPath.str());
-        if (band.Spin == spin)
-          SortBands.push_back(band);
-      }
-    }
-  }
-  int orbIndex        = 0;
-  int numOrbs_counter = 0;
-  while (numOrbs_counter < numOrbs)
-  {
-    if (SortBands[orbIndex].MakeTwoCopies)
-      numOrbs_counter += 2;
-    else
-      numOrbs_counter++;
-    orbIndex++;
-  }
-  NumDistinctOrbitals = orbIndex;
-  app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
+  OccupyBands_ESHDF(spin, sortBands, numOrbs);
 }
 
 void EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
