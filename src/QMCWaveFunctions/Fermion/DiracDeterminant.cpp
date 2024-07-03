@@ -45,14 +45,6 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
   RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
   if (rot_spo)
     rot_spo->buildOptVariables(NumPtcls);
-
-  if (Phi->getOrbitalSetSize() < NumPtcls)
-  {
-    std::ostringstream err_msg;
-    err_msg << "The SPOSet " << Phi->getName() << " only has " << Phi->getOrbitalSetSize() << " orbitals "
-            << "but this determinant needs at least " << NumPtcls << std::endl;
-    throw std::runtime_error(err_msg.str());
-  }
 }
 
 template<typename DU_TYPE>

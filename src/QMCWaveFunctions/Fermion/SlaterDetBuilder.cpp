@@ -346,6 +346,14 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   std::unique_ptr<SPOSet> psi_clone(psi->makeClone());
   psi_clone->checkObject();
 
+  if (const auto group_size = targetPtcl.groupsize(spin_group); psi_clone->getOrbitalSetSize() < group_size)
+  {
+    std::ostringstream err_msg;
+    err_msg << "The SPOSet " << psi_clone->getName() << " only has " << psi_clone->getOrbitalSetSize() << " orbitals "
+            << "but this determinant needs at least " << group_size << std::endl;
+    myComm->barrier_and_abort(err_msg.str());
+  }
+
   const int firstIndex = targetPtcl.first(spin_group);
   const int lastIndex  = targetPtcl.last(spin_group);
 
@@ -356,7 +364,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
             << "and no larger than the electron count within a determinant!\n"
             << "Acceptable value [1," << lastIndex - firstIndex << "], "
             << "user input " + std::to_string(delay_rank);
-    APP_ABORT(err_msg.str());
+    myComm->barrier_and_abort(err_msg.str());
   }
   else if (delay_rank == 0)
   {
