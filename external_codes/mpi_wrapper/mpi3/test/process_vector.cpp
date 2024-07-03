@@ -14,7 +14,7 @@ struct long_long {
 };
 
 template<class Archive>
-void serialize(Archive& ar, long_long& l, unsigned /*version*/= 0) {  // cppcheck-suppress unusedFunction ; false positive in cppcheck 2.11
+void serialize(Archive& ar, long_long& l, unsigned /*version*/= 0) {  // cppcheck-suppress [unusedFunction,unmatchedSuppression] ; false positive in cppcheck 2.11
 	ar& l.value;
 }
 
