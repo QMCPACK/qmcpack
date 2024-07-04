@@ -178,6 +178,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
     if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
       checkLogAndGL(crowd, "checkGL_after_moves");
+    ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
 
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
