@@ -113,6 +113,8 @@ const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vect
   }
 
   const RealType target = prob * wgt_t;
+  // prob is in range [0, 1). target < wgt_t should be satisfied even if prob is very close to 1.
+  assert(target < wgt_t);
   // find ibar which satisify txy_scan_[ibar-1] <= target < txy_scan_[ibar]
   int ibar = 0;
   while (ibar < txy_scan_.size() && txy_scan_[ibar] <= target)
