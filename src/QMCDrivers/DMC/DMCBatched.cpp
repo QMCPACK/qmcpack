@@ -24,6 +24,9 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
+#include <PSdispatcher.h>
+#include <TWFdispatcher.h>
+#include <Hdispatcher.h>
 #include "EstimatorInputDelegates.h"
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
@@ -77,9 +80,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
-  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
-  auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
-  auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
+  const PSdispatcher ps_dispatcher(!sft.serializing_crowd_walkers);
+  const TWFdispatcher twf_dispatcher(!sft.serializing_crowd_walkers);
+  const Hdispatcher ham_dispatcher(!sft.serializing_crowd_walkers);
 
   auto& walkers = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
@@ -245,7 +248,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer buffer_local(timers.buffer_timer);
     twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
     if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
-      checkLogAndGL(crowd, "checkGL_after_moves");
+      checkLogAndGL(crowd, "checkGL_after_moves", sft.serializing_crowd_walkers);
     ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
 
@@ -322,7 +325,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     {
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
       if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_TMOVE)
-        checkLogAndGL(crowd, "checkGL_after_tmove");
+        checkLogAndGL(crowd, "checkGL_after_tmove", sft.serializing_crowd_walkers);
       ps_dispatcher.flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);
     }
   }
@@ -442,7 +445,8 @@ bool DMCBatched::run()
   //register walker log collectors into the manager
   wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
 
-  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_);
+  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_,
+                           serializing_crowd_walkers_);
 
   LoopTimer<> dmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
@@ -451,7 +455,8 @@ bool DMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_),
+                       serializing_crowd_walkers_);
 
     FullPrecRealType energy, variance;
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
