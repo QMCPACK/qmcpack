@@ -13,7 +13,6 @@
 #include <vector>
 #include "QMCDrivers/MCPopulation.h"
 #include "RandomGenerator.h"
-#include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "Estimators/EstimatorManagerCrowd.h"
 #include "WalkerLogCollector.h"
@@ -54,8 +53,7 @@ public:
         const DriverWalkerResourceCollection& driverwalker_res,
         const ParticleSet& pset,
         const TrialWaveFunction& twf,
-        const QMCHamiltonian& hamiltonian_temp,
-        const MultiWalkerDispatchers& dispatchers);
+        const QMCHamiltonian& hamiltonian_temp);
   ~Crowd();
   /** Because so many vectors allocate them upfront.
    *
@@ -116,8 +114,6 @@ public:
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
   unsigned long get_accept() { return n_accept_; }
   unsigned long get_reject() { return n_reject_; }
-
-  const MultiWalkerDispatchers& dispatchers_;
 
   /// get refereces of active walker log collectors. If walker logging is disabled, the RefVector size can be zero.
   static RefVector<WalkerLogCollector> getWalkerLogCollectorRefs(const UPtrVector<Crowd>& crowds);

@@ -39,7 +39,6 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "ProjectData.h"
-#include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "TauParams.hpp"
 #include "Particle/MCCoords.hpp"
@@ -237,7 +236,10 @@ public:
    */
   void process(xmlNodePtr cur) override = 0;
 
-  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
+  static void initialLogEvaluation(int crowd_id,
+                                   UPtrVector<Crowd>& crowds,
+                                   UPtrVector<ContextForSteps>& step_context,
+                                   const bool serializing_crowd_walkers);
 
 
   /** should be set in input don't see a reason to set individually
@@ -326,7 +328,7 @@ protected:
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
-  static void checkLogAndGL(Crowd& crowd, const std::string_view location);
+  static void checkLogAndGL(Crowd& crowd, const std::string_view location, const bool serializing_crowd_walkers);
 
   const std::string& get_root_name() const override { return project_data_.currentMainRoot(); }
 
@@ -432,8 +434,8 @@ protected:
    */
   struct DriverWalkerResourceCollection golden_resource_;
 
-  /// multi walker dispatchers
-  const MultiWalkerDispatchers dispatchers_;
+  /// if true, calculating walker one-by-one within a crowd
+  const bool serializing_crowd_walkers_;
 
   /** Observables manager
    *  Has very problematic owner ship and life cycle.
