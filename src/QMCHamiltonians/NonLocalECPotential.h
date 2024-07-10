@@ -235,8 +235,9 @@ private:
    * member variable nonLocalOps.Txy is updated
    * @param P particle set
    * @param ref_elec reference electron id
+   * @param tmove_xy off-diagonal terms for one electron.
    */
-  void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
+  void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& tmove_xy);
 
   /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
    * @param myTable electron ion distance table

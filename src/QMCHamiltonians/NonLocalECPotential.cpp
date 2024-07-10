@@ -499,9 +499,9 @@ void NonLocalECPotential::evaluateIonDerivs(ParticleSet& P,
   pulay_terms -= PulayTerm;
 }
 
-void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
+void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& tmove_xy)
 {
-  tmove_xy_.clear();
+  tmove_xy.clear();
   const auto& myTable                  = P.getDistTableAB(myTableIndex);
   const std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(ref_elec);
 
@@ -511,7 +511,7 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
   {
     const int iat = NeighborIons[atom_index];
     PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat], use_DLA);
-    PP[iat]->contributeTxy(ref_elec, tmove_xy_);
+    PP[iat]->contributeTxy(ref_elec, tmove_xy);
   }
 }
 
@@ -613,14 +613,15 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   else if (UseTMove == TMOVE_V1)
   {
     GradType grad_iat;
+    std::vector<NonLocalData> tmove_xy;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
       Psi.prepareGroup(P, ig);
       for (int iat = P.first(ig); iat < P.last(ig); ++iat)
       {
-        computeOneElectronTxy(P, iat);
-        const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);
+        computeOneElectronTxy(P, iat, tmove_xy);
+        const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy);
         if (oneTMove)
         {
           if (P.makeMoveAndCheck(iat, oneTMove->Delta) && Psi.calcRatioGrad(P, iat, grad_iat) != ValueType(0))
@@ -638,6 +639,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     elecTMAffected.assign(P.getTotalNum(), false);
     nonLocalOps.groupByElectron(P.getTotalNum(), tmove_xy_);
     GradType grad_iat;
+    std::vector<NonLocalData> tmove_xy;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
@@ -648,8 +650,8 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
         if (elecTMAffected[iat])
         {
           // recompute Txy for the given electron effected by Tmoves
-          computeOneElectronTxy(P, iat);
-          oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);
+          computeOneElectronTxy(P, iat, tmove_xy);
+          oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy);
         }
         else
           oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
