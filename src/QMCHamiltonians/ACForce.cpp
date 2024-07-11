@@ -110,9 +110,9 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   if (fastDerivatives_)
-    ham_.evaluateIonDerivsDeterministicFast(P, ions_, psi_, psi_wrapper_, hf_force_, wf_grad_);
+    ham_.evaluateIonDerivsFast(P, ions_, psi_, psi_wrapper_, hf_force_, wf_grad_);
   else
-    ham_.evaluateIonDerivsDeterministic(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
+    ham_.evaluateIonDerivs(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
 
   if (useSpaceWarp_)
   {

@@ -296,13 +296,13 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(-5.2293234395150989));
 #endif
 
-  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivs at the
   //QMCHamiltonian level to make sure there are no crashes.
 
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+  ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
   CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
@@ -448,13 +448,13 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(-4.5825638607333019));
 #endif
 
-  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivs at the
   //QMCHamiltonian level to make sure there are no crashes.
 
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+  ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
   CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
@@ -1264,7 +1264,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   //This is to test the fast force API in QMCHamiltonian.
   ParticleSet::ParticlePos dedr(ions.getTotalNum());
   ParticleSet::ParticlePos dpsidr(ions.getTotalNum());
-  ham.evaluateIonDerivsDeterministicFast(elec, ions, *psi, twf, dedr, dpsidr);
+  ham.evaluateIonDerivsFast(elec, ions, *psi, twf, dedr, dpsidr);
 }
 
 //This will be very similar to the previous tests, but we will check its behavior
@@ -1574,7 +1574,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   CHECK(fnlpp[1][2] == Approx(0.0252567500));
 #endif
 
-  //  ham.evaluateIonDerivsDeterministicFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
+  //  ham.evaluateIonDerivsFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
 }
 #endif
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
@@ -1729,13 +1729,13 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(-4.5825638607333019));
 #endif
 
- //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+ //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivs at the
  //QMCHamiltonian level to make sure there are no crashes.  
  
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivsDeterministic(elec,ions,*psi,hf_term,pulay_term,wf_grad);
+  ham.evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
  
   CHECK(dot(hf_term[0],hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0],pulay_term[0]) != Approx(0));

@@ -296,12 +296,12 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  void evaluateIonDerivsDeterministicFast(ParticleSet& P,
-                                                      ParticleSet& ions,
-                                                      TrialWaveFunction& psi_in,
-                                                      TWFFastDerivWrapper& psi_wrapper,
-                                                      ParticleSet::ParticlePos& dedr,
-                                                      ParticleSet::ParticlePos& wf_grad);
+  void evaluateIonDerivsFast(ParticleSet& P,
+                             ParticleSet& ions,
+                             TrialWaveFunction& psi_in,
+                             TWFFastDerivWrapper& psi_wrapper,
+                             ParticleSet::ParticlePos& dedr,
+                             ParticleSet::ParticlePos& wf_grad);
 
   /** Evaluate the electron gradient of the local energy.
   * @param psi Trial Wave Function
@@ -321,12 +321,12 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  void evaluateIonDerivsDeterministic(ParticleSet& P,
-                                                  ParticleSet& ions,
-                                                  TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos& hf_terms,
-                                                  ParticleSet::ParticlePos& pulay_terms,
-                                                  ParticleSet::ParticlePos& wf_grad);
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms,
+                         ParticleSet::ParticlePos& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */

@@ -55,7 +55,7 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       ham_timer_(createGlobalTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
       eval_vals_derivs_timer_(createGlobalTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
       eval_ion_derivs_fast_timer_(
-          createGlobalTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsDeterministicFast", timer_level_medium))
+          createGlobalTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsFast", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -898,15 +898,15 @@ void QMCHamiltonian::evaluateElecGrad(ParticleSet& P,
   }
 }
 
-void QMCHamiltonian::evaluateIonDerivsDeterministic(ParticleSet& P,
-                                                                                ParticleSet& ions,
-                                                                                TrialWaveFunction& psi,
-                                                                                ParticleSet::ParticlePos& hf_term,
-                                                                                ParticleSet::ParticlePos& pulay_terms,
-                                                                                ParticleSet::ParticlePos& wf_grad)
+void QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
+                                       ParticleSet& ions,
+                                       TrialWaveFunction& psi,
+                                       ParticleSet::ParticlePos& hf_term,
+                                       ParticleSet::ParticlePos& pulay_terms,
+                                       ParticleSet::ParticlePos& wf_grad)
 {
   ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
-  wfgradraw_           = 0.0;
+  wfgradraw_ = 0.0;
 
   for (int i = 0; i < H.size(); ++i)
     H[i]->evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_terms);
@@ -1071,12 +1071,12 @@ RefVectorWithLeader<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVecto
   return HC_list;
 }
 
-void QMCHamiltonian::evaluateIonDerivsDeterministicFast(ParticleSet& P,
-                                                                                    ParticleSet& ions,
-                                                                                    TrialWaveFunction& psi_in,
-                                                                                    TWFFastDerivWrapper& psi_wrapper_in,
-                                                                                    ParticleSet::ParticlePos& dEdR,
-                                                                                    ParticleSet::ParticlePos& wf_grad)
+void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
+                                           ParticleSet& ions,
+                                           TrialWaveFunction& psi_in,
+                                           TWFFastDerivWrapper& psi_wrapper_in,
+                                           ParticleSet::ParticlePos& dEdR,
+                                           ParticleSet::ParticlePos& wf_grad)
 {
   ScopedTimer local_timer(eval_ion_derivs_fast_timer_);
   P.update();
@@ -1167,7 +1167,7 @@ void QMCHamiltonian::evaluateIonDerivsDeterministicFast(ParticleSet& P,
   ParticleSet::ParticleGradient dedr_complex(ions.getTotalNum());
   ParticleSet::ParticlePos pulayterms_(ions.getTotalNum());
   ParticleSet::ParticlePos hfdiag_(ions.getTotalNum());
-  wfgradraw_           = 0.0;
+  wfgradraw_ = 0.0;
 
   {
     psi_wrapper_in.getM(P, M_);
