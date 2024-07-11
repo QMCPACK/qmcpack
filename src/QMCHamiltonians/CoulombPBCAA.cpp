@@ -327,7 +327,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   }
 }
 
-CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
+CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                                            ParticleSet& ions,
                                                            TrialWaveFunction& psi,
                                                            ParticleSet::ParticlePos& hf_terms,

@@ -209,7 +209,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
 
-  RealType keval2 = bare_ke.evaluateWithIonDerivs(elec, ions, psi, HFTerm, PulayTerm);
+  RealType keval2 = bare_ke.evaluateWithIonDerivsDeterministic(elec, ions, psi, HFTerm, PulayTerm);
 
   CHECK(keval2 == Approx(-0.147507745));
   //These are validated against finite differences (delta=1e-6).

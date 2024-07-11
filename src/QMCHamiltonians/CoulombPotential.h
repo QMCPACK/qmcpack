@@ -340,7 +340,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     return value_;
   }
 
-  inline Return_t evaluateWithIonDerivs(ParticleSet& P,
+  inline Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                         ParticleSet& ions,
                                         TrialWaveFunction& psi,
                                         ParticleSet::ParticlePos& hf_terms,

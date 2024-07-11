@@ -220,7 +220,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ions3.createSK();
   ions3.resetGroups();
 
-  // Namely, sending in incompatible force arrays to evaluateWithIonDerivs is not
+  // Namely, sending in incompatible force arrays to evaluateWithIonDerivsDeterministic is not
   // supposed to do harm, IF
   // 1) forces are not enabled
   CoulombPBCAA noIonForce(ions3, false, false, false);
@@ -234,9 +234,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // Probably fine for a test but if this type of behavior was needed in
   // production code in the future, a different solution would be needed.
   auto noElecForces = noElecForce.getForces();
-  noIonForce.evaluateWithIonDerivs(ions3, ions3, psi, noElecForces, noElecForces);
+  noIonForce.evaluateWithIonDerivsDeterministic(ions3, ions3, psi, noElecForces, noElecForces);
   auto noIonForces = noIonForce.getForces();
-  noElecForce.evaluateWithIonDerivs(elec, ions3, psi, noIonForces, noIonForces);
+  noElecForce.evaluateWithIonDerivsDeterministic(elec, ions3, psi, noIonForces, noIonForces);
 
   // It seems a bit silly to test the makeClone method
   // but this class does not use the compiler's copy constructor and

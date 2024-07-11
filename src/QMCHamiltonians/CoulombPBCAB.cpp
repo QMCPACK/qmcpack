@@ -136,7 +136,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
   return value_;
 }
 
-CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
+CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                                            ParticleSet& ions,
                                                            TrialWaveFunction& psi,
                                                            ParticleSet::ParticlePos& hf_terms,

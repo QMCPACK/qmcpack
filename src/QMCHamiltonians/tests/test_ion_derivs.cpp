@@ -312,21 +312,6 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
   CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
   CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
-
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  wf_grad    = 0.0;
-  RandomGenerator myrng;
-  ham.setRandomGenerator(&myrng);
-  ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
-
-  CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
-  CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
-  CHECK(dot(wf_grad[0], wf_grad[0]) != Approx(0));
-
-  CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
-  CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
-  CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
 }
 
 TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
@@ -472,21 +457,6 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   pulay_term = 0.0;
   wf_grad    = 0.0;
   ham.evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
-
-  CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
-  CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
-  CHECK(dot(wf_grad[0], wf_grad[0]) != Approx(0));
-
-  CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
-  CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
-  CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
-
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  wf_grad    = 0.0;
-  RandomGenerator myrng;
-  ham.setRandomGenerator(&myrng);
-  ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
   CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
@@ -1776,22 +1746,6 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   CHECK(dot(hf_term[1],hf_term[1]) != Approx(0));
   CHECK(dot(pulay_term[1],pulay_term[1]) != Approx(0));
   CHECK(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  wf_grad    = 0.0;
-  RandomGenerator myrng;
-  ham.setRandomGenerator(&myrng);
-  ham.evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
-  
-  CHECK(dot(hf_term[0],hf_term[0]) != Approx(0));
-  CHECK(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  CHECK(dot(wf_grad[0],wf_grad[0]) != Approx(0));
- 
-  CHECK(dot(hf_term[1],hf_term[1]) != Approx(0));
-  CHECK(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  CHECK(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
 }*/
 
 /*TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")

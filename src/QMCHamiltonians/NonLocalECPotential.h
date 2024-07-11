@@ -80,12 +80,6 @@ public:
                                            const std::vector<ListenerVector<Real>>& listeners,
                                            const std::vector<ListenerVector<Real>>& listeners_ions) const override;
 
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos& hf_terms,
-                                 ParticleSet::ParticlePos& pulay_terms) override;
-
   Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                               ParticleSet& ions,
                                               TrialWaveFunction& psi,

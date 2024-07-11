@@ -312,23 +312,7 @@ public:
   */
   void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
-  /** evaluate local energy and derivatives w.r.t ionic coordinates.  
-  * @param P target particle set (electrons)
-  * @param ions source particle set (ions)
-  * @param psi Trial wave function
-  * @param hf_terms  Re [(dH)Psi]/Psi
-  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
-  * @param wf_grad  Re (dPsi/Psi)
-  * @return Local Energy.
-  */
-  FullPrecRealType evaluateIonDerivs(ParticleSet& P,
-                                     ParticleSet& ions,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos& hf_terms,
-                                     ParticleSet::ParticlePos& pulay_terms,
-                                     ParticleSet::ParticlePos& wf_grad);
-
-  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
+  /** evaluate local energy and derivatives w.r.t ionic coordinates without randomizing the quadrature point grid.
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)
   * @param psi Trial wave function

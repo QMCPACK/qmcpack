@@ -897,27 +897,6 @@ void QMCHamiltonian::evaluateElecGrad(ParticleSet& P,
     }
   }
 }
-QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
-                                                                   ParticleSet& ions,
-                                                                   TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos& hf_term,
-                                                                   ParticleSet::ParticlePos& pulay_terms,
-                                                                   ParticleSet::ParticlePos& wf_grad)
-{
-  ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
-  wfgradraw_           = 0.0;
-  RealType localEnergy = 0.0;
-
-  for (int i = 0; i < H.size(); ++i)
-    localEnergy += H[i]->evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_terms);
-
-  for (int iat = 0; iat < ions.getTotalNum(); iat++)
-  {
-    wfgradraw_[iat] = psi.evalGradSource(P, ions, iat);
-    convertToReal(wfgradraw_[iat], wf_grad[iat]);
-  }
-  return localEnergy;
-}
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(ParticleSet& P,
                                                                                 ParticleSet& ions,

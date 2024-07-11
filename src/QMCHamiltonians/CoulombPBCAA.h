@@ -114,7 +114,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
 
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
+  Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos& hf_terms,

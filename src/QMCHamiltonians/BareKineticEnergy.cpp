@@ -180,7 +180,7 @@ void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithL
  * @return Value of kinetic energy operator at electron/ion positions given by P and ions.  The force contributions from
  *          this operator are added into hf_terms and pulay_terms.
  */
-Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
+Return_t BareKineticEnergy::evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                                   ParticleSet& ions,
                                                   TrialWaveFunction& psi,
                                                   ParticleSet::ParticlePos& hf_terms,
