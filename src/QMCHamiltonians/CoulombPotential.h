@@ -74,7 +74,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     setEnergyDomain(POTENTIAL);
     twoBodyQuantumDomain(s, s);
     nCenters = s.getTotalNum();
-    prefix_   = "F_AA";
+    prefix_  = "F_AA";
 
     if (!is_active) //precompute the value
     {
@@ -340,7 +340,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     return value_;
   }
 
-  inline Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
+  inline Return_t evaluateWithIonDerivs(ParticleSet& P,
                                         ParticleSet& ions,
                                         TrialWaveFunction& psi,
                                         ParticleSet::ParticlePos& hf_terms,
@@ -349,7 +349,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     if (is_active)
       value_ = evaluate(P); // No forces for the active
     else
-      hf_terms -= forces_;   // No Pulay here
+      hf_terms -= forces_; // No Pulay here
     return value_;
   }
 

@@ -327,7 +327,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   }
 }
 
-CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivsDeterministic(ParticleSet& P,
+CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet& ions,
                                                            TrialWaveFunction& psi,
                                                            ParticleSet::ParticlePos& hf_terms,
@@ -459,9 +459,9 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   myRcut  = AA->get_rc(); //Basis.get_rc();
 
   auto myGrid = LinearGrid<RealType>();
-  int ng = P.getLattice().num_ewald_grid_points;
-  app_log() << "    CoulombPBCAA::initBreakup\n  Setting a linear grid=[0,"
-            << myRcut << ") number of grid points =" << ng << std::endl;
+  int ng      = P.getLattice().num_ewald_grid_points;
+  app_log() << "    CoulombPBCAA::initBreakup\n  Setting a linear grid=[0," << myRcut
+            << ") number of grid points =" << ng << std::endl;
   myGrid.set(0, myRcut, ng);
 
   if (rVs == nullptr)

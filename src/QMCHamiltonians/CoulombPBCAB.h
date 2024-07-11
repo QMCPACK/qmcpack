@@ -153,7 +153,7 @@ public:
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
 
-  Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
+  Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos& hf_terms,

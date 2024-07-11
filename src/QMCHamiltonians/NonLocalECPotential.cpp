@@ -457,15 +457,15 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   }
 }
 
-NonLocalECPotential::Return_t  NonLocalECPotential::evaluateWithIonDerivsDeterministic(ParticleSet& P,
-                                            ParticleSet& ions,
-                                            TrialWaveFunction& psi,
-                                            ParticleSet::ParticlePos& hf_terms,
-                                            ParticleSet::ParticlePos& pulay_terms)
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
+                                                                         ParticleSet& ions,
+                                                                         TrialWaveFunction& psi,
+                                                                         ParticleSet::ParticlePos& hf_terms,
+                                                                         ParticleSet::ParticlePos& pulay_terms)
 {
   //We're going to ignore psi and use the internal Psi.
 
-  value_ = 0.0;
+  value_    = 0.0;
   forces_   = 0;
   PulayTerm = 0;
   //loop over all the ions

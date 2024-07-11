@@ -354,11 +354,11 @@ public:
    * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
    * @return Contribution of OperatorBase to Local Energy.
    */
-  virtual Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
-                                                      ParticleSet& ions,
-                                                      TrialWaveFunction& psi,
-                                                      ParticleSet::ParticlePos& hf_term,
-                                                      ParticleSet::ParticlePos& pulay_term);
+  virtual Return_t evaluateWithIonDerivs(ParticleSet& P,
+                                         ParticleSet& ions,
+                                         TrialWaveFunction& psi,
+                                         ParticleSet::ParticlePos& hf_term,
+                                         ParticleSet::ParticlePos& pulay_term);
 
   /** 
    * @brief Evaluate "B" matrix for observable.  Filippi scheme for computing fast derivatives.
