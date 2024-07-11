@@ -296,7 +296,7 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
+  void evaluateIonDerivsDeterministicFast(ParticleSet& P,
                                                       ParticleSet& ions,
                                                       TrialWaveFunction& psi_in,
                                                       TWFFastDerivWrapper& psi_wrapper,
@@ -321,7 +321,7 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
+  void evaluateIonDerivsDeterministic(ParticleSet& P,
                                                   ParticleSet& ions,
                                                   TrialWaveFunction& psi,
                                                   ParticleSet::ParticlePos& hf_terms,
