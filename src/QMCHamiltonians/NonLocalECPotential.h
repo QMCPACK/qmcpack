@@ -211,8 +211,8 @@ private:
   NonLocalTOperator nonLocalOps;
   ///Pulay force vector
   ParticleSet::ParticlePos PulayTerm;
-  // Tmove data
-  std::vector<NonLocalData> tmove_xy_;
+  /// Tmove data collected for all the electrons
+  std::vector<NonLocalData> tmove_xy_all_;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
 

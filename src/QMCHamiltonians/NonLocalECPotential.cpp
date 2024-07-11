@@ -175,7 +175,7 @@ void NonLocalECPotential::mw_evaluatePerParticleWithToperator(
 void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_grid)
 {
   if (Tmove)
-    tmove_xy_.clear();
+    tmove_xy_all_.clear();
 
   value_ = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -216,7 +216,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
           {
             Real pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat]);
             if (Tmove)
-              PP[iat]->contributeTxy(jel, tmove_xy_);
+              PP[iat]->contributeTxy(jel, tmove_xy_all_);
             value_ += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -239,7 +239,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
           {
             Real pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
             if (Tmove)
-              PP[iat]->contributeTxy(jel, tmove_xy_);
+              PP[iat]->contributeTxy(jel, tmove_xy_all_);
 
             value_ += pairpot;
             NeighborIons.push_back(iat);
@@ -300,7 +300,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     const ParticleSet& P(p_list[iw]);
 
     if (Tmove)
-      O.tmove_xy_.clear();
+      O.tmove_xy_all_.clear();
 
     if (!keep_grid)
       for (int ipp = 0; ipp < O.PPset.size(); ipp++)
@@ -411,7 +411,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       {
         ecp_potential_list[j].get().value_ += pairpots[j];
         if (Tmove)
-          ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id, ecp_potential_list[j].get().tmove_xy_);
+          ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id, ecp_potential_list[j].get().tmove_xy_all_);
 
         if (listeners)
         {
@@ -595,7 +595,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   auto& RandomGen(*myRNG);
   if (UseTMove == TMOVE_V0)
   {
-    const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);
+    const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_all_);
     //make a non-local move
     if (oneTMove)
     {
@@ -637,7 +637,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   else if (UseTMove == TMOVE_V3)
   {
     elecTMAffected.assign(P.getTotalNum(), false);
-    nonLocalOps.groupByElectron(P.getTotalNum(), tmove_xy_);
+    nonLocalOps.groupByElectron(P.getTotalNum(), tmove_xy_all_);
     GradType grad_iat;
     std::vector<NonLocalData> tmove_xy;
     //make a non-local move per particle
