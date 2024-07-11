@@ -10,9 +10,9 @@
       https://doi.org/10.1088/1361-648X/aab9c3
 
   Git branch: HEAD
-  Last git commit: 8bbf91508111f152ff0a22353ca5ce0b71bacc7b-dirty
-  Last git commit date: Tue Jan 3 17:00:26 2023 -0500
-  Last git commit subject: Fix cth
+  Last git commit: d149ef72ed1c88087a89aae46a1f10833998eb20
+  Last git commit date: Mon Jan 9 17:41:53 2023 -0600
+  Last git commit subject: Move NLPP parsing at the beginning of the Hamiltonian after KE.
 =====================================================
   Global options 
 
@@ -34,14 +34,14 @@
 =================================================
 --- Memory usage report : when QMCPACK starts ---
 =================================================
-Available memory on node 0, free + buffers :   91625 MiB
+Available memory on node 0, free + buffers :   91258 MiB
 Memory footprint by rank 0 on node 0       :      26 MiB
 =================================================
 
   Input XML = vmc.legacy.in.xml
 
   Project = vmc
-  date    = 2024-07-10 23:01:11 CDT
+  date    = 2024-07-11 12:56:06 CDT
   host    = bora
 
 
@@ -249,20 +249,6 @@ Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
 
   QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
 
-   Coulomb Potential
-   -----------------
-    Name: ElecElec   Type: AA   PBC: no
-
-  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
-QMCHamiltonian::addOperatorType added type coulomb named ElecElec
-
-   Coulomb Potential
-   -----------------
-    Name: IonIon   Type: AA   PBC: no
-
-  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
-QMCHamiltonian::addOperatorType added type coulomb named IonIon
-
    Pseudo Potential
    ----------------
     Name: PseudoPot   Wavefunction : psi0
@@ -338,7 +324,20 @@ WARNING Nrule was not determined from qmcpack input or pseudopotential file. Set
   Using NonLocalECP potential 
     Maximum grid on a sphere for NonLocalECPotential: 12
   QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
-QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
+
+   Coulomb Potential
+   -----------------
+    Name: ElecElec   Type: AA   PBC: no
+
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+
+   Coulomb Potential
+   -----------------
+    Name: IonIon   Type: AA   PBC: no
+
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
 HamFac forceBase mode acforce
 Adding Assaraf-Caffarel total force.
 ACForce is using the default algorithm
@@ -351,7 +350,7 @@ QMCHamiltonian::addOperatorType added type Force named ac
     0 to P::Collectables 
     starting Index of the observables in P::PropertyList = 9
 ParticleSetPool::randomize 0 ParticleSets.
-  Initialization Execution time = 0.05736 secs
+  Initialization Execution time = 0.06754 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -393,12 +392,12 @@ ParticleSetPool has:
 
   Hamiltonian h0
   Kinetic         Kinetic energy
+  LocalECP        LocalECPotential: ion0
+  NonLocalECP     NonLocalECPotential: ion0
   ElecElec        CoulombAB source=e
 
   IonIon          CoulombAA source/target ion0
 
-  LocalECP        LocalECPotential: ion0
-  NonLocalECP     NonLocalECPotential: ion0
 
 
 =========================================================
@@ -461,14 +460,14 @@ Resetting walkers
 =========================================================
 --- Memory usage report : Memory Usage before cloning ---
 =========================================================
-Available memory on node 0, free + buffers :   91620 MiB
+Available memory on node 0, free + buffers :   91230 MiB
 Memory footprint by rank 0 on node 0       :      35 MiB
 =========================================================
 ========================================================
 --- Memory usage report : Memory Usage after cloning ---
 ========================================================
-Available memory on node 0, free + buffers :   91613 MiB
-Memory footprint by rank 0 on node 0       :      42 MiB
+Available memory on node 0, free + buffers :   91226 MiB
+Memory footprint by rank 0 on node 0       :      43 MiB
 ========================================================
   Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
 
@@ -480,7 +479,7 @@ Memory footprint by rank 0 on node 0       :      42 MiB
 ========================================================================
 --- Memory usage report : Memory Usage after the buffer registration ---
 ========================================================================
-Available memory on node 0, free + buffers :   91611 MiB
+Available memory on node 0, free + buffers :   91226 MiB
 Memory footprint by rank 0 on node 0       :      48 MiB
 ========================================================================
   Anonymous Buffer size per walker : 20192 Bytes.
@@ -492,8 +491,8 @@ MEMORY increase 0 MB VMC::resetRun
     reference energy   = -15.3675
     reference variance = 0.532558
 ====================================================
-  QMC Execution time = 1.1443e-01 secs
-  Total Execution time = 1.1521e-01 secs
+  QMC Execution time = 1.1490e-01 secs
+  Total Execution time = 1.1613e-01 secs
 
 =========================================================
   A new xml input file : vmc.s000.cont.xml
@@ -501,8 +500,8 @@ MEMORY increase 0 MB VMC::resetRun
 Use --enable-timers=<value> command line option to increase or decrease level of timing information
 Stack timer profile
 Timer      Inclusive_time  Exclusive_time  Calls       Time_per_call
-Total         0.1727     0.0000              1       0.172707206
-  Startup     0.0575     0.0575              1       0.057495419
-  VMC         0.1152     0.1152              1       0.115181023
+Total         0.1838     0.0000              1       0.183782214
+  Startup     0.0676     0.0676              1       0.067640355
+  VMC         0.1161     0.1161              1       0.116102938
 
 QMCPACK execution completed successfully
