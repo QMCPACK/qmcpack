@@ -560,7 +560,7 @@ def test_write():
         sp_kmap    = array([
             [0, 1]])
         for n,kp in enumerate(sp_kpoints):
-            savetoqmcpack(cell,mf,'scf.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts=kpts[sp_kmap[n]],sp_twist=kp)
+            savetoqmcpack(cell,mf,'scf.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts=kpts[sp_kmap[n]],sp_twist=kp,kmap=sp_kmap[n])
         #end for
         ### end generated conversion text ###
         '''.format("'''")
