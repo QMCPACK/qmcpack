@@ -231,12 +231,6 @@ private:
    */
   void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
 
-  void evalIonDerivsImpl(ParticleSet& P,
-                         ParticleSet& ions,
-                         TrialWaveFunction& psi,
-                         ParticleSet::ParticlePos& hf_terms,
-                         ParticleSet::ParticlePos& pulay_terms,
-                         bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set
