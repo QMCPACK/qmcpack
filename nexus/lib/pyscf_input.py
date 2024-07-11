@@ -464,7 +464,7 @@ $calculation
                 s += "sp_kpoints = {}\n".format(render_array(tiled_kpoints,4))
                 s += "sp_kmap    = {}\n".format(render_array(kmap_array,4))
                 s += 'for n,kp in enumerate(sp_kpoints):\n'
-                s += "    savetoqmcpack({0},{1},'{2}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts={3}[sp_kmap[n]],sp_twist=kp)\n".format(sys_var,mf_var,prefix,kpts_var)
+                s += "    savetoqmcpack({0},{1},'{2}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts={3}[sp_kmap[n]],sp_twist=kp,kmap=sp_kmap[n])\n".format(sys_var,mf_var,prefix,kpts_var)
                 s += "#end for\n"
                 self.kpoints       = sys_kpoints.copy()
                 self.tiled_kpoints = tiled_kpoints.copy()
