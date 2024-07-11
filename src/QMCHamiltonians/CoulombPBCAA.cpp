@@ -327,16 +327,15 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   }
 }
 
-CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
-                                                           ParticleSet& ions,
-                                                           TrialWaveFunction& psi,
-                                                           ParticleSet::ParticlePos& hf_terms,
-                                                           ParticleSet::ParticlePos& pulay_terms)
+void CoulombPBCAA::evaluateIonDerivs(ParticleSet& P,
+                                     ParticleSet& ions,
+                                     TrialWaveFunction& psi,
+                                     ParticleSet::ParticlePos& hf_terms,
+                                     ParticleSet::ParticlePos& pulay_terms)
 {
   if (ComputeForces and !is_active)
     hf_terms -= forces_;
   //No pulay term.
-  return value_;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -777,7 +776,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
           temp *= 0.5;
         res += Z1 * Zspec[spec2] * temp;
       } //spec2
-    }   //spec1
+    } //spec1
   }
   return res;
 }

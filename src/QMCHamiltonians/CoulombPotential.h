@@ -340,17 +340,15 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     return value_;
   }
 
-  inline Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                        ParticleSet& ions,
-                                        TrialWaveFunction& psi,
-                                        ParticleSet::ParticlePos& hf_terms,
-                                        ParticleSet::ParticlePos& pulay_terms) override
+  inline void evaluateIonDerivs(ParticleSet& P,
+                                ParticleSet& ions,
+                                TrialWaveFunction& psi,
+                                ParticleSet::ParticlePos& hf_terms,
+                                ParticleSet::ParticlePos& pulay_terms) override
   {
-    if (is_active)
-      value_ = evaluate(P); // No forces for the active
-    else
-      hf_terms -= forces_; // No Pulay here
-    return value_;
+    if (!is_active)
+      hf_terms -= forces_;
+    // No Pulay here
   }
 
   bool put(xmlNodePtr cur) override { return true; }

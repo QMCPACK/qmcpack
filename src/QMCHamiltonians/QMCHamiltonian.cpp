@@ -909,7 +909,7 @@ void QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
   wfgradraw_ = 0.0;
 
   for (int i = 0; i < H.size(); ++i)
-    H[i]->evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_terms);
+    H[i]->evaluateIonDerivs(P, ions, psi, hf_term, pulay_terms);
 
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {
@@ -1180,7 +1180,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     if (H[i]->dependsOnWaveFunction())
       H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_in, B_);
     else
-      H[i]->evaluateWithIonDerivs(P, ions, psi_in, hfdiag_, pulayterms_);
+      H[i]->evaluateIonDerivs(P, ions, psi_in, hfdiag_, pulayterms_);
 
 
   {

@@ -180,11 +180,11 @@ void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithL
  * @return Value of kinetic energy operator at electron/ion positions given by P and ions.  The force contributions from
  *          this operator are added into hf_terms and pulay_terms.
  */
-Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
-                                                  ParticleSet& ions,
-                                                  TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos& hf_terms,
-                                                  ParticleSet::ParticlePos& pulay_terms)
+void BareKineticEnergy::evaluateIonDerivs(ParticleSet& P,
+                                          ParticleSet& ions,
+                                          TrialWaveFunction& psi,
+                                          ParticleSet::ParticlePos& hf_terms,
+                                          ParticleSet::ParticlePos& pulay_terms)
 {
   using ParticlePos       = ParticleSet::ParticlePos;
   using ParticleGradient  = ParticleSet::ParticleGradient;
@@ -201,7 +201,6 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
   ParticleGradient iongradpsi_(Nions), pulaytmp_(Nions);
   //temporary arrays that will be explicitly real.
   ParticlePos pulaytmpreal_(Nions), iongradpsireal_(Nions);
-
 
   TinyVector<ParticleGradient, OHMMS_DIM> iongrad_grad_;
   TinyVector<ParticleLaplacian, OHMMS_DIM> iongrad_lapl_;
@@ -259,27 +258,29 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
     convertToReal(pulaytmp_[iat], pulaytmpreal_[iat]);
   }
 
+  Return_t value_local;
   if (same_mass_)
   {
-    value_ = Dot(P.G, P.G) + Sum(P.L);
-    value_ *= -one_over_2m_;
+    value_local = Dot(P.G, P.G) + Sum(P.L);
+    value_local *= -one_over_2m_;
   }
   else
   {
-    value_ = 0.0;
+    value_local = 0.0;
     for (int i = 0; i < minus_over_2m_.size(); ++i)
     {
       Return_t x = 0.0;
       for (int j = P.first(i); j < P.last(i); ++j)
         x += laplacian(P.G[j], P.L[j]);
-      value_ += x * minus_over_2m_[i];
+      value_local += x * minus_over_2m_[i];
     }
   }
-  pulaytmpreal_ -= value_ * iongradpsireal_;
 
+  // sanity check
+  assert(value_ == value_local);
 
+  pulaytmpreal_ -= value_local * iongradpsireal_;
   pulay_terms += pulaytmpreal_;
-  return value_;
 }
 
 void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,

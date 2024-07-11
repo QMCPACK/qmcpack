@@ -457,17 +457,17 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   }
 }
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
-                                                                         ParticleSet& ions,
-                                                                         TrialWaveFunction& psi,
-                                                                         ParticleSet::ParticlePos& hf_terms,
-                                                                         ParticleSet::ParticlePos& pulay_terms)
+void NonLocalECPotential::evaluateIonDerivs(ParticleSet& P,
+                                            ParticleSet& ions,
+                                            TrialWaveFunction& psi,
+                                            ParticleSet::ParticlePos& hf_terms,
+                                            ParticleSet::ParticlePos& pulay_terms)
 {
   //We're going to ignore psi and use the internal Psi.
 
-  value_    = 0.0;
-  forces_   = 0;
-  PulayTerm = 0;
+  Return_t value_local = 0.0;
+  forces_              = 0;
+  PulayTerm            = 0;
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -487,7 +487,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          value_ +=
+          value_local +=
               PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat], PulayTerm);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -497,7 +497,10 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
 
   hf_terms -= forces_;
   pulay_terms -= PulayTerm;
-  return value_;
+
+  // sanity check
+  assert(value_ == value_local);
+  value_ = value_local; // prevent unused-but-set-variable warning
 }
 
 void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)

@@ -319,7 +319,6 @@ public:
   * @param hf_terms  Re [(dH)Psi]/Psi
   * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
   * @param wf_grad  Re (dPsi/Psi)
-  * @return Local Energy.
   */
   void evaluateIonDerivs(ParticleSet& P,
                          ParticleSet& ions,
