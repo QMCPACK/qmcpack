@@ -174,6 +174,7 @@ const ParticleSet& NEEnergyDensityEstimator::getParticleSet(const PSPool& psetpo
   {
     throw UniformCommunicateError("Particle set pool does not contain \"" + psname +
                                   "\" so NEEnergyDensityEstimator::get_particleset fails!");
+
   }
   return *(pset_iter->second.get());
 }

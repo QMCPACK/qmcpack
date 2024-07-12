@@ -16,6 +16,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "EstimatorManagerNew.h"
+#include "PerParticleHamiltonianLogger.h"
 #include "EnergyDensityTest.h"
 #include "EnergyDensityEstimator.h"
 #include "EstimatorManagerInputTest.h"
@@ -24,6 +25,7 @@
 #include "EstimatorManagerCrowd.h"
 #include "Utilities/ProjectData.h"
 #include "GenerateRandomParticleSets.h"
+#include "EstimatorManagerNewTest.h"
 
 constexpr bool generate_test_data = true;
 
@@ -35,12 +37,12 @@ TEST_CASE("EnergyDensityEstimatorIntegration", "[estimators]")
   Communicate* comm = OHMMS::Controller;
 
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
-
   auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
   EstimatorManagerInput emi(doc.getRoot());
   auto& gold_elem = eden_test.getGoldElements();
-  EstimatorManagerNew emn(comm, std::move(emi), gold_elem.ham, gold_elem.pset_elec, gold_elem.particle_pool.getPool(), gold_elem.twf);
-
+  auto ham_list = eden_test.getHamList();
+  auto ham_lock = eden_test.makeTeamLock(eden_test.getHamRes(), ham_list);
+  
   auto pset_list = eden_test.getPSetList();
   auto pset_lock = eden_test.makeTeamLock(eden_test.getPSetRes(), pset_list);
   pset_list[0].L[0] = 1.0;
@@ -48,14 +50,12 @@ TEST_CASE("EnergyDensityEstimatorIntegration", "[estimators]")
   pset_list[2].L[2] = 1.0;
   pset_list[3].L[3] = 1.0;
 
-  EstimatorManagerCrowd emc(emn);  
-
-  auto ham_list = eden_test.getHamList();
-  auto ham_lock = eden_test.makeTeamLock(eden_test.getHamRes(), ham_list);
-  emc.registerListeners(ham_list);
-
   auto twf_list = eden_test.getTwfList();
   auto twf_lock = eden_test.makeTeamLock(eden_test.getTwfRes(), twf_list);
+
+  EstimatorManagerNew emn(comm, std::move(emi), gold_elem.ham, gold_elem.pset_elec, gold_elem.particle_pool.getPool(), gold_elem.twf);
+  EstimatorManagerCrowd emc(emn);  
+  emc.registerListeners(ham_list);
 
   ParticleSet::mw_update(pset_list);
   TrialWaveFunction::mw_evaluateLog(twf_list, pset_list);
@@ -66,6 +66,31 @@ TEST_CASE("EnergyDensityEstimatorIntegration", "[estimators]")
 
   auto walker_list = eden_test.getWalkerList();
   emc.accumulate(walker_list, pset_list, twf_list, ham_list, rng);
+
+  std::vector<RefVector<OperatorEstBase>> crowd_operator_ests = {emc.get_operator_estimators()};
+  emn.collectOperatorEstimators(crowd_operator_ests);
+
+  testing::EstimatorManagerNewTestAccess emnta(emn);
+  emnta.reduceOperatorEstimators();
+  auto operator_ests = emnta.getOperatorEstimators();
+
+  NEEnergyDensityEstimator& e_den_est = dynamic_cast<NEEnergyDensityEstimator&>(operator_ests[0].get());
+
+  auto spacegrids = e_den_est.getSpaceGrids();
+
+  decltype(spacegrids)::value_type::type& grid = spacegrids[0];
+
+  double summed_grid = 0;
+  // grid memory layout is (W)eight (T) Kinetic (V) potential
+  for (int i = 0; i < 16000; i++)
+    summed_grid += *(grid.getDataVector().begin() + i * 3 + 2) + *(grid.getDataVector().begin() + i * 3 + 1);
+
+  auto& pph_logger = dynamic_cast<PerParticleHamiltonianLogger&>(operator_ests[1].get());
+  auto expected_sum = pph_logger.sumOverAll();
+  //Here we check the sum of logged energies against the total energy in the grid.
+  CHECK(summed_grid == Approx(expected_sum));
+
+  std::cout << "expected sum!\n";
 }
 
 }

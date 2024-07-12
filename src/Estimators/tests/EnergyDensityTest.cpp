@@ -75,7 +75,7 @@ NEEnergyDensityEstimator& EnergyDensityTest::getEnergyDensityEstimator()
 
 
 RefVectorWithLeader<EnergyDensityTest::MCPWalker> EnergyDensityTest::getWalkerList() {
-  return RefVectorWithLeader(walkers_[0], std::move(makeRefVector<MCPWalker>(walkers_))); }
+  return {walkers_[0], makeRefVector<MCPWalker>(walkers_)}; }
 RefVectorWithLeader<ParticleSet> EnergyDensityTest::getPSetList() {
   return {psets_[0], makeRefVector<ParticleSet>(psets_)}; }
 RefVectorWithLeader<QMCHamiltonian> EnergyDensityTest::getHamList() {

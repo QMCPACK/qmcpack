@@ -71,7 +71,7 @@ Libxml2Document createEstimatorManagerNewInputXML()
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
-  
+
   ScalarInput scalar_input;
   for (auto& input_xml : scalar_input)
   {
@@ -133,6 +133,17 @@ Libxml2Document createEstimatorManagerEnergyDenistyInputXML()
   }
   {
     Libxml2Document doc;
+    std::string_view xml{R"XML(
+<estimator type="PerParticleHamiltonianLogger" to_stdout="false"/>
+)XML"};
+    bool okay = doc.parseFromString(xml);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
+  {
+    Libxml2Document doc;
     ScalarInput scalar_input;
     bool okay = doc.parseFromString(scalar_input[ScalarInput::valid::LOCAL_ENERGY]);
     REQUIRE(okay);
@@ -144,6 +155,5 @@ Libxml2Document createEstimatorManagerEnergyDenistyInputXML()
 }
 
 
-  
 } // namespace testing
 } // namespace qmcplusplus

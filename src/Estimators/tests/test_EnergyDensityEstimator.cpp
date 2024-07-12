@@ -94,18 +94,6 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
   
-  // using MCPWalker = typename OperatorEstBase::MCPWalker;
-  // std::vector<OperatorEstBase::MCPWalker> walkers(num_walkers, MCPWalker(gold_elem.pset_elec.getTotalNum()));
-
-  // auto walker_refs = makeRefVector<MCPWalker>(walkers);
-  // RefVectorWithLeader<MCPWalker> walker_list{walker_refs[0], walker_refs};
-
-  // RefVector<QMCHamiltonian> ham_refs = convertUPtrToRefVector(hams);
-
-  // RefVectorWithLeader<QMCHamiltonian> ham_list{ham_refs[0], ham_refs};
-  // ResourceCollection ham_res("test_ham_res");
-  // ham_list.getLeader().createResource(ham_res);
-  // ResourceCollectionTeamLock<QMCHamiltonian> ham_lock(ham_res, ham_list);
   auto ham_list = eden_test.getHamList();
   auto& ham_leader = ham_list.getLeader();
   auto ham_lock = eden_test.makeTeamLock(eden_test.getHamRes(), ham_list);

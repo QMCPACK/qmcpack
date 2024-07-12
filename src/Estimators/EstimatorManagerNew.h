@@ -254,7 +254,7 @@ private:
   /** non main scalar estimators collecting simple scalars, are there any?
    *  with the removal of collectables these don't seem used or needed.
    */
-  std::vector<UPtr<ScalarEstimatorBase>> scalar_ests_;
+  UPtrVector<ScalarEstimatorBase> scalar_ests_;
   ///convenient descriptors for hdf5
   std::vector<ObservableHelper> h5desc;
   /** OperatorEst Observables
@@ -264,7 +264,7 @@ private:
    * However the idea of a shared interface is much more straight forward for
    * them.
    */
-  std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
+  UPtrVector<OperatorEstBase> operator_ests_;
 
   ///block timer
   Timer block_timer_;
