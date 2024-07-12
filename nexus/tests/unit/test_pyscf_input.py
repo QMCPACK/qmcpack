@@ -574,6 +574,6 @@ def test_write():
     text = text.replace('[',' [ ').replace(']',' ] ')
     ref_text = ref_text.replace('[',' [ ').replace(']',' ] ')
 
-    assert(text_eq(text,ref_text))
+    assert(text_eq(text,ref_text,atol=1e-8))
 
 #end def test_write
