@@ -3,3 +3,5 @@
 missingIncludeSystem
 #unmatchedSuppression
 #preprocessorErrorDirective
+unusedFunction
+# ^^^ cppcheck 2.13 is very picky

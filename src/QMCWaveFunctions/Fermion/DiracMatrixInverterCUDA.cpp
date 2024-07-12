@@ -9,28 +9,12 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_QUEUE_H
-#define QMCPLUSPLUS_QUEUE_H
-
-#include "PlatformKinds.hpp"
+#include "DiracMatrixInverterCUDA.hpp"
 
 namespace qmcplusplus
 {
-
-namespace compute
-{
-
-template<PlatformKind PL>
-class Queue;
-
-class QueueBase
-{
-public:
-  virtual ~QueueBase() = default;
-};
-
-} // namespace compute
-
+template class DiracMatrixInverterCUDA<double, float>;
+template class DiracMatrixInverterCUDA<double, double>;
+template class DiracMatrixInverterCUDA<std::complex<double>, std::complex<float>>;
+template class DiracMatrixInverterCUDA<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus
-
-#endif

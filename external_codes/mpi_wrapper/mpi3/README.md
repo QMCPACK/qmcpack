@@ -18,8 +18,7 @@ B-MPI3 also provides allocators and facilities to manipulate MPI-mediated Remote
 For example, pointers are not utilized directly and it is replaced by an iterator-based interface and most data, in particular custom type objects are serialized automatically into messages by the library.
 B-MPI3 interacts well with the C++ standard library, containers and custom data types (classes).
 
-B.MPI3 is written from [scratch](https://octo-repo-visualization.vercel.app/?repo=llnl%2Fb-mpi3) in C++17 and it has been tested with many MPI library implementations and compilers, OpenMPI +1.9, MPICH +3.2.1, MVAPICH or Spectrum MPI, using the following compilers gcc +5.4.1, clang +6.0, PGI 18.04.
-(Any standard compliant MPI library can be used.)
+B.MPI3 is written from [scratch](https://octo-repo-visualization.vercel.app/?repo=llnl%2Fb-mpi3) in C++17 and it has been tested with many standard compliant MPI library implementations and compilers, OpenMPI +1.9, MPICH +3.2.1, MVAPICH, Spectrum MPI, and [ExaMPI](https://github.com/tonyskjellum/ExaMPI), using the following compilers gcc +5.4.1, clang +6.0, PGI 18.04.
 
 B.MPI3 is not an official Boost library, but is designed following the principles of Boost and the STL.
 B.MPI3 is not a derivative of Boost.MPI and it is unrelated to the, [now deprecated](https://web.archive.org/web/20170421220544/http://blogs.cisco.com/performance/the-mpi-c-bindings-what-happened-and-why/), official MPI-C++ interface.
@@ -83,16 +82,22 @@ In this way, changes to existing code can be made incrementally.
 
 ## Usage
 
-The library is "header-only"; no separate compilation or configuration of the library is necessary.
+The library is "header-only"; no separate compilation or configuration is necessary after downloading the library.
+
+
+```cpp
+git clone https://gitlab.com/correaa/boost-mpi3.git
+```
+
 It requires an MPI distribution (e.g. OpenMPI or MPICH2), a C++14 compiler and Boost libraries installed.
+In a system such as Ubuntu or Fedora, the dependencies can by installed by `sudo apt install g++ libmpich-dev libboost-test-dev ` or `sudo dnf install gcc-c++ boost-devel openmpi-devel mpich-devel`.
+
 A typical compilation/run command looks like this:
 
 ```bash
 $ mpic++ communicator_send.cpp -o communicator_send.x -lboost_serialization
 $ mpirun -n 8 ./communicator_send.x
 ```
-
-In a system such as Red Hat or Fedora, the dependencies can by installed by `sudo dnf install gcc-c++ boost-devel openmpi-devel mpich-devel`.
 
 Alternatively, the library can be fetched on demand by the CMake project:
 
@@ -104,7 +109,7 @@ FetchContent_MakeAvailable(bmpi3)
 target_link_libraries(your_executable PRIVATE bmpi3)
 ```
 
-Some systems require loading the MPI module before compiling and using MPI programs, `module load mpi` (or `mpich`).
+Some systems require loading the MPI module before compiling or using MPI programs, `module load mpi` (or `mpich`).
 
 The library is tested frequently against `openmpi` and `mpich` implementations of MPI.
 
@@ -113,8 +118,8 @@ The library is tested frequently against `openmpi` and `mpich` implementations o
 The library has a basic `ctest` based testing system.
 
 ```bash
-# module load mpi/mpich  # or mpi/openmpi  , needed in systems like Fedora
-cd mpi3/test
+# module load mpi/mpich  # or mpi/openmpi  # needed in systems like Fedora
+cd mpi3
 mkdir build && cd build
 cmake ..
 cmake --build ..

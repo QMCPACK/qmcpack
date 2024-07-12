@@ -11,17 +11,17 @@
 
 #include <catch.hpp>
 #include <algorithm>
-#include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrixComputeOMPTarget.hpp"
+#include "QMCWaveFunctions/Fermion/DiracMatrixInverterCUDA.hpp"
 #include "makeRngSpdMatrix.hpp"
-#include "Utilities/Resource.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
-#include "Platforms/PinnedAllocator.h"
+#include "Platforms/DualAllocatorAliases.hpp"
+#include "Platforms/CUDA/QueueCUDA.hpp"
+#include "Platforms/CUDA/AccelBLAS_CUDA.hpp"
 
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
@@ -30,14 +30,37 @@
 namespace qmcplusplus
 {
 template<typename T>
-using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-
+using OffloadPinnedMatrix = Matrix<T, PinnedDualAllocator<T>>;
 template<typename T>
-using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
-template<typename T>
-using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
+using OffloadPinnedVector = Vector<T, PinnedDualAllocator<T>>;
 
-TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][fermion]")
+TEST_CASE("DiracMatrixInverterCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
+{
+  OffloadPinnedMatrix<double> mat_a;
+  int n = 4;
+  mat_a.resize(n, n);
+  OffloadPinnedMatrix<double> temp_mat;
+  temp_mat.resize(n, n);
+  OffloadPinnedMatrix<double> mat_c;
+  mat_c.resize(n, n);
+
+  double host_one(1.0);
+  double host_zero(0.0);
+
+  std::vector<double> A{2, 5, 8, 7, 5, 2, 2, 8, 7, 5, 6, 6, 5, 4, 4, 8};
+  std::copy_n(A.begin(), 16, mat_a.data());
+  compute::Queue<PlatformKind::CUDA> queue;
+  compute::BLASHandle<PlatformKind::CUDA> cuda_handles(queue);
+  int lda = n;
+  cudaCheck(cudaMemcpyAsync((void*)(temp_mat.device_data()), (void*)(mat_a.data()), mat_a.size() * sizeof(double),
+                            cudaMemcpyHostToDevice, queue.getNative()));
+  cublasErrorCheck(cuBLAS::geam(cuda_handles.h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
+                                temp_mat.device_data(), lda, &host_zero, mat_c.device_data(), lda, mat_a.device_data(),
+                                lda),
+                   "cuBLAS::geam failed.");
+}
+
+TEST_CASE("DiracMatrixInverterCUDA_different_batch_sizes", "[wavefunction][fermion]")
 {
   OffloadPinnedMatrix<double> mat_a;
   mat_a.resize(4, 4);
@@ -47,12 +70,10 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   log_values.resize(1);
   OffloadPinnedMatrix<double> inv_mat_a;
   inv_mat_a.resize(4, 4);
-  DiracMatrixComputeOMPTarget<double> dmc_omp;
+  compute::Queue<PlatformKind::CUDA> queue;
+  DiracMatrixInverterCUDA<double> dmcc;
 
-  compute::Queue<PlatformKind::OMPTARGET> queue;
-  std::complex<double> log_value;
-  dmc_omp.invert_transpose(queue, mat_a, inv_mat_a, log_value);
-  CHECK(log_value == LogComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
+  dmcc.invert_transpose(queue, mat_a, inv_mat_a, log_values);
 
 
   OffloadPinnedMatrix<double> mat_b;
@@ -74,7 +95,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
   log_values.resize(2);
-  dmc_omp.mw_invertTranspose(queue, a_mats, inv_a_mats, log_values);
+  dmcc.mw_invertTranspose(queue, a_mats, inv_a_mats, log_values);
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -96,7 +117,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats3{inv_mat_a, inv_mat_a2, inv_mat_a3};
 
   log_values.resize(3);
-  dmc_omp.mw_invertTranspose(queue, a_mats3, inv_a_mats3, log_values);
+  dmcc.mw_invertTranspose(queue, a_mats3, inv_a_mats3, log_values);
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -110,11 +131,66 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   CHECK(log_values[2] == ComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
 }
 
-TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wavefunction][fermion]")
+TEST_CASE("DiracMatrixInverterCUDA_complex_determinants_against_legacy", "[wavefunction][fermion]")
 {
   int n = 64;
+  compute::Queue<PlatformKind::CUDA> queue;
 
-  DiracMatrixComputeOMPTarget<double> dmc_omp;
+  DiracMatrixInverterCUDA<std::complex<double>> dmcc;
+
+  Matrix<std::complex<double>> mat_spd;
+  mat_spd.resize(n, n);
+  testing::MakeRngSpdMatrix<std::complex<double>> makeRngSpdMatrix;
+  makeRngSpdMatrix(mat_spd);
+  // You would hope you could do this
+  // OffloadPinnedMatrix<double> mat_a(mat_spd);
+  // But you can't
+  OffloadPinnedMatrix<std::complex<double>> mat_a(n, n);
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+      mat_a(i, j) = mat_spd(i, j);
+
+  Matrix<std::complex<double>> mat_spd2;
+  mat_spd2.resize(n, n);
+  makeRngSpdMatrix(mat_spd2);
+  // You would hope you could do this
+  // OffloadPinnedMatrix<double> mat_a(mat_spd);
+  // But you can't
+  OffloadPinnedMatrix<std::complex<double>> mat_a2(n, n);
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+      mat_a2(i, j) = mat_spd2(i, j);
+
+  OffloadPinnedVector<std::complex<double>> log_values;
+  log_values.resize(2);
+  OffloadPinnedMatrix<std::complex<double>> inv_mat_a;
+  inv_mat_a.resize(n, n);
+  OffloadPinnedMatrix<std::complex<double>> inv_mat_a2;
+  inv_mat_a2.resize(n, n);
+
+  RefVector<const OffloadPinnedMatrix<std::complex<double>>> a_mats{mat_a, mat_a2};
+  RefVector<OffloadPinnedMatrix<std::complex<double>>> inv_a_mats{inv_mat_a, inv_mat_a2};
+
+  dmcc.mw_invertTranspose(queue, a_mats, inv_a_mats, log_values);
+
+  DiracMatrix<std::complex<double>> dmat;
+  Matrix<std::complex<double>> inv_mat_test(n, n);
+  std::complex<double> det_log_value;
+  dmat.invert_transpose(mat_spd, inv_mat_test, det_log_value);
+
+  auto check_matrix_result = checkMatrix(inv_mat_a, inv_mat_test);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  dmat.invert_transpose(mat_spd2, inv_mat_test, det_log_value);
+  check_matrix_result = checkMatrix(inv_mat_a2, inv_mat_test);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+}
+
+TEST_CASE("DiracMatrixInverterCUDA_large_determinants_against_legacy", "[wavefunction][fermion]")
+{
+  int n = 64;
+  compute::Queue<PlatformKind::CUDA> queue;
+  DiracMatrixInverterCUDA<double> dmcc;
 
   Matrix<double> mat_spd;
   mat_spd.resize(n, n);
@@ -149,8 +225,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wav
   RefVector<const OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
-  compute::Queue<PlatformKind::OMPTARGET> queue;
-  dmc_omp.mw_invertTranspose(queue, a_mats, inv_a_mats, log_values);
+  dmcc.mw_invertTranspose(queue, a_mats, inv_a_mats, log_values);
 
   DiracMatrix<double> dmat;
   Matrix<double> inv_mat_test(n, n);
@@ -164,6 +239,5 @@ TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wav
   check_matrix_result = checkMatrix(inv_mat_a2, inv_mat_test);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
-
 
 } // namespace qmcplusplus

@@ -12,6 +12,7 @@
 
 
 #include "DiracDeterminantBatched.h"
+#include <cassert>
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -21,10 +22,28 @@
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #endif
 #include "CPU/SIMD/inner_product.hpp"
-#include <cassert>
+#include "DiracMatrixInverterOMPTarget.hpp"
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#include "DiracMatrixInverterCUDA.hpp"
+#endif
 
 namespace qmcplusplus
 {
+
+template<PlatformKind UEPL, typename FPVT, typename VT>
+struct DetInverterSelector
+{
+  using Inverter = DiracMatrixInverterOMPTarget<FPVT, VT>;
+};
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+template<typename FPVT, typename VT>
+struct DetInverterSelector<PlatformKind::CUDA, FPVT, VT>
+{
+  using Inverter = DiracMatrixInverterCUDA<FPVT, VT>;
+};
+#endif
+
 template<PlatformKind PL, typename VT, typename FPVT>
 struct DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
@@ -105,38 +124,15 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_invertPsiM(const RefVectorWithLea
   ScopedTimer inverse_timer(wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
 
-  if (wfc_leader.matrix_inverter_kind_ == DetMatInvertor::ACCEL)
+  mw_res.log_values.resize(nw);
+
+  wfc_leader.accel_inverter_.getResource().mw_invert_transpose(mw_res.engine_rsc.queue, logdetT_list, a_inv_list,
+                                                               mw_res.log_values);
+
+  for (int iw = 0; iw < nw; ++iw)
   {
-    RefVectorWithLeader<UpdateEngine> engine_list(wfc_leader.det_engine_);
-    engine_list.reserve(nw);
-
-    mw_res.log_values.resize(nw);
-
-    for (int iw = 0; iw < nw; iw++)
-    {
-      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-      engine_list.push_back(det.det_engine_);
-      mw_res.log_values[iw] = {0.0, 0.0};
-    }
-
-    wfc_leader.accel_inverter_.getResource().mw_invertTranspose(mw_res.engine_rsc.queue, logdetT_list, a_inv_list,
-                                                                mw_res.log_values);
-
-    for (int iw = 0; iw < nw; ++iw)
-    {
-      auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-      det.log_value_ = mw_res.log_values[iw];
-    }
-  }
-  else
-  {
-    for (int iw = 0; iw < nw; iw++)
-    {
-      auto& det                  = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-      DualMatrix<Value>& psiMinv = a_inv_list[iw];
-      det.host_inverter_.invert_transpose(logdetT_list[iw].get(), psiMinv, det.log_value_);
-      psiMinv.updateTo();
-    }
+    auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
+    det.log_value_ = mw_res.log_values[iw];
   }
 
 #ifndef NDEBUG
@@ -1221,7 +1217,10 @@ void DiracDeterminantBatched<PL, VT, FPVT>::createResource(ResourceCollection& c
 {
   collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
   Phi->createResource(collection);
-  collection.addResource(std::make_unique<DetInverter>());
+  if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
+    collection.addResource(std::make_unique<typename DetInverterSelector<PL, FPVT, VT>::Inverter>());
+  else
+    collection.addResource(std::make_unique<DiracMatrixInverterOMPTarget<FPVT, VT>>());
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -1242,7 +1241,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::acquireResource(
     mw_res.psiMinv_refs.push_back(det.psiMinv_);
   }
   wfc_leader.Phi->acquireResource(collection, phi_list);
-  wfc_leader.accel_inverter_ = collection.lendResource<DetInverter>();
+  wfc_leader.accel_inverter_ = collection.lendResource<DiracMatrixInverter<FPVT, VT>>();
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>

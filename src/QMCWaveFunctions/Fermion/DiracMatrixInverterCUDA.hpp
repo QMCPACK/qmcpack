@@ -14,15 +14,19 @@
 
 #include <type_traits>
 
+#include "Configuration.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "DualAllocatorAliases.hpp"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "Platforms/CUDA/QueueCUDA.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
 #include "type_traits/complex_help.hpp"
+#include "type_traits/template_types.hpp"
 #include "Concurrency/OpenMP.h"
 #include "CPU/SIMD/algorithm.hpp"
-#include "ResourceCollection.h"
+#if defined(ENABLE_OFFLOAD)
+#include "DiracMatrixInverter.hpp"
+#endif
 
 namespace qmcplusplus
 {
@@ -45,8 +49,11 @@ namespace qmcplusplus
  *  We don't need to actively synchronize the old stream because it gets synchronized right after each use.
  *
  */
-template<typename VALUE_FP>
-class DiracMatrixComputeCUDA : public Resource
+template<typename VALUE_FP, typename VALUE = VALUE_FP>
+class DiracMatrixInverterCUDA
+#if defined(ENABLE_OFFLOAD)
+    : public DiracMatrixInverter<VALUE_FP, VALUE>
+#endif
 {
   using FullPrecReal = RealAlias<VALUE_FP>;
   using LogValue     = std::complex<FullPrecReal>;
@@ -217,19 +224,27 @@ class DiracMatrixComputeCUDA : public Resource
   }
 
 public:
-  DiracMatrixComputeCUDA() : Resource("DiracMatrixComputeCUDA")
+  DiracMatrixInverterCUDA()
+#if defined(ENABLE_OFFLOAD)
+      : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixInverterCUDA")
+#endif
   {
     cublasErrorCheck(cublasCreate(&h_cublas_), "cublasCreate failed!");
   }
 
-  DiracMatrixComputeCUDA(const DiracMatrixComputeCUDA& other) : Resource(other.getName())
+  DiracMatrixInverterCUDA(const DiracMatrixInverterCUDA& other)
+#if defined(ENABLE_OFFLOAD)
+      : DiracMatrixInverter<VALUE_FP, VALUE>(other.getName())
+#endif
   {
     cublasErrorCheck(cublasCreate(&h_cublas_), "cublasCreate failed!");
   }
 
-  ~DiracMatrixComputeCUDA() { cublasErrorCheck(cublasDestroy(h_cublas_), "cublasDestroy failed!"); }
+  ~DiracMatrixInverterCUDA() { cublasErrorCheck(cublasDestroy(h_cublas_), "cublasDestroy failed!"); }
 
-  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixComputeCUDA>(*this); }
+#if defined(ENABLE_OFFLOAD)
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixInverterCUDA>(*this); }
+#endif
 
   /** Given a_mat returns inverted amit and log determinant of a_matches.
    *  \param [in] a_mat a matrix input
@@ -342,8 +357,23 @@ public:
     const int n = a_mats[0].get().rows();
     mw_computeInvertAndLog(queue, a_mats, inv_a_mats, n, log_values);
   }
+
+#if defined(ENABLE_OFFLOAD)
+  void mw_invert_transpose(compute::QueueBase& queue,
+                           const RefVector<const DualMatrix<VALUE>>& a_mats,
+                           const RefVector<DualMatrix<VALUE>>& inv_a_mats,
+                           DualVector<LogValue>& log_values) override
+  {
+    auto& queue_cuda = dynamic_cast<compute::Queue<PlatformKind::CUDA>&>(queue);
+    mw_invertTranspose(queue_cuda, a_mats, inv_a_mats, log_values);
+  }
+#endif
 };
 
+extern template class DiracMatrixInverterCUDA<double, float>;
+extern template class DiracMatrixInverterCUDA<double, double>;
+extern template class DiracMatrixInverterCUDA<std::complex<double>, std::complex<float>>;
+extern template class DiracMatrixInverterCUDA<std::complex<double>, std::complex<double>>;
 } // namespace qmcplusplus
 
 #endif //QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H
