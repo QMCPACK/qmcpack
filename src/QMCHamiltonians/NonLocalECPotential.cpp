@@ -112,13 +112,13 @@ void NonLocalECPotential::deleteParticleQuantities()
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
 {
-  evaluateImpl(P, false);
+  evaluateImpl(P, std::nullopt);
   return value_;
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P)
 {
-  evaluateImpl(P, false, true);
+  evaluateImpl(P, std::nullopt, true);
   return value_;
 }
 
@@ -132,9 +132,9 @@ void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
-    evaluateImpl(P, true);
+    evaluateImpl(P, tmove_xy_all_);
   else
-    evaluateImpl(P, false);
+    evaluateImpl(P, std::nullopt);
   return value_;
 }
 
@@ -172,10 +172,13 @@ void NonLocalECPotential::mw_evaluatePerParticleWithToperator(
     mw_evaluateImpl(o_list, wf_list, p_list, false, l_opt);
 }
 
-void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_grid)
+void NonLocalECPotential::evaluateImpl(ParticleSet& P, const std::optional<std::reference_wrapper<std::vector<NonLocalData>>> tmove_xy_all, bool keep_grid)
 {
-  if (Tmove)
-    tmove_xy_all_.clear();
+  if (tmove_xy_all)
+  {
+    std::vector<NonLocalData>& tmove_xy_all_ref = *tmove_xy_all;
+    tmove_xy_all_ref.clear();
+  }
 
   value_ = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -215,8 +218,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
             Real pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat]);
-            if (Tmove)
-              PP[iat]->contributeTxy(jel, tmove_xy_all_);
+            if (tmove_xy_all)
+              PP[iat]->contributeTxy(jel, *tmove_xy_all);
             value_ += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -238,8 +241,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
             Real pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
-            if (Tmove)
-              PP[iat]->contributeTxy(jel, tmove_xy_all_);
+            if (tmove_xy_all)
+              PP[iat]->contributeTxy(jel, *tmove_xy_all);
 
             value_ += pairpot;
             NeighborIons.push_back(iat);
