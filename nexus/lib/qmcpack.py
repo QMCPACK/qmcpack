@@ -40,6 +40,7 @@ from qmcpack_input import generate_opt,generate_opts
 from qmcpack_input import check_excitation_type
 from qmcpack_analyzer import QmcpackAnalyzer
 from qmcpack_converters import Pw2qmcpack,Convert4qmc,Convertpw4qmc,PyscfToAfqmc
+from pyscf_sim import Pyscf
 from debug import ci,ls,gs
 from developer import DevBase,error,unavailable
 from nexus_base import nexus_core
@@ -560,6 +561,7 @@ class GCTA(DevBase):
 #end class GCTA
 
 
+
 class Qmcpack(Simulation):
     input_type    = QmcpackInput
     analyzer_type = QmcpackAnalyzer
@@ -756,6 +758,7 @@ class Qmcpack(Simulation):
                     del newwfn.determinantset.slaterdeterminant
                     newwfn.determinantset.multideterminant = oldwfn.determinantset.multideterminant
                     newwfn.determinantset.sposets = oldwfn.determinantset.sposets
+                #end if
                 dset = newwfn.determinantset
 
                 if 'jastrows' in newwfn:
@@ -784,6 +787,34 @@ class Qmcpack(Simulation):
                 #end if
                 qs.wavefunction = newwfn
 
+            elif isinstance(sim,Pyscf):
+                sinp = sim.input
+                skpoints = None
+                if sinp.tiled_kpoints is not None:
+                    skpoints = sinp.tiled_kpoints
+                elif sinp.kpoints is not None:
+                    skpoints = sinp.kpoints
+                #end if
+                if skpoints is None:
+                    self.error('cannot incorporate orbitals from pyscf\nno k-points are present')
+                #end if
+                nkpoints = len(self.system.structure.kpoints)
+                if len(skpoints)!=nkpoints:
+                    self.error('cannot incorporate orbitals from pyscf\nwrong number k-points are present\nexpected: {}\npresent: {}'.format(nkpoints,len(skpoints)))
+                #end if
+                twist_updates = []
+                for n,(h5file,kp) in enumerate(zip(result.orb_files,result.kpoints)):
+                    filepath = os.path.join(result.location,h5file)
+                    tu = obj(
+                        twistnum = -1,
+                        twist    = tuple(kp),
+                        href     = os.path.relpath(filepath,self.locdir),
+                        )
+                    twist_updates.append(tu)
+                #end for
+                ds = self.input.get('determinantset')
+                ds.twistnum = -1 # set during twist average
+                self.twist_average(twist_updates)
             else:
                 self.error('incorporating orbitals from '+sim.__class__.__name__+' has not been implemented')
             #end if
@@ -1022,6 +1053,37 @@ class Qmcpack(Simulation):
             ntwist = len(s1.kpoints)
             nelecs_at_twist = gcta_occupation(pa.wfh5, ntwist)
             self.nelecs_at_twist = nelecs_at_twist
+        elif result_name=='determinantset':
+            # This should be removed someday far in the future, 
+            # when QMCPACK can actually read its HDF5 files all by itself.
+            if isinstance(sim,Convert4qmc):
+                wf = input.get('wavefunction')
+                if isinstance(wf,collection):
+                    wf = wf.get_single('psi0')
+                #end if
+                spoc_key = None
+                if 'sposet_builder' in wf and 'spline' in wf.sposet_builder.type.lower():
+                    spoc_key = 'sposet_builder'
+                elif 'sposet_builders' in wf and ('bspline' in wf.sposet_builders or 'einspline' in wf.sposet_builders):
+                    spoc_key = 'sposet_builders'                    
+                elif 'sposet_collection' in wf and 'spline' in wf.sposet_builder.type.lower():
+                    spoc_key = 'sposet_builder'
+                elif 'sposet_collections' in wf and ('bspline' in wf.sposet_collections or 'einspline' in wf.sposet_collections):
+                    spoc_key = 'sposet_collections'                    
+                #end if
+                if spoc_key is not None:
+                    del wf[spoc_key]
+                #end if
+                c4q_inp = QmcpackInput(result.location)
+                ds = c4q_inp.get('determinantset')
+                # only one twist is supported by qmcpack right now, so don't need to know it
+                if 'twist' in ds:
+                    del ds.twist
+                #end if
+                wf.determinantset = ds
+            else:
+                self.error('incorporating determinantset from '+sim.__class__.__name__+' has not been implemented')
+            #end if                
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
         #end if        
