@@ -539,14 +539,14 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
        mo_coeff_unsorted = mo_coeff_ 
        NbAO, NbMO =mo_coeff.shape 
     else: 
-       if kmap is not None:
+      if kmap is not None:
            if cas_idx is not None:
                mo_k = numpy.array([c[:, cas_idx] for c in (mf.mo_coeff[idx] for idx in kmap)])
                e_k = numpy.array([e[cas_idx] for e in (mf.mo_energy[idx] for idx in kmap)])
            else:
                mo_k = numpy.array([mf.mo_coeff[idx] for idx in kmap])
                e_k = numpy.array([mf.mo_energy[idx] for idx in kmap])
-       else:
+      else:
            mo_k = numpy.array([c[:,cas_idx] for c in mf.mo_coeff] if cas_idx is not None else mf.mo_coeff)
            e_k =  numpy.array([e[cas_idx] for e in mf.mo_energy] if cas_idx is not None else mf.mo_energy)
 
