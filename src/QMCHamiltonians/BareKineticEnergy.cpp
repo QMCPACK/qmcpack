@@ -258,28 +258,24 @@ void BareKineticEnergy::evaluateIonDerivs(ParticleSet& P,
     convertToReal(pulaytmp_[iat], pulaytmpreal_[iat]);
   }
 
-  Return_t value_local;
   if (same_mass_)
   {
-    value_local = Dot(P.G, P.G) + Sum(P.L);
-    value_local *= -one_over_2m_;
+    value_ = Dot(P.G, P.G) + Sum(P.L);
+    value_ *= -one_over_2m_;
   }
   else
   {
-    value_local = 0.0;
+    value_ = 0.0;
     for (int i = 0; i < minus_over_2m_.size(); ++i)
     {
       Return_t x = 0.0;
       for (int j = P.first(i); j < P.last(i); ++j)
         x += laplacian(P.G[j], P.L[j]);
-      value_local += x * minus_over_2m_[i];
+      value_ += x * minus_over_2m_[i];
     }
   }
 
-  // sanity check
-  assert(value_ == value_local);
-
-  pulaytmpreal_ -= value_local * iongradpsireal_;
+  pulaytmpreal_ -= value_ * iongradpsireal_;
   pulay_terms += pulaytmpreal_;
 }
 

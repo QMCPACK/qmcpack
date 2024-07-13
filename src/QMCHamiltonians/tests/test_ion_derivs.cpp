@@ -256,9 +256,12 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   CHECK(wf_grad[1][2] == Approx(0.1440176276013005));
 
   //Kinetic Force
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  hf_term       = 0.0;
+  pulay_term    = 0.0;
+  auto& ham_ke  = *ham.getHamiltonian(KINETIC);
+  auto ke_saved = ham_ke.getValue();
+  ham_ke.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(ke_saved == Approx(ham_ke.getValue()));
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
   CHECK(hf_term[0][1] + pulay_term[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
@@ -275,9 +278,12 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(7.5625192454964454));
 #endif
   //NLPP Force
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  (ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  hf_term               = 0.0;
+  pulay_term            = 0.0;
+  auto& ham_nonlocalpp  = *ham.getHamiltonian(NONLOCALECP);
+  auto nonlocalpp_saved = ham_nonlocalpp.getValue();
+  ham_nonlocalpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(nonlocalpp_saved == Approx(ham_nonlocalpp.getValue()));
 
 //MP fails the first REQUIRE with 24.22544.  Just bypass the checks in those builds.
 #if defined(MIXED_PRECISION)
@@ -409,9 +415,12 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   CHECK(wf_grad[1][2] == Approx(-1.5197874544625731));
 
   //Kinetic Force
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  hf_term       = 0.0;
+  pulay_term    = 0.0;
+  auto& ham_ke  = *ham.getHamiltonian(KINETIC);
+  auto ke_saved = ham_ke.getValue();
+  ham_ke.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(ke_saved == Approx(ham_ke.getValue()));
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
   CHECK(hf_term[0][1] + pulay_term[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
@@ -427,10 +436,20 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   CHECK(hf_term[1][1] + pulay_term[1][1] == Approx(-3.5321234918228579));
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(5.8844148870917925));
 #endif
+
+  //Local PP Force
+  auto& ham_localpp  = *ham.getHamiltonian(LOCALECP);
+  auto localpp_saved = ham_localpp.getValue();
+  ham_localpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(localpp_saved == Approx(ham_localpp.getValue()));
+
   //NLPP Force
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  (ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  hf_term               = 0.0;
+  pulay_term            = 0.0;
+  auto& ham_nonlocalpp  = *ham.getHamiltonian(NONLOCALECP);
+  auto nonlocalpp_saved = ham_nonlocalpp.getValue();
+  ham_nonlocalpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(nonlocalpp_saved == Approx(ham_nonlocalpp.getValue()));
 //MP fails the first REQUIRE with 27.15313.  Just bypass the checks in those builds.
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(27.1517161490208956).epsilon(2e-4));

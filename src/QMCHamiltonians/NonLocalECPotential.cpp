@@ -465,9 +465,6 @@ void NonLocalECPotential::evaluateIonDerivs(ParticleSet& P,
 {
   //We're going to ignore psi and use the internal Psi.
 
-  Return_t value_local = 0.0;
-  forces_              = 0;
-  PulayTerm            = 0;
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -476,6 +473,9 @@ void NonLocalECPotential::evaluateIonDerivs(ParticleSet& P,
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
+  value_    = 0.0;
+  forces_   = 0;
+  PulayTerm = 0;
   for (int ig = 0; ig < P.groups(); ++ig) //loop over species
   {
     Psi.prepareGroup(P, ig);
@@ -487,7 +487,7 @@ void NonLocalECPotential::evaluateIonDerivs(ParticleSet& P,
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          value_local +=
+          value_ +=
               PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat], PulayTerm);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -497,10 +497,6 @@ void NonLocalECPotential::evaluateIonDerivs(ParticleSet& P,
 
   hf_terms -= forces_;
   pulay_terms -= PulayTerm;
-
-  // sanity check
-  assert(value_ == value_local);
-  value_ = value_local; // prevent unused-but-set-variable warning
 }
 
 void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)

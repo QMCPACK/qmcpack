@@ -201,15 +201,16 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RealType logpsi = psi.evaluateLog(elec);
 
   RealType keval = bare_ke.evaluate(elec);
-
   //This is validated against an alternate code path (waveefunction tester for local energy).
   CHECK(keval == Approx(-0.147507745));
+  CHECK(keval == Approx(bare_ke.getValue()));
 
   ParticleSet::ParticlePos HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
 
   bare_ke.evaluateIonDerivs(elec, ions, psi, HFTerm, PulayTerm);
+  CHECK(keval == Approx(bare_ke.getValue()));
 
   //These are validated against finite differences (delta=1e-6).
   CHECK(PulayTerm[0][0] == Approx(-0.13166));

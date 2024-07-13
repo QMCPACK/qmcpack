@@ -112,8 +112,8 @@ void LocalECPotential::evaluateIonDerivs(ParticleSet& P,
                                          ParticleSet::ParticlePos& pulay_terms)
 {
   const auto& d_table(P.getDistTableAB(myTableIndex));
-  Return_t value_local = 0.0;
-  const size_t Nelec   = P.getTotalNum();
+  value_             = 0.0;
+  const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
   {
     const auto& dist = d_table.getDistRow(iel);
@@ -135,12 +135,8 @@ void LocalECPotential::evaluateIonDerivs(ParticleSet& P,
         esum += -Zeff[iat] * v * rinv;
       }
     }
-    value_local += esum;
+    value_ += esum;
   }
-
-  // sanity check
-  assert(value_ == value_local);
-  value_ = value_local; // prevent unused-but-set-variable warning
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
