@@ -80,17 +80,11 @@ public:
                                            const std::vector<ListenerVector<Real>>& listeners,
                                            const std::vector<ListenerVector<Real>>& listeners_ions) const override;
 
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos& hf_terms,
-                                 ParticleSet::ParticlePos& pulay_terms) override;
-
-  Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
-                                              ParticleSet& ions,
-                                              TrialWaveFunction& psi,
-                                              ParticleSet::ParticlePos& hf_terms,
-                                              ParticleSet::ParticlePos& pulay_terms) override;
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms) override;
 
   void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
 
@@ -237,12 +231,6 @@ private:
    */
   void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
 
-  void evalIonDerivsImpl(ParticleSet& P,
-                         ParticleSet& ions,
-                         TrialWaveFunction& psi,
-                         ParticleSet::ParticlePos& hf_terms,
-                         ParticleSet::ParticlePos& pulay_terms,
-                         bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set
