@@ -22,6 +22,8 @@
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "Particle/NeighborLists.h"
+#include "type_traits/OptionalRef.hpp"
+
 namespace qmcplusplus
 {
 class NonLocalECPComponent;
@@ -229,7 +231,7 @@ private:
    * @param tmove_xy_all when has_value, compute Txy for all the electrons.
    * @param keepGrid.  If true, does not randomize the quadrature grid before evaluation.  
    */
-  void evaluateImpl(ParticleSet& P, const std::optional<std::reference_wrapper<std::vector<NonLocalData>>> tmove_xy_all, bool keepGrid = false);
+  void evaluateImpl(ParticleSet& P, const OptionalRef<std::vector<NonLocalData>> tmove_xy_all, bool keepGrid = false);
 
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated

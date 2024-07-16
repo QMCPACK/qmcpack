@@ -22,7 +22,9 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true) {}
+NonLocalECPComponent::NonLocalECPComponent()
+    : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true)
+{}
 
 // unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
 // This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
@@ -43,10 +45,7 @@ NonLocalECPComponent::~NonLocalECPComponent()
     delete VP;
 }
 
-void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid)
-{
-  do_randomize_grid_ = do_randomize_grid;
-}
+void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid) { do_randomize_grid_ = do_randomize_grid; }
 
 void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
@@ -133,6 +132,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
                                                                  int iel,
                                                                  RealType r,
                                                                  const PosType& dr,
+                                                                 const OptionalRef<std::vector<NonLocalData>> tmove_xy,
                                                                  bool use_DLA)
 {
   buildQuadraturePointDeltaPositions(r, dr, deltaV);
@@ -161,7 +161,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     }
   }
 
-  return calculateProjector(r, dr);
+  const auto pairpot = calculateProjector(r, dr);
+
+  if (tmove_xy)
+    contributeTxy(iel, *tmove_xy);
+
+  return pairpot;
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType r, const PosType& dr)
@@ -857,7 +862,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         //this is for diagonal case.
-        //The GradType is necessary here, since rrotsgrid_m is real.  This dot() will only return the real part in this case.  
+        //The GradType is necessary here, since rrotsgrid_m is real.  This dot() will only return the real part in this case.
         //Does correct thing if both entries are complex.
         udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb], GradType(rrotsgrid_m[j]));
         wfgradmat[j][iorb]      = gradphimat[j][iorb] - dr * (udotgradpsimat[j][iorb] * rinv);
