@@ -17,7 +17,6 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 
-#include <optional>
 #include "type_traits/OptionalRef.hpp"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/RandomRotationMatrix.h"
