@@ -198,6 +198,7 @@ public:
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,
+                             const RefVector<std::vector<NonLocalData>>& tmove_xy_all_list,
                              ResourceCollection& collection,
                              bool use_DLA);
 

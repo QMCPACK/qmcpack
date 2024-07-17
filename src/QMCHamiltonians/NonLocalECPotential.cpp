@@ -331,12 +331,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
   RefVector<const NLPPJob<Real>> batch_list;
   std::vector<Real> pairpots(nw);
+  RefVector<std::vector<NonLocalData>> tmove_xy_all_batch_list;
 
   ecp_potential_list.reserve(nw);
   ecp_component_list.reserve(nw);
   pset_list.reserve(nw);
   psi_list.reserve(nw);
   batch_list.reserve(nw);
+  tmove_xy_all_batch_list.reserve(nw);
 
   for (int ig = 0; ig < pset_leader.groups(); ++ig) //loop over species
   {
@@ -357,6 +359,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       pset_list.clear();
       psi_list.clear();
       batch_list.clear();
+      tmove_xy_all_batch_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
       {
         auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
@@ -368,11 +371,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
           pset_list.push_back(p_list[iw]);
           psi_list.push_back(wf_list[iw]);
           batch_list.push_back(job);
+          if (Tmove)
+            tmove_xy_all_batch_list.push_back(O.tmove_xy_all_);
         }
       }
 
       NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                           O_leader.mw_res_handle_.getResource().collection, O_leader.use_DLA);
+                                           tmove_xy_all_batch_list, O_leader.mw_res_handle_.getResource().collection,
+                                           O_leader.use_DLA);
 
       // Right now this is just over walker but could and probably should be over a set
       // larger than the walker count.  The easiest way to not complicate the per particle
@@ -392,21 +398,17 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         }
 
 #ifdef DEBUG_NLPP_BATCHED
+        std::vector<NonLocalData> tmove_xy_dummy;
         Real check_value =
             ecp_component_list[j].evaluateOne(pset_list[j], batch_list[j].get().ion_id, psi_list[j],
                                               batch_list[j].get().electron_id, batch_list[j].get().ion_elec_dist,
                                               batch_list[j].get().ion_elec_displ,
-                                              Tmove ? makeOptionalRef<std::vector<NonLocalData>>(
-                                                          ecp_potential_list[j].get().tmove_xy_all_)
+                                              Tmove ? makeOptionalRef<std::vector<NonLocalData>>(tmove_xy_dummy)
                                                     : std::nullopt,
                                               O_leader.use_DLA);
         if (std::abs(check_value - pairpots[j]) > 1e-5)
           std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
                     << std::abs(check_value - pairpots[j]) << std::endl;
-#else
-        if (Tmove)
-          ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id,
-                                              ecp_potential_list[j].get().tmove_xy_all_);
 #endif
       }
     }
