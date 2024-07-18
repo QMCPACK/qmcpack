@@ -914,6 +914,35 @@ An example of the second approach is
     }
   }
 
+Walker
+------
+.. note:: Batched Version Documentation
+	  The following documentation section describes the code design and behavior used when ``driver_version == batch`` at runtime.
+
+Lightweight representation of a markov chain walker's state. It is managed during simulation sections by ``MCPopulation``. Between sections it is contained in the WalkerConfigurations container class.
+
+Walker Identifiers (walker_id)
+~~~~~~
+The ``Walker::walker_id_`` and ``Walker::parent_id_`` allow logging walker instance trajectories etc. The basic data relations involved are shown in :numref:`fig1`. In each QMC section each walkerID will be unique and is generated using the equation
+.. math::
+  :label: eq_walker_id
+  walker_id = walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1
+
+where ``num_walkers_created_`` is a member variable of the sole ```MCPopulation`` object on the rank and initially set to 0. Each walkers ``parent_id`` is set when it is constructed to 0 and is assigned to ``walker_id`` of the Walker it is assigned from or the walker_id of the serialized walker it is copied from. If that assignment is from previous section's or run's ``WalkerConfigurations`` object then the value of the ``Walker::getWalkerID()`` is multiplied by -1. If the Walker's initial configuration comes from the golden particle set the parent_id will be 0.
+
+.. _fig1:
+.. figure:: /uml/WalkerID_chen.pdf
+    :width: 400
+    :align: center
+
+For fixed population methods this is all that is needed to understand ``walker_id``'s. For any method using dynamic population control the situation is a bit more involved. Currently DMC is only method with dynamic populations.
+
+During DMC branching there are two distinct mechanisms by which new walkers appear in a population.  One is when a walker is transferred, the other is when walkers of multiplicity > 2 are split. Both of these mechanism potentially occur each step in order, transfer first then splitting. During the population balancing stage walker multiplicity is derived from walker weight. Walker multiplicity summed over gives the population of walkers for the next step. Based on the multiplicity total on each rank, the highest multiplicity walkers on overpopulated ranks are sent to underpopulated ranks. When possible rank multiplicities are balanced by transferring fewer walkers with more than one unit of multiplicity.  This is unit is unfortunately called a copy in the source code but it is simply the multiplicity that the walker will have after it is unpacked on the receiving rank. That amount of multiplicity is removed from the walker on the sending rank. When a walker is received by a rank it spawns a new walker with a new walker ID. It saves that walker ID then copies from the walker from receive buffer. This operation overwrites the spawned walker member variables including ``walker_id`` and ``parent_id``. The walker_id is then copied over the ``parent_id`` and the retained ``walker_id`` from the spawned state is copied over the ``walker_id``. The walker multiplicity is set the multiplicity that walker lost on the sending rank. Each rank can still have walkers with multiplicity >= 2 at this point.  Some of these maybe walkers that existed on the rank before the population balancing and some may have been received. Walkers with multiplicity < 1 are removed at the end of the population control stage.
+
+In the next step of the dynamic population DMC algorithm all high multiplicity walkers will follow 1 trajectory for each unit of multiplicity they have which means they need to become independent replicas. For each unit of multiplicity >= 2 walker is spawned. These spawned walkers are assigned to from the original high multiplicity walker. At the end of this process all walkers have multiplicity == 1. They keep their ``walker_id``'s from spawn time.
+
+The overarching rule of parent ids is when a newly active walker is assigned to from an older walker, the older walker's ``walker_id`` becomes the new walkers ``parent_id`` and the new walkers ``walker_id`` is a global unique ID that it was spawned with.
+
 Wavefunction
 ------------
 
