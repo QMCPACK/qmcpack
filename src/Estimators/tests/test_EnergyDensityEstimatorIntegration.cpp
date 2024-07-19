@@ -40,11 +40,11 @@ TEST_CASE("EnergyDensityEstimatorIntegration", "[estimators]")
   auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
   EstimatorManagerInput emi(doc.getRoot());
   auto& gold_elem = eden_test.getGoldElements();
-  auto ham_list = eden_test.getHamList();
-  auto ham_lock = eden_test.makeTeamLock(eden_test.getHamRes(), ham_list);
-  
-  auto pset_list = eden_test.getPSetList();
-  auto pset_lock = eden_test.makeTeamLock(eden_test.getPSetRes(), pset_list);
+  auto ham_list   = eden_test.getHamList();
+  auto ham_lock   = eden_test.makeTeamLock(eden_test.getHamRes(), ham_list);
+
+  auto pset_list    = eden_test.getPSetList();
+  auto pset_lock    = eden_test.makeTeamLock(eden_test.getPSetRes(), pset_list);
   pset_list[0].L[0] = 1.0;
   pset_list[1].L[1] = 1.0;
   pset_list[2].L[2] = 1.0;
@@ -53,8 +53,9 @@ TEST_CASE("EnergyDensityEstimatorIntegration", "[estimators]")
   auto twf_list = eden_test.getTwfList();
   auto twf_lock = eden_test.makeTeamLock(eden_test.getTwfRes(), twf_list);
 
-  EstimatorManagerNew emn(comm, std::move(emi), gold_elem.ham, gold_elem.pset_elec, gold_elem.particle_pool.getPool(), gold_elem.twf);
-  EstimatorManagerCrowd emc(emn);  
+  EstimatorManagerNew emn(comm, std::move(emi), gold_elem.ham, gold_elem.pset_elec, gold_elem.particle_pool.getPool(),
+                          gold_elem.twf);
+  EstimatorManagerCrowd emc(emn);
   emc.registerListeners(ham_list);
 
   ParticleSet::mw_update(pset_list);
@@ -85,12 +86,18 @@ TEST_CASE("EnergyDensityEstimatorIntegration", "[estimators]")
   for (int i = 0; i < 16000; i++)
     summed_grid += *(grid.getDataVector().begin() + i * 3 + 2) + *(grid.getDataVector().begin() + i * 3 + 1);
 
-  auto& pph_logger = dynamic_cast<PerParticleHamiltonianLogger&>(operator_ests[1].get());
+  // We can't just do this because you do not reduce values down to the head rank per particle logger
+  // auto& pph_logger = dynamic_cast<PerParticleHamiltonianLogger&>(operator_ests[1].get());
+  // so we just get this ranks;
+  auto& pph_logger  = dynamic_cast<PerParticleHamiltonianLogger&>(crowd_operator_ests[0][1].get());
   auto expected_sum = pph_logger.sumOverAll();
   //Here we check the sum of logged energies against the total energy in the grid.
+
+  // The head rank sees the reduction across ranks of the space grid. so its expectation is * num_ranks
+  if (comm->rank() == 0)
+    expected_sum *= comm->size();
+
   CHECK(summed_grid == Approx(expected_sum));
-
-  std::cout << "expected sum!\n";
 }
 
-}
+} // namespace qmcplusplus

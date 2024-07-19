@@ -98,6 +98,7 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const NEEnergyDensityEstimato
       n_ions_(ede.n_ions_),
       spacegrid_inputs_(ede.spacegrid_inputs_)
 {
+  requires_listener_ = true;
   data_locality_ = dl;
 
   constructToReferencePoints(pset_dynamic_, pset_static_);
