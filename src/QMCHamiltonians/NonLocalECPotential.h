@@ -22,6 +22,8 @@
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "Particle/NeighborLists.h"
+#include "type_traits/OptionalRef.hpp"
+
 namespace qmcplusplus
 {
 class NonLocalECPComponent;
@@ -211,8 +213,8 @@ private:
   NonLocalTOperator nonLocalOps;
   ///Pulay force vector
   ParticleSet::ParticlePos PulayTerm;
-  // Tmove data
-  std::vector<NonLocalData> tmove_xy_;
+  /// Tmove data collected for all the electrons
+  std::vector<NonLocalData> tmove_xy_all_;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
 
@@ -226,17 +228,18 @@ private:
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
-   * @param Tmove whether Txy for Tmove is updated
+   * @param tmove_xy_all when has_value, compute Txy for all the electrons.
    * @param keepGrid.  If true, does not randomize the quadrature grid before evaluation.  
    */
-  void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
+  void evaluateImpl(ParticleSet& P, const OptionalRef<std::vector<NonLocalData>> tmove_xy_all, bool keepGrid = false);
 
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set
    * @param ref_elec reference electron id
+   * @param tmove_xy off-diagonal terms for one electron.
    */
-  void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
+  void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& tmove_xy);
 
   /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
    * @param myTable electron ion distance table
