@@ -54,13 +54,11 @@ void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P) {}
 NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
                                          ParticleSet& els,
                                          TrialWaveFunction& psi,
-                                         bool computeForces,
                                          bool enable_DLA)
     : ForceBase(ions, els),
       myRNG(nullptr),
       IonConfig(ions),
       Psi(psi),
-      ComputeForces(computeForces),
       use_DLA(enable_DLA),
       Peln(els),
       ElecNeighborIons(els),
@@ -205,55 +203,28 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P,
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
-  if (ComputeForces)
+  for (int ig = 0; ig < P.groups(); ++ig) //loop over species
   {
-    forces_ = 0;
-    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+    Psi.prepareGroup(P, ig);
+    for (int jel = P.first(ig); jel < P.last(ig); ++jel)
     {
-      Psi.prepareGroup(P, ig);
-      for (int jel = P.first(ig); jel < P.last(ig); ++jel)
-      {
-        const auto& dist               = myTable.getDistRow(jel);
-        const auto& displ              = myTable.getDisplRow(jel);
-        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-        for (int iat = 0; iat < NumIons; iat++)
-          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-          {
-            Real pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat]);
-            if (tmove_xy_all)
-              PP[iat]->contributeTxy(jel, *tmove_xy_all);
-            value_ += pairpot;
-            NeighborIons.push_back(iat);
-            IonNeighborElecs.getNeighborList(iat).push_back(jel);
-          }
-      }
-    }
-  }
-  else
-  {
-    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
-    {
-      Psi.prepareGroup(P, ig);
-      for (int jel = P.first(ig); jel < P.last(ig); ++jel)
-      {
-        const auto& dist               = myTable.getDistRow(jel);
-        const auto& displ              = myTable.getDisplRow(jel);
-        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-        for (int iat = 0; iat < NumIons; iat++)
-          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-          {
-            Real pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], tmove_xy_all, use_DLA);
-            value_ += pairpot;
-            NeighborIons.push_back(iat);
-            IonNeighborElecs.getNeighborList(iat).push_back(jel);
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          Real pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], tmove_xy_all, use_DLA);
+          value_ += pairpot;
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
 
-            if (streaming_particles_)
-            {
-              Ve_samp(jel) += 0.5 * pairpot;
-              Vi_samp(iat) += 0.5 * pairpot;
-            }
+          if (streaming_particles_)
+          {
+            Ve_samp(jel) += 0.5 * pairpot;
+            Vi_samp(iat) += 0.5 * pairpot;
           }
-      }
+        }
     }
   }
 
@@ -292,9 +263,6 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   auto& O_leader           = o_list.getCastedLeader<NonLocalECPotential>();
   ParticleSet& pset_leader = p_list.getLeader();
   const size_t nw          = o_list.size();
-
-  if (O_leader.ComputeForces)
-    APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
 
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -765,85 +733,11 @@ void NonLocalECPotential::releaseResource(ResourceCollection& collection,
 std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   std::unique_ptr<NonLocalECPotential> myclone =
-      std::make_unique<NonLocalECPotential>(IonConfig, qp, psi, ComputeForces, use_DLA);
+      std::make_unique<NonLocalECPotential>(IonConfig, qp, psi, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
       myclone->addComponent(ig, std::make_unique<NonLocalECPComponent>(*PPset[ig], qp));
   return myclone;
-}
-
-
-void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& collectables)
-{
-  OperatorBase::addValue(plist);
-  if (ComputeForces)
-  {
-    if (first_force_index_ < 0)
-      first_force_index_ = plist.size();
-    for (int iat = 0; iat < n_nuc_; iat++)
-    {
-      for (int x = 0; x < OHMMS_DIM; x++)
-      {
-        std::ostringstream obsName1, obsName2;
-        obsName1 << "FNL"
-                 << "_" << iat << "_" << x;
-        plist.add(obsName1.str());
-        //        obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
-        //        plist.add(obsName2.str());
-      }
-    }
-  }
-}
-
-void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const
-{
-  using namespace std::string_literals;
-
-  OperatorBase::registerObservables(h5list, file);
-  if (ComputeForces)
-  {
-    std::vector<int> ndim(2);
-    ndim[0] = n_nuc_;
-    ndim[1] = OHMMS_DIM;
-    h5list.push_back({{"FNL"s}});
-    auto& h5o1 = h5list.back();
-    h5o1.set_dimensions(ndim, first_force_index_);
-  }
-}
-
-void NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
-{
-  OperatorBase::setObservables(plist);
-  if (ComputeForces)
-  {
-    int index = first_force_index_;
-    for (int iat = 0; iat < n_nuc_; iat++)
-    {
-      for (int x = 0; x < OHMMS_DIM; x++)
-      {
-        plist[index++] = forces_[iat][x];
-        //    plist[index++] = PulayTerm[iat][x];
-      }
-    }
-  }
-}
-
-
-void NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& plist, int offset)
-{
-  OperatorBase::setParticlePropertyList(plist, offset);
-  if (ComputeForces)
-  {
-    int index = first_force_index_ + offset;
-    for (int iat = 0; iat < n_nuc_; iat++)
-    {
-      for (int x = 0; x < OHMMS_DIM; x++)
-      {
-        plist[index++] = forces_[iat][x];
-        //        plist[index++] = PulayTerm[iat][x];
-      }
-    }
-  }
 }
 
 } // namespace qmcplusplus
