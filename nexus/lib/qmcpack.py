@@ -518,7 +518,7 @@ class GCTA(DevBase):
         nosym_kpoints = self.unfolded_nkpoints()
         q_sum_twists = self.sum_charge_twists()
         qmc_charge = q_sum_twists / nosym_kpoints
-        if not spinor_run:
+        if spinor_run is not True:
             spin_sum_twists = self.sum_spin_twists()
             qmc_magnet = spin_sum_twists / nosym_kpoints
         #end if
@@ -543,14 +543,14 @@ class GCTA(DevBase):
             #end if
             gcta_file.write('Net Charge:                     {}\n'.format(q_sum_twists))
             gcta_file.write('Net Charge / Prim Cell:       {:20.16f}\n'.format(qmc_charge))
-            if not spinor_run:
+            if spinor_run is not True:
                 gcta_file.write('Net Magnetization / Prim Cell:{:20.16f}\n'.format(qmc_magnet))
             #end if
             if scf_magnet is not None:
                 gcta_file.write('SCF Magnetization (Reference):{:20.16f}\n'.format(scf_magnet))
             #end if
             gcta_file.write('\n\n')
-            if not spinor_run:
+            if spinor_run is not True:
                 gcta_file.write(' TWISTNUM  NELEC_UP  NELEC_DN   CHARGE     SPIN   \n')
             else:
                 gcta_file.write(' TWISTNUM    NELEC    CHARGE                      \n')
@@ -561,11 +561,11 @@ class GCTA(DevBase):
                 q_twist = n_total - nelec_twist
                 gcta_file.write('{:^10}'.format(itwist))
                 gcta_file.write('{:^10}'.format(nelec_up_dn[0]))
-                if not spinor_run:
+                if spinor_run is not True:
                     gcta_file.write('{:^10}'.format(nelec_up_dn[1]))
                 #end if
                 gcta_file.write('{:^11}'.format(q_twist))
-                if not spinor_run:
+                if spinor_run is not True:
                     spin_twist = nelec_up_dn[0] - nelec_up_dn[1]
                     gcta_file.write('{:^9}'.format(spin_twist))
                 #end if
