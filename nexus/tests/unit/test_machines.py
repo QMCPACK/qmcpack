@@ -1269,6 +1269,12 @@ def test_job_run_command():
         ('kagayaki'       , 'n2_t2'         ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
         ('kagayaki'       , 'n2_t2_e'       ) : 'mpirun -machinefile $PBS_NODEFILE -np 128 -x OMP_NUM_THREADS test.x',
         ('kagayaki'       , 'n2_t2_p2'      ) : 'mpirun -machinefile $PBS_NODEFILE -np 4 -x OMP_NUM_THREADS test.x',
+        ('kestrel'        , 'n1'            ) : 'srun test.x',
+        ('kestrel'        , 'n1_p1'         ) : 'srun test.x',
+        ('kestrel'        , 'n2'            ) : 'srun test.x',
+        ('kestrel'        , 'n2_t2'         ) : 'srun test.x',
+        ('kestrel'        , 'n2_t2_e'       ) : 'srun test.x',
+        ('kestrel'        , 'n2_t2_p2'      ) : 'srun test.x',
         })
 
     if testing.global_data['job_ref_table']:
@@ -2004,6 +2010,24 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 mpirun -machinefile $PBS_NODEFILE -np 256 -x OMP_NUM_THREADS test.x''',
+        kestrel = '''#!/bin/bash
+#SBATCH -A ABC123
+#SBATCH -p regular
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=104
+#SBATCH --cpus-per-task=1
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
+
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun test.x''',
         )
 
     def process_job_file(jf):
