@@ -3685,6 +3685,41 @@ class Kagayaki(Supercomputer):
 
 
 
+# Kestrel at NREL
+class Kestrel(Supercomputer):
+    name = 'kestrel'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH -A '+job.account+'\n'
+        c+='#SBATCH -p '+job.queue+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c+='#SBATCH --export=NONE\n'
+        #end if
+        c+='''
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+'''
+        return c
+    #end def write_job_header
+#end class Kestrel
+
+
+
 
 #Known machines
 #  workstations
@@ -3734,6 +3769,7 @@ Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    
 Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    'qdel')
 Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
 Improv(        825,   2,    64,  256,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
+Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
