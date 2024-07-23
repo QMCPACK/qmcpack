@@ -158,11 +158,6 @@ public:
 
   void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override;
 
-  /** Set the flag whether to compute forces or not.
-   * @param val The boolean value for computing forces
-   */
-  inline void setComputeForces(bool val) override { ComputeForces = val; }
-
 protected:
   /** the actual implementation for batched walkers, used by mw_evaluate, mw_evaluateWithToperator
    *  mw_evaluatePerPaticleWithToperator
