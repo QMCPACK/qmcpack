@@ -116,6 +116,9 @@ private:
   ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
 
+  /// Can disable grid randomization for testing
+  bool do_randomize_grid_;
+
   /// build QP position deltas from the reference electron using internally stored random grid points
   void buildQuadraturePointDeltaPositions(RealType r, const PosType& dr, std::vector<PosType>& deltaV) const;
 
@@ -123,8 +126,11 @@ private:
    */
   RealType calculateProjector(RealType r, const PosType& dr);
 
-  /// Can disable grid randomization for testing
-  bool do_randomize_grid_;
+  /** contribute local non-local move data
+   * @param iel reference electron id.
+   * @param Txy nonlocal move data.
+   */
+  void contributeTxy(int iel, std::vector<NonLocalData>& Txy) const;
 
 public:
   NonLocalECPComponent();
@@ -151,12 +157,6 @@ public:
   void rotateQuadratureGrid(const TensorType& rmat);
   template<typename T>
   void rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat);
-
-  /** contribute local non-local move data
-   * @param iel reference electron id.
-   * @param Txy nonlocal move data.
-   */
-  void contributeTxy(int iel, std::vector<NonLocalData>& Txy) const;
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
