@@ -25,7 +25,7 @@ namespace testing
 
 /** Testing class breaking EstimatorManagerNew encapsultation
  *
- *  Wraps EstimatorManagerNew
+ *  Wraps and does tests on EstimatorManagerNew
  */
 class EstimatorManagerNewTest
 {
@@ -65,9 +65,14 @@ private:
   std::vector<RefVector<ScalarEstimatorBase>> scalar_estimators_;
 };
 
+/** Simple private access for integration testing with EstimatorManagerNew
+ */
 class EstimatorManagerNewTestAccess {
 public:
   EstimatorManagerNewTestAccess(EstimatorManagerNew& emn) : emn_(emn) {}
+
+  void reduceOperatorEstimators() { emn_.reduceOperatorEstimators(); }
+
   const ScalarEstimatorBase& getMainEstimator() { return *(emn_.main_estimator_.get()); }
 private:
   EstimatorManagerNew& emn_;

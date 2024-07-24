@@ -92,12 +92,13 @@ bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Arg
 }
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
+EstimatorManagerNew::EstimatorManagerNew(Communicate* comm,
                                          EstimatorManagerInput&& emi,
                                          const QMCHamiltonian& H,
                                          const ParticleSet& pset,
+					 const PSPool& pset_pool,
                                          const TrialWaveFunction& twf)
-    : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
+    : RecordCount(0), my_comm_(comm), max4ascii(8), FieldWidth(20)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||

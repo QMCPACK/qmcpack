@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -21,6 +21,7 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "OperatorEstBase.h"
 #include "Particle/Walker.h"
+#include <ParticleSetPool.h>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "type_traits/template_types.hpp"
 #include "EstimatorManagerInput.h"
@@ -46,28 +47,29 @@ class EstimatorManagerNew
 {
 public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
-  using RealType         = QMCTraits::FullPrecRealType;
-  using FullPrecRealType = QMCTraits::FullPrecRealType;
-
   using QMCT      = QMCTraits;
-  using FPRBuffer = std::vector<FullPrecRealType>;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-
-  ///default constructor
+  using RealType         = QMCTraits::FullPrecRealType;
+  using FullPrecRealType         = QMCTraits::FullPrecRealType;
+  using MCPWalker = Walker<QMCT, PtclOnLatticeTraits>;
+  using PSPool = typename ParticleSetPool::PoolType;
+  /// default constructor
   EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   /** Batched version constructor.
    *
-   *  \param[in]  emi    EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
-   *  \param[in]  H      Fully Constructed Golden Hamiltonian.
-   *  \param[in]  pset   The electron or equiv. pset
-   *  \param[in]  twf    The fully constructed TrialWaveFunction.
+   *  \param[in]  comm        MPI communicator
+   *  \param[in]  emi         EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
+   *  \param[in]  H           Fully Constructed Golden Hamiltonian.
+   *  \param[in]  pset        The electron or equiv. pset
+   *  \param[in]  pset_pool   Application ParticleSet pool
+   *  \param[in]  twf         The fully constructed TrialWaveFunction.
    */
   EstimatorManagerNew(Communicate* comm,
                       EstimatorManagerInput&& emi,
                       const QMCHamiltonian& H,
                       const ParticleSet& pset,
+		      const PSPool& pset_pool,
                       const TrialWaveFunction& twf);
   ///destructor
   ~EstimatorManagerNew();
@@ -178,6 +180,9 @@ private:
    */
   int addScalarEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator);
 
+  /** add an Scalar Estimator marked main.
+   *  this drops the previous main estimator if any.
+   */
   void addMainEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator);
 
   // ///return a pointer to the estimator aname
@@ -249,7 +254,7 @@ private:
   /** non main scalar estimators collecting simple scalars, are there any?
    *  with the removal of collectables these don't seem used or needed.
    */
-  std::vector<UPtr<ScalarEstimatorBase>> scalar_ests_;
+  UPtrVector<ScalarEstimatorBase> scalar_ests_;
   ///convenient descriptors for hdf5
   std::vector<ObservableHelper> h5desc;
   /** OperatorEst Observables
@@ -259,7 +264,7 @@ private:
    * However the idea of a shared interface is much more straight forward for
    * them.
    */
-  std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
+  UPtrVector<OperatorEstBase> operator_ests_;
 
   ///block timer
   Timer block_timer_;

@@ -51,6 +51,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            const std::optional<EstimatorManagerInput>& global_emi,
                            WalkerConfigurations& wc,
                            MCPopulation&& population,
+			   const PSPool& pset_pool,
                            const std::string timer_prefix,
                            Communicate* comm,
                            const std::string& QMC_driver_type)
@@ -83,6 +84,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                                             makeEstimatorManagerInput(global_emi,
                                                                       qmcdriver_input_.get_estimator_manager_input()),
                                             population_.get_golden_hamiltonian(), population.get_golden_electrons(),
+					    pset_pool,
                                             population.get_golden_twf());
 
   drift_modifier_.reset(
