@@ -90,6 +90,10 @@ public:
   };
 
   using MCPWalker = MCPopulation::MCPWalker;
+  /** This type provides all the functionality needed by drivers to instantiate estimators so we use it to reduce coupling
+   *  with ParticleSetPool
+   */
+  using PSPool = ParticleSetPool::PoolType;
   using WFBuffer  = MCPopulation::WFBuffer;
 
   using SetNonLocalMoveHandler = std::function<void(QMCHamiltonian&)>;
@@ -131,12 +135,24 @@ protected:
   void endBlock();
 
 public:
-  /// Constructor.
+  /** Constructor
+   *
+   *  \param[in]  project_data         ...
+   *  \param[in]  input                in theory immutable parameters controlling the driver should come from here.
+   *  \param[in]  wc                   incoming walker configurations from previous run (or restart?)
+   *  \param[in]  population           rank scope container for population <em>walker elements</em>
+   *  \param[in]  pset_pool            global particle set pool, allows retrieval of "named" particle sets.
+   *                                   currently only the EnergyDensityEstimator requries this.
+   *  \param[in]  timer_prefix         prefix string for the driver timers
+   *  \param[in]  comm                 MPI communicator wrapper
+   *  \param[in]  QMC_driver_type      string identifier of the QMCDriver required for?
+   */
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
                const std::optional<EstimatorManagerInput>& global_emi,
                WalkerConfigurations& wc,
                MCPopulation&& population,
+	       const PSPool& pset_pool,
                const std::string timer_prefix,
                Communicate* comm,
                const std::string& QMC_driver_type);

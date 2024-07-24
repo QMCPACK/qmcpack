@@ -24,6 +24,7 @@ std::unique_ptr<QMCDriverInterface> VMCFactoryNew::create(const ProjectData& pro
                                                           const std::optional<EstimatorManagerInput>& global_emi,
                                                           WalkerConfigurations& wc,
                                                           MCPopulation&& pop,
+							  const ParticleSetPool::PoolType& pset_pool,
                                                           SampleStack& samples,
                                                           Communicate* comm)
 {
@@ -49,7 +50,7 @@ std::unique_ptr<QMCDriverInterface> VMCFactoryNew::create(const ProjectData& pro
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
     qmc = std::make_unique<VMCBatched>(project_data, std::move(qmcdriver_input), global_emi, std::move(vmcdriver_input),
-                                       wc, std::move(pop), samples, comm);
+                                       wc, std::move(pop), pset_pool, samples, comm);
   }
   else
   {

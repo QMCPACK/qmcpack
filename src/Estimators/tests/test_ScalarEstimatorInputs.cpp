@@ -22,9 +22,9 @@ namespace qmcplusplus
 
 TEST_CASE("Scalar Estimator Input", "[estimators]")
 {
-  using input = testing::ValidScalarEstimatorInput;
-
-  for (auto input_xml : input::xml)
+  using Input = testing::ScalarEstimatorInputs;
+  Input scalar_input;
+  for (auto input_xml : scalar_input)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);
