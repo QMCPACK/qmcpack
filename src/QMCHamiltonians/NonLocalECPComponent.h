@@ -122,9 +122,11 @@ private:
   /// build QP position deltas from the reference electron using internally stored random grid points
   void buildQuadraturePointDeltaPositions(RealType r, const PosType& dr, std::vector<PosType>& deltaV) const;
 
+  void calculateKnotPartialProduct(RealType r, const PosType& dr, std::vector<RealType>& knot_prods);
+
   /** finalize the calculation of $\frac{V\Psi_T}{\Psi_T}$
    */
-  RealType calculateProjector(RealType r, const PosType& dr);
+  RealType calculatePotential(RealType r, const PosType& dr);
 
   /** contribute local non-local move data
    * @param iel reference electron id.

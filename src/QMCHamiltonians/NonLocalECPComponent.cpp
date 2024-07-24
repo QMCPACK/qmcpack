@@ -161,7 +161,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     }
   }
 
-  const auto pairpot = calculateProjector(r, dr);
+  const auto pairpot = calculatePotential(r, dr);
 
   if (tmove_xy)
     contributeTxy(iel, *tmove_xy);
@@ -169,11 +169,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   return pairpot;
 }
 
-NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType r, const PosType& dr)
+void NonLocalECPComponent::calculateKnotPartialProduct(RealType r, const PosType& dr, std::vector<RealType>& knot_prods)
 {
-  for (int j = 0; j < nknot; j++)
-    psiratio[j] *= sgridweight_m[j];
-
   // Compute radial potential, multiplied by (2l+1) factor.
   for (int ip = 0; ip < nchannel; ip++)
     vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
@@ -182,7 +179,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
   constexpr RealType cone(1);
 
   const RealType rinv = cone / r;
-  RealType pairpot    = czero;
   // Compute spherical harmonics on grid
   for (int j = 0; j < nknot; j++)
   {
@@ -199,7 +195,17 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
     RealType lsum = 0.0;
     for (int l = 0; l < nchannel; l++)
       lsum += vrad[l] * lpol[angpp_m[l]];
-    knot_pots[j] = lsum * std::real(psiratio[j]);
+    knot_prods[j] = lsum * sgridweight_m[j];
+  }
+}
+
+NonLocalECPComponent::RealType NonLocalECPComponent::calculatePotential(RealType r, const PosType& dr)
+{
+  calculateKnotPartialProduct(r, dr, knot_pots);
+  RealType pairpot(0);
+  for (int j = 0; j < nknot; j++)
+  {
+    knot_pots[j] = knot_pots[j] * std::real(psiratio[j]);
     pairpot += knot_pots[j];
   }
 
@@ -284,7 +290,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
   {
     NonLocalECPComponent& component(ecp_component_list[i]);
     const NLPPJob<RealType>& job(joblist[i]);
-    pairpots[i] = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ);
+    pairpots[i] = component.calculatePotential(job.ion_elec_dist, job.ion_elec_displ);
     if (!tmove_xy_all_list.empty())
       component.contributeTxy(job.electron_id, tmove_xy_all_list[i]);
   }
