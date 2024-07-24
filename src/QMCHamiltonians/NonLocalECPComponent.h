@@ -167,6 +167,7 @@ public:
    * @param iel index of electron
    * @param r the distance between ion iat and electron iel.
    * @param dr displacement from ion iat to electron iel.
+   * @param tmove_xy when has_value, compute and collect Txy for the given electron ion pair.
    * @param use_DLA if ture, use determinant localization approximation (DLA).
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
@@ -188,6 +189,7 @@ public:
    * @param psi_list a list of trial wave function object
    * @param joblist a list of ion-electron pairs
    * @param pairpots a list of contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+   * @param tmove_xy_all_list if not empty, calculate and accumulate Txy.
    * @param use_DLA if ture, use determinant localization approximation (DLA).
    *
    * Note: ecp_component_list allows including different NLPP component for different walkers.
