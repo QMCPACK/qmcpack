@@ -88,6 +88,8 @@ private:
   std::vector<RealType> dvrad;
   //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
   std::vector<ValueType> psiratio;
+  //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q. Using the determinant part of Psi.
+  std::vector<ValueType> psiratio_det;
   //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
   //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
   std::vector<PosType> gradpsiratio;
