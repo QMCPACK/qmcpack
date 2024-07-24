@@ -45,7 +45,7 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
   struct NonLocalECPotentialMultiWalkerResource;
 
 public:
-  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
+  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool enable_DLA);
   ~NonLocalECPotential() override;
 
   bool dependsOnWaveFunction() const override { return true; }
@@ -150,19 +150,6 @@ public:
    */
   void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override { myRNG = rng; }
 
-  void addObservables(PropertySetType& plist, BufferType& collectables) override;
-
-  void setObservables(PropertySetType& plist) override;
-
-  void setParticlePropertyList(PropertySetType& plist, int offset) override;
-
-  void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override;
-
-  /** Set the flag whether to compute forces or not.
-   * @param val The boolean value for computing forces
-   */
-  inline void setComputeForces(bool val) override { ComputeForces = val; }
-
 protected:
   /** the actual implementation for batched walkers, used by mw_evaluate, mw_evaluateWithToperator
    *  mw_evaluatePerPaticleWithToperator
@@ -189,8 +176,6 @@ protected:
   ParticleSet& IonConfig;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
-  ///true if we should compute forces
-  bool ComputeForces;
   ///true, determinant localization approximation(DLA) is enabled
   bool use_DLA;
 
