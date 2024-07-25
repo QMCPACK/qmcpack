@@ -22,7 +22,9 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true) {}
+NonLocalECPComponent::NonLocalECPComponent()
+    : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true)
+{}
 
 // unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
 // This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
@@ -43,10 +45,7 @@ NonLocalECPComponent::~NonLocalECPComponent()
     delete VP;
 }
 
-void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid)
-{
-  do_randomize_grid_ = do_randomize_grid;
-}
+void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid) { do_randomize_grid_ = do_randomize_grid; }
 
 void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
@@ -133,6 +132,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
                                                                  int iel,
                                                                  RealType r,
                                                                  const PosType& dr,
+                                                                 const OptionalRef<std::vector<NonLocalData>> tmove_xy,
                                                                  bool use_DLA)
 {
   buildQuadraturePointDeltaPositions(r, dr, deltaV);
@@ -161,7 +161,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     }
   }
 
-  return calculateProjector(r, dr);
+  const auto pairpot = calculateProjector(r, dr);
+
+  if (tmove_xy)
+    contributeTxy(iel, *tmove_xy);
+
+  return pairpot;
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType r, const PosType& dr)
@@ -206,6 +211,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
                                           const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                           const RefVector<const NLPPJob<RealType>>& joblist,
                                           std::vector<RealType>& pairpots,
+                                          const RefVector<std::vector<NonLocalData>>& tmove_xy_all_list,
                                           ResourceCollection& collection,
                                           bool use_DLA)
 {
@@ -271,11 +277,16 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
     }
   }
 
+  if (!tmove_xy_all_list.empty())
+    assert(tmove_xy_all_list.size() == ecp_component_list.size());
+
   for (size_t i = 0; i < p_list.size(); i++)
   {
     NonLocalECPComponent& component(ecp_component_list[i]);
-    const NLPPJob<RealType>& job = joblist[i];
-    pairpots[i]                  = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ);
+    const NLPPJob<RealType>& job(joblist[i]);
+    pairpots[i] = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ);
+    if (!tmove_xy_all_list.empty())
+      component.contributeTxy(job.electron_id, tmove_xy_all_list[i]);
   }
 }
 
@@ -857,7 +868,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         //this is for diagonal case.
-        //The GradType is necessary here, since rrotsgrid_m is real.  This dot() will only return the real part in this case.  
+        //The GradType is necessary here, since rrotsgrid_m is real.  This dot() will only return the real part in this case.
         //Does correct thing if both entries are complex.
         udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb], GradType(rrotsgrid_m[j]));
         wfgradmat[j][iorb]      = gradphimat[j][iorb] - dr * (udotgradpsimat[j][iorb] * rinv);

@@ -287,7 +287,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-          Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
+          Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], std::nullopt, false);
     }
     //These numbers are validated against an alternate code path via wavefunction tester.
     CHECK(Value1 == Approx(6.9015710211e-02));
