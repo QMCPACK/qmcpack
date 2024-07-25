@@ -165,11 +165,9 @@ private:
   IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
-  /** number of walkers on each MPI wrt to the branching algorithm before load balancing
-   *  not the same as WalkerControl::branch.
-   *  For dynamic population: std::floor(sum over walkers of  std::floor(walker weight + rng))
-   *  For fixed population: std::floor(sum over walkers weight)
-
+  /** Copied from curData[LE_MAX+rank_num] during branching
+   *  I think the point is to prove that this number doesn't need to be stashed at the end of the curData buffer.
+   *  \todo figure out if curData[LE_MAX...LE_MAX+num_ranks] can be eliminated
    */
   std::vector<int> num_per_rank_;
   ///offset of the particle index for a fair distribution

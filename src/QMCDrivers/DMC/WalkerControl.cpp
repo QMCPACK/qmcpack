@@ -140,7 +140,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
    *  **This has many side effects**
    *  ## For:
    *  ### dynamic population
-   *  1. compute multiplicity. If iter 0 and all of warmup -> multiplicity = 1
+   *  1. compute multiplicity. If iter 0 and in warmup -> multiplicity = 1
    *     Multiplicity in normal branching is walker->Weight + rng()
    *  2. compute curData, collect multiplicity on every rank
    *  ### fixed population

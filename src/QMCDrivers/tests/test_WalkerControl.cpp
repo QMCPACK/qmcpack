@@ -41,31 +41,6 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   pop_->createWalkers(1, walker_confs);
 }
 
-/** Getting the "fat" walker valid enough to be MPI swapable
- *  
- *  By no means is this "valid" from the perspective of running QMC
- *  See QMCDriverNew::initialLogEvaluation
- *  A fat walker does not seem to be "valid" until all that is done.
- */
-// void UnifiedDriverWalkerControlMPITest::makeValidWalkers()
-// {
-//   auto walker_elements = pop_->get_walker_elements();
-
-//   for (auto we : walker_elements)
-//   {
-//     we.pset.update();
-//     if (we.walker.DataSet.size() <= 0)
-//     {
-//       we.walker.registerData();
-//       we.twf.registerData(we.pset, we.walker.DataSet);
-//       we.walker.DataSet.allocate();
-//     }
-//     we.twf.copyFromBuffer(we.pset, we.walker.DataSet);
-//     we.twf.evaluateLog(we.pset);
-//     we.twf.updateBuffer(we.pset, we.walker.DataSet);
-//   }
-// }
-
 void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCPopulation& pop)
 {
 #if !defined(NDEBUG)
@@ -77,13 +52,13 @@ void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCP
 
   if (c->rank() == 0)
   {
-    std::cout << "Walkers Per Rank (Total: " << current_population << ")\n";
-    // std::cout << "Rank   Count\n"
-    //    << "===========\n";
-    // for (int i = 0; i < rank_walker_count.size(); ++i)
-    // {
-    //   std::cout << std::setw(4) << i << "   " << rank_walker_count[i] << '\n';
-    // }
+    app_log() << "Walkers Per Rank (Total: " << current_population << ")\n";
+    app_log() << "Rank   Count\n"
+       << "===========\n";
+    for (int i = 0; i < rank_walker_count.size(); ++i)
+    {
+      app_log() << std::setw(4) << i << "   " << rank_walker_count[i] << '\n';
+    }
   }
 #endif
 }
