@@ -128,7 +128,7 @@ private:
 
   /** finalize the calculation of $\frac{V\Psi_T}{\Psi_T}$
    */
-  RealType calculatePotential(RealType r, const PosType& dr);
+  RealType calculatePotential(RealType r, const PosType& dr, bool use_TMDLA);
 
   /** contribute local non-local move data
    * @param iel reference electron id.

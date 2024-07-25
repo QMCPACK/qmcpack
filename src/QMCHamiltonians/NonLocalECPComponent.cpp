@@ -176,7 +176,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     }
   }
 
-  const auto pairpot = calculatePotential(r, dr);
+  const auto pairpot = calculatePotential(r, dr, use_TMDLA);
 
   if (tmove_xy)
     contributeTxy(iel, *tmove_xy);
@@ -214,13 +214,17 @@ void NonLocalECPComponent::calculateKnotPartialProduct(RealType r, const PosType
   }
 }
 
-NonLocalECPComponent::RealType NonLocalECPComponent::calculatePotential(RealType r, const PosType& dr)
+NonLocalECPComponent::RealType NonLocalECPComponent::calculatePotential(RealType r, const PosType& dr, bool use_TMDLA)
 {
   calculateKnotPartialProduct(r, dr, knot_pots);
   RealType pairpot(0);
   for (int j = 0; j < nknot; j++)
   {
-    knot_pots[j] = knot_pots[j] * std::real(psiratio[j]);
+    const RealType knot_pot = knot_pots[j] * std::real(psiratio[j]);
+    if (use_TMDLA && knot_pot > 0)
+      knot_pots[j] = knot_pots[j] * std::real(psiratio_det[j]);
+    else
+      knot_pots[j] = knot_pots[j] * std::real(psiratio[j]);
     pairpot += knot_pots[j];
   }
 
@@ -330,7 +334,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
   {
     NonLocalECPComponent& component(ecp_component_list[i]);
     const NLPPJob<RealType>& job(joblist[i]);
-    pairpots[i] = component.calculatePotential(job.ion_elec_dist, job.ion_elec_displ);
+    pairpots[i] = component.calculatePotential(job.ion_elec_dist, job.ion_elec_displ, use_TMDLA);
     if (!tmove_xy_all_list.empty())
       component.contributeTxy(job.electron_id, tmove_xy_all_list[i]);
   }
