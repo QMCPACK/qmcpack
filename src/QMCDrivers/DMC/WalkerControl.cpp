@@ -27,8 +27,6 @@
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
-#include "Utilities/for_testing/NativeInitializerPrint.hpp"
-
 namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
@@ -225,16 +223,13 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     throw std::runtime_error("Potential bug! Population num_global_walkers mismatched!");
 #endif
 
-  // If we are in warmup it think it should be a fatal error is walker->Multiplicity != 1.0
   if (!do_not_branch)
     for (UPtr<MCPWalker>& walker : pop.get_walkers())
     {
       // This may be the correct location for walker Weight to be set to 1 for the next step but... its also
       // set to 1.00 or zero many other locations.
       walker->Weight = 1.0;
-      // This code implies that previous code left population walkers in invalid state however most
-      // walkers will have Multiplicity = 1.0
-      // the only walkers who won't are those that have
+      // This code implies that previous code left population walkers in invalid state however that should not be the case.
       walker->Multiplicity = 1.0;
     }
 
