@@ -31,8 +31,7 @@ module load cmake/3.27.9
  
 module list
 
-CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx\
-             -DENABLE_TIMERS=1 -DBUILD_AFQMC=0"
+CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx"
 
 # Configure and build cpu real.
 echo ""
