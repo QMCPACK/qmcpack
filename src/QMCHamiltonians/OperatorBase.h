@@ -552,8 +552,6 @@ protected:
   virtual void deleteParticleQuantities();
 #endif
 
-  virtual void setComputeForces(bool compute);
-
   /**
    * @brief Set the Energy Domain
    * 
