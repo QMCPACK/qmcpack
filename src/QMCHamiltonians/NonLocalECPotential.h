@@ -156,13 +156,13 @@ protected:
    * @param o_list     the list of NonLocalECPotential in a walker batch
    * @param wf_list    the list of TrialWaveFunction in a walker batch
    * @param p_list     the list of ParticleSet in a walker batch
-   * @param Tmove      whether Txy for Tmove is updated
+   * @param compute_txy_all whether to compute Txy for all the electrons affected by NLPP
    * @param listeners  optional listeners which allow per particle and reduced to share impl
    */
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
-                              bool Tmove,
+                              bool compute_txy_all,
                               std::optional<ListenerOption<Real>> listeners,
                               bool keepGrid = false);
 
@@ -213,10 +213,10 @@ private:
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
-   * @param tmove_xy_all when has_value, compute Txy for all the electrons.
+   * @param compute_txy_all whether to compute Txy for all the electrons affected by NLPP
    * @param keepGrid.  If true, does not randomize the quadrature grid before evaluation.  
    */
-  void evaluateImpl(ParticleSet& P, const OptionalRef<std::vector<NonLocalData>> tmove_xy_all, bool keepGrid = false);
+  void evaluateImpl(ParticleSet& P, bool compute_txy_all, bool keepGrid = false);
 
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated

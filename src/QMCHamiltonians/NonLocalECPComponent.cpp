@@ -211,6 +211,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
                                           const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                           const RefVector<const NLPPJob<RealType>>& joblist,
                                           std::vector<RealType>& pairpots,
+                                          const RefVector<std::vector<NonLocalData>>& tmove_xy_all_list,
                                           ResourceCollection& collection,
                                           bool use_DLA)
 {
@@ -276,11 +277,16 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
     }
   }
 
+  if (!tmove_xy_all_list.empty())
+    assert(tmove_xy_all_list.size() == ecp_component_list.size());
+
   for (size_t i = 0; i < p_list.size(); i++)
   {
     NonLocalECPComponent& component(ecp_component_list[i]);
-    const NLPPJob<RealType>& job = joblist[i];
-    pairpots[i]                  = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ);
+    const NLPPJob<RealType>& job(joblist[i]);
+    pairpots[i] = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ);
+    if (!tmove_xy_all_list.empty())
+      component.contributeTxy(job.electron_id, tmove_xy_all_list[i]);
   }
 }
 
