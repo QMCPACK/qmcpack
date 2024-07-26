@@ -1551,6 +1551,8 @@ class Supercomputer(Machine):
 	        )
         elif launcher=='jsrun': # Summit
             None # Summit class takes care of this in post_process_job
+        elif launcher=='lrun': # Lassen
+            None # Lassen class takes care of this in post_process_job
         else:
             self.error(launcher+' is not yet implemented as an application launcher')
         #end if
@@ -3755,6 +3757,108 @@ cd $SLURM_SUBMIT_DIR
 
 
 
+# Lassen at LLNL
+class Lassen(Supercomputer):
+
+    name = 'lassen'
+    requires_account = True
+    batch_capable    = True
+
+    def post_process_job(self,job):
+        # add the options only if the user has not supplied options
+        if len(job.run_options)==0:
+            opt = obj(
+                nodes = '-N {}'.format(job.nodes),
+                tasks = '-T {}'.format(job.processes_per_node),
+                )
+            if job.threads>1:
+                opt.threads = '--threads={}'.format(job.threads)
+            #end if
+            if job.gpus is None:
+                job.gpus = 4# gpus to use per node
+            #end if
+            #if job.alloc_flags is None:
+            #    job.alloc_flags = 'smt1'
+            ##end if
+            if job.gpus==0:
+                None
+            else:
+                opt.mgpu = '-M "-gpu"'
+            #end if
+            job.run_options.add(**opt)
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        c ='#!/bin/bash\n'
+        c+='#BSUB -G {0}\n'.format(job.account)
+        if job.queue is not None:
+            c+='#BSUB -q {0}\n'.format(job.queue)
+        #end if
+        c+='#BSUB -J {0}\n'.format(job.name)
+        c+='#BSUB -o {0}\n'.format(job.outfile)
+        c+='#BSUB -e {0}\n'.format(job.errfile)
+        c+='#BSUB -W {0}\n'.format(job.lsf_walltime())
+        c+='#BSUB -nnodes {0}\n'.format(job.nodes)
+        #if job.alloc_flags is not None:
+        #    c+='#BSUB -alloc_flags "{0}"\n'.format(job.alloc_flags)
+        ##end if
+        return c
+    #end def write_job_header
+
+    def read_process_id(self,output):
+        pid = None
+        tokens = output.split()
+        for t in tokens:
+            if t.startswith('<'):
+                spid = t.strip('<>').strip()
+                if spid.isdigit():
+                    pid = int(spid)
+                    break
+                #end if
+            #end if
+        #end for
+        return pid
+    #end def read_process_id
+#end class Lassen
+
+
+# Ruby at LLNL
+class Ruby(Supercomputer):
+    name = 'ruby'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH -A '+job.account+'\n'
+        c+='#SBATCH -p '+job.queue+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c+='#SBATCH --export=ALL\n' 
+        else:
+            c+='#SBATCH --export=NONE\n'
+        #end if
+        c+='''
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+'''
+        return c
+    #end def write_job_header
+#end class Ruby
+
+
+
+
 
 #Known machines
 #  workstations
@@ -3804,8 +3908,10 @@ Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    
 Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    'qdel')
 Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
 Improv(        825,   2,    64,  256,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
+Lassen(        756,   2,    21,  512,  100,   'lrun',     'bsub',   'bjobs',   'bkill')
+Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Inti(           13,   2,    32,  256,  100, 'mpirun',   'sbatch',  'squeue', 'scancel')
+Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
