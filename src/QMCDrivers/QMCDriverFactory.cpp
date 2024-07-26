@@ -42,7 +42,6 @@
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
 #include "Estimators/EstimatorInputDelegates.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "Message/UniformCommunicateError.h"
@@ -305,9 +304,28 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear_batch\" is not safe with CPU mixed precision. "
               "Please use full precision build instead.");
 #endif
-    auto opt = QMCWFOptLinearFactoryNew(cur, project_data_, emi, qmc_system,
-                                        MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH), particle_pool.getPool(), 
-                                        qmc_system.getSampleStack(), comm);
+    app_summary() << "\n========================================"
+                     "\n  Reading WFOpt driver XML input section"
+                     "\n========================================"
+                  << std::endl;
+
+    QMCDriverInput qmcdriver_input;
+    VMCDriverInput vmcdriver_input;
+    try
+    {
+      qmcdriver_input.readXML(cur);
+      vmcdriver_input.readXML(cur);
+    }
+    catch (const std::exception& e)
+    {
+      throw UniformCommunicateError(e.what());
+    }
+
+    auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data_, std::move(qmcdriver_input), emi,
+                                                                     std::move(vmcdriver_input), qmc_system,
+                                                                     MCPopulation(comm->size(), comm->rank(),
+                                                                                  &qmc_system, primaryPsi, primaryH),
+                                                                     qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
     new_driver = std::move(opt);
   }
