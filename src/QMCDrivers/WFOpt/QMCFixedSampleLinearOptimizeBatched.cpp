@@ -46,24 +46,21 @@ namespace qmcplusplus
 using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
-    const ProjectData& project_data,
-    QMCDriverInput&& qmcdriver_input,
-    const std::optional<EstimatorManagerInput>& global_emi,
-    VMCDriverInput&& vmcdriver_input,
-    WalkerConfigurations& wc,
-    MCPopulation&& population,
-    const ParticleSetPool::PoolType& pset_pool,
-    SampleStack& samples,
-    Communicate* comm)
+QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
+                                                                         QMCDriverInput&& qmcdriver_input,
+                                                                         UPtr<EstimatorManagerNew>&& estimator_manager,
+
+                                                                         VMCDriverInput&& vmcdriver_input,
+                                                                         WalkerConfigurations& wc,
+                                                                         MCPopulation&& population,
+                                                                         SampleStack& samples,
+                                                                         Communicate* comm)
     : QMCDriverNew(
           project_data,
-          std::move(qmcdriver_input),
-          std::
-              nullopt, // this class is not a real QMCDriverNew as far as I can tell so we don't give it the actual global_emi_
+	  std::move(qmcdriver_input),
+          std::move(estimator_manager),
           wc,
           std::move(population),
-	  pset_pool,
           "QMCLinearOptimizeBatched::",
           comm,
           "QMCLinearOptimizeBatched"),
@@ -96,7 +93,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       line_min_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
       cost_function_timer_(createGlobalTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
-      pset_pool_(pset_pool),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
       global_emi_(global_emi)
@@ -742,8 +738,8 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), global_emi_,
                                    std::move(vmcdriver_input_copy), walker_configs_ref_,
                                    MCPopulation(myComm->size(), myComm->rank(), &population_.get_golden_electrons(),
-                                                &population_.get_golden_twf(), &population_.get_golden_hamiltonian()), pset_pool_,
-                                   samples_, myComm);
+                                                &population_.get_golden_twf(), &population_.get_golden_hamiltonian()),
+                                   pset_pool_, samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 

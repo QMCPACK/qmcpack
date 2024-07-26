@@ -77,7 +77,7 @@ public:
   /// Constructor.
   VMCBatched(const ProjectData& project_data,
              QMCDriverInput&& qmcdriver_input,
-             const std::optional<EstimatorManagerInput>& global_emi,
+             UPtr<EstimatorManagerNew>&& estimator_manager,
              VMCDriverInput&& input,
              WalkerConfigurations& wc,
              MCPopulation&& pop,

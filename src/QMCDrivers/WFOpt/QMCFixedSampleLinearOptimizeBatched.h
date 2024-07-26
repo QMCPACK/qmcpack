@@ -55,11 +55,10 @@ public:
   ///Constructor.
   QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                       QMCDriverInput&& qmcdriver_input,
-                                      const std::optional<EstimatorManagerInput>& global_emi,
+                                      UPtr<EstimatorManagerNew>&& estimator_manager,
                                       VMCDriverInput&& vmcdriver_input,
                                       WalkerConfigurations& wc,
                                       MCPopulation&& population,
-				      const QMCDriverNew::PSPool& pset_pool,
                                       SampleStack& samples,
                                       Communicate* comm);
 
