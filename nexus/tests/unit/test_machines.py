@@ -1275,6 +1275,12 @@ def test_job_run_command():
         ('kestrel'        , 'n2_t2'         ) : 'srun test.x',
         ('kestrel'        , 'n2_t2_e'       ) : 'srun test.x',
         ('kestrel'        , 'n2_t2_p2'      ) : 'srun test.x',
+        ('inti'           , 'n1'            ) : 'mpirun -np 64 test.x',
+        ('inti'           , 'n1_p1'         ) : 'mpirun -np 1 test.x',
+        ('inti'           , 'n2'            ) : 'mpirun -np 128 test.x',
+        ('inti'           , 'n2_t2'         ) : 'mpirun -np 64 test.x',
+        ('inti'           , 'n2_t2_e'       ) : 'mpirun -np 64 test.x',
+        ('inti'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
         })
 
     if testing.global_data['job_ref_table']:
@@ -2028,6 +2034,22 @@ cd $SLURM_SUBMIT_DIR
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun test.x''',
+       inti = '''#!/bin/bash
+#SBATCH -p QMCREGULAR
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=64
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=0
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --exclusive
+#SBATCH --export=ALL
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpirun -np 128 test.x''',
         )
 
     def process_job_file(jf):

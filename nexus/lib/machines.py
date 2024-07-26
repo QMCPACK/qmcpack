@@ -3172,6 +3172,41 @@ class CadesSlurm(Supercomputer):
 
 
 
+# Inti at ORNL
+class Inti(Supercomputer):
+    name = 'inti'
+    requires_account = False
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'QMCREGULAR'
+        #end if
+
+        c  = '#!/bin/bash\n'
+        # c += '#SBATCH -A {}\n'.format(job.account)
+        c += '#SBATCH -p {}\n'.format(job.queue)
+        c += '#SBATCH -J {}\n'.format(job.name)
+        c += '#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c += '#SBATCH -N {}\n'.format(job.nodes)
+        c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c += '#SBATCH --mem=0\n' # required on Cades
+        c += '#SBATCH -o '+job.outfile+'\n'
+        c += '#SBATCH -e '+job.errfile+'\n'
+        c += '#SBATCH --exclusive\n'
+        if job.user_env:
+            c += '#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c += '#SBATCH --export=NONE\n'
+        #end if
+
+        return c
+    #end def write_job_header
+#end class Inti
+
+
+
 # Summit at ORNL
 class Summit(Supercomputer):
 
@@ -3770,6 +3805,7 @@ Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    
 Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
 Improv(        825,   2,    64,  256,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Inti(           13,   2,    32,  256,  100, 'mpirun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
