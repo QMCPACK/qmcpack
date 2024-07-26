@@ -328,6 +328,8 @@ std::unique_ptr<EstimatorManagerNew> QMCDriverFactory::createEstimatorManager(
       return {};
   };
 
-  return std::make_unique<EstimatorManagerNew>(comm, makeEstimatorManagerInput(global_emi, driver_emi), H, pset, twf);
+  auto estimator_manager = std::make_unique<EstimatorManagerNew>(H, comm);
+  estimator_manager->constructEstimators(makeEstimatorManagerInput(global_emi, driver_emi), pset, twf, H);
+  return estimator_manager;
 }
 } // namespace qmcplusplus

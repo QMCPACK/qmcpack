@@ -56,21 +56,6 @@ public:
   EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
-  /** Batched version constructor.
-   *
-   *  \param[in]  comm        MPI communicator
-   *  \param[in]  emi         EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
-   *  \param[in]  H           Fully Constructed Golden Hamiltonian.
-   *  \param[in]  pset        The electron or equiv. pset
-   *  \param[in]  pset_pool   Application ParticleSet pool
-   *  \param[in]  twf         The fully constructed TrialWaveFunction.
-   */
-  EstimatorManagerNew(Communicate* comm,
-                      EstimatorManagerInput&& emi,
-                      const QMCHamiltonian& H,
-                      const ParticleSet& pset,
-		      const PSPool& pset_pool,
-                      const TrialWaveFunction& twf);
   ///destructor
   ~EstimatorManagerNew();
 
@@ -86,6 +71,17 @@ public:
 
   ///process xml tag associated with estimators
   bool put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur);
+  /** construct estimators from already parsed input.
+   *
+   *  \param[in]  emi    EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
+   *  \param[in]  H      Fully Constructed Golden Hamiltonian.
+   *  \param[in]  pset   The electron or equiv. pset
+   *  \param[in]  twf    The fully constructed TrialWaveFunction.
+   */
+  void constructEstimators(EstimatorManagerInput&& emi,
+                           const ParticleSet& pset,
+                           const TrialWaveFunction& twf,
+                           const QMCHamiltonian& H);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.

@@ -92,19 +92,16 @@ bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Arg
 }
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* comm,
-                                         EstimatorManagerInput&& emi,
-                                         const QMCHamiltonian& H,
-                                         const ParticleSet& pset,
-					 const PSPool& pset_pool,
-                                         const TrialWaveFunction& twf)
-    : RecordCount(0), my_comm_(comm), max4ascii(8), FieldWidth(20)
+EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
+                                              const ParticleSet& pset,
+                                              const TrialWaveFunction& twf,
+                                              const QMCHamiltonian& H)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
                                                      pset.getLattice()) ||
-          createEstimator<SelfHealingOverlapInput>(est_input,twf) ||
+          createEstimator<SelfHealingOverlapInput>(est_input, twf) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
