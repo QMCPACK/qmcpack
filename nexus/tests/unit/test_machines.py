@@ -1227,12 +1227,12 @@ def test_job_run_command():
         ('supermucng'     , 'n2_t2'         ) : 'mpiexec -n 48 test.x',
         ('supermucng'     , 'n2_t2_e'       ) : 'mpiexec -n 48 test.x',
         ('supermucng'     , 'n2_t2_p2'      ) : 'mpiexec -n 4 test.x',
-        ('golub'           , 'n1'            ) : 'mpirun -np 12 test.x',
-        ('golub'           , 'n1_p1'         ) : 'mpirun -np 1 test.x',
-        ('golub'           , 'n2'            ) : 'mpirun -np 24 test.x',
-        ('golub'           , 'n2_t2'         ) : 'mpirun -np 12 test.x',
-        ('golub'           , 'n2_t2_e'       ) : 'mpirun -np 12 test.x',
-        ('golub'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
+        ('golub'          , 'n1'            ) : 'mpirun -np 12 test.x',
+        ('golub'          , 'n1_p1'         ) : 'mpirun -np 1 test.x',
+        ('golub'          , 'n2'            ) : 'mpirun -np 24 test.x',
+        ('golub'          , 'n2_t2'         ) : 'mpirun -np 12 test.x',
+        ('golub'          , 'n2_t2_e'       ) : 'mpirun -np 12 test.x',
+        ('golub'          , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
         ('theta'          , 'n1'            ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 64 -N 64 test.x',
         ('theta'          , 'n1_p1'         ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 1 -N 1 test.x',
         ('theta'          , 'n2'            ) : 'aprun -e OMP_NUM_THREADS=1 -d 1 -cc depth -j 1 -n 128 -N 64 test.x',
@@ -1281,6 +1281,18 @@ def test_job_run_command():
         ('ruby'           , 'n2_t2'         ) : 'srun test.x',
         ('ruby'           , 'n2_t2_e'       ) : 'srun test.x',
         ('ruby'           , 'n2_t2_p2'      ) : 'srun test.x',
+        ('kestrel'        , 'n1'            ) : 'srun test.x',
+        ('kestrel'        , 'n1_p1'         ) : 'srun test.x',
+        ('kestrel'        , 'n2'            ) : 'srun test.x',
+        ('kestrel'        , 'n2_t2'         ) : 'srun test.x',
+        ('kestrel'        , 'n2_t2_e'       ) : 'srun test.x',
+        ('kestrel'        , 'n2_t2_p2'      ) : 'srun test.x',
+        ('inti'           , 'n1'            ) : 'srun test.x',
+        ('inti'           , 'n1_p1'         ) : 'srun test.x',
+        ('inti'           , 'n2'            ) : 'srun test.x',
+        ('inti'           , 'n2_t2'         ) : 'srun test.x',
+        ('inti'           , 'n2_t2_e'       ) : 'srun test.x',
+        ('inti'           , 'n2_t2_p2'      ) : 'srun test.x',
         })
 
     if testing.global_data['job_ref_table']:
@@ -2019,6 +2031,24 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 mpirun -machinefile $PBS_NODEFILE -np 256 -x OMP_NUM_THREADS test.x''',
+        kestrel = '''#!/bin/bash
+#SBATCH -A ABC123
+#SBATCH -p regular
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=104
+#SBATCH --cpus-per-task=1
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
+
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun test.x''',
         lassen = '''#!/bin/bash
 #BSUB -G ABC123
 #BSUB -J jobname
@@ -2048,6 +2078,23 @@ cd $SLURM_SUBMIT_DIR
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun test.x''',
+        inti = '''#!/bin/bash
+#SBATCH -p QMCREGULAR
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=0
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --exclusive
+#SBATCH --export=ALL
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun test.x''',
+
         )
 
     def process_job_file(jf):

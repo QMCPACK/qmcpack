@@ -287,8 +287,6 @@ void OperatorBase::checkoutParticleQuantities(TraceManager& tm) {};
 void OperatorBase::deleteParticleQuantities() {};
 #endif
 
-void OperatorBase::setComputeForces(bool compute) {}
-
 void OperatorBase::setEnergyDomain(EnergyDomains edomain)
 {
   if (energyDomainValid(edomain))

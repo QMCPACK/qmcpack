@@ -3174,6 +3174,41 @@ class CadesSlurm(Supercomputer):
 
 
 
+# Inti at ORNL
+class Inti(Supercomputer):
+    name = 'inti'
+    requires_account = False
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'QMCREGULAR'
+        #end if
+
+        c  = '#!/bin/bash\n'
+        # c += '#SBATCH -A {}\n'.format(job.account)
+        c += '#SBATCH -p {}\n'.format(job.queue)
+        c += '#SBATCH -J {}\n'.format(job.name)
+        c += '#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c += '#SBATCH -N {}\n'.format(job.nodes)
+        c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c += '#SBATCH --mem=0\n' # required on Cades
+        c += '#SBATCH -o '+job.outfile+'\n'
+        c += '#SBATCH -e '+job.errfile+'\n'
+        c += '#SBATCH --exclusive\n'
+        if job.user_env:
+            c += '#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c += '#SBATCH --export=NONE\n'
+        #end if
+
+        return c
+    #end def write_job_header
+#end class Inti
+
+
+
 # Summit at ORNL
 class Summit(Supercomputer):
 
@@ -3687,6 +3722,41 @@ class Kagayaki(Supercomputer):
 
 
 
+# Kestrel at NREL
+class Kestrel(Supercomputer):
+    name = 'kestrel'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH -A '+job.account+'\n'
+        c+='#SBATCH -p '+job.queue+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c+='#SBATCH --export=NONE\n'
+        #end if
+        c+='''
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+'''
+        return c
+    #end def write_job_header
+#end class Kestrel
+
+
+
 # Lassen at LLNL
 class Lassen(Supercomputer):
 
@@ -3719,7 +3789,6 @@ class Lassen(Supercomputer):
         #end if
     #end def post_process_job
 
-
     def write_job_header(self,job):
         c ='#!/bin/bash\n'
         c+='#BSUB -G {0}\n'.format(job.account)
@@ -3736,7 +3805,6 @@ class Lassen(Supercomputer):
         ##end if
         return c
     #end def write_job_header
-
 
     def read_process_id(self,output):
         pid = None
@@ -3791,6 +3859,7 @@ cd $SLURM_SUBMIT_DIR
 
 
 
+
 #Known machines
 #  workstations
 for cores in range(1,128+1):
@@ -3841,6 +3910,8 @@ Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'sc
 Improv(        825,   2,    64,  256,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Lassen(        756,   2,    21,  512,  100,   'lrun',     'bsub',   'bjobs',   'bkill')
 Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
