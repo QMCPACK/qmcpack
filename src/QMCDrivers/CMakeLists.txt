@@ -56,7 +56,6 @@ set(QMCDRIVERS
     VMC/VMCUpdatePbyP.cpp
     VMC/VMCUpdateAll.cpp
     VMC/VMCFactory.cpp
-    VMC/VMCFactoryNew.cpp
     VMC/VMCDriverInput.cpp
     VMC/SOVMCUpdatePbyP.cpp
     VMC/SOVMCUpdateAll.cpp

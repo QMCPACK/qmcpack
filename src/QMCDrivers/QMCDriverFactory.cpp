@@ -31,7 +31,6 @@
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
-#include "QMCDrivers/VMC/VMCFactoryNew.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactoryNew.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
@@ -223,10 +222,33 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   }
   else if (das.new_run_type == QMCRunType::VMC_BATCH)
   {
-    VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
-    new_driver = fac.create(project_data_, emi, qmc_system,
-                            MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
-                            particle_pool.getPool(), qmc_system.getSampleStack(), comm);
+    if (!das.what_to_do[UPDATE_MODE])
+      throw UniformCommunicateError("Batched driver only supports particle-by-particle moves.");
+
+    app_summary() << "\n========================================"
+                     "\n  Reading VMC driver XML input section"
+                     "\n========================================"
+                  << std::endl;
+
+    QMCDriverInput qmcdriver_input;
+    VMCDriverInput vmcdriver_input;
+    try
+    {
+      qmcdriver_input.readXML(cur);
+      vmcdriver_input.readXML(cur);
+    }
+    catch (const std::exception& e)
+    {
+      throw UniformCommunicateError(e.what());
+    }
+
+    new_driver =
+        std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input), emi, std::move(vmcdriver_input),
+                                     qmc_system,
+                                     MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
+                                     qmc_system.getSampleStack(), comm);
+
+    new_driver->setUpdateMode(1);
   }
   else if (das.new_run_type == QMCRunType::DMC)
   {
