@@ -206,7 +206,7 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override {};
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
   void createRngsStepContexts(int num_crowds);
 

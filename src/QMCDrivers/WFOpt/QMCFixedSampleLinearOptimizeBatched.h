@@ -55,7 +55,6 @@ public:
   ///Constructor.
   QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                       QMCDriverInput&& qmcdriver_input,
-                                      UPtr<EstimatorManagerNew>&& estimator_manager,
                                       VMCDriverInput&& vmcdriver_input,
                                       WalkerConfigurations& wc,
                                       MCPopulation&& population,

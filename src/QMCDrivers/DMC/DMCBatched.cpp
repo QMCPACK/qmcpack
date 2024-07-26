@@ -46,7 +46,7 @@ using PsiValue = TrialWaveFunction::PsiValue;
  */
 DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
-                       const std::optional<EstimatorManagerInput>& global_emi,
+                       UPtr<EstimatorManagerNew>&& estimator_manager,
                        DMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
@@ -54,7 +54,7 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
-                   global_emi,
+                   std::move(estimator_manager),
                    wc,
                    std::move(pop),
 		   pset_pool,

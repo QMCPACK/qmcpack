@@ -32,7 +32,7 @@ namespace qmcplusplus
    */
 VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
-		       UPtr<EstimatorManagerNew>&& estimator_manager,
+                       UPtr<EstimatorManagerNew>&& estimator_manager,
                        VMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
@@ -40,7 +40,7 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
-                   estimator_manager,
+                   std::move(estimator_manager),
                    wc,
                    std::move(pop),
 		   "VMCBatched::",

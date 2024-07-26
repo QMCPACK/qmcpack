@@ -37,7 +37,7 @@ public:
                           Communicate* comm)
       : QMCDriverNew(test_project,
                      std::move(input),
-                     std::nullopt,
+                     nullptr,
                      wc,
                      std::move(population),
 		     pset_pool,

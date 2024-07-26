@@ -72,7 +72,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   SampleStack samples;
   WalkerConfigurations walker_confs;
 
-  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::nullopt, std::move(dmcdriver_input), walker_confs,
+  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), nullptr, std::move(dmcdriver_input), walker_confs,
                        MCPopulation(comm->size(), comm->rank(), particle_pool.getParticleSet("e"),
                                     wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
                        particle_pool.getPool(), comm);

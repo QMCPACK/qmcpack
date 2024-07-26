@@ -84,13 +84,6 @@ public:
                                                       Communicate* comm) const;
 
 private:
-  std::unique_ptr<EstimatorManagerNew> createEstimatorManager(const std::optional<EstimatorManagerInput>& global_emi,
-                                                              const std::optional<EstimatorManagerInput>& driver_emi,
-                                                              Communicate* comm,
-                                                              const QMCHamiltonian& H,
-                                                              const ParticleSet& pset,
-                                                              const TrialWaveFunction& twf) const;
-
   /// project info for accessing global fileroot and series id
   const ProjectData& project_data_;
 };
