@@ -42,6 +42,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
 #include "Estimators/EstimatorInputDelegates.h"
+#include "Estimators/EstimatorManagerNew.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
@@ -97,7 +98,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   switch (project_data_.getDriverVersion())
   {
   case DV::BATCH:
-    if (qmc_mode.find("vmc") < nchars)      // order matters here
+    if (qmc_mode.find("vmc") < nchars) // order matters here
       das.new_run_type = QMCRunType::VMC_BATCH;
     else if (qmc_mode.find("dmc") < nchars) // order matters here
       das.new_run_type = QMCRunType::DMC_BATCH;
@@ -297,9 +298,36 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
 
   //add trace information
   bool allow_walker_logs = das.walkerlogs_tag == "yes" ||
-      (das.walkerlogs_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC || das.new_run_type == QMCRunType::VMC_BATCH || das.new_run_type == QMCRunType::DMC_BATCH));
+      (das.walkerlogs_tag == "none" &&
+       (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC ||
+        das.new_run_type == QMCRunType::VMC_BATCH || das.new_run_type == QMCRunType::DMC_BATCH));
   new_driver->requestWalkerLogs(allow_walker_logs);
 
   return new_driver;
+}
+
+
+std::unique_ptr<EstimatorManagerNew> QMCDriverFactory::createEstimatorManager(
+    const std::optional<EstimatorManagerInput>& global_emi,
+    const std::optional<EstimatorManagerInput>& driver_emi,
+    Communicate* comm,
+    const QMCHamiltonian& H,
+    const ParticleSet& pset,
+    const TrialWaveFunction& twf) const
+{
+  // This is done so that the application level input structures reflect the actual input to the code.
+  // While the actual simulation objects still take singular input structures at construction.
+  auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
+    if (global_emi.has_value() && local_emi.has_value())
+      return {global_emi.value(), local_emi.value()};
+    else if (global_emi.has_value())
+      return {global_emi.value()};
+    else if (local_emi.has_value())
+      return {local_emi.value()};
+    else
+      return {};
+  };
+
+  return std::make_unique<EstimatorManagerNew>(comm, makeEstimatorManagerInput(global_emi, driver_emi), H, pset, twf);
 }
 } // namespace qmcplusplus
