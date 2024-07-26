@@ -32,8 +32,11 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
-#include "QMCDrivers/DMC/DMCFactoryNew.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
+#include "VMC/VMCDriverInput.h"
+#include "VMC/VMCBatched.h"
+#include "DMC/DMCDriverInput.h"
+#include "DMC/DMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
 #include "QMCDrivers/WaveFunctionTester.h"
@@ -257,9 +260,27 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   }
   else if (das.new_run_type == QMCRunType::DMC_BATCH)
   {
-    DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
-    new_driver = fac.create(project_data_, emi, qmc_system,
-                            MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH), particle_pool.getPool(), comm);
+    app_summary() << "\n========================================"
+                     "\n  Reading DMC driver XML input section"
+                     "\n========================================"
+                  << std::endl;
+
+    QMCDriverInput qmcdriver_input;
+    DMCDriverInput dmcdriver_input;
+    try
+    {
+      qmcdriver_input.readXML(cur);
+      dmcdriver_input.readXML(cur);
+    }
+    catch (const std::exception& e)
+    {
+      throw UniformCommunicateError(e.what());
+    }
+
+    new_driver =
+        std::make_unique<DMCBatched>(project_data_, std::move(qmcdriver_input), emi, std::move(dmcdriver_input),
+                                     qmc_system,
+                                     MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH), comm);
   }
   else if (das.new_run_type == QMCRunType::RMC)
   {
