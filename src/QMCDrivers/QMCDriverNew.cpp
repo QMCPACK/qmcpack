@@ -48,10 +48,9 @@ namespace qmcplusplus
  */
 QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
-                           const std::optional<EstimatorManagerInput>& global_emi,
+                           UPtr<EstimatorManagerNew>&& estimator_manager,
                            WalkerConfigurations& wc,
                            MCPopulation&& population,
-			   const PSPool& pset_pool,
                            const std::string timer_prefix,
                            Communicate* comm,
                            const std::string& QMC_driver_type)
@@ -60,32 +59,12 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       QMCType(QMC_driver_type),
       population_(std::move(population)),
       serializing_crowd_walkers_(qmcdriver_input_.areWalkersSerialized()),
-      estimator_manager_(nullptr),
+      estimator_manager_(std::move(estimator_manager)),
       timers_(timer_prefix),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
       walker_configs_ref_(wc)
 {
-  // This is done so that the application level input structures reflect the actual input to the code.
-  // While the actual simulation objects still take singular input structures at construction.
-  auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
-    if (global_emi.has_value() && local_emi.has_value())
-      return {global_emi.value(), local_emi.value()};
-    else if (global_emi.has_value())
-      return {global_emi.value()};
-    else if (local_emi.has_value())
-      return {local_emi.value()};
-    else
-      return {};
-  };
-
-  estimator_manager_ =
-      std::make_unique<EstimatorManagerNew>(comm,
-                                            makeEstimatorManagerInput(global_emi,
-                                                                      qmcdriver_input_.get_estimator_manager_input()),
-                                            population_.get_golden_hamiltonian(), population.get_golden_electrons(),
-					    pset_pool,
-                                            population.get_golden_twf());
 
   drift_modifier_.reset(
       createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));

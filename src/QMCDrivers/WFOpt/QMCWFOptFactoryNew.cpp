@@ -34,9 +34,32 @@ std::unique_ptr<QMCFixedSampleLinearOptimizeBatched> QMCWFOptLinearFactoryNew(
     throw UniformCommunicateError(e.what());
   }
 
-  auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data, std::move(qmcdriver_input), global_emi,
-                                                                   std::move(vmcdriver_input), wc, std::move(pop), pset_pool,
-                                                                   samples, comm);
+  // This is done so that the application level input structures reflect the actual input to the code.
+  // While the actual simulation objects still take singular input structures at construction.
+  auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
+    if (global_emi.has_value() && local_emi.has_value())
+      return {global_emi.value(), local_emi.value()};
+    else if (global_emi.has_value())
+      return {global_emi.value()};
+    else if (local_emi.has_value())
+      return {local_emi.value()};
+    else
+      return {};
+  };
+
+  // This logic used to be in the QMCFixedSampleLinearOptimizeBatched constructor where it ignored the global_emi because it isn't "really" a driver.
+  std::optional<EstimatorManagerInput> dummy_global_emi;
+  // In my opinion unwrapping qmcdriver_input_ here and not in QMCDriver new doesn't make sense.
+  auto estimator_manager =
+      std::make_unique<EstimatorManagerNew>(comm, makeEstimatorManagerInput(dummy_global_emi, qmcdriver_input.get_estimator_manager_input()),
+                                            pop.get_golden_hamiltonian(), pop.get_golden_electrons(), pset_pool,
+                                            pop.get_golden_twf());
+
+
+  auto opt =
+      std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data, std::move(qmcdriver_input),
+                                                            std::move(estimator_manager), std::move(vmcdriver_input),
+                                                            wc, std::move(pop), samples, comm);
   return opt;
 }
 
