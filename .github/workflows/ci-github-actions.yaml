@@ -143,7 +143,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   macos:
-    runs-on: macos-13
+    runs-on: macos-14
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: macOS
@@ -151,7 +151,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jobname: [macOS-GCC12-NoMPI-Real]
+        jobname: [macOS-GCC14-NoMPI-Real]
 
     steps:
       - name: Checkout Action
@@ -165,8 +165,8 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew upgrade || brew link --overwrite python@3.12
-          brew install ninja hdf5 fftw boost
-          python3 -m pip install numpy h5py pandas
+          brew install gcc@14 ninja hdf5 fftw boost
+          python3 -m pip install numpy==1.26.4 h5py pandas
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure

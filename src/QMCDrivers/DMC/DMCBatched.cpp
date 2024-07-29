@@ -24,10 +24,15 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
+#include <PSdispatcher.h>
+#include <TWFdispatcher.h>
+#include <Hdispatcher.h>
 #include "EstimatorInputDelegates.h"
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
+#include "WalkerLogManager.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -75,9 +80,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
-  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
-  auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
-  auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
+  const PSdispatcher ps_dispatcher(!sft.serializing_crowd_walkers);
+  const TWFdispatcher twf_dispatcher(!sft.serializing_crowd_walkers);
+  const Hdispatcher ham_dispatcher(!sft.serializing_crowd_walkers);
 
   auto& walkers = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
@@ -179,7 +184,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 // }
 #ifndef NDEBUG
         for (int i = 0; i < rr.size(); ++i)
-          assert(std::isfinite(rr[i]));
+          assert(qmcplusplus::isfinite(rr[i]));
 #endif
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
@@ -243,7 +248,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer buffer_local(timers.buffer_timer);
     twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
     if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
-      checkLogAndGL(crowd, "checkGL_after_moves");
+      checkLogAndGL(crowd, "checkGL_after_moves", sft.serializing_crowd_walkers);
     ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
 
@@ -288,6 +293,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     crowd.accumulate(step_context.get_random_gen());
   }
 
+  // collect walker logs
+  crowd.collectStepWalkerLog(sft.global_step);
+
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
 
@@ -317,7 +325,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     {
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
       if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_TMOVE)
-        checkLogAndGL(crowd, "checkGL_after_tmove");
+        checkLogAndGL(crowd, "checkGL_after_tmove", sft.serializing_crowd_walkers);
       ps_dispatcher.flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);
     }
   }
@@ -429,7 +437,16 @@ bool DMCBatched::run()
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->startDriverRun();
-  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_);
+
+  //initialize WalkerLogManager and collectors
+  WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
+  for (auto& crowd : crowds_)
+    crowd->setWalkerLogCollector(wlog_manager.makeCollector());
+  //register walker log collectors into the manager
+  wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
+
+  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_,
+                           serializing_crowd_walkers_);
 
   LoopTimer<> dmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
@@ -438,7 +455,8 @@ bool DMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_),
+                       serializing_crowd_walkers_);
 
     FullPrecRealType energy, variance;
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
@@ -457,6 +475,7 @@ bool DMCBatched::run()
   ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
+  int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
     {
@@ -473,7 +492,7 @@ bool DMCBatched::run()
       for (UPtr<Crowd>& crowd : crowds_)
         crowd->startBlock(steps_per_block_);
 
-      for (int step = 0; step < steps_per_block_; ++step)
+      for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
 
@@ -482,7 +501,8 @@ bool DMCBatched::run()
         for (UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
           setNonLocalMoveHandler(*ham);
 
-        dmc_state.step = step;
+        dmc_state.step        = step;
+        dmc_state.global_step = global_step;
         crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                    std::ref(crowds_));
 
@@ -500,6 +520,7 @@ bool DMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
+      wlog_manager.writeBuffers();
       recordBlock(block);
     }
 
@@ -508,7 +529,9 @@ bool DMCBatched::run()
     if (!myComm->rank())
       stop_requested = runtimeControl.checkStop(dmc_loop);
     myComm->bcast(stop_requested);
-
+    // Progress messages before possibly stopping
+    if (!myComm->rank())
+      app_log() << runtimeControl.generateProgressMessage("DMCBatched", block, num_blocks);
     if (stop_requested)
     {
       if (!myComm->rank())
@@ -522,6 +545,7 @@ bool DMCBatched::run()
 
   print_mem("DMCBatched ends", app_log());
 
+  wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
   return finalize(num_blocks, true);

@@ -11,6 +11,7 @@
 
 
 #include "matrix_update_helper.hpp"
+#include <complex>
 #include "config.h"
 #ifndef QMC_CUDA2HIP
 #include <cuComplex.h>

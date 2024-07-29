@@ -1,5 +1,4 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2023 Alfredo A. Correa
 
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
@@ -17,9 +16,9 @@ struct projector {
 	projector(projector const&) = default;
 	projector(projector     &&) = default;
 
-	auto operator=(projector const&) -> projector& = default;  // NOLINT(clang-diagnostic-deprecated-declarations)
-	auto operator=(projector     &&) -> projector& = default;
-//	auto operator=(projector      &) -> projector& = default;
+	auto operator=(projector const&) -> projector& = default;  // NOLINT(clang-diagnostic-deprecated-declarations) TODO(correaa) deprecate copy assigment
+	auto operator=(projector     &&) -> projector& = default;  // NOLINT(clang-diagnostic-deprecated-declarations) TODO(correaa) deprecate move assigment
+//  auto operator=(projector      &) -> projector& = default;
 
 	friend auto operator==(projector const& a, projector const& b) {return a.n_ == b.n_;} //  a.comm_ == b.comm_;}
 	friend auto operator!=(projector const& a, projector const& b) {return a.n_ != b.n_;} //  a.comm_ == b.comm_;}
@@ -47,8 +46,8 @@ struct projector2 {
 		n_ = other.n_;
 		return *this;
 	}
-	auto operator=(projector2     &&) -> projector2& = default;
-//	auto operator=(projector2      &) -> projector2& = default;
+	auto operator=(projector2     &&) -> projector2& = default;  // NOLINT(clang-diagnostic-deprecated-declarations) TODO(correaa) deprecate move assigment
+//  auto operator=(projector2      &) -> projector2& = default;
 
 	friend auto operator==(projector2 const& a, projector2 const& b) {return a.n_ == b.n_;} //  a.comm_ == b.comm_;}
 	friend auto operator!=(projector2 const& a, projector2 const& b) {return a.n_ != b.n_;} //  a.comm_ == b.comm_;}
@@ -75,7 +74,7 @@ struct projector3 {  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-
 		return *this;
 	}
 //  auto operator=(projector3     &&) -> projector3& = default;
-//	auto operator=(projector3      &) -> projector3& = default;
+//  auto operator=(projector3      &) -> projector3& = default;
 
 	friend auto operator==(projector3 const& a, projector3 const& b) {return a.n_ == b.n_;} //  a.comm_ == b.comm_;}
 	friend auto operator!=(projector3 const& a, projector3 const& b) {return a.n_ != b.n_;} //  a.comm_ == b.comm_;}
@@ -94,21 +93,21 @@ struct projector3 {  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-
 };
 
 auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int try {
-//	{
-//		projector const p{world};
-//		projector p2;
-//		p2 = p;
-//	}
+//  {
+//      projector const p{world};
+//      projector p2;
+//      p2 = p;
+//  }
 	{
 		std::list<mpi3::communicator> v;
 		v.emplace_back(world);
 		v.emplace_back(world);
 	}
-//	{ // doesn't compile, communicator is not copiable
-//		std::vector<mpi3::communicator> v = {world, world};
-//		v.emplace_back(world);
-//		v.emplace_back(world);
-//	}
+//  { // doesn't compile, communicator is not copiable
+//      std::vector<mpi3::communicator> v = {world, world};
+//      v.emplace_back(world);
+//      v.emplace_back(world);
+//  }
 	{ // but this works because the member is mutable
 		std::vector<projector> v = {projector{world}, projector{world}};
 		v.emplace_back(world);

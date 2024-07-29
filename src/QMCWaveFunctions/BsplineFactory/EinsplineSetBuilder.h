@@ -157,18 +157,11 @@ public:
   //////////////////////////////////////
   hdf_archive H5File;
   std::filesystem::path H5FileName;
-  // HDF5 orbital file version
-  typedef enum
-  {
-    QMCPACK,
-    ESHDF
-  } FormatType;
-  FormatType Format;
   TinyVector<int, 3> Version;
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;
-  bool ReadOrbitalInfo(bool skipChecks = false);
-  bool ReadOrbitalInfo_ESHDF(bool skipChecks = false);
+  void ReadOrbitalInfo(bool skipChecks = false);
+  void ReadOrbitalInfo_ESHDF(bool skipChecks = false);
   void BroadcastOrbitalInfo();
   bool CheckLattice();
 
@@ -216,7 +209,6 @@ public:
   bool TwistPair(PosType a, PosType b) const;
   void TileIons();
   void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks = false);
-  void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
   ////////////////////////////////
   // Atomic orbital information //
@@ -228,7 +220,7 @@ public:
     std::vector<TinyVector<double, OHMMS_DIM>> ion_pos;
     int Ncenters;
 
-    CenterInfo() : Ncenters(0){};
+    CenterInfo() : Ncenters(0) {};
 
     void resize(int ncenters)
     {
@@ -259,12 +251,6 @@ public:
   bool makeRotations;
 
 protected:
-  /** broadcast SortBands
-   * @param N number of state
-   * @param root true if it is the i/o node
-   */
-  void bcastSortBands(int splin, int N, bool root);
-
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
    */
@@ -283,6 +269,25 @@ protected:
   static constexpr int TWISTNUM_NO_INPUT = -9999;
   /// twist_inp[i] <= -9999 to indicate no given input after parsing XML
   static constexpr double TWIST_NO_INPUT = -9999;
+
+private:
+  /** read band info from h5, sort it and decide occupation
+   * @param[in] h5 file to read band info
+   * @param[in] spin the intended spin set
+   * @param[in] numOrbs the number of needed bands
+   * @param[out] bandinfo_set sorted and stored bandinfo
+   * @return the number disinct bands
+   */
+  int OccupyBands_ESHDF(hdf_archive& h5,
+                        int spin,
+                        int sortBands,
+                        int numOrbs,
+                        std::vector<BandInfo>& bandinfo_set) const;
+
+  /** broadcast sorted bands
+   * @param sorted_bands intended set
+   */
+  void bcastBandInfoSet(std::vector<BandInfo>& sorted_bands) const;
 };
 
 } // namespace qmcplusplus

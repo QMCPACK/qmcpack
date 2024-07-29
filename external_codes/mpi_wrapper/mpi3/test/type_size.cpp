@@ -63,7 +63,7 @@ int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 		T buffer[100];  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test legacy type
 
 		switch(world.rank()) {
-			break; case 0: {
+			case 0: {
 				buffer[10] = 42.;
 				MPI_Send(buffer, 1, &mpi3::make_type<T>()[100], 1, 0          , world.handle());
 			}

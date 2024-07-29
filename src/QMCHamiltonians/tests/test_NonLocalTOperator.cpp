@@ -11,7 +11,7 @@
 
 
 #include "catch.hpp"
-#include <limits>
+#include <cmath>
 #include "QMCHamiltonians/NonLocalTOperator.h"
 
 namespace qmcplusplus
@@ -19,7 +19,8 @@ namespace qmcplusplus
 
 TEST_CASE("NonLocalTOperator", "[hamiltonian]")
 {
-  using PosType = QMCTraits::PosType;
+  using RealType = QMCTraits::RealType;
+  using PosType  = QMCTraits::PosType;
   NonLocalTOperator t_op;
   t_op.thingsThatShouldBeInMyConstructor("v0", 1.0, 0.0, 0.0);
 
@@ -53,7 +54,9 @@ TEST_CASE("NonLocalTOperator", "[hamiltonian]")
   REQUIRE(select5 != nullptr);
   CHECK(select5->PID == 2);
 
-  auto select6 = t_op.selectMove(float(1) - std::numeric_limits<float>::epsilon(), Txy);
+  RealType near_one = std::nextafter(RealType(1), RealType(0));
+  CHECK(near_one < RealType(1));
+  auto select6 = t_op.selectMove(near_one, Txy);
   REQUIRE(select6 != nullptr);
   CHECK(select6->PID == 2);
 
@@ -70,4 +73,4 @@ TEST_CASE("NonLocalTOperator", "[hamiltonian]")
   REQUIRE(select9 != nullptr);
   CHECK(select9->Weight == Approx(-0.2));
 }
-}
+} // namespace qmcplusplus

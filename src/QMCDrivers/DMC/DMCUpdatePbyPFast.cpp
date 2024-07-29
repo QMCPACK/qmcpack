@@ -24,6 +24,7 @@
 #else
 using TraceManager = int;
 #endif
+#include "WalkerLogCollector.h"
 //#define TEST_INNERBRANCH
 
 
@@ -170,6 +171,8 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif
+  if(wlog_collector)
+    wlog_collector->collect(thisWalker,W,Psi,H);
   {
     ScopedTimer local_timer(myTimers[DMC_tmoves]);
     const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);

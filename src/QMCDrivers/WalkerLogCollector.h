@@ -31,23 +31,11 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 struct WalkerLogState
 {
   /// whether logs are active in the current driver
-  bool logs_active;
+  bool logs_active = false;
   /// period between MC steps for data collection
-  int step_period;
+  int step_period = 1;
   /// controls verbosity of log file writes
-  bool verbose;
-
-  WalkerLogState()
-  {
-    reset();
-    step_period = 1;
-  }
-
-  inline void reset()
-  {
-    logs_active = false;
-    verbose     = false;
-  }
+  bool verbose = false;
 };
 
 
@@ -79,9 +67,6 @@ public:
   /// location of LocalEnergy in ParticleSet::PropertyList
   int energy_index;
 
-  /// state data set by WalkerLogManager
-  WalkerLogState state;
-
 private:
   // temporary (contiguous) storage for awful ParticleAttrib<> quantities
   /// tmp storage for walker positions
@@ -92,11 +77,12 @@ private:
   Array<WLog::PsiVal, 2> Gtmp;
   /// tmp storage for walker wavefunciton laplacians
   Array<WLog::PsiVal, 1> Ltmp;
+  /// state data set by WalkerLogManager
+  const WalkerLogState& state_;
 
 public:
-  WalkerLogCollector();
-
-  WalkerLogCollector(const WalkerLogState& state_);
+  /// constructor. The state should be given by the manager.
+  WalkerLogCollector(const WalkerLogState& state);
 
   /// resize buffers to zero rows at beginning of each MC block
   void startBlock();

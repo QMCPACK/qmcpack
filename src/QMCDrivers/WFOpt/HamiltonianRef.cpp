@@ -11,6 +11,7 @@
 
 
 #include "HamiltonianRef.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

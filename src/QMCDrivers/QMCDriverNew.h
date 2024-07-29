@@ -39,10 +39,10 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "ProjectData.h"
-#include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "TauParams.hpp"
 #include "Particle/MCCoords.hpp"
+#include "WalkerLogInput.h"
 #include <algorithm>
 
 class Communicate;
@@ -100,6 +100,12 @@ public:
    * - qmc_driver_mode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
    */
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
+
+  /// whether to allow walker logs
+  bool allow_walker_logs;
+  /// walker logs input
+  WalkerLogInput walker_logs_input;
+  //xmlNodePtr walker_logs_xml;
 
 protected:
   /** This is a data structure strictly for QMCDriver and its derived classes
@@ -230,7 +236,10 @@ public:
    */
   void process(xmlNodePtr cur) override = 0;
 
-  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
+  static void initialLogEvaluation(int crowd_id,
+                                   UPtrVector<Crowd>& crowds,
+                                   UPtrVector<ContextForSteps>& step_context,
+                                   const bool serializing_crowd_walkers);
 
 
   /** should be set in input don't see a reason to set individually
@@ -240,6 +249,10 @@ public:
 
   void putTraces(xmlNodePtr txml) override {}
   void requestTraces(bool allow_traces) override {}
+
+  void putWalkerLogs(xmlNodePtr wlxml) override;
+
+  void requestWalkerLogs(bool allow_walker_logs_) override { allow_walker_logs = allow_walker_logs_; }
 
   // scales a MCCoords by sqrtTau. Chooses appropriate taus by CT
   template<typename RT, CoordsType CT>
@@ -315,7 +328,7 @@ protected:
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
-  static void checkLogAndGL(Crowd& crowd, const std::string_view location);
+  static void checkLogAndGL(Crowd& crowd, const std::string_view location, const bool serializing_crowd_walkers);
 
   const std::string& get_root_name() const override { return project_data_.currentMainRoot(); }
 
@@ -421,8 +434,8 @@ protected:
    */
   struct DriverWalkerResourceCollection golden_resource_;
 
-  /// multi walker dispatchers
-  const MultiWalkerDispatchers dispatchers_;
+  /// if true, calculating walker one-by-one within a crowd
+  const bool serializing_crowd_walkers_;
 
   /** Observables manager
    *  Has very problematic owner ship and life cycle.

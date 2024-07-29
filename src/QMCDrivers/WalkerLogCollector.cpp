@@ -23,26 +23,14 @@ namespace qmcplusplus
 
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-
-WalkerLogCollector::WalkerLogCollector()
-{
-  init();
-}
-
-
-WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state_)
-{
-  init();
-  state = state_;
-}
+WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state) : state_(state) { init(); }
 
 
 void WalkerLogCollector::init()
 {
   properties_include = {"R2Accepted", "R2Proposed", "LocalEnergy", "LocalPotential", "Kinetic",
-                         "ElecElec",   "ElecIon",    "LocalECP",    "NonLocalECP"};
-  state.reset();
-  energy_index = -1;
+                        "ElecElec",   "ElecIon",    "LocalECP",    "NonLocalECP"};
+  energy_index       = -1;
   // empty walker steps and energy vectors for the MC block
   steps.resize(0);
   energies.resize(0);
@@ -55,9 +43,9 @@ void WalkerLogCollector::init()
 
 void WalkerLogCollector::startBlock()
 {
-  if (!state.logs_active)
+  if (!state_.logs_active)
     return; // no-op for driver if logs are inactive
-  if (state.verbose)
+  if (state_.verbose)
     app_log() << "WalkerLogCollector::startBlock " << std::endl;
   resetBuffers(); // resize buffers to zero rows
 }
@@ -69,12 +57,12 @@ void WalkerLogCollector::collect(const MCPWalker& walker,
                                  const QMCHamiltonian& ham,
                                  int step)
 {
-  if (!state.logs_active)
+  if (!state_.logs_active)
     return; // no-op for driver if logs are inactive
 
   // only collect walker data at steps matching the period (default 1)
   int current_step = (step == -1) ? pset.current_step : step;
-  if (current_step % state.step_period != 0)
+  if (current_step % state_.step_period != 0)
     return;
 
   auto& bsi = walker_property_int_buffer;
@@ -173,7 +161,7 @@ void WalkerLogCollector::collect(const MCPWalker& walker,
 
 void WalkerLogCollector::resetBuffers()
 {
-  if (state.verbose)
+  if (state_.verbose)
     app_log() << "WalkerLogCollector::reset_buffers" << std::endl;
   // resize all buffers to zero rows
   walker_property_int_buffer.resetBuffer();
@@ -187,7 +175,7 @@ void WalkerLogCollector::resetBuffers()
 
 void WalkerLogCollector::checkBuffers()
 {
-  if (state.verbose)
+  if (state_.verbose)
     app_log() << "WalkerLogCollector::checkBuffers" << std::endl;
   size_t nrows       = walker_property_int_buffer.nrows();
   auto prop_real_bad = walker_property_real_buffer.nrows() != nrows;

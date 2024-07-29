@@ -22,7 +22,7 @@ namespace compute
 {
 
 template<>
-class Queue<PlatformKind::CUDA>
+class Queue<PlatformKind::CUDA> : public QueueBase
 {
 public:
   Queue() { cudaErrorCheck(cudaStreamCreate(&hstream_), "cudaStreamCreate failed!"); }

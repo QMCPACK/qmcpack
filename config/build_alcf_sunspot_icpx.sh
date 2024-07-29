@@ -58,7 +58,7 @@ if [[ $name == *"_MP"* ]]; then
 fi
 
 if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DQMC_GPU_ARCHS=pvc"
   CMAKE_CXX_FLAGS="-mllvm -vpo-paropt-atomic-free-reduction-slm=true"
 fi
 

@@ -178,23 +178,12 @@ OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
   return evaluate(P);
 }
 
-OperatorBase::Return_t OperatorBase::evaluateWithIonDerivs(ParticleSet& P,
-                                                           ParticleSet& ions,
-                                                           TrialWaveFunction& psi,
-                                                           ParticleSet::ParticlePos& hf_term,
-                                                           ParticleSet::ParticlePos& pulay_term)
-{
-  return evaluate(P);
-}
-
-OperatorBase::Return_t OperatorBase::evaluateWithIonDerivsDeterministic(ParticleSet& P,
-                                                                        ParticleSet& ions,
-                                                                        TrialWaveFunction& psi,
-                                                                        ParticleSet::ParticlePos& hf_term,
-                                                                        ParticleSet::ParticlePos& pulay_term)
-{
-  return evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_term);
-}
+void OperatorBase::evaluateIonDerivs(ParticleSet& P,
+                                     ParticleSet& ions,
+                                     TrialWaveFunction& psi,
+                                     ParticleSet::ParticlePos& hf_term,
+                                     ParticleSet::ParticlePos& pulay_term)
+{}
 
 void OperatorBase::updateSource(ParticleSet& s) {}
 
@@ -222,7 +211,7 @@ void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCH
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
-void OperatorBase::getRequiredTraces(TraceManager& tm){};
+void OperatorBase::getRequiredTraces(TraceManager& tm) {};
 #endif
 
 // END  FUNCTIONS //
@@ -268,7 +257,6 @@ void OperatorBase::deleteTraceQuantities()
   have_required_traces_ = false;
   request_.reset();
 }
-
 #endif
 
 ////// PROTECTED FUNCTIONS
@@ -294,12 +282,10 @@ void OperatorBase::deleteScalarQuantities()
     delete value_sample_;
 }
 
-void OperatorBase::contributeParticleQuantities(){};
-void OperatorBase::checkoutParticleQuantities(TraceManager& tm){};
-void OperatorBase::deleteParticleQuantities(){};
+void OperatorBase::contributeParticleQuantities() {};
+void OperatorBase::checkoutParticleQuantities(TraceManager& tm) {};
+void OperatorBase::deleteParticleQuantities() {};
 #endif
-
-void OperatorBase::setComputeForces(bool compute) {}
 
 void OperatorBase::setEnergyDomain(EnergyDomains edomain)
 {

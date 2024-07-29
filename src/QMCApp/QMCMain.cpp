@@ -62,7 +62,8 @@ QMCMain::QMCMain(Communicate* c)
       psi_pool_(std::make_unique<WaveFunctionPool>(my_project_.getRuntimeOptions(), *particle_set_pool_, myComm)),
       ham_pool_(std::make_unique<HamiltonianPool>(*particle_set_pool_, *psi_pool_, myComm)),
       qmc_system_(nullptr),
-      first_qmc_(true)
+      first_qmc_(true),
+      walker_logs_xml_(NULL)
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       traces_xml_(NULL)
@@ -479,6 +480,10 @@ bool QMCMain::validateXML()
       traces_xml_ = cur;
     }
 #endif
+    else if (cname == "walkerlogs")
+    {
+      walker_logs_xml_ = cur;
+    }
     else
     {
       //everything else goes to m_qmcaction
@@ -624,6 +629,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml_);
 #endif
+    qmc_driver->putWalkerLogs(walker_logs_xml_);
     {
       ScopedTimer qmc_run_timer(createGlobalTimer(qmc_driver->getEngineName(), timer_level_coarse));
       Timer process_and_run;

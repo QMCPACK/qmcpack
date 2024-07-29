@@ -8,7 +8,7 @@
 #include <mpi3/handle.hpp>
 
 
-#if defined(__NVCC__)
+#if defined(__NVCC__) || defined(__HIPCC__)
 #include <thrust/transform.h>
 #endif
 
@@ -27,7 +27,8 @@ struct builtin_operation;
 template<class T, class P = T*>
 struct operation : detail::nondefault_handle<operation<T>, MPI_Op, MPI_Op_free> { // user_operation, operator_ . operator is a C++ keyword
 	using base = typename detail::nondefault_handle<operation<T>, MPI_Op, MPI_Op_free>;
-	using typename base::nondefault_handle;
+	using detail::nondefault_handle<operation<T>, MPI_Op, MPI_Op_free>::nondefault_handle;
+
 	operation() = delete;
 
 	template<class Op>
@@ -35,25 +36,25 @@ struct operation : detail::nondefault_handle<operation<T>, MPI_Op, MPI_Op_free> 
 	constexpr static void combine(void const* in, void* inout, int const* len, MPI_Datatype* /*dtype*/) {  // cppcheck-suppress constParameter ; signature is fixed
 		auto in_t    = reinterpret_cast<typename std::pointer_traits<P>::template rebind<T const>&>(in   );  // NOLINT(llvm-qualified-auto,readability-qualified-auto,cppcoreguidelines-pro-type-reinterpret-cast)
 		auto inout_t = reinterpret_cast<                             P                           &>(inout);  // NOLINT(llvm-qualified-auto,readability-qualified-auto,cppcoreguidelines-pro-type-reinterpret-cast)
-		#if defined(__NVCC__)
+		#if defined(__NVCC__) || defined(__HIPCC__)
 		thrust::transform(
 		#else
 		std::transform(
 		#endif
 			in_t, std::next(in_t, *len), inout_t, inout_t,
 			[]
-			#if defined(__NVCC__)
+			#if defined(__NVCC__) || defined(__HIPCC__)
 			__host__ __device__
 			#endif
 			(T const& a, T const& b)
-			#if not defined(__NVCC__)
+			#if not (defined(__NVCC__) || defined(__HIPCC__))
 			constexpr
 			#endif
 			{return Op{}(a, b);}
 		);
-	//	for(int i = 0; i != *len; i++) {
-	//		inout_t[i] = Op{}(std::move(inout_t[i]), in_t[i]);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-	//	}
+	//  for(int i = 0; i != *len; i++) {
+	//    inout_t[i] = Op{}(std::move(inout_t[i]), in_t[i]);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+	//  }
 	}
 
 	public:
@@ -66,7 +67,7 @@ struct operation : detail::nondefault_handle<operation<T>, MPI_Op, MPI_Op_free> 
 	operation(F&& f, bool commutative) : base(detail::uninitialized{}) {
 		MPI_Op_create(
 			&f,
-		//	reinterpret_cast<void (*)(void*, void*, int*, int*)>(&f),
+		//  reinterpret_cast<void (*)(void*, void*, int*, int*)>(&f),
 			commutative,
 			&(this->impl_)
 		);
@@ -93,12 +94,12 @@ struct operation : detail::nondefault_handle<operation<T>, MPI_Op, MPI_Op_free> 
 		min_value_location = MPI_MINLOC
 	};
 #endif
-//	operation(operation::code c) : base((MPI_Op)c){}
+//  operation(operation::code c) : base((MPI_Op)c){}
 
-//	static operation const sum;//(operation::code::sum);
-//	static operation const product;
-//	static operation const maximum;
-//	static operation const minimum;
+//  static operation const sum;//(operation::code::sum);
+//  static operation const product;
+//  static operation const maximum;
+//  static operation const minimum;
 
 };
 
@@ -184,8 +185,8 @@ template<class Op> struct predefined_operation;
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(CppoP, MpinamE, NamE) \
 template<> struct predefined_operation<CppoP>{ \
-/*	constexpr*/ operator MPI_Op() const{return MpinamE;} \
-/*	static constexpr MPI_Op value = MpinamE;*/ \
+/*  constexpr*/ operator MPI_Op() const{return MpinamE;} \
+/*  static constexpr MPI_Op value = MpinamE;*/ \
 }; \
 using NamE = predefined_operation<CppoP>  // NOLINT(bugprone-macro-parentheses)
 

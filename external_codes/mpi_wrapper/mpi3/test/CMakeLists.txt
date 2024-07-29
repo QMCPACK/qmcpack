@@ -1,5 +1,5 @@
 # Use cmake/ctest for building and testing boost mpi3 tests
-cmake_minimum_required(VERSION 3.18.4) # 3.10 for FindMPI, 3.12 for MPI_ROOT
+cmake_minimum_required(VERSION 3.18.4) # 3.10 for FindMPI, 3.12 for MPI_ROOT, 3.25 for fetchcontent SYSTEM
 project(boostmpi3_tests VERSION 0.1 LANGUAGES CXX)
 
 if(EXISTS "CMakeLists.txt")
@@ -10,9 +10,16 @@ enable_testing()
 include(CTest)
 include(FetchContent)
 
-FetchContent_Declare(multi GIT_REPOSITORY https://gitlab.com/correaa/boost-multi.git)  # needs git installed
-# FetchContent_Declare(multi URL https://gitlab.com/correaa/boost-multi/-/archive/master/boost-multi-master.zip DOWNLOAD_EXTRACT_TIMESTAMP ON)
+FetchContent_Declare(
+  multi
+  GIT_REPOSITORY https://gitlab.com/correaa/boost-multi.git
+  GIT_SHALLOW 1
+)
 FetchContent_MakeAvailable(multi)
+set_target_properties(multi PROPERTIES SYSTEM TRUE)
+
+include(CMakePrintHelpers)
+cmake_print_properties(TARGETS multi PROPERTIES LOCATION INTERFACE_INCLUDE_DIRECTORIES INCLUDE_DIRECTORIES)
 
 find_package(MPI REQUIRED)  # install MPI, e.g. `sudo dnf install mpich-devel` or `module load mpi`
 
@@ -88,7 +95,7 @@ set(TEST_SRCS
 	communicator_reduce.cpp
 	communicator_scatter.cpp
   communicator_send.cpp
-	communicator_set_error_handler.cpp
+# communicator_set_error_handler.cpp  # doesn't work with nvhpc
 	communicator_split.cpp
   enum.cpp
 	environment_thread.cpp
@@ -149,7 +156,7 @@ foreach(TEST_FILE ${TEST_SRCS})
     set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
   endif()
 
-  target_compile_options(${TEST_EXE} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror -Wno-error=deprecated-declarations>) # -Wpedantic -Wunused -Wnon-virtual-dtor -Woverloaded-virtual -Wcast-qual -Wformat=2>) #-Wsign-conversion -Wshadow -Wconversion
+  target_compile_options(${TEST_EXE} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror>) # -Wpedantic -Wunused -Wnon-virtual-dtor -Woverloaded-virtual -Wcast-qual -Wformat=2>) #-Wsign-conversion -Wshadow -Wconversion
   target_compile_options(${TEST_EXE} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Wall -Wextra>)
 
   target_compile_options(
@@ -161,6 +168,7 @@ foreach(TEST_FILE ${TEST_SRCS})
       >
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<NOT:$<CUDA_COMPILER_ID:NVIDIA>>,$<NOT:$<CUDA_COMPILER_ID:Clang>>>:
         -fmax-errors=2
+        -Wno-error=deprecated-declarations
         -Wno-unknown-pragmas
         # -Wextra-semi (gcc 8, not in gcc 7)
         -Wpedantic
@@ -179,13 +187,14 @@ foreach(TEST_FILE ${TEST_SRCS})
         -Wconstexpr-not-const
         -Wconsumed
         -Wconversion -Wconversion-null
+        -Wno-error=deprecated-declarations
         -Wmove
         -Wzero-as-null-pointer-constant -Wzero-length-array
         -Wno-c++98-compat-unnamed-type-template-args
         -Wno-ignored-qualifiers
         -Wno-range-loop-analysis # (this check is overzealous in clang 9)
       >
-      $<$<CXX_COMPILER_ID:Intel>:  # also IntelLLVM, XL (ibm), XLClang (ibm)
+      $<$<CXX_COMPILER_ID:Intel>:
         -Werror
         -Wall
         -Wextra
@@ -197,6 +206,21 @@ foreach(TEST_FILE ${TEST_SRCS})
         -Wchar-subscripts
         -Wunused -Wunused-but-set-variable -Wunused-function -Wunused-parameter -Wunused-variable
         -Wwrite-strings
+        -Wno-error=deprecated-declarations
+      >
+      $<$<CXX_COMPILER_ID:IntelLLVM>:
+        -Werror
+        -Wall
+        -Wextra
+        -diag-disable=remark
+        -wd161
+        -Wabi
+        -Warray-bounds
+        -Wcast-qual
+        -Wchar-subscripts
+        -Wunused -Wunused-but-set-variable -Wunused-function -Wunused-parameter -Wunused-variable
+        -Wwrite-strings
+        -Wno-error=deprecated-declarations
       >
       $<$<OR:$<CXX_COMPILER_ID:PGI>,$<CXX_COMPILER_ID:NVHPC>>:
         -Werror
@@ -205,6 +229,8 @@ foreach(TEST_FILE ${TEST_SRCS})
         -Wformat=2
         -Wshadow
         -Wunused-parameter
+        --diag_suppress deprecated_entity
+        --diag_suppress code_is_unreachable
       >
       $<$<CXX_COMPILER_ID:MSVC>:
         /WX
@@ -228,7 +254,10 @@ foreach(TEST_FILE ${TEST_SRCS})
   endif()
 
   target_link_libraries(${TEST_EXE} PRIVATE pthread)
-  target_link_libraries(${TEST_EXE} PRIVATE multi)
+
+  get_target_property(multi_include_dirs multi INTERFACE_INCLUDE_DIRECTORIES)
+  target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${multi_include_dirs})
+  # target_include_directories(${TEST_EXE} PRIVATE multi)
 
   set(NPROC 3)
   if (
@@ -261,9 +290,9 @@ foreach(TEST_FILE ${TEST_SRCS})
   endif()
 
   if(DEFINED ENV{VALGRIND_EXE})
-  add_test(NAME ${TEST_EXE} COMMAND ${MPIEXEC} $ENV{MPI_OVERSUBSCRIBE} -n ${NPROC} valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --error-exitcode=1 ./${TEST_EXE})
+    add_test(NAME ${TEST_EXE} COMMAND ${MPIEXEC} $ENV{MPI_OVERSUBSCRIBE} $ENV{MPI_ALLOW_RUN_AS_ROOT} -n ${NPROC} valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --error-exitcode=1 ./${TEST_EXE})
   else()
-    add_test(NAME ${TEST_EXE} COMMAND ${MPIEXEC} $ENV{MPI_OVERSUBSCRIBE} -n ${NPROC} ./${TEST_EXE})
+    add_test(NAME ${TEST_EXE} COMMAND ${MPIEXEC} $ENV{MPI_OVERSUBSCRIBE} $ENV{MPI_ALLOW_RUN_AS_ROOT} -n ${NPROC} ./${TEST_EXE})
   endif()
   set_tests_properties(${TEST_EXE} PROPERTIES TIMEOUT 30)
 endforeach()

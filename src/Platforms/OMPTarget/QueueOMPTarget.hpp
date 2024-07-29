@@ -21,7 +21,7 @@ namespace compute
 {
 
 template<>
-class Queue<PlatformKind::OMPTARGET>
+class Queue<PlatformKind::OMPTARGET> : public QueueBase
 {
 public:
   // dualspace container

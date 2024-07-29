@@ -16,6 +16,9 @@
 #if defined(ENABLE_CUDA)
 #include "CUDA/AccelMatrixUpdateCUDA.hpp"
 #endif
+#if defined(ENABLE_SYCL)
+#include "SYCL/AccelMatrixUpdateSYCL.hpp"
+#endif
 #include "OMPTarget/AccelMatrixUpdateOMPTarget.hpp"
 
 #endif

@@ -20,7 +20,6 @@ namespace qmcplusplus
 
 WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm)
 {
-  state.reset();
   communicator            = comm;
   file_root               = series_root;
   bool driver_allows_logs = allow_logs; // driver allows logs or not
@@ -69,28 +68,27 @@ WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::st
 }
 
 
-WalkerLogCollector* WalkerLogManager::makeCollector()
+std::unique_ptr<WalkerLogCollector> WalkerLogManager::makeCollector() const
 {
   if (state.verbose)
     app_log() << "WalkerLogManager::makeCollector " << std::endl;
-  WalkerLogCollector* tc = new WalkerLogCollector(state);
-  return tc;
+  return std::make_unique<WalkerLogCollector>(state);
 }
 
 
-void WalkerLogManager::startRun(std::vector<WalkerLogCollector*>& collectors)
+void WalkerLogManager::startRun(RefVector<WalkerLogCollector>&& collectors)
 {
+  collectors_in_run_ = std::move(collectors);
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
+  if (collectors_in_run_.empty())
+    throw std::runtime_error("BUG collectors are empty but walker logs are active");
   if (state.verbose)
     app_log() << "WalkerLogManager::startRun " << std::endl;
-  // transfer step_period, verbosity, etc settings to log collectors
-  for (auto& tc : collectors)
-    tc->state = state;
   // check data size consistency among the log collector buffers
-  checkCollectors(collectors);
+  checkCollectors(collectors_in_run_);
   // open the logs file
-  openFile(collectors);
+  openFile(collectors_in_run_);
 }
 
 
@@ -100,13 +98,15 @@ void WalkerLogManager::stopRun()
     return; // no-op for driver if logs are inactive
   if (state.verbose)
     app_log() << "WalkerLogManager::stopRun " << std::endl;
+  collectors_in_run_.clear();
   // close the logs file
   closeFile();
 }
 
 
-void WalkerLogManager::writeBuffers(std::vector<WalkerLogCollector*>& collectors)
+void WalkerLogManager::writeBuffers()
 {
+  const RefVector<WalkerLogCollector>& collectors = collectors_in_run_;
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
   if (state.verbose)
@@ -137,7 +137,7 @@ void WalkerLogManager::writeBuffers(std::vector<WalkerLogCollector*>& collectors
     // gather per energy and step data for all walker throughout the MC block
     for (size_t c = 0; c < collectors.size(); ++c)
     {
-      auto& tc = *collectors[c];
+      WalkerLogCollector& tc = collectors[c];
       tc.checkBuffers();
       for (size_t r = 0; r < tc.energies.size(); ++r)
         energy_order.push_back(std::make_tuple(tc.steps[r], tc.energies[r], c, r));
@@ -170,27 +170,30 @@ void WalkerLogManager::writeBuffers(std::vector<WalkerLogCollector*>& collectors
         size_t c, r;
         if (write_min_data)
         { //  cache data for minimum energy walker
-          c = std::get<2>(energy_order[nmin]);
-          r = std::get<3>(energy_order[nmin]);
-          wmin_property_int_buffer.addRow(collectors[c]->walker_property_int_buffer, r);
-          wmin_property_real_buffer.addRow(collectors[c]->walker_property_real_buffer, r);
-          wmin_particle_real_buffer.addRow(collectors[c]->walker_particle_real_buffer, r);
+          c                      = std::get<2>(energy_order[nmin]);
+          r                      = std::get<3>(energy_order[nmin]);
+          WalkerLogCollector& tc = collectors[c];
+          wmin_property_int_buffer.addRow(tc.walker_property_int_buffer, r);
+          wmin_property_real_buffer.addRow(tc.walker_property_real_buffer, r);
+          wmin_particle_real_buffer.addRow(tc.walker_particle_real_buffer, r);
         }
         if (write_max_data)
         { //  cache data for maximum energy walker
-          c = std::get<2>(energy_order[nmax]);
-          r = std::get<3>(energy_order[nmax]);
-          wmax_property_int_buffer.addRow(collectors[c]->walker_property_int_buffer, r);
-          wmax_property_real_buffer.addRow(collectors[c]->walker_property_real_buffer, r);
-          wmax_particle_real_buffer.addRow(collectors[c]->walker_particle_real_buffer, r);
+          c                      = std::get<2>(energy_order[nmax]);
+          r                      = std::get<3>(energy_order[nmax]);
+          WalkerLogCollector& tc = collectors[c];
+          wmax_property_int_buffer.addRow(tc.walker_property_int_buffer, r);
+          wmax_property_real_buffer.addRow(tc.walker_property_real_buffer, r);
+          wmax_particle_real_buffer.addRow(tc.walker_particle_real_buffer, r);
         }
         if (write_med_data)
         { //  cache data for median energy walker
-          c = std::get<2>(energy_order[nmed]);
-          r = std::get<3>(energy_order[nmed]);
-          wmed_property_int_buffer.addRow(collectors[c]->walker_property_int_buffer, r);
-          wmed_property_real_buffer.addRow(collectors[c]->walker_property_real_buffer, r);
-          wmed_particle_real_buffer.addRow(collectors[c]->walker_particle_real_buffer, r);
+          c                      = std::get<2>(energy_order[nmed]);
+          r                      = std::get<3>(energy_order[nmed]);
+          WalkerLogCollector& tc = collectors[c];
+          wmed_property_int_buffer.addRow(tc.walker_property_int_buffer, r);
+          wmed_property_real_buffer.addRow(tc.walker_property_real_buffer, r);
+          wmed_particle_real_buffer.addRow(tc.walker_particle_real_buffer, r);
         }
         // reset pointers
         n1        = n;
@@ -202,21 +205,21 @@ void WalkerLogManager::writeBuffers(std::vector<WalkerLogCollector*>& collectors
   }
 
   // write buffer data to file
-  writeBuffersHDF(collectors);
+  writeBuffersHDF();
 }
 
 
-void WalkerLogManager::checkCollectors(std::vector<WalkerLogCollector*>& collectors)
+void WalkerLogManager::checkCollectors(const RefVector<WalkerLogCollector>& collectors) const
 {
   if (state.verbose)
     app_log() << "WalkerLogManager::checkCollectors" << std::endl;
   if (collectors.size() > 0)
   {
     bool all_same           = true;
-    WalkerLogCollector& ref = *collectors[0];
+    WalkerLogCollector& ref = collectors[0];
     for (int i = 0; i < collectors.size(); ++i)
     {
-      WalkerLogCollector& tc = *collectors[i];
+      WalkerLogCollector& tc = collectors[i];
       all_same &= tc.walker_property_int_buffer.sameAs(ref.walker_property_int_buffer);
       all_same &= tc.walker_property_real_buffer.sameAs(ref.walker_property_real_buffer);
       all_same &= tc.walker_particle_real_buffer.sameAs(ref.walker_particle_real_buffer);
@@ -233,7 +236,7 @@ void WalkerLogManager::checkCollectors(std::vector<WalkerLogCollector*>& collect
 }
 
 
-void WalkerLogManager::openFile(std::vector<WalkerLogCollector*>& collectors)
+void WalkerLogManager::openFile(const RefVector<WalkerLogCollector>& collectors)
 {
   if (state.verbose)
     app_log() << "WalkerLogManager::openFile " << std::endl;
@@ -249,7 +252,7 @@ void WalkerLogManager::closeFile()
 }
 
 
-void WalkerLogManager::openHDFFile(std::vector<WalkerLogCollector*>& collectors)
+void WalkerLogManager::openHDFFile(const RefVector<WalkerLogCollector>& collectors)
 {
   if (state.verbose)
     app_log() << "WalkerLogManager::openHDFFile " << std::endl;
@@ -285,11 +288,12 @@ void WalkerLogManager::openHDFFile(std::vector<WalkerLogCollector*>& collectors)
 }
 
 
-void WalkerLogManager::writeBuffersHDF(std::vector<WalkerLogCollector*>& collectors)
+void WalkerLogManager::writeBuffersHDF()
 {
+  const RefVector<WalkerLogCollector>& collectors = collectors_in_run_;
   if (state.verbose)
     app_log() << "WalkerLogManager::writeBuffersHDF " << std::endl;
-  WalkerLogCollector& tc_lead = *collectors[0];
+  WalkerLogCollector& tc_lead = collectors[0];
   if (!registered_hdf)
   { // write walker quantity information ("data_layout") for each buffer in the HDF file
     //  create data_layout for all-walker buffers
@@ -321,7 +325,7 @@ void WalkerLogManager::writeBuffersHDF(std::vector<WalkerLogCollector*>& collect
   // write data for all-walker buffers to HDF
   for (int ip = 0; ip < collectors.size(); ++ip)
   {
-    WalkerLogCollector& tc = *collectors[ip];
+    WalkerLogCollector& tc = collectors[ip];
     tc.walker_property_int_buffer.writeHDF(*hdf_file, tc_lead.walker_property_int_buffer.hdf_file_pointer);
     tc.walker_property_real_buffer.writeHDF(*hdf_file, tc_lead.walker_property_real_buffer.hdf_file_pointer);
     if (write_particle_data)
