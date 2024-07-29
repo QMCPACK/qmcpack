@@ -90,9 +90,6 @@ class GCTA(DevBase):
                     ''')
         #end if
         spinor_run = self.input.get('spinor')
-        if spinor_run is True:
-            self.error('Spinors are currently not supported with gcta. Please contact the developers.')
-        #end if
         if (self.flavor.lower() == 'safl') and (spinor_run is True):
             self.error('safl is not supported with spinors. Use afl instead.')
         #end if
@@ -126,23 +123,30 @@ class GCTA(DevBase):
         '''
         Read the ESHDF eigenvalues, k-point info and store the data in the GCTA instance as an attribute
         '''
-        def h5int(i):
-            return array(i,dtype=int)[0]
-        #end def h5int
+        def h5_scalar(i):
+            value = array(i)
+            if value.ndim == 0:
+                return value.item()
+            else:
+                return value[0]
+        #end def h5_scalar
         h        = read_hdf(filename,view=True)
-        nkpoints = h5int(h.electrons.number_of_kpoints)
-        nspins   = h5int(h.electrons.number_of_spins)
+        nkpoints = h5_scalar(h.electrons.number_of_kpoints)
+        if hasattr(h.electrons, 'number_of_spins'):
+            nspins   = h5_scalar(h.electrons.number_of_spins) # pwscf collinear
+        else:
+            nspins   = 1 # convertpw4qmc non-collinear
         data     = obj()
         kweights = []
         for ikpoint in range(nkpoints):
             kp = h.electrons['kpoint_'+str(ikpoint)]
-            kw = array(kp.weight)[0]
+            kw = h5_scalar(kp.weight)
             kweights.append(kw)
             for ispin in range(nspins):
                 path = 'electrons/kpoint_{0}/spin_{1}'.format(ikpoint,ispin)
                 spin = h.get_path(path)
                 eigs = convert(array(spin.eigenvalues),'Ha','eV')
-                nstates = h5int(spin.number_of_states)
+                nstates = h5_scalar(spin.number_of_states)
                 data[ikpoint,ispin] = obj(
                     eig    = array(eigs),
                     kpoint = array(kp.reduced_k), # unit (crystal) coordinates for kpoints. The range is [0, 1).
@@ -153,7 +157,6 @@ class GCTA(DevBase):
         total_kweight = sum(kweights)
         total_kweight = self.int_kpoint_weight(total_kweight)
         norm_factor = 1.0 / min(kweights) # Multiplicative factor to get integer weights
-        norm_factor = self.int_kpoint_weight(norm_factor)
         res = obj(
             orbfile     = filename,
             nkpoints    = nkpoints,
@@ -495,10 +498,10 @@ class GCTA(DevBase):
         '''
         Check that the net magnetization is close to the reference SCF value
         '''
-        nosym_kpoints = self.unfolded_nkpoints()
-        spin_sum_twists = self.sum_spin_twists()
-        qmc_magnet = spin_sum_twists / nosym_kpoints
         if self.flavor.lower() == 'safl':
+            nosym_kpoints = self.unfolded_nkpoints()
+            spin_sum_twists = self.sum_spin_twists()
+            qmc_magnet = spin_sum_twists / nosym_kpoints
             feasible_accuracy = (1.0 / nosym_kpoints) + 1e-8
             error_magnet = abs(qmc_magnet - scf_magnet)
             if error_magnet > feasible_accuracy:
@@ -511,11 +514,14 @@ class GCTA(DevBase):
     #end def check_magnetization_accuracy
 
     def write_gcta_report(self, locdir, fermi_level, scf_magnet = None):
+        spinor_run = self.input.get('spinor')
         nosym_kpoints = self.unfolded_nkpoints()
         q_sum_twists = self.sum_charge_twists()
-        spin_sum_twists = self.sum_spin_twists()
         qmc_charge = q_sum_twists / nosym_kpoints
-        qmc_magnet = spin_sum_twists / nosym_kpoints
+        if spinor_run is not True:
+            spin_sum_twists = self.sum_spin_twists()
+            qmc_magnet = spin_sum_twists / nosym_kpoints
+        #end if
         n_up = self.system.particles.up_electron.count
         n_dn = self.system.particles.down_electron.count
         n_total = n_up + n_dn
@@ -537,22 +543,32 @@ class GCTA(DevBase):
             #end if
             gcta_file.write('Net Charge:                     {}\n'.format(q_sum_twists))
             gcta_file.write('Net Charge / Prim Cell:       {:20.16f}\n'.format(qmc_charge))
-            gcta_file.write('Net Magnetization / Prim Cell:{:20.16f}\n'.format(qmc_magnet))
+            if spinor_run is not True:
+                gcta_file.write('Net Magnetization / Prim Cell:{:20.16f}\n'.format(qmc_magnet))
+            #end if
             if scf_magnet is not None:
                 gcta_file.write('SCF Magnetization (Reference):{:20.16f}\n'.format(scf_magnet))
             #end if
             gcta_file.write('\n\n')
-            gcta_file.write(' TWISTNUM  NELEC_UP  NELEC_DN   CHARGE     SPIN   \n')
+            if spinor_run is not True:
+                gcta_file.write(' TWISTNUM  NELEC_UP  NELEC_DN   CHARGE     SPIN   \n')
+            else:
+                gcta_file.write(' TWISTNUM    NELEC    CHARGE                      \n')
+            #end if
             gcta_file.write('==================================================\n')
             for itwist, nelec_up_dn in enumerate(nelecs_at_twist):
                 nelec_twist = sum(nelec_up_dn)
                 q_twist = n_total - nelec_twist
-                spin_twist = nelec_up_dn[0] - nelec_up_dn[1]
                 gcta_file.write('{:^10}'.format(itwist))
                 gcta_file.write('{:^10}'.format(nelec_up_dn[0]))
-                gcta_file.write('{:^10}'.format(nelec_up_dn[1]))
+                if spinor_run is not True:
+                    gcta_file.write('{:^10}'.format(nelec_up_dn[1]))
+                #end if
                 gcta_file.write('{:^11}'.format(q_twist))
-                gcta_file.write('{:^9}'.format(spin_twist))
+                if spinor_run is not True:
+                    spin_twist = nelec_up_dn[0] - nelec_up_dn[1]
+                    gcta_file.write('{:^9}'.format(spin_twist))
+                #end if
                 gcta_file.write('\n')
             #end for
         #end with
@@ -1457,9 +1473,11 @@ class Qmcpack(Simulation):
                         elecs = self.nelecs_at_twist[itwist]
                         # step 1: resize particlesets
                         nup = elecs[0]
-                        ndn = elecs[1]
                         qi.get('u').set(size=nup)
-                        qi.get('d').set(size=ndn)
+                        if len(elecs) == 2:
+                            ndn = elecs[1]
+                            qi.get('d').set(size=ndn)
+                        #end if
                         # step 2: resize determinants
                         dset = qi.get('determinantset')
                         sdet = dset.slaterdeterminant  # hard-code single det
