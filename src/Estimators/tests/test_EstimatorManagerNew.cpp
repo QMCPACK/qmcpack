@@ -64,7 +64,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
   auto& ham             = *(hamiltonian_pool.getPrimary());
   EstimatorManagerNew emn(ham, comm);
-  emn.constructEstimators(std::move(emi), pset, twf, ham);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool);
 
   CHECK(emn.getNumEstimators() == 2);
   // Because the only scalar estimator becomes the main estimator.
@@ -82,7 +82,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   CHECK(emi2.get_scalar_estimator_inputs().size() == 4);
 
   EstimatorManagerNew emn2(ham, comm);
-  emn2.constructEstimators(std::move(emi2), pset, twf, ham);
+  emn2.constructEstimators(std::move(emi2), pset, twf, ham, particle_pool);
 
   CHECK(emn2.getNumEstimators() == 2);
   // Because the only scalar estimator becomes the main estimator.

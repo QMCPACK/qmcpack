@@ -95,7 +95,8 @@ bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Arg
 void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                               const ParticleSet& pset,
                                               const TrialWaveFunction& twf,
-                                              const QMCHamiltonian& H)
+                                              const QMCHamiltonian& H,
+					      const PSPool& pset_pool)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||

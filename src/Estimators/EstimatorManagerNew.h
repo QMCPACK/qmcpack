@@ -47,11 +47,11 @@ class EstimatorManagerNew
 {
 public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
-  using QMCT      = QMCTraits;
+  using QMCT             = QMCTraits;
   using RealType         = QMCTraits::FullPrecRealType;
-  using FullPrecRealType         = QMCTraits::FullPrecRealType;
-  using MCPWalker = Walker<QMCT, PtclOnLatticeTraits>;
-  using PSPool = typename ParticleSetPool::PoolType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using MCPWalker        = Walker<QMCT, PtclOnLatticeTraits>;
+  using PSPool           = typename ParticleSetPool::PoolType;
   /// default constructor
   EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);
   ///copy constructor, deleted
@@ -73,15 +73,17 @@ public:
   bool put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur);
   /** construct estimators from already parsed input.
    *
-   *  \param[in]  emi    EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
-   *  \param[in]  H      Fully Constructed Golden Hamiltonian.
-   *  \param[in]  pset   The electron or equiv. pset
-   *  \param[in]  twf    The fully constructed TrialWaveFunction.
+   *  \param[in]  emi      EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
+   *  \param[in]  H        Fully Constructed Golden Hamiltonian.
+   *  \param[in]  pset     The electron or equiv. pset
+   *  \param[in]  twf      The fully constructed TrialWaveFunction.
+   *  \param[in]  ps_pool  Global particle set pool since some estimators expect to be able to get arbitrary psets by string mapping
    */
   void constructEstimators(EstimatorManagerInput&& emi,
-                           const ParticleSet& pset,
-                           const TrialWaveFunction& twf,
-                           const QMCHamiltonian& H);
+                           const ParticleSet& pset_primary,
+                           const TrialWaveFunction& twf_primary,
+                           const QMCHamiltonian& H,
+                           const PSPool& pset_pool);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.
