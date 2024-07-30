@@ -92,7 +92,7 @@ bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Arg
 }
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
+void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                               const ParticleSet& pset,
                                               const TrialWaveFunction& twf,
                                               const QMCHamiltonian& H)

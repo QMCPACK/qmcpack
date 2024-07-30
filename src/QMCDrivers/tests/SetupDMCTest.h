@@ -52,7 +52,6 @@ public:
             walker_confs,
             MCPopulation(comm->size(), comm->rank(), particle_pool->getParticleSet("e"),
                          wavefunction_pool->getPrimary(), hamiltonian_pool->getPrimary()),
-	    particle_pool->getPool(),
             comm};
   }
 

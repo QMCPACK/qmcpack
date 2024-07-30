@@ -265,6 +265,9 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
       throw UniformCommunicateError(e.what());
     }
 
+    // I don't like that QMCDriverFactory is unpacking the driver input here, ideally only the driver should need to
+    // depend on the content and implementation of the input.  This seems to be to be a bigger deal that passing the
+    // known at this level PSPool down.
     new_driver =
         std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input),
                                      makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),

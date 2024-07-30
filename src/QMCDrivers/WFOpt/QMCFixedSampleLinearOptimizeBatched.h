@@ -294,9 +294,6 @@ private:
   ///vmc engine
   std::unique_ptr<VMCBatched> vmcEngine;
 
-  /// ParticleSetPool::PoolType reference necessary because construction is split between constructor, process and processOptXML
-  const QMCDriverNew::PSPool& pset_pool_;
-
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
 
