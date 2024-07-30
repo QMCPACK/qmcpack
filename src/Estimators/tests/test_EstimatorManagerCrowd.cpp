@@ -48,7 +48,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   auto& ham             = *(hamiltonian_pool.getPrimary());
 
   EstimatorManagerNew emn(ham, comm);
-  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
   CHECK(emn.getNumEstimators() == 2);
   CHECK(emn.getNumScalarEstimators() == 0);
@@ -82,7 +82,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   emi.append(std::move(pphli));
 
   EstimatorManagerNew emn(ham, comm);
-  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
   CHECK(emn.getNumEstimators() == 3);
   CHECK(emn.getNumScalarEstimators() == 0);

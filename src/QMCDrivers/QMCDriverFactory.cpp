@@ -204,7 +204,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
 
 
   auto makeEstimatorManager = [&](const std::optional<EstimatorManagerInput>& global_emi,
-                                  const std::optional<EstimatorManagerInput>& driver_emi) {
+                                  const std::optional<EstimatorManagerInput>& driver_emi) -> UPtr<EstimatorManagerNew> {
     // This is done so that the application level input structures reflect the actual input to the code.
     // While the actual simulation objects still take singular input structures at construction.
     auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
@@ -347,6 +347,11 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
       throw UniformCommunicateError(e.what());
     }
 
+    if (qmcdriver_input.get_estimator_manager_input())
+      throw UniformCommunicateError("Local Estimator sections are not allowed for Optimizer drivers!");
+    if (emi)
+      app_log() << "Batched optimizer IGNORES global estimator input.";
+    
     auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data_, std::move(qmcdriver_input),
                                                                      std::move(vmcdriver_input), qmc_system,
                                                                      MCPopulation(comm->size(), comm->rank(),
