@@ -14,7 +14,6 @@
 
 #include <array>
 #include <string_view>
-#include "ValidInputHelp.h"
 
 namespace qmcplusplus
 {
@@ -32,7 +31,9 @@ public:
     RMC_LOCAL_ENERGY
   };
 
-  TEST_INPUT_ACCESSORS(valid)
+  static std::string_view getXml(valid val) { return xml[static_cast<std::size_t>(val)]; }
+  auto begin() { return xml.begin(); }
+  auto end() {return xml.end(); }
 
 private:
   static constexpr std::array<std::string_view, 4> xml{

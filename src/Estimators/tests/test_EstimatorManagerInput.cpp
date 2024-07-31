@@ -47,9 +47,8 @@ TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
 
   {
     using Input = testing::ValidOneBodyDensityMatricesInput;
-    Input input;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input[Input::valid::VANILLA]);
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
@@ -104,9 +103,8 @@ TEST_CASE("EstimatorManagerInput::moveFromEstimatorInputs", "[estimators]")
 
   {
     using Input = testing::ValidOneBodyDensityMatricesInput;
-    Input input;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input[Input::valid::VANILLA]);
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
