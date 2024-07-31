@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_VALIDINPUTHELP_H
 #define QMCPLUSPLUS_VALIDINPUTHELP_H
 
-#define TEST_INPUT_ACCESSORS(ENUM_CLASS) static std::string_view operator[] (ENUM_CLASS val) { \
+#define TEST_INPUT_ACCESSORS(ENUM_CLASS) std::string_view operator[] (ENUM_CLASS val) { \
     return xml[static_cast<std::size_t>(val)];                                            \
   }                                                                                       \
                                                                                           \

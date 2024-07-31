@@ -328,8 +328,8 @@ TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
 
   auto samplingCaseRunner = [&pset_target, &species_set, &spo_map](Input::valid test_case) {
     Libxml2Document doc;
-
-    bool okay = doc.parseFromString(Input[test_case]);
+    Input input;
+    bool okay = doc.parseFromString(input[test_case]);
     if (!okay)
       throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
     xmlNodePtr node = doc.getRoot();
