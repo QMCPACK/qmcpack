@@ -31,7 +31,6 @@ set(QMCDRIVERS
     QMCDriver.cpp
     QMCDriverInput.cpp
     QMCDriverNew.cpp
-    WFOpt/QMCWFOptFactoryNew.cpp
     WFOpt/LinearMethod.cpp
     WFOpt/Eigensolver.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
@@ -56,7 +55,6 @@ set(QMCDRIVERS
     VMC/VMCUpdatePbyP.cpp
     VMC/VMCUpdateAll.cpp
     VMC/VMCFactory.cpp
-    VMC/VMCFactoryNew.cpp
     VMC/VMCDriverInput.cpp
     VMC/SOVMCUpdatePbyP.cpp
     VMC/SOVMCUpdateAll.cpp
@@ -65,7 +63,6 @@ set(QMCDRIVERS
     DMC/DMCUpdatePbyPFast.cpp
     DMC/DMCUpdatePbyPL2.cpp
     DMC/DMCFactory.cpp
-    DMC/DMCFactoryNew.cpp
     DMC/DMCBatched.cpp
     DMC/DMCDriverInput.cpp
     DMC/DMCRefEnergy.cpp

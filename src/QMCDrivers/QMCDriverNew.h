@@ -90,7 +90,11 @@ public:
   };
 
   using MCPWalker = MCPopulation::MCPWalker;
-  using WFBuffer  = MCPopulation::WFBuffer;
+  /** This type provides all the functionality needed by drivers to instantiate estimators so we use it to reduce coupling
+   *  with ParticleSetPool
+   */
+  using PSPool   = ParticleSetPool::PoolType;
+  using WFBuffer = MCPopulation::WFBuffer;
 
   using SetNonLocalMoveHandler = std::function<void(QMCHamiltonian&)>;
   /** bits to classify QMCDriver
@@ -131,10 +135,21 @@ protected:
   void endBlock();
 
 public:
-  /// Constructor.
+  /** Constructor
+   *
+   *  \param[in]  project_data         ...
+   *  \param[in]  input                in theory immutable parameters controlling the driver should come from here.
+   *  \param[in]  wc                   incoming walker configurations from previous run (or restart?)
+   *  \param[in]  population           rank scope container for population <em>walker elements</em>
+   *  \param[in]  pset_pool            global particle set pool, allows retrieval of "named" particle sets.
+   *                                   currently only the EnergyDensityEstimator requries this.
+   *  \param[in]  timer_prefix         prefix string for the driver timers
+   *  \param[in]  comm                 MPI communicator wrapper
+   *  \param[in]  QMC_driver_type      string identifier of the QMCDriver required for?
+   */
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
-               const std::optional<EstimatorManagerInput>& global_emi,
+               UPtr<EstimatorManagerNew>&& estimator_manager,
                WalkerConfigurations& wc,
                MCPopulation&& population,
                const std::string timer_prefix,
@@ -191,7 +206,7 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override {};
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
   void createRngsStepContexts(int num_crowds);
 

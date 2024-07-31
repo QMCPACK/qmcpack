@@ -46,20 +46,17 @@ namespace qmcplusplus
 using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
-    const ProjectData& project_data,
-    QMCDriverInput&& qmcdriver_input,
-    const std::optional<EstimatorManagerInput>& global_emi,
-    VMCDriverInput&& vmcdriver_input,
-    WalkerConfigurations& wc,
-    MCPopulation&& population,
-    SampleStack& samples,
-    Communicate* comm)
+QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
+                                                                         QMCDriverInput&& qmcdriver_input,
+                                                                         VMCDriverInput&& vmcdriver_input,
+                                                                         WalkerConfigurations& wc,
+                                                                         MCPopulation&& population,
+                                                                         SampleStack& samples,
+                                                                         Communicate* comm)
     : QMCDriverNew(
           project_data,
           std::move(qmcdriver_input),
-          std::
-              nullopt, // this class is not a real QMCDriverNew as far as I can tell so we don't give it the actual global_emi_
+          nullptr, // this class is not a real QMCDriverNew as far as I can tell so we don't give it the actual EM
           wc,
           std::move(population),
           "QMCLinearOptimizeBatched::",
@@ -95,8 +92,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       cost_function_timer_(createGlobalTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
       vmcdriver_input_(vmcdriver_input),
-      samples_(samples),
-      global_emi_(global_emi)
+      samples_(samples)
 {
   //set the optimization flag
   qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
@@ -736,7 +732,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   // create VMC engine
   vmcEngine =
-      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), global_emi_,
+      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), nullptr,
                                    std::move(vmcdriver_input_copy), walker_configs_ref_,
                                    MCPopulation(myComm->size(), myComm->rank(), &population_.get_golden_electrons(),
                                                 &population_.get_golden_twf(), &population_.get_golden_hamiltonian()),
