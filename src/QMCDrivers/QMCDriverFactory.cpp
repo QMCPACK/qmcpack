@@ -348,10 +348,10 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     }
 
     if (qmcdriver_input.get_estimator_manager_input())
-      throw UniformCommunicateError("Local Estimator sections are not allowed for Optimizer drivers!");
+      app_warning() << "The batched wavefunction optimization driver ignores local estimator input.";
     if (emi)
-      app_log() << "Batched optimizer IGNORES global estimator input.";
-    
+      app_warning() << "The batched wavefunction optimization driver ignores global estimator input.";
+
     auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data_, std::move(qmcdriver_input),
                                                                      std::move(vmcdriver_input), qmc_system,
                                                                      MCPopulation(comm->size(), comm->rank(),
