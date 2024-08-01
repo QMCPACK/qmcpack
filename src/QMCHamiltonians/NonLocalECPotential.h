@@ -109,11 +109,12 @@ public:
   {
     UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option, tau, alpha, gamma);
   }
+
   /** make non local moves with particle-by-particle moves
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMovesPbyP(ParticleSet& P);
+  int makeNonLocalMovesPbyP(ParticleSet& P) override;
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,

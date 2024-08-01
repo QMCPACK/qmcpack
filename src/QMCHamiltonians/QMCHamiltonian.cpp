@@ -987,10 +987,10 @@ void QMCHamiltonian::setNonLocalMoves(const std::string& non_local_move_option,
 
 int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
 {
-  if (nlpp_ptr == nullptr)
-    return 0;
-  else
-    return nlpp_ptr->makeNonLocalMovesPbyP(P);
+  int num_moves = 0;
+  for (int i = 0; i < H.size(); ++i)
+    num_moves += H[i]->makeNonLocalMovesPbyP(P);
+  return num_moves;
 }
 
 
@@ -998,14 +998,9 @@ std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<
                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                       const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  auto& ham_leader = ham_list.getLeader();
-
   std::vector<int> num_accepts(ham_list.size(), 0);
-  if (ham_list.getLeader().nlpp_ptr)
-  {
-    for (int iw = 0; iw < ham_list.size(); ++iw)
-      num_accepts[iw] = ham_list[iw].nlpp_ptr->makeNonLocalMovesPbyP(p_list[iw]);
-  }
+  for (int iw = 0; iw < ham_list.size(); ++iw)
+    num_accepts[iw] = ham_list[iw].makeNonLocalMoves(p_list[iw]);
   return num_accepts;
 }
 
