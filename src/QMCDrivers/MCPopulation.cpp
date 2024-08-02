@@ -107,10 +107,10 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
   for (size_t iw = 0; iw < num_walkers; iw++)
     walker_ids[iw] = nextWalkerID();
 
-    // this part is time consuming, it must be threaded and calls should be thread-safe.
-    // It would make more sense if it was over crowd threads as the thread locality of the walkers
-    // would at least initially be "optimal" Depending on the number of OMP threads and implementation
-    // this may be equivalent.
+  // this part is time consuming, it must be threaded and calls should be thread-safe.
+  // It would make more sense if it was over crowd threads as the thread locality of the walkers
+  // would at least initially be "optimal" Depending on the number of OMP threads and implementation
+  // this may be equivalent.
 #pragma omp parallel for shared(walker_ids)
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
@@ -214,8 +214,9 @@ WalkerElementsRef MCPopulation::spawnWalker()
   {
     outputManager.resume();
     auto walker_id = nextWalkerID();
-    app_warning() << "Spawning walker ID " << walker_id << " this is living walker number " << walkers_.size()
-                  << "which is beyond the allocated walker reserves, ideally this should never happen." << '\n';
+    app_debug() << "Spawning a walker (ID " << walker_id << ") triggers living walker number " << walkers_.size()
+                << " allocation. This happens when population starts to fluctuate at the begining of a simulation "
+                << "but infrequently when the fluctuation stablizes." << std::endl;
     walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back()), walker_id, 0));
 
     outputManager.pause();
