@@ -653,7 +653,7 @@ void MultiSlaterDetTableMethod::evaluateSpinorRatios(const VirtualParticleSet& V
                                                      std::vector<ValueType>& ratios)
 {
   throw std::runtime_error("MultiSlaterDetTableMethod::evaluateSpinorRatios not implemented. To use SOECPs with MSD "
-                           "wave functions, please set spin_integrator=\"simpson\" in the qmcpack input file.");
+                           "wave functions, please set spin_integrator=\"simpson\" in the QMCPACK input file.");
 }
 
 void MultiSlaterDetTableMethod::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
