@@ -126,10 +126,7 @@ void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
 {
-  if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
-    evaluateImpl(P, true);
-  else
-    evaluateImpl(P, false);
+  evaluateImpl(P, UseTMove != TMOVE_OFF);
   return value_;
 }
 
@@ -137,10 +134,7 @@ void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<Ope
                                                    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
-    mw_evaluateImpl(o_list, wf_list, p_list, true, std::nullopt);
-  else
-    mw_evaluateImpl(o_list, wf_list, p_list, false, std::nullopt);
+  mw_evaluateImpl(o_list, wf_list, p_list, UseTMove != TMOVE_OFF, std::nullopt);
 }
 
 void NonLocalECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
@@ -161,10 +155,7 @@ void NonLocalECPotential::mw_evaluatePerParticleWithToperator(
     const std::vector<ListenerVector<Real>>& listeners_ions) const
 {
   std::optional<ListenerOption<Real>> l_opt(std::in_place, listeners, listeners_ions);
-  if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
-    mw_evaluateImpl(o_list, wf_list, p_list, true, l_opt);
-  else
-    mw_evaluateImpl(o_list, wf_list, p_list, false, l_opt);
+  mw_evaluateImpl(o_list, wf_list, p_list, UseTMove != TMOVE_OFF, l_opt);
 }
 
 void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool compute_txy_all, bool keep_grid)
