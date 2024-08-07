@@ -81,6 +81,10 @@ void SOECPComponent::resize_warrays(int n, int m, int s)
   deltaV_.resize(total_knots_);
   deltaS_.resize(total_knots_);
   spin_quad_weights_.resize(total_knots_);
+  auto& up_row = spinor_multiplier_.first;
+  auto& dn_row = spinor_multiplier_.second;
+  up_row.resize(total_knots_);
+  dn_row.resize(total_knots_);
   if (m != nchannel_)
   {
     APP_ABORT("SOECPComponent::resize_warrays has incorrect number of radial channels\n");
@@ -209,27 +213,11 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
   return std::real(pairpot);
 }
 
-SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(ParticleSet& W,
-                                                                         const int iat,
-                                                                         const TrialWaveFunction& psi,
-                                                                         const int iel,
-                                                                         const RealType r,
-                                                                         const PosType& dr)
+void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, RealType sold)
 {
-#ifdef QMC_COMPLEX
-  RealType sold = W.spins[iel];
 
-  using ValueVector = SPOSet::ValueVector;
-  std::pair<ValueVector, ValueVector> spinor_multiplier;
-  auto& up_row = spinor_multiplier.first;
-  auto& dn_row = spinor_multiplier.second;
-  up_row.resize(nknot_);
-  dn_row.resize(nknot_);
-
-  //buildQuadraturePointDeltaPositions
-  for (int j = 0; j < nknot_; j++)
-    deltaV_[j] = r * rrotsgrid_m_[j] - dr;
-  vp_->makeMoves(W, iel, deltaV_, true, iat);
+  auto& up_row = spinor_multiplier_.first;
+  auto& dn_row = spinor_multiplier_.second;
 
   //calculate radial potentials
   for (int ip = 0; ip < nchannel_; ip++)
@@ -253,17 +241,34 @@ SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(Particl
           RealType fourpi   = 4.0 * M_PI;
           //Note: Need 4pi weight. In Normal NonLocalECP, 1/4Pi generated from transformation to legendre polynomials and gets absorbed into the
           // quadrature integration. We don't get the 1/4Pi from legendre here, so we need to scale by 4Pi.
-          up_row[iq] += fourpi * vrad_[il] * Y * cY * so_up;
-          dn_row[iq] += fourpi * vrad_[il] * Y * cY * so_dn;
+          up_row[iq] += fourpi * vrad_[il] * Y * cY * so_up * sgridweight_m_[iq];
+          dn_row[iq] += fourpi * vrad_[il] * Y * cY * so_dn * sgridweight_m_[iq];
         }
       }
     }
   }
+}
 
-  psi.evaluateSpinorRatios(*vp_, spinor_multiplier, psiratio_);
+SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(ParticleSet& W,
+                                                                         const int iat,
+                                                                         const TrialWaveFunction& psi,
+                                                                         const int iel,
+                                                                         const RealType r,
+                                                                         const PosType& dr)
+{
+#ifdef QMC_COMPLEX
+  RealType sold = W.spins[iel];
+
+  for (int j = 0; j < nknot_; j++)
+    deltaV_[j] = r * rrotsgrid_m_[j] - dr;
+  vp_->makeMoves(W, iel, deltaV_, true, iat);
+
+  setupExactSpinProjector(r, dr, sold);
+
+  psi.evaluateSpinorRatios(*vp_, spinor_multiplier_, psiratio_);
   ComplexType pairpot;
   for (size_t iq = 0; iq < nknot_; iq++)
-    pairpot += psiratio_[iq] * sgridweight_m_[iq];
+    pairpot += psiratio_[iq];
   return std::real(pairpot);
 #else
   throw std::runtime_error("SOECPComponent::evaluateOneBodyOpMatrixContribution only implemented in complex build");

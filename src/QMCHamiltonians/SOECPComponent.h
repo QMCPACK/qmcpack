@@ -79,6 +79,7 @@ private:
   Matrix<ValueType> dratio_;
   Vector<ValueType> dlogpsi_vp_;
   VirtualParticleSet* vp_;
+  std::pair<SPOSet::ValueVector, SPOSet::ValueVector> spinor_multiplier_;
 
   //This builds the full quadrature grid for the Simpsons rule used for spin integrals as well as
   //the spatial quadrature. In this function, it specifies the deltaS_ and deltaV_ for all the quadrature points and sets the interal weights
@@ -117,6 +118,7 @@ public:
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, int iel, RealType r, const PosType& dr);
 
   RealType calculateProjector(RealType r, const PosType& dr, RealType sold);
+  void setupExactSpinProjector(RealType r, const PosType& dr, RealType sold);
 
   RealType evaluateOneExactSpinIntegration(ParticleSet& W,
                                            const int iat,
