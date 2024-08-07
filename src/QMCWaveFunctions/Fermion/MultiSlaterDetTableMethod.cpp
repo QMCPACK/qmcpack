@@ -648,6 +648,14 @@ void MultiSlaterDetTableMethod::evaluateRatios(const VirtualParticleSet& VP, std
   }
 }
 
+void MultiSlaterDetTableMethod::evaluateSpinorRatios(const VirtualParticleSet& VP,
+                                                     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                                     std::vector<ValueType>& ratios)
+{
+  throw std::runtime_error("MultiSlaterDetTableMethod::evaluateSpinorRatios not implemented. To use SOECPs with MSD "
+                           "wave functions, please set spin_integrator=\"simpson\" in the QMCPACK input file.");
+}
+
 void MultiSlaterDetTableMethod::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // this should depend on the type of update, ratio / ratioGrad
@@ -1004,7 +1012,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
 
 void MultiSlaterDetTableMethod::calcIndividualDetRatios(Vector<ValueType>& ratios)
 {
-  ValueType psiinv       = static_cast<ValueType>(PsiValue(1.0) / psi_ratio_to_ref_det_);
+  ValueType psiinv = static_cast<ValueType>(PsiValue(1.0) / psi_ratio_to_ref_det_);
 
   // CI only for now
   assert(!csf_data_);
@@ -1027,12 +1035,13 @@ const std::vector<WaveFunctionComponent::ValueType>& MultiSlaterDetTableMethod::
 }
 
 
-void MultiSlaterDetTableMethod::evaluateDerivativesMSD(Vector<ValueType>& dlogpsi, std::optional<std::pair<unsigned, PsiValue>> move) const
+void MultiSlaterDetTableMethod::evaluateDerivativesMSD(Vector<ValueType>& dlogpsi,
+                                                       std::optional<std::pair<unsigned, PsiValue>> move) const
 {
   // when not using a new position, the result doesn't get affected by det_id, thus choose 0.
-  const unsigned det_id = move? move->first : 0;
-  const auto& detValues0 = move? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const ValueType psiinv = static_cast<ValueType>(PsiValue(1.0) / (move? move->second : psi_ratio_to_ref_det_));
+  const unsigned det_id  = move ? move->first : 0;
+  const auto& detValues0 = move ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const ValueType psiinv = static_cast<ValueType>(PsiValue(1.0) / (move ? move->second : psi_ratio_to_ref_det_));
 
   if (csf_data_) // CSF
   {
