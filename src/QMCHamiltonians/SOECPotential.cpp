@@ -138,7 +138,7 @@ void SOECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                                 const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                 const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  mw_evaluateImpl(o_list, wf_list, p_list, std::nullopt);
+  mw_evaluateImpl(o_list, wf_list, p_list, std::nullopt, false, use_exact_spin_);
 }
 
 void SOECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
@@ -148,14 +148,15 @@ void SOECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBas
                                            const std::vector<ListenerVector<Real>>& listeners_ions) const
 {
   std::optional<ListenerOption<Real>> l_opt(std::in_place, listeners, listeners_ions);
-  mw_evaluateImpl(o_list, wf_list, p_list, l_opt);
+  mw_evaluateImpl(o_list, wf_list, p_list, l_opt, false, use_exact_spin_);
 }
 
 void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                                     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                     const RefVectorWithLeader<ParticleSet>& p_list,
                                     const std::optional<ListenerOption<Real>> listeners,
-                                    bool keep_grid)
+                                    bool keep_grid, 
+                                    bool exact_spin)
 {
   auto& O_leader           = o_list.getCastedLeader<SOECPotential>();
   ParticleSet& pset_leader = p_list.getLeader();
@@ -261,8 +262,12 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
         }
       }
 
-      SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                     O_leader.mw_res_handle_.getResource().collection);
+      if (exact_spin)
+        SOECPComponent::mw_evaluateOneExactSpinIntegration(soecp_component_list, pset_list, psi_list, batch_list,
+                                                           pairpots, O_leader.mw_res_handle_.getResource().collection);
+      else
+        SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots,
+                                       O_leader.mw_res_handle_.getResource().collection);
 
       for (size_t j = 0; j < soecp_potential_list.size(); j++)
       {
