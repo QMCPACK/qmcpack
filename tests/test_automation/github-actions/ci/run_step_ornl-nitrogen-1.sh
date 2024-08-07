@@ -49,8 +49,12 @@ case "$1" in
       ;;
     esac
        
-    echo 'Configure for building CUDA2HIP with ROCM clang compilers'
+    # check the GPU architecture in use
+    whoami
+    groups
+    /opt/rocm/llvm/bin/amdgpu-arch
 
+    echo 'Configure for building CUDA2HIP with ROCM clang compilers'
     cmake -GNinja \
           -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
           -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
