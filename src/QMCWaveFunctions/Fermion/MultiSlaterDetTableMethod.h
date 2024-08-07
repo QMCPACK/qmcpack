@@ -157,6 +157,9 @@ public:
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
+  void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios) override;
+
+
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     // the base class routine may probably work, just never tested.
