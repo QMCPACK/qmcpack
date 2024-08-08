@@ -28,8 +28,8 @@
 namespace qmcplusplus
 {
 ///initialize the static data members
-PrimeNumberSet<RandomBase<QMCTraits::FullPrecRealType>::uint_type> RandomNumberControl::PrimeNumbers;
-UPtrVector<RandomBase<QMCTraits::FullPrecRealType>> RandomNumberControl::Children;
+PrimeNumberSet<RandomNumberControl::uint_type> RandomNumberControl::PrimeNumbers;
+UPtrVector<RandomNumberControl::RandomNumberGenerator> RandomNumberControl::Children;
 RandomBase<QMCTraits::FullPrecRealType>::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors
@@ -37,7 +37,7 @@ RandomNumberControl::RandomNumberControl(const char* aname)
     : OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL) //, Offset(5)
 {}
 
-UPtrVector<RandomBase<RandomNumberControl::FullPrecRealType>>& RandomNumberControl::getChildren()
+UPtrVector<RandomNumberControl::RandomNumberGenerator>& RandomNumberControl::getChildren()
 {
   if (Children.size() == 0)
   {
@@ -231,7 +231,7 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 }
 
 //switch between write functions
-void RandomNumberControl::write(const RefVector<RandomBase<FullPrecRealType>>& rng,
+void RandomNumberControl::write(const RefVector<RandomNumberGenerator>& rng,
                                 const std::string& fname,
                                 Communicate* comm)
 {
@@ -302,7 +302,7 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
 }
 
 //Parallel write
-void RandomNumberControl::write_parallel(const RefVector<RandomBase<FullPrecRealType>>& rng,
+void RandomNumberControl::write_parallel(const RefVector<RandomNumberGenerator>& rng,
                                          hdf_archive& hout,
                                          Communicate* comm)
 {
@@ -417,7 +417,7 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 }
 
 //scatter write
-void RandomNumberControl::write_rank_0(const RefVector<RandomBase<FullPrecRealType>>& rng,
+void RandomNumberControl::write_rank_0(const RefVector<RandomNumberGenerator>& rng,
                                        hdf_archive& hout,
                                        Communicate* comm)
 {
