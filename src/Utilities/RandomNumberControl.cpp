@@ -37,6 +37,17 @@ RandomNumberControl::RandomNumberControl(const char* aname)
     : OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL) //, Offset(5)
 {}
 
+UPtrVector<RandomBase<RandomNumberControl::FullPrecRealType>>& RandomNumberControl::getChildren()
+{
+  if (Children.size() == 0)
+  {
+    app_warning() << "  Initializing global RandomNumberControl! "
+                  << "This message should not be seen in production code but only in unit tests." << std::endl;
+    make_seeds();
+  }
+  return Children;
+}
+
 /// generic output
 bool RandomNumberControl::get(std::ostream& os) const
 {

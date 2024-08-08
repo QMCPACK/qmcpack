@@ -48,6 +48,9 @@ public:
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");
 
+  /// access RandomNumberControl::Children. If not initialized, make them first before return. Safe to use in unit tests.
+  static UPtrVector<RandomBase<FullPrecRealType>>& getChildren();
+
   bool get(std::ostream& os) const override;
   bool put(std::istream& is) override;
   bool put(xmlNodePtr cur) override;
