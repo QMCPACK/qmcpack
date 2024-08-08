@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 ///initialize the static data members
 PrimeNumberSet<RandomNumberControl::uint_type> RandomNumberControl::PrimeNumbers;
-UPtrVector<RandomNumberControl::RandomNumberGenerator> RandomNumberControl::Children;
+UPtrVector<RandomNumberControl::Generator> RandomNumberControl::Children;
 RandomBase<QMCTraits::FullPrecRealType>::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors
@@ -37,7 +37,7 @@ RandomNumberControl::RandomNumberControl(const char* aname)
     : OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL) //, Offset(5)
 {}
 
-UPtrVector<RandomNumberControl::RandomNumberGenerator>& RandomNumberControl::getChildren()
+UPtrVector<RandomNumberControl::Generator>& RandomNumberControl::getChildren()
 {
   if (Children.size() == 0)
   {
@@ -231,9 +231,7 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 }
 
 //switch between write functions
-void RandomNumberControl::write(const RefVector<RandomNumberGenerator>& rng,
-                                const std::string& fname,
-                                Communicate* comm)
+void RandomNumberControl::write(const RefVector<Generator>& rng, const std::string& fname, Communicate* comm)
 {
   std::string h5name = fname + ".random.h5";
   hdf_archive hout(comm, true); //attempt to write in parallel
@@ -302,9 +300,7 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
 }
 
 //Parallel write
-void RandomNumberControl::write_parallel(const RefVector<RandomNumberGenerator>& rng,
-                                         hdf_archive& hout,
-                                         Communicate* comm)
+void RandomNumberControl::write_parallel(const RefVector<Generator>& rng, hdf_archive& hout, Communicate* comm)
 {
   // cast integer to size_t
   const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
@@ -417,9 +413,7 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 }
 
 //scatter write
-void RandomNumberControl::write_rank_0(const RefVector<RandomNumberGenerator>& rng,
-                                       hdf_archive& hout,
-                                       Communicate* comm)
+void RandomNumberControl::write_rank_0(const RefVector<Generator>& rng, hdf_archive& hout, Communicate* comm)
 {
   // cast integer to size_t
   const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
