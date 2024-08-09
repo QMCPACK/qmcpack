@@ -51,15 +51,14 @@ public:
         uptr_comp.get()->initVirtualParticle(pset);
     }
   }
-  static void mw_evaluateImpl(SOECPotential& so_ecp,
-                              const RefVectorWithLeader<OperatorBase>& o_list,
+  static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& twf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
                               const std::optional<ListenerOption<Real>> listener_opt,
-                              bool keep_grid,
-                              bool exact_spin)
+                              bool keep_grid)
   {
-    so_ecp.mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, keep_grid, exact_spin);
+    auto& o_leader = o_list.getCastedLeader<SOECPotential>();
+    o_leader.mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, keep_grid);
   }
 
   static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
@@ -238,7 +237,7 @@ void doSOECPotentialTest(bool use_VPs)
   TrialWaveFunction::mw_evaluateLog(twf_list, p_list);
 
   ListenerOption<Real> listener_opt{listeners, ion_listeners};
-  testing::TestSOECPotential::mw_evaluateImpl(so_ecp, o_list, twf_list, p_list, listener_opt, true, false);
+  testing::TestSOECPotential::mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, true);
 
   //use single walker API to get reference value
   auto value = o_list[0].evaluateDeterministic(p_list[0]);
@@ -263,11 +262,17 @@ void doSOECPotentialTest(bool use_VPs)
     REQUIRE(okay);
     UPtr<SOECPComponent> so_ecp_comp = std::move(ecp_comp_builder.pp_so);
     so_ecp_exact.addComponent(0, std::move(so_ecp_comp));
+
+    UPtr<OperatorBase> so_ecp2_exact_ptr = so_ecp.makeClone(elec2, *psi_clone);
+    auto& so_ecp2_exact                  = dynamic_cast<SOECPotential&>(*so_ecp2_exact_ptr);
+
     testing::TestSOECPotential::evalFast(so_ecp_exact, elec, value);
     CHECK(value == Approx(-3.530511241));
 
+    RefVector<OperatorBase> so_ecps_exact{so_ecp_exact, so_ecp2_exact};
+    RefVectorWithLeader<OperatorBase> o_exact_list(so_ecp, so_ecps_exact);
     // check mw_ exact spin integration
-    testing::TestSOECPotential::mw_evaluateImpl(so_ecp, o_list, twf_list, p_list, listener_opt, true, true);
+    testing::TestSOECPotential::mw_evaluateImpl(o_exact_list, twf_list, p_list, listener_opt, true);
     CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
     CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
     CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(value));
@@ -280,7 +285,7 @@ void doSOECPotentialTest(bool use_VPs)
 
   elec.R[0] = {0.05, 0.0, -0.05};
   elec.update();
-  testing::TestSOECPotential::mw_evaluateImpl(so_ecp, o_list, twf_list, p_list, listener_opt, true, false);
+  testing::TestSOECPotential::mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, true);
 
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp));
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp2));
@@ -289,14 +294,6 @@ void doSOECPotentialTest(bool use_VPs)
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
   // check the second walker which will be unchanged.
   CHECK(std::accumulate(local_pots2[1], local_pots2[1] + local_pots2.cols(), 0.0) == Approx(value));
-
-  if (use_VPs)
-  {
-    //Now use exact spin
-    testing::TestSOECPotential::mw_evaluateImpl(so_ecp, o_list, twf_list, p_list, listener_opt, true, true);
-    CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
-    CHECK(std::accumulate(local_pots2[1], local_pots2[1] + local_pots2.cols(), 0.0) == Approx(value));
-  }
 }
 
 TEST_CASE("SOECPotential", "[hamiltonian]")

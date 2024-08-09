@@ -89,8 +89,7 @@ protected:
                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
                               std::optional<ListenerOption<Real>> listeners,
-                              bool keep_grid = false, 
-                              bool exact_spin = false);
+                              bool keep_grid = false);
 
 private:
   ///number of ions
