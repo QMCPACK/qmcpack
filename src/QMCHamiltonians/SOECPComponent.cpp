@@ -215,6 +215,7 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
 
 void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, RealType sold)
 {
+#ifdef QMC_COMPLEX
   auto& up_row = spinor_multiplier_.first;
   auto& dn_row = spinor_multiplier_.second;
 
@@ -246,6 +247,9 @@ void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, Real
       }
     }
   }
+#else
+  throw std::runtime_error("SOECPComponent::setupExactSpinIntegration only implemented in complex build.");
+#endif
 }
 
 SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(ParticleSet& W,
@@ -255,7 +259,6 @@ SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(Particl
                                                                          const RealType r,
                                                                          const PosType& dr)
 {
-#ifdef QMC_COMPLEX
   RealType sold = W.spins[iel];
 
   for (int j = 0; j < nknot_; j++)
@@ -269,9 +272,6 @@ SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(Particl
   for (size_t iq = 0; iq < nknot_; iq++)
     pairpot += psiratio_[iq];
   return std::real(pairpot);
-#else
-  throw std::runtime_error("SOECPComponent::evaluateOneExactSpinIntegration only implemented in complex build");
-#endif
 }
 
 void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
