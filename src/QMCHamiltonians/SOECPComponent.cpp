@@ -215,7 +215,6 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
 
 void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, RealType sold)
 {
-
   auto& up_row = spinor_multiplier_.first;
   auto& dn_row = spinor_multiplier_.second;
 
@@ -271,7 +270,7 @@ SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(Particl
     pairpot += psiratio_[iq];
   return std::real(pairpot);
 #else
-  throw std::runtime_error("SOECPComponent::evaluateOneBodyOpMatrixContribution only implemented in complex build");
+  throw std::runtime_error("SOECPComponent::evaluateOneExactSpinIntegration only implemented in complex build");
 #endif
 }
 
@@ -357,6 +356,7 @@ void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeade
                                                         std::vector<RealType>& pairpots,
                                                         ResourceCollection& collection)
 {
+#ifdef QMC_COMPLEX
   auto& soecp_component_leader = soecp_component_list.getLeader();
   // Compute ratios with VP
   RefVectorWithLeader<VirtualParticleSet> vp_list(*soecp_component_leader.vp_);
@@ -398,7 +398,7 @@ void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeade
   }
 
   TrialWaveFunction::mw_evaluateSpinorRatios(psi_list, const_vp_list, spinor_multiplier_list, psiratios_list);
-  
+
   for (size_t i = 0; i < p_list.size(); i++)
   {
     pairpots[i] = 0;
@@ -407,6 +407,9 @@ void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeade
     for (int iq = 0; iq < component.nknot_; iq++)
       pairpots[i] += std::real(psiratio[iq]);
   }
+#else
+  throw std::runtime_error("SOECPComponent::mw_evaluateOneExactSpinIntegration only implemented in complex build");
+#endif
 }
 
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet& W,

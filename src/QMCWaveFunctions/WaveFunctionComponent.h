@@ -528,6 +528,7 @@ public:
                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                  std::vector<std::vector<ValueType>>& ratios) const;
 
+  // Batched version of evaluateSpinorRatios
   virtual void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                        const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                        const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,

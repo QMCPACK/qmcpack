@@ -118,6 +118,8 @@ public:
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, int iel, RealType r, const PosType& dr);
 
   RealType calculateProjector(RealType r, const PosType& dr, RealType sold);
+
+  // sets up all the data needed for the exact spin integration. Essentially setting spinor_multiplier_
   void setupExactSpinProjector(RealType r, const PosType& dr, RealType sold);
 
   RealType evaluateOneExactSpinIntegration(ParticleSet& W,

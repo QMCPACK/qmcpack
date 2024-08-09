@@ -314,6 +314,7 @@ public:
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
 
+  // batched version of evaluateSpinorRatios
   static void mw_evaluateSpinorRatios(
       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
