@@ -69,8 +69,6 @@ public:
    */
   int addEstOperator(OperatorEstBase& op_est);
 
-  ///process xml tag associated with estimators
-  bool put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur);
   /** construct estimators from already parsed input.
    *
    *  \param[in]  emi      EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
