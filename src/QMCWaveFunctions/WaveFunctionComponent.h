@@ -515,7 +515,9 @@ public:
 
   /** Used by SOECPComponent for faster SOC evaluation
    */
-  virtual void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios);
+  virtual void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                                    const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                    std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP multiple walkers
    * @param wfc_list the list of WaveFunctionComponent references of the same component in a walker batch
@@ -525,6 +527,11 @@ public:
   virtual void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                  std::vector<std::vector<ValueType>>& ratios) const;
+
+  virtual void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                       const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                       std::vector<std::vector<ValueType>>& ratios) const;
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
@@ -563,7 +570,6 @@ public:
                                     std::vector<PsiValue>& ratios,
                                     std::vector<GradType>& grad_new,
                                     std::vector<ComplexType>& spingrad_new) const;
-
 };
 } // namespace qmcplusplus
 #endif

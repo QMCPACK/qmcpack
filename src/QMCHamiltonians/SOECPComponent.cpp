@@ -362,41 +362,50 @@ void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeade
   RefVectorWithLeader<VirtualParticleSet> vp_list(*soecp_component_leader.vp_);
   RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*soecp_component_leader.vp_);
   RefVector<const std::vector<PosType>> deltaV_list;
-  RefVector<const std::vector<RealType>> deltaS_list;
   RefVector<std::vector<ValueType>> psiratios_list;
+  RefVector<std::pair<SPOSet::ValueVector, SPOSet::ValueVector>> spinor_multiplier_list;
   vp_list.reserve(soecp_component_list.size());
   const_vp_list.reserve(soecp_component_list.size());
   deltaV_list.reserve(soecp_component_list.size());
-  deltaS_list.reserve(soecp_component_list.size());
   psiratios_list.reserve(soecp_component_list.size());
+  spinor_multiplier_list.reserve(soecp_component_list.size());
 
   for (size_t i = 0; i < soecp_component_list.size(); i++)
   {
     SOECPComponent& component(soecp_component_list[i]);
     const NLPPJob<RealType>& job = joblist[i];
-    const RealType sold          = p_list[i].spins[job.electron_id];
 
-    component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
+    for (int j = 0; j < component.nknot_; j++)
+      component.deltaV_[j] = job.ion_elec_dist * component.rrotsgrid_m_[j] - job.ion_elec_displ;
 
     vp_list.push_back(*component.vp_);
     const_vp_list.push_back(*component.vp_);
     deltaV_list.push_back(component.deltaV_);
-    deltaS_list.push_back(component.deltaS_);
     psiratios_list.push_back(component.psiratio_);
+    spinor_multiplier_list.push_back(component.spinor_multiplier_);
   }
 
   ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
 
-  VirtualParticleSet::mw_makeMovesWithSpin(vp_list, p_list, deltaV_list, deltaS_list, joblist, true);
-
-  TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
+  VirtualParticleSet::mw_makeMoves(vp_list, p_list, deltaV_list, joblist, true);
 
   for (size_t i = 0; i < p_list.size(); i++)
   {
     SOECPComponent& component(soecp_component_list[i]);
     const NLPPJob<RealType>& job = joblist[i];
     const RealType sold          = p_list[i].spins[job.electron_id];
-    pairpots[i]                  = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ, sold);
+    component.setupExactSpinProjector(job.ion_elec_dist, job.ion_elec_displ, sold);
+  }
+
+  TrialWaveFunction::mw_evaluateSpinorRatios(psi_list, const_vp_list, spinor_multiplier_list, psiratios_list);
+  
+  for (size_t i = 0; i < p_list.size(); i++)
+  {
+    pairpots[i] = 0;
+    SOECPComponent& component(soecp_component_list[i]);
+    std::vector<ValueType>& psiratio(psiratios_list[i]);
+    for (int iq = 0; iq < component.nknot_; iq++)
+      pairpots[i] += std::real(psiratio[iq]);
   }
 }
 
