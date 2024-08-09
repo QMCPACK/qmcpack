@@ -99,9 +99,10 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 // To work around the issue, check the local pointer for nullptr before restoring to global storage.
 QMCDriverNew::~QMCDriverNew()
 {
+  auto& rng_children = RandomNumberControl::getChildren();
   for (int i = 0; i < Rng.size(); ++i)
     if (Rng[i])
-      RandomNumberControl::Children[i].reset(Rng[i].release());
+      rng_children[i].reset(Rng[i].release());
 }
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
@@ -287,16 +288,10 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
   step_contexts_.resize(num_crowds);
   Rng.resize(num_crowds);
 
-  if (RandomNumberControl::Children.size() == 0)
-  {
-    app_warning() << "  Initializing global RandomNumberControl! "
-                  << "This message should not be seen in production code but only in unit tests." << std::endl;
-    RandomNumberControl::make_seeds();
-  }
-
+  auto& rng_children = RandomNumberControl::getChildren();
   for (int i = 0; i < num_crowds; ++i)
   {
-    Rng[i].reset(RandomNumberControl::Children[i].release());
+    Rng[i].reset(rng_children[i].release());
     step_contexts_[i] = std::make_unique<ContextForSteps>(*(Rng[i]));
   }
 }
