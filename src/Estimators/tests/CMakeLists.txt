@@ -54,6 +54,7 @@ set(SRCS
     test_EstimatorManagerCrowd.cpp
     test_SpaceGridInput.cpp
     test_NESpaceGrid.cpp
+    test_EnergyDensityInput.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
