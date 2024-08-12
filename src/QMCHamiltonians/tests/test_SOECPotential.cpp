@@ -64,8 +64,6 @@ public:
   static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
   {
     copyGridUnrotatedForTest(so_ecp);
-    for (auto& uptr_comp : so_ecp.ppset_)
-      uptr_comp.get()->initVirtualParticle(elec);
     so_ecp.evaluateImpl(elec, true);
     value = so_ecp.getValue();
   }
@@ -263,14 +261,25 @@ void doSOECPotentialTest(bool use_VPs)
     UPtr<SOECPComponent> so_ecp_comp = std::move(ecp_comp_builder.pp_so);
     so_ecp_exact.addComponent(0, std::move(so_ecp_comp));
 
-    UPtr<OperatorBase> so_ecp2_exact_ptr = so_ecp.makeClone(elec2, *psi_clone);
+    UPtr<OperatorBase> so_ecp2_exact_ptr = so_ecp_exact.makeClone(elec2, *psi_clone);
     auto& so_ecp2_exact                  = dynamic_cast<SOECPotential&>(*so_ecp2_exact_ptr);
+
+    RefVector<OperatorBase> so_ecps_exact{so_ecp_exact, so_ecp2_exact};
+    RefVectorWithLeader<OperatorBase> o_exact_list(so_ecp_exact, so_ecps_exact);
+    StdRandom<FullPrecReal> rng(10101);
+    StdRandom<FullPrecReal> rng2(10201);
+    so_ecp_exact.setRandomGenerator(&rng);
+    so_ecp2_exact.setRandomGenerator(&rng2);
+
+    testing::TestSOECPotential::addVPs(o_exact_list, p_list);
+    ResourceCollection so_ecp_res("test_so_ecp_res");
+    so_ecp_exact.createResource(so_ecp_res);
+    ResourceCollectionTeamLock<OperatorBase> so_ecp_lock(so_ecp_res, o_exact_list);
 
     testing::TestSOECPotential::evalFast(so_ecp_exact, elec, value);
     CHECK(value == Approx(-3.530511241));
 
-    RefVector<OperatorBase> so_ecps_exact{so_ecp_exact, so_ecp2_exact};
-    RefVectorWithLeader<OperatorBase> o_exact_list(so_ecp, so_ecps_exact);
+
     // check mw_ exact spin integration
     testing::TestSOECPotential::mw_evaluateImpl(o_exact_list, twf_list, p_list, listener_opt, true);
     CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
