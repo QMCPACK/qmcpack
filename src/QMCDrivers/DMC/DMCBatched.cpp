@@ -33,6 +33,7 @@
 #include "TauParams.hpp"
 #include "WalkerLogManager.h"
 #include "CPU/math.hpp"
+#include "RandomNumberControl.h"
 
 namespace qmcplusplus
 {
@@ -60,6 +61,7 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                    comm,
                    "DMCBatched"),
       dmcdriver_input_(input),
+      rngs_(RandomNumberControl::getChildrenRefs()),
       dmc_timers_("DMCBatched::")
 {}
 
@@ -555,7 +557,23 @@ bool DMCBatched::run()
   wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
+  if (qmcdriver_input_.get_dump_config())
+    RandomNumberControl::write(rngs_, get_root_name(), myComm);
+
   return finalize(num_blocks, true);
+}
+
+/** Creates Random Number generators for crowds and step contexts
+ *
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
+ */
+void DMCBatched::createRngsStepContexts(int num_crowds)
+{
+  step_contexts_.resize(num_crowds);
+  for (int i = 0; i < num_crowds; ++i)
+    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
 }
 
 } // namespace qmcplusplus

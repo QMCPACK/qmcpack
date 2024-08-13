@@ -50,6 +50,8 @@ public:
 
   /// access RandomNumberControl::Children. If not initialized, make them first before return. Safe to use in unit tests.
   static UPtrVector<Generator>& getChildren();
+  /// access RandomNumberControl::Children as references of each child. If not initialized, make them first before return. Safe to use in unit tests.
+  static RefVector<Generator> getChildrenRefs();
 
   bool get(std::ostream& os) const override;
   bool put(std::istream& is) override;

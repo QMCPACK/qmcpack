@@ -25,6 +25,7 @@
 #include <Hdispatcher.h>
 #include "TauParams.hpp"
 #include "WalkerLogManager.h"
+#include "RandomNumberControl.h"
 
 namespace qmcplusplus
 {
@@ -47,6 +48,7 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
                    comm,
                    "VMCBatched"),
       vmcdriver_input_(input),
+      rngs_(RandomNumberControl::getChildrenRefs()),
       samples_(samples),
       collect_samples_(false)
 {}
@@ -468,7 +470,23 @@ bool VMCBatched::run()
   wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
+  if (qmcdriver_input_.get_dump_config())
+    RandomNumberControl::write(rngs_, get_root_name(), myComm);
+
   return finalize(num_blocks, true);
+}
+
+/** Creates Random Number generators for crowds and step contexts
+ *
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
+ */
+void VMCBatched::createRngsStepContexts(int num_crowds)
+{
+  step_contexts_.resize(num_crowds);
+  for (int i = 0; i < num_crowds; ++i)
+    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
 }
 
 void VMCBatched::enable_sample_collection()

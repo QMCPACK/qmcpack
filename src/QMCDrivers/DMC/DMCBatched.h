@@ -133,6 +133,8 @@ public:
 
 private:
   const DMCDriverInput dmcdriver_input_;
+  ///Random number generators
+  const RefVector<RandomBase<FullPrecRealType>> rngs_;
 
   /** I think its better if these have there own type and variable name
    */
@@ -143,6 +145,9 @@ private:
   std::unique_ptr<SFNBranch> branch_engine_;
   ///walker controller for load-balance
   std::unique_ptr<WalkerControl> walker_controller_;
+
+  // create Rngs and StepContests
+  void createRngsStepContexts(int num_crowds);
 
   template<CoordsType CT>
   static void advanceWalkers(const StateForThread& sft,

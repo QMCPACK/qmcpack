@@ -208,17 +208,7 @@ public:
 
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
-  void createRngsStepContexts(int num_crowds);
-
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
-
-  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
-  {
-    RefVector<RandomBase<FullPrecRealType>> RngRefs;
-    for (int i = 0; i < Rng.size(); ++i)
-      RngRefs.push_back(*Rng[i]);
-    return RngRefs;
-  }
 
   /** intended for logging output and debugging
    *  you should base behavior on type preferably at compile time or if
@@ -462,9 +452,6 @@ protected:
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
   UPtrVector<ContextForSteps> step_contexts_;
-
-  ///Random number generators
-  UPtrVector<RandomBase<FullPrecRealType>> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
