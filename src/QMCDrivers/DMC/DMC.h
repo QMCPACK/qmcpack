@@ -45,7 +45,7 @@ public:
   QMCRunType getRunType() override { return QMCRunType::DMC; }
 
 private:
-  ///driver copy of Random number generators
+  ///driver level reference of Random number generators
   const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs_;
   ///Index to determine what to do when node crossing is detected
   // does not appear to be used

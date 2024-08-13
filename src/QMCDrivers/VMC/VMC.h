@@ -52,7 +52,7 @@ private:
 
   ///option to enable/disable drift equation or RN for VMC
   std::string UseDrift;
-  ///driver copy of Random number generators
+  ///driver level reference of Random number generators
   const UPtrVector<RandomBase<FullPrecRealType>>& rngs_;
   ///check the run-time environments
   void resetRun();
