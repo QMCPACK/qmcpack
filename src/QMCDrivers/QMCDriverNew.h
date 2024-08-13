@@ -220,9 +220,6 @@ public:
     return RngRefs;
   }
 
-  ///return the i-th random generator
-  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
-
   /** intended for logging output and debugging
    *  you should base behavior on type preferably at compile time or if
    *  necessary at runtime using and protected by dynamic cast.

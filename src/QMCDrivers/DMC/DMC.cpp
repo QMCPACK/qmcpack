@@ -45,7 +45,7 @@ DMC::DMC(const ProjectData& project_data,
          MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
+         const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
          Communicate* comm,
          bool enable_profiling)
     : QMCDriver(project_data, w, psi, h, comm, "DMC", enable_profiling),
@@ -91,7 +91,6 @@ void DMC::resetUpdateEngines()
     }
     //if(qmc_driver_mode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads, nullptr);
-    Rng.resize(NumThreads);
     estimatorClones.resize(NumThreads, nullptr);
     traceClones.resize(NumThreads, nullptr);
     wlog_collectors.resize(NumThreads);
@@ -133,14 +132,13 @@ void DMC::resetUpdateEngines()
       traceClones[ip] = Traces->makeClone();
 #endif
       wlog_collectors[ip] = wlog_manager_->makeCollector();
-      Rng[ip] = rngs_[ip]->makeClone();
-      hClones[ip]->setRandomGenerator(Rng[ip].get());
+      hClones[ip]->setRandomGenerator(rngs_[ip].get());
       if (W.isSpinor())
       {
         spinor = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          Movers[ip] = new SODMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new SODMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
           Movers[ip]->setSpinMass(SpinMass);
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
@@ -157,9 +155,9 @@ void DMC::resetUpdateEngines()
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
           if (L2 == "yes")
-            Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+            Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
           else
-            Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+            Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
 
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
@@ -169,9 +167,9 @@ void DMC::resetUpdateEngines()
         else
         {
           if (KillNodeCrossing)
-            Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+            Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
           else
-            Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+            Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
           Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wlog_collectors[ip].get(), DriftModifier);
@@ -299,11 +297,6 @@ bool DMC::run()
 #endif
     wlog_manager_->writeBuffers();
     block++;
-    if (DumpConfig && block % Period4CheckPoint == 0)
-    {
-      for (int ip = 0; ip < NumThreads; ip++)
-        rngs_[ip] = Rng[ip]->makeClone();
-    }
     recordBlock(block);
     dmc_loop.stop();
 
@@ -323,8 +316,6 @@ bool DMC::run()
 
   } while (block < nBlocks);
 
-  for (int ip = 0; ip < NumThreads; ip++)
-    rngs_[ip] = Rng[ip]->makeClone();
   Estimators->stop();
   for (int ip = 0; ip < NumThreads; ++ip)
     Movers[ip]->stopRun2();

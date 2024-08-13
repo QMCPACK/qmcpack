@@ -41,7 +41,7 @@ VMC::VMC(const ProjectData& project_data,
          MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
+         const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
          Communicate* comm,
          bool enable_profiling)
     : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes"), rngs_(rngs)
@@ -135,9 +135,6 @@ bool VMC::run()
   Traces->stopRun();
 #endif
   wlog_manager_->stopRun();
-  //copy back the random states
-  for (int ip = 0; ip < NumThreads; ++ip)
-    rngs_[ip] = Rng[ip]->makeClone();
   ///write samples to a file
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
@@ -170,7 +167,6 @@ void VMC::resetRun()
     estimatorClones.resize(NumThreads, nullptr);
     traceClones.resize(NumThreads, nullptr);
     wlog_collectors.resize(NumThreads);
-    Rng.resize(NumThreads);
 
     // hdf_archive::hdf_archive() is not thread-safe
     for (int ip = 0; ip < NumThreads; ++ip)
@@ -186,29 +182,28 @@ void VMC::resetRun()
       traceClones[ip] = Traces->makeClone();
 #endif
       wlog_collectors[ip] = wlog_manager_->makeCollector();
-      Rng[ip] = rngs_[ip]->makeClone();
-      hClones[ip]->setRandomGenerator(Rng[ip].get());
+      hClones[ip]->setRandomGenerator(rngs_[ip].get());
       if (W.isSpinor())
       {
         spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
         else
         {
-          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
       }
       else
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
         else
         {
-          Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
       }
       Movers[ip]->nSubSteps = nSubSteps;
