@@ -87,7 +87,7 @@ struct ListenerOption
 template<typename T>
 using CrowdEnergyValues = std::unordered_map<std::string, std::vector<Vector<T>>>;
 /** utility function to reduce over hamiltonian components for per particle energies.
- *  i.e. overall all names for a particular walker in a CrowdEnergyValues.
+ *  i.e. over all names for a particular walker in a CrowdEnergyValues.
  *  \param[in]   cev_in        crowd energy values type
  *  \param[out]  values_out    reduced walker vector of per particle values. assumed to have sizes for walker and particles commensurate with cev_in
  */
