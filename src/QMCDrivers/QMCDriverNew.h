@@ -449,10 +449,6 @@ protected:
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;
 
-  /** Per crowd move contexts, this is where the DistanceTables etc. reside
-   */
-  UPtrVector<ContextForSteps> step_contexts_;
-
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
