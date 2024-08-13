@@ -28,10 +28,9 @@ namespace qmcplusplus
 class PerParticleHamiltonianLogger : public OperatorEstBase
 {
 public:
-  using Real = QMCTraits::RealType;
+  using Real           = QMCTraits::RealType;
   using CrowdLogValues = std::unordered_map<std::string, std::vector<Vector<Real>>>;
 
-  
   PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank);
   PerParticleHamiltonianLogger(const PerParticleHamiltonianLogger& other, DataLocality data_locality);
 
@@ -55,10 +54,12 @@ public:
 
   void write(CrowdLogValues& values, const std::vector<long>& walkers_ids);
 
+  Real sumOverAll();
+
   int get_block() { return block_; }
 private:
   bool crowd_clone = false;
-  PerParticleHamiltonianLogger  * const rank_estimator_;
+  PerParticleHamiltonianLogger* const rank_estimator_;
   PerParticleHamiltonianLoggerInput input_;
   int rank_;
   CrowdLogValues values_;
@@ -68,7 +69,7 @@ private:
   std::mutex write_lock;
   int block_ = 0;
 };
-  
-}
+
+} // namespace qmcplusplus
 
 #endif
