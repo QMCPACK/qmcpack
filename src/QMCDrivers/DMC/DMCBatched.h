@@ -135,6 +135,8 @@ private:
   const DMCDriverInput dmcdriver_input_;
   ///Random number generators
   const RefVector<RandomBase<FullPrecRealType>> rngs_;
+  /// Per crowd, driver-specific move contexts
+  UPtrVector<ContextForSteps> step_contexts_;
 
   /** I think its better if these have there own type and variable name
    */
