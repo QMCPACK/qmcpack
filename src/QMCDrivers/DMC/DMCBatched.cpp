@@ -377,9 +377,12 @@ void DMCBatched::runDMCStep(int crowd_id,
 
 void DMCBatched::process(xmlNodePtr node)
 {
+  ScopedTimer local_timer(timers_.startup_timer);
   print_mem("DMCBatched before initialization", app_log());
+
   try
   {
+
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
@@ -389,7 +392,7 @@ void DMCBatched::process(xmlNodePtr node)
         determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
                                qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
 
-    Base::initializeQMC(awc);
+    initPopulationAndCrowds(awc);
     createRngsStepContexts(crowds_.size());
   }
   catch (const UniformCommunicateError& ue)
@@ -431,6 +434,9 @@ void DMCBatched::process(xmlNodePtr node)
 
     app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
   }
+
+  if (qmcdriver_input_.get_measure_imbalance())
+    measureImbalance("Startup");
 }
 
 bool DMCBatched::run()

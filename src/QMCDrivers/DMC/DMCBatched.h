@@ -35,7 +35,6 @@ class DMCBatchedTest;
 class DMCBatched : public QMCDriverNew
 {
 public:
-  using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos;

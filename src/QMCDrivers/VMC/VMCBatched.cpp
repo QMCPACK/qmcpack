@@ -268,8 +268,9 @@ void VMCBatched::runVMCStep(int crowd_id,
 
 void VMCBatched::process(xmlNodePtr node)
 {
+  ScopedTimer local_timer(timers_.startup_timer);
   print_mem("VMCBatched before initialization", app_log());
-  // \todo get total walkers should be coming from VMCDriverInpu
+
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
@@ -280,13 +281,16 @@ void VMCBatched::process(xmlNodePtr node)
         determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
                                qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
 
-    Base::initializeQMC(awc);
+    initPopulationAndCrowds(awc);
     createRngsStepContexts(crowds_.size());
   }
   catch (const UniformCommunicateError& ue)
   {
     myComm->barrier_and_abort(ue.what());
   }
+
+  if (qmcdriver_input_.get_measure_imbalance())
+    measureImbalance("Startup");
 }
 
 size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
