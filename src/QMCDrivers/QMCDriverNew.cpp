@@ -174,9 +174,6 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
   //now give walkers references to their walkers
   population_.redistributeWalkers(crowds_);
 
-  // Once they are created move contexts can be created.
-  createRngsStepContexts(crowds_.size());
-
   if (qmcdriver_input_.get_measure_imbalance())
     measureImbalance("Startup");
 }

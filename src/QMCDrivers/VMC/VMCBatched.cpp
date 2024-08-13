@@ -281,6 +281,7 @@ void VMCBatched::process(xmlNodePtr node)
                                qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
 
     Base::initializeQMC(awc);
+    createRngsStepContexts(crowds_.size());
   }
   catch (const UniformCommunicateError& ue)
   {
