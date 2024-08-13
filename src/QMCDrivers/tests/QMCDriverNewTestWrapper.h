@@ -55,7 +55,7 @@ public:
         adjustGlobalWalkerCount(*myComm, 0, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
                                 1.0, qmcdriver_input_.get_num_crowds());
 
-    Base::initializeQMC(awc);
+    initPopulationAndCrowds(awc);
   }
 
   void testAdjustGlobalWalkerCount()

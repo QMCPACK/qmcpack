@@ -34,7 +34,6 @@ class VMCBatchedTest;
 class VMCBatched : public QMCDriverNew
 {
 public:
-  using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos;
