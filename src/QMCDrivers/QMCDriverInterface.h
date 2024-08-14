@@ -39,9 +39,6 @@ public:
   virtual bool put(xmlNodePtr cur)    = 0;
   virtual void recordBlock(int block) = 0;
 
-  ///return the i-th random generator
-  virtual RandomBase<FullPrecRealType>& getRng(int i) = 0;
-
   virtual void setStatus(const std::string& aname, const std::string& h5name, bool append) = 0;
 
   virtual void setUpdateMode(bool pbyp)                                 = 0;

@@ -28,7 +28,7 @@ std::unique_ptr<QMCDriver> DMCFactory::create(const ProjectData& project_data,
                                               Communicate* comm,
                                               bool enable_profiling)
 {
-  auto qmc = std::make_unique<DMC>(project_data, w, psi, h, RandomNumberControl::Children, comm, enable_profiling);
+  auto qmc = std::make_unique<DMC>(project_data, w, psi, h, RandomNumberControl::getChildren(), comm, enable_profiling);
   qmc->setUpdateMode(PbyPUpdate);
   return qmc;
 }
