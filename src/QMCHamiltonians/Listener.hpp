@@ -20,10 +20,9 @@
 
 #include <complex>
 #include <functional>
-
+#include <string>
+#include <unordered_map>
 #include "type_traits/template_types.hpp"
-
-#include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
@@ -83,9 +82,13 @@ struct ListenerOption
   const std::vector<ListenerVector<T>>& ion_values;
 };
 
-/// Type for representing per particle energy values at the Crowd scope.
+/** Type for representing per particle energy values at the Crowd scope.
+ *  key name of hamiltonian component
+ *  vector over walkers of Vector over particles.
+ */
 template<typename T>
 using CrowdEnergyValues = std::unordered_map<std::string, std::vector<Vector<T>>>;
+
 /** utility function to reduce over hamiltonian components for per particle energies.
  *  i.e. over all names for a particular walker in a CrowdEnergyValues.
  *  \param[in]   cev_in        crowd energy values type

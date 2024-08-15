@@ -10,24 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "Listener.hpp"
-#include <unordered_map>
-#include <OhmmsPETE/OhmmsVector.h>
-#include <string>
 
 namespace qmcplusplus
 {
-
-template void combinePerParticleEnergies<double>(const CrowdEnergyValues<double>& cev_in,
-                                                 std::vector<Vector<double>>& values_out);
-
-template void combinePerParticleEnergies<float>(const CrowdEnergyValues<float>& cev_in,
-                                                std::vector<Vector<float>>& values_out);
-
-template void combinePerParticleEnergies<std::complex<double>>(const CrowdEnergyValues<std::complex<double>>& cev_in,
-                                                               std::vector<Vector<std::complex<double>>>& values_out);
-
-template void combinePerParticleEnergies<std::complex<float>>(const CrowdEnergyValues<std::complex<float>>& cev_in,
-                                                              std::vector<Vector<std::complex<float>>>& values_out);
 
 template<typename T>
 void combinePerParticleEnergies(const CrowdEnergyValues<T>& cev_in, std::vector<Vector<T>>& values_out)
@@ -53,4 +38,17 @@ void combinePerParticleEnergies(const CrowdEnergyValues<T>& cev_in, std::vector<
   }
 }
 
+template void combinePerParticleEnergies<double>(const CrowdEnergyValues<double>& cev_in,
+                                                 std::vector<Vector<double>>& values_out);
+
+template void combinePerParticleEnergies<float>(const CrowdEnergyValues<float>& cev_in,
+                                                std::vector<Vector<float>>& values_out);
+
+template void combinePerParticleEnergies<std::complex<double>>(const CrowdEnergyValues<std::complex<double>>& cev_in,
+                                                               std::vector<Vector<std::complex<double>>>& values_out);
+
+template void combinePerParticleEnergies<std::complex<float>>(const CrowdEnergyValues<std::complex<float>>& cev_in,
+                                                              std::vector<Vector<std::complex<float>>>& values_out);
+
+  
 } // namespace qmcplusplus
