@@ -158,9 +158,8 @@ void NEEnergyDensityEstimator::registerListeners(QMCHamiltonian& ham_leader)
  *  The values themselves are a vector of size particle_num.
  */
 ListenerVector<QMCTraits::RealType>::ReportingFunction NEEnergyDensityEstimator::getListener(
-    CrowdEnergyValues<Real>& values)
+    CrowdEnergyValues<Real>& local_values)
 {
-  auto& local_values = values;
   return [&local_values](const int walker_index, const std::string& name, const Vector<Real>& inputV) {
     if (walker_index >= local_values[name].size())
       local_values[name].resize(walker_index + 1);
