@@ -94,24 +94,24 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 
   auto ham_list = eden_test.getHamList();
   auto& ham_leader = ham_list.getLeader();
-  auto ham_lock = eden_test.makeTeamLock(eden_test.getHamRes(), ham_list);
+  auto ham_lock = ResourceCollectionTeamLock(eden_test.getHamRes(), ham_list);
   eden_test.getEnergyDensityEstimator().registerListeners(ham_leader);
 
   PerParticleHamiltonianLogger pph_logger({}, 0);
   pph_logger.registerListeners(ham_leader);
 
   auto pset_list = eden_test.getPSetList();
-  auto pset_lock = eden_test.makeTeamLock(eden_test.getPSetRes(), pset_list);
+  auto pset_lock = ResourceCollectionTeamLock(eden_test.getPSetRes(), pset_list);
 
   pset_list[0].L[0] = 1.0;
   pset_list[1].L[1] = 1.0;
   pset_list[2].L[2] = 1.0;
   pset_list[3].L[3] = 1.0;
 
-  {
   ParticleSet::mw_update(pset_list);
+
   auto twf_list = eden_test.getTwfList();
-  auto twf_lock = eden_test.makeTeamLock(eden_test.getTwfRes(), twf_list);
+  auto twf_lock = ResourceCollectionTeamLock(eden_test.getTwfRes(), twf_list);
   TrialWaveFunction::mw_evaluateLog(twf_list, pset_list);
   QMCHamiltonian::mw_evaluate(ham_list, twf_list, pset_list);
 
@@ -120,7 +120,8 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   bool okay = hd.create(test_file);
   REQUIRE(okay);
   std::vector<ObservableHelper> h5desc;
-  {auto& e_den_est = eden_test.getEnergyDensityEstimator();
+
+  auto& e_den_est = eden_test.getEnergyDensityEstimator();
   e_den_est.registerOperatorEstimator(hd);
 
   StdRandom<double> rng;
@@ -141,8 +142,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   CHECK(summed_grid == Approx(expected_sum));
 
   e_den_est.write(hd);
-  }
-  }
+  std::cout << "wrote success\n";
 }
 
 TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]") {}

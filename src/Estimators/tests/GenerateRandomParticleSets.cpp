@@ -42,13 +42,16 @@ std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
       for (auto r : psets.back().R)
         std::cout << NativePrint(r) << ",";
       std::cout << "},\n";
+      psets.back().update();
     }
     std::cout << "}\n";
   }
   else
   {
-    for (int iw = 0; iw < nwalkers; ++iw)
+    for (int iw = 0; iw < nwalkers; ++iw) {
       psets[iw].R = deterministic_rs[iw];
+      psets[iw].update();
+    }
   }
   return psets;
 }
