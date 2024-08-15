@@ -91,7 +91,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   Communicate* comm = OHMMS::Controller;
 
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
-  
+
   auto ham_list = eden_test.getHamList();
   auto& ham_leader = ham_list.getLeader();
   auto ham_lock = eden_test.makeTeamLock(eden_test.getHamRes(), ham_list);
@@ -108,6 +108,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   pset_list[2].L[2] = 1.0;
   pset_list[3].L[3] = 1.0;
 
+  {
   ParticleSet::mw_update(pset_list);
   auto twf_list = eden_test.getTwfList();
   auto twf_lock = eden_test.makeTeamLock(eden_test.getTwfRes(), twf_list);
@@ -119,7 +120,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   bool okay = hd.create(test_file);
   REQUIRE(okay);
   std::vector<ObservableHelper> h5desc;
-  auto& e_den_est = eden_test.getEnergyDensityEstimator();
+  {auto& e_den_est = eden_test.getEnergyDensityEstimator();
   e_den_est.registerOperatorEstimator(hd);
 
   StdRandom<double> rng;
@@ -140,6 +141,8 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   CHECK(summed_grid == Approx(expected_sum));
 
   e_den_est.write(hd);
+  }
+  }
 }
 
 TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]") {}

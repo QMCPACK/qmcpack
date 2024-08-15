@@ -54,6 +54,8 @@ set(SRCS
     test_EstimatorManagerCrowd.cpp
     test_SpaceGridInput.cpp
     test_NESpaceGrid.cpp
+    EnergyDensityTest.cpp
+    MockGoldWalkerElements.cpp
     test_EnergyDensityInput.cpp
     test_EnergyDensityEstimator.cpp
     )
