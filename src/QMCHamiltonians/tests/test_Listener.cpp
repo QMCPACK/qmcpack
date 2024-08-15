@@ -89,8 +89,8 @@ public:
    */
   auto getParticularListener(CrowdEnergyValues<Real>& crowd_energy_values)
   {
-    auto local_values = crowd_energy_values;
-    return [&local_values](const int walker_index, const std::string& name, const Vector<Real>& inputV) {
+    return [&crowd_energy_values](const int walker_index, const std::string& name, const Vector<Real>& inputV) {
+      auto& local_values = crowd_energy_values;
       if (walker_index >= local_values[name].size())
         local_values[name].resize(walker_index + 1);
       local_values[name][walker_index] = inputV;
