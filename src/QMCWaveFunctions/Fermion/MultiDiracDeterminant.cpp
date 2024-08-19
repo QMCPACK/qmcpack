@@ -625,6 +625,16 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
       // ompBLAS::copy_batched(handle,       norb,              psiV_acc_ptr_list.data(), 1,     TpsiM_col_acc_ptr_list.data(), nel, n_accepted);
       // ompBLAS::copy_batched(handle,       norb,              psiV_acc_ptr_list.data(), 1,      psiM_row_acc_ptr_list.data(),   1, n_accepted);
       // ompBLAS::copy_batched(handle,       ndet, new_ratios_to_ref_acc_ptr_list.data(), 1, ratios_to_ref_acc_ptr_list.data(),   1, n_accepted);
+      for (auto& iacc : idx_Accepted)
+      {
+        auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
+        wfc.ratios_to_ref_.updateTo();
+        wfc.TpsiM.updateTo();
+        wfc.psiMinv.updateTo();
+        wfc.psiM.updateTo();
+        // dpsiM not updated on host in this case, but this H2D update is included for consistency with single-walker acceptMove
+        wfc.dpsiM.updateTo();
+      }
     }
     break;
 
@@ -665,7 +675,7 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
 
         psiV_acc_ptr_list[i]      = wfc.psiV.data();
         TpsiM_col_acc_ptr_list[i] = wfc.TpsiM.data() + WorkingIndex;
-        psiM_row_acc_ptr_list[i] = wfc.psiM.data() + WorkingIndex * norb;
+        psiM_row_acc_ptr_list[i]  = wfc.psiM.data() + WorkingIndex * norb;
 
         new_ratios_to_ref_acc_ptr_list[i] = wfc.new_ratios_to_ref_.data();
         ratios_to_ref_acc_ptr_list[i]     = wfc.ratios_to_ref_.data();
@@ -706,6 +716,15 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
         for (int i = 0; i < n_accepted; i++)
           BLAS::copy(norb, dspin_psiV_acc_ptr_list[i], 1, dspin_psiM_row_acc_ptr_list[i], 1);
         // ompBLAS::copy_batched(handle, norb, dspin_psiV_acc_ptr_list.data(), 1, dspin_psiM_row_acc_ptr_list.data(), 1, n_accepted);
+      }
+      for (auto& iacc : idx_Accepted)
+      {
+        auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
+        wfc.ratios_to_ref_.updateTo();
+        wfc.TpsiM.updateTo();
+        wfc.psiMinv.updateTo();
+        wfc.psiM.updateTo();
+        wfc.dpsiM.updateTo();
       }
     }
     break;
@@ -819,19 +838,17 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
           // ompBLAS::copy_batched(handle, ndet * nel, new_spingrads_acc_ptr_list.data(), 1, spingrads_acc_ptr_list.data(), 1, n_accepted);
         }
       }
+      for (auto& iacc : idx_Accepted)
+      {
+        auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
+        wfc.ratios_to_ref_.updateTo();
+        wfc.TpsiM.updateTo();
+        wfc.psiMinv.updateTo();
+        wfc.psiM.updateTo();
+        wfc.dpsiM.updateTo();
+      }
     }
     break;
-  }
-
-  for (int i = 0; i < n_accepted; i++)
-  {
-    auto iacc = idx_Accepted[i];
-    auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
-    wfc.ratios_to_ref_.updateTo();
-    wfc.TpsiM.updateTo();
-    wfc.psiMinv.updateTo();
-    wfc.psiM.updateTo();
-    wfc.dpsiM.updateTo();
   }
   // restore:
   // setup pointer lists
@@ -841,8 +858,8 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
   Vector<ValueType*> psiM_row_rej_ptr_list(n_rejected);
   for (int i = 0; i < n_rejected; i++)
   {
-    auto irej = idx_Rejected[i];
-    auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(irej);
+    auto irej                    = idx_Rejected[i];
+    auto& wfc                    = wfc_list.getCastedElement<MultiDiracDeterminant>(irej);
     psiMinv_temp_rej_ptr_list[i] = wfc.psiMinv_temp.data();
     psiMinv_rej_ptr_list[i]      = wfc.psiMinv.data();
     TpsiM_col_rej_ptr_list[i]    = wfc.TpsiM.data() + WorkingIndex;
