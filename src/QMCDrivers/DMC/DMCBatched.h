@@ -16,7 +16,6 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCDrivers/ContextForSteps.h"
 #include "Particle/MCCoords.hpp"
 
 namespace qmcplusplus
@@ -136,7 +135,8 @@ private:
   const DMCDriverInput dmcdriver_input_;
   /// Per crowd, driver-specific move contexts
   UPtrVector<ContextForSteps> step_contexts_;
-
+  /// obtain reference vector of step contexts
+  RefVector<ContextForSteps> getContextForStepsRefs() const;
   /** I think its better if these have there own type and variable name
    */
   DMCTimers dmc_timers_;

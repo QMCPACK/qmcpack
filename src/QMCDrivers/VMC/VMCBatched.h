@@ -16,7 +16,6 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCDrivers/ContextForSteps.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 
 #include "Utilities/Timer.h"
@@ -131,6 +130,8 @@ private:
   /// Per crowd, driver-specific move contexts
   UPtrVector<ContextForSteps> step_contexts_;
 
+  /// obtain reference vector of step contexts
+  RefVector<ContextForSteps> getContextForStepsRefs() const;
 
   QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
   /// Storage for samples (later used in optimizer)

@@ -339,7 +339,8 @@ bool VMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_),
+    auto step_contexts_refs = getContextForStepsRefs();
+    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_refs),
                        serializing_crowd_walkers_);
     print_mem("VMCBatched after initialLogEvaluation", app_summary());
     if (qmcdriver_input_.get_measure_imbalance())
@@ -474,12 +475,15 @@ bool VMCBatched::run()
   return finalize(num_blocks, true);
 }
 
-/** Creates Random Number generators for crowds and step contexts
- *
- *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
- *  This is used instead of actually passing number of threads/crowds
- *  controlling threads all over RandomNumberControl.
- */
+RefVector<QMCDriverNew::ContextForSteps> VMCBatched::getContextForStepsRefs() const
+{
+  RefVector<ContextForSteps> refs;
+  refs.reserve(step_contexts_.size());
+  for (auto& one_context : step_contexts_)
+    refs.push_back(*one_context);
+  return refs;
+}
+
 void VMCBatched::createStepContexts(int num_crowds)
 {
   assert(num_crowds <= rngs_.size());

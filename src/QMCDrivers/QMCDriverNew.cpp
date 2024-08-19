@@ -256,14 +256,15 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
 
 void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<Crowd>& crowds,
-                                        UPtrVector<ContextForSteps>& context_for_steps,
+                                        const RefVector<ContextForSteps>& context_for_steps,
                                         const bool serializing_crowd_walkers)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   if (crowd.size() == 0)
     return;
 
-  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  ContextForSteps& my_context(context_for_steps[crowd_id]);
+  crowd.setRNGForHamiltonian(my_context.get_random_gen());
   const PSdispatcher ps_dispatcher(!serializing_crowd_walkers);
   const TWFdispatcher twf_dispatcher(!serializing_crowd_walkers);
   const Hdispatcher ham_dispatcher(!serializing_crowd_walkers);
