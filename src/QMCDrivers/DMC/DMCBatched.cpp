@@ -387,7 +387,7 @@ void DMCBatched::process(xmlNodePtr node)
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
-                                qmcdriver_input_.get_num_crowds());
+                                determintNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
     steps_per_block_ =
         determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
@@ -567,6 +567,7 @@ bool DMCBatched::run()
  */
 void DMCBatched::createRngsStepContexts(int num_crowds)
 {
+  assert(num_crowds <= rngs_.size());
   step_contexts_.resize(num_crowds);
   for (int i = 0; i < num_crowds; ++i)
     step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);

@@ -54,8 +54,8 @@ public:
   {
     // We want to test the reserve ability as well
     AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(*myComm, 0, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
-                                1.0, qmcdriver_input_.get_num_crowds());
+        adjustGlobalWalkerCount(*myComm, 0, qmcdriver_input_.get_total_walkers(),
+                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
     initPopulationAndCrowds(awc);
   }
@@ -65,7 +65,7 @@ public:
     AdjustedWalkerCounts awc;
     if (myComm->size() == 4)
     {
-      awc = adjustGlobalWalkerCount(*myComm, 0, 64, 0, 1.0, 0);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 64, 0, 1.0, 8);
       if (myComm->rank() == 1)
       {
         CHECK(awc.global_walkers == 64);
@@ -76,7 +76,7 @@ public:
         CHECK(awc.walkers_per_crowd[7] == 2);
       }
 
-      awc = adjustGlobalWalkerCount(*myComm, 4, 0, 0, 1.0, 0);
+      awc = adjustGlobalWalkerCount(*myComm, 4, 0, 0, 1.0, 8);
       if (myComm->rank() == 1)
       {
         CHECK(awc.global_walkers == 16);
@@ -132,11 +132,10 @@ public:
 
     if (myComm->size() == 2)
     {
-      awc = adjustGlobalWalkerCount(*myComm, 0, 28, 0, 1.0, 0);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 28, 0, 1.0, 8);
       if (myComm->rank() == 0)
       {
         CHECK(awc.global_walkers == 28);
-        CHECK(awc.walkers_per_crowd.size() == Concurrency::maxCapacity());
         CHECK(awc.walkers_per_rank.size() == 2);
         CHECK(awc.walkers_per_rank[0] == 14);
         // \todo for std::thread these will be ones
@@ -163,8 +162,15 @@ public:
     {
       // Ask for 14 total walkers on 16 ranks (inconsistent input)
       // results in fatal exception on all ranks.
-      CHECK_THROWS_AS(adjustGlobalWalkerCount(*myComm, 0, 14, 0, 0, 0), UniformCommunicateError);
+      CHECK_THROWS_AS(adjustGlobalWalkerCount(*myComm, 0, 14, 0, 0, 8), UniformCommunicateError);
     }
+  }
+
+  void testDetermintNumCrowds()
+  {
+    CHECK(determintNumCrowds(4, 8) == 4);
+    CHECK(determintNumCrowds(0, 8) == 8);
+    CHECK(determintNumCrowds(4, 2) == 2);
   }
 
   bool run() override { return false; }
