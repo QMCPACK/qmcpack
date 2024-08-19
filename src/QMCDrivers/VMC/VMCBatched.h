@@ -139,7 +139,7 @@ private:
   bool collect_samples_;
 
   // create Rngs and StepContests
-  void createRngsStepContexts(int num_crowds);
+  void createStepContexts(int num_crowds);
 
   /** function to calculate samples per MPI rank
    */

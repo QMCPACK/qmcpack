@@ -394,7 +394,7 @@ void DMCBatched::process(xmlNodePtr node)
                                qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
 
     initPopulationAndCrowds(awc);
-    createRngsStepContexts(crowds_.size());
+    createStepContexts(crowds_.size());
   }
   catch (const UniformCommunicateError& ue)
   {
@@ -565,7 +565,7 @@ bool DMCBatched::run()
  *  This is used instead of actually passing number of threads/crowds
  *  controlling threads all over RandomNumberControl.
  */
-void DMCBatched::createRngsStepContexts(int num_crowds)
+void DMCBatched::createStepContexts(int num_crowds)
 {
   assert(num_crowds <= rngs_.size());
   step_contexts_.resize(num_crowds);

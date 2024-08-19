@@ -148,7 +148,7 @@ private:
   std::unique_ptr<WalkerControl> walker_controller_;
 
   // create Rngs and StepContests
-  void createRngsStepContexts(int num_crowds);
+  void createStepContexts(int num_crowds);
 
   template<CoordsType CT>
   static void advanceWalkers(const StateForThread& sft,
