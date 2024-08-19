@@ -217,12 +217,12 @@ class window<void> {
 template<class T>
 class window : public window<void> {
  protected:
-	window() = default;
+	window() = default;  // cppcheck-suppress duplInheritedMember ;
 
  public:
 	template<class Size = mpi3::size_t>
 	window(communicator const& c, T* b, Size n = 0) : window<void>{c, b, n} {}  // cppcheck-suppress missingReturn ; bug in cppcheck 2.5
-	T* base() const {return static_cast<T*>(window<void>::base());}
+	T* base() const {return static_cast<T*>(window<void>::base());}  // cppcheck-suppress duplInheritedMember ;
 	mpi3::size_t size() const {return window<void>::size()/sizeof(T);}
 };
 

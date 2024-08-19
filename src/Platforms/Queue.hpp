@@ -23,7 +23,13 @@ namespace compute
 template<PlatformKind PL>
 class Queue;
 
-}
+class QueueBase
+{
+public:
+  virtual ~QueueBase() = default;
+};
+
+} // namespace compute
 
 } // namespace qmcplusplus
 

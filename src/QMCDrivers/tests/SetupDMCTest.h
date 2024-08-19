@@ -47,7 +47,7 @@ public:
     DMCDriverInput dmc_input_copy(dmcdrv_input);
     return {test_project,
             std::move(qmc_input_copy),
-            std::nullopt,
+            nullptr,
             std::move(dmc_input_copy),
             walker_confs,
             MCPopulation(comm->size(), comm->rank(), particle_pool->getParticleSet("e"),

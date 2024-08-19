@@ -110,9 +110,9 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   if (fastDerivatives_)
-    value_ = ham_.evaluateIonDerivsDeterministicFast(P, ions_, psi_, psi_wrapper_, hf_force_, wf_grad_);
+    ham_.evaluateIonDerivsFast(P, ions_, psi_, psi_wrapper_, hf_force_, wf_grad_);
   else
-    value_ = ham_.evaluateIonDerivsDeterministic(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
+    ham_.evaluateIonDerivs(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
 
   if (useSpaceWarp_)
   {
@@ -129,7 +129,6 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   //IS ALREADY UP TO DATE FOR THIS CONFIGURATION.
 
   f_epsilon_ = compute_regularizer_f(psi_.G, reg_epsilon_);
-
 
   return 0.0;
 };
@@ -160,6 +159,7 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
     }
   }
 };
+
 void ACForce::setObservables(PropertySetType& plist)
 {
   // TODO : bounds check for plist
@@ -173,7 +173,7 @@ void ACForce::setObservables(PropertySetType& plist)
       // add the minus one to be a force.
       plist[myindex++] = -hf_force_[iat][iondim] * f_epsilon_;
       plist[myindex++] = -(pulay_force_[iat][iondim] + sw_pulay_[iat][iondim]) * f_epsilon_;
-      plist[myindex++] = -value_ * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim]) * f_epsilon_;
+      plist[myindex++] = -ham_.getLocalEnergy() * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim]) * f_epsilon_;
       plist[myindex++] = -(wf_grad_[iat][iondim] + sw_grad_[iat][iondim]) * f_epsilon_;
     }
   }
@@ -187,7 +187,7 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
     {
       plist[myindex++] = -hf_force_[iat][iondim] * f_epsilon_;
       plist[myindex++] = -(pulay_force_[iat][iondim] + sw_pulay_[iat][iondim]) * f_epsilon_;
-      plist[myindex++] = -value_ * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim]) * f_epsilon_;
+      plist[myindex++] = -ham_.getLocalEnergy() * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim]) * f_epsilon_;
       plist[myindex++] = -(wf_grad_[iat][iondim] + sw_grad_[iat][iondim]) * f_epsilon_;
     }
   }

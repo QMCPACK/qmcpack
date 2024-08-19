@@ -105,11 +105,11 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
   return value_;
 }
 
-LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
-                                                                   ParticleSet& ions,
-                                                                   TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos& hf_terms,
-                                                                   ParticleSet::ParticlePos& pulay_terms)
+void LocalECPotential::evaluateIonDerivs(ParticleSet& P,
+                                         ParticleSet& ions,
+                                         TrialWaveFunction& psi,
+                                         ParticleSet::ParticlePos& hf_terms,
+                                         ParticleSet::ParticlePos& pulay_terms)
 {
   const auto& d_table(P.getDistTableAB(myTableIndex));
   value_             = 0.0;
@@ -137,7 +137,6 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
     }
     value_ += esum;
   }
-  return value_;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)

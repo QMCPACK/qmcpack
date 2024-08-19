@@ -12,7 +12,7 @@
 
 from __future__ import print_function
 
-def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.0,cas_idx=None):
+def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.0,cas_idx=None,kmap=None):
   import h5py, re, sys
   from collections import defaultdict
   from pyscf.pbc import gto, scf, df, dft
@@ -539,8 +539,17 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
        mo_coeff_unsorted = mo_coeff_ 
        NbAO, NbMO =mo_coeff.shape 
     else: 
-      mo_k = numpy.array([c[:,cas_idx] for c in mf.mo_coeff] if cas_idx is not None else mf.mo_coeff)
-      e_k =  numpy.array([e[cas_idx] for e in mf.mo_energy] if cas_idx is not None else mf.mo_energy)
+      if kmap is not None:
+           if cas_idx is not None:
+               mo_k = numpy.array([c[:, cas_idx] for c in (mf.mo_coeff[idx] for idx in kmap)])
+               e_k = numpy.array([e[cas_idx] for e in (mf.mo_energy[idx] for idx in kmap)])
+           else:
+               mo_k = numpy.array([mf.mo_coeff[idx] for idx in kmap])
+               e_k = numpy.array([mf.mo_energy[idx] for idx in kmap])
+      else:
+           mo_k = numpy.array([c[:,cas_idx] for c in mf.mo_coeff] if cas_idx is not None else mf.mo_coeff)
+           e_k =  numpy.array([e[cas_idx] for e in mf.mo_energy] if cas_idx is not None else mf.mo_energy)
+
       E_g, C_gamma,E_g_unsorted,C_unsorted = mo_k2gamma(cell, e_k, mo_k, kpts,kmesh)
       mo_coeff=C_gamma
       NbAO, NbMO =mo_coeff.shape 

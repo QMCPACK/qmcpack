@@ -76,7 +76,6 @@ set(DRIVER_TEST_SRC
     test_QMCDriverInput.cpp
     test_QMCDriverNew.cpp
     test_VMCDriverInput.cpp
-    test_VMCFactoryNew.cpp
     test_VMCBatched.cpp
     test_DMCBatched.cpp
     test_SFNBranch.cpp

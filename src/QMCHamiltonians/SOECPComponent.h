@@ -79,6 +79,7 @@ private:
   Matrix<ValueType> dratio_;
   Vector<ValueType> dlogpsi_vp_;
   VirtualParticleSet* vp_;
+  std::pair<SPOSet::ValueVector, SPOSet::ValueVector> spinor_multiplier_;
 
   //This builds the full quadrature grid for the Simpsons rule used for spin integrals as well as
   //the spatial quadrature. In this function, it specifies the deltaS_ and deltaV_ for all the quadrature points and sets the interal weights
@@ -118,7 +119,15 @@ public:
 
   RealType calculateProjector(RealType r, const PosType& dr, RealType sold);
 
-  RealType evaluateOneExactSpinIntegration(ParticleSet& W, const int iat, const TrialWaveFunction& psi, const int iel, const RealType r, const PosType& dr);
+  // sets up all the data needed for the exact spin integration. Essentially setting spinor_multiplier_
+  void setupExactSpinProjector(RealType r, const PosType& dr, RealType sold);
+
+  RealType evaluateOneExactSpinIntegration(ParticleSet& W,
+                                           const int iat,
+                                           const TrialWaveFunction& psi,
+                                           const int iel,
+                                           const RealType r,
+                                           const PosType& dr);
 
   static void mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
@@ -126,6 +135,13 @@ public:
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,
                              ResourceCollection& collection);
+
+  static void mw_evaluateOneExactSpinIntegration(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                 const RefVectorWithLeader<TrialWaveFunction>& psi_list,
+                                                 const RefVector<const NLPPJob<RealType>>& joblist,
+                                                 std::vector<RealType>& pairpots,
+                                                 ResourceCollection& collection);
 
   RealType evaluateValueAndDerivatives(ParticleSet& P,
                                        int iat,

@@ -27,7 +27,6 @@
 #else
 using TraceManager = int;
 #endif
-#include "WalkerLogManager.h"
 
 //comment this out to use only method to clone
 #define ENABLE_CLONE_PSI_AND_H
@@ -87,7 +86,6 @@ CloneManager::~CloneManager()
 #if !defined(REMOVE_TRACEMANAGER)
   delete_iter(traceClones.begin(), traceClones.end());
 #endif
-  delete_iter(wlog_collectors.begin(), wlog_collectors.end());
 }
 
 void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham)
@@ -280,6 +278,14 @@ CloneManager::RealType CloneManager::acceptRatio() const
   }
 #endif
   return static_cast<RealType>(nAcceptTot) / static_cast<RealType>(nAcceptTot + nRejectTot);
+}
+
+RefVector<WalkerLogCollector> CloneManager::getWalkerLogCollectorRefs()
+{
+  RefVector<WalkerLogCollector> refs;
+  for(int i = 0; i < wlog_collectors.size(); i++)
+    refs.push_back(*wlog_collectors[i]);
+  return refs;
 }
 
 } // namespace qmcplusplus

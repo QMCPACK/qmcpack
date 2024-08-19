@@ -380,21 +380,11 @@ if(QMC_OMP)
   if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
+    if(DEFINED OpenMP_OFFLOAD_LINKER_FLAGS)
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_OFFLOAD_LINKER_FLAGS}")
+    endif()
   endif()
 
-  #--------------------------------------------------------------
-  # Workaround for breakage of OMP Target kernels at -O0 by Clang
-  #--------------------------------------------------------------
-  # When the build type is Debug, default -O0 compilation is broken by
-  # Clang 15 as of 5d2ce7663b10c107328a4ae0c678165209e64619.
-  # Previous compilers are not suggested for clang offload builds.
-  #
-  # You can set this option to false on the command line to check
-  # if this problem has been fixed.
-  if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
-    option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
-  endif()
-  mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
   TestCXXMainCompiles("With_OpenMP")
 endif()
 

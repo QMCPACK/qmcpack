@@ -39,7 +39,6 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "ProjectData.h"
-#include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "TauParams.hpp"
 #include "Particle/MCCoords.hpp"
@@ -52,7 +51,6 @@ namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
 class TraceManager;
-class WalkerLogManager;
 class EstimatorManagerNew;
 class TrialWaveFunction;
 class QMCHamiltonian;
@@ -92,7 +90,11 @@ public:
   };
 
   using MCPWalker = MCPopulation::MCPWalker;
-  using WFBuffer  = MCPopulation::WFBuffer;
+  /** This type provides all the functionality needed by drivers to instantiate estimators so we use it to reduce coupling
+   *  with ParticleSetPool
+   */
+  using PSPool   = ParticleSetPool::PoolType;
+  using WFBuffer = MCPopulation::WFBuffer;
 
   using SetNonLocalMoveHandler = std::function<void(QMCHamiltonian&)>;
   /** bits to classify QMCDriver
@@ -133,10 +135,21 @@ protected:
   void endBlock();
 
 public:
-  /// Constructor.
+  /** Constructor
+   *
+   *  \param[in]  project_data         ...
+   *  \param[in]  input                in theory immutable parameters controlling the driver should come from here.
+   *  \param[in]  wc                   incoming walker configurations from previous run (or restart?)
+   *  \param[in]  population           rank scope container for population <em>walker elements</em>
+   *  \param[in]  pset_pool            global particle set pool, allows retrieval of "named" particle sets.
+   *                                   currently only the EnergyDensityEstimator requries this.
+   *  \param[in]  timer_prefix         prefix string for the driver timers
+   *  \param[in]  comm                 MPI communicator wrapper
+   *  \param[in]  QMC_driver_type      string identifier of the QMCDriver required for?
+   */
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
-               const std::optional<EstimatorManagerInput>& global_emi,
+               UPtr<EstimatorManagerNew>&& estimator_manager,
                WalkerConfigurations& wc,
                MCPopulation&& population,
                const std::string timer_prefix,
@@ -193,7 +206,7 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override {};
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
   void createRngsStepContexts(int num_crowds);
 
@@ -206,9 +219,6 @@ public:
       RngRefs.push_back(*Rng[i]);
     return RngRefs;
   }
-
-  ///return the i-th random generator
-  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
 
   /** intended for logging output and debugging
    *  you should base behavior on type preferably at compile time or if
@@ -238,7 +248,10 @@ public:
    */
   void process(xmlNodePtr cur) override = 0;
 
-  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
+  static void initialLogEvaluation(int crowd_id,
+                                   UPtrVector<Crowd>& crowds,
+                                   UPtrVector<ContextForSteps>& step_context,
+                                   const bool serializing_crowd_walkers);
 
 
   /** should be set in input don't see a reason to set individually
@@ -327,7 +340,7 @@ protected:
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
-  static void checkLogAndGL(Crowd& crowd, const std::string_view location);
+  static void checkLogAndGL(Crowd& crowd, const std::string_view location, const bool serializing_crowd_walkers);
 
   const std::string& get_root_name() const override { return project_data_.currentMainRoot(); }
 
@@ -433,8 +446,8 @@ protected:
    */
   struct DriverWalkerResourceCollection golden_resource_;
 
-  /// multi walker dispatchers
-  const MultiWalkerDispatchers dispatchers_;
+  /// if true, calculating walker one-by-one within a crowd
+  const bool serializing_crowd_walkers_;
 
   /** Observables manager
    *  Has very problematic owner ship and life cycle.
@@ -442,9 +455,6 @@ protected:
    *  TODO:  Modify Branch manager and others to clear this up.
    */
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
-
-  /// walker log manager
-  std::unique_ptr<WalkerLogManager> wlog_manager_;
 
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;

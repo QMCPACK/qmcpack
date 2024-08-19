@@ -296,12 +296,12 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
-                                                      ParticleSet& ions,
-                                                      TrialWaveFunction& psi_in,
-                                                      TWFFastDerivWrapper& psi_wrapper,
-                                                      ParticleSet::ParticlePos& dedr,
-                                                      ParticleSet::ParticlePos& wf_grad);
+  void evaluateIonDerivsFast(ParticleSet& P,
+                             ParticleSet& ions,
+                             TrialWaveFunction& psi_in,
+                             TWFFastDerivWrapper& psi_wrapper,
+                             ParticleSet::ParticlePos& dedr,
+                             ParticleSet::ParticlePos& wf_grad);
 
   /** Evaluate the electron gradient of the local energy.
   * @param psi Trial Wave Function
@@ -312,37 +312,20 @@ public:
   */
   void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
-  /** evaluate local energy and derivatives w.r.t ionic coordinates.  
+  /** evaluate local energy and derivatives w.r.t ionic coordinates without randomizing the quadrature point grid.
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)
   * @param psi Trial wave function
   * @param hf_terms  Re [(dH)Psi]/Psi
   * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
   * @param wf_grad  Re (dPsi/Psi)
-  * @return Local Energy.
   */
-  FullPrecRealType evaluateIonDerivs(ParticleSet& P,
-                                     ParticleSet& ions,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos& hf_terms,
-                                     ParticleSet::ParticlePos& pulay_terms,
-                                     ParticleSet::ParticlePos& wf_grad);
-
-  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
-  * @param P target particle set (electrons)
-  * @param ions source particle set (ions)
-  * @param psi Trial wave function
-  * @param hf_terms  Re [(dH)Psi]/Psi
-  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
-  * @param wf_grad  Re (dPsi/Psi)
-  * @return Local Energy.
-  */
-  FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
-                                                  ParticleSet& ions,
-                                                  TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos& hf_terms,
-                                                  ParticleSet::ParticlePos& pulay_terms,
-                                                  ParticleSet::ParticlePos& wf_grad);
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms,
+                         ParticleSet::ParticlePos& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */

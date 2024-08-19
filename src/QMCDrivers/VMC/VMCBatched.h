@@ -53,19 +53,23 @@ public:
     IndexType recalculate_properties_period;
     const size_t steps_per_block;
     IndexType step            = -1;
-    IndexType global_step    = -1;
+    IndexType global_step     = -1;
     bool is_recomputing_block = false;
+    /// if true, calculating walker one-by-one within a crowd
+    const bool serializing_crowd_walkers;
 
     StateForThread(const QMCDriverInput& qmci,
                    const VMCDriverInput& vmci,
                    DriftModifierBase& drift_mod,
                    MCPopulation& pop,
-                   const size_t steps_per_block)
+                   const size_t steps_per_block,
+                   const bool serializing_crowd_walkers)
         : qmcdrv_input(qmci),
           vmcdrv_input(vmci),
           drift_modifier(drift_mod),
           population(pop),
-          steps_per_block(steps_per_block)
+          steps_per_block(steps_per_block),
+          serializing_crowd_walkers(serializing_crowd_walkers)
     {}
   };
 
@@ -73,7 +77,7 @@ public:
   /// Constructor.
   VMCBatched(const ProjectData& project_data,
              QMCDriverInput&& qmcdriver_input,
-             const std::optional<EstimatorManagerInput>& global_emi,
+             UPtr<EstimatorManagerNew>&& estimator_manager,
              VMCDriverInput&& input,
              WalkerConfigurations& wc,
              MCPopulation&& pop,

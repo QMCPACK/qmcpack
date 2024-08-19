@@ -22,7 +22,7 @@ namespace compute
 {
 
 template<>
-class Queue<PlatformKind::SYCL>
+class Queue<PlatformKind::SYCL> : public QueueBase
 {
 public:
   Queue() : queue_(createSYCLInOrderQueueOnDefaultDevice()) {}

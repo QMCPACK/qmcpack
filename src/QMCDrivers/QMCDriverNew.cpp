@@ -29,11 +29,13 @@
 #include "Utilities/qmc_common.h"
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
+#include <PSdispatcher.h>
+#include <TWFdispatcher.h>
+#include <Hdispatcher.h>
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
-#include "WalkerLogInput.h"
 #include "WalkerLogManager.h"
 
 
@@ -46,7 +48,7 @@ namespace qmcplusplus
  */
 QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
-                           const std::optional<EstimatorManagerInput>& global_emi,
+                           UPtr<EstimatorManagerNew>&& estimator_manager,
                            WalkerConfigurations& wc,
                            MCPopulation&& population,
                            const std::string timer_prefix,
@@ -56,32 +58,17 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
       population_(std::move(population)),
-      dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
-      estimator_manager_(nullptr),
+      serializing_crowd_walkers_(qmcdriver_input_.areWalkersSerialized()),
       timers_(timer_prefix),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
       walker_configs_ref_(wc)
 {
-  // This is done so that the application level input structures reflect the actual input to the code.
-  // While the actual simulation objects still take singular input structures at construction.
-  auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
-    if (global_emi.has_value() && local_emi.has_value())
-      return {global_emi.value(), local_emi.value()};
-    else if (global_emi.has_value())
-      return {global_emi.value()};
-    else if (local_emi.has_value())
-      return {local_emi.value()};
-    else
-      return {};
-  };
-
-  estimator_manager_ =
-      std::make_unique<EstimatorManagerNew>(comm,
-                                            makeEstimatorManagerInput(global_emi,
-                                                                      qmcdriver_input_.get_estimator_manager_input()),
-                                            population_.get_golden_hamiltonian(), population.get_golden_electrons(),
-                                            population.get_golden_twf());
+  // when there is no actual estimator_manager provided, construct one with local energy only.
+  if (estimator_manager)
+    estimator_manager_ = std::move(estimator_manager);
+  else
+    estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), comm);
 
   drift_modifier_.reset(
       createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
@@ -112,9 +99,10 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 // To work around the issue, check the local pointer for nullptr before restoring to global storage.
 QMCDriverNew::~QMCDriverNew()
 {
+  auto& rng_children = RandomNumberControl::getChildren();
   for (int i = 0; i < Rng.size(); ++i)
     if (Rng[i])
-      RandomNumberControl::Children[i].reset(Rng[i].release());
+      rng_children[i].reset(Rng[i].release());
 }
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
@@ -139,9 +127,9 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
                 << "  on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
                 << std::endl
                 << "                         steps = " << steps_per_block_
-                << (steps_per_block_ == qmcdriver_input_.get_requested_steps()
-                        ? ""
-                        : " (different from input value " + std::to_string(qmcdriver_input_.get_requested_steps()) + ")")
+                << (steps_per_block_ == qmcdriver_input_.get_requested_steps() ? ""
+                                                                               : " (different from input value " +
+                            std::to_string(qmcdriver_input_.get_requested_steps()) + ")")
                 << std::endl
                 << "                        blocks = " << qmcdriver_input_.get_max_blocks() << std::endl
                 << std::endl;
@@ -179,9 +167,8 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i] =
-        std::make_unique<Crowd>(*estimator_manager_, golden_resource_, population_.get_golden_electrons(),
-                                population_.get_golden_twf(), population_.get_golden_hamiltonian(), dispatchers_);
+    crowds_[i] = std::make_unique<Crowd>(*estimator_manager_, golden_resource_, population_.get_golden_electrons(),
+                                         population_.get_golden_twf(), population_.get_golden_hamiltonian());
   }
 
   //now give walkers references to their walkers
@@ -199,8 +186,8 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
  */
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
-  app_log() << "\n=========================================================" << "\n  Start " << QMCType
-            << "\n  File Root " << get_root_name();
+  app_log() << "\n========================================================="
+            << "\n  Start " << QMCType << "\n  File Root " << get_root_name();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())
@@ -301,32 +288,27 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
   step_contexts_.resize(num_crowds);
   Rng.resize(num_crowds);
 
-  if (RandomNumberControl::Children.size() == 0)
-  {
-    app_warning() << "  Initializing global RandomNumberControl! "
-                  << "This message should not be seen in production code but only in unit tests." << std::endl;
-    RandomNumberControl::make_seeds();
-  }
-
+  auto& rng_children = RandomNumberControl::getChildren();
   for (int i = 0; i < num_crowds; ++i)
   {
-    Rng[i].reset(RandomNumberControl::Children[i].release());
+    Rng[i].reset(rng_children[i].release());
     step_contexts_[i] = std::make_unique<ContextForSteps>(*(Rng[i]));
   }
 }
 
 void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<Crowd>& crowds,
-                                        UPtrVector<ContextForSteps>& context_for_steps)
+                                        UPtrVector<ContextForSteps>& context_for_steps,
+                                        const bool serializing_crowd_walkers)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   if (crowd.size() == 0)
     return;
 
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
-  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
-  auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
-  auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
+  const PSdispatcher ps_dispatcher(!serializing_crowd_walkers);
+  const TWFdispatcher twf_dispatcher(!serializing_crowd_walkers);
+  const Hdispatcher ham_dispatcher(!serializing_crowd_walkers);
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
@@ -383,9 +365,9 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 void QMCDriverNew::putWalkerLogs(xmlNodePtr wlxml)
 {
   walker_logs_input.present = false;
-  if(wlxml)
+  if (wlxml)
   {
-    walker_logs_input.readXML(wlxml); 
+    walker_logs_input.readXML(wlxml);
     walker_logs_input.present = true;
   }
 }
@@ -546,11 +528,11 @@ void QMCDriverNew::endBlock()
   estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight);
 }
 
-void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
+void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location, const bool serializing_crowd_walkers)
 {
-  bool success         = true;
-  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
-  auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
+  bool success = true;
+  const PSdispatcher ps_dispatcher(!serializing_crowd_walkers);
+  const TWFdispatcher twf_dispatcher(!serializing_crowd_walkers);
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());

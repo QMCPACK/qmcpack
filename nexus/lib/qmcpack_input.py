@@ -4295,7 +4295,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         self.variables = obj()
         self.inputs = obj()
         self.filenames = None
-        if quantity!=None and values!=None and input!=None:
+        if quantity is not None and values is not None and input is not None:
             self.bundle_inputs(quantity,values,input)
         #end if
     #end def __init__
@@ -4307,8 +4307,14 @@ class TracedQmcpackInput(BundledQmcpackInput):
             inp = input.copy()
             qhost = inp.get_host(quantity)                               
             #print(qhost)
-            if qhost!=None:
-                qhost[quantity] = value
+            if qhost is not None:
+                if not isinstance(value,obj):
+                    qhost[quantity] = value
+                else:
+                    for k,v in value.items():
+                        qhost[k] = v
+                    #end for
+                #end if
             else:
                 self.error('quantity '+quantity+' was not found in '+input.__class__.__name__)
             #end if
@@ -4328,6 +4334,9 @@ class TracedQmcpackInput(BundledQmcpackInput):
             var = self.variables[i]
             q = var.quantity
             v = var.value
+            if isinstance(v,obj):
+                v = i
+            #end if
             bfile = prefix+'.g'+str(i).zfill(3)+'.'+q+'_'+str(v)+'.'+ext
             self.filenames.append(bfile)
         #end if
@@ -5482,6 +5491,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
     basis = []
     builder = None
     maxed = False
+    wf = wf_elem
     if reuse and 'basis' in dm and isinstance(dm.basis,sposet):
         spo = dm.basis
         # get sposet size
@@ -5496,7 +5506,6 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         #end if
         try:
             # get sposet from wavefunction
-            wf = wf_elem
             dets = wf.get('determinant')
             det  = dets.get_single()
             if 'sposet' in det:
