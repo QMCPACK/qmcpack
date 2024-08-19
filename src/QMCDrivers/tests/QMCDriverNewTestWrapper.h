@@ -200,23 +200,6 @@ public:
   }
 };
 
-template<class CONCURRENCY>
-void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<CONCURRENCY>::operator()(int num_crowds)
-{}
-
-template<>
-void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<Executor::OPENMP>>::operator()(int num_crowds)
-{
-  if (Concurrency::maxCapacity<>() != 8)
-    throw std::runtime_error("OMP_NUM_THREADS must be 8 for this test.");
-  if (num_crowds > 8)
-    CHECK_THROWS_AS(checkNumCrowdsLTNumThreads(num_crowds), UniformCommunicateError);
-  else
-    checkNumCrowdsLTNumThreads(num_crowds);
-  return;
-}
-
-
 } // namespace testing
 } // namespace qmcplusplus
 #endif

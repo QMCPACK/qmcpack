@@ -69,24 +69,6 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   // What else should we expect after process
 }
 
-#ifdef _OPENMP
-TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
-{
-  using namespace testing;
-
-  Concurrency::OverrideMaxCapacity<> override(8);
-  // test is a no op except for openmp, max threads is >> than num cores
-  // in other concurrency models.
-  if (Concurrency::maxCapacity<>() != 8)
-    throw std::runtime_error("Insufficient threads available to match test input");
-
-  QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
-
-  testNumCrowds(9);
-  testNumCrowds(8);
-}
-#endif
-
 TEST_CASE("QMCDriverNew walker counts", "[drivers]")
 {
   using namespace testing;

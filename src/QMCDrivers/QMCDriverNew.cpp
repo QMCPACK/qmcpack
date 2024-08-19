@@ -100,17 +100,6 @@ int QMCDriverNew::determintNumCrowds(const int requested_num_crowds, const int r
   return num_crowds;
 }
 
-void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
-{
-  int num_threads(Concurrency::maxCapacity<>());
-  if (num_crowds > num_threads)
-  {
-    std::stringstream error_msg;
-    error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
-    throw UniformCommunicateError(error_msg.str());
-  }
-}
-
 void QMCDriverNew::initPopulationAndCrowds(const AdjustedWalkerCounts& awc)
 {
   app_summary() << QMCType << " Driver running with" << std::endl

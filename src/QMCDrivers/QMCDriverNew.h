@@ -336,8 +336,6 @@ protected:
                                        IndexType requested_steps,
                                        IndexType blocks);
 
-  static void checkNumCrowdsLTNumThreads(const int num_crowds);
-
   /// check logpsi and grad and lap against values computed from scratch
   static void checkLogAndGL(Crowd& crowd, const std::string_view location, const bool serializing_crowd_walkers);
 
