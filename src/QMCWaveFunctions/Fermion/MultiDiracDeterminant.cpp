@@ -589,39 +589,42 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
      * new_ratios_to_ref_[:] -> ratios_to_ref_[:]; [NumDets]
      */
     {
-      OffloadVector<ValueType*> psiMinv_temp_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> psiMinv_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> psiMinv_temp_acc_ptr_list(n_accepted);
+      Vector<ValueType*> psiMinv_acc_ptr_list(n_accepted);
 
-      OffloadVector<ValueType*> psiV_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> TpsiM_col_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> psiM_row_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> psiV_acc_ptr_list(n_accepted);
+      Vector<ValueType*> TpsiM_col_acc_ptr_list(n_accepted);
+      Vector<ValueType*> psiM_row_acc_ptr_list(n_accepted);
 
-      OffloadVector<ValueType*> new_ratios_to_ref_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> ratios_to_ref_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> new_ratios_to_ref_acc_ptr_list(n_accepted);
+      Vector<ValueType*> ratios_to_ref_acc_ptr_list(n_accepted);
 
       for (int i = 0; i < n_accepted; i++)
       {
-        auto iacc                          = idx_Accepted[i];
-        psiMinv_temp_acc_deviceptr_list[i] = mw_res.psiMinv_temp_deviceptr_list[iacc];
-        psiMinv_acc_deviceptr_list[i]      = mw_res.psiMinv_deviceptr_list[iacc];
+        auto iacc = idx_Accepted[i];
+        auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
 
-        psiV_acc_deviceptr_list[i]      = mw_res.psiV_deviceptr_list[iacc];
-        TpsiM_col_acc_deviceptr_list[i] = mw_res.TpsiM_deviceptr_list[iacc] + WorkingIndex;
-        psiM_row_acc_deviceptr_list[i]  = mw_res.psiM_deviceptr_list[iacc] + WorkingIndex * norb;
+        psiMinv_temp_acc_ptr_list[i] = wfc.psiMinv_temp.data();
+        psiMinv_acc_ptr_list[i]      = wfc.psiMinv.data();
 
-        auto& wfc                               = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
-        new_ratios_to_ref_acc_deviceptr_list[i] = wfc.new_ratios_to_ref_.device_data();
-        ratios_to_ref_acc_deviceptr_list[i]     = wfc.ratios_to_ref_.device_data();
+        psiV_acc_ptr_list[i]      = wfc.psiV.data();
+        TpsiM_col_acc_ptr_list[i] = wfc.TpsiM.data() + WorkingIndex;
+        psiM_row_acc_ptr_list[i]  = wfc.psiM.data() + WorkingIndex * norb;
+
+        new_ratios_to_ref_acc_ptr_list[i] = wfc.new_ratios_to_ref_.data();
+        ratios_to_ref_acc_ptr_list[i]     = wfc.ratios_to_ref_.data();
       }
-
-      ompBLAS::copy_batched(handle, nel * nel, psiMinv_temp_acc_deviceptr_list.data(), 1,
-                            psiMinv_acc_deviceptr_list.data(), 1, n_accepted);
-      ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, TpsiM_col_acc_deviceptr_list.data(), nel,
-                            n_accepted);
-      ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, psiM_row_acc_deviceptr_list.data(), 1,
-                            n_accepted);
-      ompBLAS::copy_batched(handle, ndet, new_ratios_to_ref_acc_deviceptr_list.data(), 1,
-                            ratios_to_ref_acc_deviceptr_list.data(), 1, n_accepted);
+      for (int i = 0; i < n_accepted; i++)
+      {
+        BLAS::copy(nel * nel, psiMinv_temp_acc_ptr_list[i], 1, psiMinv_acc_ptr_list[i], 1);
+        BLAS::copy(norb, psiV_acc_ptr_list[i], 1, TpsiM_col_acc_ptr_list[i], nel);
+        BLAS::copy(norb, psiV_acc_ptr_list[i], 1, psiM_row_acc_ptr_list[i], 1);
+        BLAS::copy(ndet, new_ratios_to_ref_acc_ptr_list[i], 1, ratios_to_ref_acc_ptr_list[i], 1);
+      }
+      // ompBLAS::copy_batched(handle,  nel * nel,      psiMinv_temp_acc_ptr_list.data(), 1,       psiMinv_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle,       norb,              psiV_acc_ptr_list.data(), 1,     TpsiM_col_acc_ptr_list.data(), nel, n_accepted);
+      // ompBLAS::copy_batched(handle,       norb,              psiV_acc_ptr_list.data(), 1,      psiM_row_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle,       ndet, new_ratios_to_ref_acc_ptr_list.data(), 1, ratios_to_ref_acc_ptr_list.data(),   1, n_accepted);
     }
     break;
 
@@ -637,52 +640,56 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
      *   dspin_psiV[:] -> dspin_psiM[WorkingIndex,:]; [NumOrbitals] (NumPtcls in 1st dim)
      */
     {
-      OffloadVector<ValueType*> psiMinv_temp_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> psiMinv_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> psiMinv_temp_acc_ptr_list(n_accepted);
+      Vector<ValueType*> psiMinv_acc_ptr_list(n_accepted);
 
-      OffloadVector<ValueType*> psiV_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> TpsiM_col_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> psiM_row_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> psiV_acc_ptr_list(n_accepted);
+      Vector<ValueType*> TpsiM_col_acc_ptr_list(n_accepted);
+      Vector<ValueType*> psiM_row_acc_ptr_list(n_accepted);
 
-      OffloadVector<ValueType*> new_ratios_to_ref_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> ratios_to_ref_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> new_ratios_to_ref_acc_ptr_list(n_accepted);
+      Vector<ValueType*> ratios_to_ref_acc_ptr_list(n_accepted);
 
-      OffloadVector<ValueType*> dpsiV_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> dpsiM_row_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> d2psiV_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> d2psiM_row_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> dpsiV_acc_ptr_list(n_accepted);
+      Vector<ValueType*> dpsiM_row_acc_ptr_list(n_accepted);
+      Vector<ValueType*> d2psiV_acc_ptr_list(n_accepted);
+      Vector<ValueType*> d2psiM_row_acc_ptr_list(n_accepted);
 
       for (int i = 0; i < n_accepted; i++)
       {
-        auto iacc                          = idx_Accepted[i];
-        psiMinv_temp_acc_deviceptr_list[i] = mw_res.psiMinv_temp_deviceptr_list[iacc];
-        psiMinv_acc_deviceptr_list[i]      = mw_res.psiMinv_deviceptr_list[iacc];
+        auto iacc = idx_Accepted[i];
+        auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
 
-        psiV_acc_deviceptr_list[i]      = mw_res.psiV_deviceptr_list[iacc];
-        TpsiM_col_acc_deviceptr_list[i] = mw_res.TpsiM_deviceptr_list[iacc] + WorkingIndex;
-        psiM_row_acc_deviceptr_list[i]  = mw_res.psiM_deviceptr_list[iacc] + WorkingIndex * norb;
+        psiMinv_temp_acc_ptr_list[i] = wfc.psiMinv_temp.data();
+        psiMinv_acc_ptr_list[i]      = wfc.psiMinv.data();
 
-        auto& wfc                               = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
-        new_ratios_to_ref_acc_deviceptr_list[i] = wfc.new_ratios_to_ref_.device_data();
-        ratios_to_ref_acc_deviceptr_list[i]     = wfc.ratios_to_ref_.device_data();
+        psiV_acc_ptr_list[i]      = wfc.psiV.data();
+        TpsiM_col_acc_ptr_list[i] = wfc.TpsiM.data() + WorkingIndex;
+        psiM_row_acc_ptr_list[i] = wfc.psiM.data() + WorkingIndex * norb;
 
-        dpsiV_acc_deviceptr_list[i]      = mw_res.dpsiV_deviceptr_list[iacc]->data();
-        dpsiM_row_acc_deviceptr_list[i]  = mw_res.dpsiM_deviceptr_list[iacc]->data() + WorkingIndex * norb * DIM;
-        d2psiV_acc_deviceptr_list[i]     = wfc.d2psiV.device_data();
-        d2psiM_row_acc_deviceptr_list[i] = wfc.d2psiM.device_data() + WorkingIndex * norb;
+        new_ratios_to_ref_acc_ptr_list[i] = wfc.new_ratios_to_ref_.data();
+        ratios_to_ref_acc_ptr_list[i]     = wfc.ratios_to_ref_.data();
+
+        dpsiV_acc_ptr_list[i]      = wfc.dpsiV.data()->data();
+        dpsiM_row_acc_ptr_list[i]  = wfc.dpsiM.data()->data() + WorkingIndex * norb * DIM;
+        d2psiV_acc_ptr_list[i]     = wfc.d2psiV.data();
+        d2psiM_row_acc_ptr_list[i] = wfc.d2psiM.data() + WorkingIndex * norb;
       }
-      ompBLAS::copy_batched(handle, nel * nel, psiMinv_temp_acc_deviceptr_list.data(), 1,
-                            psiMinv_acc_deviceptr_list.data(), 1, n_accepted);
-      ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, TpsiM_col_acc_deviceptr_list.data(), nel,
-                            n_accepted);
-      ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, psiM_row_acc_deviceptr_list.data(), 1,
-                            n_accepted);
-      ompBLAS::copy_batched(handle, norb * DIM, dpsiV_acc_deviceptr_list.data(), 1, dpsiM_row_acc_deviceptr_list.data(),
-                            1, n_accepted);
-      ompBLAS::copy_batched(handle, norb, d2psiV_acc_deviceptr_list.data(), 1, d2psiM_row_acc_deviceptr_list.data(), 1,
-                            n_accepted);
-      ompBLAS::copy_batched(handle, ndet, new_ratios_to_ref_acc_deviceptr_list.data(), 1,
-                            ratios_to_ref_acc_deviceptr_list.data(), 1, n_accepted);
+      for (int i = 0; i < n_accepted; i++)
+      {
+        BLAS::copy(nel * nel, psiMinv_temp_acc_ptr_list[i], 1, psiMinv_acc_ptr_list[i], 1);
+        BLAS::copy(norb, psiV_acc_ptr_list[i], 1, TpsiM_col_acc_ptr_list[i], nel);
+        BLAS::copy(norb, psiV_acc_ptr_list[i], 1, psiM_row_acc_ptr_list[i], 1);
+        BLAS::copy(norb * DIM, dpsiV_acc_ptr_list[i], 1, dpsiM_row_acc_ptr_list[i], 1);
+        BLAS::copy(norb, d2psiV_acc_ptr_list[i], 1, d2psiM_row_acc_ptr_list[i], 1);
+        BLAS::copy(ndet, new_ratios_to_ref_acc_ptr_list[i], 1, ratios_to_ref_acc_ptr_list[i], 1);
+      }
+      // ompBLAS::copy_batched(handle,  nel * nel,      psiMinv_temp_acc_ptr_list.data(), 1,       psiMinv_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle,       norb,              psiV_acc_ptr_list.data(), 1,     TpsiM_col_acc_ptr_list.data(), nel, n_accepted);
+      // ompBLAS::copy_batched(handle,       norb,              psiV_acc_ptr_list.data(), 1,      psiM_row_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle, norb * DIM,             dpsiV_acc_ptr_list.data(), 1,     dpsiM_row_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle,       norb,            d2psiV_acc_ptr_list.data(), 1,    d2psiM_row_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle,       ndet, new_ratios_to_ref_acc_ptr_list.data(), 1, ratios_to_ref_acc_ptr_list.data(),   1, n_accepted);
 
       // dspin_psiM/V not on device
       if (wfc_leader.is_spinor_)
@@ -718,20 +725,20 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
      *   new_spingrads[:,:] -> spingrads[:,:]; [NumDets,NumPtcls]
      */
     {
-      OffloadVector<ValueType*> psiMinv_temp_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> psiMinv_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> psiMinv_temp_acc_ptr_list(n_accepted);
+      Vector<ValueType*> psiMinv_acc_ptr_list(n_accepted);
 
-      OffloadVector<ValueType*> psiV_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> TpsiM_col_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> psiM_row_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> psiV_acc_ptr_list(n_accepted);
+      Vector<ValueType*> TpsiM_col_acc_ptr_list(n_accepted);
+      Vector<ValueType*> psiM_row_acc_ptr_list(n_accepted);
 
-      OffloadVector<ValueType*> new_ratios_to_ref_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> ratios_to_ref_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> new_ratios_to_ref_acc_ptr_list(n_accepted);
+      Vector<ValueType*> ratios_to_ref_acc_ptr_list(n_accepted);
 
-      OffloadVector<ValueType*> dpsiV_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> dpsiM_row_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> d2psiV_acc_deviceptr_list(n_accepted);
-      OffloadVector<ValueType*> d2psiM_row_acc_deviceptr_list(n_accepted);
+      Vector<ValueType*> dpsiV_acc_ptr_list(n_accepted);
+      Vector<ValueType*> dpsiM_row_acc_ptr_list(n_accepted);
+      Vector<ValueType*> d2psiV_acc_ptr_list(n_accepted);
+      Vector<ValueType*> d2psiM_row_acc_ptr_list(n_accepted);
 
       Vector<ValueType*> new_grads_acc_ptr_list(n_accepted);
       Vector<ValueType*> grads_acc_ptr_list(n_accepted);
@@ -740,40 +747,44 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
 
       for (int i = 0; i < n_accepted; i++)
       {
-        auto iacc                          = idx_Accepted[i];
-        psiMinv_temp_acc_deviceptr_list[i] = mw_res.psiMinv_temp_deviceptr_list[iacc];
-        psiMinv_acc_deviceptr_list[i]      = mw_res.psiMinv_deviceptr_list[iacc];
+        auto iacc = idx_Accepted[i];
+        auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
 
-        psiV_acc_deviceptr_list[i]      = mw_res.psiV_deviceptr_list[iacc];
-        TpsiM_col_acc_deviceptr_list[i] = mw_res.TpsiM_deviceptr_list[iacc] + WorkingIndex;
-        psiM_row_acc_deviceptr_list[i]  = mw_res.psiM_deviceptr_list[iacc] + WorkingIndex * norb;
+        psiMinv_temp_acc_ptr_list[i] = wfc.psiMinv_temp.data();
+        psiMinv_acc_ptr_list[i]      = wfc.psiMinv.data();
 
-        auto& wfc                               = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
-        new_ratios_to_ref_acc_deviceptr_list[i] = wfc.new_ratios_to_ref_.device_data();
-        ratios_to_ref_acc_deviceptr_list[i]     = wfc.ratios_to_ref_.device_data();
+        psiV_acc_ptr_list[i]      = wfc.psiV.data();
+        TpsiM_col_acc_ptr_list[i] = wfc.TpsiM.data() + WorkingIndex;
+        psiM_row_acc_ptr_list[i]  = wfc.psiM.data() + WorkingIndex * norb;
 
-        dpsiV_acc_deviceptr_list[i]      = mw_res.dpsiV_deviceptr_list[iacc]->data();
-        dpsiM_row_acc_deviceptr_list[i]  = mw_res.dpsiM_deviceptr_list[iacc]->data() + WorkingIndex * norb * DIM;
-        d2psiV_acc_deviceptr_list[i]     = wfc.d2psiV.device_data();
-        d2psiM_row_acc_deviceptr_list[i] = wfc.d2psiM.device_data() + WorkingIndex * norb;
+        new_ratios_to_ref_acc_ptr_list[i] = wfc.new_ratios_to_ref_.data();
+        ratios_to_ref_acc_ptr_list[i]     = wfc.ratios_to_ref_.data();
+
+        dpsiV_acc_ptr_list[i]      = wfc.dpsiV.data()->data();
+        dpsiM_row_acc_ptr_list[i]  = wfc.dpsiM.data()->data() + WorkingIndex * norb * DIM;
+        d2psiV_acc_ptr_list[i]     = wfc.d2psiV.data();
+        d2psiM_row_acc_ptr_list[i] = wfc.d2psiM.data() + WorkingIndex * norb;
 
         new_grads_acc_ptr_list[i] = wfc.new_grads.data()->data();
         grads_acc_ptr_list[i]     = wfc.grads.data()->data();
         new_lapls_acc_ptr_list[i] = wfc.new_lapls.data();
         lapls_acc_ptr_list[i]     = wfc.lapls.data();
       }
-      ompBLAS::copy_batched(handle, nel * nel, psiMinv_temp_acc_deviceptr_list.data(), 1,
-                            psiMinv_acc_deviceptr_list.data(), 1, n_accepted);
-      ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, TpsiM_col_acc_deviceptr_list.data(), norb,
-                            n_accepted);
-      ompBLAS::copy_batched(handle, norb, psiV_acc_deviceptr_list.data(), 1, psiM_row_acc_deviceptr_list.data(), 1,
-                            n_accepted);
-      ompBLAS::copy_batched(handle, norb * DIM, dpsiV_acc_deviceptr_list.data(), 1, dpsiM_row_acc_deviceptr_list.data(),
-                            1, n_accepted);
-      ompBLAS::copy_batched(handle, norb, d2psiV_acc_deviceptr_list.data(), 1, d2psiM_row_acc_deviceptr_list.data(), 1,
-                            n_accepted);
-      ompBLAS::copy_batched(handle, ndet, new_ratios_to_ref_acc_deviceptr_list.data(), 1,
-                            ratios_to_ref_acc_deviceptr_list.data(), 1, n_accepted);
+      for (int i = 0; i < n_accepted; i++)
+      {
+        BLAS::copy(nel * nel, psiMinv_temp_acc_ptr_list[i], 1, psiMinv_acc_ptr_list[i], 1);
+        BLAS::copy(norb, psiV_acc_ptr_list[i], 1, TpsiM_col_acc_ptr_list[i], nel);
+        BLAS::copy(norb, psiV_acc_ptr_list[i], 1, psiM_row_acc_ptr_list[i], 1);
+        BLAS::copy(norb * DIM, dpsiV_acc_ptr_list[i], 1, dpsiM_row_acc_ptr_list[i], 1);
+        BLAS::copy(norb, d2psiV_acc_ptr_list[i], 1, d2psiM_row_acc_ptr_list[i], 1);
+        BLAS::copy(ndet, new_ratios_to_ref_acc_ptr_list[i], 1, ratios_to_ref_acc_ptr_list[i], 1);
+      }
+      // ompBLAS::copy_batched(handle,  nel * nel,      psiMinv_temp_acc_ptr_list.data(), 1,       psiMinv_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle,       norb,              psiV_acc_ptr_list.data(), 1,     TpsiM_col_acc_ptr_list.data(), nel, n_accepted);
+      // ompBLAS::copy_batched(handle,       norb,              psiV_acc_ptr_list.data(), 1,      psiM_row_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle, norb * DIM,             dpsiV_acc_ptr_list.data(), 1,     dpsiM_row_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle,       norb,            d2psiV_acc_ptr_list.data(), 1,    d2psiM_row_acc_ptr_list.data(),   1, n_accepted);
+      // ompBLAS::copy_batched(handle,       ndet, new_ratios_to_ref_acc_ptr_list.data(), 1, ratios_to_ref_acc_ptr_list.data(),   1, n_accepted);
 
       // grads,lapls not on device
       // ompBLAS::copy_batched(handle, ndet * nel * DIM, new_grads_acc_ptr_list.data(), 1, grads_acc_ptr_list.data(), 1, n_accepted);
@@ -812,34 +823,49 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
     break;
   }
 
+  for (int i = 0; i < n_accepted; i++)
+  {
+    auto iacc = idx_Accepted[i];
+    auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(iacc);
+    wfc.ratios_to_ref_.updateTo();
+    wfc.TpsiM.updateTo();
+    wfc.psiMinv.updateTo();
+    wfc.psiM.updateTo();
+    wfc.dpsiM.updateTo();
+  }
   // restore:
   // setup pointer lists
-  OffloadVector<ValueType*> psiMinv_temp_rej_deviceptr_list(n_rejected);
-  OffloadVector<ValueType*> psiMinv_rej_deviceptr_list(n_rejected);
-  OffloadVector<ValueType*> TpsiM_col_rej_deviceptr_list(n_rejected);
-  OffloadVector<ValueType*> psiM_row_rej_deviceptr_list(n_rejected);
+  Vector<ValueType*> psiMinv_temp_rej_ptr_list(n_rejected);
+  Vector<ValueType*> psiMinv_rej_ptr_list(n_rejected);
+  Vector<ValueType*> TpsiM_col_rej_ptr_list(n_rejected);
+  Vector<ValueType*> psiM_row_rej_ptr_list(n_rejected);
   for (int i = 0; i < n_rejected; i++)
   {
-    auto irej                          = idx_Rejected[i];
-    psiMinv_temp_rej_deviceptr_list[i] = mw_res.psiMinv_temp_deviceptr_list[irej];
-    psiMinv_rej_deviceptr_list[i]      = mw_res.psiMinv_deviceptr_list[irej];
-    TpsiM_col_rej_deviceptr_list[i]    = mw_res.TpsiM_deviceptr_list[irej] + WorkingIndex;
-    psiM_row_rej_deviceptr_list[i]     = mw_res.psiM_deviceptr_list[irej] + WorkingIndex * norb;
+    auto irej = idx_Rejected[i];
+    auto& wfc = wfc_list.getCastedElement<MultiDiracDeterminant>(irej);
+    psiMinv_temp_rej_ptr_list[i] = wfc.psiMinv_temp.data();
+    psiMinv_rej_ptr_list[i]      = wfc.psiMinv.data();
+    TpsiM_col_rej_ptr_list[i]    = wfc.TpsiM.data() + WorkingIndex;
+    psiM_row_rej_ptr_list[i]     = wfc.psiM.data() + WorkingIndex * norb;
   }
 
   /**
      * psiMinv[:,:] -> psiMinv_temp[:,:]; [NumPtcls,NumPtcls]
      * psiM[WorkingIndex,:] -> TpsiM[:,WorkingIndex]; [NumOrbitals] (NumPtcls in other dim)
      */
-  ompBLAS::copy_batched(handle, nel * nel, psiMinv_rej_deviceptr_list.data(), 1, psiMinv_temp_rej_deviceptr_list.data(),
-                        1, n_rejected);
-  ompBLAS::copy_batched(handle, norb, psiM_row_rej_deviceptr_list.data(), 1, TpsiM_col_rej_deviceptr_list.data(), nel,
-                        n_rejected);
+  for (int i = 0; i < n_rejected; i++)
+  {
+    BLAS::copy(nel * nel, psiMinv_rej_ptr_list[i], 1, psiMinv_temp_rej_ptr_list[i], 1);
+    BLAS::copy(norb, psiM_row_rej_ptr_list[i], 1, TpsiM_col_rej_ptr_list[i], nel);
+  }
+  // ompBLAS::copy_batched(handle, nel * nel,  psiMinv_rej_ptr_list.data(), 1, psiMinv_temp_rej_ptr_list.data(),   1, n_rejected);
+  // ompBLAS::copy_batched(handle,      norb, psiM_row_rej_ptr_list.data(), 1,    TpsiM_col_rej_ptr_list.data(), nel, n_rejected);
 
   for (auto& irej : idx_Rejected)
   {
     auto& wfc    = wfc_list.getCastedElement<MultiDiracDeterminant>(irej);
     wfc.curRatio = ValueType(1);
+    wfc.TpsiM.updateTo();
   }
 }
 
