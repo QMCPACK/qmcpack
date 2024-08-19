@@ -138,11 +138,18 @@ TEST_CASE("Listener::CrowdEnergyValues", "[hamiltonian]")
   another_mock_ham_reporter.reportVector();
 
   CHECK(mock_estimator.crowd_energy_values_["PotentialA"][0][0] == 0.5);
-  CHECK(mock_estimator.crowd_energy_values_["PotentialB"][0][3] == 3.75);
+  CHECK(mock_estimator.crowd_energy_values_["PotentialA"][0][1] == 1.5);
+  CHECK(mock_estimator.crowd_energy_values_["PotentialA"][0][2] == 2.5);
+  CHECK(mock_estimator.crowd_energy_values_["PotentialA"][0][3] == 3.5);
+  CHECK(mock_estimator.crowd_energy_values_["PotentialB"][1][0] == 0.75);
+  CHECK(mock_estimator.crowd_energy_values_["PotentialB"][1][3] == 3.75);
 
   std::vector<Vector<Real>> reduced_over_reporters;
   combinePerParticleEnergies(mock_estimator.crowd_energy_values_, reduced_over_reporters);
   CHECK(reduced_over_reporters[0][0] == 1.25);
+  CHECK(reduced_over_reporters[0][3] == 7.25);
+  CHECK(reduced_over_reporters[2][0] == 1.25);
+  CHECK(reduced_over_reporters[2][3] == 7.25);
 }
 
 
