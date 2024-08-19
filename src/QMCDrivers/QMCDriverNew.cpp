@@ -36,7 +36,7 @@
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
 #include "WalkerLogManager.h"
-
+#include "RandomNumberControl.h"
 
 namespace qmcplusplus
 {
@@ -50,6 +50,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            UPtr<EstimatorManagerNew>&& estimator_manager,
                            WalkerConfigurations& wc,
                            MCPopulation&& population,
+                           const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                            const std::string timer_prefix,
                            Communicate* comm,
                            const std::string& QMC_driver_type)
@@ -58,6 +59,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       QMCType(QMC_driver_type),
       population_(std::move(population)),
       serializing_crowd_walkers_(qmcdriver_input_.areWalkersSerialized()),
+      rngs_(rng_refs),
       timers_(timer_prefix),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
@@ -220,6 +222,9 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 
   infoSummary.flush();
   infoLog.flush();
+
+  if (DumpConfig)
+    RandomNumberControl::write(rngs_, get_root_name(), myComm);
 
   return true;
 }

@@ -25,7 +25,6 @@
 #include <Hdispatcher.h>
 #include "TauParams.hpp"
 #include "WalkerLogManager.h"
-#include "RandomNumberControl.h"
 
 namespace qmcplusplus
 {
@@ -37,18 +36,19 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
                        VMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
-		       SampleStack& samples,
+                       const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
+                       SampleStack& samples,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
                    wc,
                    std::move(pop),
-		   "VMCBatched::",
+                   rng_refs,
+                   "VMCBatched::",
                    comm,
                    "VMCBatched"),
       vmcdriver_input_(input),
-      rngs_(RandomNumberControl::getChildrenRefs()),
       samples_(samples),
       collect_samples_(false)
 {}
@@ -469,9 +469,6 @@ bool VMCBatched::run()
 
   wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
-
-  if (qmcdriver_input_.get_dump_config())
-    RandomNumberControl::write(rngs_, get_root_name(), myComm);
 
   return finalize(num_blocks, true);
 }

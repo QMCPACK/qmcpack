@@ -51,6 +51,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
                                                                          VMCDriverInput&& vmcdriver_input,
                                                                          WalkerConfigurations& wc,
                                                                          MCPopulation&& population,
+             const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                                                                          SampleStack& samples,
                                                                          Communicate* comm)
     : QMCDriverNew(
@@ -59,6 +60,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
           nullptr, // this class is not a real QMCDriverNew as far as I can tell so we don't give it the actual EM
           wc,
           std::move(population),
+          rng_refs,
           "QMCLinearOptimizeBatched::",
           comm,
           "QMCLinearOptimizeBatched"),
@@ -736,6 +738,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
                                    std::move(vmcdriver_input_copy), walker_configs_ref_,
                                    MCPopulation(myComm->size(), myComm->rank(), &population_.get_golden_electrons(),
                                                 &population_.get_golden_twf(), &population_.get_golden_hamiltonian()),
+                                   rngs_,
                                    samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');

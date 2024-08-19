@@ -90,6 +90,7 @@ public:
              DMCDriverInput&& input,
              WalkerConfigurations& wc,
              MCPopulation&& pop,
+             const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
              Communicate* comm);
 
   /// Copy Constructor (disabled)
@@ -133,8 +134,6 @@ public:
 
 private:
   const DMCDriverInput dmcdriver_input_;
-  ///Random number generators
-  const RefVector<RandomBase<FullPrecRealType>> rngs_;
   /// Per crowd, driver-specific move contexts
   UPtrVector<ContextForSteps> step_contexts_;
 

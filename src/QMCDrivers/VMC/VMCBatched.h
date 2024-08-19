@@ -80,6 +80,7 @@ public:
              VMCDriverInput&& input,
              WalkerConfigurations& wc,
              MCPopulation&& pop,
+             const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
              SampleStack& samples_,
              Communicate* comm);
   /// Copy constructor
@@ -125,12 +126,8 @@ public:
    */
   void enable_sample_collection();
 
-  const RefVector<RandomBase<FullPrecRealType>>& getRngRefs() const { return rngs_; }
-
 private:
   VMCDriverInput vmcdriver_input_;
-  ///Random number generators
-  const RefVector<RandomBase<FullPrecRealType>> rngs_;
   /// Per crowd, driver-specific move contexts
   UPtrVector<ContextForSteps> step_contexts_;
 

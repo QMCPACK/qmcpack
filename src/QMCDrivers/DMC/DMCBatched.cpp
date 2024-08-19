@@ -33,7 +33,6 @@
 #include "TauParams.hpp"
 #include "WalkerLogManager.h"
 #include "CPU/math.hpp"
-#include "RandomNumberControl.h"
 
 namespace qmcplusplus
 {
@@ -51,17 +50,18 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                        DMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
+                       const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
                    wc,
                    std::move(pop),
+                   rng_refs,
                    "DMCBatched::",
                    comm,
                    "DMCBatched"),
       dmcdriver_input_(input),
-      rngs_(RandomNumberControl::getChildrenRefs()),
       dmc_timers_("DMCBatched::")
 {}
 
@@ -384,7 +384,6 @@ void DMCBatched::process(xmlNodePtr node)
 
   try
   {
-
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
@@ -556,9 +555,6 @@ bool DMCBatched::run()
 
   wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
-
-  if (qmcdriver_input_.get_dump_config())
-    RandomNumberControl::write(rngs_, get_root_name(), myComm);
 
   return finalize(num_blocks, true);
 }

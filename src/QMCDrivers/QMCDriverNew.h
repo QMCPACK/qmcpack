@@ -152,6 +152,7 @@ public:
                UPtr<EstimatorManagerNew>&& estimator_manager,
                WalkerConfigurations& wc,
                MCPopulation&& population,
+               const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                const std::string timer_prefix,
                Communicate* comm,
                const std::string& QMC_driver_type);
@@ -174,6 +175,8 @@ public:
   void makeLocalWalkers(int nwalkers, RealType reserve);
 
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
+
+  const RefVector<RandomBase<FullPrecRealType>>& getRngRefs() const { return rngs_; }
 
   /** record the state of the block
    * @param block current block
@@ -448,6 +451,12 @@ protected:
 
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;
+
+  /** driver captured references of random number generators (RNGs)
+   * that all the uses of RNG within the driver should be based on.
+   * The number of crowds is restricted by the count of RNGs.
+   */
+  const RefVector<RandomBase<FullPrecRealType>> rngs_;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
