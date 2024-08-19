@@ -6542,19 +6542,19 @@ opt_batched_defaults = obj(
     cost            = 'variance',
     cycles          = 12,
     var_cycles      = 0,
-    #var_samples     = None,
+    var_samples     = None,
     init_cycles     = 0,
-    #init_samples    = None,
+    init_samples    = None,
     init_minwalkers = 1e-4,
     )
 
 shared_opt_batched_defaults = obj(
-    #samples              = 204800,
-    nonlocalpp           = True,
-    use_nonlocalpp_deriv = True,
+    samples              = 204800,
+    #nonlocalpp           = True,
+    #use_nonlocalpp_deriv = True,
     warmupsteps          = 300,                
     blocks               = 100,                
-    steps                = 1,                  
+    #steps                = 1,                 
     substeps             = 10,                 
     timestep             = 0.3,
     usedrift             = False,
@@ -7021,9 +7021,9 @@ def generate_batched_opt_calculations(
         cost       ,
         cycles     ,
         var_cycles ,
-        #var_samples,
+        var_samples,
         init_cycles,
-        #init_samples,
+        init_samples,
         init_minwalkers,
         loc        = 'generate_opt_calculations',
         **opt_inputs
@@ -7071,16 +7071,16 @@ def generate_batched_opt_calculations(
             reweightedvariance   = 0.0,
             **opt_inputs
             )
-        #if var_samples is not None:
-        #    vmin_opt.samples = var_samples
-        ##end if
+        if var_samples is not None:
+            vmin_opt.samples = var_samples
+        #end if
         opt_calcs.append(loop(max=var_cycles,qmc=vmin_opt))
     #end if
     if init_cycles>0:
         init_opt = opt(**opt_inputs)
-        #if init_samples is not None:
-        #    init_opt.samples = init_samples
-        ##end if
+        if init_samples is not None:
+            init_opt.samples = init_samples
+        #end if
         init_opt.minwalkers = init_minwalkers
         if not oneshift:
             init_opt.energy               = cost[0]
@@ -7710,7 +7710,7 @@ def generate_basic_input(**kwargs):
         if isinstance(calc,loop):
             calc = calc.qmc
         #end if
-        if isinstance(calc,(linear,cslinear,linear_batch)) and 'nonlocalpp' not in calc:
+        if isinstance(calc,(linear,cslinear,linear_batch)) and 'nonlocalpp' not in calc and not batched:
             calc.nonlocalpp           = True
             calc.use_nonlocalpp_deriv = True
         #end if
