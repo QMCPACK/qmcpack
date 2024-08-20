@@ -191,7 +191,7 @@ private:
   ///neighborlist of ions
   NeighborLists IonNeighborElecs;
   ///use T-moves
-  int UseTMove;
+  TmoveKind UseTMove;
   ///ture if an electron is affected by other electrons moved by T-moves
   std::vector<bool> elecTMAffected;
   ///non local operator
