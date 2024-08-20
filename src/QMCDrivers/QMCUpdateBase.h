@@ -270,6 +270,8 @@ protected:
   QMCHamiltonian& H;
   ///random number generator
   RandomBase<FullPrecRealType>& RandomGen;
+  ///non local operator
+  NonLocalTOperator non_local_ops_;
   ///branch engine, stateless reference to the one in QMCDriver
   const BranchEngineType* branchEngine;
   ///drift modifer, stateless reference to the one in QMCDriver
