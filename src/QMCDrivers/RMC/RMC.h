@@ -59,6 +59,9 @@ private:
   std::vector<int> Action;
   std::vector<int> TransProb;
 
+  ///driver copy of Random number generators
+  UPtrVector<RandomBase<QMCTraits::FullPrecRealType>> Rng;
+
   ///check the run-time environments
   inline void resetVars()
   {
