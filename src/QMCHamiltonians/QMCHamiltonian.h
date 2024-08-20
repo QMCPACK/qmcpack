@@ -40,7 +40,6 @@ namespace qmcplusplus
 {
 class MCWalkerConfiguration;
 class HamiltonianFactory;
-class NonLocalECPotential;
 
 /**  Collection of Local Energy Operators
  *
@@ -162,6 +161,8 @@ public:
    */
   void informOperatorsOfListener();
 
+  ///return true if
+  inline bool hasPhysicalNLPP() const { return hasPhysicalNLPP_; }
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables
@@ -421,8 +422,8 @@ private:
   const std::string myName;
   ///vector of Hamiltonians
   std::vector<std::unique_ptr<OperatorBase>> H;
-  ///pointer to NonLocalECP
-  NonLocalECPotential* nlpp_ptr;
+  ///true if H contains NLPP
+  bool hasPhysicalNLPP_;
   ///pointer to L2Potential
   L2Potential* l2_ptr;
   ///vector of Hamiltonians

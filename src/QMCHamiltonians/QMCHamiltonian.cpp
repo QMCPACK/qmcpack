@@ -20,7 +20,6 @@
 #include "QMCHamiltonian.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/TimerManager.h"
 #include "BareKineticEnergy.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
@@ -50,7 +49,7 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
     : myIndex(0),
       numCollectables(0),
       myName(aname),
-      nlpp_ptr(nullptr),
+      hasPhysicalNLPP_(false),
       l2_ptr(nullptr),
       ham_timer_(createGlobalTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
       eval_vals_derivs_timer_(createGlobalTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
@@ -134,19 +133,8 @@ void QMCHamiltonian::addOperator(std::unique_ptr<OperatorBase>&& h, const std::s
 
   //assign save NLPP if found
   //  name is fixed in ECPotentialBuilder::put()
-  if (aname == "NonLocalECP")
-  {
-    if (nlpp_ptr == nullptr)
-    {
-      // original h arguments moved to either H or auxH
-      nlpp_ptr = physical ? dynamic_cast<NonLocalECPotential*>(H.back().get())
-                          : dynamic_cast<NonLocalECPotential*>(auxH.back().get());
-    }
-    else
-    {
-      APP_ABORT("QMCHamiltonian::addOperator nlpp_ptr is supposed to be null. Something went wrong!");
-    }
-  }
+  if (physical && (aname == "NonLocalECP" || aname == "SOECP"))
+    hasPhysicalNLPP_ = true;
 
   //save L2 potential if found
   //  name is fixed in ECPotentialBuilder::put()
@@ -966,8 +954,6 @@ void QMCHamiltonian::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
     H[i]->setRandomGenerator(rng);
   for (int i = 0; i < auxH.size(); i++)
     auxH[i]->setRandomGenerator(rng);
-  if (nlpp_ptr)
-    nlpp_ptr->setRandomGenerator(rng);
 }
 
 int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P, NonLocalTOperator& move_op)
