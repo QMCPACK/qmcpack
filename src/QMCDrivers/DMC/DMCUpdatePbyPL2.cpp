@@ -241,7 +241,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
 #endif
   {
     ScopedTimer local_timer(myTimers[DMC_tmoves]);
-    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, non_local_ops_);
     if (NonLocalMoveAcceptedTemp > 0)
     {
       RealType logpsi = Psi.updateBuffer(W, w_buffer, false);

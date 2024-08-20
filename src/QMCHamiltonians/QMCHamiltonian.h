@@ -326,21 +326,12 @@ public:
                          ParticleSet::ParticlePos& hf_terms,
                          ParticleSet::ParticlePos& pulay_terms,
                          ParticleSet::ParticlePos& wf_grad);
-  /** set non local moves options
-   * @param cur the xml input
-   */
-  void setNonLocalMoves(xmlNodePtr cur);
-
-  void setNonLocalMoves(const std::string& non_local_move_option,
-                        const double tau,
-                        const double alpha,
-                        const double gamma);
 
   /** make non local moves
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMoves(ParticleSet& P);
+  int makeNonLocalMoves(ParticleSet& P, NonLocalTOperator& move_op);
 
   /** determine if L2 potential is present
    */
@@ -369,7 +360,8 @@ public:
 
   static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                               const RefVectorWithLeader<ParticleSet>& p_list);
+                                               const RefVectorWithLeader<ParticleSet>& p_list,
+                                               NonLocalTOperator& move_op);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable

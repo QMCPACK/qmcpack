@@ -970,37 +970,23 @@ void QMCHamiltonian::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
     nlpp_ptr->setRandomGenerator(rng);
 }
 
-void QMCHamiltonian::setNonLocalMoves(xmlNodePtr cur)
-{
-  if (nlpp_ptr != nullptr)
-    nlpp_ptr->setNonLocalMoves(cur);
-}
-
-void QMCHamiltonian::setNonLocalMoves(const std::string& non_local_move_option,
-                                      const double tau,
-                                      const double alpha,
-                                      const double gamma)
-{
-  if (nlpp_ptr != nullptr)
-    nlpp_ptr->setNonLocalMoves(non_local_move_option, tau, alpha, gamma);
-}
-
-int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
+int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P, NonLocalTOperator& move_op)
 {
   int num_moves = 0;
   for (int i = 0; i < H.size(); ++i)
-    num_moves += H[i]->makeNonLocalMovesPbyP(P);
+    num_moves += H[i]->makeNonLocalMovesPbyP(P, move_op);
   return num_moves;
 }
 
 
 std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                      const RefVectorWithLeader<ParticleSet>& p_list)
+                                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                                      NonLocalTOperator& move_op)
 {
   std::vector<int> num_accepts(ham_list.size(), 0);
   for (int iw = 0; iw < ham_list.size(); ++iw)
-    num_accepts[iw] = ham_list[iw].makeNonLocalMoves(p_list[iw]);
+    num_accepts[iw] = ham_list[iw].makeNonLocalMoves(p_list[iw], move_op);
   return num_accepts;
 }
 

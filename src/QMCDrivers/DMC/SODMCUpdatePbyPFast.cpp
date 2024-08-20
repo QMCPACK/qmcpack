@@ -181,7 +181,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
 #endif
   {
     ScopedTimer local_timer(myTimers[SODMC_tmoves]);
-    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, non_local_ops_);
     if (NonLocalMoveAcceptedTemp > 0)
     {
       RealType logpsi = Psi.updateBuffer(W, w_buffer, false);

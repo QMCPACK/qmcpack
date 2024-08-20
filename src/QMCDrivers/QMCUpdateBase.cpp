@@ -101,7 +101,6 @@ void QMCUpdateBase::setDefaults()
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
 {
-  H.setNonLocalMoves(cur);
   non_local_ops_.put(cur);
   bool s = myParams.put(cur);
   if (debug_checks_str_ == "no")
@@ -124,8 +123,8 @@ void QMCUpdateBase::resetRun2(BranchEngineType* brancher,
                               WalkerLogCollector* wlog_collector_,
                               const DriftModifierBase* driftmodifer)
 {
-  wlog_collector    = wlog_collector_;
-  resetRun(brancher,est,traces,driftmodifer);
+  wlog_collector = wlog_collector_;
+  resetRun(brancher, est, traces, driftmodifer);
 }
 
 void QMCUpdateBase::resetRun(BranchEngineType* brancher,
@@ -198,7 +197,7 @@ void QMCUpdateBase::startBlock(int steps)
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
 #endif
-  if(wlog_collector)
+  if (wlog_collector)
     wlog_collector->startBlock();
   nAccept              = 0;
   nReject              = 0;

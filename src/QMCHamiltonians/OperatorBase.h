@@ -48,6 +48,7 @@ class MCWalkerConfiguration;
 class TrialWaveFunction;
 class QMCHamiltonian;
 class ResourceCollection;
+class NonLocalTOperator;
 struct NonLocalData;
 
 /** @ingroup hamiltonian
@@ -393,7 +394,7 @@ public:
    * @param P particle set
    * @return the number of accepted moves
    */
-  virtual int makeNonLocalMovesPbyP(ParticleSet& P) { return 0; }
+  virtual int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) { return 0; }
 
   /** 
    * @brief Update data associated with a particleset.

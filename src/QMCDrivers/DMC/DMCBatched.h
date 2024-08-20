@@ -119,8 +119,6 @@ public:
 
   QMCRunType getRunType() override { return QMCRunType::DMC_BATCH; }
 
-  void setNonLocalMoveHandler(QMCHamiltonian& hamiltonian);
-
 private:
   /// forward declaration. DMC specialized ContextForSteps
   class DMCContextForSteps;

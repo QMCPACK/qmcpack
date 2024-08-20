@@ -79,12 +79,6 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
 
 DMCBatched::~DMCBatched() = default;
 
-void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& hamiltonian)
-{
-  hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
-                               dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
-}
-
 template<CoordsType CT>
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
@@ -326,7 +320,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
-      walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw]);
+      walker_non_local_moves_accepted[iw] =
+          walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw], step_context.non_local_ops);
 
       if (walker_non_local_moves_accepted[iw] > 0)
       {
@@ -518,11 +513,6 @@ bool DMCBatched::run()
       for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
-
-        // ensure all the live walkers carry the up-to-date T-move settings.
-        // Such info should be removed from each NLPP eventually and be kept in the driver.
-        for (UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
-          setNonLocalMoveHandler(*ham);
 
         dmc_state.step        = step;
         dmc_state.global_step = global_step;

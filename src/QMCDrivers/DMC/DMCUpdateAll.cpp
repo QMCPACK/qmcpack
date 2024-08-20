@@ -106,7 +106,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     thisWalker.Properties(WP::R2PROPOSED) = rr_proposed;
   }
 
-  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, non_local_ops_);
   if (NonLocalMoveAcceptedTemp > 0)
   {
     W.saveWalker(thisWalker);

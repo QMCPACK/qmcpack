@@ -23,6 +23,7 @@
 #include <IteratorUtility.h>
 #include <ResourceCollection.h>
 #include "NonLocalECPComponent.h"
+#include "NonLocalTOperator.h"
 #include "NLPPJob.h"
 
 namespace qmcplusplus
@@ -59,8 +60,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els, Tr
       use_DLA(enable_DLA),
       Peln(els),
       ElecNeighborIons(els),
-      IonNeighborElecs(ions),
-      UseTMove(TmoveKind::OFF)
+      IonNeighborElecs(ions)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
@@ -155,7 +155,7 @@ void NonLocalECPotential::mw_evaluatePerParticleWithToperator(
     const std::vector<ListenerVector<Real>>& listeners_ions) const
 {
   std::optional<ListenerOption<Real>> l_opt(std::in_place, listeners, listeners_ions);
-  mw_evaluateImpl(o_list, wf_list, p_list, UseTMove != TmoveKind::OFF, l_opt);
+  mw_evaluateImpl(o_list, wf_list, p_list, true, l_opt);
 }
 
 void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool compute_txy_all, bool keep_grid)
@@ -552,11 +552,13 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
   }
 }
 
-int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
+int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op)
 {
-  int NonLocalMoveAccepted = 0;
   auto& RandomGen(*myRNG);
-  if (UseTMove == TmoveKind::V0)
+  auto& nonLocalOps = move_op;
+
+  int NonLocalMoveAccepted = 0;
+  if (move_op.getMoveKind() == TmoveKind::V0)
   {
     const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_all_);
     //make a non-local move
@@ -573,7 +575,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       }
     }
   }
-  else if (UseTMove == TmoveKind::V1)
+  else if (move_op.getMoveKind() == TmoveKind::V1)
   {
     GradType grad_iat;
     std::vector<NonLocalData> tmove_xy;
@@ -597,7 +599,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       }
     }
   }
-  else if (UseTMove == TmoveKind::V3)
+  else if (move_op.getMoveKind() == TmoveKind::V3)
   {
     elecTMAffected.assign(P.getTotalNum(), false);
     nonLocalOps.groupByElectron(P.getTotalNum(), tmove_xy_all_);
