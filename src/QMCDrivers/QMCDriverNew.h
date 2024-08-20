@@ -125,9 +125,9 @@ protected:
   };
   /** Do common section starting tasks for VMC and DMC
    *
-   * set up population_, crowds_, rngs and step_contexts_
+   * set up population_, crowds_
    */
-  void initializeQMC(const AdjustedWalkerCounts& awc);
+  void initPopulationAndCrowds(const AdjustedWalkerCounts& awc);
 
   /// inject additional barrier and measure load imbalance.
   void measureImbalance(const std::string& tag) const;

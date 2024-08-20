@@ -116,10 +116,8 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
   }
 }
 
-void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
+void QMCDriverNew::initPopulationAndCrowds(const AdjustedWalkerCounts& awc)
 {
-  ScopedTimer local_timer(timers_.startup_timer);
-
   app_summary() << QMCType << " Driver running with" << std::endl
                 << "             total_walkers     = " << awc.global_walkers << std::endl
                 << "             walkers_per_rank  = " << awc.walkers_per_rank << std::endl
@@ -173,12 +171,6 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
 
   //now give walkers references to their walkers
   population_.redistributeWalkers(crowds_);
-
-  // Once they are created move contexts can be created.
-  createRngsStepContexts(crowds_.size());
-
-  if (qmcdriver_input_.get_measure_imbalance())
-    measureImbalance("Startup");
 }
 
 /** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
