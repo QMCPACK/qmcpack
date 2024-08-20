@@ -101,7 +101,8 @@ void QMCUpdateBase::setDefaults()
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
 {
-  non_local_ops_.put(cur);
+  if (H.hasPhysicalNLPP())
+    non_local_ops_.put(cur);
   bool s = myParams.put(cur);
   if (debug_checks_str_ == "no")
     debug_checks_ = DriverDebugChecks::ALL_OFF;
