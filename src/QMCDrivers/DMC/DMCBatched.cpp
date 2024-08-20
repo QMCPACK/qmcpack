@@ -40,6 +40,12 @@ using std::placeholders::_1;
 using WP       = WalkerProperties::Indexes;
 using PsiValue = TrialWaveFunction::PsiValue;
 
+class DMCBatched::DMCContextForSteps: public ContextForSteps
+{
+public:
+  DMCContextForSteps(RandomBase<FullPrecRealType>& random_gen) : ContextForSteps(random_gen) {}
+};
+
 /** Constructor maintains proper ownership of input parameters
  *
  *  Note you must call the Base constructor before the derived class sets QMCType
@@ -78,7 +84,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
                                 DMCTimers& dmc_timers,
-                                ContextForSteps& step_context,
+                                DMCContextForSteps& step_context,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
@@ -337,7 +343,7 @@ template void DMCBatched::advanceWalkers<CoordsType::POS>(const StateForThread& 
                                                           Crowd& crowd,
                                                           DriverTimers& timers,
                                                           DMCTimers& dmc_timers,
-                                                          ContextForSteps& step_context,
+                                                          DMCContextForSteps& step_context,
                                                           bool recompute,
                                                           bool accumulate_this_step);
 
@@ -345,7 +351,7 @@ template void DMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThr
                                                                Crowd& crowd,
                                                                DriverTimers& timers,
                                                                DMCTimers& dmc_timers,
-                                                               ContextForSteps& step_context,
+                                                               DMCContextForSteps& step_context,
                                                                bool recompute,
                                                                bool accumulate_this_step);
 
@@ -353,7 +359,7 @@ void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
                             DMCTimers& dmc_timers,
-                            UPtrVector<ContextForSteps>& context_for_steps,
+                            UPtrVector<DMCContextForSteps>& context_for_steps,
                             UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
@@ -574,7 +580,7 @@ void DMCBatched::createStepContexts(int num_crowds)
   assert(num_crowds <= rngs_.size());
   step_contexts_.resize(num_crowds);
   for (int i = 0; i < num_crowds; ++i)
-    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
+    step_contexts_[i] = std::make_unique<DMCContextForSteps>(rngs_[i]);
 }
 
 } // namespace qmcplusplus

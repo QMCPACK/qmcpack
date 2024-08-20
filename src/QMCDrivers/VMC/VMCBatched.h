@@ -91,27 +91,6 @@ public:
 
   bool run() override;
 
-  /** Refactor of VMCUpdatePbyP in crowd context
-   *
-   *  MCWalkerConfiguration layer removed.
-   *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
-   */
-  template<CoordsType CT>
-  static void advanceWalkers(const StateForThread& sft,
-                             Crowd& crowd,
-                             DriverTimers& timers,
-                             ContextForSteps& move_context,
-                             bool recompute,
-                             bool accumulate_this_step);
-
-  // This is the task body executed at crowd scope
-  // it does not have access to object member variables by design
-  static void runVMCStep(int crowd_id,
-                         const StateForThread& sft,
-                         DriverTimers& timers,
-                         UPtrVector<ContextForSteps>& context_for_steps,
-                         UPtrVector<Crowd>& crowds);
-
   /** transitional interface on the way to better walker count adjustment handling.
    *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.
    */
@@ -138,6 +117,27 @@ private:
   SampleStack& samples_;
   /// Sample collection flag
   bool collect_samples_;
+
+  /** Refactor of VMCUpdatePbyP in crowd context
+   *
+   *  MCWalkerConfiguration layer removed.
+   *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
+   */
+  template<CoordsType CT>
+  static void advanceWalkers(const StateForThread& sft,
+                             Crowd& crowd,
+                             DriverTimers& timers,
+                             ContextForSteps& move_context,
+                             bool recompute,
+                             bool accumulate_this_step);
+
+  // This is the task body executed at crowd scope
+  // it does not have access to object member variables by design
+  static void runVMCStep(int crowd_id,
+                         const StateForThread& sft,
+                         DriverTimers& timers,
+                         UPtrVector<ContextForSteps>& context_for_steps,
+                         UPtrVector<Crowd>& crowds);
 
   // create Rngs and StepContests
   void createStepContexts(int num_crowds);
