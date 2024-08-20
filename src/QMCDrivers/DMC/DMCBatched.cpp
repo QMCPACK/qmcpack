@@ -50,12 +50,14 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                        DMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
+                       const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
                    wc,
                    std::move(pop),
+                   rng_refs,
                    "DMCBatched::",
                    comm,
                    "DMCBatched"),
@@ -382,7 +384,6 @@ void DMCBatched::process(xmlNodePtr node)
 
   try
   {
-
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
@@ -556,6 +557,19 @@ bool DMCBatched::run()
   estimator_manager_->stopDriverRun();
 
   return finalize(num_blocks, true);
+}
+
+/** Creates Random Number generators for crowds and step contexts
+ *
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
+ */
+void DMCBatched::createRngsStepContexts(int num_crowds)
+{
+  step_contexts_.resize(num_crowds);
+  for (int i = 0; i < num_crowds; ++i)
+    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
 }
 
 } // namespace qmcplusplus

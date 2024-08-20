@@ -33,12 +33,14 @@ public:
                           QMCDriverInput&& input,
                           WalkerConfigurations& wc,
                           MCPopulation&& population,
+                          const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                           Communicate* comm)
       : QMCDriverNew(test_project,
                      std::move(input),
                      nullptr,
                      wc,
                      std::move(population),
+                     rng_refs,
                      "QMCDriverTestWrapper::",
                      comm,
                      "QMCDriverNewTestWrapper")

@@ -36,5 +36,20 @@ SetupPools::SetupPools()
       MinimalHamiltonianPool::make_hamWithEE(comm, *particle_pool, *wavefunction_pool));
 }
 
+SetupPools::~SetupPools() = default;
+
+RandomNumberGeneratorPool::RandomNumberGeneratorPool(const size_t num) : rng_pool(num) {}
+
+RandomNumberGeneratorPool::~RandomNumberGeneratorPool() = default;
+
+RefVector<RandomBase<RandomNumberGeneratorPool::FullPrecRealType>> RandomNumberGeneratorPool::getRngRefs()
+{
+  RefVector<RandomBase<FullPrecRealType>> rng_refs;
+  rng_refs.reserve(rng_pool.size());
+  for (auto& rng : rng_pool)
+    rng_refs.push_back(rng);
+  return rng_refs;
+}
+
 } // namespace testing
 } // namespace qmcplusplus

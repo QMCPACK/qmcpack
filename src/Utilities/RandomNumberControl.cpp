@@ -48,6 +48,15 @@ UPtrVector<RandomNumberControl::Generator>& RandomNumberControl::getChildren()
   return Children;
 }
 
+RefVector<RandomNumberControl::Generator> RandomNumberControl::getChildrenRefs()
+{
+  auto& rngs_children = getChildren();
+  RefVector<Generator> rng_refs;
+  for (auto& child: rngs_children)
+    rng_refs.push_back(*child);
+  return rng_refs;
+}
+
 /// generic output
 bool RandomNumberControl::get(std::ostream& os) const
 {

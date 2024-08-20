@@ -152,6 +152,7 @@ public:
                UPtr<EstimatorManagerNew>&& estimator_manager,
                WalkerConfigurations& wc,
                MCPopulation&& population,
+               const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                const std::string timer_prefix,
                Communicate* comm,
                const std::string& QMC_driver_type);
@@ -174,6 +175,8 @@ public:
   void makeLocalWalkers(int nwalkers, RealType reserve);
 
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
+
+  const RefVector<RandomBase<FullPrecRealType>>& getRngRefs() const { return rngs_; }
 
   /** record the state of the block
    * @param block current block
@@ -208,17 +211,7 @@ public:
 
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
-  void createRngsStepContexts(int num_crowds);
-
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
-
-  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
-  {
-    RefVector<RandomBase<FullPrecRealType>> RngRefs;
-    for (int i = 0; i < Rng.size(); ++i)
-      RngRefs.push_back(*Rng[i]);
-    return RngRefs;
-  }
 
   /** intended for logging output and debugging
    *  you should base behavior on type preferably at compile time or if
@@ -459,12 +452,11 @@ protected:
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;
 
-  /** Per crowd move contexts, this is where the DistanceTables etc. reside
+  /** driver captured references of random number generators (RNGs)
+   * that all the uses of RNG within the driver should be based on.
+   * The number of crowds is restricted by the count of RNGs.
    */
-  UPtrVector<ContextForSteps> step_contexts_;
-
-  ///Random number generators
-  UPtrVector<RandomBase<FullPrecRealType>> Rng;
+  const RefVector<RandomBase<FullPrecRealType>> rngs_;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

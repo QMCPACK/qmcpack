@@ -80,8 +80,13 @@ public:
              VMCDriverInput&& input,
              WalkerConfigurations& wc,
              MCPopulation&& pop,
+             const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
              SampleStack& samples_,
              Communicate* comm);
+  /// Copy constructor
+  VMCBatched(const VMCBatched&) = delete;
+  /// Copy operator (disabled).
+  VMCBatched& operator=(const VMCBatched&) = delete;
 
   void process(xmlNodePtr node) override;
 
@@ -122,20 +127,20 @@ public:
   void enable_sample_collection();
 
 private:
-  int prevSteps;
-  int prevStepsBetweenSamples;
   VMCDriverInput vmcdriver_input_;
+  /// Per crowd, driver-specific move contexts
+  UPtrVector<ContextForSteps> step_contexts_;
+
+
   QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
-  /// Copy constructor
-  VMCBatched(const VMCBatched&) = delete;
-  /// Copy operator (disabled).
-  VMCBatched& operator=(const VMCBatched&) = delete;
-
-
   /// Storage for samples (later used in optimizer)
   SampleStack& samples_;
   /// Sample collection flag
   bool collect_samples_;
+
+  // create Rngs and StepContests
+  void createRngsStepContexts(int num_crowds);
+
   /** function to calculate samples per MPI rank
    */
   static size_t compute_samples_per_rank(const size_t num_blocks,

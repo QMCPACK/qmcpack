@@ -23,7 +23,6 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "RandomNumberControl.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/qmc_common.h"
@@ -37,7 +36,7 @@
 #include "Message/UniformCommunicateError.h"
 #include "EstimatorInputDelegates.h"
 #include "WalkerLogManager.h"
-
+#include "RandomNumberControl.h"
 
 namespace qmcplusplus
 {
@@ -51,6 +50,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            UPtr<EstimatorManagerNew>&& estimator_manager,
                            WalkerConfigurations& wc,
                            MCPopulation&& population,
+                           const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                            const std::string timer_prefix,
                            Communicate* comm,
                            const std::string& QMC_driver_type)
@@ -59,6 +59,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       QMCType(QMC_driver_type),
       population_(std::move(population)),
       serializing_crowd_walkers_(qmcdriver_input_.areWalkersSerialized()),
+      rngs_(rng_refs),
       timers_(timer_prefix),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
@@ -84,26 +85,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), myComm);
 }
 
-// The Rng pointers are transferred from global storage (RandomNumberControl::Children)
-// to local storage (Rng) for the duration of QMCDriverNew.
-// They are transferred to local storage in createRngsStepContext (called from startup,
-// which is usually called from the "process" function in the derived class.)
-// The local storage is moved back to the global storage in the destructor.
-// In optimization, there are two instances of QMCDriverNew - one for the optimizer and one
-// for the vmc engine.   As long as the vmc engine calls process first, it gets valid
-// Rng pointers.  The optimizer is called second and gets nullptr, but it doesn't use Rng,
-// so it doesn't matter.
-// Upon restore, the vmc engine would need to be restored last (otherwise the global storage gets
-// the nullptr from the optimizer).  However, the order is fixed by the order the destructors
-// are called.
-// To work around the issue, check the local pointer for nullptr before restoring to global storage.
-QMCDriverNew::~QMCDriverNew()
-{
-  auto& rng_children = RandomNumberControl::getChildren();
-  for (int i = 0; i < Rng.size(); ++i)
-    if (Rng[i])
-      rng_children[i].reset(Rng[i].release());
-}
+QMCDriverNew::~QMCDriverNew() = default;
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
 {
@@ -224,7 +206,6 @@ void QMCDriverNew::recordBlock(int block)
     population_.saveWalkerConfigurations(walker_configs_ref_);
     setWalkerOffsets(walker_configs_ref_, myComm);
     wOut->dump(walker_configs_ref_, block);
-    RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
   }
 }
 
@@ -243,7 +224,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   infoLog.flush();
 
   if (DumpConfig)
-    RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
+    RandomNumberControl::write(rngs_, get_root_name(), myComm);
 
   return true;
 }
@@ -266,25 +247,6 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
     IndexType num_walkers_to_kill = population_.get_walkers().size() - nwalkers;
     for (int i = 0; i < num_walkers_to_kill; ++i)
       population_.killLastWalker();
-  }
-}
-
-/** Creates Random Number generators for crowds and step contexts
- *
- *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
- *  This is used instead of actually passing number of threads/crowds
- *  controlling threads all over RandomNumberControl.
- */
-void QMCDriverNew::createRngsStepContexts(int num_crowds)
-{
-  step_contexts_.resize(num_crowds);
-  Rng.resize(num_crowds);
-
-  auto& rng_children = RandomNumberControl::getChildren();
-  for (int i = 0; i < num_crowds; ++i)
-  {
-    Rng[i].reset(rng_children[i].release());
-    step_contexts_[i] = std::make_unique<ContextForSteps>(*(Rng[i]));
   }
 }
 

@@ -36,14 +36,16 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
                        VMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
-		       SampleStack& samples,
+                       const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
+                       SampleStack& samples,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
                    wc,
                    std::move(pop),
-		   "VMCBatched::",
+                   rng_refs,
+                   "VMCBatched::",
                    comm,
                    "VMCBatched"),
       vmcdriver_input_(input),
@@ -469,6 +471,19 @@ bool VMCBatched::run()
   estimator_manager_->stopDriverRun();
 
   return finalize(num_blocks, true);
+}
+
+/** Creates Random Number generators for crowds and step contexts
+ *
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
+ */
+void VMCBatched::createRngsStepContexts(int num_crowds)
+{
+  step_contexts_.resize(num_crowds);
+  for (int i = 0; i < num_crowds; ++i)
+    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
 }
 
 void VMCBatched::enable_sample_collection()
