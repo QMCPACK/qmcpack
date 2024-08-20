@@ -126,7 +126,7 @@ void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
 {
-  evaluateImpl(P, UseTMove != TmoveKind::OFF);
+  evaluateImpl(P, true);
   return value_;
 }
 
@@ -134,7 +134,7 @@ void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<Ope
                                                    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  mw_evaluateImpl(o_list, wf_list, p_list, UseTMove != TmoveKind::OFF, std::nullopt);
+  mw_evaluateImpl(o_list, wf_list, p_list, true, std::nullopt);
 }
 
 void NonLocalECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,

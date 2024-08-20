@@ -41,10 +41,12 @@ using std::placeholders::_1;
 using WP       = WalkerProperties::Indexes;
 using PsiValue = TrialWaveFunction::PsiValue;
 
-class DMCBatched::DMCContextForSteps: public ContextForSteps
+class DMCBatched::DMCContextForSteps : public ContextForSteps
 {
 public:
-  DMCContextForSteps(RandomBase<FullPrecRealType>& random_gen, const NonLocalTOperator& non_local_ops) : ContextForSteps(random_gen), non_local_ops(non_local_ops) {}
+  DMCContextForSteps(RandomBase<FullPrecRealType>& random_gen, const NonLocalTOperator& non_local_ops)
+      : ContextForSteps(random_gen), non_local_ops(non_local_ops)
+  {}
 
   ///non local operator
   NonLocalTOperator non_local_ops;
@@ -268,7 +270,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer ham_local(timers.hamiltonian_timer);
 
     std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
-        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_twfs, walker_elecs));
+        step_context.non_local_ops.getMoveKind() == TmoveKind::OFF
+            ? ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_twfs, walker_elecs)
+            : ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_twfs, walker_elecs));
 
     auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
                                    auto rr_prop) {
@@ -585,7 +589,7 @@ void DMCBatched::createStepContexts(int num_crowds)
   step_contexts_.resize(num_crowds);
   NonLocalTOperator non_local_ops;
   non_local_ops.thingsThatShouldBeInMyConstructor(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
-                               dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
+                                                  dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
   for (int i = 0; i < num_crowds; ++i)
     step_contexts_[i] = std::make_unique<DMCContextForSteps>(rngs_[i], non_local_ops);
 }
