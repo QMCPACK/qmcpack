@@ -71,36 +71,26 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex clangoffloadnompi_offloadcuda clangoffloadmpi_offloadcuda clangoffloadmpi_offloadcuda_complex"
+	    buildsys="clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex clangoffloadnompi_offloadcuda clangoffloadmpi_offloadcuda clangoffloadmpi_offloadcuda_complex clangoffloadmpi_offloadcuda_complex clangoffloadmpi_offloadcuda_mixed_debug clangoffloadmpi_offloadcuda_mixed_complex_debug"
 	else
 	    buildsys="clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex clangoffloadmpi_offloadcuda"
 	fi
 	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
 	;;
     nitrogen2 )
-#	if [[ $jobtype == "nightly" ]]; then
-#	    buildsys="amdclangnompi_offloadhip amdclangnompi gccnewnompi_legacycu2hip gccnewnompi gccnewmpi gccoldmpi gccnewmpi_legacycu2hip clangnewmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
-#	else
-#	    buildsys="amdclangnompi_offloadhip amdclangnompi gccnewnompi_legacycu2hip gccnewmpi gccoldnompi clangnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex"
-#	fi
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
+	    buildsys="gccnewnompi gccnewnompi_complex gccnewnompi_debug gccnewnompi_complex_debug gccnewnompi_mixed_debug gccnewnompi_mixed_complex_debug gccnewmpi clangnewmpi amdclangnompi amdclangnompi_debug amdclangnompi_offloadhip amdclangnompi_offloadhip_debug amdclangnompi_offloadhip_complex amdclangnompi_offloadhip_complex_debug amdclangnompi_offloadhip_mixed amdclangnompi_offloadhip_mixed_complex"
 	else
-	    buildsys="amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
+	    buildsys="gccnewmpi amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
 	fi
 	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
 	export amdgpuarch=`/usr/bin/rocminfo | awk '/gfx/ {print $2; exit 0;}'`
 	;;
     nitrogen )
-#	if [[ $jobtype == "nightly" ]]; then
-#	    buildsys="gccnewnompi gccnewmpi gccoldmpi clangnewmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
-#	else
-#	    buildsys="clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex"
-#	fi
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
+	    buildsys="gccnewmpi amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
 	else
-	    buildsys="amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
+	    buildsys="gccnewmpi amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
 	fi
 	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
 	export amdgpuarch=`/usr/bin/rocminfo | awk '/gfx/ {print $2; exit 0;}'`
@@ -116,17 +106,16 @@ case "$jobtype" in
 	export PARALLELCFG="-j 48"
 	export TESTCFG="--timeout 5400 -VV"
 	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=256;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=64;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=64"
-	export LIMITEDTESTS=""
+	export LIMITEDTESTS="--exclude-regex long-"
 	export LESSLIMITEDTESTS=""
 	;;
     nightly )
 	export PARALLELCFG="-j 48"
 	export TESTCFG="--timeout 600 -VV"
 	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=16;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=12;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=16"
-        export LIMITEDTESTS="-E 'short-|long-|example'"
-	export LESSLIMITEDTESTS="-E long-"
-#        export LIMITEDTESTS="-R deterministic"
-#        export LESSLIMITEDTESTS="-R deterministic"
+#        export LIMITEDTESTS="--exclude-regex 'short-|long-|example'"
+        export LIMITEDTESTS="--label-regex deterministic"
+	export LESSLIMITEDTESTS="--exclude-regex long-"
 	;;
     * )
 	echo Unknown jobtype $jobtype
@@ -496,13 +485,21 @@ fi
 
 # Adjust which tests are run to control overall runtime
 case "$sys" in
-    *intel2020*|*gccnew*|*clangnew*|*gcc*legacycuda*|*gcc*cu2hip*|amdclang*) echo "Running full ("less limited") test set for $sys"
-							     THETESTS=${LESSLIMITEDTESTS}
-							     ;;
-    *) echo "Running limited test set for $sys"
-       THETESTS=${LIMITEDTESTS}
+    *offload*) echo "Running limited test set for $sys"
+               THETESTS=${LIMITEDTESTS}
+               ;;
+    *) echo "Running full/lesslimited test set for $sys"
+       THETESTS=${LESSLIMITEDTESTS}
        ;;
 esac
+#case "$sys" in
+#    *intel2020*|*gccnew*|*clangnew*|*gcc*legacycuda*|*gcc*cu2hip*|amdclang*) echo "Running full ("less limited") test set for $sys"
+#							     THETESTS=${LESSLIMITEDTESTS}
+#							     ;;
+#    *) echo "Running limited test set for $sys"
+#       THETESTS=${LIMITEDTESTS}
+#       ;;
+#esac
 #THETESTS=$LIMITEDTESTS # for DEBUG. Remove for production.
 echo THETESTS: ${THETESTS}
 
