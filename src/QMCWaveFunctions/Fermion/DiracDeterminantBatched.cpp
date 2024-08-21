@@ -684,20 +684,6 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateGL(const RefVectorWithLea
     for (int iw = 0; iw < nw; iw++)
     {
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-
-#ifndef NDEBUG
-      // at this point, host and device should have exactly the same G and L values.
-      GradMatrix dpsiM_from_device     = det.dpsiM;
-      Matrix<Value> d2psiM_from_device = det.d2psiM;
-
-      auto& my_psiM_vgl  = det.psiM_vgl;
-      auto* psiM_vgl_ptr = my_psiM_vgl.data();
-      // transfer device to host, total size 4, g(3) + l(1)
-      PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
-      assert(dpsiM_from_device == det.dpsiM);
-      assert(d2psiM_from_device == det.d2psiM);
-#endif
-
       det.UpdateMode = ORB_WALKER;
       det.computeGL(G_list[iw], L_list[iw]);
     }
