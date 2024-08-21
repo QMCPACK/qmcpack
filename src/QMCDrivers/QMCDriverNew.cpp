@@ -94,7 +94,9 @@ int QMCDriverNew::determintNumCrowds(const int requested_num_crowds, const int r
     num_crowds = rng_count;
   else if (requested_num_crowds > rng_count)
   {
-    app_warning() << "Capping the number of crowds to the count of driver-captured RNGs : " << rng_count << std::endl;
+    app_warning() << "Capping the number of crowds to the count of driver-captured RNGs : " << rng_count
+                  << ". This warning can be silenced by choosing 'crowds' in the range of [1, cap] or leaving it unset."
+                  << std::endl;
     num_crowds = rng_count;
   }
   return num_crowds;
