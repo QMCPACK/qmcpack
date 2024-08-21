@@ -295,10 +295,10 @@ public:
 
 protected:
   /** pure function returning the number crowds
-   * @param requested_num_crowds requested "crowds" from pinput
+   * @param requested_num_crowds requested "crowds" from input
    * @param rng_size the count of captured RNGs
    */
-  static int determintNumCrowds(const int requested_num_crowds, const int rng_count);
+  static int determineNumCrowds(const int requested_num_crowds, const int rng_count);
 
   /** pure function returning AdjustedWalkerCounts data structure 
    *

@@ -87,7 +87,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 
 QMCDriverNew::~QMCDriverNew() = default;
 
-int QMCDriverNew::determintNumCrowds(const int requested_num_crowds, const int rng_count)
+int QMCDriverNew::determineNumCrowds(const int requested_num_crowds, const int rng_count)
 {
   int num_crowds = requested_num_crowds;
   if (requested_num_crowds == 0)

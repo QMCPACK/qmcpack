@@ -168,9 +168,9 @@ public:
 
   void testDetermintNumCrowds()
   {
-    CHECK(determintNumCrowds(4, 8) == 4);
-    CHECK(determintNumCrowds(0, 8) == 8);
-    CHECK(determintNumCrowds(4, 2) == 2);
+    CHECK(determineNumCrowds(4, 8) == 4);
+    CHECK(determineNumCrowds(0, 8) == 8);
+    CHECK(determineNumCrowds(4, 2) == 2);
   }
 
   bool run() override { return false; }
