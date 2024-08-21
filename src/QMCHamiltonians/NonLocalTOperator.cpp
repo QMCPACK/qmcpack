@@ -27,7 +27,7 @@ NonLocalTOperator::NonLocalTOperator() : move_kind_(TmoveKind::OFF), tau_(0.01),
  * @return Tmove version
  *  Turns out this wants the NodePtr to the entire driver block.
  */
-TmoveKind NonLocalTOperator::put(xmlNodePtr cur)
+void NonLocalTOperator::put(xmlNodePtr cur)
 {
   std::string use_tmove = "no";
   ParameterSet m_param;
@@ -42,7 +42,7 @@ TmoveKind NonLocalTOperator::put(xmlNodePtr cur)
   bool success = m_param.put(cur);
   plusFactor   = tau_ * gamma_;
   minusFactor  = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
-  move_kind_  = TmoveKind::OFF;
+  move_kind_   = TmoveKind::OFF;
   std::ostringstream o;
   if (use_tmove == "no")
   {
@@ -69,21 +69,19 @@ TmoveKind NonLocalTOperator::put(xmlNodePtr cur)
 
 #pragma omp master
   app_log() << o.str() << std::endl;
-
-  return move_kind_;
 }
 
-TmoveKind NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
-                                                         const double tau,
-                                                         const double alpha,
-                                                         const double gamma)
+void NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
+                                                          const double tau,
+                                                          const double alpha,
+                                                          const double gamma)
 {
   tau_        = tau;
   alpha_      = alpha;
   gamma_      = gamma;
   plusFactor  = tau_ * gamma_;
   minusFactor = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
-  move_kind_ = TmoveKind::OFF;
+  move_kind_  = TmoveKind::OFF;
 
   if (non_local_move_option == "no")
     move_kind_ = TmoveKind::OFF;
@@ -95,7 +93,6 @@ TmoveKind NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string
     move_kind_ = TmoveKind::V3;
   else
     throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
-  return move_kind_;
 }
 
 const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vector<NonLocalData>& txy)

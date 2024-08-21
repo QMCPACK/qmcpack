@@ -42,17 +42,17 @@ public:
 
   NonLocalTOperator();
 
-  TmoveKind getMoveKind() const {return move_kind_; }
+  TmoveKind getMoveKind() const { return move_kind_; }
 
   /** replacement for put because wouldn't it be cool to know what the classes configuration actually
    *  is.
    */
-  TmoveKind thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
-                                        const double tau,
-                                        const double alpha,
-                                        const double gamma);
+  void thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
+                                         const double tau,
+                                         const double alpha,
+                                         const double gamma);
   /** initialize the parameters */
-  TmoveKind put(xmlNodePtr cur);
+  void put(xmlNodePtr cur);
 
   /** select the move for a given probability
    * @param prob value [0,1)
