@@ -294,6 +294,12 @@ public:
   /** }@ */
 
 protected:
+  /** pure function returning the number crowds
+   * @param requested_num_crowds requested "crowds" from input
+   * @param rng_size the count of captured RNGs
+   */
+  static int determineNumCrowds(const int requested_num_crowds, const int rng_count);
+
   /** pure function returning AdjustedWalkerCounts data structure 
    *
    *  The logic is now walker counts is fairly simple.
@@ -329,8 +335,6 @@ protected:
                                        IndexType requested_samples,
                                        IndexType requested_steps,
                                        IndexType blocks);
-
-  static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
   static void checkLogAndGL(Crowd& crowd, const std::string_view location, const bool serializing_crowd_walkers);
