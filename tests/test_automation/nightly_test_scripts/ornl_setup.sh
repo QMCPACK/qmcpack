@@ -197,12 +197,19 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout 08834e2b0358b58d84b4716473cbe902d4de8db1
-#commit 08834e2b0358b58d84b4716473cbe902d4de8db1 (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Chris Marsh <chrismarsh.c2@gmail.com>
-#Date:   Tue May 21 07:31:36 2024 -0600
+
+git checkout e5f53a62509452227bc84cdd2b96bb8d89d684b2
+#commit e5f53a62509452227bc84cdd2b96bb8d89d684b2 (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Paul R. C. Kent <kentpr@ornl.gov>
+#Date:   Fri Aug 16 12:04:29 2024 -0400
 #
-#    Add homebrew gcc@14.1.0 patch for aarch64 darwin (#44280)
+#    py-lxml: add v5.2.2 (#45785)
+#git checkout 21a2c3a5914d906b24d8d7881a54d127dfffc293
+#commit 21a2c3a5914d906b24d8d7881a54d127dfffc293 (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Sakib Rahman <rahmans@myumanitoba.ca>
+#Date:   Tue Aug 13 16:39:51 2024 -0400
+#
+#    py-htgettoken: add v2.0-2 (#45688)
 
 echo --- Git version and last log entry
 git log -1
