@@ -57,7 +57,7 @@ public:
                                       VMCDriverInput&& vmcdriver_input,
                                       WalkerConfigurations& wc,
                                       MCPopulation&& population,
-             const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
+                                      const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                                       SampleStack& samples,
                                       Communicate* comm);
 
