@@ -87,15 +87,19 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 
 QMCDriverNew::~QMCDriverNew() = default;
 
-void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
+int QMCDriverNew::determineNumCrowds(const int requested_num_crowds, const int rng_count)
 {
-  int num_threads(Concurrency::maxCapacity<>());
-  if (num_crowds > num_threads)
+  int num_crowds = requested_num_crowds;
+  if (requested_num_crowds == 0)
+    num_crowds = rng_count;
+  else if (requested_num_crowds > rng_count)
   {
-    std::stringstream error_msg;
-    error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
-    throw UniformCommunicateError(error_msg.str());
+    app_warning() << "Capping the number of crowds to the count of driver-captured RNGs : " << rng_count
+                  << ". This warning can be silenced by choosing 'crowds' in the range of [1, cap] or leaving it unset."
+                  << std::endl;
+    num_crowds = rng_count;
   }
+  return num_crowds;
 }
 
 void QMCDriverNew::initPopulationAndCrowds(const AdjustedWalkerCounts& awc)
@@ -346,20 +350,17 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
                                                                          const IndexType requested_total_walkers,
                                                                          const IndexType requested_walkers_per_rank,
                                                                          const RealType reserve_walkers,
-                                                                         int num_crowds)
+                                                                         const int num_crowds)
 {
+  assert(num_crowds > 0);
+
   const int num_ranks = comm.size();
   const int rank_id   = comm.rank();
-
-  // Step 1. set num_crowds by input and Concurrency::maxCapacity<>()
-  checkNumCrowdsLTNumThreads(num_crowds);
-  if (num_crowds == 0)
-    num_crowds = Concurrency::maxCapacity<>();
 
   AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
   awc.walkers_per_rank.resize(num_ranks, 0);
 
-  // Step 2. decide awc.global_walkers and awc.walkers_per_rank based on input values
+  // Step 1. decide awc.global_walkers and awc.walkers_per_rank based on input values
   if (requested_total_walkers != 0)
   {
     if (requested_total_walkers < num_ranks)
@@ -395,7 +396,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
     app_warning() << "TotalWalkers (" << awc.global_walkers << ") not divisible by number of ranks (" << num_ranks
                   << "). This will result in a loss of efficiency.\n";
 
-  // Step 3. decide awc.walkers_per_crowd
+  // Step 2. decide awc.walkers_per_crowd
   awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
 
   if (awc.walkers_per_rank[rank_id] % num_crowds)
