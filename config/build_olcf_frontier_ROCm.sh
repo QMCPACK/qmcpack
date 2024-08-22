@@ -2,11 +2,11 @@
 
 # Build script for Frontier
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Feb 9th 2024
+# last revision: Aug 19th 2024
 
 echo "Loading QMCPACK dependency modules for frontier"
 for module_name in PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd \
-                   amd amd-mixed gcc gcc-mixed cce cce-mixed rocm
+                   amd amd-mixed gcc gcc-mixed gcc-native cce cce-mixed rocm
 do
   if module is-loaded $module_name ; then module unload $module_name; fi
 done
@@ -14,7 +14,6 @@ done
 module load PrgEnv-amd amd/6.0.0
 module unload darshan-runtime
 unset HIP_PATH # it messed up clang as a HIP compiler.
-module load craype/2.7.16 # hard-coded version. 2.7.19/20/21 cause CC segfault.
 module unload cray-libsci
 module load cmake/3.22.2
 module load cray-fftw
@@ -81,7 +80,7 @@ mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
 cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
-      -DCMAKE_C_FLAGS=--gcc-toolchain=/opt/cray/pe/gcc/11.2.0/snos -DCMAKE_CXX_FLAGS="--gcc-toolchain=/opt/cray/pe/gcc/11.2.0/snos -add-runpath" \
+      -DCMAKE_CXX_FLAGS="-add-runpath" \
       $source_folder
 fi
 

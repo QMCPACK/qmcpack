@@ -50,12 +50,14 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                        DMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
+                       const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
                    wc,
                    std::move(pop),
+                   rng_refs,
                    "DMCBatched::",
                    comm,
                    "DMCBatched"),
@@ -377,19 +379,22 @@ void DMCBatched::runDMCStep(int crowd_id,
 
 void DMCBatched::process(xmlNodePtr node)
 {
+  ScopedTimer local_timer(timers_.startup_timer);
   print_mem("DMCBatched before initialization", app_log());
+
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
-                                qmcdriver_input_.get_num_crowds());
+                                determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
     steps_per_block_ =
         determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
                                qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
 
-    Base::initializeQMC(awc);
+    initPopulationAndCrowds(awc);
+    createRngsStepContexts(crowds_.size());
   }
   catch (const UniformCommunicateError& ue)
   {
@@ -430,6 +435,9 @@ void DMCBatched::process(xmlNodePtr node)
 
     app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
   }
+
+  if (qmcdriver_input_.get_measure_imbalance())
+    measureImbalance("Startup");
 }
 
 bool DMCBatched::run()
@@ -549,6 +557,20 @@ bool DMCBatched::run()
   estimator_manager_->stopDriverRun();
 
   return finalize(num_blocks, true);
+}
+
+/** Creates Random Number generators for crowds and step contexts
+ *
+ *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
+ *  This is used instead of actually passing number of threads/crowds
+ *  controlling threads all over RandomNumberControl.
+ */
+void DMCBatched::createRngsStepContexts(int num_crowds)
+{
+  assert(num_crowds <= rngs_.size());
+  step_contexts_.resize(num_crowds);
+  for (int i = 0; i < num_crowds; ++i)
+    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
 }
 
 } // namespace qmcplusplus

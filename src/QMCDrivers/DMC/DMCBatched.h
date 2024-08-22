@@ -35,7 +35,6 @@ class DMCBatchedTest;
 class DMCBatched : public QMCDriverNew
 {
 public:
-  using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos;
@@ -91,6 +90,7 @@ public:
              DMCDriverInput&& input,
              WalkerConfigurations& wc,
              MCPopulation&& pop,
+             const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
              Communicate* comm);
 
   /// Copy Constructor (disabled)
@@ -134,6 +134,8 @@ public:
 
 private:
   const DMCDriverInput dmcdriver_input_;
+  /// Per crowd, driver-specific move contexts
+  UPtrVector<ContextForSteps> step_contexts_;
 
   /** I think its better if these have there own type and variable name
    */
@@ -144,6 +146,9 @@ private:
   std::unique_ptr<SFNBranch> branch_engine_;
   ///walker controller for load-balance
   std::unique_ptr<WalkerControl> walker_controller_;
+
+  // create Rngs and StepContests
+  void createRngsStepContexts(int num_crowds);
 
   template<CoordsType CT>
   static void advanceWalkers(const StateForThread& sft,
