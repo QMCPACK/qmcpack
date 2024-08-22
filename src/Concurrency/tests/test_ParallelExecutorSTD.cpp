@@ -20,13 +20,23 @@
 namespace qmcplusplus
 {
 void TestTask(const int ip, std::atomic<int>& counter) { ++counter; }
+inline void print_obj_address(const int ip, int& obj, int& obj2)
+{
+  std::cout << "[" << ip<< "]" << &obj << " " << &obj2 << std::endl;
+}
+
 
 TEST_CASE("ParallelExecutor<STD> function case", "[concurrency]")
 {
   int num_threads = 8;
   ParallelExecutor<Executor::STD_THREADS> test_block;
   std::atomic<int> count(0);
-  test_block(num_threads, TestTask, std::ref(count));
+  test_block(num_threads, TestTask, count);
+
+  int count1(0);
+  int count2(0);
+  std::cout << "ref address " << &count1 << " " << &count2 << std::endl;
+  test_block(num_threads, print_obj_address, count1, std::ref(count2));
   REQUIRE(count == 8);
 }
 
