@@ -20,11 +20,6 @@
 namespace qmcplusplus
 {
 void TestTask(const int ip, std::atomic<int>& counter) { ++counter; }
-inline void print_obj_address(const int ip, int& obj, int& obj2)
-{
-  std::cout << "[" << ip<< "]" << &obj << " " << &obj2 << std::endl;
-}
-
 
 TEST_CASE("ParallelExecutor<STD> function case", "[concurrency]")
 {
@@ -32,11 +27,6 @@ TEST_CASE("ParallelExecutor<STD> function case", "[concurrency]")
   ParallelExecutor<Executor::STD_THREADS> test_block;
   std::atomic<int> count(0);
   test_block(num_threads, TestTask, count);
-
-  int count1(0);
-  int count2(0);
-  std::cout << "ref address " << &count1 << " " << &count2 << std::endl;
-  test_block(num_threads, print_obj_address, count1, std::ref(count2));
   REQUIRE(count == 8);
 }
 
@@ -46,7 +36,7 @@ TEST_CASE("ParallelExecutor<STD> lambda case", "[concurrency]")
   ParallelExecutor<Executor::STD_THREADS> test_block;
   std::atomic<int> count(0);
   test_block(
-      num_threads, [](int id, std::atomic<int>& my_count) { ++my_count; }, std::ref(count));
+      num_threads, [](int id, std::atomic<int>& my_count) { ++my_count; }, count);
   REQUIRE(count == 8);
 }
 
@@ -59,9 +49,9 @@ TEST_CASE("ParallelExecutor<STD> nested case", "[concurrency]")
       num_threads,
       [num_threads](int task_id, std::atomic<int>& my_count) {
         ParallelExecutor<Executor::STD_THREADS> test_block2;
-        test_block2(num_threads, TestTask, std::ref(my_count));
+        test_block2(num_threads, TestTask, my_count);
       },
-      std::ref(count));
+      count);
   REQUIRE(count == 64);
 }
 
