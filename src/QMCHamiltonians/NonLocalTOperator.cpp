@@ -71,28 +71,14 @@ void NonLocalTOperator::put(xmlNodePtr cur)
   app_log() << o.str() << std::endl;
 }
 
-void NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
-                                                          const double tau,
-                                                          const double alpha,
-                                                          const double gamma)
+NonLocalTOperator::NonLocalTOperator(const TmoveKind non_local_move_option,
+                                     const double tau,
+                                     const double alpha,
+                                     const double gamma)
+    : move_kind_(non_local_move_option), tau_(tau), alpha_(alpha), gamma_(gamma)
 {
-  tau_        = tau;
-  alpha_      = alpha;
-  gamma_      = gamma;
   plusFactor  = tau_ * gamma_;
   minusFactor = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
-  move_kind_  = TmoveKind::OFF;
-
-  if (non_local_move_option == "no")
-    move_kind_ = TmoveKind::OFF;
-  else if (non_local_move_option == "yes" || non_local_move_option == "v0")
-    move_kind_ = TmoveKind::V0;
-  else if (non_local_move_option == "v1")
-    move_kind_ = TmoveKind::V1;
-  else if (non_local_move_option == "v3")
-    move_kind_ = TmoveKind::V3;
-  else
-    throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
 }
 
 const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vector<NonLocalData>& txy)
