@@ -111,6 +111,7 @@ public:
   //xmlNodePtr walker_logs_xml;
 
 protected:
+  /// a collection of driver-specific objects needed per batch
   class ContextForSteps
   {
   public:
