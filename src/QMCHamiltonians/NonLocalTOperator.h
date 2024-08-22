@@ -26,30 +26,33 @@
 namespace qmcplusplus
 {
 /// Tmove options
-enum
+enum class TmoveKind
 {
-  TMOVE_OFF = 0, // no Tmove
-  TMOVE_V0,      // M. Casula, PRB 74, 161102(R) (2006)
-  TMOVE_V1,      // version 1, M. Casula et al., JCP 132, 154113 (2010)
-  TMOVE_V3,      // an approximation to version 1 but much faster.
+  OFF = 0, // no Tmove
+  V0,      // M. Casula, PRB 74, 161102(R) (2006)
+  V1,      // version 1, M. Casula et al., JCP 132, 154113 (2010)
+  V3,      // an approximation to version 1 but much faster.
 };
 
-struct NonLocalTOperator
+class NonLocalTOperator
 {
+public:
   using RealType = NonLocalData::RealType;
   using PosType  = NonLocalData::PosType;
 
   NonLocalTOperator();
 
+  TmoveKind getMoveKind() const { return move_kind_; }
+
   /** replacement for put because wouldn't it be cool to know what the classes configuration actually
    *  is.
    */
-  int thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
-                                        const double tau,
-                                        const double alpha,
-                                        const double gamma);
+  void thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
+                                         const double tau,
+                                         const double alpha,
+                                         const double gamma);
   /** initialize the parameters */
-  int put(xmlNodePtr cur);
+  void put(xmlNodePtr cur);
 
   /** select the move for a given probability
    * @param prob value [0,1)
@@ -69,6 +72,7 @@ struct NonLocalTOperator
   void groupByElectron(size_t num_elec, const std::vector<NonLocalData>& txy);
 
 private:
+  TmoveKind move_kind_;
   RealType tau_;
   RealType alpha_;
   RealType gamma_;

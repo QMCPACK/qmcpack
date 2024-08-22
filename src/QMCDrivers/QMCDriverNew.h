@@ -37,7 +37,6 @@
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/QMCDriverInput.h"
-#include "QMCDrivers/ContextForSteps.h"
 #include "ProjectData.h"
 #include "DriverWalkerTypes.h"
 #include "TauParams.hpp"
@@ -112,6 +111,17 @@ public:
   //xmlNodePtr walker_logs_xml;
 
 protected:
+  /// a collection of driver-specific objects needed per batch
+  class ContextForSteps
+  {
+  public:
+    ContextForSteps(RandomBase<FullPrecRealType>& random_gen) : random_gen_(random_gen) {}
+    RandomBase<FullPrecRealType>& get_random_gen() { return random_gen_; }
+
+  protected:
+    RandomBase<FullPrecRealType>& random_gen_;
+  };
+
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason
@@ -243,7 +253,7 @@ public:
 
   static void initialLogEvaluation(int crowd_id,
                                    UPtrVector<Crowd>& crowds,
-                                   UPtrVector<ContextForSteps>& step_context,
+                                   const RefVector<ContextForSteps>& step_context,
                                    const bool serializing_crowd_walkers);
 
 
