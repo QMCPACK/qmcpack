@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -20,9 +20,21 @@ namespace qmcplusplus
 namespace testing
 {
 
-struct ValidOneBodyDensityMatricesInput
+class ValidOneBodyDensityMatricesInput
 {
-  // clang-format: off
+public:
+  enum class valid : std::size_t
+  {
+    VANILLA = 0,
+    SCALE,
+    GRID
+  };
+
+  static std::string_view getXml(valid val) { return xml[static_cast<std::size_t>(val)]; }
+  auto begin() { return xml.begin(); }
+  auto end() {return xml.end(); }
+
+private:
   static constexpr std::array<std::string_view, 3> xml{
       R"XML(
 <estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
@@ -56,15 +68,9 @@ struct ValidOneBodyDensityMatricesInput
   <parameter name="timestep"     >  0.5           </parameter>
   <parameter name="use_drift"    >  no            </parameter>
 </estimator>
-)XML"
-  // clang-format: on
-  };
-    enum valid
-  {
-    VANILLA = 0,
-    SCALE,
-    GRID
-  };
+)XML"};
+
+public:
 };
 
 } // namespace testing

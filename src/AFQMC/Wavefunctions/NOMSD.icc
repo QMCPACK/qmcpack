@@ -28,6 +28,7 @@
 #include "AFQMC/Numerics/tensor_operations.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "type_traits/complex_help.hpp"
+#include "CPU/math.hpp"
 
 //#include "AFQMC/Wavefunctions/NOMSD.h"
 
@@ -47,7 +48,7 @@ void NOMSD<devPsiT>::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   assert(E.dimensionality == 2);
   assert(Ov.dimensionality == 1);
   assert(E.size() == wset.size());
-  assert(E.stride() == std::get<1>(E.sizes()) );
+  assert(E.stride() == std::get<1>(E.sizes()));
   assert(Ov.size() == wset.size());
   assert(std::get<1>(E.sizes()) == 3);
 
@@ -345,10 +346,13 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
   assert(std::get<1>(G.strides()) == 1);
   assert(Ov.stride() == 1);
 
-  if (transposed_G_for_E_) {
-    assert(( G.extensions() == boost::multi::extensions_t<2>{nw, static_cast<boost::multi::size_t>(dm_size(false))} ));
-  } else {
-    assert(( G.extensions() == boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(false)), nw} ));
+  if (transposed_G_for_E_)
+  {
+    assert((G.extensions() == boost::multi::extensions_t<2>{nw, static_cast<boost::multi::size_t>(dm_size(false))}));
+  }
+  else
+  {
+    assert((G.extensions() == boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(false)), nw}));
   }
   assert(Ov.size() >= nw);
   assert(std::get<1>(SM.sizes()) == Gsize);
@@ -368,18 +372,15 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
 
     for (int iw = 0; iw < nw; ++iw)
     {
-      if (iw % TG.TG_local().size() != TG.TG_local().rank()) {
+      if (iw % TG.TG_local().size() != TG.TG_local().rank())
         continue;
-      }
       Ov[iw] = SDetOp.MixedDensityMatrix(OrbMats[nd], A[iw], G2D_, LogOverlapFactor, true);
-      if (walker_type == CLOSED) {
+      if (walker_type == CLOSED)
         Ov[iw] *= Ov[iw];
-      }
-      if (transposed_G_for_E_) {
+      if (transposed_G_for_E_)
         G[iw] = G1D_;
-      } else {
+      else
         G(G.extension(), iw) = G1D_;
-      }
     }
   }
   else
@@ -416,11 +417,10 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
         // notice interchange of dimensions
         CMatrix_cref M(SM[iw / 2].origin() + GAdims.first * GAdims.second, {GBdims.second, GBdims.first});
         ovlp2[iw] = SDetOp.MixedDensityMatrix(OrbMats[2 * nd + 1], M, GB2D_, LogOverlapFactor, true);
-        if (transposed_G_for_E_) {
+        if (transposed_G_for_E_)
           G[iw / 2].sliced(GAdims.first * GAdims.second, G[iw / 2].size()) = GB1D_;
-        } else {
+        else
           G({GAdims.first * GAdims.second, G.size()}, iw / 2) = GB1D_;
-        }
       }
     }
     // CHECK: I don't need all_reduce here, but the current version of mpi3
@@ -452,10 +452,15 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
 {
   assert(std::get<1>(G.strides()) == 1);
   assert(Ov.stride() == 1);
-  if (transposed) {
-	assert(( G.extensions() == boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))} ));
-  } else {
-	assert(( G.extensions() == boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()} ));
+  if (transposed)
+  {
+    assert((G.extensions() ==
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+  }
+  else
+  {
+    assert((G.extensions() ==
+            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw = wset.size();
   assert(Ov.size() >= nw);
@@ -469,10 +474,15 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
 
   if (walker_type != COLLINEAR)
   {
-    if (herm) {
-      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
-    } else {
-      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
+    if (herm)
+    {
+      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first &&
+             std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
+    }
+    else
+    {
+      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first &&
+             std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
     }
 
     auto Gdims = dm_dims(not compact, Alpha);
@@ -487,24 +497,37 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
       Ov[iw] = SDetOp.MixedDensityMatrix(RefA, *wset[iw].SlaterMatrix(Alpha), G2D_, LogOverlapFactor, compact, herm);
       if (walker_type == CLOSED)
         Ov[iw] *= Ov[iw];
-      if (transposed) {
+      if (transposed)
+      {
         G[iw] = G1D_;
-      } else {
+      }
+      else
+      {
         G(G.extension(), iw) = G1D_;
       }
     }
   }
   else
   {
-    if (herm) {
-      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
-    } else {
-      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
+    if (herm)
+    {
+      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first &&
+             std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
     }
-    if (herm) {
-      assert(std::get<0>(RefB.sizes()) == dm_dims(false, Beta).first && std::get<1>(RefB.sizes()) == dm_dims(false, Beta).second);
-    } else {
-      assert(std::get<1>(RefB.sizes()) == dm_dims(false, Beta).first && std::get<0>(RefB.sizes()) == dm_dims(false, Beta).second);
+    else
+    {
+      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first &&
+             std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
+    }
+    if (herm)
+    {
+      assert(std::get<0>(RefB.sizes()) == dm_dims(false, Beta).first &&
+             std::get<1>(RefB.sizes()) == dm_dims(false, Beta).second);
+    }
+    else
+    {
+      assert(std::get<1>(RefB.sizes()) == dm_dims(false, Beta).first &&
+             std::get<0>(RefB.sizes()) == dm_dims(false, Beta).second);
     }
     StaticVector ovlp2(iextensions<1u>{2 * nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     fill_n(ovlp2.origin(), 2 * nw, ComplexType(0.0));
@@ -534,11 +557,10 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
       {
         ovlp2[iw] =
             SDetOp.MixedDensityMatrix(RefB, *wset[iw / 2].SlaterMatrix(Beta), GB2D_, LogOverlapFactor, compact, herm);
-        if (transposed) {
-          G[iw / 2].sliced(GAdims.first * GAdims.second,  G[iw / 2].size() ) = GB1D_;
-        } else {
+        if (transposed)
+          G[iw / 2].sliced(GAdims.first * GAdims.second, G[iw / 2].size()) = GB1D_;
+        else
           G({GAdims.first * GAdims.second, G.size()}, iw / 2) = GB1D_;
-        }
       }
     }
     if (TG.TG_local().size() > 1)
@@ -574,10 +596,15 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
   assert(std::get<1>(G.strides()) == 1);
   assert(Ov.stride() == 1);
 
-  if (transposed) {
-	assert(( G.extensions() == boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))} ));
-  } else {
-	assert(( G.extensions() == boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()} ));
+  if (transposed)
+  {
+    assert((G.extensions() ==
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+  }
+  else
+  {
+    assert((G.extensions() ==
+            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
   }
 
   const int nw = wset.size();
@@ -590,7 +617,8 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
   StaticVector ovlp2(iextensions<1u>{2 * nbatch__},
                      buffer_manager.get_generator().template get_allocator<ComplexType>());
   fill_n(ovlp2.origin(), ovlp2.num_elements(), ComplexType(0.0));
-  if (std::get<1>(G.sizes()) != G.stride()) {
+  if (std::get<1>(G.sizes()) != G.stride())
+  {
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
   }
   double LogOverlapFactor(wset.getLogOverlapFactor());
@@ -607,10 +635,15 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
 
   if (walker_type != COLLINEAR)
   {
-    if (herm) {
-      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
-    } else {
-      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
+    if (herm)
+    {
+      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first &&
+             std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
+    }
+    else
+    {
+      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first &&
+             std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
     }
     Static3Tensor G3D_({nbatch__, GAdims.first, GAdims.second},
                        buffer_manager.get_generator().template get_allocator<ComplexType>());
@@ -647,15 +680,25 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
   }
   else
   {
-    if (herm) {
-      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
-    } else {
-      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
+    if (herm)
+    {
+      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first &&
+             std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
     }
-    if (herm) {
-      assert(std::get<0>(RefB.sizes()) == dm_dims(false, Beta).first && std::get<1>(RefB.sizes()) == dm_dims(false, Beta).second);
-    } else {
-      assert(std::get<1>(RefB.sizes()) == dm_dims(false, Beta).first && std::get<0>(RefB.sizes()) == dm_dims(false, Beta).second);
+    else
+    {
+      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first &&
+             std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
+    }
+    if (herm)
+    {
+      assert(std::get<0>(RefB.sizes()) == dm_dims(false, Beta).first &&
+             std::get<1>(RefB.sizes()) == dm_dims(false, Beta).second);
+    }
+    else
+    {
+      assert(std::get<1>(RefB.sizes()) == dm_dims(false, Beta).first &&
+             std::get<0>(RefB.sizes()) == dm_dims(false, Beta).second);
     }
 
     auto GBdims = dm_dims(not compact, Beta);
@@ -701,7 +744,7 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
       {
         if (transposed)
         {
-          ma::copy(GB2D_[ib], G[iw + ib].sliced(GAdims.first * GAdims.second, G[iw + ib].size() ));
+          ma::copy(GB2D_[ib], G[iw + ib].sliced(GAdims.first * GAdims.second, G[iw + ib].size()));
         }
         else
         {
@@ -815,10 +858,15 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
 
   assert(std::get<1>(G.strides()) == 1);
   assert(Ov.stride() == 1);
-  if (transpose) {
-    assert(( G.extensions() == boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))} ));
-  } else {
-    assert(( G.extensions() == boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()} ));
+  if (transpose)
+  {
+    assert((G.extensions() ==
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+  }
+  else
+  {
+    assert((G.extensions() ==
+            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw   = wset.size();
   const int ndet = ci.size();
@@ -826,7 +874,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
   assert(Ov.size() >= nw);
   fill_n(Ov.origin(), nw, 0);
   // need strided fill_n????
-  if (std::get<1>(G.sizes()) != G.stride()) {
+  if (std::get<1>(G.sizes()) != G.stride())
+  {
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
   }
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
@@ -894,7 +943,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
         // first setup
         local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
         shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                      shared_allocator<ComplexType>{local_group_comm});
+                                                         shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -993,7 +1042,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
         //local_group_comm = std::make_unique<shared_communicator>(TG.TG_local().split(last_task_index));
         local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
         shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                      shared_allocator<ComplexType>{local_group_comm});
+                                                         shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -1054,8 +1103,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
     int ik0, ikN;
     std::tie(ik0, ikN) = FairDivideBoundary(TG.TG_local().rank(), int(G.size()), TG.TG_local().size());
     using ma::term_by_term_matrix_vector;
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, ikN - ik0, std::get<1>(G.sizes()), make_device_ptr(G[ik0].origin()), G.stride(),
-                               make_device_ptr(Ov.origin()), Ov.stride());
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, ikN - ik0, std::get<1>(G.sizes()), make_device_ptr(G[ik0].origin()),
+                               G.stride(), make_device_ptr(Ov.origin()), Ov.stride());
   }
   TG.local_barrier();
 }
@@ -1077,10 +1126,15 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
 
   assert(std::get<1>(G.strides()) == 1);
   assert(Ov.stride() == 1);
-  if (transpose) {
-    assert(( G.extensions() == boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))} ));
-  } else {
-    assert(( G.extensions() == boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()} ));
+  if (transpose)
+  {
+    assert((G.extensions() ==
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+  }
+  else
+  {
+    assert((G.extensions() ==
+            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw   = wset.size();
   const int ndet = ci.size();
@@ -1093,7 +1147,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
                      buffer_manager.get_generator().template get_allocator<ComplexType>());
   fill_n(ovlp2.origin(), ovlp2.num_elements(), ComplexType(0.0));
   // need strided fill_n????
-  if (std::get<1>(G.sizes()) != G.stride()) {
+  if (std::get<1>(G.sizes()) != G.stride())
+  {
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
   }
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
@@ -1245,8 +1300,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
   else
   {
     using ma::term_by_term_matrix_vector;
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, G.size(), std::get<1>(G.sizes()), make_device_ptr(G.origin()), G.stride(),
-                               make_device_ptr(Ov.origin()), Ov.stride());
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, G.size(), std::get<1>(G.sizes()), make_device_ptr(G.origin()),
+                               G.stride(), make_device_ptr(Ov.origin()), Ov.stride());
   }
   TG.local_barrier();
 }
@@ -1395,7 +1450,7 @@ void NOMSD<devPsiT>::Overlap_shared(const WlkSet& wset, TVec&& Ov)
         // first setup
         local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
         shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                      shared_allocator<ComplexType>{local_group_comm});
+                                                         shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -1449,7 +1504,7 @@ void NOMSD<devPsiT>::Overlap_shared(const WlkSet& wset, TVec&& Ov)
         // first setup
         local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
         shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                      shared_allocator<ComplexType>{local_group_comm});
+                                                         shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -1503,7 +1558,8 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared(const WlkSet& wset,
   double LogOverlapFactor(wset.getLogOverlapFactor());
   auto wlk_dims = wset.walker_dims();
   // Transposed temporaries for back propagation.
-  if (std::get<1>(G.sizes()) != G.stride()) {
+  if (std::get<1>(G.sizes()) != G.stride())
+  {
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
   }
   using std::fill_n;
@@ -1513,10 +1569,10 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared(const WlkSet& wset,
   {
     assert(detR != nullptr);
     assert(wset.size() <= (*Refs).size());
-    assert(ci.size() <= std::get<1>((*Refs).sizes()) );
-    assert(nrow * ncol == std::get<2>((*Refs).sizes()) );
+    assert(ci.size() <= std::get<1>((*Refs).sizes()));
+    assert(nrow * ncol == std::get<2>((*Refs).sizes()));
     assert(wset.size() == (*detR).size());
-    assert(OrbMats.size() == std::get<1>((*detR).sizes()) );
+    assert(OrbMats.size() == std::get<1>((*detR).sizes()));
   }
   if (walker_type != COLLINEAR)
   {
@@ -1693,7 +1749,8 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet&
   auto wlk_dims = wset.walker_dims();
   double LogOverlapFactor(wset.getLogOverlapFactor());
   // Transposed temporaries for back propagation.
-  if (std::get<1>(G.sizes()) != G.stride() ) {
+  if (std::get<1>(G.sizes()) != G.stride())
+  {
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
   }
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
@@ -1701,11 +1758,11 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet&
   if (Refs != nullptr)
   {
     assert(detR != nullptr);
-    assert(wset.size() <= (*Refs).size() );
-    assert(ci.size() <= std::get<1>((*Refs).sizes()) );
-    assert(nrow * ncol == std::get<2>((*Refs).sizes()) );
-    assert(wset.size() == (*detR).size() );
-    assert(OrbMats.size() == std::get<1>((*detR).sizes()) );
+    assert(wset.size() <= (*Refs).size());
+    assert(ci.size() <= std::get<1>((*Refs).sizes()));
+    assert(nrow * ncol == std::get<2>((*Refs).sizes()));
+    assert(wset.size() == (*detR).size());
+    assert(OrbMats.size() == std::get<1>((*detR).sizes()));
   }
 
   fill_n(Ovlp.origin(), Ovlp.num_elements(), ComplexType(0.0));
@@ -1825,16 +1882,16 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet&
       }
       overlap *= ma::conj(ci[0]);
 
-      //        if( not ( std::isfinite(real(Ovlp[iw][0])) && std::isfinite(imag(Ovlp[iw][0])) &&
-      //                  std::isfinite(real(Ovlp[iw][1])) && std::isfinite(imag(Ovlp[iw][1])) &&
-      if (not(std::isfinite(real(DMsum[iw][0])) && std::isfinite(imag(DMsum[iw][0])) &&
-              std::isfinite(real(DMsum[iw][1])) && std::isfinite(imag(DMsum[iw][1]))))
+      //        if( not ( qmcplusplus::isfinite(real(Ovlp[iw][0])) && qmcplusplus::isfinite(imag(Ovlp[iw][0])) &&
+      //                  qmcplusplus::isfinite(real(Ovlp[iw][1])) && qmcplusplus::isfinite(imag(Ovlp[iw][1])) &&
+      if (not(qmcplusplus::isfinite(real(DMsum[iw][0])) && qmcplusplus::isfinite(imag(DMsum[iw][0])) &&
+              qmcplusplus::isfinite(real(DMsum[iw][1])) && qmcplusplus::isfinite(imag(DMsum[iw][1]))))
         continue;
       if (qmcplusplus::isnan(std::real(DMsum[iw][0])) || qmcplusplus::isnan(std::imag(DMsum[iw][0])) ||
           qmcplusplus::isnan(std::real(DMsum[iw][1])) || qmcplusplus::isnan(std::imag(DMsum[iw][1])))
         continue;
-      if (std::isinf(real(DMsum[iw][0])) || std::isinf(imag(DMsum[iw][0])) || std::isinf(real(DMsum[iw][1])) ||
-          std::isinf(imag(DMsum[iw][1])))
+      if (qmcplusplus::isinf(real(DMsum[iw][0])) || qmcplusplus::isinf(imag(DMsum[iw][0])) ||
+          qmcplusplus::isinf(real(DMsum[iw][1])) || qmcplusplus::isinf(imag(DMsum[iw][1])))
         continue;
 
       ComplexType ov_denom;
@@ -2257,7 +2314,7 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
   else
   {
     auto Gsize = dm_size(true);
-    auto Gdims   = dm_dims(true, Alpha);
+    auto Gdims = dm_dims(true, Alpha);
     CVector G1D(iextensions<1u>{Gsize});
     fill_n(G1D.origin(), G1D.num_elements(), ComplexType(0));
     ComplexType ov(0);
@@ -2382,8 +2439,10 @@ inline void NOMSD<devPsiT>::recompute_ci()
     StaticSHMVector shmbuff(iextensions<1u>{nt},
                             shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
 
-    boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> H({ndets, ndets}, shared_allocator<ComplexType>(TG.Node()));
-    boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> S({ndets, ndets}, shared_allocator<ComplexType>(TG.Node()));
+    boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> H({ndets, ndets},
+                                                                         shared_allocator<ComplexType>(TG.Node()));
+    boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> S({ndets, ndets},
+                                                                         shared_allocator<ComplexType>(TG.Node()));
     boost::multi::array<ComplexType, 1> energy(iextensions<1u>{2});
     CMatrix Psia({0, 0});
     CMatrix Psib({0, 0});

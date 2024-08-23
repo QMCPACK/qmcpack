@@ -302,7 +302,9 @@ public:
 
   /** Used by SOECPComponent to do faster SOC evaluation
    */
-  void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios) const;
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                            std::vector<ValueType>& ratios) const;
 
   /** batched version of evaluateRatios
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
@@ -311,6 +313,13 @@ public:
                                 const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
+
+  // batched version of evaluateSpinorRatios
+  static void mw_evaluateSpinorRatios(
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
+      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+      const RefVector<std::vector<ValueType>>& ratios_list);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(const VirtualParticleSet& VP,

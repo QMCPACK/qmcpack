@@ -24,6 +24,7 @@
 #include "CUDA/CUDAallocator.hpp"
 #include "ROCm/rocsolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

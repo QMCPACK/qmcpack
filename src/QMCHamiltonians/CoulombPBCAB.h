@@ -153,11 +153,11 @@ public:
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
 
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos& hf_terms,
-                                 ParticleSet::ParticlePos& pulay_terms) override;
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }

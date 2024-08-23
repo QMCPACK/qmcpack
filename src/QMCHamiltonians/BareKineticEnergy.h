@@ -98,27 +98,25 @@ public:
                                            const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
   /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
- *  
- *  This general function represents the OperatorBase interface for computing.  For an operator \hat{O}, this
- *  function will return \frac{\hat{O}\Psi_T}{\Psi_T},  \frac{\partial(\hat{O})\Psi_T}{\Psi_T}, and 
- *  \frac{\hat{O}\partial\Psi_T}{\Psi_T} - \frac{\hat{O}\Psi_T}{\Psi_T}\frac{\partial \Psi_T}{\Psi_T}.  These are 
- *  referred to as Value, HF term, and pulay term respectively.
- *
- * @param P electron particle set.
- * @param ions ion particle set
- * @param psi Trial wave function object.
- * @param hf_terms 3Nion dimensional object. All direct force terms, or ionic gradient of operator itself.
- *                 Contribution of this operator is ADDED onto hf_terms.
- * @param pulay_terms The terms coming from ionic gradients of trial wavefunction.  Contribution of this operator is
- *                 ADDED onto pulay_terms.
- * @return Value of kinetic energy operator at electron/ion positions given by P and ions.  The force contributions from
- *          this operator are added into hf_terms and pulay_terms.
- */
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos& hf_terms,
-                                 ParticleSet::ParticlePos& pulay_terms) override;
+  *  
+  *  This general function represents the OperatorBase interface for computing.  For an operator \hat{O}, this
+  *  function will return \frac{\hat{O}\Psi_T}{\Psi_T},  \frac{\partial(\hat{O})\Psi_T}{\Psi_T}, and 
+  *  \frac{\hat{O}\partial\Psi_T}{\Psi_T} - \frac{\hat{O}\Psi_T}{\Psi_T}\frac{\partial \Psi_T}{\Psi_T}.  These are 
+  *  referred to as Value, HF term, and pulay term respectively.
+  *
+  * @param P electron particle set.
+  * @param ions ion particle set
+  * @param psi Trial wave function object.
+  * @param hf_terms 3Nion dimensional object. All direct force terms, or ionic gradient of operator itself.
+  *                 Contribution of this operator is ADDED onto hf_terms.
+  * @param pulay_terms The terms coming from ionic gradients of trial wavefunction.  Contribution of this operator is
+  *                 ADDED onto pulay_terms.
+  */
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms) override;
 
   void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
 

@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2018 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Mark Dewing, mdewin@anl.gov, Argonne National Laboratory
+// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////

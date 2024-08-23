@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -63,7 +63,8 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
   auto& ham             = *(hamiltonian_pool.getPrimary());
-  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+  EstimatorManagerNew emn(ham, comm);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
   CHECK(emn.getNumEstimators() == 2);
   // Because the only scalar estimator becomes the main estimator.
@@ -78,9 +79,10 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   EstimatorManagerInput emi2(estimators_doc2.getRoot());
 
   CHECK(emi2.get_estimator_inputs().size() == 2);
-  CHECK(emi2.get_scalar_estimator_inputs().size() == 5);
+  CHECK(emi2.get_scalar_estimator_inputs().size() == 4);
 
-  EstimatorManagerNew emn2(comm, std::move(emi2), ham, pset, twf);
+  EstimatorManagerNew emn2(ham, comm);
+  emn2.constructEstimators(std::move(emi2), pset, twf, ham, particle_pool.getPool());
 
   CHECK(emn2.getNumEstimators() == 2);
   // Because the only scalar estimator becomes the main estimator.

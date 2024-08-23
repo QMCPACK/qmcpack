@@ -92,18 +92,17 @@ bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Arg
 }
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
-                                         EstimatorManagerInput&& emi,
-                                         const QMCHamiltonian& H,
-                                         const ParticleSet& pset,
-                                         const TrialWaveFunction& twf)
-    : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
+void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
+                                              const ParticleSet& pset,
+                                              const TrialWaveFunction& twf,
+                                              const QMCHamiltonian& H,
+					      const PSPool& pset_pool)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
                                                      pset.getLattice()) ||
-          createEstimator<SelfHealingOverlapInput>(est_input,twf) ||
+          createEstimator<SelfHealingOverlapInput>(est_input, twf) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
@@ -443,109 +442,6 @@ void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& va
   my_comm_->bcast(tmp, 3);
   e   = tmp[1] / tmp[0];
   var = tmp[2] / tmp[0] - e * e;
-}
-
-bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur)
-{
-  std::vector<std::string> extra_types;
-  std::vector<std::string> extra_names;
-  cur = cur->children;
-  std::string MainEstimatorName("LocalEnergy");
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if (cname == "estimator")
-    {
-      std::string est_type("none");
-      std::string est_name(MainEstimatorName);
-      std::string use_hdf5("yes");
-      OhmmsAttributeSet hAttrib;
-      hAttrib.add(est_type, "type");
-      hAttrib.add(est_name, "name");
-      hAttrib.add(use_hdf5, "hdf5");
-      hAttrib.put(cur);
-      if ((est_name == MainEstimatorName) || (est_name == "elocal"))
-      {
-        max4ascii = H.sizeOfObservables() + 3;
-        addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"));
-      }
-      else if (est_name == "RMC")
-      {
-        int nobs(20);
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(nobs, "nobs");
-        hAttrib.put(cur);
-        max4ascii = nobs * H.sizeOfObservables() + 3;
-        addMainEstimator(std::make_unique<RMCLocalEnergyEstimator>(H, nobs));
-      }
-      else if (est_name == "CSLocalEnergy")
-      {
-        OhmmsAttributeSet hAttrib;
-        int nPsi = 1;
-        hAttrib.add(nPsi, "nPsi");
-        hAttrib.put(cur);
-        addMainEstimator(std::make_unique<CSEnergyEstimator>(H, nPsi));
-        app_log() << "  Adding a CSLocalEnergy estimator for the MainEstimator " << std::endl;
-      }
-      else if (est_name == "SpinDensityNew")
-      {
-        SpinDensityInput spdi(cur);
-        DataLocality dl = DataLocality::crowd;
-        if (spdi.get_save_memory())
-          dl = DataLocality::rank;
-        if (spdi.get_cell().explicitly_defined)
-          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.getSpeciesSet(), dl));
-        else
-          operator_ests_.emplace_back(
-              std::make_unique<SpinDensityNew>(std::move(spdi), pset.getLattice(), pset.getSpeciesSet(), dl));
-      }
-      else if (est_type == "MomentumDistribution")
-      {
-        MomentumDistributionInput mdi(cur);
-        DataLocality dl = DataLocality::crowd;
-        operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
-                                                                           pset.getTwist(), pset.getLattice(), dl));
-      }
-      else if (est_type == "OneBodyDensityMatrices")
-      {
-        OneBodyDensityMatricesInput obdmi(cur);
-        // happens once insures golden particle set is not abused.
-        ParticleSet pset_target(pset);
-        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
-                                                                             pset.getSpeciesSet(), twf.getSPOMap(),
-                                                                             pset_target));
-      }
-      else if (est_type == "MagnetizationDensity")
-      {
-        MagnetizationDensityInput magdensinput(cur);
-        ParticleSet pset_target(pset);
-        operator_ests_.emplace_back(std::make_unique<MagnetizationDensity>(std::move(magdensinput), pset.getLattice()));
-      }
-      else
-      {
-        extra_types.push_back(est_type);
-        extra_names.push_back(est_name);
-      }
-    }
-    cur = cur->next;
-  }
-  if (main_estimator_ == nullptr)
-  {
-    app_log() << " ::put Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
-    max4ascii = H.sizeOfObservables() + 3;
-    addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, true));
-  }
-  if (!extra_types.empty())
-  {
-    app_log() << "\nUnrecognized estimators in input:" << std::endl;
-    for (int i = 0; i < extra_types.size(); i++)
-    {
-      app_log() << "  type: " << extra_types[i] << "     name: " << extra_names[i] << std::endl;
-    }
-    app_log() << std::endl;
-    throw UniformCommunicateError("Unrecognized estimators encountered in input.  See log message for more details.");
-  }
-  return true;
 }
 
 void EstimatorManagerNew::addMainEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator)

@@ -297,6 +297,8 @@ class Pwscf(Simulation):
                     f.close()
                 #end if
             #end if
+        elif result_name == 'hubbard_parameters':
+            self.input.incorporate_hubbard(result)
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
         #end if        

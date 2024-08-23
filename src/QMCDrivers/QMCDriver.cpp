@@ -36,6 +36,8 @@
 #else
 using TraceManager = int;
 #endif
+#include "WalkerLogInput.h"
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -62,6 +64,8 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   DumpConfig   = false;
   IsQMCDriver  = true;
   allow_traces = false;
+  allow_walker_logs = false;
+  walker_logs_xml   = NULL;
   MyCounter    = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
@@ -198,11 +202,15 @@ void QMCDriver::process(xmlNodePtr cur)
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
   if (!Traces)
-  {
     Traces = std::make_unique<TraceManager>(myComm);
-  }
   Traces->put(traces_xml, allow_traces, RootName);
 #endif
+  //create and initialize traces
+  if (!wlog_manager_)
+  {
+    WalkerLogInput walker_logs_input(walker_logs_xml);
+    wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, RootName, myComm);
+  }
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)

@@ -12,54 +12,13 @@
 #ifndef QMCPLUSPLUS_ACCELBLAS_H
 #define QMCPLUSPLUS_ACCELBLAS_H
 
-#include "PlatformKinds.hpp"
-
-namespace qmcplusplus
-{
-
-namespace compute
-{
-
-template<PlatformKind PL>
-class BLASHandle;
-
-namespace BLAS
-{
-template<PlatformKind PL, typename T>
-void gemm(BLASHandle<PL>& handle,
-          const char transa,
-          const char transb,
-          int m,
-          int n,
-          int k,
-          const T* alpha,
-          const T* A,
-          int lda,
-          const T* B,
-          int ldb,
-          const T* beta,
-          T* C,
-          int ldc);
-
-template<PlatformKind PL, typename T>
-void gemm_batched(BLASHandle<PL>& handle,
-                  const char transa,
-                  const char transb,
-                  int m,
-                  int n,
-                  int k,
-                  const T* alpha,
-                  const T* const A[],
-                  int lda,
-                  const T* const B[],
-                  int ldb,
-                  const T* beta,
-                  T* const C[],
-                  int ldc,
-                  int batchCount);
-} // namespace BLAS
-} // namespace compute
-
-} // namespace qmcplusplus
+#include "config.h"
+#if defined(ENABLE_CUDA)
+#include "CUDA/AccelBLAS_CUDA.hpp"
+#endif
+#if defined(ENABLE_SYCL)
+#include "SYCL/AccelBLAS_SYCL.hpp"
+#endif
+#include "OMPTarget/AccelBLAS_OMPTarget.hpp"
 
 #endif

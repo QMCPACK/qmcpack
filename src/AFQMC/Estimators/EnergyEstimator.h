@@ -12,6 +12,7 @@
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
+#include "CPU/math.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
@@ -89,7 +90,7 @@ public:
           dum = (wprop[0][i]) * ovlp_[i] * (wprop[2][i]);
         }
         et = eloc_[i][0] + eloc_[i][1] + eloc_[i][2];
-        if ((!std::isfinite(real(dum))) || (!std::isfinite(real(et * dum))))
+        if ((!qmcplusplus::isfinite(real(dum))) || (!qmcplusplus::isfinite(real(et * dum))))
           continue;
         data[1] += dum;
         data[0] += et * dum;

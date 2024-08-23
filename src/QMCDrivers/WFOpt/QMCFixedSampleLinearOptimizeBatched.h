@@ -21,7 +21,6 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
-#include "QMCDrivers/VMC/VMCBatched.h"
 #include "Optimize/NRCOptimization.h"
 #include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
@@ -45,7 +44,7 @@ namespace qmcplusplus
 
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
-
+class VMCBatched;
 class GradientTest;
 
 
@@ -55,10 +54,10 @@ public:
   ///Constructor.
   QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                       QMCDriverInput&& qmcdriver_input,
-                                      const std::optional<EstimatorManagerInput>& global_emi,
                                       VMCDriverInput&& vmcdriver_input,
                                       WalkerConfigurations& wc,
                                       MCPopulation&& population,
+                                      const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                                       SampleStack& samples,
                                       Communicate* comm);
 

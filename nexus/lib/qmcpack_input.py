@@ -4295,7 +4295,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         self.variables = obj()
         self.inputs = obj()
         self.filenames = None
-        if quantity!=None and values!=None and input!=None:
+        if quantity is not None and values is not None and input is not None:
             self.bundle_inputs(quantity,values,input)
         #end if
     #end def __init__
@@ -4306,9 +4306,15 @@ class TracedQmcpackInput(BundledQmcpackInput):
         for value in values:
             inp = input.copy()
             qhost = inp.get_host(quantity)                               
-            print(qhost)
-            if qhost!=None:
-                qhost[quantity] = value
+            #print(qhost)
+            if qhost is not None:
+                if not isinstance(value,obj):
+                    qhost[quantity] = value
+                else:
+                    for k,v in value.items():
+                        qhost[k] = v
+                    #end for
+                #end if
             else:
                 self.error('quantity '+quantity+' was not found in '+input.__class__.__name__)
             #end if
@@ -4328,6 +4334,9 @@ class TracedQmcpackInput(BundledQmcpackInput):
             var = self.variables[i]
             q = var.quantity
             v = var.value
+            if isinstance(v,obj):
+                v = i
+            #end if
             bfile = prefix+'.g'+str(i).zfill(3)+'.'+q+'_'+str(v)+'.'+ext
             self.filenames.append(bfile)
         #end if
@@ -5482,6 +5491,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
     basis = []
     builder = None
     maxed = False
+    wf = wf_elem
     if reuse and 'basis' in dm and isinstance(dm.basis,sposet):
         spo = dm.basis
         # get sposet size
@@ -5496,7 +5506,6 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         #end if
         try:
             # get sposet from wavefunction
-            wf = wf_elem
             dets = wf.get('determinant')
             det  = dets.get_single()
             if 'sposet' in det:
@@ -6533,19 +6542,19 @@ opt_batched_defaults = obj(
     cost            = 'variance',
     cycles          = 12,
     var_cycles      = 0,
-    #var_samples     = None,
+    var_samples     = None,
     init_cycles     = 0,
-    #init_samples    = None,
+    init_samples    = None,
     init_minwalkers = 1e-4,
     )
 
 shared_opt_batched_defaults = obj(
-    #samples              = 204800,
-    nonlocalpp           = True,
-    use_nonlocalpp_deriv = True,
+    samples              = 204800,
+    #nonlocalpp           = True,
+    #use_nonlocalpp_deriv = True,
     warmupsteps          = 300,                
     blocks               = 100,                
-    steps                = 1,                  
+    #steps                = 1,                 
     substeps             = 10,                 
     timestep             = 0.3,
     usedrift             = False,
@@ -7012,9 +7021,9 @@ def generate_batched_opt_calculations(
         cost       ,
         cycles     ,
         var_cycles ,
-        #var_samples,
+        var_samples,
         init_cycles,
-        #init_samples,
+        init_samples,
         init_minwalkers,
         loc        = 'generate_opt_calculations',
         **opt_inputs
@@ -7062,16 +7071,16 @@ def generate_batched_opt_calculations(
             reweightedvariance   = 0.0,
             **opt_inputs
             )
-        #if var_samples is not None:
-        #    vmin_opt.samples = var_samples
-        ##end if
+        if var_samples is not None:
+            vmin_opt.samples = var_samples
+        #end if
         opt_calcs.append(loop(max=var_cycles,qmc=vmin_opt))
     #end if
     if init_cycles>0:
         init_opt = opt(**opt_inputs)
-        #if init_samples is not None:
-        #    init_opt.samples = init_samples
-        ##end if
+        if init_samples is not None:
+            init_opt.samples = init_samples
+        #end if
         init_opt.minwalkers = init_minwalkers
         if not oneshift:
             init_opt.energy               = cost[0]
@@ -7315,6 +7324,7 @@ gen_basic_input_defaults = obj(
     precision      = 'float',          
     twistnum       = None,             
     twist          = None,             
+    gcta           = None,
     spin_polarized = None,             
     partition      = None,             
     partition_mf   = None,             
@@ -7700,7 +7710,7 @@ def generate_basic_input(**kwargs):
         if isinstance(calc,loop):
             calc = calc.qmc
         #end if
-        if isinstance(calc,(linear,cslinear,linear_batch)) and 'nonlocalpp' not in calc:
+        if isinstance(calc,(linear,cslinear,linear_batch)) and 'nonlocalpp' not in calc and not batched:
             calc.nonlocalpp           = True
             calc.use_nonlocalpp_deriv = True
         #end if

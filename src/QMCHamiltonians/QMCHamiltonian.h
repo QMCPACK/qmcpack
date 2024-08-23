@@ -40,7 +40,6 @@ namespace qmcplusplus
 {
 class MCWalkerConfiguration;
 class HamiltonianFactory;
-class NonLocalECPotential;
 
 /**  Collection of Local Energy Operators
  *
@@ -162,6 +161,8 @@ public:
    */
   void informOperatorsOfListener();
 
+  ///return true if
+  inline bool hasPhysicalNLPP() const { return hasPhysicalNLPP_; }
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables
@@ -296,12 +297,12 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
-                                                      ParticleSet& ions,
-                                                      TrialWaveFunction& psi_in,
-                                                      TWFFastDerivWrapper& psi_wrapper,
-                                                      ParticleSet::ParticlePos& dedr,
-                                                      ParticleSet::ParticlePos& wf_grad);
+  void evaluateIonDerivsFast(ParticleSet& P,
+                             ParticleSet& ions,
+                             TrialWaveFunction& psi_in,
+                             TWFFastDerivWrapper& psi_wrapper,
+                             ParticleSet::ParticlePos& dedr,
+                             ParticleSet::ParticlePos& wf_grad);
 
   /** Evaluate the electron gradient of the local energy.
   * @param psi Trial Wave Function
@@ -312,52 +313,26 @@ public:
   */
   void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
-  /** evaluate local energy and derivatives w.r.t ionic coordinates.  
+  /** evaluate local energy and derivatives w.r.t ionic coordinates without randomizing the quadrature point grid.
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)
   * @param psi Trial wave function
   * @param hf_terms  Re [(dH)Psi]/Psi
   * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
   * @param wf_grad  Re (dPsi/Psi)
-  * @return Local Energy.
   */
-  FullPrecRealType evaluateIonDerivs(ParticleSet& P,
-                                     ParticleSet& ions,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos& hf_terms,
-                                     ParticleSet::ParticlePos& pulay_terms,
-                                     ParticleSet::ParticlePos& wf_grad);
-
-  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
-  * @param P target particle set (electrons)
-  * @param ions source particle set (ions)
-  * @param psi Trial wave function
-  * @param hf_terms  Re [(dH)Psi]/Psi
-  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
-  * @param wf_grad  Re (dPsi/Psi)
-  * @return Local Energy.
-  */
-  FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
-                                                  ParticleSet& ions,
-                                                  TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos& hf_terms,
-                                                  ParticleSet::ParticlePos& pulay_terms,
-                                                  ParticleSet::ParticlePos& wf_grad);
-  /** set non local moves options
-   * @param cur the xml input
-   */
-  void setNonLocalMoves(xmlNodePtr cur);
-
-  void setNonLocalMoves(const std::string& non_local_move_option,
-                        const double tau,
-                        const double alpha,
-                        const double gamma);
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms,
+                         ParticleSet::ParticlePos& wf_grad);
 
   /** make non local moves
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMoves(ParticleSet& P);
+  int makeNonLocalMoves(ParticleSet& P, NonLocalTOperator& move_op);
 
   /** determine if L2 potential is present
    */
@@ -386,7 +361,8 @@ public:
 
   static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                               const RefVectorWithLeader<ParticleSet>& p_list);
+                                               const RefVectorWithLeader<ParticleSet>& p_list,
+                                               NonLocalTOperator& move_op);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
@@ -446,8 +422,8 @@ private:
   const std::string myName;
   ///vector of Hamiltonians
   std::vector<std::unique_ptr<OperatorBase>> H;
-  ///pointer to NonLocalECP
-  NonLocalECPotential* nlpp_ptr;
+  ///true if H contains NLPP
+  bool hasPhysicalNLPP_;
   ///pointer to L2Potential
   L2Potential* l2_ptr;
   ///vector of Hamiltonians
