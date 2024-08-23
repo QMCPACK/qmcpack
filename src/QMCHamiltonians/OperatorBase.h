@@ -48,6 +48,7 @@ class MCWalkerConfiguration;
 class TrialWaveFunction;
 class QMCHamiltonian;
 class ResourceCollection;
+class NonLocalTOperator;
 struct NonLocalData;
 
 /** @ingroup hamiltonian
@@ -388,6 +389,13 @@ public:
                                                         const int iat,
                                                         std::vector<std::vector<ValueMatrix>>& Bforce)
   {}
+
+  /** make non local moves with particle-by-particle moves
+   * @param P particle set
+   * @return the number of accepted moves
+   */
+  virtual int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) { return 0; }
+
   /** 
    * @brief Update data associated with a particleset.
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.

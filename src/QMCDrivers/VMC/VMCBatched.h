@@ -16,7 +16,6 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCDrivers/ContextForSteps.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 
 #include "Utilities/Timer.h"
@@ -92,6 +91,33 @@ public:
 
   bool run() override;
 
+  /** transitional interface on the way to better walker count adjustment handling.
+   *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.
+   */
+  auto getCDLW();
+
+  /** Enable collecting samples during the VMC run
+   *
+   *  strong assumption that VMCBatched driver has passed through process phase of
+   *  initialization.
+   *  A side effect of VMCBatched::process is that MCPopulation has created local walkers.
+   */
+  void enable_sample_collection();
+
+private:
+  VMCDriverInput vmcdriver_input_;
+  /// Per crowd, driver-specific move contexts
+  UPtrVector<ContextForSteps> step_contexts_;
+
+  /// obtain reference vector of step contexts
+  RefVector<ContextForSteps> getContextForStepsRefs() const;
+
+  QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
+  /// Storage for samples (later used in optimizer)
+  SampleStack& samples_;
+  /// Sample collection flag
+  bool collect_samples_;
+
   /** Refactor of VMCUpdatePbyP in crowd context
    *
    *  MCWalkerConfiguration layer removed.
@@ -113,33 +139,8 @@ public:
                          UPtrVector<ContextForSteps>& context_for_steps,
                          UPtrVector<Crowd>& crowds);
 
-  /** transitional interface on the way to better walker count adjustment handling.
-   *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.
-   */
-  auto getCDLW();
-
-  /** Enable collecting samples during the VMC run
-   *
-   *  strong assumption that VMCBatched driver has passed through process phase of
-   *  initialization.
-   *  A side effect of VMCBatched::process is that MCPopulation has created local walkers.
-   */
-  void enable_sample_collection();
-
-private:
-  VMCDriverInput vmcdriver_input_;
-  /// Per crowd, driver-specific move contexts
-  UPtrVector<ContextForSteps> step_contexts_;
-
-
-  QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
-  /// Storage for samples (later used in optimizer)
-  SampleStack& samples_;
-  /// Sample collection flag
-  bool collect_samples_;
-
   // create Rngs and StepContests
-  void createRngsStepContexts(int num_crowds);
+  void createStepContexts(int num_crowds);
 
   /** function to calculate samples per MPI rank
    */

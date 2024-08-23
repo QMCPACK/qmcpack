@@ -18,7 +18,6 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "Configuration.h"
-#include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "Particle/NeighborLists.h"
@@ -97,23 +96,11 @@ public:
                                          std::vector<std::vector<ValueMatrix>>& Bforce) override;
 
 
-  /** set non local moves options
-   * @param cur the xml input
-   */
-  void setNonLocalMoves(xmlNodePtr cur) { UseTMove = nonLocalOps.put(cur); }
-
-  void setNonLocalMoves(const std::string& non_local_move_option,
-                        const double tau,
-                        const double alpha,
-                        const double gamma)
-  {
-    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option, tau, alpha, gamma);
-  }
   /** make non local moves with particle-by-particle moves
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMovesPbyP(ParticleSet& P);
+  int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) override;
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
@@ -190,12 +177,8 @@ private:
   NeighborLists ElecNeighborIons;
   ///neighborlist of ions
   NeighborLists IonNeighborElecs;
-  ///use T-moves
-  int UseTMove;
   ///ture if an electron is affected by other electrons moved by T-moves
   std::vector<bool> elecTMAffected;
-  ///non local operator
-  NonLocalTOperator nonLocalOps;
   ///Pulay force vector
   ParticleSet::ParticlePos PulayTerm;
   /// Tmove data collected for all the electrons

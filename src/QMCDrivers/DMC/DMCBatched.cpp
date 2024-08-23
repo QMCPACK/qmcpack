@@ -33,12 +33,24 @@
 #include "TauParams.hpp"
 #include "WalkerLogManager.h"
 #include "CPU/math.hpp"
+#include "QMCHamiltonians/NonLocalTOperator.h"
 
 namespace qmcplusplus
 {
 using std::placeholders::_1;
 using WP       = WalkerProperties::Indexes;
 using PsiValue = TrialWaveFunction::PsiValue;
+
+class DMCBatched::DMCContextForSteps : public ContextForSteps
+{
+public:
+  DMCContextForSteps(RandomBase<FullPrecRealType>& random_gen, const NonLocalTOperator& non_local_ops)
+      : ContextForSteps(random_gen), non_local_ops(non_local_ops)
+  {}
+
+  ///non local operator
+  NonLocalTOperator non_local_ops;
+};
 
 /** Constructor maintains proper ownership of input parameters
  *
@@ -67,18 +79,12 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
 
 DMCBatched::~DMCBatched() = default;
 
-void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& hamiltonian)
-{
-  hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
-                               dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
-}
-
 template<CoordsType CT>
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
                                 DMCTimers& dmc_timers,
-                                ContextForSteps& step_context,
+                                DMCContextForSteps& step_context,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
@@ -258,7 +264,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer ham_local(timers.hamiltonian_timer);
 
     std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
-        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_twfs, walker_elecs));
+        step_context.non_local_ops.getMoveKind() == TmoveKind::OFF
+            ? ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_twfs, walker_elecs)
+            : ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_twfs, walker_elecs));
 
     auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
                                    auto rr_prop) {
@@ -312,7 +320,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
-      walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw]);
+      walker_non_local_moves_accepted[iw] =
+          walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw], step_context.non_local_ops);
 
       if (walker_non_local_moves_accepted[iw] > 0)
       {
@@ -337,7 +346,7 @@ template void DMCBatched::advanceWalkers<CoordsType::POS>(const StateForThread& 
                                                           Crowd& crowd,
                                                           DriverTimers& timers,
                                                           DMCTimers& dmc_timers,
-                                                          ContextForSteps& step_context,
+                                                          DMCContextForSteps& step_context,
                                                           bool recompute,
                                                           bool accumulate_this_step);
 
@@ -345,7 +354,7 @@ template void DMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThr
                                                                Crowd& crowd,
                                                                DriverTimers& timers,
                                                                DMCTimers& dmc_timers,
-                                                               ContextForSteps& step_context,
+                                                               DMCContextForSteps& step_context,
                                                                bool recompute,
                                                                bool accumulate_this_step);
 
@@ -353,7 +362,7 @@ void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
                             DMCTimers& dmc_timers,
-                            UPtrVector<ContextForSteps>& context_for_steps,
+                            UPtrVector<DMCContextForSteps>& context_for_steps,
                             UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
@@ -394,7 +403,7 @@ void DMCBatched::process(xmlNodePtr node)
                                qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
 
     initPopulationAndCrowds(awc);
-    createRngsStepContexts(crowds_.size());
+    createStepContexts(crowds_.size());
   }
   catch (const UniformCommunicateError& ue)
   {
@@ -463,7 +472,8 @@ bool DMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_, serializing_crowd_walkers_);
+    auto step_contexts_refs = getContextForStepsRefs();
+    section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_refs, serializing_crowd_walkers_);
 
     FullPrecRealType energy, variance;
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
@@ -502,11 +512,6 @@ bool DMCBatched::run()
       for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
-
-        // ensure all the live walkers carry the up-to-date T-move settings.
-        // Such info should be removed from each NLPP eventually and be kept in the driver.
-        for (UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
-          setNonLocalMoveHandler(*ham);
 
         dmc_state.step        = step;
         dmc_state.global_step = global_step;
@@ -557,18 +562,25 @@ bool DMCBatched::run()
   return finalize(num_blocks, true);
 }
 
-/** Creates Random Number generators for crowds and step contexts
- *
- *  This is quite dangerous in that number of crowds can be > omp_get_max_threads()
- *  This is used instead of actually passing number of threads/crowds
- *  controlling threads all over RandomNumberControl.
- */
-void DMCBatched::createRngsStepContexts(int num_crowds)
+RefVector<QMCDriverNew::ContextForSteps> DMCBatched::getContextForStepsRefs() const
+{
+  RefVector<ContextForSteps> refs;
+  refs.reserve(step_contexts_.size());
+  for (auto& one_context : step_contexts_)
+    refs.push_back(*one_context);
+  return refs;
+}
+
+void DMCBatched::createStepContexts(int num_crowds)
 {
   assert(num_crowds <= rngs_.size());
   step_contexts_.resize(num_crowds);
+  NonLocalTOperator non_local_ops;
+  if (population_.get_golden_hamiltonian().hasPhysicalNLPP())
+    non_local_ops.thingsThatShouldBeInMyConstructor(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
+                                                    dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
   for (int i = 0; i < num_crowds; ++i)
-    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
+    step_contexts_[i] = std::make_unique<DMCContextForSteps>(rngs_[i], non_local_ops);
 }
 
 } // namespace qmcplusplus

@@ -20,7 +20,6 @@
 #include "QMCHamiltonian.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/TimerManager.h"
 #include "BareKineticEnergy.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
@@ -50,7 +49,7 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
     : myIndex(0),
       numCollectables(0),
       myName(aname),
-      nlpp_ptr(nullptr),
+      hasPhysicalNLPP_(false),
       l2_ptr(nullptr),
       ham_timer_(createGlobalTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
       eval_vals_derivs_timer_(createGlobalTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
@@ -134,19 +133,8 @@ void QMCHamiltonian::addOperator(std::unique_ptr<OperatorBase>&& h, const std::s
 
   //assign save NLPP if found
   //  name is fixed in ECPotentialBuilder::put()
-  if (aname == "NonLocalECP")
-  {
-    if (nlpp_ptr == nullptr)
-    {
-      // original h arguments moved to either H or auxH
-      nlpp_ptr = physical ? dynamic_cast<NonLocalECPotential*>(H.back().get())
-                          : dynamic_cast<NonLocalECPotential*>(auxH.back().get());
-    }
-    else
-    {
-      APP_ABORT("QMCHamiltonian::addOperator nlpp_ptr is supposed to be null. Something went wrong!");
-    }
-  }
+  if (physical && (aname == "NonLocalECP" || aname == "SOECP"))
+    hasPhysicalNLPP_ = true;
 
   //save L2 potential if found
   //  name is fixed in ECPotentialBuilder::put()
@@ -966,46 +954,25 @@ void QMCHamiltonian::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
     H[i]->setRandomGenerator(rng);
   for (int i = 0; i < auxH.size(); i++)
     auxH[i]->setRandomGenerator(rng);
-  if (nlpp_ptr)
-    nlpp_ptr->setRandomGenerator(rng);
 }
 
-void QMCHamiltonian::setNonLocalMoves(xmlNodePtr cur)
+int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P, NonLocalTOperator& move_op)
 {
-  if (nlpp_ptr != nullptr)
-    nlpp_ptr->setNonLocalMoves(cur);
-}
-
-void QMCHamiltonian::setNonLocalMoves(const std::string& non_local_move_option,
-                                      const double tau,
-                                      const double alpha,
-                                      const double gamma)
-{
-  if (nlpp_ptr != nullptr)
-    nlpp_ptr->setNonLocalMoves(non_local_move_option, tau, alpha, gamma);
-}
-
-int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
-{
-  if (nlpp_ptr == nullptr)
-    return 0;
-  else
-    return nlpp_ptr->makeNonLocalMovesPbyP(P);
+  int num_moves = 0;
+  for (int i = 0; i < H.size(); ++i)
+    num_moves += H[i]->makeNonLocalMovesPbyP(P, move_op);
+  return num_moves;
 }
 
 
 std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                      const RefVectorWithLeader<ParticleSet>& p_list)
+                                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                                      NonLocalTOperator& move_op)
 {
-  auto& ham_leader = ham_list.getLeader();
-
   std::vector<int> num_accepts(ham_list.size(), 0);
-  if (ham_list.getLeader().nlpp_ptr)
-  {
-    for (int iw = 0; iw < ham_list.size(); ++iw)
-      num_accepts[iw] = ham_list[iw].nlpp_ptr->makeNonLocalMovesPbyP(p_list[iw]);
-  }
+  for (int iw = 0; iw < ham_list.size(); ++iw)
+    num_accepts[iw] = ham_list[iw].makeNonLocalMoves(p_list[iw], move_op);
   return num_accepts;
 }
 

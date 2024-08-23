@@ -89,7 +89,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
   }
 
   // evaluate Hamiltonian
-  enew = H.evaluateWithToperator(W);
+  enew = non_local_ops_.getMoveKind() == TmoveKind::OFF ? H.evaluate(W) : H.evaluateWithToperator(W);
   H.auxHevaluate(W, thisWalker);
   H.saveProperty(thisWalker.getPropertyBase());
 
@@ -106,7 +106,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     thisWalker.Properties(WP::R2PROPOSED) = rr_proposed;
   }
 
-  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, non_local_ops_);
   if (NonLocalMoveAcceptedTemp > 0)
   {
     W.saveWalker(thisWalker);

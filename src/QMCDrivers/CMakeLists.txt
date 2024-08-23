@@ -47,7 +47,6 @@ set(QMCDRIVERS
     WaveFunctionTester.cpp
     WalkerControlBase.cpp
     CloneManager.cpp
-    ContextForSteps.cpp
     Crowd.cpp
     QMCUpdateBase.cpp
     GreenFunctionModifiers/DriftModifierBuilder.cpp
