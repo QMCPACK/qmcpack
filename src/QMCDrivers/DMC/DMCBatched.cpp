@@ -44,7 +44,7 @@ using PsiValue = TrialWaveFunction::PsiValue;
 class DMCBatched::DMCContextForSteps : public ContextForSteps
 {
 public:
-  DMCContextForSteps(RandomBase<FullPrecRealType>& random_gen, const NonLocalTOperator& non_local_ops)
+  DMCContextForSteps(RandomBase<FullPrecRealType>& random_gen, NonLocalTOperator&& non_local_ops)
       : ContextForSteps(random_gen), non_local_ops(non_local_ops)
   {}
 
@@ -575,12 +575,14 @@ void DMCBatched::createStepContexts(int num_crowds)
 {
   assert(num_crowds <= rngs_.size());
   step_contexts_.resize(num_crowds);
-  NonLocalTOperator non_local_ops;
-  if (population_.get_golden_hamiltonian().hasPhysicalNLPP())
-    non_local_ops.thingsThatShouldBeInMyConstructor(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
-                                                    dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
   for (int i = 0; i < num_crowds; ++i)
-    step_contexts_[i] = std::make_unique<DMCContextForSteps>(rngs_[i], non_local_ops);
+    step_contexts_[i] =
+        std::make_unique<DMCContextForSteps>(rngs_[i],
+                                             NonLocalTOperator(population_.get_golden_hamiltonian().hasPhysicalNLPP()
+                                                                   ? dmcdriver_input_.get_non_local_move()
+                                                                   : TmoveKind::OFF,
+                                                               qmcdriver_input_.get_tau(), dmcdriver_input_.get_alpha(),
+                                                               dmcdriver_input_.get_gamma()));
 }
 
 } // namespace qmcplusplus

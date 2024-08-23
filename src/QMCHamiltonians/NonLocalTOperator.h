@@ -21,19 +21,11 @@
 #ifndef QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 #define QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 
+#include "TmoveKind.h"
 #include "NonLocalData.h"
 
 namespace qmcplusplus
 {
-/// Tmove options
-enum class TmoveKind
-{
-  OFF = 0, // no Tmove
-  V0,      // M. Casula, PRB 74, 161102(R) (2006)
-  V1,      // version 1, M. Casula et al., JCP 132, 154113 (2010)
-  V3,      // an approximation to version 1 but much faster.
-};
-
 class NonLocalTOperator
 {
 public:
@@ -41,16 +33,13 @@ public:
   using PosType  = NonLocalData::PosType;
 
   NonLocalTOperator();
-
-  TmoveKind getMoveKind() const { return move_kind_; }
-
   /** replacement for put because wouldn't it be cool to know what the classes configuration actually
    *  is.
    */
-  void thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
-                                         const double tau,
-                                         const double alpha,
-                                         const double gamma);
+  NonLocalTOperator(const TmoveKind non_local_move_option, const double tau, const double alpha, const double gamma);
+
+  TmoveKind getMoveKind() const { return move_kind_; }
+
   /** initialize the parameters */
   void put(xmlNodePtr cur);
 
