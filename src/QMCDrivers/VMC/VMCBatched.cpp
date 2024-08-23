@@ -340,8 +340,7 @@ bool VMCBatched::run()
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     auto step_contexts_refs = getContextForStepsRefs();
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_refs),
-                       serializing_crowd_walkers_);
+    section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_refs, serializing_crowd_walkers_);
     print_mem("VMCBatched after initialLogEvaluation", app_summary());
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("InitialLogEvaluation");
@@ -371,8 +370,7 @@ bool VMCBatched::run()
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
-      crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_),
-                 std::ref(crowds_));
+      crowd_task(crowds_.size(), runWarmupStep, vmc_state, timers_, step_contexts_, crowds_);
     }
 
     app_log() << "VMC Warmup completed in " << std::setprecision(4) << warmup_timer.elapsed() << " secs" << std::endl;
@@ -405,7 +403,7 @@ bool VMCBatched::run()
         ScopedTimer local_timer(timers_.run_steps_timer);
         vmc_state.step        = step;
         vmc_state.global_step = global_step;
-        crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+        crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, step_contexts_, crowds_);
 
         if (collect_samples_)
         {

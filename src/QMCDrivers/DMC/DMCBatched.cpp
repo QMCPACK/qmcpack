@@ -473,8 +473,7 @@ bool DMCBatched::run()
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     auto step_contexts_refs = getContextForStepsRefs();
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_refs),
-                       serializing_crowd_walkers_);
+    section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_refs, serializing_crowd_walkers_);
 
     FullPrecRealType energy, variance;
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
@@ -516,8 +515,7 @@ bool DMCBatched::run()
 
         dmc_state.step        = step;
         dmc_state.global_step = global_step;
-        crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
-                   std::ref(crowds_));
+        crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, step_contexts_, crowds_);
 
         {
           const int iter = block * steps_per_block_ + step;
