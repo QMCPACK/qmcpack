@@ -72,7 +72,6 @@ set(DRIVER_TEST_SRC
     SetupPools.cpp
     test_Crowd.cpp
     test_MCPopulation.cpp
-    test_ContextForSteps.cpp
     test_QMCDriverInput.cpp
     test_QMCDriverNew.cpp
     test_VMCDriverInput.cpp

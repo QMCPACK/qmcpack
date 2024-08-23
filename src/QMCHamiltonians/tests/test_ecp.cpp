@@ -28,8 +28,6 @@
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/SpinorSet.h"
-//for nonlocal moves
-#include "QMCHamiltonians/NonLocalTOperator.h"
 
 
 //for Hamiltonian manipulations.

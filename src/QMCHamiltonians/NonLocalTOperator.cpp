@@ -21,13 +21,13 @@
 
 namespace qmcplusplus
 {
-NonLocalTOperator::NonLocalTOperator() : tau_(0.01), alpha_(0.0), gamma_(0.0) {}
+NonLocalTOperator::NonLocalTOperator() : move_kind_(TmoveKind::OFF), tau_(0.01), alpha_(0.0), gamma_(0.0) {}
 
 /** process options related to TMoves
  * @return Tmove version
  *  Turns out this wants the NodePtr to the entire driver block.
  */
-int NonLocalTOperator::put(xmlNodePtr cur)
+void NonLocalTOperator::put(xmlNodePtr cur)
 {
   std::string use_tmove = "no";
   ParameterSet m_param;
@@ -42,26 +42,26 @@ int NonLocalTOperator::put(xmlNodePtr cur)
   bool success = m_param.put(cur);
   plusFactor   = tau_ * gamma_;
   minusFactor  = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
-  int v_tmove  = TMOVE_OFF;
+  move_kind_   = TmoveKind::OFF;
   std::ostringstream o;
   if (use_tmove == "no")
   {
-    v_tmove = TMOVE_OFF;
+    move_kind_ = TmoveKind::OFF;
     o << "  Using Locality Approximation";
   }
   else if (use_tmove == "yes" || use_tmove == "v0")
   {
-    v_tmove = TMOVE_V0;
+    move_kind_ = TmoveKind::V0;
     o << "  Using Non-local T-moves v0, M. Casula, PRB 74, 161102(R) (2006)";
   }
   else if (use_tmove == "v1")
   {
-    v_tmove = TMOVE_V1;
+    move_kind_ = TmoveKind::V1;
     o << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
   }
   else if (use_tmove == "v3")
   {
-    v_tmove = TMOVE_V3;
+    move_kind_ = TmoveKind::V3;
     o << "  Using Non-local T-moves v3, an approximation to v1";
   }
   else
@@ -69,33 +69,30 @@ int NonLocalTOperator::put(xmlNodePtr cur)
 
 #pragma omp master
   app_log() << o.str() << std::endl;
-
-  return v_tmove;
 }
 
-int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
-                                                         const double tau,
-                                                         const double alpha,
-                                                         const double gamma)
+void NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
+                                                          const double tau,
+                                                          const double alpha,
+                                                          const double gamma)
 {
   tau_        = tau;
   alpha_      = alpha;
   gamma_      = gamma;
   plusFactor  = tau_ * gamma_;
   minusFactor = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
-  int v_tmove = TMOVE_OFF;
+  move_kind_  = TmoveKind::OFF;
 
   if (non_local_move_option == "no")
-    v_tmove = TMOVE_OFF;
+    move_kind_ = TmoveKind::OFF;
   else if (non_local_move_option == "yes" || non_local_move_option == "v0")
-    v_tmove = TMOVE_V0;
+    move_kind_ = TmoveKind::V0;
   else if (non_local_move_option == "v1")
-    v_tmove = TMOVE_V1;
+    move_kind_ = TmoveKind::V1;
   else if (non_local_move_option == "v3")
-    v_tmove = TMOVE_V3;
+    move_kind_ = TmoveKind::V3;
   else
     throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
-  return v_tmove;
 }
 
 const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vector<NonLocalData>& txy)

@@ -37,7 +37,6 @@
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/QMCDriverInput.h"
-#include "QMCDrivers/ContextForSteps.h"
 #include "ProjectData.h"
 #include "DriverWalkerTypes.h"
 #include "TauParams.hpp"
@@ -112,6 +111,17 @@ public:
   //xmlNodePtr walker_logs_xml;
 
 protected:
+  /// a collection of driver-specific objects needed per batch
+  class ContextForSteps
+  {
+  public:
+    ContextForSteps(RandomBase<FullPrecRealType>& random_gen) : random_gen_(random_gen) {}
+    RandomBase<FullPrecRealType>& get_random_gen() { return random_gen_; }
+
+  protected:
+    RandomBase<FullPrecRealType>& random_gen_;
+  };
+
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason
@@ -125,9 +135,9 @@ protected:
   };
   /** Do common section starting tasks for VMC and DMC
    *
-   * set up population_, crowds_, rngs and step_contexts_
+   * set up population_, crowds_
    */
-  void initializeQMC(const AdjustedWalkerCounts& awc);
+  void initPopulationAndCrowds(const AdjustedWalkerCounts& awc);
 
   /// inject additional barrier and measure load imbalance.
   void measureImbalance(const std::string& tag) const;
@@ -152,6 +162,7 @@ public:
                UPtr<EstimatorManagerNew>&& estimator_manager,
                WalkerConfigurations& wc,
                MCPopulation&& population,
+               const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                const std::string timer_prefix,
                Communicate* comm,
                const std::string& QMC_driver_type);
@@ -174,6 +185,8 @@ public:
   void makeLocalWalkers(int nwalkers, RealType reserve);
 
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
+
+  const RefVector<RandomBase<FullPrecRealType>>& getRngRefs() const { return rngs_; }
 
   /** record the state of the block
    * @param block current block
@@ -208,17 +221,7 @@ public:
 
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
-  void createRngsStepContexts(int num_crowds);
-
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
-
-  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
-  {
-    RefVector<RandomBase<FullPrecRealType>> RngRefs;
-    for (int i = 0; i < Rng.size(); ++i)
-      RngRefs.push_back(*Rng[i]);
-    return RngRefs;
-  }
 
   /** intended for logging output and debugging
    *  you should base behavior on type preferably at compile time or if
@@ -250,7 +253,7 @@ public:
 
   static void initialLogEvaluation(int crowd_id,
                                    UPtrVector<Crowd>& crowds,
-                                   UPtrVector<ContextForSteps>& step_context,
+                                   const RefVector<ContextForSteps>& step_context,
                                    const bool serializing_crowd_walkers);
 
 
@@ -301,6 +304,12 @@ public:
   /** }@ */
 
 protected:
+  /** pure function returning the number crowds
+   * @param requested_num_crowds requested "crowds" from input
+   * @param rng_size the count of captured RNGs
+   */
+  static int determineNumCrowds(const int requested_num_crowds, const int rng_count);
+
   /** pure function returning AdjustedWalkerCounts data structure 
    *
    *  The logic is now walker counts is fairly simple.
@@ -336,8 +345,6 @@ protected:
                                        IndexType requested_samples,
                                        IndexType requested_steps,
                                        IndexType blocks);
-
-  static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
   static void checkLogAndGL(Crowd& crowd, const std::string_view location, const bool serializing_crowd_walkers);
@@ -459,12 +466,11 @@ protected:
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;
 
-  /** Per crowd move contexts, this is where the DistanceTables etc. reside
+  /** driver captured references of random number generators (RNGs)
+   * that all the uses of RNG within the driver should be based on.
+   * The number of crowds is restricted by the count of RNGs.
    */
-  UPtrVector<ContextForSteps> step_contexts_;
-
-  ///Random number generators
-  UPtrVector<RandomBase<FullPrecRealType>> Rng;
+  const RefVector<RandomBase<FullPrecRealType>> rngs_;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

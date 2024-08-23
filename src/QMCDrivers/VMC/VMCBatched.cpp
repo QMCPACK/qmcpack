@@ -36,14 +36,16 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
                        VMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
-		       SampleStack& samples,
+                       const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
+                       SampleStack& samples,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
                    wc,
                    std::move(pop),
-		   "VMCBatched::",
+                   rng_refs,
+                   "VMCBatched::",
                    comm,
                    "VMCBatched"),
       vmcdriver_input_(input),
@@ -268,24 +270,30 @@ void VMCBatched::runVMCStep(int crowd_id,
 
 void VMCBatched::process(xmlNodePtr node)
 {
+  ScopedTimer local_timer(timers_.startup_timer);
   print_mem("VMCBatched before initialization", app_log());
-  // \todo get total walkers should be coming from VMCDriverInpu
+
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
-                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+                                qmcdriver_input_.get_walkers_per_rank(), 1.0,
+                                determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
     steps_per_block_ =
         determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
                                qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
 
-    Base::initializeQMC(awc);
+    initPopulationAndCrowds(awc);
+    createStepContexts(crowds_.size());
   }
   catch (const UniformCommunicateError& ue)
   {
     myComm->barrier_and_abort(ue.what());
   }
+
+  if (qmcdriver_input_.get_measure_imbalance())
+    measureImbalance("Startup");
 }
 
 size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
@@ -331,7 +339,8 @@ bool VMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_),
+    auto step_contexts_refs = getContextForStepsRefs();
+    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_refs),
                        serializing_crowd_walkers_);
     print_mem("VMCBatched after initialLogEvaluation", app_summary());
     if (qmcdriver_input_.get_measure_imbalance())
@@ -464,6 +473,23 @@ bool VMCBatched::run()
   estimator_manager_->stopDriverRun();
 
   return finalize(num_blocks, true);
+}
+
+RefVector<QMCDriverNew::ContextForSteps> VMCBatched::getContextForStepsRefs() const
+{
+  RefVector<ContextForSteps> refs;
+  refs.reserve(step_contexts_.size());
+  for (auto& one_context : step_contexts_)
+    refs.push_back(*one_context);
+  return refs;
+}
+
+void VMCBatched::createStepContexts(int num_crowds)
+{
+  assert(num_crowds <= rngs_.size());
+  step_contexts_.resize(num_crowds);
+  for (int i = 0; i < num_crowds; ++i)
+    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
 }
 
 void VMCBatched::enable_sample_collection()
