@@ -14,8 +14,6 @@ comment: off
 ignore:
   - "external_codes"
   - "tests"
-  - "src/*/tests"
-  - "src/*/*/tests"
   - "src/**/tests/*.cpp"
   - "src/**/tests/*.h"
 
