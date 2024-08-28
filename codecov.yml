@@ -16,6 +16,8 @@ ignore:
   - "tests"
   - "src/*/tests"
   - "src/*/*/tests"
+  - "src/**/tests/*.cpp"
+  - "src/**/tests/*.h"
 
 # Fixes report prefix paths from CI dynamic coverage action
 # from https://docs.codecov.io/docs/fixing-paths
