@@ -90,7 +90,7 @@ public:
   void packData(PooledData<Real>& buffer) override;
   void unpackData(PooledData<Real>& buffer) override;
 
-  UPtr<OperatorEstBase> spawnCrowdClone() const override;
+  UPtr<OperatorEstBase> spawnCrowdClone() override;
 
   /** start block entry point
    */

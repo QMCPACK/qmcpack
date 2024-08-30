@@ -59,7 +59,7 @@ public:
 
   /** standard interface
    */
-  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() override;
 
   /** accumulate 1 or more walkers of SelfHealingOverlap samples
    */

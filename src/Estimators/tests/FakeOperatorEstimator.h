@@ -40,7 +40,7 @@ public:
 
   void startBlock(int nsteps) override {}
 
-  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() override
   {
     return std::make_unique<FakeOperatorEstimator>(*this);
   }

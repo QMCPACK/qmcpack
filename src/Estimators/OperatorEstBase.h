@@ -95,8 +95,19 @@ public:
   std::vector<QMCT::RealType>& get_data() { return data_; }
 
   virtual std::size_t getFullDataSize() const { return data_.size(); }
+
+  /** @ingroup Estimator reduction buffers
+   *  @brief   MPI data packing and unpacking routines.
+   *           These are only used on the rank estimator owned by EstimatorManagerNew.
+   *           The rank EstimatorManagerNew owns the buffer.
+   *  @{
+   */
+
+  ///Packs data from native container types to Real buffer for reduction over MPI
   virtual void packData(PooledData<Real>& buffer);
+  ///Unpacks data from MPI into native container types.
   virtual void unpackData(PooledData<Real>& buffer);  
+  ///@}
 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong
@@ -106,7 +117,7 @@ public:
    */
   virtual void registerOperatorEstimator(hdf_archive& file) {}
 
-  virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() const = 0;
+  virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() = 0;
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *

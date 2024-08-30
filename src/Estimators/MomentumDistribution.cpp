@@ -176,7 +176,7 @@ MomentumDistribution::MomentumDistribution(const MomentumDistribution& md, DataL
   data_locality_ = dl;
 }
 
-std::unique_ptr<OperatorEstBase> MomentumDistribution::spawnCrowdClone() const
+std::unique_ptr<OperatorEstBase> MomentumDistribution::spawnCrowdClone()
 {
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;

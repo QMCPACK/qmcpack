@@ -21,7 +21,7 @@
 #include <StdRandom.h>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCHamiltonians/Listener.hpp"
-
+#include "type_traits/OptionalRef.hpp"
 namespace qmcplusplus
 {
 
@@ -32,7 +32,7 @@ public:
   using CrowdLogValues = std::unordered_map<std::string, std::vector<Vector<Real>>>;
 
   PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank);
-  PerParticleHamiltonianLogger(const PerParticleHamiltonianLogger& other, DataLocality data_locality);
+  PerParticleHamiltonianLogger(PerParticleHamiltonianLogger& other, DataLocality data_locality);
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
@@ -40,7 +40,7 @@ public:
                   const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecRealType>& rng) override;
 
-  UPtr<OperatorEstBase> spawnCrowdClone() const override;
+  UPtr<OperatorEstBase> spawnCrowdClone() override;
   void startBlock(int steps) override;
 
   void registerListeners(QMCHamiltonian& ham_leader) override;
@@ -54,12 +54,12 @@ public:
 
   void write(CrowdLogValues& values, const std::vector<long>& walkers_ids);
 
-  Real sumOverAll();
+  Real sumOverAll() const;
 
   int get_block() { return block_; }
 private:
   bool crowd_clone = false;
-  PerParticleHamiltonianLogger* const rank_estimator_;
+  OptionalRef<PerParticleHamiltonianLogger> rank_estimator_;
   PerParticleHamiltonianLoggerInput input_;
   int rank_;
   CrowdLogValues values_;

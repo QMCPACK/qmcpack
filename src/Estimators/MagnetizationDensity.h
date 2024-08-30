@@ -71,7 +71,7 @@ public:
   * @return Size of data.
   */
   size_t getFullDataSize() const override;
-  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() override;
   void registerOperatorEstimator(hdf_archive& file) override;
 
   /**

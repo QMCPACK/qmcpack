@@ -81,7 +81,7 @@ std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
 
 size_t SpinDensityNew::getFullDataSize() const { return species_.size() * derived_parameters_.npoints; }
 
-std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const
+std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone()
 {
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;

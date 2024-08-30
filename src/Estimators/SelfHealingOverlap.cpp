@@ -41,7 +41,7 @@ SelfHealingOverlap::SelfHealingOverlap(const SelfHealingOverlap& sh, DataLocalit
   data_locality_ = dl;
 }
 
-std::unique_ptr<OperatorEstBase> SelfHealingOverlap::spawnCrowdClone() const
+std::unique_ptr<OperatorEstBase> SelfHealingOverlap::spawnCrowdClone()
 {
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;

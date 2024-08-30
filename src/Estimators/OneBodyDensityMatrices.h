@@ -168,7 +168,7 @@ public:
    */
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl);
 
-  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() override;
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,

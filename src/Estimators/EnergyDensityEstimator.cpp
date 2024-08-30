@@ -396,7 +396,7 @@ void NEEnergyDensityEstimator::write(hdf_archive& file)
   file.pop();
 }
 
-std::unique_ptr<OperatorEstBase> NEEnergyDensityEstimator::spawnCrowdClone() const
+std::unique_ptr<OperatorEstBase> NEEnergyDensityEstimator::spawnCrowdClone()
 {
   auto spawn_data_locality = data_locality_;
   auto data_size           = this->data_.size();

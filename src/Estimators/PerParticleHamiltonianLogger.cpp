@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank)
-    : OperatorEstBase(DataLocality::crowd), rank_estimator_(nullptr), input_(input), rank_(rank)
+  : OperatorEstBase(DataLocality::crowd), input_(input), rank_(rank)
 {
   requires_listener_ = true;
   my_name_           = "PerParticleHamiltonianLogger";
@@ -26,8 +26,8 @@ PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonia
   rank_fstream_.open(filename, std::ios::out);
 }
 
-PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(const PerParticleHamiltonianLogger& pphl, DataLocality dl)
-    : OperatorEstBase(dl), rank_estimator_(const_cast<PerParticleHamiltonianLogger*>(&pphl)), input_(pphl.input_)
+PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLogger& pphl, DataLocality dl)
+  : OperatorEstBase(dl), rank_estimator_(makeOptionalRef(pphl)), input_(pphl.input_)
 {
   requires_listener_ = true;
   my_name_           = pphl.name_;
@@ -69,13 +69,13 @@ void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walker
   walker_ids_.clear();
   for (MCPWalker& walker : walkers)
     walker_ids_.push_back(walker.getWalkerID());
-  rank_estimator_->write(values_, walker_ids_);
+  rank_estimator_->get().write(values_, walker_ids_);
 
   // \todo some per crowd reduction.
   //       clear log values
 }
 
-PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll()
+PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll() const
 {
   Real sum{0};
   for (auto& [component, values] : values_)
@@ -84,7 +84,7 @@ PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll()
   return sum;
 }
 
-std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone() const
+std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone()
 {
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
