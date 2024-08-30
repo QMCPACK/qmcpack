@@ -69,7 +69,9 @@ private:
   CrowdLogValues values_;
   std::vector<long> walker_ids_;
   const std::string name_{"PerParticleHamiltonianLogger"};
+  /// rank owned fstream
   std::fstream rank_fstream_;
+  /// use it to prevent race when writing per-crowd.
   std::mutex write_lock;
   int block_ = 0;
 };
