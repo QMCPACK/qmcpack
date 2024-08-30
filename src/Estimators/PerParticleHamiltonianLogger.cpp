@@ -84,12 +84,12 @@ PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll() co
   return sum;
 }
 
-std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone()
+std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone() const
 {
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
 
-  auto spawn = std::make_unique<PerParticleHamiltonianLogger>(*this, spawn_data_locality);
+  auto spawn = std::make_unique<PerParticleHamiltonianLogger>(const_cast<PerParticleHamiltonianLogger&>(*this), spawn_data_locality);
   spawn->get_data().resize(data_size, 0.0);
   return spawn;
 }

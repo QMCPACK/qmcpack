@@ -40,7 +40,7 @@ public:
                   const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecRealType>& rng) override;
 
-  UPtr<OperatorEstBase> spawnCrowdClone() override;
+  UPtr<OperatorEstBase> spawnCrowdClone() const override;
   void startBlock(int steps) override;
 
   void registerListeners(QMCHamiltonian& ham_leader) override;
@@ -63,7 +63,7 @@ public:
   int get_block() { return block_; }
 private:
   bool crowd_clone = false;
-  OptionalRef<PerParticleHamiltonianLogger> rank_estimator_;
+  const OptionalRef<PerParticleHamiltonianLogger> rank_estimator_;
   PerParticleHamiltonianLoggerInput input_;
   int rank_;
   CrowdLogValues values_;
