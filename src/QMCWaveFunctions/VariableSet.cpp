@@ -261,10 +261,10 @@ void VariableSet::writeToHDF(const std::string& filename, qmcplusplus::hdf_archi
 
   std::vector<qmcplusplus::QMCTraits::RealType> param_values;
   std::vector<std::string> param_names;
-  for (auto& pair_it : NameAndValue)
+  for (auto& [name, value] : NameAndValue)
   {
-    param_names.push_back(pair_it.first);
-    param_values.push_back(pair_it.second);
+    param_names.push_back(name);
+    param_values.push_back(value);
   }
 
   hout.write(param_names, "parameter_names");
