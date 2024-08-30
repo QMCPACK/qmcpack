@@ -54,6 +54,10 @@ public:
 
   void write(CrowdLogValues& values, const std::vector<long>& walkers_ids);
 
+  /** This function is supplied for testing it sums over all values currently stored by the
+   *  per particle logger.  This is useful in unit testing some of the other estimators
+   *  that make use of Listeners.
+   */
   Real sumOverAll() const;
 
   int get_block() { return block_; }
