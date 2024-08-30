@@ -117,7 +117,7 @@ public:
    */
   virtual void registerOperatorEstimator(hdf_archive& file) {}
 
-  virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() = 0;
+  virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() const = 0;
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *

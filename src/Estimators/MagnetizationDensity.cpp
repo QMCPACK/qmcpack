@@ -113,7 +113,7 @@ size_t MagnetizationDensity::computeBin(const QMCT::PosType& r, const unsigned i
   return DIM * point + component;
 }
 
-std::unique_ptr<OperatorEstBase> MagnetizationDensity::spawnCrowdClone()
+std::unique_ptr<OperatorEstBase> MagnetizationDensity::spawnCrowdClone() const
 {
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
