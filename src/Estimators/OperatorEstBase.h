@@ -91,8 +91,32 @@ public:
 
   virtual void startBlock(int steps) = 0;
 
+  const std::vector<QMCT::RealType>& get_data() const { return data_; }
   std::vector<QMCT::RealType>& get_data() { return data_; }
+
   virtual std::size_t getFullDataSize() const { return data_.size(); }
+
+  /** @ingroup Functions to add or remove estimator data from PooledData<Real>
+   *  @brief   used for MPI reduction.
+   *           These are only used on the rank estimator owned by EstimatorManagerNew.
+   *           The rank EstimatorManagerNew owns the buffer.
+   *           It is not intended to store the state of the estimator.
+   *           The packing and unpacking functions must follow the same sequence of adds or gets
+   *           as PooledData is a stateful sequence of bytes with an internal position cursor.
+   *  @{
+   */
+
+  /** Packs data from native container types in a subtype of Operator est base
+   *  to buffer of type Real for reduction over MPI.
+   *  I.e. writes to pooled data.
+   */
+  virtual void packData(PooledData<Real>& buffer);
+  /** Unpacks data from mpi buffer of type Real into native container types
+   *  after a reduction over MPI.
+   *  i.e. reads from pooled data.
+   */
+  virtual void unpackData(PooledData<Real>& buffer);  
+  ///@}
 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong

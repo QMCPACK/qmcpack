@@ -287,7 +287,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   auto& species_set = pset_target.getSpeciesSet();
   auto& spo_map     = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
-  auto samplingCaseRunner = [&pset_target, &species_set, &spo_map](Input::valid test_case) {
+  auto samplingCaseRunner = [&input, &pset_target, &species_set, &spo_map](Input::valid test_case) {
     Libxml2Document doc;
     bool okay = doc.parseFromString(Input::getXml(test_case));
     if (!okay)
@@ -435,7 +435,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
                                                                 {2.535993099, 1.637133598, 3.689830303},
                                                             }};
   std::vector<ParticleSet> psets =
-      testing::generateRandomParticleSets<generate_test_data>(pset_target, pset_source, deterministic_rs, nwalkers);
+      testing::generateRandomParticleSets(pset_target, pset_source, deterministic_rs, nwalkers, generate_test_data);
 
   auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
   std::vector<UPtr<TrialWaveFunction>> twfcs(nwalkers);
