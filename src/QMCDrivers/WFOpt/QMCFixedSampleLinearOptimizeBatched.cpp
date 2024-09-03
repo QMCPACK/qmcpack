@@ -208,7 +208,7 @@ void QMCFixedSampleLinearOptimizeBatched::start()
     optTarget->getConfigurations("");
     optTarget->setRng(vmcEngine->getRngRefs());
     NullEngineHandle handle;
-    if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION)
+    if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
       optTarget->checkConfigurationsSR(handle);
     else
       optTarget->checkConfigurations(handle);
@@ -322,8 +322,8 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
-  if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION)
-    return stochastic_reconfiguration();
+  if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
+    return stochastic_reconfiguration_conjugate_gradient();
 
   return previous_linear_methods_run();
 }
@@ -709,7 +709,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   if (bestShift_i < 0.0 && (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE || options_LMY_.doHybrid))
     bestShift_i = shift_i_input;
   if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY ||
-      options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION)
+      options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
     bestShift_i = shift_i_input;
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
@@ -1788,7 +1788,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   return (optTarget->getReportCounter() > 0);
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration()
+bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
 {
   app_log() << std::endl
             << "*****************************************************************************" << std::endl

@@ -119,7 +119,7 @@ private:
   bool one_shift_run();
 
   // simple stochastic reconfig
-  bool stochastic_reconfiguration();
+  bool stochastic_reconfiguration_conjugate_gradient();
 
   // perform optimization using a gradient descent algorithm
   bool descent_run();
