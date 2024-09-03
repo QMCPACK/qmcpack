@@ -40,7 +40,8 @@ set(QMCEST_SRC
     PerParticleHamiltonianLogger.cpp
     ReferencePointsInput.cpp
     NEReferencePoints.cpp
-    NESpaceGrid.cpp)
+    NESpaceGrid.cpp
+    EnergyDensityEstimator.cpp)
 
 ####################################
 # create libqmcestimators

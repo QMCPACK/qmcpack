@@ -45,18 +45,13 @@ if(NOT QMC_MIXED_PRECISION)
   #  Test loading from variational parameter file
   check_python_reqs(h5py he_param_h5 add_h5_tests)
   if(add_h5_tests)
-    if(QMC_COMPLEX)
-      set(complex_flag "--complex")
-    else()
-      set(complex_flag)
-    endif()
     set(SDIR "${CMAKE_CURRENT_SOURCE_DIR}")
     # Normally the directory is created by qmc_run_and_check_custom_scalar,
     # but we need to write a file there before that runs
     set(TDIR "${CMAKE_CURRENT_BINARY_DIR}/He_param_grad_load-1-16")
     file(MAKE_DIRECTORY ${TDIR})
     execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py
-                            ${SDIR}/he_vp_opt.txt ${complex_flag} -o ${TDIR}/he_vp_opt.h5)
+                            ${SDIR}/he_vp_opt.txt -o ${TDIR}/he_vp_opt.h5)
 
     list(APPEND HE_BSPLINE_OPT_PARAM jud_0 0.00000124 0.002) # scalar name, value, error
     list(APPEND HE_BSPLINE_OPT_PARAM jud_1 -0.000273 0.0012)

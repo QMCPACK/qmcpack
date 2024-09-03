@@ -21,19 +21,18 @@
 #include <StdRandom.h>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCHamiltonians/Listener.hpp"
-
+#include "type_traits/OptionalRef.hpp"
 namespace qmcplusplus
 {
 
 class PerParticleHamiltonianLogger : public OperatorEstBase
 {
 public:
-  using Real = QMCTraits::RealType;
+  using Real           = QMCTraits::RealType;
   using CrowdLogValues = std::unordered_map<std::string, std::vector<Vector<Real>>>;
 
-  
   PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank);
-  PerParticleHamiltonianLogger(const PerParticleHamiltonianLogger& other, DataLocality data_locality);
+  PerParticleHamiltonianLogger(PerParticleHamiltonianLogger& other, DataLocality data_locality);
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
@@ -55,20 +54,28 @@ public:
 
   void write(CrowdLogValues& values, const std::vector<long>& walkers_ids);
 
+  /** This function is supplied for testing it sums over all values currently stored by the
+   *  per particle logger.  This is useful in unit testing some of the other estimators
+   *  that make use of Listeners.
+   */
+  Real sumOverAll() const;
+
   int get_block() { return block_; }
 private:
   bool crowd_clone = false;
-  PerParticleHamiltonianLogger  * const rank_estimator_;
+  const OptionalRef<PerParticleHamiltonianLogger> rank_estimator_;
   PerParticleHamiltonianLoggerInput input_;
   int rank_;
   CrowdLogValues values_;
   std::vector<long> walker_ids_;
   const std::string name_{"PerParticleHamiltonianLogger"};
+  /// rank owned fstream
   std::fstream rank_fstream_;
+  /// use it to prevent race when writing per-crowd.
   std::mutex write_lock;
   int block_ = 0;
 };
-  
-}
+
+} // namespace qmcplusplus
 
 #endif
