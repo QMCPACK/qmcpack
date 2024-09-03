@@ -25,6 +25,7 @@
 #include "QMCDrivers/WFOpt/GradientTest.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/ConjugateGradient.h"
 #include "Concurrency/Info.hpp"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
@@ -1849,75 +1850,17 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
                 << "*********************" << std::endl;
 
 
-      //Just chose an arbitrary convergence threshold for the conjugate gradient algorithm
-      RealType thr = 1e-3;
-      RealType eps = 1.0;
-      int kmax     = numParams;
-      int k        = 0;
-
-      std::vector<RealType> rk(numParams, 0);
-      std::vector<RealType> rkp1(numParams, 0);
-      std::vector<RealType> pk(numParams, 0);
-      std::vector<RealType> pkp1(numParams, 0);
-      std::vector<RealType> xk(numParams, 0);
-      std::vector<RealType> xkp1(numParams, 0);
-      std::vector<RealType> Apk(numParams, 0);
-
-
-      //Basic implementation of conjugate gradient algorithm...coming directly from wikipedia
-      RealType dk = 0;
-      //initial guess is zero, so S*x_0 = 0
+      std::vector<RealType> param_update;
+      std::vector<RealType> bvec(numParams, 0);
       for (int i = 0; i < numParams; i++)
-      {
-        rk[i] = -sr_tau * ham[i + 1];
-        dk += rk[i] * rk[i];
-      }
-      eps            = dk / numParams * thr;
-      pk             = rk;
-      bool converged = false;
-      while (!converged)
-      {
-        //This function avoids building the full Sij matrix by calculating the matrix vector 
-        //product of the overlap matrix * the current parameter vector. 
-        //This is the "accelerated stochastic reconfiguration" from https://doi.org/10.1103/PhysRevB.85.045103
-        //Basically doing Eqn. (7)
-        optTarget->calcOvlParmVec(pk, bestShift_s, Apk);
-        RealType denom = 0;
-        for (int i = 0; i < numParams; i++)
-          denom += pk[i] * Apk[i];
-        RealType ak = dk / denom;
-
-        RealType dkp1 = 0;
-        for (int i = 0; i < numParams; i++)
-        {
-          xkp1[i] = xk[i] + ak * pk[i];
-          rkp1[i] = rk[i] - ak * Apk[i];
-          dkp1 += rkp1[i] * rkp1[i];
-        }
-        if (dkp1 / numParams < eps || k == kmax)
-        {
-          converged = true;
-          break;
-        }
-        else
-        {
-          RealType bk = dkp1 / dk;
-          for (int i = 0; i < numParams; i++)
-          {
-            pkp1[i] = rkp1[i] + bk * pk[i];
-            pk[i]   = pkp1[i];
-            rk[i]   = rkp1[i];
-            xk[i]   = xkp1[i];
-            dk      = dkp1;
-          }
-          k++;
-        }
-      }
-      app_log() << "Solved iterative krylov in " << k << " iterations" << std::endl;
+        bvec[i] = -sr_tau * ham[i + 1];
+      ConjugateGradient cg;
+      int iterations = cg.run(*optTarget, bvec, param_update);
+      app_log() << "Solved iterative krylov in " << iterations << " iterations" << std::endl;
       for (int i = 0; i < numParams; i++)
-        parameterDirections[i + 1] = xkp1[i];
+        parameterDirections[i + 1] = param_update[i];
       // compute the scaling constant to apply to the update
-      nonlinear_rescale      = getNonLinearRescale(parameterDirections, Apk, *optTarget);
+      nonlinear_rescale      = getNonLinearRescale(parameterDirections, param_update, *optTarget);
       objFuncWrapper_.Lambda = nonlinear_rescale;
     }
   }

@@ -140,7 +140,6 @@ public:
 
   virtual Return_rt fillHamVec(std::vector<Return_rt>& ham);
   virtual void calcOvlParmVec(const std::vector<Return_rt>& parm,
-                              const Return_rt& shift,
                               std::vector<Return_rt>& ovlParmVec);
 
 #ifdef HAVE_LMY_ENGINE

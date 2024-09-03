@@ -1040,7 +1040,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(std::vector
 }
 
 void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm,
-                                            const Return_rt& shift,
                                             std::vector<Return_rt>& ovlParmVec)
 {
   ScopedTimer tmp_timer(fill_timer_);
@@ -1100,7 +1099,5 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm,
                 ovlParmVec);
   }
   myComm->allreduce(ovlParmVec);
-  for (int pm = 0; pm < getNumParams(); pm++)
-    ovlParmVec[pm] += shift * parm[pm];
 }
 } // namespace qmcplusplus
