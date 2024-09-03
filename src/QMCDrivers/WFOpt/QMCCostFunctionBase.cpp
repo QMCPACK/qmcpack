@@ -16,6 +16,7 @@
 
 
 #include "QMCCostFunctionBase.h"
+#include "OhmmsPETE/OhmmsVectorOperators.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -128,6 +129,21 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   EffectiveWeight effective_weight = correlatedSampling(needGrad);
   IsValid                          = isEffectiveWeightValid(effective_weight);
   return computedCost();
+}
+
+QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham) 
+{
+  throw std::runtime_error("Need to implement fillHamVec");
+}
+
+void QMCCostFunctionBase::calcOvlParmVec(const std::vector<Return_rt>& parm, const Return_rt& shift, std::vector<Return_rt>& ovlParmVec)
+{
+  throw std::runtime_error("Need to implement calcOvlParmVec");
+}
+
+void QMCCostFunctionBase::checkConfigurationsSR(EngineHandle& handle)
+{
+  throw std::runtime_error("Need to implement checkConfigurationsSR");
 }
 
 void QMCCostFunctionBase::printEstimates()

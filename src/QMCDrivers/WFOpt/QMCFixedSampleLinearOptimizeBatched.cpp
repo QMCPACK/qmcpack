@@ -81,11 +81,13 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       shift_s_input(1.00),
       accept_history(3),
       shift_s_base(4.0),
+      sr_tau(0.01),
       MinMethod("OneShiftOnly"),
       do_output_matrices_csv_(false),
       do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
       freeze_parameters_(false),
+      use_line_search_(false),
       initialize_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
       generate_samples_timer_(createGlobalTimer("QMCLinearOptimizeBatched::generateSamples", timer_level_medium)),
       build_olv_ham_timer_(createGlobalTimer("QMCLinearOptimizedBatched::build_ovl_ham_matrix", timer_level_medium)),
@@ -93,6 +95,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       eigenvalue_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
       line_min_timer_(createGlobalTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
       cost_function_timer_(createGlobalTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
+      sr_solver_timer_(createGlobalTimer("QMCLinearOptimizeBatched::StochasticReconfiguration", timer_level_medium)),
       wfNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples)
@@ -109,6 +112,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(param_tol, "alloweddifference");
   m_param.add(shift_i_input, "shift_i");
   m_param.add(shift_s_input, "shift_s");
+  m_param.add(sr_tau, "sr_tau");
   // options_LMY_
   m_param.add(options_LMY_.targetExcited, "options_LMY_.targetExcited");
   m_param.add(options_LMY_.block_lm, "options_LMY_.block_lm");
@@ -204,7 +208,10 @@ void QMCFixedSampleLinearOptimizeBatched::start()
     optTarget->getConfigurations("");
     optTarget->setRng(vmcEngine->getRngRefs());
     NullEngineHandle handle;
-    optTarget->checkConfigurations(handle);
+    if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
+      optTarget->checkConfigurationsSR(handle);
+    else
+      optTarget->checkConfigurations(handle);
     app_log() << "  Execution time (derivatives) = " << std::setprecision(4) << t_deriv.elapsed() << std::endl;
   }
 }
@@ -314,6 +321,9 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
 
   if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
+
+  if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
+    return stochastic_reconfiguration_conjugate_gradient();
 
   return previous_linear_methods_run();
 }
@@ -566,6 +576,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   std::string OutputMatrices("no");
   std::string OutputMatricesHDF("no");
   std::string FreezeParameters("no");
+  std::string UseLineSearch("no");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
@@ -574,6 +585,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   m_param.add(OutputMatrices, "output_matrices_csv", {"no", "yes"});
   m_param.add(OutputMatricesHDF, "output_matrices_hdf", {"no", "yes"});
   m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
+  m_param.add(UseLineSearch, "line_search", {"no", "yes"});
 
   m_param.add(eigensolver_, "eigensolver",
               {
@@ -587,6 +599,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   do_output_matrices_csv_ = (OutputMatrices == "yes");
   do_output_matrices_hdf_ = (OutputMatricesHDF == "yes");
   freeze_parameters_      = (FreezeParameters == "yes");
+  use_line_search_        = (UseLineSearch == "yes");
 
   // Use freeze_parameters with output_matrices to generate multiple lines in the output with
   // the same parameters so statistics can be computed in post-processing.
@@ -695,7 +708,8 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   // if this is the first time this function has been called, set the initial shifts
   if (bestShift_i < 0.0 && (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE || options_LMY_.doHybrid))
     bestShift_i = shift_i_input;
-  if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
+  if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY ||
+      options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
     bestShift_i = shift_i_input;
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
@@ -1759,6 +1773,213 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     accept_history <<= 1;
     accept_history.set(0, true);
   }
+
+  app_log() << std::endl
+            << "*****************************************************************************" << std::endl
+            << "Applying the update for shift_i = " << std::scientific << std::right << std::setw(12)
+            << std::setprecision(4) << bestShift_i << "     and shift_s = " << std::scientific << std::right
+            << std::setw(12) << std::setprecision(4) << bestShift_s << std::endl
+            << "*****************************************************************************" << std::endl;
+
+  // perform some finishing touches for this linear method iteration
+  finish();
+
+  // return whether the cost function's report counter is positive
+  return (optTarget->getReportCounter() > 0);
+}
+
+bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
+{
+  app_log() << std::endl
+            << "*****************************************************************************" << std::endl
+            << "                   Running Stochastic Reconfiguration                   " << std::endl
+            << "*****************************************************************************" << std::endl;
+  // ensure the cost function is set to compute derivative vectors
+  optTarget->setneedGrads(true);
+
+  // generate samples and compute weights, local energies, and derivative vectors
+  // Note: this has a switch for checkConfigurations or checkConfigurationsSR to do stochastic reconfiguration
+  // The SR version avoids calculating the dhpsioverpsi terms and only does dlogpsi
+  start();
+
+  // get number of optimizable parameters
+  const int numParams = optTarget->getNumParams();
+
+  // get dimension of the linear method matrices
+  const int N = numParams + 1;
+
+  // prepare vectors to hold the initial and current parameters
+  std::vector<RealType> currentParameters(numParams, 0.0);
+
+  // initialize the initial and current parameter vectors
+  for (int i = 0; i < numParams; i++)
+    currentParameters.at(i) = std::real(optTarget->Params(i));
+
+  // prepare vectors to hold the parameter update directions for each shift
+  std::vector<RealType> parameterDirections;
+  parameterDirections.assign(N, 0.0);
+
+  // compute the initial cost
+  const RealType initCost = optTarget->computedCost();
+
+  std::vector<RealType> ham(N, 0);
+
+  // for outputing matrices and eigenvalue/vectors to disk
+  hdf_archive hout;
+
+  RealType nonlinear_rescale(1.0);
+  {
+    ScopedTimer local(build_olv_ham_timer_);
+    Timer t_build_matrices;
+    // say what we are doing
+    app_log() << std::endl
+              << "********************************************************" << std::endl
+              << "Building <Psi_i/Psi_0 Psi_j/Psi_0> and <Psi_i/Psi_0 E_L>" << std::endl
+              << "********************************************************" << std::endl;
+
+    //This constructs \langle \psi_i/\Psi_0 * E_L \rangle
+    optTarget->fillHamVec(ham);
+
+    {
+      ScopedTimer local(sr_solver_timer_);
+      Timer t_eigen;
+      app_log() << std::endl
+                << "*********************" << std::endl
+                << "Solving linear system" << std::endl
+                << "*********************" << std::endl;
+
+
+      //Just chose an arbitrary convergence threshold for the conjugate gradient algorithm
+      RealType thr = 1e-3;
+      RealType eps = 1.0;
+      int kmax     = numParams;
+      int k        = 0;
+
+      std::vector<RealType> rk(numParams, 0);
+      std::vector<RealType> rkp1(numParams, 0);
+      std::vector<RealType> pk(numParams, 0);
+      std::vector<RealType> pkp1(numParams, 0);
+      std::vector<RealType> xk(numParams, 0);
+      std::vector<RealType> xkp1(numParams, 0);
+      std::vector<RealType> Apk(numParams, 0);
+
+
+      //Basic implementation of conjugate gradient algorithm...coming directly from wikipedia
+      RealType dk = 0;
+      //initial guess is zero, so S*x_0 = 0
+      for (int i = 0; i < numParams; i++)
+      {
+        rk[i] = -sr_tau * ham[i + 1];
+        dk += rk[i] * rk[i];
+      }
+      eps            = dk / numParams * thr;
+      pk             = rk;
+      bool converged = false;
+      while (!converged)
+      {
+        //This function avoids building the full Sij matrix by calculating the matrix vector 
+        //product of the overlap matrix * the current parameter vector. 
+        //This is the "accelerated stochastic reconfiguration" from https://doi.org/10.1103/PhysRevB.85.045103
+        //Basically doing Eqn. (7)
+        optTarget->calcOvlParmVec(pk, bestShift_s, Apk);
+        RealType denom = 0;
+        for (int i = 0; i < numParams; i++)
+          denom += pk[i] * Apk[i];
+        RealType ak = dk / denom;
+
+        RealType dkp1 = 0;
+        for (int i = 0; i < numParams; i++)
+        {
+          xkp1[i] = xk[i] + ak * pk[i];
+          rkp1[i] = rk[i] - ak * Apk[i];
+          dkp1 += rkp1[i] * rkp1[i];
+        }
+        if (dkp1 / numParams < eps || k == kmax)
+        {
+          converged = true;
+          break;
+        }
+        else
+        {
+          RealType bk = dkp1 / dk;
+          for (int i = 0; i < numParams; i++)
+          {
+            pkp1[i] = rkp1[i] + bk * pk[i];
+            pk[i]   = pkp1[i];
+            rk[i]   = rkp1[i];
+            xk[i]   = xkp1[i];
+            dk      = dkp1;
+          }
+          k++;
+        }
+      }
+      app_log() << "Solved iterative krylov in " << k << " iterations" << std::endl;
+      for (int i = 0; i < numParams; i++)
+        parameterDirections[i + 1] = xkp1[i];
+      // compute the scaling constant to apply to the update
+      nonlinear_rescale      = getNonLinearRescale(parameterDirections, Apk, *optTarget);
+      objFuncWrapper_.Lambda = nonlinear_rescale;
+    }
+  }
+
+  //We get the parameter direction from the SR solve above using CG algorithm
+  //Then, we can either use a line search with correlated sampling to find the best update along that direction, 
+  //or we can use a simple approach where we just accept the move based on the size of the step...sr_tau in this case. 
+  //The line search with correlated sampling converges faster, but can have issues if the weight from correlated 
+  //sampling gets small and stays small. Otherwise, just taking a small sr_tau will work, but can take a lot of iterations
+  //
+  //im sure there are better ways to do this
+  if (use_line_search_)
+  {
+    optTarget->setneedGrads(false);
+
+    optdir.resize(numParams, 0);
+    optparam.resize(numParams, 0);
+
+    //set up line search stuff
+    for (int i = 0; i < numParams; i++)
+      optparam[i] = currentParameters[i];
+    for (int i = 0; i < numParams; i++)
+      optdir[i] = parameterDirections[i + 1];
+
+    RealType bigVec(0);
+    for (int i = 0; i < numParams; i++)
+      bigVec = std::max(bigVec, std::abs(parameterDirections[i + 1]));
+
+    //Settings for line search, taken from previous_linear_methods_run
+    objFuncWrapper_.TOL              = param_tol / bigVec;
+    objFuncWrapper_.AbsFuncTol       = true;
+    objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
+    objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
+    bool Valid                       = true;
+    {
+      ScopedTimer local(line_min_timer_);
+      Valid = objFuncWrapper_.lineoptimization2();
+    }
+
+    if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))
+    {
+      for (int i = 0; i < numParams; i++)
+        optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+    }
+    else
+    {
+      for (int i = 0; i < numParams; i++)
+        optTarget->Params(i) = currentParameters.at(i) + nonlinear_rescale * parameterDirections.at(i + 1);
+    }
+  }
+  else
+  {
+    for (int i = 0; i < numParams; i++)
+      optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+  }
+
+  if (bestShift_s > 1.0e-2)
+    bestShift_s = bestShift_s / shift_s_base;
+  // say what we are doing
+  app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
+  accept_history <<= 1;
+  accept_history.set(0, true);
 
   app_log() << std::endl
             << "*****************************************************************************" << std::endl

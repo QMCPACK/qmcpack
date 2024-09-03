@@ -118,6 +118,9 @@ private:
   // perform the single-shift update, no sample regeneration
   bool one_shift_run();
 
+  // simple stochastic reconfig
+  bool stochastic_reconfiguration_conjugate_gradient();
+
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
@@ -195,6 +198,8 @@ private:
   std::bitset<2> accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
+  /// SR projection timestep
+  RealType sr_tau;
 
   // ------------------------------------
   // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers
@@ -275,6 +280,8 @@ private:
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
 
+  bool use_line_search_;
+
   NewTimer& initialize_timer_;
   NewTimer& generate_samples_timer_;
   NewTimer& build_olv_ham_timer_;
@@ -282,6 +289,7 @@ private:
   NewTimer& eigenvalue_timer_;
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
+  NewTimer& sr_solver_timer_;
 
   ///xml node to be dumped
   xmlNodePtr wfNode;

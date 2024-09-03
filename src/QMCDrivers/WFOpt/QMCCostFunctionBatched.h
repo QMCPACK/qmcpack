@@ -52,6 +52,7 @@ public:
 
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations(EngineHandle& handle) override;
+  void checkConfigurationsSR(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                   DescentEngine& descentEngineObj,
@@ -62,6 +63,8 @@ public:
   void resetPsi(bool final_reset = false) override;
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
+  Return_rt fillHamVec(std::vector<Return_rt>& ham) override;
+  void calcOvlParmVec(const std::vector<Return_rt>& parm, const Return_rt& shift, std::vector<Return_rt>& ovlParmVec) override;
 
 protected:
   /// H components used in correlated sampling. It can be KE or KE+NLPP
