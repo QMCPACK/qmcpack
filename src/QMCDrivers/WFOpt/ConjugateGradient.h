@@ -28,6 +28,8 @@ public:
 
   ConjugateGradient(Real thr = 1e-6, Real regularization = 0);
 
+  //Solve linear system Ax = b, i.e. x = Ainv * b using conjugate gradient. 
+  //If ill-conditioned, solves x = (Ainv + lambda * I) * b where lambda is a small regularization 
   int run(QMCCostFunctionBase& optTarget, const std::vector<Real>& bvec, std::vector<Real>& solution);
 
 private:

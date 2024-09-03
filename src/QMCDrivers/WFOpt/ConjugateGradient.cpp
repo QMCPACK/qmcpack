@@ -38,7 +38,7 @@ int ConjugateGradient::run(QMCCostFunctionBase& optTarget, const std::vector<Rea
 
   //Basic implementation of conjugate gradient algorithm...coming directly from wikipedia
   Real dk = 0;
-  //initial guess is zero, so S*x_0 = 0
+  //initial guess is zero, so A*x_0 = 0
   for (int i = 0; i < numParams; i++)
   {
     rk[i] = bvec[i];
@@ -49,10 +49,9 @@ int ConjugateGradient::run(QMCCostFunctionBase& optTarget, const std::vector<Rea
   bool converged = false;
   while (!converged)
   {
-    //This function avoids building the full Sij matrix by calculating the matrix vector
-    //product of the overlap matrix * the current parameter vector.
-    //This is the "accelerated stochastic reconfiguration" from https://doi.org/10.1103/PhysRevB.85.045103
-    //Basically doing Eqn. (7)
+    //This function avoids building the full Aij matrix by calculating the matrix vector
+    //product of the A matrix * the current solution vector
+    //optTarget needs to implement A*p and return in Apk
     optTarget.calcOvlParmVec(pk, Apk);
     for (int pm = 0; pm < numParams; pm++)
       Apk[pm] += regularization_ * pk[pm];
