@@ -606,7 +606,7 @@ optimization block:
 <parameter name="MinMethod"> THE METHOD YOU LIKE </parameter>
 
 OneShiftOnly Optimizer
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
 This method relies on the effective weight of correlated sampling rather than the cost function value to justify a new set of parameters.
@@ -720,7 +720,7 @@ command ``qmca -q ev *.scalar.dat`` to look at the VMC energy and
 variance for each optimization step.
 
 Adaptive Optimizer
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 The default setting of the adaptive optimizer is to construct the linear
 method Hamiltonian and overlap matrices explicitly and add different
@@ -933,7 +933,7 @@ Excited state recommendations:
    favor of the ground state.
 
 Descent Optimizer
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 Gradient descent algorithms are an alternative set of optimization methods to the OneShiftOnly and adaptive optimizers based on the linear method.
 These methods use only first derivatives to optimize trial wave functions and convergence can be accelerated by retaining a memory of previous derivative values.
@@ -1074,7 +1074,7 @@ Additional information and recommendations:
   </loop>
 
 Hybrid Optimizer
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Another optimization option is to use a hybrid combination of accelerated descent and blocked linear method.
 It provides a means to retain the advantages of both individual methods while scaling to large numbers of parameters beyond the traditional 10,000 parameter limit of the linear method. :cite:`Otis2019`
@@ -1174,7 +1174,7 @@ Additional information and recommendations:
    the descent engine to do this averaging on its own.
 
 Quartic Optimizer
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 *This is an older optimizer method retained for compatibility. We
 recommend starting with the newest OneShiftOnly or adaptive optimizers.*
