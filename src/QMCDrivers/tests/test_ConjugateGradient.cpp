@@ -65,7 +65,6 @@ using Real = QMCTraits::RealType;
 TEST_CASE("ConjugateGradient", "[drivers]")
 {
   //Testing that congjuate gradient algorithm correctly solves a particular Ax = b linear system
-  
 
   //Set A matrix
   std::vector<Real> row0{0.25592304, 0.59014979, 0.46571581, 0.12010389, 0.27168455};
@@ -117,7 +116,6 @@ TEST_CASE("ConjugateGradient", "[drivers]")
   ConjugateGradient cg;
   std::vector<Real> soln(np, 0);
   int niterations = cg.run(ls, b, soln);
-  std::cout << niterations << std::endl;
   for (int i = 0; i < np; i++)
     CHECK(soln[i] == Approx(x[i]));
 } 

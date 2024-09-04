@@ -1828,7 +1828,6 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
   // for outputing matrices and eigenvalue/vectors to disk
   hdf_archive hout;
 
-  RealType nonlinear_rescale(1.0);
   {
     ScopedTimer local(build_olv_ham_timer_);
     Timer t_build_matrices;
@@ -1857,11 +1856,10 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
       ConjugateGradient cg;
       int iterations = cg.run(*optTarget, bvec, param_update);
       app_log() << "Solved iterative krylov in " << iterations << " iterations" << std::endl;
+      // compute the scaling constant to apply to the update
       for (int i = 0; i < numParams; i++)
         parameterDirections[i + 1] = param_update[i];
-      // compute the scaling constant to apply to the update
-      nonlinear_rescale      = getNonLinearRescale(parameterDirections, param_update, *optTarget);
-      objFuncWrapper_.Lambda = nonlinear_rescale;
+      objFuncWrapper_.Lambda = cg.getNonLinearRescale(*optTarget);
     }
   }
 
@@ -1908,7 +1906,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
     else
     {
       for (int i = 0; i < numParams; i++)
-        optTarget->Params(i) = currentParameters.at(i) + nonlinear_rescale * parameterDirections.at(i + 1);
+        optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
     }
   }
   else

@@ -23,8 +23,8 @@ ConjugateGradient::ConjugateGradient(Real threshold, Real regularization)
 int ConjugateGradient::run(QMCCostFunctionBase& optTarget, const std::vector<Real>& bvec, std::vector<Real>& solution)
 {
   int numParams = optTarget.getNumParams();
-  int kmax = numParams;
-  int k    = 0;
+  int kmax      = numParams;
+  int k         = 0;
 
   std::vector<Real> rk(numParams, 0);
   std::vector<Real> rkp1(numParams, 0);
@@ -33,8 +33,6 @@ int ConjugateGradient::run(QMCCostFunctionBase& optTarget, const std::vector<Rea
   std::vector<Real> xk(numParams, 0);
   std::vector<Real> xkp1(numParams, 0);
   std::vector<Real> Apk(numParams, 0);
-  solution.resize(numParams);
-
 
   //Basic implementation of conjugate gradient algorithm...coming directly from wikipedia
   Real dk = 0;
@@ -87,8 +85,63 @@ int ConjugateGradient::run(QMCCostFunctionBase& optTarget, const std::vector<Rea
     }
   }
 
+  //store data for potential use in nonlinear rescale
+  Axsol_ = Apk;
+  xsol_  = xkp1;
+
+  //return solution
+  solution.resize(numParams);
   solution = xkp1;
   return k;
+}
+
+void ConjugateGradient::getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const
+{
+  std::vector<int> types;
+  optTarget.getParameterTypes(types);
+  first = 0;
+  last  = types.size();
+  //assume all non-linear coeffs are together.
+  if (types[0] == optimize::LINEAR_P)
+  {
+    int i(0);
+    while (i < types.size())
+    {
+      if (types[i] == optimize::LINEAR_P)
+        first = i;
+      i++;
+    }
+    first++;
+  }
+  else
+  {
+    int i(types.size() - 1);
+    while (i >= 0)
+    {
+      if (types[i] == optimize::LINEAR_P)
+        last = i;
+      i--;
+    }
+  }
+  //     returns the number of non-linear parameters.
+  //    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
+}
+
+ConjugateGradient::Real ConjugateGradient::getNonLinearRescale(const QMCCostFunctionBase& optTarget) const
+{
+  int first(0), last(0);
+  getNonLinearRange(first, last, optTarget);
+  if (first == last)
+    return 1.0;
+  Real rescale(1.0);
+  Real xi(0.5);
+  Real D(0.0);
+  for (int i = first; i < last; i++)
+    D += Axsol_[i] * xsol_[i];
+  rescale = (1 - xi) * D / ((1 - xi) + xi * std::sqrt(1 + D));
+  rescale = 1.0 / (1.0 - rescale);
+  //     app_log()<<"rescale: "<<rescale<< std::endl;
+  return rescale;
 }
 
 } // namespace qmcplusplus
