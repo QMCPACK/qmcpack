@@ -606,7 +606,7 @@ optimization block:
 <parameter name="MinMethod"> THE METHOD YOU LIKE </parameter>
 
 OneShiftOnly Optimizer
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
 This method relies on the effective weight of correlated sampling rather than the cost function value to justify a new set of parameters.
@@ -652,13 +652,18 @@ Recommendations:
 
 - If the VMC energy of the last optimization iterations grows significantly, increase ``minwalkers`` closer to 1 and make the optimization stable.
 
-- If the first iterations of optimization are rejected on a reasonable initial wavefunction,
-  lower the ``minwalkers`` value based on the measured value printed in the standard output to accept the move.
+- If the first iterations of optimization are rejected despite a reasonable initial wavefunction, lower the ``minwalkers`` value
+  based on the measured value printed in the standard output to accept the move.
 
-We recommended using this optimizer in two sections with a very small ``minwalkers`` in the first and a large value in the second, such as the following.
-In the very beginning, parameters are far away from optimal values and large changes are proposed by the optimizer.
-Having a small ``minwalkers`` makes it much easier to accept these changes.
-When the energy gradually converges, we can have a large ``minwalkers`` to avoid risky parameter sets.
+When optimizing parameters from scratch, we recommended using this optimizer in two sections with a very small ``minwalkers`` in the
+first and a large value in the second, e.g., 1e-4 amd 0.5, as illustrated below. In the very beginning, parameters are far away from
+optimal values and large changes are proposed by the optimizer. Having a small ``minwalkers`` makes it much easier to accept these
+changes. If optimization becomes unstable, increase ``minwalkers``. If optimization gets stuck with proposed parameter sets being
+constantly rejected, decrease ``minwalkers``. When the energy gradually converges, keeping a large ``minwalkers`` is necessary to
+prevent accepting risky parameter sets. Continuing optimization with more parameters from a partially converged wavefunction should
+also use large ``minwalkers``, for example adding three-body Jastrow factor to converged one-body and two-body Jastrow factors. When
+developing a reliable optimization recipe for a new system, one should check convergence of the process with significantly increased
+samples, e.g. 4x, and repeat the check each time the flexibility in the wavefunction and number of parameters is increased.
 
 ::
 
@@ -716,7 +721,7 @@ command ``qmca -q ev *.scalar.dat`` to look at the VMC energy and
 variance for each optimization step.
 
 Adaptive Optimizer
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 The default setting of the adaptive optimizer is to construct the linear
 method Hamiltonian and overlap matrices explicitly and add different
@@ -929,7 +934,7 @@ Excited state recommendations:
    favor of the ground state.
 
 Descent Optimizer
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 Gradient descent algorithms are an alternative set of optimization methods to the OneShiftOnly and adaptive optimizers based on the linear method.
 These methods use only first derivatives to optimize trial wave functions and convergence can be accelerated by retaining a memory of previous derivative values.
@@ -1070,7 +1075,7 @@ Additional information and recommendations:
   </loop>
 
 Hybrid Optimizer
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Another optimization option is to use a hybrid combination of accelerated descent and blocked linear method.
 It provides a means to retain the advantages of both individual methods while scaling to large numbers of parameters beyond the traditional 10,000 parameter limit of the linear method. :cite:`Otis2019`
@@ -1170,7 +1175,7 @@ Additional information and recommendations:
    the descent engine to do this averaging on its own.
 
 Quartic Optimizer
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 *This is an older optimizer method retained for compatibility. We
 recommend starting with the newest OneShiftOnly or adaptive optimizers.*
