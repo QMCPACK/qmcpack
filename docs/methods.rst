@@ -652,17 +652,18 @@ Recommendations:
 
 - If the VMC energy of the last optimization iterations grows significantly, increase ``minwalkers`` closer to 1 and make the optimization stable.
 
-- If the first iterations of optimization are rejected on a reasonable initial wavefunction,
-  lower the ``minwalkers`` value based on the measured value printed in the standard output to accept the move.
+- If the first iterations of optimization are rejected despite a reasonable initial wavefunction, lower the ``minwalkers`` value
+  based on the measured value printed in the standard output to accept the move.
 
-When optimizing parameters from scratch, We recommended using this optimizer in two sections with a very small ``minwalkers``
-in the first and a large value in the second, such as the following.
-In the very beginning, parameters are far away from optimal values and large changes are proposed by the optimizer.
-Having a small ``minwalkers`` makes it much easier to accept these changes. If optimization becomes unstable, increase ``minwalkers``.
-If optimization gets stuck with proposed parameter sets being constantly rejected, decrease ``minwalkers``.
-When the energy gradually converges, keeping a large ``minwalkers`` is necessary to prevent accepting risky parameter sets.
-Continuing optimization with more parameters from a partially converged wavefunction should also use large ``minwalkers``,
-for example adding three-body Jastrow factor to converged one-body and two-body Jastrow factors.
+When optimizing parameters from scratch, we recommended using this optimizer in two sections with a very small ``minwalkers`` in the
+first and a large value in the second, e.g., 1e-4 amd 0.5, as illustrated below. In the very beginning, parameters are far away from
+optimal values and large changes are proposed by the optimizer. Having a small ``minwalkers`` makes it much easier to accept these
+changes. If optimization becomes unstable, increase ``minwalkers``. If optimization gets stuck with proposed parameter sets being
+constantly rejected, decrease ``minwalkers``. When the energy gradually converges, keeping a large ``minwalkers`` is necessary to
+prevent accepting risky parameter sets. Continuing optimization with more parameters from a partially converged wavefunction should
+also use large ``minwalkers``, for example adding three-body Jastrow factor to converged one-body and two-body Jastrow factors. When
+developing a reliable optimization recipe for a new system, one should check convergence of the process with significantly increased
+samples, e.g. 4x, and repeat the check each time the flexibility in the wavefunction and number of parameters is increased.
 
 ::
 
