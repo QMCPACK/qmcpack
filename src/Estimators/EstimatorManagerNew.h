@@ -48,7 +48,7 @@ class EstimatorManagerNew
 public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
   using QMCT             = QMCTraits;
-  using RealType         = QMCTraits::FullPrecRealType;
+  using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   using MCPWalker        = Walker<QMCT, PtclOnLatticeTraits>;
   using PSPool           = typename ParticleSetPool::PoolType;
@@ -108,7 +108,7 @@ public:
    * \param[in] reject
    * \param[in] block_weight
    */
-  void stopBlock(unsigned long accept, unsigned long reject, RealType block_weight);
+  void stopBlock(unsigned long accept, unsigned long reject, FullPrecRealType block_weight);
 
   /** At end of block collect the main scalar estimators for the entire rank
    *
@@ -198,7 +198,7 @@ private:
    *       send & receive buffers
    *  3. The operation is generic as long as OperatorEstimator satisfies
    *     the requirement that get_data_ref() returns a reference to
-   *     std::vector<RealType>
+   *     std::vector<Real>
    *
    *  Implementation makes the assumption that sending each OperatorEstimator
    *  separately is the correct memory use vs. mpi message balance.
@@ -238,13 +238,13 @@ private:
   ScalarEstimatorBase::accumulator_type varAccumulator;
   ///cached block averages of the values
 
-  Vector<RealType> AverageCache;
+  Vector<FullPrecRealType> AverageCache;
   ///cached block averages of properties, e.g. BlockCPU
   Vector<RealType> PropertyCache;
   ///manager of scalar data
-  RecordNamedProperty<RealType> BlockAverages;
+  RecordNamedProperty<FullPrecRealType> BlockAverages;
   ///manager of property data
-  RecordNamedProperty<RealType> BlockProperties;
+  RecordNamedProperty<FullPrecRealType> BlockProperties;
   /// main estimator i.e. some version of a local energy estimator.
   UPtr<ScalarEstimatorBase> main_estimator_;
   /** non main scalar estimators collecting simple scalars, are there any?

@@ -87,7 +87,7 @@ public:
 
   std::size_t getFullDataSize() const override;
 
-  void packData(PooledData<Real>& buffer) override;
+  void packData(PooledData<Real>& buffer) const override;
   void unpackData(PooledData<Real>& buffer) override;
 
   UPtr<OperatorEstBase> spawnCrowdClone() const override;

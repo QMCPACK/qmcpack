@@ -110,7 +110,7 @@ public:
    *  to buffer of type Real for reduction over MPI.
    *  I.e. writes to pooled data.
    */
-  virtual void packData(PooledData<Real>& buffer);
+  virtual void packData(PooledData<Real>& buffer) const;
   /** Unpacks data from mpi buffer of type Real into native container types
    *  after a reduction over MPI.
    *  i.e. reads from pooled data.

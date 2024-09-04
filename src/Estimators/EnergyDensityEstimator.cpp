@@ -188,7 +188,7 @@ std::size_t NEEnergyDensityEstimator::getFullDataSize() const
   return size;
 }
 
-void NEEnergyDensityEstimator::packData(PooledData<Real>& buffer)
+void NEEnergyDensityEstimator::packData(PooledData<Real>& buffer) const
 {
   OperatorEstBase::packData(buffer);
   for(auto& grid: spacegrids_)

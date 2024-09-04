@@ -12,6 +12,7 @@
 
 #include "catch.hpp"
 
+#include "ValidEnergyDensityInput.h"
 #include "ValidOneBodyDensityMatricesInput.h"
 #include "ValidSpinDensityInput.h"
 #include "ValidMomentumDistributionInput.h"
@@ -59,6 +60,14 @@ Libxml2Document createEstimatorManagerNewInputXML()
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
+  {
+    using Input = testing::EnergyDensityInputs;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::CELL));
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
 
   ScalarInput scalar_input;
   for (auto& input_xml : scalar_input)
@@ -93,6 +102,49 @@ Libxml2Document createEstimatorManagerNewVMCInputXML()
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
+  {
+    using Input = testing::EnergyDensityInputs;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::CELL));
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(ScalarInput::getXml(ScalarInput::valid::LOCAL_ENERGY));
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
+  return estimators_doc;
+}
+
+Libxml2Document createEstimatorManagerEnergyDenistyInputXML()
+{
+  const int max_node_recurse = 3;
+  Libxml2Document estimators_doc;
+  estimators_doc.newDoc("Estimators");
+  {
+    using Input = testing::EnergyDensityInputs;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::CELL));
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    Libxml2Document doc;
+    std::string_view xml{R"XML(
+<estimator type="PerParticleHamiltonianLogger" to_stdout="false"/>
+)XML"};
+    bool okay = doc.parseFromString(xml);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(ScalarInput::getXml(ScalarInput::valid::LOCAL_ENERGY));
