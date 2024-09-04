@@ -46,6 +46,10 @@ public:
   ResourceCollection& getHamRes();
   ResourceCollection& getTwfRes();
   
+  template <typename LIST>
+  ResourceCollectionTeamLock<LIST> makeTeamLock(ResourceCollection& res, RefVectorWithLeader<LIST> list) {
+    return ResourceCollectionTeamLock<LIST>(res, list);
+  }
 private:
   ProjectData test_project_;
   MockGoldWalkerElements gold_elem_;

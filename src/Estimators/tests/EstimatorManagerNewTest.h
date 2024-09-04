@@ -74,6 +74,7 @@ public:
   void reduceOperatorEstimators() { emn_.reduceOperatorEstimators(); }
 
   const ScalarEstimatorBase& getMainEstimator() { return *(emn_.main_estimator_.get()); }
+  RefVector<OperatorEstBase> getOperatorEstimators() { return convertUPtrToRefVector(emn_.operator_ests_); }
 private:
   EstimatorManagerNew& emn_;
 };

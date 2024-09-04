@@ -137,7 +137,7 @@ public:
   /** get the average of per-block energy and variance of all the blocks
    * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
    */
-  void getApproximateEnergyVariance(RealType& e, RealType& var);
+  void getApproximateEnergyVariance(FullPrecRealType& e, FullPrecRealType& var);
 
   auto& get_AverageCache() { return AverageCache; }
 

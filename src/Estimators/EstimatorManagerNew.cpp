@@ -447,7 +447,7 @@ void EstimatorManagerNew::zeroOperatorEstimators()
     op_est->zero();
 }
 
-void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& var)
+void EstimatorManagerNew::getApproximateEnergyVariance(FullPrecRealType& e, FullPrecRealType& var)
 {
   RealType tmp[3];
   tmp[0] = energyAccumulator.count();
