@@ -86,12 +86,11 @@ int ConjugateGradient::run(QMCCostFunctionBase& optTarget, const std::vector<Rea
   }
 
   //store data for potential use in nonlinear rescale
-  Axsol_ = Apk;
-  xsol_  = xkp1;
+  Axsol_ = std::move(Apk);
+  xsol_  = std::move(xkp1);
 
   //return solution
-  solution.resize(numParams);
-  solution = xkp1;
+  solution = xsol_;
   return k;
 }
 

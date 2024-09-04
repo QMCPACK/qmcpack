@@ -34,7 +34,9 @@ public:
   Real getNonLinearRescale(const QMCCostFunctionBase& optTarget) const;
 
 private:
+  //convergence threshold
   Real threshold_;
+  //for ill-conditioned matrices, add small offset to the diagonal
   Real regularization_;
   //to be used for nonlinear rescale
   std::vector<Real> Axsol_;
