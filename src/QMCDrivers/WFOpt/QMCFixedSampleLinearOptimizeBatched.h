@@ -200,6 +200,10 @@ private:
   RealType shift_s_base;
   /// SR projection timestep
   RealType sr_tau;
+  /// SR regularization parameter
+  RealType sr_regularization;
+  /// tolerance for CG solution in SR
+  RealType sr_tolerance;
 
   // ------------------------------------
   // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers
