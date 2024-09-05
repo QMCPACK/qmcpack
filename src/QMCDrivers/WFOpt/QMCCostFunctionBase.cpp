@@ -136,7 +136,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Retur
   throw std::runtime_error("Need to implement fillHamVec");
 }
 
-void QMCCostFunctionBase::calcOvlParmVec(const std::vector<Return_rt>& parm, const Return_rt& shift, std::vector<Return_rt>& ovlParmVec)
+void QMCCostFunctionBase::calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec)
 {
   throw std::runtime_error("Need to implement calcOvlParmVec");
 }

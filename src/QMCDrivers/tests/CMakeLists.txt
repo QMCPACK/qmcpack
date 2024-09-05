@@ -81,6 +81,7 @@ set(DRIVER_TEST_SRC
     test_QMCCostFunctionBatched.cpp
     test_QMCCostFunctionBase.cpp
     test_LinearMethod.cpp
+    test_ConjugateGradient.cpp
     test_Eigensolver.cpp
     test_WFOptDriverInput.cpp)
 add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})

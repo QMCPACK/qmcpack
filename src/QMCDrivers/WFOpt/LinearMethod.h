@@ -72,7 +72,6 @@ public:
   Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const;
   // compute a rescale factor. Ye: Where is the method from?
   Real getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S, const QMCCostFunctionBase& optTarget) const;
-  Real getNonLinearRescale(std::vector<Real>& dP, std::vector<Real>& SdP, const QMCCostFunctionBase& optTarget) const;
 };
 } // namespace qmcplusplus
 #endif
