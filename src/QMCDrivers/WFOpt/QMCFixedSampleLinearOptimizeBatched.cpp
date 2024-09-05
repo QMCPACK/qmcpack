@@ -83,6 +83,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       accept_history(3),
       shift_s_base(4.0),
       sr_tau(0.01),
+      sr_regularization(0.01),
+      sr_tolerance(1e-6),
       MinMethod("OneShiftOnly"),
       do_output_matrices_csv_(false),
       do_output_matrices_hdf_(false),
@@ -114,6 +116,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(shift_i_input, "shift_i");
   m_param.add(shift_s_input, "shift_s");
   m_param.add(sr_tau, "sr_tau");
+  m_param.add(sr_regularization, "sr_regularization");
+  m_param.add(sr_tolerance, "sr_tolerance");
   // options_LMY_
   m_param.add(options_LMY_.targetExcited, "options_LMY_.targetExcited");
   m_param.add(options_LMY_.block_lm, "options_LMY_.block_lm");
@@ -1853,7 +1857,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
       std::vector<RealType> bvec(numParams, 0);
       for (int i = 0; i < numParams; i++)
         bvec[i] = -sr_tau * ham[i + 1];
-      ConjugateGradient cg;
+      ConjugateGradient cg(sr_tolerance, sr_regularization);
       int iterations = cg.run(*optTarget, bvec, param_update);
       app_log() << "Solved iterative krylov in " << iterations << " iterations" << std::endl;
       // compute the scaling constant to apply to the update
@@ -1915,8 +1919,6 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
       optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
   }
 
-  if (bestShift_s > 1.0e-2)
-    bestShift_s = bestShift_s / shift_s_base;
   // say what we are doing
   app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
   accept_history <<= 1;

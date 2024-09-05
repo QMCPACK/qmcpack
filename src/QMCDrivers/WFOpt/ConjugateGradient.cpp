@@ -52,7 +52,7 @@ int ConjugateGradient::run(QMCCostFunctionBase& optTarget, const std::vector<Rea
     //optTarget needs to implement A*p and return in Apk
     optTarget.calcOvlParmVec(pk, Apk);
     for (int pm = 0; pm < numParams; pm++)
-      Apk[pm] += regularization_ * pk[pm];
+      Apk[pm] *= (1 + regularization_);
     Real denom = 0;
     for (int i = 0; i < numParams; i++)
       denom += pk[i] * Apk[i];
