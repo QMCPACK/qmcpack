@@ -72,7 +72,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-		  const RefVector<QMCHamiltonian>& hams,
+                  const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecReal>& rng) override;
 
   void evaluate(ParticleSet& pset, const MCPWalker& walker, const int walker_index);
@@ -113,6 +113,7 @@ public:
   RefVector<NESpaceGrid<Real>> getSpaceGrids();
 
   RefVector<std::vector<QMCT::RealType>>& getExtraData();
+
 private:
   auto extractIonPositionsAndCharge(const ParticleSet& pset);
 

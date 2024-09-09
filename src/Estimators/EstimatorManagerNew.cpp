@@ -98,7 +98,7 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                               const ParticleSet& pset,
                                               const TrialWaveFunction& twf,
                                               const QMCHamiltonian& H,
-					      const PSPool& pset_pool)
+                                              const PSPool& pset_pool)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
@@ -109,8 +109,7 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
-	  createEstimator<EnergyDensityInput>(est_input, pset_pool)
-	  ))
+          createEstimator<EnergyDensityInput>(est_input, pset_pool)))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 
@@ -410,7 +409,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
 #else
       operator_recv_buffer = operator_send_buffer;
 #endif
-      
+
       // This is a crucial step where summed over weighted observable is normalized by the total weight.  For correctness this should be done
       // only after the full weighted sum is done.
       // i.e.  (1 / Sum(w_1 + ... + w_n)) * (w_1 * S_1 + ... + w_n * S_n) != (1/w_1) * w_1 * S_1 + ... + (1/w_n) * w_n * S_n
@@ -418,10 +417,10 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       // Assumptions lead rank is 0, true for Ensembles?
       if (my_comm_->rank() == 0)
       {
-	estimator.unpackData(operator_recv_buffer);
-	RealType reduced_walker_weights = 0.0;
+        estimator.unpackData(operator_recv_buffer);
+        RealType reduced_walker_weights = 0.0;
         operator_recv_buffer.get(reduced_walker_weights);
-        RealType invTotWgt            = 1.0 / static_cast<RealType>(reduced_walker_weights);
+        RealType invTotWgt = 1.0 / static_cast<RealType>(reduced_walker_weights);
         estimator.normalize(invTotWgt);
       }
     }

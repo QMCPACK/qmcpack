@@ -39,11 +39,11 @@ class OEBAccessor;
 class OperatorEstBase
 {
 public:
-  using QMCT      = QMCTraits;
+  using QMCT             = QMCTraits;
   using FullPrecRealType = QMCT::FullPrecRealType;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using Real = QMCT::RealType;
-  using Data = std::vector<Real>;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using Real             = QMCT::RealType;
+  using Data             = std::vector<Real>;
 
   ///constructor
   OperatorEstBase(DataLocality dl);
@@ -115,7 +115,7 @@ public:
    *  after a reduction over MPI.
    *  i.e. reads from pooled data.
    */
-  virtual void unpackData(PooledData<Real>& buffer);  
+  virtual void unpackData(PooledData<Real>& buffer);
   ///@}
 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
@@ -152,7 +152,7 @@ public:
    *
    *  Many estimators don't need per particle values so the default implementation is no op.
    */
-  virtual void registerListeners(QMCHamiltonian& ham_leader){};
+  virtual void registerListeners(QMCHamiltonian& ham_leader) {};
 
   bool isListenerRequired() { return requires_listener_; }
 

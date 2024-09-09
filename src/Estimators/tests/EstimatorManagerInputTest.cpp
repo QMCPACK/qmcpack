@@ -156,6 +156,6 @@ Libxml2Document createEstimatorManagerEnergyDenistyInputXML()
   return estimators_doc;
 }
 
-  
+
 } // namespace testing
 } // namespace qmcplusplus

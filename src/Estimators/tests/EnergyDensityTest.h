@@ -31,12 +31,12 @@ public:
   using MCPWalker = typename OperatorEstBase::MCPWalker;
 
   EnergyDensityTest(Communicate* comm, int num_walkers, bool generate_test_data = false);
-  
+
   RefVector<ParticleSet> getPsetRefs() { return makeRefVector<ParticleSet>(psets_); }
   NEEnergyDensityEstimator& getEnergyDensityEstimator();
 
   MockGoldWalkerElements& getGoldElements() { return gold_elem_; }
-  
+
   RefVectorWithLeader<MCPWalker> getWalkerList();
   RefVectorWithLeader<ParticleSet> getPSetList();
   RefVectorWithLeader<QMCHamiltonian> getHamList();
@@ -45,11 +45,7 @@ public:
   ResourceCollection& getPSetRes();
   ResourceCollection& getHamRes();
   ResourceCollection& getTwfRes();
-  
-  // template <typename LIST>
-  // ResourceCollectionTeamLock<LIST> makeTeamLock(ResourceCollection& res, RefVectorWithLeader<LIST> list) {
-  //   return ResourceCollectionTeamLock<LIST>(res, list);
-  // }
+
 private:
   ProjectData test_project_;
   MockGoldWalkerElements gold_elem_;
@@ -109,7 +105,6 @@ private:
           {2.284020089, 1.173071915, 1.044597715},
       },
   };
-
 };
 
 } // namespace testing

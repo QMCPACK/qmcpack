@@ -45,13 +45,13 @@ class SelfHealingOverlapInput;
 class MagnetizationDensityInput;
 class PerParticleHamiltonianLoggerInput;
 using EstimatorInput  = std::variant<std::monostate,
-                                    MomentumDistributionInput,
-                                    SpinDensityInput,
-                                    OneBodyDensityMatricesInput,
-                                    SelfHealingOverlapInput,
-                                    MagnetizationDensityInput,
-                                    PerParticleHamiltonianLoggerInput,
-                                    EnergyDensityInput>;
+                                     MomentumDistributionInput,
+                                     SpinDensityInput,
+                                     OneBodyDensityMatricesInput,
+                                     SelfHealingOverlapInput,
+                                     MagnetizationDensityInput,
+                                     PerParticleHamiltonianLoggerInput,
+                                     EnergyDensityInput>;
 using EstimatorInputs = std::vector<EstimatorInput>;
 
 /** The scalar esimtator inputs
@@ -93,6 +93,7 @@ public:
    */
   void append(const EstimatorInput& ei);
   void append(const ScalarEstimatorInput& sei);
+
 private:
   /// this is a vector of variants for typesafe access to the estimator inputs
   EstimatorInputs estimator_inputs_;

@@ -56,7 +56,7 @@ TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
   {
     Libxml2Document doc;
     using spin_input = testing::ValidSpinDensityInput;
-    bool okay = doc.parseFromString(spin_input::xml[spin_input::GRID]);
+    bool okay        = doc.parseFromString(spin_input::xml[spin_input::GRID]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);
@@ -112,7 +112,7 @@ TEST_CASE("EstimatorManagerInput::moveFromEstimatorInputs", "[estimators]")
   {
     Libxml2Document doc;
     using spin_input = testing::ValidSpinDensityInput;
-    bool okay = doc.parseFromString(spin_input::xml[spin_input::GRID]);
+    bool okay        = doc.parseFromString(spin_input::xml[spin_input::GRID]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);

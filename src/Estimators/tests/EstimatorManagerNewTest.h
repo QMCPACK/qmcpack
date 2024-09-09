@@ -31,7 +31,7 @@ class EstimatorManagerNewTest
 {
 public:
   using QMCT = QMCTraits;
-  
+
   EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate* comm, int ranks);
   /** Quickly add main scalar samples using FakeEstimator mock estimator. */
   void fakeMainScalarSamples();
@@ -52,13 +52,14 @@ public:
   std::vector<QMCT::RealType> generateGoodOperatorData(int num_ranks);
   /// test replacing the main estimator
   bool testReplaceMainEstimator();
-  
+
   bool testMakeBlockAverages();
   void testReduceOperatorEstimators();
 
   std::vector<QMCT::RealType>& get_operator_data() { return em.operator_ests_[0]->get_data(); }
-  
+
   EstimatorManagerNew em;
+
 private:
   Communicate* comm_;
   std::vector<FakeEstimator> estimators_;
@@ -67,7 +68,8 @@ private:
 
 /** Simple private access for integration testing with EstimatorManagerNew
  */
-class EstimatorManagerNewTestAccess {
+class EstimatorManagerNewTestAccess
+{
 public:
   EstimatorManagerNewTestAccess(EstimatorManagerNew& emn) : emn_(emn) {}
 
@@ -75,11 +77,12 @@ public:
 
   const ScalarEstimatorBase& getMainEstimator() { return *(emn_.main_estimator_.get()); }
   RefVector<OperatorEstBase> getOperatorEstimators() { return convertUPtrToRefVector(emn_.operator_ests_); }
+
 private:
   EstimatorManagerNew& emn_;
 };
 
-}
-}
+} // namespace testing
+} // namespace qmcplusplus
 
 #endif /* QMCPLUSPLUS_ESTIMATORMANAGERNEWTEST_HPP */
