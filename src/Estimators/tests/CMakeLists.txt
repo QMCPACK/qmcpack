@@ -80,18 +80,18 @@ endif()
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 
 if(HAVE_MPI)
+  #this is dependent on the directory creation and sym linking of earlier driver tests
   set(UTEST_EXE test_${SRC_DIR}_mpi)
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
 
-  #this is dependent on the directory creation and sym linking of earlier driver tests
   set(SRCS FakeOperatorEstimator.cpp
       GenerateRandomParticleSets.cpp
       MockGoldWalkerElements.cpp
       EnergyDensityTest.cpp
       EstimatorManagerNewTest.cpp
       EstimatorManagerInputTest.cpp
-      test_manager_mpi.cpp
       test_EnergyDensityEstimatorIntegration.cpp
+      test_manager_mpi.cpp
       )
 
   add_executable(${UTEST_EXE} ${SRCS})

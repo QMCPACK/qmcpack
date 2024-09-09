@@ -41,17 +41,18 @@ TEST_CASE("EnergyDensityEstimatorIntegration", "[estimators]")
   EstimatorManagerInput emi(doc.getRoot());
   auto& gold_elem = eden_test.getGoldElements();
   auto ham_list   = eden_test.getHamList();
-  auto ham_lock   = eden_test.makeTeamLock(eden_test.getHamRes(), ham_list);
+
+  auto ham_lock   = ResourceCollectionTeamLock<QMCHamiltonian>(eden_test.getHamRes(), ham_list);
 
   auto pset_list    = eden_test.getPSetList();
-  auto pset_lock    = eden_test.makeTeamLock(eden_test.getPSetRes(), pset_list);
+  auto pset_lock    = ResourceCollectionTeamLock<ParticleSet>(eden_test.getPSetRes(), pset_list);
   pset_list[0].L[0] = 1.0;
   pset_list[1].L[1] = 1.0;
   pset_list[2].L[2] = 1.0;
   pset_list[3].L[3] = 1.0;
 
   auto twf_list = eden_test.getTwfList();
-  auto twf_lock = eden_test.makeTeamLock(eden_test.getTwfRes(), twf_list);
+  auto twf_lock = ResourceCollectionTeamLock<TrialWaveFunction>(eden_test.getTwfRes(), twf_list);
 
   EstimatorManagerNew emn(gold_elem.ham, comm);
   emn.constructEstimators(std::move(emi), gold_elem.pset_elec, gold_elem.twf, gold_elem.ham, gold_elem.particle_pool.getPool());
