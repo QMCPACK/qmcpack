@@ -429,7 +429,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
 void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 {
-  std::cout << "checkConfigurationsSR" << std::endl;
   ScopedTimer tmp_timer(check_config_timer_);
 
   RealType et_tot = 0.0;

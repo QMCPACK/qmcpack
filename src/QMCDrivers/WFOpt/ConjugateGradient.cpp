@@ -17,11 +17,12 @@ namespace qmcplusplus
 {
 
 ConjugateGradient::ConjugateGradient(Real threshold, Real regularization)
-    : threshold_(threshold), regularization_(regularization)
+    : threshold_(threshold), regularization_(regularization), conjugate_gradient_timer_(createGlobalTimer("ConjugateGradient::run", timer_level_fine))
 {}
 
 int ConjugateGradient::run(QMCCostFunctionBase& optTarget, const std::vector<Real>& bvec, std::vector<Real>& solution)
 {
+  ScopedTimer local(conjugate_gradient_timer_);
   int numParams = optTarget.getNumParams();
   int kmax      = numParams;
   int k         = 0;
