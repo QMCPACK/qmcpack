@@ -17,14 +17,6 @@
 #define QMCPLUSPLUS_CUDA_RUNTIME_H
 
 #include <cstddef>
-#include "config.h"
-#ifndef QMC_CUDA2HIP
-#include <cuda_runtime.h>
-#else
-#include <hip/hip_runtime.h>
-#include "Platforms/ROCm/cuda2hip.h"
-#endif
-
 #include "CUDAerror.h"
 
 size_t getCUDAdeviceFreeMem();
