@@ -315,11 +315,10 @@ public:
                                 ComputeType ct = ComputeType::ALL);
 
   // batched version of evaluateSpinorRatios
-  static void mw_evaluateSpinorRatios(
-      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-      const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
-      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
-      const RefVector<std::vector<ValueType>>& ratios_list);
+  static void mw_evaluateSpinorRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                      const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
+                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                      const RefVector<std::vector<ValueType>>& ratios_list);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(const VirtualParticleSet& VP,
@@ -473,6 +472,10 @@ public:
                                               RecordArray<ValueType>& dhpsioverpsi);
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
+  static void mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
+                                                const opt_variables_type& optvars,
+                                                RecordArray<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
 
