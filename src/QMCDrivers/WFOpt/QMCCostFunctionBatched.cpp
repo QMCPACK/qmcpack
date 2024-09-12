@@ -546,7 +546,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
         // get energy_list
         energy_list = QMCHamiltonian::mw_evaluate(h_list, wf_list, p_list);
         // get dlogpsi from TWF
-        TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
+        TrialWaveFunction::mw_evaluateParameterDerivativesWF(wf_list, p_list, optVars, dlogpsi_array);
 
         handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array, base_sample_index);
 
