@@ -1206,6 +1206,19 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
   }
 }
 
+void TrialWaveFunction::mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                                          const opt_variables_type& optvars,
+                                                          RecordArray<ValueType>& dlogpsi)
+{
+  const int nparam = dlogpsi.getNumOfParams();
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    Vector<ValueType> dlogpsi_record_view(dlogpsi[iw], nparam);
+    wf_list[iw].evaluateDerivativesWF(p_list[iw], optvars, dlogpsi_record_view);
+  }
+}
+
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,
                                                 std::vector<ValueType>& dgradlogpsi)
 {

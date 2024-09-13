@@ -14,7 +14,7 @@
 
 
 #include <Configuration.h>
-
+#include <NewTimer.h>
 
 namespace qmcplusplus
 {
@@ -41,6 +41,7 @@ private:
   //to be used for nonlinear rescale
   std::vector<Real> Axsol_;
   std::vector<Real> xsol_;
+  NewTimer& conjugate_gradient_timer_;
 
   // obtain the range of non-linear parameters
   void getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const;
