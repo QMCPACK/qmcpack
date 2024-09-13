@@ -43,7 +43,7 @@ enum class DTModes : uint_fast8_t
    * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
    * DT consumers should know if full table is needed or not and request via addTable.
    */
-  NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP = 0x16,
+  NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP = 0x10,
 };
 
 constexpr bool operator&(DTModes x, DTModes y)
