@@ -75,7 +75,7 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
   for (int ig = 0; ig < spacegrid_inputs_.size(); ++ig)
   {
     spacegrids_.emplace_back(
-      std::make_unique<NESpaceGrid<Real>>(spacegrid_inputs_[ig], ref_points_->get_points(), N_EDVALS, periodic));
+        std::make_unique<NESpaceGrid<Real>>(spacegrid_inputs_[ig], ref_points_->get_points(), N_EDVALS, periodic));
   }
 #ifndef NDEBUG
   std::cout << "Instantiated " << spacegrids_.size() << " spacegrids\n";

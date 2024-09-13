@@ -316,7 +316,7 @@ void NESpaceGrid<REAL>::someMoreAxisGridStuff()
 //   bool succeeded = true;
 //   for (int d = 0; d < OHMMS_DIM; d++)
 //   {
-    
+
 //     if (axis_labels[d] == "phi" || axis_labels[d] == "theta" )
 //       if (axis_grids[d].umin < 0.0 || axis_grids[d].umax > 1.0)
 //       {
@@ -577,8 +577,8 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
   const Real o2pi = 1.0 / (2.0 * M_PI);
   using CoordForm = SpaceGridInput::CoordForm;
   auto& agr       = input_.get_axis_grids();
-  std::fill(particles_outside.begin(),particles_outside.end(), true);
-  
+  std::fill(particles_outside.begin(), particles_outside.end(), true);
+
   switch (input_.get_coord_form())
   {
   case CoordForm::CARTESIAN:

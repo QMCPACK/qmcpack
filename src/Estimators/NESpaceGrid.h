@@ -82,10 +82,10 @@ public:
    * \param[in]  is_periodic      properly names is what is says
    */
   NESpaceGrid(SpaceGridInput& sgi, const Points& points, const int ndp, const int nvalues, const bool is_periodic);
-  
-  NESpaceGrid(const NESpaceGrid& sg) = default;
+
+  NESpaceGrid(const NESpaceGrid& sg)            = default;
   NESpaceGrid& operator=(const NESpaceGrid& sg) = default;
-  
+
   void write_description(std::ostream& os, const std::string& indent);
 
   /** set up Observable helper(s) for this grid
@@ -97,9 +97,7 @@ public:
   void write(hdf_archive& file) const;
   /// @}
 
-  void accumulate(const ParticlePos& R,
-                  const Matrix<Real>& values,
-                  std::vector<bool>& particles_outside);
+  void accumulate(const ParticlePos& R, const Matrix<Real>& values, std::vector<bool>& particles_outside);
 
   /** SpaceGridAccumulate not type erased and with its own particular interface.
    *  the composing class needs to provide the following to spave grid.
@@ -116,7 +114,7 @@ public:
   void accumulate(const ParticlePos& R,
                   const Matrix<Real>& values,
                   std::vector<bool>& particles_outside,
-		  const DistanceTableAB& dtab);
+                  const DistanceTableAB& dtab);
 
   bool check_grid(void);
   int nDomains(void) const { return ndomains_; }
@@ -126,6 +124,7 @@ public:
   void static collect(NESpaceGrid& reduction_grid, RefVector<NESpaceGrid> grid_for_each_crowd);
 
   auto& getDataVector() { return data_; }
+
 private:
   /** copy AxisGrid data to SoA layout for evaluation
    */
@@ -133,7 +132,7 @@ private:
 
 
   void zero();
-  
+
   /** return actual origin point based on input
    */
   static Point deriveOrigin(const SpaceGridInput& input, const Points& points);
@@ -179,7 +178,7 @@ private:
   //  *  Causes side effects updating
   //  *    origin_    fixed up origin for grid
   //  *    axes_      axes with scaling applied to it.
-  //  *    axinv_     the inverse of the axes with scaling applied   
+  //  *    axinv_     the inverse of the axes with scaling applied
   //  */
   // bool initializeVoronoi(const SpaceGridInput& input, const Points& points, ParticlePos& r_static);
 
@@ -217,7 +216,7 @@ private:
    *  Maintained to use more legacy code without modificaiton in the short term.
    *  In the long term its possible the entire way the grid data is structured in memory should be redesigned.
    */
-  const int buffer_offset_{0}; 
+  const int buffer_offset_{0};
   int ndomains_{1};
   int nvalues_per_domain_;
   /** @ingroup Calculated by NESpaceGrid
@@ -245,7 +244,7 @@ private:
   ReferenceEnergy reference_energy_;
   std::vector<Real> data_;
   std::shared_ptr<ObservableHelper> observable_helper_;
-  
+
   struct IRPair
   {
     Real r;
