@@ -287,9 +287,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
     for (int inb = 0; inb < num_batches; inb++)
     {
-      int current_batch_size = walkers_per_crowd[crowd_id];
-      if (inb == num_batches - 1)
-        current_batch_size = final_batch_size;
+      const int current_batch_size = inb == num_batches - 1 ? final_batch_size : walkers_per_crowd[crowd_id];
 
       const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
@@ -487,9 +485,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 
     for (int inb = 0; inb < num_batches; inb++)
     {
-      int current_batch_size = walkers_per_crowd[crowd_id];
-      if (inb == num_batches - 1)
-        current_batch_size = final_batch_size;
+      const int current_batch_size = inb == num_batches - 1 ? final_batch_size : walkers_per_crowd[crowd_id];
 
       const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
@@ -660,7 +656,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   }
 
   //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-  Return_rt wgt_tot  = 0.0;
+  Return_rt wgt_tot = 0.0;
 
   // Ensure number of samples did not change after getConfiguration
   assert(rank_local_num_samples_ == samples_.getNumSamples());
@@ -697,11 +693,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
 
         for (int inb = 0; inb < num_batches; inb++)
         {
-          int current_batch_size = walkers_per_crowd[crowd_id];
-          if (inb == num_batches - 1)
-          {
-            current_batch_size = final_batch_size;
-          }
+          const int current_batch_size = inb == num_batches - 1 ? final_batch_size : walkers_per_crowd[crowd_id];
 
           const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
@@ -1032,8 +1024,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(std::vector
   return 1.0;
 }
 
-void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm,
-                                            std::vector<Return_rt>& ovlParmVec)
+void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec)
 {
   ScopedTimer tmp_timer(fill_timer_);
 
@@ -1060,7 +1051,7 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm,
     Return_rt weight                = saved[REWEIGHT] * wgtinv;
     const Return_t* Dsaved          = DerivRecords_[iw];
     for (int pm = 0; pm < getNumParams(); pm++)
-      prod[iw] += (Dsaved[pm] - D_avg[pm])  * parm[pm];
+      prod[iw] += (Dsaved[pm] - D_avg[pm]) * parm[pm];
   }
 
 
