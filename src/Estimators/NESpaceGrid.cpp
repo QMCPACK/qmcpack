@@ -53,21 +53,6 @@ NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
 }
 
 template<typename REAL>
-NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
-                               const NEReferencePoints::Points& points,
-                               ParticlePos& static_particle_positions,
-                               std::vector<Real>& Z,
-                               const int ndp,
-                               const int nvalues,
-                               const bool is_periodic)
-    : input_(sgi), ndparticles_(ndp), is_periodic_(is_periodic), points_(points), nvalues_per_domain_(nvalues)
-{
-  bool init_success = initializeCoordSystem();
-  if (!init_success)
-    throw std::runtime_error("NESpaceGrid initialization failed");
-}
-
-template<typename REAL>
 bool NESpaceGrid<REAL>::initializeCoordSystem()
 {
   using CoordForm   = SpaceGridInput::CoordForm;

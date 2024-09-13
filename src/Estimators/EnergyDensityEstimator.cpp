@@ -74,16 +74,8 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
   spacegrids_.reserve(spacegrid_inputs_.size());
   for (int ig = 0; ig < spacegrid_inputs_.size(); ++ig)
   {
-    if (pset_static_)
-    {
-      auto [r_ptcls, z_ptcls] = extractIonPositionsAndCharge(*pset_static_);
-      spacegrids_.emplace_back(std::make_unique<NESpaceGrid<Real>>(spacegrid_inputs_[ig], ref_points_->get_points(),
-                                                                   r_ptcls, z_ptcls, pset_dynamic_.getTotalNum(),
-                                                                   N_EDVALS, periodic));
-    }
-    else
-      spacegrids_.emplace_back(
-          std::make_unique<NESpaceGrid<Real>>(spacegrid_inputs_[ig], ref_points_->get_points(), N_EDVALS, periodic));
+    spacegrids_.emplace_back(
+      std::make_unique<NESpaceGrid<Real>>(spacegrid_inputs_[ig], ref_points_->get_points(), N_EDVALS, periodic));
   }
 #ifndef NDEBUG
   std::cout << "Instantiated " << spacegrids_.size() << " spacegrids\n";

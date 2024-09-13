@@ -82,17 +82,7 @@ public:
    * \param[in]  is_periodic      properly names is what is says
    */
   NESpaceGrid(SpaceGridInput& sgi, const Points& points, const int ndp, const int nvalues, const bool is_periodic);
-
-  /** This is the constructor for when PStatic is used.
-   */
-  NESpaceGrid(SpaceGridInput& sgi,
-              const Points& points,
-              ParticlePos& static_particle_positions,
-              std::vector<Real>& static_particle_charges,
-              const int ndp,
-              const int nvalues,
-              const bool is_periodic);
-
+  
   NESpaceGrid(const NESpaceGrid& sg) = default;
   NESpaceGrid& operator=(const NESpaceGrid& sg) = default;
   
