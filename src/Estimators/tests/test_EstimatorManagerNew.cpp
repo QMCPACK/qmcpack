@@ -53,7 +53,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   Libxml2Document estimators_doc = createEstimatorManagerNewVMCInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-  CHECK(emi.get_estimator_inputs().size() == 2);
+  CHECK(emi.get_estimator_inputs().size() == 3);
   CHECK(emi.get_scalar_estimator_inputs().size() == 1);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
@@ -66,7 +66,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 2);
+  CHECK(emn.getNumEstimators() == 3);
   // Because the only scalar estimator becomes the main estimator.
   CHECK(emn.getNumScalarEstimators() == 0);
   EstimatorManagerNewTestAccess emnta(emn);
@@ -78,13 +78,12 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   Libxml2Document estimators_doc2 = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi2(estimators_doc2.getRoot());
 
-  CHECK(emi2.get_estimator_inputs().size() == 2);
+  CHECK(emi2.get_estimator_inputs().size() == 3);
   CHECK(emi2.get_scalar_estimator_inputs().size() == 4);
 
   EstimatorManagerNew emn2(ham, comm);
   emn2.constructEstimators(std::move(emi2), pset, twf, ham, particle_pool.getPool());
-
-  CHECK(emn2.getNumEstimators() == 2);
+  CHECK(emn2.getNumEstimators() == 3);
   // Because the only scalar estimator becomes the main estimator.
   CHECK(emn2.getNumScalarEstimators() == 0);
   EstimatorManagerNewTestAccess emnta2(emn2);

@@ -61,13 +61,9 @@ void OperatorEstBase::write(hdf_archive& file)
   file.pop();
 }
 
-void OperatorEstBase::packData(PooledData<Real>& buffer) {
-  buffer.add(data_.begin(),data_.end());
-}
+void OperatorEstBase::packData(PooledData<Real>& buffer) const { buffer.add(data_.begin(), data_.end()); }
 
-void OperatorEstBase::unpackData(PooledData<Real>& buffer) {
-  buffer.get(data_.begin(), data_.end());
-}
+void OperatorEstBase::unpackData(PooledData<Real>& buffer) { buffer.get(data_.begin(), data_.end()); }
 
 void OperatorEstBase::zero()
 {

@@ -53,21 +53,6 @@ NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
 }
 
 template<typename REAL>
-NESpaceGrid<REAL>::NESpaceGrid(SpaceGridInput& sgi,
-                               const NEReferencePoints::Points& points,
-                               ParticlePos& static_particle_positions,
-                               std::vector<Real>& Z,
-                               const int ndp,
-                               const int nvalues,
-                               const bool is_periodic)
-    : input_(sgi), ndparticles_(ndp), is_periodic_(is_periodic), points_(points), nvalues_per_domain_(nvalues)
-{
-  bool init_success = initializeCoordSystem();
-  if (!init_success)
-    throw std::runtime_error("NESpaceGrid initialization failed");
-}
-
-template<typename REAL>
 bool NESpaceGrid<REAL>::initializeCoordSystem()
 {
   using CoordForm   = SpaceGridInput::CoordForm;
@@ -331,7 +316,7 @@ void NESpaceGrid<REAL>::someMoreAxisGridStuff()
 //   bool succeeded = true;
 //   for (int d = 0; d < OHMMS_DIM; d++)
 //   {
-    
+
 //     if (axis_labels[d] == "phi" || axis_labels[d] == "theta" )
 //       if (axis_grids[d].umin < 0.0 || axis_grids[d].umax > 1.0)
 //       {
@@ -592,8 +577,8 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
   const Real o2pi = 1.0 / (2.0 * M_PI);
   using CoordForm = SpaceGridInput::CoordForm;
   auto& agr       = input_.get_axis_grids();
-  std::fill(particles_outside.begin(),particles_outside.end(), true);
-  
+  std::fill(particles_outside.begin(), particles_outside.end(), true);
+
   switch (input_.get_coord_form())
   {
   case CoordForm::CARTESIAN:
