@@ -2192,3 +2192,14 @@ qmc_run_and_check(
   1
   1
   FALSE)
+
+# Input file does not exist and does not have XML suffix
+  qmc_run_and_check(
+  deterministic-input_check_not_present_not_xml_suffix
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_input_check_not_present_not_xml_suffix
+  det_qmc_input_check_not_present_not_xml_suffix.in.notxml
+  1
+  1
+  FALSE)
+
