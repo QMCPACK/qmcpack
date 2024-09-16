@@ -40,7 +40,7 @@ option is disabled:
 Input files
 -----------
 
-The input is one or more XML file(s), documented in :ref:`input-overview`. Input XML files must end in the suffice ``.xml``.
+The input is one or more XML file(s), documented in :ref:`input-overview`. Input XML files must end in the suffix ``.xml``.
 
 An ensemble of calculations can be run by specifying multiple input XML files or text files containing a list of valid XML input
 files. In the latter case, a single filename of an XML input should be specified on each line. Ensemble runs split available MPI
