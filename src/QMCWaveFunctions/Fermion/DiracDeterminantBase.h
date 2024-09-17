@@ -189,22 +189,6 @@ protected:
   ValueMatrix dummy_vmt;
 #endif
 
-  static bool checkG(const GradType& g)
-  {
-#if !defined(NDEBUG)
-    auto g_mag = std::abs(dot(g, g));
-    if (qmcplusplus::isnan(g_mag))
-      throw std::runtime_error("gradient of NaN");
-    if (qmcplusplus::isinf(g_mag))
-      throw std::runtime_error("gradient of inf");
-    if (g_mag < std::abs(std::numeric_limits<RealType>::epsilon()))
-    {
-      std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
-      throw std::runtime_error("gradient of zero");
-    }
-#endif
-    return true;
-  }
 };
 
 } // namespace qmcplusplus
