@@ -1175,7 +1175,7 @@ Additional information and recommendations:
    the descent engine to do this averaging on its own.
 
 Stochastic Reconfiguration with Conjugate Gradient
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We have implemented a preliminary version of stochastic reconfiguration (:cite:`Sorella2001` and :cite:`Casula2004`),
 currently only available in the batched drivers. The SR optimization reduces the
 computational cost over the linear method by avoiding the need to build the 
