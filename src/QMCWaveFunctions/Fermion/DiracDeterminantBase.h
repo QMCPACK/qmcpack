@@ -196,8 +196,10 @@ protected:
     if (qmcplusplus::isnan(g_mag))
       throw std::runtime_error("gradient of NaN");
     if (qmcplusplus::isinf(g_mag))
-      throw std::runtime_error("gradient of inf");
-    if (g_mag < std::abs(std::numeric_limits<RealType>::epsilon()))
+      throw std::runtime_error("gradient of Inf");
+    if (std::abs(g[0]) < std::abs(std::numeric_limits<RealType>::epsilon()) &&
+        std::abs(g[1]) < std::abs(std::numeric_limits<RealType>::epsilon()) &&
+        std::abs(g[2]) < std::abs(std::numeric_limits<RealType>::epsilon()))
     {
       std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
       throw std::runtime_error("gradient of zero");
