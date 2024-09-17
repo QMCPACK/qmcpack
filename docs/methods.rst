@@ -1174,7 +1174,7 @@ Additional information and recommendations:
    parameters discussed earlier for descent are useful for setting up
    the descent engine to do this averaging on its own.
 
-Stochastic Reconfiguration with Gradient Descent
+Stochastic Reconfiguration with Conjugate Gradient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 We have implemented a preliminary version of stochastic reconfiguration (:cite:`Sorella2001` and :cite:`Casula2004`),
 currently only available in the batched drivers. The SR optimization reduces the
