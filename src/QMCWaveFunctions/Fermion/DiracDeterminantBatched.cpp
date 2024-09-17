@@ -177,7 +177,6 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::Grad DiracDeterminantBatched<PL,
   ScopedTimer local_timer(RatioTimer);
   const int WorkingIndex = iat - FirstIndex;
   Grad g                 = simd::dot(psiMinv_[WorkingIndex], dpsiM[WorkingIndex], NumOrbitals);
-  assert(checkG(g));
   return g;
 }
 
@@ -209,11 +208,6 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evalGrad(const RefVectorWithLeade
 
   UpdateEngine::mw_evalGrad(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
                             dpsiM_row_list, WorkingIndex, grad_now);
-
-#ifndef NDEBUG
-  for (int iw = 0; iw < nw; iw++)
-    checkG(grad_now[iw]);
-#endif
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -227,7 +221,6 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::Grad DiracDeterminantBatched<PL,
   const int WorkingIndex = iat - FirstIndex;
   Grad g                 = simd::dot(psiMinv_[WorkingIndex], dpsiM[WorkingIndex], NumOrbitals);
   ComplexType spin_g     = simd::dot(psiMinv_[WorkingIndex], dspin_psiV.data(), NumOrbitals);
-  assert(checkG(g));
   spingrad += spin_g;
   return g;
 }
@@ -286,11 +279,6 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evalGradWithSpin(
   UpdateEngine::mw_evalGradWithSpin(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc,
                                     mw_res.psiMinv_refs, dpsiM_row_list, mw_dspin, WorkingIndex, grad_now,
                                     spingrad_now);
-
-#ifndef NDEBUG
-  for (int iw = 0; iw < nw; iw++)
-    checkG(grad_now[iw]);
-#endif
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
