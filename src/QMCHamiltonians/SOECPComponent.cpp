@@ -471,6 +471,24 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
 #endif
 }
 
+SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivativesExactSpinIntegration(
+    ParticleSet& W,
+    int iat,
+    TrialWaveFunction& Psi,
+    int iel,
+    RealType r,
+    const PosType& dr,
+    const opt_variables_type& optvars,
+    const Vector<ValueType>& dlogpsi,
+    Vector<ValueType>& dhpsioverpsi)
+{
+#ifndef QMC_COMPLEX
+  throw std::runtime_error("SOECPComponent::evaluateValueAndDerivatives should not be called in real build\n");
+#else
+  return 0;
+#endif
+}
+
 void SOECPComponent::buildTotalQuadrature(const RealType r, const PosType& dr, const RealType sold)
 {
   int count = 0;
