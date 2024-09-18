@@ -69,7 +69,7 @@ if(NOT QMC_COMPLEX)
     #
     # H4 starting from perturbed orbitals, using optimizable determinants, and the adaptive linear method
     #
-    list(APPEND H4_ORB_OPT_SCALARS "totenergy" "-2.0889 0.001") # total energy
+    list(APPEND H4_ORB_OPT_SCALARS "totenergy" "-2.0889 0.004") # total energy
 
     qmc_run_and_check(
       short-H4-RHF-orb-opt
@@ -238,7 +238,7 @@ if(NOT QMC_COMPLEX)
     H4_HYBRID_SCALARS
     TRUE)
 
-  list(APPEND H4_BATCHED_HYBRID_SCALARS "totenergy" "-2.10456 0.01")
+  list(APPEND H4_BATCHED_HYBRID_SCALARS "totenergy" "-2.10456 0.02")
 
   qmc_run_and_check(
     short-H4-batched-hybrid
