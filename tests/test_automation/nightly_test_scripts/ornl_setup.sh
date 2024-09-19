@@ -79,6 +79,11 @@ packages:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
+    libffi:
+        externals:
+        - spec: libffi@3.4.2
+          prefix: /
+          buildable: False
 EOF
 ;;
     nitrogen )
@@ -105,6 +110,11 @@ packages:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
+    libffi:
+        externals:
+        - spec: libffi@3.4.2
+          prefix: /
+          buildable: False
 EOF
 ;;
     sulfur )
@@ -130,6 +140,11 @@ packages:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
+          buildable: False
+    libffi:
+        externals:
+        - spec: libffi@3.4.2
+          prefix: /
           buildable: False
 EOF
 	;;
@@ -182,14 +197,19 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout 74fba221f1803e25139440d6b8ed6e6a9364b626
-#commit 74fba221f1803e25139440d6b8ed6e6a9364b626 (grafted, HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Massimiliano Culpo <massimiliano.culpo@gmail.com>
-#Date:   Mon Aug 28 16:58:16 2023 +0200
+
+git checkout e5f53a62509452227bc84cdd2b96bb8d89d684b2
+#commit e5f53a62509452227bc84cdd2b96bb8d89d684b2 (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Paul R. C. Kent <kentpr@ornl.gov>
+#Date:   Fri Aug 16 12:04:29 2024 -0400
 #
-#    GnuPG: add v2.4.3 (#39654)
-#    
-#    Also updates a few dependencies
+#    py-lxml: add v5.2.2 (#45785)
+#git checkout 21a2c3a5914d906b24d8d7881a54d127dfffc293
+#commit 21a2c3a5914d906b24d8d7881a54d127dfffc293 (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Sakib Rahman <rahmans@myumanitoba.ca>
+#Date:   Tue Aug 13 16:39:51 2024 -0400
+#
+#    py-htgettoken: add v2.0-2 (#45688)
 
 echo --- Git version and last log entry
 git log -1
@@ -201,10 +221,10 @@ cd bin
 # Consider using a GCC toolset on Red Hat systems to use
 # recent compilers with better architecture support.
 # e.g. dnf install gcc-toolset-11
-if [ -e /opt/rh/gcc-toolset-12/enable ]; then
-    echo --- Using gcc-toolset-12 for newer compilers
-    source /opt/rh/gcc-toolset-12/enable 
-fi
+#if [ -e /opt/rh/gcc-toolset-12/enable ]; then
+#    echo --- Using gcc-toolset-12 for newer compilers
+#    source /opt/rh/gcc-toolset-12/enable 
+#fi
 
 export DISPLAY="" 
 export SPACK_ROOT=$HOME/apps/spack
@@ -213,8 +233,8 @@ export PATH=$SPACK_ROOT/bin:$PATH
 echo --- Bootstrap
 spack bootstrap now
 
-#echo --- Changing RMGDFT boost dependency
-sed -i 's/^ .* depends.*boost@1.61.*//g' $HOME/apps/spack/var/spack/repos/builtin/packages/rmgdft/package.py
+##echo --- Changing RMGDFT boost dependency
+#sed -i 's/^ .* depends.*boost@1.61.*//g' $HOME/apps/spack/var/spack/repos/builtin/packages/rmgdft/package.py
 echo --- Spack list
 spack find
 echo --- Spack compilers
@@ -288,9 +308,9 @@ spack install gcc@${gcc_vllvmoffload}
 spack install cuda@${cuda_voffload} +allow-unsupported-compilers
 #spack install llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} ~libcxx +compiler-rt ~lldb ~gold ~omp_as_runtime targets=all
 spack install llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
-spack load llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload}
+spack load llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload}  targets=all
 spack compiler find
-spack unload llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload}
+spack unload llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
 
 echo --- Spack compilers  `date`
 spack compilers

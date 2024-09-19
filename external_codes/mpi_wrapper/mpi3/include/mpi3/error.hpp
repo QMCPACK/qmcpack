@@ -44,7 +44,11 @@ auto inline string(enum error err) {
 	// std::array<char, MPI_MAX_ERROR_STRING> estring{};  // in EXAMPI MPI_MAX_ERROR_STRING is not constexpr
 	std::string estring(MPI_MAX_ERROR_STRING, '\0');
 	int len;  // NOLINT(cppcoreguidelines-init-variables) delayed initialization
-	int s = MPI_Error_string(static_cast<int>(err), estring.data(), &len);  // do not use the MPI_() macro or mpi3::call here because they need this in the first place to capture the error message
+	int const s = MPI_Error_string(
+		static_cast<int>(err),
+		estring.data(),  // this needs C++17
+		&len
+	);  // do not use the MPI_() macro or mpi3::call here because they need this in the first place to capture the error message
 	if( s !=MPI_SUCCESS ) {throw std::logic_error("error while constructing error string");}
 	estring.resize(static_cast<std::size_t>(len));
 	return estring;

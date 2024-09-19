@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
@@ -35,6 +35,7 @@ public:
   using size_type     = typename Container_t::size_type;
   using iterator      = typename Container_t::iterator;
   using This_t        = Matrix<T, Alloc>;
+  using Alloc_t       = Alloc;
 
   Matrix() : D1(0), D2(0), TotSize(0) {} // Default Constructor initializes to zero.
 
@@ -59,7 +60,7 @@ public:
    *  realspace dualspace allocator "interface"
    */
   template<typename CONTAINER>
-  Matrix(CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(other, ref, n * m)
+  Matrix(const CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(other, ref, n * m)
   {}
 
   // Copy Constructor
@@ -154,23 +155,45 @@ public:
   template<class T_FROM, typename ALLOC_FROM>
   void assignUpperLeft(const Matrix<T_FROM, ALLOC_FROM>& from)
   {
-    auto& this_ref    = *this;
-    const size_t cols = std::min(this_ref.cols(), from.cols());
-    const size_t rows = std::min(this_ref.rows(), from.rows());
+    auto& this_ref       = *this;
+    const size_type cols = std::min(this_ref.cols(), from.cols());
+    const size_type rows = std::min(this_ref.rows(), from.rows());
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
         this_ref(i, j) = from(i, j);
   }
 
   // Assignment Operators
+  /// From another Matrix with matching type.
   inline This_t& operator=(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
+    // I don't understand why it would be desirable to have this compile
+    // but just do the resize and not the assigment, just seems like a surprising foot gun.
     if (qmc_allocator_traits<Alloc>::is_host_accessible)
       assign(*this, rhs);
     return *this;
   }
 
+  /** From a Matrix with a narrower value_type
+   *  so this is a widening assignment and there is no loss of precision.
+   *  Giving it the same semantics as the matching type matrix is desirable.
+   */
+  template<typename OtherT,
+           typename = std::enable_if_t<sizeof(This_t::value_type) >= sizeof(typename Matrix<OtherT>::value_type), void>>
+  This_t& operator=(const Matrix<OtherT>& rhs)
+  {
+    static_assert(qmc_allocator_traits<Alloc_t>::is_host_accessible &&
+                  qmc_allocator_traits<typename Matrix<OtherT>::Alloc_t>::is_host_accessible);
+    resize(rhs.size1(), rhs.size2());
+    assign(*this, rhs);
+    return *this;
+  }
+
+  /** From any type except the above two cases that assign can resolve.
+   *  Historically this allowed narrowing assigments from one Matrix type to another.
+   *  I am not sure this was intentional.
+   */
   template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   This_t& operator=(const RHS& rhs)
   {
@@ -368,14 +391,14 @@ public:
 
   // Abstract Dual Space Transfers
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateTo()
+  void updateTo(size_type size = 0, std::ptrdiff_t offset = 0)
   {
-    X.updateTo();
+    X.updateTo(size, offset);
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateFrom()
+  void updateFrom(size_type size = 0, std::ptrdiff_t offset = 0)
   {
-    X.updateFrom();
+    X.updateFrom(size, offset);
   }
 
 protected:

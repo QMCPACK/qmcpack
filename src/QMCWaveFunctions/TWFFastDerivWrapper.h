@@ -108,7 +108,6 @@ public:
    */
   IndexType getRowM(const ParticleSet& P, const IndexType iel, ValueVector& val) const;
 
-
   /** @brief Returns value, gradient, and laplacian matrices for all orbitals and all particles, species by species. 
    *
    *  @param[in] P particle set.

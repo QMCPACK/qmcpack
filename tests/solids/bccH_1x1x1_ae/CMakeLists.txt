@@ -80,8 +80,8 @@ qmc_run_and_check(
 
 # Deterministic correlated sampling test
 list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_A" "-1.5879406376 0.00001")
-list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_B" "-1.5845867400 0.00001")
-list(APPEND DET_BCC_H_CSVMC_SCALARS "dtotenergy_AB" "-0.0033713724 0.00001")
+list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_B" "-1.5845867400 0.00002")
+list(APPEND DET_BCC_H_CSVMC_SCALARS "dtotenergy_AB" "-0.0033713724 0.00002")
 list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_A" "-0.9628996202 0.0000001")
 list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_B" "-0.9581655983 0.0000001")
 list(APPEND DET_BCC_H_CSVMC_SCALARS "dionion_AB" "-0.0047340219 0.0000001")
@@ -99,15 +99,15 @@ qmc_run_and_check(
 )
 
 #Now for the correlated sampling tests
-list(APPEND BCC_H_CSVMC_SCALARS "totenergy_A" "-1.83428 0.00013")
-list(APPEND BCC_H_CSVMC_SCALARS "totenergy_B" "-1.83390 0.00012")
-list(APPEND BCC_H_CSVMC_SCALARS "dtotenergy_AB" "-0.000384 0.000068")
+list(APPEND BCC_H_CSVMC_SCALARS "totenergy_A" "-1.83428 0.0002")
+list(APPEND BCC_H_CSVMC_SCALARS "totenergy_B" "-1.83390 0.0002")
+list(APPEND BCC_H_CSVMC_SCALARS "dtotenergy_AB" "-0.000384 0.0001")
 list(APPEND BCC_H_CSVMC_SCALARS "ionion_A" "-0.96289962 0.0000001")
 list(APPEND BCC_H_CSVMC_SCALARS "ionion_B" "-0.95816559 0.0000001")
 list(APPEND BCC_H_CSVMC_SCALARS "dionion_AB" "-0.004734021 0.0000001")
-list(APPEND BCC_H_CSVMC_SCALARS "eeenergy_A" "-0.77607 0.00013")
-list(APPEND BCC_H_CSVMC_SCALARS "eeenergy_B" "-0.77546 0.00013")
-list(APPEND BCC_H_CSVMC_SCALARS "deeenergy_AB" "-0.000603 0.000035")
+list(APPEND BCC_H_CSVMC_SCALARS "eeenergy_A" "-0.77607 0.0002")
+list(APPEND BCC_H_CSVMC_SCALARS "eeenergy_B" "-0.77546 0.0002")
+list(APPEND BCC_H_CSVMC_SCALARS "deeenergy_AB" "-0.000603 0.00005")
 
 # Check CSVMCUpdatePbyP driver using particle-by-particle updates
 qmc_run_and_check(

@@ -144,7 +144,8 @@ set(DETERMINANT_SRC
     test_multi_dirac_determinant.cpp
     test_DiracMatrix.cpp
     test_ci_configuration.cpp
-    test_multi_slater_determinant.cpp)
+    test_multi_slater_determinant.cpp
+    test_SlaterDet.cpp)
 
 add_library(sposets_for_testing FakeSPO.cpp ConstantSPOSet.cpp)
 target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -158,7 +159,7 @@ target_link_libraries(sposets_for_testing PUBLIC qmcwfs)
 #endif()
 
 if(ENABLE_CUDA)
-  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp test_cuBLAS_LU.cpp)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixInverterCUDA.cpp test_cuBLAS_LU.cpp)
   if(NOT QMC_CUDA2HIP)
     set(DETERMINANT_SRC ${DETERMINANT_SRC} test_cuSolverInverter.cpp)
   endif()
@@ -170,7 +171,7 @@ if(ENABLE_SYCL)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_syclSolverInverter.cpp)
 endif()
 if(ENABLE_OFFLOAD)
-  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixInverterOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
 
 foreach(CATEGORY common trialwf sposet jastrow determinant)
@@ -201,7 +202,7 @@ endforeach()
 if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
-  set(BENCHMARK_SRC benchmark_DiracMatrixComputeCUDA.cpp)
+  set(BENCHMARK_SRC benchmark_DiracMatrixInverterCUDA.cpp)
   if(QMC_CUDA2HIP)
     set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_rocSolverInverter.cpp)
   else()

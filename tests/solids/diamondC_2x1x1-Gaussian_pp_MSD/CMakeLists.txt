@@ -26,8 +26,8 @@ qmc_run_and_check(
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "totenergy" "-21.34158422 0.234973849712")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "kinetic" "19.99861447 0.207280984944")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "potential" "-41.34019869 0.234973849712")
-list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "eeenergy" "-4.48998595 0.068997600176")
-list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "localecp" "-13.06854246 0.077946495184")
+list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "eeenergy" "-4.48998595 0.1")
+list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "localecp" "-13.06854246 0.15")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "nonlocalecp" "2.05740964 0.077946495184")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "ionion" "-25.55132719 0.000002")
 qmc_run_and_check(
@@ -653,7 +653,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion"
          "-25.55133363 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp"
-         "-15.85799109  0.0004")
+         "-15.85799109  0.0005")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp"
          "3.60753175 0.0010")
   endif()

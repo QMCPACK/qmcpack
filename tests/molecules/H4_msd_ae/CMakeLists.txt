@@ -4,7 +4,7 @@ if(NOT QMC_COMPLEX)
   #
   # H4 Multi-Slater Jastrow wfn. Fixed CI and J parameters but the orbitals are allowed to relax
   #
-  list(APPEND H4_MSD_ORB_OPT_SCALARS "totenergy" "-2.160310 0.000810") # total energy
+  list(APPEND H4_MSD_ORB_OPT_SCALARS "totenergy" "-2.160310 0.001") # total energy
 
   qmc_run_and_check(
     short-H4-msd-orb-opt

@@ -52,8 +52,21 @@ class Pyscf(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         if result_name=='orbitals':
-            h5_file = self.input.prefix+'.h5'
-            result.h5_file = os.path.join(self.locdir,h5_file)
+            inp = self.input
+            if 'kpoints' not in inp or inp.kpoints is None:
+                h5_file = inp.prefix+'.h5'
+            else:
+                h5_file = inp.prefix+'.twistnum_000.h5'
+                if inp.tiled_kpoints is not None:
+                    kpoints = inp.tiled_kpoints
+                else:
+                    kpoints = inp.kpoints
+                #end if
+                result.kpoints = kpoints.copy()
+                result.orb_files = ['{}.twistnum_{}.h5'.format(inp.prefix,str(n).zfill(3)) for n in range(len(kpoints))]
+            #end if
+            result.h5_file  = os.path.join(self.locdir,h5_file)
+            result.location = self.locdir
         elif result_name=='wavefunction':
             result.chkfile = os.path.join(self.locdir,self.input.chkfile)
         else:

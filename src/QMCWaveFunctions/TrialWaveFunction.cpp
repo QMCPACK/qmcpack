@@ -1043,6 +1043,23 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
     }
 }
 
+void TrialWaveFunction::evaluateSpinorRatios(const VirtualParticleSet& VP,
+                                             const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                             std::vector<ValueType>& ratios) const
+{
+  ScopedTimer local_timer(TWF_timers_[NL_TIMER]);
+  assert(VP.getTotalNum() == ratios.size());
+  std::vector<ValueType> t(ratios.size());
+  std::fill(ratios.begin(), ratios.end(), 1.0);
+  for (int i = 0; i < Z.size(); ++i)
+  {
+    ScopedTimer z_timer(WFC_timers_[NL_TIMER + TIMER_SKIP * i]);
+    Z[i]->evaluateSpinorRatios(VP, spinor_multiplier, t);
+    for (int j = 0; j < ratios.size(); ++j)
+      ratios[j] *= t[j];
+  }
+}
+
 void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                           const RefVector<std::vector<ValueType>>& ratios_list,
@@ -1074,6 +1091,38 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
           ratios[j] *= t[iw][j];
       }
     }
+}
+
+void TrialWaveFunction::mw_evaluateSpinorRatios(
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+    const RefVector<std::vector<ValueType>>& ratios_list)
+{
+  auto& wf_leader = wf_list.getLeader();
+  ScopedTimer local_timer(wf_leader.TWF_timers_[NL_TIMER]);
+  auto& wavefunction_components = wf_leader.Z;
+  std::vector<std::vector<ValueType>> t(ratios_list.size());
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    std::vector<ValueType>& ratios = ratios_list[iw];
+    assert(vp_list[iw].getTotalNum() == ratios.size());
+    std::fill(ratios.begin(), ratios.end(), 1.0);
+    t[iw].resize(ratios.size());
+  }
+
+  for (int i = 0; i < wavefunction_components.size(); i++)
+  {
+    ScopedTimer z_timer(wf_leader.WFC_timers_[NL_TIMER + TIMER_SKIP * i]);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_components[i]->mw_evaluateSpinorRatios(wfc_list, vp_list, spinor_multiplier_list, t);
+    for (int iw = 0; iw < wf_list.size(); iw++)
+    {
+      std::vector<ValueType>& ratios = ratios_list[iw];
+      for (int j = 0; j < ratios.size(); ++j)
+        ratios[j] *= t[iw][j];
+    }
+  }
 }
 
 void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
@@ -1154,6 +1203,19 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
   {
     ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);
+  }
+}
+
+void TrialWaveFunction::mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                                          const opt_variables_type& optvars,
+                                                          RecordArray<ValueType>& dlogpsi)
+{
+  const int nparam = dlogpsi.getNumOfParams();
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    Vector<ValueType> dlogpsi_record_view(dlogpsi[iw], nparam);
+    wf_list[iw].evaluateDerivativesWF(p_list[iw], optvars, dlogpsi_record_view);
   }
 }
 

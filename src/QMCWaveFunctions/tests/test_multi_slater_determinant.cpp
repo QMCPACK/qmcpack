@@ -12,6 +12,9 @@
 
 #include "catch.hpp"
 
+#include <cstdio>
+#include <string>
+#include <limits>
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
@@ -21,10 +24,7 @@
 #include "TWFGrads.hpp"
 #include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
-
-#include <stdio.h>
-#include <string>
-#include <limits>
+#include <Fermion/MultiSlaterDetTableMethod.h>
 
 using std::string;
 
@@ -96,7 +96,10 @@ void test_LiH_msd(const std::string& spo_xml_string,
   elec_.update();
 
   auto& twf(*twf_ptr);
-  CHECK(twf.findMSD().size() == 1);
+  auto msd_refvec = twf.findMSD();
+  CHECK(msd_refvec.size() == 1);
+  MultiSlaterDetTableMethod& msd = msd_refvec[0];
+
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
@@ -109,6 +112,11 @@ void test_LiH_msd(const std::string& spo_xml_string,
   CHECK(elec_.G[2][2] == ValueApprox(1.2765987657));
   CHECK(elec_.L[0] == ValueApprox(-15.460736911));
   CHECK(elec_.L[3] == ValueApprox(-0.328013327566));
+
+  Vector<ValueType> individual_det_ratios;
+  msd.calcIndividualDetRatios(individual_det_ratios);
+  CHECK(individual_det_ratios[0] == ValueApprox(-1.4357837882));
+  CHECK(individual_det_ratios[3] == ValueApprox(-0.013650987));
 
   twf.prepareGroup(elec_, 0);
   auto grad_old = twf.evalGrad(elec_, 1);

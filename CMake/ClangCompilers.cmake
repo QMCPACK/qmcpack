@@ -1,7 +1,7 @@
 # Check compiler version
 if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
   message(STATUS "Compiler Version ${CMAKE_CXX_COMPILER_VERSION}")
-  message(FATAL_ERROR "Requires clang 7.0 or higher ")
+  message(FATAL_ERROR "Requires Clang 7.0 or higher.")
 endif()
 
 if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0
@@ -16,6 +16,10 @@ if(QMC_OMP)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
   if(ENABLE_OFFLOAD)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16.0)
+      message(FATAL_ERROR "Requires Clang 16.0 or higher for OpenMP offload")
+    endif()
+
     if(DEFINED OFFLOAD_TARGET)
       set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
       if(DEFINED OFFLOAD_ARCH)

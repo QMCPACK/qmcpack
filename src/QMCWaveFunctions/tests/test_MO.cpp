@@ -445,6 +445,8 @@ void test_EtOH_mw(bool transform)
       // test values from OffloadMWVArray impl.
       CHECK(std::real(psi_v_list[iw].get()[iorb]) == Approx(psi_list[iw].get()[iorb]));
     }
+    CHECK(std::real(psi_v_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
+    CHECK(std::real(psi_v_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
     CHECK(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
     CHECK(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
     CHECK(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));

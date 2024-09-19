@@ -9,6 +9,9 @@ cmake_minimum_required(VERSION 3.21.0)
 if(POLICY CMP0127)
   cmake_policy(SET CMP0127 NEW) # Condition evaluation v3.22+ https://cmake.org/cmake/help/latest/policy/CMP0127.html
 endif()
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW) # v3.27+ find_package() uses upper-case <PACKAGENAME>_ROOT variables.
+endif()
 
 ######################################################################
 # QMCPACK project
@@ -176,7 +179,6 @@ option(BUILD_AFQMC_WITH_NCCL "Build AFQMC with NCCL library." OFF)
 if(BUILD_AFQMC AND NOT QMC_MPI)
   message(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 endif()
-option(BUILD_FCIQMC "Build with FCIQMC" OFF)
 option(QMC_BUILD_STATIC "Link to static libraries" OFF)
 option(ENABLE_TIMERS "Enable internal timers" ON)
 option(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
@@ -238,6 +240,8 @@ endif(QMC_OMP)
 #-------------------------------------------------------------------------------
 # Set vendor specific compiler options
 #-------------------------------------------------------------------------------
+include(TestCXXMainCompiles)
+TestCXXMainCompiles("Before_Customization")
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
@@ -278,7 +282,7 @@ else(CMAKE_TOOLCHAIN_FILE)
   endif()
 
   include(inspectCompiler)
-
+  TestCXXMainCompiles("After_Customization")
 endif(CMAKE_TOOLCHAIN_FILE)
 
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
@@ -326,7 +330,7 @@ if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
   endif()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
-
+  TestCXXMainCompiles("With_Sanitizers")
 endif()
 
 #-----------------------------------------------------------------------
@@ -373,36 +377,15 @@ if(QMC_OMP)
   #---------------------------------------------------------
   # Set up OpenMP offload compile options
   #---------------------------------------------------------
-  set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
   if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
-    if(${COMPILER} MATCHES "Clang"
-	AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "gfx"
-	AND QMC_CUDA2HIP)
-      # As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers
-      # when using OpenMP offload to AMD GPU together with HIP.
-      set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
+    if(DEFINED OpenMP_OFFLOAD_LINKER_FLAGS)
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_OFFLOAD_LINKER_FLAGS}")
     endif()
   endif()
-  # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
-  # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-  cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
-    ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
 
-  #--------------------------------------------------------------
-  # Workaround for breakage of OMP Target kernels at -O0 by Clang
-  #--------------------------------------------------------------
-  # When the build type is Debug, default -O0 compilation is broken by
-  # Clang 15 as of 5d2ce7663b10c107328a4ae0c678165209e64619.
-  # Previous compilers are not suggested for clang offload builds.
-  #
-  # You can set this option to false on the command line to check
-  # if this problem has been fixed.
-  if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
-    option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
-  endif()
-  mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
+  TestCXXMainCompiles("With_OpenMP")
 endif()
 
 #-------------------------------------------------------------------------------------
@@ -417,17 +400,6 @@ if(QMC_EXP_THREADING)
   endif(HAVE_LIBATOMIC)
   add_definitions(-DQMC_EXP_THREADING)
 endif(QMC_EXP_THREADING)
-
-#--------------------------------------------------------------
-# final test for compile options before searching for libraries
-#--------------------------------------------------------------
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles("int main(){}" TEST_CXX_COMPILE_MAIN)
-if(NOT TEST_CXX_COMPILE_MAIN)
-  unset(TEST_CXX_COMPILE_MAIN CACHE)
-  message(FATAL_ERROR "Failed in compiling a main() function likely due to incorrect compile options. "
-                      "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
-endif()
 
 ######################################################################
 # Check external libraries.
@@ -897,6 +869,23 @@ if(ENABLE_SYCL)
     target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
   endif()
 endif(ENABLE_SYCL)
+
+#--------------------------------------------------------------------
+#  Resolve Vendor(CUDA/HIP/SYCL) and OpenMP runtime incompatibilities
+#--------------------------------------------------------------------
+# Some OpenMP offload runtime libraries have composibility issue with vendor native ones.
+# A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
+set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
+if(ENABLE_OFFLOAD)
+  # Known issue HIP<5.5 https://github.com/ROCm/aomp/issues/253
+  message("check ${COMPILER} ${QMC_CUDA2HIP} ${hip_VERSION}")
+  if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND hip_VERSION VERSION_LESS "5.5")
+    set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
+  endif()
+endif()
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
+  ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
+
 
 #-------------------------------------------------------------------
 # set up VTune ittnotify library

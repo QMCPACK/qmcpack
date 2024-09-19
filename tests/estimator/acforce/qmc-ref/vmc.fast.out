@@ -1,7 +1,7 @@
   Input file(s): vmc.fast.in.xml 
 
 =====================================================
-                    QMCPACK 3.14.9
+                    QMCPACK 3.15.9
 
        (c) Copyright 2003-  QMCPACK developers
 
@@ -9,10 +9,10 @@
  J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
       https://doi.org/10.1088/1361-648X/aab9c3
 
-  Git branch: fast_force_switch
-  Last git commit: f1c13c8554c868d9c092e27bb5dc9b3f8fea4189-dirty
-  Last git commit date: Thu Sep 22 11:57:56 2022 -0600
-  Last git commit subject: Clang format
+  Git branch: HEAD
+  Last git commit: d149ef72ed1c88087a89aae46a1f10833998eb20
+  Last git commit date: Mon Jan 9 17:41:53 2023 -0600
+  Last git commit subject: Move NLPP parsing at the beginning of the Hamiltonian after KE.
 =====================================================
   Global options 
 
@@ -21,7 +21,7 @@
   MPI group ID              = 0
   Number of ranks in group  = 1
   MPI ranks per node        = 1
-  OMP 1st level threads     = 1
+  OMP 1st level threads     = 16
   OMP nested threading disabled or only 1 thread on the 2nd level
 
   Precision used in this calculation, see definitions in the manual:
@@ -34,22 +34,22 @@
 =================================================
 --- Memory usage report : when QMCPACK starts ---
 =================================================
-Available memory on node 0, free + buffers : 2600209 MiB
-Memory footprint by rank 0 on node 0       :      13 MiB
+Available memory on node 0, free + buffers :   91415 MiB
+Memory footprint by rank 0 on node 0       :      26 MiB
 =================================================
 
   Input XML = vmc.fast.in.xml
 
-  Project = vmc.fast
-  date    = 2022-09-23 10:37:55 MDT
-  host    = cee-compute007
+  Project = vmc
+  date    = 2024-07-11 12:55:52 CDT
+  host    = bora
 
 
  Random Number
  -------------
   Offset for the random number seeds from input file (mod 1024): 1
 
-  Range of prime numbers to use as seeds over processors and threads = 5-7
+  Range of prime numbers to use as seeds over processors and threads = 5-67
 
 
  Lattice
@@ -171,16 +171,16 @@ Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
 
      Name                        Value Type Recompute Use Index
      ---- ---------------------------- ---- --------- --- -----
-     uu_0  (3.376320e-01,0.000000e+00)    1         1  ON     0
-     uu_1  (1.624732e-01,0.000000e+00)    1         1  ON     1
-     uu_2  (4.351991e-02,0.000000e+00)    1         1  ON     2
-     uu_3 (-4.035807e-02,0.000000e+00)    1         1  ON     3
-     uu_4 (-9.603443e-02,0.000000e+00)    1         1  ON     4
-     uu_5 (-1.304825e-01,0.000000e+00)    1         1  ON     5
-     uu_6 (-1.519115e-01,0.000000e+00)    1         1  ON     6
-     uu_7 (-1.581844e-01,0.000000e+00)    1         1  ON     7
-     uu_8 (-1.434888e-01,0.000000e+00)    1         1  ON     8
-     uu_9 (-8.433161e-02,0.000000e+00)    1         1  ON     9
+     uu_0                 3.376320e-01    1         1  ON     0
+     uu_1                 1.624732e-01    1         1  ON     1
+     uu_2                 4.351991e-02    1         1  ON     2
+     uu_3                -4.035807e-02    1         1  ON     3
+     uu_4                -9.603443e-02    1         1  ON     4
+     uu_5                -1.304825e-01    1         1  ON     5
+     uu_6                -1.519115e-01    1         1  ON     6
+     uu_7                -1.581844e-01    1         1  ON     7
+     uu_8                -1.434888e-01    1         1  ON     8
+     uu_9                -8.433161e-02    1         1  ON     9
 
     Radial function for species: u - d
      Number of parameters: 10
@@ -189,16 +189,16 @@ Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
 
      Name                        Value Type Recompute Use Index
      ---- ---------------------------- ---- --------- --- -----
-     ud_0  (5.214319e-01,0.000000e+00)    1         1  ON     0
-     ud_1  (2.176056e-01,0.000000e+00)    1         1  ON     1
-     ud_2  (5.294951e-02,0.000000e+00)    1         1  ON     2
-     ud_3 (-5.134927e-02,0.000000e+00)    1         1  ON     3
-     ud_4 (-1.203809e-01,0.000000e+00)    1         1  ON     4
-     ud_5 (-1.636808e-01,0.000000e+00)    1         1  ON     5
-     ud_6 (-1.874756e-01,0.000000e+00)    1         1  ON     6
-     ud_7 (-1.933985e-01,0.000000e+00)    1         1  ON     7
-     ud_8 (-1.696532e-01,0.000000e+00)    1         1  ON     8
-     ud_9 (-1.025787e-01,0.000000e+00)    1         1  ON     9
+     ud_0                 5.214319e-01    1         1  ON     0
+     ud_1                 2.176056e-01    1         1  ON     1
+     ud_2                 5.294951e-02    1         1  ON     2
+     ud_3                -5.134927e-02    1         1  ON     3
+     ud_4                -1.203809e-01    1         1  ON     4
+     ud_5                -1.636808e-01    1         1  ON     5
+     ud_6                -1.874756e-01    1         1  ON     6
+     ud_7                -1.933985e-01    1         1  ON     7
+     ud_8                -1.696532e-01    1         1  ON     8
+     ud_9                -1.025787e-01    1         1  ON     9
 
 
    Jastrow
@@ -212,16 +212,16 @@ Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
 
      Name                        Value Type Recompute Use Index
      ---- ---------------------------- ---- --------- --- -----
-     eC_0 (-6.838408e-01,0.000000e+00)    1         1  ON     0
-     eC_1 (-5.121351e-01,0.000000e+00)    1         1  ON     1
-     eC_2 (-2.169132e-01,0.000000e+00)    1         1  ON     2
-     eC_3  (2.112267e-02,0.000000e+00)    1         1  ON     3
-     eC_4  (1.632960e-01,0.000000e+00)    1         1  ON     4
-     eC_5  (2.996529e-01,0.000000e+00)    1         1  ON     5
-     eC_6  (3.618872e-01,0.000000e+00)    1         1  ON     6
-     eC_7  (3.632020e-01,0.000000e+00)    1         1  ON     7
-     eC_8  (1.806446e-01,0.000000e+00)    1         1  ON     8
-     eC_9  (2.469864e-02,0.000000e+00)    1         1  ON     9
+     eC_0                -6.838408e-01    1         1  ON     0
+     eC_1                -5.121351e-01    1         1  ON     1
+     eC_2                -2.169132e-01    1         1  ON     2
+     eC_3                 2.112267e-02    1         1  ON     3
+     eC_4                 1.632960e-01    1         1  ON     4
+     eC_5                 2.996529e-01    1         1  ON     5
+     eC_6                 3.618872e-01    1         1  ON     6
+     eC_7                 3.632020e-01    1         1  ON     7
+     eC_8                 1.806446e-01    1         1  ON     8
+     eC_9                 2.469864e-02    1         1  ON     9
 
     Radial function for element: N - e
      Number of parameters: 10
@@ -230,16 +230,16 @@ Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
 
      Name                        Value Type Recompute Use Index
      ---- ---------------------------- ---- --------- --- -----
-     eN_0 (-1.130653e+00,0.000000e+00)    1         1  ON     0
-     eN_1 (-8.410557e-01,0.000000e+00)    1         1  ON     1
-     eN_2 (-3.885257e-01,0.000000e+00)    1         1  ON     2
-     eN_3 (-2.958499e-02,0.000000e+00)    1         1  ON     3
-     eN_4  (1.927348e-01,0.000000e+00)    1         1  ON     4
-     eN_5  (3.788962e-01,0.000000e+00)    1         1  ON     5
-     eN_6  (5.181950e-01,0.000000e+00)    1         1  ON     6
-     eN_7  (6.060955e-01,0.000000e+00)    1         1  ON     7
-     eN_8  (4.846685e-01,0.000000e+00)    1         1  ON     8
-     eN_9  (1.689172e-01,0.000000e+00)    1         1  ON     9
+     eN_0                -1.130653e+00    1         1  ON     0
+     eN_1                -8.410557e-01    1         1  ON     1
+     eN_2                -3.885257e-01    1         1  ON     2
+     eN_3                -2.958499e-02    1         1  ON     3
+     eN_4                 1.927348e-01    1         1  ON     4
+     eN_5                 3.788962e-01    1         1  ON     5
+     eN_6                 5.181950e-01    1         1  ON     6
+     eN_7                 6.060955e-01    1         1  ON     7
+     eN_8                 4.846685e-01    1         1  ON     8
+     eN_9                 1.689172e-01    1         1  ON     9
 
   Adding psi0 TrialWaveFunction to the pool
 
@@ -248,20 +248,6 @@ Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
   Name: h0
 
   QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
-
-   Coulomb Potential
-   -----------------
-    Name: ElecElec   Type: AA   PBC: no
-
-  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
-QMCHamiltonian::addOperatorType added type coulomb named ElecElec
-
-   Coulomb Potential
-   -----------------
-    Name: IonIon   Type: AA   PBC: no
-
-  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
-QMCHamiltonian::addOperatorType added type coulomb named IonIon
 
    Pseudo Potential
    ----------------
@@ -338,9 +324,23 @@ WARNING Nrule was not determined from qmcpack input or pseudopotential file. Set
   Using NonLocalECP potential 
     Maximum grid on a sphere for NonLocalECPotential: 12
   QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
-QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
+
+   Coulomb Potential
+   -----------------
+    Name: ElecElec   Type: AA   PBC: no
+
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+
+   Coulomb Potential
+   -----------------
+    Name: IonIon   Type: AA   PBC: no
+
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
 HamFac forceBase mode acforce
 Adding Assaraf-Caffarel total force.
+ACForce is using the fast force algorithm
 ACForce is not using space warp
   QMCHamiltonian::addOperator ac to auxH 
 QMCHamiltonian::addOperatorType added type Force named ac
@@ -350,7 +350,7 @@ QMCHamiltonian::addOperatorType added type Force named ac
     0 to P::Collectables 
     starting Index of the observables in P::PropertyList = 9
 ParticleSetPool::randomize 0 ParticleSets.
-  Initialization Execution time = 0.133 secs
+  Initialization Execution time = 0.06092 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -392,22 +392,22 @@ ParticleSetPool has:
 
   Hamiltonian h0
   Kinetic         Kinetic energy
+  LocalECP        LocalECPotential: ion0
+  NonLocalECP     NonLocalECPotential: ion0
   ElecElec        CoulombAB source=e
 
   IonIon          CoulombAA source/target ion0
 
-  LocalECP        LocalECPotential: ion0
-  NonLocalECP     NonLocalECPotential: ion0
 
 
 =========================================================
   Start VMC
-  File Root vmc.fast.s000 append = no 
+  File Root vmc.s000 append = no 
 =========================================================
 Resetting walkers
-  Adding 1 walkers to 0 existing sets
-  Total number of walkers: 1.0000000000e+00
-  Total weight: 1.0000000000e+00
+  Adding 16 walkers to 0 existing sets
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
   Resetting Properties of the walkers 1 x 38
 
 <vmc function="put">
@@ -418,7 +418,7 @@ Resetting walkers
   substeps       = 5
   current        = 0
   target samples = 0.0000000000e+00
-  walkers/mpi    = 1
+  walkers/mpi    = 16
 
   stepsbetweensamples = 6
 <parameter name="blocks">5</parameter>
@@ -447,7 +447,7 @@ Resetting walkers
 <parameter name="timestep">5.0000000000e-01</parameter>
 <parameter name="use_drift">yes</parameter>
 <parameter name="usedrift">yes</parameter>
-<parameter name="walkers">1</parameter>
+<parameter name="walkers">16</parameter>
 <parameter name="warmup_steps">10</parameter>
 <parameter name="warmupsteps">10</parameter>
   DumpConfig==true Configurations are dumped to config.h5 with a period of 5 blocks
@@ -455,39 +455,53 @@ Resetting walkers
 </vmc>
   Set drift_modifier UNR parameter a = 1.0000000000e+00
   Adding a default LocalEnergyEstimator for the MainEstimator 
-  Initial partition of walkers 0 1 
+  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+=========================================================
+--- Memory usage report : Memory Usage before cloning ---
+=========================================================
+Available memory on node 0, free + buffers :   91371 MiB
+Memory footprint by rank 0 on node 0       :      35 MiB
+=========================================================
+========================================================
+--- Memory usage report : Memory Usage after cloning ---
+========================================================
+Available memory on node 0, free + buffers :   91363 MiB
+Memory footprint by rank 0 on node 0       :      43 MiB
+========================================================
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
 
   Using Particle by Particle moves
   Walker moves with drift
   Total Sample Size   =0
-  Walker distribution on root = 0 1 
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
   Using Locality Approximation
 ========================================================================
 --- Memory usage report : Memory Usage after the buffer registration ---
 ========================================================================
-Available memory on node 0, free + buffers : 2600196 MiB
-Memory footprint by rank 0 on node 0       :      26 MiB
+Available memory on node 0, free + buffers :   91358 MiB
+Memory footprint by rank 0 on node 0       :      48 MiB
 ========================================================================
-  Anonymous Buffer size per walker : 21632 Bytes.
+  Anonymous Buffer size per walker : 20192 Bytes.
 MEMORY increase 0 MB VMC::resetRun
 ====================================================
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.5
-    reference energy   = -15.3393
-    reference variance = 0.0830525
+    reference energy   = -15.3675
+    reference variance = 0.532558
 ====================================================
-  QMC Execution time = 2.0937e-01 secs
-  Total Execution time = 2.1131e-01 secs
+  QMC Execution time = 5.5031e-02 secs
+  Total Execution time = 5.5811e-02 secs
 
 =========================================================
-  A new xml input file : vmc.fast.s000.cont.xml
+  A new xml input file : vmc.s000.cont.xml
 
 Use --enable-timers=<value> command line option to increase or decrease level of timing information
 Stack timer profile
 Timer      Inclusive_time  Exclusive_time  Calls       Time_per_call
-Total         0.3444     0.0001              1       0.344390331
-  Startup     0.1331     0.1331              1       0.133069978
-  VMC         0.2112     0.2112              1       0.211201571
+Total         0.1169     0.0000              1       0.116867037
+  Startup     0.0611     0.0611              1       0.061052146
+  VMC         0.0558     0.0558              1       0.055783932
 
 QMCPACK execution completed successfully

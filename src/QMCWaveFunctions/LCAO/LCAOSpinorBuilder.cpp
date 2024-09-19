@@ -51,10 +51,10 @@ std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   std::unique_ptr<LCAOrbitalSet> upspo =
       std::make_unique<LCAOrbitalSet>(spo_name + "_up", std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), norbs,
-                                      false);
+                                      false, false);
   std::unique_ptr<LCAOrbitalSet> dnspo =
       std::make_unique<LCAOrbitalSet>(spo_name + "_dn", std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), norbs,
-                                      false);
+                                      false, false);
   loadMO(*upspo, *dnspo, cur);
 
   //create spinor and register up/dn

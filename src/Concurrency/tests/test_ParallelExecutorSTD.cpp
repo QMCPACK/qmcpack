@@ -26,7 +26,7 @@ TEST_CASE("ParallelExecutor<STD> function case", "[concurrency]")
   int num_threads = 8;
   ParallelExecutor<Executor::STD_THREADS> test_block;
   std::atomic<int> count(0);
-  test_block(num_threads, TestTask, std::ref(count));
+  test_block(num_threads, TestTask, count);
   REQUIRE(count == 8);
 }
 
@@ -36,7 +36,7 @@ TEST_CASE("ParallelExecutor<STD> lambda case", "[concurrency]")
   ParallelExecutor<Executor::STD_THREADS> test_block;
   std::atomic<int> count(0);
   test_block(
-      num_threads, [](int id, std::atomic<int>& my_count) { ++my_count; }, std::ref(count));
+      num_threads, [](int id, std::atomic<int>& my_count) { ++my_count; }, count);
   REQUIRE(count == 8);
 }
 
@@ -49,9 +49,9 @@ TEST_CASE("ParallelExecutor<STD> nested case", "[concurrency]")
       num_threads,
       [num_threads](int task_id, std::atomic<int>& my_count) {
         ParallelExecutor<Executor::STD_THREADS> test_block2;
-        test_block2(num_threads, TestTask, std::ref(my_count));
+        test_block2(num_threads, TestTask, my_count);
       },
-      std::ref(count));
+      count);
   REQUIRE(count == 64);
 }
 

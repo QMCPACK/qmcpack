@@ -69,6 +69,7 @@ public:
 #endif
 
   using ValueType    = WaveFunctionComponent::ValueType;
+  using ValueVector  = WaveFunctionComponent::ValueVector;
   using GradType     = WaveFunctionComponent::GradType;
   using BufferType   = WaveFunctionComponent::BufferType;
   using WFBufferType = WaveFunctionComponent::WFBufferType;
@@ -298,6 +299,13 @@ public:
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
+
+  /** Used by SOECPComponent to do faster SOC evaluation
+   */
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                            std::vector<ValueType>& ratios) const;
+
   /** batched version of evaluateRatios
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
@@ -305,6 +313,12 @@ public:
                                 const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
+
+  // batched version of evaluateSpinorRatios
+  static void mw_evaluateSpinorRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                      const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
+                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                      const RefVector<std::vector<ValueType>>& ratios_list);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(const VirtualParticleSet& VP,
@@ -457,7 +471,20 @@ public:
                                               RecordArray<ValueType>& dlogpsi,
                                               RecordArray<ValueType>& dhpsioverpsi);
 
+  /** Compute the derivatives of the log of the wavefunction with respect to optimizable parameters.
+   *  parameters
+   *  @param P particle set
+   *  @param optvars optimizable parameters
+   *  @param dlogpsi array of derivatives of the log of the wavefunction.
+   *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
+   *        the derivative of the log of the wavefunction.
+  */
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
+  /// batched version of evaluateDerivativesWF
+  static void mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
+                                                const opt_variables_type& optvars,
+                                                RecordArray<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
 

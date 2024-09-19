@@ -91,6 +91,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
   OptimizableFunctorBase* makeClone() const override { return new BsplineFunctor(*this); }
 
+  constexpr static bool isOMPoffload() { return true; }
+
   void setCusp(Real c) override { CuspValue = c; }
 
   void setPeriodic(bool p) override { periodic = p; }

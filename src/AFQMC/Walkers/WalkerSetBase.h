@@ -210,7 +210,7 @@ public:
     if (i < 0 || i > tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(std::get<1>(walker_buffer.sizes()) == walker_size);
-    return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i], data_displ, wlk_desc);
+    return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer.const_array_cast())[i], data_displ, wlk_desc);
   }
 
   // cleans state of object.
@@ -656,7 +656,7 @@ public:
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
     if (v.num_elements() < tot_num_walkers)
       APP_ABORT("Error: getProperty(v):: v.size < tot_num_walkers.\n");
-    auto W_(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+    auto W_(boost::multi::static_array_cast<element, pointer>(walker_buffer.const_array_cast()));
     ma::copy(W_({0, tot_num_walkers}, data_displ[id]), v.sliced(0, tot_num_walkers));
   }
 

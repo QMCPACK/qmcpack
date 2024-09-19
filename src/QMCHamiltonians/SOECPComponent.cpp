@@ -71,10 +71,8 @@ void SOECPComponent::resize_warrays(int n, int m, int s)
   nchannel_ = sopp_m_.size();
   nknot_    = sgridxyz_m_.size();
   sknot_    = s;
-  if (sknot_ < 2)
-    throw std::runtime_error("Spin knots must be >= 2\n");
-  if (sknot_ % 2 != 0)
-    throw std::runtime_error("Spin knots uses Simpson's rule. Must have even number of knots");
+  if (sknot_ % 2 != 0 && sknot_ > 0)
+    throw std::runtime_error("Spin integration uses Simpson's rule. Must have even number of knots in this case");
 
   //Need +1 for Simpsons rule to include both end points.
   //sknot here refers to the number of subintervals for integration
@@ -83,6 +81,10 @@ void SOECPComponent::resize_warrays(int n, int m, int s)
   deltaV_.resize(total_knots_);
   deltaS_.resize(total_knots_);
   spin_quad_weights_.resize(total_knots_);
+  auto& up_row = spinor_multiplier_.first;
+  auto& dn_row = spinor_multiplier_.second;
+  up_row.resize(total_knots_);
+  dn_row.resize(total_knots_);
   if (m != nchannel_)
   {
     APP_ABORT("SOECPComponent::resize_warrays has incorrect number of radial channels\n");
@@ -133,6 +135,25 @@ SOECPComponent::ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int 
     APP_ABORT("SOECPComponent::lMatrixElements Invalid operator dimension\n");
     return 0;
   }
+}
+
+SOECPComponent::ComplexType SOECPComponent::matrixElementDecomposed(int l, int m1, int m2, RealType spin, bool plus)
+{
+  RealType pm = plus ? RealType(1) : RealType(-1);
+  RealType mp = -1 * pm;
+
+
+  ComplexType lx = lmMatrixElements(l, m1, m2, 0);
+  ComplexType ly = lmMatrixElements(l, m1, m2, 1);
+  ComplexType lz = lmMatrixElements(l, m1, m2, 2);
+
+  RealType cos2s = std::cos(2 * spin);
+  RealType sin2s = std::sin(2 * spin);
+  ComplexType phase(cos2s, mp * sin2s);
+  ComplexType eye(0, 1);
+  RealType onehalf = 0.5;
+  ComplexType val  = onehalf * (pm * lz + phase * (lx + pm * eye * ly));
+  return val;
 }
 
 SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
@@ -189,6 +210,67 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
     }
     pairpot += psiratio_[iq] * lsum * spin_quad_weights_[iq];
   }
+  return std::real(pairpot);
+}
+
+void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, RealType sold)
+{
+#ifdef QMC_COMPLEX
+  auto& up_row = spinor_multiplier_.first;
+  auto& dn_row = spinor_multiplier_.second;
+
+  //calculate radial potentials
+  for (int ip = 0; ip < nchannel_; ip++)
+    vrad_[ip] = sopp_m_[ip]->splint(r);
+
+  for (int iq = 0; iq < nknot_; iq++)
+  {
+    up_row[iq] = 0.0;
+    dn_row[iq] = 0.0;
+    for (int il = 0; il < nchannel_; il++)
+    {
+      int l = il + 1;
+      for (int m1 = -l; m1 <= l; m1++)
+      {
+        ComplexType Y = sphericalHarmonic(l, m1, dr);
+        for (int m2 = -l; m2 <= l; m2++)
+        {
+          ComplexType cY    = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq]));
+          ComplexType so_up = matrixElementDecomposed(l, m1, m2, sold, true);
+          ComplexType so_dn = matrixElementDecomposed(l, m1, m2, sold, false);
+          RealType fourpi   = 4.0 * M_PI;
+          //Note: Need 4pi weight. In Normal NonLocalECP, 1/4Pi generated from transformation to legendre polynomials and gets absorbed into the
+          // quadrature integration. We don't get the 1/4Pi from legendre here, so we need to scale by 4Pi.
+          up_row[iq] += fourpi * vrad_[il] * Y * cY * so_up * sgridweight_m_[iq];
+          dn_row[iq] += fourpi * vrad_[il] * Y * cY * so_dn * sgridweight_m_[iq];
+        }
+      }
+    }
+  }
+#else
+  throw std::runtime_error("SOECPComponent::setupExactSpinIntegration only implemented in complex build.");
+#endif
+}
+
+SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(ParticleSet& W,
+                                                                         const int iat,
+                                                                         const TrialWaveFunction& psi,
+                                                                         const int iel,
+                                                                         const RealType r,
+                                                                         const PosType& dr)
+{
+  RealType sold = W.spins[iel];
+
+  for (int j = 0; j < nknot_; j++)
+    deltaV_[j] = r * rrotsgrid_m_[j] - dr;
+  vp_->makeMoves(W, iel, deltaV_, true, iat);
+
+  setupExactSpinProjector(r, dr, sold);
+
+  psi.evaluateSpinorRatios(*vp_, spinor_multiplier_, psiratio_);
+  ComplexType pairpot;
+  for (size_t iq = 0; iq < nknot_; iq++)
+    pairpot += psiratio_[iq];
   return std::real(pairpot);
 }
 
@@ -265,6 +347,69 @@ void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& s
     const RealType sold          = p_list[i].spins[job.electron_id];
     pairpots[i]                  = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ, sold);
   }
+}
+
+void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
+                                                        const RefVectorWithLeader<ParticleSet>& p_list,
+                                                        const RefVectorWithLeader<TrialWaveFunction>& psi_list,
+                                                        const RefVector<const NLPPJob<RealType>>& joblist,
+                                                        std::vector<RealType>& pairpots,
+                                                        ResourceCollection& collection)
+{
+#ifdef QMC_COMPLEX
+  auto& soecp_component_leader = soecp_component_list.getLeader();
+  // Compute ratios with VP
+  RefVectorWithLeader<VirtualParticleSet> vp_list(*soecp_component_leader.vp_);
+  RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*soecp_component_leader.vp_);
+  RefVector<const std::vector<PosType>> deltaV_list;
+  RefVector<std::vector<ValueType>> psiratios_list;
+  RefVector<std::pair<SPOSet::ValueVector, SPOSet::ValueVector>> spinor_multiplier_list;
+  vp_list.reserve(soecp_component_list.size());
+  const_vp_list.reserve(soecp_component_list.size());
+  deltaV_list.reserve(soecp_component_list.size());
+  psiratios_list.reserve(soecp_component_list.size());
+  spinor_multiplier_list.reserve(soecp_component_list.size());
+
+  for (size_t i = 0; i < soecp_component_list.size(); i++)
+  {
+    SOECPComponent& component(soecp_component_list[i]);
+    const NLPPJob<RealType>& job = joblist[i];
+
+    for (int j = 0; j < component.nknot_; j++)
+      component.deltaV_[j] = job.ion_elec_dist * component.rrotsgrid_m_[j] - job.ion_elec_displ;
+
+    vp_list.push_back(*component.vp_);
+    const_vp_list.push_back(*component.vp_);
+    deltaV_list.push_back(component.deltaV_);
+    psiratios_list.push_back(component.psiratio_);
+    spinor_multiplier_list.push_back(component.spinor_multiplier_);
+  }
+
+  ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
+
+  VirtualParticleSet::mw_makeMoves(vp_list, p_list, deltaV_list, joblist, true);
+
+  for (size_t i = 0; i < p_list.size(); i++)
+  {
+    SOECPComponent& component(soecp_component_list[i]);
+    const NLPPJob<RealType>& job = joblist[i];
+    const RealType sold          = p_list[i].spins[job.electron_id];
+    component.setupExactSpinProjector(job.ion_elec_dist, job.ion_elec_displ, sold);
+  }
+
+  TrialWaveFunction::mw_evaluateSpinorRatios(psi_list, const_vp_list, spinor_multiplier_list, psiratios_list);
+
+  for (size_t i = 0; i < p_list.size(); i++)
+  {
+    pairpots[i] = 0;
+    SOECPComponent& component(soecp_component_list[i]);
+    std::vector<ValueType>& psiratio(psiratios_list[i]);
+    for (int iq = 0; iq < component.nknot_; iq++)
+      pairpots[i] += std::real(psiratio[iq]);
+  }
+#else
+  throw std::runtime_error("SOECPComponent::mw_evaluateOneExactSpinIntegration only implemented in complex build");
+#endif
 }
 
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet& W,

@@ -14,15 +14,15 @@ int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 	static_assert(sizeof(MPI_Comm) == sizeof(mpi3::communicator) );
 
 {
-	mpi3::communicator& w2 = mpi3::grip_communicator(world.handle());
+	mpi3::communicator const& w2 = mpi3::grip_communicator(world.handle());
 	assert(  w2 ==  world );
-	assert( &w2 == &world );
+	assert( &world == &w2 );
 
 	assert(  mpi3::grip_communicator(MPI_COMM_WORLD) ==  world );
 	assert( &mpi3::grip_communicator(MPI_COMM_WORLD) != &world );
 }
 
-//	assert( reinterpret_cast<mpi3::communicator&>(MPI_COMM_WORLD) == world );
+//  assert( reinterpret_cast<mpi3::communicator&>(MPI_COMM_WORLD) == world );
 
 {
 	mpi3::communicator mty;
@@ -55,7 +55,7 @@ int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 		}));
 #endif
 		fs.emplace_back(std::async([thread_comm=world](){
-		//	auto comm2 = thread_comm; // works, just to test
+		//  auto comm2 = thread_comm; // works, just to test
 			return 5;
 		}));
 #if 0 // more correct

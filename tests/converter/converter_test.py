@@ -88,12 +88,8 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
             okay = False
 
         if len(stderr.strip()) != 0:
-            # some MPI output on stderr is okay
-            # TODO - more general way of checking acceptable stderr strings
-            if not stderr.startswith('Rank'):
-                print("Stderr not empty")
-                print(stderr)
-                okay = False
+            print("Stderr not empty:")
+            print(stderr)
 
         if not os.path.exists(gold_file):
             print("Gold file missing")
@@ -155,7 +151,7 @@ def run_one_converter_test(c4q_exe, h5diff_exe):
        conv_input_files = glob.glob('*.h5')
 
     if code=='generic': 
-       conv_input_files = glob.glob('*.h5')
+       conv_input_files = glob.glob('*[!multidet].h5')
 
     if len(conv_input_files) != 1:
         print("Unexpected number of inputs files (should be 1): ",

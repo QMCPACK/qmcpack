@@ -49,9 +49,6 @@
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
-#ifdef BUILD_FCIQMC
-#include "FCIQMC/App/SQCFactory.h"
-#endif
 
 #define STR_VAL(arg) #arg
 #define GET_MACRO_VAL(arg) STR_VAL(arg)
@@ -65,7 +62,8 @@ QMCMain::QMCMain(Communicate* c)
       psi_pool_(std::make_unique<WaveFunctionPool>(my_project_.getRuntimeOptions(), *particle_set_pool_, myComm)),
       ham_pool_(std::make_unique<HamiltonianPool>(*particle_set_pool_, *psi_pool_, myComm)),
       qmc_system_(nullptr),
-      first_qmc_(true)
+      first_qmc_(true),
+      walker_logs_xml_(NULL)
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       traces_xml_(NULL)
@@ -245,12 +243,12 @@ bool QMCMain::execute()
   particle_set_pool_->get(app_log());
   ham_pool_->get(app_log());
   OHMMS::Controller->barrier();
+  t3.stop();
   if (qmc_common.dryrun)
   {
-    app_log() << "  dryrun == 1 Ignore qmc/loop elements " << std::endl;
-    myComm->barrier_and_abort("QMCMain::execute");
+    app_log() << "  dryrun == 1 : Skipping all QMC and loop elements " << std::endl;
+    return true;
   }
-  t3.stop();
   Timer t1;
   qmc_common.qmc_counter = 0;
   for (int qa = 0; qa < qmc_action_.size(); qa++)
@@ -311,11 +309,7 @@ bool QMCMain::execute()
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
-    //#if defined(H5_HAVE_PARALLEL)
     xmlNewProp(newmcptr, (const xmlChar*)"collected", (const xmlChar*)"yes");
-    //#else
-    //      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"no");
-    //#endif
     if (mcptr == NULL)
     {
       xmlAddNextSibling(last_input_node_, newmcptr);
@@ -486,6 +480,10 @@ bool QMCMain::validateXML()
       traces_xml_ = cur;
     }
 #endif
+    else if (cname == "walkerlogs")
+    {
+      walker_logs_xml_ = cur;
+    }
     else
     {
       //everything else goes to m_qmcaction
@@ -631,12 +629,18 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 #if !defined(REMOVE_TRACEMANAGER)
     qmc_driver->putTraces(traces_xml_);
 #endif
-    qmc_driver->process(cur);
-    infoSummary.flush();
-    infoLog.flush();
-    Timer qmcTimer;
-    qmc_driver->run();
-    app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
+    qmc_driver->putWalkerLogs(walker_logs_xml_);
+    {
+      ScopedTimer qmc_run_timer(createGlobalTimer(qmc_driver->getEngineName(), timer_level_coarse));
+      Timer process_and_run;
+      qmc_driver->process(cur);
+      infoSummary.flush();
+      infoLog.flush();
+
+      qmc_driver->run();
+      app_log() << "  " << qmc_driver->getEngineName() << " Execution time = " << std::setprecision(4)
+                << process_and_run.elapsed() << " secs" << std::endl;
+    }
     // transfer the states of a driver before its destruction
     last_branch_engine_legacy_driver_ = qmc_driver->getBranchEngine();
     // save the driver in a driver loop

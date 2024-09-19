@@ -796,15 +796,8 @@ class XsfFile(StandardFile):
         s.recenter()
         elem = []
         for e in s.elem:
-            ne = len(e)
-            if ne>1:
-                if ne==2 and not e[1].isalpha():
-                    e = e[0]
-                elif ne>2:
-                    e = e[0:2]
-                #end if
-            #end if
-            if is_element(e):
+            is_elem,e = is_element(e,symbol=True)
+            if is_elem:
                 elem.append(ptable.elements[e].atomic_number)
             else:
                 elem.append(0)

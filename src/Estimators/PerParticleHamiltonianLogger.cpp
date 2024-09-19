@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank)
-    : OperatorEstBase(DataLocality::crowd), rank_estimator_(nullptr), input_(input), rank_(rank)
+  : OperatorEstBase(DataLocality::crowd), input_(input), rank_(rank)
 {
   requires_listener_ = true;
   my_name_           = "PerParticleHamiltonianLogger";
@@ -26,8 +26,8 @@ PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonia
   rank_fstream_.open(filename, std::ios::out);
 }
 
-PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(const PerParticleHamiltonianLogger& pphl, DataLocality dl)
-    : OperatorEstBase(dl), rank_estimator_(const_cast<PerParticleHamiltonianLogger*>(&pphl)), input_(pphl.input_)
+PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLogger& pphl, DataLocality dl)
+  : OperatorEstBase(dl), rank_estimator_(makeOptionalRef(pphl)), input_(pphl.input_)
 {
   requires_listener_ = true;
   my_name_           = pphl.name_;
@@ -68,11 +68,20 @@ void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walker
   // This could change every call for DMC.
   walker_ids_.clear();
   for (MCPWalker& walker : walkers)
-    walker_ids_.push_back(walker.ID);
-  rank_estimator_->write(values_, walker_ids_);
+    walker_ids_.push_back(walker.getWalkerID());
+  rank_estimator_->get().write(values_, walker_ids_);
 
   // \todo some per crowd reduction.
   //       clear log values
+}
+
+PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll() const
+{
+  Real sum{0};
+  for (auto& [component, values] : values_)
+    for (auto& a_vector : values)
+      sum += std::accumulate(a_vector.begin(), a_vector.end(), 0.0);
+  return sum;
 }
 
 std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone() const
@@ -80,7 +89,7 @@ std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone()
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
 
-  auto spawn = std::make_unique<PerParticleHamiltonianLogger>(*this, spawn_data_locality);
+  auto spawn = std::make_unique<PerParticleHamiltonianLogger>(const_cast<PerParticleHamiltonianLogger&>(*this), spawn_data_locality);
   spawn->get_data().resize(data_size, 0.0);
   return spawn;
 }
@@ -104,6 +113,7 @@ void PerParticleHamiltonianLogger::registerListeners(QMCHamiltonian& ham_leader)
 {
   ListenerVector<Real> listener(name_, getLogger());
   QMCHamiltonian::mw_registerLocalEnergyListener(ham_leader, listener);
+  QMCHamiltonian::mw_registerLocalIonPotentialListener(ham_leader, listener);
 }
 
 void PerParticleHamiltonianLogger::startBlock(int steps)

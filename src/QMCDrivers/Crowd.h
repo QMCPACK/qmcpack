@@ -13,15 +13,16 @@
 #include <vector>
 #include "QMCDrivers/MCPopulation.h"
 #include "RandomGenerator.h"
-#include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 #include "Estimators/EstimatorManagerCrowd.h"
+#include "WalkerLogCollector.h"
 
 namespace qmcplusplus
 {
 // forward declaration
 class ResourceCollection;
 class EstimatorManagerNew;
+class WalkerLogCollector;
 
 /** Driver synchronized step context
  * 
@@ -50,10 +51,9 @@ public:
    */
   Crowd(EstimatorManagerNew& emb,
         const DriverWalkerResourceCollection& driverwalker_res,
-	const ParticleSet& pset,
+        const ParticleSet& pset,
         const TrialWaveFunction& twf,
-	const QMCHamiltonian& hamiltonian_temp,
-        const MultiWalkerDispatchers& dispatchers);
+        const QMCHamiltonian& hamiltonian_temp);
   ~Crowd();
   /** Because so many vectors allocate them upfront.
    *
@@ -83,6 +83,11 @@ public:
     estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, walker_hamiltonians_, rng);
   }
 
+  /// activate the collector
+  void setWalkerLogCollector(std::unique_ptr<WalkerLogCollector>&&);
+  /// Collect walker log data
+  void collectStepWalkerLog(int current_step);
+
   void setRNGForHamiltonian(RandomBase<FullPrecRealType>& rng);
 
   auto beginWalkers() { return mcp_walkers_.begin(); }
@@ -110,7 +115,8 @@ public:
   unsigned long get_accept() { return n_accept_; }
   unsigned long get_reject() { return n_reject_; }
 
-  const MultiWalkerDispatchers& dispatchers_;
+  /// get refereces of active walker log collectors. If walker logging is disabled, the RefVector size can be zero.
+  static RefVector<WalkerLogCollector> getWalkerLogCollectorRefs(const UPtrVector<Crowd>& crowds);
 
 private:
   /** @name Walker Vectors
@@ -129,6 +135,8 @@ private:
   DriverWalkerResourceCollection driverwalker_resource_collection_;
   /// per crowd estimator manager
   EstimatorManagerCrowd estimator_manager_crowd_;
+  // collector for walker logs
+  std::unique_ptr<WalkerLogCollector> wlog_collector_;
 
   /** @name Step State
    * 

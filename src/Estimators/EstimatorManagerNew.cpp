@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -17,15 +17,19 @@
 #include <cstdint>
 
 #include "EstimatorManagerNew.h"
+#include "EstimatorInputDelegates.h"
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
+#include "SelfHealingOverlap.h"
 #include "MagnetizationDensity.h"
 #include "PerParticleHamiltonianLogger.h"
+#include "EnergyDensityEstimator.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/CommUtilities.h"
+#include <Pools/PooledData.h>
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
@@ -90,21 +94,22 @@ bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Arg
 }
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
-                                         EstimatorManagerInput&& emi,
-                                         const QMCHamiltonian& H,
-                                         const ParticleSet& pset,
-                                         const TrialWaveFunction& twf)
-    : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
+void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
+                                              const ParticleSet& pset,
+                                              const TrialWaveFunction& twf,
+                                              const QMCHamiltonian& H,
+                                              const PSPool& pset_pool)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
                                                      pset.getLattice()) ||
+          createEstimator<SelfHealingOverlapInput>(est_input, twf) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
-          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank())))
+          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
+          createEstimator<EnergyDensityInput>(est_input, pset_pool)))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 
@@ -240,7 +245,7 @@ void EstimatorManagerNew::stopDriverRun() { h_file.reset(); }
 
 void EstimatorManagerNew::startBlock(int steps) { block_timer_.restart(); }
 
-void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, RealType block_weight)
+void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, FullPrecRealType block_weight)
 {
   /* Need a redesign of how accept, reject and block_weight are handled from driver to this manager.
    * DMC needs to add non-local move counters.
@@ -330,7 +335,7 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
     auto cur = reduce_buffer.begin();
     copy(cur, cur + n1, AverageCache.begin());
     copy(cur + n1, cur + n2, PropertyCache.begin());
-    const RealType invTotWgt = 1.0 / PropertyCache[weightInd];
+    const FullPrecRealType invTotWgt = 1.0 / PropertyCache[weightInd];
     AverageCache *= invTotWgt;
     //do not weight weightInd i.e. its index 0!
     for (int i = 1; i < PropertyCache.size(); i++)
@@ -377,23 +382,26 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     RefVector<OperatorEstBase> ref_op_ests = convertUPtrToRefVector(operator_ests_);
     for (int iop = 0; iop < operator_data_sizes.size(); ++iop)
     {
-      operator_data_sizes[iop] = operator_ests_[iop]->get_data().size();
+      operator_data_sizes[iop] = operator_ests_[iop]->getFullDataSize();
     }
-    // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced firt.
+
+    // Allocate buffer to hold largest Operator est data size
+    // +1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced first.
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
-    std::vector<RealType> operator_send_buffer;
-    std::vector<RealType> operator_recv_buffer;
+    PooledData<RealType> operator_send_buffer;
+    PooledData<RealType> operator_recv_buffer;
     operator_send_buffer.reserve(nops);
     operator_recv_buffer.reserve(nops);
     for (int iop = 0; iop < operator_ests_.size(); ++iop)
     {
       auto& estimator      = *operator_ests_[iop];
-      auto& data           = estimator.get_data();
-      size_t adjusted_size = data.size() + 1;
-      operator_send_buffer.resize(adjusted_size, 0.0);
-      operator_recv_buffer.resize(adjusted_size, 0.0);
-      std::copy_n(data.begin(), data.size(), operator_send_buffer.begin());
-      operator_send_buffer[data.size()] = estimator.get_walkers_weight();
+      size_t adjusted_size = estimator.getFullDataSize() + 1;
+      operator_send_buffer.clear(); //(adjusted_size, 0.0);
+      estimator.packData(operator_send_buffer);
+      auto weight = static_cast<RealType>(estimator.get_walkers_weight());
+      operator_send_buffer.add(weight);
+      assert(operator_send_buffer.size() == adjusted_size);
+      operator_recv_buffer.resize(adjusted_size);
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
       my_comm_->comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(), std::plus<>{},
@@ -401,12 +409,19 @@ void EstimatorManagerNew::reduceOperatorEstimators()
 #else
       operator_recv_buffer = operator_send_buffer;
 #endif
+
+      // This is a crucial step where summed over weighted observable is normalized by the total weight.  For correctness this should be done
+      // only after the full weighted sum is done.
+      // i.e.  (1 / Sum(w_1 + ... + w_n)) * (w_1 * S_1 + ... + w_n * S_n) != (1/w_1) * w_1 * S_1 + ... + (1/w_n) * w_n * S_n
+      // for a general case where w's are not strictly ==
+      // Assumptions lead rank is 0, true for Ensembles?
       if (my_comm_->rank() == 0)
       {
-        std::copy_n(operator_recv_buffer.begin(), data.size(), data.begin());
-        size_t reduced_walker_weights = operator_recv_buffer[data.size()];
-        RealType invTotWgt            = 1.0 / static_cast<QMCT::RealType>(reduced_walker_weights);
-        operator_ests_[iop]->normalize(invTotWgt);
+        estimator.unpackData(operator_recv_buffer);
+        RealType reduced_walker_weights = 0.0;
+        operator_recv_buffer.get(reduced_walker_weights);
+        RealType invTotWgt = 1.0 / static_cast<RealType>(reduced_walker_weights);
+        estimator.normalize(invTotWgt);
       }
     }
   }
@@ -431,7 +446,7 @@ void EstimatorManagerNew::zeroOperatorEstimators()
     op_est->zero();
 }
 
-void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& var)
+void EstimatorManagerNew::getApproximateEnergyVariance(FullPrecRealType& e, FullPrecRealType& var)
 {
   RealType tmp[3];
   tmp[0] = energyAccumulator.count();
@@ -440,109 +455,6 @@ void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& va
   my_comm_->bcast(tmp, 3);
   e   = tmp[1] / tmp[0];
   var = tmp[2] / tmp[0] - e * e;
-}
-
-bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur)
-{
-  std::vector<std::string> extra_types;
-  std::vector<std::string> extra_names;
-  cur = cur->children;
-  std::string MainEstimatorName("LocalEnergy");
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if (cname == "estimator")
-    {
-      std::string est_type("none");
-      std::string est_name(MainEstimatorName);
-      std::string use_hdf5("yes");
-      OhmmsAttributeSet hAttrib;
-      hAttrib.add(est_type, "type");
-      hAttrib.add(est_name, "name");
-      hAttrib.add(use_hdf5, "hdf5");
-      hAttrib.put(cur);
-      if ((est_name == MainEstimatorName) || (est_name == "elocal"))
-      {
-        max4ascii = H.sizeOfObservables() + 3;
-        addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"));
-      }
-      else if (est_name == "RMC")
-      {
-        int nobs(20);
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(nobs, "nobs");
-        hAttrib.put(cur);
-        max4ascii = nobs * H.sizeOfObservables() + 3;
-        addMainEstimator(std::make_unique<RMCLocalEnergyEstimator>(H, nobs));
-      }
-      else if (est_name == "CSLocalEnergy")
-      {
-        OhmmsAttributeSet hAttrib;
-        int nPsi = 1;
-        hAttrib.add(nPsi, "nPsi");
-        hAttrib.put(cur);
-        addMainEstimator(std::make_unique<CSEnergyEstimator>(H, nPsi));
-        app_log() << "  Adding a CSLocalEnergy estimator for the MainEstimator " << std::endl;
-      }
-      else if (est_name == "SpinDensityNew")
-      {
-        SpinDensityInput spdi(cur);
-        DataLocality dl = DataLocality::crowd;
-        if (spdi.get_save_memory())
-          dl = DataLocality::rank;
-        if (spdi.get_cell().explicitly_defined)
-          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.getSpeciesSet(), dl));
-        else
-          operator_ests_.emplace_back(
-              std::make_unique<SpinDensityNew>(std::move(spdi), pset.getLattice(), pset.getSpeciesSet(), dl));
-      }
-      else if (est_type == "MomentumDistribution")
-      {
-        MomentumDistributionInput mdi(cur);
-        DataLocality dl = DataLocality::crowd;
-        operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
-                                                                           pset.getTwist(), pset.getLattice(), dl));
-      }
-      else if (est_type == "OneBodyDensityMatrices")
-      {
-        OneBodyDensityMatricesInput obdmi(cur);
-        // happens once insures golden particle set is not abused.
-        ParticleSet pset_target(pset);
-        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
-                                                                             pset.getSpeciesSet(), twf.getSPOMap(),
-                                                                             pset_target));
-      }
-      else if (est_type == "MagnetizationDensity")
-      {
-        MagnetizationDensityInput magdensinput(cur);
-        ParticleSet pset_target(pset);
-        operator_ests_.emplace_back(std::make_unique<MagnetizationDensity>(std::move(magdensinput), pset.getLattice()));
-      }
-      else
-      {
-        extra_types.push_back(est_type);
-        extra_names.push_back(est_name);
-      }
-    }
-    cur = cur->next;
-  }
-  if (main_estimator_ == nullptr)
-  {
-    app_log() << " ::put Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
-    max4ascii = H.sizeOfObservables() + 3;
-    addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, true));
-  }
-  if (!extra_types.empty())
-  {
-    app_log() << "\nUnrecognized estimators in input:" << std::endl;
-    for (int i = 0; i < extra_types.size(); i++)
-    {
-      app_log() << "  type: " << extra_types[i] << "     name: " << extra_names[i] << std::endl;
-    }
-    app_log() << std::endl;
-    throw UniformCommunicateError("Unrecognized estimators encountered in input.  See log message for more details.");
-  }
-  return true;
 }
 
 void EstimatorManagerNew::addMainEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator)

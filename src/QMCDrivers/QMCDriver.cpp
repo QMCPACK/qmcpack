@@ -36,6 +36,8 @@
 #else
 using TraceManager = int;
 #endif
+#include "WalkerLogInput.h"
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -55,7 +57,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       Psi(psi),
       H(h),
       checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
-      driver_scope_timer_(createGlobalTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
@@ -63,6 +64,8 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   DumpConfig   = false;
   IsQMCDriver  = true;
   allow_traces = false;
+  allow_walker_logs = false;
+  walker_logs_xml   = NULL;
   MyCounter    = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
@@ -199,11 +202,15 @@ void QMCDriver::process(xmlNodePtr cur)
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
   if (!Traces)
-  {
     Traces = std::make_unique<TraceManager>(myComm);
-  }
   Traces->put(traces_xml, allow_traces, RootName);
 #endif
+  //create and initialize traces
+  if (!wlog_manager_)
+  {
+    WalkerLogInput walker_logs_input(walker_logs_xml);
+    wlog_manager_ = std::make_unique<WalkerLogManager>(walker_logs_input, allow_walker_logs, RootName, myComm);
+  }
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)
@@ -371,8 +378,8 @@ void QMCDriver::setWalkerOffsets()
   long id = nwoff[myComm->rank()];
   for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
   {
-    W[iw]->ID       = id;
-    W[iw]->ParentID = id;
+    W[iw]->setWalkerID(id);
+    W[iw]->setParentID(id);
   }
   app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
   app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;

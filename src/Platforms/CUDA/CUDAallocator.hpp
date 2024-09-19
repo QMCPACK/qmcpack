@@ -181,8 +181,8 @@ bool operator!=(const CUDAAllocator<T1>&, const CUDAAllocator<T2>&)
 {
   return false;
 }
-template<typename T>
 
+template<typename T>
 struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 {
   static const bool is_host_accessible = false;

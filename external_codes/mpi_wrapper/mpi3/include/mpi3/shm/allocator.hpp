@@ -1,5 +1,4 @@
-//-*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
-// © Alfredo A. Correa 2019-2020
+// Copyright 2019-2024 Alfredo A. Correa
 
 #ifndef MPI3_SHM_ALLOCATOR_HPP
 #define MPI3_SHM_ALLOCATOR_HPP
@@ -91,7 +90,7 @@ private:
 	auto alloc_destroy_n(Ptr first, Size count) {
 		first.wP_->fence();
 		if(comm_->root()) {
-			std::for_each_n(first, count, [](auto const& e) {raw_pointer_cast(&e)->~TT();});
+			std::for_each(first, first + count, [](auto const& e) {raw_pointer_cast(&e)->~TT();});
 			// for( ; count > 0; --count, ++first) {raw_pointer_cast(first)->~TT();}
 		}
 		first.wP_->fence();
