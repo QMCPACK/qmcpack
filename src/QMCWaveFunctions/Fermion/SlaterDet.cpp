@@ -99,7 +99,7 @@ void SlaterDet::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionCompon
                                     const RefVectorWithLeader<ParticleSet>& p_list,
                                     int iat,
                                     std::vector<GradType>& grad_now,
-                                    std::vector<ComplexType>& spingrad_now) const 
+                                    std::vector<ComplexType>& spingrad_now) const
 {
   const int det_id = getDetID(iat);
   Dets[det_id]->mw_evalGradWithSpin(extract_DetRef_list(wfc_list, det_id), p_list, iat, grad_now, spingrad_now);
@@ -117,6 +117,15 @@ void SlaterDet::evaluateDerivRatios(const VirtualParticleSet& VP,
                                     Matrix<ValueType>& dratios)
 {
   return Dets[getDetID(VP.refPtcl)]->evaluateDerivRatios(VP, optvars, ratios, dratios);
+}
+
+void SlaterDet::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                          const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                          const opt_variables_type& optvars,
+                                          std::vector<ValueType>& ratios,
+                                          Matrix<ValueType>& dratios)
+{
+  return Dets[getDetID(VP.refPtcl)]->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, ratios, dratios);
 }
 
 SlaterDet::LogValue SlaterDet::evaluateLog(const ParticleSet& P,

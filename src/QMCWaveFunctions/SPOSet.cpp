@@ -303,6 +303,25 @@ void SPOSet::evaluateDerivRatios(const VirtualParticleSet& VP,
                            "must be overloaded when the SPOSet is optimizable.");
 }
 
+void SPOSet::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                       const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                       const opt_variables_type& optvars,
+                                       ValueVector& psi,
+                                       const ValueVector& psiinv,
+                                       std::vector<ValueType>& ratios,
+                                       Matrix<ValueType>& dratios,
+                                       int FirstIndex,
+                                       int LastIndex)
+{
+  // Match the fallback in WaveFunctionComponent that evaluates just the ratios
+  evaluateDetSpinorRatios(VP, psi, spinor_multiplier, psiinv, ratios);
+
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateSpinorDerivRatios "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
 
 /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD

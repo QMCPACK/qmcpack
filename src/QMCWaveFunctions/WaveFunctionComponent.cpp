@@ -279,12 +279,12 @@ void WaveFunctionComponent::evaluateDerivRatios(const VirtualParticleSet& VP,
 }
 
 void WaveFunctionComponent::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
-                                         const std::pair<ValueVector, ValueVector>& spinor_multiplier, 
-                                         const opt_variables_type& optvars,
-                                         std::vector<ValueType>& ratios,
-                                         Matrix<ValueType>& dratios)
+                                                      const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                                      const opt_variables_type& optvars,
+                                                      std::vector<ValueType>& ratios,
+                                                      Matrix<ValueType>& dratios)
 {
-  evaluateSpinorRatios(VP, spinor_multiplier, ratios);
+  evaluateDerivRatios(VP, optvars, ratios, dratios);
 }
 
 void WaveFunctionComponent::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
