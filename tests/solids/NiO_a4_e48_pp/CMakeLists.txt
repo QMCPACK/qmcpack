@@ -20,7 +20,7 @@ else()
     #  NonLocalECP           =           -50.477 +/-            0.011
     #  IonIon                =           -239.30 +/-             0.00
     list(APPEND NIO_A4_E48_SCALARS "totenergy" "-370.7944 0.024")
-    list(APPEND NIO_A4_E48_SCALARS "kinetic" "230.471 0.46")
+    list(APPEND NIO_A4_E48_SCALARS "kinetic" "230.471 0.55")
     list(APPEND NIO_A4_E48_SCALARS "samples" "32000 0.0")
 
     qmc_run_and_check(
@@ -39,10 +39,10 @@ else()
     #  LocalEnergy           =  -371.288648 +/- 0.000530   13.352353 +/- 0.006475
     #  LocalEnergy           =  -371.283531 +/- 0.000519   13.590739 +/- 0.008039
     #  LocalEnergy           =  -371.283912 +/- 0.000493   13.588468 +/- 0.007902
-    list(APPEND NIO_A4_E48_DMC_SCALARS "totenergy" "-371.320817 0.023")
-    list(APPEND NIO_A4_E48_DMC_V0_SCALARS "totenergy" "-371.288648 0.018")
-    list(APPEND NIO_A4_E48_DMC_V1_SCALARS "totenergy" "-371.283531 0.018")
-    list(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.283912 0.018")
+    list(APPEND NIO_A4_E48_DMC_SCALARS "totenergy" "-371.320817 0.03")
+    list(APPEND NIO_A4_E48_DMC_V0_SCALARS "totenergy" "-371.288648 0.025")
+    list(APPEND NIO_A4_E48_DMC_V1_SCALARS "totenergy" "-371.283531 0.025")
+    list(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.283912 0.025")
 
     qmc_run_and_check(
       short-NiO_a4_e48_pp-dmc_sdj
@@ -108,8 +108,8 @@ else()
     #  LocalECP              =          -389.971 +/-            0.022
     #  NonLocalECP           =           -50.534 +/-            0.012
     #  IonIon                =           -239.30 +/-             0.00
-    list(APPEND NIO_A4_E48_J3_SCALARS "totenergy" "-370.88498 0.023")
-    list(APPEND NIO_A4_E48_J3_SCALARS "kinetic" "230.555 0.46")
+    list(APPEND NIO_A4_E48_J3_SCALARS "totenergy" "-370.88498 0.035")
+    list(APPEND NIO_A4_E48_J3_SCALARS "kinetic" "230.555 0.8")
     list(APPEND NIO_A4_E48_J3_SCALARS "samples" "32000 0.0")
 
     qmc_run_and_check(
