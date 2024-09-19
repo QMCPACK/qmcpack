@@ -485,7 +485,23 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivativesExactSpinInt
 #ifndef QMC_COMPLEX
   throw std::runtime_error("SOECPComponent::evaluateValueAndDerivatives should not be called in real build\n");
 #else
-  return 0;
+  const size_t num_vars = optvars.num_active_vars;
+  dratio_.resize(total_knots_, num_vars);
+  dlogpsi_vp_.resize(dlogpsi.size());
+
+  RealType sold = W.spins[iel];
+  for (int j = 0; j < nknot_; j++)
+    deltaV_[j] = r * rrotsgrid_m_[j] - dr;
+  vp_->makeMoves(W, iel, deltaV_, true, iat);
+  setupExactSpinProjector(r, dr, sold);
+  Psi.evaluateSpinorDerivRatios(*vp_, spinor_multiplier_, optvars, psiratio_, dratio_);
+
+  BLAS::gemv('N', num_vars, total_knots_, 1.0, dratio_.data(), num_vars, psiratio_.data(), 1, 1.0, dhpsioverpsi.data(), 1);
+
+  ComplexType pairpot;
+  for (size_t iq = 0; iq < nknot_; iq++)
+    pairpot += psiratio_[iq];
+  return std::real(pairpot);
 #endif
 }
 

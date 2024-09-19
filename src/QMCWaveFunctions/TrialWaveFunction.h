@@ -326,6 +326,14 @@ public:
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
 
+  /** Used by SOECPComponent to do faster SOC evaluation with derivatives of ratio
+   */
+  void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                 const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                 const opt_variables_type& optvars,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratio);
+
   void printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag = "GL");
 
   /** Returns the logarithmic gradient of the trial wave function

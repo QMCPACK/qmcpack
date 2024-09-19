@@ -544,6 +544,13 @@ public:
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
 
+  // Used by SOECPComponent for faster SOC evaluation
+  virtual void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                         const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                         const opt_variables_type& optvars,
+                                         std::vector<ValueType>& ratios,
+                                         Matrix<ValueType>& dratios);
+
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param p_list the list of ParticleSet pointers in a walker batch

@@ -1142,6 +1142,25 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
   }
 }
 
+void TrialWaveFunction::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                                  const std::pair<ValueVector, ValueVector>& spinor_multiplier, 
+                                                  const opt_variables_type& optvars,
+                                                  std::vector<ValueType>& ratios,
+                                                  Matrix<ValueType>& dratio)
+{
+  std::fill(ratios.begin(), ratios.end(), 1.0);
+  std::fill(dratio.begin(), dratio.end(), 0.0);
+  std::vector<ValueType> t(ratios.size());
+  for (int i = 0; i < Z.size(); ++i)
+  {
+    ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
+    Z[i]->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, t, dratio);
+    for (int j = 0; j < ratios.size(); ++j)
+      ratios[j] *= t[j];
+  }
+
+}
+
 bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }
 
 std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp) const
