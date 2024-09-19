@@ -598,7 +598,7 @@ Optimizers
 QMCPACK implements a number of different optimizers each with different
 priorities for accuracy, convergence, memory usage, and stability. The
 optimizers can be switched among “OneShiftOnly” (default), “adaptive,”
-“descent,” “hybrid,” "stochastic_reconfiguration," and “quartic” (old) using the following line in the
+“descent,” “hybrid,” "sr_cg," and “quartic” (old) using the following line in the
 optimization block:
 
 ::
@@ -1174,8 +1174,8 @@ Additional information and recommendations:
    parameters discussed earlier for descent are useful for setting up
    the descent engine to do this averaging on its own.
 
-Stochastic Reconfiguration
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Stochastic Reconfiguration with Conjugate Gradient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We have implemented a preliminary version of stochastic reconfiguration (:cite:`Sorella2001` and :cite:`Casula2004`),
 currently only available in the batched drivers. The SR optimization reduces the
 computational cost over the linear method by avoiding the need to build the 
@@ -1188,13 +1188,13 @@ counts, e.g. in orbital optimization. The SR method determines the parameter cha
 where :math:`\mathbf{S}` is given by :math:`\langle \Psi_i | \Psi_j\rangle`, :math:`\mathbf{g}` is given by :math:`\langle \Psi_i | H | \Psi_0\rangle`, :math:`\Delta \mathbf{p}` is the parameter update, and :math:`\tau` is an effective timestep since the SR method can be interpretted as an imaginary time projection expanded in the parameter derivative basis. 
 The solution could be found by directly inverting the overlap matrix :math:`\mathbf{S}`, but this becomes prohibitive for large parameter counts. Therefore, we have implemented the conjugate gradient iterative scheme to solve the linear equation :cite:`Neuscamman2012`. This avoids having to directly invert the overlap matrix and significantly reduces the cost for large parameter counts.
 
-Since we are using finite samples to represent the overlap matrix, it can become ill-conditioned. We choose to use a simple regularization scheme to improve the optimization, described in :cite:`Sorella2007`. The overlap matrix is scaled via :math:`\mathbf{S} \rightarrow \mathbf{S}(1+\epsilon \mathbf{I})`, where :math:`\epsilon` is a small scalar. This can be controlled through ``sr_regularization``. 
+Since we are using finite samples to represent the overlap matrix, it can become ill-conditioned. We choose to use a simple regularization scheme to improve the optimization, described in :cite:`Sorella2007`. The overlap matrix is scaled via :math:`\mathbf{S} \rightarrow \mathbf{S} + \epsilon \mathbf{I}`, where :math:`\epsilon` is a small scalar. This can be controlled through ``sr_regularization``. 
 
 By default, the parameter update is accepted as is, and the size of the proposed parameter changes can be controlled by the timestep :math:`\tau`. This parameter can be controlled via ``sr_tau``. If this parameter gets too large, the optimization can become unstable. Therefore, it is recommended to use a small timestep. Small timesteps require many more total optimization steps than is typically required by the linear method, so convergence should be carefully checked. Alternatively, it is possible to use the conjugate gradient step to determine the parameter update direction, and follow up with a line search, triggered via ``line_search``. This can result in much faster convergence at the expense of doing additional correlated sampling steps. 
 
 We are currently investigating various improvements to make this a more reliable optimizer. 
 
-``stochastic_reconfiguration`` method:
+``sr_cg` method:
 
   parameters:
 
