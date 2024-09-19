@@ -238,14 +238,14 @@ public:
    * @param ratios return determinant ratios
    */
   virtual void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
-                                       const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                   const opt_variables_type& optvars,
-                                   ValueVector& psi,
-                                   const ValueVector& psiinv,
-                                   std::vector<ValueType>& ratios,
-                                   Matrix<ValueType>& dratios,
-                                   int FirstIndex,
-                                   int LastIndex);
+                                         const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                         const opt_variables_type& optvars,
+                                         ValueVector& psi,
+                                         const ValueVector& psiinv,
+                                         std::vector<ValueType>& ratios,
+                                         Matrix<ValueType>& dratios,
+                                         int FirstIndex,
+                                         int LastIndex);
 
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP, of multiple walkers
