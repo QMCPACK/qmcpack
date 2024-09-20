@@ -128,7 +128,12 @@ SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& 
     const auto& displ = ble.getDisplRow(jel);
     for (int iat = 0; iat < num_ions_; iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
-        value_ += pp_[iat]->evaluateValueAndDerivatives(P, iat, psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+        if (use_exact_spin_)
+          value_ += pp_[iat]->evaluateValueAndDerivativesExactSpinIntegration(P, iat, psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                        dhpsioverpsi);
+
+        else
+          value_ += pp_[iat]->evaluateValueAndDerivatives(P, iat, psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                         dhpsioverpsi);
   }
   return value_;

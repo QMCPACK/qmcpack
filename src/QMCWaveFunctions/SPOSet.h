@@ -230,6 +230,23 @@ public:
                                    int FirstIndex,
                                    int LastIndex);
 
+  /** evaluate determinant ratios and parameter derivatives for virtual moves, specifically for Spinor SPOSets
+   * @param VP virtual particle set
+   * @param psi values of the SPO, used as a scratch space if needed
+   * @param spinor_multiplier factor to apply to the up and down components independently
+   * @param invrow the row of inverse slater matrix corresponding to the particle moved virtually
+   * @param ratios return determinant ratios
+   */
+  virtual void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                         const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                         const opt_variables_type& optvars,
+                                         ValueVector& psi,
+                                         const ValueVector& psiinv,
+                                         std::vector<ValueType>& ratios,
+                                         Matrix<ValueType>& dratios,
+                                         int FirstIndex,
+                                         int LastIndex);
+
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP, of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
