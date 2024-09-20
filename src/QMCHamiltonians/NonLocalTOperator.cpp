@@ -83,6 +83,14 @@ NonLocalTOperator::NonLocalTOperator(const TmoveKind non_local_move_option,
 
 const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vector<NonLocalData>& txy)
 {
+  // Although prob is required to be [0, 1), the received value can still be 1 when there is precision conversion.
+  // For example, when the caller value is the largest value smaller than 1.0 in double precision,
+  // the callee (RealType=float) can still receive 1.0f after an implicit conversion.
+  // Here we adjust the value of prob to be slightly smaller than 1.
+  if (prob == RealType(1))
+    prob = std::nextafter(RealType(1), RealType(0));
+  assert(prob >= 0 && prob < 1);
+
   // txy_scan_[0] = 1.0, txy_scan_[i>0] = txy_scan_[i-1] + txy[i-1].Weight (modified)
   txy_scan_.resize(txy.size());
   RealType wgt_t = 1.0;
