@@ -185,6 +185,8 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
 
 SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const PosType& dr, RealType sold)
 {
+#ifdef QMC_COMPLEX
+  wvec_.resize(total_knots_); //contribution from each quarature point
   ComplexType pairpot;
   for (int iq = 0; iq < total_knots_; iq++)
   {
@@ -208,9 +210,13 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
       }
       lsum += vrad_[il] * msums;
     }
-    pairpot += psiratio_[iq] * lsum * spin_quad_weights_[iq];
+    wvec_[iq] = psiratio_[iq] * lsum * spin_quad_weights_[iq];
+    pairpot += wvec_[iq];
   }
   return std::real(pairpot);
+#else
+  throw std::runtime_error("SOECPComponent::calculateProjector only implemented in complex build.");
+#endif
 }
 
 void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, RealType sold)
@@ -429,7 +435,6 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
   const size_t num_vars = optvars.num_active_vars;
   dratio_.resize(total_knots_, num_vars);
   dlogpsi_vp_.resize(dlogpsi.size());
-  wvec_.resize(total_knots_);
 
   RealType sold = W.spins[iel];
   buildTotalQuadrature(r, dr, sold);
@@ -462,34 +467,44 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
       W.acceptMove(iel);
     }
 
-  ComplexType pairpot;
-  for (int iq = 0; iq < total_knots_; iq++)
-  {
-    ComplexType lsum;
-    for (int il = 0; il < nchannel_; il++)
-    {
-      int l = il + 1;
-      ComplexType msums;
-      for (int m1 = -l; m1 <= l; m1++)
-      {
-        ComplexType Y = sphericalHarmonic(l, m1, dr);
-        for (int m2 = -l; m2 <= l; m2++)
-        {
-          ComplexType ldots;
-          for (int id = 0; id < 3; id++)
-            ldots += lmMatrixElements(l, m1, m2, id) * sMatrixElements(W.spins[iel], W.spins[iel] + deltaS_[iq], id);
-          ComplexType cY = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq % nknot_]));
-          msums += Y * cY * ldots;
-        }
-      }
-      lsum += sopp_m_[il]->splint(r) * msums;
-    }
-    wvec_[iq] = lsum * psiratio_[iq] * spin_quad_weights_[iq];
-    pairpot += wvec_[iq];
-  }
-
+  ComplexType pairpot = calculateProjector(r, dr, sold);
+  //calculateProjector stores quad points in wvec_
   BLAS::gemv('N', num_vars, total_knots_, 1.0, dratio_.data(), num_vars, wvec_.data(), 1, 1.0, dhpsioverpsi.data(), 1);
 
+  return std::real(pairpot);
+#endif
+}
+
+SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivativesExactSpinIntegration(
+    ParticleSet& W,
+    int iat,
+    TrialWaveFunction& Psi,
+    int iel,
+    RealType r,
+    const PosType& dr,
+    const opt_variables_type& optvars,
+    const Vector<ValueType>& dlogpsi,
+    Vector<ValueType>& dhpsioverpsi)
+{
+#ifndef QMC_COMPLEX
+  throw std::runtime_error("SOECPComponent::evaluateValueAndDerivatives should not be called in real build\n");
+#else
+  const size_t num_vars = optvars.num_active_vars;
+  dratio_.resize(total_knots_, num_vars);
+  dlogpsi_vp_.resize(dlogpsi.size());
+
+  RealType sold = W.spins[iel];
+  for (int j = 0; j < nknot_; j++)
+    deltaV_[j] = r * rrotsgrid_m_[j] - dr;
+  vp_->makeMoves(W, iel, deltaV_, true, iat);
+  setupExactSpinProjector(r, dr, sold);
+  Psi.evaluateSpinorDerivRatios(*vp_, spinor_multiplier_, optvars, psiratio_, dratio_);
+
+  BLAS::gemv('N', num_vars, total_knots_, 1.0, dratio_.data(), num_vars, psiratio_.data(), 1, 1.0, dhpsioverpsi.data(), 1);
+
+  ComplexType pairpot;
+  for (size_t iq = 0; iq < nknot_; iq++)
+    pairpot += psiratio_[iq];
   return std::real(pairpot);
 #endif
 }
