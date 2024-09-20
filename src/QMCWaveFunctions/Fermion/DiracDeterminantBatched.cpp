@@ -671,7 +671,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateGL(const RefVectorWithLea
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
+      auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
       det.UpdateMode = ORB_WALKER;
       det.computeGL(G_list[iw], L_list[iw]);
     }
@@ -806,7 +806,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateRatios(const VirtualParticle
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorRatios(
     const VirtualParticleSet& VP,
-    const std::pair<ValueVector, ValueVector>& spinor_multipler,
+    const std::pair<ValueVector, ValueVector>& spinor_multiplier,
     std::vector<Value>& ratios)
 {
   {
@@ -816,7 +816,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorRatios(
   }
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multipler, d2psiV_host_view, ratios);
+    Phi->evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multiplier, d2psiV_host_view, ratios);
   }
 }
 
@@ -869,6 +869,20 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivRatios(const VirtualPar
   assert(WorkingIndex >= 0);
   std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
   Phi->evaluateDerivRatios(VP, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios, FirstIndex, LastIndex);
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorDerivRatios(
+    const VirtualParticleSet& VP,
+    const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+    const opt_variables_type& optvars,
+    std::vector<ValueType>& ratios,
+    Matrix<ValueType>& dratios)
+{
+  const int WorkingIndex = VP.refPtcl - FirstIndex;
+  assert(WorkingIndex >= 0);
+  std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
+  Phi->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios, FirstIndex, LastIndex);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>

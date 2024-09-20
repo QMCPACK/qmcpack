@@ -326,6 +326,16 @@ public:
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
 
+  /** compute both ratios and deriatives of ratio with respect to the optimizables
+   * Used by SOECP for exact spin integration. spinor_multiplier contains the contribution of the SOECP
+   * for the up/down components that needs to be multiplied by up/down components of spinor orbital. 
+   */
+  void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                 const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                 const opt_variables_type& optvars,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratio);
+
   void printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag = "GL");
 
   /** Returns the logarithmic gradient of the trial wave function

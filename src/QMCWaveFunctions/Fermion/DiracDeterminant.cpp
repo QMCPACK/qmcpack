@@ -448,7 +448,9 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios)
+void DiracDeterminant<DU_TYPE>::evaluateSpinorRatios(const VirtualParticleSet& VP,
+                                                     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                                     std::vector<ValueType>& ratios)
 {
   {
     ScopedTimer local_timer(RatioTimer);
@@ -519,6 +521,19 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivRatios(const VirtualParticleSet& VP
   assert(WorkingIndex >= 0);
   std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
   Phi->evaluateDerivRatios(VP, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                                          const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                                          const opt_variables_type& optvars,
+                                                          std::vector<ValueType>& ratios,
+                                                          Matrix<ValueType>& dratios)
+{
+  const int WorkingIndex = VP.refPtcl - FirstIndex;
+  assert(WorkingIndex >= 0);
+  std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
+  Phi->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
 }
 
 template<typename DU_TYPE>
