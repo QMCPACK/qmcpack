@@ -185,6 +185,7 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
 
 SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const PosType& dr, RealType sold)
 {
+#ifdef QMC_COMPLEX
   wvec_.resize(total_knots_); //contribution from each quarature point
   ComplexType pairpot;
   for (int iq = 0; iq < total_knots_; iq++)
@@ -213,6 +214,9 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
     pairpot += wvec_[iq];
   }
   return std::real(pairpot);
+#else
+  throw std::runtime_error("SOECPComponent::calculateProjector only implemented in complex build.");
+#end if
 }
 
 void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, RealType sold)
