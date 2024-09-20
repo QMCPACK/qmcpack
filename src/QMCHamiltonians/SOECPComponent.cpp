@@ -216,7 +216,7 @@ SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const Po
   return std::real(pairpot);
 #else
   throw std::runtime_error("SOECPComponent::calculateProjector only implemented in complex build.");
-#end if
+#endif
 }
 
 void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, RealType sold)
