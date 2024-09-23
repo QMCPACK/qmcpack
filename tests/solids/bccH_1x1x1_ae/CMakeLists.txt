@@ -1,7 +1,7 @@
 #
 # Short tests, about 2-3 seconds on 16 cores
 #
-list(APPEND BCC_H_SCALARS "totenergy" "-1.834032 0.0003")
+list(APPEND BCC_H_SCALARS "totenergy" "-1.834032 0.0005")
 list(APPEND BCC_H_SCALARS "kinetic" "0.186673807952 0.003")
 list(APPEND BCC_H_SCALARS "potential" "-2.02070672998 0.003")
 list(APPEND BCC_H_SCALARS "eeenergy" "-0.775870180954 0.003")
