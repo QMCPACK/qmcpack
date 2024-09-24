@@ -544,6 +544,18 @@ public:
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
 
+  /** evaluate ratios and derivatives to evaluate the SOECP
+   * @param VP VirtualParticleSet
+   * @param spinor_multiplier contribution of SOECP for up/down channels. Gets multiplied into Spinor SPOSet up/down components
+   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
+   * @param dratios Nq x Num_param matrix. \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
+   */
+  virtual void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                         const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                         const opt_variables_type& optvars,
+                                         std::vector<ValueType>& ratios,
+                                         Matrix<ValueType>& dratios);
+
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param p_list the list of ParticleSet pointers in a walker batch

@@ -53,8 +53,8 @@ TEST_CASE("NonLocalTOperator", "[hamiltonian]")
   REQUIRE(select5 != nullptr);
   CHECK(select5->PID == 2);
 
-  RealType near_one = std::nextafter(RealType(1), RealType(0));
-  CHECK(near_one < RealType(1));
+  double near_one = std::nextafter(1.0, 0.0);
+  CHECK(near_one < 1.0);
   auto select6 = t_op.selectMove(near_one, Txy);
   REQUIRE(select6 != nullptr);
   CHECK(select6->PID == 2);

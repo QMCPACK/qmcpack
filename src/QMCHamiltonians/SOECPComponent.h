@@ -153,6 +153,16 @@ public:
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi);
 
+  RealType evaluateValueAndDerivativesExactSpinIntegration(ParticleSet& P,
+                                                           int iat,
+                                                           TrialWaveFunction& psi,
+                                                           int iel,
+                                                           RealType r,
+                                                           const PosType& dr,
+                                                           const opt_variables_type& optvars,
+                                                           const Vector<ValueType>& dlogpsi,
+                                                           Vector<ValueType>& dhpsioverpsi);
+
   void print(std::ostream& os);
 
   void initVirtualParticle(const ParticleSet& qp);

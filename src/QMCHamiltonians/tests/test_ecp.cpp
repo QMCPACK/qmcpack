@@ -546,7 +546,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   auto logpsi = psi.evaluateLog(elec);
 
-  auto test_evaluateOne = [&]() {
+  auto test_evaluateOne = [&](bool exact) {
     RealType Value1(0.0);
     for (int jel = 0; jel < elec.getTotalNum(); jel++)
     {
@@ -554,7 +554,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
-          Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
+          if (exact)
+            Value1 += sopp->evaluateOneExactSpinIntegration(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
+          else
+            Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
     }
     REQUIRE(Value1 == Approx(-3.530511241));
   };
@@ -562,10 +565,11 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   {
     //test with VPs
     sopp->initVirtualParticle(elec);
-    test_evaluateOne();
+    test_evaluateOne(false);
+    test_evaluateOne(true);
     sopp->deleteVirtualParticle();
     //test without VPs
-    test_evaluateOne();
+    test_evaluateOne(false);
   }
 
   //Check evaluateValueAndDerivatives
@@ -591,7 +595,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
                                              -8.169955304e-14};
 
 
-  auto test_evaluateValueAndDerivatives = [&]() {
+  auto test_evaluateValueAndDerivatives = [&](bool exact) {
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
@@ -609,8 +613,12 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
-          Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                      dhpsioverpsi);
+          if (exact)
+            Value1 += sopp->evaluateValueAndDerivativesExactSpinIntegration(elec, iat, psi, jel, dist[iat], -displ[iat],
+                                                                            optvars, dlogpsi, dhpsioverpsi);
+          else
+            Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                        dhpsioverpsi);
     }
     REQUIRE(Value1 == Approx(-3.530511241).epsilon(2.e-5));
 
@@ -620,9 +628,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   {
     sopp->initVirtualParticle(elec);
-    test_evaluateValueAndDerivatives();
+    test_evaluateValueAndDerivatives(false);
+    test_evaluateValueAndDerivatives(true);
     sopp->deleteVirtualParticle();
-    test_evaluateValueAndDerivatives();
+    test_evaluateValueAndDerivatives(false);
   }
 }
 #endif

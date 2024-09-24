@@ -103,7 +103,9 @@ public:
     return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
   }
 
-  inline void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios) override
+  inline void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                                   const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                   std::vector<ValueType>& ratios) override
   {
     return Dets[getDetID(VP.refPtcl)]->evaluateSpinorRatios(VP, spinor_multiplier, ratios);
   }
@@ -112,6 +114,12 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
+
+  void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                 const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                 const opt_variables_type& optvars,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratios) override;
 
   inline void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
