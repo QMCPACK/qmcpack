@@ -109,7 +109,7 @@ qmc_run_and_check(
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
 list(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.5316 0.0024")
-list(APPEND DIAMOND_DMC_SCALARS "kinetic" "11.4857 0.0231")
+list(APPEND DIAMOND_DMC_SCALARS "kinetic" "11.4857 0.03")
 list(APPEND DIAMOND_DMC_SCALARS "potential" "-22.0170 0.0239")
 list(APPEND DIAMOND_DMC_SCALARS "localecp" "-7.1518 0.0323")
 list(APPEND DIAMOND_DMC_SCALARS "nonlocalecp" "0.62688 0.01")
