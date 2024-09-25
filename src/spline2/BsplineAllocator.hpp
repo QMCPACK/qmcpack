@@ -42,9 +42,8 @@ inline void find_coefs_1d(Ugrid grid, BCtype_s bc, float* data, intptr_t dstride
 } // namespace einspline
 
 template<typename T,
-         typename COEFS_ALLOC         = aligned_allocator<T>,
-         typename MULTI_SPLINE_ALLOC  = aligned_allocator<typename bspline_traits<T, 3>::SplineType>,
-         typename SINGLE_SPLINE_ALLOC = aligned_allocator<typename bspline_traits<T, 3>::SingleSplineType>>
+         typename COEFS_ALLOC        = aligned_allocator<T>,
+         typename MULTI_SPLINE_ALLOC = aligned_allocator<typename bspline_traits<T, 3>::SplineType>>
 class BsplineAllocator
 {
   using SplineType       = typename bspline_traits<T, 3>::SplineType;
@@ -55,7 +54,6 @@ class BsplineAllocator
   /// allocators
   COEFS_ALLOC coefs_allocator;
   MULTI_SPLINE_ALLOC multi_spline_allocator;
-  SINGLE_SPLINE_ALLOC single_spline_allocator;
 
 public:
   ///default constructor
@@ -76,7 +74,7 @@ public:
   void destroy(SingleSplineType* spline)
   {
     coefs_allocator.deallocate(spline->coefs, spline->coefs_size);
-    single_spline_allocator.deallocate(spline, 1);
+    delete spline;
   }
 
   ///allocate a multi-bspline structure
@@ -108,18 +106,11 @@ public:
   void copy(UBT* single, MBT* multi, int i, const int* offset, const int* N);
 };
 
-template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC, typename SINGLE_SPLINE_ALLOC>
-typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC>::SplineType* BsplineAllocator<
-    T,
-    COEFS_ALLOC,
-    MULTI_SPLINE_ALLOC,
-    SINGLE_SPLINE_ALLOC>::allocateMultiBspline(Ugrid x_grid,
-                                               Ugrid y_grid,
-                                               Ugrid z_grid,
-                                               BCType xBC,
-                                               BCType yBC,
-                                               BCType zBC,
-                                               int num_splines)
+template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC>
+typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC>::SplineType* BsplineAllocator<T,
+                                                                                            COEFS_ALLOC,
+                                                                                            MULTI_SPLINE_ALLOC>::
+    allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, BCType xBC, BCType yBC, BCType zBC, int num_splines)
 {
   // Create new spline
   SplineType* spline = multi_spline_allocator.allocate(1);
@@ -173,26 +164,20 @@ typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLO
   return spline;
 }
 
-template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC, typename SINGLE_SPLINE_ALLOC>
-typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC>::SingleSplineType* BsplineAllocator<
-    T,
-    COEFS_ALLOC,
-    MULTI_SPLINE_ALLOC,
-    SINGLE_SPLINE_ALLOC>::allocateUBspline(Ugrid x_grid,
-                                           Ugrid y_grid,
-                                           Ugrid z_grid,
-                                           BCType xBC,
-                                           BCType yBC,
-                                           BCType zBC,
-                                           T* data)
+template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC>
+typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC>::SingleSplineType* BsplineAllocator<T,
+                                                                                                  COEFS_ALLOC,
+                                                                                                  MULTI_SPLINE_ALLOC>::
+    allocateUBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, BCType xBC, BCType yBC, BCType zBC, T* data)
 {
   // Create new spline
-  SingleSplineType* spline = single_spline_allocator.allocate(1);
-  spline->spcode           = bspline_traits<T, 3>::single_spcode;
-  spline->tcode            = bspline_traits<T, 3>::tcode;
-  spline->xBC              = xBC;
-  spline->yBC              = yBC;
-  spline->zBC              = zBC;
+  auto* spline = new SingleSplineType;
+
+  spline->spcode = bspline_traits<T, 3>::single_spcode;
+  spline->tcode  = bspline_traits<T, 3>::tcode;
+  spline->xBC    = xBC;
+  spline->yBC    = yBC;
+  spline->zBC    = zBC;
 
   // Setup internal variables
   int Mx = x_grid.num;
@@ -266,13 +251,13 @@ typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLO
   return spline;
 }
 
-template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC, typename SINGLE_SPLINE_ALLOC>
+template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC>
 template<typename UBT, typename MBT>
-void BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC>::copy(UBT* single,
-                                                                                     MBT* multi,
-                                                                                     int i,
-                                                                                     const int* offset,
-                                                                                     const int* N)
+void BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC>::copy(UBT* single,
+                                                                MBT* multi,
+                                                                int i,
+                                                                const int* offset,
+                                                                const int* N)
 {
   using out_type        = typename bspline_type<MBT>::value_type;
   using in_type         = typename bspline_type<UBT>::value_type;
