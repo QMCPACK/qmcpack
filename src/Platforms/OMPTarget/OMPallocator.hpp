@@ -75,10 +75,10 @@ struct OMPallocator : public HostAllocator
   OMPallocator(const OMPallocator<U, V>&) : device_ptr_(nullptr)
   {}
 
-  template<class U, class V>
+  template<class U>
   struct rebind
   {
-    using other = OMPallocator<U, V>;
+    using other = OMPallocator<U, typename std::allocator_traits<HostAllocator>::template rebind_alloc<U>>;
   };
 
   value_type* allocate(std::size_t n)

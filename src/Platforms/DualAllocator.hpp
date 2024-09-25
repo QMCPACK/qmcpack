@@ -52,20 +52,19 @@ struct DualAllocator : public HostAllocator
   using Pointer      = typename HostAllocator::pointer;
   using ConstPointer = typename HostAllocator::const_pointer;
 
-  DualAllocator() : device_ptr_(nullptr){};
+  DualAllocator() : device_ptr_(nullptr) {};
   DualAllocator(const DualAllocator&) : device_ptr_(nullptr) {}
-  DualAllocator& operator=(const DualAllocator&)
-  {
-    device_ptr_ = nullptr;
-  }
+  DualAllocator& operator=(const DualAllocator&) { device_ptr_ = nullptr; }
   template<class U, class V>
   DualAllocator(const DualAllocator<U, V>&) : device_ptr_(nullptr)
   {}
 
-  template<class U, class V>
+  template<class U>
   struct rebind
   {
-    using other = DualAllocator<U, V>;
+    using other = DualAllocator<U,
+                                typename std::allocator_traits<DeviceAllocator>::template rebind_alloc<U>,
+                                typename std::allocator_traits<HostAllocator>::template rebind_alloc<U>>;
   };
 
   Value* allocate(std::size_t n)
@@ -73,8 +72,8 @@ struct DualAllocator : public HostAllocator
     static_assert(std::is_same<T, Value>::value, "DualAllocator and HostAllocator data types must agree!");
     if (device_ptr_ != nullptr)
       throw std::runtime_error("DualAllocator does not support device reallocation");
-    Value* host_ptr   = std::allocator_traits<HostAllocator>::allocate(allocator_, n);
-    device_ptr_ = std::allocator_traits<DeviceAllocator>::allocate(device_allocator_, n);
+    Value* host_ptr = std::allocator_traits<HostAllocator>::allocate(allocator_, n);
+    device_ptr_     = std::allocator_traits<DeviceAllocator>::allocate(device_allocator_, n);
     dual_device_mem_allocated += n * sizeof(T);
     return host_ptr;
   }
@@ -89,7 +88,7 @@ struct DualAllocator : public HostAllocator
 
   void attachReference(const DualAllocator& from, std::ptrdiff_t ptr_offset)
   {
-    device_ptr_               = const_cast<Pointer>(from.get_device_ptr()) + ptr_offset;
+    device_ptr_ = const_cast<Pointer>(from.get_device_ptr()) + ptr_offset;
   }
 
   T* get_device_ptr() { return device_ptr_; }
@@ -107,7 +106,7 @@ private:
 template<typename T, class DeviceAllocator, class HostAllocator>
 struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
 {
-  using DualAlloc                      = DualAllocator<T, DeviceAllocator, HostAllocator>;
+  using DualAlloc                          = DualAllocator<T, DeviceAllocator, HostAllocator>;
   static constexpr bool is_host_accessible = true;
   static constexpr bool is_dual_space      = true;
 
