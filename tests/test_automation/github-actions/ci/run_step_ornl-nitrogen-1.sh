@@ -61,6 +61,7 @@ case "$1" in
           -DQMC_MPI=0 \
           -DENABLE_CUDA=ON \
           -DQMC_CUDA2HIP=ON \
+          -DENABLE_OFFLOAD=ON \
           -DQMC_GPU_ARCHS=gfx906 \
           -DQMC_COMPLEX=$IS_COMPLEX \
           -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
