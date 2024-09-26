@@ -1,9 +1,9 @@
 find_package(Doxygen)
 if(NOT DOXYGEN_FOUND)
-    message(STATUS "The qmcpack_doxygen target for the QMCPACK developer/API "
-        "documentation requires doxygen and (optionally) dot from graphviz."
-    )
+    message(STATUS "doxygen not found. Source code documentation via qmcpack_doxygen target requires doxygen and (optionally) dot from graphviz.")
     return()
+else()
+    message(STATUS "doxygen found. For source code documentation build the qmcpack_doxygen target.")
 endif()
 
 set(DOXYGEN_PROJECT_NAME QMCPACK)
