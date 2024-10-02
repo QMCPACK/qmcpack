@@ -235,6 +235,18 @@ if(QMC_OMP)
       FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
                   "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
   endif()
+
+  # explicitly set OpenMP runtime library rpath like other normal libraries.
+  list(GET OpenMP_CXX_LIBRARIES 0 OpenMP_LIBRARY_FILE)
+  if(OpenMP_LIBRARY_FILE)
+    cmake_path(GET OpenMP_LIBRARY_FILE PARENT_PATH OpenMP_LIBRARY_DIR)
+    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES ${OpenMP_LIBRARY_DIR} isSystemDir)
+    if("${isSystemDir}" STREQUAL "-1")
+      message(STATUS "Append OpenMP runtime library path ${OpenMP_LIBRARY_DIR}")
+      list(APPEND CMAKE_BUILD_RPATH ${OpenMP_LIBRARY_DIR})
+      list(APPEND CMAKE_INSTALL_RPATH ${OpenMP_LIBRARY_DIR})
+    endif("${isSystemDir}" STREQUAL "-1")
+  endif()
 endif(QMC_OMP)
 
 #-------------------------------------------------------------------------------
