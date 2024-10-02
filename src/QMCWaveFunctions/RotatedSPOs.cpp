@@ -569,7 +569,7 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
                &work.at(0), &LWORK, &info);
 #else
   std::vector<ValueType> eval(n, 0);
-  std::vector<ValueType> work(2 * n, 0);
+  std::vector<ValueType> work(4 * n, 0);
   std::vector<RealType> rwork(2 * n, 0);
   LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_cl.at(0), &LDA, nullptr, &LDA, &work.at(0),
                &LWORK, &rwork.at(0), &info);
