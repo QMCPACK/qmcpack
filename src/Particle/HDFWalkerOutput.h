@@ -50,9 +50,14 @@ public:
   ~HDFWalkerOutput();
 
   /** dump configurations
-   * @param w walkers
+   * Write walkers into hdf file.
+   * The "walkers" dataset typically resides at "state_0/walkers", which
+   *   contains no information about when it was written (at which block).
+   * The identify_block flag appends the block index to uniquely identify
+   *   each walker dump, e.g., "state_0/walkers10" is from block 10.
+   *
    */
-  bool dump(const WalkerConfigurations& w, int block);
+  bool dump(const WalkerConfigurations& w, int block, const bool identify_block=false);
   //     bool dump(ForwardWalkingHistoryObject& FWO);
 
 private:
@@ -62,7 +67,7 @@ private:
   std::array<BufferType, 2> RemoteData;
   std::array<std::vector<QMCTraits::FullPrecRealType>, 2> RemoteDataW;
   int block;
-  void write_configuration(const WalkerConfigurations& W, hdf_archive& hout, int block);
+  void write_configuration(const WalkerConfigurations& W, hdf_archive& hout, int block, const bool identify_block);
 };
 
 } // namespace qmcplusplus
