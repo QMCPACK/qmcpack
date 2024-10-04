@@ -20,8 +20,9 @@ gcc_vllvmoffload=${gcc_vold}
 
 # LLVM 
 # Dates at https://releases.llvm.org/
-llvm_vnew=18.1.8 # Released 2024-06-20
-llvm_voffload=18.1.8
+llvm_vnew=19.1.0 # Released 2024-09-17
+#llvm_vnew=18.1.8 # Released 2024-06-20
+llvm_voffload=${llvm_vnew}
 cuda_voffload=12.4.0 # CUDA version for offload builds
 
 # HDF5
@@ -49,12 +50,13 @@ fftw_vold=${fftw_vnew} # Released 2018-05-28
 
 # BOOST
 # Dates at https://www.boost.org/users/history/
-boost_vnew=1.85.0 # Released 2024-04-15
+boost_vnew=1.86.0 # Released 2024-08-14
 boost_vold=1.79.0 # Released 2022-04-13
 
 # Python
 # Use a single version to reduce dependencies. Ideally the spack prefered version.
-python_version=3.11.9
+python_version=3.12.5
+#python_version=3.11.9 # Successful through 202409 usage
 
 
 
