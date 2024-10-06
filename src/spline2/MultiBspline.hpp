@@ -40,6 +40,8 @@ private:
   using SplineType = typename bspline_traits<T, 3>::SplineType;
   ///define the real type
   using real_type = typename bspline_traits<T, 3>::real_type;
+  ///define the boundary condition type
+  using BoundaryCondition = typename bspline_traits<T, 3>::BCType;
   ///actual einspline multi-bspline object
   SplineType* spline_m;
   ///use allocator
@@ -65,15 +67,15 @@ public:
    *
    * num_splines must be padded to the aligned size. The caller must be aware of padding and pad all result arrays.
    */
-  template<typename GT, typename BCT>
-  void create(GT& grid, BCT& bc, int num_splines)
+  template<typename BCT>
+  inline void create(const Ugrid grid[3], const BCT& bc, int num_splines)
   {
     static_assert(std::is_same<T, typename ALLOC::value_type>::value, "MultiBspline and ALLOC data types must agree!");
     if (getAlignedSize<T, ALLOC::alignment>(num_splines) != num_splines)
       throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!\n");
     if (spline_m == nullptr)
     {
-      typename bspline_traits<T, 3>::BCType xBC, yBC, zBC;
+      BoundaryCondition xBC, yBC, zBC;
       xBC.lCode = bc[0].lCode;
       yBC.lCode = bc[1].lCode;
       zBC.lCode = bc[2].lCode;
