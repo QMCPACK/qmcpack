@@ -61,7 +61,6 @@ public:
   SplineType* getSplinePtr() { return spline_m; }
 
   /** create the einspline as used in the builder
-   * @tparam GT grid type
    * @tparam BCT boundary type
    * @param bc num_splines number of splines
    *
