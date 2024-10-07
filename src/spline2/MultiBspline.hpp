@@ -19,11 +19,9 @@
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_HPP
 
-#include <cstdlib>
-#include <type_traits>
-#include "config.h"
 #include "MultiBsplineBase.hpp"
 #include "spline2/BsplineAllocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 
 namespace qmcplusplus
 {

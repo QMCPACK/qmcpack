@@ -16,10 +16,7 @@
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINEOFFLOAD_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINEOFFLOAD_HPP
-#include <iostream>
-#include <cstdlib>
-#include <type_traits>
-#include "config.h"
+
 #include "MultiBsplineBase.hpp"
 #include "spline2/BsplineAllocator.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
