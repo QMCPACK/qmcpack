@@ -103,26 +103,41 @@ public:
   int num_splines() const { return (spline_m == nullptr) ? 0 : spline_m->num_splines; }
 
   size_t sizeInByte() const { return (spline_m == nullptr) ? 0 : spline_m->coefs_size * sizeof(T); }
-
-  /** copy a single spline to the big table
-   * @tparam SingleSpline single spline type
-   * @param aSpline UBspline_3d_(d,s)
-   * @param int index of aSpline
-   */
-  template<typename SingleSpline>
-  void copy_spline(SingleSpline* aSpline, int i)
-  {
-    if (spline_m == nullptr)
-      throw std::runtime_error("The internal storage of MultiBspline must be created first!\n");
-    if (aSpline->x_grid.num != spline_m->x_grid.num || aSpline->y_grid.num != spline_m->y_grid.num ||
-        aSpline->z_grid.num != spline_m->z_grid.num)
-      throw std::runtime_error("Cannot copy a single spline to MultiSpline with a different grid!\n");
-
-    const int BaseOffset[3] = {0, 0, 0};
-    const int BaseN[3]      = {spline_m->x_grid.num + 3, spline_m->y_grid.num + 3, spline_m->z_grid.num + 3};
-    myAllocator.copy(aSpline, spline_m, i, BaseOffset, BaseN);
-  }
 };
+
+
+/** copy a single spline to multi spline
+   * @tparam SSDT single spline coefficient data type
+   * @tparam MSDT multi spline coefficient data type
+   * @param single UBspline_3d_(d,s)
+   * @param multi multi_UBspline_3d_(d,s)
+   * @param int index of single in multi
+   */
+template<typename SSDT, typename MSDT>
+void copy_spline(const typename bspline_traits<SSDT, 3>::SingleSplineType& single,
+                 typename bspline_traits<MSDT, 3>::SplineType& multi,
+                 int i)
+{
+  if (single.x_grid.num != multi.x_grid.num || single.y_grid.num != multi.y_grid.num ||
+      single.z_grid.num != multi.z_grid.num)
+    throw std::runtime_error("Cannot copy a single spline to MultiSpline with a different grid!\n");
+
+  intptr_t x_stride_in  = single.x_stride;
+  intptr_t y_stride_in  = single.y_stride;
+  intptr_t x_stride_out = multi.x_stride;
+  intptr_t y_stride_out = multi.y_stride;
+  intptr_t z_stride_out = multi.z_stride;
+  const intptr_t istart = static_cast<intptr_t>(i);
+  const intptr_t n0 = multi.x_grid.num + 3, n1 = multi.y_grid.num + 3, n2 = multi.z_grid.num + 3;
+  for (intptr_t ix = 0; ix < n0; ++ix)
+    for (intptr_t iy = 0; iy < n1; ++iy)
+    {
+      auto* __restrict__ out      = multi.coefs + ix * x_stride_out + iy * y_stride_out + istart;
+      const auto* __restrict__ in = single.coefs + ix * x_stride_in + iy * y_stride_in;
+      for (intptr_t iz = 0; iz < n2; ++iz)
+        out[iz * z_stride_out] = in[iz];
+    }
+}
 
 } // namespace qmcplusplus
 

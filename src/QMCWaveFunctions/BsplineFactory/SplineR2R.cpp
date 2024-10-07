@@ -32,7 +32,7 @@ inline void SplineR2R<ST>::set_spline(SingleSplineType* spline_r,
                                       int ispline,
                                       int level)
 {
-  SplineInst->copy_spline(spline_r, ispline);
+  copy_spline<double, ST>(*spline_r, *SplineInst->getSplinePtr(), ispline);
 }
 
 template<typename ST>
