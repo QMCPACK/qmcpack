@@ -928,6 +928,20 @@ class Qmcpack(Simulation):
                             corr.uu.cusp = -0.5
                         #end if
                     #end if
+                    J3 = optwf.get('J3')
+                    if J3 is not None:
+                        corr = J3.get('correlation')
+                        j3_ids = []
+                        for j3_term in corr:
+                            j3_id = j3_term.coefficients.id
+                            j3_ids.append(j3_id)
+                        #end for
+                        for j3_id in j3_ids:
+                            if 'ud' in j3_id:
+                                delattr(corr, j3_id)
+                            #end if
+                        #end for
+                    #end if
                 #end if
                 def process_jastrow(wf):                
                     if 'jastrow' in wf:
