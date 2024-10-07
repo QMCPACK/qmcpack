@@ -29,8 +29,8 @@ inline void SplineC2ROMPTarget<ST>::set_spline(SingleSplineType* spline_r,
                                                int ispline,
                                                int level)
 {
-  SplineInst->copy_spline(spline_r, 2 * ispline);
-  SplineInst->copy_spline(spline_i, 2 * ispline + 1);
+  copy_spline<double, ST>(*spline_r, *SplineInst->getSplinePtr(), 2 * ispline);
+  copy_spline<double, ST>(*spline_i, *SplineInst->getSplinePtr(), 2 * ispline + 1);
 }
 
 template<typename ST>
