@@ -251,10 +251,10 @@ struct CUDALockedPageAllocator : public ULPHA
   CUDALockedPageAllocator(const CUDALockedPageAllocator<U, V>&)
   {}
 
-  template<class U, class V>
+  template<class U>
   struct rebind
   {
-    using other = CUDALockedPageAllocator<U, V>;
+    using other = CUDALockedPageAllocator<U, typename std::allocator_traits<ULPHA>::template rebind_alloc<U>>;
   };
 
   value_type* allocate(std::size_t n)

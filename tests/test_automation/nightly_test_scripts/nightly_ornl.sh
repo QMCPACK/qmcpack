@@ -71,7 +71,12 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex clangoffloadnompi_offloadcuda clangoffloadmpi_offloadcuda clangoffloadmpi_offloadcuda_complex clangoffloadmpi_offloadcuda_complex clangoffloadmpi_offloadcuda_mixed_debug clangoffloadmpi_offloadcuda_mixed_complex_debug"
+	    buildsys="clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex \
+		clangoffloadmpi_offloadcuda \
+		clangoffloadnompi_offloadcuda clangoffloadnompi_offloadcuda_debug \
+		clangoffloadnompi_offloadcuda_complex clangoffloadnompi_offloadcuda_complex_debug \
+		clangoffloadnompi_offloadcuda_mixed clangoffloadnompi_offloadcuda_mixed_debug \
+		clangoffloadnompi_offloadcuda_mixed_complex clangoffloadnompi_offloadcuda_mixed_complex_debug"
 	else
 	    buildsys="clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex clangoffloadmpi_offloadcuda"
 	fi
@@ -79,7 +84,12 @@ case "$ourhostname" in
 	;;
     nitrogen2 )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="gccnewnompi gccnewnompi_complex gccnewnompi_debug gccnewnompi_complex_debug gccnewnompi_mixed_debug gccnewnompi_mixed_complex_debug gccnewmpi clangnewmpi amdclangnompi amdclangnompi_debug amdclangnompi_offloadhip amdclangnompi_offloadhip_debug amdclangnompi_offloadhip_complex amdclangnompi_offloadhip_complex_debug amdclangnompi_offloadhip_mixed amdclangnompi_offloadhip_mixed_complex"
+	    buildsys="gccnewnompi gccnewnompi_complex gccnewnompi_debug gccnewnompi_complex_debug gccnewnompi_mixed_debug gccnewnompi_mixed_complex_debug gccnewmpi clangnewmpi \
+		amdclangnompi amdclangnompi_debug \
+		amdclangnompi_offloadhip amdclangnompi_offloadhip_debug \
+		amdclangnompi_offloadhip_complex amdclangnompi_offloadhip_complex_debug \
+		amdclangnompi_offloadhip_mixed amdclangnompi_offloadhip_mixed_debug \
+		amdclangnompi_offloadhip_mixed_complex amdclangnompi_offloadhip_mixed_complex_debug"
 	else
 	    buildsys="gccnewmpi amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
 	fi
@@ -104,14 +114,12 @@ esac
 case "$jobtype" in
     weekly )
 	export PARALLELCFG="-j 48"
-	export TESTCFG="--timeout 5400 -VV"
 	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=256;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=64;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=64"
 	export LIMITEDTESTS="--exclude-regex long-"
 	export LESSLIMITEDTESTS=""
 	;;
     nightly )
 	export PARALLELCFG="-j 48"
-	export TESTCFG="--timeout 600 -VV"
 	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=16;-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=12;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=16"
 #        export LIMITEDTESTS="--exclude-regex 'short-|long-|example'"
         export LIMITEDTESTS="--label-regex deterministic"
@@ -239,6 +247,9 @@ echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
 echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 
+
+
+
 # Setup additional python paths when gccnew and therefore pyscf available. TO DO: test for module availability
 case "$sys" in
     gccnew*mpi*) echo $ourenv
@@ -255,8 +266,16 @@ case "$sys" in
     gccold*mpi*) echo $ourenv
 		;;
     clangnew*mpi*) echo $ourenv
-		;;
+# Ensure clang libraries both available and ahead of any system installed versions
+		   echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+		   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which clang++|sed 's/bin\/clang++/lib\/x86_64-unknown-linux-gnu/g'`
+		   echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+		   ;;
     clangoffload*mpi*) echo $ourenv
+# Ensure clang libraries both available and ahead of any system installed versions
+		   echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+		   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which clang++|sed 's/bin\/clang++/lib\/x86_64-unknown-linux-gnu/g'`
+		   echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 		;;
     amdclang*) echo $ourenv
 	       rocvlist=`find /opt/rocm-* -name "rocm-[1-9]*" -print|sort -V -r`
@@ -504,10 +523,20 @@ esac
 echo THETESTS: ${THETESTS}
 
 if [[ $sys == *"debug"* ]]; then
+    if [[ $jobtype == *"nightly"* ]]; then
+	    export TESTCFG="--timeout 3600 -VV"
+	else
+	    export TESTCFG="--timeout 7200 -VV"
+	fi
     export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Debug
     CMCFG="-DCMAKE_BUILD_TYPE=Debug $CMCFG"
     ctestscriptarg=debug
 else
+    if [[ $jobtype == *"nightly"* ]]; then
+	    export TESTCFG="--timeout 900 -VV"
+	else
+	    export TESTCFG="--timeout 7200 -VV"
+	fi
     export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Release
     ctestscriptarg=release
 fi

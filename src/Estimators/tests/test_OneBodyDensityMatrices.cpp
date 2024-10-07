@@ -274,7 +274,6 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
 TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
 {
   using Input = testing::ValidOneBodyDensityMatricesInput;
-  Input input;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
@@ -287,7 +286,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   auto& species_set = pset_target.getSpeciesSet();
   auto& spo_map     = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
-  auto samplingCaseRunner = [&input, &pset_target, &species_set, &spo_map](Input::valid test_case) {
+  auto samplingCaseRunner = [&pset_target, &species_set, &spo_map](Input::valid test_case) {
     Libxml2Document doc;
     bool okay = doc.parseFromString(Input::getXml(test_case));
     if (!okay)
