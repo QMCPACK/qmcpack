@@ -62,7 +62,6 @@ case "$1" in
         
         echo "Set PATHs to cuda-11.2"
         export PATH=$HOME/opt/cuda/11.2/bin:$PATH
-        export LD_LIBRARY_PATH=$LLVM_DIR/lib:$LD_LIBRARY_PATH
         export OMPI_CC=$LLVM_DIR/bin/clang
         export OMPI_CXX=$LLVM_DIR/bin/clang++
 
@@ -78,7 +77,6 @@ case "$1" in
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
-              -DCMAKE_EXE_LINKER_FLAGS="-L $LLVM_DIR/lib" \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBOOST_ROOT=$BOOST_DIR \
               -DBUILD_AFQMC=ON \
