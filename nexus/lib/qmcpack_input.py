@@ -7627,6 +7627,22 @@ def generate_basic_input(**kwargs):
           del corr.ud
         if 'uu' in corr:
           corr.uu.cusp = -0.5
+      #end if
+      J3 = wfn.jastrows.get('J3')
+      if J3 is not None:
+        corr = J3.get('correlation')
+        j3_ids = []
+        for j3_term in corr:
+          j3_id = j3_term.coefficients.id
+          j3_ids.append(j3_id)
+        #end for
+        for j3_id in j3_ids:
+          if 'ud' in j3_id:
+            delattr(corr, j3_id)
+          #end if
+        #end for
+      #end if
+    #end if
 
     h_estimators = kw.estimators
     d_estimators = None
