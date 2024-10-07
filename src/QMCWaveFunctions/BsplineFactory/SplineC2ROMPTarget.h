@@ -189,29 +189,17 @@ public:
   /// this routine can not be called from threaded region
   void finalizeConstruction() override
   {
-    // map the SplineInst->getSplinePtr() structure to GPU
-    auto* MultiSpline    = SplineInst->getSplinePtr();
-    auto* restrict coefs = MultiSpline->coefs;
-    // attach pointers on the device to achieve deep copy
-    PRAGMA_OFFLOAD("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
-    {
-      MultiSpline->coefs = coefs;
-    }
-
+    SplineInst->finalize();
     // transfer static data to GPU
-    auto* mKK_ptr = mKK->data();
-    PRAGMA_OFFLOAD("omp target update to(mKK_ptr[0:mKK->size()])")
-    auto* myKcart_ptr = myKcart->data();
-    PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
+    mKK->updateTo();
+    myKcart->updateTo();
     for (uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
     }
-    auto* PrimLattice_G_ptr = PrimLattice_G_offload->data();
-    PRAGMA_OFFLOAD("omp target update to(PrimLattice_G_ptr[0:9])")
-    auto* GGt_ptr = GGt_offload->data();
-    PRAGMA_OFFLOAD("omp target update to(GGt_ptr[0:9])")
+    PrimLattice_G_offload->updateTo();
+    GGt_offload->updateTo();
   }
 
   inline void flush_zero() { SplineInst->flush_zero(); }

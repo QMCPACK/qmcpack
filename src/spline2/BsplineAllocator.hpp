@@ -51,7 +51,8 @@ class BsplineAllocator
 
   /// allocators
   ALLOC coefs_allocator;
-  typename std::allocator_traits<ALLOC>::template rebind_alloc<SplineType> multi_spline_allocator;
+  using MultiAlloc = typename std::allocator_traits<ALLOC>::template rebind_alloc<SplineType>;
+  MultiAlloc multi_spline_allocator;
 
 public:
   ///default constructor
@@ -102,6 +103,20 @@ public:
      */
   template<typename UBT, typename MBT>
   void copy(UBT* single, MBT* multi, int i, const int* offset, const int* N);
+
+  template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  void finalize(SplineType* multi_spline)
+  {
+    auto* coefs_host_ptr   = multi_spline->coefs;
+    auto* coefs_device_ptr = coefs_allocator.get_device_ptr();
+    // overwrite coefs pointer for updating device copy
+    multi_spline->coefs = coefs_device_ptr;
+    // transfer multi_spline and its spline coefficients to device
+    qmc_allocator_traits<MultiAlloc>::updateTo(multi_spline_allocator, multi_spline, 1);
+    qmc_allocator_traits<ALLOC>::updateTo(coefs_allocator, coefs_host_ptr, multi_spline->coefs_size);
+    // restore coefs pointer on host
+    multi_spline->coefs = coefs_host_ptr;
+  }
 };
 
 template<typename T, typename ALLOC>

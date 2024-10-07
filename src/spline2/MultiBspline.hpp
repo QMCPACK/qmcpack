@@ -102,6 +102,12 @@ public:
   int num_splines() const { return (spline_m == nullptr) ? 0 : spline_m->num_splines; }
 
   size_t sizeInByte() const { return (spline_m == nullptr) ? 0 : spline_m->coefs_size * sizeof(T); }
+
+  template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  void finalize()
+  {
+    myAllocator.finalize(spline_m);
+  }
 };
 
 
