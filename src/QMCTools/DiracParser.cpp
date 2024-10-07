@@ -257,18 +257,15 @@ void DiracParser::getGeometry(std::istream& is)
   //now overwrite charge for pseudsized atoms
   is.clear();
   is.seekg(pivot_begin);
-  while (lookFor(is, "Nuclear Gaussian exponent for atom", aline))
+  while (lookFor(is, "This atomic center has RECP with", aline))
   {
     parsewords(aline.c_str(), currentWords);
-    int z = std::stoi(currentWords[7]);
-    std::getline(is, aline);
-    if (aline.size() == 0)
-      break;
+    int zcore = std::stoi(currentWords[7]);
     //found an ECP to replace
     ECP = true;
     getwords(currentWords, is);
     int zeff                         = std::stoi(currentWords[6]);
-    zeffMap.find(IonName[z])->second = zeff;
+    zeffMap.find(IonName[zcore + zeff])->second = zeff;
   }
   is.clear();
   is.seekg(pivot_begin);
