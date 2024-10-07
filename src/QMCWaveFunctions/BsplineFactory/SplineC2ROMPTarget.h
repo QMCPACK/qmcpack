@@ -21,7 +21,7 @@
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineOffload.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
@@ -76,7 +76,7 @@ private:
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  std::shared_ptr<MultiBspline<ST, OffloadAllocator<ST>>> SplineInst;
+  std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
 
   std::shared_ptr<OffloadVector<ST>> mKK;
   std::shared_ptr<OffloadPosVector<ST>> myKcart;
@@ -179,7 +179,7 @@ public:
   void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = std::make_shared<MultiBspline<ST, OffloadAllocator<ST>>>();
+    SplineInst = std::make_shared<MultiBsplineOffload<ST>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
 
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
