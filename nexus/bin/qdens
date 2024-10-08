@@ -309,8 +309,8 @@ class SingleDensity(QDBase):
         self.check_type('grid'     ,grid     ,'tuple/list/ndarray',(tuple,list,np.ndarray))
         self.check_type('structure',structure,'Structure'         ,Structure)
         self.check_type('extension',extension,'string'            ,str)
-        self.check_type('density_cell'  ,grid     ,'tuple/list/ndarray',(tuple,list,np.ndarray))
-        self.check_type('density_corner',grid     ,'tuple/list/ndarray',(tuple,list,np.ndarray))
+        self.check_type('density_cell'  ,grid,'tuple/list/ndarray',(tuple,list,np.ndarray))
+        self.check_type('density_corner',grid,'tuple/list/ndarray',(tuple,list,np.ndarray))
         # process other inputs
         if mean is not None:
             self.mean = np.array(mean,dtype=float)
@@ -335,19 +335,12 @@ class SingleDensity(QDBase):
                 self._error('inputted density_corner must have length 3, received {0}'.format(density_corner))
             #end if
             self.density_corner = np.array(density_corner,dtype=float)
-        else:
-            self.density_corner = np.zeros(3) # If density_corner is not given, use [0, 0, 0] as corner
         #end if
         if density_cell is not None:
             if len(np.array(density_cell).ravel())!=9:
                 self._error('inputted density_cell must have length 9, received {0}'.format(density_cell))
             #end if
             self.density_cell = np.array(density_cell,dtype=float)
-        else:
-            # If density_cell is not given, use the structure cell
-            s = self.structure.copy()
-            s.change_units('A')
-            self.density_cell = s.axes
         #end if
         if data is not None:
             self.analyze(data)
@@ -1130,10 +1123,17 @@ class QMCDensityProcessor(QDBase):
                         if 'cell' in sd:
                             density_cell = sd.cell.copy()
                             density_cell = convert(density_cell, 'B', 'A')
+                        else:
+                            # If density_cell is not given, use the structure cell
+                            dens_struct = structure.copy()
+                            dens_struct.change_units('A')
+                            density_cell = dens_struct.axes
                         #end if
                         if 'corner' in sd:
                             density_corner = sd.corner.copy()
                             density_corner = convert(density_corner, 'B', 'A')
+                        else:
+                            density_corner = np.zeros(3) # If density_corner is not given, use [0, 0, 0] as corner
                         #end if
                     elif name not in grids and isinstance(xml,density_xml):
                         sd = xml
@@ -1222,9 +1222,9 @@ class QMCDensityProcessor(QDBase):
         if opt.density_corner is not None:
             density_corner = input_list(opt.density_corner)
             try:
-                density_corner = np.array(density_corner,dtype=int)
+                density_corner = np.array(density_corner,dtype=float)
             except:
-                self.error('--density_corner input misformatted\nexpected a list of integers\nreceived: {0}'.format(density_corner))
+                self.error('--density_corner input misformatted\nexpected a list of floats\nreceived: {0}'.format(density_corner))
             #end try
             if len(density_corner)!=3:
                 self.error('--density_corner input misformatted\nexpected 3 elements\nreceived {0} elements with values: {1}'.format(len(density_corner),density_corner))
