@@ -69,24 +69,12 @@ private:
   Tensor<ST, 3> GGt;
   ///multi bspline set
   std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
-
-  ////std::shared_ptr<OffloadVector<ST>> mKK;
-  ////std::shared_ptr<OffloadPosVector<ST>> myKcart;
+  /// const offload copy of GGt
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
+  /// const offload copy of GPrimLattice_G
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
-
+  /// crowd resource
   ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_handle_;
-
-  ///team private ratios for reduction, numVP x numTeams
-  //Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
-  ///offload scratch space, dynamically resized to the maximal need
-  Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
-  ///result scratch space, dynamically resized to the maximal need
-  Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
-  ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
-  Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
-  ///position scratch space, used to avoid allocation on the fly and faster transfer
-  Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
 
   ///Copy of original splines for orbital rotation
   std::shared_ptr<std::vector<ST>> coef_copy_;

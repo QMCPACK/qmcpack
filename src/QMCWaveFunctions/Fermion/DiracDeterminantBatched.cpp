@@ -846,7 +846,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateRatios(
       // build lists
       phi_list.push_back(*det.Phi);
       psiV_list.push_back(det.psiV_host_view);
-      if (false) //Phi->isOMPoffload())
+      if (Phi->isOMPoffload())
         invRow_ptr_list.push_back(det.psiMinv_.device_data() + WorkingIndex * psiMinv_.cols());
       else
         invRow_ptr_list.push_back(det.psiMinv_[WorkingIndex]);

@@ -64,7 +64,7 @@ void SplineR2R<ST>::finalizeConstruction()
   {
     SplineInst->finalize();
     // transfer static data to GPU
-    GGt_offload = std::make_shared<OffloadVector<ST>>(9);
+    GGt_offload           = std::make_shared<OffloadVector<ST>>(9);
     PrimLattice_G_offload = std::make_shared<OffloadVector<ST>>(9);
     for (uint32_t i = 0; i < 9; i++)
     {
@@ -226,7 +226,7 @@ template<typename ST>
 void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                                       ValueVector& psi,
                                       const ValueVector& psiinv,
-                                      std::vector<TT>& ratios)
+                                      std::vector<ValueType>& ratios)
 {
   const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
@@ -259,7 +259,7 @@ void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   // do the reduction manually
   for (int iat = 0; iat < VP.getTotalNum(); ++iat)
   {
-    ratios[iat] = TT(0);
+    ratios[iat] = ValueType(0);
     for (int tid = 0; tid < ratios_private.cols(); tid++)
       ratios[iat] += ratios_private[iat][tid];
   }
@@ -272,7 +272,117 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
                                          const std::vector<const ValueType*>& invRow_ptr_list,
                                          std::vector<std::vector<ValueType>>& ratios_list) const
 {
-  BsplineSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+  if (!use_offload_)
+  {
+    BsplineSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+    return;
+  }
+
+  assert(this == &spo_list.getLeader());
+  auto& phi_leader                = spo_list.getCastedLeader<SplineR2R>();
+  auto& mw_mem                    = phi_leader.mw_mem_handle_.getResource();
+  auto& det_ratios_buffer_H2D     = mw_mem.det_ratios_buffer_H2D;
+  auto& mw_ratios_private         = mw_mem.mw_ratios_private;
+  auto& mw_offload_scratch        = mw_mem.mw_offload_scratch;
+  auto& mw_results_scratch        = mw_mem.mw_results_scratch;
+  const size_t nw                 = spo_list.size();
+  const size_t requested_orb_size = phi_leader.size();
+
+  size_t mw_nVP = 0;
+  for (const VirtualParticleSet& VP : vp_list)
+    mw_nVP += VP.getTotalNum();
+
+  const size_t packed_size = nw * sizeof(ValueType*) + mw_nVP * (4 * sizeof(ST) + sizeof(int));
+  det_ratios_buffer_H2D.resize(packed_size);
+
+  // pack invRow_ptr_list to det_ratios_buffer_H2D
+  Vector<const ValueType*> ptr_buffer(reinterpret_cast<const ValueType**>(det_ratios_buffer_H2D.data()), nw);
+  for (size_t iw = 0; iw < nw; iw++)
+    ptr_buffer[iw] = invRow_ptr_list[iw];
+
+  // pack particle positions
+  auto* pos_ptr = reinterpret_cast<ST*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
+  auto* ref_id_ptr =
+      reinterpret_cast<int*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) + mw_nVP * 4 * sizeof(ST));
+  size_t iVP = 0;
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    const VirtualParticleSet& VP = vp_list[iw];
+    assert(ratios_list[iw].size() == VP.getTotalNum());
+    for (size_t iat = 0; iat < VP.getTotalNum(); ++iat, ++iVP)
+    {
+      ref_id_ptr[iVP]    = iw;
+      const PointType& r = VP.activeR(iat);
+      PointType ru;
+      const int bc_sign = phi_leader.convertPos(r, ru);
+
+      pos_ptr[0] = (bc_sign & 1) ? ST(-1) : ST(1);
+      pos_ptr[1] = ru[0];
+      pos_ptr[2] = ru[1];
+      pos_ptr[3] = ru[2];
+      pos_ptr += 4;
+    }
+  }
+
+  const size_t ChunkSizePerTeam = 512;
+  const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+  mw_ratios_private.resize(mw_nVP, NumTeams);
+  const auto spline_padded_size = myV.size();
+  mw_offload_scratch.resize(spline_padded_size * mw_nVP);
+
+  // Ye: need to extract sizes and pointers before entering target region
+  const auto* spline_ptr       = SplineInst->getSplinePtr();
+  auto* offload_scratch_ptr    = mw_offload_scratch.data();
+  auto* buffer_H2D_ptr         = det_ratios_buffer_H2D.data();
+  auto* ratios_private_ptr     = mw_ratios_private.data();
+  const size_t first_spo_local = first_spo;
+
+  {
+    ScopedTimer offload(offload_timer_);
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
+                map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()]) \
+                map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
+    for (int iat = 0; iat < mw_nVP; iat++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const size_t first = ChunkSizePerTeam * team_id;
+        const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+
+        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + spline_padded_size * iat;
+        auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 4 * sizeof(ST));
+        auto* restrict psiinv_ptr  = reinterpret_cast<const ValueType**>(buffer_H2D_ptr)[ref_id_ptr[iat]];
+        auto* restrict pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4];
+        spline2::computeLocationAndFractional(spline_ptr, pos_scratch[iat * 4 + 1], pos_scratch[iat * 4 + 2],
+                                              pos_scratch[iat * 4 + 3], ix, iy, iz, a, b, c);
+
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
+                                             offload_scratch_iat_ptr + first + index);
+        ValueType sum(0);
+        PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
+        for (int index = first; index < requested_orb_size; index++)
+          sum += psiinv_ptr[index] * offload_scratch_iat_ptr[spline_padded_size * SoAFields3D::VAL + index] *
+              pos_scratch[iat * 4];
+        ratios_private_ptr[iat * NumTeams + team_id] = sum;
+      }
+  }
+
+  // do the reduction manually
+  iVP = 0;
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto& ratios = ratios_list[iw];
+    for (size_t iat = 0; iat < ratios.size(); iat++, iVP++)
+    {
+      ratios[iat] = ValueType(0);
+      for (int tid = 0; tid < NumTeams; ++tid)
+        ratios[iat] += mw_ratios_private[iVP][tid];
+    }
+  }
 }
 
 template<typename ST>
@@ -392,7 +502,6 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
     Vector<ST> pos_copy(reinterpret_cast<ST*>(buffer_H2D[iw]), 4);
 
     pos_copy[0] = (bc_sign & 1) ? ST(-1) : ST(1);
-    ;
     pos_copy[1] = ru[0];
     pos_copy[2] = ru[1];
     pos_copy[3] = ru[2];
@@ -403,7 +512,6 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
 
   const size_t num_pos          = nwalkers;
   const auto spline_padded_size = myV.size();
-  const auto sposet_padded_size = getAlignedSize<TT>(OrbitalSetSize);
   const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
