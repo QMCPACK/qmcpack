@@ -17,10 +17,12 @@
 #define QMCPLUSPLUS_SPLINE_R2R_H
 
 #include <memory>
-#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
+#include "BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineBase.hpp"
 #include "Utilities/FairDivide.h"
+#include <ResourceHandle.h>
+#include "SplineOMPTargetMultiWalkerMem.h"
 
 namespace qmcplusplus
 {
@@ -51,19 +53,46 @@ public:
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadAllocator<DT>>;
+  template<typename DT>
+  using OffloadPosVector = VectorSoaContainer<DT, 3, OffloadAllocator<DT>>;
+
 private:
+  /// if true, use OpenMP offload computation
+  const bool use_offload_;
+  /// timer for offload portion
+  NewTimer& offload_timer_;
+  /// if true, gamma point calculation
   bool IsGamma;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
   Tensor<ST, 3> GGt;
   ///multi bspline set
-  std::shared_ptr<MultiBspline<ST>> SplineInst;
+  std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
+
+  ////std::shared_ptr<OffloadVector<ST>> mKK;
+  ////std::shared_ptr<OffloadPosVector<ST>> myKcart;
+  std::shared_ptr<OffloadVector<ST>> GGt_offload;
+  std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
+
+  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_handle_;
+
+  ///team private ratios for reduction, numVP x numTeams
+  //Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
+  ///offload scratch space, dynamically resized to the maximal need
+  Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
+  ///result scratch space, dynamically resized to the maximal need
+  Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
+  ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
+  Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
+  ///position scratch space, used to avoid allocation on the fly and faster transfer
+  Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
 
   ///Copy of original splines for orbital rotation
   std::shared_ptr<std::vector<ST>> coef_copy_;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
-
 
 protected:
   ///primitive cell
@@ -76,13 +105,31 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineR2R(const std::string& my_name) : BsplineSet(my_name) {}
-
+  SplineR2R(const std::string& my_name, bool use_offload = false);
   SplineR2R(const SplineR2R& in);
   virtual std::string getClassName() const override { return "SplineR2R"; }
   virtual std::string getKeyword() const override { return "SplineR2R"; }
   bool isComplex() const override { return false; };
   bool isRotationSupported() const override { return true; }
+
+  void createResource(ResourceCollection& collection) const override
+  {
+    auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>());
+  }
+
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
+  {
+    assert(this == &spo_list.getLeader());
+    auto& phi_leader          = spo_list.getCastedLeader<SplineR2R>();
+    phi_leader.mw_mem_handle_ = collection.lendResource<SplineOMPTargetMultiWalkerMem<ST, TT>>();
+  }
+
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
+  {
+    assert(this == &spo_list.getLeader());
+    auto& phi_leader = spo_list.getCastedLeader<SplineR2R>();
+    collection.takebackResource(phi_leader.mw_mem_handle_);
+  }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
 
@@ -133,13 +180,15 @@ public:
   template<typename BCT>
   void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
   {
-    GGt        = dot(transpose(PrimLattice.G), PrimLattice.G);
-    SplineInst = std::make_shared<MultiBspline<ST>>();
+    GGt = dot(transpose(PrimLattice.G), PrimLattice.G);
     SplineInst->create(xyz_g, xyz_bc, myV.size());
 
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation" << std::endl;
   }
+
+  /// this routine can not be called from threaded region
+  void finalizeConstruction() override;
 
   inline void flush_zero() { SplineInst->flush_zero(); }
 
@@ -175,6 +224,12 @@ public:
                          const ValueVector& psiinv,
                          std::vector<TT>& ratios) override;
 
+  void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                            const RefVector<ValueVector>& psi_list,
+                            const std::vector<const ValueType*>& invRow_ptr_list,
+                            std::vector<std::vector<ValueType>>& ratios_list) const override;
+
   void assign_vgl(int bc_sign, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi, int first, int last) const;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
@@ -186,6 +241,14 @@ public:
                    ValueVector& psi,
                    GradVector& dpsi,
                    ValueVector& d2psi) override;
+
+  void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                      const RefVectorWithLeader<ParticleSet>& P_list,
+                                      int iat,
+                                      const std::vector<const ValueType*>& invRow_ptr_list,
+                                      OffloadMWVGLArray& phi_vgl_v,
+                                      std::vector<ValueType>& ratios,
+                                      std::vector<GradType>& grads) const override;
 
   void assign_vgh(int bc_sign, ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi, int first, int last)
       const;

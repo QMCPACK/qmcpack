@@ -13,8 +13,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Concurrency/OpenMP.h"
 #include "SplineR2R.h"
+#include "Concurrency/OpenMP.h"
+#include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineOffload.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Platforms/CPU/BLAS.hpp"
@@ -22,6 +24,26 @@
 
 namespace qmcplusplus
 {
+
+template<typename T>
+inline static std::unique_ptr<MultiBsplineBase<T>> create_MultiBsplineDerived(const bool use_offload)
+{
+  if (use_offload)
+    return std::make_unique<MultiBsplineOffload<T>>();
+  else
+    return std::make_unique<MultiBspline<T>>();
+}
+
+template<typename ST>
+SplineR2R<ST>::SplineR2R(const std::string& my_name, bool use_offload)
+    : BsplineSet(my_name),
+      use_offload_(use_offload),
+      offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
+      SplineInst(create_MultiBsplineDerived<ST>(use_offload)),
+      GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
+      PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
+{}
+
 template<typename ST>
 SplineR2R<ST>::SplineR2R(const SplineR2R& in) = default;
 
@@ -33,6 +55,23 @@ inline void SplineR2R<ST>::set_spline(SingleSplineType* spline_r,
                                       int level)
 {
   copy_spline<double, ST>(*spline_r, *SplineInst->getSplinePtr(), ispline);
+}
+
+template<typename ST>
+void SplineR2R<ST>::finalizeConstruction()
+{
+  if (use_offload_)
+  {
+    SplineInst->finalize();
+    // transfer static data to GPU
+    for (uint32_t i = 0; i < 9; i++)
+    {
+      (*GGt_offload)[i]           = GGt[i];
+      (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
+    }
+    PrimLattice_G_offload->updateTo();
+    GGt_offload->updateTo();
+  }
 }
 
 template<typename ST>
@@ -223,6 +262,16 @@ void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 }
 
 template<typename ST>
+void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                         const RefVector<ValueVector>& psi_list,
+                                         const std::vector<const ValueType*>& invRow_ptr_list,
+                                         std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  BsplineSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+}
+
+template<typename ST>
 inline void SplineR2R<ST>::assign_vgl(int bc_sign,
                                       ValueVector& psi,
                                       GradVector& dpsi,
@@ -305,6 +354,19 @@ void SplineR2R<ST>::evaluateVGL(const ParticleSet& P,
     assign_vgl(bc_sign, psi, dpsi, d2psi, first, last);
   }
 }
+
+template<typename ST>
+void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                                   int iat,
+                                                   const std::vector<const ValueType*>& invRow_ptr_list,
+                                                   OffloadMWVGLArray& phi_vgl_v,
+                                                   std::vector<ValueType>& ratios,
+                                                   std::vector<GradType>& grads) const
+{
+  BsplineSet::mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
+}
+
 
 template<typename ST>
 void SplineR2R<ST>::assign_vgh(int bc_sign,
