@@ -37,7 +37,7 @@ inline static std::unique_ptr<MultiBsplineBase<T>> create_MultiBsplineDerived(co
 template<typename ST>
 SplineR2R<ST>::SplineR2R(const std::string& my_name, bool use_offload)
     : BsplineSet(my_name),
-      use_offload_(use_offload),
+      use_offload_(false), //FIXME
       offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
       SplineInst(create_MultiBsplineDerived<ST>(use_offload)),
       GGt_offload(std::make_shared<OffloadVector<ST>>(9)),

@@ -252,9 +252,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #if !defined(QMC_COMPLEX)
   if (use_real_splines_)
   {
-    //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
     if (MixedSplineReader == 0)
-      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes", useGPU);
+      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes");
   }
   else
 #endif

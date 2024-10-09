@@ -81,7 +81,7 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2C(const std::string& my_name) : BsplineSet(my_name) {}
+  SplineC2C(const std::string& my_name, bool use_offload = false) : BsplineSet(my_name) {}
 
   SplineC2C(const SplineC2C& in);
   virtual std::string getClassName() const override { return "SplineC2C"; }

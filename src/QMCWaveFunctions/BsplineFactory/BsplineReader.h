@@ -51,6 +51,8 @@ struct BsplineReader
   bool rotate;
   ///map from spo index to band index
   std::vector<std::vector<int>> spo2band;
+  /// if true, use offload
+  bool use_offload;
 
   BsplineReader(EinsplineSetBuilder* e);
 
