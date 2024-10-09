@@ -41,9 +41,7 @@ SplineR2R<ST>::SplineR2R(const std::string& my_name, bool use_offload)
     : BsplineSet(my_name),
       use_offload_(use_offload),
       offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
-      SplineInst(create_MultiBsplineDerived<ST>(use_offload)),
-      GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
-      PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
+      SplineInst(create_MultiBsplineDerived<ST>(use_offload))
 {}
 
 template<typename ST>
@@ -66,6 +64,8 @@ void SplineR2R<ST>::finalizeConstruction()
   {
     SplineInst->finalize();
     // transfer static data to GPU
+    GGt_offload = std::make_shared<OffloadVector<ST>>(9);
+    PrimLattice_G_offload = std::make_shared<OffloadVector<ST>>(9);
     for (uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
@@ -186,6 +186,8 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         spl_coefs[cur_elem] = newval;
       }
   }
+  // update coefficients on GPU from host
+  SplineInst->finalize();
 }
 
 
@@ -378,7 +380,6 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   auto& buffer_H2D         = mw_mem.buffer_H2D;
   auto& rg_private         = mw_mem.rg_private;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
-  auto& mw_results_scratch = mw_mem.mw_results_scratch;
   const int nwalkers       = spo_list.size();
   buffer_H2D.resize(nwalkers, sizeof(ST) * 4 + sizeof(ValueType*));
 
@@ -407,8 +408,6 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
   mw_offload_scratch.resize(spline_padded_size * num_pos * SoAFields3D::NUM_FIELDS);
-  // for V(1)G(3)L(1) final result
-  mw_results_scratch.resize(sposet_padded_size * num_pos * 5);
   // per team ratio and grads
   rg_private.resize(num_pos, NumTeams * 4);
 
@@ -416,7 +415,6 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   const auto* spline_ptr         = SplineInst->getSplinePtr();
   auto* buffer_H2D_ptr           = buffer_H2D.data();
   auto* offload_scratch_ptr      = mw_offload_scratch.data();
-  auto* results_scratch_ptr      = mw_results_scratch.data();
   auto* GGt_ptr                  = GGt_offload->data();
   auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
   auto* phi_vgl_ptr              = phi_vgl_v.data();
@@ -438,7 +436,6 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
         const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
 
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
-        auto* restrict psi_iw_ptr             = results_scratch_ptr + sposet_padded_size * iw * 5;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
         const auto* restrict invRow_iw_ptr =
             *reinterpret_cast<ValueType**>(buffer_H2D_ptr + buffer_H2D_stride * iw + sizeof(ST) * 4);
@@ -469,7 +466,8 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
                        offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
         }
 
-        PRAGMA_OFFLOAD("omp parallel for")
+        ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
+        PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
         for (int index = first; index < requested_orb_size; index++)
         {
           const ST* restrict val   = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::VAL;
@@ -478,47 +476,25 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
           const ST* restrict g2    = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD2;
           const ST* restrict lcart = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::LAPL;
 
-          TT* restrict psi    = psi_iw_ptr;
-          TT* restrict dpsi_x = psi_iw_ptr + sposet_padded_size;
-          TT* restrict dpsi_y = psi_iw_ptr + sposet_padded_size * 2;
-          TT* restrict dpsi_z = psi_iw_ptr + sposet_padded_size * 3;
-          TT* restrict d2psi  = psi_iw_ptr + sposet_padded_size * 4;
+          ValueType* restrict out_phi    = phi_vgl_ptr + iw * requested_orb_size;
+          ValueType* restrict out_dphi_x = out_phi + phi_vgl_stride;
+          ValueType* restrict out_dphi_y = out_dphi_x + phi_vgl_stride;
+          ValueType* restrict out_dphi_z = out_dphi_y + phi_vgl_stride;
+          ValueType* restrict out_d2phi  = out_dphi_z + phi_vgl_stride;
 
-          const size_t psiIndex = first_spo + index;
-          psi[psiIndex]         = pos_iw_ptr[0] * val[index];
-          dpsi_x[psiIndex]      = pos_iw_ptr[0] * (G[0] * g0[index] + G[1] * g1[index] + G[2] * g2[index]);
-          dpsi_y[psiIndex]      = pos_iw_ptr[0] * (G[3] * g0[index] + G[4] * g1[index] + G[5] * g2[index]);
-          dpsi_z[psiIndex]      = pos_iw_ptr[0] * (G[6] * g0[index] + G[7] * g1[index] + G[8] * g2[index]);
-          d2psi[psiIndex]       = pos_iw_ptr[0] * lcart[index];
+          const size_t psiIndex = first_spo_local + index;
+          out_phi[psiIndex]     = pos_iw_ptr[0] * val[index];
+          out_dphi_x[psiIndex]  = pos_iw_ptr[0] * (G[0] * g0[index] + G[1] * g1[index] + G[2] * g2[index]);
+          out_dphi_y[psiIndex]  = pos_iw_ptr[0] * (G[3] * g0[index] + G[4] * g1[index] + G[5] * g2[index]);
+          out_dphi_z[psiIndex]  = pos_iw_ptr[0] * (G[6] * g0[index] + G[7] * g1[index] + G[8] * g2[index]);
+          out_d2phi[psiIndex]   = pos_iw_ptr[0] * lcart[index];
+
+          ratio += out_phi[psiIndex] * invRow_iw_ptr[psiIndex];
+          grad_x += out_dphi_x[psiIndex] * invRow_iw_ptr[psiIndex];
+          grad_y += out_dphi_y[psiIndex] * invRow_iw_ptr[psiIndex];
+          grad_z += out_dphi_z[psiIndex] * invRow_iw_ptr[psiIndex];
         }
 
-        ValueType* restrict psi    = psi_iw_ptr;
-        ValueType* restrict dpsi_x = psi_iw_ptr + sposet_padded_size;
-        ValueType* restrict dpsi_y = psi_iw_ptr + sposet_padded_size * 2;
-        ValueType* restrict dpsi_z = psi_iw_ptr + sposet_padded_size * 3;
-        ValueType* restrict d2psi  = psi_iw_ptr + sposet_padded_size * 4;
-
-        ValueType* restrict out_phi    = phi_vgl_ptr + iw * requested_orb_size;
-        ValueType* restrict out_dphi_x = out_phi + phi_vgl_stride;
-        ValueType* restrict out_dphi_y = out_dphi_x + phi_vgl_stride;
-        ValueType* restrict out_dphi_z = out_dphi_y + phi_vgl_stride;
-        ValueType* restrict out_d2phi  = out_dphi_z + phi_vgl_stride;
-
-        ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
-        PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
-        for (int j = first; j < requested_orb_size; j++)
-        {
-          out_phi[j]    = psi[j];
-          out_dphi_x[j] = dpsi_x[j];
-          out_dphi_y[j] = dpsi_y[j];
-          out_dphi_z[j] = dpsi_z[j];
-          out_d2phi[j]  = d2psi[j];
-
-          ratio += psi[j] * invRow_iw_ptr[j];
-          grad_x += dpsi_x[j] * invRow_iw_ptr[j];
-          grad_y += dpsi_y[j] * invRow_iw_ptr[j];
-          grad_z += dpsi_z[j] * invRow_iw_ptr[j];
-        }
 
         rg_private_ptr[(iw * NumTeams + team_id) * 4]     = ratio;
         rg_private_ptr[(iw * NumTeams + team_id) * 4 + 1] = grad_x;
