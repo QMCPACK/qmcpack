@@ -846,7 +846,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateRatios(
       // build lists
       phi_list.push_back(*det.Phi);
       psiV_list.push_back(det.psiV_host_view);
-      if (Phi->isOMPoffload())
+      if (false) //Phi->isOMPoffload())
         invRow_ptr_list.push_back(det.psiMinv_.device_data() + WorkingIndex * psiMinv_.cols());
       else
         invRow_ptr_list.push_back(det.psiMinv_[WorkingIndex]);
@@ -882,7 +882,8 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorDerivRatios(
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   assert(WorkingIndex >= 0);
   std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
-  Phi->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios, FirstIndex, LastIndex);
+  Phi->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios,
+                                 FirstIndex, LastIndex);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>

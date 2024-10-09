@@ -111,6 +111,7 @@ public:
   virtual std::string getKeyword() const override { return "SplineR2R"; }
   bool isComplex() const override { return false; };
   bool isRotationSupported() const override { return true; }
+  virtual bool isOMPoffload() const override { return use_offload_; }
 
   void createResource(ResourceCollection& collection) const override
   {
@@ -199,7 +200,7 @@ public:
   bool write_splines(hdf_archive& h5f);
 
   /** convert position in PrimLattice unit and return sign */
-  inline int convertPos(const PointType& r, PointType& ru)
+  inline int convertPos(const PointType& r, PointType& ru) const
   {
     ru          = PrimLattice.toUnit(r);
     int bc_sign = 0;
