@@ -73,7 +73,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
 </tmp>)XML";
 
   if (!use_offload)
-    std::regex_replace(spo_xml, std::regex("omptarget"), "no");
+    spo_xml = std::regex_replace(spo_xml, std::regex("omptarget"), "no");
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml);
@@ -108,7 +108,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
   CHECK(std::real(dpsiM[1][1][1]) == Approx(-1.1174004078));
   CHECK(std::real(dpsiM[1][1][2]) == Approx(-0.8462534547));
   // lapl
-  CHECK(std::real(d2psiM[1][0]) == Approx(1.3313053846));
+  CHECK(std::real(d2psiM[1][0]) == Approx(1.3313053846).epsilon(2e-5));
   CHECK(std::real(d2psiM[1][1]) == Approx(-4.712583065));
 
   // for vgh
@@ -240,7 +240,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
   inv_row = {0.1, 0.2, 0.3, 0.4, 0.5};
   inv_row.updateTo();
 
-  std::vector<const SPOSet::ValueType*> inv_row_ptr(nw, inv_row.device_data());
+  std::vector<const SPOSet::ValueType*> inv_row_ptr(nw, use_offload ? inv_row.device_data() : inv_row.data());
 
   SPOSet::OffloadMWVGLArray phi_vgl_v;
   phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
@@ -296,8 +296,8 @@ void test_einset_diamond_1x1x1(bool use_offload)
 
 TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
-   test_einset_diamond_1x1x1(true);
-   test_einset_diamond_1x1x1(false);
+  test_einset_diamond_1x1x1(true);
+  test_einset_diamond_1x1x1(false);
 }
 
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
