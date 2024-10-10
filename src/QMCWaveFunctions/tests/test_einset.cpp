@@ -24,12 +24,13 @@
 #include <stdio.h>
 #include <string>
 #include <limits>
+#include <regex>
 
 using std::string;
 
 namespace qmcplusplus
 {
-TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
+void test_einset_diamond_1x1x1(bool use_offload)
 {
   Communicate* c = OHMMS::Controller;
 
@@ -67,12 +68,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   //diamondC_1x1x1
   // add save_coefs="yes" to create an HDF file of spline coefficients for the eval_bspline_spo.py script
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="8"/>
-</tmp>)";
+  std::string spo_xml = R"XML(<tmp>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="8" gpu="omptarget"/>
+</tmp>)XML";
+
+  if (!use_offload)
+    std::regex_replace(spo_xml, std::regex("omptarget"), "no");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
+  bool okay = doc.parseFromString(spo_xml);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
@@ -228,6 +232,38 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(psi_v_list[1].get()[0][0]) == Approx(-0.8886948824));
   CHECK(std::real(psi_v_list[1].get()[1][0]) == Approx(-0.42546836868));
 
+  const size_t nw = 2;
+  std::vector<SPOSet::ValueType> ratio_v(nw);
+  std::vector<SPOSet::GradType> grads_v(nw);
+
+  Vector<SPOSet::ValueType, OffloadPinnedAllocator<SPOSet::ValueType>> inv_row(5);
+  inv_row = {0.1, 0.2, 0.3, 0.4, 0.5};
+  inv_row.updateTo();
+
+  std::vector<const SPOSet::ValueType*> inv_row_ptr(nw, inv_row.device_data());
+
+  SPOSet::OffloadMWVGLArray phi_vgl_v;
+  phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
+  spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, inv_row_ptr, phi_vgl_v, ratio_v, grads_v);
+#if defined(QMC_COMPLEX)
+  CHECK(ratio_v[0] == ComplexApprox(std::complex{-0.0425468, 0.0425468}));
+  CHECK(grads_v[0][0] == ComplexApprox(std::complex{99.0451, 2.22151}));
+  CHECK(grads_v[0][1] == ComplexApprox(std::complex{52.8267, -6.65955}));
+  CHECK(grads_v[0][2] == ComplexApprox(std::complex{156.207, 4.43802}));
+  CHECK(ratio_v[1] == ComplexApprox(std::complex{-0.523449, 0.641483}));
+  CHECK(grads_v[1][0] == ComplexApprox(std::complex{1.59725, 0.227989}));
+  CHECK(grads_v[1][1] == ComplexApprox(std::complex{-0.543437, 0.0247015}));
+  CHECK(grads_v[1][2] == ComplexApprox(std::complex{2.15262, 0.306102}));
+#else
+  CHECK(std::real(ratio_v[0]) == Approx(-0.0425468457));
+  CHECK(std::real(grads_v[0][0]) == Approx(101.2666081556));
+  CHECK(std::real(grads_v[0][1]) == Approx(46.1671284048));
+  CHECK(std::real(grads_v[0][2]) == Approx(160.644753288));
+  CHECK(std::real(ratio_v[1]) == Approx(-0.5234490454));
+  CHECK(std::real(grads_v[1][0]) == Approx(1.8766445844));
+  CHECK(std::real(grads_v[1][1]) == Approx(-0.513164153));
+  CHECK(std::real(grads_v[1][2]) == Approx(2.5277422458));
+#endif
 #if 0
   // Dump values of the orbitals
   int orbSize= spo->getOrbitalSetSize();
@@ -256,6 +292,12 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   fclose(fspo);
 
 #endif
+}
+
+TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
+{
+   test_einset_diamond_1x1x1(true);
+   test_einset_diamond_1x1x1(false);
 }
 
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
@@ -297,13 +339,13 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_2x1x1
-  const char* particles = R"(<tmp>
+  const char* spo_xml = R"(<tmp>
 <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="5"/>
 </tmp>
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
+  bool okay = doc.parseFromString(spo_xml);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
