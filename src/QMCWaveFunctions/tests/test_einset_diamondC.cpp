@@ -68,9 +68,12 @@ void test_einset_diamond_1x1x1(bool use_offload)
 
   //diamondC_1x1x1
   // add save_coefs="yes" to create an HDF file of spline coefficients for the eval_bspline_spo.py script
-  std::string spo_xml = R"XML(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="8" gpu="omptarget"/>
-</tmp>)XML";
+  std::string spo_xml = R"XML(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" gpu="omptarget">
+  <sposet name="updet" size="8">
+    <occupation mode="ground"/>
+  </sposet>
+</sposet_collection>)XML";
 
   if (!use_offload)
     spo_xml = std::regex_replace(spo_xml, std::regex("omptarget"), "no");
@@ -83,7 +86,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -339,9 +342,12 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_2x1x1
-  const char* spo_xml = R"(<tmp>
-<determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="5"/>
-</tmp>
+  const char* spo_xml = R"(
+<sposet_collection type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
+  <sposet name="updet" size="5">
+    <occupation mode="ground"/>
+  </sposet>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -352,7 +358,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 

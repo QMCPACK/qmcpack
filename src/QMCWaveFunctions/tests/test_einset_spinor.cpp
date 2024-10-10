@@ -81,13 +81,12 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   ions_.update();
 
 
-  const char* particles = R"(<tmp>
-   <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" size="3" precision="float" meshfactor="4.0">
+  const char* particles = R"(
+   <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="float" meshfactor="4.0">
      <sposet name="myspo" size="3">
        <occupation mode="ground"/>
      </sposet>
    </sposet_builder>
-  </tmp>
 )";
 
   Libxml2Document doc;
@@ -99,7 +98,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  const auto spo_builder_ptr = fac.createSPOSetBuilder(ein1);
+  const auto spo_builder_ptr = fac.createSPOSetBuilder(root);
   auto& builder              = *spo_builder_ptr;
 
   auto spo = builder.createSPOSet(ein1);
