@@ -73,9 +73,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_1x1x1
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="4" hybridrep="yes"/>
-</tmp>
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" hybridrep="yes">
+  <sposet name="updet" size="4"/>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -86,7 +87,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -232,9 +233,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_2x1x1
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="4" hybridrep="yes"/>
-</tmp>
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" hybridrep="yes">
+  <sposet name="updet" size="4"/>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -245,7 +247,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 

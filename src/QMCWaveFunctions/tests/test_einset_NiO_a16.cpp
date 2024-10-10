@@ -91,9 +91,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   //diamondC_2x1x1
   const char* particles = R"(
 <sposet_collection type="einspline" href="NiO-fcc-supertwist111-supershift000-S4.h5" tilematrix="1 0 0 0 1 1 0 2 -2" twistnum="0" source="ion" meshfactor="1.0" precision="float" gpu="omptarget">
-  <sposet name="updet" size="97">
-    <occupation mode="ground"/>
-  </sposet>
+  <sposet name="updet" size="97"/>
 </sposet_collection>
 )";
 

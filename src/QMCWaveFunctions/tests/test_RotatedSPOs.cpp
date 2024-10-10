@@ -78,9 +78,10 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_1x1x1 - 8 bands available
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="8"/>
-</tmp>
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
+  <sposet name="updet" size="8"/>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -91,7 +92,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 

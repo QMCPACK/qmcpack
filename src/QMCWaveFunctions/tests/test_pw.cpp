@@ -51,13 +51,13 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.create({1, 1});
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec.R[0]                    = {0.0, 0.0, 0.0};
-  elec.R[1]                    = {0.0, 1.0, 0.0};
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 1.0, 0.0};
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
-  const int upIdx                    = tspecies.addSpecies("u");
-  const int downIdx                  = tspecies.addSpecies("d");
-  const int chargeIdx                = tspecies.addAttribute("charge");
+  const int upIdx              = tspecies.addSpecies("u");
+  const int downIdx            = tspecies.addSpecies("d");
+  const int chargeIdx          = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
@@ -153,15 +153,15 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.create({2, 2});
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec.R[0]                    = {0.0, 0.0, 0.0};
-  elec.R[1]                    = {0.0, 1.0, 0.0};
-  elec.R[2]                    = {0.0, 0.0, 1.0};
-  elec.R[3]                    = {0.0, 1.0, 1.0};
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 1.0, 0.0};
+  elec.R[2] = {0.0, 0.0, 1.0};
+  elec.R[3] = {0.0, 1.0, 1.0};
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
-  const int upIdx                    = tspecies.addSpecies("u");
-  const int downIdx                  = tspecies.addSpecies("d");
-  const int chargeIdx                = tspecies.addAttribute("charge");
+  const int upIdx              = tspecies.addSpecies("u");
+  const int downIdx            = tspecies.addSpecies("d");
+  const int chargeIdx          = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 

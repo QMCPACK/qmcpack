@@ -65,9 +65,7 @@ void test_einset_LiH_x(bool use_offload)
   // LiH
   std::string spo_xml = R"XML(
 <sposet_collection type="einspline" href="LiH-x.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" source="ion" precision="float" gpu="omptarget" twist="0.5 0.0 0.0">
-  <sposet name="updet" size="6">
-    <occupation mode="ground"/>
-  </sposet>
+  <sposet name="updet" size="6"/>
 </sposet_collection>
 )XML";
 
@@ -193,14 +191,14 @@ void test_einset_LiH_x(bool use_offload)
   phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
   spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, inv_row_ptr, phi_vgl_v, ratio_v, grads_v);
 #if defined(QMC_COMPLEX)
-  CHECK(ratio_v[0] == ComplexApprox(std::complex{0.111643,0.111644}));
-  CHECK(grads_v[0][0] == ComplexApprox(std::complex{-3.73874,-22.8802}));
-  CHECK(grads_v[0][1] == ComplexApprox(std::complex{-7.20916,10.4173}));
-  CHECK(grads_v[0][2] == ComplexApprox(std::complex{-10.9493,0.954407}));
-  CHECK(ratio_v[1] == ComplexApprox(std::complex{-0.494879,0.363164}));
-  CHECK(grads_v[1][0] == ComplexApprox(std::complex{-1.85816,0.899594}));
-  CHECK(grads_v[1][1] == ComplexApprox(std::complex{0.24621,-0.28615}));
-  CHECK(grads_v[1][2] == ComplexApprox(std::complex{0.147884,0.67006}));
+  CHECK(ratio_v[0] == ComplexApprox(std::complex{0.111643, 0.111644}));
+  CHECK(grads_v[0][0] == ComplexApprox(std::complex{-3.73874, -22.8802}));
+  CHECK(grads_v[0][1] == ComplexApprox(std::complex{-7.20916, 10.4173}));
+  CHECK(grads_v[0][2] == ComplexApprox(std::complex{-10.9493, 0.954407}));
+  CHECK(ratio_v[1] == ComplexApprox(std::complex{-0.494879, 0.363164}));
+  CHECK(grads_v[1][0] == ComplexApprox(std::complex{-1.85816, 0.899594}));
+  CHECK(grads_v[1][1] == ComplexApprox(std::complex{0.24621, -0.28615}));
+  CHECK(grads_v[1][2] == ComplexApprox(std::complex{0.147884, 0.67006}));
 #else
   CHECK(std::real(ratio_v[0]) == Approx(0.1116431436));
   CHECK(std::real(grads_v[0][0]) == Approx(-8.4771142931));
