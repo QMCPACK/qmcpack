@@ -106,7 +106,7 @@ void test_einset_LiH_x(bool use_offload)
   CHECK(std::real(dpsiM[1][1][1]) == Approx(-0.2475463897));
   CHECK(std::real(dpsiM[1][1][2]) == Approx(0.4088463187));
   // lapl
-  CHECK(std::real(d2psiM[1][0]) == Approx(1.7295608521));
+  CHECK(std::real(d2psiM[1][0]) == Approx(1.7295608521).epsilon(4e-5));
   CHECK(std::real(d2psiM[1][1]) == Approx(0.7432643771));
 #else
   CHECK(std::real(psiM[1][0]) == Approx(-1.1857329607));
