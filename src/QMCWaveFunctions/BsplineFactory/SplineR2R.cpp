@@ -286,7 +286,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   auto& mw_offload_scratch        = mw_mem.mw_offload_scratch;
   auto& mw_results_scratch        = mw_mem.mw_results_scratch;
   const size_t nw                 = spo_list.size();
-  const size_t requested_orb_size = phi_leader.size();
+  const size_t requested_orb_size = psi_list.size() ? psi_list[0].get().size() : phi_leader.size();
 
   size_t mw_nVP = 0;
   for (const VirtualParticleSet& VP : vp_list)
@@ -365,8 +365,10 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
         ValueType sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int index = first; index < requested_orb_size; index++)
+	{
           sum += psiinv_ptr[index] * offload_scratch_iat_ptr[spline_padded_size * SoAFields3D::VAL + index] *
               pos_scratch[iat * 4];
+	}
         ratios_private_ptr[iat * NumTeams + team_id] = sum;
       }
   }
