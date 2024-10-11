@@ -21,6 +21,7 @@
 #include "BsplineReader.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include <PlatformSelector.hpp>
 
 #include <array>
 #include <filesystem>
@@ -70,9 +71,11 @@ void BsplineReader::setCommon(xmlNodePtr cur)
   // check orbital normalization by default
   std::string checkOrbNorm("yes");
   std::string saveCoefs("no");
+  std::string useGPU;
   OhmmsAttributeSet a;
   a.add(checkOrbNorm, "check_orb_norm");
   a.add(saveCoefs, "save_coefs");
+  a.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   a.put(cur);
 
   // allow user to turn off norm check with a warning
@@ -82,6 +85,11 @@ void BsplineReader::setCommon(xmlNodePtr cur)
     checkNorm = false;
   }
   saveSplineCoefs = saveCoefs == "yes";
+  use_offload = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
+  if(use_offload)
+    app_summary() << "    Running OpenMP offload code path." << std::endl;
+  else
+    app_summary() << "    Running on CPU." << std::endl;
 }
 
 std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur)
