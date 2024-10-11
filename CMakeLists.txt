@@ -758,7 +758,7 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
   message("Project CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
 endif()
 
-if(USE_NVTX_API)
+if(USE_NVTX_API AND NOT QMC_CUDA2HIP)
   message(STATUS "Enabling use of CUDA NVTX APIs")
   find_library(
     NVTX_API_LIB NAME nvToolsExt
@@ -771,7 +771,7 @@ if(USE_NVTX_API)
   link_libraries(${NVTX_API_LIB})
 else()
   message(STATUS "CUDA NVTX APIs disabled")
-endif(USE_NVTX_API)
+endif(USE_NVTX_API AND NOT QMC_CUDA2HIP)
 
 #-------------------------------------------------------------------
 #  set up ROCM compiler options and libraries
@@ -829,6 +829,21 @@ if(ENABLE_ROCM)
   message("Project HIP_FLAGS: ${CMAKE_HIP_FLAGS}")
   option(QMC_DISABLE_HIP_HOST_REGISTER "Disable hipHostRegister for pinning host memory" ON)
 endif(ENABLE_ROCM)
+
+if(USE_NVTX_API AND QMC_CUDA2HIP)
+  message(STATUS "Enabling use of ROCm rocTX APIs")
+  find_library(
+    ROCTX_API_LIB NAME libroctx64.so
+    HINTS ${ROCM_PATH}
+    PATH_SUFFIXES lib lib64)
+  if(NOT ROCTX_API_LIB)
+    message(FATAL_ERROR "USE_ROCTX_API set but ROCTX_API_LIB not found")
+  endif(NOT ROCTX_API_LIB)
+  message("ROCm rocTX library: ${ROCTX_API_LIB}")
+  link_libraries(${ROCTX_API_LIB})
+  else()
+    message(STATUS "ROCm rocTX APIs disabled")
+endif(USE_NVTX_API AND QMC_CUDA2HIP)
 
 #-------------------------------------------------------------------
 #  set up HIP compiler options
