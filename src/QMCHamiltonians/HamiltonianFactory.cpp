@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: John R. Gergely,  University of Illinois at Urbana-Champaign
 //                    Bryan Clark, bclark@Princeton.edu, Princeton University
@@ -50,6 +50,7 @@
 #endif
 #include "QMCHamiltonians/SkPot.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -85,7 +86,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
  *  </hamiltonian>
  * \endxmlonly
  */
-bool HamiltonianFactory::build(xmlNodePtr cur)
+bool HamiltonianFactory::build(xmlNodePtr cur, bool batched)
 {
   if (cur == NULL)
     return false;
@@ -177,8 +178,18 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         targetH->addOperator(std::move(hs), "Grid", true);
       }
     }
+    else if (cname == "flux")
+    {
+      if (potName.size() < 1)
+	potName = "flux";
+      targetH->addOperator(std::make_unique<ConservedEnergy>(), potName, false);
+    }
     else if (cname == "estimator")
     {
+      if (batched)
+        throw UniformCommunicateError(
+            "estimator input nodes are not accepted in hamiltonian input in the batched version of the code!");
+
       if (potType == "flux")
         targetH->addOperator(std::make_unique<ConservedEnergy>(), potName, false);
       else if (potType == "specieskinetic")
@@ -426,9 +437,9 @@ void HamiltonianFactory::renameProperty(std::string& aname)
   }
 }
 
-bool HamiltonianFactory::put(xmlNodePtr cur)
+bool HamiltonianFactory::put(xmlNodePtr cur, bool batched)
 {
-  bool success = build(cur);
+  bool success = build(cur, batched);
   return success;
 }
 

@@ -46,7 +46,7 @@ HamiltonianPool::~HamiltonianPool()
   }
 }
 
-bool HamiltonianPool::put(xmlNodePtr cur)
+bool HamiltonianPool::put(xmlNodePtr cur, bool batched)
 {
   ReportEngine PRE("HamiltonianPool", "put");
   std::string id("h0"), target("e"), role("extra");
@@ -77,7 +77,8 @@ bool HamiltonianPool::put(xmlNodePtr cur)
   }
   else
     curH = (*hit).second;
-  bool success = curH->put(cur);
+
+  bool success = curH->put(cur, batched);
   if (set2Primary)
     primaryH = curH->getH();
   return success;
@@ -85,7 +86,7 @@ bool HamiltonianPool::put(xmlNodePtr cur)
 
 bool HamiltonianPool::get(std::ostream& os) const
 {
-  for(auto& [name, factory] : myPool)
+  for (auto& [name, factory] : myPool)
   {
     os << "  Hamiltonian " << name << std::endl;
     factory->getH()->get(os);

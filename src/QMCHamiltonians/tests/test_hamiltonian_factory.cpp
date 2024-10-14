@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
 #include "Utilities/RuntimeOptions.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -75,7 +76,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  hf.put(root);
+  hf.put(root, true);
 
 
   REQUIRE(hf.getH());
@@ -84,6 +85,45 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
   REQUIRE(hf.getH()->getOperatorType("ElecElec") == "coulomb");
   REQUIRE(hf.getH()->getOperatorType("ElecIon") == "coulomb");
+}
+
+TEST_CASE("HamiltonianFactory_prevent_legacy_estimator_input", "[hamiltonian]")
+{
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell simulation_cell;
+  auto elec_ptr = createElectronParticleSet(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+
+  ions.setName("ion0");
+  ions.create({1});
+
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+
+  RuntimeOptions runtime_options;
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+
+  const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+         <estimator name="Density" type="density" delta="0.1 0.1 0.1"/>
+</hamiltonian>)";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(hamiltonian_xml);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  CHECK_THROWS_AS(hf.put(root, true), qmcplusplus::UniformCommunicateError);
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
@@ -128,7 +168,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  hf.put(root);
+  hf.put(root,true);
 }
 
 } // namespace qmcplusplus
