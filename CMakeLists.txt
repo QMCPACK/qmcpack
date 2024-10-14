@@ -834,7 +834,6 @@ if(USE_NVTX_API AND QMC_CUDA2HIP)
   message(STATUS "Enabling use of ROCm rocTX APIs")
   find_library(
     ROCTX_API_LIB NAME libroctx64.so
-    HINTS ${ROCM_PATH}
     PATH_SUFFIXES lib lib64)
   if(NOT ROCTX_API_LIB)
     message(FATAL_ERROR "USE_ROCTX_API set but ROCTX_API_LIB not found")
