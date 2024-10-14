@@ -112,7 +112,7 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMPTarget(const std::string& my_name)
+  SplineC2ROMPTarget(const std::string& my_name, bool use_offload = true)
       : BsplineSet(my_name),
         offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
         nComplexBands(0),

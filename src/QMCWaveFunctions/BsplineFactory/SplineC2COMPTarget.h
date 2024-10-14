@@ -107,7 +107,7 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2COMPTarget(const std::string& my_name)
+  SplineC2COMPTarget(const std::string& my_name, bool use_offload = true)
       : BsplineSet(my_name),
         offload_timer_(createGlobalTimer("SplineC2COMPTarget::offload", timer_level_fine)),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),

@@ -93,9 +93,10 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   ParticleSet elec_clone(elec_);
 
   //diamondC_1x1x1
-  const char* spo_xml = R"(<tmp> \
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="2"/>
-</tmp>
+  const char* spo_xml = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
+  <sposet name="updet" size="2"/>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -105,7 +106,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   xmlNodePtr spo_root = doc.getRoot();
   xmlNodePtr ein1     = xmlFirstElementChild(spo_root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, spo_root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 

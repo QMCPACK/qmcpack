@@ -203,7 +203,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   auto& mw_offload_scratch    = mw_mem.mw_offload_scratch;
   auto& mw_results_scratch    = mw_mem.mw_results_scratch;
   const size_t nw             = spo_list.size();
-  const size_t orb_size       = phi_leader.size();
+  const size_t orb_size       = psi_list.size() ? psi_list[0].get().size() : phi_leader.size();
 
   size_t mw_nVP = 0;
   for (const VirtualParticleSet& VP : vp_list)

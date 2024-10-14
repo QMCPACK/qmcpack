@@ -50,8 +50,7 @@ std::unique_ptr<BsplineReader> createBsplineComplex(EinsplineSetBuilder* e,
  */
 std::unique_ptr<BsplineReader> createBsplineReal(EinsplineSetBuilder* e,
                                                  bool use_single,
-                                                 bool hybrid_rep,
-                                                 const std::string& useGPU);
+                                                 bool hybrid_rep);
 
 } // namespace qmcplusplus
 #endif

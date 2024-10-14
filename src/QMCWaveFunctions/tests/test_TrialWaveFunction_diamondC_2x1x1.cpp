@@ -108,12 +108,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   ParticleSet elec_clone(elec_);
 
   //diamondC_1x1x1
-  std::string spo_xml     = R"XML(<tmp> \
-               <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" size="2" gpu="no"/> \
-               </tmp>)XML";
-  std::string spo_omp_xml = R"XML(<tmp> \
-               <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" size="2" gpu="omptarget"/> \
-               </tmp>)XML";
+  std::string spo_xml     = R"XML(
+               <sposet_collection type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" gpu="no">
+                 <sposet name="updet" size="2"/>
+               </sposet_collection>)XML";
+  std::string spo_omp_xml = R"XML(
+               <sposet_collection type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" gpu="omptarget">
+                 <sposet name="updet" size="2"/>
+               </sposet_collection>)XML";
 #ifndef MIXED_PRECISION
   if (std::is_same<SPO_precision, double_tag>::value)
   {
@@ -128,7 +130,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   xmlNodePtr spo_root = doc.getRoot();
   xmlNodePtr ein1     = xmlFirstElementChild(spo_root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, spo_root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 

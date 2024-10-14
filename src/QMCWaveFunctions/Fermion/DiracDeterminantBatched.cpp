@@ -882,7 +882,8 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorDerivRatios(
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   assert(WorkingIndex >= 0);
   std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
-  Phi->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios, FirstIndex, LastIndex);
+  Phi->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios,
+                                 FirstIndex, LastIndex);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
