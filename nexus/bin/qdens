@@ -1121,6 +1121,7 @@ class QMCDensityProcessor(QDBase):
                             self.error('could not identify grid data for spin density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
                         #end if
                         if 'cell' in sd:
+                            self.error('Currently, the cell keyword is not supported due to a bug: See https://github.com/QMCPACK/qmcpack/issues/5201')
                             density_cell = sd.cell.copy()
                             density_cell = convert(density_cell, 'B', 'A')
                         else:
@@ -1130,6 +1131,7 @@ class QMCDensityProcessor(QDBase):
                             density_cell = dens_struct.axes
                         #end if
                         if 'corner' in sd:
+                            self.error('Currently, the corner keyword is not supported due to a bug: See https://github.com/QMCPACK/qmcpack/issues/5201')
                             density_corner = sd.corner.copy()
                             density_corner = convert(density_corner, 'B', 'A')
                         else:
@@ -1203,6 +1205,7 @@ class QMCDensityProcessor(QDBase):
 
         #   --density_cell option
         if opt.density_cell is not None:
+            self.error('Currently, the cell keyword is not supported due to a bug: See https://github.com/QMCPACK/qmcpack/issues/5201')
             density_cell = input_list(opt.density_cell)
             try:
                 density_cell = np.array(density_cell,dtype=float)
@@ -1220,6 +1223,7 @@ class QMCDensityProcessor(QDBase):
 
         #   --density_corner option
         if opt.density_corner is not None:
+            self.error('Currently, the corner keyword is not supported due to a bug: See https://github.com/QMCPACK/qmcpack/issues/5201')
             density_corner = input_list(opt.density_corner)
             try:
                 density_corner = np.array(density_corner,dtype=float)
