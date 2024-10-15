@@ -932,7 +932,10 @@ class Qmcpack(Simulation):
                     if J3 is not None:
                         corr = J3.get('correlation')
                         if hasattr(corr, 'coefficients'):
-                            pass
+                            # For single-species systems, the data structure changes.
+                            # In this case, the only J3 term should be 'uu'.
+                            # Otherwise, the user might be trying to do something strange.
+                            assert 'uu' in corr.coefficients.id, 'Only uu J3 terms are allowed in SOC calculations.'
                         else:
                             j3_ids = []
                             for j3_term in corr:
