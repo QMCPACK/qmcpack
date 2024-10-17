@@ -155,4 +155,7 @@
 
 #define cudaDeviceSetLimit(limit, value) ;
 
+#define nvtxRangePop                    roctxRangePop
+#define nvtxRangePushA                  roctxRangePushA
+
 #endif /* CUDA2HIP_H */

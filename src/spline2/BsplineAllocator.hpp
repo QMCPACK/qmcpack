@@ -51,7 +51,8 @@ class BsplineAllocator
 
   /// allocators
   ALLOC coefs_allocator;
-  typename std::allocator_traits<ALLOC>::template rebind_alloc<SplineType> multi_spline_allocator;
+  using MultiAlloc = typename std::allocator_traits<ALLOC>::template rebind_alloc<SplineType>;
+  MultiAlloc multi_spline_allocator;
 
 public:
   ///default constructor
@@ -79,9 +80,9 @@ public:
   SplineType* allocateMultiBspline(Ugrid x_grid,
                                    Ugrid y_grid,
                                    Ugrid z_grid,
-                                   BCType xBC,
-                                   BCType yBC,
-                                   BCType zBC,
+                                   const BCType& xBC,
+                                   const BCType& yBC,
+                                   const BCType& zBC,
                                    int num_splines);
 
   ///allocate a UBspline_3d_d, it can be made template to support UBspline_3d_s
@@ -108,9 +109,9 @@ template<typename T, typename ALLOC>
 typename BsplineAllocator<T, ALLOC>::SplineType* BsplineAllocator<T, ALLOC>::allocateMultiBspline(Ugrid x_grid,
                                                                                                   Ugrid y_grid,
                                                                                                   Ugrid z_grid,
-                                                                                                  BCType xBC,
-                                                                                                  BCType yBC,
-                                                                                                  BCType zBC,
+                                                                                                  const BCType& xBC,
+                                                                                                  const BCType& yBC,
+                                                                                                  const BCType& zBC,
                                                                                                   int num_splines)
 {
   // Create new spline
