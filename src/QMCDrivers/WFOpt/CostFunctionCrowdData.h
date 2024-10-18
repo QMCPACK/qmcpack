@@ -29,13 +29,13 @@ class CostFunctionCrowdData
 {
 public:
   using Return_rt = qmcplusplus::QMCTraits::RealType;
-
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   /// Create the arrays of crowd_size and create object copies
   CostFunctionCrowdData(int crowd_size,
                         ParticleSet& P,
                         TrialWaveFunction& Psi,
                         QMCHamiltonian& H,
-                        RandomGenerator& Rng);
+                        RandomBase<FullPrecRealType>& Rng);
 
   /// Set the log_psi_* arrays to zero
   void zero_log_psi();
@@ -48,8 +48,8 @@ public:
   std::vector<Return_rt>& get_log_psi_fixed() { return log_psi_fixed_; }
   std::vector<Return_rt>& get_log_psi_opt() { return log_psi_opt_; }
 
-  UPtrVector<RandomGenerator>& get_rng_ptr_list() { return rng_ptr_list_; }
-  RandomGenerator& get_rng_save() { return *rng_save_ptr_; }
+  UPtrVector<RandomBase<FullPrecRealType>>& get_rng_ptr_list() { return rng_ptr_list_; }
+  RandomBase<FullPrecRealType>& get_rng_save() { return *rng_save_ptr_; }
 
   UPtrVector<TrialWaveFunction>& get_wf_ptr_list() { return wf_ptr_list_; }
 
@@ -72,7 +72,7 @@ private:
   UPtrVector<ParticleSet> p_ptr_list_;
   UPtrVector<QMCHamiltonian> h_ptr_list_;
   UPtrVector<QMCHamiltonian> h0_ptr_list_;
-  UPtrVector<RandomGenerator> rng_ptr_list_;
+  UPtrVector<RandomBase<FullPrecRealType>> rng_ptr_list_;
 
   // proivides multi walker resource
   DriverWalkerResourceCollection driverwalker_resource_collection_;
@@ -81,7 +81,7 @@ private:
   ResourceCollection h0_res_;
 
   // Saved RNG state to reset to before correlated sampling
-  std::unique_ptr<RandomGenerator> rng_save_ptr_;
+  std::unique_ptr<RandomBase<FullPrecRealType>> rng_save_ptr_;
 
   // Crowd-local accumulator variables
   Return_rt e0_;

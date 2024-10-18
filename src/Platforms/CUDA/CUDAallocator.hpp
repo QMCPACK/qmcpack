@@ -181,8 +181,8 @@ bool operator!=(const CUDAAllocator<T1>&, const CUDAAllocator<T2>&)
 {
   return false;
 }
-template<typename T>
 
+template<typename T>
 struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 {
   static const bool is_host_accessible = false;
@@ -251,10 +251,10 @@ struct CUDALockedPageAllocator : public ULPHA
   CUDALockedPageAllocator(const CUDALockedPageAllocator<U, V>&)
   {}
 
-  template<class U, class V>
+  template<class U>
   struct rebind
   {
-    using other = CUDALockedPageAllocator<U, V>;
+    using other = CUDALockedPageAllocator<U, typename std::allocator_traits<ULPHA>::template rebind_alloc<U>>;
   };
 
   value_type* allocate(std::size_t n)

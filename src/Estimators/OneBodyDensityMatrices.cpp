@@ -19,6 +19,7 @@
 #include "Utilities/string_utils.h"
 #include "type_traits/complex_help.hpp"
 #include "Concurrency/OpenMP.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -36,6 +37,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
       lattice_(lattice),
       species_(species),
       basis_functions_("OneBodyDensityMatrices::basis"),
+      is_spinor_(pset_target.isSpinor()),
       timers_("OneBodyDensityMatrix")
 {
   my_name_ = "OneBodyDensityMatrices";
@@ -81,6 +83,13 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
     break;
   }
   rsamples_.resize(samples_);
+  if (is_spinor_)
+    ssamples_.resize(samples_);
+
+  if (is_spinor_ && sampling_ != Sampling::METROPOLIS)
+    throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices only density sampling implemented "
+                                  "for calculations using spinors");
+
 
   // get the sposets that form the basis
   auto& sposets = input_.get_basis_sets();
@@ -122,7 +131,6 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   for (int i = 0; i < basis_size_; ++i)
     basis_norms_[i] = bn_standard;
 
-  rsamples_.resize(samples_);
   samples_weights_.resize(samples_);
   psi_ratios_.resize(nparticles);
 
@@ -147,6 +155,8 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   {
     basis_gradients_.resize(basis_size_);
     basis_laplacians_.resize(basis_size_);
+    if (is_spinor_)
+      basis_spin_gradients_.resize(basis_size_);
   }
 
   // so if the input is not normalized, normalize it.
@@ -195,8 +205,10 @@ size_t OneBodyDensityMatrices::calcFullDataSize(const size_t basis_size, const i
 
 void OneBodyDensityMatrices::startBlock(int steps) {}
 
-template<class RNG_GEN>
-void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps)
+void OneBodyDensityMatrices::generateSamples(const Real weight,
+                                             ParticleSet& pset_target,
+                                             RandomBase<FullPrecReal>& rng,
+                                             int steps)
 {
   ScopedTimer local_timer(timers_.gen_samples_timer);
 
@@ -218,9 +230,12 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
   case Integrator::UNIFORM:
     generateUniformSamples(rng);
     break;
-  case Integrator::DENSITY: {
-    generateDensitySamples(save, steps, rng, pset_target);
-  }
+  case Integrator::DENSITY:
+    if (is_spinor_)
+      generateDensitySamplesWithSpin(save, steps, rng, pset_target);
+    else
+      generateDensitySamples(save, steps, rng, pset_target);
+    break;
   }
 
   if (save)
@@ -261,8 +276,7 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
   }
 }
 
-template<typename RNG_GEN>
-inline void OneBodyDensityMatrices::generateUniformGrid(RNG_GEN& rng)
+inline void OneBodyDensityMatrices::generateUniformGrid(RandomBase<FullPrecReal>& rng)
 {
   Position rp;
   Position ushift = 0.0;
@@ -283,8 +297,7 @@ inline void OneBodyDensityMatrices::generateUniformGrid(RNG_GEN& rng)
   }
 }
 
-template<typename RAN_GEN>
-inline void OneBodyDensityMatrices::generateUniformSamples(RAN_GEN& rng)
+inline void OneBodyDensityMatrices::generateUniformSamples(RandomBase<FullPrecReal>& rng)
 {
   Position rp;
   for (int s = 0; s < samples_; ++s)
@@ -295,8 +308,10 @@ inline void OneBodyDensityMatrices::generateUniformSamples(RAN_GEN& rng)
   }
 }
 
-template<typename RAN_GEN>
-inline void OneBodyDensityMatrices::generateDensitySamples(bool save, int steps, RAN_GEN& rng, ParticleSet& pset_target)
+inline void OneBodyDensityMatrices::generateDensitySamples(bool save,
+                                                           int steps,
+                                                           RandomBase<FullPrecReal>& rng,
+                                                           ParticleSet& pset_target)
 {
   const auto timestep = input_.get_timestep();
   Real sqt            = std::sqrt(timestep);
@@ -352,8 +367,78 @@ inline void OneBodyDensityMatrices::generateDensitySamples(bool save, int steps,
   rhocur_ = rho;
 }
 
-template<typename RAN_GEN>
-OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt, RAN_GEN& rng)
+inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
+                                                                   int steps,
+                                                                   RandomBase<FullPrecReal>& rng,
+                                                                   ParticleSet& pset_target)
+{
+  const auto timestep = input_.get_timestep();
+  Real sqt            = std::sqrt(timestep);
+  Real ot             = 1.0 / timestep;
+  Position r          = rpcur_;  //current position
+  Position d          = dpcur_;  //current drift
+  Real rho            = rhocur_; //current density
+  for (int s = 0; s < steps; ++s)
+  {
+    nmoves_++;
+    Position rp;                       // trial pos
+    Position dp;                       // trial drift
+    Position ds;                       // drift sum
+    Real rhop;                         // trial density
+    Real ratio;                        // dens ratio
+    Real Pacc;                         // acc prob
+    Position diff = diffuse(sqt, rng); // get diffusion
+
+    //now do spin variables
+    Real spinp;                         // trial spin
+    Real dspinp = 0;                    // trial spindrifty
+    Real sdiff = diffuseSpin(sqt, rng); //spin diffusion
+    if (input_.get_use_drift())
+    {
+      rp    = r + diff + d;                                               //update trial position
+      spinp = spcur_ + sdiff + dspcur_;                                   //update trial spin
+      calcDensityDriftWithSpin(rp, spinp, rhop, dp, dspinp, pset_target); //get trial drift and density
+      ratio   = rhop / rho;                                               //density ratio
+      ds      = dp + d;                                                   //drift sum
+      auto spin_ds = dspinp + dspcur_;                                    //spin drift sum
+      Pacc    = ratio * std::exp(-ot * (dot(diff, ds) + .5 * dot(ds, ds))) *
+          std::exp(-ot * (sdiff * spin_ds) + 0.5 * spin_ds * spin_ds); //acceptance probability
+    }
+    else
+    {
+      rp    = r + diff;                                  //update trial position
+      spinp = spcur_ + sdiff;                            //update trial spin
+      calcDensityWithSpin(rp, spinp, rhop, pset_target); //get trial density
+      ratio = rhop / rho;                                //density ratio
+      Pacc  = ratio;                                     //acceptance probability
+    }
+    if (rng() < Pacc)
+    { //accept move
+      r       = rp;
+      d       = dp;
+      spcur_  = spinp;
+      dspcur_ = dspinp;
+      rho     = rhop;
+      naccepted_++;
+    }
+    if (save)
+    {
+      rsamples_[s]        = r;
+      samples_weights_[s] = 1.0 / rho;
+      ssamples_[s]        = spcur_;
+    }
+  }
+  acceptance_ratio_ = Real(naccepted_) / nmoves_;
+
+  if (input_.get_write_acceptance_ratio() && omp_get_thread_num() == 0)
+    app_log() << "dm1b  acceptance_ratio = " << acceptance_ratio_ << std::endl;
+
+  rpcur_  = r;
+  dpcur_  = d;
+  rhocur_ = rho;
+}
+
+OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt, RandomBase<FullPrecReal>& rng)
 {
   Position diff;
   assignGaussRand(&diff[0], OHMMS_DIM, rng);
@@ -361,6 +446,13 @@ OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt,
   return diff;
 }
 
+OneBodyDensityMatrices::Real OneBodyDensityMatrices::diffuseSpin(const Real sqt, RandomBase<FullPrecReal>& rng)
+{
+  Real diff;
+  assignGaussRand(&diff, 1, rng);
+  diff *= sqt;
+  return diff;
+}
 
 inline void OneBodyDensityMatrices::calcDensity(const Position& r, Real& dens, ParticleSet& pset_target)
 {
@@ -374,6 +466,20 @@ inline void OneBodyDensityMatrices::calcDensity(const Position& r, Real& dens, P
   dens /= basis_size_;
 }
 
+inline void OneBodyDensityMatrices::calcDensityWithSpin(const Position& r,
+                                                        const Real& s,
+                                                        Real& dens,
+                                                        ParticleSet& pset_target)
+{
+  updateBasisWithSpin(r, s, pset_target);
+  dens = 0.0;
+  for (int i = 0; i < basis_size_; ++i)
+  {
+    Value b = basis_values_[i];
+    dens += std::abs(qmcplusplus::conj(b) * b);
+  }
+  dens /= basis_size_;
+}
 
 void OneBodyDensityMatrices::calcDensityDrift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target)
 {
@@ -393,19 +499,46 @@ void OneBodyDensityMatrices::calcDensityDrift(const Position& r, Real& dens, Pos
   dens /= basis_size_;
 }
 
+void OneBodyDensityMatrices::calcDensityDriftWithSpin(const Position& r,
+                                                      const Real& s,
+                                                      Real& dens,
+                                                      Position& drift,
+                                                      Real& sdrift,
+                                                      ParticleSet& pset_target)
+{
+  updateBasisD012WithSpin(r, s, pset_target);
+  dens   = 0.0;
+  drift  = 0.0;
+  sdrift = 0.0;
+  for (int i = 0; i < basis_size_; ++i)
+  {
+    const Grad& bg   = basis_gradients_[i];
+    const Value& bsg = basis_spin_gradients_[i];
+    Value b          = basis_values_[i];
+    Value bc         = qmcplusplus::conj(b);
+    dens += std::abs(bc * b);
+    for (int d = 0; d < OHMMS_DIM; ++d)
+      drift[d] += std::real(bc * bg[d]);
+    sdrift += std::real(bc * bsg);
+  }
+  drift *= input_.get_timestep() / dens;
+  sdrift *= input_.get_timestep() / dens;
+  dens /= basis_size_;
+}
+
 void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
                                         const RefVector<ParticleSet>& psets,
                                         const RefVector<TrialWaveFunction>& wfns,
-                                        RandomGenerator& rng)
+                                        const RefVector<QMCHamiltonian>& hams,
+                                        RandomBase<FullPrecReal>& rng)
 {
   implAccumulate(walkers, psets, wfns, rng);
 }
 
-template<class RNG_GEN>
 void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
                                             const RefVector<ParticleSet>& psets,
                                             const RefVector<TrialWaveFunction>& wfns,
-                                            RNG_GEN& rng)
+                                            RandomBase<FullPrecReal>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
@@ -414,11 +547,10 @@ void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
   }
 }
 
-template<class RNG_GEN>
 void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
                                             TrialWaveFunction& psi_target,
                                             const MCPWalker& walker,
-                                            RNG_GEN& rng)
+                                            RandomBase<FullPrecReal>& rng)
 {
   //perform warmup sampling the first time
   warmupSampling(pset_target, rng);
@@ -479,7 +611,10 @@ void OneBodyDensityMatrices::generateParticleBasis(ParticleSet& pset_target, std
     Matrix<Value>& P_nb = phi_nb[s];
     for (int n = 0; n < species_sizes_[s]; ++n, ++p)
     {
-      updateBasis(pset_target.R[p], pset_target);
+      if (is_spinor_)
+        updateBasisWithSpin(pset_target.R[p], pset_target.spins[p], pset_target);
+      else
+        updateBasis(pset_target.R[p], pset_target);
       for (int b = 0; b < basis_size_; ++b, ++nb)
         P_nb(nb) = qmcplusplus::conj(basis_values_[b]);
     }
@@ -494,7 +629,10 @@ void OneBodyDensityMatrices::generateSampleBasis(Matrix<Value>& Phi_mb,
   int mb = 0;
   for (int m = 0; m < samples_; ++m)
   {
-    updateBasis(rsamples_[m], pset_target);
+    if (is_spinor_)
+      updateBasisWithSpin(rsamples_[m], ssamples_[m], pset_target);
+    else
+      updateBasis(rsamples_[m], pset_target);
     for (int b = 0; b < basis_size_; ++b, ++mb)
       Phi_mb(mb) = basis_values_[b];
   }
@@ -508,8 +646,25 @@ void OneBodyDensityMatrices::generateSampleRatios(ParticleSet& pset_target,
   for (int m = 0; m < samples_; ++m)
   {
     // get N ratios for the current sample point
-    pset_target.makeVirtualMoves(rsamples_[m]);
-    psi_target.evaluateRatiosAlltoOne(pset_target, psi_ratios_);
+    if (!is_spinor_)
+    {
+      pset_target.makeVirtualMoves(rsamples_[m]);
+      psi_target.evaluateRatiosAlltoOne(pset_target, psi_ratios_);
+    }
+    else
+    {
+      //note: makeVirtualMoves updates distance tables
+      //There is not a corresponding "distance table" for the spins, so we need to brute force this by moving each electron and using makeMoveWithSpin, calcRatio, and rejectMove, and resetPhaseDiff, similar to how NonLocalECP works for evaluating quadrature points without virtual particles
+      int p = 0;
+      for (int s = 0; s < species_.size(); ++s)
+        for (int n = 0; n < species_sizes_[s]; ++n, ++p)
+        {
+          pset_target.makeMoveWithSpin(p, rsamples_[m] - pset_target.R[p], ssamples_[m] - pset_target.spins[p]);
+          psi_ratios_[p] = psi_target.calcRatio(pset_target, p);
+          pset_target.rejectMove(p);
+          psi_target.resetPhaseDiff();
+        }
+    }
 
     // collect ratios into per-species matrices
     int p = 0;
@@ -534,6 +689,15 @@ inline void OneBodyDensityMatrices::updateBasis(const Position& r, ParticleSet& 
     basis_values_[i] *= basis_norms_[i];
 }
 
+inline void OneBodyDensityMatrices::updateBasisWithSpin(const Position& r, const Real& s, ParticleSet& pset_target)
+{
+  // This is ridiculous in the case of splines, still necessary for hybrid/LCAO
+  pset_target.makeMoveWithSpin(0, r - pset_target.R[0], s - pset_target.spins[0]);
+  basis_functions_.evaluateValue(pset_target, 0, basis_values_);
+  pset_target.rejectMove(0);
+  for (int i = 0; i < basis_size_; ++i)
+    basis_values_[i] *= basis_norms_[i];
+}
 
 inline void OneBodyDensityMatrices::updateBasisD012(const Position& r, ParticleSet& pset_target)
 {
@@ -548,8 +712,22 @@ inline void OneBodyDensityMatrices::updateBasisD012(const Position& r, ParticleS
     basis_laplacians_[i] *= basis_norms_[i];
 }
 
-template<class RAN_GEN>
-void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RAN_GEN& rng)
+inline void OneBodyDensityMatrices::updateBasisD012WithSpin(const Position& r, const Real& s, ParticleSet& pset_target)
+{
+  pset_target.makeMoveWithSpin(0, r - pset_target.R[0], s - pset_target.spins[0]);
+  basis_functions_.evaluateVGL_spin(pset_target, 0, basis_values_, basis_gradients_, basis_laplacians_,
+                                    basis_spin_gradients_);
+  pset_target.rejectMove(0);
+  for (int i = 0; i < basis_size_; ++i)
+  {
+    basis_values_[i] *= basis_norms_[i];
+    basis_gradients_[i] *= basis_norms_[i];
+    basis_laplacians_[i] *= basis_norms_[i];
+    basis_spin_gradients_[i] *= basis_norms_[i];
+  }
+}
+
+void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RandomBase<FullPrecReal>& rng)
 {
   if (sampling_ == Sampling::METROPOLIS)
   {
@@ -557,7 +735,13 @@ void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RAN_GEN& r
     {
       rpcur_ = diffuse(std::sqrt(input_.get_timestep()), rng);
       rpcur_ += center_;
-      calcDensityDrift(rpcur_, rhocur_, dpcur_, pset_target);
+      if (!is_spinor_)
+        calcDensityDrift(rpcur_, rhocur_, dpcur_, pset_target);
+      else
+      {
+        spcur_ = diffuseSpin(std::sqrt(input_.get_timestep()), rng);
+        calcDensityDriftWithSpin(rpcur_, spcur_, rhocur_, dpcur_, dspcur_, pset_target);
+      }
     }
     generateSamples(1.0, pset_target, rng, input_.get_warmup_samples());
     warmed_up_ = true;
@@ -608,41 +792,20 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
   }
   int nentries = std::accumulate(my_indexes.begin(), my_indexes.end(), 1);
 
+  int spin_data_size = 0;
+  if constexpr (IsComplex_t<Value>::value)
+    spin_data_size = 2 * basis_size_ * basis_size_;
+  else
+    spin_data_size = basis_size_ * basis_size_;
+
   hdf_path hdf_name{my_name_};
   hdf_name /= "number_matrix";
   for (int s = 0; s < species_.size(); ++s)
   {
     h5desc_.emplace_back(hdf_name / species_.speciesName[s]);
     auto& oh = h5desc_.back();
-    oh.set_dimensions(my_indexes, 0);
+    oh.set_dimensions(my_indexes, s * spin_data_size);
   }
 }
-
-template void OneBodyDensityMatrices::generateSamples<RandomGenerator>(Real weight,
-                                                                       ParticleSet& pset_target,
-                                                                       RandomGenerator& rng,
-                                                                       int steps);
-template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator>(ParticleSet& pset_target,
-                                                                      TrialWaveFunction& psi_target,
-                                                                      const MCPWalker& walker,
-                                                                      RandomGenerator& rng);
-template void OneBodyDensityMatrices::implAccumulate<RandomGenerator>(const RefVector<MCPWalker>& walkers,
-                                                                      const RefVector<ParticleSet>& psets,
-                                                                      const RefVector<TrialWaveFunction>& wfns,
-                                                                      RandomGenerator& rng);
-#if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
-template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
-                                                                         ParticleSet& pset_target,
-                                                                         StdRandom<double>& rng,
-                                                                         int steps);
-template void OneBodyDensityMatrices::evaluateMatrix<StdRandom<double>>(ParticleSet& pset_target,
-                                                                        TrialWaveFunction& psi_target,
-                                                                        const MCPWalker& walker,
-                                                                        StdRandom<double>& rng);
-template void OneBodyDensityMatrices::implAccumulate<StdRandom<double>>(const RefVector<MCPWalker>& walkers,
-                                                                        const RefVector<ParticleSet>& psets,
-                                                                        const RefVector<TrialWaveFunction>& wfns,
-                                                                        StdRandom<double>& rng);
-#endif
 
 } // namespace qmcplusplus

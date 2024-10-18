@@ -147,6 +147,8 @@ public:
     //       for(; first != last; ++first) std::accumulate(**first,wgt);*/
   }
 
+  std::string getName() const override { return "RMCLocalEnergyEstimator"; }
+  
   void add2Record(RecordListType& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override {}
   RMCLocalEnergyEstimator* clone() override;

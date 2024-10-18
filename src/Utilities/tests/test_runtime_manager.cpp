@@ -36,25 +36,25 @@ TEST_CASE("test_runtime_manager", "[utilities]")
   RunTimeManager<FakeChronoClock> rm;
   FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.0s);
   double e                                     = rm.elapsed();
-  REQUIRE(e == Approx(1.0));
+  CHECK(e == Approx(1.0));
 }
 
 TEST_CASE("test_loop_timer", "[utilities]")
 {
   LoopTimer<FakeChronoClock> loop;
   double it_time = loop.get_time_per_iteration();
-  REQUIRE(it_time == Approx(0.0));
+  CHECK(it_time == Approx(0.0));
 
   loop.start();
   loop.stop();
   it_time = loop.get_time_per_iteration();
-  REQUIRE(it_time == Approx(1.0));
+  CHECK(it_time == Approx(1.0));
 
   FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(2.0s);
   loop.start();
   loop.stop();
   it_time = loop.get_time_per_iteration();
-  REQUIRE(it_time == Approx(1.5)); // 2 iterations
+  CHECK(it_time == Approx(1.5)); // 2 iterations
   // restore value
   FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.0s);
 }

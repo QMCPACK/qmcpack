@@ -13,8 +13,8 @@
         <coefficient size="26" spindataset="0"/>
       </sposet>
       <slaterdeterminant>
-	<determinant id="updet" group="u" sposet="spo_ud" size="4" />
-	<determinant id="downdet" group="d" sposet="spo_ud" size="4" />
+	<determinant id="updet" group="u" sposet="spo-up" size="4" />
+	<determinant id="downdet" group="d" sposet="spo-dn" size="4" />
       </slaterdeterminant>
     </determinantset>
   </wavefunction>

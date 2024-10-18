@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
+    <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
       <basisset name="LCAOBSet">
         <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="H" normalized="no">
           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
@@ -24,9 +24,11 @@
           0.2 0.0 0.0 0.0
         </opt_vars>
       </sposet>
+    </sposet_collection>
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="det_up" sposet="spo"/>
-        <determinant id="det_down" sposet="spo"/>
+        <determinant sposet="spo"/>
+        <determinant sposet="spo"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">

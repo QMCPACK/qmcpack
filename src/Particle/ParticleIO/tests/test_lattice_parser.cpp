@@ -53,10 +53,10 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
     LatticeParser lp(uLattice);
     REQUIRE_NOTHROW(lp.put(root));
 
-    REQUIRE(uLattice.R[0] == Approx(3.8));
-    REQUIRE(uLattice.Volume == Approx(3.8 * 3.8 * 3.8));
+    CHECK(uLattice.R[0] == Approx(3.8));
+    CHECK(uLattice.Volume == Approx(3.8 * 3.8 * 3.8));
 
-    REQUIRE(uLattice.LR_dim_cutoff == Approx(20));
+    CHECK(uLattice.LR_dim_cutoff == Approx(20));
   }
 
   SECTION("invalid n p p input")
@@ -147,8 +147,8 @@ TEST_CASE("read_lattice_xml_lrhandle", "[particle_io][xml]")
     LatticeParser lp(uLattice);
     REQUIRE_NOTHROW(lp.put(root));
 
-    REQUIRE(uLattice.R[8] == Approx(10.0));
-    REQUIRE(uLattice.LR_dim_cutoff == Approx(30));
+    CHECK(uLattice.R[8] == Approx(10.0));
+    CHECK(uLattice.LR_dim_cutoff == Approx(30));
   }
 
   SECTION("valid p p n ewald_quasi2d input")

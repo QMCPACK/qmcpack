@@ -32,6 +32,7 @@ namespace qmcplusplus
 {
 
 class GradientTest;
+class VMC;
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -58,7 +59,7 @@ public:
   ///preprocess xml node
   bool put(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
-  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
+  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
 
   RealType Func(RealType dl) override;
 
@@ -136,7 +137,7 @@ private:
 
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string GEVtype, StabilizerMethod, GEVSplit;
+  std::string StabilizerMethod;
   RealType w_beta;
   /// number of previous steps to orthogonalize to.
   int eigCG;
@@ -223,7 +224,7 @@ private:
   ///target cost function to optimize
   std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///vmc engine
-  std::unique_ptr<QMCDriver> vmcEngine;
+  std::unique_ptr<VMC> vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
 

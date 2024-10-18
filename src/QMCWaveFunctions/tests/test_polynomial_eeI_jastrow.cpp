@@ -30,9 +30,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType     = WaveFunctionComponent::RealType;
-using LogValueType = WaveFunctionComponent::LogValueType;
-using PsiValueType = WaveFunctionComponent::PsiValueType;
+using RealType = WaveFunctionComponent::RealType;
+using LogValue = WaveFunctionComponent::LogValue;
+using PsiValue = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 {
@@ -53,31 +53,18 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 
   ions_.setName("ion");
   ions_.create({2});
-  ions_.R[0][0] = 2.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = -2.0;
-  ions_.R[1][1] = 0.0;
-  ions_.R[1][2] = 0.0;
+  ions_.R[0] = {2.0, 0.0, 0.0};
+  ions_.R[1] = {-2.0, 0.0, 0.0};
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
   ions_.update();
 
   elec_.setName("elec");
   elec_.create({2, 2});
-  elec_.R[0][0] = 1.00;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 0.0;
-  elec_.R[1][2] = 0.0;
-  elec_.R[2][0] = -1.00;
-  elec_.R[2][1] = 0.0;
-  elec_.R[2][2] = 0.0;
-  elec_.R[3][0] = 0.0;
-  elec_.R[3][1] = 0.0;
-  elec_.R[3][2] = 2.0;
-
+  elec_.R[0] = {1.00, 0.0, 0.0};
+  elec_.R[1] = {0.0, 0.0, 0.0};
+  elec_.R[2] = {-1.00, 0.0, 0.0};
+  elec_.R[3] = {0.0, 0.0, 2.0};
   SpeciesSet& target_species(elec_.getSpeciesSet());
   int upIdx                          = target_species.addSpecies("u");
   int downIdx                        = target_species.addSpecies("d");
@@ -117,10 +104,10 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   elec_.update();
 
   double logpsi_real = std::real(j3->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(-1.193457749)); // note: number not validated
+  CHECK(logpsi_real == Approx(-1.193457749)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
-  REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
+  CHECK(KE == Approx(-0.058051245)); // note: number not validated
 
   using ValueType = QMCTraits::ValueType;
   using PosType   = QMCTraits::PosType;
@@ -132,31 +119,31 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   std::vector<ValueType> ratios(elec_.getTotalNum());
   j3->evaluateRatiosAlltoOne(elec_, ratios);
 
-  REQUIRE(std::real(ratios[0]) == Approx(0.8744938582));
-  REQUIRE(std::real(ratios[1]) == Approx(1.0357541137));
-  REQUIRE(std::real(ratios[2]) == Approx(0.8302245609));
-  REQUIRE(std::real(ratios[3]) == Approx(0.7987703724));
+  CHECK(std::real(ratios[0]) == Approx(0.8744938582));
+  CHECK(std::real(ratios[1]) == Approx(1.0357541137));
+  CHECK(std::real(ratios[2]) == Approx(0.8302245609));
+  CHECK(std::real(ratios[3]) == Approx(0.7987703724));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  PsiValueType ratio_0 = j3->ratio(elec_, 0);
+  PsiValue ratio_0 = j3->ratio(elec_, 0);
   elec_.rejectMove(0);
 
   elec_.makeMove(1, newpos - elec_.R[1]);
-  PsiValueType ratio_1 = j3->ratio(elec_, 1);
+  PsiValue ratio_1 = j3->ratio(elec_, 1);
   elec_.rejectMove(1);
 
   elec_.makeMove(2, newpos - elec_.R[2]);
-  PsiValueType ratio_2 = j3->ratio(elec_, 2);
+  PsiValue ratio_2 = j3->ratio(elec_, 2);
   elec_.rejectMove(2);
 
   elec_.makeMove(3, newpos - elec_.R[3]);
-  PsiValueType ratio_3 = j3->ratio(elec_, 3);
+  PsiValue ratio_3 = j3->ratio(elec_, 3);
   elec_.rejectMove(3);
 
-  REQUIRE(std::real(ratio_0) == Approx(0.8744938582));
-  REQUIRE(std::real(ratio_1) == Approx(1.0357541137));
-  REQUIRE(std::real(ratio_2) == Approx(0.8302245609));
-  REQUIRE(std::real(ratio_3) == Approx(0.7987703724));
+  CHECK(std::real(ratio_0) == Approx(0.8744938582));
+  CHECK(std::real(ratio_1) == Approx(1.0357541137));
+  CHECK(std::real(ratio_2) == Approx(0.8302245609));
+  CHECK(std::real(ratio_3) == Approx(0.7987703724));
 
   UniqueOptObjRefs opt_obj_refs;
   j3->extractOptimizableObjectRefs(opt_obj_refs);
@@ -180,26 +167,32 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
     app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   app_log() << std::endl;
 
-  REQUIRE(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
-  REQUIRE(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
+  CHECK(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
+  CHECK(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
+
+  Vector<WaveFunctionComponent::ValueType> dlogpsiWF;
+  dlogpsiWF.resize(NumOptimizables);
+  j3->evaluateDerivativesWF(elec_, optvars, dlogpsiWF);
+  for (int i = 0; i < NumOptimizables; i++)
+    CHECK(dlogpsi[i] == ValueApprox(dlogpsiWF[i]));
 
   VirtualParticleSet VP(elec_, 2);
   std::vector<PosType> newpos2(2);
   std::vector<ValueType> ratios2(2);
   newpos2[0] = newpos - elec_.R[1];
   newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
-  VP.makeMoves(1, elec_.R[1], newpos2);
+  VP.makeMoves(elec_, 1, newpos2);
   j3->evaluateRatios(VP, ratios2);
 
-  REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
-  REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
+  CHECK(std::real(ratios2[0]) == Approx(1.0357541137));
+  CHECK(std::real(ratios2[1]) == Approx(1.0257141422));
 
   std::fill(ratios2.begin(), ratios2.end(), 0);
   Matrix<ValueType> dratio(2, NumOptimizables);
   j3->evaluateDerivRatios(VP, optvars, ratios2, dratio);
 
-  REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
-  REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
+  CHECK(std::real(ratios2[0]) == Approx(1.0357541137));
+  CHECK(std::real(ratios2[1]) == Approx(1.0257141422));
   CHECK(std::real(dratio[0][43]) == Approx(-1.4282569e+03));
 
   // testing batched interfaces
@@ -235,15 +228,15 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   const int ei_table_index = elec_.addTable(ions_);
   const auto& ei_table1    = elec_.getDistTableAB(ei_table_index);
   // make virtual move of elec 0, reference ion 1
-  NLPPJob<RealType> job1(1, 0, elec_.R[0], ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
+  NLPPJob<RealType> job1(1, 0, ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
   const auto& ei_table2 = elec_clone.getDistTableAB(ei_table_index);
   // make virtual move of elec 1, reference ion 3
-  NLPPJob<RealType> job2(3, 1, elec_clone.R[1], ei_table2.getDistances()[1][3], -ei_table2.getDisplacements()[1][3]);
+  NLPPJob<RealType> job2(3, 1, ei_table2.getDistances()[1][3], -ei_table2.getDisplacements()[1][3]);
 
   std::vector<PosType> deltaV1{{0.1, 0.2, 0.3}, {0.1, 0.3, 0.2}, {0.2, 0.1, 0.3}};
   std::vector<PosType> deltaV2{{0.02, 0.01, 0.03}, {0.02, 0.03, 0.01}, {0.03, 0.01, 0.02}};
 
-  VirtualParticleSet::mw_makeMoves(vp_list, {deltaV1, deltaV2}, {job1, job2}, false);
+  VirtualParticleSet::mw_makeMoves(vp_list, p_ref_list, {deltaV1, deltaV2}, {job1, job2}, false);
 
   std::vector<std::vector<ValueType>> nlpp_ratios(2);
   nlpp_ratios[0].resize(nknot);

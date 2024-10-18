@@ -25,27 +25,23 @@
 
 namespace qmcplusplus
 {
-using RealType     = QMCTraits::RealType;
-using ValueType    = QMCTraits::ValueType;
-using ComplexType  = QMCTraits::ComplexType;
-using PosType      = QMCTraits::PosType;
-using GradType     = QMCTraits::GradType;
-using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
-using PsiValueType = QMCTraits::QTFull::ValueType;
+using RealType    = QMCTraits::RealType;
+using ValueType   = QMCTraits::ValueType;
+using ComplexType = QMCTraits::ComplexType;
+using PosType     = QMCTraits::PosType;
+using GradType    = QMCTraits::GradType;
+using LogValue    = std::complex<QMCTraits::QTFull::RealType>;
+using PsiValue    = QMCTraits::QTFull::ValueType;
 
-template<class DET_ENGINE>
+template<PlatformKind PL>
 void test_DiracDeterminantBatched_first()
 {
-  using DetType  = DiracDeterminantBatched<DET_ENGINE>;
+  using DetType  = DiracDeterminantBatched<PL, ValueType, QMCTraits::QTFull::ValueType>;
   auto spo_init  = std::make_unique<FakeSPO>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
   DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  // occurs in call to registerData
-  ddb.dpsiV.resize(norb);
-  ddb.d2psiV.resize(norb);
 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
@@ -66,12 +62,13 @@ void test_DiracDeterminantBatched_first()
   b(2, 1) = -0.04586322768;
   b(2, 2) = 0.3927890292;
 
-  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), b);
+  auto check = checkMatrix(b, ddb.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   ParticleSet::GradType grad;
-  PsiValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
-  PsiValueType det_ratio1 = 0.178276269185;
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+  PsiValue det_ratio  = ddb.ratioGrad(elec, 0, grad);
+  PsiValue det_ratio1 = 0.178276269185;
+  CHECK(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
 
@@ -85,7 +82,8 @@ void test_DiracDeterminantBatched_first()
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), b);
+  check = checkMatrix(b, ddb.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);
@@ -99,7 +97,7 @@ void test_DiracDeterminantBatched_first()
   CHECK(std::real(ratios[2]) == Approx(-1.3145695364));
 
   elec.makeMove(0, newpos - elec.R[0]);
-  PsiValueType ratio_0 = ddb.ratio(elec, 0);
+  PsiValue ratio_0 = ddb.ratio(elec, 0);
   elec.rejectMove(0);
 
   CHECK(std::real(ratio_0) == Approx(-0.5343861437));
@@ -109,7 +107,7 @@ void test_DiracDeterminantBatched_first()
   std::vector<ValueType> ratios2(2);
   newpos2[0] = newpos - elec.R[1];
   newpos2[1] = PosType(0.2, 0.5, 0.3) - elec.R[1];
-  VP.makeMoves(1, elec.R[1], newpos2);
+  VP.makeMoves(elec, 1, newpos2);
   ddb.evaluateRatios(VP, ratios2);
 
   CHECK(std::real(ratios2[0]) == Approx(0.4880285278));
@@ -117,7 +115,7 @@ void test_DiracDeterminantBatched_first()
 
   //test acceptMove
   elec.makeMove(1, newpos - elec.R[1]);
-  PsiValueType ratio_1 = ddb.ratio(elec, 1);
+  PsiValue ratio_1 = ddb.ratio(elec, 1);
   ddb.acceptMove(elec, 1);
   elec.acceptMove(1);
 
@@ -128,26 +126,25 @@ void test_DiracDeterminantBatched_first()
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
-  test_DiracDeterminantBatched_first<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>();
+  test_DiracDeterminantBatched_first<PlatformKind::CUDA>();
 #endif
-  test_DiracDeterminantBatched_first<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_SYCL)
+  test_DiracDeterminantBatched_first<PlatformKind::SYCL>();
+#endif
+  test_DiracDeterminantBatched_first<PlatformKind::OMPTARGET>();
 }
 
 //#define DUMP_INFO
 
-template<class DET_ENGINE>
+template<PlatformKind PL>
 void test_DiracDeterminantBatched_second()
 {
-  using DetType  = DiracDeterminantBatched<DET_ENGINE>;
+  using DetType  = DiracDeterminantBatched<PL, ValueType, QMCTraits::QTFull::ValueType>;
   auto spo_init  = std::make_unique<FakeSPO>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  // occurs in call to registerData
-  ddb.dpsiV.resize(norb);
-  ddb.d2psiV.resize(norb);
 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
@@ -199,13 +196,13 @@ void test_DiracDeterminantBatched_second()
   }
 
   ParticleSet::GradType grad;
-  PsiValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
+  PsiValue det_ratio = ddb.ratioGrad(elec, 0, grad);
 
   simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
-  LogValueType det_update1;
+  LogValue det_update1;
   dm.invert_transpose(scratchT, a_update1, det_update1);
-  PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddb.get_log_value());
+  PsiValue det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddb.get_log_value());
 #ifdef DUMP_INFO
   app_log() << "det 0 = " << std::exp(ddb.get_log_value()) << std::endl;
   app_log() << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -213,38 +210,38 @@ void test_DiracDeterminantBatched_second()
 #endif
   //double det_ratio1 = 0.178276269185;
 
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+  CHECK(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
 
-  PsiValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
-  LogValueType det_update2;
+  PsiValue det_ratio2 = ddb.ratioGrad(elec, 1, grad);
+  LogValue det_update2;
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   dm.invert_transpose(scratchT, a_update2, det_update2);
-  PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
+  PsiValue det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   app_log() << "det 1 = " << std::exp(ddb.get_log_value()) << std::endl;
   app_log() << "det 2 = " << std::exp(det_update2) << std::endl;
   app_log() << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
+  CHECK(det_ratio2 == ValueApprox(det_ratio2_val));
 
   ddb.acceptMove(elec, 1);
 
-  PsiValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
-  LogValueType det_update3;
+  PsiValue det_ratio3 = ddb.ratioGrad(elec, 2, grad);
+  LogValue det_update3;
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   dm.invert_transpose(scratchT, a_update3, det_update3);
-  PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
+  PsiValue det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   app_log() << "det 2 = " << std::exp(ddb.get_log_value()) << std::endl;
   app_log() << "det 3 = " << std::exp(det_update3) << std::endl;
   app_log() << "det ratio 3 = " << det_ratio3 << std::endl;
 #endif
-  REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
+  CHECK(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
 
   ddb.acceptMove(elec, 2);
@@ -259,30 +256,30 @@ void test_DiracDeterminantBatched_second()
   app_log() << ddb.getPsiMinv() << std::endl;
 #endif
 
-  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), orig_a);
+  auto check = checkMatrix(orig_a, ddb.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 }
 
 TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
-  test_DiracDeterminantBatched_second<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>();
+  test_DiracDeterminantBatched_second<PlatformKind::CUDA>();
 #endif
-  test_DiracDeterminantBatched_second<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_SYCL)
+  test_DiracDeterminantBatched_second<PlatformKind::SYCL>();
+#endif
+  test_DiracDeterminantBatched_second<PlatformKind::OMPTARGET>();
 }
 
-template<class DET_ENGINE>
+template<PlatformKind PL>
 void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor matrix_inverter_kind)
 {
-  using DetType  = DiracDeterminantBatched<DET_ENGINE>;
+  using DetType  = DiracDeterminantBatched<PL, ValueType, QMCTraits::QTFull::ValueType>;
   auto spo_init  = std::make_unique<FakeSPO>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   DetType ddc(std::move(spo_init), 0, norb, delay_rank, matrix_inverter_kind);
   auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
-
-  // occurs in call to registerData
-  ddc.dpsiV.resize(norb);
-  ddc.d2psiV.resize(norb);
 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
@@ -335,13 +332,13 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
 
 
   ParticleSet::GradType grad;
-  PsiValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
+  PsiValue det_ratio = ddc.ratioGrad(elec, 0, grad);
 
   simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
-  LogValueType det_update1;
+  LogValue det_update1;
   dm.invert_transpose(scratchT, a_update1, det_update1);
-  PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddc.get_log_value());
+  PsiValue det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddc.get_log_value());
 #ifdef DUMP_INFO
   app_log() << "det 0 = " << std::exp(ddc.get_log_value()) << std::endl;
   app_log() << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -349,23 +346,24 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
 #endif
   //double det_ratio1 = 0.178276269185;
 
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+  CHECK(det_ratio1 == ValueApprox(det_ratio));
 
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 0, true);
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
-  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), a_update1);
+  auto check = checkMatrix(a_update1, ddc.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   grad = ddc.evalGrad(elec, 1);
 
-  PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
+  PsiValue det_ratio2 = ddc.ratioGrad(elec, 1, grad);
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
-  LogValueType det_update2;
+  LogValue det_update2;
   dm.invert_transpose(scratchT, a_update2, det_update2);
-  PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
+  PsiValue det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   app_log() << "det 1 = " << std::exp(ddc.get_log_value()) << std::endl;
   app_log() << "det 2 = " << std::exp(det_update2) << std::endl;
@@ -373,26 +371,26 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
 #endif
   // check ratio computed directly and the one computed by ddc with no delay
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
+  CHECK(det_ratio2 == ValueApprox(det_ratio2_val));
 
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1, true);
 
   grad = ddc.evalGrad(elec, 2);
 
-  PsiValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
+  PsiValue det_ratio3 = ddc.ratioGrad(elec, 2, grad);
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
-  LogValueType det_update3;
+  LogValue det_update3;
   dm.invert_transpose(scratchT, a_update3, det_update3);
-  PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
+  PsiValue det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   app_log() << "det 2 = " << std::exp(ddc.get_log_value()) << std::endl;
   app_log() << "det 3 = " << std::exp(det_update3) << std::endl;
   app_log() << "det ratio 3 = " << det_ratio3 << std::endl;
 #endif
   // check ratio computed directly and the one computed by ddc with 1 delay
-  REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
+  CHECK(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
 
   // maximal delay reached and Ainv is updated fully
@@ -411,7 +409,8 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
 #endif
 
   // compare all the elements of get_ref_psiMinv() in ddc and orig_a
-  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), orig_a);
+  check = checkMatrix(orig_a, ddc.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");
@@ -436,7 +435,7 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   ParticleSet::mw_update(p_ref_list);
   ddc.mw_recompute(ddc_ref_list, p_ref_list, isAccepted);
 
-  std::vector<PsiValueType> ratios(2);
+  std::vector<PsiValue> ratios(2);
   std::vector<GradType> grad_new(2);
   ddc.mw_ratioGrad(ddc_ref_list, p_ref_list, 0, ratios, grad_new);
 
@@ -446,8 +445,11 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   ddc.mw_accept_rejectMove(ddc_ref_list, p_ref_list, 0, isAccepted, true);
   ddc.mw_completeUpdates(ddc_ref_list);
 
-  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), a_update1);
-  checkMatrix(ddc_clone_ref.get_det_engine().get_ref_psiMinv(), a_update1);
+  check = checkMatrix(a_update1, ddc.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+
+  check = checkMatrix(a_update1, ddc_clone_ref.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   ddc.mw_evalGrad(ddc_ref_list, p_ref_list, 1, grad_new);
   ddc.mw_ratioGrad(ddc_ref_list, p_ref_list, 1, ratios, grad_new);
@@ -465,28 +467,31 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   ddc.mw_accept_rejectMove(ddc_ref_list, p_ref_list, 2, isAccepted, true);
   ddc.mw_completeUpdates(ddc_ref_list);
 
-  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), orig_a);
-  checkMatrix(ddc_clone_ref.get_det_engine().get_ref_psiMinv(), orig_a);
+  check = checkMatrix(orig_a, ddc.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+
+  check = checkMatrix(orig_a, ddc_clone_ref.get_psiMinv());
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 }
 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 {
   // maximum delay 2
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
-  test_DiracDeterminantBatched_delayed_update<
-      MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
-  test_DiracDeterminantBatched_delayed_update<
-      MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::CUDA>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::CUDA>(2, DetMatInvertor::HOST);
 #endif
-  test_DiracDeterminantBatched_delayed_update<
-      MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
-  test_DiracDeterminantBatched_delayed_update<
-      MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_SYCL)
+  //test_DiracDeterminantBatched_delayed_update<PlatformKind::SYCL>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::SYCL>(2, DetMatInvertor::HOST);
+#endif
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::OMPTARGET>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<PlatformKind::OMPTARGET>(2, DetMatInvertor::HOST);
 }
 
 
 #ifdef QMC_COMPLEX
-template<class DET_ENGINE>
+template<PlatformKind PL>
 void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInvertor matrix_inverter_kind)
 {
   using ParticlePos       = ParticleSet::ParticlePos;
@@ -495,15 +500,8 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
   // O2 test example from pwscf non-collinear calculation.
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0) = 5.10509515;
-  lattice.R(0, 1) = -3.23993545;
-  lattice.R(0, 2) = 0.00000000;
-  lattice.R(1, 0) = 5.10509515;
-  lattice.R(1, 1) = 3.23993545;
-  lattice.R(1, 2) = 0.00000000;
-  lattice.R(2, 0) = -6.49690625;
-  lattice.R(2, 1) = 0.00000000;
-  lattice.R(2, 2) = 7.08268015;
+  lattice.R = {5.10509515, -3.23993545, 0.00000000, 5.10509515, 3.23993545,
+               0.00000000, -6.49690625, 0.00000000, 7.08268015};
 
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
   const SimulationCell simulation_cell(lattice);
@@ -561,7 +559,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-  using DetType = DiracDeterminantBatched<DET_ENGINE>;
+  using DetType = DiracDeterminantBatched<PL, ValueType, QMCTraits::QTFull::ValueType>;
   DetType dd(std::move(spinor_set), 0, nelec, delay_rank, matrix_inverter_kind);
   app_log() << " nelec=" << nelec << std::endl;
 
@@ -587,37 +585,37 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   //In this section, we're going to test that values and various derivatives come out
   //correctly at the reference configuration.
 
-  LogValueType logref = dd.evaluateLog(elec_, G, L);
+  LogValue logref = dd.evaluateLog(elec_, G, L);
 
-  REQUIRE(logref == ComplexApprox(ValueType(-1.1619939279564413, 0.8794794652468605)));
-  REQUIRE(G[0][0] == ComplexApprox(ValueType(0.13416635, 0.2468612)));
-  REQUIRE(G[0][1] == ComplexApprox(ValueType(-1.1165475, 0.71497753)));
-  REQUIRE(G[0][2] == ComplexApprox(ValueType(0.0178403, 0.08212244)));
-  REQUIRE(G[1][0] == ComplexApprox(ValueType(1.00240841, 0.12371593)));
-  REQUIRE(G[1][1] == ComplexApprox(ValueType(1.62679698, -0.41080777)));
-  REQUIRE(G[1][2] == ComplexApprox(ValueType(1.81324632, 0.78589013)));
-  REQUIRE(G[2][0] == ComplexApprox(ValueType(-1.10994555, 0.15525902)));
-  REQUIRE(G[2][1] == ComplexApprox(ValueType(-0.46335602, -0.50809713)));
-  REQUIRE(G[2][2] == ComplexApprox(ValueType(-1.751199, 0.10949589)));
-  REQUIRE(L[0] == ComplexApprox(ValueType(-2.06554158, 1.18145239)));
-  REQUIRE(L[1] == ComplexApprox(ValueType(-5.06340536, 0.82126749)));
-  REQUIRE(L[2] == ComplexApprox(ValueType(-4.82375261, -1.97943258)));
+  CHECK(logref == ComplexApprox(ValueType(-1.1619939279564413, 0.8794794652468605)));
+  CHECK(G[0][0] == ComplexApprox(ValueType(0.13416635, 0.2468612)));
+  CHECK(G[0][1] == ComplexApprox(ValueType(-1.1165475, 0.71497753)));
+  CHECK(G[0][2] == ComplexApprox(ValueType(0.0178403, 0.08212244)));
+  CHECK(G[1][0] == ComplexApprox(ValueType(1.00240841, 0.12371593)));
+  CHECK(G[1][1] == ComplexApprox(ValueType(1.62679698, -0.41080777)));
+  CHECK(G[1][2] == ComplexApprox(ValueType(1.81324632, 0.78589013)));
+  CHECK(G[2][0] == ComplexApprox(ValueType(-1.10994555, 0.15525902)));
+  CHECK(G[2][1] == ComplexApprox(ValueType(-0.46335602, -0.50809713)));
+  CHECK(G[2][2] == ComplexApprox(ValueType(-1.751199, 0.10949589)));
+  CHECK(L[0] == ComplexApprox(ValueType(-2.06554158, 1.18145239)));
+  CHECK(L[1] == ComplexApprox(ValueType(-5.06340536, 0.82126749)));
+  CHECK(L[2] == ComplexApprox(ValueType(-4.82375261, -1.97943258)));
 
   //This is a workaround for the fact that I haven't implemented
   // evaluateLogWithSpin().  Shouldn't be needed unless we do drifted all-electron moves...
   for (int iat = 0; iat < nelec; iat++)
     dd.evalGradWithSpin(elec_, iat, SG[iat]);
 
-  REQUIRE(SG[0] == ComplexApprox(ValueType(-1.05686704, -2.01802154)));
-  REQUIRE(SG[1] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
-  REQUIRE(SG[2] == ComplexApprox(ValueType(-0.62617675, -0.51093984)));
+  CHECK(SG[0] == ComplexApprox(ValueType(-1.05686704, -2.01802154)));
+  CHECK(SG[1] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
+  CHECK(SG[2] == ComplexApprox(ValueType(-0.62617675, -0.51093984)));
 
   GradType g_singleeval(0.0);
   g_singleeval = dd.evalGrad(elec_, 1);
 
-  REQUIRE(g_singleeval[0] == ComplexApprox(G[1][0]));
-  REQUIRE(g_singleeval[1] == ComplexApprox(G[1][1]));
-  REQUIRE(g_singleeval[2] == ComplexApprox(G[1][2]));
+  CHECK(g_singleeval[0] == ComplexApprox(G[1][0]));
+  CHECK(g_singleeval[1] == ComplexApprox(G[1][1]));
+  CHECK(g_singleeval[2] == ComplexApprox(G[1][2]));
 
 
   //And now we're going to propose a trial spin+particle move and check the ratio and gradients at the
@@ -631,22 +629,22 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
   //This tests ratio only evaluation.  Indirectly a call to evaluate(P,iat)
   ratio_new = dd.ratio(elec_, 1);
-  REQUIRE(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
 
   ratio_new = dd.ratioGrad(elec_, 1, grad_new);
-  REQUIRE(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
-  REQUIRE(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-  REQUIRE(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-  REQUIRE(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+  CHECK(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+  CHECK(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+  CHECK(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
 
   grad_new     = 0;
   spingrad_new = 0;
   ratio_new    = dd.ratioGradWithSpin(elec_, 1, grad_new, spingrad_new);
-  REQUIRE(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
-  REQUIRE(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-  REQUIRE(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-  REQUIRE(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
-  REQUIRE(spingrad_new == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
+  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+  CHECK(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+  CHECK(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+  CHECK(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+  CHECK(spingrad_new == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
 
 
   //Cool.  Now we test the transition between rejecting a move and accepting a move.
@@ -655,23 +653,23 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   elec_.rejectMove(1);
   //Going to check evalGrad and evalGradWithSpin for simplicity.
   g_singleeval = dd.evalGrad(elec_, 1);
-  REQUIRE(g_singleeval[0] == ComplexApprox(G[1][0]));
-  REQUIRE(g_singleeval[1] == ComplexApprox(G[1][1]));
-  REQUIRE(g_singleeval[2] == ComplexApprox(G[1][2]));
+  CHECK(g_singleeval[0] == ComplexApprox(G[1][0]));
+  CHECK(g_singleeval[1] == ComplexApprox(G[1][1]));
+  CHECK(g_singleeval[2] == ComplexApprox(G[1][2]));
 
   ValueType spingrad_old_test;
   g_singleeval = dd.evalGradWithSpin(elec_, 1, spingrad_old_test);
 
-  REQUIRE(spingrad_old_test == ComplexApprox(SG[1]));
-  REQUIRE(g_singleeval[0] == ComplexApprox(G[1][0]));
-  REQUIRE(g_singleeval[1] == ComplexApprox(G[1][1]));
-  REQUIRE(g_singleeval[2] == ComplexApprox(G[1][2]));
+  CHECK(spingrad_old_test == ComplexApprox(SG[1]));
+  CHECK(g_singleeval[0] == ComplexApprox(G[1][0]));
+  CHECK(g_singleeval[1] == ComplexApprox(G[1][1]));
+  CHECK(g_singleeval[2] == ComplexApprox(G[1][2]));
 
   //Now we test what happens if we accept a move...
   elec_.makeMoveAndCheckWithSpin(1, dr, ds);
   elec_.acceptMove(1);
 
-  LogValueType lognew(0.0);
+  LogValue lognew(0.0);
   G      = 0.0; //evalauteLog += onto the G and L arguments.  So we zero them out.
   L      = 0.0;
   SG     = 0.0;
@@ -682,11 +680,11 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   //logval for the new configuration has been computed with python.
   //The others reference values are computed earlier in this section.  New values equal the previous
   // "new values" associated with the previous trial moves.
-  REQUIRE(lognew == ComplexApprox(ValueType(-0.41337396772929913, 1.4774106123071726)));
-  REQUIRE(G[1][0] == ComplexApprox(grad_new[0]));
-  REQUIRE(G[1][1] == ComplexApprox(grad_new[1]));
-  REQUIRE(G[1][2] == ComplexApprox(grad_new[2]));
-  REQUIRE(SG[1] == ComplexApprox(spingrad_new));
+  CHECK(lognew == ComplexApprox(ValueType(-0.41337396772929913, 1.4774106123071726)));
+  CHECK(G[1][0] == ComplexApprox(grad_new[0]));
+  CHECK(G[1][1] == ComplexApprox(grad_new[1]));
+  CHECK(G[1][2] == ComplexApprox(grad_new[2]));
+  CHECK(SG[1] == ComplexApprox(spingrad_new));
 
   //move back to original config
   elec_.makeMoveAndCheckWithSpin(1, -dr, -ds);
@@ -723,20 +721,20 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   dd.mw_evaluateLog(dd_ref_list, p_ref_list, G_list, L_list);
   for (int iw = 0; iw < dd_ref_list.size(); iw++)
   {
-    PsiValueType ref = dd_ref_list[iw].getValue();
-    REQUIRE(std::log(ref) == ComplexApprox(ValueType(-1.1619939279564413, 0.8794794652468605)));
-    REQUIRE(G_list[iw].get()[0][0] == ComplexApprox(ValueType(0.13416635, 0.2468612)));
-    REQUIRE(G_list[iw].get()[0][1] == ComplexApprox(ValueType(-1.1165475, 0.71497753)));
-    REQUIRE(G_list[iw].get()[0][2] == ComplexApprox(ValueType(0.0178403, 0.08212244)));
-    REQUIRE(G_list[iw].get()[1][0] == ComplexApprox(ValueType(1.00240841, 0.12371593)));
-    REQUIRE(G_list[iw].get()[1][1] == ComplexApprox(ValueType(1.62679698, -0.41080777)));
-    REQUIRE(G_list[iw].get()[1][2] == ComplexApprox(ValueType(1.81324632, 0.78589013)));
-    REQUIRE(G_list[iw].get()[2][0] == ComplexApprox(ValueType(-1.10994555, 0.15525902)));
-    REQUIRE(G_list[iw].get()[2][1] == ComplexApprox(ValueType(-0.46335602, -0.50809713)));
-    REQUIRE(G_list[iw].get()[2][2] == ComplexApprox(ValueType(-1.751199, 0.10949589)));
-    REQUIRE(L_list[iw].get()[0] == ComplexApprox(ValueType(-2.06554158, 1.18145239)));
-    REQUIRE(L_list[iw].get()[1] == ComplexApprox(ValueType(-5.06340536, 0.82126749)));
-    REQUIRE(L_list[iw].get()[2] == ComplexApprox(ValueType(-4.82375261, -1.97943258)));
+    PsiValue ref = dd_ref_list[iw].getValue();
+    CHECK(std::log(ref) == ComplexApprox(ValueType(-1.1619939279564413, 0.8794794652468605)));
+    CHECK(G_list[iw].get()[0][0] == ComplexApprox(ValueType(0.13416635, 0.2468612)));
+    CHECK(G_list[iw].get()[0][1] == ComplexApprox(ValueType(-1.1165475, 0.71497753)));
+    CHECK(G_list[iw].get()[0][2] == ComplexApprox(ValueType(0.0178403, 0.08212244)));
+    CHECK(G_list[iw].get()[1][0] == ComplexApprox(ValueType(1.00240841, 0.12371593)));
+    CHECK(G_list[iw].get()[1][1] == ComplexApprox(ValueType(1.62679698, -0.41080777)));
+    CHECK(G_list[iw].get()[1][2] == ComplexApprox(ValueType(1.81324632, 0.78589013)));
+    CHECK(G_list[iw].get()[2][0] == ComplexApprox(ValueType(-1.10994555, 0.15525902)));
+    CHECK(G_list[iw].get()[2][1] == ComplexApprox(ValueType(-0.46335602, -0.50809713)));
+    CHECK(G_list[iw].get()[2][2] == ComplexApprox(ValueType(-1.751199, 0.10949589)));
+    CHECK(L_list[iw].get()[0] == ComplexApprox(ValueType(-2.06554158, 1.18145239)));
+    CHECK(L_list[iw].get()[1] == ComplexApprox(ValueType(-5.06340536, 0.82126749)));
+    CHECK(L_list[iw].get()[2] == ComplexApprox(ValueType(-4.82375261, -1.97943258)));
   }
 
   //Move particle 1 in each walker
@@ -746,16 +744,16 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   elec_.mw_makeMove(p_ref_list, 1, displs);
 
   //Check ratios and grads for both walkers for proposed move
-  std::vector<PsiValueType> ratios(2);
+  std::vector<PsiValue> ratios(2);
   std::vector<GradType> grads(2);
   std::vector<ComplexType> spingrads(2);
   dd.mw_ratioGrad(dd_ref_list, p_ref_list, 1, ratios, grads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
-    REQUIRE(ratios[iw] == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
-    REQUIRE(grads[iw][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-    REQUIRE(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-    REQUIRE(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+    CHECK(ratios[iw] == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+    CHECK(grads[iw][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+    CHECK(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+    CHECK(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
   }
 
   std::fill(ratios.begin(), ratios.end(), 0);
@@ -763,11 +761,11 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   dd.mw_ratioGradWithSpin(dd_ref_list, p_ref_list, 1, ratios, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
-    REQUIRE(ratios[iw] == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
-    REQUIRE(grads[iw][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-    REQUIRE(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-    REQUIRE(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
-    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
+    CHECK(ratios[iw] == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+    CHECK(grads[iw][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+    CHECK(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+    CHECK(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+    CHECK(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
   }
 
   //reject move and check for initial values for mw_evalGrad
@@ -776,9 +774,9 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   dd.mw_evalGrad(dd_ref_list, p_ref_list, 1, grads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
-    REQUIRE(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
-    REQUIRE(grads[iw][1] == ComplexApprox(G_list[iw].get()[1][1]));
-    REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
+    CHECK(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
+    CHECK(grads[iw][1] == ComplexApprox(G_list[iw].get()[1][1]));
+    CHECK(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
   }
 
   std::fill(grads.begin(), grads.end(), 0);
@@ -786,10 +784,10 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
-    REQUIRE(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
-    REQUIRE(grads[iw][1] == ComplexApprox(G_list[iw].get()[1][1]));
-    REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
-    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
+    CHECK(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
+    CHECK(grads[iw][1] == ComplexApprox(G_list[iw].get()[1][1]));
+    CHECK(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
+    CHECK(spingrads[iw] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
   }
 
   //now make and accept move, checking new values
@@ -803,32 +801,30 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   dd.mw_evaluateLog(dd_ref_list, p_ref_list, G_list, L_list);
   for (int iw = 0; iw < dd_ref_list.size(); iw++)
   {
-    PsiValueType ref = dd_ref_list[iw].getValue();
-    REQUIRE(std::log(ref) == ComplexApprox(ValueType(-0.41337396772929913, 1.4774106123071726)));
-    REQUIRE(G_list[iw].get()[1][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-    REQUIRE(G_list[iw].get()[1][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-    REQUIRE(G_list[iw].get()[1][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+    PsiValue ref = dd_ref_list[iw].getValue();
+    CHECK(std::log(ref) == ComplexApprox(ValueType(-0.41337396772929913, 1.4774106123071726)));
+    CHECK(G_list[iw].get()[1][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+    CHECK(G_list[iw].get()[1][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+    CHECK(G_list[iw].get()[1][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
   }
 
   dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
-    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
+    CHECK(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
 }
 
 TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")
 {
-/* Uncomment when MatrixDelayedUpdateCUDA::mw_evalGradWithSpin is implemented
+  /* Uncomment when DelayedUpdateBatched::mw_evalGradWithSpin is implemented
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_spinor_update<
-      MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
+      PlatformKind::CUDA>(1, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_spinor_update<
-      MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::HOST);
+      PlatformKind::CUDA>(1, DetMatInvertor::HOST);
 #endif
 */
-  test_DiracDeterminantBatched_spinor_update<
-      MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
-  test_DiracDeterminantBatched_spinor_update<
-      MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::HOST);
+  test_DiracDeterminantBatched_spinor_update<PlatformKind::OMPTARGET>(1, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_spinor_update<PlatformKind::OMPTARGET>(1, DetMatInvertor::HOST);
 }
 #endif
 } // namespace qmcplusplus

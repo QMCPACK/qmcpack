@@ -18,13 +18,14 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/ExampleHeComponent.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
-using RealType     = WaveFunctionComponent::RealType;
-using ValueType    = WaveFunctionComponent::ValueType;
-using LogValueType = WaveFunctionComponent::LogValueType;
-using PsiValueType = WaveFunctionComponent::PsiValueType;
+using RealType  = WaveFunctionComponent::RealType;
+using ValueType = WaveFunctionComponent::ValueType;
+using LogValue  = WaveFunctionComponent::LogValue;
+using PsiValue  = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("ExampleHe", "[wavefunction]")
 {
@@ -40,13 +41,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   agroup[0] = nelec;
   elec.setName("e");
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 2.0;
-  elec.R[0][2] = 3.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 1.1;
-  elec.R[1][2] = 2.2;
-
+  elec.R[0]                  = {1.0, 2.0, 3.0};
+  elec.R[1]                  = {0.0, 1.1, 2.2};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int downIdx                = tspecies.addSpecies("d");
@@ -59,10 +55,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   ions.setName("ion0");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0]                   = {0.0, 0.0, 0.0};
   SpeciesSet& he_species      = ions.getSpeciesSet();
   int He_Idx                  = he_species.addSpecies("He");
   int chargeIdx               = he_species.addAttribute("charge");
@@ -85,7 +78,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  auto twf_ptr = wff.buildTWF(root);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wff.buildTWF(root, runtime_options);
 
   REQUIRE(twf_ptr != nullptr);
   REQUIRE(twf_ptr->size() == 1);
@@ -105,7 +99,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   all_lap.resize(nelec);
 
   // Set the base expectations for wavefunction value and derivatives
-  LogValueType logpsi = example_he->evaluateLog(elec, all_grad, all_lap);
+  LogValue logpsi = example_he->evaluateLog(elec, all_grad, all_lap);
 
   // Comparisons are performed at a single set of electron coordinates.  This should be expanded.
 
@@ -115,17 +109,17 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   int iat = 0;
   grad0   = example_he->evalGrad(elec, iat);
 
-  REQUIRE(grad0[0] == ValueApprox(all_grad[0][0]));
-  REQUIRE(grad0[1] == ValueApprox(all_grad[0][1]));
-  REQUIRE(grad0[2] == ValueApprox(all_grad[0][2]));
+  CHECK(grad0[0] == ValueApprox(all_grad[0][0]));
+  CHECK(grad0[1] == ValueApprox(all_grad[0][1]));
+  CHECK(grad0[2] == ValueApprox(all_grad[0][2]));
 
   ParticleSet::GradType grad1;
   iat   = 1;
   grad1 = example_he->evalGrad(elec, iat);
 
-  REQUIRE(grad1[0] == ValueApprox(all_grad[1][0]));
-  REQUIRE(grad1[1] == ValueApprox(all_grad[1][1]));
-  REQUIRE(grad1[2] == ValueApprox(all_grad[1][2]));
+  CHECK(grad1[0] == ValueApprox(all_grad[1][0]));
+  CHECK(grad1[1] == ValueApprox(all_grad[1][1]));
+  CHECK(grad1[2] == ValueApprox(all_grad[1][2]));
 
 
   // Compare ratio and ratioGrad with a zero displacement
@@ -134,29 +128,29 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   elec.makeMove(iat, zero_displ);
 
 
-  PsiValueType ratio = example_he->ratio(elec, iat);
-  REQUIRE(std::real(ratio) == Approx(1.0));
+  PsiValue ratio = example_he->ratio(elec, iat);
+  CHECK(std::real(ratio) == Approx(1.0));
 
   ratio = example_he->ratioGrad(elec, iat, grad0);
 
-  REQUIRE(std::real(ratio) == Approx(1.0));
+  CHECK(std::real(ratio) == Approx(1.0));
 
-  REQUIRE(grad0[0] == ValueApprox(all_grad[0][0]));
-  REQUIRE(grad0[1] == ValueApprox(all_grad[0][1]));
-  REQUIRE(grad0[2] == ValueApprox(all_grad[0][2]));
+  CHECK(grad0[0] == ValueApprox(all_grad[0][0]));
+  CHECK(grad0[1] == ValueApprox(all_grad[0][1]));
+  CHECK(grad0[2] == ValueApprox(all_grad[0][2]));
 
   iat = 1;
   elec.makeMove(iat, zero_displ);
   ratio = example_he->ratio(elec, iat);
-  REQUIRE(std::real(ratio) == Approx(1.0));
+  CHECK(std::real(ratio) == Approx(1.0));
 
 
   ratio = example_he->ratioGrad(elec, iat, grad1);
 
-  REQUIRE(std::real(ratio) == Approx(1.0));
-  REQUIRE(grad1[0] == ValueApprox(all_grad[1][0]));
-  REQUIRE(grad1[1] == ValueApprox(all_grad[1][1]));
-  REQUIRE(grad1[2] == ValueApprox(all_grad[1][2]));
+  CHECK(std::real(ratio) == Approx(1.0));
+  CHECK(grad1[0] == ValueApprox(all_grad[1][0]));
+  CHECK(grad1[1] == ValueApprox(all_grad[1][1]));
+  CHECK(grad1[2] == ValueApprox(all_grad[1][2]));
 
   // Compare ratio and ratioGrad with a non-zero displacement
   // Should compare more displacements
@@ -170,23 +164,23 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   new_lap.resize(nelec);
 
   // wavefunction value and derivatives at new position
-  LogValueType new_logpsi = example_he->evaluateLog(elec, new_grad, new_lap);
-  elec.R[0]               = oldpos;
+  LogValue new_logpsi = example_he->evaluateLog(elec, new_grad, new_lap);
+  elec.R[0]           = oldpos;
   elec.update();
 
   iat = 0;
   elec.makeMove(iat, displ);
 
   ratio = example_he->ratio(elec, iat);
-  REQUIRE(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
+  CHECK(ValueApprox(ratio) == LogToValue<PsiValue>::convert(new_logpsi - logpsi));
 
   ratio = example_he->ratioGrad(elec, iat, grad0);
 
-  REQUIRE(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
+  CHECK(ValueApprox(ratio) == LogToValue<PsiValue>::convert(new_logpsi - logpsi));
 
-  REQUIRE(grad0[0] == ValueApprox(new_grad[0][0]));
-  REQUIRE(grad0[1] == ValueApprox(new_grad[0][1]));
-  REQUIRE(grad0[2] == ValueApprox(new_grad[0][2]));
+  CHECK(grad0[0] == ValueApprox(new_grad[0][0]));
+  CHECK(grad0[1] == ValueApprox(new_grad[0][1]));
+  CHECK(grad0[2] == ValueApprox(new_grad[0][2]));
 
   // Compare parameter derivatives
 
@@ -204,32 +198,32 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   var_param["B"] = new_B;
   example_he->resetParametersExclusive(var_param);
-  REQUIRE(example_he->B == Approx(new_B));
+  CHECK(example_he->B == Approx(new_B));
 
   ParticleSet::ParticleGradient grad_plus_h;
   ParticleSet::ParticleLaplacian lap_plus_h;
   grad_plus_h.resize(nelec);
   lap_plus_h.resize(nelec);
 
-  LogValueType logpsi_plus_h = example_he->evaluateLog(elec, grad_plus_h, lap_plus_h);
+  LogValue logpsi_plus_h = example_he->evaluateLog(elec, grad_plus_h, lap_plus_h);
 
   //phase change is not allowed in finite difference
   REQUIRE(std::imag(logpsi_plus_h) == std::imag(logpsi));
 
   // Finite difference derivative approximation
-  LogValueType fd_logpsi = (logpsi_plus_h - logpsi) / LogValueType(h);
+  LogValue fd_logpsi = (logpsi_plus_h - logpsi) / LogValue(h);
 
   Vector<ValueType> dlogpsi(nparam);
   Vector<ValueType> dhpsioverpsi(nparam);
   example_he->evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
-  REQUIRE(dlogpsi[0] == ValueApprox(std::real(fd_logpsi)).epsilon(h));
+  CHECK(dlogpsi[0] == ValueApprox(std::real(fd_logpsi)).epsilon(h));
 
   ValueType eloc   = -0.5 * (Sum(all_lap) + Dot(all_grad, all_grad));
   ValueType eloc_h = -0.5 * (Sum(lap_plus_h) + Dot(grad_plus_h, grad_plus_h));
 
   ValueType fd_eloc = (eloc_h - eloc) / h;
 
-  REQUIRE(dhpsioverpsi[0] == ValueApprox(fd_eloc).epsilon(h));
+  CHECK(dhpsioverpsi[0] == ValueApprox(fd_eloc).epsilon(h));
 }
 } // namespace qmcplusplus

@@ -21,7 +21,8 @@ namespace qmcplusplus
 {
 namespace testing
 {
-EstimatorManagerNewTest::EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate* comm, int ranks) : em(ham, comm), comm_(comm)
+EstimatorManagerNewTest::EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate* comm, int ranks)
+    : em(ham, comm), comm_(comm)
 {
   int num_ranks = comm_->size();
   if (num_ranks != ranks)
@@ -38,9 +39,9 @@ bool EstimatorManagerNewTest::testReplaceMainEstimator()
 
   em.addMainEstimator(std::move(fake_est_uptr));
 
-  CHECK(em.main_estimator_->getSubTypeStr() == "fake");	
+  CHECK(em.main_estimator_->getSubTypeStr() == "fake");
 
-  auto fake_est2 = std::make_unique<FakeEstimator>();
+  auto fake_est2   = std::make_unique<FakeEstimator>();
   fake_est2->type_ = "Fake2";
 
   em.addMainEstimator(std::move(fake_est2));
@@ -71,7 +72,7 @@ void EstimatorManagerNewTest::fakeMainScalarSamples()
 
   em.get_AverageCache().resize(4);
 }
-  
+
 void EstimatorManagerNewTest::fakeScalarSamplesAndCollect()
 {
   estimators_.clear();
@@ -102,7 +103,7 @@ void EstimatorManagerNewTest::fakeScalarSamplesAndCollect()
   estimators3.push_back(fake_estimator);
   estimators3.push_back(fake_estimator);
   estimators3.push_back(fake_estimator);
-  
+
   em.addScalarEstimator(std::make_unique<FakeEstimator>());
   em.addScalarEstimator(std::make_unique<FakeEstimator>());
   em.addScalarEstimator(std::make_unique<FakeEstimator>());
@@ -110,7 +111,7 @@ void EstimatorManagerNewTest::fakeScalarSamplesAndCollect()
   scalar_estimators_.push_back(makeRefVector<ScalarEstimatorBase>(estimators_));
   scalar_estimators_.push_back(makeRefVector<ScalarEstimatorBase>(estimators2));
   scalar_estimators_.push_back(makeRefVector<ScalarEstimatorBase>(estimators3));
-  
+
   em.get_AverageCache().resize(4);
 
   em.collectScalarEstimators(scalar_estimators_);
@@ -148,7 +149,7 @@ void EstimatorManagerNewTest::collectMainEstimators()
   auto crowd_main_estimators = makeRefVector<ScalarEstimatorBase>(estimators_);
   em.collectMainEstimators(crowd_main_estimators);
 }
-  
+
 void EstimatorManagerNewTest::testReduceOperatorEstimators() { em.reduceOperatorEstimators(); }
 
 } // namespace testing

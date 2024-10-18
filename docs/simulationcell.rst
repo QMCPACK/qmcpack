@@ -20,21 +20,23 @@ up.
 
 Attribute:
 
-  +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
-  | **parameter name**  | **datatype** | **values**                | **default**       | **description**                                    |
-  +=====================+==============+===========================+===================+====================================================+
-  | ``lattice``         | 9 floats     | any float                 | Must be specified | Specification of lattice vectors.                  |
-  +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
-  | ``bconds``          | string       | "p" or "n"                | "n n n "          | Boundary conditions for each axis.                 |
-  +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
-  | ``vacuum``          | float        | :math:`\geq 1.0`          | 1.0               | Vacuum scale.                                      |
-  +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
-  | ``LR_handler``      | string       | string                    | "opt_breakup"     | Ewald breakup method.                              |
-  +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
-  | ``LR_dim_cutoff``   | float        | float                     | 15                | Ewald breakup distance.                            |
-  +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
-  | ``LR_tol``          | float        | float                     | 3e-4              | Tolerance in Ha for Ewald ion-ion energy per atom. |
-  +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
+  +---------------------+--------------+------------------+-------------------+------------------------------------------------------------------------------------+
+  | **parameter name**  | **datatype** | **values**       | **default**       | **description**                                                                    |
+  +=====================+==============+==================+===================+====================================================================================+
+  | ``lattice``         | 9 floats     | any float        | Must be specified | Specification of lattice vectors.                                                  |
+  +---------------------+--------------+------------------+-------------------+------------------------------------------------------------------------------------+
+  | ``bconds``          | string       | "p" or "n"       | "n n n "          | Boundary conditions for each axis.                                                 |
+  +---------------------+--------------+------------------+-------------------+------------------------------------------------------------------------------------+
+  | ``vacuum``          | float        | :math:`\geq 1.0` | 1.0               | Vacuum scale.                                                                      |
+  +---------------------+--------------+------------------+-------------------+------------------------------------------------------------------------------------+
+  | ``LR_handler``      | string       | string           | "opt_breakup"     | Ewald breakup method.                                                              |
+  +---------------------+--------------+------------------+-------------------+------------------------------------------------------------------------------------+
+  | ``LR_dim_cutoff``   | float        | float            | 15                | Ewald breakup distance.                                                            |
+  +---------------------+--------------+------------------+-------------------+------------------------------------------------------------------------------------+
+  | ``LR_tol``          | float        | float            | 3e-4              | Tolerance in Ha for Ewald ion-ion energy per atom.                                 |
+  +---------------------+--------------+------------------+-------------------+------------------------------------------------------------------------------------+
+  | ``ewald_grid``      | int          | int              | 1001              | The number of linear grid points used for short-range part of the Ewald potential. |
+  +---------------------+--------------+------------------+-------------------+------------------------------------------------------------------------------------+
 
 
 An example of a block is given below:
@@ -119,6 +121,7 @@ the z-axis increases from 12 to 18 by the vacuum scale of 1.5.
        <parameter name="vacuum"> 1.5 </parameter>
        <parameter name="LR_dim_cutoff"> 20 </parameter>
        <parameter name="LR_handler"> ewald </parameter>
+       <parameter name="ewald_grid"> 1001 </parameter>
      </simulationcell>
 
 LR_handler
@@ -162,6 +165,11 @@ and :math:`k_{c}` is the
 length of the maximum :math:`k`-vector used in the long-ranged term.
 Larger values of increase the accuracy of the evaluation.
 A value of 15 tends to be conservative for the ``opt_breakup`` handler in 3D.
+
+ewald_grid
+~~~~~~~~~~~~~
+The short-range part of the Ewald/optimized potential :math:`v^{sr}(r)` is put on a linear grid.
+`ewald_grid` controls the number of grid points on this 1D grid.
 
 .. _particleset:
 
@@ -216,6 +224,20 @@ Optional particleset attributes
 -  | ``size``
    | Number of particles in set.
 
+-  | ``random``
+   | Randomize starting positions of particles. Each component of each
+     particle’s position is randomized independently in the range of the
+     simulation cell in that component’s direction.
+
+-  | ``randomsrc``/``random_source``
+   | Specify source particle set around which to randomize the initial
+     positions of this particle set.
+
+-  | ``spinor``
+   | Sets an internal flag that the particleset (usually for electrons) is
+     a spinor object. This is used in the wavefunction builders and QMC drivers
+     to determiane if spin sampling will be used
+
 ``Group`` element:
 
   +-----------------+---------------------------+
@@ -250,40 +272,8 @@ Optional particleset attributes
   | ``atomicnumber`` | Integer  | *Any*  | 0       | Atomic number of particles in set  |
   +------------------+----------+--------+---------+------------------------------------+
 
-``attrib`` element:
-
-  +---------------------+------------------------------------+
-  | Parent elements     | ``particleset``, ``group``         |
-  +---------------------+------------------------------------+
-
-  Attribute:
-
-  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
-  | **Name**           | **Datatype** | **Values**                                 | **Default** | **Description**        |
-  +====================+==============+============================================+=============+========================+
-  | ``name``           | String       | *Any*                                      | *None*      | Name of attrib         |
-  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
-  | ``datatype``       | String       | IntArray, realArray, posArray, stringArray | *None*      | Type of data in attrib |
-  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
-  | ``size``:math:`^o` | String       | *Any*                                      | *None*      | Size of data in attrib |
-  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
-
--  | ``random``
-   | Randomize starting positions of particles. Each component of each
-     particle’s position is randomized independently in the range of the
-     simulation cell in that component’s direction.
-
--  | ``randomsrc``/``random_source``
-   | Specify source particle set around which to randomize the initial
-     positions of this particle set.
-
--  | ``spinor``
-   | Sets an internal flag that the particleset (usually for electrons) is
-     a spinor object. This is used in the wavefunction builders and QMC drivers
-     to determiane if spin sampling will be used
-
-Required name attributes
-^^^^^^^^^^^^^^^^^^^^^^^^
+Required group attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 -  | ``name``/``id``
    | Unique name for the particle set group. Typically, element symbols
@@ -299,6 +289,29 @@ Optional group attributes
 -  | ``unit``
    | Units for mass of particles in set (au[:math:`m_e` = 1] or
      amu[:math:`\frac{1}{12}m_{\rm ^{12}C}` = 1]).
+
+``attrib`` element:
+
+  +---------------------+------------------------------------+
+  | Parent elements     | ``particleset``, ``group``         |
+  +---------------------+------------------------------------+
+
+  Attribute:
+
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+  | **Name**           | **Datatype** | **Values**                                 | **Default** | **Description**        |
+  +====================+==============+============================================+=============+========================+
+  | ``name``           | String       | ionid, *Any*                               | *None*      | Name of attrib         |
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+  | ``datatype``       | String       | IntArray, realArray, posArray, stringArray | *None*      | Type of data in attrib |
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+  | ``condition``      | Integer      | 0, 1                                       | 0           | Select coordinates     |
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+  | ``size``:math:`^o` | String       | *Any*                                      | *None*      | Size of data in attrib |
+  +--------------------+--------------+--------------------------------------------+-------------+------------------------+
+
+-  | ``condition``
+   | When ``datatype`` is posArray, set 0 for cartesian coordinates or set 1 for fractional coordinates.
 
 Example use cases
 ~~~~~~~~~~~~~~~~~

@@ -26,6 +26,7 @@
 #else
 using TraceManager = int;
 #endif
+#include "WalkerLogCollector.h"
 
 namespace qmcplusplus
 {
@@ -34,9 +35,10 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& psi,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
-                             RandomGenerator& rg)
+                             RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
+      wlog_collector(0),
       W(w),
       Psi(psi),
       Guide(guide),
@@ -44,15 +46,20 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
       RandomGen(rg),
       branchEngine(0),
       DriftModifier(0),
-      Estimators(0)
+      Estimators(0),
+      initWalkers_timer_(createGlobalTimer("QMCUpdateBase::WalkerInit", timer_level_medium))
 {
   setDefaults();
 }
 
 /// Constructor.
-QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
+QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
+                             TrialWaveFunction& psi,
+                             QMCHamiltonian& h,
+                             RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
+      wlog_collector(0),
       W(w),
       Psi(psi),
       Guide(psi),
@@ -60,7 +67,8 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, Q
       RandomGen(rg),
       branchEngine(0),
       DriftModifier(0),
-      Estimators(0)
+      Estimators(0),
+      initWalkers_timer_(createGlobalTimer("QMCUpdateBase::WalkerInit", timer_level_medium))
 {
   setDefaults();
 }
@@ -89,13 +97,12 @@ void QMCUpdateBase::setDefaults()
   for (int ig = 0; ig < W.groups(); ++ig)
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       MassInvP[iat] = MassInvS[ig];
-
-  InitWalkersTimer = timer_manager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
 }
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
 {
-  H.setNonLocalMoves(cur);
+  if (H.hasPhysicalNLPP())
+    non_local_ops_.put(cur);
   bool s = myParams.put(cur);
   if (debug_checks_str_ == "no")
     debug_checks_ = DriverDebugChecks::ALL_OFF;
@@ -109,6 +116,16 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
   return s;
+}
+
+void QMCUpdateBase::resetRun2(BranchEngineType* brancher,
+                              EstimatorManagerBase* est,
+                              TraceManager* traces,
+                              WalkerLogCollector* wlog_collector_,
+                              const DriftModifierBase* driftmodifer)
+{
+  wlog_collector = wlog_collector_;
+  resetRun(brancher, est, traces, driftmodifer);
 }
 
 void QMCUpdateBase::resetRun(BranchEngineType* brancher,
@@ -181,6 +198,8 @@ void QMCUpdateBase::startBlock(int steps)
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
 #endif
+  if (wlog_collector)
+    wlog_collector->startBlock();
   nAccept              = 0;
   nReject              = 0;
   nAllRejected         = 0;
@@ -198,34 +217,33 @@ void QMCUpdateBase::stopBlock(bool collectall)
 
 void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
 {
+  ScopedTimer local(initWalkers_timer_);
   UpdatePbyP = false;
-  InitWalkersTimer->start();
   //ignore different mass
   //RealType tauovermass = Tau*MassInv[0];
   for (; it != it_end; ++it)
   {
-    W.R = (*it)->R;
+    auto& walker = *it;
+    W.R          = walker->R;
     W.update();
     RealType logpsi(Psi.evaluateLog(W));
-    (*it)->G          = W.G;
-    (*it)->L          = W.L;
+    walker->G         = W.G;
+    walker->L         = W.L;
     RealType nodecorr = setScaledDriftPbyPandNodeCorr(Tau, MassInvP, W.G, drift);
     RealType ene      = H.evaluate(W);
     // cannot call auxHevalate() here because walkers are not initialized
     // for example, DensityEstimator needs the weights of the walkers
     //H.auxHevaluate(W);
-    (*it)->resetProperty(logpsi, Psi.getPhase(), ene, 0.0, 0.0, nodecorr);
-    (*it)->Weight = 1;
-    H.saveProperty((*it)->getPropertyBase());
+    walker->resetProperty(logpsi, Psi.getPhase(), ene, 0.0, 0.0, nodecorr);
+    walker->Weight = 1.0;
+    H.saveProperty(walker->getPropertyBase());
   }
-  InitWalkersTimer->stop();
 }
 
 void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
 {
+  ScopedTimer local(initWalkers_timer_);
   UpdatePbyP = true;
-  BadState   = false;
-  InitWalkersTimer->start();
   if (it == it_end)
   {
     // a particular case, no walker enters in this call.
@@ -253,15 +271,11 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     RealType logpsi = Psi.updateBuffer(W, awalker.DataSet, false);
     W.saveWalker(awalker);
     RealType eloc = H.evaluate(W);
-    BadState |= std::isnan(eloc);
     awalker.resetProperty(logpsi, Psi.getPhase(), eloc);
     H.auxHevaluate(W, awalker);
     H.saveProperty(awalker.getPropertyBase());
-    awalker.ReleasedNodeAge    = 0;
-    awalker.ReleasedNodeWeight = 0;
-    awalker.Weight             = 1;
+    awalker.Weight = 1.;
   }
-  InitWalkersTimer->stop();
 #pragma omp master
   print_mem("Memory Usage after the buffer registration", app_log());
 }
@@ -279,7 +293,7 @@ QMCUpdateBase::RealType QMCUpdateBase::getNodeCorrection(const ParticleSet::Part
 void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, const std::string_view location)
 {
   bool success = true;
-  TrialWaveFunction::LogValueType log_value{twf.getLogPsi(), twf.getPhase()};
+  TrialWaveFunction::LogValue log_value{twf.getLogPsi(), twf.getPhase()};
   ParticleSet::ParticleGradient G_saved  = twf.G;
   ParticleSet::ParticleLaplacian L_saved = twf.L;
 
@@ -296,7 +310,7 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
   std::ostringstream msg;
   auto& ref_G = twf.G;
   auto& ref_L = twf.L;
-  TrialWaveFunction::LogValueType ref_log{twf.getLogPsi(), twf.getPhase()};
+  TrialWaveFunction::LogValue ref_log{twf.getLogPsi(), twf.getPhase()};
   if (std::abs(std::exp(log_value) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
   {
     success = false;
@@ -329,25 +343,17 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
     throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
 }
 
-void QMCUpdateBase::setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
-{
-  for (; it != it_end; ++it)
-  {
-    RealType M          = std::abs((*it)->Weight);
-    (*it)->Multiplicity = std::floor(M + RandomGen());
-  }
-}
-
 void QMCUpdateBase::setMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
 {
   for (; it != it_end; ++it)
   {
-    RealType M = (*it)->Weight;
-    if ((*it)->Age > MaxAge)
+    auto& walker = *it;
+    RealType M   = walker->Weight;
+    if (walker->Age > MaxAge)
       M = std::min((RealType)0.5, M);
-    else if ((*it)->Age > 0)
+    else if (walker->Age > 0)
       M = std::min((RealType)1.0, M);
-    (*it)->Multiplicity = M + RandomGen();
+    walker->Multiplicity = M + RandomGen();
   }
 }
 

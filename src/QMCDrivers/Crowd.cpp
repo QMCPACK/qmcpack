@@ -10,13 +10,35 @@
 #include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
+
 namespace qmcplusplus
 {
 Crowd::Crowd(EstimatorManagerNew& emb,
              const DriverWalkerResourceCollection& driverwalker_res,
-             const MultiWalkerDispatchers& dispatchers)
-    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
-{}
+             const ParticleSet& pset,
+             const TrialWaveFunction& twf,
+             const QMCHamiltonian& ham)
+    : driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
+{
+  if (emb.areThereListeners())
+  {
+    // By creating a tempory QMCHamiltonian before walkers are distributed to the crowds we insure that
+    // after construction that each crowd has a valid driverwalker_resource_collection_.ham_res.
+    // We can't use the golden hamiltonian to do this because QMCHamiltonian and mw_res_ are 1 to 1 or 1 to 0.
+    //
+    // Violating the incapsulation of the QMChamiltonian mw_res_ could make this very efficent but doesn't seem
+    // necessary since this happens num crowds times per section.
+    //
+    // QMCHamiltonian makes quite a smell with its non const pset and twf constructor
+    // arguments.
+    ParticleSet pset_temp(pset);
+    UPtr<TrialWaveFunction> twf_temp(twf.makeClone(pset_temp));
+    UPtr<QMCHamiltonian> ham_temp(ham.makeClone(pset_temp, *twf_temp));
+    RefVectorWithLeader<QMCHamiltonian> ham_list{*ham_temp, {*ham_temp}};
+    ResourceCollectionTeamLock<QMCHamiltonian> ham_lock(driverwalker_resource_collection_.ham_res, ham_list);
+    estimator_manager_crowd_.registerListeners(ham_list);
+  }
+}
 
 Crowd::~Crowd() = default;
 
@@ -46,7 +68,7 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
   walker_hamiltonians_.push_back(hamiltonian);
 };
 
-void Crowd::setRNGForHamiltonian(RandomGenerator& rng)
+void Crowd::setRNGForHamiltonian(RandomBase<FullPrecRealType>& rng)
 {
   for (QMCHamiltonian& ham : walker_hamiltonians_)
     ham.setRandomGenerator(&rng);
@@ -59,8 +81,34 @@ void Crowd::startBlock(int num_steps)
   // VMCBatched does no nonlocal moves
   n_nonlocal_accept_ = 0;
   estimator_manager_crowd_.startBlock(num_steps);
+  if (wlog_collector_)
+    wlog_collector_->startBlock();
 }
 
 void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }
+
+void Crowd::setWalkerLogCollector(std::unique_ptr<WalkerLogCollector>&& collector)
+{
+  wlog_collector_ = std::move(collector);
+}
+
+void Crowd::collectStepWalkerLog(int current_step)
+{
+  if (!wlog_collector_)
+    return;
+
+  for (int iw = 0; iw < size(); ++iw)
+    wlog_collector_->collect(mcp_walkers_[iw], walker_elecs_[iw], walker_twfs_[iw], walker_hamiltonians_[iw],
+                             current_step);
+}
+
+RefVector<WalkerLogCollector> Crowd::getWalkerLogCollectorRefs(const UPtrVector<Crowd>& crowds)
+{
+  RefVector<WalkerLogCollector> refs;
+  for (auto& crowd : crowds)
+    if (crowd && crowd->wlog_collector_)
+      refs.push_back(*crowd->wlog_collector_);
+  return refs;
+}
 
 } // namespace qmcplusplus

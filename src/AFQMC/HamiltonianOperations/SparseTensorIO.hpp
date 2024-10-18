@@ -62,16 +62,9 @@ SparseTensor<T1, T2> loadSparseTensor(hdf_archive& dump,
   int V2_nrows, V2_ncols, Spvn_nrows, Spvn_ncols;
 
   // read from HDF
-  if (!dump.push("HamiltonianOperations", false))
-  {
-    app_error() << " Error in loadSparseTensor: Group HamiltonianOperations not found. \n";
-    APP_ABORT("");
-  }
-  if (!dump.push("SparseTensor", false))
-  {
-    app_error() << " Error in loadSparseTensor: Group SparseTensor not found. \n";
-    APP_ABORT("");
-  }
+  dump.push("HamiltonianOperations", false);
+  dump.push("SparseTensor", false);
+
   if (TGwfn.Global().root())
   {
     if (!dump.readEntry(dims, "dims"))
@@ -155,22 +148,14 @@ SparseTensor<T1, T2> loadSparseTensor(hdf_archive& dump,
   V2.reserve(ndet);
   for (int i = 0; i < ndet; i++)
   {
-    if (!dump.push(std::string("HalfRotatedHijkl_") + std::to_string(i), false))
-    {
-      app_error() << " Error in loadSparseTensor: Group HalfRotatedHijkl_" << i << " not found. \n";
-      APP_ABORT("");
-    }
+    dump.push(std::string("HalfRotatedHijkl_") + std::to_string(i), false);
     V2.emplace_back(
         csr_hdf5::unstructured_distributed_CSR_from_HDF<T1_shm_csr_matrix>(dump, TGwfn, V2_nrows, V2_ncols, cutv2));
     dump.pop();
   }
 
   // read Cholesky matrix
-  if (!dump.push(std::string("SparseCholeskyMatrix"), false))
-  {
-    app_error() << " Error in loadSparseTensor: Group SparseCholeskyMatrix not found. \n";
-    APP_ABORT("");
-  }
+  dump.push(std::string("SparseCholeskyMatrix"), false);
   SpVType_shm_csr_matrix Spvn(
       csr_hdf5::column_distributed_CSR_from_HDF<SpVType_shm_csr_matrix>(dump, TGprop, Spvn_nrows, Spvn_ncols, cutv2));
   dump.pop();

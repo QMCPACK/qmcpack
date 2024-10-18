@@ -1,7 +1,3 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ $0 -o $0x&&mpirun -n 4 $0x&&rm $0x;exit
-#endif
-
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
 #include "../../mpi3/window.hpp"
@@ -10,9 +6,8 @@ mpic++ $0 -o $0x&&mpirun -n 4 $0x&&rm $0x;exit
 #include<iostream>
 
 namespace mpi3 = boost::mpi3;
-using std::cout;
 
-int mpi3::main(int, char*[], mpi3::communicator world){
+auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int try{
 	mpi3::communicator comm = (world < 2);
 #if 0
 	if(comm){
@@ -31,5 +26,8 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 	}
 #endif
 	return 0;
+}catch(...){
+	return 1;
 }
+
 

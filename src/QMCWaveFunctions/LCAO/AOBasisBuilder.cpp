@@ -283,9 +283,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   if (expandYlm(aos.get(), all_nl, expandlm) != num)
     myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
-  //aos->Rmax can be set small
-  //aos->setRmax(0);
-  aos->setBasisSetSize(-1);
+  aos->finalize();
   app_log() << "   Maximum Angular Momentum  = " << aos->Ylm.lmax() << std::endl
             << "   Number of Radial functors = " << aos->RnlID.size() << std::endl
             << "   Basis size                = " << aos->getBasisSetSize() << "\n\n";
@@ -410,9 +408,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   if (expandYlm(aos.get(), all_nl, expandlm) != num)
     myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
-  //aos->Rmax can be set small
-  //aos->setRmax(0);
-  aos->setBasisSetSize(-1);
+  aos->finalize();
   app_log() << "   Maximum Angular Momentum  = " << aos->Ylm.lmax() << std::endl
             << "   Number of Radial functors = " << aos->RnlID.size() << std::endl
             << "   Basis size                = " << aos->getBasisSetSize() << "\n\n";

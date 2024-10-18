@@ -43,7 +43,7 @@ public:
   using Base = WalkerSetBase<shared_allocator<ComplexType>, ComplexType*>;
 
   /// constructor
-  SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, RandomGenerator* r)
+  SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, RandomBase<RealType>& r)
       : Base(tg_,
              cur,
              info,

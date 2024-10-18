@@ -35,6 +35,7 @@ set(HAMSRCS
     SkAllEstimator.cpp
     MomentumEstimator.cpp
     ForceBase.cpp
+    BareForce.cpp
     HamiltonianFactory.cpp
     CoulombPotentialFactory.cpp
     HarmonicExternalPotential.cpp
@@ -45,7 +46,9 @@ set(HAMSRCS
     SpeciesKineticEnergy.cpp
     LatticeDeviationEstimator.cpp
     SpaceWarpTransformation.cpp
-    ObservableHelper.cpp)
+    SelfHealingOverlapLegacy.cpp
+    ObservableHelper.cpp
+    Listener.cpp)
 
 if(OHMMS_DIM MATCHES 3)
   set(HAMSRCS
@@ -76,47 +79,19 @@ if(OHMMS_DIM MATCHES 3)
     set(HAMSRCS ${HAMSRCS} MPC.cpp)
   endif(HAVE_LIBFFTW)
 
-  if(QMC_CUDA)
-    set(HAMSRCS_CUDA CudaCoulomb.cu NLPP.cu)
-    set(HAMSRCS
-        ${HAMSRCS}
-        CoulombPBCAA_CUDA.cpp
-        CoulombPBCAB_CUDA.cpp
-        MPC_CUDA.cpp
-        LocalECPotential_CUDA.cpp
-        NonLocalECPotential_CUDA.cpp
-        CoulombPotential_CUDA.cpp
-        SkEstimator_CUDA.cpp)
-  endif(QMC_CUDA)
-
 endif(OHMMS_DIM MATCHES 3)
 
 if(USE_OBJECT_TARGET)
   add_library(qmcham OBJECT ${HAMSRCS})
-  add_library(qmcham_unit OBJECT ${HAMSRCS})
 else()
   add_library(qmcham ${HAMSRCS})
-  add_library(qmcham_unit ${HAMSRCS})
 endif()
-if(QMC_CUDA)
-  add_library(qmcham_cuda ${HAMSRCS_CUDA})
-  if(QMC_CUDA2HIP)
-    set_source_files_properties(${HAMSRCS_CUDA} PROPERTIES LANGUAGE HIP)
-  endif()
-  target_link_libraries(qmcham PRIVATE qmcham_cuda)
-  target_link_libraries(qmcham_unit PRIVATE qmcham_cuda)
-endif(QMC_CUDA)
-
-use_fake_rng(qmcham_unit)
 
 target_include_directories(qmcham PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_include_directories(qmcham_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_link_libraries(qmcham PUBLIC qmcwfs)
-target_link_libraries(qmcham_unit PUBLIC qmcwfs)
 
 target_link_libraries(qmcham PRIVATE einspline platform_LA Math::FFTW3)
-target_link_libraries(qmcham_unit PRIVATE einspline platform_LA Math::FFTW3)
 
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)

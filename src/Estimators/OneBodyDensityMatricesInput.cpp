@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -16,11 +16,14 @@
 namespace qmcplusplus
 {
 
+template bool InputSection::setIfInInput<qmcplusplus::OneBodyDensityMatricesInput::Integrator>(qmcplusplus::OneBodyDensityMatricesInput::Integrator& var, const std::string& tag);
+
+  
 OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
 {
   // This results in checkParticularValidity being called on OneBodyDensityMatrixInputSection
   input_section_.readXML(cur);
-  auto setIfInInput = [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); };
+  auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(energy_matrix_, "energy_matrix");
   setIfInInput(use_drift_, "use_drift");
   setIfInInput(normalized_, "normalized");

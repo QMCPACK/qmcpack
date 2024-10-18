@@ -54,27 +54,12 @@ set(PARTICLE_OMPTARGET_SRCS
     createDistanceTableAAOMPTarget.cpp
     createDistanceTableABOMPTarget.cpp)
 
-if(USE_OBJECT_TARGET)
-  add_library(qmcparticle_omptarget OBJECT ${PARTICLE_OMPTARGET_SRCS})
-else(USE_OBJECT_TARGET)
-  add_library(qmcparticle_omptarget ${PARTICLE_OMPTARGET_SRCS})
-endif(USE_OBJECT_TARGET)
+add_library(qmcparticle_omptarget OBJECT ${PARTICLE_OMPTARGET_SRCS})
 
 target_include_directories(qmcparticle_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle_omptarget PUBLIC qmcutil containers)
 
-target_compile_options(qmcparticle_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
-
 target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
-
-if(QMC_CUDA)
-  add_library(qmcparticle_cuda accept_kernel.cu)
-  if(QMC_CUDA2HIP)
-    set_source_files_properties(accept_kernel.cu PROPERTIES LANGUAGE HIP)
-  endif()
-  target_link_libraries(qmcparticle_cuda PRIVATE platform_runtime)
-  target_link_libraries(qmcparticle PRIVATE qmcparticle_cuda)
-endif(QMC_CUDA)
 
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)

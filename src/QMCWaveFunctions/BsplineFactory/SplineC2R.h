@@ -36,7 +36,7 @@ namespace qmcplusplus
  * The internal storage of complex spline coefficients uses double sized real arrays of ST type, aligned and padded.
  * The first nComplexBands complex splines produce 2 real orbitals.
  * The rest complex splines produce 1 real orbital.
- * All the output orbitals are real.
+ * All the output orbitals are real (C2R). The maximal number of output orbitals is OrbitalSetSize.
  */
 template<typename ST>
 class SplineC2R : public BsplineSet
@@ -84,7 +84,7 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2R(const std::string& my_name) : BsplineSet(my_name), nComplexBands(0) {}
+  SplineC2R(const std::string& my_name, bool use_offload = false) : BsplineSet(my_name), nComplexBands(0) {}
 
   SplineC2R(const SplineC2R& in);
   virtual std::string getClassName() const override { return "SplineC2R"; }
@@ -120,8 +120,8 @@ public:
     gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
-  template<typename GT, typename BCT>
-  void create_spline(GT& xyz_g, BCT& xyz_bc)
+  template<typename BCT>
+  void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
   {
     resize_kpoints();
     SplineInst = std::make_shared<MultiBspline<ST>>();
@@ -136,11 +136,8 @@ public:
   /** remap kPoints to pack the double copy */
   inline void resize_kpoints()
   {
-#ifndef QMC_CUDA
-    // GPU CUDA code doesn't allow a change of the ordering
     nComplexBands = this->remap_kpoints();
-#endif
-    int nk = kPoints.size();
+    const int nk  = kPoints.size();
     mKK.resize(nk);
     myKcart.resize(nk);
     for (size_t i = 0; i < nk; ++i)
@@ -209,8 +206,8 @@ public:
                      GGGVector& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
-  friend struct SplineSetReader;
-  friend struct BsplineReaderBase;
+  friend class SplineSetReader;
+  friend struct BsplineReader;
 };
 
 extern template class SplineC2R<float>;

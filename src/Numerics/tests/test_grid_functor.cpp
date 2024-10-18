@@ -35,8 +35,8 @@ TEST_CASE("double_1d_grid_functor", "[numerics]")
   REQUIRE(grid.size() == 3);
   REQUIRE(grid.rmin() == 0.0);
   REQUIRE(grid.rmax() == 1.0);
-  REQUIRE(grid.dh() == Approx(0.5));
-  REQUIRE(grid.dr(1) == Approx(0.5));
+  CHECK(grid.dh() == Approx(0.5));
+  CHECK(grid.dr(1) == Approx(0.5));
 }
 
 TEST_CASE("double_1d_grid_functor_vs_n", "[numerics]")
@@ -52,8 +52,8 @@ TEST_CASE("double_1d_grid_functor_vs_n", "[numerics]")
       REQUIRE(grid.size() == n);
       REQUIRE(grid.rmin() == 0.0);
       REQUIRE(grid.rmax() == 1.0);
-      REQUIRE(grid.dh() == Approx(1.0 / (n - 1)));
-      REQUIRE(grid.dr(0) == Approx(1.0 / (n - 1)));
+      CHECK(grid.dh() == Approx(1.0 / (n - 1)));
+      CHECK(grid.dr(0) == Approx(1.0 / (n - 1)));
     }
   }
 }

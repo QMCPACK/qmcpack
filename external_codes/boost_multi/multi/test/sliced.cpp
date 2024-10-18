@@ -1,26 +1,56 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-// Copyright 2021-2022 Alfredo A. Correa
+// Copyright 2021-2023 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi slice"
-#include<boost/test/unit_test.hpp>
+#include <boost/multi/array.hpp>
 
-#include "multi/array.hpp"
+#include <numeric>  // std::iota
 
-#include<numeric> // std::iota
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+// #  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+// #  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
 
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(multi_array_sliced_empty) {
-	multi::array<double, 2> arr({0, 0}, 99.);
+	multi::array<double, 2> const arr({0, 0}, 99.0);
 	BOOST_REQUIRE( arr.sliced(0, 0).is_empty() );
-	BOOST_REQUIRE( arr.sliced(1, 1).is_empty() );
+	// BOOST_REQUIRE( arr.sliced(1, 1).is_empty() );  // this results in offsetting nullptr
 }
 
 BOOST_AUTO_TEST_CASE(multi_array_sliced) {
-	multi::array<double, 4> arr({10, 20, 30, 40}, 99.);
-	std::iota(arr.elements().begin(), arr.elements().end(), 0.);
+	multi::array<int, 4> arr({10, 20, 30, 40}, 99);
+	std::iota(arr.elements().begin(), arr.elements().end(), 0);
 
-	static_assert( decltype( arr.sliced(0, 5) )::rank_v == decltype(arr)::rank_v , "!"); //NOLINT(misc-redundant-expression)
+	static_assert( decltype( arr.sliced(0, 5) )::rank::value == 4);
+	static_assert( decltype( arr.sliced(0, 5) )::rank{} == 4);
+	static_assert( decltype( arr.sliced(0, 5) )::rank_v == 4);
 
 	BOOST_REQUIRE(  arr.sliced( 0, 5)[1][2][3][4] ==  arr[1][2][3][4] );
 	BOOST_REQUIRE( &arr.sliced( 0, 5)[1][2][3][4] == &arr[1][2][3][4] );
@@ -47,46 +77,46 @@ BOOST_AUTO_TEST_CASE(multi_array_sliced) {
 }
 
 BOOST_AUTO_TEST_CASE(multi_array_stride) {
-	multi::array<double, 2> arr = {
-		{ 1.,  2.,  3.,  4.},
-		{ 5.,  6.,  7.,  8.},
-		{ 9., 10., 11., 12.},
-		{13., 14., 15., 16.},
+	multi::array<int, 2> arr = {
+		{ 10,  20,  30,  40},
+		{ 50,  60,  70,  80},
+		{ 90, 100, 110, 120},
+		{130, 140, 150, 160},
 	};
 	BOOST_REQUIRE((
-		arr.strided(2) == multi::array<double, 2>{
-			{ 1.,  2.,  3.,  4.},
-			{ 9., 10., 11., 12.},
+		arr.strided(2) == multi::array<int, 2>{
+			{ 10,  20,  30,  40},
+			{ 90, 100, 110, 120},
 		}
 	));
 }
 
-BOOST_AUTO_TEST_CASE(take) {
-	multi::array<double, 2> arr = {
-		{ 1.,  2.,  3.,  4.},
-		{ 5.,  6.,  7.,  8.},
-		{ 9., 10., 11., 12.},
-		{13., 14., 15., 16.},
+BOOST_AUTO_TEST_CASE(multi_array_take) {
+	multi::array<int, 2> arr = {
+		{ 10,  20,  30,  40},
+		{ 50,  60,  70,  80},
+		{ 90, 100, 110, 120},
+		{130, 140, 150, 160},
 	};
 	BOOST_REQUIRE((
-		arr.take(2) == multi::array<double, 2>{
-			{ 1.,  2.,  3.,  4.},
-			{ 5.,  6.,  7.,  8.},
+		arr.taked(2) == multi::array<int, 2>{
+			{ 10,  20,  30,  40},
+			{ 50,  60,  70,  80},
 		}
 	));
 }
 
 BOOST_AUTO_TEST_CASE(drop) {
 	multi::array<double, 2> arr = {
-		{ 1.,  2.,  3.,  4.},
-		{ 5.,  6.,  7.,  8.},
-		{ 9., 10., 11., 12.},
-		{13., 14., 15., 16.},
+		{ 10,  20,  30,  40},
+		{ 50,  60,  70,  80},
+		{ 90, 100, 110, 120},
+		{130, 140, 150, 160},
 	};
 	BOOST_REQUIRE((
-		arr.drop(2) == multi::array<double, 2>{
-			{ 9., 10., 11., 12.},
-			{13., 14., 15., 16.},
+		arr.dropped(2) == multi::array<double, 2>{
+			{ 90, 100, 110, 120},
+			{130, 140, 150, 160},
 		}
 	));
 }

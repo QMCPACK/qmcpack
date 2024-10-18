@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -23,6 +23,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "Utilities/ProjectData.h"
 #include <stdio.h>
 #include <sstream>
 
@@ -45,23 +46,48 @@ TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
 
 TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)", "[estimators]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
   using namespace testing;
-  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  Libxml2Document estimators_doc = createEstimatorManagerNewVMCInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
+  CHECK(emi.get_estimator_inputs().size() == 3);
+  CHECK(emi.get_scalar_estimator_inputs().size() == 1);
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf              = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham              = *(hamiltonian_pool.getPrimary());
-  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset            = *(particle_pool.getParticleSet("e"));
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham             = *(hamiltonian_pool.getPrimary());
+  EstimatorManagerNew emn(ham, comm);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 2);
+  CHECK(emn.getNumEstimators() == 3);
+  // Because the only scalar estimator becomes the main estimator.
   CHECK(emn.getNumScalarEstimators() == 0);
+  EstimatorManagerNewTestAccess emnta(emn);
+  CHECK(emnta.getMainEstimator().getName() == "LocalEnergyEstimator");
+
+
+  // Check behavior when multiple "main" estimators are in the input
+  // Each should override the previous main input as this is the behavior of legacy.
+  Libxml2Document estimators_doc2 = createEstimatorManagerNewInputXML();
+  EstimatorManagerInput emi2(estimators_doc2.getRoot());
+
+  CHECK(emi2.get_estimator_inputs().size() == 3);
+  CHECK(emi2.get_scalar_estimator_inputs().size() == 4);
+
+  EstimatorManagerNew emn2(ham, comm);
+  emn2.constructEstimators(std::move(emi2), pset, twf, ham, particle_pool.getPool());
+  CHECK(emn2.getNumEstimators() == 3);
+  // Because the only scalar estimator becomes the main estimator.
+  CHECK(emn2.getNumScalarEstimators() == 0);
+  EstimatorManagerNewTestAccess emnta2(emn2);
+  CHECK(emnta2.getMainEstimator().getName() == "RMCLocalEnergyEstimator");
 }
 
 TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
@@ -79,13 +105,13 @@ TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
   embt.fakeMainScalarSamples();
   embt.collectMainEstimators();
   double correct_value = 5.0;
-  REQUIRE(embt.em.get_AverageCache()[0] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[0] == Approx(correct_value));
   correct_value = 8.0;
-  REQUIRE(embt.em.get_AverageCache()[1] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[1] == Approx(correct_value));
   correct_value = 11.0;
-  REQUIRE(embt.em.get_AverageCache()[2] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[2] == Approx(correct_value));
   correct_value = 14.0;
-  REQUIRE(embt.em.get_AverageCache()[3] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[3] == Approx(correct_value));
 }
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")

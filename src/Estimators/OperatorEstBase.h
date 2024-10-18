@@ -19,6 +19,7 @@
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
 #include "QMCHamiltonians/ObservableHelper.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/DataLocality.h"
 #include "hdf/hdf_archive.h"
@@ -38,12 +39,12 @@ class OEBAccessor;
 class OperatorEstBase
 {
 public:
-  using QMCT      = QMCTraits;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using QMCT             = QMCTraits;
+  using FullPrecRealType = QMCT::FullPrecRealType;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using Real             = QMCT::RealType;
+  using Data             = std::vector<Real>;
 
-  using Data = std::vector<QMCT::RealType>;
-
-  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
   /** Shallow copy constructor!
@@ -73,7 +74,8 @@ public:
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
                           const RefVector<ParticleSet>& psets,
                           const RefVector<TrialWaveFunction>& wfns,
-                          RandomGenerator& rng) = 0;
+                          const RefVector<QMCHamiltonian>& hams,
+                          RandomBase<FullPrecRealType>& rng) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -89,7 +91,32 @@ public:
 
   virtual void startBlock(int steps) = 0;
 
+  const std::vector<QMCT::RealType>& get_data() const { return data_; }
   std::vector<QMCT::RealType>& get_data() { return data_; }
+
+  virtual std::size_t getFullDataSize() const { return data_.size(); }
+
+  /** @ingroup Functions to add or remove estimator data from PooledData<Real>
+   *  @brief   used for MPI reduction.
+   *           These are only used on the rank estimator owned by EstimatorManagerNew.
+   *           The rank EstimatorManagerNew owns the buffer.
+   *           It is not intended to store the state of the estimator.
+   *           The packing and unpacking functions must follow the same sequence of adds or gets
+   *           as PooledData is a stateful sequence of bytes with an internal position cursor.
+   *  @{
+   */
+
+  /** Packs data from native container types in a subtype of Operator est base
+   *  to buffer of type Real for reduction over MPI.
+   *  I.e. writes to pooled data.
+   */
+  virtual void packData(PooledData<Real>& buffer) const;
+  /** Unpacks data from mpi buffer of type Real into native container types
+   *  after a reduction over MPI.
+   *  i.e. reads from pooled data.
+   */
+  virtual void unpackData(PooledData<Real>& buffer);
+  ///@}
 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong
@@ -114,13 +141,23 @@ public:
 
   /** Return the total walker weight for this block
    */
-  QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
+  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
 
   const std::string& get_my_name() const { return my_name_; }
+
+  /** Register 0-many listeners with a leading QMCHamiltonian instance i.e. a QMCHamiltonian
+   *  that has acquired the crowd scope QMCHamiltonianMultiWalkerResource.
+   *  This must be called for each crowd scope estimator that listens to register listeners into
+   *  the crowd scope QMCHamiltonianMultiWalkerResource.
+   *
+   *  Many estimators don't need per particle values so the default implementation is no op.
+   */
+  virtual void registerListeners(QMCHamiltonian& ham_leader) {};
 
   bool isListenerRequired() { return requires_listener_; }
 
   DataLocality get_data_locality() const { return data_locality_; }
+
 protected:
   /** locality for accumulation of estimator data.
    *  This designates the memory scheme used for the estimator

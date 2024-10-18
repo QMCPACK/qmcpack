@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: D. Das, University of Illinois at Urbana-Champaign
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -11,6 +11,7 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp
 //
@@ -26,13 +27,7 @@
 #include "Pools/PooledData.h"
 #include "Pools/PooledMemory.h"
 #include "QMCDrivers/WalkerProperties.h"
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#include "Pools/PointerPool.h"
-#include "CUDA_legacy/gpu_vector.h"
-#endif
-#include <assert.h>
-#include <deque>
+
 namespace qmcplusplus
 {
 /** A container class to represent a walker.
@@ -41,7 +36,7 @@ namespace qmcplusplus
  * RealTypehe template (P)articleSet(A)ttribute is a generic container  of position types.
  * RealTypehe template (G)radient(A)ttribute is a generic container of gradients types.
  * Data members for each walker
- * - ID : identity for a walker. default is 0.
+ * - walker_id_ : identity for a walker. default is 0.
  * - Age : generation after a move is accepted.
  * - Weight : weight to take the ensemble averages
  * - Multiplicity : multiplicity for branching. Probably can be removed.
@@ -66,11 +61,6 @@ public:
   using FullPrecRealType = typename t_traits::FullPrecRealType;
   /** typedef for value data type. */
   using ValueType = typename t_traits::ValueType;
-#ifdef QMC_CUDA
-  using CTS = CUDAGlobalTypes;
-  /** array of laplacians */
-  using CudaLapType = typename CTS::ValueType;
-#endif
   /** array of particles */
   using ParticlePos = typename p_traits::ParticlePos;
   /** array of scalars */
@@ -92,35 +82,56 @@ public:
   using Buffer_t   = PooledData<RealType>;
   /** }@ */
 
-  ///id reserved for forward walking
-  long ID;
-  ///id reserved for forward walking
-  long ParentID;
-  ///DMCgeneration
-  int Generation;
-  ///Age of this walker age is incremented when a walker is not moved after a sweep
-  int Age;
-  ///Age of this walker age is incremented when a walker is not moved after a sweep
-  int ReleasedNodeAge;
-  ///Weight of the walker
-  FullPrecRealType Weight;
-  ///Weight of the walker
-  FullPrecRealType ReleasedNodeWeight;
-  /** Number of copies for branching
+private:
+  /** walker identifier during a QMCSection
    *
-   * When Multiplicity = 0, this walker will be destroyed.
+   *  batched:
+   *  Only MCPopulation should set A living walker will have a WalkerID > 0
+   *  0 is the value of a default constructed walker.
+   *  Any negative value must have been set by an outside entity and indicates
+   *  an invalid walker ID.
    */
-  FullPrecRealType Multiplicity;
+  long walker_id_ = 0;
+  /** walker identifier that provided the initial state of walker
+   *
+   *  batched:
+   *  default constructed = 0;
+   *  parentID > 0 it is the walkerID in this section it was assigned from
+   *  parentID < 0 it is the  walkerID of a walker in a WalkerConfiguration
+   *  used to construct an initial population of walkers.
+   */
+  long parent_id_ = 0;
+
+public:
+  /** allegedly DMC generation
+   *  PD: I can find no evidence it is ever updated anywhere in the code.
+   */
+  int Generation = 0;
+  ///Age is incremented when a walker is not moved after a sweep
+  int Age = 0;
+  ///Weight of the walker
+  FullPrecRealType Weight = 1.0;
+  /** Number of replicas of this walker after branching
+   * When Multiplicity = 0, this walker will be destroyed.
+   * PD: It seems to me that this should be an integer.
+   */
+  FullPrecRealType Multiplicity = 1.0;
   /// mark true if this walker is being sent.
   bool SendInProgress;
-  /// if true, this walker is either copied or tranferred from another MPI rank.
+
+  /** if true, this walker is either a copy to lower multiplicity or tranferred from another MPI rank.
+   *  This walker will need distance table, jastrow factors, etc recomputed.
+   *  So this is really a variable tracking the "cache" of the ParticleSet, etc.
+   *  \todo this is a smell and would be nice to address in ParticleSet refactoring.
+   */
   bool wasTouched = true;
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos R;
 
-  //Dynamical spin variable.
+  /** Spin configuration vector (size N)
+   *  i.e. Dynamical spin variable. */
   ParticleScalar spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
@@ -152,80 +163,51 @@ public:
   void set_has_been_on_wire(bool tf) { has_been_on_wire_ = tf; }
 #endif
 
-  /// Data for GPU-vectorized versions
-#ifdef QMC_CUDA
-  static inline int cuda_DataSize = 0;
-  using cuda_Buffer_t = gpu::device_vector<CTS::ValueType>;
-  cuda_Buffer_t cuda_DataSet;
-  // Note that R_GPU has size N+1.  The last element contains the
-  // proposed position for single-particle moves.
-  gpu::device_vector<CTS::PosType> R_GPU;
-  gpu::device_vector<CTS::GradType> Grad_GPU;
-  gpu::device_vector<CudaLapType> Lap_GPU;
-  gpu::device_vector<CUDA_PRECISION_FULL> Rhok_GPU;
-  int k_species_stride;
-  inline void resizeCuda(int size, int num_species, int num_k)
+  long getWalkerID() const { return walker_id_; }
+  long getParentID() const { return parent_id_; }
+  /** set function for walker walker_id_
+   *  only necessary because as an optimization we reuse walkers.
+   */
+  void setWalkerID(long walker_id) { walker_id_ = walker_id; }
+  void setParentID(long parent_id) { parent_id_ = parent_id; }
+
+  /// create a walker for n-particles
+  inline explicit Walker(int nptcl = 0) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
   {
-    cuda_DataSize = size;
-    cuda_DataSet.resize(size);
-    int N = R.size();
-    R_GPU.resize(N);
-    Grad_GPU.resize(N);
-    Lap_GPU.resize(N);
-    // For GPU coallescing
-    k_species_stride = ((2 * num_k + 15) / 16) * 16;
-    if (num_k)
-      Rhok_GPU.resize(num_species * k_species_stride);
-  }
-  inline CUDA_PRECISION_FULL* get_rhok_ptr() { return Rhok_GPU.data(); }
-  inline CUDA_PRECISION_FULL* get_rhok_ptr(int isp) { return Rhok_GPU.data() + k_species_stride * isp; }
-
-#endif
-
-  ///create a walker for n-particles
-  inline explicit Walker(int nptcl = 0)
-      : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
-#ifdef QMC_CUDA
-        ,
-        cuda_DataSet("Walker::walker_buffer"),
-        R_GPU("Walker::R_GPU"),
-        Grad_GPU("Walker::Grad_GPU"),
-        Lap_GPU("Walker::Lap_GPU"),
-        Rhok_GPU("Walker::Rhok_GPU")
-#endif
-  {
-    ID                 = 0;
-    ParentID           = 0;
-    Generation         = 0;
-    Age                = 0;
-    Weight             = 1.0;
-    Multiplicity       = 1.0;
-    ReleasedNodeWeight = 1.0;
-    ReleasedNodeAge    = 0;
-
     if (nptcl > 0)
       resize(nptcl);
-    //static_cast<Matrix<FullPrecRealType>>(Properties) = 0.0;
   }
 
-#if defined(QMC_CUDA)
-  //some member variables in CUDA build cannot be and should not be copied
-  //use default copy constructor to skip actual data copy
-  Walker(const Walker& a) = default;
-#else
   Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
-#endif
+  Walker(const Walker& a, long walker_id, long parent_id) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
+    makeCopy(a);
+    // makeCopy replaces walker_id_ and parent_id with a.walker_id_  ...
+    // so these can not be set in the contructor initializer list
+    walker_id_ = walker_id;
+    parent_id_ = parent_id;
+  }
+
+  /** create a valid walker for n-particles (batched version)
+   *  the goal is for this walker is valid after construction
+   *  without the need for more initialization functions to be called.
+   */
+  inline explicit Walker(long walker_id, long parent_id, int nptcl = 0)
+      : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
+    if (nptcl > 0)
+      resize(nptcl);
+  }
 
   inline int addPropertyHistory(int leng)
   {
-    int newL                            = PropertyHistory.size();
-    std::vector<RealType> newVecHistory = std::vector<RealType>(leng, 0.0);
-    PropertyHistory.push_back(newVecHistory);
+    int newL = PropertyHistory.size();
+    PropertyHistory.push_back(std::vector<RealType>(leng, 0.0));
     PHindex.push_back(0);
     return newL;
   }
 
-  inline void deletePropertyHistory() { PropertyHistory.erase(PropertyHistory.begin(), PropertyHistory.end()); }
+  inline void deletePropertyHistory() { PropertyHistory.clear(); }
 
   inline void resetPropertyHistory()
   {
@@ -280,25 +262,29 @@ public:
     spins.resize(nptcl);
     G.resize(nptcl);
     L.resize(nptcl);
-#ifdef QMC_CUDA
-    R_GPU.resize(nptcl);
-    Grad_GPU.resize(nptcl);
-    Lap_GPU.resize(nptcl);
-#endif
-    //Drift.resize(nptcl);
   }
 
-  ///copy the content of a walker
+  /** assign the content of a walker
+   *  except:
+   *  SendInProgress
+   *  wasTouched
+   *  has_been_on_wire
+   *
+   *  Special Behavior:
+   *  R & spins
+   *  Properties.copy instead of operator= ConstantSizeMatrix has strict size semantics for assignment.
+   *                                       but they seem like they should be fine.
+   *  PropertyHistory
+   */
   inline void makeCopy(const Walker& a)
   {
-    ID                 = a.ID;
-    ParentID           = a.ParentID;
-    Generation         = a.Generation;
-    Age                = a.Age;
-    Weight             = a.Weight;
-    Multiplicity       = a.Multiplicity;
-    ReleasedNodeWeight = a.ReleasedNodeWeight;
-    ReleasedNodeAge    = a.ReleasedNodeAge;
+    walker_id_   = a.walker_id_;
+    parent_id_   = a.parent_id_;
+    Generation   = a.Generation;
+    Age          = a.Age;
+    Weight       = a.Weight;
+    Multiplicity = a.Multiplicity;
+    // PD. \todo Why this strange idiom, something wrong with ParticleAttrib assignment operator
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
@@ -309,7 +295,6 @@ public:
     G = a.G;
     L = a.L;
 #endif
-    //Drift = a.Drift;
     Properties.copy(a.Properties);
     DataSet    = a.DataSet;
     block_end  = a.block_end;
@@ -319,12 +304,6 @@ public:
     for (int i = 0; i < PropertyHistory.size(); i++)
       PropertyHistory[i] = a.PropertyHistory[i];
     PHindex = a.PHindex;
-#ifdef QMC_CUDA
-    cuda_DataSet = a.cuda_DataSet;
-    R_GPU        = a.R_GPU;
-    Grad_GPU     = a.Grad_GPU;
-    Lap_GPU      = a.Lap_GPU;
-#endif
   }
 
   //return the address of the values of Hamiltonian terms
@@ -338,7 +317,6 @@ public:
 
   ///return the address of the i-th properties
   inline const FullPrecRealType* getPropertyBase(int i) const { return Properties[i]; }
-
 
   /** reset the property of a walker
    *@param logpsi \f$\log |\Psi|\f$
@@ -357,19 +335,6 @@ public:
     Properties(WP::LOCALENERGY) = ene;
   }
 
-  inline void resetReleasedNodeProperty(FullPrecRealType localenergy,
-                                        FullPrecRealType alternateEnergy,
-                                        FullPrecRealType altR)
-  {
-    Properties(WP::ALTERNATEENERGY) = alternateEnergy;
-    Properties(WP::LOCALENERGY)     = localenergy;
-    Properties(WP::SIGN)            = altR;
-  }
-  inline void resetReleasedNodeProperty(FullPrecRealType localenergy, FullPrecRealType alternateEnergy)
-  {
-    Properties(WP::ALTERNATEENERGY) = alternateEnergy;
-    Properties(WP::LOCALENERGY)     = localenergy;
-  }
   /** reset the property of a walker
    * @param logpsi \f$\log |\Psi|\f$
    * @param sigN  sign of the trial wavefunction
@@ -420,7 +385,7 @@ public:
 
   /** byte size for a packed message
    *
-   * ID, Age, Properties, R, Drift, DataSet is packed
+   * walker_id_, Age, Properties, R, Drift, DataSet is packed
    */
   inline size_t byteSize()
   {
@@ -439,12 +404,10 @@ public:
     // walker data must be placed at the beginning
     assert(DataSet.size() == 0);
     // scalars
-    DataSet.add(ID);
-    DataSet.add(ParentID);
+    DataSet.add(walker_id_);
+    DataSet.add(parent_id_);
     DataSet.add(Generation);
     DataSet.add(Age);
-    DataSet.add(ReleasedNodeAge);
-    DataSet.add(ReleasedNodeWeight);
     // vectors
     assert(R.size() != 0);
     DataSet.add(R.first_address(), R.last_address());
@@ -465,18 +428,6 @@ public:
     for (int iat = 0; iat < PropertyHistory.size(); iat++)
       DataSet.add(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
     DataSet.add(PHindex.data(), PHindex.data() + PHindex.size());
-#ifdef QMC_CUDA
-    size_t size = cuda_DataSet.size();
-    size_t N    = R_GPU.size();
-    size_t M    = Rhok_GPU.size();
-    TinyVector<size_t, 3> dim(size, N, M);
-    DataSet.add(dim.data(), dim.data() + 3);
-    DataSet.add(cuda_DataSet.data(), cuda_DataSet.data() + size);
-    DataSet.add(R_GPU.data(), R_GPU.data() + N);
-    DataSet.add(Grad_GPU.data(), Grad_GPU.data() + N);
-    DataSet.add(Lap_GPU.data(), Lap_GPU.data() + N);
-    DataSet.add(Rhok_GPU.data(), Rhok_GPU.data() + M);
-#endif
     block_end  = DataSet.current();
     scalar_end = DataSet.current_scalar();
   }
@@ -485,7 +436,7 @@ public:
   {
     assert(DataSet.size() != 0);
     DataSet.rewind();
-    DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
+    DataSet >> walker_id_ >> parent_id_ >> Generation >> Age;
     // vectors
     assert(R.size() != 0);
     DataSet.get(R.first_address(), R.last_address());
@@ -501,35 +452,6 @@ public:
     for (int iat = 0; iat < PropertyHistory.size(); iat++)
       DataSet.get(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
     DataSet.get(PHindex.data(), PHindex.data() + PHindex.size());
-#ifdef QMC_CUDA
-    // Unpack GPU data
-    std::vector<CTS::ValueType> host_data;
-    std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<CTS::PosType> R_host;
-    std::vector<CTS::GradType> Grad_host;
-    std::vector<CudaLapType> host_lapl;
-
-    TinyVector<size_t, 3> dim;
-    DataSet.get(dim.data(), dim.data() + 3);
-    size_t size = dim[0];
-    size_t N    = dim[1];
-    size_t M    = dim[2];
-    host_data.resize(size);
-    R_host.resize(N);
-    Grad_host.resize(N);
-    host_lapl.resize(N);
-    host_rhok.resize(M);
-    DataSet.get(host_data.data(), host_data.data() + size);
-    DataSet.get(R_host.data(), R_host.data() + N);
-    DataSet.get(Grad_host.data(), Grad_host.data() + N);
-    DataSet.get(host_lapl.data(), host_lapl.data() + N);
-    DataSet.get(host_rhok.data(), host_rhok.data() + M);
-    cuda_DataSet = host_data;
-    R_GPU        = R_host;
-    Grad_GPU     = Grad_host;
-    Lap_GPU      = host_lapl;
-    Rhok_GPU     = host_rhok;
-#endif
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
   }
@@ -539,7 +461,7 @@ public:
   void updateBuffer()
   {
     DataSet.rewind();
-    DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
+    DataSet << walker_id_ << parent_id_ << Generation << Age;
     // vectors
     DataSet.put(R.first_address(), R.last_address());
     DataSet.put(spins.first_address(), spins.last_address());
@@ -551,30 +473,6 @@ public:
     for (int iat = 0; iat < PropertyHistory.size(); iat++)
       DataSet.put(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
     DataSet.put(PHindex.data(), PHindex.data() + PHindex.size());
-#ifdef QMC_CUDA
-    // Pack GPU data
-    std::vector<CTS::ValueType> host_data;
-    std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<CTS::PosType> R_host;
-    std::vector<CTS::GradType> Grad_host;
-    std::vector<CudaLapType> host_lapl;
-
-    cuda_DataSet.copyFromGPU(host_data);
-    R_GPU.copyFromGPU(R_host);
-    Grad_GPU.copyFromGPU(Grad_host);
-    Lap_GPU.copyFromGPU(host_lapl);
-    Rhok_GPU.copyFromGPU(host_rhok);
-    int size = host_data.size();
-    int N    = R_host.size();
-    int M    = host_rhok.size();
-    TinyVector<size_t, 3> dim(size, N, M);
-    DataSet.put(dim.data(), dim.data() + 3);
-    DataSet.put(host_data.data(), host_data.data() + size);
-    DataSet.put(R_host.data(), R_host.data() + N);
-    DataSet.put(Grad_host.data(), Grad_host.data() + N);
-    DataSet.put(host_lapl.data(), host_lapl.data() + N);
-    DataSet.put(host_rhok.data(), host_rhok.data() + M);
-#endif
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
   }

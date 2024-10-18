@@ -7,22 +7,30 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2021.3)
     message(FATAL_ERROR "Requires Intel oneAPI 2021.3 or higher!")
   endif()
-elseif(INTEL_ONEAPI_COMPILER_FOUND)
-  # in this case, the version string reported based on Clang, not accurate enough. just skip check.
 else()
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.1.2)
-    message(FATAL_ERROR "Requires Intel classic compiler 19.1.2 or higher!")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2021.1)
+    message(FATAL_ERROR "Requires Intel classic compiler 2021.1 or higher!")
   endif()
 endif()
 
 # Enable OpenMP
 if(QMC_OMP)
-  if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
     if(ENABLE_OFFLOAD)
-      set(OFFLOAD_TARGET
-          "spir64"
-          CACHE STRING "Offload target architecture")
-      set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
+      if(DEFINED OFFLOAD_ARCH OR QMC_GPU_ARCHS)
+        # for ahead-of-time compilation and linking
+        set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=spir64_gen")
+        if(DEFINED OFFLOAD_ARCH)
+          set(OpenMP_OFFLOAD_LINKER_FLAGS "-Xs \"-device ${OFFLOAD_ARCH}\"")
+        else()
+          set(OpenMP_OFFLOAD_LINKER_FLAGS "-Xs \"-device ${QMC_GPU_ARCHS}\"")
+        endif()
+      else()
+        set(OFFLOAD_TARGET
+            "spir64"
+            CACHE STRING "Offload target architecture")
+        set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
+      endif()
     endif(ENABLE_OFFLOAD)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fiopenmp")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fiopenmp")
@@ -35,8 +43,12 @@ if(QMC_OMP)
   endif()
 endif(QMC_OMP)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND)
+if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
   # oneAPI compiler options
+
+  # Set extra optimization specific flags
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffast-math")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 
   # Set clang specific flags (which we always want)
   add_compile_definitions(restrict=__restrict__)
@@ -84,7 +96,7 @@ endif()
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
 
   # use -x for classic compiler only. this option is not robust with oneAPI compiler as 2021.3 release
-  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" AND NOT INTEL_ONEAPI_COMPILER_FOUND)
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
     set(X_OPTION "^-x| -x")
     set(AX_OPTION "^-ax| -ax")
     #check if the user has already specified -x option for cross-compiling.

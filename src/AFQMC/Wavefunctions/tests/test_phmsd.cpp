@@ -85,16 +85,9 @@ void test_read_phmsd(boost::mpi3::communicator& world)
     {
       app_error() << "Error reading wavefunction file.\n";
     }
-    if (!dump.push("Wavefunction", false))
-    {
-      app_error() << " Error in WavefunctionFactory: Group Wavefunction not found. \n";
-      APP_ABORT("");
-    }
-    if (!dump.push("PHMSD", false))
-    {
-      app_error() << " Error in WavefunctionFactory: Group PHMSD not found. \n";
-      APP_ABORT("");
-    }
+    dump.push("Wavefunction", false);
+    dump.push("PHMSD", false);
+
     int ndets_to_read = -1;
     std::string wfn_type;
     WALKER_TYPES walker_type = COLLINEAR;
@@ -150,16 +143,9 @@ void getBasicWavefunction(std::vector<int>& occs, std::vector<ComplexType>& coef
   {
     app_error() << "Error reading wavefunction file.\n";
   }
-  if (!dump.push("Wavefunction", false))
-  {
-    app_error() << " Error in WavefunctionFactory: Group Wavefunction not found. \n";
-    APP_ABORT("");
-  }
-  if (!dump.push("PHMSD", false))
-  {
-    app_error() << " Error in WavefunctionFactory: Group PHMSD not found. \n";
-    APP_ABORT("");
-  }
+  dump.push("Wavefunction", false);
+  dump.push("PHMSD", false);
+
   std::vector<int> Idata(5);
   if (!dump.readEntry(Idata, "dims"))
     APP_ABORT("Errro reading dims array\n");
@@ -245,7 +231,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
     RandomGenerator rng;
-    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
+    WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
     REQUIRE(std::get<1>(initial_guess.sizes()) == NMO);
@@ -292,15 +278,15 @@ void test_phmsd(boost::mpi3::communicator& world)
     // coefficients as using factory setup.
     for (auto it = wset.begin(); it != wset.end(); ++it)
     {
-      REQUIRE(std::abs(real(*it->overlap())) == Approx(std::abs(real(ovlp_sum))));
-      REQUIRE(std::abs(imag(*it->overlap())) == Approx(std::abs(imag(ovlp_sum))));
+      CHECK(std::abs(real(*it->overlap())) == Approx(std::abs(real(ovlp_sum))));
+      CHECK(std::abs(imag(*it->overlap())) == Approx(std::abs(imag(ovlp_sum))));
     }
     // It's not straightforward to calculate energy directly in unit test due to half
     // rotation.
     //wfn.Energy(wset);
     //for(auto it = wset.begin(); it!=wset.end(); ++it) {
-    //REQUIRE(real(*it->energy()) == Approx(real(energy)));
-    //REQUIRE(imag(*it->energy()) == Approx(imag(energy)));
+    //CHECK(real(*it->energy()) == Approx(real(energy)));
+    //CHECK(imag(*it->energy()) == Approx(imag(energy)));
     //}
     //auto nCV = wfn.local_number_of_cholesky_vectors();
     //boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});

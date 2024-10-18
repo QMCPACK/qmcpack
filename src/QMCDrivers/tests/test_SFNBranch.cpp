@@ -49,7 +49,7 @@ public:
     walkers[0].get().R[0] = 1.0;
     walkers[1].get().R[0] = 0.5;
 
-    auto sfnb = std::make_unique<SFNBranch>(tau_, num_global_walkers_);
+    auto sfnb = std::make_unique<SFNBranch>(tau_, 1.0, DMCRefEnergyScheme::LIMITED_HISTORY);
 
     createMyNode(*sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
 

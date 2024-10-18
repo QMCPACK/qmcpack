@@ -104,7 +104,7 @@ TEST_CASE("putContent", "[xml]")
 
   float c;
   putContent(c, item);
-  REQUIRE(c == Approx(3.5));
+  CHECK(c == Approx(3.5));
 
   vector<double> d;
   item = xmlNextElementSibling(item);

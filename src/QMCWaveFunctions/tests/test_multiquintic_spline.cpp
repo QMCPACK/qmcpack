@@ -34,12 +34,12 @@ TEST_CASE("LogGridLight", "[wavefunction][LCAO]")
   REQUIRE(idx2 == 3);
 
   double t = grid(0);
-  REQUIRE(t == Approx(0.1));
+  CHECK(t == Approx(0.1));
 
   int idx3  = 0;
   double t2 = grid.getCLForQuintic(0.1, idx3);
   REQUIRE(idx3 == 0);
-  REQUIRE(t2 == Approx(0.0));
+  CHECK(t2 == Approx(0.0));
 }
 
 
@@ -98,25 +98,25 @@ TEST_CASE("MultiQuinticSpline", "[wavefunction][LCAO]")
     u1 = spline1.splint(r, du1, d2u1);
     u2 = spline2.splint(r, du2, d2u2);
 
-    REQUIRE(u[0] == Approx(u1));
-    REQUIRE(du[0] == Approx(du1));
-    REQUIRE(d2u[0] == Approx(d2u1));
-    REQUIRE(u[1] == Approx(u2));
-    REQUIRE(du[1] == Approx(du2));
-    REQUIRE(d2u[1] == Approx(d2u2));
+    CHECK(u[0] == Approx(u1));
+    CHECK(du[0] == Approx(du1));
+    CHECK(d2u[0] == Approx(d2u1));
+    CHECK(u[1] == Approx(u2));
+    CHECK(du[1] == Approx(du2));
+    CHECK(d2u[1] == Approx(d2u2));
 
     m_spline.evaluate(r, u, du, d2u, d3u);
     u1 = spline1.splint(r, du1, d2u1, d3u1);
     u2 = spline2.splint(r, du2, d2u2, d3u2);
 
-    REQUIRE(u[0] == Approx(u1));
-    REQUIRE(du[0] == Approx(du1));
-    REQUIRE(d2u[0] == Approx(d2u1));
-    REQUIRE(d3u[0] == Approx(d3u1));
-    REQUIRE(u[1] == Approx(u2));
-    REQUIRE(du[1] == Approx(du2));
-    REQUIRE(d2u[1] == Approx(d2u2));
-    REQUIRE(d3u[1] == Approx(d3u2));
+    CHECK(u[0] == Approx(u1));
+    CHECK(du[0] == Approx(du1));
+    CHECK(d2u[0] == Approx(d2u1));
+    CHECK(d3u[0] == Approx(d3u1));
+    CHECK(u[1] == Approx(u2));
+    CHECK(du[1] == Approx(du2));
+    CHECK(d2u[1] == Approx(d2u2));
+    CHECK(d3u[1] == Approx(d3u2));
   }
 }
 

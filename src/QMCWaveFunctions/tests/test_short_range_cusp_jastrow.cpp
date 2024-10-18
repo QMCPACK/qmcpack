@@ -58,18 +58,18 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   // prepare the Jastrow factor using the xml input
   ShortRangeCuspFunctor<RealType> f("test_functor");
   f.put(child);
-  REQUIRE(f.A == Approx(3.0));
-  REQUIRE(f.R0 == Approx(0.0624));
-  REQUIRE(f.B.at(0) == Approx(0.3));
-  REQUIRE(f.B.at(1) == Approx(0.2));
-  REQUIRE(f.B.at(2) == Approx(0.4));
+  CHECK(f.A == Approx(3.0));
+  CHECK(f.R0 == Approx(0.0624));
+  CHECK(f.B.at(0) == Approx(0.3));
+  CHECK(f.B.at(1) == Approx(0.2));
+  CHECK(f.B.at(2) == Approx(0.4));
   REQUIRE(f.Opt_A == false);
   REQUIRE(f.Opt_R0 == true);
   REQUIRE(f.Opt_B == true);
   REQUIRE(f.ID_A == "string_not_set");
   REQUIRE(f.ID_R0 == "LiCuspR0");
   REQUIRE(f.ID_B == "LiCuspB");
-  REQUIRE(f.cutoff_radius == Approx(6.0));
+  CHECK(f.cutoff_radius == Approx(6.0));
 
   // set finite difference displacement parameter
   const RealType h = 0.0001;
@@ -84,9 +84,9 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   RealType d2udr2 = 15000000.0; // initialize to a wrong value
   RealType val_2  = f.evaluate(r, dudr, d2udr2);
 
-  REQUIRE(val == Approx(-0.1970331287).epsilon(eps));
-  REQUIRE(val_2 == Approx(-0.1970331287).epsilon(eps));
-  REQUIRE(val == Approx(val_2));
+  CHECK(val == Approx(-0.1970331287).epsilon(eps));
+  CHECK(val_2 == Approx(-0.1970331287).epsilon(eps));
+  CHECK(val == Approx(val_2));
 
   // Finite difference to verify the spatial derivatives
   RealType r_ph          = r + h;
@@ -99,17 +99,17 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   RealType val_mh        = f.evaluate(r_mh, dudr_mh, d2udr2_mh);
   RealType approx_dudr   = (val_ph - val_mh) / (2 * h);
   RealType approx_d2udr2 = (dudr_ph - dudr_mh) / (2 * h);
-  REQUIRE(dudr == Approx(approx_dudr).epsilon(eps));
-  REQUIRE(d2udr2 == Approx(approx_d2udr2).epsilon(eps));
+  CHECK(dudr == Approx(approx_dudr).epsilon(eps));
+  CHECK(d2udr2 == Approx(approx_d2udr2).epsilon(eps));
 
   // currently the d3udr3_3 function is not implemented
   //RealType dudr_3;
   //RealType d2udr2_3;
   //RealType d3udr3_3;
   //RealType val_3 = f.evaluate(r, dudr_3, d2udr2_3, d3udr3_3);
-  //REQUIRE(val == Approx(val_3));
-  //REQUIRE(dudr == Approx(dudr_3));
-  //REQUIRE(d2udr2 == Approx(d2udr2_3));
+  //CHECK(val == Approx(val_3));
+  //CHECK(dudr == Approx(dudr_3));
+  //CHECK(d2udr2 == Approx(d2udr2_3));
 
   // Now let's do finite difference checks for the parameter derivatives
 
@@ -146,13 +146,13 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
     RealType val_m = f.evaluate(r, dudr_m, d2udr2_m);
 
     const RealType val_dp = (val_h - val_m) / (2.0 * h);
-    REQUIRE(val_dp == Approx(param_derivs[i][0]).epsilon(eps));
+    CHECK(val_dp == Approx(param_derivs[i][0]).epsilon(eps));
 
     const RealType dudr_dp = (dudr_h - dudr_m) / (2.0 * h);
-    REQUIRE(dudr_dp == Approx(param_derivs[i][1]).epsilon(eps));
+    CHECK(dudr_dp == Approx(param_derivs[i][1]).epsilon(eps));
 
     const RealType d2udr2_dp = (d2udr2_h - d2udr2_m) / (2.0 * h);
-    REQUIRE(d2udr2_dp == Approx(param_derivs[i][2]).epsilon(eps));
+    CHECK(d2udr2_dp == Approx(param_derivs[i][2]).epsilon(eps));
 
     var_param[var_name] = old_param;
     f.resetParametersExclusive(var_param);

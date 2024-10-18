@@ -31,6 +31,7 @@
 namespace qmcplusplus
 {
 class TraceManager;
+class WalkerLogManager;
 /** @ingroup QMC
  * @brief Base class for update methods for each step
  *
@@ -51,8 +52,6 @@ public:
   using mTensorType = TensorType;
 #endif
 
-  ///If true, terminate the simulation, but it is never checked
-  bool BadState;
   ///number of steps per measurement
   int nSubSteps;
   /// determine additional checks for debugging purpose
@@ -78,13 +77,13 @@ public:
   bool UseDrift;
 
   /// Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
+  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomBase<FullPrecRealType>& rg);
   ///Alt Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w,
                 TrialWaveFunction& psi,
                 TrialWaveFunction& guide,
                 QMCHamiltonian& h,
-                RandomGenerator& rg);
+                RandomBase<FullPrecRealType>& rg);
   ///destructor
   virtual ~QMCUpdateBase();
 
@@ -101,6 +100,12 @@ public:
   void resetRun(BranchEngineType* brancher,
                 EstimatorManagerBase* est,
                 TraceManager* traces,
+                const DriftModifierBase* driftmodifer);
+
+  void resetRun2(BranchEngineType* brancher,
+                EstimatorManagerBase* est,
+                TraceManager* traces,
+                WalkerLogCollector* wlog_collector_,
                 const DriftModifierBase* driftmodifer);
 
   inline RealType getTau()
@@ -166,9 +171,6 @@ public:
       M = std::min(cone, M);
     awalker.Multiplicity = M + RandomGen();
   }
-
-  /** set the multiplicity of the walkers to branch */
-  void setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
 
   /** initialize Walker buffers for PbyP update
    */
@@ -243,6 +245,7 @@ public:
 public:
   ///traces
   TraceManager* Traces;
+  WalkerLogCollector* wlog_collector;
 
 protected:
   ///update particle-by-particle
@@ -266,7 +269,9 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
   ///random number generator
-  RandomGenerator& RandomGen;
+  RandomBase<FullPrecRealType>& RandomGen;
+  ///non local operator
+  NonLocalTOperator non_local_ops_;
   ///branch engine, stateless reference to the one in QMCDriver
   const BranchEngineType* branchEngine;
   ///drift modifer, stateless reference to the one in QMCDriver
@@ -311,7 +316,7 @@ private:
   /// Copy operator (disabled).
   QMCUpdateBase& operator=(const QMCUpdateBase&) { return *this; }
   ///
-  NewTimer* InitWalkersTimer;
+  NewTimer& initWalkers_timer_;
 };
 } // namespace qmcplusplus
 

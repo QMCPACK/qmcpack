@@ -24,6 +24,7 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
+#include "ResourceHandle.h"
 #include "SpeciesSet.h"
 #include "Pools/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
@@ -146,13 +147,17 @@ public:
    */
   void create(const std::vector<int>& agroup);
 
-  ///write to a std::ostream
-  bool get(std::ostream&) const override;
+  /** print particle coordinates to a std::ostream
+   * @param os output stream
+   * @param maxParticlesToPrint maximal number of particles to print. Pass 0 to print all.
+   */
+  void print(std::ostream& os, const size_t maxParticlesToPrint = 0) const;
 
-  ///read from std::istream
+  ///dummy. For satisfying OhmmsElementBase.
+  bool get(std::ostream& os) const override;
+  ///dummy. For satisfying OhmmsElementBase.
   bool put(std::istream&) override;
-
-  ///reset member data
+  ///dummy. For satisfying OhmmsElementBase.
   void reset() override;
 
   ///initialize ParticleSet from xmlNode
@@ -421,7 +426,7 @@ public:
   void applyBC(const ParticlePos& pin, ParticlePos& pout);
   void applyBC(ParticlePos& pos);
   void applyBC(const ParticlePos& pin, ParticlePos& pout, int first, int last);
-  void applyMinimumImage(ParticlePos& pinout);
+  void applyMinimumImage(ParticlePos& pinout) const;
 
   /** load a Walker_t to the current ParticleSet
    * @param awalker the reference to the walker to be loaded
@@ -473,8 +478,8 @@ public:
   ///return the address of the i-th properties
   inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
-  inline void setTwist(SingleParticlePos& t) { myTwist = t; }
-  inline SingleParticlePos getTwist() const { return myTwist; }
+  inline void setTwist(const SingleParticlePos& t) { myTwist = t; }
+  inline const SingleParticlePos& getTwist() const { return myTwist; }
 
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
@@ -612,7 +617,7 @@ protected:
   std::unique_ptr<StructFact> structure_factor_;
 
   ///multi walker structure factor data
-  std::unique_ptr<SKMultiWalkerMem> mw_structure_factor_data_;
+  ResourceHandle<SKMultiWalkerMem> mw_structure_factor_data_handle_;
 
   /** map to handle distance tables
    *

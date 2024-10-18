@@ -43,9 +43,7 @@ void test_lcao_spinor()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1});
 
-  ions_.R[0][0]        = 0.00000000;
-  ions_.R[0][1]        = 0.00000000;
-  ions_.R[0][2]        = 0.00000000;
+  ions_.R[0]           = {0.00000000, 0.00000000, 0.00000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -53,9 +51,7 @@ void test_lcao_spinor()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.1;
-  elec_.R[0][1]  = -0.3;
-  elec_.R[0][2]  = 1.7;
+  elec_.R[0]     = {0.1, -0.3, 1.7};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 
@@ -71,7 +67,7 @@ void test_lcao_spinor()
   const char* particles = R"XML(<tmp> 
    <sposet_builder name="spinorbuilder" type="molecularorbital" href="lcao_spinor.h5" source="ion" precision="float"> 
      <basisset transform="yes"/> 
-     <sposet name="myspo" size="1"/> 
+     <sposet name="myspo" size="2"/> 
    </sposet_builder> 
    </tmp>)XML";
 
@@ -94,10 +90,14 @@ void test_lcao_spinor()
   });
   REQUIRE(spo);
 
-  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix dspsiM(elec_.R.size(), spo->getOrbitalSetSize()); //spin gradient
-  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  //For this test, we are making the number of total orbitals in the SPOSet larger
+  //than what is requested for all SPOSet calls.
+  //That will allow us to check the behavior of SpinorSet doing the right thing if
+  //OrbitalSetSize > norbs_requested. This is necessary for things like orb opt with single determinants
+  SPOSet::ValueMatrix psiM(elec_.R.size(), elec_.R.size());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), elec_.R.size());
+  SPOSet::ValueMatrix dspsiM(elec_.R.size(), elec_.R.size()); //spin gradient
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), elec_.R.size());
 
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
@@ -123,7 +123,7 @@ void test_lcao_spinor()
    * In this case, the ion derivative is actually just the negative of 
    * the electron gradient. 
    */
-  SPOSet::GradMatrix gradIon(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix gradIon(elec_.R.size(), elec_.R.size());
   spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 0, gradIon);
   for (int iat = 0; iat < 1; iat++)
   {
@@ -132,7 +132,6 @@ void test_lcao_spinor()
     CHECK(gradIon[iat][0][2] == ComplexApprox(-vdz).epsilon(eps));
   }
 
-  int OrbitalSetSize = spo->getOrbitalSetSize();
   //temporary arrays for holding the values of the up and down channels respectively.
   SPOSet::ValueVector psi_work;
 
@@ -145,10 +144,10 @@ void test_lcao_spinor()
   //temporary arrays for holding spin gradient
   SPOSet::ValueVector dspsi_work;
 
-  psi_work.resize(OrbitalSetSize);
-  dpsi_work.resize(OrbitalSetSize);
-  d2psi_work.resize(OrbitalSetSize);
-  dspsi_work.resize(OrbitalSetSize);
+  psi_work.resize(elec_.R.size());
+  dpsi_work.resize(elec_.R.size());
+  d2psi_work.resize(elec_.R.size());
+  dspsi_work.resize(elec_.R.size());
 
   //We worked hard to generate nice reference data above.  Let's generate a test for evaluateV
   //and evaluateVGL by perturbing the electronic configuration by dR, and then make
@@ -227,9 +226,7 @@ void test_lcao_spinor()
 
   //now create second walker
   ParticleSet elec_2(elec_);
-  elec_2.R[0][0]  = -0.4;
-  elec_2.R[0][1]  = 1.5;
-  elec_2.R[0][2]  = -0.2;
+  elec_2.R[0]     = {-0.4, 1.5, -0.2};
   elec_2.spins[0] = -1.3;
 
   //create new reference values for new positions
@@ -263,9 +260,9 @@ void test_lcao_spinor()
   ResourceCollectionTeamLock<SPOSet> mw_spo_lock(spo_res, spo_list);
   REQUIRE(spinor.isResourceOwned());
 
-  SPOSet::ValueMatrix psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix d2psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM_2(elec_.R.size(), elec_.R.size());
+  SPOSet::GradMatrix dpsiM_2(elec_.R.size(), elec_.R.size());
+  SPOSet::ValueMatrix d2psiM_2(elec_.R.size(), elec_.R.size());
 
   RefVector<SPOSet::ValueMatrix> logdet_list;
   RefVector<SPOSet::GradMatrix> dlogdet_list;
@@ -307,15 +304,15 @@ void test_lcao_spinor()
   }
   elec_.mw_update(p_list);
 
-  SPOSet::ValueVector psi_work_2(OrbitalSetSize);
-  SPOSet::GradVector dpsi_work_2(OrbitalSetSize);
-  SPOSet::ValueVector d2psi_work_2(OrbitalSetSize);
+  SPOSet::ValueVector psi_work_2(elec_.R.size());
+  SPOSet::GradVector dpsi_work_2(elec_.R.size());
+  SPOSet::ValueVector d2psi_work_2(elec_.R.size());
 
   RefVector<SPOSet::ValueVector> psi_v_list   = {psi_work, psi_work_2};
   RefVector<SPOSet::GradVector> dpsi_v_list   = {dpsi_work, dpsi_work_2};
   RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
   SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin;
-  mw_dspin.resize(2, OrbitalSetSize);
+  mw_dspin.resize(2, elec_.R.size());
   //check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 1; iat++)
   {
@@ -373,9 +370,7 @@ void test_lcao_spinor_excited()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1});
 
-  ions_.R[0][0]        = 0.00000000;
-  ions_.R[0][1]        = 0.00000000;
-  ions_.R[0][2]        = 0.00000000;
+  ions_.R[0]           = {0.00000000, 0.00000000, 0.00000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -383,9 +378,7 @@ void test_lcao_spinor_excited()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.1;
-  elec_.R[0][1]  = -0.3;
-  elec_.R[0][2]  = 1.7;
+  elec_.R[0]     = {0.1, -0.3, 1.7};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 
@@ -562,9 +555,7 @@ void test_lcao_spinor_excited()
 
   //now create second walker
   ParticleSet elec_2(elec_);
-  elec_2.R[0][0]  = -0.4;
-  elec_2.R[0][1]  = 1.5;
-  elec_2.R[0][2]  = -0.2;
+  elec_2.R[0]     = {-0.4, 1.5, -0.2};
   elec_2.spins[0] = -1.3;
 
   //create new reference values for new positions
@@ -581,9 +572,9 @@ void test_lcao_spinor_excited()
   p_list.push_back(elec_);
   p_list.push_back(elec_2);
 
-  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
-  elec_.mw_update(p_list);
+  ResourceCollection spo_res("test_spo_res");
+  spo->createResource(spo_res);
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
@@ -604,6 +595,10 @@ void test_lcao_spinor_excited()
   d2logdet_list.push_back(d2psiM);
   d2logdet_list.push_back(d2psiM_2);
 
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_spo_lock(spo_res, spo_list);
+
+  elec_.mw_update(p_list);
   spo->mw_evaluate_notranspose(spo_list, p_list, 0, 1, logdet_list, dlogdet_list, d2logdet_list);
   for (unsigned int iat = 0; iat < 1; iat++)
   {
@@ -698,12 +693,8 @@ void test_lcao_spinor_ion_derivs()
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
 
-  ions_.R[0][0]        = 0.10000000;
-  ions_.R[0][1]        = 0.20000000;
-  ions_.R[0][2]        = 0.30000000;
-  ions_.R[1][0]        = -0.30000000;
-  ions_.R[1][1]        = -0.20000000;
-  ions_.R[1][2]        = -0.10000000;
+  ions_.R[0]           = {0.10000000, 0.20000000, 0.30000000};
+  ions_.R[1]           = {-0.30000000, -0.20000000, -0.10000000};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int hIdx             = ispecies.addSpecies("H");
   ions_.update();
@@ -711,9 +702,7 @@ void test_lcao_spinor_ion_derivs()
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1});
-  elec_.R[0][0]  = 0.01;
-  elec_.R[0][1]  = -0.02;
-  elec_.R[0][2]  = 0.03;
+  elec_.R[0]     = {0.01, -0.02, 0.03};
   elec_.spins[0] = 0.6;
   elec_.setSpinor(true);
 

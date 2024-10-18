@@ -18,26 +18,30 @@
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "TestListenerFunction.h"
+#include "Utilities/ResourceCollection.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Utilities/RuntimeOptions.h"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
 
 namespace qmcplusplus
 {
 using QMCT = QMCTraits;
 using Real = QMCT::RealType;
+using WP   = WalkerProperties::Indexes;
 
 constexpr bool generate_test_data = false;
 
 TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
 {
+  RuntimeOptions runtime_options;
   Communicate* comm;
   comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
-  TrialWaveFunction twf;
+  TrialWaveFunction twf(runtime_options);
 
   std::vector<QMCHamiltonian> hamiltonians;
   //hamiltonians.emplace_back(*(hamiltonian_pool.getPrimary()));
@@ -53,16 +57,15 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   //TODO: Would be nice to check some values but I think the system needs a little more setup
 }
 
-#ifndef QMC_CUDA
-
 /** QMCHamiltonian + Hamiltonians with listeners integration test
  */
 TEST_CASE("integrateListeners", "[hamiltonian]")
 {
+  RuntimeOptions runtime_options;
   Communicate* comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   //auto& species_set        = pset_target.getSpeciesSet();
@@ -199,8 +202,12 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
 
   ParticleSet::mw_update(p_list);
 
-  QMCHamiltonian::mw_evaluate(ham_list, twf_list, p_list);
+  auto energies = QMCHamiltonian::mw_evaluate(ham_list, twf_list, p_list);
 
+  CHECK(ham_list[0].getLocalEnergy() == energies[0]);
+  CHECK(ham_list[1].getLocalEnergy() == energies[1]);
+  CHECK(ham_list[0].getLocalEnergy() == p_list[0].PropertyList[WP::LOCALENERGY]);
+  CHECK(ham_list[1].getLocalEnergy() == p_list[1].PropertyList[WP::LOCALENERGY]);
 
   if constexpr (generate_test_data)
   {
@@ -262,8 +269,20 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
     auto sum_kinetic    = std::accumulate(kinetic.begin(), kinetic.end(), 0.0);
     auto sum_local_nrg  = std::accumulate(local_nrg.begin(), local_nrg.end(), 0.0);
     CHECK(sum_local_nrg == Approx(sum_local_pots + sum_kinetic));
+
+    // Here we test consistency between the per particle energies and the per hamiltonian energies
+    typename decltype(energies)::value_type hamiltonian_local_nrg_sum = 0.0;
+    typename decltype(energies)::value_type energies_sum = 0.0;
+    for (int iw = 0; iw < num_walkers; ++iw) {
+      hamiltonian_local_nrg_sum += ham_list[iw].getLocalEnergy();
+      energies_sum += energies[iw];
+    }
+
+    // the QMCHamiltonian.getLocalEnergy() contains the ion_potential as well.
+    sum_local_nrg += std::accumulate(ion_pots.begin(), ion_pots.end(), 0.0);
+    CHECK(sum_local_nrg == Approx(hamiltonian_local_nrg_sum));
+    CHECK(sum_local_nrg == Approx(energies_sum));
   }
 }
-#endif
 
 } // namespace qmcplusplus

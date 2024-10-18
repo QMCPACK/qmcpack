@@ -19,9 +19,9 @@
 
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 #include "Concurrency/ParallelExecutor.hpp"
-#include "Platforms/Host/OutputManager.h"
 #include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
@@ -54,7 +54,7 @@ void ParallelExecutor<Executor::OPENMP>::operator()(int num_tasks, F&& f, Args&&
         ++nested_throw_count;
       else
       {
-        app_error() << re.what() << std::flush;
+        std::cerr << re.what() << std::flush;
         ++throw_count;
       }
     }

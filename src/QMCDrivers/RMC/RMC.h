@@ -36,7 +36,6 @@ public:
       Communicate* comm);
   bool run() override;
   bool put(xmlNodePtr cur) override;
-  //inline std::vector<RandomGenerator*>& getRng() { return Rng;}
   QMCRunType getRunType() override { return QMCRunType::RMC; }
 
 private:
@@ -59,6 +58,9 @@ private:
   //       vector of indices for the action and transprob
   std::vector<int> Action;
   std::vector<int> TransProb;
+
+  ///driver copy of Random number generators
+  UPtrVector<RandomBase<QMCTraits::FullPrecRealType>> Rng;
 
   ///check the run-time environments
   inline void resetVars()

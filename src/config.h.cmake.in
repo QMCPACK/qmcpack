@@ -99,11 +99,11 @@
 /* Find ESSL library */
 #cmakedefine HAVE_ESSL @HAVE_ESSL@
 
-/* Using CUDA for GPU execution */
-#cmakedefine QMC_CUDA @QMC_CUDA@
-
 /* Using translation of CUDA to HIP for GPU execution */
 #cmakedefine QMC_CUDA2HIP @QMC_CUDA2HIP@
+
+/* Disable hipHostRegister/hipHostUnregister */
+#cmakedefine QMC_DISABLE_HIP_HOST_REGISTER @QMC_DISABLE_HIP_HOST_REGISTER@
 
 /* Using CUDA for GPU execution, next generation */
 #cmakedefine ENABLE_CUDA @ENABLE_CUDA@
@@ -114,20 +114,11 @@
 /* Using boost::stacktrace */
 #cmakedefine ENABLE_STACKTRACE @ENABLE_STACKTRACE@
 
-/* Setting base precision for CUDA kernels */
-#cmakedefine CUDA_PRECISION @CUDA_PRECISION@
-
-/* Setting full precision for CUDA kernels */
-#cmakedefine CUDA_PRECISION_FULL @CUDA_PRECISION_FULL@
-
 /* For AFQMC compilation  */
 #cmakedefine BUILD_AFQMC @BUILD_AFQMC@
 
 /* For AFQMC compilation  */
 #cmakedefine BUILD_AFQMC_WITH_NCCL @BUILD_AFQMC_WITH_NCCL@
-
-/* For FCIQMC compilation  */
-#cmakedefine BUILD_FCIQMC @BUILD_FCIQMC@
 
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 

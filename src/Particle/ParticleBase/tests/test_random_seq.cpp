@@ -39,8 +39,8 @@ TEST_CASE("gaussian random array length 1", "[particle_base]")
   assignGaussRand(a.data(), 1, rg);
 
   // assuming RNG input is 0.5
-  REQUIRE(a[0] == Approx(-1.1774100224305424));
-  REQUIRE(a[1] == Approx(0.0)); // ensure no overflow
+  CHECK(a[0] == Approx(-1.1774100224305424));
+  CHECK(a[1] == Approx(0.0)); // ensure no overflow
 }
 
 TEST_CASE("gaussian random array length 2", "[particle_base]")
@@ -50,9 +50,9 @@ TEST_CASE("gaussian random array length 2", "[particle_base]")
   assignGaussRand(a.data(), 2, rg);
 
   // assuming RNG input is 0.5
-  REQUIRE(a[0] == Approx(-1.1774100224305424));
-  REQUIRE(a[1] == Approx(1.4419114152535772e-16));
-  REQUIRE(a[2] == Approx(0.0)); // ensure no overflow
+  CHECK(a[0] == Approx(-1.1774100224305424));
+  CHECK(a[1] == Approx(1.4419114152535772e-16));
+  CHECK(a[2] == Approx(0.0)); // ensure no overflow
 }
 
 TEST_CASE("gaussian random array length 3", "[particle_base]")
@@ -62,10 +62,10 @@ TEST_CASE("gaussian random array length 3", "[particle_base]")
   assignGaussRand(a.data(), 3, rg);
 
   // assuming RNG input is 0.5
-  REQUIRE(a[0] == Approx(-1.1774100224305424));
-  REQUIRE(a[1] == Approx(1.4419114152535772e-16));
-  REQUIRE(a[2] == Approx(-1.1774100224305424));
-  REQUIRE(a[3] == Approx(0.0)); // ensure no overflow
+  CHECK(a[0] == Approx(-1.1774100224305424));
+  CHECK(a[1] == Approx(1.4419114152535772e-16));
+  CHECK(a[2] == Approx(-1.1774100224305424));
+  CHECK(a[3] == Approx(0.0)); // ensure no overflow
 }
 
 TEST_CASE("gaussian random particle attrib array length 1", "[particle_base]")
@@ -76,7 +76,7 @@ TEST_CASE("gaussian random particle attrib array length 1", "[particle_base]")
   makeGaussRandomWithEngine(PA, rg);
 
   // assuming RNG input is 0.5
-  REQUIRE(PA[0][0] == Approx(-1.1774100224305424));
+  CHECK(PA[0][0] == Approx(-1.1774100224305424));
 }
 
 TEST_CASE("gaussian random input one", "[particle_base]")
@@ -89,8 +89,8 @@ TEST_CASE("gaussian random input one", "[particle_base]")
   // uniform RNG input is 1.0
   // most uniform RNGs do not produce 1.0 exactly (open interval),
   // but the code is there to prevent it, so a test.
-  REQUIRE(a[0] == Approx(8.49042441685));
-  REQUIRE(a[1] == Approx(0.0)); // ensure no overflow
+  CHECK(a[0] == Approx(8.49042441685));
+  CHECK(a[1] == Approx(0.0)); // ensure no overflow
 }
 
 TEST_CASE("gaussian random input zero", "[particle_base]")
@@ -101,8 +101,8 @@ TEST_CASE("gaussian random input zero", "[particle_base]")
   assignGaussRand(a.data(), 2, rg);
 
   // uniform RNG input is 0.0
-  REQUIRE(a[0] == Approx(0.0));
-  REQUIRE(a[1] == Approx(0.0));
+  CHECK(a[0] == Approx(0.0));
+  CHECK(a[1] == Approx(0.0));
 }
 
 TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
@@ -110,7 +110,7 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
   int size_test = 7;
   std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test);
   {
-    StdRandom<double> rng;
+    StdRandom<QMCTraits::FullPrecRealType> rng;
     makeGaussRandomWithEngine(gauss_random_vals, rng);
   }
 
@@ -125,13 +125,13 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
 
   MCCoords<CoordsType::POS> mc_coords_rs(size_test);
   {
-    StdRandom<double> rng;
+    StdRandom<QMCTraits::FullPrecRealType> rng;
     makeGaussRandomWithEngine(mc_coords_rs, rng);
     checkRs(mc_coords_rs.positions);
   }
   MCCoords<CoordsType::POS_SPIN> mc_coords_rsspins(size_test);
   {
-    StdRandom<double> rng;
+    StdRandom<QMCTraits::FullPrecRealType> rng;
     makeGaussRandomWithEngine(mc_coords_rsspins, rng);
     checkRs(mc_coords_rsspins.positions);
     // Mod 2 is result of how gaussianDistribution is generated.

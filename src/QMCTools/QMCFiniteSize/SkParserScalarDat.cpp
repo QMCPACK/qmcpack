@@ -10,23 +10,23 @@ namespace qmcplusplus
 using RealType = SkParserScalarDat::RealType;
 using PosType  = SkParserScalarDat::PosType;
 
-void SkParserScalarDat::read_sk_file(const string& fname)
+void SkParserScalarDat::read_sk_file(const std::string& fname)
 {
   IndexType IDENT = 7; //This is the position of character which denotes difference
                        //between rhok_e_e_X, rhok_e_i_X, and rhok_e_r_X.  Either e,i, or r.
-  vector<vector<RealType>> skdata(0);
+  std::vector<std::vector<RealType>> skdata(0);
 
-  vector<RealType> rho_ee(0);
-  vector<RealType> rho_ee_err(0);
-  vector<RealType> rho_i(0);
-  vector<RealType> rho_r(0);
-  vector<RealType> rho_i_err(0);
-  vector<RealType> rho_r_err(0);
+  std::vector<RealType> rho_ee(0);
+  std::vector<RealType> rho_ee_err(0);
+  std::vector<RealType> rho_i(0);
+  std::vector<RealType> rho_r(0);
+  std::vector<RealType> rho_i_err(0);
+  std::vector<RealType> rho_r_err(0);
 
-  ifstream f;
-  f.open(fname.c_str(), ifstream::in);
+  std::ifstream f;
+  f.open(fname.c_str(), std::ifstream::in);
 
-  string obsname(""), eq(""), pm(""); //just a sink for getline.
+  std::string obsname(""), eq(""), pm(""); //just a sink for getline.
   RealType val_tmp(0.0), err_tmp(0.0);
 
 
@@ -34,7 +34,7 @@ void SkParserScalarDat::read_sk_file(const string& fname)
   {
     f >> obsname >> eq >> val_tmp >> pm >> err_tmp;
 
-    if (obsname.find("rhok_e_") != string::npos)
+    if (obsname.find("rhok_e_") != std::string::npos)
     {
       //Great.  Found the sk data.  Now to determine if its rhok*rhok, Re(Rhok), or Im(rhok)
       if (obsname[IDENT] == 'e')
@@ -103,7 +103,7 @@ void SkParserScalarDat::read_sk_file(const string& fname)
 }
 
 
-void SkParserScalarDat::parse(const string& fname)
+void SkParserScalarDat::parse(const std::string& fname)
 {
   // vector<vector<RealType> > rawdata(0);
   read_sk_file(fname);

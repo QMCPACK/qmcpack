@@ -21,6 +21,7 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "TestListenerFunction.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -48,10 +49,7 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -62,10 +60,7 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({1});
-  elec.R[0][0] = 0.5;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-
+  elec.R[0]                  = {0.5, 0.0, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -82,18 +77,18 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   CoulombPBCAB cab(ions, elec);
 
   // Self energy plus Background charge term
-  REQUIRE(cab.myConst == Approx(2 * 0.0506238028)); // not validated
+  CHECK(cab.myConst == Approx(2 * 0.0506238028)); // not validated
 
   double val_ei = cab.evaluate(elec);
-  REQUIRE(val_ei == Approx(-0.005314032183 + 2 * 0.0506238028)); // not validated
+  CHECK(val_ei == Approx(-0.005314032183 + 2 * 0.0506238028)); // not validated
 
   CoulombPBCAA caa_elec(elec, true, false, false);
   CoulombPBCAA caa_ion(ions, false, false, false);
   double val_ee = caa_elec.evaluate(elec);
   double val_ii = caa_ion.evaluate(ions);
   double sum    = val_ee + val_ii + val_ei;
-  REQUIRE(sum == Approx(-2.741363553)); // Can be validated via Ewald summation elsewhere
-                                        // -2.74136517454081
+  CHECK(sum == Approx(-2.741363553)); // Can be validated via Ewald summation elsewhere
+                                      // -2.74136517454081
 }
 
 TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
@@ -111,13 +106,8 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.88972614;
-  ions.R[1][1] = 1.88972614;
-  ions.R[1][2] = 1.88972614;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.88972614, 1.88972614, 1.88972614};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -127,13 +117,8 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.5;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.5;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                  = {0.5, 0.0, 0.0};
+  elec.R[1]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -150,11 +135,11 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 
   // Background charge term
   double consts = cab.evalConsts(elec);
-  REQUIRE(consts == Approx(0.0267892759 * 4)); // not validated
+  CHECK(consts == Approx(0.0267892759 * 4)); // not validated
 
 
   double val_ei = cab.evaluate(elec);
-  REQUIRE(val_ei == Approx(-2.219665062 + 0.0267892759 * 4)); // not validated
+  CHECK(val_ei == Approx(-2.219665062 + 0.0267892759 * 4)); // not validated
 
 
   CoulombPBCAA caa_elec(elec, false, false, false);
@@ -162,8 +147,8 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   double val_ee = caa_elec.evaluate(elec);
   double val_ii = caa_ion.evaluate(ions);
   double sum    = val_ee + val_ii + val_ei;
-  REQUIRE(sum == Approx(-3.143491064)); // Can be validated via Ewald summation elsewhere
-                                        // -3.14349127313640
+  CHECK(sum == Approx(-3.143491064)); // Can be validated via Ewald summation elsewhere
+                                      // -3.14349127313640
 }
 
 TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
@@ -183,13 +168,8 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.88972614;
-  ions.R[1][1] = 1.88972614;
-  ions.R[1][2] = 1.88972614;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.88972614, 1.88972614, 1.88972614};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -205,13 +185,8 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.5;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.5;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                  = {0.0, 0.5, 0.0};
+  elec.R[1]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -225,12 +200,8 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
 
   ParticleSet elec2(elec);
 
-  elec2.R[0][0] = 0.0;
-  elec2.R[0][1] = 0.5;
-  elec2.R[0][2] = 0.1;
-  elec2.R[1][0] = 0.6;
-  elec2.R[1][1] = 0.05;
-  elec2.R[1][2] = -0.1;
+  elec2.R[0] = {0.0, 0.5, 0.1};
+  elec2.R[1] = {0.6, 0.05, -0.1};
   elec2.update();
 
   CoulombPBCAB cab(ions, elec, false);
@@ -246,7 +217,9 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
   RefVector<ParticleSet> ion_ptcls{ions, ions2};
   RefVectorWithLeader<ParticleSet> ion_p_list(ions, ion_ptcls);
 
-  TrialWaveFunction psi, psi_clone;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi_clone(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
   Matrix<Real> local_pots(2);
@@ -277,9 +250,8 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
   CHECK(cab2.getValue() == Approx(-1.7222343352));
   // Check that the sum of the particle energies == the total
   Real elec_ion_sum = std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0);
-  CHECK( elec_ion_sum ==
-	 Approx(-1.0562537047));
-  CHECK( elec_ion_sum + std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) ==
+  CHECK(elec_ion_sum == Approx(-1.0562537047));
+  CHECK(elec_ion_sum + std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) ==
         Approx(-2.219665062 + 0.0267892759 * 4));
   elec_ion_sum = std::accumulate(local_pots[1], local_pots[1] + local_pots.cols(), 0.0);
   CHECK(elec_ion_sum == Approx(-0.8611171676));

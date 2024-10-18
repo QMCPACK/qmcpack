@@ -106,18 +106,18 @@ public:
   ~AntiSymTensor(){};
 
   // assignment operators
-  const AntiSymTensor<T, D>& operator=(const AntiSymTensor<T, D>& rhs)
+  AntiSymTensor<T, D>& operator=(const AntiSymTensor<T, D>& rhs)
   {
     OTAssign<AntiSymTensor<T, D>, AntiSymTensor<T, D>, OpAssign>::apply(*this, rhs, OpAssign());
     return *this;
   }
   template<class T1>
-  const AntiSymTensor<T, D>& operator=(const AntiSymTensor<T1, D>& rhs)
+  AntiSymTensor<T, D>& operator=(const AntiSymTensor<T1, D>& rhs)
   {
     OTAssign<AntiSymTensor<T, D>, AntiSymTensor<T1, D>, OpAssign>::apply(*this, rhs, OpAssign());
     return *this;
   }
-  const AntiSymTensor<T, D>& operator=(const T& rhs)
+  AntiSymTensor<T, D>& operator=(const T& rhs)
   {
     OTAssign<AntiSymTensor<T, D>, T, OpAssign>::apply(*this, rhs, OpAssign());
     return *this;
@@ -173,13 +173,13 @@ public:
   public:
     AssignProxy(Type_t& elem, int where) : elem_m(elem), where_m(where) {}
     AssignProxy(const AssignProxy& model) : elem_m(model.elem_m), where_m(where_m) {}
-    const AssignProxy& operator=(const AssignProxy& a)
+    AssignProxy& operator=(const AssignProxy& a)
     {
       PAssert(where_m != 0 || a.elem_m == -a.elem_m);
       elem_m = where_m < 0 ? -a.elem_m : a.elem_m;
       return *this;
     }
-    const AssignProxy& operator=(const Type_t& e)
+    AssignProxy& operator=(const Type_t& e)
     {
       PAssert(where_m != 0 || e == -e);
       elem_m = where_m < 0 ? -e : e;
@@ -315,13 +315,13 @@ public:
   ~AntiSymTensor() {}
 
   // assignment operators
-  const AntiSymTensor<T, 1>& operator=(const AntiSymTensor<T, 1>&) { return *this; }
+  AntiSymTensor<T, 1>& operator=(const AntiSymTensor<T, 1>&) { return *this; }
   template<class T1>
-  const AntiSymTensor<T, 1>& operator=(const AntiSymTensor<T1, 1>&)
+  AntiSymTensor<T, 1>& operator=(const AntiSymTensor<T1, 1>&)
   {
     return *this;
   }
-  const AntiSymTensor<T, 1>& operator=(const T& rhs) { return *this; }
+  AntiSymTensor<T, 1>& operator=(const T& rhs) { return *this; }
 
   // accumulation operators
   template<class T1>
@@ -361,13 +361,13 @@ public:
   public:
     AssignProxy(Type_t& elem, int where) : elem_m(elem), where_m(where) {}
     AssignProxy(const AssignProxy& model) : elem_m(model.elem_m), where_m(where_m) {}
-    const AssignProxy& operator=(const AssignProxy& a)
+    AssignProxy& operator=(const AssignProxy& a)
     {
       PAssert(where_m != 0 || a.elem_m == -a.elem_m);
       elem_m = where_m < 0 ? -a.elem_m : a.elem_m;
       return *this;
     }
-    const AssignProxy& operator=(const Type_t& e)
+    AssignProxy& operator=(const Type_t& e)
     {
       PAssert(where_m != 0 || e == -e);
       elem_m = where_m < 0 ? -e : e;

@@ -10,16 +10,16 @@ namespace qmcplusplus
 using RealType = SkParserASCII::RealType;
 using PosType  = SkParserASCII::PosType;
 
-vector<vector<RealType>> SkParserASCII::read_sk_file(const string& fname)
+std::vector<std::vector<RealType>> SkParserASCII::read_sk_file(const std::string& fname)
 {
-  vector<vector<RealType>> skdata(0);
+  std::vector<std::vector<RealType>> skdata(0);
 
-  vector<RealType> tmp(5);
+  std::vector<RealType> tmp(5);
 
-  ifstream f;
-  f.open(fname.c_str(), ifstream::in);
+  std::ifstream f;
+  f.open(fname.c_str(), std::ifstream::in);
 
-  string tmpstring;           //just a sink for getline.
+  std::string tmpstring;      //just a sink for getline.
   std::getline(f, tmpstring); //skip the first line.
 
   while (!f.eof())
@@ -34,9 +34,9 @@ vector<vector<RealType>> SkParserASCII::read_sk_file(const string& fname)
   return skdata;
 }
 
-vector<PosType> SkParserASCII::get_grid_from_data(vector<vector<RealType>>& filedata)
+std::vector<PosType> SkParserASCII::get_grid_from_data(std::vector<std::vector<RealType>>& filedata)
 {
-  vector<PosType> kgrid(filedata.size());
+  std::vector<PosType> kgrid(filedata.size());
 
   for (int i = 0; i < filedata.size(); i++)
   {
@@ -48,27 +48,27 @@ vector<PosType> SkParserASCII::get_grid_from_data(vector<vector<RealType>>& file
   return kgrid;
 }
 
-vector<RealType> SkParserASCII::get_sk_from_data(vector<vector<RealType>>& filedata)
+std::vector<RealType> SkParserASCII::get_sk_from_data(std::vector<std::vector<RealType>>& filedata)
 {
-  vector<RealType> sk(filedata.size());
+  std::vector<RealType> sk(filedata.size());
   for (int i = 0; i < filedata.size(); i++)
     sk[i] = filedata[i][SK];
 
   return sk;
 }
 
-vector<RealType> SkParserASCII::get_skerr_from_data(vector<vector<RealType>>& filedata)
+std::vector<RealType> SkParserASCII::get_skerr_from_data(std::vector<std::vector<RealType>>& filedata)
 {
-  vector<RealType> skerr(filedata.size());
+  std::vector<RealType> skerr(filedata.size());
   for (int i = 0; i < filedata.size(); i++)
     skerr[i] = filedata[i][SKERR];
 
   return skerr;
 }
 
-void SkParserASCII::parse(const string& fname)
+void SkParserASCII::parse(const std::string& fname)
 {
-  vector<vector<RealType>> rawdata(0);
+  std::vector<std::vector<RealType>> rawdata(0);
   rawdata   = read_sk_file(fname);
   kgridraw  = get_grid_from_data(rawdata);
   skraw     = get_sk_from_data(rawdata);

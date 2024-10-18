@@ -4,24 +4,11 @@
 # Note: vendor compilers can be just rebranded customized Clang compiler.
 # It requires more recent CMake to handle it properly. We need to handle such cases for older CMake.
 
-execute_process(
-  COMMAND ${CMAKE_CXX_COMPILER} --version
-  RESULT_VARIABLE VERSION_QUERY_RETURN
-  OUTPUT_VARIABLE VERSION_QUERY_OUTPUT)
-
-if(VERSION_QUERY_RETURN EQUAL 0)
-  if(CMAKE_VERSION VERSION_LESS 3.20
-     AND VERSION_QUERY_OUTPUT MATCHES "Intel"
-     AND VERSION_QUERY_OUTPUT MATCHES "oneAPI")
-    set(INTEL_ONEAPI_COMPILER_FOUND TRUE)
-  endif()
-endif()
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(COMPILER GNU)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "XL")
   set(COMPILER IBM)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel" OR INTEL_ONEAPI_COMPILER_FOUND)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(COMPILER Intel)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
   set(COMPILER NVHPC)

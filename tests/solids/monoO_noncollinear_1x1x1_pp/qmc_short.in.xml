@@ -63,14 +63,14 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-   <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" size="12"> 
+   <sposet_collection name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" size="12"> 
      <sposet name="myspo" size="12"> 
        <occupation mode="ground"/> 
      </sposet> 
-   </sposet_builder> 
+   </sposet_collection> 
          <determinantset>
             <slaterdeterminant>
-               <determinant id="updetA" group="u" sposet="myspo" size="12"/>
+               <determinant sposet="myspo"/>
             </slaterdeterminant>
          </determinantset>
         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">

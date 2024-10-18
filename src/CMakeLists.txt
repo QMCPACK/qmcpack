@@ -107,11 +107,6 @@ if(IS_GIT_PROJECT)
   message("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
 endif()
 
-# For unit tests, enable use for the fake RNG
-function(USE_FAKE_RNG TARGET)
-  target_compile_definitions(${TARGET} PRIVATE "USE_FAKE_RNG")
-endfunction()
-
 add_subdirectory(io)
 add_subdirectory(einspline)
 add_subdirectory(Containers)
@@ -144,10 +139,6 @@ else() #{{{
   if(BUILD_AFQMC)
     add_subdirectory(AFQMC)
   endif(BUILD_AFQMC)
-
-  if(BUILD_FCIQMC)
-    add_subdirectory(FCIQMC)
-  endif(BUILD_FCIQMC)
 
   add_subdirectory(QMCApp)
   add_subdirectory(QMCTools)

@@ -28,13 +28,13 @@
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule, int llocal)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule, int llocal, int srule)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
       Llocal(llocal),
       Nrule(nrule),
-      Srule(8),
+      Srule(srule),
       AtomicNumber(0),
       Zeff(0),
       RcutMax(-1),
@@ -226,9 +226,9 @@ void ECPComponentBuilder::printECPTable()
     return;
   if (!outputManager.isActive(Verbosity::DEBUG))
     return;
-  char fname[12];
-  sprintf(fname, "%s.pp.dat", Species.c_str());
-  std::ofstream fout(fname);
+  std::array<char, 12> fname;
+  std::snprintf(fname.data(), fname.size(), "%s.pp.dat", Species.c_str());
+  std::ofstream fout(fname.data());
   fout.setf(std::ios::scientific, std::ios::floatfield);
   fout.precision(12);
   int nl      = pp_nonloc ? pp_nonloc->nlpp_m.size() : 0;
@@ -271,8 +271,8 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   pp_nonloc->resize_warrays(myRule.nk, NumNonLocal, Lmax);
   if (pp_so)
   { //added here bc must have nonlocal terms to have SO contributions
-    pp_so->sgridxyz_m    = myRule.xyz_m;
-    pp_so->sgridweight_m = myRule.weight_m;
+    pp_so->sgridxyz_m_    = myRule.xyz_m;
+    pp_so->sgridweight_m_ = myRule.weight_m;
     pp_so->resize_warrays(myRule.nk, NumSO, Srule);
   }
 }

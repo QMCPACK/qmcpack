@@ -184,8 +184,7 @@ bool CSVMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    if (storeConfigs)
-      recordBlock(block);
+    recordBlock(block);
   } //block
   Estimators->stop(estimatorClones);
   for (int ip = 0; ip < NumThreads; ++ip)
@@ -195,7 +194,7 @@ bool CSVMC::run()
 #endif
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
-    *RandomNumberControl::Children[ip] = *Rng[ip];
+    RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
   ///write samples to a file
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
@@ -247,7 +246,7 @@ void CSVMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
+      Rng[ip] = RandomNumberControl::Children[ip]->makeClone();
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         if (UseDrift == "yes")

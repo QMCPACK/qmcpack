@@ -29,203 +29,90 @@ namespace ompBLAS
 using ompBLAS_status = int;
 using ompBLAS_handle = int;
 
+template<typename T>
+ompBLAS_status gemm(ompBLAS_handle& handle,
+                    const char transa,
+                    const char transb,
+                    const int M,
+                    const int N,
+                    const int K,
+                    const T& alpha,
+                    const T* const A,
+                    const int lda,
+                    const T* const B,
+                    const int ldb,
+                    const T& beta,
+                    T* const C,
+                    const int ldc);
+
+template<typename T>
+ompBLAS_status gemm_batched(ompBLAS_handle& handle,
+                            const char transa,
+                            const char transb,
+                            const int M,
+                            const int N,
+                            const int K,
+                            const T& alpha,
+                            const T* const A[],
+                            const int lda,
+                            const T* const B[],
+                            const int ldb,
+                            const T& beta,
+                            T* const C[],
+                            const int ldc,
+                            const int batch_count);
+
+template<typename T>
 ompBLAS_status gemv(ompBLAS_handle& handle,
                     const char trans,
                     const int m,
                     const int n,
-                    const float alpha,
-                    const float* const A,
+                    const T alpha,
+                    const T* const A,
                     const int lda,
-                    const float* const x,
+                    const T* const x,
                     const int incx,
-                    const float beta,
-                    float* const y,
+                    const T beta,
+                    T* const y,
                     const int incy);
 
-ompBLAS_status gemv(ompBLAS_handle& handle,
-                    const char trans,
-                    const int m,
-                    const int n,
-                    const double alpha,
-                    const double* const A,
-                    const int lda,
-                    const double* const x,
-                    const int incx,
-                    const double beta,
-                    double* const y,
-                    const int incy);
-
-ompBLAS_status gemv(ompBLAS_handle& handle,
-                    const char trans,
-                    const int m,
-                    const int n,
-                    const std::complex<float> alpha,
-                    const std::complex<float>* const A,
-                    const int lda,
-                    const std::complex<float>* const x,
-                    const int incx,
-                    const std::complex<float> beta,
-                    std::complex<float>* const y,
-                    const int incy);
-
-ompBLAS_status gemv(ompBLAS_handle& handle,
-                    const char trans,
-                    const int m,
-                    const int n,
-                    const std::complex<double> alpha,
-                    const std::complex<double>* const A,
-                    const int lda,
-                    const std::complex<double>* const x,
-                    const int incx,
-                    const std::complex<double> beta,
-                    std::complex<double>* const y,
-                    const int incy);
-
+template<typename T>
 ompBLAS_status gemv_batched(ompBLAS_handle& handle,
                             const char trans,
                             const int m,
                             const int n,
-                            const float* alpha,
-                            const float* const A[],
+                            const T* alpha,
+                            const T* const A[],
                             const int lda,
-                            const float* const x[],
+                            const T* const x[],
                             const int incx,
-                            const float* beta,
-                            float* const y[],
+                            const T* beta,
+                            T* const y[],
                             const int incy,
                             const int batch_count);
 
-ompBLAS_status gemv_batched(ompBLAS_handle& handle,
-                            const char trans,
-                            const int m,
-                            const int n,
-                            const double* alpha,
-                            const double* const A[],
-                            const int lda,
-                            const double* const x[],
-                            const int incx,
-                            const double* beta,
-                            double* const y[],
-                            const int incy,
-                            const int batch_count);
-
-ompBLAS_status gemv_batched(ompBLAS_handle& handle,
-                            const char trans,
-                            const int m,
-                            const int n,
-                            const std::complex<float>* alpha,
-                            const std::complex<float>* const A[],
-                            const int lda,
-                            const std::complex<float>* const x[],
-                            const int incx,
-                            const std::complex<float>* beta,
-                            std::complex<float>* const y[],
-                            const int incy,
-                            const int batch_count);
-
-ompBLAS_status gemv_batched(ompBLAS_handle& handle,
-                            const char trans,
-                            const int m,
-                            const int n,
-                            const std::complex<double>* alpha,
-                            const std::complex<double>* const A[],
-                            const int lda,
-                            const std::complex<double>* const x[],
-                            const int incx,
-                            const std::complex<double>* beta,
-                            std::complex<double>* const y[],
-                            const int incy,
-                            const int batch_count);
-
+template<typename T>
 ompBLAS_status ger(ompBLAS_handle& handle,
                    const int m,
                    const int n,
-                   const float alpha,
-                   const float* const x,
+                   const T alpha,
+                   const T* const x,
                    const int incx,
-                   const float* const y,
+                   const T* const y,
                    const int incy,
-                   float* const A,
+                   T* const A,
                    const int lda);
 
-ompBLAS_status ger(ompBLAS_handle& handle,
-                   const int m,
-                   const int n,
-                   const double alpha,
-                   const double* const x,
-                   const int incx,
-                   const double* const y,
-                   const int incy,
-                   double* const A,
-                   const int lda);
-
-ompBLAS_status ger(ompBLAS_handle& handle,
-                   const int m,
-                   const int n,
-                   const std::complex<float> alpha,
-                   const std::complex<float>* const x,
-                   const int incx,
-                   const std::complex<float>* const y,
-                   const int incy,
-                   std::complex<float>* const A,
-                   const int lda);
-
-ompBLAS_status ger(ompBLAS_handle& handle,
-                   const int m,
-                   const int n,
-                   const std::complex<double> alpha,
-                   const std::complex<double>* const x,
-                   const int incx,
-                   const std::complex<double>* const y,
-                   const int incy,
-                   std::complex<double>* const A,
-                   const int lda);
-
+template<typename T>
 ompBLAS_status ger_batched(ompBLAS_handle& handle,
                            const int m,
                            const int n,
-                           const float* alpha,
-                           const float* const x[],
+                           const T* alpha,
+                           const T* const x[],
                            const int incx,
-                           const float* const y[],
+                           const T* const y[],
                            const int incy,
-                           float* const A[],
-                           const int lda,
-                           const int batch_count);
-
-ompBLAS_status ger_batched(ompBLAS_handle& handle,
-                           const int m,
-                           const int n,
-                           const double* alpha,
-                           const double* const x[],
-                           const int incx,
-                           const double* const y[],
-                           const int incy,
-                           double* const A[],
-                           const int lda,
-                           const int batch_count);
-
-ompBLAS_status ger_batched(ompBLAS_handle& handle,
-                           const int m,
-                           const int n,
-                           const std::complex<float>* alpha,
-                           const std::complex<float>* const x[],
-                           const int incx,
-                           const std::complex<float>* const y[],
-                           const int incy,
-                           std::complex<float>* const A[],
-                           const int lda,
-                           const int batch_count);
-
-ompBLAS_status ger_batched(ompBLAS_handle& handle,
-                           const int m,
-                           const int n,
-                           const std::complex<double>* alpha,
-                           const std::complex<double>* const x[],
-                           const int incx,
-                           const std::complex<double>* const y[],
-                           const int incy,
-                           std::complex<double>* const A[],
+                           T* const A[],
                            const int lda,
                            const int batch_count);
 
@@ -241,35 +128,12 @@ ompBLAS_status ger_batched(ompBLAS_handle& handle,
  * @param incx,incy storage spacing between elements of x/y to be copied from/to
  * @param batch_count number of batches to process
  */
+template<typename T>
 ompBLAS_status copy_batched(ompBLAS_handle& handle,
                             const int n,
-                            const float* const x[],
+                            const T* const x[],
                             const int incx,
-                            float* const y[],
-                            const int incy,
-                            const int batch_count);
-
-ompBLAS_status copy_batched(ompBLAS_handle& handle,
-                            const int n,
-                            const double* const x[],
-                            const int incx,
-                            double* const y[],
-                            const int incy,
-                            const int batch_count);
-
-ompBLAS_status copy_batched(ompBLAS_handle& handle,
-                            const int n,
-                            const std::complex<float>* const x[],
-                            const int incx,
-                            std::complex<float>* const y[],
-                            const int incy,
-                            const int batch_count);
-
-ompBLAS_status copy_batched(ompBLAS_handle& handle,
-                            const int n,
-                            const std::complex<double>* const x[],
-                            const int incx,
-                            std::complex<double>* const y[],
+                            T* const y[],
                             const int incy,
                             const int batch_count);
 
@@ -289,45 +153,19 @@ ompBLAS_status copy_batched(ompBLAS_handle& handle,
  * @param incx,incy storage spacing between elements of x/y to be copied from/to
  * @param batch_count number of batches to process
  */
+template<typename T>
 ompBLAS_status copy_batched_offset(ompBLAS_handle& handle,
                                    const int n,
-                                   const float* const x[],
+                                   const T* const x[],
                                    const int x_offset,
                                    const int incx,
-                                   float* const y[],
+                                   T* const y[],
                                    const int y_offset,
                                    const int incy,
                                    const int batch_count);
 
-ompBLAS_status copy_batched_offset(ompBLAS_handle& handle,
-                                   const int n,
-                                   const double* const x[],
-                                   const int x_offset,
-                                   const int incx,
-                                   double* const y[],
-                                   const int y_offset,
-                                   const int incy,
-                                   const int batch_count);
-
-ompBLAS_status copy_batched_offset(ompBLAS_handle& handle,
-                                   const int n,
-                                   const std::complex<float>* const x[],
-                                   const int x_offset,
-                                   const int incx,
-                                   std::complex<float>* const y[],
-                                   const int y_offset,
-                                   const int incy,
-                                   const int batch_count);
-
-ompBLAS_status copy_batched_offset(ompBLAS_handle& handle,
-                                   const int n,
-                                   const std::complex<double>* const x[],
-                                   const int x_offset,
-                                   const int incx,
-                                   std::complex<double>* const y[],
-                                   const int y_offset,
-                                   const int incy,
-                                   const int batch_count);
+template<typename T>
+ompBLAS_status copy(ompBLAS_handle& handle, const int n, const T* const x, const int incx, T* const y, const int incy);
 
 } // namespace ompBLAS
 

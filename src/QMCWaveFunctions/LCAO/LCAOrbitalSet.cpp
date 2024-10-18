@@ -13,19 +13,69 @@
 #include "LCAOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/BLAS.hpp"
+#include "OMPTarget/ompBLAS.hpp"
+#include <ResourceCollection.h>
+#include <AccelBLAS.hpp>
 
 namespace qmcplusplus
 {
-LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
-    : SPOSet(my_name), BasisSetSize(bs ? bs->getBasisSetSize() : 0), Identity(true)
+
+struct LCAOrbitalSet::LCAOMultiWalkerMem : public Resource
+{
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
+  LCAOMultiWalkerMem() : Resource("LCAOrbitalSet"), blas_handle(queue) {}
+  LCAOMultiWalkerMem(const LCAOMultiWalkerMem&) : LCAOMultiWalkerMem() {}
+
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<LCAOMultiWalkerMem>(*this); }
+
+  OffloadMWVGLArray phi_vgl_v;                           // [5][NW][NumMO]
+  OffloadMWVGLArray basis_vgl_mw;                        // [5][NW][NumAO]
+  OffloadMWVArray phi_v;                                 // [NW][NumMO]
+  OffloadMWVArray basis_v_mw;                            // [NW][NumAO]
+  OffloadMWVArray vp_phi_v;                              // [NVPs][NumMO]
+  OffloadMWVArray vp_basis_v_mw;                         // [NVPs][NumAO]
+  OffloadVector<const ValueType*> invRow_deviceptr_list; // [NVPs]
+  OffloadMatrix<ValueType> rg_buffer;                    // [4][NVPs]
+  OffloadVector<size_t> nVP_index_list;                  // [NVPs]
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  compute::Queue<PlatformKind::CUDA> queue;
+  compute::BLASHandle<PlatformKind::CUDA> blas_handle;
+#else
+  compute::Queue<PlatformKind::OMPTARGET> queue;
+  compute::BLASHandle<PlatformKind::OMPTARGET> blas_handle;
+#endif
+};
+
+LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name,
+                             std::unique_ptr<basis_type>&& bs,
+                             size_t norbs,
+                             bool identity,
+                             bool use_offload)
+    : SPOSet(my_name),
+      BasisSetSize(bs ? bs->getBasisSetSize() : 0),
+      Identity(identity),
+      useOMPoffload_(use_offload),
+      basis_timer_(createGlobalTimer("LCAOrbitalSet::Basis", timer_level_fine)),
+      mo_timer_(createGlobalTimer("LCAOrbitalSet::MO", timer_level_fine))
 {
   if (!bs)
     throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
-  myBasisSet = std::move(bs);
+  myBasisSet     = std::move(bs);
+  OrbitalSetSize = norbs;
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
   Tempgh.resize(BasisSetSize);
-  OrbitalSetSize = BasisSetSize;
+  OrbitalSetSize = norbs;
+  if (!Identity)
+  {
+    Tempv.resize(OrbitalSetSize);
+    Temphv.resize(OrbitalSetSize);
+    Tempghv.resize(OrbitalSetSize);
+    C = std::make_shared<OffloadValueMatrix>(OrbitalSetSize, BasisSetSize);
+  }
   LCAOrbitalSet::checkObject();
 }
 
@@ -35,7 +85,10 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
       C(in.C),
       BasisSetSize(in.BasisSetSize),
       C_copy(in.C_copy),
-      Identity(in.Identity)
+      Identity(in.Identity),
+      useOMPoffload_(in.useOMPoffload_),
+      basis_timer_(in.basis_timer_),
+      mo_timer_(in.mo_timer_)
 {
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
@@ -51,16 +104,7 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
 
 void LCAOrbitalSet::setOrbitalSetSize(int norbs)
 {
-  if (C)
-    throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize cannot reset existing MO coefficients");
-
-  Identity       = false;
-  OrbitalSetSize = norbs;
-  C              = std::make_shared<ValueMatrix>(OrbitalSetSize, BasisSetSize);
-  Tempv.resize(OrbitalSetSize);
-  Temphv.resize(OrbitalSetSize);
-  Tempghv.resize(OrbitalSetSize);
-  LCAOrbitalSet::checkObject();
+  throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize should not be called");
 }
 
 void LCAOrbitalSet::checkObject() const
@@ -84,6 +128,48 @@ void LCAOrbitalSet::checkObject() const
   }
 }
 
+void LCAOrbitalSet::finalizeConstruction()
+{
+  if (C)
+    C->updateTo();
+}
+
+void LCAOrbitalSet::createResource(ResourceCollection& collection) const
+{
+  myBasisSet->createResource(collection);
+
+  auto resource_index = collection.addResource(std::make_unique<LCAOMultiWalkerMem>());
+}
+
+void LCAOrbitalSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+
+  spo_leader.myBasisSet->acquireResource(collection, extractBasisRefList(spo_list));
+
+  spo_leader.mw_mem_handle_ = collection.lendResource<LCAOMultiWalkerMem>();
+}
+
+void LCAOrbitalSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+
+  spo_leader.myBasisSet->releaseResource(collection, extractBasisRefList(spo_list));
+
+  collection.takebackResource(spo_leader.mw_mem_handle_);
+}
+
+RefVectorWithLeader<typename LCAOrbitalSet::basis_type> LCAOrbitalSet::extractBasisRefList(
+    const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  RefVectorWithLeader<basis_type> basis_list(*spo_list.getCastedLeader<LCAOrbitalSet>().myBasisSet);
+  basis_list.reserve(spo_list.size());
+  for (size_t iw = 0; iw < spo_list.size(); iw++)
+    basis_list.push_back(*spo_list.getCastedElement<LCAOrbitalSet>(iw).myBasisSet);
+  return basis_list;
+}
 std::unique_ptr<SPOSet> LCAOrbitalSet::makeClone() const { return std::make_unique<LCAOrbitalSet>(*this); }
 
 void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
@@ -103,8 +189,8 @@ void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& ps
 }
 
 /** Find a better place for other user classes, Matrix should be padded as well */
-template<typename T, unsigned D>
-inline void Product_ABt(const VectorSoaContainer<T, D>& A, const Matrix<T>& B, VectorSoaContainer<T, D>& C)
+template<typename T, unsigned D, typename Alloc>
+inline void Product_ABt(const VectorSoaContainer<T, D>& A, const Matrix<T, Alloc>& B, VectorSoaContainer<T, D>& C)
 {
   constexpr char transa = 't';
   constexpr char transb = 'n';
@@ -334,16 +420,330 @@ inline void LCAOrbitalSet::evaluate_ionderiv_v_row_impl(const vgl_type& temp, Gr
 void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   //TAKE CARE OF IDENTITY
-  myBasisSet->evaluateVGL(P, iat, Temp);
+  {
+    ScopedTimer local(basis_timer_);
+    myBasisSet->evaluateVGL(P, iat, Temp);
+  }
+
   if (Identity)
     evaluate_vgl_impl(Temp, psi, dpsi, d2psi);
   else
   {
     assert(psi.size() <= OrbitalSetSize);
-    ValueMatrix C_partial_view(C->data(), psi.size(), BasisSetSize);
-    Product_ABt(Temp, C_partial_view, Tempv);
+    {
+      ScopedTimer local(mo_timer_);
+      ValueMatrix C_partial_view(C->data(), psi.size(), BasisSetSize);
+      Product_ABt(Temp, C_partial_view, Tempv);
+    }
     evaluate_vgl_impl(Tempv, psi, dpsi, d2psi);
   }
+}
+
+void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   const RefVector<ValueVector>& psi_v_list,
+                                   const RefVector<GradVector>& dpsi_v_list,
+                                   const RefVector<ValueVector>& d2psi_v_list) const
+{
+  assert(this == &spo_list.getLeader());
+  if (!useOMPoffload_)
+  {
+    SPOSet::mw_evaluateVGL(spo_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+    return;
+  }
+
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& phi_vgl_v  = spo_leader.mw_mem_handle_.getResource().phi_vgl_v;
+
+  phi_vgl_v.resize(DIM_VGL, spo_list.size(), OrbitalSetSize);
+  mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
+
+  const size_t nw = phi_vgl_v.size(1);
+  phi_vgl_v.updateFrom();
+
+  //TODO: make this cleaner?
+  for (int iw = 0; iw < nw; iw++)
+  {
+    const size_t output_size = psi_v_list[iw].get().size();
+    std::copy_n(phi_vgl_v.data_at(0, iw, 0), output_size, psi_v_list[iw].get().data());
+    std::copy_n(phi_vgl_v.data_at(4, iw, 0), output_size, d2psi_v_list[iw].get().data());
+    // grads are [dim, walker, orb] in phi_vgl_v
+    //           [walker][orb, dim] in dpsi_v_list
+    for (size_t idim = 0; idim < DIM; idim++)
+      BLAS::copy(output_size, phi_vgl_v.data_at(idim + 1, iw, 0), 1, &dpsi_v_list[iw].get().data()[0][idim], DIM);
+  }
+}
+
+void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                           const RefVectorWithLeader<ParticleSet>& P_list,
+                                           int iat,
+                                           OffloadMWVGLArray& phi_vgl_v) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader   = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& mw_res       = spo_leader.mw_mem_handle_.getResource();
+  auto& basis_vgl_mw = mw_res.basis_vgl_mw;
+  basis_vgl_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
+
+  {
+    ScopedTimer local(basis_timer_);
+    auto basis_list = spo_leader.extractBasisRefList(spo_list);
+    myBasisSet->mw_evaluateVGL(basis_list, P_list, iat, basis_vgl_mw);
+    // basis_vgl_mw correct on device
+  }
+
+  if (Identity)
+  {
+    const size_t output_size = phi_vgl_v.size(2);
+    const size_t nw          = phi_vgl_v.size(1);
+    if (useOMPoffload_)
+    {
+      int dummy_handle = 0;
+      int success      = 0;
+      success          = ompBLAS::copy(dummy_handle, output_size * nw * DIM_VGL, basis_vgl_mw.device_data(), 1,
+                                       phi_vgl_v.device_data(), 1);
+      if (success != 0)
+        throw std::runtime_error("In LCAOrbitalSet::mw_evaluateVGLImplGEMM ompBLAS::copy failed.");
+    }
+    else
+      std::copy_n(basis_vgl_mw.data(), output_size * nw * DIM_VGL, phi_vgl_v.data());
+  }
+  else
+  {
+    ScopedTimer local(mo_timer_);
+    const size_t requested_orb_size = phi_vgl_v.size(2);
+    assert(requested_orb_size <= OrbitalSetSize);
+    {
+      if (useOMPoffload_)
+      {
+        auto* c_devptr = C->device_data();
+        compute::BLAS::gemm(mw_res.blas_handle, 'T', 'N',
+                            requested_orb_size,        // MOs
+                            spo_list.size() * DIM_VGL, // walkers * DIM_VGL
+                            BasisSetSize,              // AOs
+                            ValueType(1), c_devptr, BasisSetSize, basis_vgl_mw.device_data(), BasisSetSize,
+                            ValueType(0), phi_vgl_v.device_data(), requested_orb_size);
+        mw_res.queue.sync();
+      }
+      else
+      {
+        ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+        // TODO: make class for general blas interface in Platforms
+        // have instance of that class as member of LCAOrbitalSet, call gemm through that
+        BLAS::gemm('T', 'N',
+                   requested_orb_size,        // MOs
+                   spo_list.size() * DIM_VGL, // walkers * DIM_VGL
+                   BasisSetSize,              // AOs
+                   1, C_partial_view.data(), BasisSetSize, basis_vgl_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
+                   requested_orb_size);
+      }
+    }
+  }
+  // phi_vgl_v correct on device if useOMPoffload_
+}
+
+void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                OffloadMWVArray& vp_phi_v) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader    = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& mw_res        = spo_leader.mw_mem_handle_.getResource();
+  auto& vp_basis_v_mw = mw_res.vp_basis_v_mw;
+  //Splatter basis_v
+  const size_t nVPs = vp_phi_v.size(0);
+  vp_basis_v_mw.resize(nVPs, BasisSetSize);
+
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValueVPs(basis_list, vp_list, vp_basis_v_mw);
+
+  if (Identity)
+  {
+    if (useOMPoffload_)
+    {
+      int dummy_handle = 0;
+      int success      = 0;
+      success =
+          ompBLAS::copy(dummy_handle, OrbitalSetSize * nVPs, vp_basis_v_mw.device_data(), 1, vp_phi_v.device_data(), 1);
+      if (success != 0)
+        throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueVPsImplGEMM ompBLAS::copy failed.");
+    }
+    else
+      std::copy_n(vp_basis_v_mw.data_at(0, 0), OrbitalSetSize * nVPs, vp_phi_v.data_at(0, 0));
+  }
+  else
+  {
+    ScopedTimer local(mo_timer_);
+    const size_t requested_orb_size = vp_phi_v.size(1);
+    assert(requested_orb_size <= OrbitalSetSize);
+
+    if (useOMPoffload_)
+    {
+      auto* c_devptr = C->device_data();
+      compute::BLAS::gemm(mw_res.blas_handle, 'T', 'N',
+                          requested_orb_size, // MOs
+                          nVPs,               // walkers * Virtual Particles
+                          BasisSetSize,       // AOs
+                          ValueType(1), c_devptr, BasisSetSize, vp_basis_v_mw.device_data(), BasisSetSize, ValueType(0),
+                          vp_phi_v.device_data(), requested_orb_size);
+      mw_res.queue.sync();
+    }
+    else
+    {
+      ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+      BLAS::gemm('T', 'N',
+                 requested_orb_size, // MOs
+                 nVPs,               // walkers * Virtual Particles
+                 BasisSetSize,       // AOs
+                 1, C_partial_view.data(), BasisSetSize, vp_basis_v_mw.data(), BasisSetSize, 0, vp_phi_v.data(),
+                 requested_orb_size);
+    }
+  }
+}
+
+void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                                     const RefVectorWithLeader<ParticleSet>& P_list,
+                                     int iat,
+                                     const RefVector<ValueVector>& psi_v_list) const
+{
+  assert(this == &spo_list.getLeader());
+  if (!useOMPoffload_)
+  {
+    SPOSet::mw_evaluateValue(spo_list, P_list, iat, psi_v_list);
+    return;
+  }
+
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& phi_v      = spo_leader.mw_mem_handle_.getResource().phi_v;
+  phi_v.resize(spo_list.size(), OrbitalSetSize);
+  mw_evaluateValueImplGEMM(spo_list, P_list, iat, phi_v);
+
+  const size_t output_size = phi_v.size(1);
+  const size_t nw          = phi_v.size(0);
+  phi_v.updateFrom();
+
+  for (int iw = 0; iw < nw; iw++)
+    std::copy_n(phi_v.data_at(iw, 0), output_size, psi_v_list[iw].get().data());
+}
+
+void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                             const RefVectorWithLeader<ParticleSet>& P_list,
+                                             int iat,
+                                             OffloadMWVArray& phi_v) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  const size_t nw  = spo_list.size();
+  auto& mw_res     = spo_leader.mw_mem_handle_.getResource();
+  auto& basis_v_mw = mw_res.basis_v_mw;
+  basis_v_mw.resize(nw, BasisSetSize);
+
+  auto basis_list = spo_leader.extractBasisRefList(spo_list);
+  myBasisSet->mw_evaluateValue(basis_list, P_list, iat, basis_v_mw);
+
+  if (Identity)
+  {
+    if (useOMPoffload_)
+    {
+      int dummy_handle = 0;
+      int success      = 0;
+      success = ompBLAS::copy(dummy_handle, OrbitalSetSize * nw, basis_v_mw.device_data(), 1, phi_v.device_data(), 1);
+      if (success != 0)
+        throw std::runtime_error("In LCAOrbitalSet::mw_evaluateValueImplGEMM ompBLAS::copy failed.");
+    }
+    else
+      std::copy_n(basis_v_mw.data(), OrbitalSetSize * nw, phi_v.data());
+  }
+  else
+  {
+    ScopedTimer local(mo_timer_);
+    const size_t requested_orb_size = phi_v.size(1);
+    assert(requested_orb_size <= OrbitalSetSize);
+
+    if (useOMPoffload_)
+    {
+      auto* c_devptr = C->device_data();
+      compute::BLAS::gemm(mw_res.blas_handle, 'T', 'N',
+                          requested_orb_size, // MOs
+                          nw,                 // walkers
+                          BasisSetSize,       // AOs
+                          ValueType(1), c_devptr, BasisSetSize, basis_v_mw.device_data(), BasisSetSize, ValueType(0),
+                          phi_v.device_data(), requested_orb_size);
+      mw_res.queue.sync();
+    }
+    else
+    {
+      ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+      BLAS::gemm('T', 'N',
+                 requested_orb_size, // MOs
+                 spo_list.size(),    // walkers
+                 BasisSetSize,       // AOs
+                 1, C_partial_view.data(), BasisSetSize, basis_v_mw.data(), BasisSetSize, 0, phi_v.data(),
+                 requested_orb_size);
+    }
+  }
+}
+
+void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                         const RefVector<ValueVector>& psi_list,
+                                         const std::vector<const ValueType*>& invRow_ptr_list,
+                                         std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  assert(this == &spo_list.getLeader());
+  if (!useOMPoffload_)
+  {
+    SPOSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+    return;
+  }
+
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  auto& vp_phi_v   = spo_leader.mw_mem_handle_.getResource().vp_phi_v;
+
+  const size_t nVPs               = VirtualParticleSet::countVPs(vp_list);
+  const size_t requested_orb_size = psi_list[0].get().size();
+  vp_phi_v.resize(nVPs, requested_orb_size);
+
+  mw_evaluateValueVPsImplGEMM(spo_list, vp_list, vp_phi_v);
+
+  if (useOMPoffload_)
+  {
+    const size_t nw             = vp_list.size();
+    auto& invRow_deviceptr_list = spo_leader.mw_mem_handle_.getResource().invRow_deviceptr_list;
+    auto& rg_buffer             = spo_leader.mw_mem_handle_.getResource().rg_buffer;
+
+    invRow_deviceptr_list.resize(nVPs);
+    rg_buffer.resize(4, nVPs);
+
+    for (size_t iw = 0, istart = 0; iw < nw; iw++)
+    {
+      const size_t nvp_i = vp_list[iw].getTotalNum();
+      std::fill_n(invRow_deviceptr_list.begin() + istart, nvp_i, invRow_ptr_list[iw]);
+      istart += nvp_i;
+    }
+    auto* invRow_deviceptr_list_ptr = invRow_deviceptr_list.data();
+    auto* vp_phi_v_ptr              = vp_phi_v.data();
+    auto* rg_buffer_ptr             = rg_buffer.data();
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+      map(always,to: invRow_deviceptr_list_ptr[:nVPs]) \
+      map(to: vp_phi_v_ptr[:nVPs*requested_orb_size]) \
+      map(always, from: rg_buffer_ptr[:nVPs])")
+    for (size_t ivp = 0; ivp < nVPs; ivp++)
+    {
+      rg_buffer_ptr[ivp] = 0;
+      for (size_t iorb = 0; iorb < requested_orb_size; iorb++)
+        rg_buffer_ptr[ivp] += vp_phi_v_ptr[ivp * requested_orb_size + iorb] * invRow_deviceptr_list_ptr[ivp][iorb];
+    }
+
+    for (size_t iw = 0, index = 0; iw < nw; iw++)
+      for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+        ratios_list[iw][iat] = rg_buffer[0][index++];
+  }
+  else
+    for (size_t iw = 0, index = 0; iw < vp_list.size(); iw++)
+      for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+        ratios_list[iw][iat] = simd::dot(vp_phi_v.data_at(index++, 0), invRow_ptr_list[iw], requested_orb_size);
 }
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
@@ -354,15 +754,110 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
   Vector<ValueType> invTemp(Temp.data(1), BasisSetSize);
 
-  // when only a subset of orbitals is used, extract limited rows of C.
-  Matrix<ValueType> C_occupied(C->data(), psiinv.size(), BasisSetSize);
-  MatrixOperators::product_Atx(C_occupied, psiinv, invTemp);
+  if (Identity)
+    std::copy_n(psiinv.data(), psiinv.size(), invTemp.data());
+  else
+  {
+    ScopedTimer local(mo_timer_);
+    // when only a subset of orbitals is used, extract limited rows of C.
+    Matrix<ValueType> C_occupied(C->data(), psiinv.size(), BasisSetSize);
+    MatrixOperators::product_Atx(C_occupied, psiinv, invTemp);
+  }
 
   for (size_t j = 0; j < VP.getTotalNum(); j++)
   {
-    myBasisSet->evaluateV(VP, j, vTemp.data());
+    {
+      ScopedTimer local(basis_timer_);
+      myBasisSet->evaluateV(VP, j, vTemp.data());
+    }
     ratios[j] = simd::dot(vTemp.data(), invTemp.data(), BasisSetSize);
   }
+}
+
+void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                                   int iat,
+                                                   const std::vector<const ValueType*>& invRow_ptr_list,
+                                                   OffloadMWVGLArray& phi_vgl_v,
+                                                   std::vector<ValueType>& ratios,
+                                                   std::vector<GradType>& grads) const
+{
+  assert(this == &spo_list.getLeader());
+  assert(phi_vgl_v.size(0) == DIM_VGL);
+  assert(phi_vgl_v.size(1) == spo_list.size());
+
+  if (!useOMPoffload_)
+  {
+    SPOSet::mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
+    return;
+  }
+
+  mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
+  // Device data of phi_vgl_v must be up-to-date upon return
+  // phi_vgl_v.updateTo(); // moved updateTo to mw_evaluateVGLImplGEMM
+
+  const size_t nw             = spo_list.size();
+  const size_t norb_requested = phi_vgl_v.size(2);
+  if (useOMPoffload_)
+  {
+    auto& spo_leader            = spo_list.getCastedLeader<LCAOrbitalSet>();
+    auto& invRow_deviceptr_list = spo_leader.mw_mem_handle_.getResource().invRow_deviceptr_list;
+    auto& rg_buffer             = spo_leader.mw_mem_handle_.getResource().rg_buffer;
+
+    invRow_deviceptr_list.resize(nw);
+    rg_buffer.resize(4, nw);
+
+    for (size_t iw = 0; iw < nw; iw++)
+      invRow_deviceptr_list[iw] = invRow_ptr_list[iw];
+
+    auto* invRow_deviceptr_list_ptr = invRow_deviceptr_list.data();
+    auto* phi_vgl_v_ptr             = phi_vgl_v.data();
+    auto* rg_buffer_ptr             = rg_buffer.data();
+    const size_t phi_vgl_stride     = nw * norb_requested;
+
+    PRAGMA_OFFLOAD("omp target teams distribute \
+                  map(always,to: invRow_deviceptr_list_ptr[:nw]) \
+                  map(to: phi_vgl_v_ptr[:nw*norb_requested]) \
+                  map(always, from: rg_buffer_ptr[:rg_buffer.size()])")
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      auto* phi_v_ptr  = phi_vgl_v_ptr + iw * norb_requested;
+      auto* phi_gx_ptr = phi_v_ptr + phi_vgl_stride;
+      auto* phi_gy_ptr = phi_gx_ptr + phi_vgl_stride;
+      auto* phi_gz_ptr = phi_gy_ptr + phi_vgl_stride;
+      auto* invRow     = invRow_deviceptr_list_ptr[iw];
+
+      ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
+      PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
+      for (size_t iorb = 0; iorb < norb_requested; iorb++)
+      {
+        ratio += phi_v_ptr[iorb] * invRow[iorb];
+        grad_x += phi_gx_ptr[iorb] * invRow[iorb];
+        grad_y += phi_gy_ptr[iorb] * invRow[iorb];
+        grad_z += phi_gz_ptr[iorb] * invRow[iorb];
+      }
+
+      rg_buffer_ptr[iw]          = ratio;
+      rg_buffer_ptr[iw + nw]     = grad_x / ratio;
+      rg_buffer_ptr[iw + nw * 2] = grad_y / ratio;
+      rg_buffer_ptr[iw + nw * 3] = grad_z / ratio;
+    }
+
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      ratios[iw] = rg_buffer[0][iw];
+      grads[iw]  = {rg_buffer[1][iw], rg_buffer[2][iw], rg_buffer[3][iw]};
+    }
+  }
+  else
+    for (int iw = 0; iw < nw; iw++)
+    {
+      ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_vgl_v.data_at(0, iw, 0), norb_requested);
+      GradType dphi;
+      for (size_t idim = 0; idim < DIM; idim++)
+        dphi[idim] = simd::dot(invRow_ptr_list[iw], phi_vgl_v.data_at(idim + 1, iw, 0), norb_requested) / ratios[iw];
+      grads[iw] = dphi;
+    }
 }
 
 void LCAOrbitalSet::evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& dhpsi)
@@ -682,18 +1177,14 @@ void LCAOrbitalSet::evaluateGradSourceRow(const ParticleSet& P,
   }
 }
 
-void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
-{
-  APP_ABORT("LCAOrbitalSet::evaluateThirdDeriv(P,istart,istop,ggg_logdet) not implemented\n");
-}
-
 void LCAOrbitalSet::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
 {
   if (!use_stored_copy)
-    C_copy = *C;
+    *C_copy = *C;
   //gemm is out-of-place
-  BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), C_copy.data(), BasisSetSize,
+  BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), C_copy->data(), BasisSetSize,
              rot_mat.data(), OrbitalSetSize, RealType(0.0), C->data(), BasisSetSize);
+  C->updateTo();
 
   /* debugging code
   app_log() << "PRINTING MO COEFFICIENTS AFTER ROTATION " << objectName << std::endl;

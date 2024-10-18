@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Lab
 //                    Peter W.  Doak, doakpw@ornl.gov, Oak Ridge National Lab
@@ -21,11 +21,12 @@
 
 #include <stdio.h>
 #include <sstream>
-
+#include <map>
 
 namespace qmcplusplus
 {
-using RealType = QMCTraits::RealType;
+// Take note that all input is done at full precision.
+using Real = QMCTraits::FullPrecRealType;
 
 enum class TestEnum1
 {
@@ -51,19 +52,22 @@ public:
   TestInputSection()
   {
     section_name   = "Test";
-    attributes     = {"name", "samples", "kmax", "full"};
-    parameters     = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets", "center"};
+    attributes     = {"name", "samples", "kmax", "full", "width::type"};
+    parameters     = {"label",     "count",   "width",  "rational", "testenum1",
+                      "testenum2", "sposets", "center", "density",  "target"};
     required       = {"count", "full"};
-    strings        = {"name", "label"};
+    strings        = {"name", "label", "width::type"};
     multi_strings  = {"sposets"};
+    multi_reals    = {"density"};
+    multiple       = {"target"};
     integers       = {"samples", "count"};
     reals          = {"kmax", "width"};
-    positions      = {"center"};
+    positions      = {"center", "target"};
     bools          = {"full", "rational"};
     enums          = {"testenum1", "testenum2"};
     default_values = {{"name", std::string("demo")},
                       {"samples", int(20)},
-                      {"width", RealType(1.0)},
+                      {"width", Real(1.0)},
                       {"rational", bool(false)}};
   };
   // clang-format: on
@@ -72,12 +76,20 @@ public:
   {
     return lookupAnyEnum(name, get<std::string>(name), lookup_input_enum_value);
   }
+
+  void report(std::ostream& ostr)
+  { //InputSection::report(ostr);
+  }
 };
 
 class TestAssignAnyEnum : public InputSection
 {
 public:
-  TestAssignAnyEnum() { enums = {"testenum"}; }
+  TestAssignAnyEnum()
+  {
+    section_name = "unknown";
+    enums        = {"testenum"};
+  }
 };
 
 
@@ -106,9 +118,8 @@ TEST_CASE("InputSection::assignAnyEnum", "[estimators]")
   };
 
   TestAssignAnyEnum taae;
-  CHECK_THROWS_AS(taae.get<SomeEnum>("testenum"), std::runtime_error);
+  CHECK_THROWS_AS(taae.get<SomeEnum>("testenum"), UniformCommunicateError);
 }
-
 
 TEST_CASE("InputSection::readXML", "[estimators]")
 {
@@ -132,6 +143,8 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     TestInputSection ti;
     ti.readXML(cur);
 
+    ti.report(std::cout);
+
     // assigned from xml
     CHECK(ti.has("full"));
     CHECK(ti.has("count"));
@@ -150,10 +163,9 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<std::string>("name") == "demo");
     CHECK(ti.get<int>("samples") == 20);
-    CHECK(ti.get<RealType>("width") == Approx(1.0));
+    CHECK(ti.get<Real>("width") == Approx(1.0));
     CHECK(ti.get<bool>("rational") == false);
   }
-
 
   SECTION("complete attributes and parameters")
   {
@@ -162,11 +174,14 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 <test name="alice" samples="10" kmax="3.0" full="no">
   <parameter name="label"   >  relative  </parameter>
   <parameter name="count"   >  15        </parameter>
-  <parameter name="width"   >  2.5       </parameter>
+  <parameter name="width" type="super">  2.5       </parameter>
   <parameter name="rational">  yes       </parameter>
   <parameter name="testenum1"> Value1 </parameter>
   <parameter name="testenum2"> Value2 </parameter>
   <parameter name="sposets"> spo1 spo2 </parameter>
+  <density> 10.0 20.0 30.0 </density>
+  <target> 0.0 0.2 0.3 </target>
+  <target> 0.1 0.3 0.5 </target>
   <parameter name="center"> 0.0 0.0 0.1 </parameter>
 </test>
 )";
@@ -182,6 +197,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     TestInputSection ti;
     ti.readXML(cur);
 
+    ti.report(std::cout);
     // assigned from xml
     CHECK(ti.has("name"));
     CHECK(ti.has("samples"));
@@ -190,17 +206,20 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.has("label"));
     CHECK(ti.has("count"));
     CHECK(ti.has("width"));
+    CHECK(ti.has("width::type"));
     CHECK(ti.has("rational"));
     CHECK(ti.has("sposets"));
     // check value correctness
     CHECK(ti.get<std::string>("name") == "alice");
     CHECK(ti.get<int>("samples") == 10);
-    CHECK(ti.get<RealType>("kmax") == Approx(3.0));
+    CHECK(ti.get<Real>("kmax") == Approx(3.0));
     CHECK(ti.get<bool>("full") == false);
     CHECK(ti.get<std::string>("label") == "relative");
     CHECK(ti.get<int>("count") == 15);
-    CHECK(ti.get<RealType>("width") == Approx(2.5));
+    CHECK(ti.get<Real>("width") == Approx(2.5));
+    CHECK(ti.get<std::string>("width::type") == "super");
     CHECK(ti.get<bool>("rational") == true);
+    CHECK(ti.get<std::vector<Real>>("density") == std::vector<Real>{10.0, 20.0, 30.0});
     CHECK(ti.get<TestEnum1>("testenum1") == TestEnum1::VALUE1);
     CHECK(ti.get<TestEnum2>("testenum2") == TestEnum2::VALUE2);
     CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
@@ -213,28 +232,29 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     //     required attribute/parameter is missing
     //     unrecognized attribute/parameter encountered
 
-    std::unordered_map<std::string, const char*> invalid_inputs = {
-        {"missing_attribute", R"(
+    std::map<std::string, std::string_view> invalid_inputs =
+        {{"missing_attribute", R"(
 <test>
   <parameter name="count"> 15 </parameter>
 </test>
 )"},
-        {"missing_parameter", R"(
+         {"missing_parameter", R"(
 <test full="no"/>
 )"},
-        {"foreign_attribute", R"(
+         {"foreign_attribute", R"(
 <test full="no" area="51">
   <parameter name="count"> 15 </parameter>
 </test>
 )"},
-        {"foreign_parameter", R"(
+         {"foreign_parameter", R"(
 <test full="no">
   <parameter name="count"> 15 </parameter>
   <parameter name="area" > 51 </parameter>
 </test>
 )"},
-    };
+         {"invalid_section_name", R"(<not_test><parameter name="nothing"></parameter></not_test>)"}};
 
+    std::cout << "really going to try bad sections\n" << std::endl;
     for (auto& [label, xml] : invalid_inputs)
     {
       // parse xml doc
@@ -245,19 +265,36 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 
       // read xml
       TestInputSection ti;
-      CHECK_THROWS_AS(ti.readXML(cur), std::runtime_error);
+      CHECK_THROWS_AS(ti.readXML(cur), UniformCommunicateError);
     }
   }
 }
 
+TEST_CASE("InputSection::InvalidElement", "[estimators]")
+{
+  std::string invalid_element{R"(<test> &lt; </test>)"};
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(invalid_element);
+  REQUIRE(okay);
+  xmlNodePtr cur = doc.getRoot();
+  TestInputSection ti;
+  CHECK_THROWS_AS(ti.readXML(cur), UniformCommunicateError);
+}
 
 TEST_CASE("InputSection::init", "[estimators]")
 {
+  SECTION("bad type handling")
+  {
+    TestInputSection ti;
+    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", int(15)}, {"width", int(10)}}), UniformCommunicateError);
+  }
   SECTION("minimum required attributes and parameters")
   {
     // initialize
     TestInputSection ti;
     ti.init({{"full", bool(false)}, {"count", int(15)}});
+
+    ti.report(std::cout);
 
     // assigned from initializer-list
     CHECK(ti.has("full"));
@@ -275,7 +312,7 @@ TEST_CASE("InputSection::init", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<std::string>("name") == "demo");
     CHECK(ti.get<int>("samples") == 20);
-    CHECK(ti.get<RealType>("width") == Approx(1.0));
+    CHECK(ti.get<Real>("width") == Approx(1.0));
     CHECK(ti.get<bool>("rational") == false);
   }
 
@@ -286,15 +323,16 @@ TEST_CASE("InputSection::init", "[estimators]")
     TestInputSection ti;
     ti.init({{"name", std::string("alice")},
              {"samples", int(10)},
-             {"kmax", RealType(3.0)},
+             {"kmax", Real(3.0)},
              {"full", bool(false)},
              {"label", std::string("relative")},
              {"count", int(15)},
-             {"width", RealType(2.5)},
+             {"width", Real(2.5)},
              {"rational", bool(true)},
              {"sposets", std::vector<std::string>{"spo1", "spo2"}},
              {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
+    ti.report(std::cout);
     // assigned from initializer-list
     CHECK(ti.has("name"));
     CHECK(ti.has("samples"));
@@ -307,11 +345,11 @@ TEST_CASE("InputSection::init", "[estimators]")
     // check value correctness
     CHECK(ti.get<std::string>("name") == "alice");
     CHECK(ti.get<int>("samples") == 10);
-    CHECK(ti.get<RealType>("kmax") == Approx(3.0));
+    CHECK(ti.get<Real>("kmax") == Approx(3.0));
     CHECK(ti.get<bool>("full") == false);
     CHECK(ti.get<std::string>("label") == "relative");
     CHECK(ti.get<int>("count") == 15);
-    CHECK(ti.get<RealType>("width") == Approx(2.5));
+    CHECK(ti.get<Real>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
     CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
     CHECK(ti.get<InputSection::Position>("center") == InputSection::Position(0.0, 0.0, 0.1));
@@ -321,56 +359,56 @@ TEST_CASE("InputSection::init", "[estimators]")
   SECTION("invalid type assignment")
   {
     TestInputSection ti;
-    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", RealType(15.)}}), std::bad_cast);
+    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", Real(15.)}}), UniformCommunicateError);
   }
 }
-
 
 TEST_CASE("InputSection::get", "[estimators]")
 {
   TestInputSection ti;
   ti.init({{"name", std::string("alice")},
            {"samples", int(10)},
-           {"kmax", RealType(3.0)},
+           {"kmax", Real(3.0)},
            {"full", bool(false)},
            {"label", std::string("relative")},
            {"count", int(15)},
-           {"width", RealType(2.5)},
+           {"width", Real(2.5)},
            {"rational", bool(true)},
            {"sposets", std::vector<std::string>{"spo1", "spo2"}},
            {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
   // invalid type access results in thrown exception
-  CHECK_THROWS_AS(ti.get<int>("name"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<RealType>("samples"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<bool>("kmax"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<std::string>("full"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<RealType>("label"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<bool>("count"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<std::string>("width"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<int>("rational"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<std::string>("sposets"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<RealType>("center"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<int>("name"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<Real>("samples"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<bool>("kmax"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<std::string>("full"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<Real>("label"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<bool>("count"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<std::string>("width"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<int>("rational"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<std::string>("sposets"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<Real>("center"), UniformCommunicateError);
 }
 
 class CustomTestInput : public InputSection
 {
 public:
-  struct WeirdStuff {
+  struct WeirdStuff
+  {
     std::string letters;
-    std::array<int,3> numbers;
+    std::array<int, 3> numbers;
   };
   using Repeater = std::vector<std::pair<std::string, std::string>>;
   CustomTestInput()
   {
     section_name = "Test";
-    attributes   = {"name", "samples", "kmax", "full"};
-    parameters   = {"label", "count", "width"};
-    strings      = {"name", "label"};
+    attributes   = {"name", "samples", "kmax", "full", "custom_attribute", "with_custom::custom_attribute"};
+    parameters   = {"label", "count", "width", "with_custom"};
+    strings      = {"name", "label", "with_custom"};
     reals        = {"kmax"};
     integers     = {"samples", "count"};
     bools        = {"full"};
-    custom       = {"weird_stuff", "repeater"};
+    custom       = {"weird_stuff", "repeater", "custom_attribute"};
   }
   void setFromStreamCustom(const std::string& ename, const std::string& name, std::istringstream& svalue) override
   {
@@ -387,63 +425,80 @@ public:
     {
       std::string compound;
       svalue >> compound;
-      auto split_vstrv = split(compound, ":"); 
+      auto split_vstrv = split(compound, ":");
       if (has(name))
-	std::any_cast<Repeater>(&(values_[name]))->emplace_back(split_vstrv[0],split_vstrv[1]);
+        std::any_cast<Repeater>(&(values_[name]))->emplace_back(split_vstrv[0], split_vstrv[1]);
       else
-	values_[name] = Repeater{{split_vstrv[0],split_vstrv[1]}};
+        values_[name] = Repeater{{split_vstrv[0], split_vstrv[1]}};
+    }
+    else if (name == "custom_attribute" || name == "with_custom::custom_attribute")
+    {
+      std::string cus_at;
+      std::getline(svalue, cus_at);
+      values_[name] = cus_at;
     }
     else
-      throw std::runtime_error("bad name passed or custom setFromStream not implemented in derived class.");
+      throw std::runtime_error("bad name passed: " + name +
+                               " or custom setFromStream not implemented in derived class.");
   }
+
+  void report(std::ostream& ostr) { InputSection::report(ostr); }
 };
 
 class FailCustomTestInput : public InputSection
 {
 public:
-  struct WeirdStuff {
+  struct WeirdStuff
+  {
     std::string letters;
-    std::array<int,3> numbers;
+    std::array<int, 3> numbers;
   };
   using Repeater = std::vector<std::pair<std::string, std::string>>;
   FailCustomTestInput()
   {
     section_name = "Test";
-    attributes   = {"name", "samples", "kmax", "full"};
-    parameters   = {"label", "count", "width"};
+    attributes   = {"name", "samples", "kmax", "full", "custom_attribute", "with_custom::custom_attribute"};
+    parameters   = {"label", "count", "width", "with_custom"};
     strings      = {"name", "label"};
     reals        = {"kmax"};
     integers     = {"samples", "count"};
     bools        = {"full"};
-    custom       = {"weird_stuff", "repeater"};
+    custom       = {"weird_stuff", "repeater", "custom_attribute"};
   }
 };
 
 TEST_CASE("InputSection::custom", "[estimators]")
 {
   std::string_view xml = R"XML(
-<test name="alice" samples="10" kmax="3.0" full="no">
+<test name="alice" samples="10" kmax="3.0" full="no" custom_attribute="for the section">
   <parameter name="label"   >  relative  </parameter>
   <parameter name="count"   >  15        </parameter>
   <weird_stuff name="weird"> XQ 10 20 10 </weird_stuff>
   <Repeater> first:something </Repeater>
   <Repeater> second:else </Repeater>
+  <parameter name="with_custom" custom_attribute="This is a custom attribute."/>
 </test>
 )XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml);
+  bool okay      = doc.parseFromString(xml);
   xmlNodePtr cur = doc.getRoot();
   CustomTestInput cti;
   cti.readXML(cur);
 
   auto ws = cti.get<decltype(cti)::WeirdStuff>("weird");
   CHECK(ws.letters == "XQ");
-  std::array<int,3> exp_numbers{10, 20, 10};
+  std::array<int, 3> exp_numbers{10, 20, 10};
   CHECK(ws.numbers == exp_numbers);
 
+  cti.report(std::cout);
+  std::string custom_attribute = cti.get<std::string>("with_custom::custom_attribute");
+  CHECK(custom_attribute == "This is a custom attribute.");
+  custom_attribute = cti.get<std::string>("custom_attribute");
+  CHECK(custom_attribute == "for the section");
+
   auto repeater = cti.get<decltype(cti)::Repeater>("repeater");
-  decltype(cti)::Repeater exp_repeater{{"first","something"},{"second","else"}};
+  decltype(cti)::Repeater exp_repeater{{"first", "something"}, {"second", "else"}};
   CHECK(repeater == exp_repeater);
 
   FailCustomTestInput fcti;
@@ -466,9 +521,10 @@ public:
   public:
     AnotherInputSection()
     {
-      section_name = "AnotherInputSection";
-      attributes   = {"name", "optional"};
-      strings      = {"name", "optional"};
+      section_name            = "AnotherInput";
+      section_name_alternates = {"ainput"};
+      attributes              = {"name", "optional"};
+      strings                 = {"name", "optional"};
     }
   };
 
@@ -539,11 +595,11 @@ private:
 TEST_CASE("InputSection::Delegate", "[estimators]")
 {
   std::string_view xml = R"XML(
-<test name="alice" full="no">
+<delegatetest name="alice" full="no">
   <parameter name="label"   >  relative  </parameter>
   <parameter name="count"   >  15        </parameter>
   <AnotherInput name="ainput"> XQ 10 20 10 </AnotherInput>
-</test>
+</delegatetest>
 )XML";
 
   Libxml2Document doc;

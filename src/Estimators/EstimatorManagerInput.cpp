@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -10,11 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "EstimatorManagerInput.h"
+#include "EstimatorInputDelegates.h"
 #include <algorithm>
-#include "ScalarEstimatorInputs.h"
-#include "MomentumDistributionInput.h"
-#include "OneBodyDensityMatricesInput.h"
-#include "SpinDensityInput.h"
 #include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
@@ -85,6 +82,14 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<SpinDensityInput>(child);
       else if (atype == "momentumdistribution")
         appendEstimatorInput<MomentumDistributionInput>(child);
+      else if (atype == "selfhealingoverlap")
+        appendEstimatorInput<SelfHealingOverlapInput>(child);
+      else if (atype == "perparticlehamiltonianlogger")
+        appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
+      else if (atype == "magnetizationdensity")
+        appendEstimatorInput<MagnetizationDensityInput>(child);
+      else if (atype == "energydensity")
+        appendEstimatorInput<EnergyDensityInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");
@@ -106,6 +111,9 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
     }
   }
 }
+
+void EstimatorManagerInput::append(const EstimatorInput& ei) { estimator_inputs_.emplace_back(ei); }
+void EstimatorManagerInput::append(const ScalarEstimatorInput& sei) { scalar_estimator_inputs_.emplace_back(sei); }
 
 
 } // namespace qmcplusplus

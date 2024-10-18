@@ -16,130 +16,131 @@
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #include "Pools/PooledData.h"
-#include <stdint.h>
+#include <cstdint>
+#include <stdexcept>
 ///dummy declarations to be specialized
 template<typename T>
 inline void gsum(T&, int)
 {
-  APP_ABORT("Need specialization for gsum(T&, int)");
+  throw std::runtime_error("Need specialization for gsum(T&, int)");
 }
 
 template<typename T>
 inline void Communicate::allreduce(T&)
 {
-  APP_ABORT("Need specialization for allreduce(T&)");
+  throw std::runtime_error("Need specialization for allreduce(T&)");
 }
 
 template<typename T>
 inline void Communicate::reduce(T&)
 {
-  APP_ABORT("Need specialization for reduce(T&)");
+  throw std::runtime_error("Need specialization for reduce(T&)");
 }
 
 template<typename T>
 inline void Communicate::reduce(T* restrict, T* restrict, int n)
 {
-  APP_ABORT("Need specialization for reduce(T* restrict , T* restrict, int n)");
+  throw std::runtime_error("Need specialization for reduce(T* restrict , T* restrict, int n)");
 }
 
 template<typename T>
 inline void Communicate::reduce_in_place(T* restrict, int n)
 {
-  APP_ABORT("Need specialization for reduce_in_place(T* restrict, int n)");
+  throw std::runtime_error("Need specialization for reduce_in_place(T* restrict, int n)");
 }
 
 template<typename T>
 inline void Communicate::bcast(T&)
 {
-  APP_ABORT("Need specialization for bcast(T&)");
+  throw std::runtime_error("Need specialization for bcast(T&)");
 }
 
 template<typename T>
 inline void Communicate::bcast(T* restrict, int n)
 {
-  APP_ABORT("Need specialization for bcast(T* restrict ,int n)");
+  throw std::runtime_error("Need specialization for bcast(T* restrict ,int n)");
 }
 
 template<typename T>
 inline void Communicate::send(int dest, int tag, T&)
 {
-  APP_ABORT("Need specialization for send(int, int, T& )");
+  throw std::runtime_error("Need specialization for send(int, int, T& )");
 }
 
 template<typename T>
 inline void Communicate::gather(T& sb, T& rb, int dest)
 {
-  APP_ABORT("Need specialization for gather(T&, T&, int)");
+  throw std::runtime_error("Need specialization for gather(T&, T&, int)");
 }
 
 template<typename T>
 inline void Communicate::allgather(T& sb, T& rb, int count)
 {
-  APP_ABORT("Need specialization for allgather(T&, T&, int)");
+  throw std::runtime_error("Need specialization for allgather(T&, T&, int)");
 }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T& sb, T& rb, IT&, IT&, int dest)
 {
-  APP_ABORT("Need specialization for gatherv(T&, T&, IT&, IT&, int)");
+  throw std::runtime_error("Need specialization for gatherv(T&, T&, IT&, IT&, int)");
 }
 
 template<typename T>
 inline void Communicate::scatter(T& sb, T& rb, int dest)
 {
-  APP_ABORT("Need specialization for scatter(T&, T&, int)");
+  throw std::runtime_error("Need specialization for scatter(T&, T&, int)");
 }
 
 template<typename T, typename IT>
 inline void Communicate::scatterv(T& sb, T& rb, IT&, IT&, int source)
 {
-  APP_ABORT("Need specialization for scatterv(T&, T&, IT&, IT&, int)");
+  throw std::runtime_error("Need specialization for scatterv(T&, T&, IT&, IT&, int)");
 }
 
 template<typename T>
 inline Communicate::request Communicate::irecv(int source, int tag, T&)
 {
-  APP_ABORT("Need specialization for irecv(int source, int tag, T& )");
+  throw std::runtime_error("Need specialization for irecv(int source, int tag, T& )");
   return MPI_REQUEST_NULL;
 }
 
 template<typename T>
 inline Communicate::request Communicate::isend(int dest, int tag, T&)
 {
-  APP_ABORT("Need specialization for isend(int source, int tag, T& )");
+  throw std::runtime_error("Need specialization for isend(int source, int tag, T& )");
   return MPI_REQUEST_NULL;
 }
 
 template<typename T>
 inline Communicate::request Communicate::irecv(int source, int tag, T*, int n)
 {
-  APP_ABORT("Need specialization for irecv(int source, int tag, T*, int )");
+  throw std::runtime_error("Need specialization for irecv(int source, int tag, T*, int )");
   return MPI_REQUEST_NULL;
 }
 
 template<typename T>
 inline Communicate::request Communicate::isend(int dest, int tag, T*, int n)
 {
-  APP_ABORT("Need specialization for isend(int source, int tag, T*, int )");
+  throw std::runtime_error("Need specialization for isend(int source, int tag, T*, int )");
   return MPI_REQUEST_NULL;
 }
 
 template<typename T>
 inline void Communicate::allgather(T* sb, T* rb, int count)
 {
-  APP_ABORT("Need specialization for allgather(T*, T*, int)");
+  throw std::runtime_error("Need specialization for allgather(T*, T*, int)");
 }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T* sb, T* rb, int n, IT&, IT&, int dest)
 {
-  APP_ABORT("Need specialization for gatherv(T*, T*, int, IT&, IT&, int)");
+  throw std::runtime_error("Need specialization for gatherv(T*, T*, int, IT&, IT&, int)");
 }
 
 template<typename T>
 inline void Communicate::gsum(T&)
 {
-  APP_ABORT("Need specialization for Communicate::::gsum(T&)");
+  throw std::runtime_error("Need specialization for Communicate::::gsum(T&)");
 }
 
 template<>
@@ -321,6 +322,14 @@ inline void Communicate::allreduce(std::vector<double>& g)
 {
   std::vector<double> gt(g.size(), 0.0);
   MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
+  g = gt;
+}
+
+template<>
+inline void Communicate::allreduce(std::vector<std::complex<float>>& g)
+{
+  std::vector<std::complex<float>> gt(g.size(), std::complex<float>(0.0));
+  MPI_Allreduce(&(g[0]), &(gt[0]), 2 * g.size(), MPI_FLOAT, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -773,11 +782,6 @@ inline void Communicate::gatherv(std::vector<char>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(char) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gatherv(&l[0], l.size(), MPI_CHAR, &g[0], &counts[0], &displ[0], MPI_CHAR, dest, myMPI);
 }
 
@@ -789,11 +793,6 @@ inline void Communicate::gatherv(std::vector<double>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(double) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gatherv(&l[0], l.size(), MPI_DOUBLE, &g[0], &counts[0], &displ[0], MPI_DOUBLE, dest, myMPI);
 }
 
@@ -804,11 +803,6 @@ inline void Communicate::gatherv(std::vector<float>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(float) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gatherv(&l[0], l.size(), MPI_FLOAT, &g[0], &counts[0], &displ[0], MPI_FLOAT, dest, myMPI);
 }
 
@@ -819,33 +813,18 @@ inline void Communicate::gatherv(std::vector<int>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(int) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gatherv(&l[0], l.size(), MPI_INT, &g[0], &counts[0], &displ[0], MPI_INT, dest, myMPI);
 }
 
 template<>
 inline void Communicate::allgather(std::vector<char>& sb, std::vector<char>& rb, int count)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (sb.size() * sizeof(double) < cray_short_msg_size)
-    this->barrier();
-#endif
   MPI_Allgather(&sb[0], count, MPI_CHAR, &rb[0], count, MPI_CHAR, myMPI);
 }
 
 template<>
 inline void Communicate::allgather(std::vector<int>& sb, std::vector<int>& rb, int count)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (sb.size() * sizeof(int) < cray_short_msg_size)
-    this->barrier();
-#endif
   MPI_Allgather(&sb[0], count, MPI_INT, &rb[0], count, MPI_INT, myMPI);
 }
 
@@ -856,11 +835,6 @@ inline void Communicate::allgatherv(std::vector<int>& l,
                                     std::vector<int>& counts,
                                     std::vector<int>& displ)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(int) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Allgatherv(&l[0], l.size(), MPI_INT, &g[0], &counts[0], &displ[0], MPI_INT, myMPI);
 }
 
@@ -871,44 +845,24 @@ inline void Communicate::gatherv(std::vector<long>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(long) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gatherv(&l[0], l.size(), MPI_LONG, &g[0], &counts[0], &displ[0], MPI_LONG, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<double>& l, std::vector<double>& g, int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(double) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gather(&l[0], l.size(), MPI_DOUBLE, &g[0], l.size(), MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<char>& l, std::vector<char>& g, int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(char) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gather(&l[0], l.size(), MPI_CHAR, &g[0], l.size(), MPI_CHAR, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<int>& l, std::vector<int>& g, int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(int) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gather(&l[0], l.size(), MPI_INT, &g[0], l.size(), MPI_INT, dest, myMPI);
 }
 
@@ -919,22 +873,12 @@ inline void Communicate::gatherv(PooledData<double>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(double) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), &counts[0], &displ[0], MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(PooledData<double>& l, PooledData<double>& g, int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (l.size() * sizeof(double) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
 }
 
@@ -973,22 +917,12 @@ inline void Communicate::gsum(std::vector<std::complex<double>>& g)
 template<>
 inline void Communicate::gatherv(char* l, char* g, int n, std::vector<int>& counts, std::vector<int>& displ, int dest)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (n * sizeof(char) < cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gatherv(l, n, MPI_CHAR, g, &counts[0], &displ[0], MPI_CHAR, dest, myMPI);
 }
 
 template<>
 inline void Communicate::allgather(char* sb, char* rb, int count)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size = 128000;
-  if (count * sizeof(char) < cray_short_msg_size)
-    this->barrier();
-#endif
   MPI_Allgather(sb, count, MPI_CHAR, rb, count, MPI_CHAR, myMPI);
 }
 

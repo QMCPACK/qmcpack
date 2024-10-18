@@ -40,7 +40,6 @@ void setWalkerOffsets(MCWalkerConfiguration& W, Communicate* myComm)
   myComm->allreduce(nw);
   for (int ip = 0; ip < myComm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  W.setGlobalNumWalkers(nwoff[myComm->size()]);
   W.setWalkerOffsets(nwoff);
 }
 
@@ -48,20 +47,19 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv);
-  OHMMS::Controller->initialize(env);
+  OHMMS::Controller = new Communicate(env.world());
 #endif
-  // Suppress HDF5 warning and error messages.
-  qmcplusplus::hdf_error_suppression hide_hdf_errors;
 
   Communicate* myComm = OHMMS::Controller;
-  
-  using RealType    = QMCTraits::RealType;
-  using ParticlePos = ParticleSet::ParticlePos;
-  using LatticeType = ParticleSet::ParticleLayout;
-  using TensorType  = ParticleSet::TensorType;
-  using PosType     = ParticleSet::PosType;
-  using uint_type   = RandomGenerator::uint_type;
-  using Walker_t    = MCWalkerConfiguration::Walker_t;
+
+  using RealType         = QMCTraits::RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using ParticlePos      = ParticleSet::ParticlePos;
+  using LatticeType      = ParticleSet::ParticleLayout;
+  using TensorType       = ParticleSet::TensorType;
+  using PosType          = ParticleSet::PosType;
+  using uint_type        = RandomGenerator::uint_type;
+  using Walker_t         = MCWalkerConfiguration::Walker_t;
 
   //use the global generator
 
@@ -104,9 +102,8 @@ int main(int argc, char** argv)
       break;
     case 'd': //directory
       directory = optarg;
-      if (directory.back() != '/') {
+      if (directory.back() != '/')
         directory += "/";
-      }
       break;
     }
   }
@@ -126,9 +123,7 @@ int main(int argc, char** argv)
 
   //turn off output
   if (myComm->rank())
-  {
     outputManager.shutOff();
-  }
 
   int nptcl = 0;
   double t0 = 0.0, t1 = 0.0;
@@ -137,20 +132,17 @@ int main(int argc, char** argv)
   ParticleSet ions(super_lattice);
   tile_cell(ions, tmat);
 
-  RandomNumberControl::make_seeds();
-  std::vector<RandomGenerator> myRNG(NumThreads);
+  auto& rnc_children = RandomNumberControl::getChildren();
   std::vector<uint_type> mt(Random.state_size(), 0);
+  std::vector<std::vector<uint_type>> mt_children(NumThreads, mt);
   std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(super_lattice));
 
 #pragma omp parallel reduction(+ : t0)
   {
-    int ip = omp_get_thread_num();
+    const int ip = omp_get_thread_num();
 
-    MCWalkerConfiguration& els = elecs[ip];
-
-    //create generator within the thread
-    myRNG[ip]                  = *RandomNumberControl::Children[ip];
-    RandomGenerator& random_th = myRNG[ip];
+    MCWalkerConfiguration& els                = elecs[ip];
+    RandomNumberControl::Generator& random_th = *rnc_children[ip];
 
     const int nions = ions.getTotalNum();
     const int nels  = count_electrons(ions);
@@ -162,7 +154,7 @@ int main(int argc, char** argv)
     { //create up/down electrons
       els.create({nels / 2, nels - nels / 2});
       els.R.InUnit = PosUnit::Lattice;
-      std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
+      std::generate(&els.R[0][0], &els.R[0][0] + nels3, std::ref(random_th));
       els.convert2Cart(els.R); // convert to Cartiesian
       els.update();
     }
@@ -175,10 +167,8 @@ int main(int argc, char** argv)
          wi != elecs[0].begin() + wPerNode[ip + 1]; wi++)
       els.saveWalker(**wi);
 
-    // save random seeds and electron configurations.
-    *RandomNumberControl::Children[ip] = myRNG[ip];
-    //MCWalkerConfiguration els_save(els);
-
+    // save random seeds
+    random_th.save(mt_children[ip]);
   } //end of omp parallel
   Random.save(mt);
 
@@ -196,16 +186,14 @@ int main(int argc, char** argv)
   myComm->barrier();
   h5write += h5clock.elapsed(); //store timer
 
-// flush random seeds to zero
+  // flush random seeds to zero
+  std::vector<uint_type> vt(mt.size(), 0);
 #pragma omp parallel
   {
-    int ip                     = omp_get_thread_num();
-    RandomGenerator& random_th = *RandomNumberControl::Children[ip];
-    std::vector<uint_type> vt(random_th.state_size(), 0);
+    RandomNumberControl::Generator& random_th = *rnc_children[omp_get_thread_num()];
     random_th.load(vt);
   }
-  std::vector<uint_type> mt_temp(Random.state_size(), 0);
-  Random.load(mt_temp);
+  Random.load(vt);
 
   // load random seeds
   myComm->barrier();
@@ -218,19 +206,17 @@ int main(int argc, char** argv)
   int mismatch_count = 0;
 #pragma omp parallel reduction(+ : mismatch_count)
   {
-    int ip                     = omp_get_thread_num();
-    RandomGenerator& random_th = myRNG[ip];
-    std::vector<uint_type> vt_orig(random_th.state_size());
+    const int ip                              = omp_get_thread_num();
+    RandomNumberControl::Generator& random_th = *rnc_children[ip];
     std::vector<uint_type> vt_load(random_th.state_size());
-    random_th.save(vt_orig);
-    RandomNumberControl::Children[ip]->save(vt_load);
+    random_th.save(vt_load);
     for (int i = 0; i < random_th.state_size(); i++)
-      if (vt_orig[i] != vt_load[i])
+      if (mt_children[ip][i] != vt_load[i])
         mismatch_count++;
   }
-  Random.save(mt_temp);
+  Random.save(vt);
   for (int i = 0; i < Random.state_size(); i++)
-    if (mt_temp[i] != mt[i])
+    if (vt[i] != mt[i])
       mismatch_count++;
 
   myComm->allreduce(mismatch_count);
@@ -239,7 +225,7 @@ int main(int argc, char** argv)
   {
     if (mismatch_count != 0)
       std::cout << "Fail: random seeds mismatch between write and read!\n"
-                << "  state_size= " << myRNG[0].state_size() << " mismatch_cout=" << mismatch_count << std::endl;
+                << "  state_size= " << mt.size() << " mismatch_cout=" << mismatch_count << std::endl;
     else
       std::cout << "Pass: random seeds match exactly between write and read!\n";
   }
@@ -263,7 +249,8 @@ int main(int argc, char** argv)
   // load walkers
   std::string restart_input = R"(
     <tmp>
-      <mcwalkerset fileroot=")" + directory + R"(restart" node="-1" version="3 0" collected="yes"/>
+      <mcwalkerset fileroot=")" +
+      directory + R"(restart" node="-1" version="3 0" collected="yes"/>
     </tmp>
   )";
 

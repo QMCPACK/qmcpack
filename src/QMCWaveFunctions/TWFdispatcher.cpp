@@ -45,7 +45,7 @@ void TWFdispatcher::flex_recompute(const RefVectorWithLeader<TrialWaveFunction>&
 void TWFdispatcher::flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                    int iat,
-                                   std::vector<PsiValueType>& ratios,
+                                   std::vector<PsiValue>& ratios,
                                    ComputeType ct) const
 {
   assert(wf_list.size() == p_list.size());
@@ -97,7 +97,7 @@ template<CoordsType CT>
 void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                        int iat,
-                                       std::vector<PsiValueType>& ratios,
+                                       std::vector<PsiValue>& ratios,
                                        TWFGrads<CT>& grads) const
 {
   assert(wf_list.size() == p_list.size());
@@ -180,13 +180,13 @@ template void TWFdispatcher::flex_evalGrad<CoordsType::POS_SPIN>(const RefVector
 template void TWFdispatcher::flex_calcRatioGrad<CoordsType::POS>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                                  const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  int iat,
-                                                                 std::vector<PsiValueType>& ratios,
+                                                                 std::vector<PsiValue>& ratios,
                                                                  TWFGrads<CoordsType::POS>& grads) const;
 template void TWFdispatcher::flex_calcRatioGrad<CoordsType::POS_SPIN>(
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
     int iat,
-    std::vector<PsiValueType>& ratios,
+    std::vector<PsiValue>& ratios,
     TWFGrads<CoordsType::POS_SPIN>& grads) const;
 
 } // namespace qmcplusplus
