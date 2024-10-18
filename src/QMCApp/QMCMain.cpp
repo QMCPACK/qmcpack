@@ -445,7 +445,8 @@ bool QMCMain::validateXML()
     }
     else if (cname == "hamiltonian")
     {
-      ham_pool_->put(cur);
+      // second param enables batched input error checking in HamiltonianFactory
+      ham_pool_->put(cur, my_project_.getDriverVersion() == ProjectData::DriverVersion::BATCH);
     }
     else if (cname == "include")
     {
@@ -549,7 +550,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     else if (cname == "hamiltonian")
     {
       inputnode = true;
-      ham_pool_->put(cur);
+      ham_pool_->put(cur, my_project_.getDriverVersion() == ProjectData::DriverVersion::BATCH);
     }
     else if (cname == "estimators")
     {
