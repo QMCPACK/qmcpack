@@ -26,7 +26,7 @@ def doublefactorial(n):
 
 @functools.lru_cache()
 def cartnorm(nxyz):
-    return np.product([doublefactorial(2*i-1) for i in nxyz])
+    return np.prod([doublefactorial(2*i-1) for i in nxyz])
 
 def cartnorm_str(s):
     return cartnorm(tuple(s.count(i) for i in 'xyz'))
@@ -307,8 +307,8 @@ class qmch5:
                 assert(bset['expandYlm'][()] == b'pyscf')
                 del bset['angular']
                 del bset['expandYlm']
-                bset.create_dataset('angular', (1,),'S9',np.string_("cartesian"))
-                bset.create_dataset('expandYlm', (1,),'S6',np.string_("Gamess"))
+                bset.create_dataset('angular', (1,),'S9',np.bytes_("cartesian"))
+                bset.create_dataset('expandYlm', (1,),'S6',np.bytes_("Gamess"))
 
             # generate transformation matrix (over all AOs)
             A = self.s2c_transformation_matrix()
