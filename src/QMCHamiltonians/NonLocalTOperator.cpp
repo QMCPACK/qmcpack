@@ -21,13 +21,13 @@
 
 namespace qmcplusplus
 {
-NonLocalTOperator::NonLocalTOperator() : tau_(0.01), alpha_(0.0), gamma_(0.0) {}
+NonLocalTOperator::NonLocalTOperator() : move_kind_(TmoveKind::OFF), tau_(0.01), alpha_(0.0), gamma_(0.0) {}
 
 /** process options related to TMoves
  * @return Tmove version
  *  Turns out this wants the NodePtr to the entire driver block.
  */
-int NonLocalTOperator::put(xmlNodePtr cur)
+void NonLocalTOperator::put(xmlNodePtr cur)
 {
   std::string use_tmove = "no";
   ParameterSet m_param;
@@ -42,26 +42,26 @@ int NonLocalTOperator::put(xmlNodePtr cur)
   bool success = m_param.put(cur);
   plusFactor   = tau_ * gamma_;
   minusFactor  = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
-  int v_tmove  = TMOVE_OFF;
+  move_kind_   = TmoveKind::OFF;
   std::ostringstream o;
   if (use_tmove == "no")
   {
-    v_tmove = TMOVE_OFF;
+    move_kind_ = TmoveKind::OFF;
     o << "  Using Locality Approximation";
   }
   else if (use_tmove == "yes" || use_tmove == "v0")
   {
-    v_tmove = TMOVE_V0;
+    move_kind_ = TmoveKind::V0;
     o << "  Using Non-local T-moves v0, M. Casula, PRB 74, 161102(R) (2006)";
   }
   else if (use_tmove == "v1")
   {
-    v_tmove = TMOVE_V1;
+    move_kind_ = TmoveKind::V1;
     o << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
   }
   else if (use_tmove == "v3")
   {
-    v_tmove = TMOVE_V3;
+    move_kind_ = TmoveKind::V3;
     o << "  Using Non-local T-moves v3, an approximation to v1";
   }
   else
@@ -69,37 +69,28 @@ int NonLocalTOperator::put(xmlNodePtr cur)
 
 #pragma omp master
   app_log() << o.str() << std::endl;
-
-  return v_tmove;
 }
 
-int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
-                                                         const double tau,
-                                                         const double alpha,
-                                                         const double gamma)
+NonLocalTOperator::NonLocalTOperator(const TmoveKind non_local_move_option,
+                                     const double tau,
+                                     const double alpha,
+                                     const double gamma)
+    : move_kind_(non_local_move_option), tau_(tau), alpha_(alpha), gamma_(gamma)
 {
-  tau_        = tau;
-  alpha_      = alpha;
-  gamma_      = gamma;
   plusFactor  = tau_ * gamma_;
   minusFactor = -tau_ * (1.0 - alpha_ * (1.0 + gamma_));
-  int v_tmove = TMOVE_OFF;
-
-  if (non_local_move_option == "no")
-    v_tmove = TMOVE_OFF;
-  else if (non_local_move_option == "yes" || non_local_move_option == "v0")
-    v_tmove = TMOVE_V0;
-  else if (non_local_move_option == "v1")
-    v_tmove = TMOVE_V1;
-  else if (non_local_move_option == "v3")
-    v_tmove = TMOVE_V3;
-  else
-    throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
-  return v_tmove;
 }
 
 const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vector<NonLocalData>& txy)
 {
+  // Although prob is required to be [0, 1), the received value can still be 1 when there is precision conversion.
+  // For example, when the caller value is the largest value smaller than 1.0 in double precision,
+  // the callee (RealType=float) can still receive 1.0f after an implicit conversion.
+  // Here we adjust the value of prob to be slightly smaller than 1.
+  if (prob == RealType(1))
+    prob = std::nextafter(RealType(1), RealType(0));
+  assert(prob >= 0 && prob < 1);
+
   // txy_scan_[0] = 1.0, txy_scan_[i>0] = txy_scan_[i-1] + txy[i-1].Weight (modified)
   txy_scan_.resize(txy.size());
   RealType wgt_t = 1.0;
@@ -113,6 +104,8 @@ const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vect
   }
 
   const RealType target = prob * wgt_t;
+  // prob is in range [0, 1). target < wgt_t should be satisfied even if prob is very close to 1.
+  assert(target < wgt_t);
   // find ibar which satisify txy_scan_[ibar-1] <= target < txy_scan_[ibar]
   int ibar = 0;
   while (ibar < txy_scan_.size() && txy_scan_[ibar] <= target)

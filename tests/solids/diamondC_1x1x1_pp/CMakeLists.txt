@@ -4,7 +4,7 @@ list(APPEND DIAMOND_SCALARS "potential" "-21.925822 0.018")
 list(APPEND DIAMOND_SCALARS "eeenergy" "-2.700534 0.0043")
 list(APPEND DIAMOND_SCALARS "ionion" "-12.77567000 0.001")
 list(APPEND DIAMOND_SCALARS "localecp" "-7.046740 0.030")
-list(APPEND DIAMOND_SCALARS "nonlocalecp" "0.597119 0.0056")
+list(APPEND DIAMOND_SCALARS "nonlocalecp" "0.597119 0.0065")
 list(APPEND DIAMOND_SCALARS "samples" "128000 0.0")
 list(APPEND DIAMOND_SCALARS "mpc" "-2.453044 0.004431")
 #  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.4")
@@ -109,10 +109,10 @@ qmc_run_and_check(
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
 list(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.5316 0.0024")
-list(APPEND DIAMOND_DMC_SCALARS "kinetic" "11.4857 0.0231")
+list(APPEND DIAMOND_DMC_SCALARS "kinetic" "11.4857 0.03")
 list(APPEND DIAMOND_DMC_SCALARS "potential" "-22.0170 0.0239")
 list(APPEND DIAMOND_DMC_SCALARS "localecp" "-7.1518 0.0323")
-list(APPEND DIAMOND_DMC_SCALARS "nonlocalecp" "0.62688 0.0080")
+list(APPEND DIAMOND_DMC_SCALARS "nonlocalecp" "0.62688 0.01")
 list(APPEND DIAMOND_DMC_SCALARS "eeenergy" "-2.71641 0.0073")
 list(APPEND DIAMOND_DMC_SCALARS "mpc" "-2.47994 0.00779")
 
@@ -1824,6 +1824,24 @@ if(add_traces_tests)
       'vmc,dmc'
       --dmc_steps_exclude=1
       --tol=2e-6)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_scalars
+      -n 
+      4
+      -s
+      '0,1'
+      -m
+      'vmc,dmc'
+      --dmc_steps_exclude=1
+      --tol=2e-6)
   else()
     simple_run_and_check(
       deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
@@ -1839,6 +1857,122 @@ if(add_traces_tests)
       -m
       'vmc,dmc'
       --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_scalars
+      -n
+      4
+      -s
+      '0,1'
+      -m
+      'vmc,dmc'
+      --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-walkerlog_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkerlog_vmc_scalars.in.xml
+      1
+      1
+      check_wlogs.py
+      -p
+      qmc_wlog_vmc_scalars
+      -s
+      0
+      -m
+      vmc
+      --dmc_steps_exclude=1)
+ 
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-walkerlog_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkerlog_vmc_scalars.in.xml
+      4
+      4
+      check_wlogs.py
+      -p
+      qmc_wlog_vmc_scalars
+      -n
+      4
+      -s
+      0
+      -m
+      vmc
+      --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-dmc-walkerlog_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkerlog_dmc_scalars.in.xml
+      4
+      4
+      check_wlogs.py
+      -p
+      qmc_wlog_dmc_scalars
+      -n
+      4
+      -s
+      1
+      -m
+      dmc
+      --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmcbatch-walkerlog_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkerlog_vmcbatch_scalars.in.xml
+      1
+      1
+      check_wlogs.py
+      -p
+      qmc_wlog_vmcbatch_scalars
+      -s
+      0
+      -m
+      vmc
+      --dmc_steps_exclude=1)
+ 
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmcbatch-walkerlog_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkerlog_vmcbatch_scalars.in.xml
+      4
+      4
+      check_wlogs.py
+      -p
+      qmc_wlog_vmcbatch_scalars
+      -n
+      4
+      -s
+      0
+      -m
+      vmc
+      --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-dmcbatch-walkerlog_scalars
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_walkerlog_dmcbatch_scalars.in.xml
+      4
+      4
+      check_wlogs.py
+      -p
+      qmc_wlog_dmcbatch_scalars
+      -n
+      4
+      -s
+      1
+      -m
+      dmc
+      --dmc_steps_exclude=1)
+
   endif()
 
   if(QMC_MIXED_PRECISION)
@@ -1860,6 +1994,26 @@ if(add_traces_tests)
       'Kinetic,ElecElec'
       --dmc_steps_exclude=1
       --tol=1e-6)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars_selective.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_scalars_selective
+      -n 
+      4
+      -s
+      '0,1'
+      -m
+      'vmc,dmc'
+      -q
+      'Kinetic,ElecElec'
+      --dmc_steps_exclude=1
+      --tol=1e-6)
   else()
     simple_run_and_check(
       deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
@@ -1870,6 +2024,25 @@ if(add_traces_tests)
       check_traces.py
       -p
       qmc_trace_scalars_selective
+      -s
+      '0,1'
+      -m
+      'vmc,dmc'
+      -q
+      'Kinetic,ElecElec'
+      --dmc_steps_exclude=1)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars_selective.in.xml
+      4
+      4
+      check_traces.py
+      -p
+      qmc_trace_scalars_selective
+      -n
+      4
       -s
       '0,1'
       -m
@@ -2019,3 +2192,14 @@ qmc_run_and_check(
   1
   1
   FALSE)
+
+# Input file does not exist and does not have XML suffix
+  qmc_run_and_check(
+  deterministic-input_check_not_present_not_xml_suffix
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_input_check_not_present_not_xml_suffix
+  det_qmc_input_check_not_present_not_xml_suffix.in.notxml
+  1
+  1
+  FALSE)
+

@@ -30,9 +30,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType     = WaveFunctionComponent::RealType;
-using LogValueType = WaveFunctionComponent::LogValueType;
-using PsiValueType = WaveFunctionComponent::PsiValueType;
+using RealType = WaveFunctionComponent::RealType;
+using LogValue = WaveFunctionComponent::LogValue;
+using PsiValue = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 {
@@ -125,19 +125,19 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(ratios[3]) == Approx(0.7987703724));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  PsiValueType ratio_0 = j3->ratio(elec_, 0);
+  PsiValue ratio_0 = j3->ratio(elec_, 0);
   elec_.rejectMove(0);
 
   elec_.makeMove(1, newpos - elec_.R[1]);
-  PsiValueType ratio_1 = j3->ratio(elec_, 1);
+  PsiValue ratio_1 = j3->ratio(elec_, 1);
   elec_.rejectMove(1);
 
   elec_.makeMove(2, newpos - elec_.R[2]);
-  PsiValueType ratio_2 = j3->ratio(elec_, 2);
+  PsiValue ratio_2 = j3->ratio(elec_, 2);
   elec_.rejectMove(2);
 
   elec_.makeMove(3, newpos - elec_.R[3]);
-  PsiValueType ratio_3 = j3->ratio(elec_, 3);
+  PsiValue ratio_3 = j3->ratio(elec_, 3);
   elec_.rejectMove(3);
 
   CHECK(std::real(ratio_0) == Approx(0.8744938582));

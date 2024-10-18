@@ -20,9 +20,9 @@
 
 namespace qmcplusplus
 {
-using RealType     = WaveFunctionComponent::RealType;
-using LogValueType = WaveFunctionComponent::LogValueType;
-using ValueType    = QMCTraits::ValueType;
+using RealType  = WaveFunctionComponent::RealType;
+using LogValue  = WaveFunctionComponent::LogValue;
+using ValueType = QMCTraits::ValueType;
 
 TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 {
@@ -97,15 +97,15 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 
   // check logs
   //evaluateLog += into G + L so reset
-  elec_.G          = 0.0;
-  elec_.L          = 0.0;
-  LogValueType log = twf_component_list[0]->evaluateLog(elec_, elec_.G, elec_.L);
-  LogValueType expected_log{-0.568775, 0.0};
+  elec_.G      = 0.0;
+  elec_.L      = 0.0;
+  LogValue log = twf_component_list[0]->evaluateLog(elec_, elec_.G, elec_.L);
+  LogValue expected_log{-0.568775, 0.0};
   CHECK(log == LogComplexApprox(expected_log));
   //evaluateLog += into G + L so reset
-  elec_.G                 = 0.0;
-  elec_.L                 = 0.0;
-  LogValueType cloned_log = cloned_j1spin->evaluateLog(elec_, elec_.G, elec_.L);
+  elec_.G             = 0.0;
+  elec_.L             = 0.0;
+  LogValue cloned_log = cloned_j1spin->evaluateLog(elec_, elec_.G, elec_.L);
   CHECK(cloned_log == LogComplexApprox(expected_log));
 
   // check derivatives
@@ -142,38 +142,38 @@ TEST_CASE("J1 spin evaluate derivatives multiparticle Jastrow", "[wavefunction]"
   ions_.setName("ion0");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
-  ions_.R[0]                 = {-1.0, 0.0, 0.0};
-  ions_.R[1]                 = { 1.0, 0.0, 0.0};
-  SpeciesSet& ispecies       = ions_.getSpeciesSet();
+  ions_.R[0]                  = {-1.0, 0.0, 0.0};
+  ions_.R[1]                  = {1.0, 0.0, 0.0};
+  SpeciesSet& ispecies        = ions_.getSpeciesSet();
   int BeIdx                   = ispecies.addSpecies("Be");
-  int ichargeIdx             = ispecies.addAttribute("charge");
+  int ichargeIdx              = ispecies.addAttribute("charge");
   ispecies(ichargeIdx, BeIdx) = 4.0;
 
   elec_.setName("e");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({4, 4, 1});
-  elec_.R[0] = { 0.5,  0.5,  0.5};
-  elec_.R[1] = {-0.5,  0.5,  0.5};
-  elec_.R[2] = { 0.5, -0.5,  0.5};
-  elec_.R[3] = { 0.5,  0.5, -0.5};
-  elec_.R[4] = {-0.5, -0.5,  0.5};
-  elec_.R[5] = { 0.5, -0.5, -0.5};
-  elec_.R[6] = {-0.5,  0.5, -0.5};
+  elec_.R[0] = {0.5, 0.5, 0.5};
+  elec_.R[1] = {-0.5, 0.5, 0.5};
+  elec_.R[2] = {0.5, -0.5, 0.5};
+  elec_.R[3] = {0.5, 0.5, -0.5};
+  elec_.R[4] = {-0.5, -0.5, 0.5};
+  elec_.R[5] = {0.5, -0.5, -0.5};
+  elec_.R[6] = {-0.5, 0.5, -0.5};
   elec_.R[7] = {-0.5, -0.5, -0.5};
-  elec_.R[8] = { 1.5,  1.5,  1.5};
+  elec_.R[8] = {1.5, 1.5, 1.5};
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int downIdx                = tspecies.addSpecies("d");
-  int posIdx                = tspecies.addSpecies("p");
+  int posIdx                 = tspecies.addSpecies("p");
   int massIdx                = tspecies.addAttribute("mass");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
-  tspecies(massIdx, posIdx) = 1.0;
+  tspecies(massIdx, posIdx)  = 1.0;
   tspecies(chargeIdx, upIdx) = -1.0;
   tspecies(massIdx, downIdx) = -1.0;
-  tspecies(massIdx, posIdx) =  1.0;
+  tspecies(massIdx, posIdx)  = 1.0;
   // Necessary to set mass
   elec_.resetGroups();
 
@@ -216,15 +216,15 @@ TEST_CASE("J1 spin evaluate derivatives multiparticle Jastrow", "[wavefunction]"
 
   // check logs
   //evaluateLog += into G + L so reset
-  elec_.G          = 0.0;
-  elec_.L          = 0.0;
-  LogValueType log = twf_component_list[0]->evaluateLog(elec_, elec_.G, elec_.L);
-  LogValueType expected_log{-3.58983, 0.0};
+  elec_.G      = 0.0;
+  elec_.L      = 0.0;
+  LogValue log = twf_component_list[0]->evaluateLog(elec_, elec_.G, elec_.L);
+  LogValue expected_log{-3.58983, 0.0};
   CHECK(log == LogComplexApprox(expected_log));
   //evaluateLog += into G + L so reset
-  elec_.G                 = 0.0;
-  elec_.L                 = 0.0;
-  LogValueType cloned_log = cloned_j1spin->evaluateLog(elec_, elec_.G, elec_.L);
+  elec_.G             = 0.0;
+  elec_.L             = 0.0;
+  LogValue cloned_log = cloned_j1spin->evaluateLog(elec_, elec_.G, elec_.L);
   CHECK(cloned_log == LogComplexApprox(expected_log));
 
   // check derivatives

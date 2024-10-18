@@ -180,11 +180,11 @@ void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithL
  * @return Value of kinetic energy operator at electron/ion positions given by P and ions.  The force contributions from
  *          this operator are added into hf_terms and pulay_terms.
  */
-Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
-                                                  ParticleSet& ions,
-                                                  TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos& hf_terms,
-                                                  ParticleSet::ParticlePos& pulay_terms)
+void BareKineticEnergy::evaluateIonDerivs(ParticleSet& P,
+                                          ParticleSet& ions,
+                                          TrialWaveFunction& psi,
+                                          ParticleSet::ParticlePos& hf_terms,
+                                          ParticleSet::ParticlePos& pulay_terms)
 {
   using ParticlePos       = ParticleSet::ParticlePos;
   using ParticleGradient  = ParticleSet::ParticleGradient;
@@ -201,7 +201,6 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
   ParticleGradient iongradpsi_(Nions), pulaytmp_(Nions);
   //temporary arrays that will be explicitly real.
   ParticlePos pulaytmpreal_(Nions), iongradpsireal_(Nions);
-
 
   TinyVector<ParticleGradient, OHMMS_DIM> iongrad_grad_;
   TinyVector<ParticleLaplacian, OHMMS_DIM> iongrad_lapl_;
@@ -275,11 +274,9 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
       value_ += x * minus_over_2m_[i];
     }
   }
+
   pulaytmpreal_ -= value_ * iongradpsireal_;
-
-
   pulay_terms += pulaytmpreal_;
-  return value_;
 }
 
 void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,

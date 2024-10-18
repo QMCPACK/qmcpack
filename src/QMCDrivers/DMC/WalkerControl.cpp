@@ -134,23 +134,27 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   }
 }
 
+/** unified: perform branch and swap (balance) walkers as required
+   *  **This has many side effects**
+   *  ## For:
+   *  ### dynamic population
+   *  1. compute multiplicity. If iter 0 and in warmup -> multiplicity = 1
+   *     Multiplicity in normal branching is walker->Weight + rng()
+   *  2. compute curData, collect multiplicity on every rank
+   *  ### fixed population
+   *  1. compute curData, collect weight on every rank
+   *  2. compute multiplicity by comb method
+   *  ---
+   *  3. figure out final distribution, apply walker count ceiling
+   *  4. collect good, bad walkers
+   *  5. communicate walkers
+   *  6. unpack received walkers, apply walker count floor
+   *  7. call MCPopulation to amplify walkers with Multiplicity > 1
+   */
 void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   if (debug_disable_branching_)
     do_not_branch = true;
-  /* dynamic population
-    1. compute multiplicity. If iter 0, multiplicity = 1
-    2. compute curData, collect multiplicity on every rank
-
-     fix population
-    1. compute curData, collect weight on every rank
-    2. compute multiplicity by comb method
-
-    3. figure out final distribution, apply walker count ceiling
-    4. collect good, bad walkers
-    5. communicate walkers
-    6. unpack received walkers, apply walker count floor
-   */
 
   ScopedTimer branch_timer(my_timers_[WC_branch]);
   auto& walkers = pop.get_walkers();
@@ -205,26 +209,9 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
   // ranks sending walkers from other ranks have the lowest walker count now.
   untouched_walkers = std::min(untouched_walkers, walkers.size());
 
-  { // copy good walkers
+  {
     ScopedTimer copywalkers_timer(my_timers_[WC_copyWalkers]);
-    const size_t good_walkers = walkers.size();
-    for (size_t iw = 0; iw < good_walkers; iw++)
-    {
-      size_t num_copies = static_cast<int>(walkers[iw]->Multiplicity);
-      while (num_copies > 1)
-      {
-        auto walker_elements = pop.spawnWalker();
-        // save this walkers ID
-        // \todo revisit Walker assignment operator after legacy drivers removed.
-        // but in the modern scheme walker IDs are permanent after creation, what walker they
-        // were copied from is in ParentID.
-        long save_id                    = walker_elements.walker.ID;
-        walker_elements.walker          = *walkers[iw];
-        walker_elements.walker.ParentID = walker_elements.walker.ID;
-        walker_elements.walker.ID       = save_id;
-        num_copies--;
-      }
-    }
+    pop.fissionHighMultiplicityWalkers();
   }
 
   const int current_num_global_walkers = std::accumulate(num_per_rank_.begin(), num_per_rank_.end(), 0);
@@ -239,7 +226,10 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
   if (!do_not_branch)
     for (UPtr<MCPWalker>& walker : pop.get_walkers())
     {
-      walker->Weight       = 1.0;
+      // This may be the correct location for walker Weight to be set to 1 for the next step but... its also
+      // set to 1.00 or zero many other locations.
+      walker->Weight = 1.0;
+      // This code implies that previous code left population walkers in invalid state however that should not be the case.
       walker->Multiplicity = 1.0;
     }
 
@@ -344,17 +334,22 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 
   auto& good_walkers = pop.get_walkers();
   const int nswap    = plus.size();
-  // sort good walkers by the number of copies
+  // first --> multiplicity
+  // second -->  walker index in good_walkers
   std::vector<std::pair<int, int>> ncopy_pairs;
   for (int iw = 0; iw < good_walkers.size(); iw++)
+  {
     ncopy_pairs.push_back(std::make_pair(static_cast<int>(good_walkers[iw]->Multiplicity), iw));
+  }
+  // sort good walkers by the number of copies
   std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
 
   struct job
   {
-    const int walkerID;
+    // Walker_index is just its index not its "walker_id"
+    const int walker_index;
     const int target;
-    job(int wid, int target_in) : walkerID(wid), target(target_in){};
+    job(int wid, int target_in) : walker_index(wid), target(target_in) {};
   };
 
   int nsend = 0;
@@ -407,7 +402,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
     if (minus[ic] == rank_num_)
     {
       newW.push_back(pop.spawnWalker());
-
       // recv the number of copies from the target
       myComm->comm.receive_n(&nsentcopy, 1, plus[ic]);
       job_list.push_back(job(newW.size() - 1, plus[ic]));
@@ -430,11 +424,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
     std::vector<mpi3::request> requests;
     // mark all walkers not in send
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
-      good_walkers[jobit->walkerID]->SendInProgress = false;
+      good_walkers[jobit->walker_index]->SendInProgress = false;
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // pack data and send
-      auto& awalker   = good_walkers[jobit->walkerID];
+      auto& awalker   = good_walkers[jobit->walker_index];
       size_t byteSize = awalker->byteSize();
       if (!awalker->SendInProgress)
       {
@@ -462,11 +456,22 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   }
   else
   {
+    auto unpackWalker = [](auto& awalker) {
+      auto walker_id = awalker.getWalkerID();
+      // Walker::copyFromBuffer overwrites the walker_id
+      awalker.copyFromBuffer();
+      auto parent_id = awalker.getWalkerID();
+      // The logic of walker_id's is that they do not change once a walker becomes living so we write it back
+      awalker.setWalkerID(walker_id);
+      // And set the parent_id to this walkers parent.
+      awalker.setParentID(parent_id);
+    };
+
     std::vector<mpi3::request> requests;
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // recv and unpack data
-      auto& walker_elements = newW[jobit->walkerID];
+      auto& walker_elements = newW[jobit->walker_index];
       auto& awalker         = walker_elements.walker;
       size_t byteSize       = awalker.byteSize();
       if (use_nonblocking_)
@@ -475,7 +480,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       {
         ScopedTimer local_timer(my_timers_[WC_recv]);
         myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
-        awalker.copyFromBuffer();
+        unpackWalker(awalker);
       }
     }
     if (use_nonblocking_)
@@ -490,8 +495,10 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
           {
             if (requests[im].completed())
             {
-              auto& walker_elements = newW[job_list[im].walkerID];
-              walker_elements.walker.copyFromBuffer();
+              auto& walker_elements = newW[job_list[im].walker_index];
+              // Here the walker ID from the spawn is overwritten with the copy.
+              auto& awalker = walker_elements.walker;
+              unpackWalker(walker_elements.walker);
               not_completed[im] = false;
             }
             else
@@ -517,7 +524,14 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   for (int iw = 0; iw < good_walkers.size(); iw++)
     TotalMultiplicity += good_walkers[iw]->Multiplicity;
   if (static_cast<int>(TotalMultiplicity) != fair_offset_[rank_num_ + 1] - fair_offset_[rank_num_])
-    throw std::runtime_error("Multiplicity check failed in WalkerControl::swapWalkersSimple!");
+  {
+    std::ostringstream error_msg;
+    error_msg << "Multiplicity check failed in WalkerControl::swapWalkersSimple!\n"
+              << "for rank: " << rank_num_ << " total_multiplicity: " << TotalMultiplicity
+              << "  fair_offset_[rank_num_ + 1] - fair_offset_[rank_num_]: " << fair_offset_[rank_num_ + 1] << " - "
+              << fair_offset_[rank_num_] << '\n';
+    throw std::runtime_error(error_msg.str());
+  }
 #endif
 }
 #endif

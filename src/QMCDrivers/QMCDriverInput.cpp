@@ -36,10 +36,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   // ParameterSet has an dependency on the lifetime of the backing xmlNodePtr
   // so its better it not live long
 
-  std::string serialize_walkers;
   std::string debug_checks_str;
   std::string measure_imbalance_str;
   int Period4CheckPoint{0};
+  int dummy_int = 0;
 
   ParameterSet parameter_set;
   parameter_set.add(recalculate_properties_period_, "checkProperties");
@@ -49,18 +49,18 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(config_dump_period_.period, "record_configs");
   parameter_set.add(starting_step_, "current");
   parameter_set.add(max_blocks_, "blocks");
-  parameter_set.add(max_steps_, "steps");
+  parameter_set.add(requested_steps_, "steps");
   parameter_set.add(sub_steps_, "substeps");
   parameter_set.add(sub_steps_, "sub_steps");
   parameter_set.add(warmup_steps_, "warmupsteps");
   parameter_set.add(warmup_steps_, "warmup_steps");
   parameter_set.add(num_crowds_, "crowds");
-  parameter_set.add(serialize_walkers, "crowd_serialize_walkers", {"no", "yes"});
+  parameter_set.add(crowd_serialize_walkers_, "crowd_serialize_walkers", {false});
   parameter_set.add(walkers_per_rank_, "walkers_per_rank");
-  parameter_set.add(walkers_per_rank_, "walkers", {}, TagStatus::UNSUPPORTED);
+  parameter_set.add(dummy_int, "walkers", {}, TagStatus::UNSUPPORTED);
   parameter_set.add(total_walkers_, "total_walkers");
-  parameter_set.add(steps_between_samples_, "stepsbetweensamples", {}, TagStatus::UNSUPPORTED);
-  parameter_set.add(samples_per_thread_, "samplesperthread", {}, TagStatus::UNSUPPORTED);
+  parameter_set.add(dummy_int, "stepsbetweensamples", {}, TagStatus::UNSUPPORTED);
+  parameter_set.add(dummy_int, "samplesperthread", {}, TagStatus::UNSUPPORTED);
   parameter_set.add(requested_samples_, "samples");
   parameter_set.add(tau_, "timestep");
   parameter_set.add(tau_, "time_step");
@@ -72,7 +72,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(max_disp_sq_, "maxDisplSq");
   parameter_set.add(debug_checks_str, "debug_checks",
                     {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
-  parameter_set.add(measure_imbalance_str, "measure_imbalance", {"no", "yes"});
+  parameter_set.add(measure_imbalance_, "measure_imbalance", {false});
 
   OhmmsAttributeSet aAttrib;
   // first stage in from QMCDriverFactory
@@ -136,7 +136,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
     }
   }
 
-  crowd_serialize_walkers_ = serialize_walkers == "yes";
   if (crowd_serialize_walkers_)
     app_summary() << "  Batched operations are serialized over walkers." << std::endl;
   if (scoped_profiling_)
@@ -153,9 +152,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
     if (debug_checks_str == "all" || debug_checks_str == "checkGL_after_tmove")
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
-
-  if (measure_imbalance_str == "yes")
-    measure_imbalance_ = true;
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;

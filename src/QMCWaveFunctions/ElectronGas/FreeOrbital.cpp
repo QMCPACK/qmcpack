@@ -1,4 +1,5 @@
 #include "FreeOrbital.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

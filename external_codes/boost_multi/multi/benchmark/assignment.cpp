@@ -12,7 +12,7 @@ $CXX -DNDEBUG `#-DNOEXCEPT_ASSIGNMENT` $0 -o $0x `pkg-config --libs benchmark`&&
 namespace multi = boost::multi;
 
 using complex = std::complex<double>; 
-MAYBE_UNUSED constexpr complex I{0, 1};
+[[maybe_unused]] constexpr complex I{0.0, 1.0};
 using T = complex;
 
 constexpr std::size_t N = 1 << 24;

@@ -15,6 +15,7 @@
 
 #include <complex>
 #include <sycl/sycl.hpp>
+#include <oneapi/mkl/blas.hpp>
 
 namespace qmcplusplus
 {
@@ -23,6 +24,20 @@ namespace syclBLAS
 using syclBLAS_int    = std::int64_t;
 using syclBLAS_status = sycl::event;
 using syclBLAS_handle = sycl::queue;
+
+inline oneapi::mkl::transpose convertTransEnum(char trans)
+{
+  if (trans == 'N' || trans == 'n')
+    return oneapi::mkl::transpose::nontrans;
+  else if (trans == 'T' || trans == 't')
+    return oneapi::mkl::transpose::trans;
+  else if (trans == 'C' || trans == 'c')
+    return oneapi::mkl::transpose::conjtrans;
+  else
+    throw std::runtime_error(
+        "syclBLAS::convertTransEnum trans can only be 'N', 'T', 'C', 'n', 't', 'c'. Input value is " +
+        std::string(1, trans));
+}
 
 template<typename T>
 sycl::event gemv(sycl::queue& handle,
@@ -38,6 +53,23 @@ sycl::event gemv(sycl::queue& handle,
                  T* const y,
                  const int incy,
                  const std::vector<sycl::event>& events = {});
+
+/// in-house version of gemv_batch implemented in SYCL. Can be dropped if we have vendor optimized versions
+template<typename T>
+sycl::event gemv_batched(sycl::queue& handle,
+                         const char trans,
+                         const int m,
+                         const int n,
+                         const T* alpha,
+                         const T* const A[],
+                         const int lda,
+                         const T* const x[],
+                         const int incx,
+                         const T* beta,
+                         T* const y[],
+                         const int incy,
+                         const size_t batch_count,
+                         const std::vector<sycl::event>& events = {});
 
 template<typename T>
 sycl::event gemm(sycl::queue& handle,
@@ -55,6 +87,21 @@ sycl::event gemm(sycl::queue& handle,
                  T* const C,
                  const int ldc,
                  const std::vector<sycl::event>& events = {});
+
+/// in-house version of ger_batch implemented in SYCL. Can be dropped if we have vendor optimized versions
+template<typename T>
+sycl::event ger_batched(sycl::queue& handle,
+                        const int m,
+                        const int n,
+                        const T* alpha,
+                        const T* const x[],
+                        const int incx,
+                        const T* const y[],
+                        const int incy,
+                        T* const A[],
+                        const int lda,
+                        const size_t batch_count,
+                        const std::vector<sycl::event>& events = {});
 
 template<typename T1, typename T2>
 sycl::event transpose(sycl::queue& q,

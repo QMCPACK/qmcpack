@@ -18,6 +18,7 @@
 #include "SYCL/syclBLAS.hpp"
 #include "SYCL/syclSolver.hpp"
 #include "QMCWaveFunctions/detail/SYCL/sycl_determinant_helper.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -132,6 +133,10 @@ public:
     syclBLAS::copy_n(m_queue, Mat1_gpu.data(), Mat1_gpu.size(), Ainv_gpu.data());
 
     m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT)).wait();
+
+    for(int i = 0; i < norb; i++)
+      if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
+        throw std::runtime_error("Ainv[i][i] is NaN. i = " + std::to_string(i));
   }
 };
 } // namespace qmcplusplus

@@ -47,9 +47,10 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
   auto& ham             = *(hamiltonian_pool.getPrimary());
 
-  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+  EstimatorManagerNew emn(ham, comm);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 2);
+  CHECK(emn.getNumEstimators() == 3);
   CHECK(emn.getNumScalarEstimators() == 0);
 
   EstimatorManagerCrowd emc(emn);
@@ -80,9 +81,10 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   PerParticleHamiltonianLoggerInput pphli;
   emi.append(std::move(pphli));
 
-  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+  EstimatorManagerNew emn(ham, comm);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 3);
+  CHECK(emn.getNumEstimators() == 4);
   CHECK(emn.getNumScalarEstimators() == 0);
 
   // We repeat a bunch of test_QMCHamiltonian here to get things set up.
@@ -159,7 +161,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   for (int iw = 0; iw < num_walkers; ++iw)
     savePropertiesIntoWalker(*(hams[iw]), walkers[iw]);
 
-  emc.accumulate(walker_refs, p_refs, twf_refs, rng);
+  emc.accumulate(walker_refs, p_refs, twf_refs, ham_refs, rng);
 }
 
 

@@ -29,6 +29,8 @@ struct FakeFunctor : public OptimizableFunctorBase
   ///default constructor
   FakeFunctor(const std::string& my_name) : OptimizableFunctorBase(my_name) {}
 
+  constexpr static bool isOMPoffload() { return false; }
+
   void setCusp(real_type cusp) override {}
 
   OptimizableFunctorBase* makeClone() const override { return new FakeFunctor(*this); }

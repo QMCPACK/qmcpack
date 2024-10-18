@@ -21,11 +21,12 @@
 
 #include <stdio.h>
 #include <sstream>
-
+#include <map>
 
 namespace qmcplusplus
 {
-using Real = QMCTraits::RealType;
+// Take note that all input is done at full precision.
+using Real = QMCTraits::FullPrecRealType;
 
 enum class TestEnum1
 {
@@ -51,11 +52,11 @@ public:
   TestInputSection()
   {
     section_name   = "Test";
-    attributes     = {"name", "samples", "kmax", "full","width::type"};
+    attributes     = {"name", "samples", "kmax", "full", "width::type"};
     parameters     = {"label",     "count",   "width",  "rational", "testenum1",
                       "testenum2", "sposets", "center", "density",  "target"};
     required       = {"count", "full"};
-    strings        = {"name", "label","width::type"};
+    strings        = {"name", "label", "width::type"};
     multi_strings  = {"sposets"};
     multi_reals    = {"density"};
     multiple       = {"target"};
@@ -84,7 +85,11 @@ public:
 class TestAssignAnyEnum : public InputSection
 {
 public:
-  TestAssignAnyEnum() { enums = {"testenum"}; }
+  TestAssignAnyEnum()
+  {
+    section_name = "unknown";
+    enums        = {"testenum"};
+  }
 };
 
 
@@ -113,7 +118,7 @@ TEST_CASE("InputSection::assignAnyEnum", "[estimators]")
   };
 
   TestAssignAnyEnum taae;
-  CHECK_THROWS_AS(taae.get<SomeEnum>("testenum"), std::runtime_error);
+  CHECK_THROWS_AS(taae.get<SomeEnum>("testenum"), UniformCommunicateError);
 }
 
 TEST_CASE("InputSection::readXML", "[estimators]")
@@ -227,29 +232,29 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     //     required attribute/parameter is missing
     //     unrecognized attribute/parameter encountered
 
-    std::unordered_map<std::string, const char*> invalid_inputs = {
-        {"missing_attribute", R"(
+    std::map<std::string, std::string_view> invalid_inputs =
+        {{"missing_attribute", R"(
 <test>
   <parameter name="count"> 15 </parameter>
 </test>
 )"},
-        {"missing_parameter", R"(
+         {"missing_parameter", R"(
 <test full="no"/>
 )"},
-        {"foreign_attribute", R"(
+         {"foreign_attribute", R"(
 <test full="no" area="51">
   <parameter name="count"> 15 </parameter>
 </test>
 )"},
-        {"foreign_parameter", R"(
+         {"foreign_parameter", R"(
 <test full="no">
   <parameter name="count"> 15 </parameter>
   <parameter name="area" > 51 </parameter>
 </test>
 )"},
-	{"invalid_section_name", R"(<not_test><parameter name="nothing"></parameter></not_test>)"}
-    };
+         {"invalid_section_name", R"(<not_test><parameter name="nothing"></parameter></not_test>)"}};
 
+    std::cout << "really going to try bad sections\n" << std::endl;
     for (auto& [label, xml] : invalid_inputs)
     {
       // parse xml doc
@@ -430,9 +435,6 @@ public:
     {
       std::string cus_at;
       std::getline(svalue, cus_at);
-      // if (ename != section_name)
-      // 	values_[ename + " " + name] = cus_at;
-      // else
       values_[name] = cus_at;
     }
     else
@@ -490,7 +492,6 @@ TEST_CASE("InputSection::custom", "[estimators]")
   CHECK(ws.numbers == exp_numbers);
 
   cti.report(std::cout);
-
   std::string custom_attribute = cti.get<std::string>("with_custom::custom_attribute");
   CHECK(custom_attribute == "This is a custom attribute.");
   custom_attribute = cti.get<std::string>("custom_attribute");
@@ -520,10 +521,10 @@ public:
   public:
     AnotherInputSection()
     {
-      section_name = "AnotherInput";
+      section_name            = "AnotherInput";
       section_name_alternates = {"ainput"};
-      attributes   = {"name", "optional"};
-      strings      = {"name", "optional"};
+      attributes              = {"name", "optional"};
+      strings                 = {"name", "optional"};
     }
   };
 

@@ -65,6 +65,7 @@ void CompositeSPOSet::add(std::unique_ptr<SPOSet> component)
   component_values.emplace_back(norbs);
   component_gradients.emplace_back(norbs);
   component_laplacians.emplace_back(norbs);
+  component_spin_gradients.emplace_back(norbs);
 
   OrbitalSetSize += norbs;
   component_offsets.push_back(OrbitalSetSize);
@@ -110,6 +111,30 @@ void CompositeSPOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& ps
     std::copy(values.begin(), values.end(), psi.begin() + n);
     std::copy(gradients.begin(), gradients.end(), dpsi.begin() + n);
     std::copy(laplacians.begin(), laplacians.end(), d2psi.begin() + n);
+    n += component.size();
+  }
+}
+
+void CompositeSPOSet::evaluateVGL_spin(const ParticleSet& P,
+                                       int iat,
+                                       ValueVector& psi,
+                                       GradVector& dpsi,
+                                       ValueVector& d2psi,
+                                       ValueVector& dspin_psi)
+{
+  int n = 0;
+  for (int c = 0; c < components.size(); ++c)
+  {
+    SPOSet& component           = *components[c];
+    ValueVector& values         = component_values[c];
+    GradVector& gradients       = component_gradients[c];
+    ValueVector& laplacians     = component_laplacians[c];
+    ValueVector& spin_gradients = component_spin_gradients[c];
+    component.evaluateVGL_spin(P, iat, values, gradients, laplacians, spin_gradients);
+    std::copy(values.begin(), values.end(), psi.begin() + n);
+    std::copy(gradients.begin(), gradients.end(), dpsi.begin() + n);
+    std::copy(laplacians.begin(), laplacians.end(), d2psi.begin() + n);
+    std::copy(spin_gradients.begin(), spin_gradients.end(), dspin_psi.begin() + n);
     n += component.size();
   }
 }

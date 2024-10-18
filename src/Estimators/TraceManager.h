@@ -2086,7 +2086,7 @@ public:
     file_name += ".traces.h5";
     if (verbose)
       app_log() << "TraceManager::open_hdf_file  opening traces hdf file " << file_name << std::endl;
-    hdf_file        = std::make_unique<hdf_archive>(communicator, false);
+    hdf_file        = std::make_unique<hdf_archive>();
     bool successful = hdf_file->create(file_name);
     if (!successful)
       APP_ABORT("TraceManager::open_hdf_file  failed to open hdf file " + file_name);

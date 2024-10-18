@@ -43,7 +43,8 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
   for (int i = 0; i < OHMMS_DIM; i++)
     vec_length[i] = 2.0 * M_PI * std::sqrt(dot(Lattice.Gv[i], Lattice.Gv[i]));
   RealType kmax      = input_.get_kmax();
-  PosType kmaxs      = {input_.get_kmax0(), input_.get_kmax1(), input_.get_kmax2()};
+  auto realCast      = [](auto& real) { return static_cast<RealType>(real); };
+  PosType kmaxs      = {realCast(input_.get_kmax0()), realCast(input_.get_kmax1()), realCast(input_.get_kmax2())};
   RealType sum_kmaxs = kmaxs[0] + kmaxs[1] + kmaxs[2];
   RealType sphere_kmax;
   bool sphere      = input_.get_kmax() > 0.0 ? true : false;
@@ -234,6 +235,7 @@ void MomentumDistribution::startBlock(int steps)
 void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
                                       const RefVector<ParticleSet>& psets,
                                       const RefVector<TrialWaveFunction>& wfns,
+                                      const RefVector<QMCHamiltonian>& hams,
                                       RandomBase<FullPrecRealType>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)

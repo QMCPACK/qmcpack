@@ -12,6 +12,9 @@
 
 #include "catch.hpp"
 
+#include <cstdio>
+#include <string>
+#include <limits>
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
@@ -21,21 +24,18 @@
 #include "TWFGrads.hpp"
 #include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
-
-#include <stdio.h>
-#include <string>
-#include <limits>
+#include <Fermion/MultiSlaterDetTableMethod.h>
 
 using std::string;
 
 namespace qmcplusplus
 {
-using PosType      = ParticleSet::PosType;
-using RealType     = ParticleSet::RealType;
-using ValueType    = ParticleSet::ValueType;
-using GradType     = ParticleSet::GradType;
-using LogValueType = WaveFunctionComponent::LogValueType;
-using PsiValueType = WaveFunctionComponent::PsiValueType;
+using PosType   = ParticleSet::PosType;
+using RealType  = ParticleSet::RealType;
+using ValueType = ParticleSet::ValueType;
+using GradType  = ParticleSet::GradType;
+using LogValue  = WaveFunctionComponent::LogValue;
+using PsiValue  = WaveFunctionComponent::PsiValue;
 
 void test_LiH_msd(const std::string& spo_xml_string,
                   const std::string& check_sponame,
@@ -96,6 +96,10 @@ void test_LiH_msd(const std::string& spo_xml_string,
   elec_.update();
 
   auto& twf(*twf_ptr);
+  auto msd_refvec = twf.findMSD();
+  CHECK(msd_refvec.size() == 1);
+  MultiSlaterDetTableMethod& msd = msd_refvec[0];
+
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
@@ -108,6 +112,11 @@ void test_LiH_msd(const std::string& spo_xml_string,
   CHECK(elec_.G[2][2] == ValueApprox(1.2765987657));
   CHECK(elec_.L[0] == ValueApprox(-15.460736911));
   CHECK(elec_.L[3] == ValueApprox(-0.328013327566));
+
+  Vector<ValueType> individual_det_ratios;
+  msd.calcIndividualDetRatios(individual_det_ratios);
+  CHECK(individual_det_ratios[0] == ValueApprox(-1.4357837882));
+  CHECK(individual_det_ratios[3] == ValueApprox(-0.013650987));
 
   twf.prepareGroup(elec_, 0);
   auto grad_old = twf.evalGrad(elec_, 1);
@@ -269,18 +278,18 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(grad_old.grads_positions[1][2] == ValueApprox(-5.8209379274));
 
     TWFGrads<CoordsType::POS> grad_new(2);
-    std::vector<PsiValueType> ratios(2);
+    std::vector<PsiValue> ratios(2);
 
     ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displ);
     TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
 
-    CHECK(ratios[0] == ValueApprox(PsiValueType(-0.6181619459)));
-    CHECK(ratios[1] == ValueApprox(PsiValueType(1.6186330488)));
+    CHECK(ratios[0] == ValueApprox(PsiValue(-0.6181619459)));
+    CHECK(ratios[1] == ValueApprox(PsiValue(1.6186330488)));
 
     TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
 
-    CHECK(ratios[0] == ValueApprox(PsiValueType(-0.6181619459)));
-    CHECK(ratios[1] == ValueApprox(PsiValueType(1.6186330488)));
+    CHECK(ratios[0] == ValueApprox(PsiValue(-0.6181619459)));
+    CHECK(ratios[1] == ValueApprox(PsiValue(1.6186330488)));
 
     CHECK(grad_new.grads_positions[0][0] == ValueApprox(1.2418467899));
     CHECK(grad_new.grads_positions[0][1] == ValueApprox(1.2425653495));
@@ -311,13 +320,13 @@ void test_LiH_msd(const std::string& spo_xml_string,
     ParticleSet::mw_makeMove(p_ref_list, moved_elec_id_next, displ);
     TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id_next, ratios);
 
-    CHECK(ratios[0] == ValueApprox(PsiValueType(2.1080036144)));
-    CHECK(ratios[1] == ValueApprox(PsiValueType(0.4947158435)));
+    CHECK(ratios[0] == ValueApprox(PsiValue(2.1080036144)));
+    CHECK(ratios[1] == ValueApprox(PsiValue(0.4947158435)));
 
     TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id_next, ratios, grad_new);
 
-    CHECK(ratios[0] == ValueApprox(PsiValueType(2.1080036144)));
-    CHECK(ratios[1] == ValueApprox(PsiValueType(0.4947158435)));
+    CHECK(ratios[0] == ValueApprox(PsiValue(2.1080036144)));
+    CHECK(ratios[1] == ValueApprox(PsiValue(0.4947158435)));
 
     CHECK(grad_new.grads_positions[0][0] == ValueApprox(1.8412365668));
     CHECK(grad_new.grads_positions[0][1] == ValueApprox(1.3736370007));
@@ -528,7 +537,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
   displs.spins     = {ds, ds};
   ParticleSet::mw_makeMove(p_list, moved_elec_id, displs);
 
-  std::vector<PsiValueType> ratios(num_walkers);
+  std::vector<PsiValue> ratios(num_walkers);
   TrialWaveFunction::mw_calcRatio(twf_list, p_list, moved_elec_id, ratios);
   for (int iw = 0; iw < num_walkers; iw++)
     CHECK(ValueType(std::abs(ratios[iw])) == ValueApprox(0.991503).epsilon(1e-4));

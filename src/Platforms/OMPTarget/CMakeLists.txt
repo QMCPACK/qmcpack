@@ -9,7 +9,10 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(OMP_RT_SRCS OMPallocator.cpp OMPDeviceManager.cpp)
+set(OMP_RT_SRCS OMPallocator.cpp)
+if(ENABLE_OFFLOAD)
+  set(OMP_RT_SRCS ${OMP_RT_SRCS} OMPDeviceManager.cpp)
+endif(ENABLE_OFFLOAD)
 set(OMP_LA_SRCS ompBLAS.cpp)
 
 add_library(platform_omptarget_runtime ${OMP_RT_SRCS})
@@ -20,9 +23,6 @@ else()
 endif()
 target_link_libraries(platform_omptarget_runtime PRIVATE platform_host_runtime)
 target_link_libraries(platform_omptarget_LA PUBLIC platform_omptarget_runtime)
-
-target_compile_options(platform_omptarget_LA
-                       PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
 if(ENABLE_CUDA AND QMC_OFFLOAD_MEM_ASSOCIATED)
   target_link_libraries(platform_omptarget_runtime PUBLIC platform_cuda_runtime)

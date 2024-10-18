@@ -30,22 +30,32 @@ namespace qmcplusplus
 struct LCAOrbitalSet : public SPOSet
 {
 public:
-  using basis_type = SoaBasisSetBase<ValueType>;
-  using vgl_type   = basis_type::vgl_type;
-  using vgh_type   = basis_type::vgh_type;
-  using vghgh_type = basis_type::vghgh_type;
+  using basis_type         = SoaBasisSetBase<ValueType>;
+  using vgl_type           = basis_type::vgl_type;
+  using vgh_type           = basis_type::vgh_type;
+  using vghgh_type         = basis_type::vghgh_type;
+  using OffloadValueMatrix = OffloadMatrix<ValueType>;
 
   ///pointer to the basis set
   std::unique_ptr<basis_type> myBasisSet;
   /// pointer to matrix containing the coefficients
-  std::shared_ptr<ValueMatrix> C;
+  std::shared_ptr<OffloadValueMatrix> C;
 
   /** constructor
+     * @param my_name name of the SPOSet object
      * @param bs pointer to the BasisSet
+     * @param norb number of orbitals
+     * @param identity if true, the MO coefficients matrix is identity
      */
-  LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs);
+  LCAOrbitalSet(const std::string& my_name,
+                std::unique_ptr<basis_type>&& bs,
+                size_t norbs,
+                bool identity,
+                bool use_offload);
 
   LCAOrbitalSet(const LCAOrbitalSet& in);
+
+  bool isOMPoffload() const override { return useOMPoffload_; }
 
   std::string getClassName() const final { return "LCAOrbitalSet"; }
 
@@ -55,7 +65,7 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const final;
 
-  void storeParamsBeforeRotation() final { C_copy = std::make_shared<ValueMatrix>(*C); }
+  void storeParamsBeforeRotation() final { C_copy = std::make_shared<OffloadValueMatrix>(*C); }
 
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) final;
 
@@ -73,6 +83,10 @@ public:
     *
     */
   void checkObject() const final;
+
+  /** update C on device
+   */
+  void finalizeConstruction() override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) final;
 
@@ -219,10 +233,12 @@ protected:
   ///number of Single-particle orbitals
   const IndexType BasisSetSize;
   /// a copy of the original C before orbital rotation is applied;
-  std::shared_ptr<ValueMatrix> C_copy;
-
+  std::shared_ptr<OffloadValueMatrix> C_copy;
   ///true if C is an identity matrix
-  bool Identity;
+  const bool Identity;
+  /// whether offload is on or off at runtime.
+  const bool useOMPoffload_;
+
   ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
   vgl_type Temp;
   ///Tempv(OrbitalSetSize) Tempv=C*Temp
@@ -308,6 +324,10 @@ private:
   void mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
                                    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                    OffloadMWVArray& phi_v) const;
+
+  /// helper function for extracting a list of basis sets from a list of LCAOrbitalSet
+  RefVectorWithLeader<basis_type> extractBasisRefList(const RefVectorWithLeader<SPOSet>& spo_list) const;
+
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
   /// timer for basis set

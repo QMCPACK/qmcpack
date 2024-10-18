@@ -12,18 +12,17 @@
 #ifndef QMCPLUSPLUS_RESOURCHANDLE_H
 #define QMCPLUSPLUS_RESOURCHANDLE_H
 
-#include <functional>
-#include <optional>
+#include "type_traits/OptionalRef.hpp"
 
 namespace qmcplusplus
 {
 /** ResourceHandle manages the temporary resource referenced from a collection
  */
 template<class RS>
-class ResourceHandle : private std::optional<std::reference_wrapper<RS>>
+class ResourceHandle : private OptionalRef<RS>
 {
 public:
-  using Base = std::optional<std::reference_wrapper<RS>>;
+  using Base = OptionalRef<RS>;
 
   ResourceHandle() = default;
   ResourceHandle(RS& res) { Base::emplace(res); }

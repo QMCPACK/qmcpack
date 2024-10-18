@@ -79,7 +79,7 @@ std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
   return species_size;
 }
 
-size_t SpinDensityNew::getFullDataSize() { return species_.size() * derived_parameters_.npoints; }
+size_t SpinDensityNew::getFullDataSize() const { return species_.size() * derived_parameters_.npoints; }
 
 std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const
 {
@@ -117,6 +117,7 @@ void SpinDensityNew::startBlock(int steps)
 void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
                                 const RefVector<ParticleSet>& psets,
                                 const RefVector<TrialWaveFunction>& wfns,
+                                const RefVector<QMCHamiltonian>& hams,
                                 RandomBase<FullPrecRealType>& rng)
 {
   auto& dp_ = derived_parameters_;

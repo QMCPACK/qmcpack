@@ -23,7 +23,7 @@
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
 #include "einspline_helper.hpp"
-#include "BsplineReaderBase.h"
+#include "BsplineReader.h"
 #include "createBsplineReader.h"
 
 namespace qmcplusplus
@@ -75,6 +75,9 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a.add(spinSet, "spindataset");
     a.add(spinSet, "group");
     a.put(cur);
+
+    if (myName.empty())
+      myName = "einspline.spinor";
   }
 
   auto pit(ParticleSets.find(sourceName));
@@ -174,23 +177,13 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   if (use_real_splines_)
   {
     if (MixedSplineReader == 0)
-    {
-      if (use_single)
-        MixedSplineReader = createBsplineRealSingle(this, hybrid_rep == "yes", useGPU);
-      else
-        MixedSplineReader = createBsplineRealDouble(this, hybrid_rep == "yes", useGPU);
-    }
+      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes", useGPU);
   }
   else
 #endif
   {
     if (MixedSplineReader == 0)
-    {
-      if (use_single)
-        MixedSplineReader = createBsplineComplexSingle(this, hybrid_rep == "yes", useGPU);
-      else
-        MixedSplineReader = createBsplineComplexDouble(this, hybrid_rep == "yes", useGPU);
-    }
+      MixedSplineReader = createBsplineComplex(this, use_single, hybrid_rep == "yes", useGPU);
   }
 
   MixedSplineReader->setCommon(XMLRoot);
@@ -200,13 +193,13 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   MixedSplineReader->setRotate(false);
 
   //Make the up spin set.
-  bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
   auto bspline_zd_u = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  bspline_zd_u->finalizeConstruction();
 
   //Make the down spin set.
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
-  bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
   auto bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
+  bspline_zd_d->finalizeConstruction();
 
   //register with spin set and we're off to the races.
   auto spinor_set = std::make_unique<SpinorSet>(spo_object_name);

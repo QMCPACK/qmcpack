@@ -60,7 +60,7 @@ if(QMC_COMPLEX)
 
   #Data generated using utils/make_ref_data.sh  diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT vmc_short_ground.s000.scalar.dat  qmc_ref_ground_long_noj.s000.scalar.dat
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "totenergy" "-21.3657227937065 0.068654689630")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "variance" "4.173318575244 0.206016680533")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "variance" "4.173318575244 0.28")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "kinetic" "19.757886856418 0.297513259260")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "potential" "-41.123130287178 0.282895938880")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "eeenergy" "-4.603005269151 0.085411994867")

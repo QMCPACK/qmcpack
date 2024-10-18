@@ -60,6 +60,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
+                  const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecReal>& rng) override;
 
   void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
@@ -69,7 +70,7 @@ public:
   *
   * @return Size of data.
   */
-  size_t getFullDataSize();
+  size_t getFullDataSize() const override;
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
   void registerOperatorEstimator(hdf_archive& file) override;
 

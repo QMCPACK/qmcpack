@@ -62,6 +62,7 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
 class TraceManager;
+class WalkerLogManager;
 
 /** @ingroup QMCDrivers
  * @{
@@ -81,7 +82,6 @@ public:
 
   using Walker_t = MCWalkerConfiguration::Walker_t;
   using Buffer_t = Walker_t::Buffer_t;
-  using FullPrecRealType = QMCTraits::FullPrecRealType;
 
   /** bits to classify QMCDriver
    *
@@ -95,6 +95,11 @@ public:
   bool allow_traces;
   /// traces xml
   xmlNodePtr traces_xml;
+
+  /// whether to allow traces
+  bool allow_walker_logs;
+  /// traces xml
+  xmlNodePtr walker_logs_xml;
 
   /// Constructor.
   QMCDriver(const ProjectData& project_data,
@@ -149,6 +154,10 @@ public:
 
   inline void requestTraces(bool traces) override { allow_traces = traces; }
 
+  inline void putWalkerLogs(xmlNodePtr wlxml) override { walker_logs_xml = wlxml; }
+
+  inline void requestWalkerLogs(bool allow_walker_logs_) override { allow_walker_logs = allow_walker_logs_; }
+
   std::string getEngineName() override { return QMCType; }
 
   template<class PDT>
@@ -184,17 +193,8 @@ public:
   ///Traces manager
   std::unique_ptr<TraceManager> Traces;
 
-  ///return the random generators
-  inline RefVector<RandomBase<FullPrecRealType>> getRngRefs() const
-  {
-    RefVector<RandomBase<FullPrecRealType>> RngRefs;
-    for (int i = 0; i < Rng.size(); ++i)
-      RngRefs.push_back(*Rng[i]);
-    return RngRefs;
-  }
-
-  ///return the i-th random generator
-  inline RandomBase<FullPrecRealType>& getRng(int i) override { return (*Rng[i]); }
+  ///Traces manager
+  std::unique_ptr<WalkerLogManager> wlog_manager_;
 
   unsigned long getDriverMode() override { return qmc_driver_mode.to_ulong(); }
 
@@ -324,9 +324,6 @@ protected:
   ///a list of QMCHamiltonians for multiple method
   std::vector<QMCHamiltonian*> H1;
 
-  ///Random number generators
-  UPtrVector<RandomBase<FullPrecRealType>> Rng;
-
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
@@ -366,8 +363,6 @@ protected:
 
 private:
   NewTimer& checkpoint_timer_;
-  ///time the driver lifetime
-  ScopedTimer driver_scope_timer_;
   ///profile the driver lifetime
   ScopedProfiler driver_scope_profiler_;
 };

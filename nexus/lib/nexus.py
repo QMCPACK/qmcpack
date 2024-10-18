@@ -50,6 +50,7 @@ from rmg import Rmg, RmgInput, RmgAnalyzer, generate_rmg_input, generate_rmg
 
 from qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
 from qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
+from qmcpack_converters import Convertpw4qmc, Convertpw4qmcInput, Convertpw4qmcAnalyzer, generate_convertpw4qmc_input, generate_convertpw4qmc
 from qmcpack_converters import PyscfToAfqmc, PyscfToAfqmcInput, PyscfToAfqmcAnalyzer, generate_pyscf_to_afqmc_input, generate_pyscf_to_afqmc
 
 from pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp
@@ -58,6 +59,7 @@ from pwscf_postprocessors import Bands   , BandsInput   , BandsAnalyzer   , gene
 from pwscf_postprocessors import Projwfc , ProjwfcInput , ProjwfcAnalyzer , generate_projwfc_input , generate_projwfc
 from pwscf_postprocessors import Cppp    , CpppInput    , CpppAnalyzer    , generate_cppp_input    , generate_cppp
 from pwscf_postprocessors import Pwexport, PwexportInput, PwexportAnalyzer, generate_pwexport_input, generate_pwexport
+from pwscf_postprocessors import Hp      , HpInput      ,       HpAnalyzer,       generate_hp_input, generate_hp
 
 from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts

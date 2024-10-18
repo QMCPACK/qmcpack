@@ -526,7 +526,11 @@ device_pointer<T> copy_n(device_pointer<T const> const A, Size n, device_pointer
 */
 
 template<typename T, typename ForwardIt, typename Size>
-device_pointer<T> copy_n(ForwardIt A, Size n, device_pointer<T> B)
+auto copy_n(ForwardIt A, Size n, device_pointer<T> B)
+// AAC: only use this overload if it is semantically correct 
+// (e.g., A is not a fancy pointer -- in continuous memory);
+// and if not, there will be other candidates, possibly provided by Multi itself (e.g. through ADL priority)
+-> decltype(arch::memcopy(to_address(B), to_address(A), n * sizeof(T)), B + n) 
 {
   arch::memcopy(to_address(B), to_address(A), n * sizeof(T));
   return B + n;
@@ -797,8 +801,8 @@ device_pointer<T> uninitialized_copy(device_pointer<T> first, device_pointer<T> 
 }
 */
 // only trivial types for now, no placement new yet
-template<typename T, typename Size>
-device_pointer<T> uninitialized_copy_n(device_pointer<T> A, Size n, device_pointer<T> B)
+template<typename T1, typename Size, typename T2>
+device_pointer<T2> uninitialized_copy_n(device_pointer<T1> A, Size n, device_pointer<T2> B)
 {
   return copy_n(A, n, B);
 }

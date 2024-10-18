@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -16,6 +16,19 @@
 
 namespace qmcplusplus
 {
+
+[[noreturn]] std::any InputSection::assignAnyEnum(const std::string& tag) const
+{
+  throw UniformCommunicateError("derived class must provide assignAnyEnum method if enum parameters are used");
+}
+
+[[noreturn]] void InputSection::setFromStreamCustom(const std::string& ename,
+                                                    const std::string& name,
+                                                    std::istringstream& svalue)
+{
+  throw UniformCommunicateError("derived class must provide handleCustom method if custom parameters are used");
+}
+
 
 void InputSection::readAttributes(xmlNodePtr cur,
                                   const std::string& element_name,
@@ -49,7 +62,6 @@ void InputSection::readAttributes(xmlNodePtr cur,
       setFromStreamCustom(element_name, qualified_name, stream);
     else
       setFromStream(qualified_name, stream);
-
     att = att->next;
   }
 }
@@ -65,6 +77,7 @@ void InputSection::handleDelegate(const std::string& ename, const xmlNodePtr ele
 
 void InputSection::readXML(xmlNodePtr cur)
 {
+  assert(cur != nullptr);
   // For historical reasons that actual "type" of the element/input section is expressed in a very inconsistent way.
   // It could be coded via the element name i.e. the tag, or at minimum a method, type, or name attribute.
   std::string section_ename{lowerCase(castXMLCharToChar(cur->name))};
@@ -74,22 +87,27 @@ void InputSection::readXML(xmlNodePtr cur)
   // at anyrate one of these must match the section_name.
   std::string lcase_section_name{lowerCase(section_name)};
 
-  auto checkSectionName = [&section_name = section_name, &section_name_alternates = section_name_alternates](auto& possible_sname){
+  auto checkSectionName = [&section_name            = section_name,
+                           &section_name_alternates = section_name_alternates](auto& possible_sname) {
     std::string lcase_section_name{lowerCase(section_name)};
     if (possible_sname == lcase_section_name)
       return true;
     if (section_name_alternates.size() > 0)
       return std::any_of(section_name_alternates.begin(), section_name_alternates.end(),
-                      [&possible_sname](auto& name_alternate) {
-                        std::string lcase_alternate{lowerCase(name_alternate)};
-                        return possible_sname == lcase_alternate;
-                      });
+                         [&possible_sname](auto& name_alternate) {
+                           std::string lcase_alternate{lowerCase(name_alternate)};
+                           return possible_sname == lcase_alternate;
+                         });
     return false;
   };
 
-  if (!(checkSectionName(section_ename) || checkSectionName(section_method) ||
-        checkSectionName(section_type) || checkSectionName(section_name_actual)))
-    throw UniformCommunicateError("Input is invalid  " + lcase_section_name + " does not match input node!");
+  if (!(checkSectionName(section_ename) || checkSectionName(section_method) || checkSectionName(section_type) ||
+        checkSectionName(section_name_actual)))
+  {
+    std::stringstream error;
+    error << "Input is invalid \"" << lcase_section_name << "\" does not match a defined input node!";
+    throw UniformCommunicateError(error.str());
+  }
 
   // these attributes don't get an element name passed to them because by convention we save and define them unqualified.
   readAttributes(cur, "", {"type"});
@@ -200,7 +218,7 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   else if (isMultiReal(name))
   {
     std::vector<Real> real_values;
-    for (FullPrecReal value; svalue >> value;)
+    for (Real value; svalue >> value;)
       real_values.push_back(static_cast<Real>(value));
     assignValue(name, real_values);
   }
@@ -219,7 +237,7 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   }
   else if (isReal(name))
   {
-    FullPrecReal value;
+    Real value;
     svalue >> value;
     assignValue(name, Real(value));
   }
@@ -249,7 +267,7 @@ void InputSection::assignValue(const std::string& name, const T& value)
   else
   {
     if (has(name))
-      std::any_cast<std::vector<T>>(values_[name]).push_back(value);
+      std::any_cast<std::vector<T>&>(values_[name]).push_back(value);
     else
       values_[name] = std::vector<T>{value};
   }
@@ -317,6 +335,8 @@ void InputSection::report(std::ostream& out) const
   }
   out << "\n\n";
 }
+
+void InputSection::report() const { report(app_log()); }
 
 std::any InputSection::lookupAnyEnum(const std::string& enum_name,
                                      const std::string& enum_value,

@@ -16,6 +16,7 @@
 #====================================================================#
 
 
+import numpy as np
 from numpy import ndarray,array
 from generic import obj
 from developer import error
@@ -192,24 +193,15 @@ $calculation
         if system is not None and 'system' not in self.keywords:
             self.error('system input is provided, but $system is not present in template input'+extra)
         #end if
+        folded_structure = None
+        tiled_structure  = None
         if system is not None and 'system' not in self.values:
             if 'system' not in self.keywords:
                 self.error('cannot incorporate "system" input\n$system is not present in template input'+extra)
             #end if
             system = system.copy() # make a local copy
-            if system.has_folded() and twist_num is not None:
-                stmp = system.structure.copy()
-                prim_sys_kpoints = stmp.folded_structure.kpoints.copy()
-                kmap = stmp.kmap() 
-                allkpts = list(map(lambda xs: list(map(lambda x: prim_sys_kpoints[x], xs)), kmap))
-                sp_kpoints = stmp.kpoints.copy()
-                sp_twist = sp_kpoints[twist_num]
-                p_kpts     = allkpts[twist_num]
-                sp_kmesh = system.generation_info.kgrid
-            else:
-                sp_twist=None
-            #end if
             if use_folded and system.has_folded():
+                tiled_structure = system.structure.copy()
                 system = system.folded_system
             #end if
             s = system.structure
@@ -230,6 +222,7 @@ $calculation
             sys_inputs.charge = system.net_charge
             sys_inputs.spin   = system.net_spin
             if is_solid:
+                folded_structure     = s.copy()
                 sys_inputs.dimension = len(s.axes)
                 sys_inputs.a         = s.write_axes()
                 if len(s.kpoints)>0:
@@ -407,18 +400,75 @@ $calculation
             elif sys_var is None:
                 self.error('cannot generate save2qmcpack text\nplease provide input variable "sys_var"\n(used to set "cell" in save2qmcpack) ')
             #end if
+            if folded_structure is not None:
+                folded_structure.change_units('B') # always use Bohr units for k-points
+                nkpoints = len(folded_structure.kpoints)
+                if sys_kpoints is None and nkpoints!=0 or sys_kpoints is not None and len(sys_kpoints)!=nkpoints:
+                    self.error('inconsistency in written and saved k-points')
+                #end if
+                if tiled_structure is None:
+                    tiling  = array([1,1,1],dtype=int)
+                    ntwists = nkpoints
+                else:
+                    if nkpoints==0:
+                        self.error('k-points must be present for save2qmcpack to write supercell wavefunction')
+                    #end if
+                    tiled_structure.change_units('B') # always use Bohr units for twists/k-points
+                    tiled_kpoints = tiled_structure.kpoints.copy()
+                    ntwists = len(tiled_kpoints)
+                    if ntwists==0:
+                        self.error('supercell k-points must be present for save2qmcpack to write supercell wavefunction')
+                    #end if
+                    kmap = tiled_structure.kmap()
+                    if len(kmap)!=ntwists:
+                        self.error('inconsistency between supercell twist mapping and supercell twist count')
+                    #end if
+                    assert len(kmap)==ntwists
+                    kmap_array = []
+                    folded_indices = []
+                    for itwist in sorted(kmap.keys()):
+                        ifolded = list(kmap[itwist])
+                        kmap_array.append(ifolded)
+                        folded_indices.extend(ifolded)
+                    #end for
+                    kmap_array = array(kmap_array,dtype=int)
+                    if len(set(folded_indices))!=nkpoints:
+                        self.error('inconsistency in mapping between supercell twists and folded cell k-points')
+                    #end if
+                    if not tiled_structure.has_tmatrix():
+                        self.error('tiling matrix is missing')
+                    #end if
+                    tmatrix  = tiled_structure.tmatrix.copy()
+                    tiling   = np.diag(tmatrix)
+                    diagonal = np.abs(tmatrix-np.diag(tiling)).sum()==0
+                    if not diagonal:
+                        self.error('non-diagonal tilings are not yet supported by save2qmcpack')
+                    #end if
+                #end if
+            #end if
             s = '### generated conversion text ###\n'
             s += 'from PyscfToQmcpack import savetoqmcpack\n'
+            self.kpoints       = None
+            self.tiled_kpoints = None
+            self.tiled_kmap    = None
             if sys_kpoints is None:
                 s += "savetoqmcpack({0},{1},'{2}')\n".format(sys_var,mf_var,prefix)
-            elif sp_twist is None:
-                s += "savetoqmcpack({0},{1},'{2}',{3})\n".format(sys_var,mf_var,prefix,kpts_var)
-            else:
-                s += "kmesh = [{},{},{}]\n".format(sp_kmesh[0],sp_kmesh[1],sp_kmesh[2])
-                s += "sp_kpoints = {}\n".format(render_array(sp_kpoints,4))
-                s += "for spki,spk in enumerate(sp_kpoints):\n"
-                s += "    savetoqmcpack({0},{1},'{2}_Tw-{{}}'.format(spki),kmesh=kmesh,kpts={3},sp_twist=spk)\n".format(sys_var,mf_var,prefix,kpts_var)
+            elif tiled_structure is None:
+                s += 'tiling = [{},{},{}]\n'.format(*tiling)
+                s += 'for n,kp in enumerate({}):\n'.format(kpts_var)
+                s += "    savetoqmcpack({0},{1},'{2}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts=[kp],sp_twist=kp)\n".format(sys_var,mf_var,prefix)
                 s += "#end for\n"
+                self.kpoints = sys_kpoints.copy()
+            else:
+                s += 'tiling = [{},{},{}]\n'.format(*tiling)
+                s += "sp_kpoints = {}\n".format(render_array(tiled_kpoints,4))
+                s += "sp_kmap    = {}\n".format(render_array(kmap_array,4))
+                s += 'for n,kp in enumerate(sp_kpoints):\n'
+                s += "    savetoqmcpack({0},{1},'{2}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts={3}[sp_kmap[n]],sp_twist=kp,kmap=sp_kmap[n])\n".format(sys_var,mf_var,prefix,kpts_var)
+                s += "#end for\n"
+                self.kpoints       = sys_kpoints.copy()
+                self.tiled_kpoints = tiled_kpoints.copy()
+                self.tiled_kmap    = kmap_array.copy()
             #end if
             s += '### end generated conversion text ###\n'
             self.addendum = '\n'+s+'\n'
