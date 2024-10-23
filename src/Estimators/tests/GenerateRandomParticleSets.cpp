@@ -32,7 +32,7 @@ std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
   std::vector<ParticleSet> psets(num_psets, pset_target);
   if (generate_test_data)
   {
-    std::cout << "Initialize OneBodyDensityMatrices::accumulate psets with:\n{";
+    std::cout << "Initialize psets with:\n{";
     std::vector<ParticleSet> psets;
     for (int iw = 0; iw < nwalkers; ++iw)
     {

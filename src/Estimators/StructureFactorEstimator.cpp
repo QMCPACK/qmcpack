@@ -26,13 +26,14 @@ StructureFactorEstimator::StructureFactorEstimator(StructureFactorInput& sfi,
   elec_species_ = elns_.getSpeciesSet().getTotalNum();
   ion_species_  = ions_.getSpeciesSet().getTotalNum();
 
-  auto num_kpoints_ = pset_ions.getSimulationCell().getKLists().numk;
+  num_kpoints_ = pset_ions.getSimulationCell().getKLists().numk;
   kshell_offsets_   = pset_ions.getSimulationCell().getKLists().kshell;
   int max_kshell    = kshell_offsets_.size() - 1;
 
   rhok_tot_r_.resize(num_kpoints_);
   rhok_tot_i_.resize(num_kpoints_);
-
+  sfk_e_e_.resize(num_kpoints_);
+  rhok_e_.resize(num_kpoints_);
   // Legacy comment, but I don't trust it.
   //for values, we are including e-e structure factor, and e-Ion.  So a total of NumIonSpecies+1 structure factors.
   //+2 for the real and imaginary parts of rho_k^e

@@ -79,6 +79,8 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
 
   // This should cause a compilation error. a DerivedDummy cannot be converted to an OtherDummy.
   // RefVector<OtherDummy> od_ref_vec = convertUPtrToRefVector<OtherDummy>(ddv);
+
+  
 }
 
 TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")

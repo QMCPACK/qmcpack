@@ -79,7 +79,7 @@ static RefVector<T> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
 template<class T2, class T>
 static RefVector<T2> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
 {
-  static_assert(!std::is_same_v<T2, T> && std::is_base_of_v<T2, T>);
+  static_assert((!std::is_same_v<T2, T>) && std::is_base_of_v<T2, T>);
   RefVector<T2> ref_list;
   ref_list.reserve(ptr_list.size());
   for (const UPtr<T>& ptr : ptr_list)
