@@ -21,11 +21,11 @@ namespace qmcplusplus
 
 TEST_CASE("StructureFactorInput::parseXML::valid", "[estimators]")
 {
-  using input = qmcplusplus::testing::ValidStructureFactorInput;
+  using input  = qmcplusplus::testing::ValidStructureFactorInput;
   int test_num = 0;
   for (auto input_xml : input::xml)
   {
-    std::cout << "input number: " << test_num++ << '\n'; 
+    std::cout << "input number: " << test_num++ << '\n';
     Libxml2Document doc;
     bool okay       = doc.parseFromString(input_xml);
     xmlNodePtr node = doc.getRoot();
@@ -39,11 +39,11 @@ TEST_CASE("StructureFactorInput::parseXML::invalid", "[estimators]")
   for (auto input_xml : input::xml)
   {
     Libxml2Document doc;
-    bool okay                           = doc.parseFromString(input_xml);
-    xmlNodePtr node                     = doc.getRoot();
+    bool okay                             = doc.parseFromString(input_xml);
+    xmlNodePtr node                       = doc.getRoot();
     auto constructBadStructureFactorInput = [](xmlNodePtr cur) { StructureFactorInput sfi(cur); };
     CHECK_THROWS_AS(constructBadStructureFactorInput(node), UniformCommunicateError);
   }
 }
 
-}
+} // namespace qmcplusplus

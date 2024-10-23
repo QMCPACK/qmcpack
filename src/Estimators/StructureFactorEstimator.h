@@ -18,6 +18,11 @@
 namespace qmcplusplus
 {
 
+namespace testing
+{
+class StructureFactorAccess;
+}
+
 class StructureFactorEstimator : public OperatorEstBase
 {
 public:
@@ -25,7 +30,7 @@ public:
   using Real         = QMCT::RealType;
   using FullPrecReal = QMCT::FullPrecRealType;
   using KPt          = TinyVector<Real, QMCTraits::DIM>;
-  
+
   StructureFactorEstimator(StructureFactorInput& sfi,
                            ParticleSet& pset_ions,
                            ParticleSet& pset_elec,
@@ -48,6 +53,12 @@ public:
   void registerOperatorEstimator(hdf_archive& file) override;
   void write(hdf_archive& file);
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
+
+protected:
+  // Testing functions
+  const Vector<Real>& getSKElecElec() const { return sfk_e_e_; }
+  const Vector<std::complex<Real>>& getRhoKElec() const { return rhok_e_; }
+
 private:
   int elec_species_;
   ParticleSet& elns_;
@@ -74,10 +85,13 @@ private:
   /*@{
    *  work area to reduce over electron species, they should probably just be complex as well.
    *  but particle set stores the real and imaginary parts as two real vectors.
-   */  
+   */
   Vector<Real> rhok_tot_r_;
   Vector<Real> rhok_tot_i_;
   /*@}*/
+
+public:
+  friend class testing::StructureFactorAccess;
 };
 
 } // namespace qmcplusplus
