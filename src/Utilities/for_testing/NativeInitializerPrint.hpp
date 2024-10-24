@@ -89,6 +89,16 @@ inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>&
   return out;
 }
 
+template<class T>
+inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<std::complex<T>>>& np_vec)
+{
+  out << "{ ";
+  auto vec = np_vec.get_obj();
+  for (std::complex<T>& t : vec)
+    out << std::setprecision(10) << "{" << t.real() << "," << t.imag() << "}" << ", ";
+  out << " }";
+  return out;
+}
 
 } // namespace qmcplusplus
 
